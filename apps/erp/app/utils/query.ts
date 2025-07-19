@@ -99,7 +99,7 @@ export function setGenericQueryFilters<
 >(
   query: PostgrestFilterBuilder<T, U, V>,
   args: Partial<GenericQueryFilters>,
-  defaultSorts?: { column: string; ascending: boolean }[]
+  defaultSorts?: { column: string; ascending: boolean; foreignTable?: string }[]
 ): PostgrestFilterBuilder<T, U, V> {
   args.filters?.forEach((filter) => {
     if (!filter.value) return;
@@ -124,7 +124,10 @@ export function setGenericQueryFilters<
     });
   } else if (defaultSorts && defaultSorts?.length > 0) {
     defaultSorts.forEach((sort) => {
-      query = query.order(sort.column, { ascending: sort.ascending });
+      query = query.order(sort.column, {
+        ascending: sort.ascending,
+        foreignTable: sort.foreignTable,
+      });
     });
   }
 

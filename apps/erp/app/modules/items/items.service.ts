@@ -29,6 +29,7 @@ import type {
   itemValidator,
   makeMethodVersionValidator,
   materialFormValidator,
+  materialGradeValidator,
   materialSubstanceValidator,
   materialValidator,
   methodMaterialValidator,
@@ -229,6 +230,13 @@ export async function deleteMaterialForm(
   id: string
 ) {
   return client.from("materialForm").delete().eq("id", id);
+}
+
+export async function deleteMaterialGrade(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("materialGrade").delete().eq("id", id);
 }
 
 export async function deleteMaterialSubstance(
@@ -834,9 +842,42 @@ export async function getMaterialFormsList(
 ) {
   return client
     .from("materialForm")
-    .select("id, name")
+    .select("id, name, companyId")
     .or(`companyId.eq.${companyId},companyId.is.null`)
     .order("name");
+}
+
+export async function getMaterialGrades(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("materialGrades")
+    .select("*", {
+      count: "exact",
+    })
+    .or(`companyId.eq.${companyId},companyId.is.null`);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "substanceName", ascending: true },
+      { column: "name", ascending: true },
+    ]);
+  }
+
+  return query;
+}
+
+export async function getMaterialGrade(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("materialGrade").select("*").eq("id", id).single();
 }
 
 export async function getMaterialSubstance(
@@ -877,7 +918,7 @@ export async function getMaterialSubstancesList(
 ) {
   return client
     .from("materialSubstance")
-    .select("id, name")
+    .select("id, name, companyId")
     .or(`companyId.eq.${companyId},companyId.is.null`)
     .order("name");
 }
@@ -2474,6 +2515,34 @@ export async function upsertMaterialForm(
       .select("id")
       .single()
   );
+}
+
+export async function upsertMaterialGrade(
+  client: SupabaseClient<Database>,
+  materialGrade:
+    | (Omit<z.infer<typeof materialGradeValidator>, "id"> & {
+        companyId: string;
+      })
+    | (Omit<z.infer<typeof materialGradeValidator>, "id"> & {
+        id: string;
+      })
+) {
+  if ("id" in materialGrade) {
+    return (
+      client
+        .from("materialGrade")
+        .update(sanitize(materialGrade))
+        // @ts-ignore
+        .eq("id", materialGrade.id)
+        .select("id")
+        .single()
+    );
+  }
+  return client
+    .from("materialGrade")
+    .insert([materialGrade])
+    .select("*")
+    .single();
 }
 
 export async function upsertMaterialSubstance(

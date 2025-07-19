@@ -62,7 +62,7 @@ const Shape = (props: ShapeSelectProps) => {
       options={options}
       {...props}
       inline={props.inline ? ShapePreview : undefined}
-      label={props?.label ?? "Form"}
+      label={props?.label ?? "Shape"}
     />
   );
 };
@@ -83,6 +83,7 @@ export const useShape = () => {
     return (materialFormsLoader.data?.data ?? []).map((c) => ({
       value: c.id,
       label: c.name,
+      helper: c.companyId === null ? "Standard" : undefined,
     }));
   }, [materialFormsLoader.data?.data]);
 

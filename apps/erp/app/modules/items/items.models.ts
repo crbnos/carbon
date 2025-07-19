@@ -489,6 +489,12 @@ export const materialFormValidator = z.object({
   name: z.string().min(1, { message: "Name is required" }).max(255),
 });
 
+export const materialGradeValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  materialSubstanceId: z.string().min(1, { message: "Substance is required" }),
+  name: z.string().min(1, { message: "Name is required" }).max(255),
+});
+
 export const materialSubstanceValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }).max(255),

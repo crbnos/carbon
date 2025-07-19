@@ -2,49 +2,71 @@ import { Badge, MenuIcon, MenuItem } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { LuBookMarked, LuCircleCheck, LuPencil, LuTrash } from "react-icons/lu";
+import {
+  LuBeef,
+  LuCircleCheck,
+  LuGlassWater,
+  LuPencil,
+  LuTrash,
+} from "react-icons/lu";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { useSubstance } from "~/components/Form/Substance";
 import { usePermissions, useUrlParams } from "~/hooks";
-import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
-import type { Substance } from "../../types";
+import type { MaterialGrade } from "../../types";
 
-type MaterialSubstancesTableProps = {
-  data: Substance[];
+type MaterialGradesTableProps = {
+  data: MaterialGrade[];
   count: number;
 };
 
-const MaterialSubstancesTable = memo(
-  ({ data, count }: MaterialSubstancesTableProps) => {
+const MaterialGradesTable = memo(
+  ({ data, count }: MaterialGradesTableProps) => {
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const permissions = usePermissions();
+    const substances = useSubstance();
 
     const rows = useMemo(() => data, [data]);
-    const customColumns = useCustomColumns<Substance>("materialSubstance");
 
     const columns = useMemo<ColumnDef<(typeof rows)[number]>[]>(() => {
       const defaultColumns: ColumnDef<(typeof rows)[number]>[] = [
         {
+          accessorKey: "substanceName",
+          header: "Substance",
+          cell: ({ row }) => <Enumerable value={row.original.substanceName} />,
+          meta: {
+            icon: <LuGlassWater />,
+            filter: {
+              type: "static",
+              options: substances.map((substance) => ({
+                label: <Enumerable value={substance.label} />,
+                value: substance.value,
+              })),
+            },
+          },
+        },
+        {
           accessorKey: "name",
-          header: "Name",
+          header: "Grade",
           cell: ({ row }) =>
             row.original.companyId === null ? (
               <Enumerable value={row.original.name} />
             ) : (
               <Hyperlink
-                to={`${path.to.materialSubstance(
-                  row.original.id
+                to={`${path.to.materialGrade(
+                  row.original.id!
                 )}?${params.toString()}`}
               >
                 <Enumerable value={row.original.name} />
               </Hyperlink>
             ),
           meta: {
-            icon: <LuBookMarked />,
+            icon: <LuBeef />,
           },
         },
+
         {
           accessorKey: "companyId",
           header: "Standard",
@@ -60,8 +82,8 @@ const MaterialSubstancesTable = memo(
           },
         },
       ];
-      return [...defaultColumns, ...customColumns];
-    }, [params, customColumns]);
+      return [...defaultColumns];
+    }, [params, substances]);
 
     const renderContextMenu = useCallback(
       (row: (typeof rows)[number]) => {
@@ -73,12 +95,12 @@ const MaterialSubstancesTable = memo(
               }
               onClick={() => {
                 navigate(
-                  `${path.to.materialSubstance(row.id)}?${params.toString()}`
+                  `${path.to.materialGrade(row.id!)}?${params.toString()}`
                 );
               }}
             >
               <MenuIcon icon={<LuPencil />} />
-              Edit Substance
+              Edit Material Grade
             </MenuItem>
             <MenuItem
               disabled={
@@ -87,14 +109,12 @@ const MaterialSubstancesTable = memo(
               destructive
               onClick={() => {
                 navigate(
-                  `${path.to.deleteMaterialSubstance(
-                    row.id
-                  )}?${params.toString()}`
+                  `${path.to.deleteMaterialGrade(row.id!)}?${params.toString()}`
                 );
               }}
             >
               <MenuIcon icon={<LuTrash />} />
-              Delete Substance
+              Delete Material Grade
             </MenuItem>
           </>
         );
@@ -110,17 +130,17 @@ const MaterialSubstancesTable = memo(
         primaryAction={
           permissions.can("create", "parts") && (
             <New
-              label="Material Substance"
-              to={`${path.to.newMaterialSubstance}?${params.toString()}`}
+              label="Material Grade"
+              to={`${path.to.newMaterialGrade}?${params.toString()}`}
             />
           )
         }
         renderContextMenu={renderContextMenu}
-        title="Material Substances"
+        title="Material Grades"
       />
     );
   }
 );
 
-MaterialSubstancesTable.displayName = "MaterialSubstancesTable";
-export default MaterialSubstancesTable;
+MaterialGradesTable.displayName = "MaterialGradesTable";
+export default MaterialGradesTable;

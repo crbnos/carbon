@@ -15,7 +15,7 @@ type SubstanceSelectProps = Omit<ComboboxProps, "options" | "inline"> & {
 
 const SubstancePreview = (
   value: string,
-  options: { value: string; label: string | React.ReactNode }[]
+  options: { value: string; label: string | React.ReactNode; helper?: string }[]
 ) => {
   const substance = options.find((o) => o.value === value);
   // @ts-ignore
@@ -83,6 +83,7 @@ export const useSubstance = () => {
     return (materialSubstances.data?.data ?? []).map((c) => ({
       value: c.id,
       label: c.name,
+      helper: c.companyId === null ? "Standard" : undefined,
     }));
   }, [materialSubstances.data?.data]);
 

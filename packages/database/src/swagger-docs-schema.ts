@@ -14748,6 +14748,123 @@ export default {
         tags: ["nonConformanceCustomer"],
       },
     },
+    "/materialDimensions": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialDimensions.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimensions.materialFormId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimensions.companyId",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/materialDimensions",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["materialDimensions"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.materialDimensions",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["materialDimensions"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialDimensions.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimensions.materialFormId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimensions.companyId",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["materialDimensions"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialDimensions.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimensions.materialFormId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimensions.companyId",
+          },
+          {
+            $ref: "#/parameters/body.materialDimensions",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["materialDimensions"],
+      },
+    },
     "/salesOrder": {
       get: {
         parameters: [
@@ -18451,6 +18568,132 @@ export default {
           },
         },
         tags: ["supplierProcesses"],
+      },
+    },
+    "/materialFinish": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialFinish.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialFinish.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialFinish.materialSubstanceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialFinish.companyId",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/materialFinish",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["materialFinish"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.materialFinish",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["materialFinish"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialFinish.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialFinish.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialFinish.materialSubstanceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialFinish.companyId",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["materialFinish"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialFinish.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialFinish.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialFinish.materialSubstanceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialFinish.companyId",
+          },
+          {
+            $ref: "#/parameters/body.materialFinish",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["materialFinish"],
       },
     },
     "/procedure": {
@@ -51924,6 +52167,132 @@ export default {
         tags: ["customFieldTables"],
       },
     },
+    "/materialGrade": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialGrade.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialGrade.materialSubstanceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialGrade.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialGrade.companyId",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/materialGrade",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["materialGrade"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.materialGrade",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["materialGrade"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialGrade.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialGrade.materialSubstanceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialGrade.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialGrade.companyId",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["materialGrade"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialGrade.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialGrade.materialSubstanceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialGrade.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialGrade.companyId",
+          },
+          {
+            $ref: "#/parameters/body.materialGrade",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["materialGrade"],
+      },
+    },
     "/companySettings": {
       get: {
         parameters: [
@@ -64371,6 +64740,30 @@ export default {
       },
       type: "object",
     },
+    materialDimensions: {
+      required: ["id", "materialFormId", "companyId"],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        materialFormId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialForm.id`.<fk table='materialForm' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     salesOrder: {
       required: [
         "id",
@@ -66066,6 +66459,34 @@ export default {
           type: "string",
         },
         processName: {
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
+    materialFinish: {
+      required: ["id", "name", "materialSubstanceId"],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        materialSubstanceId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialSubstance.id`.<fk table='materialSubstance' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -82016,6 +82437,34 @@ export default {
       },
       type: "object",
     },
+    materialGrade: {
+      required: ["id", "materialSubstanceId", "name"],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        materialSubstanceId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialSubstance.id`.<fk table='materialSubstance' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     companySettings: {
       required: [
         "id",
@@ -90004,6 +90453,33 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.materialDimensions": {
+      name: "materialDimensions",
+      description: "materialDimensions",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/materialDimensions",
+      },
+    },
+    "rowFilter.materialDimensions.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialDimensions.materialFormId": {
+      name: "materialFormId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialDimensions.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.salesOrder": {
       name: "salesOrder",
       description: "salesOrder",
@@ -91911,6 +92387,39 @@ export default {
     },
     "rowFilter.supplierProcesses.processName": {
       name: "processName",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "body.materialFinish": {
+      name: "materialFinish",
+      description: "materialFinish",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/materialFinish",
+      },
+    },
+    "rowFilter.materialFinish.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialFinish.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialFinish.materialSubstanceId": {
+      name: "materialSubstanceId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialFinish.companyId": {
+      name: "companyId",
       required: false,
       in: "query",
       type: "string",
@@ -109908,6 +110417,39 @@ export default {
     },
     "rowFilter.customFieldTables.fields": {
       name: "fields",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "body.materialGrade": {
+      name: "materialGrade",
+      description: "materialGrade",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/materialGrade",
+      },
+    },
+    "rowFilter.materialGrade.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialGrade.materialSubstanceId": {
+      name: "materialSubstanceId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialGrade.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialGrade.companyId": {
+      name: "companyId",
       required: false,
       in: "query",
       type: "string",
