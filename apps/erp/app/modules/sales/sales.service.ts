@@ -1324,7 +1324,8 @@ export async function getSalesOrderLineShipments(
   return client
     .from("shipmentLine")
     .select("*, shipment(*), shelf(id, name)")
-    .eq("lineId", salesOrderLineId);
+    .eq("lineId", salesOrderLineId)
+    .gt("shippedQuantity", 0);
 }
 
 export async function getSalesRFQ(

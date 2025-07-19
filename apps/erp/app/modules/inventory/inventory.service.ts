@@ -31,6 +31,27 @@ export async function deleteReceipt(
   return client.from("receipt").delete().eq("id", receiptId);
 }
 
+export async function deleteReceiptLine(
+  client: SupabaseClient<Database>,
+  receiptLineId: string
+) {
+  return client.from("receiptLine").delete().eq("id", receiptLineId);
+}
+
+export async function deleteShipment(
+  client: SupabaseClient<Database>,
+  shipmentId: string
+) {
+  return client.from("shipment").delete().eq("id", shipmentId);
+}
+
+export async function deleteShipmentLine(
+  client: SupabaseClient<Database>,
+  shipmentLineId: string
+) {
+  return client.from("shipmentLine").delete().eq("id", shipmentLineId);
+}
+
 export async function deleteShippingMethod(
   client: SupabaseClient<Database>,
   shippingMethodId: string
@@ -39,13 +60,6 @@ export async function deleteShippingMethod(
     .from("shippingMethod")
     .update({ active: false })
     .eq("id", shippingMethodId);
-}
-
-export async function deleteShipment(
-  client: SupabaseClient<Database>,
-  shipmentId: string
-) {
-  return client.from("shipment").delete().eq("id", shipmentId);
 }
 
 export async function getItemLedgerPage(

@@ -98,7 +98,9 @@ function getRelatedItems(
       module: "inventory",
       children: items.shipments
         .filter((shipment) =>
-          shipment.shipmentLine.some((line) => line.lineId === lineId)
+          shipment.shipmentLine.some(
+            (line) => line.lineId === lineId && line.shippedQuantity > 0
+          )
         )
         .map((shipment) => ({
           id: shipment.id ?? "",

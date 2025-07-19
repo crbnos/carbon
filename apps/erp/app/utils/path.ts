@@ -1085,6 +1085,8 @@ export const path = {
     receipt: (id: string) => generatePath(`${x}/receipt/${id}`),
     receiptInvoice: (id: string) => generatePath(`${x}/receipt/${id}/invoice`),
     receiptDetails: (id: string) => generatePath(`${x}/receipt/${id}/details`),
+    receiptLineDelete: (id: string) =>
+      generatePath(`${x}/receipt/lines/${id}/delete`),
     receiptLineSplit: `${x}/receipt/lines/split`,
     receiptLines: (id: string) => generatePath(`${x}/receipt/${id}/lines`),
     receiptLinesTracking: (id: string) =>
@@ -1185,6 +1187,8 @@ export const path = {
     shipment: (id: string) => generatePath(`${x}/shipment/${id}`),
     shipmentDetails: (id: string) =>
       generatePath(`${x}/shipment/${id}/details`),
+    shipmentLineDelete: (id: string) =>
+      generatePath(`${x}/shipment/lines/${id}/delete`),
     shipmentLineSplit: `${x}/shipment/lines/split`,
     shipmentLinesTracking: (id: string) =>
       generatePath(`${x}/shipment/lines/tracking`),

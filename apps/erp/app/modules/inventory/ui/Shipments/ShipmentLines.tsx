@@ -8,6 +8,11 @@ import {
   CardTitle,
   cn,
   Combobox,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   Heading,
   HStack,
   IconButton,
@@ -43,14 +48,17 @@ import { useCallback, useEffect, useState } from "react";
 import {
   LuCheck,
   LuCircleAlert,
+  LuEllipsisVertical,
   LuGroup,
   LuQrCode,
   LuSplit,
+  LuTrash,
 } from "react-icons/lu";
 import { Empty, ItemThumbnail } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useShelves } from "~/components/Form/Shelf";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
+import { ConfirmDelete } from "~/components/Modals";
 import { useRouteData } from "~/hooks";
 import type {
   getBatchNumbersForItem,
@@ -308,6 +316,7 @@ function ShipmentLineItem({
   const item = items.find((p) => p.id === line.itemId);
   const unitsOfMeasure = useUnitOfMeasure();
   const splitDisclosure = useDisclosure();
+  const deleteDisclosure = useDisclosure();
 
   return (
     <div className={cn("flex flex-col border-b p-6 gap-6 relative", className)}>
@@ -320,19 +329,33 @@ function ShipmentLineItem({
             </span>
           </div>
         ) : (
-          <Tooltip>
-            <TooltipTrigger asChild>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
               <IconButton
-                aria-label="Split shipment line"
-                icon={<LuSplit />}
-                variant="ghost"
+                aria-label="Line options"
+                variant="secondary"
+                icon={<LuEllipsisVertical />}
                 size="sm"
-                onClick={splitDisclosure.onOpen}
-                isDisabled={isReadOnly}
               />
-            </TooltipTrigger>
-            <TooltipContent>Split shipment line</TooltipContent>
-          </Tooltip>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem
+                disabled={isReadOnly}
+                onClick={splitDisclosure.onOpen}
+              >
+                <DropdownMenuIcon icon={<LuSplit />} />
+                Split shipment line
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                destructive
+                disabled={isReadOnly}
+                onClick={deleteDisclosure.onOpen}
+              >
+                <DropdownMenuIcon icon={<LuTrash />} />
+                Delete shipment line
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
       </div>
       <div className="flex flex-1 justify-between items-center w-full">
@@ -472,6 +495,15 @@ function ShipmentLineItem({
       )}
       {splitDisclosure.isOpen && (
         <SplitShipmentLineModal line={line} onClose={splitDisclosure.onClose} />
+      )}
+      {deleteDisclosure.isOpen && (
+        <ConfirmDelete
+          name="Shipment Line"
+          text="Are you sure you want to delete this shipment line?"
+          action={path.to.shipmentLineDelete(line.id!)}
+          onCancel={deleteDisclosure.onClose}
+          onSubmit={deleteDisclosure.onClose}
+        />
       )}
     </div>
   );
