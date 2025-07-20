@@ -5,8 +5,8 @@ import { validationError, validator } from "@carbon/form";
 import { useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { materialGradeValidator, upsertMaterialGrade } from "~/modules/items";
-import MaterialGradeForm from "~/modules/items/ui/MaterialGrades/MaterialGradeForm";
+import { materialFinishValidator, upsertMaterialFinish } from "~/modules/items";
+import MaterialFinishForm from "~/modules/items/ui/MaterialFinishes/MaterialFinishForm";
 
 import { getParams, path } from "~/utils/path";
 
@@ -27,7 +27,9 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const modal = formData.get("type") == "modal";
 
-  const validation = await validator(materialGradeValidator).validate(formData);
+  const validation = await validator(materialFinishValidator).validate(
+    formData
+  );
 
   if (validation.error) {
     return validationError(validation.error);
@@ -35,40 +37,40 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  const insertMaterialGrade = await upsertMaterialGrade(client, {
+  const insertMaterialFinish = await upsertMaterialFinish(client, {
     ...data,
     companyId,
   });
-  if (insertMaterialGrade.error) {
+  if (insertMaterialFinish.error) {
     return json(
       {},
       await flash(
         request,
-        error(insertMaterialGrade.error, "Failed to insert material grade")
+        error(insertMaterialFinish.error, "Failed to insert material finish")
       )
     );
   }
 
-  const materialGradeId = insertMaterialGrade.data?.id;
-  if (!materialGradeId) {
+  const materialFinishId = insertMaterialFinish.data?.id;
+  if (!materialFinishId) {
     return json(
       {},
       await flash(
         request,
-        error(insertMaterialGrade, "Failed to insert material grade")
+        error(insertMaterialFinish, "Failed to insert material finish")
       )
     );
   }
 
   return modal
-    ? json(insertMaterialGrade, { status: 201 })
+    ? json(insertMaterialFinish, { status: 201 })
     : redirect(
-        `${path.to.materialGrades}?${getParams(request)}`,
-        await flash(request, success("Part group created"))
+        `${path.to.materialFinishes}?${getParams(request)}`,
+        await flash(request, success("Finish created"))
       );
 }
 
-export default function NewMaterialGradesRoute() {
+export default function NewMaterialFinishsRoute() {
   const navigate = useNavigate();
   const initialValues = {
     name: "",
@@ -76,7 +78,7 @@ export default function NewMaterialGradesRoute() {
   };
 
   return (
-    <MaterialGradeForm
+    <MaterialFinishForm
       onClose={() => navigate(-1)}
       initialValues={initialValues}
     />

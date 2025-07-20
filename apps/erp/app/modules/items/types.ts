@@ -14,6 +14,7 @@ import type {
   getItemShelfQuantities,
   getMakeMethods,
   getMaterial,
+  getMaterialFinishes,
   getMaterialForms,
   getMaterialGrades,
   getMaterialSubstances,
@@ -105,6 +106,10 @@ export type MakeMethod = NonNullable<
 
 export type Material = NonNullable<
   Awaited<ReturnType<typeof getMaterials>>["data"]
+>[number];
+
+export type MaterialFinish = NonNullable<
+  Awaited<ReturnType<typeof getMaterialFinishes>>["data"]
 >[number];
 
 export type MaterialGrade = NonNullable<

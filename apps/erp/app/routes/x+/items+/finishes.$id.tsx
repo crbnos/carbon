@@ -6,11 +6,11 @@ import { useLoaderData, useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import {
-  getMaterialGrade,
-  materialGradeValidator,
-  upsertMaterialGrade,
+  getMaterialFinish,
+  materialFinishValidator,
+  upsertMaterialFinish,
 } from "~/modules/items";
-import MaterialGradeForm from "~/modules/items/ui/MaterialGrades/MaterialGradeForm";
+import MaterialFinishForm from "~/modules/items/ui/MaterialFinishes/MaterialFinishForm";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -22,11 +22,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const materialGrade = await getMaterialGrade(client, id);
+  const materialFinish = await getMaterialFinish(client, id);
 
-  if (materialGrade.data?.companyId === null) {
+  if (materialFinish.data?.companyId === null) {
     throw redirect(
-      path.to.materialGrades,
+      path.to.materialFinishes,
       await flash(
         request,
         error(new Error("Access denied"), "Cannot edit global material grade")
@@ -35,7 +35,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return json({
-    materialGrade: materialGrade?.data ?? null,
+    materialFinish: materialFinish?.data ?? null,
   });
 }
 
@@ -48,48 +48,48 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  console.log("id", id);
-
   const formData = await request.formData();
-  const validation = await validator(materialGradeValidator).validate(formData);
+  const validation = await validator(materialFinishValidator).validate(
+    formData
+  );
 
   if (validation.error) {
     return validationError(validation.error);
   }
 
-  const updateMaterialGrade = await upsertMaterialGrade(client, {
+  const updateMaterialFinish = await upsertMaterialFinish(client, {
     id: id,
     ...validation.data,
   });
 
-  if (updateMaterialGrade.error) {
+  if (updateMaterialFinish.error) {
     return json(
       {},
       await flash(
         request,
-        error(updateMaterialGrade.error, "Failed to update material grade")
+        error(updateMaterialFinish.error, "Failed to update material grade")
       )
     );
   }
 
   throw redirect(
-    `${path.to.materialGrades}?${getParams(request)}`,
+    `${path.to.materialFinishes}?${getParams(request)}`,
     await flash(request, success("Updated material grade"))
   );
 }
 
-export default function EditMaterialGradesRoute() {
-  const { materialGrade } = useLoaderData<typeof loader>();
+export default function EditMaterialFinishsRoute() {
+  const { materialFinish } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
 
   const initialValues = {
-    id: materialGrade?.id ?? undefined,
-    name: materialGrade?.name ?? "",
-    materialSubstanceId: materialGrade?.materialSubstanceId ?? "",
+    id: materialFinish?.id ?? undefined,
+    name: materialFinish?.name ?? "",
+    materialSubstanceId: materialFinish?.materialSubstanceId ?? "",
   };
 
   return (
-    <MaterialGradeForm
+    <MaterialFinishForm
       key={initialValues.id}
       initialValues={initialValues}
       onClose={() => navigate(-1)}

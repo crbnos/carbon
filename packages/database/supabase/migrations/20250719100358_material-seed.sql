@@ -47,7 +47,7 @@ CREATE TABLE "materialFinish" (
 
   CONSTRAINT "materialFinish_materialSubstanceId_fkey" FOREIGN KEY ("materialSubstanceId") REFERENCES "materialSubstance"("id"),
   CONSTRAINT "materialFinish_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id"),
-  CONSTRAINT "materialFinish_name_companyId_unique" UNIQUE ("name", "companyId")
+  CONSTRAINT "materialFinish_name_companyId_unique" UNIQUE ("materialSubstanceId", "name", "companyId")
 );
 
 CREATE OR REPLACE VIEW "materialFinishes" WITH(SECURITY_INVOKER=true) AS
@@ -81,40 +81,40 @@ INSERT INTO "materialFinish" ("id", "name", "materialSubstanceId", "companyId") 
   ('brush-240-alum', '#240 Brushed', 'aluminum', null),
 
   -- Stainless finishes
-  ('1-ss', '#1 Mill Finish', 'stainless', null),
-  ('2b-ss', '#2B Bright Cold Rolled', 'stainless', null),
-  ('2d-ss', '#2D Dull Cold Rolled', 'stainless', null),
-  ('3-ss', '#3 Intermediate Polish', 'stainless', null),
-  ('4-ss', '#4 Brushed', 'stainless', null),
-  ('6-ss', '#6 Fine Satin', 'stainless', null),
-  ('7-ss', '#7 High Reflective', 'stainless', null),
-  ('8-ss', '#8 Mirror', 'stainless', null),
-  ('ba-ss', 'BA (Bright Annealed)', 'stainless', null),
+  ('1-ss', '#1', 'stainless', null),
+  ('2b-ss', '#2B', 'stainless', null),
+  ('2d-ss', '#2D', 'stainless', null),
+  ('3-ss', '#3', 'stainless', null),
+  ('4-ss', '#4', 'stainless', null),
+  ('6-ss', '#6', 'stainless', null),
+  ('7-ss', '#7', 'stainless', null),
+  ('8-ss', '#8', 'stainless', null),
+  ('ba-ss', 'BA', 'stainless', null),
 
   -- Brass finishes
-  ('brush-120-brass', '#120 Brushed', 'brass', null),
-  ('brush-180-brass', '#180 Brushed', 'brass', null),
-  ('brush-240-brass', '#240 Brushed', 'brass', null),
-  ('mirror-brass', 'Mirror Polished', 'brass', null),
+  ('brush-120-brass', '#120', 'brass', null),
+  ('brush-180-brass', '#180', 'brass', null),
+  ('brush-240-brass', '#240', 'brass', null),
+  ('mirror-brass', 'Mirror', 'brass', null),
   ('satin-brass', 'Satin', 'brass', null),
 
   -- Bronze finishes
-  ('brush-120-bronze', '#120 Brushed', 'bronze', null),
-  ('brush-180-bronze', '#180 Brushed', 'bronze', null),
-  ('mirror-bronze', 'Mirror Polished', 'bronze', null),
+  ('brush-120-bronze', '#120', 'bronze', null),
+  ('brush-180-bronze', '#180', 'bronze', null),
+  ('mirror-bronze', 'Mirror', 'bronze', null),
   ('satin-bronze', 'Satin', 'bronze', null),
 
   -- Copper finishes
-  ('brush-120-copper', '#120 Brushed', 'copper', null),
-  ('brush-180-copper', '#180 Brushed', 'copper', null),
-  ('mirror-copper', 'Mirror Polished', 'copper', null),
+  ('brush-120-copper', '#120', 'copper', null),
+  ('brush-180-copper', '#180', 'copper', null),
+  ('mirror-copper', 'Mirror', 'copper', null),
   ('satin-copper', 'Satin', 'copper', null),
 
   -- Inconel finishes
-  ('mill-inconel', 'Mill Finish', 'inconel', null),
+  ('mill-inconel', 'Mill', 'inconel', null),
   ('ground-32-inconel', '32 Ra Ground', 'inconel', null),
   ('ground-16-inconel', '16 Ra Ground', 'inconel', null),
-  ('polish-inconel', 'Polished', 'inconel', null),
+  ('polish-inconel', 'Polish', 'inconel', null),
 
   -- Titanium finishes
   ('mill-ti', 'Mill Finish', 'titanium', null),
@@ -134,7 +134,7 @@ CREATE TABLE "materialGrade" (
 
   CONSTRAINT "materialGrade_materialSubstanceId_fkey" FOREIGN KEY ("materialSubstanceId") REFERENCES "materialSubstance"("id"),
   CONSTRAINT "materialGrade_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id"),
-  CONSTRAINT "materialGrade_name_companyId_unique" UNIQUE ("name", "companyId")
+  CONSTRAINT "materialGrade_name_companyId_unique" UNIQUE ("materialSubstanceId", "name", "companyId")
 );
 
 CREATE OR REPLACE VIEW "materialGrades" WITH(SECURITY_INVOKER=true) AS
@@ -235,8 +235,192 @@ INSERT INTO "materialGrade" ("id", "materialSubstanceId", "name", "companyId") V
 CREATE TABLE "materialDimensions" (
   "id" TEXT NOT NULL PRIMARY KEY DEFAULT xid(),
   "materialFormId" TEXT NOT NULL,
-  "companyId" TEXT NOT NULL,
+  "name" TEXT NOT NULL,
+  "companyId" TEXT,
 
   CONSTRAINT "materialDimensions_materialFormId_fkey" FOREIGN KEY ("materialFormId") REFERENCES "materialForm"("id"),
-  CONSTRAINT "materialDimensions_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id")
+  CONSTRAINT "materialDimensions_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id"),
+  CONSTRAINT "materialDimensions_name_companyId_unique" UNIQUE ("materialFormId", "name", "companyId")
 );
+
+INSERT INTO "materialDimensions" ("id", "materialFormId", "name", "companyId") VALUES
+  -- Sheet dimensions (gauges)
+  ('sheet-20ga', 'sheet', '20 Gauge', null),
+  ('sheet-18ga', 'sheet', '18 Gauge', null),
+  ('sheet-16ga', 'sheet', '16 Gauge', null),
+  ('sheet-14ga', 'sheet', '14 Gauge', null),
+  ('sheet-12ga', 'sheet', '12 Gauge', null),
+  ('sheet-11ga', 'sheet', '11 Gauge', null),
+  ('sheet-10ga', 'sheet', '10 Gauge', null),
+  ('sheet-7ga', 'sheet', '7 Gauge', null),
+  
+  -- Plate dimensions (thicknesses)
+  ('plate-1-8', 'plate', '1/8"', null),
+  ('plate-3-16', 'plate', '3/16"', null),
+  ('plate-1-4', 'plate', '1/4"', null),
+  ('plate-5-16', 'plate', '5/16"', null),
+  ('plate-3-8', 'plate', '3/8"', null),
+  ('plate-1-2', 'plate', '1/2"', null),
+  ('plate-5-8', 'plate', '5/8"', null),
+  ('plate-3-4', 'plate', '3/4"', null),
+  ('plate-1', 'plate', '1"', null),
+  ('plate-1-25', 'plate', '1.25"', null),
+  ('plate-1-5', 'plate', '1.5"', null),
+  ('plate-2', 'plate', '2"', null),
+  
+  -- Round bar dimensions (diameters)
+  ('roundbar-1-8', 'roundbar', '1/8"', null),
+  ('roundbar-3-16', 'roundbar', '3/16"', null),
+  ('roundbar-1-4', 'roundbar', '1/4"', null),
+  ('roundbar-5-16', 'roundbar', '5/16"', null),
+  ('roundbar-3-8', 'roundbar', '3/8"', null),
+  ('roundbar-1-2', 'roundbar', '1/2"', null),
+  ('roundbar-5-8', 'roundbar', '5/8"', null),
+  ('roundbar-3-4', 'roundbar', '3/4"', null),
+  ('roundbar-7-8', 'roundbar', '7/8"', null),
+  ('roundbar-1', 'roundbar', '1"', null),
+  ('roundbar-1-25', 'roundbar', '1.25"', null),
+  ('roundbar-1-5', 'roundbar', '1.5"', null),
+  ('roundbar-2', 'roundbar', '2"', null),
+  ('roundbar-2-5', 'roundbar', '2.5"', null),
+  ('roundbar-3', 'roundbar', '3"', null),
+  ('roundbar-4', 'roundbar', '4"', null),
+  
+  -- Square bar dimensions
+  ('squarebar-1-8', 'squarebar', '1/8"', null),
+  ('squarebar-3-16', 'squarebar', '3/16"', null),
+  ('squarebar-1-4', 'squarebar', '1/4"', null),
+  ('squarebar-5-16', 'squarebar', '5/16"', null),
+  ('squarebar-3-8', 'squarebar', '3/8"', null),
+  ('squarebar-1-2', 'squarebar', '1/2"', null),
+  ('squarebar-5-8', 'squarebar', '5/8"', null),
+  ('squarebar-3-4', 'squarebar', '3/4"', null),
+  ('squarebar-1', 'squarebar', '1"', null),
+  ('squarebar-1-25', 'squarebar', '1.25"', null),
+  ('squarebar-1-5', 'squarebar', '1.5"', null),
+  ('squarebar-2', 'squarebar', '2"', null),
+  
+  -- Hex bar dimensions
+  ('hexbar-1-4', 'hexbar', '1/4"', null),
+  ('hexbar-5-16', 'hexbar', '5/16"', null),
+  ('hexbar-3-8', 'hexbar', '3/8"', null),
+  ('hexbar-1-2', 'hexbar', '1/2"', null),
+  ('hexbar-5-8', 'hexbar', '5/8"', null),
+  ('hexbar-3-4', 'hexbar', '3/4"', null),
+  ('hexbar-7-8', 'hexbar', '7/8"', null),
+  ('hexbar-1', 'hexbar', '1"', null),
+  ('hexbar-1-25', 'hexbar', '1.25"', null),
+  ('hexbar-1-5', 'hexbar', '1.5"', null),
+  
+  -- Flat bar dimensions (thickness x width)
+  ('flatbar-1-8x1-2', 'flatbar', '1/8" x 1/2"', null),
+  ('flatbar-1-8x3-4', 'flatbar', '1/8" x 3/4"', null),
+  ('flatbar-1-8x1', 'flatbar', '1/8" x 1"', null),
+  ('flatbar-3-16x1-2', 'flatbar', '3/16" x 1/2"', null),
+  ('flatbar-3-16x3-4', 'flatbar', '3/16" x 3/4"', null),
+  ('flatbar-3-16x1', 'flatbar', '3/16" x 1"', null),
+  ('flatbar-1-4x1-2', 'flatbar', '1/4" x 1/2"', null),
+  ('flatbar-1-4x3-4', 'flatbar', '1/4" x 3/4"', null),
+  ('flatbar-1-4x1', 'flatbar', '1/4" x 1"', null),
+  ('flatbar-1-4x1-5', 'flatbar', '1/4" x 1.5"', null),
+  ('flatbar-1-4x2', 'flatbar', '1/4" x 2"', null),
+  ('flatbar-3-8x1', 'flatbar', '3/8" x 1"', null),
+  ('flatbar-3-8x1-5', 'flatbar', '3/8" x 1.5"', null),
+  ('flatbar-3-8x2', 'flatbar', '3/8" x 2"', null),
+  ('flatbar-1-2x1', 'flatbar', '1/2" x 1"', null),
+  ('flatbar-1-2x1-5', 'flatbar', '1/2" x 1.5"', null),
+  ('flatbar-1-2x2', 'flatbar', '1/2" x 2"', null),
+  ('flatbar-1-2x3', 'flatbar', '1/2" x 3"', null),
+  
+  -- Round tube dimensions (OD x wall thickness)
+  ('roundtube-1-2x049', 'roundtube', '1/2" x .049"', null),
+  ('roundtube-5-8x049', 'roundtube', '5/8" x .049"', null),
+  ('roundtube-3-4x049', 'roundtube', '3/4" x .049"', null),
+  ('roundtube-7-8x049', 'roundtube', '7/8" x .049"', null),
+  ('roundtube-1x049', 'roundtube', '1" x .049"', null),
+  ('roundtube-1x065', 'roundtube', '1" x .065"', null),
+  ('roundtube-1-25x049', 'roundtube', '1.25" x .049"', null),
+  ('roundtube-1-25x065', 'roundtube', '1.25" x .065"', null),
+  ('roundtube-1-5x049', 'roundtube', '1.5" x .049"', null),
+  ('roundtube-1-5x065', 'roundtube', '1.5" x .065"', null),
+  ('roundtube-2x049', 'roundtube', '2" x .049"', null),
+  ('roundtube-2x065', 'roundtube', '2" x .065"', null),
+  ('roundtube-2x083', 'roundtube', '2" x .083"', null),
+  
+  -- Square tube dimensions (size x wall thickness)
+  ('squaretube-1-2x049', 'squaretube', '1/2" x .049"', null),
+  ('squaretube-5-8x049', 'squaretube', '5/8" x .049"', null),
+  ('squaretube-3-4x049', 'squaretube', '3/4" x .049"', null),
+  ('squaretube-1x049', 'squaretube', '1" x .049"', null),
+  ('squaretube-1x065', 'squaretube', '1" x .065"', null),
+  ('squaretube-1-25x049', 'squaretube', '1.25" x .049"', null),
+  ('squaretube-1-25x065', 'squaretube', '1.25" x .065"', null),
+  ('squaretube-1-5x049', 'squaretube', '1.5" x .049"', null),
+  ('squaretube-1-5x065', 'squaretube', '1.5" x .065"', null),
+  ('squaretube-2x049', 'squaretube', '2" x .049"', null),
+  ('squaretube-2x065', 'squaretube', '2" x .065"', null),
+  ('squaretube-2x083', 'squaretube', '2" x .083"', null),
+  
+  -- Rectangular tube dimensions (width x height x wall thickness)
+  ('recttube-1x2x049', 'recttube', '1" x 2" x .049"', null),
+  ('recttube-1x2x065', 'recttube', '1" x 2" x .065"', null),
+  ('recttube-1-5x2x049', 'recttube', '1.5" x 2" x .049"', null),
+  ('recttube-1-5x2x065', 'recttube', '1.5" x 2" x .065"', null),
+  ('recttube-2x3x049', 'recttube', '2" x 3" x .049"', null),
+  ('recttube-2x3x065', 'recttube', '2" x 3" x .065"', null),
+  ('recttube-2x4x049', 'recttube', '2" x 4" x .049"', null),
+  ('recttube-2x4x065', 'recttube', '2" x 4" x .065"', null),
+  ('recttube-3x4x065', 'recttube', '3" x 4" x .065"', null),
+  
+  -- Rectangular bar dimensions (thickness x width)
+  ('rectbar-1-8x1-2', 'rectbar', '1/8" x 1/2"', null),
+  ('rectbar-1-4x1-2', 'rectbar', '1/4" x 1/2"', null),
+  ('rectbar-1-4x3-4', 'rectbar', '1/4" x 3/4"', null),
+  ('rectbar-1-4x1', 'rectbar', '1/4" x 1"', null),
+  ('rectbar-3-8x3-4', 'rectbar', '3/8" x 3/4"', null),
+  ('rectbar-3-8x1', 'rectbar', '3/8" x 1"', null),
+  ('rectbar-1-2x1', 'rectbar', '1/2" x 1"', null),
+  ('rectbar-1-2x1-5', 'rectbar', '1/2" x 1.5"', null),
+  ('rectbar-1-2x2', 'rectbar', '1/2" x 2"', null),
+  
+  -- Angle dimensions (leg x leg x thickness)
+  ('angle-1x1x1-8', 'angle', '1" x 1" x 1/8"', null),
+  ('angle-1x1x3-16', 'angle', '1" x 1" x 3/16"', null),
+  ('angle-1-25x1-25x1-8', 'angle', '1.25" x 1.25" x 1/8"', null),
+  ('angle-1-25x1-25x3-16', 'angle', '1.25" x 1.25" x 3/16"', null),
+  ('angle-1-5x1-5x1-8', 'angle', '1.5" x 1.5" x 1/8"', null),
+  ('angle-1-5x1-5x3-16', 'angle', '1.5" x 1.5" x 3/16"', null),
+  ('angle-2x2x1-8', 'angle', '2" x 2" x 1/8"', null),
+  ('angle-2x2x3-16', 'angle', '2" x 2" x 3/16"', null),
+  ('angle-2x2x1-4', 'angle', '2" x 2" x 1/4"', null),
+  ('angle-3x3x1-4', 'angle', '3" x 3" x 1/4"', null),
+  ('angle-3x3x5-16', 'angle', '3" x 3" x 5/16"', null),
+  ('angle-4x4x1-4', 'angle', '4" x 4" x 1/4"', null),
+  ('angle-4x4x5-16', 'angle', '4" x 4" x 5/16"', null),
+  
+  -- Channel dimensions (depth x flange width x thickness)
+  ('channel-3x1-41x170', 'channel', 'C3 x 4.1', null),
+  ('channel-4x5-4x184', 'channel', 'C4 x 5.4', null),
+  ('channel-5x6-7x190', 'channel', 'C5 x 6.7', null),
+  ('channel-6x8-2x200', 'channel', 'C6 x 8.2', null),
+  ('channel-7x9-8x210', 'channel', 'C7 x 9.8', null),
+  ('channel-8x11-5x220', 'channel', 'C8 x 11.5', null),
+  ('channel-9x13-4x233', 'channel', 'C9 x 13.4', null),
+  ('channel-10x15-3x240', 'channel', 'C10 x 15.3', null),
+  ('channel-12x20-7x282', 'channel', 'C12 x 20.7', null),
+  
+  -- Filament dimensions (diameters for 3D printing)
+  ('filament-1-75', 'filament', '1.75mm', null),
+  ('filament-3', 'filament', '3.0mm', null),
+  
+  -- Pellet dimensions (mesh sizes)
+  ('pellet-4', 'pellet', '4 mesh', null),
+  ('pellet-6', 'pellet', '6 mesh', null),
+  ('pellet-8', 'pellet', '8 mesh', null),
+  ('pellet-10', 'pellet', '10 mesh', null),
+  ('pellet-12', 'pellet', '12 mesh', null),
+  ('pellet-14', 'pellet', '14 mesh', null),
+  ('pellet-16', 'pellet', '16 mesh', null),
+  ('pellet-20', 'pellet', '20 mesh', null);
+
+

@@ -484,6 +484,12 @@ export const itemUnitSalePriceValidator = z.object({
   allowInvoiceDiscount: zfd.checkbox(),
 });
 
+export const materialFinishValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  materialSubstanceId: z.string().min(1, { message: "Substance is required" }),
+  name: z.string().min(1, { message: "Name is required" }).max(255),
+});
+
 export const materialFormValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }).max(255),

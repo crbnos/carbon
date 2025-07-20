@@ -48,8 +48,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  console.log("id", id);
-
   const formData = await request.formData();
   const validation = await validator(materialGradeValidator).validate(formData);
 

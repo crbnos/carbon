@@ -64,7 +64,7 @@ export async function action({ request }: ActionFunctionArgs) {
     ? json(insertMaterialGrade, { status: 201 })
     : redirect(
         `${path.to.materialGrades}?${getParams(request)}`,
-        await flash(request, success("Part group created"))
+        await flash(request, success("Grade created"))
       );
 }
 

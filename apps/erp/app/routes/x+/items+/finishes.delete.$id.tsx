@@ -5,7 +5,7 @@ import { useLoaderData, useNavigate, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteMaterialGrade, getMaterialGrade } from "~/modules/items";
+import { deleteMaterialFinish, getMaterialFinish } from "~/modules/items";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -15,18 +15,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const materialGrade = await getMaterialGrade(client, id);
-  if (materialGrade.error) {
+  const materialFinish = await getMaterialFinish(client, id);
+  if (materialFinish.error) {
     throw redirect(
-      path.to.materialGrades,
+      path.to.materialFinishes,
       await flash(
         request,
-        error(materialGrade.error, "Failed to get material grade")
+        error(materialFinish.error, "Failed to get material finish")
       )
     );
   }
 
-  return json({ materialGrade: materialGrade.data });
+  return json({ materialFinish: materialFinish.data });
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -37,44 +37,44 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) {
     throw redirect(
-      path.to.materialGrades,
-      await flash(request, error(params, "Failed to get an material grade id"))
+      path.to.materialFinishes,
+      await flash(request, error(params, "Failed to get an material finish id"))
     );
   }
 
-  const { error: deleteTypeError } = await deleteMaterialGrade(client, id);
+  const { error: deleteTypeError } = await deleteMaterialFinish(client, id);
   if (deleteTypeError) {
     throw redirect(
-      `${path.to.materialGrades}?${getParams(request)}`,
+      `${path.to.materialFinishes}?${getParams(request)}`,
       await flash(
         request,
-        error(deleteTypeError, "Failed to delete material grade")
+        error(deleteTypeError, "Failed to delete material finish")
       )
     );
   }
 
   throw redirect(
-    path.to.materialGrades,
-    await flash(request, success("Successfully deleted material grade"))
+    path.to.materialFinishes,
+    await flash(request, success("Successfully deleted material finish"))
   );
 }
 
-export default function DeleteMaterialGradeRoute() {
+export default function DeleteMaterialFinishRoute() {
   const { id } = useParams();
   if (!id) throw new Error("id not found");
 
-  const { materialGrade } = useLoaderData<typeof loader>();
+  const { materialFinish } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
 
-  if (!materialGrade) return null;
+  if (!materialFinish) return null;
 
   const onCancel = () => navigate(-1);
 
   return (
     <ConfirmDelete
-      action={path.to.deleteMaterialGrade(id)}
-      name={materialGrade.name}
-      text={`Are you sure you want to delete the material grade: ${materialGrade.name}? This cannot be undone.`}
+      action={path.to.deleteMaterialFinish(id)}
+      name={materialFinish.name}
+      text={`Are you sure you want to delete the material finish: ${materialFinish.name}? This cannot be undone.`}
       onCancel={onCancel}
     />
   );

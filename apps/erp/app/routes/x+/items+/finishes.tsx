@@ -5,16 +5,16 @@ import { VStack } from "@carbon/react";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { getMaterialGrades } from "~/modules/items";
-import MaterialGradesTable from "~/modules/items/ui/MaterialGrades/MaterialGradesTable";
+import { getMaterialFinishes } from "~/modules/items";
+import MaterialFinishesTable from "~/modules/items/ui/MaterialFinishes/MaterialFinishesTable";
 
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
-  breadcrumb: "Grades",
-  to: path.to.materialGrades,
+  breadcrumb: "Finishes",
+  to: path.to.materialFinishes,
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -29,8 +29,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [materialGrades] = await Promise.all([
-    getMaterialGrades(client, companyId, {
+  const [materialFinishes] = await Promise.all([
+    getMaterialFinishes(client, companyId, {
       limit,
       offset,
       sorts,
@@ -39,8 +39,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }),
   ]);
 
-  if (materialGrades.error) {
-    console.error(materialGrades.error);
+  if (materialFinishes.error) {
+    console.error(materialFinishes.error);
     throw redirect(
       path.to.items,
       await flash(request, error(null, "Error loading material substances"))
@@ -48,17 +48,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return json({
-    materialGrades: materialGrades.data ?? [],
-    count: materialGrades.count ?? 0,
+    materialFinishes: materialFinishes.data ?? [],
+    count: materialFinishes.count ?? 0,
   });
 }
 
-export default function MaterialGradesRoute() {
-  const { materialGrades, count } = useLoaderData<typeof loader>();
+export default function MaterialFinishesRoute() {
+  const { materialFinishes, count } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <MaterialGradesTable data={materialGrades} count={count ?? 0} />
+      <MaterialFinishesTable data={materialFinishes} count={count ?? 0} />
       <Outlet />
     </VStack>
   );

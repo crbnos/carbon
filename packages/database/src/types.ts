@@ -12166,19 +12166,22 @@ export type Database = {
       };
       materialDimensions: {
         Row: {
-          companyId: string;
+          companyId: string | null;
           id: string;
           materialFormId: string;
+          name: string;
         };
         Insert: {
-          companyId: string;
+          companyId?: string | null;
           id?: string;
           materialFormId: string;
+          name: string;
         };
         Update: {
-          companyId?: string;
+          companyId?: string | null;
           id?: string;
           materialFormId?: string;
+          name?: string;
         };
         Relationships: [
           {
@@ -37852,6 +37855,52 @@ export type Database = {
           }
         ];
       };
+      materialFinishes: {
+        Row: {
+          companyId: string | null;
+          id: string | null;
+          materialSubstanceId: string | null;
+          name: string | null;
+          substanceName: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "materialFinish_companyId_fkey";
+            columns: ["companyId"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "materialFinish_companyId_fkey";
+            columns: ["companyId"];
+            isOneToOne: false;
+            referencedRelation: "company";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "materialFinish_companyId_fkey";
+            columns: ["companyId"];
+            isOneToOne: false;
+            referencedRelation: "customFieldTables";
+            referencedColumns: ["companyId"];
+          },
+          {
+            foreignKeyName: "materialFinish_companyId_fkey";
+            columns: ["companyId"];
+            isOneToOne: false;
+            referencedRelation: "integrations";
+            referencedColumns: ["companyId"];
+          },
+          {
+            foreignKeyName: "materialFinish_materialSubstanceId_fkey";
+            columns: ["materialSubstanceId"];
+            isOneToOne: false;
+            referencedRelation: "materialSubstance";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       materialGrades: {
         Row: {
           companyId: string | null;
@@ -43030,14 +43079,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey";
-            columns: ["customerCountryCode"];
+            columns: ["paymentCountryCode"];
             isOneToOne: false;
             referencedRelation: "country";
             referencedColumns: ["alpha2"];
           },
           {
             foreignKeyName: "address_countryCode_fkey";
-            columns: ["paymentCountryCode"];
+            columns: ["customerCountryCode"];
             isOneToOne: false;
             referencedRelation: "country";
             referencedColumns: ["alpha2"];

@@ -2,6 +2,7 @@ import { AiOutlinePartition } from "react-icons/ai";
 import {
   LuAtom,
   LuBeef,
+  LuDessert,
   LuGlassWater,
   LuHammer,
   LuPizza,
@@ -66,6 +67,12 @@ const itemsRoutes: AuthenticatedRouteGroup[] = [
   {
     name: "Configure",
     routes: [
+      {
+        name: "Finishes",
+        to: path.to.materialFinishes,
+        icon: <LuDessert />,
+        role: "employee",
+      },
       {
         name: "Grades",
         to: path.to.materialGrades,

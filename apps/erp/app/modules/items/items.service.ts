@@ -28,6 +28,7 @@ import type {
   itemUnitSalePriceValidator,
   itemValidator,
   makeMethodVersionValidator,
+  materialFinishValidator,
   materialFormValidator,
   materialGradeValidator,
   materialSubstanceValidator,
@@ -223,6 +224,13 @@ export async function deleteItemPostingGroup(
   id: string
 ) {
   return client.from("itemPostingGroup").delete().eq("id", id);
+}
+
+export async function deleteMaterialFinish(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("materialFinish").delete().eq("id", id);
 }
 
 export async function deleteMaterialForm(
@@ -802,6 +810,39 @@ export async function getMaterialsList(
     .eq("active", true);
 
   return query.order("name");
+}
+
+export async function getMaterialFinish(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("materialFinish").select("*").eq("id", id).single();
+}
+
+export async function getMaterialFinishes(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("materialFinishes")
+    .select("*", {
+      count: "exact",
+    })
+    .or(`companyId.eq.${companyId},companyId.is.null`);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "substanceName", ascending: true },
+      { column: "name", ascending: true },
+    ]);
+  }
+
+  return query;
 }
 
 export async function getMaterialForm(
@@ -2483,6 +2524,34 @@ export async function upsertMaterial(
 
   if (updateItem.error) return updateItem;
   return updateMaterial;
+}
+
+export async function upsertMaterialFinish(
+  client: SupabaseClient<Database>,
+  materialFinish:
+    | (Omit<z.infer<typeof materialFinishValidator>, "id"> & {
+        companyId: string;
+      })
+    | (Omit<z.infer<typeof materialFinishValidator>, "id"> & {
+        id: string;
+      })
+) {
+  if ("id" in materialFinish) {
+    return (
+      client
+        .from("materialFinish")
+        .update(sanitize(materialFinish))
+        // @ts-ignore
+        .eq("id", materialFinish.id)
+        .select("id")
+        .single()
+    );
+  }
+  return client
+    .from("materialFinish")
+    .insert([materialFinish])
+    .select("*")
+    .single();
 }
 
 export async function upsertMaterialForm(
