@@ -48,10 +48,10 @@ const MaterialGradeForm = ({
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
-      toast.success(`Created material form`);
+      toast.success(`Created material grade`);
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
       toast.error(
-        `Failed to create material form: ${fetcher.data.error.message}`
+        `Failed to create material grade: ${fetcher.data.error.message}`
       );
     }
   }, [fetcher.data, fetcher.state, onClose, type]);

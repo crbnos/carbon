@@ -232,7 +232,7 @@ INSERT INTO "materialGrade" ("id", "materialSubstanceId", "name", "companyId") V
 
 
 
-CREATE TABLE "materialDimensions" (
+CREATE TABLE "materialDimension" (
   "id" TEXT NOT NULL PRIMARY KEY DEFAULT xid(),
   "materialFormId" TEXT NOT NULL,
   "name" TEXT NOT NULL,
@@ -243,7 +243,17 @@ CREATE TABLE "materialDimensions" (
   CONSTRAINT "materialDimensions_name_companyId_unique" UNIQUE ("materialFormId", "name", "companyId")
 );
 
-INSERT INTO "materialDimensions" ("id", "materialFormId", "name", "companyId") VALUES
+CREATE OR REPLACE VIEW "materialDimensions" WITH(SECURITY_INVOKER=true) AS
+  SELECT
+    "materialDimension"."id",
+    "materialDimension"."materialFormId",
+    "materialDimension"."name",
+    "materialDimension"."companyId",
+    "materialForm"."name" AS "formName"
+  FROM "materialDimension"
+  LEFT JOIN "materialForm" ON "materialDimension"."materialFormId" = "materialForm"."id";
+
+INSERT INTO "materialDimension" ("id", "materialFormId", "name", "companyId") VALUES
   -- Sheet dimensions (gauges)
   ('sheet-20ga', 'sheet', '20 Gauge', null),
   ('sheet-18ga', 'sheet', '18 Gauge', null),
@@ -384,19 +394,80 @@ INSERT INTO "materialDimensions" ("id", "materialFormId", "name", "companyId") V
   ('rectbar-1-2x2', 'rectbar', '1/2" x 2"', null),
   
   -- Angle dimensions (leg x leg x thickness)
+  ('angle-1-2x1-2x1-8', 'angle', '1/2" x 1/2" x 1/8"', null),
+  ('angle-5-8x5-8x1-8', 'angle', '5/8" x 5/8" x 1/8"', null),
+  ('angle-3-4x3-4x1-8', 'angle', '3/4" x 3/4" x 1/8"', null),
   ('angle-1x1x1-8', 'angle', '1" x 1" x 1/8"', null),
   ('angle-1x1x3-16', 'angle', '1" x 1" x 3/16"', null),
+  ('angle-1x1x1-4', 'angle', '1" x 1" x 1/4"', null),
   ('angle-1-25x1-25x1-8', 'angle', '1.25" x 1.25" x 1/8"', null),
   ('angle-1-25x1-25x3-16', 'angle', '1.25" x 1.25" x 3/16"', null),
+  ('angle-1-25x1-25x1-4', 'angle', '1.25" x 1.25" x 1/4"', null),
   ('angle-1-5x1-5x1-8', 'angle', '1.5" x 1.5" x 1/8"', null),
   ('angle-1-5x1-5x3-16', 'angle', '1.5" x 1.5" x 3/16"', null),
+  ('angle-1-5x1-5x1-4', 'angle', '1.5" x 1.5" x 1/4"', null),
+  ('angle-1-75x1-75x1-8', 'angle', '1.75" x 1.75" x 1/8"', null),
+  ('angle-1-75x1-75x3-16', 'angle', '1.75" x 1.75" x 3/16"', null),
+  ('angle-1-75x1-75x1-4', 'angle', '1.75" x 1.75" x 1/4"', null),
+  ('angle-2x1-5x1-8', 'angle', '2" x 1.5" x 1/8"', null),
+  ('angle-2x1-5x3-16', 'angle', '2" x 1.5" x 3/16"', null),
+  ('angle-2x1-5x1-4', 'angle', '2" x 1.5" x 1/4"', null),
   ('angle-2x2x1-8', 'angle', '2" x 2" x 1/8"', null),
   ('angle-2x2x3-16', 'angle', '2" x 2" x 3/16"', null),
   ('angle-2x2x1-4', 'angle', '2" x 2" x 1/4"', null),
+  ('angle-2x2x3-8', 'angle', '2" x 2" x 3/8"', null),
+  ('angle-2-5x1-5x3-16', 'angle', '2.5" x 1.5" x 3/16"', null),
+  ('angle-2-5x1-5x1-4', 'angle', '2.5" x 1.5" x 1/4"', null),
+  ('angle-2-5x2x1-4', 'angle', '2.5" x 2" x 1/4"', null),
+  ('angle-2-5x2x5-16', 'angle', '2.5" x 2" x 5/16"', null),
+  ('angle-2-5x2-5x3-16', 'angle', '2.5" x 2.5" x 3/16"', null),
+  ('angle-2-5x2-5x1-4', 'angle', '2.5" x 2.5" x 1/4"', null),
+  ('angle-2-5x2-5x3-8', 'angle', '2.5" x 2.5" x 3/8"', null),
+  ('angle-2-5x2-5x1-2', 'angle', '2.5" x 2.5" x 1/2"', null),
+  ('angle-3x2x3-16', 'angle', '3" x 2" x 3/16"', null),
+  ('angle-3x2x1-4', 'angle', '3" x 2" x 1/4"', null),
+  ('angle-3x2x3-8', 'angle', '3" x 2" x 3/8"', null),
+  ('angle-3x2x1-2', 'angle', '3" x 2" x 1/2"', null),
+  ('angle-3x3x3-16', 'angle', '3" x 3" x 3/16"', null),
   ('angle-3x3x1-4', 'angle', '3" x 3" x 1/4"', null),
-  ('angle-3x3x5-16', 'angle', '3" x 3" x 5/16"', null),
+  ('angle-3x3x3-8', 'angle', '3" x 3" x 3/8"', null),
+  ('angle-3x3x1-2', 'angle', '3" x 3" x 1/2"', null),
+  ('angle-3-5x3-5x1-4', 'angle', '3.5" x 3.5" x 1/4"', null),
+  ('angle-3-5x3-5x3-8', 'angle', '3.5" x 3.5" x 3/8"', null),
+  ('angle-4x3x1-4', 'angle', '4" x 3" x 1/4"', null),
+  ('angle-4x3x3-8', 'angle', '4" x 3" x 3/8"', null),
+  ('angle-4x3x1-2', 'angle', '4" x 3" x 1/2"', null),
+  ('angle-4x3-5x1-2', 'angle', '4" x 3.5" x 1/2"', null),
   ('angle-4x4x1-4', 'angle', '4" x 4" x 1/4"', null),
-  ('angle-4x4x5-16', 'angle', '4" x 4" x 5/16"', null),
+  ('angle-4x4x3-8', 'angle', '4" x 4" x 3/8"', null),
+  ('angle-4x4x1-2', 'angle', '4" x 4" x 1/2"', null),
+  ('angle-4x4x5-8', 'angle', '4" x 4" x 5/8"', null),
+  ('angle-4x4x3-4', 'angle', '4" x 4" x 3/4"', null),
+  ('angle-5x3x1-4', 'angle', '5" x 3" x 1/4"', null),
+  ('angle-5x3x3-8', 'angle', '5" x 3" x 3/8"', null),
+  ('angle-5x3x1-2', 'angle', '5" x 3" x 1/2"', null),
+  ('angle-5x3-5x1-4', 'angle', '5" x 3.5" x 1/4"', null),
+  ('angle-5x3-5x5-16', 'angle', '5" x 3.5" x 5/16"', null),
+  ('angle-5x3-5x3-8', 'angle', '5" x 3.5" x 3/8"', null),
+  ('angle-5x5x3-8', 'angle', '5" x 5" x 3/8"', null),
+  ('angle-5x5x1-2', 'angle', '5" x 5" x 1/2"', null),
+  ('angle-6x4x3-8', 'angle', '6" x 4" x 3/8"', null),
+  ('angle-6x4x1-2', 'angle', '6" x 4" x 1/2"', null),
+  ('angle-6x4x3-4', 'angle', '6" x 4" x 3/4"', null),
+  ('angle-6x6x3-8', 'angle', '6" x 6" x 3/8"', null),
+  ('angle-6x6x1-2', 'angle', '6" x 6" x 1/2"', null),
+  ('angle-6x6x5-8', 'angle', '6" x 6" x 5/8"', null),
+  ('angle-6x6x3-4', 'angle', '6" x 6" x 3/4"', null),
+  ('angle-6x6x1', 'angle', '6" x 6" x 1"', null),
+  ('angle-8x4x1-2', 'angle', '8" x 4" x 1/2"', null),
+  ('angle-8x4x3-4', 'angle', '8" x 4" x 3/4"', null),
+  ('angle-8x4x1', 'angle', '8" x 4" x 1"', null),
+  ('angle-8x6x1-2', 'angle', '8" x 6" x 1/2"', null),
+  ('angle-8x6x3-4', 'angle', '8" x 6" x 3/4"', null),
+  ('angle-8x6x1', 'angle', '8" x 6" x 1"', null),
+  ('angle-8x8x1-2', 'angle', '8" x 8" x 1/2"', null),
+  ('angle-8x8x3-4', 'angle', '8" x 8" x 3/4"', null),
+  ('angle-8x8x1', 'angle', '8" x 8" x 1"', null),
   
   -- Channel dimensions (depth x flange width x thickness)
   ('channel-3x1-41x170', 'channel', 'C3 x 4.1', null),

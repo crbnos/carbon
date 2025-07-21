@@ -5,8 +5,8 @@ import { memo, useCallback, useMemo } from "react";
 import {
   LuCircleCheck,
   LuDessert,
-  LuGlassWater,
   LuPencil,
+  LuShapes,
   LuTrash,
 } from "react-icons/lu";
 import { Hyperlink, New, Table } from "~/components";
@@ -14,15 +14,15 @@ import { Enumerable } from "~/components/Enumerable";
 import { useSubstance } from "~/components/Form/Substance";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
-import type { MaterialFinish } from "../../types";
+import type { MaterialDimension } from "../../types";
 
-type MaterialFinishesTableProps = {
-  data: MaterialFinish[];
+type MaterialDimensionsTableProps = {
+  data: MaterialDimension[];
   count: number;
 };
 
-const MaterialFinishesTable = memo(
-  ({ data, count }: MaterialFinishesTableProps) => {
+const MaterialDimensionsTable = memo(
+  ({ data, count }: MaterialDimensionsTableProps) => {
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const permissions = usePermissions();
@@ -33,11 +33,11 @@ const MaterialFinishesTable = memo(
     const columns = useMemo<ColumnDef<(typeof rows)[number]>[]>(() => {
       const defaultColumns: ColumnDef<(typeof rows)[number]>[] = [
         {
-          accessorKey: "substanceName",
-          header: "Substance",
-          cell: ({ row }) => <Enumerable value={row.original.substanceName} />,
+          accessorKey: "formName",
+          header: "Shape",
+          cell: ({ row }) => <Enumerable value={row.original.formName} />,
           meta: {
-            icon: <LuGlassWater />,
+            icon: <LuShapes />,
             filter: {
               type: "static",
               options: substances.map((substance) => ({
@@ -49,13 +49,13 @@ const MaterialFinishesTable = memo(
         },
         {
           accessorKey: "name",
-          header: "Finish",
+          header: "Dimension",
           cell: ({ row }) =>
             row.original.companyId === null ? (
               row.original.name
             ) : (
               <Hyperlink
-                to={`${path.to.materialFinish(
+                to={`${path.to.materialDimension(
                   row.original.id!
                 )}?${params.toString()}`}
               >
@@ -95,12 +95,12 @@ const MaterialFinishesTable = memo(
               }
               onClick={() => {
                 navigate(
-                  `${path.to.materialFinish(row.id!)}?${params.toString()}`
+                  `${path.to.materialDimension(row.id!)}?${params.toString()}`
                 );
               }}
             >
               <MenuIcon icon={<LuPencil />} />
-              Edit Material Finish
+              Edit Material Dimension
             </MenuItem>
             <MenuItem
               disabled={
@@ -109,14 +109,14 @@ const MaterialFinishesTable = memo(
               destructive
               onClick={() => {
                 navigate(
-                  `${path.to.deleteMaterialFinish(
+                  `${path.to.deleteMaterialDimension(
                     row.id!
                   )}?${params.toString()}`
                 );
               }}
             >
               <MenuIcon icon={<LuTrash />} />
-              Delete Material Finish
+              Delete Material Dimension
             </MenuItem>
           </>
         );
@@ -132,17 +132,17 @@ const MaterialFinishesTable = memo(
         primaryAction={
           permissions.can("create", "parts") && (
             <New
-              label="Material Finish"
-              to={`${path.to.newMaterialFinish}?${params.toString()}`}
+              label="Material Dimension"
+              to={`${path.to.newMaterialDimension}?${params.toString()}`}
             />
           )
         }
         renderContextMenu={renderContextMenu}
-        title="Material Finishes"
+        title="Material Dimensions"
       />
     );
   }
 );
 
-MaterialFinishesTable.displayName = "MaterialFinishesTable";
-export default MaterialFinishesTable;
+MaterialDimensionsTable.displayName = "MaterialDimensionsTable";
+export default MaterialDimensionsTable;

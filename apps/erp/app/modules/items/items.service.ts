@@ -28,6 +28,7 @@ import type {
   itemUnitSalePriceValidator,
   itemValidator,
   makeMethodVersionValidator,
+  materialDimensionValidator,
   materialFinishValidator,
   materialFormValidator,
   materialGradeValidator,
@@ -224,6 +225,13 @@ export async function deleteItemPostingGroup(
   id: string
 ) {
   return client.from("itemPostingGroup").delete().eq("id", id);
+}
+
+export async function deleteMaterialDimension(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("materialDimension").delete().eq("id", id);
 }
 
 export async function deleteMaterialFinish(
@@ -810,6 +818,39 @@ export async function getMaterialsList(
     .eq("active", true);
 
   return query.order("name");
+}
+
+export async function getMaterialDimension(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("materialDimension").select("*").eq("id", id).single();
+}
+
+export async function getMaterialDimensions(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("materialDimensions")
+    .select("*", {
+      count: "exact",
+    })
+    .or(`companyId.eq.${companyId},companyId.is.null`);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "formName", ascending: true },
+      { column: "name", ascending: true },
+    ]);
+  }
+
+  return query;
 }
 
 export async function getMaterialFinish(
@@ -2524,6 +2565,34 @@ export async function upsertMaterial(
 
   if (updateItem.error) return updateItem;
   return updateMaterial;
+}
+
+export async function upsertMaterialDimension(
+  client: SupabaseClient<Database>,
+  materialDimension:
+    | (Omit<z.infer<typeof materialDimensionValidator>, "id"> & {
+        companyId: string;
+      })
+    | (Omit<z.infer<typeof materialDimensionValidator>, "id"> & {
+        id: string;
+      })
+) {
+  if ("id" in materialDimension) {
+    return (
+      client
+        .from("materialDimension")
+        .update(sanitize(materialDimension))
+        // @ts-ignore
+        .eq("id", materialDimension.id)
+        .select("id")
+        .single()
+    );
+  }
+  return client
+    .from("materialDimension")
+    .insert([materialDimension])
+    .select("*")
+    .single();
 }
 
 export async function upsertMaterialFinish(

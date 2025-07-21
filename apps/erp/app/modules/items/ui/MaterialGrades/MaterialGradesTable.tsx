@@ -52,14 +52,14 @@ const MaterialGradesTable = memo(
           header: "Grade",
           cell: ({ row }) =>
             row.original.companyId === null ? (
-              <Enumerable value={row.original.name} />
+              row.original.name
             ) : (
               <Hyperlink
                 to={`${path.to.materialGrade(
                   row.original.id!
                 )}?${params.toString()}`}
               >
-                <Enumerable value={row.original.name} />
+                {row.original.name}
               </Hyperlink>
             ),
           meta: {

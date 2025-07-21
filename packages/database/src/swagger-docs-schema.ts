@@ -14821,6 +14821,9 @@ export default {
             $ref: "#/parameters/rowFilter.materialDimensions.companyId",
           },
           {
+            $ref: "#/parameters/rowFilter.materialDimensions.formName",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -14854,78 +14857,6 @@ export default {
           },
           "206": {
             description: "Partial Content",
-          },
-        },
-        tags: ["materialDimensions"],
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.materialDimensions",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/preferPost",
-          },
-        ],
-        responses: {
-          "201": {
-            description: "Created",
-          },
-        },
-        tags: ["materialDimensions"],
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.materialDimensions.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.materialDimensions.materialFormId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.materialDimensions.name",
-          },
-          {
-            $ref: "#/parameters/rowFilter.materialDimensions.companyId",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["materialDimensions"],
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.materialDimensions.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.materialDimensions.materialFormId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.materialDimensions.name",
-          },
-          {
-            $ref: "#/parameters/rowFilter.materialDimensions.companyId",
-          },
-          {
-            $ref: "#/parameters/body.materialDimensions",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
           },
         },
         tags: ["materialDimensions"],
@@ -43911,6 +43842,132 @@ export default {
         tags: ["nonConformanceSupplier"],
       },
     },
+    "/materialDimension": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialDimension.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimension.materialFormId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimension.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimension.companyId",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/materialDimension",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["materialDimension"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.materialDimension",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["materialDimension"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialDimension.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimension.materialFormId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimension.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimension.companyId",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["materialDimension"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialDimension.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimension.materialFormId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimension.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimension.companyId",
+          },
+          {
+            $ref: "#/parameters/body.materialDimension",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["materialDimension"],
+      },
+    },
     "/salesOrders": {
       get: {
         parameters: [
@@ -64894,10 +64951,8 @@ export default {
       type: "object",
     },
     materialDimensions: {
-      required: ["id", "materialFormId", "name"],
       properties: {
         id: {
-          default: "public.xid()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -64915,6 +64970,10 @@ export default {
         companyId: {
           description:
             "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        formName: {
           format: "text",
           type: "string",
         },
@@ -78358,6 +78417,34 @@ export default {
       },
       type: "object",
     },
+    materialDimension: {
+      required: ["id", "materialFormId", "name"],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        materialFormId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialForm.id`.<fk table='materialForm' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     salesOrders: {
       properties: {
         id: {
@@ -90708,6 +90795,12 @@ export default {
     },
     "rowFilter.materialDimensions.companyId": {
       name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialDimensions.formName": {
+      name: "formName",
       required: false,
       in: "query",
       type: "string",
@@ -105912,6 +106005,39 @@ export default {
     },
     "rowFilter.nonConformanceSupplier.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "body.materialDimension": {
+      name: "materialDimension",
+      description: "materialDimension",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/materialDimension",
+      },
+    },
+    "rowFilter.materialDimension.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialDimension.materialFormId": {
+      name: "materialFormId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialDimension.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialDimension.companyId": {
+      name: "companyId",
       required: false,
       in: "query",
       type: "string",

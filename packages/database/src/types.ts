@@ -12119,52 +12119,10 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "materialForm";
             referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "material_materialSubstanceId_fkey";
-            columns: ["materialSubstanceId"];
-            isOneToOne: false;
-            referencedRelation: "materialSubstance";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "material_updatedBy_fkey";
-            columns: ["updatedBy"];
-            isOneToOne: false;
-            referencedRelation: "employees";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "material_updatedBy_fkey";
-            columns: ["updatedBy"];
-            isOneToOne: false;
-            referencedRelation: "employeesAcrossCompanies";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "material_updatedBy_fkey";
-            columns: ["updatedBy"];
-            isOneToOne: false;
-            referencedRelation: "employeeSummary";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "material_updatedBy_fkey";
-            columns: ["updatedBy"];
-            isOneToOne: false;
-            referencedRelation: "user";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "material_updatedBy_fkey";
-            columns: ["updatedBy"];
-            isOneToOne: false;
-            referencedRelation: "userDefaults";
-            referencedColumns: ["userId"];
           }
         ];
       };
-      materialDimensions: {
+      materialDimension: {
         Row: {
           companyId: string | null;
           id: string;
@@ -37855,6 +37813,52 @@ export type Database = {
           }
         ];
       };
+      materialDimensions: {
+        Row: {
+          companyId: string | null;
+          formName: string | null;
+          id: string | null;
+          materialFormId: string | null;
+          name: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "materialDimensions_companyId_fkey";
+            columns: ["companyId"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "materialDimensions_companyId_fkey";
+            columns: ["companyId"];
+            isOneToOne: false;
+            referencedRelation: "company";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "materialDimensions_companyId_fkey";
+            columns: ["companyId"];
+            isOneToOne: false;
+            referencedRelation: "customFieldTables";
+            referencedColumns: ["companyId"];
+          },
+          {
+            foreignKeyName: "materialDimensions_companyId_fkey";
+            columns: ["companyId"];
+            isOneToOne: false;
+            referencedRelation: "integrations";
+            referencedColumns: ["companyId"];
+          },
+          {
+            foreignKeyName: "materialDimensions_materialFormId_fkey";
+            columns: ["materialFormId"];
+            isOneToOne: false;
+            referencedRelation: "materialForm";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       materialFinishes: {
         Row: {
           companyId: string | null;
@@ -43079,14 +43083,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey";
-            columns: ["paymentCountryCode"];
+            columns: ["customerCountryCode"];
             isOneToOne: false;
             referencedRelation: "country";
             referencedColumns: ["alpha2"];
           },
           {
             foreignKeyName: "address_countryCode_fkey";
-            columns: ["customerCountryCode"];
+            columns: ["paymentCountryCode"];
             isOneToOne: false;
             referencedRelation: "country";
             referencedColumns: ["alpha2"];
