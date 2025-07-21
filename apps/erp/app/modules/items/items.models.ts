@@ -178,11 +178,20 @@ export const materialValidator = itemValidator.merge(
     id: z.string().min(1, { message: "Material ID is required" }).max(255),
     materialSubstanceId: zfd.text(z.string().optional()),
     materialFormId: zfd.text(z.string().optional()),
-    finish: z.string().optional(),
-    grade: z.string().optional(),
-    dimensions: z.string().optional(),
+    finish: zfd.text(z.string().optional()),
+    grade: zfd.text(z.string().optional()),
+    dimensions: zfd.text(z.string().optional()),
   })
 );
+
+export const materialValidatorWithGeneratedIds = z.object({
+  id: z.string().min(1, { message: "" }),
+  materialSubstanceId: z.string().min(1, { message: "Substance is required" }),
+  materialFormId: z.string().min(1, { message: "Shape is required" }),
+  finish: zfd.text(z.string().optional()),
+  grade: zfd.text(z.string().optional()),
+  dimensions: zfd.text(z.string().optional()),
+});
 
 export const methodMaterialValidator = z
   .object({

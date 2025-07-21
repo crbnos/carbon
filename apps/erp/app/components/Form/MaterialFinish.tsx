@@ -51,6 +51,7 @@ const MaterialFinish = (props: MaterialFinishSelectProps) => {
         path.to.api.materialFinishes(props.substanceId)
       );
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.substanceId]);
 
   const options = useMemo(() => {
@@ -78,6 +79,7 @@ const MaterialFinish = (props: MaterialFinishSelectProps) => {
         {...props}
         disabled={props.disabled || !props.substanceId}
         inline={props?.inline ? MaterialFinishPreview : undefined}
+        isOptional={props?.isOptional ?? true}
         label={props?.label ?? "Finish"}
         onChange={onChange}
         onCreateOption={(option) => {

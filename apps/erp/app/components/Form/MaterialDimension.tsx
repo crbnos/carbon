@@ -51,6 +51,7 @@ const MaterialDimension = (props: MaterialDimensionSelectProps) => {
         path.to.api.materialDimensions(props.formId)
       );
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.formId]);
 
   const options = useMemo(() => {
@@ -78,6 +79,7 @@ const MaterialDimension = (props: MaterialDimensionSelectProps) => {
         {...props}
         disabled={props.disabled || !props.formId}
         inline={props?.inline ? MaterialDimensionPreview : undefined}
+        isOptional={props?.isOptional ?? true}
         label={props?.label ?? "Dimensions"}
         onChange={onChange}
         onCreateOption={(option) => {

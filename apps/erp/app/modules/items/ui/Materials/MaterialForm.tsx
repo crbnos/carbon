@@ -33,8 +33,13 @@ import MaterialGrade from "~/components/Form/MaterialGrade";
 import Shape from "~/components/Form/Shape";
 import Substance from "~/components/Form/Substance";
 import { useNextItemId, usePermissions, useUser } from "~/hooks";
+import { useSettings } from "~/hooks/useSettings";
 import { path } from "~/utils/path";
-import { itemTrackingTypes, materialValidator } from "../../items.models";
+import {
+  itemTrackingTypes,
+  materialValidator,
+  materialValidatorWithGeneratedIds,
+} from "../../items.models";
 
 type MaterialFormProps = {
   initialValues: z.infer<typeof materialValidator> & { tags?: string[] };
@@ -128,7 +133,8 @@ const MaterialForm = ({
   }, [id]);
 
   const permissions = usePermissions();
-  const [withCustomId, setWithCustomId] = useState(false);
+  const companySettings = useSettings();
+  const useCustomId = companySettings.materialGeneratedIds === false;
 
   const [defaultMethodType, setDefaultMethodType] = useState<string>(
     initialValues.defaultMethodType ?? "Buy"
@@ -151,7 +157,11 @@ const MaterialForm = ({
           <ValidatedForm
             action={path.to.newMaterial}
             method="post"
-            validator={materialValidator}
+            validator={
+              useCustomId
+                ? materialValidator
+                : materialValidatorWithGeneratedIds
+            }
             defaultValues={initialValues}
             fetcher={fetcher}
           >
@@ -165,7 +175,7 @@ const MaterialForm = ({
             <ModalCardBody>
               <Hidden name="type" value={type} />
               <Hidden name="replenishmentSystem" value="Buy" />
-              {!withCustomId && (
+              {!useCustomId && (
                 <>
                   <Hidden name="id" value={materialId} />
                   <Hidden name="name" value={description} />
@@ -177,7 +187,7 @@ const MaterialForm = ({
                   "grid-cols-1 md:grid-cols-2"
                 )}
               >
-                {withCustomId && (
+                {useCustomId && (
                   <>
                     <InputControlled
                       name="id"

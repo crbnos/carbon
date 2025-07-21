@@ -533,6 +533,22 @@ export async function updateLogoLightIcon(
     .eq("id", companyId);
 }
 
+export async function updateMaterialGeneratedIdsSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  materialGeneratedIds: boolean
+) {
+  console.log("materialGeneratedIds", materialGeneratedIds);
+  return client
+    .from("companySettings")
+    .update(
+      sanitize({
+        materialGeneratedIds,
+      })
+    )
+    .eq("id", companyId);
+}
+
 export async function updateProductLabelSize(
   client: SupabaseClient<Database>,
   companyId: string,

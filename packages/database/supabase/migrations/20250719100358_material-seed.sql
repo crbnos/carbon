@@ -1,3 +1,5 @@
+ALTER TABLE "companySettings" ADD COLUMN "materialGeneratedIds" BOOLEAN NOT NULL DEFAULT FALSE;
+
 INSERT INTO "materialForm" ("id", "name", "createdBy") VALUES
   ('angle', 'Angle', 'system'),
   ('channel', 'Channel', 'system'),
@@ -493,5 +495,7 @@ INSERT INTO "materialDimension" ("id", "materialFormId", "name", "companyId") VA
   ('pellet-14', 'pellet', '14 mesh', null),
   ('pellet-16', 'pellet', '16 mesh', null),
   ('pellet-20', 'pellet', '20 mesh', null);
+
+
 
 

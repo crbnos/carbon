@@ -691,6 +691,7 @@ export const path = {
     itemCostUpdate: (id: string) => generatePath(`${x}/items/cost/${id}`),
     itemPostingGroup: (id: string) => generatePath(`${x}/items/groups/${id}`),
     itemPostingGroups: `${x}/items/groups`,
+    itemsSettings: `${x}/settings/items`,
     job: (id: string) => generatePath(`${x}/job/${id}`),
     jobBatchNumber: (id: string) => generatePath(`${x}/job/${id}/batch`),
     jobComplete: (id: string) => generatePath(`${x}/job/${id}/complete`),

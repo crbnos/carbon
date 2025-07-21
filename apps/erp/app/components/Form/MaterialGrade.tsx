@@ -47,6 +47,7 @@ const MaterialGrade = (props: MaterialGradeSelectProps) => {
     if (props.substanceId) {
       materialGradesLoader.load(path.to.api.materialGrades(props.substanceId));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.substanceId]);
 
   const options = useMemo(() => {
@@ -74,6 +75,7 @@ const MaterialGrade = (props: MaterialGradeSelectProps) => {
         {...props}
         disabled={props.disabled || !props.substanceId}
         inline={props?.inline ? MaterialGradePreview : undefined}
+        isOptional={props?.isOptional ?? true}
         label={props?.label ?? "Grade"}
         onChange={onChange}
         onCreateOption={(option) => {
