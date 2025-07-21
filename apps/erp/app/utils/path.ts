@@ -64,10 +64,13 @@ export const path = {
         ),
       jobs: `${api}/production/jobs`,
       locations: `${api}/resources/locations`,
+      materialDimensions: (formId: string) =>
+        generatePath(`${api}/items/dimensions/${formId}`),
+      materialFinishes: (substanceId: string) =>
+        generatePath(`${api}/items/finishes/${substanceId}`),
       materialForms: `${api}/items/forms`,
-      materialGrades: `${api}/items/grades`,
-      materialFinishes: `${api}/items/finishes`,
-      materialDimensions: `${api}/items/dimensions`,
+      materialGrades: (substanceId: string) =>
+        generatePath(`${api}/items/grades/${substanceId}`),
       materialSubstances: `${api}/items/substances`,
       messagingNotify: `${api}/messaging/notify`,
       mrp: (locationId?: string) =>

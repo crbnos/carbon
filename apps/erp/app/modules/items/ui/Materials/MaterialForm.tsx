@@ -21,13 +21,15 @@ import {
   CustomFormFields,
   DefaultMethodType,
   Hidden,
-  Input,
   InputControlled,
   Number,
   Select,
   Submit,
   UnitOfMeasure,
 } from "~/components/Form";
+import MaterialDimension from "~/components/Form/MaterialDimension";
+import MaterialFinish from "~/components/Form/MaterialFinish";
+import MaterialGrade from "~/components/Form/MaterialGrade";
 import Shape from "~/components/Form/Shape";
 import Substance from "~/components/Form/Substance";
 import { useNextItemId, usePermissions, useUser } from "~/hooks";
@@ -66,6 +68,8 @@ const MaterialForm = ({
     dimensions?: string;
     finish?: string;
   }>({});
+  const [substanceId, setSubstanceId] = useState<string | undefined>();
+  const [formId, setFormId] = useState<string | undefined>();
 
   // const getMaterialFamily = useCallback(() => {
   //   const base = [
@@ -199,19 +203,21 @@ const MaterialForm = ({
                   name="materialSubstanceId"
                   label="Substance"
                   onChange={(value) => {
+                    setSubstanceId(value?.value as string | undefined);
                     setProperties((prev) => ({
                       ...prev,
                       substance: (value?.label as string) ?? "",
                     }));
                   }}
                 />
-                <Input
+                <MaterialGrade
                   name="grade"
                   label="Grade"
-                  onBlur={(e) => {
+                  substanceId={substanceId}
+                  onChange={(value) => {
                     setProperties((prev) => ({
                       ...prev,
-                      grade: e.target.value,
+                      grade: value?.name ?? "",
                     }));
                   }}
                 />
@@ -219,29 +225,32 @@ const MaterialForm = ({
                   name="materialFormId"
                   label="Shape"
                   onChange={(value) => {
+                    setFormId(value?.value as string | undefined);
                     setProperties((prev) => ({
                       ...prev,
                       shape: (value?.label as string) ?? "",
                     }));
                   }}
                 />
-                <Input
+                <MaterialFinish
                   name="finish"
                   label="Finish"
-                  onBlur={(e) => {
+                  substanceId={substanceId}
+                  onChange={(value) => {
                     setProperties((prev) => ({
                       ...prev,
-                      finish: e.target.value,
+                      finish: value?.name ?? "",
                     }));
                   }}
                 />
-                <Input
+                <MaterialDimension
                   name="dimensions"
                   label="Dimensions"
-                  onBlur={(e) => {
+                  formId={formId}
+                  onChange={(value) => {
                     setProperties((prev) => ({
                       ...prev,
-                      dimensions: e.target.value,
+                      dimensions: value?.name ?? "",
                     }));
                   }}
                 />

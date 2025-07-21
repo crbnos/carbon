@@ -853,6 +853,18 @@ export async function getMaterialDimensions(
   return query;
 }
 
+export async function getMaterialDimensionList(
+  client: SupabaseClient<Database>,
+  materialFormId: string,
+  companyId: string
+) {
+  return client
+    .from("materialDimension")
+    .select("*")
+    .eq("materialFormId", materialFormId)
+    .or(`companyId.eq.${companyId},companyId.is.null`);
+}
+
 export async function getMaterialFinish(
   client: SupabaseClient<Database>,
   id: string
@@ -884,6 +896,18 @@ export async function getMaterialFinishes(
   }
 
   return query;
+}
+
+export async function getMaterialFinishList(
+  client: SupabaseClient<Database>,
+  materialSubstanceId: string,
+  companyId: string
+) {
+  return client
+    .from("materialFinish")
+    .select("*")
+    .eq("materialSubstanceId", materialSubstanceId)
+    .or(`companyId.eq.${companyId},companyId.is.null`);
 }
 
 export async function getMaterialForm(
@@ -960,6 +984,18 @@ export async function getMaterialGrade(
   id: string
 ) {
   return client.from("materialGrade").select("*").eq("id", id).single();
+}
+
+export async function getMaterialGradeList(
+  client: SupabaseClient<Database>,
+  materialSubstanceId: string,
+  companyId: string
+) {
+  return client
+    .from("materialGrade")
+    .select("*")
+    .eq("materialSubstanceId", materialSubstanceId)
+    .or(`companyId.eq.${companyId},companyId.is.null`);
 }
 
 export async function getMaterialSubstance(
