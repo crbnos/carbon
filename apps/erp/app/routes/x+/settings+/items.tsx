@@ -19,9 +19,11 @@ import { flash } from "@carbon/auth/session.server";
 import { Boolean, Submit, ValidatedForm, validator } from "@carbon/form";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useEffect } from "react";
+import { setMetricSettings } from "~/modules/items/items.server";
 import {
   getCompanySettings,
   materialIdsValidator,
+  materialUnitsValidator,
   updateMaterialGeneratedIdsSetting,
 } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
@@ -60,27 +62,49 @@ export async function action({ request }: ActionFunctionArgs) {
   const intent = formData.get("intent");
 
   switch (intent) {
-    case "materialGeneratedIds":
-      const validation = await validator(materialIdsValidator).validate(
+    case "materialIds":
+      const idsValidation = await validator(materialIdsValidator).validate(
         formData
       );
 
-      if (validation.error) {
+      if (idsValidation.error) {
         return json({ success: false, message: "Invalid form data" });
       }
 
-      const materialGeneratedIds = await updateMaterialGeneratedIdsSetting(
+      const materialIdsResult = await updateMaterialGeneratedIdsSetting(
         client,
         companyId,
-        validation.data.materialGeneratedIds
+        idsValidation.data.materialGeneratedIds
       );
-      if (materialGeneratedIds.error)
+      if (materialIdsResult.error)
         return json({
           success: false,
-          message: materialGeneratedIds.error.message,
+          message: materialIdsResult.error.message,
         });
 
       return json({ success: true, message: "Material IDs setting updated" });
+
+    case "materialUnits":
+      const unitsValidation = await validator(materialUnitsValidator).validate(
+        formData
+      );
+
+      if (unitsValidation.error) {
+        return json({ success: false, message: "Invalid form data" });
+      }
+
+      const materialUnitsResult = await setMetricSettings(
+        client,
+        companyId,
+        unitsValidation.data.useMetric
+      );
+      if (materialUnitsResult.error)
+        return json({
+          success: false,
+          message: materialUnitsResult.error.message,
+        });
+
+      return json({ success: true, message: "Material units setting updated" });
   }
 
   return json({ success: false, message: "Invalid form data" });
@@ -106,17 +130,18 @@ export default function ItemsSettingsRoute() {
         spacing={4}
         className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
       >
-        <Heading size="h3">Sales</Heading>
+        <Heading size="h3">Items</Heading>
         <Card>
           <ValidatedForm
             method="post"
             validator={materialIdsValidator}
             defaultValues={{
-              materialGeneratedIds: companySettings.materialGeneratedIds ?? [],
+              materialGeneratedIds:
+                companySettings.materialGeneratedIds ?? false,
             }}
             fetcher={fetcher}
           >
-            <input type="hidden" name="intent" value="materialGeneratedIds" />
+            <input type="hidden" name="intent" value="materialIds" />
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 Material IDs
@@ -131,7 +156,38 @@ export default function ItemsSettingsRoute() {
                 <div className="flex flex-col gap-2">
                   <Boolean
                     name="materialGeneratedIds"
-                    description="Generate material IDs"
+                    description="Generate IDs and descriptions for raw materials"
+                  />
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit>Save</Submit>
+            </CardFooter>
+          </ValidatedForm>
+        </Card>
+        <Card>
+          <ValidatedForm
+            method="post"
+            validator={materialUnitsValidator}
+            defaultValues={{
+              useMetric: (companySettings as any).useMetric ?? false,
+            }}
+            fetcher={fetcher}
+          >
+            <input type="hidden" name="intent" value="materialUnits" />
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">Metric</CardTitle>
+              <CardDescription>
+                Use metric system for default material dimensions.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-8 max-w-[400px]">
+                <div className="flex flex-col gap-2">
+                  <Boolean
+                    name="useMetric"
+                    description="Use metric units for material dimensions"
                   />
                 </div>
               </div>

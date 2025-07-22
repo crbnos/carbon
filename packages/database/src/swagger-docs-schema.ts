@@ -9715,15 +9715,6 @@ export default {
             $ref: "#/parameters/rowFilter.material.materialSubstanceId",
           },
           {
-            $ref: "#/parameters/rowFilter.material.grade",
-          },
-          {
-            $ref: "#/parameters/rowFilter.material.dimensions",
-          },
-          {
-            $ref: "#/parameters/rowFilter.material.finish",
-          },
-          {
             $ref: "#/parameters/rowFilter.material.approved",
           },
           {
@@ -9752,6 +9743,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.material.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.material.dimensionId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.material.finishId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.material.gradeId",
           },
           {
             $ref: "#/parameters/select",
@@ -9822,15 +9822,6 @@ export default {
             $ref: "#/parameters/rowFilter.material.materialSubstanceId",
           },
           {
-            $ref: "#/parameters/rowFilter.material.grade",
-          },
-          {
-            $ref: "#/parameters/rowFilter.material.dimensions",
-          },
-          {
-            $ref: "#/parameters/rowFilter.material.finish",
-          },
-          {
             $ref: "#/parameters/rowFilter.material.approved",
           },
           {
@@ -9859,6 +9850,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.material.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.material.dimensionId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.material.finishId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.material.gradeId",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -9883,15 +9883,6 @@ export default {
             $ref: "#/parameters/rowFilter.material.materialSubstanceId",
           },
           {
-            $ref: "#/parameters/rowFilter.material.grade",
-          },
-          {
-            $ref: "#/parameters/rowFilter.material.dimensions",
-          },
-          {
-            $ref: "#/parameters/rowFilter.material.finish",
-          },
-          {
             $ref: "#/parameters/rowFilter.material.approved",
           },
           {
@@ -9920,6 +9911,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.material.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.material.dimensionId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.material.finishId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.material.gradeId",
           },
           {
             $ref: "#/parameters/body.material",
@@ -14816,6 +14816,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.materialDimensions.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimensions.isMetric",
           },
           {
             $ref: "#/parameters/rowFilter.materialDimensions.companyId",
@@ -34660,13 +34663,13 @@ export default {
             $ref: "#/parameters/rowFilter.materials.materialSubstance",
           },
           {
+            $ref: "#/parameters/rowFilter.materials.dimensions",
+          },
+          {
             $ref: "#/parameters/rowFilter.materials.finish",
           },
           {
             $ref: "#/parameters/rowFilter.materials.grade",
-          },
-          {
-            $ref: "#/parameters/rowFilter.materials.dimensions",
           },
           {
             $ref: "#/parameters/rowFilter.materials.materialSubstanceId",
@@ -43855,6 +43858,9 @@ export default {
             $ref: "#/parameters/rowFilter.materialDimension.name",
           },
           {
+            $ref: "#/parameters/rowFilter.materialDimension.isMetric",
+          },
+          {
             $ref: "#/parameters/rowFilter.materialDimension.companyId",
           },
           {
@@ -43926,6 +43932,9 @@ export default {
             $ref: "#/parameters/rowFilter.materialDimension.name",
           },
           {
+            $ref: "#/parameters/rowFilter.materialDimension.isMetric",
+          },
+          {
             $ref: "#/parameters/rowFilter.materialDimension.companyId",
           },
           {
@@ -43949,6 +43958,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.materialDimension.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimension.isMetric",
           },
           {
             $ref: "#/parameters/rowFilter.materialDimension.companyId",
@@ -52504,6 +52516,12 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.salesJobCompletedNotificationGroup",
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.materialGeneratedIds",
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.useMetric",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -52590,6 +52608,12 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.salesJobCompletedNotificationGroup",
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.materialGeneratedIds",
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.useMetric",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -52628,6 +52652,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.salesJobCompletedNotificationGroup",
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.materialGeneratedIds",
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.useMetric",
           },
           {
             $ref: "#/parameters/body.companySettings",
@@ -62526,18 +62556,6 @@ export default {
           format: "text",
           type: "string",
         },
-        grade: {
-          format: "text",
-          type: "string",
-        },
-        dimensions: {
-          format: "text",
-          type: "string",
-        },
-        finish: {
-          format: "text",
-          type: "string",
-        },
         approved: {
           default: false,
           format: "boolean",
@@ -62588,6 +62606,24 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+        dimensionId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialDimension.id`.<fk table='materialDimension' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        finishId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialFinish.id`.<fk table='materialFinish' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        gradeId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialGrade.id`.<fk table='materialGrade' column='id'/>",
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -64966,6 +65002,10 @@ export default {
         name: {
           format: "text",
           type: "string",
+        },
+        isMetric: {
+          format: "boolean",
+          type: "boolean",
         },
         companyId: {
           description:
@@ -74114,15 +74154,15 @@ export default {
           format: "text",
           type: "string",
         },
+        dimensions: {
+          format: "text",
+          type: "string",
+        },
         finish: {
           format: "text",
           type: "string",
         },
         grade: {
-          format: "text",
-          type: "string",
-        },
-        dimensions: {
           format: "text",
           type: "string",
         },
@@ -78418,7 +78458,7 @@ export default {
       type: "object",
     },
     materialDimension: {
-      required: ["id", "materialFormId", "name"],
+      required: ["id", "materialFormId", "name", "isMetric"],
       properties: {
         id: {
           default: "public.xid()",
@@ -78435,6 +78475,11 @@ export default {
         name: {
           format: "text",
           type: "string",
+        },
+        isMetric: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
         },
         companyId: {
           description:
@@ -82748,6 +82793,8 @@ export default {
         "rfqReadyNotificationGroup",
         "inventoryJobCompletedNotificationGroup",
         "salesJobCompletedNotificationGroup",
+        "materialGeneratedIds",
+        "useMetric",
       ],
       properties: {
         id: {
@@ -82803,6 +82850,16 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+        materialGeneratedIds: {
+          default: true,
+          format: "boolean",
+          type: "boolean",
+        },
+        useMetric: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
         },
       },
       type: "object",
@@ -88075,24 +88132,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.material.grade": {
-      name: "grade",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.material.dimensions": {
-      name: "dimensions",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.material.finish": {
-      name: "finish",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.material.approved": {
       name: "approved",
       required: false,
@@ -88149,6 +88188,24 @@ export default {
     },
     "rowFilter.material.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.material.dimensionId": {
+      name: "dimensionId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.material.finishId": {
+      name: "finishId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.material.gradeId": {
+      name: "gradeId",
       required: false,
       in: "query",
       type: "string",
@@ -90789,6 +90846,12 @@ export default {
     },
     "rowFilter.materialDimensions.name": {
       name: "name",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialDimensions.isMetric": {
+      name: "isMetric",
       required: false,
       in: "query",
       type: "string",
@@ -101263,6 +101326,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.materials.dimensions": {
+      name: "dimensions",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.materials.finish": {
       name: "finish",
       required: false,
@@ -101271,12 +101340,6 @@ export default {
     },
     "rowFilter.materials.grade": {
       name: "grade",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.materials.dimensions": {
-      name: "dimensions",
       required: false,
       in: "query",
       type: "string",
@@ -106032,6 +106095,12 @@ export default {
     },
     "rowFilter.materialDimension.name": {
       name: "name",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialDimension.isMetric": {
+      name: "isMetric",
       required: false,
       in: "query",
       type: "string",
@@ -110910,6 +110979,18 @@ export default {
     },
     "rowFilter.companySettings.salesJobCompletedNotificationGroup": {
       name: "salesJobCompletedNotificationGroup",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.companySettings.materialGeneratedIds": {
+      name: "materialGeneratedIds",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.companySettings.useMetric": {
+      name: "useMetric",
       required: false,
       in: "query",
       type: "string",

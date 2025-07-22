@@ -15,7 +15,7 @@ import {
 import { Link, useLoaderData } from "@remix-run/react";
 import { redirect, type ActionFunctionArgs } from "@vercel/remix";
 import type { z } from "zod";
-import { Hidden, Input, Submit, TextArea } from "~/components/Form";
+import { Hidden, Input, Submit } from "~/components/Form";
 import { useOnboarding } from "~/hooks";
 import {
   onboardingUserValidator,
@@ -46,13 +46,13 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { firstName, lastName, about, next } = validation.data;
+  const { firstName, lastName, next } = validation.data;
 
   const updateAccount = await updatePublicAccount(client, {
     id: userId,
     firstName,
     lastName,
-    about: about ?? "",
+    // about: about ?? "",
   });
 
   if (updateAccount.error) {
@@ -77,7 +77,7 @@ export default function OnboardingUser() {
   ) {
     initialValues.firstName = user?.firstName!;
     initialValues.lastName = user?.lastName!;
-    initialValues.about = user?.about!;
+    // initialValues.about = user?.about!;
   }
 
   return (
@@ -96,7 +96,7 @@ export default function OnboardingUser() {
           <VStack spacing={4}>
             <Input autoFocus name="firstName" label="First Name" />
             <Input name="lastName" label="Last Name" />
-            <TextArea name="about" label="About" />
+            {/* <TextArea name="about" label="About" /> */}
           </VStack>
         </CardContent>
         <CardFooter>

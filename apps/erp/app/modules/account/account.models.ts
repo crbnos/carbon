@@ -4,7 +4,7 @@ import { zfd } from "zod-form-data";
 export const onboardingUserValidator = z.object({
   firstName: z.string().min(1, { message: "First name is required" }),
   lastName: z.string().min(1, { message: "Last name is required" }),
-  about: zfd.text(z.string().optional()),
+  // about: zfd.text(z.string().optional()),
   next: z.string().min(1, { message: "Next is required" }),
 });
 

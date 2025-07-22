@@ -538,14 +538,19 @@ export async function updateMaterialGeneratedIdsSetting(
   companyId: string,
   materialGeneratedIds: boolean
 ) {
-  console.log("materialGeneratedIds", materialGeneratedIds);
   return client
     .from("companySettings")
-    .update(
-      sanitize({
-        materialGeneratedIds,
-      })
-    )
+    .update(sanitize({ materialGeneratedIds }))
+    .eq("id", companyId);
+}
+
+export async function updateMaterialUnitsSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  useMetric: boolean
+) {
+  return (client.from("companySettings") as any)
+    .update(sanitize({ useMetric }))
     .eq("id", companyId);
 }
 

@@ -2245,6 +2245,7 @@ export type Database = {
           rfqReadyNotificationGroup: string[];
           salesJobCompletedNotificationGroup: string[];
           shelfLabelSize: string | null;
+          useMetric: boolean;
         };
         Insert: {
           digitalQuoteEnabled?: boolean;
@@ -2257,6 +2258,7 @@ export type Database = {
           rfqReadyNotificationGroup?: string[];
           salesJobCompletedNotificationGroup?: string[];
           shelfLabelSize?: string | null;
+          useMetric?: boolean;
         };
         Update: {
           digitalQuoteEnabled?: boolean;
@@ -2269,6 +2271,7 @@ export type Database = {
           rfqReadyNotificationGroup?: string[];
           salesJobCompletedNotificationGroup?: string[];
           shelfLabelSize?: string | null;
+          useMetric?: boolean;
         };
         Relationships: [
           {
@@ -12116,6 +12119,48 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "materialForm";
             referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "material_dimensionId_fkey";
+            columns: ["dimensionId"];
+            isOneToOne: false;
+            referencedRelation: "materialDimensions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "material_finishId_fkey";
+            columns: ["finishId"];
+            isOneToOne: false;
+            referencedRelation: "materialFinish";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "material_finishId_fkey";
+            columns: ["finishId"];
+            isOneToOne: false;
+            referencedRelation: "materialFinishes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "material_gradeId_fkey";
+            columns: ["gradeId"];
+            isOneToOne: false;
+            referencedRelation: "materialGrade";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "material_gradeId_fkey";
+            columns: ["gradeId"];
+            isOneToOne: false;
+            referencedRelation: "materialGrades";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "material_materialFormId_fkey";
+            columns: ["materialFormId"];
+            isOneToOne: false;
+            referencedRelation: "materialForm";
+            referencedColumns: ["id"];
           }
         ];
       };
@@ -12123,18 +12168,21 @@ export type Database = {
         Row: {
           companyId: string | null;
           id: string;
+          isMetric: boolean;
           materialFormId: string;
           name: string;
         };
         Insert: {
           companyId?: string | null;
           id?: string;
+          isMetric?: boolean;
           materialFormId: string;
           name: string;
         };
         Update: {
           companyId?: string | null;
           id?: string;
+          isMetric?: boolean;
           materialFormId?: string;
           name?: string;
         };
@@ -37815,6 +37863,7 @@ export type Database = {
           companyId: string | null;
           formName: string | null;
           id: string | null;
+          isMetric: boolean | null;
           materialFormId: string | null;
           name: string | null;
         };
@@ -38730,14 +38779,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey";
-            columns: ["id"];
+            columns: ["supplierLocationId"];
             isOneToOne: false;
             referencedRelation: "supplierLocation";
             referencedColumns: ["id"];
           },
           {
             foreignKeyName: "partner_id_fkey";
-            columns: ["supplierLocationId"];
+            columns: ["id"];
             isOneToOne: false;
             referencedRelation: "supplierLocation";
             referencedColumns: ["id"];
@@ -40077,14 +40126,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey";
-            columns: ["supplierCountryCode"];
+            columns: ["customerCountryCode"];
             isOneToOne: false;
             referencedRelation: "country";
             referencedColumns: ["alpha2"];
           },
           {
             foreignKeyName: "address_countryCode_fkey";
-            columns: ["customerCountryCode"];
+            columns: ["supplierCountryCode"];
             isOneToOne: false;
             referencedRelation: "country";
             referencedColumns: ["alpha2"];

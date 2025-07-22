@@ -80,6 +80,10 @@ export const materialIdsValidator = z.object({
   materialGeneratedIds: zfd.checkbox(),
 });
 
+export const materialUnitsValidator = z.object({
+  useMetric: zfd.checkbox(),
+});
+
 export const productLabelSizeValidator = z.object({
   productLabelSize: z.enum(
     labelSizes.map((size) => size.id) as [string, ...string[]],

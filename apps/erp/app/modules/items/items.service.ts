@@ -830,13 +830,14 @@ export async function getMaterialDimension(
 export async function getMaterialDimensions(
   client: SupabaseClient<Database>,
   companyId: string,
-  args?: GenericQueryFilters & { search: string | null }
+  args?: GenericQueryFilters & { search: string | null; isMetric: boolean }
 ) {
   let query = client
     .from("materialDimensions")
     .select("*", {
       count: "exact",
     })
+    .eq("isMetric", args?.isMetric ?? false)
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
   if (args?.search) {
@@ -856,12 +857,14 @@ export async function getMaterialDimensions(
 export async function getMaterialDimensionList(
   client: SupabaseClient<Database>,
   materialFormId: string,
+  isMetric: boolean,
   companyId: string
 ) {
   return client
     .from("materialDimension")
     .select("*")
     .eq("materialFormId", materialFormId)
+    .eq("isMetric", isMetric)
     .or(`companyId.eq.${companyId},companyId.is.null`);
 }
 
@@ -2608,6 +2611,7 @@ export async function upsertMaterialDimension(
   materialDimension:
     | (Omit<z.infer<typeof materialDimensionValidator>, "id"> & {
         companyId: string;
+        isMetric: boolean;
       })
     | (Omit<z.infer<typeof materialDimensionValidator>, "id"> & {
         id: string;
@@ -2624,6 +2628,7 @@ export async function upsertMaterialDimension(
         .single()
     );
   }
+
   return client
     .from("materialDimension")
     .insert([materialDimension])
