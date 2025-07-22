@@ -306,6 +306,31 @@ export async function getIssues(
   return query;
 }
 
+export async function getQualityActions(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("qualityActions")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.or(
+      `readableNonConformanceId.ilike.%${args.search}%,nonConformanceName.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%`
+    );
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "createdAt", ascending: false },
+    ]);
+  }
+
+  return query;
+}
+
 export async function getIssueWorkflow(
   client: SupabaseClient<Database>,
   nonConformanceWorkflowId: string
