@@ -1601,7 +1601,7 @@ export const nonConformanceTypes: Omit<
     createdBy: "system",
   },
   {
-    name: "Material Non-Conformance",
+    name: "Material Issue",
     createdBy: "system",
   },
   {
@@ -1621,7 +1621,7 @@ export const nonConformanceTypes: Omit<
     createdBy: "system",
   },
   {
-    name: "Supplier Non-Conformance",
+    name: "Supplier Issue",
     createdBy: "system",
   },
   {
@@ -1767,7 +1767,7 @@ export const sequences = [
   },
   {
     table: "nonConformance",
-    name: "Non-Conformance",
+    name: "Issue",
     prefix: "NCR",
     suffix: null,
     next: 0,

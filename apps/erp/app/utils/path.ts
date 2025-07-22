@@ -152,8 +152,7 @@ export const path = {
     file: {
       cadModel: (id: string) => generatePath(`${file}/model/${id}`),
       jobTraveler: (id: string) => generatePath(`${file}/traveler/${id}.pdf`),
-      nonConformance: (id: string) =>
-        generatePath(`${file}/non-conformance/${id}.pdf`),
+      nonConformance: (id: string) => generatePath(`${file}/issue/${id}.pdf`),
       operationLabelsPdf: (
         id: string,
         {
@@ -324,8 +323,8 @@ export const path = {
     bulkUpdatePurchasingPlanning: `${x}/purchasing/planning/update`,
     bulkUpdateProcedure: `${x}/procedure/update`,
     bulkUpdateJob: `${x}/job/update`,
-    bulkUpdateNonConformance: `${x}/non-conformance/update`,
-    bulkUpdateNonConformanceWorkflow: `${x}/non-conformance-workflow/update`,
+    bulkUpdateIssue: `${x}/issue/update`,
+    bulkUpdateIssueWorkflow: `${x}/issue-workflow/update`,
     bulkUpdatePurchaseOrder: `${x}/purchase-order/update`,
     bulkUpdatePurchaseInvoice: `${x}/purchase-invoice/update`,
     bulkUpdateQuote: `${x}/quote/update`,
@@ -517,20 +516,15 @@ export const path = {
       generatePath(`${x}/items/methods/operation/parameter/delete/${id}`),
     deleteMethodOperationTool: (id: string) =>
       generatePath(`${x}/items/methods/operation/tool/delete/${id}`),
-    deleteNonConformance: (id: string) =>
-      generatePath(`${x}/non-conformance/delete/${id}`),
-    deleteNonConformanceAssociation: (
-      id: string,
-      type: string,
-      associationId: string
-    ) =>
+    deleteIssue: (id: string) => generatePath(`${x}/issue/delete/${id}`),
+    deleteIssueAssociation: (id: string, type: string, associationId: string) =>
       generatePath(
-        `${x}/non-conformance/${id}/association/delete/${type}/${associationId}`
+        `${x}/issue/${id}/association/delete/${type}/${associationId}`
       ),
-    deleteNonConformanceWorkflow: (id: string) =>
-      generatePath(`${x}/non-conformance-workflow/delete/${id}`),
-    deleteNonConformanceType: (id: string) =>
-      generatePath(`${x}/quality/non-conformance-types/delete/${id}`),
+    deleteIssueWorkflow: (id: string) =>
+      generatePath(`${x}/issue-workflow/delete/${id}`),
+    deleteIssueType: (id: string) =>
+      generatePath(`${x}/quality/issue-types/delete/${id}`),
     deleteNoQuoteReason: (id: string) =>
       generatePath(`${x}/sales/no-quote-reasons/delete/${id}`),
     deleteCustomerPortal: (id: string) =>
@@ -666,6 +660,21 @@ export const path = {
       generatePath(`${x}/inventory/quantities/${id}/adjustment`),
     inventoryRoot: `${x}/inventory`,
     invoicing: `${x}/invoicing`,
+    issues: `${x}/quality/issues`,
+    issue: (id: string) => generatePath(`${x}/issue/${id}`),
+    issueDetails: (id: string) => generatePath(`${x}/issue/${id}/details`),
+    issueSupplier: (id: string) => generatePath(`${x}/issue/${id}/supplier`),
+    issueStatus: (id: string) => generatePath(`${x}/issue/${id}/status`),
+    issueInvestigations: (id: string) =>
+      generatePath(`${x}/issue/${id}/investigations`),
+    issueActions: (id: string) => generatePath(`${x}/issue/${id}/actions`),
+    issueTaskStatus: (id: string) =>
+      generatePath(`${x}/issue/task/${id}/status`),
+    issueReview: (id: string) => generatePath(`${x}/issue/${id}/review`),
+    issueWorkflow: (id: string) => generatePath(`${x}/issue-workflow/${id}`),
+    issueWorkflows: `${x}/quality/issue-workflows`,
+    issueType: (id: string) => generatePath(`${x}/quality/issue-types/${id}`),
+    issueTypes: `${x}/quality/issue-types`,
     items: `${x}/items`,
     itemCostUpdate: (id: string) => generatePath(`${x}/items/cost/${id}`),
     itemPostingGroup: (id: string) => generatePath(`${x}/items/groups/${id}`),
@@ -820,11 +829,11 @@ export const path = {
     newMethodOperationAttribute: `${x}/items/methods/operation/attribute/new`,
     newMethodOperationTool: `${x}/items/methods/operation/tool/new`,
     newMethodOperationParameter: `${x}/items/methods/operation/parameter/new`,
-    newNonConformance: `${x}/non-conformance/new`,
-    newNonConformanceAssociation: (id: string) =>
-      generatePath(`${x}/non-conformance/${id}/association/new`),
-    newNonConformanceType: `${x}/quality/non-conformance-types/new`,
-    newNonConformanceWorkflow: `${x}/non-conformance-workflow/new`,
+    newIssue: `${x}/issue/new`,
+    newIssueAssociation: (id: string) =>
+      generatePath(`${x}/issue/${id}/association/new`),
+    newIssueType: `${x}/quality/issue-types/new`,
+    newIssueWorkflow: `${x}/issue-workflow/new`,
     newNote: `${x}/shared/notes/new`,
     newPart: `${x}/part/new`,
     newProcedure: `${x}/production/procedures/new`,
@@ -901,28 +910,7 @@ export const path = {
     newUom: `${x}/items/uom/new`,
     newWorkCenter: `${x}/resources/work-centers/new`,
     newWebhook: `${x}/settings/webhooks/new`,
-    nonConformances: `${x}/quality/non-conformances`,
-    nonConformance: (id: string) => generatePath(`${x}/non-conformance/${id}`),
-    nonConformanceDetails: (id: string) =>
-      generatePath(`${x}/non-conformance/${id}/details`),
-    nonConformanceSupplier: (id: string) =>
-      generatePath(`${x}/non-conformance/${id}/supplier`),
-    nonConformanceStatus: (id: string) =>
-      generatePath(`${x}/non-conformance/${id}/status`),
-    nonConformanceInvestigations: (id: string) =>
-      generatePath(`${x}/non-conformance/${id}/investigations`),
-    nonConformanceActions: (id: string) =>
-      generatePath(`${x}/non-conformance/${id}/actions`),
-    nonConformanceTaskStatus: (id: string) =>
-      generatePath(`${x}/non-conformance/task/${id}/status`),
-    nonConformanceReview: (id: string) =>
-      generatePath(`${x}/non-conformance/${id}/review`),
-    nonConformanceWorkflow: (id: string) =>
-      generatePath(`${x}/non-conformance-workflow/${id}`),
-    nonConformanceWorkflows: `${x}/quality/non-conformance-workflows`,
-    nonConformanceType: (id: string) =>
-      generatePath(`${x}/quality/non-conformance-types/${id}`),
-    nonConformanceTypes: `${x}/quality/non-conformance-types`,
+
     noQuoteReasons: `${x}/sales/no-quote-reasons`,
     noQuoteReason: (id: string) =>
       generatePath(`${x}/sales/no-quote-reasons/${id}`),
@@ -1027,7 +1015,8 @@ export const path = {
     purchasing: `${x}/purchasing`,
     purchasingPlanning: `${x}/purchasing/planning`,
     purchasingSettings: `${x}/settings/purchasing`,
-    quality: `${x}/quality/non-conformances`,
+    quality: `${x}/quality/issues`,
+    qualityActions: `${x}/quality/actions`,
     quote: (id: string) => generatePath(`${x}/quote/${id}`),
     quoteAssembly: (quoteId: string, lineId: string, assemblyId: string) =>
       generatePath(

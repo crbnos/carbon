@@ -45,8 +45,8 @@ function useCreate(): Route[] {
 
     if (permissions.can("create", "quality")) {
       links.push({
-        name: "Non-Conformance",
-        to: path.to.newNonConformance,
+        name: "Issue",
+        to: path.to.newIssue,
         icon: <LuShieldX />,
       });
     }

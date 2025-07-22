@@ -190,7 +190,7 @@ export function OperationStatusIcon({
   }
 }
 
-export const NonConformanceTaskStatusIcon = ({
+export const IssueTaskStatusIcon = ({
   status,
   className,
 }: {

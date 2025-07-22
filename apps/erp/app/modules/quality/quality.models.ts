@@ -109,7 +109,7 @@ export const gaugeTypeValidator = z.object({
   name: z.string().min(1, { message: "Name is required" }),
 });
 
-export const nonConformanceAssociationValidator = z
+export const issueAssociationValidator = z
   .object({
     type: z.enum(nonConformanceAssociationType),
     id: z.string(),
@@ -131,7 +131,7 @@ export const nonConformanceAssociationValidator = z
     }
   );
 
-export const nonConformanceValidator = z.object({
+export const issueValidator = z.object({
   id: zfd.text(z.string().optional()),
   nonConformanceId: zfd.text(z.string().optional()),
   priority: z.enum(nonConformancePriority),
@@ -158,12 +158,12 @@ export const nonConformanceReviewerValidator = z.object({
   title: z.string().min(1, { message: "Title is required" }),
 });
 
-export const nonConformanceTypeValidator = z.object({
+export const issueTypeValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }),
 });
 
-export const nonConformanceWorkflowValidator = z.object({
+export const issueWorkflowValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }),
   content: z

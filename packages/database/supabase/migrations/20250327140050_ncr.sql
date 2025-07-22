@@ -55,18 +55,18 @@ FOR DELETE USING (
   )
 );
 
--- Insert non-conformance types for all existing companies
+-- Insert issue types for all existing companies
 WITH nc_types AS (
   SELECT unnest(ARRAY[
     'Design Error',
     'Manufacturing Defect',
     'Process Deviation',
-    'Material Non-Conformance',
+    'Material Issue',
     'Testing Failure',
     'Documentation Error',
     'Training Issue',
     'Equipment Malfunction',
-    'Supplier Non-Conformance',
+    'Supplier Issue',
     'Customer Complaint'
   ]) AS name
 )
@@ -787,7 +787,7 @@ CREATE INDEX "nonConformanceTrackedEntity_nonConformanceId_idx" ON "nonConforman
 CREATE INDEX "nonConformanceTrackedEntity_trackedEntityId_idx" ON "nonConformanceTrackedEntity" ("trackedEntityId");
 
 INSERT INTO "customFieldTable" ("table", "name", "module") 
-VALUES ('nonConformance', 'Non-Conformance', 'Quality');
+VALUES ('nonConformance', 'Issue', 'Quality');
 
 CREATE TABLE "nonConformanceInvestigationTask" (
   "id" TEXT NOT NULL DEFAULT xid(),
@@ -1068,7 +1068,7 @@ FOR DELETE USING (
 INSERT INTO "sequence" ("table", "name", "prefix", "suffix", "next", "size", "step", "companyId")
 SELECT 
   'nonConformance',
-  'Non-Conformance',
+  'Issue',
   'NCR',
   NULL,
   0,

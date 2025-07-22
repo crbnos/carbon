@@ -129,7 +129,7 @@ export const notifyTask = task({
             throw nonConformance.error;
           }
 
-          return `Non-Conformance ${nonConformance?.data?.nonConformanceId} assigned to you`;
+          return `Issue ${nonConformance?.data?.nonConformanceId} assigned to you`;
         case NotificationEvent.JobAssignment:
           const job = await client
             .from("job")

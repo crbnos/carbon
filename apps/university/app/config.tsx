@@ -1218,11 +1218,11 @@ export const modules: Config = [
             name: "Tracking Quality",
             id: "tracking-quality",
             description:
-              "Master quality control processes including non-conformances and gauge management.",
+              "Master quality control processes including issues and gauge management.",
             challenge: [
               {
                 id: "q1",
-                question: "What is a non-conformance?",
+                question: "What is a issue?",
                 options: [
                   "A successful product",
                   "A product or material that doesn't meet specifications",
@@ -1245,10 +1245,10 @@ export const modules: Config = [
             ],
             lessons: [
               {
-                id: "non-conformances",
+                id: "issues",
                 loomUrl:
                   "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
-                name: "Non-Conformances",
+                name: "Issues",
                 description:
                   "Learn how to track and manage non-conforming materials and products.",
                 duration: 0,
