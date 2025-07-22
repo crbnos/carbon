@@ -11,6 +11,7 @@ import type {
   getIssueReviewers,
   getIssueTypes,
   getIssueWorkflow,
+  getQualityActions,
 } from "./quality.service";
 
 export type Gauge = NonNullable<
@@ -68,4 +69,8 @@ export type IssueApprovalTask = NonNullable<
 
 export type IssueReviewer = NonNullable<
   Awaited<ReturnType<typeof getIssueReviewers>>["data"]
+>[number];
+
+export type QualityAction = NonNullable<
+  Awaited<ReturnType<typeof getQualityActions>>["data"]
 >[number];

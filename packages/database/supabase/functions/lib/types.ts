@@ -2240,10 +2240,12 @@ export type Database = {
           digitalQuoteNotificationGroup: string[]
           id: string
           inventoryJobCompletedNotificationGroup: string[]
+          materialGeneratedIds: boolean
           productLabelSize: string | null
           rfqReadyNotificationGroup: string[]
           salesJobCompletedNotificationGroup: string[]
           shelfLabelSize: string | null
+          useMetric: boolean
         }
         Insert: {
           digitalQuoteEnabled?: boolean
@@ -2251,10 +2253,12 @@ export type Database = {
           digitalQuoteNotificationGroup?: string[]
           id: string
           inventoryJobCompletedNotificationGroup?: string[]
+          materialGeneratedIds?: boolean
           productLabelSize?: string | null
           rfqReadyNotificationGroup?: string[]
           salesJobCompletedNotificationGroup?: string[]
           shelfLabelSize?: string | null
+          useMetric?: boolean
         }
         Update: {
           digitalQuoteEnabled?: boolean
@@ -2262,10 +2266,12 @@ export type Database = {
           digitalQuoteNotificationGroup?: string[]
           id?: string
           inventoryJobCompletedNotificationGroup?: string[]
+          materialGeneratedIds?: boolean
           productLabelSize?: string | null
           rfqReadyNotificationGroup?: string[]
           salesJobCompletedNotificationGroup?: string[]
           shelfLabelSize?: string | null
+          useMetric?: boolean
         }
         Relationships: [
           {
@@ -11919,10 +11925,10 @@ export type Database = {
           createdAt: string
           createdBy: string
           customFields: Json | null
-          dimensions: string | null
+          dimensionId: string | null
           externalId: Json | null
-          finish: string | null
-          grade: string | null
+          finishId: string | null
+          gradeId: string | null
           id: string
           materialFormId: string | null
           materialSubstanceId: string | null
@@ -11937,10 +11943,10 @@ export type Database = {
           createdAt?: string
           createdBy: string
           customFields?: Json | null
-          dimensions?: string | null
+          dimensionId?: string | null
           externalId?: Json | null
-          finish?: string | null
-          grade?: string | null
+          finishId?: string | null
+          gradeId?: string | null
           id: string
           materialFormId?: string | null
           materialSubstanceId?: string | null
@@ -11955,10 +11961,10 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
-          dimensions?: string | null
+          dimensionId?: string | null
           externalId?: Json | null
-          finish?: string | null
-          grade?: string | null
+          finishId?: string | null
+          gradeId?: string | null
           id?: string
           materialFormId?: string | null
           materialSubstanceId?: string | null
@@ -12066,6 +12072,48 @@ export type Database = {
             referencedColumns: ["userId"]
           },
           {
+            foreignKeyName: "material_dimensionId_fkey"
+            columns: ["dimensionId"]
+            isOneToOne: false
+            referencedRelation: "materialDimension"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_dimensionId_fkey"
+            columns: ["dimensionId"]
+            isOneToOne: false
+            referencedRelation: "materialDimensions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_finishId_fkey"
+            columns: ["finishId"]
+            isOneToOne: false
+            referencedRelation: "materialFinish"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_finishId_fkey"
+            columns: ["finishId"]
+            isOneToOne: false
+            referencedRelation: "materialFinishes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_gradeId_fkey"
+            columns: ["gradeId"]
+            isOneToOne: false
+            referencedRelation: "materialGrade"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_gradeId_fkey"
+            columns: ["gradeId"]
+            isOneToOne: false
+            referencedRelation: "materialGrades"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "material_materialFormId_fkey"
             columns: ["materialFormId"]
             isOneToOne: false
@@ -12113,6 +12161,123 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+        ]
+      }
+      materialDimension: {
+        Row: {
+          companyId: string | null
+          id: string
+          isMetric: boolean
+          materialFormId: string
+          name: string
+        }
+        Insert: {
+          companyId?: string | null
+          id?: string
+          isMetric?: boolean
+          materialFormId: string
+          name: string
+        }
+        Update: {
+          companyId?: string | null
+          id?: string
+          isMetric?: boolean
+          materialFormId?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materialDimensions_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialDimensions_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialDimensions_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "materialDimensions_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "materialDimensions_materialFormId_fkey"
+            columns: ["materialFormId"]
+            isOneToOne: false
+            referencedRelation: "materialForm"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      materialFinish: {
+        Row: {
+          companyId: string | null
+          id: string
+          materialSubstanceId: string
+          name: string
+        }
+        Insert: {
+          companyId?: string | null
+          id?: string
+          materialSubstanceId: string
+          name: string
+        }
+        Update: {
+          companyId?: string | null
+          id?: string
+          materialSubstanceId?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materialFinish_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialFinish_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialFinish_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "materialFinish_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "materialFinish_materialSubstanceId_fkey"
+            columns: ["materialSubstanceId"]
+            isOneToOne: false
+            referencedRelation: "materialSubstance"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -12248,6 +12413,63 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+        ]
+      }
+      materialGrade: {
+        Row: {
+          companyId: string | null
+          id: string
+          materialSubstanceId: string
+          name: string
+        }
+        Insert: {
+          companyId?: string | null
+          id?: string
+          materialSubstanceId: string
+          name: string
+        }
+        Update: {
+          companyId?: string | null
+          id?: string
+          materialSubstanceId?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materialGrade_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialGrade_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialGrade_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "materialGrade_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "materialGrade_materialSubstanceId_fkey"
+            columns: ["materialSubstanceId"]
+            isOneToOne: false
+            referencedRelation: "materialSubstance"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -37632,6 +37854,145 @@ export type Database = {
           },
         ]
       }
+      materialDimensions: {
+        Row: {
+          companyId: string | null
+          formName: string | null
+          id: string | null
+          isMetric: boolean | null
+          materialFormId: string | null
+          name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materialDimensions_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialDimensions_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialDimensions_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "materialDimensions_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "materialDimensions_materialFormId_fkey"
+            columns: ["materialFormId"]
+            isOneToOne: false
+            referencedRelation: "materialForm"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      materialFinishes: {
+        Row: {
+          companyId: string | null
+          id: string | null
+          materialSubstanceId: string | null
+          name: string | null
+          substanceName: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materialFinish_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialFinish_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialFinish_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "materialFinish_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "materialFinish_materialSubstanceId_fkey"
+            columns: ["materialSubstanceId"]
+            isOneToOne: false
+            referencedRelation: "materialSubstance"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      materialGrades: {
+        Row: {
+          companyId: string | null
+          id: string | null
+          materialSubstanceId: string | null
+          name: string | null
+          substanceName: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materialGrade_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialGrade_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialGrade_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "materialGrade_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "materialGrade_materialSubstanceId_fkey"
+            columns: ["materialSubstanceId"]
+            isOneToOne: false
+            referencedRelation: "materialSubstance"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       materials: {
         Row: {
           active: boolean | null
@@ -40138,6 +40499,212 @@ export type Database = {
           },
         ]
       }
+      qualityActions: {
+        Row: {
+          actionType: Database["public"]["Enums"]["nonConformanceAction"] | null
+          assignee: string | null
+          companyId: string | null
+          completedDate: string | null
+          createdAt: string | null
+          createdBy: string | null
+          dueDate: string | null
+          id: string | null
+          nonConformanceCloseDate: string | null
+          nonConformanceDueDate: string | null
+          nonConformanceId: string | null
+          nonConformanceItemId: string | null
+          nonConformanceName: string | null
+          nonConformanceOpenDate: string | null
+          nonConformanceStatus:
+            | Database["public"]["Enums"]["nonConformanceStatus"]
+            | null
+          nonConformanceTypeName: string | null
+          notes: Json | null
+          readableNonConformanceId: string | null
+          sortOrder: number | null
+          status: Database["public"]["Enums"]["nonConformanceTaskStatus"] | null
+          tags: string[] | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nonConformance_itemId_fkey"
+            columns: ["nonConformanceItemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformance_itemId_fkey"
+            columns: ["nonConformanceItemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformance_itemId_fkey"
+            columns: ["nonConformanceItemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformance_itemId_fkey"
+            columns: ["nonConformanceItemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformance_itemId_fkey"
+            columns: ["nonConformanceItemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "nonConformance"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       quoteCustomerDetails: {
         Row: {
           contactEmail: string | null
@@ -42009,14 +42576,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -42552,14 +43119,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
