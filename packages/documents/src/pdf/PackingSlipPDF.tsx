@@ -174,74 +174,79 @@ const PackingSlipPDF = ({
             )}
           </View>
 
-          {shipmentLines.map((line) => {
-            const barcodeDataUrl = generateBarcode(line.itemReadableId);
-            const trackedEntitiesForLine = trackedEntities.filter(
-              (entity) =>
-                (entity.attributes as TrackedEntityAttributes)?.[
-                  "Shipment Line"
-                ] === line.id
-            );
-            return (
-              <View
-                style={tw(
-                  "flex flex-row justify-between py-3 px-[6px] border-b border-gray-300 page-break-inside-avoid"
-                )}
-                key={line.id}
-              >
-                <View style={tw(`w-${hasTrackedEntities ? "7/12" : "9/12"}`)}>
-                  <Text style={tw("font-bold mb-1")}>
-                    {getLineDescription(line)}
-                  </Text>
-                  <Text style={tw("text-[9px] opacity-80 mb-2")}>
-                    {getLineDescriptionDetails(line)}
-                  </Text>
-
-                  {thumbnails &&
-                    line.id in thumbnails &&
-                    thumbnails[line.id] && (
-                      <View style={tw("mt-2 mb-2")}>
-                        <Image
-                          src={thumbnails[line.id]!}
-                          style={tw("w-1/3 h-auto")}
-                        />
-                      </View>
-                    )}
-
-                  <Image src={barcodeDataUrl} style={tw("max-w-[50%]")} />
-                </View>
-                <Text
+          {shipmentLines
+            .filter((line) => line.shippedQuantity > 0)
+            .map((line) => {
+              const barcodeDataUrl = generateBarcode(line.itemReadableId);
+              const trackedEntitiesForLine = trackedEntities.filter(
+                (entity) =>
+                  (entity.attributes as TrackedEntityAttributes)?.[
+                    "Shipment Line"
+                  ] === line.id
+              );
+              return (
+                <View
                   style={tw(
-                    `w-${hasTrackedEntities ? "1/6" : "3/12"} text-center`
+                    "flex flex-row justify-between py-3 px-[6px] border-b border-gray-300 page-break-inside-avoid"
                   )}
+                  key={line.id}
                 >
-                  {getLineQuantity(line)}
-                </Text>
-                {hasTrackedEntities && (
-                  <View style={tw("flex flex-col gap-2 w-1/4 text-right")}>
-                    {trackedEntitiesForLine.length > 0 && (
-                      <View>
-                        {trackedEntitiesForLine.map((entity) => {
-                          const qrCodeDataUrl = generateQRCode(entity.id);
-                          return (
-                            <View key={entity.id} style={tw("mb-2 text-right")}>
-                              <Text style={tw("text-[8px] mb-1")}>
-                                {entity.id}
-                              </Text>
-                              <Image
-                                src={qrCodeDataUrl}
-                                style={tw("max-w-[80%] ml-auto")}
-                              />
-                            </View>
-                          );
-                        })}
-                      </View>
-                    )}
+                  <View style={tw(`w-${hasTrackedEntities ? "7/12" : "9/12"}`)}>
+                    <Text style={tw("font-bold mb-1")}>
+                      {getLineDescription(line)}
+                    </Text>
+                    <Text style={tw("text-[9px] opacity-80 mb-2")}>
+                      {getLineDescriptionDetails(line)}
+                    </Text>
+
+                    {thumbnails &&
+                      line.id in thumbnails &&
+                      thumbnails[line.id] && (
+                        <View style={tw("mt-2 mb-2")}>
+                          <Image
+                            src={thumbnails[line.id]!}
+                            style={tw("w-1/4 h-auto max-w-[25%]")}
+                          />
+                        </View>
+                      )}
+
+                    <Image src={barcodeDataUrl} style={tw("max-w-[50%]")} />
                   </View>
-                )}
-              </View>
-            );
-          })}
+                  <Text
+                    style={tw(
+                      `w-${hasTrackedEntities ? "1/6" : "3/12"} text-center`
+                    )}
+                  >
+                    {getLineQuantity(line)}
+                  </Text>
+                  {hasTrackedEntities && (
+                    <View style={tw("flex flex-col gap-2 w-1/4 text-right")}>
+                      {trackedEntitiesForLine.length > 0 && (
+                        <View>
+                          {trackedEntitiesForLine.map((entity) => {
+                            const qrCodeDataUrl = generateQRCode(entity.id);
+                            return (
+                              <View
+                                key={entity.id}
+                                style={tw("mb-2 text-right")}
+                              >
+                                <Text style={tw("text-[8px] mb-1")}>
+                                  {entity.id}
+                                </Text>
+                                <Image
+                                  src={qrCodeDataUrl}
+                                  style={tw("max-w-[80%] ml-auto")}
+                                />
+                              </View>
+                            );
+                          })}
+                        </View>
+                      )}
+                    </View>
+                  )}
+                </View>
+              );
+            })}
         </View>
 
         {/* Notes and Terms Section */}
@@ -294,7 +299,7 @@ async function generateBarcode(text: string): Promise<string> {
     bcid: "code128", // Barcode type
     text: text, // Text to encode
     scale: 3, // 3x scaling factor
-    height: 10, // Bar height, in millimeters
+    height: 5, // Bar height, in millimeters
     includetext: true, // Show human-readable text
     textxalign: "center", // Always good to set this
   });
