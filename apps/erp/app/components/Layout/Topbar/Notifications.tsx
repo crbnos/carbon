@@ -165,11 +165,7 @@ function GenericNotification({
       );
     case NotificationEvent.NonConformanceAssignment:
       return (
-        <Notification
-          icon={<LuShieldX />}
-          to={path.to.nonConformance(id)}
-          {...props}
-        />
+        <Notification icon={<LuShieldX />} to={path.to.issue(id)} {...props} />
       );
     case NotificationEvent.ProcedureAssignment:
       return (

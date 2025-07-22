@@ -11,11 +11,11 @@ import type {
   gaugeCalibrationStatus,
   gaugeTypeValidator,
   gaugeValidator,
+  issueTypeValidator,
+  issueValidator,
+  issueWorkflowValidator,
   nonConformanceReviewerValidator,
   nonConformanceStatus,
-  nonConformanceTypeValidator,
-  nonConformanceValidator,
-  nonConformanceWorkflowValidator,
 } from "./quality.models";
 
 export async function activateGauge(
@@ -62,14 +62,14 @@ export async function deleteGaugeType(
   return client.from("gaugeType").delete().eq("id", gaugeTypeId);
 }
 
-export async function deleteNonConformance(
+export async function deleteIssue(
   client: SupabaseClient<Database>,
   nonConformanceId: string
 ) {
   return client.from("nonConformance").delete().eq("id", nonConformanceId);
 }
 
-export async function deleteNonConformanceAssociation(
+export async function deleteIssueAssociation(
   client: SupabaseClient<Database>,
   type: string,
   associationId: string
@@ -120,7 +120,7 @@ export async function deleteNonConformanceAssociation(
   }
 }
 
-export async function deleteNonConformanceType(
+export async function deleteIssueType(
   client: SupabaseClient<Database>,
   nonConformanceTypeId: string
 ) {
@@ -130,7 +130,7 @@ export async function deleteNonConformanceType(
     .eq("id", nonConformanceTypeId);
 }
 
-export async function deleteNonConformanceWorkflow(
+export async function deleteIssueWorkflow(
   client: SupabaseClient<Database>,
   nonConformanceWorkflowId: string
 ) {
@@ -270,7 +270,7 @@ export async function getGaugeTypes(
   return query;
 }
 
-export async function getNonConformance(
+export async function getIssue(
   client: SupabaseClient<Database>,
   nonConformanceId: string
 ) {
@@ -281,7 +281,7 @@ export async function getNonConformance(
     .single();
 }
 
-export async function getNonConformances(
+export async function getIssues(
   client: SupabaseClient<Database>,
   companyId: string,
   args?: GenericQueryFilters & { search: string | null }
@@ -306,7 +306,7 @@ export async function getNonConformances(
   return query;
 }
 
-export async function getNonConformanceWorkflow(
+export async function getIssueWorkflow(
   client: SupabaseClient<Database>,
   nonConformanceWorkflowId: string
 ) {
@@ -317,7 +317,7 @@ export async function getNonConformanceWorkflow(
     .single();
 }
 
-export async function getNonConformanceInvestigationTasks(
+export async function getIssueInvestigationTasks(
   client: SupabaseClient<Database>,
   id: string,
   companyId: string
@@ -330,7 +330,7 @@ export async function getNonConformanceInvestigationTasks(
     .order("investigationType", { ascending: true });
 }
 
-export async function getNonConformanceActionTasks(
+export async function getIssueActionTasks(
   client: SupabaseClient<Database>,
   id: string,
   companyId: string
@@ -343,7 +343,7 @@ export async function getNonConformanceActionTasks(
     .order("actionType", { ascending: true });
 }
 
-export async function getNonConformanceApprovalTasks(
+export async function getIssueApprovalTasks(
   client: SupabaseClient<Database>,
   id: string,
   companyId: string
@@ -356,7 +356,7 @@ export async function getNonConformanceApprovalTasks(
     .order("approvalType", { ascending: true });
 }
 
-export async function getNonConformanceAssociations(
+export async function getIssueAssociations(
   client: SupabaseClient<Database>,
   nonConformanceId: string,
   companyId: string
@@ -554,7 +554,7 @@ export async function getNonConformanceAssociations(
   };
 }
 
-export async function getNonConformanceReviewers(
+export async function getIssueReviewers(
   client: SupabaseClient<Database>,
   id: string,
   companyId: string
@@ -567,7 +567,7 @@ export async function getNonConformanceReviewers(
     .order("id", { ascending: true });
 }
 
-export async function getNonConformanceTasks(
+export async function getIssueTasks(
   client: SupabaseClient<Database>,
   id: string,
   companyId: string
@@ -594,7 +594,7 @@ export async function getNonConformanceTasks(
   ]);
 }
 
-export async function getNonConformanceWorkflows(
+export async function getIssueWorkflows(
   client: SupabaseClient<Database>,
   companyId: string,
   args?: GenericQueryFilters & { search: string | null }
@@ -618,7 +618,7 @@ export async function getNonConformanceWorkflows(
   return query;
 }
 
-export async function getNonConformanceWorkflowsList(
+export async function getIssueWorkflowsList(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
@@ -630,7 +630,7 @@ export async function getNonConformanceWorkflowsList(
     .order("name");
 }
 
-export async function getNonConformanceTypesList(
+export async function getIssueTypesList(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
@@ -641,7 +641,7 @@ export async function getNonConformanceTypesList(
     .order("name");
 }
 
-export async function getNonConformanceType(
+export async function getIssueType(
   client: SupabaseClient<Database>,
   nonConformanceTypeId: string
 ) {
@@ -652,7 +652,7 @@ export async function getNonConformanceType(
     .single();
 }
 
-export async function getNonConformanceTypes(
+export async function getIssueTypes(
   client: SupabaseClient<Database>,
   companyId: string,
   args?: GenericQueryFilters & { search: string | null }
@@ -675,7 +675,7 @@ export async function getNonConformanceTypes(
   return query;
 }
 
-export async function insertNonConformanceReviewer(
+export async function insertIssueReviewer(
   client: SupabaseClient<Database>,
   reviewer: z.infer<typeof nonConformanceReviewerValidator> & {
     nonConformanceId: string;
@@ -686,7 +686,7 @@ export async function insertNonConformanceReviewer(
   return client.from("nonConformanceReviewer").insert(reviewer);
 }
 
-export async function updateNonConformanceStatus(
+export async function updateIssueStatus(
   client: SupabaseClient<Database>,
   update: {
     id: string;
@@ -698,7 +698,7 @@ export async function updateNonConformanceStatus(
 ) {
   return client.from("nonConformance").update(update).eq("id", update.id);
 }
-export async function updateNonConformanceTaskStatus(
+export async function updateIssueTaskStatus(
   client: SupabaseClient<Database>,
   args: {
     id: string;
@@ -822,7 +822,7 @@ export async function upsertGaugeType(
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<z.infer<typeof nonConformanceTypeValidator>, "id"> & {
+    | (Omit<z.infer<typeof issueTypeValidator>, "id"> & {
         id: string;
         updatedBy: string;
         customFields?: Json;
@@ -838,22 +838,16 @@ export async function upsertGaugeType(
   }
 }
 
-export async function upsertNonConformance(
+export async function upsertIssue(
   client: SupabaseClient<Database>,
   nonConformance:
-    | (Omit<
-        z.infer<typeof nonConformanceValidator>,
-        "id" | "nonConformanceId"
-      > & {
+    | (Omit<z.infer<typeof issueValidator>, "id" | "nonConformanceId"> & {
         nonConformanceId: string;
         companyId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<
-        z.infer<typeof nonConformanceValidator>,
-        "id" | "nonConformanceId"
-      > & {
+    | (Omit<z.infer<typeof issueValidator>, "id" | "nonConformanceId"> & {
         id: string;
         nonConformanceId: string;
         updatedBy: string;
@@ -874,14 +868,14 @@ export async function upsertNonConformance(
   }
 }
 
-export async function upsertNonConformanceWorkflow(
+export async function upsertIssueWorkflow(
   client: SupabaseClient<Database>,
   nonConformanceWorkflow:
-    | (Omit<z.infer<typeof nonConformanceWorkflowValidator>, "id"> & {
+    | (Omit<z.infer<typeof issueWorkflowValidator>, "id"> & {
         companyId: string;
         createdBy: string;
       })
-    | (Omit<z.infer<typeof nonConformanceWorkflowValidator>, "id"> & {
+    | (Omit<z.infer<typeof issueWorkflowValidator>, "id"> & {
         id: string;
         updatedBy: string;
       })
@@ -900,15 +894,15 @@ export async function upsertNonConformanceWorkflow(
   }
 }
 
-export async function upsertNonConformanceType(
+export async function upsertIssueType(
   client: SupabaseClient<Database>,
   nonConformanceType:
-    | (Omit<z.infer<typeof nonConformanceTypeValidator>, "id"> & {
+    | (Omit<z.infer<typeof issueTypeValidator>, "id"> & {
         companyId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<z.infer<typeof nonConformanceTypeValidator>, "id"> & {
+    | (Omit<z.infer<typeof issueTypeValidator>, "id"> & {
         id: string;
         updatedBy: string;
         customFields?: Json;

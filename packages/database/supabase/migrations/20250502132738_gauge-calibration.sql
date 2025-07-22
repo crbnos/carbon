@@ -1,5 +1,5 @@
 INSERT INTO "customFieldTable" ("table", "name", "module") 
-VALUES ('nonConformanceType', 'Non-Conformance Type', 'Quality');
+VALUES ('nonConformanceType', 'Issue Type', 'Quality');
 
 INSERT INTO "customFieldTable" ("table", "name", "module") 
 VALUES ('gaugeType', 'Gauge Type', 'Quality');
@@ -71,7 +71,7 @@ FOR DELETE USING (
   )
 );
 
--- Insert non-conformance types for all existing companies
+-- Insert issue types for all existing companies
 WITH nc_types AS (
   SELECT unnest(ARRAY[
     'Gauge Block',

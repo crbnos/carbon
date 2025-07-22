@@ -1,6 +1,7 @@
 import {
   LuCircleGauge,
   LuDraftingCompass,
+  LuListChecks,
   LuOctagonX,
   LuShapes,
   LuShieldX,
@@ -16,8 +17,14 @@ const qualityRoutes: AuthenticatedRouteGroup[] = [
     name: "History",
     routes: [
       {
-        name: "Non-Conformances",
-        to: path.to.nonConformances,
+        name: "Actions",
+        to: path.to.qualityActions,
+        icon: <LuListChecks />,
+        table: "nonConformanceActionTask",
+      },
+      {
+        name: "Issues",
+        to: path.to.issues,
         icon: <LuShieldX />,
         table: "nonConformance",
       },
@@ -53,13 +60,13 @@ const qualityRoutes: AuthenticatedRouteGroup[] = [
         icon: <LuShapes />,
       },
       {
-        name: "NCR Types",
-        to: path.to.nonConformanceTypes,
+        name: "Issue Types",
+        to: path.to.issueTypes,
         icon: <LuOctagonX />,
       },
       {
-        name: "NCR Workflows",
-        to: path.to.nonConformanceWorkflows,
+        name: "Issue Workflows",
+        to: path.to.issueWorkflows,
         icon: <LuWorkflow />,
       },
     ],

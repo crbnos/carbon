@@ -4,13 +4,13 @@ import type {
   getGaugeCalibrationRecords,
   getGauges,
   getGaugeTypes,
-  getNonConformance,
-  getNonConformanceActionTasks,
-  getNonConformanceApprovalTasks,
-  getNonConformanceInvestigationTasks,
-  getNonConformanceReviewers,
-  getNonConformanceTypes,
-  getNonConformanceWorkflow,
+  getIssue,
+  getIssueActionTasks,
+  getIssueApprovalTasks,
+  getIssueInvestigationTasks,
+  getIssueReviewers,
+  getIssueTypes,
+  getIssueWorkflow,
 } from "./quality.service";
 
 export type Gauge = NonNullable<
@@ -25,11 +25,11 @@ export type GaugeType = NonNullable<
   Awaited<ReturnType<typeof getGaugeTypes>>["data"]
 >[number];
 
-export type NonConformanceAssociationKey =
+export type IssueAssociationKey =
   (typeof nonConformanceAssociationType)[number];
 
-export type NonConformanceAssociationNode = {
-  key: NonConformanceAssociationKey;
+export type IssueAssociationNode = {
+  key: IssueAssociationKey;
   name: string;
   pluralName: string;
   module: string;
@@ -42,33 +42,30 @@ export type NonConformanceAssociationNode = {
   }[];
 };
 
-export type NonConformanceStatus =
-  Database["public"]["Enums"]["nonConformanceStatus"];
+export type IssueStatus = Database["public"]["Enums"]["nonConformanceStatus"];
 
-export type NonConformance = NonNullable<
-  Awaited<ReturnType<typeof getNonConformance>>["data"]
+export type Issue = NonNullable<Awaited<ReturnType<typeof getIssue>>["data"]>;
+
+export type IssueType = NonNullable<
+  Awaited<ReturnType<typeof getIssueTypes>>["data"]
+>[number];
+
+export type IssueWorkflow = NonNullable<
+  Awaited<ReturnType<typeof getIssueWorkflow>>["data"]
 >;
 
-export type NonConformanceType = NonNullable<
-  Awaited<ReturnType<typeof getNonConformanceTypes>>["data"]
+export type IssueInvestigationTask = NonNullable<
+  Awaited<ReturnType<typeof getIssueInvestigationTasks>>["data"]
 >[number];
 
-export type NonConformanceWorkflow = NonNullable<
-  Awaited<ReturnType<typeof getNonConformanceWorkflow>>["data"]
->;
-
-export type NonConformanceInvestigationTask = NonNullable<
-  Awaited<ReturnType<typeof getNonConformanceInvestigationTasks>>["data"]
+export type IssueActionTask = NonNullable<
+  Awaited<ReturnType<typeof getIssueActionTasks>>["data"]
 >[number];
 
-export type NonConformanceActionTask = NonNullable<
-  Awaited<ReturnType<typeof getNonConformanceActionTasks>>["data"]
+export type IssueApprovalTask = NonNullable<
+  Awaited<ReturnType<typeof getIssueApprovalTasks>>["data"]
 >[number];
 
-export type NonConformanceApprovalTask = NonNullable<
-  Awaited<ReturnType<typeof getNonConformanceApprovalTasks>>["data"]
->[number];
-
-export type NonConformanceReviewer = NonNullable<
-  Awaited<ReturnType<typeof getNonConformanceReviewers>>["data"]
+export type IssueReviewer = NonNullable<
+  Awaited<ReturnType<typeof getIssueReviewers>>["data"]
 >[number];
