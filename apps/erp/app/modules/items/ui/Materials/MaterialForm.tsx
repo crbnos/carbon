@@ -17,7 +17,6 @@ import { useCallback, useEffect, useState } from "react";
 import type { z } from "zod";
 import { TrackingTypeIcon } from "~/components";
 import {
-  Boolean,
   CustomFormFields,
   DefaultMethodType,
   Hidden,
@@ -30,6 +29,7 @@ import {
 import MaterialDimension from "~/components/Form/MaterialDimension";
 import MaterialFinish from "~/components/Form/MaterialFinish";
 import MaterialGrade from "~/components/Form/MaterialGrade";
+import MaterialType from "~/components/Form/MaterialType";
 import Shape from "~/components/Form/Shape";
 import Substance from "~/components/Form/Substance";
 import { useNextItemId, usePermissions, useUser } from "~/hooks";
@@ -72,6 +72,7 @@ const MaterialForm = ({
     grade?: string;
     dimensions?: string;
     finish?: string;
+    materialType?: string;
   }>({});
   const [substanceId, setSubstanceId] = useState<string | undefined>();
   const [formId, setFormId] = useState<string | undefined>();
@@ -91,6 +92,7 @@ const MaterialForm = ({
 
   const getDescription = useCallback(() => {
     const base = [
+      properties.materialType,
       properties.substance,
       properties.grade,
       properties.shape,
@@ -221,7 +223,7 @@ const MaterialForm = ({
                   }}
                 />
                 <MaterialGrade
-                  name="grade"
+                  name="gradeId"
                   label="Grade"
                   substanceId={substanceId}
                   onChange={(value) => {
@@ -242,8 +244,20 @@ const MaterialForm = ({
                     }));
                   }}
                 />
+                <MaterialType
+                  name="materialTypeId"
+                  label="Type"
+                  substanceId={substanceId}
+                  formId={formId}
+                  onChange={(value) => {
+                    setProperties((prev) => ({
+                      ...prev,
+                      materialType: value?.name ?? "",
+                    }));
+                  }}
+                />
                 <MaterialFinish
-                  name="finish"
+                  name="finishId"
                   label="Finish"
                   substanceId={substanceId}
                   onChange={(value) => {
@@ -254,7 +268,7 @@ const MaterialForm = ({
                   }}
                 />
                 <MaterialDimension
-                  name="dimensions"
+                  name="dimensionId"
                   label="Dimensions"
                   formId={formId}
                   onChange={(value) => {
@@ -294,7 +308,7 @@ const MaterialForm = ({
                   }}
                   minValue={0}
                 />
-                <Boolean name="active" label="Active" />
+
                 <CustomFormFields table="material" tags={initialValues.tags} />
               </div>
             </ModalCardBody>

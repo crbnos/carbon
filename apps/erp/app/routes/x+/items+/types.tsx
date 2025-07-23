@@ -5,17 +5,16 @@ import { VStack } from "@carbon/react";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { getMaterialDimensions } from "~/modules/items";
-import { getMetricSettings } from "~/modules/items/items.server";
-import MaterialDimensionsTable from "~/modules/items/ui/MaterialDimensions/MaterialDimensionsTable";
+import { getMaterialTypes } from "~/modules/items";
+import MaterialTypesTable from "~/modules/items/ui/MaterialTypes/MaterialTypesTable";
 
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
-  breadcrumb: "Dimensions",
-  to: path.to.materialDimensions,
+  breadcrumb: "Types",
+  to: path.to.materialTypes,
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -30,39 +29,36 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const isMetric = await getMetricSettings(client, companyId);
-
-  const [materialDimensions] = await Promise.all([
-    getMaterialDimensions(client, companyId, {
+  const [materialTypes] = await Promise.all([
+    getMaterialTypes(client, companyId, {
       limit,
       offset,
       sorts,
       search,
       filters,
-      isMetric,
     }),
   ]);
 
-  if (materialDimensions.error) {
-    console.error(materialDimensions.error);
+  if (materialTypes.error) {
+    console.error(materialTypes.error);
     throw redirect(
       path.to.items,
-      await flash(request, error(null, "Error loading material dimensions"))
+      await flash(request, error(null, "Error loading material types"))
     );
   }
 
   return json({
-    materialDimensions: materialDimensions.data ?? [],
-    count: materialDimensions.count ?? 0,
+    materialTypes: materialTypes.data ?? [],
+    count: materialTypes.count ?? 0,
   });
 }
 
-export default function MaterialDimensionsRoute() {
-  const { materialDimensions, count } = useLoaderData<typeof loader>();
+export default function MaterialTypesRoute() {
+  const { materialTypes, count } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <MaterialDimensionsTable data={materialDimensions} count={count ?? 0} />
+      <MaterialTypesTable data={materialTypes} count={count ?? 0} />
       <Outlet />
     </VStack>
   );

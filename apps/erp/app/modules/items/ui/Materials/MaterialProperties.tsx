@@ -17,13 +17,17 @@ import {
   toast,
 } from "@carbon/react";
 import { Await, useFetcher, useParams } from "@remix-run/react";
-import { Suspense, useCallback, useEffect } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { LuCopy, LuKeySquare, LuLink } from "react-icons/lu";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/components";
 import { Boolean, Tags, UnitOfMeasure } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
+import MaterialDimension from "~/components/Form/MaterialDimension";
+import MaterialFinish from "~/components/Form/MaterialFinish";
+import MaterialGrade from "~/components/Form/MaterialGrade";
+import MaterialType from "~/components/Form/MaterialType";
 import Shape from "~/components/Form/Shape";
 import Substance from "~/components/Form/Substance";
 import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
@@ -35,18 +39,26 @@ import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 import { itemTrackingTypes } from "../../items.models";
-import type { ItemFile, Material, PickMethod, SupplierPart } from "../../types";
+import type {
+  ItemFile,
+  MaterialSummary,
+  PickMethod,
+  SupplierPart,
+} from "../../types";
 import { FileBadge } from "../Item";
 
 const MaterialProperties = () => {
   const { itemId } = useParams();
   if (!itemId) throw new Error("itemId not found");
 
+  const [substanceId, setSubstanceId] = useState<string | undefined>();
+  const [formId, setFormId] = useState<string | undefined>();
+
   const sharedMaterialsData = useRouteData<{ locations: ListItem[] }>(
     path.to.materialRoot
   );
   const routeData = useRouteData<{
-    materialSummary: Material;
+    materialSummary: MaterialSummary;
     files: Promise<ItemFile[]>;
     supplierParts: SupplierPart[];
     pickMethods: PickMethod[];
@@ -84,9 +96,10 @@ const MaterialProperties = () => {
         | "unitOfMeasureCode"
         | "materialFormId"
         | "materialSubstanceId"
-        | "grade"
-        | "dimensions"
-        | "finish",
+        | "gradeId"
+        | "dimensionId"
+        | "finishId"
+        | "materialTypeId",
       value: string | null
     ) => {
       const formData = new FormData();
@@ -140,6 +153,16 @@ const MaterialProperties = () => {
   );
 
   const [suppliers] = useSuppliers();
+
+  // Initialize state with current material data
+  useEffect(() => {
+    if (routeData?.materialSummary) {
+      setSubstanceId(
+        routeData.materialSummary.materialSubstanceId ?? undefined
+      );
+      setFormId(routeData.materialSummary.materialFormId ?? undefined);
+    }
+  }, [routeData?.materialSummary]);
 
   return (
     <VStack
@@ -326,6 +349,7 @@ const MaterialProperties = () => {
           name="materialFormId"
           inline
           onChange={(value) => {
+            setFormId(value?.value as string | undefined);
             onUpdate("materialFormId", value?.value ?? null);
           }}
         />
@@ -346,34 +370,95 @@ const MaterialProperties = () => {
           name="materialSubstanceId"
           inline
           onChange={(value) => {
+            setSubstanceId(value?.value as string | undefined);
             onUpdate("materialSubstanceId", value?.value ?? null);
           }}
         />
       </ValidatedForm>
 
-      {(["grade", "dimensions", "finish"] as const).map((fieldName) => (
+      <ValidatedForm
+        defaultValues={{
+          gradeId: routeData?.materialSummary?.gradeId ?? undefined,
+        }}
+        validator={z.object({
+          gradeId: zfd.text(z.string().optional()),
+        })}
+        className="w-full"
+      >
+        <MaterialGrade
+          label="Grade"
+          name="gradeId"
+          substanceId={substanceId}
+          inline
+          onChange={(value) => {
+            onUpdate("gradeId", value?.id ?? null);
+          }}
+        />
+      </ValidatedForm>
+
+      <ValidatedForm
+        defaultValues={{
+          dimensionId: routeData?.materialSummary?.dimensionId ?? undefined,
+        }}
+        validator={z.object({
+          dimensionId: zfd.text(z.string().optional()),
+        })}
+        className="w-full"
+      >
+        <MaterialDimension
+          label="Dimensions"
+          name="dimensionId"
+          formId={formId}
+          inline
+          onChange={(value) => {
+            onUpdate("dimensionId", value?.id ?? null);
+          }}
+        />
+      </ValidatedForm>
+
+      <ValidatedForm
+        defaultValues={{
+          finishId: routeData?.materialSummary?.finishId ?? undefined,
+        }}
+        validator={z.object({
+          finishId: zfd.text(z.string().optional()),
+        })}
+        className="w-full"
+      >
+        <MaterialFinish
+          label="Finish"
+          name="finishId"
+          substanceId={substanceId}
+          inline
+          onChange={(value) => {
+            onUpdate("finishId", value?.id ?? null);
+          }}
+        />
+      </ValidatedForm>
+
+      {substanceId && formId && (
         <ValidatedForm
-          key={fieldName}
           defaultValues={{
-            [fieldName]: routeData?.materialSummary?.[fieldName] ?? "",
+            materialTypeId:
+              routeData?.materialSummary?.materialTypeId ?? undefined,
           }}
           validator={z.object({
-            [fieldName]: zfd.text(z.string().optional()),
+            materialTypeId: zfd.text(z.string().optional()),
           })}
           className="w-full"
         >
-          <InputControlled
-            name={fieldName}
-            label={fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}
-            value={routeData?.materialSummary?.[fieldName] ?? ""}
-            size="sm"
+          <MaterialType
+            label="Type"
+            name="materialTypeId"
+            substanceId={substanceId}
+            formId={formId}
             inline
-            onBlur={(e) => {
-              onUpdate(fieldName, e.target.value);
+            onChange={(value) => {
+              onUpdate("materialTypeId", value?.id ?? null);
             }}
           />
         </ValidatedForm>
-      ))}
+      )}
 
       <ValidatedForm
         defaultValues={{

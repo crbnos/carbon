@@ -35,6 +35,7 @@ import {
   LuGlassWater,
   LuPaintBucket,
   LuPencil,
+  LuPuzzle,
   LuShapes,
   LuStar,
   LuTag,
@@ -83,8 +84,6 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
   const filters = useFilters();
   const materialSubstanceId = filters.getFilter("materialSubstanceId")?.[0];
   const materialFormId = filters.getFilter("materialFormId")?.[0];
-
-  console.log({ materialSubstanceId, materialFormId });
 
   const columns = useMemo<ColumnDef<Material>[]>(() => {
     const defaultColumns: ColumnDef<Material>[] = [
@@ -204,6 +203,26 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
             transform: (data: { id: string; name: string }[] | null) =>
               data?.map(({ name }) => ({
                 value: name,
+                label: name,
+              })) ?? [],
+          },
+        },
+      },
+      {
+        accessorKey: "materialType",
+        header: "Type",
+        cell: (item) => item.getValue(),
+        meta: {
+          icon: <LuPuzzle />,
+          filter: {
+            type: "fetcher",
+            endpoint: path.to.api.materialTypes(
+              materialSubstanceId,
+              materialFormId
+            ),
+            transform: (data: { id: string; name: string }[] | null) =>
+              data?.map(({ id, name }) => ({
+                value: id,
                 label: name,
               })) ?? [],
           },

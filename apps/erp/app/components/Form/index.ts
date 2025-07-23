@@ -45,6 +45,7 @@ import Employees from "./Employees";
 import Item from "./Item";
 import ItemPostingGroup from "./ItemPostingGroup";
 import Location from "./Location";
+import MaterialType from "./MaterialType";
 import Part from "./Part";
 import PaymentTerm from "./PaymentTerm";
 import Process from "./Process";
@@ -105,6 +106,7 @@ export {
   Item,
   ItemPostingGroup,
   Location,
+  MaterialType,
   MultiSelect,
   Number,
   NumberControlled,

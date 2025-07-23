@@ -3045,6 +3045,117 @@ export default {
         tags: ["groups"],
       },
     },
+    "/qualityActions": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.qualityActions.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityActions.nonConformanceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityActions.actionType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityActions.status",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityActions.dueDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityActions.completedDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityActions.assignee",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityActions.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityActions.sortOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityActions.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityActions.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityActions.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityActions.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityActions.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityActions.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityActions.readableNonConformanceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityActions.nonConformanceName",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityActions.nonConformanceStatus",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityActions.nonConformanceOpenDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityActions.nonConformanceDueDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityActions.nonConformanceCloseDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityActions.nonConformanceItemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityActions.nonConformanceTypeName",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/qualityActions",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["qualityActions"],
+      },
+    },
     "/nonConformanceSalesOrderLine": {
       get: {
         parameters: [
@@ -9754,6 +9865,9 @@ export default {
             $ref: "#/parameters/rowFilter.material.gradeId",
           },
           {
+            $ref: "#/parameters/rowFilter.material.materialTypeId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -9861,6 +9975,9 @@ export default {
             $ref: "#/parameters/rowFilter.material.gradeId",
           },
           {
+            $ref: "#/parameters/rowFilter.material.materialTypeId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -9920,6 +10037,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.material.gradeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.material.materialTypeId",
           },
           {
             $ref: "#/parameters/body.material",
@@ -18094,6 +18214,141 @@ export default {
           },
         },
         tags: ["supplierPayment"],
+      },
+    },
+    "/materialType": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialType.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialType.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialType.materialSubstanceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialType.materialFormId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialType.companyId",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/materialType",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["materialType"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.materialType",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["materialType"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialType.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialType.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialType.materialSubstanceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialType.materialFormId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialType.companyId",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["materialType"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialType.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialType.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialType.materialSubstanceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialType.materialFormId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialType.companyId",
+          },
+          {
+            $ref: "#/parameters/body.materialType",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["materialType"],
       },
     },
     "/purchasePayment": {
@@ -34672,6 +34927,9 @@ export default {
             $ref: "#/parameters/rowFilter.materials.grade",
           },
           {
+            $ref: "#/parameters/rowFilter.materials.materialType",
+          },
+          {
             $ref: "#/parameters/rowFilter.materials.materialSubstanceId",
           },
           {
@@ -41797,6 +42055,69 @@ export default {
           },
         },
         tags: ["salesOrderLocations"],
+      },
+    },
+    "/materialTypes": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialTypes.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialTypes.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialTypes.materialSubstanceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialTypes.materialFormId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialTypes.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialTypes.substanceName",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialTypes.formName",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/materialTypes",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["materialTypes"],
       },
     },
     "/user": {
@@ -59393,6 +59714,127 @@ export default {
       },
       type: "object",
     },
+    qualityActions: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        nonConformanceId: {
+          description:
+            "Note:\nThis is a Foreign Key to `nonConformance.id`.<fk table='nonConformance' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        actionType: {
+          enum: [
+            "Corrective Action",
+            "Preventive Action",
+            "Containment Action",
+            "Verification",
+            "Customer Communication",
+          ],
+          format: 'public."nonConformanceAction"',
+          type: "string",
+        },
+        status: {
+          enum: ["Pending", "In Progress", "Completed", "Skipped"],
+          format: 'public."nonConformanceTaskStatus"',
+          type: "string",
+        },
+        dueDate: {
+          format: "date",
+          type: "string",
+        },
+        completedDate: {
+          format: "date",
+          type: "string",
+        },
+        assignee: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        notes: {
+          format: "json",
+        },
+        sortOrder: {
+          format: "integer",
+          type: "integer",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        readableNonConformanceId: {
+          format: "text",
+          type: "string",
+        },
+        nonConformanceName: {
+          format: "text",
+          type: "string",
+        },
+        nonConformanceStatus: {
+          enum: ["Registered", "In Progress", "Closed"],
+          format: 'public."nonConformanceStatus"',
+          type: "string",
+        },
+        nonConformanceOpenDate: {
+          format: "date",
+          type: "string",
+        },
+        nonConformanceDueDate: {
+          format: "date",
+          type: "string",
+        },
+        nonConformanceCloseDate: {
+          format: "date",
+          type: "string",
+        },
+        nonConformanceItemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        nonConformanceTypeName: {
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     nonConformanceSalesOrderLine: {
       required: [
         "id",
@@ -61412,7 +61854,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -61461,7 +61903,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -62622,6 +63064,12 @@ export default {
         gradeId: {
           description:
             "Note:\nThis is a Foreign Key to `materialGrade.id`.<fk table='materialGrade' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        materialTypeId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialType.id`.<fk table='materialType' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -66504,6 +66952,40 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+      },
+      type: "object",
+    },
+    materialType: {
+      required: ["id", "name", "materialSubstanceId", "materialFormId"],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        materialSubstanceId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialSubstance.id`.<fk table='materialSubstance' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        materialFormId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialForm.id`.<fk table='materialForm' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -74166,6 +74648,10 @@ export default {
           format: "text",
           type: "string",
         },
+        materialType: {
+          format: "text",
+          type: "string",
+        },
         materialSubstanceId: {
           description:
             "Note:\nThis is a Foreign Key to `materialSubstance.id`.<fk table='materialSubstance' column='id'/>",
@@ -77632,6 +78118,46 @@ export default {
           type: "string",
         },
         paymentCountryName: {
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
+    materialTypes: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        materialSubstanceId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialSubstance.id`.<fk table='materialSubstance' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        materialFormId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialForm.id`.<fk table='materialForm' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        substanceName: {
+          format: "text",
+          type: "string",
+        },
+        formName: {
           format: "text",
           type: "string",
         },
@@ -84586,6 +85112,153 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.qualityActions": {
+      name: "qualityActions",
+      description: "qualityActions",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/qualityActions",
+      },
+    },
+    "rowFilter.qualityActions.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityActions.nonConformanceId": {
+      name: "nonConformanceId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityActions.actionType": {
+      name: "actionType",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityActions.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityActions.dueDate": {
+      name: "dueDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityActions.completedDate": {
+      name: "completedDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityActions.assignee": {
+      name: "assignee",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityActions.notes": {
+      name: "notes",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityActions.sortOrder": {
+      name: "sortOrder",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityActions.tags": {
+      name: "tags",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityActions.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityActions.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityActions.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityActions.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityActions.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityActions.readableNonConformanceId": {
+      name: "readableNonConformanceId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityActions.nonConformanceName": {
+      name: "nonConformanceName",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityActions.nonConformanceStatus": {
+      name: "nonConformanceStatus",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityActions.nonConformanceOpenDate": {
+      name: "nonConformanceOpenDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityActions.nonConformanceDueDate": {
+      name: "nonConformanceDueDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityActions.nonConformanceCloseDate": {
+      name: "nonConformanceCloseDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityActions.nonConformanceItemId": {
+      name: "nonConformanceItemId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityActions.nonConformanceTypeName": {
+      name: "nonConformanceTypeName",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.nonConformanceSalesOrderLine": {
       name: "nonConformanceSalesOrderLine",
       description: "nonConformanceSalesOrderLine",
@@ -88206,6 +88879,12 @@ export default {
     },
     "rowFilter.material.gradeId": {
       name: "gradeId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.material.materialTypeId": {
+      name: "materialTypeId",
       required: false,
       in: "query",
       type: "string",
@@ -92532,6 +93211,45 @@ export default {
     },
     "rowFilter.supplierPayment.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "body.materialType": {
+      name: "materialType",
+      description: "materialType",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/materialType",
+      },
+    },
+    "rowFilter.materialType.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialType.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialType.materialSubstanceId": {
+      name: "materialSubstanceId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialType.materialFormId": {
+      name: "materialFormId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialType.companyId": {
+      name: "companyId",
       required: false,
       in: "query",
       type: "string",
@@ -101344,6 +102062,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.materials.materialType": {
+      name: "materialType",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.materials.materialSubstanceId": {
       name: "materialSubstanceId",
       required: false,
@@ -105219,6 +105943,57 @@ export default {
     },
     "rowFilter.salesOrderLocations.paymentCountryName": {
       name: "paymentCountryName",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "body.materialTypes": {
+      name: "materialTypes",
+      description: "materialTypes",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/materialTypes",
+      },
+    },
+    "rowFilter.materialTypes.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialTypes.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialTypes.materialSubstanceId": {
+      name: "materialSubstanceId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialTypes.materialFormId": {
+      name: "materialFormId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialTypes.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialTypes.substanceName": {
+      name: "substanceName",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialTypes.formName": {
+      name: "formName",
       required: false,
       in: "query",
       type: "string",

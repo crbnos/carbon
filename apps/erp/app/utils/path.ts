@@ -71,6 +71,8 @@ export const path = {
       materialForms: `${api}/items/forms`,
       materialGrades: (substanceId: string) =>
         generatePath(`${api}/items/grades/${substanceId}`),
+      materialTypes: (substanceId: string, formId: string) =>
+        generatePath(`${api}/items/types/${substanceId}/${formId}`),
       materialSubstances: `${api}/items/substances`,
       messagingNotify: `${api}/messaging/notify`,
       mrp: (locationId?: string) =>
@@ -518,6 +520,8 @@ export const path = {
       generatePath(`${x}/items/forms/delete/${id}`),
     deleteMaterialGrade: (id: string) =>
       generatePath(`${x}/items/grades/delete/${id}`),
+    deleteMaterialType: (id: string) =>
+      generatePath(`${x}/items/types/delete/${id}`),
     deleteMaterialSubstance: (id: string) =>
       generatePath(`${x}/items/substances/delete/${id}`),
     deleteMethodMaterial: (id: string) =>
@@ -753,6 +757,8 @@ export const path = {
     materialForms: `${x}/items/forms`,
     materialGrade: (id: string) => generatePath(`${x}/items/grades/${id}`),
     materialGrades: `${x}/items/grades`,
+    materialType: (id: string) => generatePath(`${x}/items/types/${id}`),
+    materialTypes: `${x}/items/types`,
     materialInventory: (id: string) =>
       generatePath(`${x}/material/${id}/view/inventory`),
     materialInventoryLocation: (id: string, locationId: string) =>
@@ -869,6 +875,7 @@ export const path = {
     newMaterialSubstance: `${x}/items/substances/new`,
     newMaterialSupplier: (id: string) =>
       generatePath(`${x}/material/${id}/view/purchasing/new`),
+    newMaterialType: `${x}/items/types/new`,
     newPartSupplier: (id: string) =>
       generatePath(`${x}/part/${id}/view/purchasing/new`),
     newNoQuoteReason: `${x}/sales/no-quote-reasons/new`,

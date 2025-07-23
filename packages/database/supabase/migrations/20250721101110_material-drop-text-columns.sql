@@ -9,6 +9,17 @@ ALTER TABLE "material"
   DROP COLUMN "finish",
   DROP COLUMN "grade";
 
+-- Add materialTypeId column
+ALTER TABLE "material" 
+  ADD COLUMN "materialTypeId" TEXT;
+
+-- Add foreign key constraint for materialTypeId
+ALTER TABLE "material"
+  ADD CONSTRAINT "material_materialTypeId_fkey" FOREIGN KEY ("materialTypeId") REFERENCES "materialType"("id");
+
+-- Create index for better performance
+CREATE INDEX "material_materialTypeId_idx" ON "material"("materialTypeId");
+
 
 CREATE OR REPLACE VIEW "materials" WITH (SECURITY_INVOKER=true) AS 
 WITH latest_items AS (
@@ -70,6 +81,7 @@ SELECT
   md."name" AS "dimensions",
   mfin."name" AS "finish",
   mg."name" AS "grade",
+  mt."name" AS "materialType",
   m."materialSubstanceId",
   m."materialFormId",
   m."customFields",
@@ -95,7 +107,8 @@ FROM "material" m
   LEFT JOIN "materialSubstance" ms ON ms."id" = m."materialSubstanceId"
   LEFT JOIN "materialDimension" md ON m."dimensionId" = md."id"
   LEFT JOIN "materialFinish" mfin ON m."finishId" = mfin."id"
-  LEFT JOIN "materialGrade" mg ON m."gradeId" = mg."id";
+  LEFT JOIN "materialGrade" mg ON m."gradeId" = mg."id"
+  LEFT JOIN "materialType" mt ON m."materialTypeId" = mt."id";
 
 
 -- Update get_material_details function to use new ID-based relationships
@@ -129,8 +142,13 @@ RETURNS TABLE (
     "finish" TEXT,
     "grade" TEXT,
     "dimensions" TEXT,
+    "materialType" TEXT,
     "materialSubstanceId" TEXT,
     "materialFormId" TEXT,
+    "materialTypeId" TEXT,
+    "dimensionId" TEXT,
+    "gradeId" TEXT,
+    "finishId" TEXT,
     "customFields" JSONB,
     "tags" TEXT[],
     "createdBy" TEXT,
@@ -191,11 +209,16 @@ BEGIN
     ir."revisions",
     mf."name" AS "materialForm",
     ms."name" AS "materialSubstance",
-    md."name" AS "finish",
-    mfin."name" AS "grade",
-    mgr."name" AS "dimensions",
+    mfin."name" AS "finish",
+    mg."name" AS "grade", 
+    md."name" AS "dimensions",
+    mt."name" AS "materialType",
     m."materialSubstanceId",
     m."materialFormId",
+    m."materialTypeId",
+    m."dimensionId",
+    m."gradeId",
+    m."finishId",
     m."customFields",
     m."tags",
     i."createdBy",
@@ -218,7 +241,8 @@ BEGIN
     LEFT JOIN "materialSubstance" ms ON ms."id" = m."materialSubstanceId"
     LEFT JOIN "materialDimension" md ON m."dimensionId" = md."id"
     LEFT JOIN "materialFinish" mfin ON m."finishId" = mfin."id"
-    LEFT JOIN "materialGrade" mgr ON m."gradeId" = mgr."id"
+    LEFT JOIN "materialGrade" mg ON m."gradeId" = mg."id"
+    LEFT JOIN "materialType" mt ON m."materialTypeId" = mt."id"
     WHERE i."id" = item_id;
 END;
 $$ LANGUAGE plpgsql STABLE;

@@ -1,4 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import type { Database } from "@carbon/database";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -62,11 +63,12 @@ export async function action({ request }: ActionFunctionArgs) {
           })
           .in("id", items as string[])
       );
-    case "grade":
-    case "dimensions":
-    case "finish":
+    case "gradeId":
+    case "dimensionId":
+    case "finishId":
     case "materialFormId":
     case "materialSubstanceId":
+    case "materialTypeId":
       const materialItems = await client
         .from("item")
         .select("readableId")
@@ -78,14 +80,29 @@ export async function action({ request }: ActionFunctionArgs) {
         return json({ error: { message: "No materials found" }, data: null });
       }
 
+      let updateData: Database["public"]["Tables"]["material"]["Update"] = {
+        [field]: value || null,
+        updatedBy: userId,
+        updatedAt: new Date().toISOString(),
+      };
+
+      // If substance changes, reset finishId, gradeId, and materialTypeId
+      if (field === "materialSubstanceId") {
+        updateData.finishId = null;
+        updateData.gradeId = null;
+        updateData.materialTypeId = null;
+      }
+
+      // If form changes, reset dimensionId and materialTypeId
+      if (field === "materialFormId") {
+        updateData.dimensionId = null;
+        updateData.materialTypeId = null;
+      }
+
       return json(
         await client
           .from("material")
-          .update({
-            [field]: value,
-            updatedBy: userId,
-            updatedAt: new Date().toISOString(),
-          })
+          .update(updateData)
           .in("id", materialIds as string[])
       );
     case "active":

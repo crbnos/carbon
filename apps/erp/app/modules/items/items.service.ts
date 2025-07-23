@@ -33,6 +33,7 @@ import type {
   materialFormValidator,
   materialGradeValidator,
   materialSubstanceValidator,
+  materialTypeValidator,
   materialValidator,
   methodMaterialValidator,
   methodOperationValidator,
@@ -2536,9 +2537,10 @@ export async function upsertMaterial(
       id: material.id,
       materialFormId: material.materialFormId,
       materialSubstanceId: material.materialSubstanceId,
-      finish: material.finish,
-      grade: material.grade,
-      dimensions: material.dimensions,
+      finishId: material.finishId,
+      gradeId: material.gradeId,
+      dimensionId: material.dimensionId,
+      materialTypeId: material.materialTypeId,
       companyId: material.companyId,
       createdBy: material.createdBy,
       customFields: material.customFields,
@@ -2579,9 +2581,10 @@ export async function upsertMaterial(
   const materialUpdate = {
     materialFormId: material.materialFormId,
     materialSubstanceId: material.materialSubstanceId,
-    finish: material.finish,
-    grade: material.grade,
-    dimensions: material.dimensions,
+    finishId: material.finishId,
+    gradeId: material.gradeId,
+    dimensionId: material.dimensionId,
+    materialTypeId: material.materialTypeId,
     customFields: material.customFields,
   };
 
@@ -2720,6 +2723,84 @@ export async function upsertMaterialGrade(
   return client
     .from("materialGrade")
     .insert([materialGrade])
+    .select("*")
+    .single();
+}
+
+export async function deleteMaterialType(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("materialType").delete().eq("id", id);
+}
+
+export async function getMaterialTypes(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  materialFormId: string,
+  materialSubstanceId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("materialTypes")
+    .select("*", { count: "exact" })
+    .eq("materialFormId", materialFormId)
+    .eq("materialSubstanceId", materialSubstanceId)
+    .or(`companyId.eq.${companyId},companyId.is.null`);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  query = setGenericQueryFilters(query, args ?? {});
+  return query;
+}
+
+export async function getMaterialType(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("materialType").select("*").eq("id", id).single();
+}
+
+export async function getMaterialTypeList(
+  client: SupabaseClient<Database>,
+  materialSubstanceId: string,
+  materialFormId: string,
+  companyId: string
+) {
+  return client
+    .from("materialType")
+    .select("*")
+    .eq("materialSubstanceId", materialSubstanceId)
+    .eq("materialFormId", materialFormId)
+    .or(`companyId.eq.${companyId},companyId.is.null`);
+}
+
+export async function upsertMaterialType(
+  client: SupabaseClient<Database>,
+  materialType:
+    | (Omit<z.infer<typeof materialTypeValidator>, "id"> & {
+        companyId: string;
+      })
+    | (Omit<z.infer<typeof materialTypeValidator>, "id"> & {
+        id: string;
+      })
+) {
+  if ("id" in materialType) {
+    return (
+      client
+        .from("materialType")
+        .update(sanitize(materialType))
+        // @ts-ignore
+        .eq("id", materialType.id)
+        .select("id")
+        .single()
+    );
+  }
+  return client
+    .from("materialType")
+    .insert([materialType])
     .select("*")
     .single();
 }

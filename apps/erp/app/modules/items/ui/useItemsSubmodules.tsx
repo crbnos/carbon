@@ -7,6 +7,7 @@ import {
   LuGlassWater,
   LuHammer,
   LuPizza,
+  LuPuzzle,
   LuRuler,
   LuShapes,
 } from "react-icons/lu";
@@ -96,6 +97,12 @@ const itemsRoutes: AuthenticatedRouteGroup[] = [
         name: "Substances",
         to: path.to.materialSubstances,
         icon: <LuGlassWater />,
+        role: "employee",
+      },
+      {
+        name: "Types",
+        to: path.to.materialTypes,
+        icon: <LuPuzzle />,
         role: "employee",
       },
       // {

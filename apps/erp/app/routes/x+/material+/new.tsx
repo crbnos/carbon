@@ -31,6 +31,8 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
+  console.log(validation.data);
+
   const createMaterial = await upsertMaterial(client, {
     ...validation.data,
     companyId,

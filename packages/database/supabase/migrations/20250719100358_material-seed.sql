@@ -224,6 +224,74 @@ INSERT INTO "materialGrade" ("id", "materialSubstanceId", "name", "companyId") V
   ('500', 'monel', '500', null);
 
 
+CREATE TABLE "materialType" (
+  "id" TEXT NOT NULL PRIMARY KEY DEFAULT xid(),
+  "name" TEXT NOT NULL,
+  "materialSubstanceId" TEXT NOT NULL,
+  "materialFormId" TEXT NOT NULL,
+  "companyId" TEXT,
+
+  CONSTRAINT "materialType_materialSubstanceId_fkey" FOREIGN KEY ("materialSubstanceId") REFERENCES "materialSubstance"("id"),
+  CONSTRAINT "materialType_materialFormId_fkey" FOREIGN KEY ("materialFormId") REFERENCES "materialForm"("id"),
+  CONSTRAINT "materialType_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id"),
+  CONSTRAINT "materialType_name_companyId_unique" UNIQUE ("materialSubstanceId", "materialFormId", "name", "companyId")
+);
+
+CREATE OR REPLACE VIEW "materialTypes" WITH(SECURITY_INVOKER=true) AS
+  SELECT
+    "materialType"."id",
+    "materialType"."name",
+    "materialType"."materialSubstanceId",
+    "materialType"."materialFormId", 
+    "materialType"."companyId",
+    "materialSubstance"."name" AS "substanceName",
+    "materialForm"."name" AS "formName"
+  FROM "materialType"
+  LEFT JOIN "materialSubstance" ON "materialType"."materialSubstanceId" = "materialSubstance"."id"
+  LEFT JOIN "materialForm" ON "materialType"."materialFormId" = "materialForm"."id";
+
+INSERT INTO "materialType" ("id", "name", "materialSubstanceId", "materialFormId", "companyId") VALUES
+  -- Steel Plate types
+  ('hot-rolled-steel-plate', 'Hot Rolled', 'steel', 'plate', null),
+  ('cold-rolled-steel-plate', 'Cold Rolled', 'steel', 'plate', null),
+  ('pickled-oiled-steel-plate', 'Pickled & Oiled', 'steel', 'plate', null),
+  ('normalized-steel-plate', 'Normalized', 'steel', 'plate', null),
+  
+  -- Aluminum Round Tube types
+  ('seamless-aluminum-roundtube', 'Seamless', 'aluminum', 'roundtube', null),
+  ('structural-aluminum-roundtube', 'Structural', 'aluminum', 'roundtube', null),
+  ('drawn-aluminum-roundtube', 'Drawn', 'aluminum', 'roundtube', null),
+  
+  -- Steel Round Tube types
+  ('seamless-steel-roundtube', 'Seamless', 'steel', 'roundtube', null),
+  ('welded-steel-roundtube', 'Welded', 'steel', 'roundtube', null),
+  ('dom-steel-roundtube', 'DOM (Drawn Over Mandrel)', 'steel', 'roundtube', null),
+  
+  -- Stainless Steel types
+  ('annealed-stainless-plate', 'Annealed', 'stainless', 'plate', null),
+  ('pickled-stainless-plate', 'Pickled', 'stainless', 'plate', null),
+  ('solution-annealed-stainless-plate', 'Solution Annealed', 'stainless', 'plate', null),
+  
+  -- Aluminum Bar types
+  ('extruded-aluminum-roundbar', 'Extruded', 'aluminum', 'roundbar', null),
+  ('cold-finished-aluminum-roundbar', 'Cold Finished', 'aluminum', 'roundbar', null),
+  ('heat-treated-aluminum-roundbar', 'Heat Treated', 'aluminum', 'roundbar', null),
+  
+  -- Steel Bar types
+  ('hot-rolled-steel-roundbar', 'Hot Rolled', 'steel', 'roundbar', null),
+  ('cold-finished-steel-roundbar', 'Cold Finished', 'steel', 'roundbar', null),
+  ('ground-steel-roundbar', 'Ground', 'steel', 'roundbar', null),
+  
+  -- Sheet types
+  ('hot-rolled-steel-sheet', 'Hot Rolled', 'steel', 'sheet', null),
+  ('cold-rolled-steel-sheet', 'Cold Rolled', 'steel', 'sheet', null),
+  ('galvanized-steel-sheet', 'Galvanized', 'steel', 'sheet', null),
+  
+  -- Aluminum Sheet types
+  ('rolled-aluminum-sheet', 'Rolled', 'aluminum', 'sheet', null),
+  ('treadplate-aluminum-sheet', 'Tread Plate', 'aluminum', 'sheet', null);
+
+
 
 CREATE TABLE "materialDimension" (
   "id" TEXT NOT NULL PRIMARY KEY DEFAULT xid(),

@@ -19,6 +19,7 @@ import type {
   getMaterialForms,
   getMaterialGrades,
   getMaterialSubstances,
+  getMaterialTypes,
   getMaterials,
   getMethodMaterials,
   getMethodOperations,
@@ -119,6 +120,10 @@ export type MaterialFinish = NonNullable<
 
 export type MaterialGrade = NonNullable<
   Awaited<ReturnType<typeof getMaterialGrades>>["data"]
+>[number];
+
+export type MaterialType = NonNullable<
+  Awaited<ReturnType<typeof getMaterialTypes>>["data"]
 >[number];
 
 export type MaterialSummary = NonNullable<

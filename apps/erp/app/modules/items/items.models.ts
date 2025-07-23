@@ -178,9 +178,10 @@ export const materialValidator = itemValidator.merge(
     id: z.string().min(1, { message: "Material ID is required" }).max(255),
     materialSubstanceId: zfd.text(z.string().optional()),
     materialFormId: zfd.text(z.string().optional()),
-    finish: zfd.text(z.string().optional()),
-    grade: zfd.text(z.string().optional()),
-    dimensions: zfd.text(z.string().optional()),
+    materialTypeId: zfd.text(z.string().optional()),
+    finishId: zfd.text(z.string().optional()),
+    gradeId: zfd.text(z.string().optional()),
+    dimensionId: zfd.text(z.string().optional()),
   })
 );
 
@@ -188,9 +189,10 @@ export const materialValidatorWithGeneratedIds = z.object({
   id: z.string().min(1, { message: "" }),
   materialSubstanceId: z.string().min(1, { message: "Substance is required" }),
   materialFormId: z.string().min(1, { message: "Shape is required" }),
-  finish: zfd.text(z.string().optional()),
-  grade: zfd.text(z.string().optional()),
-  dimensions: zfd.text(z.string().optional()),
+  materialTypeId: zfd.text(z.string().optional()),
+  finishId: zfd.text(z.string().optional()),
+  gradeId: zfd.text(z.string().optional()),
+  dimensionId: zfd.text(z.string().optional()),
 });
 
 export const methodMaterialValidator = z
@@ -518,6 +520,13 @@ export const materialGradeValidator = z.object({
 
 export const materialSubstanceValidator = z.object({
   id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" }).max(255),
+});
+
+export const materialTypeValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  materialSubstanceId: z.string().min(1, { message: "Substance is required" }),
+  materialFormId: z.string().min(1, { message: "Shape is required" }),
   name: z.string().min(1, { message: "Name is required" }).max(255),
 });
 
