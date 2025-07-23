@@ -52,6 +52,8 @@ import type {
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/quote+/$quoteId.new";
+import { useItems } from "~/stores";
+import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 import { quoteLineStatusType, quoteLineValidator } from "../../sales.models";
 import DeleteQuoteLine from "./DeleteQuoteLine";
@@ -76,6 +78,7 @@ const QuoteLineForm = ({
 
   if (!quoteId) throw new Error("quoteId not found");
 
+  const [items] = useItems();
   const routeData = useRouteData<{
     quote: Quotation;
   }>(path.to.quote(quoteId));
@@ -91,7 +94,6 @@ const QuoteLineForm = ({
     customerPartRevision: string;
     description: string;
     itemId: string;
-    itemReadableId: string;
     methodType: string;
     modelUploadId: string | null;
     uom: string;
@@ -99,7 +101,6 @@ const QuoteLineForm = ({
     customerPartId: initialValues.customerPartId ?? "",
     customerPartRevision: initialValues.customerPartRevision ?? "",
     itemId: initialValues.itemId ?? "",
-    itemReadableId: initialValues.itemReadableId ?? "",
     description: initialValues.description ?? "",
     methodType: initialValues.methodType ?? "",
     uom: initialValues.unitOfMeasureCode ?? "",
@@ -193,7 +194,6 @@ const QuoteLineForm = ({
     const newItemData = {
       ...itemData,
       itemId,
-      itemReadableId: item.data?.readableIdWithRevision ?? "",
       description: item.data?.name ?? "",
       methodType: item.data?.defaultMethodType ?? "",
       uom: item.data?.unitOfMeasureCode ?? "",
@@ -263,7 +263,8 @@ const QuoteLineForm = ({
                 <ModalCardHeader>
                   <ModalCardTitle>
                     {isEditing
-                      ? itemData?.itemReadableId ?? "Quote Line"
+                      ? getItemReadableId(items, itemData?.itemId) ??
+                        "Quote Line"
                       : "New Quote Line"}
                   </ModalCardTitle>
                   <ModalCardDescription>
@@ -308,10 +309,6 @@ const QuoteLineForm = ({
               <ModalCardBody>
                 <Hidden name="id" />
                 <Hidden name="quoteId" />
-                <Hidden
-                  name="itemReadableId"
-                  value={itemData?.itemReadableId}
-                />
                 <Hidden name="unitOfMeasureCode" value={itemData?.uom} />
                 <Hidden
                   name="modelUploadId"

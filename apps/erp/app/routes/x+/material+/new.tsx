@@ -31,10 +31,9 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  console.log(validation.data);
-
   const createMaterial = await upsertMaterial(client, {
     ...validation.data,
+    active: true,
     companyId,
     customFields: setCustomFields(formData),
     createdBy: userId,

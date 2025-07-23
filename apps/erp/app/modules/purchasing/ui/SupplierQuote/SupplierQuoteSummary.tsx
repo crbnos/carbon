@@ -24,6 +24,8 @@ import { LuChevronRight, LuImage } from "react-icons/lu";
 import { SupplierAvatar } from "~/components";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { useCurrencyFormatter, useRouteData, useUser } from "~/hooks";
+import { useItems } from "~/stores";
+import { getItemReadableId } from "~/utils/items";
 import { getPrivateUrl, path } from "~/utils/path";
 import type {
   PurchaseOrderLine,
@@ -45,6 +47,7 @@ const LineItems = ({
   const { id } = useParams();
   if (!id) throw new Error("Could not find quote id");
 
+  const [items] = useItems();
   const routeData = useRouteData<{
     quote: SupplierQuote;
     lines: SupplierQuoteLine[];
@@ -87,6 +90,7 @@ const LineItems = ({
       {routeData?.lines?.map((line) => {
         const prices = pricingByLine[line.id!];
 
+        const itemReadableId = getItemReadableId(items, line.itemId);
         if (!line || !prices || !line.id) {
           return null;
         }
@@ -102,7 +106,7 @@ const LineItems = ({
             <HStack spacing={4} className="items-start">
               {line.thumbnailPath ? (
                 <img
-                  alt={line.itemReadableId!}
+                  alt={itemReadableId!}
                   className="w-24 h-24 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
                   src={getPrivateUrl(line.thumbnailPath)}
                 />
@@ -119,9 +123,7 @@ const LineItems = ({
                 >
                   <div className="flex items-center gap-x-4 justify-between flex-grow">
                     <HStack spacing={2} className="min-w-0 flex-shrink">
-                      <Heading className="truncate">
-                        {line.itemReadableId}
-                      </Heading>
+                      <Heading className="truncate">{itemReadableId}</Heading>
                       <Button
                         asChild
                         variant="link"

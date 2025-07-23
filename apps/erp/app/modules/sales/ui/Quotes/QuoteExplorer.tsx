@@ -80,7 +80,6 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
     description: "",
     estimatorId: userId,
     itemId: "",
-    itemReadableId: "",
     locationId: quoteData?.quote?.locationId ?? defaults.locationId ?? "",
     methodType: "Make" as const,
     status: "Not Started" as const,

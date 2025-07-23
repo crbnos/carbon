@@ -20,7 +20,9 @@ import {
   OpportunityLineDocuments,
   OpportunityLineNotes,
 } from "~/modules/sales/ui/Opportunity";
+import { useItems } from "~/stores";
 import { getCustomFields, setCustomFields } from "~/utils/form";
+import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -113,7 +115,6 @@ export default function EditSalesInvoiceLineRoute() {
     invoiceLineType: (salesInvoiceLine?.invoiceLineType ?? "Part") as "Part",
     methodType: (salesInvoiceLine?.methodType ?? "Pick") as "Pick",
     itemId: salesInvoiceLine?.itemId ?? "",
-    itemReadableId: salesInvoiceLine?.itemReadableId ?? "",
     accountNumber: salesInvoiceLine?.accountNumber ?? "",
     assetId: salesInvoiceLine?.assetId ?? "",
     description: salesInvoiceLine?.description ?? "",
@@ -127,6 +128,8 @@ export default function EditSalesInvoiceLineRoute() {
     ...getCustomFields(salesInvoiceLine?.customFields),
   };
 
+  const [items] = useItems();
+
   return (
     <Fragment key={salesInvoiceLine?.id}>
       <SalesInvoiceLineForm
@@ -137,7 +140,7 @@ export default function EditSalesInvoiceLineRoute() {
         id={salesInvoiceLine?.id ?? ""}
         table="salesInvoiceLine"
         title="Notes"
-        subTitle={salesInvoiceLine?.itemReadableId ?? ""}
+        subTitle={getItemReadableId(items, salesInvoiceLine?.itemId) ?? ""}
         internalNotes={salesInvoiceLine?.internalNotes as JSONContent}
       />
 

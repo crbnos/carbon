@@ -259,7 +259,6 @@ export async function action({ request }: ActionFunctionArgs) {
                 {
                   purchaseOrderId: purchaseOrder.id,
                   itemId: item.id,
-                  itemReadableId: order.itemReadableId,
                   description: order.description,
                   purchaseOrderLineType: "Part",
                   purchaseQuantity: order.quantity,
@@ -295,7 +294,6 @@ export async function action({ request }: ActionFunctionArgs) {
                     id: order.existingLineId,
                     purchaseOrderId: order.existingId,
                     itemId: item.id,
-                    itemReadableId: order.itemReadableId,
                     description: order.description,
                     purchaseOrderLineType: "Part",
                     purchaseQuantity: order.quantity,
@@ -329,7 +327,6 @@ export async function action({ request }: ActionFunctionArgs) {
                   {
                     purchaseOrderId: order.existingId,
                     itemId: item.id,
-                    itemReadableId: order.itemReadableId,
                     description: order.description,
                     purchaseOrderLineType: "Part",
                     purchaseQuantity: order.quantity,

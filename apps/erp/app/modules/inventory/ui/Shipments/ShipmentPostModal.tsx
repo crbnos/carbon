@@ -22,6 +22,8 @@ import { useFetcher, useNavigation, useParams } from "@remix-run/react";
 import { useEffect, useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { useUser } from "~/hooks";
+import { useItems } from "~/stores";
+import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 import type { ShipmentLine } from "../..";
 import { getShipmentTracking } from "../..";
@@ -30,6 +32,7 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
   const { shipmentId } = useParams();
   if (!shipmentId) throw new Error("shipmentId not found");
 
+  const [items] = useItems();
   const routeData = useRouteData<{
     shipmentLines: ShipmentLine[];
   }>(path.to.shipment(shipmentId));
@@ -90,7 +93,7 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
 
         if (trackedEntity?.status !== "Available") {
           errors.push({
-            itemReadableId: line.itemReadableId,
+            itemReadableId: getItemReadableId(items, line.itemId) ?? null,
             shippedQuantity: line.shippedQuantity ?? 0,
             shippedQuantityError: "Tracked entity is not available",
           });
@@ -113,7 +116,7 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
 
         if (quantityAvailable !== line.shippedQuantity) {
           errors.push({
-            itemReadableId: line.itemReadableId,
+            itemReadableId: getItemReadableId(items, line.itemId) ?? null,
             shippedQuantity: line.shippedQuantity ?? 0,
             shippedQuantityError: "Serial numbers are missing or unavailable",
           });

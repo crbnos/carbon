@@ -133,7 +133,6 @@ export default function SupplierQuoteLine() {
     supplierPartRevision: line.supplierPartRevision ?? "",
     description: line.description ?? "",
     itemId: line.itemId ?? "",
-    itemReadableId: line.itemReadableId ?? "",
     quantity: line.quantity ?? [1],
     inventoryUnitOfMeasureCode: line.inventoryUnitOfMeasureCode ?? "",
     purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode ?? "",

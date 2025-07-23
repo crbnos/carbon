@@ -154,7 +154,6 @@ export default function JobMakeMethodRoute() {
         <Await resolve={productionData}>
           {(resolvedProductionData) => (
             <JobEstimatesVsActuals
-              // @ts-expect-error
               materials={materials ?? []}
               // @ts-expect-error
               operations={operations}

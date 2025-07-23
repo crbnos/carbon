@@ -260,7 +260,6 @@ serve(async (req: Request) => {
             itemLedgerInserts.push({
               postingDate: today,
               itemId: shipmentLine.itemId,
-              itemReadableId: shipmentLine.itemReadableId ?? "",
               quantity: -shippedQuantity,
               locationId: shipmentLine.locationId ?? locationId,
               shelfId: shipmentLine.shelfId,
@@ -277,7 +276,6 @@ serve(async (req: Request) => {
             itemLedgerInserts.push({
               postingDate: today,
               itemId: shipmentLine.itemId,
-              itemReadableId: shipmentLine.itemReadableId ?? "",
               quantity: -shippedQuantity,
               locationId: shipmentLine.locationId ?? locationId,
               shelfId: shipmentLine.shelfId,
@@ -308,7 +306,6 @@ serve(async (req: Request) => {
               itemLedgerInserts.push({
                 postingDate: today,
                 itemId: shipmentLine.itemId,
-                itemReadableId: shipmentLine.itemReadableId ?? "",
                 quantity: -1,
                 locationId: shipmentLine.locationId ?? locationId,
                 shelfId: shipmentLine.shelfId,
@@ -657,14 +654,6 @@ serve(async (req: Request) => {
                       "Shipment Line"
                     ]
                 )?.itemId!,
-                itemReadableId:
-                  shipmentLines.data.find(
-                    (sl) =>
-                      sl.id ===
-                      (splitInfo.attributes as TrackedEntityAttributes)?.[
-                        "Shipment Line"
-                      ]
-                  )?.itemReadableId ?? "",
                 quantity: -splitInfo.originalQuantity,
                 locationId: locationId,
                 shelfId: shipmentLines.data.find(
@@ -691,14 +680,6 @@ serve(async (req: Request) => {
                       "Shipment Line"
                     ]
                 )?.itemId!,
-                itemReadableId:
-                  shipmentLines.data.find(
-                    (sl) =>
-                      sl.id ===
-                      (splitInfo.attributes as TrackedEntityAttributes)?.[
-                        "Shipment Line"
-                      ]
-                  )?.itemReadableId ?? "",
                 quantity: splitInfo.shippedQuantity,
                 locationId: locationId,
                 shelfId: shipmentLines.data.find(
@@ -725,14 +706,6 @@ serve(async (req: Request) => {
                       "Shipment Line"
                     ]
                 )?.itemId!,
-                itemReadableId:
-                  shipmentLines.data.find(
-                    (sl) =>
-                      sl.id ===
-                      (splitInfo.attributes as TrackedEntityAttributes)?.[
-                        "Shipment Line"
-                      ]
-                  )?.itemReadableId ?? "",
                 quantity: splitInfo.remainingQuantity,
                 locationId: locationId,
                 shelfId: shipmentLines.data.find(

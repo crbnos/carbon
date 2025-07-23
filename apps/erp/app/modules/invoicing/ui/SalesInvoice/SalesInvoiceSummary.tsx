@@ -27,6 +27,8 @@ import {
   useRouteData,
   useUser,
 } from "~/hooks";
+import { useItems } from "~/stores";
+import { getItemReadableId } from "~/utils/items";
 import { getPrivateUrl, path } from "~/utils/path";
 import type {
   SalesInvoice,
@@ -52,6 +54,7 @@ const LineItems = ({
   const { invoiceId } = useParams();
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
+  const [items] = useItems();
   const percentFormatter = usePercentFormatter();
   const [openItems, setOpenItems] = useState<string[]>([]);
   const unitOfMeasures = useUnitOfMeasure();
@@ -67,6 +70,7 @@ const LineItems = ({
       {salesInvoiceLines.map((line) => {
         if (!line.id) return null;
 
+        const itemReadableId = getItemReadableId(items, line.itemId);
         const lineSubtotal = (line.unitPrice ?? 0) * (line.quantity ?? 0);
         const customerSubtotal =
           (line.convertedUnitPrice ?? 0) * (line.quantity ?? 0);
@@ -100,7 +104,7 @@ const LineItems = ({
             <HStack spacing={4} className="items-start">
               {line.thumbnailPath ? (
                 <img
-                  alt={line.itemReadableId!}
+                  alt={itemReadableId ?? ""}
                   className="w-24 h-24 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
                   src={getPrivateUrl(line.thumbnailPath)}
                 />
@@ -117,9 +121,7 @@ const LineItems = ({
                 >
                   <div className="flex items-center gap-x-4 justify-between flex-grow min-w-0">
                     <HStack spacing={2} className="min-w-0 flex-shrink">
-                      <Heading className="truncate">
-                        {line.itemReadableId}
-                      </Heading>
+                      <Heading className="truncate">{itemReadableId}</Heading>
 
                       <Button
                         asChild

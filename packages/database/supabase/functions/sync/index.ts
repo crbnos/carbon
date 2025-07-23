@@ -313,9 +313,6 @@ serve(async (req: Request) => {
                 materialMakeMethodId,
                 methodType: defaultMethodType,
                 order: index,
-                itemReadableId:
-                  existingItemsByItemId.get(itemId)?.readableIdWithRevision ??
-                  partId,
                 itemType: existingItemsByItemId.get(itemId)?.type ?? "Part",
                 unitOfMeasureCode:
                   existingItemsByItemId.get(itemId)?.unitOfMeasureCode ?? "EA",

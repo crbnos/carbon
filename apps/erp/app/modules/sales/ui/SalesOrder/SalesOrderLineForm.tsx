@@ -45,6 +45,8 @@ import { usePermissions, useRouteData, useUser } from "~/hooks";
 
 import { useCarbon } from "@carbon/auth";
 import { methodType } from "~/modules/shared";
+import { useItems } from "~/stores";
+import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 import { salesOrderLineValidator } from "../../sales.models";
 import type {
@@ -86,7 +88,6 @@ const SalesOrderLineForm = ({
   const [locationId, setLocationId] = useState(initialValues.locationId ?? "");
   const [itemData, setItemData] = useState<{
     itemId: string;
-    itemReadableId?: string;
     methodType: string;
     description: string;
     unitPrice: number;
@@ -95,7 +96,6 @@ const SalesOrderLineForm = ({
     modelUploadId: string | null;
   }>({
     itemId: initialValues.itemId ?? "",
-    itemReadableId: initialValues.itemReadableId ?? "",
     description: initialValues.description ?? "",
     methodType: initialValues.methodType ?? "",
     unitPrice: initialValues.unitPrice ?? 0,
@@ -111,7 +111,6 @@ const SalesOrderLineForm = ({
     setLineType(t);
     setItemData({
       itemId: "",
-      itemReadableId: "",
       description: "",
       unitPrice: 0,
       methodType: "",
@@ -150,7 +149,6 @@ const SalesOrderLineForm = ({
 
     setItemData({
       itemId,
-      itemReadableId: item.data?.readableIdWithRevision ?? "",
       description: item.data?.name ?? "",
       methodType: item.data?.defaultMethodType ?? "",
       unitPrice: price.data?.unitSalePrice ?? 0,
@@ -182,6 +180,7 @@ const SalesOrderLineForm = ({
   };
 
   const deleteDisclosure = useDisclosure();
+  const [items] = useItems();
 
   return (
     <>
@@ -206,13 +205,11 @@ const SalesOrderLineForm = ({
                 <ModalCardHeader>
                   <ModalCardTitle
                     className={cn(
-                      isEditing &&
-                        !itemData?.itemReadableId &&
-                        "text-muted-foreground"
+                      isEditing && !itemData?.itemId && "text-muted-foreground"
                     )}
                   >
                     {isEditing
-                      ? itemData?.itemReadableId || "..."
+                      ? getItemReadableId(items, itemData?.itemId) || "..."
                       : "New Sales Order Line"}
                   </ModalCardTitle>
                   <ModalCardDescription>
@@ -247,10 +244,7 @@ const SalesOrderLineForm = ({
               <ModalCardBody>
                 <Hidden name="id" />
                 <Hidden name="salesOrderId" />
-                <Hidden
-                  name="itemReadableId"
-                  value={itemData?.itemReadableId}
-                />
+                <Hidden name="itemId" value={itemData?.itemId} />
                 {!isEditing && (
                   <Hidden
                     name="description"

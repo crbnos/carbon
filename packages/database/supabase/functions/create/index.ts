@@ -535,6 +535,7 @@ serve(async (req: Request) => {
                   .insertInto("supplierInteraction")
                   .values({
                     companyId,
+                    supplierId: supplier,
                   })
                   .returning(["id"])
                   .execute();
@@ -648,7 +649,6 @@ serve(async (req: Request) => {
                     purchaseOrderId,
                     purchaseOrderLineType: item.type,
                     itemId: item.id,
-                    itemReadableId: item.readableIdWithRevision,
                     description: item.name || item.description,
                     purchaseQuantity: operation.operationQuantity || 1,
                     purchaseUnitOfMeasureCode: item.unitOfMeasureCode,
@@ -855,7 +855,6 @@ serve(async (req: Request) => {
             lineId: d.id,
             companyId: companyId,
             itemId: d.itemId,
-            itemReadableId: d.itemReadableId,
             orderQuantity: d.purchaseQuantity * (d.conversionFactor ?? 1),
             outstandingQuantity:
               outstandingQuantity * (d.conversionFactor ?? 1),
@@ -1278,7 +1277,6 @@ serve(async (req: Request) => {
                 lineId: purchaseOrderLine.id,
                 companyId: companyId,
                 itemId: purchaseOrderLine.itemId,
-                itemReadableId: purchaseOrderLine.itemReadableId,
                 orderQuantity: purchaseOrderLine.purchaseQuantity,
                 outstandingQuantity: outstandingQuantity,
                 shippedQuantity: outstandingQuantity ?? 0,
@@ -1527,7 +1525,6 @@ serve(async (req: Request) => {
                       companyId: companyId,
                       fulfillmentId,
                       itemId: salesOrderLine.itemId,
-                      itemReadableId: salesOrderLine.itemReadableId,
                       orderQuantity: salesOrderLine.saleQuantity,
                       outstandingQuantity:
                         salesOrderLine.quantityToSend ??
@@ -1604,7 +1601,6 @@ serve(async (req: Request) => {
                   lineId: salesOrderLine.id,
                   companyId: companyId,
                   itemId: salesOrderLine.itemId,
-                  itemReadableId: salesOrderLine.itemReadableId,
                   orderQuantity: salesOrderLine.saleQuantity,
                   outstandingQuantity: outstandingQuantity,
                   shippedQuantity: outstandingQuantity ?? 0,
@@ -1815,7 +1811,6 @@ serve(async (req: Request) => {
                     companyId: companyId,
                     fulfillmentId,
                     itemId: salesOrderLine.data.itemId,
-                    itemReadableId: salesOrderLine.data.itemReadableId,
                     orderQuantity: quantityAvailable,
                     outstandingQuantity: quantityAvailable,
                     shippedQuantity: quantityAvailable,
@@ -1890,7 +1885,6 @@ serve(async (req: Request) => {
                 lineId: salesOrderLineId,
                 companyId: companyId,
                 itemId: salesOrderLine.data.itemId!,
-                itemReadableId: salesOrderLine.data.itemReadableId,
                 orderQuantity: salesOrderLine.data.saleQuantity ?? 0,
                 outstandingQuantity: outstandingQuantity!,
                 shippedQuantity: outstandingQuantity!,

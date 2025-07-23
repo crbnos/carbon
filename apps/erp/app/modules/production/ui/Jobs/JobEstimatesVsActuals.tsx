@@ -47,11 +47,13 @@ import { useEffect, useState } from "react";
 import { LuCircleChevronRight, LuNotebook } from "react-icons/lu";
 import { EmployeeAvatar, EmployeeAvatarGroup } from "~/components";
 import { useCurrencyFormatter, usePercentFormatter, useUser } from "~/hooks";
+import { useItems } from "~/stores";
 import { makeDurations } from "~/utils/duration";
+import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 import type { jobOperationValidator } from "../../production.models";
+import type { getJobMaterialsByMethodId } from "../../production.service";
 import type {
-  JobMaterial,
   JobOperation,
   ProductionEvent,
   ProductionQuantity,
@@ -63,11 +65,14 @@ type Operation = z.infer<typeof jobOperationValidator> & {
   operationQuantity: number | null;
 };
 
+type JobMaterial = NonNullable<
+  Awaited<ReturnType<typeof getJobMaterialsByMethodId>>["data"]
+>[number];
+
 type Material = Pick<
   JobMaterial,
   | "id"
   | "itemId"
-  | "itemReadableId"
   | "estimatedQuantity"
   | "methodType"
   | "quantityIssued"
@@ -95,6 +100,7 @@ const JobEstimatesVsActuals = ({
   const user = useUser();
   if (!jobId) throw new Error("Could not find jobId");
 
+  const [items] = useItems();
   const currencyFormatter = useCurrencyFormatter();
   const percentFormatter = usePercentFormatter();
   const detailsDisclosure = useDisclosure();
@@ -562,7 +568,9 @@ const JobEstimatesVsActuals = ({
                                 {material.methodType}
                               </TooltipContent>
                             </Tooltip>
-                            <span>{material.itemReadableId}</span>
+                            <span>
+                              {getItemReadableId(items, material.itemId)}
+                            </span>
                           </HStack>
                         </Td>
                         <Td>{material.estimatedQuantity}</Td>

@@ -265,14 +265,14 @@ export async function getJobMaterialsWithQuantityOnHand(
 ) {
   let query = client
     .from("jobMaterial")
-    .select("id", {
+    .select("id, ...item(readableIdWithRevision)", {
       count: "exact",
     })
     .eq("jobId", jobId);
 
   if (args?.search) {
     query = query.or(
-      `itemReadableId.ilike.%${args.search}%,description.ilike.%${args.search}%`
+      `item.readableIdWithRevision.ilike.%${args.search}%,description.ilike.%${args.search}%`
     );
   }
 

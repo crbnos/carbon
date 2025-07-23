@@ -702,7 +702,7 @@ export async function getMaterialUsedIn(
     client
       .from("quoteMaterial")
       .select(
-        "id, methodType, documentParentId:quoteId, documentId:quoteLineId, ...quoteLine(documentReadableId:itemReadableId)"
+        "id, methodType, documentParentId:quoteId, documentId:quoteLineId, ...quoteLine(...item(documentReadableId:readableIdWithRevision))"
       )
       .eq("itemId", itemId)
       .eq("companyId", companyId),
@@ -1072,7 +1072,7 @@ export async function getMethodMaterials(
     .eq("companyId", companyId);
 
   if (args?.search) {
-    query = query.ilike("itemReadableId", `%${args.search}%`);
+    query = query.ilike("item.readableIdWithRevision", `%${args.search}%`);
   }
 
   if (args) {
@@ -1391,7 +1391,7 @@ export async function getPartUsedIn(
     client
       .from("quoteMaterial")
       .select(
-        "id, methodType, documentParentId:quoteId, documentId:quoteLineId, ...quoteLine(documentReadableId:itemReadableId)"
+        "id, methodType, documentParentId:quoteId, documentId:quoteLineId, ...quoteLine(...item(documentReadableId:readableIdWithRevision))"
       )
       .eq("itemId", itemId)
       .eq("companyId", companyId),
@@ -1687,7 +1687,6 @@ export async function updateDefaultRevision(
     .from("methodMaterial")
     .update({
       itemId: item.data.id,
-      itemReadableId: item.data.readableId,
       materialMakeMethodId: makeMethod.data?.id,
     })
     .in("itemId", itemIds);
@@ -2363,7 +2362,6 @@ export async function upsertMethodMaterial(
         {
           ...methodMaterial,
           itemId: methodMaterial.itemId!,
-          itemReadableId: methodMaterial.itemReadableId!,
           materialMakeMethodId,
         },
       ])

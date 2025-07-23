@@ -157,7 +157,6 @@ export default function EditSalesOrderLineRoute() {
     addOnCost: line?.addOnCost ?? 0,
     assetId: line?.assetId ?? "",
     description: line?.description ?? "",
-    itemReadableId: line?.itemReadableId ?? "",
     locationId: line?.locationId ?? "",
     methodType: line?.methodType ?? "Make",
     promisedDate: line?.promisedDate ?? undefined,

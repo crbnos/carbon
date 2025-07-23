@@ -25,6 +25,8 @@ import { Empty, ItemThumbnail, MethodItemTypeIcon } from "~/components";
 import { useOptimisticLocation, usePermissions, useRouteData } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { MethodItemType } from "~/modules/shared";
+import { useItems } from "~/stores";
+import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 import type { Supplier, SupplierQuote, SupplierQuoteLine } from "../../types";
 import DeleteSupplierQuoteLine from "./DeleteSupplierQuoteLine";
@@ -140,7 +142,7 @@ export default function SupplierQuoteExplorer() {
       {deleteLineDisclosure.isOpen && deleteLine?.id && (
         <DeleteSupplierQuoteLine
           line={{
-            itemReadableId: deleteLine?.itemReadableId ?? "",
+            itemId: deleteLine?.itemId ?? "",
             id: deleteLine.id,
           }}
           onCancel={onDeleteCancel}
@@ -163,6 +165,7 @@ function SupplierQuoteLineItem({
 }: SupplierQuoteLineItemProps) {
   const { id, lineId } = useParams();
   if (!id) throw new Error("Could not find id");
+  const [items] = useItems();
   const permissions = usePermissions();
   const disclosure = useDisclosure();
   const location = useOptimisticLocation();
@@ -197,7 +200,7 @@ function SupplierQuoteLineItem({
 
             <VStack spacing={0} className="min-w-0">
               <span className="font-semibold line-clamp-1">
-                {line.itemReadableId}
+                {getItemReadableId(items, line.itemId)}
               </span>
               <span className="text-muted-foreground text-xs truncate line-clamp-1">
                 {line.description}

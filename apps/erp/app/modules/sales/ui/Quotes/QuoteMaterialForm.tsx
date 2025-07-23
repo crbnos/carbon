@@ -33,7 +33,8 @@ import {
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import type { MethodItemType, MethodType } from "~/modules/shared";
-import { useBom } from "~/stores";
+import { useBom, useItems } from "~/stores";
+import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 import type { quoteOperationValidator } from "../../sales.models";
 import { quoteMaterialValidator } from "../../sales.models";
@@ -65,7 +66,6 @@ const QuoteMaterialForm = ({
   );
   const [itemData, setItemData] = useState<{
     itemId: string;
-    itemReadableId: string;
     methodType: MethodType;
     description: string;
     unitCost: number;
@@ -73,7 +73,6 @@ const QuoteMaterialForm = ({
     quantity: number;
   }>({
     itemId: initialValues.itemId ?? "",
-    itemReadableId: initialValues.itemReadableId ?? "",
     methodType: initialValues.methodType ?? "Buy",
     description: initialValues.description ?? "",
     unitCost: initialValues.unitCost ?? 0,
@@ -86,7 +85,6 @@ const QuoteMaterialForm = ({
     setItemType(value as MethodItemType);
     setItemData({
       itemId: "",
-      itemReadableId: "",
       methodType: "" as "Buy",
       quantity: 1,
       description: "",
@@ -117,7 +115,6 @@ const QuoteMaterialForm = ({
     setItemData((d) => ({
       ...d,
       itemId,
-      itemReadableId: item.data?.readableIdWithRevision ?? "",
       description: item.data?.name ?? "",
       unitCost: itemCost.data?.unitCost ?? 0,
       unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
@@ -149,6 +146,9 @@ const QuoteMaterialForm = ({
     setSelectedMaterialId,
   ]);
 
+  const [items] = useItems();
+  const itemReadableId = getItemReadableId(items, itemData.itemId);
+
   return (
     <Card>
       <ValidatedForm
@@ -161,12 +161,12 @@ const QuoteMaterialForm = ({
         <CardHeader>
           <CardTitle className="line-clamp-2">{itemData.description}</CardTitle>
           <CardDescription className="flex items-center gap-2">
-            {itemData.itemReadableId} <Copy text={itemData.itemReadableId} />
+            {itemReadableId} <Copy text={itemReadableId ?? ""} />
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Hidden name="quoteMakeMethodId" />
-          <Hidden name="itemReadableId" value={itemData.itemReadableId} />
+
           {itemData.methodType === "Make" && (
             <Hidden name="unitCost" value={itemData.unitCost} />
           )}

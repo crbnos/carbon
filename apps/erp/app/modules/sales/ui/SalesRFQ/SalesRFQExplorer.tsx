@@ -75,7 +75,6 @@ export default function SalesRFQExplorer() {
     customerPartRevision: "",
     description: "",
     itemId: "",
-    itemReadableId: "",
     quantity: [1],
     order: 1,
     unitOfMeasureCode: "EA",

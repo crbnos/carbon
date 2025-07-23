@@ -20,6 +20,8 @@ import {
 import { useFetcher } from "@remix-run/react";
 import { useEffect } from "react";
 import type { action } from "~/routes/x+/purchase-invoice+/$invoiceId.post";
+import { useItems } from "~/stores";
+import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 
 type PurchaseInvoicePostModalProps = {
@@ -28,7 +30,6 @@ type PurchaseInvoicePostModalProps = {
   invoiceId: string;
   linesToReceive: {
     itemId: string | null;
-    itemReadableId: string | null;
     description: string | null;
     quantity: number;
   }[];
@@ -40,6 +41,7 @@ const PurchaseInvoicePostModal = ({
   invoiceId,
   linesToReceive,
 }: PurchaseInvoicePostModalProps) => {
+  const [items] = useItems();
   const hasLinesToReceive = linesToReceive.length > 0;
 
   const fetcher = useFetcher<typeof action>();
@@ -83,7 +85,9 @@ const PurchaseInvoicePostModal = ({
                     <Tr key={line.itemId} className="text-sm">
                       <Td>
                         <VStack spacing={0}>
-                          <span>{line.itemReadableId}</span>
+                          <span>
+                            {getItemReadableId(items, line.itemId) ?? ""}
+                          </span>
                           {line.description && (
                             <span className="text-xs text-muted-foreground">
                               {line.description}

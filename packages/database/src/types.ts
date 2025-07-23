@@ -8249,7 +8249,6 @@ export type Database = {
           externalDocumentId: string | null
           id: string
           itemId: string
-          itemReadableId: string | null
           locationId: string | null
           postingDate: string
           quantity: number
@@ -8270,7 +8269,6 @@ export type Database = {
           externalDocumentId?: string | null
           id?: string
           itemId: string
-          itemReadableId?: string | null
           locationId?: string | null
           postingDate?: string
           quantity: number
@@ -8291,7 +8289,6 @@ export type Database = {
           externalDocumentId?: string | null
           id?: string
           itemId?: string
-          itemReadableId?: string | null
           locationId?: string | null
           postingDate?: string
           quantity?: number
@@ -9917,7 +9914,6 @@ export type Database = {
           estimatedQuantity: number | null
           id: string
           itemId: string
-          itemReadableId: string
           itemType: string
           jobId: string
           jobMakeMethodId: string
@@ -9947,7 +9943,6 @@ export type Database = {
           estimatedQuantity?: number | null
           id?: string
           itemId: string
-          itemReadableId: string
           itemType?: string
           jobId: string
           jobMakeMethodId: string
@@ -9977,7 +9972,6 @@ export type Database = {
           estimatedQuantity?: number | null
           id?: string
           itemId?: string
-          itemReadableId?: string
           itemType?: string
           jobId?: string
           jobMakeMethodId?: string
@@ -12771,7 +12765,6 @@ export type Database = {
           customFields: Json | null
           id: string
           itemId: string
-          itemReadableId: string
           itemType: string
           kit: boolean
           makeMethodId: string
@@ -12794,7 +12787,6 @@ export type Database = {
           customFields?: Json | null
           id?: string
           itemId: string
-          itemReadableId: string
           itemType?: string
           kit?: boolean
           makeMethodId: string
@@ -12817,7 +12809,6 @@ export type Database = {
           customFields?: Json | null
           id?: string
           itemId?: string
-          itemReadableId?: string
           itemType?: string
           kit?: boolean
           makeMethodId?: string
@@ -20146,7 +20137,6 @@ export type Database = {
           invoiceId: string
           invoiceLineType: Database["public"]["Enums"]["payableLineType"]
           itemId: string | null
-          itemReadableId: string | null
           jobOperationId: string | null
           locationId: string | null
           modelUploadId: string | null
@@ -20186,7 +20176,6 @@ export type Database = {
           invoiceId: string
           invoiceLineType: Database["public"]["Enums"]["payableLineType"]
           itemId?: string | null
-          itemReadableId?: string | null
           jobOperationId?: string | null
           locationId?: string | null
           modelUploadId?: string | null
@@ -20226,7 +20215,6 @@ export type Database = {
           invoiceId?: string
           invoiceLineType?: Database["public"]["Enums"]["payableLineType"]
           itemId?: string | null
-          itemReadableId?: string | null
           jobOperationId?: string | null
           locationId?: string | null
           modelUploadId?: string | null
@@ -21303,7 +21291,6 @@ export type Database = {
           inventoryUnitOfMeasureCode: string | null
           invoicedComplete: boolean
           itemId: string | null
-          itemReadableId: string | null
           jobId: string | null
           jobOperationId: string | null
           locationId: string | null
@@ -21351,7 +21338,6 @@ export type Database = {
           inventoryUnitOfMeasureCode?: string | null
           invoicedComplete?: boolean
           itemId?: string | null
-          itemReadableId?: string | null
           jobId?: string | null
           jobOperationId?: string | null
           locationId?: string | null
@@ -21399,7 +21385,6 @@ export type Database = {
           inventoryUnitOfMeasureCode?: string | null
           invoicedComplete?: boolean
           itemId?: string | null
-          itemReadableId?: string | null
           jobId?: string | null
           jobOperationId?: string | null
           locationId?: string | null
@@ -22607,7 +22592,6 @@ export type Database = {
           id: string
           internalNotes: Json | null
           itemId: string
-          itemReadableId: string | null
           itemType: string
           locationId: string | null
           methodType: Database["public"]["Enums"]["methodType"]
@@ -22638,7 +22622,6 @@ export type Database = {
           id?: string
           internalNotes?: Json | null
           itemId: string
-          itemReadableId?: string | null
           itemType?: string
           locationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
@@ -22669,7 +22652,6 @@ export type Database = {
           id?: string
           internalNotes?: Json | null
           itemId?: string
-          itemReadableId?: string | null
           itemType?: string
           locationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
@@ -23339,7 +23321,6 @@ export type Database = {
           description: string
           id: string
           itemId: string
-          itemReadableId: string
           itemType: string
           kit: boolean
           methodType: Database["public"]["Enums"]["methodType"]
@@ -23365,7 +23346,6 @@ export type Database = {
           description: string
           id?: string
           itemId: string
-          itemReadableId: string
           itemType?: string
           kit?: boolean
           methodType?: Database["public"]["Enums"]["methodType"]
@@ -23391,7 +23371,6 @@ export type Database = {
           description?: string
           id?: string
           itemId?: string
-          itemReadableId?: string
           itemType?: string
           kit?: boolean
           methodType?: Database["public"]["Enums"]["methodType"]
@@ -24965,7 +24944,6 @@ export type Database = {
           createdBy: string
           id: string
           itemId: string
-          itemReadableId: string | null
           lineId: string | null
           locationId: string | null
           orderQuantity: number
@@ -24987,7 +24965,6 @@ export type Database = {
           createdBy: string
           id?: string
           itemId: string
-          itemReadableId?: string | null
           lineId?: string | null
           locationId?: string | null
           orderQuantity: number
@@ -25009,7 +24986,6 @@ export type Database = {
           createdBy?: string
           id?: string
           itemId?: string
-          itemReadableId?: string | null
           lineId?: string | null
           locationId?: string | null
           orderQuantity?: number
@@ -25475,7 +25451,6 @@ export type Database = {
           invoiceId: string
           invoiceLineType: Database["public"]["Enums"]["salesInvoiceLineType"]
           itemId: string | null
-          itemReadableId: string | null
           locationId: string | null
           methodType: Database["public"]["Enums"]["methodType"]
           modelUploadId: string | null
@@ -25512,7 +25487,6 @@ export type Database = {
           invoiceId: string
           invoiceLineType: Database["public"]["Enums"]["salesInvoiceLineType"]
           itemId?: string | null
-          itemReadableId?: string | null
           locationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           modelUploadId?: string | null
@@ -25549,7 +25523,6 @@ export type Database = {
           invoiceId?: string
           invoiceLineType?: Database["public"]["Enums"]["salesInvoiceLineType"]
           itemId?: string | null
-          itemReadableId?: string | null
           locationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           modelUploadId?: string | null
@@ -26402,7 +26375,6 @@ export type Database = {
           internalNotes: Json | null
           invoicedComplete: boolean
           itemId: string | null
-          itemReadableId: string | null
           locationId: string | null
           methodType: Database["public"]["Enums"]["methodType"]
           modelUploadId: string | null
@@ -26445,7 +26417,6 @@ export type Database = {
           internalNotes?: Json | null
           invoicedComplete?: boolean
           itemId?: string | null
-          itemReadableId?: string | null
           locationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           modelUploadId?: string | null
@@ -26488,7 +26459,6 @@ export type Database = {
           internalNotes?: Json | null
           invoicedComplete?: boolean
           itemId?: string | null
-          itemReadableId?: string | null
           locationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           modelUploadId?: string | null
@@ -29040,7 +29010,6 @@ export type Database = {
           fulfillmentId: string | null
           id: string
           itemId: string
-          itemReadableId: string | null
           lineId: string | null
           locationId: string | null
           orderQuantity: number
@@ -29062,7 +29031,6 @@ export type Database = {
           fulfillmentId?: string | null
           id?: string
           itemId: string
-          itemReadableId?: string | null
           lineId?: string | null
           locationId?: string | null
           orderQuantity?: number
@@ -29084,7 +29052,6 @@ export type Database = {
           fulfillmentId?: string | null
           id?: string
           itemId?: string
-          itemReadableId?: string | null
           lineId?: string | null
           locationId?: string | null
           orderQuantity?: number
@@ -31260,7 +31227,6 @@ export type Database = {
           internalNotes: Json | null
           inventoryUnitOfMeasureCode: string | null
           itemId: string
-          itemReadableId: string | null
           purchaseUnitOfMeasureCode: string | null
           quantity: number[] | null
           supplierPartId: string | null
@@ -31282,7 +31248,6 @@ export type Database = {
           internalNotes?: Json | null
           inventoryUnitOfMeasureCode?: string | null
           itemId: string
-          itemReadableId?: string | null
           purchaseUnitOfMeasureCode?: string | null
           quantity?: number[] | null
           supplierPartId?: string | null
@@ -31304,7 +31269,6 @@ export type Database = {
           internalNotes?: Json | null
           inventoryUnitOfMeasureCode?: string | null
           itemId?: string
-          itemReadableId?: string | null
           purchaseUnitOfMeasureCode?: string | null
           quantity?: number[] | null
           supplierPartId?: string | null
@@ -36777,7 +36741,6 @@ export type Database = {
           estimatedQuantity: number | null
           id: string | null
           itemId: string | null
-          itemReadableId: string | null
           itemType: string | null
           jobId: string | null
           jobMakeMethodId: string | null
@@ -38915,14 +38878,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -39369,6 +39332,7 @@ export type Database = {
           itemId: string | null
           itemName: string | null
           itemReadableId: string | null
+          jobOperationId: string | null
           locationId: string | null
           modelUploadId: string | null
           purchaseOrderId: string | null
@@ -39394,6 +39358,27 @@ export type Database = {
           updatedBy: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "purchaseInvoiceLine_jobOperationId_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLine_jobOperationId_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationsWithDependencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLine_jobOperationId_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationsWithMakeMethods"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "purchaseInvoiceLine_modelUploadId_fkey"
             columns: ["modelUploadId"]
@@ -39971,6 +39956,7 @@ export type Database = {
           modelPath: string | null
           modelSize: number | null
           modelUploadId: string | null
+          promisedDate: string | null
           purchaseOrderId: string | null
           purchaseOrderLineType:
             | Database["public"]["Enums"]["purchaseOrderLineType"]
@@ -40260,14 +40246,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -41436,7 +41422,6 @@ export type Database = {
           description: string | null
           id: string | null
           itemId: string | null
-          itemReadableId: string | null
           itemType: string | null
           kit: boolean | null
           methodType: Database["public"]["Enums"]["methodType"] | null
@@ -42716,14 +42701,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -43259,14 +43244,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]

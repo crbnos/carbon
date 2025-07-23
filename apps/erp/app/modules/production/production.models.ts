@@ -570,7 +570,6 @@ const baseMaterialValidator = z.object({
     }),
   }),
   itemId: z.string().min(1, { message: "Item is required" }),
-  itemReadableId: z.string().min(1, { message: "Item ID is required" }),
   kit: zfd.text(z.string().optional()).transform((value) => value === "true"),
   order: zfd.numeric(z.number().min(0)),
   quantity: zfd.numeric(z.number().min(0)),
@@ -593,7 +592,7 @@ export const jobMaterialValidator = baseMaterialValidator
   .refine(
     (data) => {
       if (data.itemType === "Part") {
-        return !!data.itemReadableId;
+        return !!data.itemId;
       }
       return true;
     },
@@ -605,7 +604,7 @@ export const jobMaterialValidator = baseMaterialValidator
   .refine(
     (data) => {
       if (data.itemType === "Material") {
-        return !!data.itemReadableId;
+        return !!data.itemId;
       }
       return true;
     },
@@ -617,7 +616,7 @@ export const jobMaterialValidator = baseMaterialValidator
   .refine(
     (data) => {
       if (data.itemType === "Tool") {
-        return !!data.itemReadableId;
+        return !!data.itemId;
       }
       return true;
     },
@@ -629,7 +628,7 @@ export const jobMaterialValidator = baseMaterialValidator
   .refine(
     (data) => {
       if (data.itemType === "Consumable") {
-        return !!data.itemReadableId;
+        return !!data.itemId;
       }
       return true;
     },
@@ -646,7 +645,7 @@ export const jobMaterialValidatorForReleasedJob = baseMaterialValidator
   .refine(
     (data) => {
       if (data.itemType === "Part") {
-        return !!data.itemReadableId;
+        return !!data.itemId;
       }
       return true;
     },
@@ -658,7 +657,7 @@ export const jobMaterialValidatorForReleasedJob = baseMaterialValidator
   .refine(
     (data) => {
       if (data.itemType === "Material") {
-        return !!data.itemReadableId;
+        return !!data.itemId;
       }
       return true;
     },
@@ -670,7 +669,7 @@ export const jobMaterialValidatorForReleasedJob = baseMaterialValidator
   .refine(
     (data) => {
       if (data.itemType === "Tool") {
-        return !!data.itemReadableId;
+        return !!data.itemId;
       }
       return true;
     },
@@ -682,7 +681,7 @@ export const jobMaterialValidatorForReleasedJob = baseMaterialValidator
   .refine(
     (data) => {
       if (data.itemType === "Consumable") {
-        return !!data.itemReadableId;
+        return !!data.itemId;
       }
       return true;
     },

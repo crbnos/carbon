@@ -31,6 +31,8 @@ import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { Supplier } from "~/modules/purchasing/types";
 import type { MethodItemType } from "~/modules/shared";
 import { methodItemType } from "~/modules/shared";
+import { useItems } from "~/stores";
+import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 import type { PurchaseInvoice, PurchaseInvoiceLine } from "../../types";
 import DeletePurchaseInvoiceLine from "./DeletePurchaseInvoiceLine";
@@ -172,6 +174,7 @@ function PurchaseInvoiceLineItem({
   if (!invoiceId) throw new Error("Could not find invoiceId");
   const permissions = usePermissions();
   const location = useOptimisticLocation();
+  const [items] = useItems();
 
   const isSelected =
     location.pathname === path.to.purchaseInvoiceLine(invoiceId, line.id!);
@@ -194,7 +197,7 @@ function PurchaseInvoiceLineItem({
             <ItemThumbnail thumbnailPath={line.thumbnailPath} type="Part" />
             <VStack spacing={0} className="min-w-0">
               <span className="font-semibold line-clamp-1">
-                {line.itemReadableId}
+                {getItemReadableId(items, line.itemId) ?? ""}
               </span>
               <span className="text-muted-foreground text-xs truncate line-clamp-1">
                 {line.description}

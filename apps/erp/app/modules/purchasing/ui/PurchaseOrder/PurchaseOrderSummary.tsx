@@ -27,6 +27,8 @@ import {
   useRouteData,
   useUser,
 } from "~/hooks";
+import { useItems } from "~/stores";
+import { getItemReadableId } from "~/utils/items";
 import { getPrivateUrl, path } from "~/utils/path";
 import type {
   PurchaseOrder,
@@ -50,6 +52,7 @@ const LineItems = ({
   lines: PurchaseOrderLine[];
   shouldConvertCurrency: boolean;
 }) => {
+  const [items] = useItems();
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
 
@@ -68,6 +71,7 @@ const LineItems = ({
       {lines.map((line) => {
         if (!line.id) return null;
 
+        const itemReadableId = getItemReadableId(items, line.itemId);
         const lineTotal = (line.unitPrice ?? 0) * (line.purchaseQuantity ?? 0);
         const supplierLineTotal =
           (line.supplierUnitPrice ?? 0) * (line.purchaseQuantity ?? 0);
@@ -89,7 +93,7 @@ const LineItems = ({
             <HStack spacing={4} className="items-start">
               {line.thumbnailPath ? (
                 <img
-                  alt={line.itemReadableId!}
+                  alt={itemReadableId!}
                   className="w-24 h-24 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
                   src={getPrivateUrl(line.thumbnailPath)}
                 />
@@ -106,9 +110,7 @@ const LineItems = ({
                 >
                   <div className="flex items-center gap-x-4 justify-between flex-grow min-w-0">
                     <HStack spacing={2} className="min-w-0 flex-shrink ">
-                      <Heading className="truncate">
-                        {line.itemReadableId}
-                      </Heading>
+                      <Heading className="truncate">{itemReadableId}</Heading>
 
                       <Button
                         asChild

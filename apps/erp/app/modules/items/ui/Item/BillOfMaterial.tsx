@@ -72,7 +72,8 @@ import {
   type MethodItemType,
   type MethodType,
 } from "~/modules/shared";
-import { useBom } from "~/stores";
+import { useBom, useItems, type Item as ItemType } from "~/stores";
+import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 import type { methodOperationValidator } from "../../items.models";
 import { methodMaterialValidator } from "../../items.models";
@@ -122,7 +123,7 @@ const initialMethodMaterial: Omit<Material, "makeMethodId" | "order"> & {
   description: string;
 } = {
   itemId: "",
-  itemReadableId: "",
+
   // @ts-expect-error
   itemType: "Item" as const,
   methodType: "Buy" as const,
@@ -144,6 +145,7 @@ const BillOfMaterial = ({
     permissions.can("update", "parts") === false ||
     makeMethod.status !== "Draft";
 
+  const [items] = useItems();
   const fetcher = useFetcher<{}>();
   const [searchParams] = useSearchParams();
 
@@ -195,6 +197,7 @@ const BillOfMaterial = ({
   });
 
   const materials = makeItems(
+    items,
     Array.from(materialsById.values()),
     orderState,
     checkedState
@@ -493,7 +496,11 @@ const BillOfMaterial = ({
                     )?.code,
                     returnType: {
                       type: "list",
-                      listOptions: materials.map((m) => m.data.itemReadableId!),
+                      listOptions: materials
+                        .map(
+                          (m) => getItemReadableId(items, m.data.itemId) ?? ""
+                        )
+                        .filter(Boolean),
                     },
                   })
                 }
@@ -591,7 +598,6 @@ function MaterialForm({
   const [itemType, setItemType] = useState<MethodItemType>(item.data.itemType);
   const [itemData, setItemData] = useState<{
     itemId: string;
-    itemReadableId: string;
     methodType: MethodType;
     description: string;
     unitOfMeasureCode: string;
@@ -599,7 +605,6 @@ function MaterialForm({
     kit: boolean;
   }>({
     itemId: item.data.itemId ?? "",
-    itemReadableId: item.data.itemReadableId ?? "",
     methodType: item.data.methodType ?? "Buy",
     description: item.data.description ?? "",
     unitOfMeasureCode: item.data.unitOfMeasureCode ?? "EA",
@@ -613,7 +618,6 @@ function MaterialForm({
 
     setItemData({
       itemId: "",
-      itemReadableId: "",
       methodType: "" as "Buy",
       quantity: 1,
       description: "",
@@ -646,7 +650,6 @@ function MaterialForm({
     setItemData((d) => ({
       ...d,
       itemId,
-      itemReadableId: item.data?.readableIdWithRevision ?? "",
       description: item.data?.name ?? "",
       unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
       methodType: item.data?.defaultMethodType ?? "Buy",
@@ -680,7 +683,6 @@ function MaterialForm({
       <div>
         <Hidden name="id" />
         <Hidden name="makeMethodId" />
-        <Hidden name="itemReadableId" value={itemData.itemReadableId} />
         <Hidden name="order" />
         <Hidden name="kit" value={itemData.kit.toString()} />
       </div>
@@ -876,6 +878,7 @@ function MaterialForm({
 }
 
 function makeItems(
+  items: ItemType[],
   materials: Material[],
   orderState: OrderState,
   checkedState: CheckedState
@@ -885,11 +888,12 @@ function makeItems(
       ? orderState[material.id] ?? material.order
       : material.order;
     const checked = material.id ? checkedState[material.id] ?? false : false;
-    return makeItem(material, order, checked);
+    return makeItem(items, material, order, checked);
   });
 }
 
 function makeItem(
+  items: ItemType[],
   material: Material,
   order: number,
   checked: boolean
@@ -899,7 +903,9 @@ function makeItem(
     title: (
       <VStack spacing={0} className="py-1 cursor-pointer">
         <div className="flex items-center gap-2 group">
-          <h3 className="font-semibold truncate">{material.itemReadableId}</h3>
+          <h3 className="font-semibold truncate">
+            {getItemReadableId(items, material.itemId) ?? ""}
+          </h3>
           {material.itemId && material.itemType && (
             <Link to={getLinkToItemDetails(material.itemType, material.itemId)}>
               <LuExternalLink className="h-4 w-4 opacity-0 group-hover:opacity-100" />
