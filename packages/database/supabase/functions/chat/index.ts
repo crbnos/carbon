@@ -4,8 +4,8 @@ import { APICallError, LanguageModelV1CallOptions } from "npm:ai";
 import { z } from "npm:zod";
 import { corsHeaders } from "../lib/headers.ts";
 
-import { getAuthFromAPIKey, getSupabase } from "../lib/supabase.ts";
 import SupabaseClient from "https://esm.sh/v135/@supabase/supabase-js@2.33.1/dist/module/SupabaseClient.d.ts";
+import { getAuthFromAPIKey, getSupabase } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 
 const model = createAnthropic({
@@ -69,7 +69,7 @@ serve(async (req: Request) => {
   } catch (error) {
     console.error(error);
     if (error instanceof APICallError) {
-      throw new Response(
+      return new Response(
         JSON.stringify({
           message: "API call error",
         }),

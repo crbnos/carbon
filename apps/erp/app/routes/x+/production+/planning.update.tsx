@@ -28,12 +28,25 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   const { items, action, locationId } = await request.json();
+
   if (typeof locationId !== "string") {
-    return json({ success: false, message: "Location is required" });
+    return json(
+      {
+        success: false,
+        message: "Location ID is required and must be a valid string",
+      },
+      { status: 500 }
+    );
   }
 
   if (typeof action !== "string") {
-    return json({ success: false, message: "Invalid form data" });
+    return json(
+      {
+        success: false,
+        message: "Action parameter is required and must be a valid string",
+      },
+      { status: 500 }
+    );
   }
 
   switch (action) {
@@ -41,12 +54,51 @@ export async function action({ request }: ActionFunctionArgs) {
       const parsedItems = itemsValidator.safeParse(items);
 
       if (!parsedItems.success) {
-        return json({ success: false, message: "Invalid form data" });
+        const errorMessages = parsedItems.error.errors.map((error) => {
+          const path = error.path;
+          const field = path[path.length - 1];
+
+          // Create more readable error messages based on the field and context
+          if (field === "orders" && path.length === 2) {
+            return "No orders provided for item";
+          }
+          if (field === "quantity") {
+            return "Invalid quantity specified";
+          }
+          if (field === "periodId") {
+            return "No period specified";
+          }
+          if (field === "startDate") {
+            return "Invalid start date";
+          }
+          if (field === "dueDate") {
+            return "Invalid due date";
+          }
+
+          // Fallback to original message for unhandled cases
+          return error.message;
+        });
+
+        console.error("Validation errors:", parsedItems.error.errors);
+        return json(
+          {
+            success: false,
+            message: `Validation failed: ${errorMessages.join(", ")}`,
+            errors: errorMessages,
+          },
+          { status: 500 }
+        );
       }
 
       const itemsToOrder = parsedItems.data;
       if (itemsToOrder.length === 0) {
-        return json({ success: false, message: "No items to order" });
+        return json(
+          {
+            success: false,
+            message: "No items were provided to create production orders",
+          },
+          { status: 500 }
+        );
       }
 
       try {
@@ -61,6 +113,9 @@ export async function action({ request }: ActionFunctionArgs) {
           createdBy: string;
           updatedBy: string;
         }> = [];
+
+        let processedItems = 0;
+        let errors: string[] = [];
 
         for (const item of itemsToOrder) {
           const orders = item.orders;
@@ -77,24 +132,27 @@ export async function action({ request }: ActionFunctionArgs) {
             .single();
 
           if (manufacturing.error) {
-            console.error(
-              `Failed to get manufacturing data for item ${item.id}:`,
-              manufacturing.error
-            );
+            const errorMsg = `Failed to retrieve manufacturing data for item ${item.id}: ${manufacturing.error.message}`;
+            console.error(errorMsg);
+            errors.push(errorMsg);
             continue;
           }
 
           if (manufacturing.data?.manufacturingBlocked) {
-            console.warn(`Manufacturing is blocked for item ${item.id}`);
+            const errorMsg = `Manufacturing is blocked for item ${item.id}`;
+            console.warn(errorMsg);
+            errors.push(errorMsg);
             continue;
           }
 
           if (manufacturing.data?.requiresConfiguration) {
-            console.warn(
-              `Manufacturing requires configuration for item ${item.id}`
-            );
+            const errorMsg = `Manufacturing requires configuration for item ${item.id}`;
+            console.warn(errorMsg);
+            errors.push(errorMsg);
             continue;
           }
+
+          let itemProcessed = false;
 
           // Process each order for this item
           for (const order of orders) {
@@ -106,16 +164,17 @@ export async function action({ request }: ActionFunctionArgs) {
                 companyId
               );
               if (nextSequence.error) {
-                console.error(
-                  `Failed to get next sequence for item ${item.id}:`,
-                  nextSequence.error
-                );
+                const errorMsg = `Failed to generate job sequence for item ${item.id}: ${nextSequence.error.message}`;
+                console.error(errorMsg);
+                errors.push(errorMsg);
                 continue;
               }
 
               const jobId = nextSequence.data;
               if (!jobId) {
-                console.error(`Failed to get job ID for item ${item.id}`);
+                const errorMsg = `Failed to generate job ID for item ${item.id}`;
+                console.error(errorMsg);
+                errors.push(errorMsg);
                 continue;
               }
 
@@ -140,18 +199,17 @@ export async function action({ request }: ActionFunctionArgs) {
               );
 
               if (createJob.error) {
-                console.error(
-                  `Failed to create job for item ${item.id}:`,
-                  createJob.error
-                );
+                const errorMsg = `Failed to create job for item ${item.id}: ${createJob.error.message}`;
+                console.error(errorMsg);
+                errors.push(errorMsg);
                 continue;
               }
 
               const id = createJob.data?.id;
               if (!id) {
-                console.error(
-                  `Failed to get created job ID for item ${item.id}`
-                );
+                const errorMsg = `Job was not returned after creation for item ${item.id}`;
+                console.error(errorMsg);
+                errors.push(errorMsg);
                 continue;
               }
 
@@ -163,14 +221,14 @@ export async function action({ request }: ActionFunctionArgs) {
               });
 
               if (upsertMethod.error) {
-                console.error(
-                  `Failed to create job method for item ${item.id}:`,
-                  upsertMethod.error
-                );
+                const errorMsg = `Failed to create job method for item ${item.id}: ${upsertMethod.error.message}`;
+                console.error(errorMsg);
+                errors.push(errorMsg);
                 continue;
               }
 
               jobIds.push(id);
+              itemProcessed = true;
             } else {
               // Update existing job
               jobIds.push(order.existingId);
@@ -191,12 +249,13 @@ export async function action({ request }: ActionFunctionArgs) {
                 .eq("id", order.existingId);
 
               if (updateJob.error) {
-                console.error(
-                  `Failed to update job ${order.existingId}:`,
-                  updateJob.error
-                );
+                const errorMsg = `Failed to update job ${order.existingId} for item ${item.id}: ${updateJob.error.message}`;
+                console.error(errorMsg);
+                errors.push(errorMsg);
                 continue;
               }
+
+              itemProcessed = true;
             }
 
             // Track supply forecast by period
@@ -206,24 +265,27 @@ export async function action({ request }: ActionFunctionArgs) {
               (order.quantity - (order.existingQuantity ?? 0));
           }
 
-          // Add job IDs to the overall list
-          allJobIds.push(...jobIds);
+          if (itemProcessed) {
+            processedItems++;
+            // Add job IDs to the overall list
+            allJobIds.push(...jobIds);
 
-          // Add supply forecasts for this item
-          Object.entries(supplyForecastByPeriod).forEach(
-            ([periodId, quantity]) => {
-              allSupplyForecasts.push({
-                itemId: item.id,
-                locationId,
-                sourceType: "Production Order" as const,
-                forecastQuantity: quantity,
-                periodId,
-                companyId,
-                createdBy: userId,
-                updatedBy: userId,
-              });
-            }
-          );
+            // Add supply forecasts for this item
+            Object.entries(supplyForecastByPeriod).forEach(
+              ([periodId, quantity]) => {
+                allSupplyForecasts.push({
+                  itemId: item.id,
+                  locationId,
+                  sourceType: "Production Order" as const,
+                  forecastQuantity: quantity,
+                  periodId,
+                  companyId,
+                  createdBy: userId,
+                  updatedBy: userId,
+                });
+              }
+            );
+          }
         }
 
         // Insert all supply forecasts
@@ -233,10 +295,9 @@ export async function action({ request }: ActionFunctionArgs) {
             .insert(allSupplyForecasts);
 
           if (insertForecasts.error) {
-            console.error(
-              "Failed to insert supply forecasts:",
-              insertForecasts.error
-            );
+            const errorMsg = `Failed to insert supply forecasts: ${insertForecasts.error.message}`;
+            console.error(errorMsg);
+            errors.push(errorMsg);
           }
         }
 
@@ -251,21 +312,57 @@ export async function action({ request }: ActionFunctionArgs) {
           }
         }
 
+        if (errors.length > 0 && processedItems === 0) {
+          return json(
+            {
+              success: false,
+              message: `Failed to process any items. Errors: ${errors
+                .slice(0, 3)
+                .join("; ")}${
+                errors.length > 3 ? ` and ${errors.length - 3} more...` : ""
+              }`,
+              errors: errors,
+            },
+            { status: 500 }
+          );
+        }
+
+        const message =
+          processedItems === itemsToOrder.length
+            ? `Successfully processed all ${processedItems} items with ${allJobIds.length} jobs`
+            : `Processed ${processedItems} of ${itemsToOrder.length} items. ${
+                errors.length
+              } errors occurred: ${errors.slice(0, 2).join("; ")}${
+                errors.length > 2 ? "..." : ""
+              }`;
+
         return json({
-          success: true,
-          message: `Successfully processed ${itemsToOrder.length} items with ${allJobIds.length} jobs`,
+          success: processedItems > 0,
+          message,
+          processedItems,
+          totalItems: itemsToOrder.length,
+          errors: errors.length > 0 ? errors : undefined,
         });
       } catch (error) {
-        console.error("Error processing production orders:", error);
-        return json({
-          success: false,
-          message: `Error processing production orders: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`,
-        });
+        console.error("Unexpected error processing production orders:", error);
+        return json(
+          {
+            success: false,
+            message: `Unexpected error occurred while processing production orders: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`,
+          },
+          { status: 500 }
+        );
       }
 
     default:
-      return json({ success: false, message: "Invalid field" });
+      return json(
+        {
+          success: false,
+          message: `Unknown action '${action}'. Expected action: 'order'`,
+        },
+        { status: 500 }
+      );
   }
 }
