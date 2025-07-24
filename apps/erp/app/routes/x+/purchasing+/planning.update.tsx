@@ -31,11 +31,23 @@ export async function action({ request }: ActionFunctionArgs) {
   const { items, action, locationId } = await request.json();
 
   if (typeof locationId !== "string") {
-    return json({ success: false, message: "Location is required" });
+    return json(
+      {
+        success: false,
+        message: "Location ID is required and must be a valid string",
+      },
+      { status: 500 }
+    );
   }
 
   if (typeof action !== "string") {
-    return json({ success: false, message: "Invalid form data" });
+    return json(
+      {
+        success: false,
+        message: "Action parameter is required and must be a valid string",
+      },
+      { status: 500 }
+    );
   }
 
   switch (action) {
@@ -43,15 +55,54 @@ export async function action({ request }: ActionFunctionArgs) {
       const parsedItems = itemsValidator.safeParse(items);
 
       if (!parsedItems.success) {
-        parsedItems.error.errors.forEach((error) => {
-          console.error(error);
+        const errorMessages = parsedItems.error.errors.map((error) => {
+          const path = error.path;
+          const field = path[path.length - 1];
+
+          // Create more readable error messages based on the field and context
+          if (field === "orders" && path.length === 2) {
+            return "No orders provided for item";
+          }
+          if (field === "supplierId" || field === "suppliers") {
+            return "No suppliers provided";
+          }
+          if (field === "quantity") {
+            return "Invalid quantity specified";
+          }
+          if (field === "unitPrice") {
+            return "Invalid unit price specified";
+          }
+          if (field === "periodId") {
+            return "No period specified";
+          }
+          if (field === "deliveryDate") {
+            return "Invalid delivery date";
+          }
+
+          // Fallback to original message for unhandled cases
+          return error.message;
         });
-        return json({ success: false, message: "Invalid form data" });
+
+        console.error("Validation errors:", parsedItems.error.errors);
+        return json(
+          {
+            success: false,
+            message: `Validation failed: ${errorMessages.join(", ")}`,
+            errors: errorMessages,
+          },
+          { status: 500 }
+        );
       }
 
       const itemsToOrder = parsedItems.data;
       if (itemsToOrder.length === 0) {
-        return json({ success: false, message: "No items to order" });
+        return json(
+          {
+            success: false,
+            message: "No items were provided to create purchase orders",
+          },
+          { status: 500 }
+        );
       }
 
       try {
@@ -98,11 +149,59 @@ export async function action({ request }: ActionFunctionArgs) {
             .single(),
         ]);
 
+        if (suppliers.error) {
+          console.error("Failed to fetch suppliers:", suppliers.error);
+          return json(
+            {
+              success: false,
+              message: "Failed to retrieve supplier information from database",
+            },
+            { status: 500 }
+          );
+        }
+
+        if (supplierParts.error) {
+          console.error("Failed to fetch supplier parts:", supplierParts.error);
+          return json(
+            {
+              success: false,
+              message:
+                "Failed to retrieve supplier part information from database",
+            },
+            { status: 500 }
+          );
+        }
+
+        if (periods.error) {
+          console.error("Failed to fetch periods:", periods.error);
+          return json(
+            {
+              success: false,
+              message: "Failed to retrieve period information from database",
+            },
+            { status: 500 }
+          );
+        }
+
+        if (company.error) {
+          console.error("Failed to fetch company:", company.error);
+          return json(
+            {
+              success: false,
+              message: "Failed to retrieve company information from database",
+            },
+            { status: 500 }
+          );
+        }
+
         const suppliersById = new Map(
           suppliers.data?.map((supplier) => [supplier.id, supplier]) ?? []
         );
 
         const baseCurrencyCode = company.data?.baseCurrencyCode ?? "USD";
+
+        let processedItems = 0;
+        let errors: string[] = [];
 
         for (const item of itemsToOrder) {
           const orders = item.orders;
@@ -121,26 +220,34 @@ export async function action({ request }: ActionFunctionArgs) {
             .single();
 
           if (purchasing.error) {
-            console.error(
-              `Failed to get purchasing data for item ${item.id}:`,
-              purchasing.error
-            );
+            const errorMsg = `Failed to retrieve purchasing data for item ${item.id}: ${purchasing.error.message}`;
+            console.error(errorMsg);
+            errors.push(errorMsg);
             continue;
           }
 
           if (purchasing.data?.purchasingBlocked) {
-            console.warn(`Purchasing is blocked for item ${item.id}`);
+            const errorMsg = `Purchasing is blocked for item ${item.id}`;
+            console.warn(errorMsg);
+            errors.push(errorMsg);
             continue;
           }
 
           // Get existing purchase orders for this supplier
-          const { data: existingPurchaseOrders } = await client
+          const { data: existingPurchaseOrders, error: poError } = await client
             .from("purchaseOrder")
             .select(
               "id, purchaseOrderId, orderDate, status, purchaseOrderDelivery(receiptRequestedDate, receiptPromisedDate)"
             )
             .eq("supplierId", supplier?.id ?? "")
             .in("status", ["Draft", "Planned"]);
+
+          if (poError) {
+            const errorMsg = `Failed to retrieve existing purchase orders for supplier ${supplier?.id}: ${poError.message}`;
+            console.error(errorMsg);
+            errors.push(errorMsg);
+            continue;
+          }
 
           const existingPOs =
             existingPurchaseOrders?.map((order) => {
@@ -182,9 +289,13 @@ export async function action({ request }: ActionFunctionArgs) {
             return order;
           });
 
+          let itemProcessed = false;
+
           for (const order of ordersMappedToExistingPOs) {
             if (!order.supplierId) {
-              console.error(`Supplier ID is required for item ${item.id}`);
+              const errorMsg = `Supplier ID is missing for item ${item.id}`;
+              console.error(errorMsg);
+              errors.push(errorMsg);
               continue;
             }
 
@@ -195,18 +306,17 @@ export async function action({ request }: ActionFunctionArgs) {
                 companyId
               );
               if (nextSequence.error) {
-                console.error(
-                  `Failed to get next sequence for item ${item.id}:`,
-                  nextSequence.error
-                );
+                const errorMsg = `Failed to generate purchase order sequence for item ${item.id}: ${nextSequence.error.message}`;
+                console.error(errorMsg);
+                errors.push(errorMsg);
                 continue;
               }
 
               const purchaseOrderId = nextSequence.data;
               if (!purchaseOrderId) {
-                console.error(
-                  `Failed to get purchase order ID for item ${item.id}`
-                );
+                const errorMsg = `Failed to generate purchase order ID for item ${item.id}`;
+                console.error(errorMsg);
+                errors.push(errorMsg);
                 continue;
               }
 
@@ -217,6 +327,13 @@ export async function action({ request }: ActionFunctionArgs) {
                   companyId,
                   supplier?.currencyCode ?? baseCurrencyCode
                 );
+
+                if (currency.error) {
+                  const errorMsg = `Failed to retrieve exchange rate for currency ${supplier?.currencyCode}: ${currency.error.message}`;
+                  console.error(errorMsg);
+                  errors.push(errorMsg);
+                  continue;
+                }
 
                 if (currency.data) {
                   exchangeRate = currency.data.exchangeRate ?? 1;
@@ -239,18 +356,17 @@ export async function action({ request }: ActionFunctionArgs) {
               );
 
               if (createPurchaseOrder.error) {
-                console.error(
-                  `Failed to create purchase order for item ${item.id}:`,
-                  createPurchaseOrder.error
-                );
+                const errorMsg = `Failed to create purchase order for item ${item.id}: ${createPurchaseOrder.error.message}`;
+                console.error(errorMsg);
+                errors.push(errorMsg);
                 continue;
               }
 
               const purchaseOrder = createPurchaseOrder.data?.[0];
               if (!purchaseOrder) {
-                console.error(
-                  `Failed to get created purchase order for item ${item.id}`
-                );
+                const errorMsg = `Purchase order was not returned after creation for item ${item.id}`;
+                console.error(errorMsg);
+                errors.push(errorMsg);
                 continue;
               }
 
@@ -281,12 +397,13 @@ export async function action({ request }: ActionFunctionArgs) {
               );
 
               if (createPurchaseOrderLine.error) {
-                console.error(
-                  `Failed to create purchase order line for item ${item.id}:`,
-                  createPurchaseOrderLine.error
-                );
+                const errorMsg = `Failed to create purchase order line for item ${item.id}: ${createPurchaseOrderLine.error.message}`;
+                console.error(errorMsg);
+                errors.push(errorMsg);
                 continue;
               }
+
+              itemProcessed = true;
             } else {
               if (order.existingLineId) {
                 const updatePurchaseOrderLine = await upsertPurchaseOrderLine(
@@ -317,10 +434,9 @@ export async function action({ request }: ActionFunctionArgs) {
                 );
 
                 if (updatePurchaseOrderLine.error) {
-                  console.error(
-                    `Failed to update purchase order line ${order.existingLineId}:`,
-                    updatePurchaseOrderLine.error
-                  );
+                  const errorMsg = `Failed to update purchase order line ${order.existingLineId} for item ${item.id}: ${updatePurchaseOrderLine.error.message}`;
+                  console.error(errorMsg);
+                  errors.push(errorMsg);
                   continue;
                 }
               } else {
@@ -351,18 +467,27 @@ export async function action({ request }: ActionFunctionArgs) {
                 );
 
                 if (insertPurchaseOrderLine.error) {
-                  console.error(
-                    `Failed to insert purchase order line for item ${item.id}:`,
-                    insertPurchaseOrderLine.error
-                  );
+                  const errorMsg = `Failed to add purchase order line for item ${item.id}: ${insertPurchaseOrderLine.error.message}`;
+                  console.error(errorMsg);
+                  errors.push(errorMsg);
+                  continue;
                 }
               }
 
-              await updatePurchaseOrder(client, {
+              const updateResult = await updatePurchaseOrder(client, {
                 id: order.existingId,
                 status: "Planned" as const,
                 updatedBy: userId,
               });
+
+              if (updateResult.error) {
+                const errorMsg = `Failed to update purchase order status for item ${item.id}: ${updateResult.error.message}`;
+                console.error(errorMsg);
+                errors.push(errorMsg);
+                continue;
+              }
+
+              itemProcessed = true;
             }
 
             const periodId = order.periodId;
@@ -371,20 +496,23 @@ export async function action({ request }: ActionFunctionArgs) {
               (order.quantity - (order.existingQuantity ?? 0));
           }
 
-          Object.entries(supplyForecastByPeriod).forEach(
-            ([periodId, quantity]) => {
-              allSupplyForecasts.push({
-                itemId: item.id,
-                locationId,
-                sourceType: "Purchase Order" as const,
-                forecastQuantity: quantity,
-                periodId,
-                companyId,
-                createdBy: userId,
-                updatedBy: userId,
-              });
-            }
-          );
+          if (itemProcessed) {
+            processedItems++;
+            Object.entries(supplyForecastByPeriod).forEach(
+              ([periodId, quantity]) => {
+                allSupplyForecasts.push({
+                  itemId: item.id,
+                  locationId,
+                  sourceType: "Purchase Order" as const,
+                  forecastQuantity: quantity,
+                  periodId,
+                  companyId,
+                  createdBy: userId,
+                  updatedBy: userId,
+                });
+              }
+            );
+          }
         }
 
         if (allSupplyForecasts.length > 0) {
@@ -393,28 +521,63 @@ export async function action({ request }: ActionFunctionArgs) {
             .insert(allSupplyForecasts);
 
           if (insertForecasts.error) {
-            console.error(
-              "Failed to insert supply forecasts:",
-              insertForecasts.error
-            );
+            const errorMsg = `Failed to insert supply forecasts: ${insertForecasts.error.message}`;
+            console.error(errorMsg);
+            errors.push(errorMsg);
           }
         }
 
+        if (errors.length > 0 && processedItems === 0) {
+          return json(
+            {
+              success: false,
+              message: `Failed to process any items. Errors: ${errors
+                .slice(0, 3)
+                .join("; ")}${
+                errors.length > 3 ? ` and ${errors.length - 3} more...` : ""
+              }`,
+              errors: errors,
+            },
+            { status: 500 }
+          );
+        }
+
+        const message =
+          processedItems === itemsToOrder.length
+            ? `Successfully processed all ${processedItems} items`
+            : `Processed ${processedItems} of ${itemsToOrder.length} items. ${
+                errors.length
+              } errors occurred: ${errors.slice(0, 2).join("; ")}${
+                errors.length > 2 ? "..." : ""
+              }`;
+
         return json({
-          success: true,
-          message: `Successfully processed ${itemsToOrder.length} items`,
+          success: processedItems > 0,
+          message,
+          processedItems,
+          totalItems: itemsToOrder.length,
+          errors: errors.length > 0 ? errors : undefined,
         });
       } catch (error) {
-        console.error("Error processing purchase orders:", error);
-        return json({
-          success: false,
-          message: `Error processing purchase orders: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`,
-        });
+        console.error("Unexpected error processing purchase orders:", error);
+        return json(
+          {
+            success: false,
+            message: `Unexpected error occurred while processing purchase orders: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`,
+          },
+          { status: 500 }
+        );
       }
 
     default:
-      return json({ success: false, message: "Invalid field" });
+      return json(
+        {
+          success: false,
+          message: `Unknown action '${action}'. Expected action: 'order'`,
+        },
+        { status: 500 }
+      );
   }
 }

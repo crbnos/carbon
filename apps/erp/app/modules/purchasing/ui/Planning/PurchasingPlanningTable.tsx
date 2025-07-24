@@ -373,7 +373,8 @@ const OrderDrawer = memo(
         setOrders(selectedItem, []);
         onClose();
       }
-    }, [fetcher.data, onClose, selectedItem, setOrders]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [fetcher.data?.success]);
 
     const supplierDisclosure = useDisclosure();
 
@@ -801,19 +802,6 @@ const PlanningTable = memo(
         return initial;
       }
     );
-
-    useEffect(() => {
-      if (
-        bulkUpdateFetcher.data?.success === false &&
-        bulkUpdateFetcher?.data?.message
-      ) {
-        toast.error(bulkUpdateFetcher.data.message);
-      }
-
-      if (bulkUpdateFetcher.data?.success === true) {
-        toast.success("Orders submitted");
-      }
-    }, [bulkUpdateFetcher.data]);
 
     const isDisabled =
       !permissions.can("create", "production") ||
@@ -1255,5 +1243,5 @@ PlanningTable.displayName = "PlanningTable";
 export default PlanningTable;
 
 function getLocationPath(locationId: string) {
-  return `${path.to.productionPlanning}?location=${locationId}`;
+  return `${path.to.purchasingPlanning}?location=${locationId}`;
 }

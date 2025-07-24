@@ -60,7 +60,33 @@ The `QuotationPrice` type (from `sales.service.ts` exports) includes:
 - `shippingCost`: number
 - `exchangeRate`: number | null
 
+## Sales Order and Invoice Integration
+
+### Sales Order Lines
+- The `salesOrderLine` table does NOT contain discount fields
+- The `salesOrderLines` view (created in `20240412224648_sales-orders.sql`) includes:
+  - Basic sales order line fields
+  - Customer ID from the parent sales order
+  - Item name and description via joins
+  - **No discount information is included in this view**
+
+### Sales Invoice Lines
+- The `salesInvoiceLine` table does NOT contain discount fields
+- The `salesInvoiceLines` view (created in `20250507143421_sales-invoice.sql`) includes:
+  - Basic invoice line fields
+  - Item details (name, description, thumbnail)
+  - Unit cost from `itemCost` table
+  - Customer part ID
+  - **No discount information is included in this view**
+
+### Quote to Sales Order/Invoice Flow
+- Sales orders and invoices were originally designed to reference quotes (via `quoteId`)
+- This relationship appears to have been removed/commented out in the migrations
+- Currently, there is no direct link between quote line prices (with discounts) and sales order/invoice lines
+- Discount information from quotes is NOT automatically propagated to sales orders or invoices
+
 ## Notes
 - Discounts are applied at the price level per quantity, not at the quote or line level
 - The system calculates net prices dynamically based on unit price and discount percent
 - No global quote-level discount exists; all discounts are line-item and quantity-specific
+- **Important**: Discount information exists only in the `quoteLinePrice` table and is not available in sales order or invoice views
