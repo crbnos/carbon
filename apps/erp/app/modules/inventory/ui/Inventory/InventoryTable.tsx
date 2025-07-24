@@ -145,7 +145,7 @@ const InventoryTable = memo(
         },
         {
           accessorKey: "materialFormId",
-          header: "Form",
+          header: "Shape",
           cell: ({ row }) => {
             const form = forms.find(
               (f) => f.id === row.original.materialFormId

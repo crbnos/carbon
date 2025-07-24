@@ -142,7 +142,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
       },
       {
         accessorKey: "materialFormId",
-        header: "Form",
+        header: "Shape",
         cell: (item) => <Enumerable value={item.getValue<string>()} />,
         meta: {
           filter: {
@@ -193,7 +193,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
       },
       {
         accessorKey: "dimensions",
-        header: "Dimensions",
+        header: "Dimension",
         cell: (item) => item.getValue(),
         meta: {
           icon: <LuExpand />,

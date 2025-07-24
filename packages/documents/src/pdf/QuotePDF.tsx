@@ -92,6 +92,11 @@ const QuotePDF = ({
     return line.quantity.length === 1;
   });
 
+  // Check if any quote lines have discounts
+  const hasDiscounts = quoteLinePrices.some(
+    (price) => (price.discountPercent ?? 0) > 0
+  );
+
   const getTotal = () => {
     return quoteLines.reduce((total, line) => {
       if (line.status === "No Quote") return total;
@@ -205,10 +210,24 @@ const QuotePDF = ({
             <View style={tw("w-2/3 flex flex-row")}>
               <Text style={tw("w-1/6 text-right")}>Qty</Text>
               <Text style={tw("w-1/6 text-right")}>Unit Price</Text>
-              <Text style={tw("w-1/6 text-right")}>Discount</Text>
-              <Text style={tw("w-1/6 text-right")}>Tax & Fees</Text>
-              <Text style={tw("w-1/6 text-right")}>Lead Time</Text>
-              <Text style={tw("w-1/6 text-right")}>Total Price</Text>
+              {hasDiscounts && (
+                <Text style={tw("w-1/6 text-right")}>Discount</Text>
+              )}
+              <Text
+                style={tw(`${hasDiscounts ? "w-1/6" : "w-1/5"} text-right`)}
+              >
+                Tax & Fees
+              </Text>
+              <Text
+                style={tw(`${hasDiscounts ? "w-1/6" : "w-1/5"} text-right`)}
+              >
+                Lead Time
+              </Text>
+              <Text
+                style={tw(`${hasDiscounts ? "w-1/6" : "w-1/5"} text-right`)}
+              >
+                Total Price
+              </Text>
             </View>
           </View>
 
@@ -341,20 +360,34 @@ const QuotePDF = ({
                                 ? unitPriceFormatter.format(unitPrice)
                                 : "-"}
                             </Text>
-                            <Text style={tw("w-1/6 text-right")}>
-                              {discountPercent > 0
-                                ? `${(discountPercent * 100).toFixed(1)}%`
-                                : "-"}
-                            </Text>
-                            <Text style={tw("w-1/6 text-right")}>
+                            {hasDiscounts && (
+                              <Text style={tw("w-1/6 text-right")}>
+                                {discountPercent > 0
+                                  ? `${(discountPercent * 100).toFixed(1)}%`
+                                  : "-"}
+                              </Text>
+                            )}
+                            <Text
+                              style={tw(
+                                `${hasDiscounts ? "w-1/6" : "w-1/5"} text-right`
+                              )}
+                            >
                               {totalTaxAndFees > 0
                                 ? formatter.format(totalTaxAndFees)
                                 : "-"}
                             </Text>
-                            <Text style={tw("w-1/6 text-right")}>
+                            <Text
+                              style={tw(
+                                `${hasDiscounts ? "w-1/6" : "w-1/5"} text-right`
+                              )}
+                            >
                               {price ? `${price.leadTime} days` : "-"}
                             </Text>
-                            <Text style={tw("w-1/6 text-right")}>
+                            <Text
+                              style={tw(
+                                `${hasDiscounts ? "w-1/6" : "w-1/5"} text-right`
+                              )}
+                            >
                               {netUnitPrice
                                 ? formatter.format(totalPrice)
                                 : "-"}
