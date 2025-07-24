@@ -203,11 +203,12 @@ const QuotePDF = ({
               <Text>Description</Text>
             </View>
             <View style={tw("w-2/3 flex flex-row")}>
-              <Text style={tw("w-1/5 text-right")}>Qty</Text>
-              <Text style={tw("w-1/5 text-right")}>Unit Price</Text>
-              <Text style={tw("w-1/5 text-right")}>Tax & Fees</Text>
-              <Text style={tw("w-1/5 text-right")}>Lead Time</Text>
-              <Text style={tw("w-1/5 text-right")}>Total Price</Text>
+              <Text style={tw("w-1/6 text-right")}>Qty</Text>
+              <Text style={tw("w-1/6 text-right")}>Unit Price</Text>
+              <Text style={tw("w-1/6 text-right")}>Discount</Text>
+              <Text style={tw("w-1/6 text-right")}>Tax & Fees</Text>
+              <Text style={tw("w-1/6 text-right")}>Lead Time</Text>
+              <Text style={tw("w-1/6 text-right")}>Total Price</Text>
             </View>
           </View>
 
@@ -308,9 +309,11 @@ const QuotePDF = ({
                         const price = prices.find(
                           (price) => price.quantity === quantity
                         );
+                        const unitPrice = price?.convertedUnitPrice ?? 0;
                         const netUnitPrice = price?.convertedNetUnitPrice ?? 0;
                         const netExtendedPrice =
                           price?.convertedNetExtendedPrice ?? 0;
+                        const discountPercent = price?.discountPercent ?? 0;
 
                         const additionalCharge =
                           additionalChargesByQuantity[index] ?? 0;
@@ -330,23 +333,28 @@ const QuotePDF = ({
 
                         return (
                           <View key={quantity} style={tw("flex flex-row")}>
-                            <Text style={tw("w-1/5 text-right")}>
+                            <Text style={tw("w-1/6 text-right")}>
                               {quantity}
                             </Text>
-                            <Text style={tw("w-1/5 text-right")}>
-                              {netUnitPrice
-                                ? unitPriceFormatter.format(netUnitPrice)
+                            <Text style={tw("w-1/6 text-right")}>
+                              {unitPrice
+                                ? unitPriceFormatter.format(unitPrice)
                                 : "-"}
                             </Text>
-                            <Text style={tw("w-1/5 text-right")}>
+                            <Text style={tw("w-1/6 text-right")}>
+                              {discountPercent > 0
+                                ? `${(discountPercent * 100).toFixed(1)}%`
+                                : "-"}
+                            </Text>
+                            <Text style={tw("w-1/6 text-right")}>
                               {totalTaxAndFees > 0
                                 ? formatter.format(totalTaxAndFees)
                                 : "-"}
                             </Text>
-                            <Text style={tw("w-1/5 text-right")}>
+                            <Text style={tw("w-1/6 text-right")}>
                               {price ? `${price.leadTime} days` : "-"}
                             </Text>
-                            <Text style={tw("w-1/5 text-right")}>
+                            <Text style={tw("w-1/6 text-right")}>
                               {netUnitPrice
                                 ? formatter.format(totalPrice)
                                 : "-"}

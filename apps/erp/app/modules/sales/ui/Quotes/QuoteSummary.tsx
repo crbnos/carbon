@@ -46,6 +46,9 @@ type SelectedLine = {
   shippingCost: number;
   convertedShippingCost: number;
   taxPercent: number;
+  discountPercent: number;
+  unitPrice: number;
+  convertedUnitPrice: number;
 };
 
 const deselectedLine: SelectedLine = {
@@ -58,6 +61,9 @@ const deselectedLine: SelectedLine = {
   shippingCost: 0,
   convertedShippingCost: 0,
   taxPercent: 0,
+  discountPercent: 0,
+  unitPrice: 0,
+  convertedUnitPrice: 0,
 };
 
 const LineItems = ({
@@ -343,6 +349,9 @@ const LinePricingOptions = ({
                 convertedShippingCost:
                   selectedOption.convertedShippingCost ?? 0,
                 taxPercent: line.taxPercent ?? 0,
+                discountPercent: selectedOption.discountPercent ?? 0,
+                unitPrice: selectedOption.unitPrice ?? 0,
+                convertedUnitPrice: selectedOption.convertedUnitPrice ?? 0,
               },
             }));
             setSelectedValue(value);
@@ -355,6 +364,7 @@ const LinePricingOptions = ({
               <Th />
               <Th>Quantity</Th>
               <Th>Unit Price</Th>
+              <Th>Discount</Th>
               <Th>Add-Ons</Th>
               <Th>Lead Time</Th>
               <Th>Subtotal</Th>
@@ -387,7 +397,12 @@ const LinePricingOptions = ({
                       </Td>
                       <Td>{option.quantity}</Td>
                       <Td>
-                        {formatter.format(option.convertedNetUnitPrice ?? 0)}
+                        {formatter.format(option.convertedUnitPrice ?? 0)}
+                      </Td>
+                      <Td>
+                        {option.discountPercent > 0
+                          ? percentFormatter.format(option.discountPercent)
+                          : "-"}
                       </Td>
                       <Td>
                         {formatter.format(
@@ -429,7 +444,7 @@ const LinePricingOptions = ({
                 <Td className="text-right">
                   <MotionNumber
                     value={
-                      (selectedLine.convertedNetUnitPrice ?? 0) *
+                      (selectedLine.convertedUnitPrice ?? 0) *
                       selectedLine.quantity
                     }
                     format={{ style: "currency", currency: quoteCurrency }}
@@ -437,6 +452,27 @@ const LinePricingOptions = ({
                   />
                 </Td>
               </Tr>
+
+              {selectedLine.discountPercent > 0 && (
+                <Tr key="discount" className="border-b border-border">
+                  <Td>
+                    Discount (
+                    {percentFormatter.format(selectedLine.discountPercent)})
+                  </Td>
+                  <Td className="text-right">
+                    -
+                    <MotionNumber
+                      value={
+                        (selectedLine.convertedUnitPrice ?? 0) *
+                        selectedLine.quantity *
+                        selectedLine.discountPercent
+                      }
+                      format={{ style: "currency", currency: quoteCurrency }}
+                      locales={locale}
+                    />
+                  </Td>
+                </Tr>
+              )}
 
               {additionalCharges.length > 0 &&
                 additionalCharges.map((charge) => (
@@ -627,6 +663,9 @@ const QuoteSummary = ({
           shippingCost: price.shippingCost ?? 0,
           convertedShippingCost: price.convertedShippingCost ?? 0,
           taxPercent: line.taxPercent ?? 0,
+          discountPercent: price.discountPercent ?? 0,
+          unitPrice: price.unitPrice ?? 0,
+          convertedUnitPrice: price.convertedUnitPrice ?? 0,
         };
         return acc;
       }, {}) ?? {}
@@ -639,6 +678,14 @@ const QuoteSummary = ({
       (line.convertedNetUnitPrice ?? 0) * line.quantity +
       (line.convertedAddOn ?? 0) +
       (line.convertedShippingCost ?? 0)
+    );
+  }, 0);
+  const totalDiscount = Object.values(selectedLines).reduce((acc, line) => {
+    return (
+      acc +
+      (line.convertedUnitPrice ?? 0) *
+        line.quantity *
+        (line.discountPercent ?? 0)
     );
   }, 0);
   const tax = Object.values(selectedLines).reduce((acc, line) => {
@@ -694,7 +741,7 @@ const QuoteSummary = ({
           <HStack className="justify-between text-base text-muted-foreground w-full">
             <span>Subtotal:</span>
             <MotionNumber
-              value={subtotal}
+              value={subtotal + totalDiscount}
               format={{
                 style: "currency",
                 currency: routeData?.quote?.currencyCode ?? "USD",
@@ -702,6 +749,22 @@ const QuoteSummary = ({
               locales={locale}
             />
           </HStack>
+          {totalDiscount > 0 && (
+            <HStack className="justify-between text-base text-muted-foreground w-full">
+              <span>Discount:</span>
+              <span className="text-muted-foreground">
+                -
+                <MotionNumber
+                  value={totalDiscount}
+                  format={{
+                    style: "currency",
+                    currency: routeData?.quote?.currencyCode ?? "USD",
+                  }}
+                  locales={locale}
+                />
+              </span>
+            </HStack>
+          )}
           <HStack className="justify-between text-base text-muted-foreground w-full">
             <span>Tax:</span>
             <MotionNumber
