@@ -6,6 +6,7 @@ import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
+  Separator,
   Status,
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
@@ -461,8 +462,13 @@ function JobOperationProgress({
                   </HoverCardTrigger>
                   <HoverCardContent
                     align="end"
-                    className="flex flex-col items-end gap-1 text-xs overflow-hidden w-96"
+                    className="flex flex-col items-end gap-1 text-xs overflow-hidden max-w-96"
                   >
+                    <div className="w-full text-left text-xs font-normal tracking-normal flex items-center gap-1">
+                      <LuPaperclip className="size-3 text-muted-foreground" />
+                      <span>Attachments</span>
+                    </div>
+                    <Separator className="my-1" />
                     {attachments.map((attachment) => {
                       const fileName = attachment.split("/").pop();
                       return (
