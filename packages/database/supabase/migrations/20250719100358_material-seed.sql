@@ -60,6 +60,9 @@ CREATE TABLE "materialFinish" (
   CONSTRAINT "materialFinish_name_companyId_unique" UNIQUE ("materialSubstanceId", "name", "companyId")
 );
 
+
+
+
 CREATE OR REPLACE VIEW "materialFinishes" WITH(SECURITY_INVOKER=true) AS
   SELECT
     "materialFinish"."id",
@@ -899,3 +902,182 @@ INSERT INTO "materialDimension" ("id", "materialFormId", "name", "isMetric", "co
   ('billet-round-200', 'billet', '200mm ⌀', true, null),
   ('billet-round-250', 'billet', '250mm ⌀', true, null),
   ('billet-round-300', 'billet', '300mm ⌀', true, null);
+
+
+-- Enable Row Level Security on new tables
+ALTER TABLE "materialFinish" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "materialGrade" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "materialType" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "materialDimension" ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies for materialFinish table
+CREATE POLICY "SELECT" ON "materialFinish"
+FOR SELECT 
+USING (
+  "companyId" IS NULL 
+  OR "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission('parts_view')
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "materialFinish"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission('parts_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "materialFinish"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission('parts_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "materialFinish"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission('parts_delete')
+    )::text[]
+  )
+);
+
+-- RLS Policies for materialGrade table
+CREATE POLICY "SELECT" ON "materialGrade"
+FOR SELECT 
+USING (
+  "companyId" IS NULL 
+  OR "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission('parts_view')
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "materialGrade"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission('parts_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "materialGrade"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission('parts_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "materialGrade"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission('parts_delete')
+    )::text[]
+  )
+);
+
+-- RLS Policies for materialType table
+CREATE POLICY "SELECT" ON "materialType"
+FOR SELECT 
+USING (
+  "companyId" IS NULL 
+  OR "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission('parts_view')
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "materialType"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission('parts_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "materialType"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission('parts_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "materialType"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission('parts_delete')
+    )::text[]
+  )
+);
+
+-- RLS Policies for materialDimension table
+CREATE POLICY "SELECT" ON "materialDimension"
+FOR SELECT 
+USING (
+  "companyId" IS NULL 
+  OR "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission('parts_view')
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "materialDimension"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission('parts_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "materialDimension"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission('parts_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "materialDimension"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission('parts_delete')
+    )::text[]
+  )
+);
