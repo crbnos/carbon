@@ -99,7 +99,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
             />
             <Hyperlink to={path.to.material(row.original.id!)}>
               <VStack spacing={0}>
-                {row.original.readableIdWithRevision}
+                {row.original.readableId}
                 <div className="w-full truncate text-muted-foreground text-xs">
                   {row.original.name}
                 </div>

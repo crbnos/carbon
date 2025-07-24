@@ -1,4 +1,4 @@
-import { ValidatedForm } from "@carbon/form";
+import { Array, ValidatedForm } from "@carbon/form";
 import {
   ModalCard,
   ModalCardBody,
@@ -21,7 +21,6 @@ import {
   DefaultMethodType,
   Hidden,
   InputControlled,
-  Number,
   Select,
   Submit,
   UnitOfMeasure,
@@ -96,14 +95,11 @@ const MaterialForm = ({
       properties.substance,
       properties.grade,
       properties.shape,
+      properties.dimensions,
       properties.finish,
     ]
       .filter((p) => !!p)
       .join(" ");
-
-    if (properties.dimensions) {
-      return `${base}: ${properties.dimensions}`;
-    }
 
     return base;
   }, [properties]);
@@ -185,7 +181,7 @@ const MaterialForm = ({
               )}
               <div
                 className={cn(
-                  "grid w-full gap-x-8 gap-y-4",
+                  "grid w-full gap-x-8 gap-y-4 items-start",
                   "grid-cols-1 md:grid-cols-2"
                 )}
               >
@@ -299,15 +295,7 @@ const MaterialForm = ({
                   label="Inventory Unit of Measure"
                 />
 
-                <Number
-                  name="unitCost"
-                  label="Unit Cost"
-                  formatOptions={{
-                    style: "currency",
-                    currency: baseCurrency,
-                  }}
-                  minValue={0}
-                />
+                <Array name="sizes" label="Sizes" />
 
                 <CustomFormFields table="material" tags={initialValues.tags} />
               </div>

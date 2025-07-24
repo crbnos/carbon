@@ -1420,9 +1420,6 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLine.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.quoteLine.itemType",
           },
           {
@@ -1566,9 +1563,6 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLine.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.quoteLine.itemType",
           },
           {
@@ -1664,9 +1658,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLine.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteLine.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.quoteLine.itemType",
@@ -6589,9 +6580,6 @@ export default {
             $ref: "#/parameters/rowFilter.supplierQuoteLine.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierQuoteLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.supplierQuoteLine.description",
           },
           {
@@ -6708,9 +6696,6 @@ export default {
             $ref: "#/parameters/rowFilter.supplierQuoteLine.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierQuoteLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.supplierQuoteLine.description",
           },
           {
@@ -6779,9 +6764,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuoteLine.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierQuoteLine.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuoteLine.description",
@@ -7291,9 +7273,6 @@ export default {
             $ref: "#/parameters/rowFilter.receiptLines.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.receiptLines.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.receiptLines.orderQuantity",
           },
           {
@@ -7337,6 +7316,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.receiptLines.requiresBatchTracking",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLines.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.receiptLines.thumbnailPath",
@@ -7846,9 +7828,6 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.itemType",
           },
           {
@@ -7925,6 +7904,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.version",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.itemReadableId",
           },
           {
             $ref: "#/parameters/select",
@@ -8509,9 +8491,6 @@ export default {
             $ref: "#/parameters/rowFilter.methodMaterial.customFields",
           },
           {
-            $ref: "#/parameters/rowFilter.methodMaterial.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.methodMaterial.order",
           },
           {
@@ -8631,9 +8610,6 @@ export default {
             $ref: "#/parameters/rowFilter.methodMaterial.customFields",
           },
           {
-            $ref: "#/parameters/rowFilter.methodMaterial.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.methodMaterial.order",
           },
           {
@@ -8705,9 +8681,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.methodMaterial.customFields",
-          },
-          {
-            $ref: "#/parameters/rowFilter.methodMaterial.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.methodMaterial.order",
@@ -8927,9 +8900,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteMaterialWithMakeMethodId.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteMaterialWithMakeMethodId.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.quoteMaterialWithMakeMethodId.itemType",
@@ -11251,9 +11221,6 @@ export default {
             $ref: "#/parameters/rowFilter.itemLedger.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.itemLedger.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.itemLedger.locationId",
           },
           {
@@ -11361,9 +11328,6 @@ export default {
             $ref: "#/parameters/rowFilter.itemLedger.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.itemLedger.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.itemLedger.locationId",
           },
           {
@@ -11423,9 +11387,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemLedger.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemLedger.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.itemLedger.locationId",
@@ -16654,9 +16615,6 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLines.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLines.serviceId",
           },
           {
@@ -16747,7 +16705,13 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLines.taxPercent",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.jobOperationId",
+          },
+          {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLines.thumbnailPath",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLines.itemName",
@@ -21523,9 +21487,6 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.accountNumber",
           },
           {
@@ -21720,9 +21681,6 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.accountNumber",
           },
           {
@@ -21869,9 +21827,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseOrderLine.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.accountNumber",
@@ -23665,9 +23620,6 @@ export default {
             $ref: "#/parameters/rowFilter.supplierQuoteLines.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierQuoteLines.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.supplierQuoteLines.description",
           },
           {
@@ -23708,6 +23660,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuoteLines.externalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierQuoteLines.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuoteLines.itemType",
@@ -26527,9 +26482,6 @@ export default {
             $ref: "#/parameters/rowFilter.quoteMaterial.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteMaterial.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.quoteMaterial.itemType",
           },
           {
@@ -26658,9 +26610,6 @@ export default {
             $ref: "#/parameters/rowFilter.quoteMaterial.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteMaterial.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.quoteMaterial.itemType",
           },
           {
@@ -26741,9 +26690,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteMaterial.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteMaterial.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.quoteMaterial.itemType",
@@ -27469,9 +27415,6 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.serviceId",
           },
           {
@@ -27642,9 +27585,6 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.serviceId",
           },
           {
@@ -27767,9 +27707,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.serviceId",
@@ -28192,9 +28129,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceLines.methodType",
           },
           {
-            $ref: "#/parameters/rowFilter.salesInvoiceLines.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.salesInvoiceLines.accountNumber",
           },
           {
@@ -28277,6 +28211,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLines.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLines.thumbnailPath",
@@ -30481,9 +30418,6 @@ export default {
             $ref: "#/parameters/rowFilter.receiptLine.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.receiptLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.receiptLine.orderQuantity",
           },
           {
@@ -30600,9 +30534,6 @@ export default {
             $ref: "#/parameters/rowFilter.receiptLine.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.receiptLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.receiptLine.orderQuantity",
           },
           {
@@ -30671,9 +30602,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.receiptLine.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLine.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.receiptLine.orderQuantity",
@@ -33190,9 +33118,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLines.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLines.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.salesOrderLines.accountNumber",
           },
           {
@@ -33299,6 +33224,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLines.sentDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLines.thumbnailPath",
@@ -37486,9 +37414,6 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLines.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteLines.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.quoteLines.itemType",
           },
           {
@@ -37553,6 +37478,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLines.configuration",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLines.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.quoteLines.thumbnailPath",
@@ -38836,9 +38764,6 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterial.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.jobMaterial.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.jobMaterial.itemType",
           },
           {
@@ -38979,9 +38904,6 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterial.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.jobMaterial.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.jobMaterial.itemType",
           },
           {
@@ -39074,9 +38996,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobMaterial.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobMaterial.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.jobMaterial.itemType",
@@ -40354,9 +40273,6 @@ export default {
             $ref: "#/parameters/rowFilter.shipmentLines.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.shipmentLines.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.shipmentLines.orderQuantity",
           },
           {
@@ -40400,6 +40316,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.shipmentLines.fulfillmentId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLines.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.shipmentLines.thumbnailPath",
@@ -40606,9 +40525,6 @@ export default {
             $ref: "#/parameters/rowFilter.shipmentLine.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.shipmentLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.shipmentLine.orderQuantity",
           },
           {
@@ -40725,9 +40641,6 @@ export default {
             $ref: "#/parameters/rowFilter.shipmentLine.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.shipmentLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.shipmentLine.orderQuantity",
           },
           {
@@ -40796,9 +40709,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.shipmentLine.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLine.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.shipmentLine.orderQuantity",
@@ -41134,9 +41044,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.salesOrderLine.accountNumber",
           },
           {
@@ -41316,9 +41223,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.salesOrderLine.accountNumber",
           },
           {
@@ -41450,9 +41354,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLine.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesOrderLine.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLine.accountNumber",
@@ -45148,9 +45049,6 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderLines.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.accountNumber",
           },
           {
@@ -45271,10 +45169,16 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.quantityShipped",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderLines.promisedDate",
+          },
+          {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.thumbnailPath",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.itemName",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLines.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.itemDescription",
@@ -49042,9 +48946,6 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLinePrices.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteLinePrices.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.quoteLinePrices.itemType",
           },
           {
@@ -49109,6 +49010,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLinePrices.configuration",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.quoteLinePrices.thumbnailPath",
@@ -51997,9 +51901,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.methodType",
           },
           {
-            $ref: "#/parameters/rowFilter.salesInvoiceLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.accountNumber",
           },
           {
@@ -52161,9 +52062,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.methodType",
           },
           {
-            $ref: "#/parameters/rowFilter.salesInvoiceLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.accountNumber",
           },
           {
@@ -52277,9 +52175,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.methodType",
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesInvoiceLine.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.accountNumber",
@@ -59135,10 +59030,6 @@ export default {
           format: "text",
           type: "string",
         },
-        itemReadableId: {
-          format: "text",
-          type: "string",
-        },
         itemType: {
           default: "Part",
           format: "text",
@@ -61281,10 +61172,6 @@ export default {
           format: "text",
           type: "string",
         },
-        itemReadableId: {
-          format: "text",
-          type: "string",
-        },
         description: {
           format: "text",
           type: "string",
@@ -61640,10 +61527,6 @@ export default {
           format: "text",
           type: "string",
         },
-        itemReadableId: {
-          format: "text",
-          type: "string",
-        },
         orderQuantity: {
           format: "numeric",
           type: "number",
@@ -61711,6 +61594,10 @@ export default {
         requiresBatchTracking: {
           format: "boolean",
           type: "boolean",
+        },
+        itemReadableId: {
+          format: "text",
+          type: "string",
         },
         thumbnailPath: {
           format: "text",
@@ -61950,10 +61837,6 @@ export default {
           format: "text",
           type: "string",
         },
-        itemReadableId: {
-          format: "text",
-          type: "string",
-        },
         itemType: {
           format: "text",
           type: "string",
@@ -62070,6 +61953,10 @@ export default {
         version: {
           format: "numeric",
           type: "number",
+        },
+        itemReadableId: {
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -62299,7 +62186,6 @@ export default {
         "companyId",
         "createdAt",
         "createdBy",
-        "itemReadableId",
         "order",
         "scrapQuantity",
         "kit",
@@ -62377,10 +62263,6 @@ export default {
         },
         customFields: {
           format: "jsonb",
-        },
-        itemReadableId: {
-          format: "text",
-          type: "string",
         },
         order: {
           default: 1,
@@ -62493,10 +62375,6 @@ export default {
         itemId: {
           description:
             "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        itemReadableId: {
           format: "text",
           type: "string",
         },
@@ -63836,10 +63714,6 @@ export default {
         itemId: {
           description:
             "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        itemReadableId: {
           format: "text",
           type: "string",
         },
@@ -66292,10 +66166,6 @@ export default {
           format: "text",
           type: "string",
         },
-        itemReadableId: {
-          format: "text",
-          type: "string",
-        },
         serviceId: {
           format: "text",
           type: "string",
@@ -66429,7 +66299,17 @@ export default {
           format: "numeric",
           type: "number",
         },
+        jobOperationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `jobOperation.id`.<fk table='jobOperation' column='id'/>",
+          format: "text",
+          type: "string",
+        },
         thumbnailPath: {
+          format: "text",
+          type: "string",
+        },
+        itemReadableId: {
           format: "text",
           type: "string",
         },
@@ -68315,10 +68195,6 @@ export default {
           format: "text",
           type: "string",
         },
-        itemReadableId: {
-          format: "text",
-          type: "string",
-        },
         accountNumber: {
           format: "text",
           type: "string",
@@ -69283,10 +69159,6 @@ export default {
           format: "text",
           type: "string",
         },
-        itemReadableId: {
-          format: "text",
-          type: "string",
-        },
         description: {
           format: "text",
           type: "string",
@@ -69348,6 +69220,10 @@ export default {
         },
         externalNotes: {
           format: "json",
+        },
+        itemReadableId: {
+          format: "text",
+          type: "string",
         },
         itemType: {
           enum: [
@@ -70597,7 +70473,6 @@ export default {
         "quoteId",
         "quoteLineId",
         "itemId",
-        "itemReadableId",
         "itemType",
         "methodType",
         "order",
@@ -70633,10 +70508,6 @@ export default {
         itemId: {
           description:
             "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        itemReadableId: {
           format: "text",
           type: "string",
         },
@@ -71058,10 +70929,6 @@ export default {
           format: "text",
           type: "string",
         },
-        itemReadableId: {
-          format: "text",
-          type: "string",
-        },
         serviceId: {
           format: "text",
           type: "string",
@@ -71443,10 +71310,6 @@ export default {
           format: 'public."methodType"',
           type: "string",
         },
-        itemReadableId: {
-          format: "text",
-          type: "string",
-        },
         accountNumber: {
           format: "text",
           type: "string",
@@ -71571,6 +71434,10 @@ export default {
         updatedBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        itemReadableId: {
           format: "text",
           type: "string",
         },
@@ -72592,10 +72459,6 @@ export default {
           format: "text",
           type: "string",
         },
-        itemReadableId: {
-          format: "text",
-          type: "string",
-        },
         orderQuantity: {
           format: "numeric",
           type: "number",
@@ -73609,10 +73472,6 @@ export default {
           format: "text",
           type: "string",
         },
-        itemReadableId: {
-          format: "text",
-          type: "string",
-        },
         accountNumber: {
           format: "text",
           type: "string",
@@ -73760,6 +73619,10 @@ export default {
         },
         sentDate: {
           format: "date",
+          type: "string",
+        },
+        itemReadableId: {
+          format: "text",
           type: "string",
         },
         thumbnailPath: {
@@ -75763,10 +75626,6 @@ export default {
           format: "text",
           type: "string",
         },
-        itemReadableId: {
-          format: "text",
-          type: "string",
-        },
         itemType: {
           format: "text",
           type: "string",
@@ -75866,6 +75725,10 @@ export default {
         },
         configuration: {
           format: "jsonb",
+        },
+        itemReadableId: {
+          format: "text",
+          type: "string",
         },
         thumbnailPath: {
           format: "text",
@@ -76553,7 +76416,6 @@ export default {
         "id",
         "jobId",
         "itemId",
-        "itemReadableId",
         "itemType",
         "methodType",
         "order",
@@ -76585,10 +76447,6 @@ export default {
         itemId: {
           description:
             "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        itemReadableId: {
           format: "text",
           type: "string",
         },
@@ -77249,10 +77107,6 @@ export default {
           format: "text",
           type: "string",
         },
-        itemReadableId: {
-          format: "text",
-          type: "string",
-        },
         orderQuantity: {
           format: "numeric",
           type: "number",
@@ -77320,6 +77174,10 @@ export default {
         fulfillmentId: {
           description:
             "Note:\nThis is a Foreign Key to `fulfillment.id`.<fk table='fulfillment' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        itemReadableId: {
           format: "text",
           type: "string",
         },
@@ -77406,10 +77264,6 @@ export default {
         itemId: {
           description:
             "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        itemReadableId: {
           format: "text",
           type: "string",
         },
@@ -77760,10 +77614,6 @@ export default {
         itemId: {
           description:
             "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        itemReadableId: {
           format: "text",
           type: "string",
         },
@@ -79540,10 +79390,6 @@ export default {
           format: "text",
           type: "string",
         },
-        itemReadableId: {
-          format: "text",
-          type: "string",
-        },
         accountNumber: {
           format: "text",
           type: "string",
@@ -79716,11 +79562,19 @@ export default {
           format: "numeric",
           type: "number",
         },
+        promisedDate: {
+          format: "date",
+          type: "string",
+        },
         thumbnailPath: {
           format: "text",
           type: "string",
         },
         itemName: {
+          format: "text",
+          type: "string",
+        },
+        itemReadableId: {
           format: "text",
           type: "string",
         },
@@ -81663,10 +81517,6 @@ export default {
           format: "text",
           type: "string",
         },
-        itemReadableId: {
-          format: "text",
-          type: "string",
-        },
         itemType: {
           format: "text",
           type: "string",
@@ -81766,6 +81616,10 @@ export default {
         },
         configuration: {
           format: "jsonb",
+        },
+        itemReadableId: {
+          format: "text",
+          type: "string",
         },
         thumbnailPath: {
           format: "text",
@@ -82986,10 +82840,6 @@ export default {
           default: "Pick",
           enum: ["Buy", "Make", "Pick"],
           format: 'public."methodType"',
-          type: "string",
-        },
-        itemReadableId: {
-          format: "text",
           type: "string",
         },
         accountNumber: {
@@ -84424,12 +84274,6 @@ export default {
     },
     "rowFilter.quoteLine.itemId": {
       name: "itemId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.quoteLine.itemReadableId": {
-      name: "itemReadableId",
       required: false,
       in: "query",
       type: "string",
@@ -86828,12 +86672,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.supplierQuoteLine.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.supplierQuoteLine.description": {
       name: "description",
       required: false,
@@ -87191,12 +87029,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.receiptLines.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.receiptLines.orderQuantity": {
       name: "orderQuantity",
       required: false,
@@ -87283,6 +87115,12 @@ export default {
     },
     "rowFilter.receiptLines.requiresBatchTracking": {
       name: "requiresBatchTracking",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.receiptLines.itemReadableId": {
+      name: "itemReadableId",
       required: false,
       in: "query",
       type: "string",
@@ -87569,12 +87407,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.jobMaterialWithMakeMethodId.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.jobMaterialWithMakeMethodId.itemType": {
       name: "itemType",
       required: false,
@@ -87727,6 +87559,12 @@ export default {
     },
     "rowFilter.jobMaterialWithMakeMethodId.version": {
       name: "version",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobMaterialWithMakeMethodId.itemReadableId": {
+      name: "itemReadableId",
       required: false,
       in: "query",
       type: "string",
@@ -88103,12 +87941,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.methodMaterial.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.methodMaterial.order": {
       name: "order",
       required: false,
@@ -88237,12 +88069,6 @@ export default {
     },
     "rowFilter.quoteMaterialWithMakeMethodId.itemId": {
       name: "itemId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.quoteMaterialWithMakeMethodId.itemReadableId": {
-      name: "itemReadableId",
       required: false,
       in: "query",
       type: "string",
@@ -89743,12 +89569,6 @@ export default {
     },
     "rowFilter.itemLedger.itemId": {
       name: "itemId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.itemLedger.itemReadableId": {
-      name: "itemReadableId",
       required: false,
       in: "query",
       type: "string",
@@ -92426,12 +92246,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.purchaseInvoiceLines.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.purchaseInvoiceLines.serviceId": {
       name: "serviceId",
       required: false,
@@ -92612,8 +92426,20 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.purchaseInvoiceLines.jobOperationId": {
+      name: "jobOperationId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.purchaseInvoiceLines.thumbnailPath": {
       name: "thumbnailPath",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.itemReadableId": {
+      name: "itemReadableId",
       required: false,
       in: "query",
       type: "string",
@@ -94763,12 +94589,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.purchaseOrderLine.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.purchaseOrderLine.accountNumber": {
       name: "accountNumber",
       required: false,
@@ -95885,12 +95705,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.supplierQuoteLines.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.supplierQuoteLines.description": {
       name: "description",
       required: false,
@@ -95971,6 +95785,12 @@ export default {
     },
     "rowFilter.supplierQuoteLines.externalNotes": {
       name: "externalNotes",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplierQuoteLines.itemReadableId": {
+      name: "itemReadableId",
       required: false,
       in: "query",
       type: "string",
@@ -97331,12 +97151,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.quoteMaterial.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.quoteMaterial.itemType": {
       name: "itemType",
       required: false,
@@ -97805,12 +97619,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.purchaseInvoiceLine.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.purchaseInvoiceLine.serviceId": {
       name: "serviceId",
       required: false,
@@ -98270,12 +98078,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.salesInvoiceLines.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.salesInvoiceLines.accountNumber": {
       name: "accountNumber",
       required: false,
@@ -98440,6 +98242,12 @@ export default {
     },
     "rowFilter.salesInvoiceLines.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.itemReadableId": {
+      name: "itemReadableId",
       required: false,
       in: "query",
       type: "string",
@@ -99647,12 +99455,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.receiptLine.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.receiptLine.orderQuantity": {
       name: "orderQuantity",
       required: false,
@@ -100739,12 +100541,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.salesOrderLines.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.salesOrderLines.accountNumber": {
       name: "accountNumber",
       required: false,
@@ -100957,6 +100753,12 @@ export default {
     },
     "rowFilter.salesOrderLines.sentDate": {
       name: "sentDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLines.itemReadableId": {
+      name: "itemReadableId",
       required: false,
       in: "query",
       type: "string",
@@ -103286,12 +103088,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.quoteLines.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.quoteLines.itemType": {
       name: "itemType",
       required: false,
@@ -103420,6 +103216,12 @@ export default {
     },
     "rowFilter.quoteLines.configuration": {
       name: "configuration",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLines.itemReadableId": {
+      name: "itemReadableId",
       required: false,
       in: "query",
       type: "string",
@@ -104177,12 +103979,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.jobMaterial.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.jobMaterial.itemType": {
       name: "itemType",
       required: false,
@@ -104909,12 +104705,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.shipmentLines.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.shipmentLines.orderQuantity": {
       name: "orderQuantity",
       required: false,
@@ -105005,6 +104795,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.shipmentLines.itemReadableId": {
+      name: "itemReadableId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.shipmentLines.thumbnailPath": {
       name: "thumbnailPath",
       required: false,
@@ -105091,12 +104887,6 @@ export default {
     },
     "rowFilter.shipmentLine.itemId": {
       name: "itemId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.shipmentLine.itemReadableId": {
-      name: "itemReadableId",
       required: false,
       in: "query",
       type: "string",
@@ -105454,12 +105244,6 @@ export default {
     },
     "rowFilter.salesOrderLine.itemId": {
       name: "itemId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.salesOrderLine.itemReadableId": {
-      name: "itemReadableId",
       required: false,
       in: "query",
       type: "string",
@@ -107465,12 +107249,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.purchaseOrderLines.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.purchaseOrderLines.accountNumber": {
       name: "accountNumber",
       required: false,
@@ -107711,6 +107489,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.purchaseOrderLines.promisedDate": {
+      name: "promisedDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.purchaseOrderLines.thumbnailPath": {
       name: "thumbnailPath",
       required: false,
@@ -107719,6 +107503,12 @@ export default {
     },
     "rowFilter.purchaseOrderLines.itemName": {
       name: "itemName",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseOrderLines.itemReadableId": {
+      name: "itemReadableId",
       required: false,
       in: "query",
       type: "string",
@@ -109886,12 +109676,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.quoteLinePrices.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.quoteLinePrices.itemType": {
       name: "itemType",
       required: false,
@@ -110020,6 +109804,12 @@ export default {
     },
     "rowFilter.quoteLinePrices.configuration": {
       name: "configuration",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.itemReadableId": {
+      name: "itemReadableId",
       required: false,
       in: "query",
       type: "string",
@@ -111334,12 +111124,6 @@ export default {
     },
     "rowFilter.salesInvoiceLine.methodType": {
       name: "methodType",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.salesInvoiceLine.itemReadableId": {
-      name: "itemReadableId",
       required: false,
       in: "query",
       type: "string",

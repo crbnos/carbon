@@ -72,7 +72,7 @@ export default function MaterialsNewRoute() {
     materialFormId: "",
     materialSubstanceId: "",
     replenishmentSystem: "Buy" as const,
-    defaultMethodType: "Buy" as const,
+    defaultMethodType: "Pick" as const,
     itemTrackingType: "Inventory" as "Inventory",
     unitOfMeasureCode: "EA",
     unitCost: 0,

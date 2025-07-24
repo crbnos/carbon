@@ -182,6 +182,7 @@ export const materialValidator = itemValidator.merge(
     finishId: zfd.text(z.string().optional()),
     gradeId: zfd.text(z.string().optional()),
     dimensionId: zfd.text(z.string().optional()),
+    sizes: z.array(z.string()).optional(),
   })
 );
 
@@ -193,6 +194,7 @@ export const materialValidatorWithGeneratedIds = z.object({
   finishId: zfd.text(z.string().optional()),
   gradeId: zfd.text(z.string().optional()),
   dimensionId: zfd.text(z.string().optional()),
+  sizes: z.array(z.string()).optional(),
 });
 
 export const methodMaterialValidator = z.object({

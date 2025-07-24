@@ -2505,6 +2505,7 @@ export async function upsertMaterial(
         companyId: string;
         createdBy: string;
         customFields?: Json;
+        sizes?: string[];
       })
     | (z.infer<typeof materialValidator> & {
         updatedBy: string;
@@ -2512,24 +2513,53 @@ export async function upsertMaterial(
       })
 ) {
   if ("createdBy" in material) {
-    const itemInsert = await client
-      .from("item")
-      .insert({
-        readableId: material.id,
-        name: material.name,
-        type: "Material",
-        replenishmentSystem: material.replenishmentSystem,
-        defaultMethodType: material.defaultMethodType,
-        itemTrackingType: material.itemTrackingType,
-        unitOfMeasureCode: material.unitOfMeasureCode,
-        active: material.active,
-        companyId: material.companyId,
-        createdBy: material.createdBy,
-      })
-      .select("id")
-      .single();
-    if (itemInsert.error) return itemInsert;
-    const itemId = itemInsert.data?.id;
+    if (material.sizes) {
+      const itemInserts = await Promise.all(
+        material.sizes.map((size) =>
+          client
+            .from("item")
+            .insert({
+              readableId: material.id,
+              name: material.name,
+              type: "Material",
+              replenishmentSystem: material.replenishmentSystem,
+              defaultMethodType: material.defaultMethodType,
+              itemTrackingType: material.itemTrackingType,
+              unitOfMeasureCode: material.unitOfMeasureCode,
+              active: material.active,
+              revision: size,
+              companyId: material.companyId,
+              createdBy: material.createdBy,
+            })
+            .select("id")
+            .single()
+        )
+      );
+
+      const hasErrors = itemInserts.some((insert) => insert.error);
+      if (hasErrors) {
+        const firstError = itemInserts.find((insert) => insert.error);
+        return firstError!;
+      }
+    } else {
+      const itemInsert = await client
+        .from("item")
+        .insert({
+          readableId: material.id,
+          name: material.name,
+          type: "Material",
+          replenishmentSystem: material.replenishmentSystem,
+          defaultMethodType: material.defaultMethodType,
+          itemTrackingType: material.itemTrackingType,
+          unitOfMeasureCode: material.unitOfMeasureCode,
+          active: material.active,
+          companyId: material.companyId,
+          createdBy: material.createdBy,
+        })
+        .select("id")
+        .single();
+      if (itemInsert.error) return itemInsert;
+    }
 
     const materialInsert = await client.from("material").upsert({
       id: material.id,
@@ -2546,23 +2576,16 @@ export async function upsertMaterial(
 
     if (materialInsert.error) return materialInsert;
 
-    const costUpdate = await client
-      .from("itemCost")
-      .update({ unitCost: material.unitCost })
-      .eq("itemId", itemId)
-      .select("*")
-      .single();
-
-    if (costUpdate.error) return costUpdate;
-
     const newMaterial = await client
       .from("materials")
       .select("*")
       .eq("readableId", material.id)
-      .eq("companyId", material.companyId)
-      .single();
+      .eq("companyId", material.companyId);
 
-    return newMaterial;
+    return {
+      data: newMaterial.data?.[0] ?? null,
+      error: newMaterial.error,
+    };
   }
 
   const itemUpdate = {
