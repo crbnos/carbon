@@ -1,14 +1,27 @@
 import { getCarbonServiceRole } from "@carbon/auth";
 import type { Database } from "@carbon/database";
-import { Avatar, cn, Status } from "@carbon/react";
+import {
+  Avatar,
+  cn,
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+  Status,
+} from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { useNumberFormatter } from "@react-aria/i18n";
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, useParams } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { LoaderFunctionArgs } from "@vercel/remix";
-import { json } from "@vercel/remix";
+import { defer } from "@vercel/remix";
 import { useMemo } from "react";
-import { LuBookMarked, LuImage, LuShield, LuShieldCheck } from "react-icons/lu";
+import {
+  LuBookMarked,
+  LuImage,
+  LuPaperclip,
+  LuShield,
+  LuShieldCheck,
+} from "react-icons/lu";
 import z from "zod";
 import {
   BreadcrumbItem,
@@ -17,7 +30,10 @@ import {
   MethodIcon,
   Table,
 } from "~/components";
-import { jobOperationStatus } from "~/modules/production";
+import {
+  getJobOperationAttachments,
+  jobOperationStatus,
+} from "~/modules/production";
 import { JobStatus } from "~/modules/production/ui/Jobs";
 import { getExternalSalesOrderLines } from "~/modules/sales/sales.service";
 import { SalesStatus } from "~/modules/sales/ui/SalesOrder";
@@ -36,6 +52,7 @@ export const meta = () => {
 
 const jobOperationValidator = z
   .object({
+    id: z.string(),
     status: z.enum(jobOperationStatus),
     description: z.string(),
     order: z.number(),
@@ -90,6 +107,10 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     throw new Error("Sales order lines not found");
   }
 
+  const jobOperationIds = jobOperationValidator
+    .safeParse(salesOrderLines.data?.flatMap((line) => line.jobOperations))
+    .data?.map((operation) => operation.id);
+
   const thumbnailPaths = salesOrderLines.data?.reduce<
     Record<string, string | null>
   >((acc, line) => {
@@ -99,7 +120,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     return acc;
   }, {});
 
-  const thumbnails: Record<string, string | null> =
+  const [thumbnails, jobOperationAttachments] = await Promise.all([
     (thumbnailPaths
       ? await Promise.all(
           Object.entries(thumbnailPaths).map(([id, path]) => {
@@ -120,20 +141,29 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
         acc[thumbnail.id] = thumbnail.data;
       }
       return acc;
-    }, {}) ?? {};
+    }, {}) ?? {},
+    getJobOperationAttachments(serviceRole, jobOperationIds ?? []),
+  ]);
 
-  return json({
+  return defer({
     customer: customer.data,
     company: company.data,
     salesOrderLines: salesOrderLines.data ?? [],
+    jobOperationAttachments,
     count: salesOrderLines.count,
     thumbnails,
   });
 }
 
 export default function CustomerPortal() {
-  const { count, customer, company, salesOrderLines, thumbnails } =
-    useLoaderData<typeof loader>();
+  const {
+    count,
+    customer,
+    company,
+    salesOrderLines,
+    thumbnails,
+    jobOperationAttachments,
+  } = useLoaderData<typeof loader>();
 
   const formatter = useNumberFormatter({
     minimumFractionDigits: 0,
@@ -295,12 +325,13 @@ export default function CustomerPortal() {
               quantityShipped={row.original.quantitySent ?? 0}
               quantityComplete={row.original.jobQuantityComplete ?? 0}
               jobOperations={jobOperations.data}
+              jobOperationAttachments={jobOperationAttachments}
             />
           );
         },
       },
     ];
-  }, [formatter, thumbnails]);
+  }, [formatter, thumbnails, jobOperationAttachments]);
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-background">
@@ -380,11 +411,18 @@ function JobOperationProgress({
   quantityShipped,
   quantityComplete,
   jobOperations,
+  jobOperationAttachments,
 }: {
   quantityShipped: number;
   quantityComplete: number;
   jobOperations: z.infer<typeof jobOperationValidator>;
+  jobOperationAttachments: Record<string, string[]>;
 }) {
+  const { id } = useParams();
+  if (!id) {
+    throw new Error("Customer ID is required");
+  }
+
   const isComplete = quantityShipped > 0 || quantityComplete > 0;
   return (
     <div className="flex items-center gap-0">
@@ -393,13 +431,15 @@ function JobOperationProgress({
         .map((operation, index) => {
           const isFirst = index === 0;
           const isLast = index === jobOperations.length - 1;
+          const operationId = operation.id;
+          const attachments = jobOperationAttachments[operationId];
 
           return (
             <div
               key={index}
               className={cn(
                 `
-              max-w-[140px]
+              flex items-center gap-1 max-w-[140px]
               uppercase font-bold text-[11px] truncate tracking-tight whitespace-nowrap
               px-2 py-1
               border border-border
@@ -414,6 +454,32 @@ function JobOperationProgress({
               )}
             >
               {operation.description}
+              {Array.isArray(attachments) && attachments.length > 0 && (
+                <HoverCard openDelay={0}>
+                  <HoverCardTrigger>
+                    <LuPaperclip className="size-3 text-muted-foreground" />
+                  </HoverCardTrigger>
+                  <HoverCardContent
+                    align="end"
+                    className="flex flex-col items-end gap-1 text-xs overflow-hidden w-96"
+                  >
+                    {attachments.map((attachment) => {
+                      const fileName = attachment.split("/").pop();
+                      return (
+                        <div key={attachment}>
+                          <a
+                            href={path.to.externalCustomerFile(id, attachment)}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {fileName}
+                          </a>
+                        </div>
+                      );
+                    })}
+                  </HoverCardContent>
+                </HoverCard>
+              )}
             </div>
           );
         })}

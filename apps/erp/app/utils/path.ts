@@ -629,6 +629,8 @@ export const path = {
       generatePath(`${x}/users/employee-types/${id}`),
     employeeTypes: `${x}/users/employee-types`,
     externalCustomer: (id: string) => generatePath(`/share/customer/${id}`),
+    externalCustomerFile: (id: string, path: string) =>
+      generatePath(`/share/customer/${id}/${path}`),
     externalQuote: (id: string) => generatePath(`/share/quote/${id}`),
     feedback: `${x}/feedback`,
     fiscalYears: `${x}/accounting/years`,

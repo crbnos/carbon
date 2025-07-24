@@ -67,7 +67,7 @@ export async function clientAction({
   serverAction,
   params,
 }: ClientActionFunctionArgs) {
-  const formData = await await request.clone().formData(); // if we. don't clone it we can't access it in the action
+  const formData = await request.clone().formData(); // if we. don't clone it we can't access it in the action
   const validation = await validator(supplierProcessValidator).validate(
     formData
   );
