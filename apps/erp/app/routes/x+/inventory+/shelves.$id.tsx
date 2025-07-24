@@ -54,7 +54,7 @@ export async function clientAction({
 }: ClientActionFunctionArgs) {
   const companyId = getCompanyId();
 
-  const formData = await await request.clone().formData(); // if we. don't clone it we can't access it in the action
+  const formData = await request.clone().formData(); // if we. don't clone it we can't access it in the action
   const validation = await validator(shelfValidator).validate(formData);
 
   if (validation.error) {

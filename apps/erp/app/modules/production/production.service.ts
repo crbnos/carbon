@@ -186,6 +186,17 @@ export async function getJob(client: SupabaseClient<Database>, id: string) {
   return client.from("jobs").select("*").eq("id", id).single();
 }
 
+export async function getJobByOperationId(
+  client: SupabaseClient<Database>,
+  operationId: string
+) {
+  return client
+    .from("jobOperation")
+    .select("...job(id, companyId, customerId)")
+    .eq("id", operationId)
+    .single();
+}
+
 export async function getJobPurchaseOrderLines(
   client: SupabaseClient<Database>,
   jobId: string
@@ -451,6 +462,37 @@ export async function getJobOperationsAssignedToEmployee(
     )
     .eq("assignee", employeeId)
     .eq("companyId", companyId);
+}
+
+export async function getJobOperationAttachments(
+  client: SupabaseClient<Database>,
+  jobOperationIds: string[]
+): Promise<Record<string, string[]>> {
+  if (jobOperationIds.length === 0) return {};
+
+  const { data: operationAttributes } = await client
+    .from("jobOperationAttribute")
+    .select("*, jobOperationAttributeRecord(*)")
+    .in("operationId", jobOperationIds);
+
+  if (!operationAttributes) return {};
+
+  const attachmentsByOperation: Record<string, string[]> = {};
+
+  operationAttributes.forEach((attr) => {
+    if (attr.jobOperationAttributeRecord) {
+      if (attr.type === "File" && attr.jobOperationAttributeRecord?.value) {
+        if (!attachmentsByOperation[attr.operationId]) {
+          attachmentsByOperation[attr.operationId] = [];
+        }
+        attachmentsByOperation[attr.operationId].push(
+          attr.jobOperationAttributeRecord?.value
+        );
+      }
+    }
+  });
+
+  return attachmentsByOperation;
 }
 
 export async function getJobOperationsList(

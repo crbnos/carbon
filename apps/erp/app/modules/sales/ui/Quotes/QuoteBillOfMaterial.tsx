@@ -674,7 +674,7 @@ function MaterialForm({
       return;
     }
 
-    const [item, itemCost] = await await Promise.all([
+    const [item, itemCost] = await Promise.all([
       carbon
         .from("item")
         .select(
