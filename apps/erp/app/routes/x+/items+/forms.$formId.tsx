@@ -10,7 +10,7 @@ import {
   materialFormValidator,
   upsertMaterialForm,
 } from "~/modules/items";
-import { MaterialShapeForm } from "~/modules/items/ui/MaterialForms";
+import { MaterialShapeForm } from "~/modules/items/ui/MaterialShapes";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 

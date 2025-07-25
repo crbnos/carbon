@@ -16,7 +16,13 @@ import { useFetcher } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 import type { z } from "zod";
-import { CustomFormFields, Hidden, Input, InputControlled, Submit } from "~/components/Form";
+import {
+  CustomFormFields,
+  Hidden,
+  Input,
+  InputControlled,
+  Submit,
+} from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import { materialFormValidator } from "../../items.models";

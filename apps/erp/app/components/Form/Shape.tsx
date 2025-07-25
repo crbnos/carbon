@@ -5,7 +5,7 @@ import { useFetcher } from "@remix-run/react";
 import { useMemo, useRef, useState } from "react";
 import { usePermissions } from "~/hooks";
 import type { getMaterialFormsList } from "~/modules/items";
-import { MaterialShapeForm } from "~/modules/items/ui/MaterialForms";
+import { MaterialShapeForm } from "~/modules/items/ui/MaterialShapes";
 import { path } from "~/utils/path";
 import { Enumerable } from "../Enumerable";
 
