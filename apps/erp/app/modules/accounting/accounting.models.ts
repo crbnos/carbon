@@ -350,7 +350,6 @@ export const costLedgerValidator = z.object({
   documentType: z.union([z.enum(itemLedgerDocumentTypes), z.undefined()]),
   documentId: z.string().optional(),
   itemId: zfd.text(z.string()),
-  itemReadableId: zfd.text(z.string()),
   quantity: z.number(),
   cost: z.number(),
   costPostedToGL: z.number(),

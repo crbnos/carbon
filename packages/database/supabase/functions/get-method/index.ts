@@ -691,7 +691,6 @@ serve(async (req: Request) => {
                 }),
               ]);
 
-              let itemReadableId = child.data.itemReadableId;
               let itemType = child.data.itemType;
               let unitCost = child.data.unitCost;
               let requiresSerialTracking =
@@ -709,8 +708,6 @@ serve(async (req: Request) => {
                   .eq("companyId", companyId)
                   .single();
                 if (item.data) {
-                  itemReadableId =
-                    item.data.readableIdWithRevision ?? item.data.readableId;
                   itemType = item.data.type;
                   unitCost =
                     item.data.itemCost[0]?.unitCost ?? child.data.unitCost;
@@ -732,7 +729,6 @@ serve(async (req: Request) => {
                 jobOperationId:
                   methodOperationsToJobOperations[child.data.operationId],
                 itemId,
-                itemReadableId,
                 itemType,
                 kit: child.data.kit,
                 methodType,
@@ -768,8 +764,7 @@ serve(async (req: Request) => {
               materialsWithConfiguredFields = bomConfiguration
                 .map((readableIdWithRevision, index) => {
                   const material = materialsWithConfiguredFields.find(
-                    (material) =>
-                      material.itemReadableId === readableIdWithRevision
+                    (material) => material.itemId === itemId
                   );
                   if (material) {
                     return {
@@ -792,7 +787,7 @@ serve(async (req: Request) => {
 
             const madeChildren = madeMaterials.map((material, index) => {
               const childIndex = materialsWithConfiguredFields.findIndex(
-                (m) => m.itemReadableId === material.itemReadableId
+                (m) => m.itemId === material.itemId
               );
               return node.children[childIndex];
             });
@@ -1061,7 +1056,6 @@ serve(async (req: Request) => {
                 methodOperationsToJobOperations[child.data.operationId],
               itemId: child.data.itemId,
               kit: child.data.kit,
-              itemReadableId: child.data.itemReadableId,
               itemType: child.data.itemType,
               methodType: child.data.methodType,
               order: child.data.order,
@@ -1565,7 +1559,6 @@ serve(async (req: Request) => {
                 }),
               ]);
 
-              let itemReadableId = child.data.itemReadableId;
               let itemType = child.data.itemType;
               let unitCost = child.data.unitCost;
 
@@ -1581,8 +1574,6 @@ serve(async (req: Request) => {
                   .eq("companyId", companyId)
                   .single();
                 if (item.data) {
-                  itemReadableId =
-                    item.data.readableIdWithRevision ?? item.data.readableId;
                   itemType = item.data.type;
                   unitCost =
                     item.data.itemCost[0]?.unitCost ?? child.data.unitCost;
@@ -1602,7 +1593,6 @@ serve(async (req: Request) => {
                   methodOperationsToQuoteOperations[child.data.operationId],
                 order: child.data.order,
                 itemId,
-                itemReadableId,
                 itemType,
                 kit: child.data.kit,
                 methodType,
@@ -1635,8 +1625,7 @@ serve(async (req: Request) => {
               materialsWithConfiguredFields = bomConfiguration
                 .map((readableIdWithRevision, index) => {
                   const material = materialsWithConfiguredFields.find(
-                    (material) =>
-                      material.itemReadableId === readableIdWithRevision
+                    (material) => material.itemId === itemId
                   );
                   if (material) {
                     return {
@@ -1659,7 +1648,7 @@ serve(async (req: Request) => {
 
             const madeChildren = madeMaterials.map((material, index) => {
               const childIndex = materialsWithConfiguredFields.findIndex(
-                (m) => m.itemReadableId === material.itemReadableId
+                (m) => m.itemId === material.itemId
               );
               return node.children[childIndex];
             });
@@ -1924,7 +1913,6 @@ serve(async (req: Request) => {
               quoteOperationId:
                 methodOperationsToQuoteOperations[child.data.operationId],
               itemId: child.data.itemId,
-              itemReadableId: child.data.itemReadableId,
               itemType: child.data.itemType,
               kit: child.data.kit,
               methodType: child.data.methodType,
@@ -2089,7 +2077,6 @@ serve(async (req: Request) => {
                 makeMethodId: makeMethodByItemId[node.data.itemId],
                 materialMakeMethodId: makeMethodByItemId[child.data.itemId],
                 itemId: child.data.itemId,
-                itemReadableId: child.data.itemReadableId,
                 itemType: child.data.itemType,
                 kit: child.data.kit,
                 methodType: child.data.methodType,
@@ -2357,7 +2344,6 @@ serve(async (req: Request) => {
                 makeMethodId: makeMethodByItemId[node.data.itemId],
                 materialMakeMethodId: makeMethodByItemId[child.data.itemId],
                 itemId: child.data.itemId,
-                itemReadableId: child.data.itemReadableId,
                 itemType: child.data.itemType,
                 kit: child.data.kit,
                 methodType: child.data.methodType,
@@ -2926,7 +2912,6 @@ serve(async (req: Request) => {
                   makeMethodId: makeMethodByItemId[node.data.itemId],
                   materialMakeMethodId: makeMethodByItemId[child.data.itemId],
                   itemId: child.data.itemId,
-                  itemReadableId: child.data.itemReadableId,
                   itemType: child.data.itemType,
                   kit: child.data.kit,
                   methodType: child.data.methodType,
@@ -3206,7 +3191,6 @@ serve(async (req: Request) => {
                   materialMakeMethodId: makeMethodByItemId[child.data.itemId],
                   itemId: child.data.itemId,
                   kit: child.data.kit,
-                  itemReadableId: child.data.itemReadableId,
                   itemType: child.data.itemType,
                   methodType: child.data.methodType,
                   order: child.data.order,
@@ -3431,6 +3415,16 @@ serve(async (req: Request) => {
           quoteMaterials.error ||
           quoteOperations.error
         ) {
+          if (quoteMakeMethod.error) {
+            console.log("quoteMakeMethodError");
+            console.log(quoteMakeMethod.error);
+          }
+          if (quoteMaterials.error) {
+            console.log(quoteMaterials.error);
+          }
+          if (quoteOperations.error) {
+            console.log(quoteOperations.error);
+          }
           throw new Error("Failed to fetch quote data");
         }
 
@@ -3481,7 +3475,6 @@ serve(async (req: Request) => {
                   id: newMaterialId,
                   jobId,
                   itemId: child.data.itemId,
-                  itemReadableId: child.data.itemReadableId,
                   itemType: child.data.itemType,
                   kit: child.data.kit,
                   methodType: child.data.methodType,
@@ -3772,7 +3765,6 @@ serve(async (req: Request) => {
                   quoteLineId: targetQuoteLineId,
                   itemId: child.data.itemId,
                   kit: child.data.kit,
-                  itemReadableId: child.data.itemReadableId,
                   itemType: child.data.itemType,
                   methodType: child.data.methodType,
                   order: child.data.order,
@@ -4042,6 +4034,7 @@ serve(async (req: Request) => {
               .insertInto("opportunity")
               .values({
                 companyId,
+                customerId: sourceQuote.data?.customerId,
               })
               .returning(["id"])
               .executeTakeFirstOrThrow();
@@ -4248,7 +4241,6 @@ serve(async (req: Request) => {
                     quoteLineId: newLineId,
                     itemId: child.data.itemId,
                     kit: child.data.kit,
-                    itemReadableId: child.data.itemReadableId,
                     itemType: child.data.itemType,
                     methodType: child.data.methodType,
                     order: child.data.order,

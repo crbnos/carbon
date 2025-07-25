@@ -58,11 +58,7 @@ const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
 
             <VStack spacing={0}>
               <Hyperlink
-                to={path.to.jobMakeMethod(
-                  jobId,
-                  row.original.jobMakeMethodId,
-                  row.original.id
-                )}
+                to={path.to.jobMakeMethod(jobId, row.original.jobMakeMethodId)}
                 onClick={() => {
                   setSelectedMaterialId(row.original.id ?? null);
                 }}

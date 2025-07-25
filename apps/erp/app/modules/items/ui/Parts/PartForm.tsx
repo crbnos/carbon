@@ -295,7 +295,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                   />
                 )}
                 {!isEditing && replenishmentSystem !== "Buy" && (
-                  <Number name="lotSize" label="Lot Size" minValue={0} />
+                  <Number name="lotSize" label="Batch Size" minValue={0} />
                 )}
                 <Boolean name="active" label="Active" />
                 <CustomFormFields table="part" tags={initialValues.tags} />

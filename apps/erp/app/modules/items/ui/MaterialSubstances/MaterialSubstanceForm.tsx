@@ -14,9 +14,9 @@ import {
 } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { z } from "zod";
-import { CustomFormFields, Hidden, Input, Submit } from "~/components/Form";
+import { CustomFormFields, Hidden, Input, InputControlled, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import { materialSubstanceValidator } from "../../items.models";
@@ -36,6 +36,7 @@ const MaterialSubstanceForm = ({
 }: MaterialSubstanceFormProps) => {
   const permissions = usePermissions();
   const fetcher = useFetcher<PostgrestResponse<{ id: string; name: string }>>();
+  const [code, setCode] = useState<string>(initialValues.code);
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
@@ -86,6 +87,15 @@ const MaterialSubstanceForm = ({
               <Hidden name="type" value={type} />
               <VStack spacing={4}>
                 <Input name="name" label="Name" />
+                <InputControlled
+                  name="code"
+                  label="Code"
+                  value={code}
+                  onChange={(value) =>
+                    setCode(value.toUpperCase().replace(/\s/g, ""))
+                  }
+                  helperText="Unique, uppercase, without spaces"
+                />
                 <CustomFormFields table="materialSubstance" />
               </VStack>
             </ModalDrawerBody>

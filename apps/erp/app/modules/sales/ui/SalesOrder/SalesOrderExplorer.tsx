@@ -51,7 +51,9 @@ import {
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { MethodItemType } from "~/modules/shared";
 import { methodItemType } from "~/modules/shared";
+import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";
+import { getItemReadableId } from "~/utils/items";
 import type {
   Customer,
   SalesOrder,
@@ -244,6 +246,7 @@ function SalesOrderLineItem({
   const { orderId, lineId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
 
+  const [items] = useItems();
   const permissions = usePermissions();
   const disclosure = useDisclosure();
   const location = useOptimisticLocation();
@@ -282,7 +285,7 @@ function SalesOrderLineItem({
 
           <VStack spacing={0} className="min-w-0">
             <span className="font-semibold line-clamp-1">
-              {line.itemReadableId}
+              {getItemReadableId(items, line.itemId)}
             </span>
             <span className="text-muted-foreground text-xs truncate line-clamp-1">
               {line.description}

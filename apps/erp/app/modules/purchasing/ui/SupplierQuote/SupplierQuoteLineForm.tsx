@@ -333,7 +333,7 @@ const SupplierQuoteLineForm = ({
       {isEditing && deleteDisclosure.isOpen && initialValues.id && (
         <DeleteSupplierQuoteLine
           line={{
-            itemReadableId: itemData.itemReadableId ?? "",
+            itemId: itemData.itemId ?? "",
             id: initialValues.id,
           }}
           onCancel={deleteDisclosure.onClose}

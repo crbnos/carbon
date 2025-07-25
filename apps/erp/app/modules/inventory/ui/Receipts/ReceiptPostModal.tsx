@@ -22,6 +22,8 @@ import { useFetcher, useNavigation, useParams } from "@remix-run/react";
 import { useEffect, useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { useUser } from "~/hooks";
+import { useItems } from "~/stores";
+import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 import { getReceiptTracking } from "../../inventory.service";
 import type { ReceiptLine } from "../../types";
@@ -30,6 +32,7 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
   const { receiptId } = useParams();
   if (!receiptId) throw new Error("receiptId not found");
 
+  const [items] = useItems();
   const routeData = useRouteData<{
     receiptLines: ReceiptLine[];
   }>(path.to.receipt(receiptId));
@@ -94,7 +97,7 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
           | undefined;
         if (!attributes?.["Batch Number"]) {
           errors.push({
-            itemReadableId: line.itemReadableId,
+            itemReadableId: getItemReadableId(items, line.itemId) ?? null,
             receivedQuantity: line.receivedQuantity ?? 0,
             receivedQuantityError: "Batch number is required",
           });
@@ -117,7 +120,7 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
 
         if (quantityWithSerial !== line.receivedQuantity) {
           errors.push({
-            itemReadableId: line.itemReadableId,
+            itemReadableId: getItemReadableId(items, line.itemId) ?? null,
             receivedQuantity: line.receivedQuantity ?? 0,
             receivedQuantityError: "Serial numbers are missing",
           });

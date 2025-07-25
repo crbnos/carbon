@@ -83,8 +83,9 @@ const ConsumableProperties = () => {
         | "replenishmentSystem"
         | "defaultMethodType"
         | "itemTrackingType"
+        | "consumableId"
         | "active",
-      value: string
+      value: string | null
     ) => {
       const formData = new FormData();
 
@@ -191,10 +192,31 @@ const ConsumableProperties = () => {
             </Tooltip>
           </HStack>
         </HStack>
-        <VStack spacing={0}>
-          <span className="text-sm tracking-tight">
-            {routeData?.consumableSummary?.readableIdWithRevision}
-          </span>
+        <VStack spacing={1} className="pt-2">
+          <ValidatedForm
+            defaultValues={{
+              consumableId:
+                routeData?.consumableSummary?.readableIdWithRevision ?? undefined,
+            }}
+            validator={z.object({
+              consumableId: z.string(),
+            })}
+            className="w-full -mt-2"
+          >
+            <span className="text-sm">
+              <InputControlled
+                label=""
+                name="consumableId"
+                inline
+                size="sm"
+                value={routeData?.consumableSummary?.readableId ?? ""}
+                onBlur={(e) => {
+                  onUpdate("consumableId", e.target.value ?? null);
+                }}
+                className="text-muted-foreground"
+              />
+            </span>
+          </ValidatedForm>
           <ValidatedForm
             defaultValues={{
               name: routeData?.consumableSummary?.name ?? undefined,

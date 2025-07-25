@@ -168,7 +168,7 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
                 const isChecked = hasFilter(filter.accessorKey, option.value);
                 return (
                   <CommandItem
-                    value={option.value}
+                    value={reactNodeToString(option.label).replace(/"/g, '\\"')}
                     key={option.value}
                     onSelect={() => {
                       toggleFilter(

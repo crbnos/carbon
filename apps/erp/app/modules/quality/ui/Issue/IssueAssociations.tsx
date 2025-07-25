@@ -50,6 +50,8 @@ import { ConfirmDelete } from "~/components/Modals";
 import { LevelLine } from "~/components/TreeView";
 import { usePermissions } from "~/hooks";
 import type { action as associationAction } from "~/routes/x+/issue+/$id.association.new";
+import { useItems } from "~/stores";
+import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 import { issueAssociationValidator } from "../../quality.models";
 import type { IssueAssociationKey, IssueAssociationNode } from "../../types";
@@ -599,6 +601,7 @@ function NewSalesOrderLineAssociation({ itemId }: { itemId?: string }) {
 
 function NewShipmentLineAssociation({ itemId }: { itemId?: string }) {
   const { carbon } = useCarbon();
+  const [items] = useItems();
   const [shipments, setShipments] = useState<
     { label: string; value: string }[]
   >([]);
@@ -638,7 +641,7 @@ function NewShipmentLineAssociation({ itemId }: { itemId?: string }) {
 
     let query = carbon
       .from("shipmentLine")
-      .select("id, itemId, itemReadableId")
+      .select("id, itemId")
       .eq("shipmentId", shipmentId);
 
     if (itemId) {
@@ -653,7 +656,7 @@ function NewShipmentLineAssociation({ itemId }: { itemId?: string }) {
 
     setShipmentLines(
       data?.map((line) => ({
-        label: line.itemReadableId ?? `Line ${line.id}`,
+        label: getItemReadableId(items, line.itemId) ?? `Line ${line.id}`,
         value: line.id,
       })) ?? []
     );
@@ -694,6 +697,7 @@ function NewShipmentLineAssociation({ itemId }: { itemId?: string }) {
 
 function NewReceiptLineAssociation({ itemId }: { itemId?: string }) {
   const { carbon } = useCarbon();
+  const [items] = useItems();
   const [receipts, setReceipts] = useState<{ label: string; value: string }[]>(
     []
   );
@@ -733,7 +737,7 @@ function NewReceiptLineAssociation({ itemId }: { itemId?: string }) {
 
     let query = carbon
       .from("receiptLine")
-      .select("id, itemId, itemReadableId")
+      .select("id, itemId")
       .eq("receiptId", receiptId);
 
     if (itemId) {
@@ -748,7 +752,7 @@ function NewReceiptLineAssociation({ itemId }: { itemId?: string }) {
 
     setReceiptLines(
       data?.map((line) => ({
-        label: line.itemReadableId ?? `Line ${line.id}`,
+        label: getItemReadableId(items, line.itemId) ?? `Line ${line.id}`,
         value: line.id,
       })) ?? []
     );

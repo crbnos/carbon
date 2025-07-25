@@ -1,9 +1,13 @@
 import { AiOutlinePartition } from "react-icons/ai";
 import {
   LuAtom,
+  LuAxis3D,
+  LuBeef,
+  LuDessert,
   LuGlassWater,
   LuHammer,
   LuPizza,
+  LuPuzzle,
   LuRuler,
   LuShapes,
 } from "react-icons/lu";
@@ -66,6 +70,24 @@ const itemsRoutes: AuthenticatedRouteGroup[] = [
     name: "Configure",
     routes: [
       {
+        name: "Dimensions",
+        to: path.to.materialDimensions,
+        icon: <LuAxis3D />,
+        role: "employee",
+      },
+      {
+        name: "Finishes",
+        to: path.to.materialFinishes,
+        icon: <LuDessert />,
+        role: "employee",
+      },
+      {
+        name: "Grades",
+        to: path.to.materialGrades,
+        icon: <LuBeef />,
+        role: "employee",
+      },
+      {
         name: "Shapes",
         to: path.to.materialForms,
         icon: <LuShapes />,
@@ -75,6 +97,12 @@ const itemsRoutes: AuthenticatedRouteGroup[] = [
         name: "Substances",
         to: path.to.materialSubstances,
         icon: <LuGlassWater />,
+        role: "employee",
+      },
+      {
+        name: "Types",
+        to: path.to.materialTypes,
+        icon: <LuPuzzle />,
         role: "employee",
       },
       // {

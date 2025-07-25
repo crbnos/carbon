@@ -28,6 +28,8 @@ import { usePermissions, useRouteData } from "~/hooks";
 import type { PurchaseInvoice, PurchaseInvoiceLine } from "~/modules/invoicing";
 import { PurchaseInvoicingStatus } from "~/modules/invoicing";
 import type { action as statusAction } from "~/routes/x+/purchase-invoice+/$invoiceId.status";
+import { useItems } from "~/stores";
+import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 import PurchaseInvoicePostModal from "./PurchaseInvoicePostModal";
 
@@ -49,6 +51,7 @@ const PurchaseInvoiceHeader = () => {
 
   if (!invoiceId) throw new Error("invoiceId not found");
 
+  const [items] = useItems();
   const routeData = useRouteData<{
     purchaseInvoice: PurchaseInvoice;
     purchaseInvoiceLines: PurchaseInvoiceLine[];
@@ -106,7 +109,7 @@ const PurchaseInvoiceHeader = () => {
     if (!carbon) throw new Error("carbon not found");
     const { data, error } = await carbon
       .from("purchaseInvoiceLine")
-      .select("itemId, itemReadableId, description, quantity, conversionFactor")
+      .select("itemId, description, quantity, conversionFactor")
       .eq("invoiceId", invoiceId)
       .in("invoiceLineType", ["Part", "Material", "Tool", "Consumable"])
       .is("purchaseOrderLineId", null);
@@ -119,6 +122,7 @@ const PurchaseInvoiceHeader = () => {
       setLinesNotAssociatedWithPO(
         data?.map((d) => ({
           ...d,
+          itemReadableId: getItemReadableId(items, d.itemId) ?? null,
           description: d.description ?? "",
           quantity: d.quantity * (d.conversionFactor ?? 1),
         })) ?? []

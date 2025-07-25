@@ -166,6 +166,8 @@ CREATE TABLE "material" (
   CONSTRAINT "material_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id")
 );
 
+
+
 CREATE INDEX "material_companyId_idx" ON "material"("companyId");
 CREATE INDEX "material_itemId_idx" ON "material"("itemId");
 

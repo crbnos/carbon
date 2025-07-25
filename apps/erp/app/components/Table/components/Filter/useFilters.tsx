@@ -36,6 +36,28 @@ export function useFilters() {
     });
   };
 
+  const getFilter = (searchKey: string): string[] => {
+    const filter = urlFiltersParams.find((filter) => {
+      const [key] = filter.split(":");
+      return key === searchKey;
+    });
+
+    if (!filter) {
+      return [];
+    }
+
+    const [, operator, value] = filter.split(":");
+    if (!value) {
+      return [];
+    }
+
+    if (["in", "contains"].includes(operator)) {
+      return value.split(",");
+    } else {
+      return [value];
+    }
+  };
+
   const addFilter = (newKey: string, newValue: string, isArray = false) => {
     if (hasFilterKey(newKey)) {
       const filterIndex = getFilterKeyIndex(newKey);
@@ -122,6 +144,7 @@ export function useFilters() {
 
   return {
     clearFilters,
+    getFilter,
     hasFilter,
     hasFilters,
     hasFilterKey,

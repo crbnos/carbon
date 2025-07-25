@@ -35,6 +35,7 @@ import {
   LuGlassWater,
   LuPaintBucket,
   LuPencil,
+  LuPuzzle,
   LuShapes,
   LuStar,
   LuTag,
@@ -54,6 +55,7 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
+import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { methodType } from "~/modules/shared";
@@ -79,6 +81,10 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
   const [people] = usePeople();
   const customColumns = useCustomColumns<Material>("material");
 
+  const filters = useFilters();
+  const materialSubstanceId = filters.getFilter("materialSubstanceId")?.[0];
+  const materialFormId = filters.getFilter("materialFormId")?.[0];
+
   const columns = useMemo<ColumnDef<Material>[]>(() => {
     const defaultColumns: ColumnDef<Material>[] = [
       {
@@ -93,7 +99,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
             />
             <Hyperlink to={path.to.material(row.original.id!)}>
               <VStack spacing={0}>
-                {row.original.readableIdWithRevision}
+                {row.original.readableId}
                 <div className="w-full truncate text-muted-foreground text-xs">
                   {row.original.name}
                 </div>
@@ -118,7 +124,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
         },
       },
       {
-        accessorKey: "materialSubstance",
+        accessorKey: "materialSubstanceId",
         header: "Substance",
         cell: (item) => <Enumerable value={item.getValue<string>()} />,
         meta: {
@@ -126,8 +132,8 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
             type: "fetcher",
             endpoint: path.to.api.materialSubstances,
             transform: (data: { id: string; name: string }[] | null) =>
-              data?.map(({ name }) => ({
-                value: name,
+              data?.map(({ id, name }) => ({
+                value: id,
                 label: <Enumerable value={name} />,
               })) ?? [],
           },
@@ -135,16 +141,16 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
         },
       },
       {
-        accessorKey: "materialForm",
-        header: "Form",
+        accessorKey: "materialFormId",
+        header: "Shape",
         cell: (item) => <Enumerable value={item.getValue<string>()} />,
         meta: {
           filter: {
             type: "fetcher",
             endpoint: path.to.api.materialForms,
             transform: (data: { id: string; name: string }[] | null) =>
-              data?.map(({ name }) => ({
-                value: name,
+              data?.map(({ id, name }) => ({
+                value: id,
                 label: <Enumerable value={name} />,
               })) ?? [],
           },
@@ -157,6 +163,15 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
         cell: (item) => item.getValue(),
         meta: {
           icon: <LuPaintBucket />,
+          filter: {
+            type: "fetcher",
+            endpoint: path.to.api.materialFinishes(materialSubstanceId),
+            transform: (data: { id: string; name: string }[] | null) =>
+              data?.map(({ name }) => ({
+                value: name,
+                label: name,
+              })) ?? [],
+          },
         },
       },
       {
@@ -165,14 +180,52 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
         cell: (item) => item.getValue(),
         meta: {
           icon: <LuStar />,
+          filter: {
+            type: "fetcher",
+            endpoint: path.to.api.materialGrades(materialSubstanceId),
+            transform: (data: { id: string; name: string }[] | null) =>
+              data?.map(({ name }) => ({
+                value: name,
+                label: name,
+              })) ?? [],
+          },
         },
       },
       {
         accessorKey: "dimensions",
-        header: "Dimensions",
+        header: "Dimension",
         cell: (item) => item.getValue(),
         meta: {
           icon: <LuExpand />,
+          filter: {
+            type: "fetcher",
+            endpoint: path.to.api.materialDimensions(materialFormId),
+            transform: (data: { id: string; name: string }[] | null) =>
+              data?.map(({ name }) => ({
+                value: name,
+                label: name,
+              })) ?? [],
+          },
+        },
+      },
+      {
+        accessorKey: "materialType",
+        header: "Type",
+        cell: (item) => item.getValue(),
+        meta: {
+          icon: <LuPuzzle />,
+          filter: {
+            type: "fetcher",
+            endpoint: path.to.api.materialTypes(
+              materialSubstanceId,
+              materialFormId
+            ),
+            transform: (data: { id: string; name: string }[] | null) =>
+              data?.map(({ id, name }) => ({
+                value: id,
+                label: name,
+              })) ?? [],
+          },
         },
       },
       {
@@ -317,7 +370,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
       },
     ];
     return [...defaultColumns, ...customColumns];
-  }, [tags, people, customColumns]);
+  }, [tags, people, customColumns, materialSubstanceId, materialFormId]);
 
   const fetcher = useFetcher<typeof action>();
   useEffect(() => {
@@ -348,7 +401,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
       });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
+    [materialSubstanceId, materialFormId]
   );
 
   const renderActions = useCallback(

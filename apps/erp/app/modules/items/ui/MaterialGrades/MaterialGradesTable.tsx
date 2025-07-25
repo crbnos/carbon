@@ -1,53 +1,89 @@
-import { MenuIcon, MenuItem } from "@carbon/react";
+import { Badge, MenuIcon, MenuItem } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { LuBookMarked, LuPencil, LuTrash } from "react-icons/lu";
+import {
+  LuBeef,
+  LuCircleCheck,
+  LuGlassWater,
+  LuPencil,
+  LuTrash,
+} from "react-icons/lu";
 import { Hyperlink, New, Table } from "~/components";
-import { usePermissions, useUrlParams } from "~/hooks";
-import { useCustomColumns } from "~/hooks/useCustomColumns";
-import { path } from "~/utils/path";
-import type { Form } from "../../types";
 import { Enumerable } from "~/components/Enumerable";
+import { useSubstance } from "~/components/Form/Substance";
+import { usePermissions, useUrlParams } from "~/hooks";
+import { path } from "~/utils/path";
+import type { MaterialGrade } from "../../types";
 
-type MaterialShapesTableProps = {
-  data: Form[];
+type MaterialGradesTableProps = {
+  data: MaterialGrade[];
   count: number;
 };
 
-const MaterialShapesTable = memo(
-  ({ data, count }: MaterialShapesTableProps) => {
+const MaterialGradesTable = memo(
+  ({ data, count }: MaterialGradesTableProps) => {
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const permissions = usePermissions();
+    const substances = useSubstance();
 
     const rows = useMemo(() => data, [data]);
-    const customColumns = useCustomColumns<Form>("materialForm");
 
     const columns = useMemo<ColumnDef<(typeof rows)[number]>[]>(() => {
       const defaultColumns: ColumnDef<(typeof rows)[number]>[] = [
         {
+          accessorKey: "substanceName",
+          header: "Substance",
+          cell: ({ row }) => <Enumerable value={row.original.substanceName} />,
+          meta: {
+            icon: <LuGlassWater />,
+            filter: {
+              type: "static",
+              options: substances.map((substance) => ({
+                label: <Enumerable value={substance.label} />,
+                value: substance.label,
+              })),
+            },
+          },
+        },
+        {
           accessorKey: "name",
-          header: "Name",
+          header: "Grade",
           cell: ({ row }) =>
             row.original.companyId === null ? (
               row.original.name
             ) : (
               <Hyperlink
-                to={`${path.to.materialForm(
-                  row.original.id
+                to={`${path.to.materialGrade(
+                  row.original.id!
                 )}?${params.toString()}`}
               >
-                <Enumerable value={row.original.name} />
+                {row.original.name}
               </Hyperlink>
             ),
           meta: {
-            icon: <LuBookMarked />,
+            icon: <LuBeef />,
+          },
+        },
+
+        {
+          accessorKey: "companyId",
+          header: "Standard",
+          cell: ({ row }) => {
+            return row.original.companyId === null ? (
+              <Badge variant="outline">Standard</Badge>
+            ) : (
+              <Badge variant="blue">Custom</Badge>
+            );
+          },
+          meta: {
+            icon: <LuCircleCheck />,
           },
         },
       ];
-      return [...defaultColumns, ...customColumns];
-    }, [params, customColumns]);
+      return [...defaultColumns];
+    }, [params, substances]);
 
     const renderContextMenu = useCallback(
       (row: (typeof rows)[number]) => {
@@ -59,12 +95,12 @@ const MaterialShapesTable = memo(
               }
               onClick={() => {
                 navigate(
-                  `${path.to.materialForm(row.id)}?${params.toString()}`
+                  `${path.to.materialGrade(row.id!)}?${params.toString()}`
                 );
               }}
             >
               <MenuIcon icon={<LuPencil />} />
-              Edit Material Shape
+              Edit Material Grade
             </MenuItem>
             <MenuItem
               disabled={
@@ -73,12 +109,12 @@ const MaterialShapesTable = memo(
               destructive
               onClick={() => {
                 navigate(
-                  `${path.to.deleteMaterialForm(row.id)}?${params.toString()}`
+                  `${path.to.deleteMaterialGrade(row.id!)}?${params.toString()}`
                 );
               }}
             >
               <MenuIcon icon={<LuTrash />} />
-              Delete Material Shape
+              Delete Material Grade
             </MenuItem>
           </>
         );
@@ -94,17 +130,17 @@ const MaterialShapesTable = memo(
         primaryAction={
           permissions.can("create", "parts") && (
             <New
-              label="Material Form"
-              to={`${path.to.newMaterialForm}?${params.toString()}`}
+              label="Material Grade"
+              to={`${path.to.newMaterialGrade}?${params.toString()}`}
             />
           )
         }
         renderContextMenu={renderContextMenu}
-        title="Material Forms"
+        title="Material Grades"
       />
     );
   }
 );
 
-MaterialShapesTable.displayName = "MaterialShapesTable";
-export default MaterialShapesTable;
+MaterialGradesTable.displayName = "MaterialGradesTable";
+export default MaterialGradesTable;

@@ -2240,10 +2240,12 @@ export type Database = {
           digitalQuoteNotificationGroup: string[]
           id: string
           inventoryJobCompletedNotificationGroup: string[]
+          materialGeneratedIds: boolean
           productLabelSize: string | null
           rfqReadyNotificationGroup: string[]
           salesJobCompletedNotificationGroup: string[]
           shelfLabelSize: string | null
+          useMetric: boolean
         }
         Insert: {
           digitalQuoteEnabled?: boolean
@@ -2251,10 +2253,12 @@ export type Database = {
           digitalQuoteNotificationGroup?: string[]
           id: string
           inventoryJobCompletedNotificationGroup?: string[]
+          materialGeneratedIds?: boolean
           productLabelSize?: string | null
           rfqReadyNotificationGroup?: string[]
           salesJobCompletedNotificationGroup?: string[]
           shelfLabelSize?: string | null
+          useMetric?: boolean
         }
         Update: {
           digitalQuoteEnabled?: boolean
@@ -2262,10 +2266,12 @@ export type Database = {
           digitalQuoteNotificationGroup?: string[]
           id?: string
           inventoryJobCompletedNotificationGroup?: string[]
+          materialGeneratedIds?: boolean
           productLabelSize?: string | null
           rfqReadyNotificationGroup?: string[]
           salesJobCompletedNotificationGroup?: string[]
           shelfLabelSize?: string | null
+          useMetric?: boolean
         }
         Relationships: [
           {
@@ -8243,7 +8249,6 @@ export type Database = {
           externalDocumentId: string | null
           id: string
           itemId: string
-          itemReadableId: string | null
           locationId: string | null
           postingDate: string
           quantity: number
@@ -8264,7 +8269,6 @@ export type Database = {
           externalDocumentId?: string | null
           id?: string
           itemId: string
-          itemReadableId?: string | null
           locationId?: string | null
           postingDate?: string
           quantity: number
@@ -8285,7 +8289,6 @@ export type Database = {
           externalDocumentId?: string | null
           id?: string
           itemId?: string
-          itemReadableId?: string | null
           locationId?: string | null
           postingDate?: string
           quantity?: number
@@ -9911,7 +9914,6 @@ export type Database = {
           estimatedQuantity: number | null
           id: string
           itemId: string
-          itemReadableId: string
           itemType: string
           jobId: string
           jobMakeMethodId: string
@@ -9941,7 +9943,6 @@ export type Database = {
           estimatedQuantity?: number | null
           id?: string
           itemId: string
-          itemReadableId: string
           itemType?: string
           jobId: string
           jobMakeMethodId: string
@@ -9971,7 +9972,6 @@ export type Database = {
           estimatedQuantity?: number | null
           id?: string
           itemId?: string
-          itemReadableId?: string
           itemType?: string
           jobId?: string
           jobMakeMethodId?: string
@@ -11919,13 +11919,14 @@ export type Database = {
           createdAt: string
           createdBy: string
           customFields: Json | null
-          dimensions: string | null
+          dimensionId: string | null
           externalId: Json | null
-          finish: string | null
-          grade: string | null
+          finishId: string | null
+          gradeId: string | null
           id: string
           materialFormId: string | null
           materialSubstanceId: string | null
+          materialTypeId: string | null
           tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
@@ -11937,13 +11938,14 @@ export type Database = {
           createdAt?: string
           createdBy: string
           customFields?: Json | null
-          dimensions?: string | null
+          dimensionId?: string | null
           externalId?: Json | null
-          finish?: string | null
-          grade?: string | null
+          finishId?: string | null
+          gradeId?: string | null
           id: string
           materialFormId?: string | null
           materialSubstanceId?: string | null
+          materialTypeId?: string | null
           tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -11955,13 +11957,14 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
-          dimensions?: string | null
+          dimensionId?: string | null
           externalId?: Json | null
-          finish?: string | null
-          grade?: string | null
+          finishId?: string | null
+          gradeId?: string | null
           id?: string
           materialFormId?: string | null
           materialSubstanceId?: string | null
+          materialTypeId?: string | null
           tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -12064,6 +12067,48 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "material_dimensionId_fkey"
+            columns: ["dimensionId"]
+            isOneToOne: false
+            referencedRelation: "materialDimension"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_dimensionId_fkey"
+            columns: ["dimensionId"]
+            isOneToOne: false
+            referencedRelation: "materialDimensions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_finishId_fkey"
+            columns: ["finishId"]
+            isOneToOne: false
+            referencedRelation: "materialFinish"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_finishId_fkey"
+            columns: ["finishId"]
+            isOneToOne: false
+            referencedRelation: "materialFinishes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_gradeId_fkey"
+            columns: ["gradeId"]
+            isOneToOne: false
+            referencedRelation: "materialGrade"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_gradeId_fkey"
+            columns: ["gradeId"]
+            isOneToOne: false
+            referencedRelation: "materialGrades"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "material_materialFormId_fkey"
@@ -12080,6 +12125,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "material_materialTypeId_fkey"
+            columns: ["materialTypeId"]
+            isOneToOne: false
+            referencedRelation: "materialType"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "material_materialTypeId_fkey"
+            columns: ["materialTypeId"]
+            isOneToOne: false
+            referencedRelation: "materialTypes"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "material_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -12113,11 +12172,129 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+        ]
+      }
+      materialDimension: {
+        Row: {
+          companyId: string | null
+          id: string
+          isMetric: boolean
+          materialFormId: string
+          name: string
+        }
+        Insert: {
+          companyId?: string | null
+          id?: string
+          isMetric?: boolean
+          materialFormId: string
+          name: string
+        }
+        Update: {
+          companyId?: string | null
+          id?: string
+          isMetric?: boolean
+          materialFormId?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materialDimensions_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialDimensions_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialDimensions_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "materialDimensions_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "materialDimensions_materialFormId_fkey"
+            columns: ["materialFormId"]
+            isOneToOne: false
+            referencedRelation: "materialForm"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      materialFinish: {
+        Row: {
+          companyId: string | null
+          id: string
+          materialSubstanceId: string
+          name: string
+        }
+        Insert: {
+          companyId?: string | null
+          id?: string
+          materialSubstanceId: string
+          name: string
+        }
+        Update: {
+          companyId?: string | null
+          id?: string
+          materialSubstanceId?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materialFinish_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialFinish_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialFinish_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "materialFinish_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "materialFinish_materialSubstanceId_fkey"
+            columns: ["materialSubstanceId"]
+            isOneToOne: false
+            referencedRelation: "materialSubstance"
+            referencedColumns: ["id"]
           },
         ]
       }
       materialForm: {
         Row: {
+          code: string
           companyId: string | null
           createdAt: string
           createdBy: string
@@ -12129,6 +12306,7 @@ export type Database = {
           updatedBy: string | null
         }
         Insert: {
+          code: string
           companyId?: string | null
           createdAt?: string
           createdBy: string
@@ -12140,6 +12318,7 @@ export type Database = {
           updatedBy?: string | null
         }
         Update: {
+          code?: string
           companyId?: string | null
           createdAt?: string
           createdBy?: string
@@ -12251,8 +12430,66 @@ export type Database = {
           },
         ]
       }
+      materialGrade: {
+        Row: {
+          companyId: string | null
+          id: string
+          materialSubstanceId: string
+          name: string
+        }
+        Insert: {
+          companyId?: string | null
+          id?: string
+          materialSubstanceId: string
+          name: string
+        }
+        Update: {
+          companyId?: string | null
+          id?: string
+          materialSubstanceId?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materialGrade_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialGrade_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialGrade_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "materialGrade_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "materialGrade_materialSubstanceId_fkey"
+            columns: ["materialSubstanceId"]
+            isOneToOne: false
+            referencedRelation: "materialSubstance"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       materialSubstance: {
         Row: {
+          code: string
           companyId: string | null
           createdAt: string
           createdBy: string
@@ -12264,6 +12501,7 @@ export type Database = {
           updatedBy: string | null
         }
         Insert: {
+          code: string
           companyId?: string | null
           createdAt?: string
           createdBy: string
@@ -12275,6 +12513,7 @@ export type Database = {
           updatedBy?: string | null
         }
         Update: {
+          code?: string
           companyId?: string | null
           createdAt?: string
           createdBy?: string
@@ -12383,6 +12622,76 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+        ]
+      }
+      materialType: {
+        Row: {
+          code: string
+          companyId: string | null
+          id: string
+          materialFormId: string
+          materialSubstanceId: string
+          name: string
+        }
+        Insert: {
+          code: string
+          companyId?: string | null
+          id?: string
+          materialFormId: string
+          materialSubstanceId: string
+          name: string
+        }
+        Update: {
+          code?: string
+          companyId?: string | null
+          id?: string
+          materialFormId?: string
+          materialSubstanceId?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materialType_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialType_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialType_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "materialType_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "materialType_materialFormId_fkey"
+            columns: ["materialFormId"]
+            isOneToOne: false
+            referencedRelation: "materialForm"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialType_materialSubstanceId_fkey"
+            columns: ["materialSubstanceId"]
+            isOneToOne: false
+            referencedRelation: "materialSubstance"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -12465,7 +12774,6 @@ export type Database = {
           customFields: Json | null
           id: string
           itemId: string
-          itemReadableId: string
           itemType: string
           kit: boolean
           makeMethodId: string
@@ -12488,7 +12796,6 @@ export type Database = {
           customFields?: Json | null
           id?: string
           itemId: string
-          itemReadableId: string
           itemType?: string
           kit?: boolean
           makeMethodId: string
@@ -12511,7 +12818,6 @@ export type Database = {
           customFields?: Json | null
           id?: string
           itemId?: string
-          itemReadableId?: string
           itemType?: string
           kit?: boolean
           makeMethodId?: string
@@ -19840,7 +20146,6 @@ export type Database = {
           invoiceId: string
           invoiceLineType: Database["public"]["Enums"]["payableLineType"]
           itemId: string | null
-          itemReadableId: string | null
           jobOperationId: string | null
           locationId: string | null
           modelUploadId: string | null
@@ -19880,7 +20185,6 @@ export type Database = {
           invoiceId: string
           invoiceLineType: Database["public"]["Enums"]["payableLineType"]
           itemId?: string | null
-          itemReadableId?: string | null
           jobOperationId?: string | null
           locationId?: string | null
           modelUploadId?: string | null
@@ -19920,7 +20224,6 @@ export type Database = {
           invoiceId?: string
           invoiceLineType?: Database["public"]["Enums"]["payableLineType"]
           itemId?: string | null
-          itemReadableId?: string | null
           jobOperationId?: string | null
           locationId?: string | null
           modelUploadId?: string | null
@@ -20997,7 +21300,6 @@ export type Database = {
           inventoryUnitOfMeasureCode: string | null
           invoicedComplete: boolean
           itemId: string | null
-          itemReadableId: string | null
           jobId: string | null
           jobOperationId: string | null
           locationId: string | null
@@ -21045,7 +21347,6 @@ export type Database = {
           inventoryUnitOfMeasureCode?: string | null
           invoicedComplete?: boolean
           itemId?: string | null
-          itemReadableId?: string | null
           jobId?: string | null
           jobOperationId?: string | null
           locationId?: string | null
@@ -21093,7 +21394,6 @@ export type Database = {
           inventoryUnitOfMeasureCode?: string | null
           invoicedComplete?: boolean
           itemId?: string | null
-          itemReadableId?: string | null
           jobId?: string | null
           jobOperationId?: string | null
           locationId?: string | null
@@ -22301,7 +22601,6 @@ export type Database = {
           id: string
           internalNotes: Json | null
           itemId: string
-          itemReadableId: string | null
           itemType: string
           locationId: string | null
           methodType: Database["public"]["Enums"]["methodType"]
@@ -22332,7 +22631,6 @@ export type Database = {
           id?: string
           internalNotes?: Json | null
           itemId: string
-          itemReadableId?: string | null
           itemType?: string
           locationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
@@ -22363,7 +22661,6 @@ export type Database = {
           id?: string
           internalNotes?: Json | null
           itemId?: string
-          itemReadableId?: string | null
           itemType?: string
           locationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
@@ -23033,7 +23330,6 @@ export type Database = {
           description: string
           id: string
           itemId: string
-          itemReadableId: string
           itemType: string
           kit: boolean
           methodType: Database["public"]["Enums"]["methodType"]
@@ -23059,7 +23355,6 @@ export type Database = {
           description: string
           id?: string
           itemId: string
-          itemReadableId: string
           itemType?: string
           kit?: boolean
           methodType?: Database["public"]["Enums"]["methodType"]
@@ -23085,7 +23380,6 @@ export type Database = {
           description?: string
           id?: string
           itemId?: string
-          itemReadableId?: string
           itemType?: string
           kit?: boolean
           methodType?: Database["public"]["Enums"]["methodType"]
@@ -24659,7 +24953,6 @@ export type Database = {
           createdBy: string
           id: string
           itemId: string
-          itemReadableId: string | null
           lineId: string | null
           locationId: string | null
           orderQuantity: number
@@ -24681,7 +24974,6 @@ export type Database = {
           createdBy: string
           id?: string
           itemId: string
-          itemReadableId?: string | null
           lineId?: string | null
           locationId?: string | null
           orderQuantity: number
@@ -24703,7 +24995,6 @@ export type Database = {
           createdBy?: string
           id?: string
           itemId?: string
-          itemReadableId?: string | null
           lineId?: string | null
           locationId?: string | null
           orderQuantity?: number
@@ -25169,7 +25460,6 @@ export type Database = {
           invoiceId: string
           invoiceLineType: Database["public"]["Enums"]["salesInvoiceLineType"]
           itemId: string | null
-          itemReadableId: string | null
           locationId: string | null
           methodType: Database["public"]["Enums"]["methodType"]
           modelUploadId: string | null
@@ -25206,7 +25496,6 @@ export type Database = {
           invoiceId: string
           invoiceLineType: Database["public"]["Enums"]["salesInvoiceLineType"]
           itemId?: string | null
-          itemReadableId?: string | null
           locationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           modelUploadId?: string | null
@@ -25243,7 +25532,6 @@ export type Database = {
           invoiceId?: string
           invoiceLineType?: Database["public"]["Enums"]["salesInvoiceLineType"]
           itemId?: string | null
-          itemReadableId?: string | null
           locationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           modelUploadId?: string | null
@@ -26096,7 +26384,6 @@ export type Database = {
           internalNotes: Json | null
           invoicedComplete: boolean
           itemId: string | null
-          itemReadableId: string | null
           locationId: string | null
           methodType: Database["public"]["Enums"]["methodType"]
           modelUploadId: string | null
@@ -26139,7 +26426,6 @@ export type Database = {
           internalNotes?: Json | null
           invoicedComplete?: boolean
           itemId?: string | null
-          itemReadableId?: string | null
           locationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           modelUploadId?: string | null
@@ -26182,7 +26468,6 @@ export type Database = {
           internalNotes?: Json | null
           invoicedComplete?: boolean
           itemId?: string | null
-          itemReadableId?: string | null
           locationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           modelUploadId?: string | null
@@ -28734,7 +29019,6 @@ export type Database = {
           fulfillmentId: string | null
           id: string
           itemId: string
-          itemReadableId: string | null
           lineId: string | null
           locationId: string | null
           orderQuantity: number
@@ -28756,7 +29040,6 @@ export type Database = {
           fulfillmentId?: string | null
           id?: string
           itemId: string
-          itemReadableId?: string | null
           lineId?: string | null
           locationId?: string | null
           orderQuantity?: number
@@ -28778,7 +29061,6 @@ export type Database = {
           fulfillmentId?: string | null
           id?: string
           itemId?: string
-          itemReadableId?: string | null
           lineId?: string | null
           locationId?: string | null
           orderQuantity?: number
@@ -30954,7 +31236,6 @@ export type Database = {
           internalNotes: Json | null
           inventoryUnitOfMeasureCode: string | null
           itemId: string
-          itemReadableId: string | null
           purchaseUnitOfMeasureCode: string | null
           quantity: number[] | null
           supplierPartId: string | null
@@ -30976,7 +31257,6 @@ export type Database = {
           internalNotes?: Json | null
           inventoryUnitOfMeasureCode?: string | null
           itemId: string
-          itemReadableId?: string | null
           purchaseUnitOfMeasureCode?: string | null
           quantity?: number[] | null
           supplierPartId?: string | null
@@ -30998,7 +31278,6 @@ export type Database = {
           internalNotes?: Json | null
           inventoryUnitOfMeasureCode?: string | null
           itemId?: string
-          itemReadableId?: string | null
           purchaseUnitOfMeasureCode?: string | null
           quantity?: number[] | null
           supplierPartId?: string | null
@@ -37632,6 +37911,145 @@ export type Database = {
           },
         ]
       }
+      materialDimensions: {
+        Row: {
+          companyId: string | null
+          formName: string | null
+          id: string | null
+          isMetric: boolean | null
+          materialFormId: string | null
+          name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materialDimensions_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialDimensions_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialDimensions_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "materialDimensions_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "materialDimensions_materialFormId_fkey"
+            columns: ["materialFormId"]
+            isOneToOne: false
+            referencedRelation: "materialForm"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      materialFinishes: {
+        Row: {
+          companyId: string | null
+          id: string | null
+          materialSubstanceId: string | null
+          name: string | null
+          substanceName: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materialFinish_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialFinish_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialFinish_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "materialFinish_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "materialFinish_materialSubstanceId_fkey"
+            columns: ["materialSubstanceId"]
+            isOneToOne: false
+            referencedRelation: "materialSubstance"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      materialGrades: {
+        Row: {
+          companyId: string | null
+          id: string | null
+          materialSubstanceId: string | null
+          name: string | null
+          substanceName: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materialGrade_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialGrade_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialGrade_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "materialGrade_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "materialGrade_materialSubstanceId_fkey"
+            columns: ["materialSubstanceId"]
+            isOneToOne: false
+            referencedRelation: "materialSubstance"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       materials: {
         Row: {
           active: boolean | null
@@ -37653,6 +38071,7 @@ export type Database = {
           materialFormId: string | null
           materialSubstance: string | null
           materialSubstanceId: string | null
+          materialType: string | null
           modelName: string | null
           modelPath: string | null
           modelSize: number | null
@@ -37845,6 +38264,61 @@ export type Database = {
           },
           {
             foreignKeyName: "material_materialSubstanceId_fkey"
+            columns: ["materialSubstanceId"]
+            isOneToOne: false
+            referencedRelation: "materialSubstance"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      materialTypes: {
+        Row: {
+          companyId: string | null
+          formName: string | null
+          id: string | null
+          materialFormId: string | null
+          materialSubstanceId: string | null
+          name: string | null
+          substanceName: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "materialType_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialType_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialType_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "materialType_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "materialType_materialFormId_fkey"
+            columns: ["materialFormId"]
+            isOneToOne: false
+            referencedRelation: "materialForm"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "materialType_materialSubstanceId_fkey"
             columns: ["materialSubstanceId"]
             isOneToOne: false
             referencedRelation: "materialSubstance"
@@ -38868,6 +39342,7 @@ export type Database = {
           itemId: string | null
           itemName: string | null
           itemReadableId: string | null
+          jobOperationId: string | null
           locationId: string | null
           modelUploadId: string | null
           purchaseOrderId: string | null
@@ -38893,6 +39368,27 @@ export type Database = {
           updatedBy: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "purchaseInvoiceLine_jobOperationId_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLine_jobOperationId_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationsWithDependencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLine_jobOperationId_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationsWithMakeMethods"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "purchaseInvoiceLine_modelUploadId_fkey"
             columns: ["modelUploadId"]
@@ -39470,6 +39966,7 @@ export type Database = {
           modelPath: string | null
           modelSize: number | null
           modelUploadId: string | null
+          promisedDate: string | null
           purchaseOrderId: string | null
           purchaseOrderLineType:
             | Database["public"]["Enums"]["purchaseOrderLineType"]
@@ -39759,14 +40256,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -40935,7 +41432,6 @@ export type Database = {
           description: string | null
           id: string | null
           itemId: string | null
-          itemReadableId: string | null
           itemType: string | null
           kit: boolean | null
           methodType: Database["public"]["Enums"]["methodType"] | null
@@ -42758,14 +43254,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -45340,6 +45836,14 @@ export type Database = {
           replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
           materialSubstanceId: string
           materialFormId: string
+          dimensionId: string
+          dimension: string
+          finishId: string
+          finish: string
+          gradeId: string
+          grade: string
+          materialType: string
+          materialTypeId: string
           thumbnailPath: string
           unitOfMeasureCode: string
           quantityOnHand: number
@@ -45539,14 +46043,36 @@ export type Database = {
           finish: string
           grade: string
           dimensions: string
+          materialType: string
           materialSubstanceId: string
           materialFormId: string
+          materialTypeId: string
+          dimensionId: string
+          gradeId: string
+          finishId: string
           customFields: Json
           tags: string[]
           createdBy: string
           createdAt: string
           updatedBy: string
           updatedAt: string
+        }[]
+      }
+      get_material_naming_details: {
+        Args: {
+          readable_id: string
+        }
+        Returns: {
+          id: string
+          shape: string
+          shapeCode: string
+          substance: string
+          substanceCode: string
+          finish: string
+          grade: string
+          dimensions: string
+          materialType: string
+          materialTypeCode: string
         }[]
       }
       get_method_tree: {

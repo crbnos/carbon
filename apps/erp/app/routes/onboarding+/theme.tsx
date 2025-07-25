@@ -184,6 +184,9 @@ export default function OnboardingTheme() {
                       "--theme-primary": `hsl(${
                         t?.activeColor[mode === "dark" ? "dark" : "light"]
                       })`,
+                      borderColor: `hsl(${
+                        t?.activeColor[mode === "dark" ? "dark" : "light"]
+                      })`,
                     } as React.CSSProperties
                   }
                 >

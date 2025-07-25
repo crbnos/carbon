@@ -1,14 +1,20 @@
-import { MenuIcon, MenuItem } from "@carbon/react";
+import { Badge, MenuIcon, MenuItem } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { LuBookMarked, LuPencil, LuTrash } from "react-icons/lu";
+import {
+  LuBookMarked,
+  LuCircleCheck,
+  LuCode,
+  LuPencil,
+  LuTrash,
+} from "react-icons/lu";
 import { Hyperlink, New, Table } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
 import type { Substance } from "../../types";
-import { Enumerable } from "~/components/Enumerable";
 
 type MaterialSubstancesTableProps = {
   data: Substance[];
@@ -31,7 +37,7 @@ const MaterialSubstancesTable = memo(
           header: "Name",
           cell: ({ row }) =>
             row.original.companyId === null ? (
-              row.original.name
+              <Enumerable value={row.original.name} />
             ) : (
               <Hyperlink
                 to={`${path.to.materialSubstance(
@@ -43,6 +49,28 @@ const MaterialSubstancesTable = memo(
             ),
           meta: {
             icon: <LuBookMarked />,
+          },
+        },
+        {
+          accessorKey: "code",
+          header: "Code",
+          cell: ({ row }) => row.original.code,
+          meta: {
+            icon: <LuCode />,
+          },
+        },
+        {
+          accessorKey: "companyId",
+          header: "Standard",
+          cell: ({ row }) => {
+            return row.original.companyId === null ? (
+              <Badge variant="outline">Standard</Badge>
+            ) : (
+              <Badge variant="blue">Custom</Badge>
+            );
+          },
+          meta: {
+            icon: <LuCircleCheck />,
           },
         },
       ];

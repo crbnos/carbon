@@ -100,7 +100,6 @@ export const itemLedgerValidator = z.object({
   documentType: z.union([z.enum(itemLedgerDocumentTypes), z.undefined()]),
   documentId: z.string().optional(),
   itemId: z.string().min(1, { message: "Item is required" }),
-  itemReadableId: z.string().optional(),
   locationId: z.string().optional(),
   shelfId: z.string().optional(),
   quantity: z.number(),

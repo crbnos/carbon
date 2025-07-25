@@ -82,6 +82,7 @@ export default function NewMaterialSubstancesRoute() {
   const navigate = useNavigate();
   const initialValues = {
     name: "",
+    code: "",
     description: "",
   };
 

@@ -1420,9 +1420,6 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLine.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.quoteLine.itemType",
           },
           {
@@ -1566,9 +1563,6 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLine.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.quoteLine.itemType",
           },
           {
@@ -1664,9 +1658,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLine.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteLine.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.quoteLine.itemType",
@@ -6589,9 +6580,6 @@ export default {
             $ref: "#/parameters/rowFilter.supplierQuoteLine.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierQuoteLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.supplierQuoteLine.description",
           },
           {
@@ -6708,9 +6696,6 @@ export default {
             $ref: "#/parameters/rowFilter.supplierQuoteLine.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierQuoteLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.supplierQuoteLine.description",
           },
           {
@@ -6779,9 +6764,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuoteLine.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierQuoteLine.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuoteLine.description",
@@ -7218,6 +7200,63 @@ export default {
         tags: ["quoteOperation"],
       },
     },
+    "/materialGrades": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialGrades.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialGrades.materialSubstanceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialGrades.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialGrades.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialGrades.substanceName",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/materialGrades",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["materialGrades"],
+      },
+    },
     "/receiptLines": {
       get: {
         parameters: [
@@ -7232,9 +7271,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.receiptLines.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLines.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.receiptLines.orderQuantity",
@@ -7280,6 +7316,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.receiptLines.requiresBatchTracking",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLines.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.receiptLines.thumbnailPath",
@@ -7789,9 +7828,6 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.itemType",
           },
           {
@@ -7868,6 +7904,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.version",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.itemReadableId",
           },
           {
             $ref: "#/parameters/select",
@@ -8452,9 +8491,6 @@ export default {
             $ref: "#/parameters/rowFilter.methodMaterial.customFields",
           },
           {
-            $ref: "#/parameters/rowFilter.methodMaterial.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.methodMaterial.order",
           },
           {
@@ -8574,9 +8610,6 @@ export default {
             $ref: "#/parameters/rowFilter.methodMaterial.customFields",
           },
           {
-            $ref: "#/parameters/rowFilter.methodMaterial.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.methodMaterial.order",
           },
           {
@@ -8648,9 +8681,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.methodMaterial.customFields",
-          },
-          {
-            $ref: "#/parameters/rowFilter.methodMaterial.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.methodMaterial.order",
@@ -8870,9 +8900,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteMaterialWithMakeMethodId.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteMaterialWithMakeMethodId.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.quoteMaterialWithMakeMethodId.itemType",
@@ -9769,15 +9796,6 @@ export default {
             $ref: "#/parameters/rowFilter.material.materialSubstanceId",
           },
           {
-            $ref: "#/parameters/rowFilter.material.grade",
-          },
-          {
-            $ref: "#/parameters/rowFilter.material.dimensions",
-          },
-          {
-            $ref: "#/parameters/rowFilter.material.finish",
-          },
-          {
             $ref: "#/parameters/rowFilter.material.approved",
           },
           {
@@ -9806,6 +9824,18 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.material.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.material.dimensionId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.material.finishId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.material.gradeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.material.materialTypeId",
           },
           {
             $ref: "#/parameters/select",
@@ -9876,15 +9906,6 @@ export default {
             $ref: "#/parameters/rowFilter.material.materialSubstanceId",
           },
           {
-            $ref: "#/parameters/rowFilter.material.grade",
-          },
-          {
-            $ref: "#/parameters/rowFilter.material.dimensions",
-          },
-          {
-            $ref: "#/parameters/rowFilter.material.finish",
-          },
-          {
             $ref: "#/parameters/rowFilter.material.approved",
           },
           {
@@ -9913,6 +9934,18 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.material.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.material.dimensionId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.material.finishId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.material.gradeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.material.materialTypeId",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -9937,15 +9970,6 @@ export default {
             $ref: "#/parameters/rowFilter.material.materialSubstanceId",
           },
           {
-            $ref: "#/parameters/rowFilter.material.grade",
-          },
-          {
-            $ref: "#/parameters/rowFilter.material.dimensions",
-          },
-          {
-            $ref: "#/parameters/rowFilter.material.finish",
-          },
-          {
             $ref: "#/parameters/rowFilter.material.approved",
           },
           {
@@ -9974,6 +9998,18 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.material.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.material.dimensionId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.material.finishId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.material.gradeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.material.materialTypeId",
           },
           {
             $ref: "#/parameters/body.material",
@@ -11185,9 +11221,6 @@ export default {
             $ref: "#/parameters/rowFilter.itemLedger.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.itemLedger.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.itemLedger.locationId",
           },
           {
@@ -11295,9 +11328,6 @@ export default {
             $ref: "#/parameters/rowFilter.itemLedger.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.itemLedger.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.itemLedger.locationId",
           },
           {
@@ -11357,9 +11387,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemLedger.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemLedger.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.itemLedger.locationId",
@@ -14859,6 +14886,66 @@ export default {
         tags: ["nonConformanceCustomer"],
       },
     },
+    "/materialDimensions": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialDimensions.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimensions.materialFormId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimensions.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimensions.isMetric",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimensions.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimensions.formName",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/materialDimensions",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["materialDimensions"],
+      },
+    },
     "/salesOrder": {
       get: {
         parameters: [
@@ -16528,9 +16615,6 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLines.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLines.serviceId",
           },
           {
@@ -16621,7 +16705,13 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLines.taxPercent",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.jobOperationId",
+          },
+          {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLines.thumbnailPath",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLines.itemName",
@@ -18090,6 +18180,150 @@ export default {
         tags: ["supplierPayment"],
       },
     },
+    "/materialType": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialType.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialType.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialType.code",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialType.materialSubstanceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialType.materialFormId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialType.companyId",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/materialType",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["materialType"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.materialType",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["materialType"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialType.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialType.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialType.code",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialType.materialSubstanceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialType.materialFormId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialType.companyId",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["materialType"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialType.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialType.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialType.code",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialType.materialSubstanceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialType.materialFormId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialType.companyId",
+          },
+          {
+            $ref: "#/parameters/body.materialType",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["materialType"],
+      },
+    },
     "/purchasePayment": {
       get: {
         parameters: [
@@ -18562,6 +18796,132 @@ export default {
           },
         },
         tags: ["supplierProcesses"],
+      },
+    },
+    "/materialFinish": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialFinish.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialFinish.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialFinish.materialSubstanceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialFinish.companyId",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/materialFinish",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["materialFinish"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.materialFinish",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["materialFinish"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialFinish.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialFinish.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialFinish.materialSubstanceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialFinish.companyId",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["materialFinish"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialFinish.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialFinish.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialFinish.materialSubstanceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialFinish.companyId",
+          },
+          {
+            $ref: "#/parameters/body.materialFinish",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["materialFinish"],
       },
     },
     "/procedure": {
@@ -20985,6 +21345,63 @@ export default {
         tags: ["salesOrderFavorite"],
       },
     },
+    "/materialFinishes": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialFinishes.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialFinishes.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialFinishes.materialSubstanceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialFinishes.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialFinishes.substanceName",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/materialFinishes",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["materialFinishes"],
+      },
+    },
     "/openProductionOrders": {
       get: {
         parameters: [
@@ -21077,9 +21494,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseOrderLine.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.accountNumber",
@@ -21276,9 +21690,6 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.accountNumber",
           },
           {
@@ -21425,9 +21836,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseOrderLine.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.accountNumber",
@@ -23221,9 +23629,6 @@ export default {
             $ref: "#/parameters/rowFilter.supplierQuoteLines.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierQuoteLines.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.supplierQuoteLines.description",
           },
           {
@@ -23264,6 +23669,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuoteLines.externalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierQuoteLines.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuoteLines.itemType",
@@ -26083,9 +26491,6 @@ export default {
             $ref: "#/parameters/rowFilter.quoteMaterial.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteMaterial.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.quoteMaterial.itemType",
           },
           {
@@ -26214,9 +26619,6 @@ export default {
             $ref: "#/parameters/rowFilter.quoteMaterial.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteMaterial.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.quoteMaterial.itemType",
           },
           {
@@ -26297,9 +26699,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteMaterial.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteMaterial.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.quoteMaterial.itemType",
@@ -27025,9 +27424,6 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.serviceId",
           },
           {
@@ -27198,9 +27594,6 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.serviceId",
           },
           {
@@ -27323,9 +27716,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.serviceId",
@@ -27466,6 +27856,9 @@ export default {
             $ref: "#/parameters/rowFilter.materialForm.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.materialForm.code",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -27552,6 +27945,9 @@ export default {
             $ref: "#/parameters/rowFilter.materialForm.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.materialForm.code",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -27590,6 +27986,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.materialForm.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialForm.code",
           },
           {
             $ref: "#/parameters/body.materialForm",
@@ -27748,9 +28147,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceLines.methodType",
           },
           {
-            $ref: "#/parameters/rowFilter.salesInvoiceLines.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.salesInvoiceLines.accountNumber",
           },
           {
@@ -27833,6 +28229,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLines.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLines.thumbnailPath",
@@ -30037,9 +30436,6 @@ export default {
             $ref: "#/parameters/rowFilter.receiptLine.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.receiptLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.receiptLine.orderQuantity",
           },
           {
@@ -30156,9 +30552,6 @@ export default {
             $ref: "#/parameters/rowFilter.receiptLine.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.receiptLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.receiptLine.orderQuantity",
           },
           {
@@ -30227,9 +30620,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.receiptLine.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLine.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.receiptLine.orderQuantity",
@@ -32746,9 +33136,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLines.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLines.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.salesOrderLines.accountNumber",
           },
           {
@@ -32855,6 +33242,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLines.sentDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLines.thumbnailPath",
@@ -34474,13 +34864,16 @@ export default {
             $ref: "#/parameters/rowFilter.materials.materialSubstance",
           },
           {
+            $ref: "#/parameters/rowFilter.materials.dimensions",
+          },
+          {
             $ref: "#/parameters/rowFilter.materials.finish",
           },
           {
             $ref: "#/parameters/rowFilter.materials.grade",
           },
           {
-            $ref: "#/parameters/rowFilter.materials.dimensions",
+            $ref: "#/parameters/rowFilter.materials.materialType",
           },
           {
             $ref: "#/parameters/rowFilter.materials.materialSubstanceId",
@@ -37039,9 +37432,6 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLines.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteLines.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.quoteLines.itemType",
           },
           {
@@ -37106,6 +37496,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLines.configuration",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLines.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.quoteLines.thumbnailPath",
@@ -38389,9 +38782,6 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterial.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.jobMaterial.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.jobMaterial.itemType",
           },
           {
@@ -38532,9 +38922,6 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterial.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.jobMaterial.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.jobMaterial.itemType",
           },
           {
@@ -38627,9 +39014,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobMaterial.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobMaterial.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.jobMaterial.itemType",
@@ -39907,9 +40291,6 @@ export default {
             $ref: "#/parameters/rowFilter.shipmentLines.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.shipmentLines.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.shipmentLines.orderQuantity",
           },
           {
@@ -39953,6 +40334,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.shipmentLines.fulfillmentId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLines.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.shipmentLines.thumbnailPath",
@@ -40159,9 +40543,6 @@ export default {
             $ref: "#/parameters/rowFilter.shipmentLine.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.shipmentLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.shipmentLine.orderQuantity",
           },
           {
@@ -40278,9 +40659,6 @@ export default {
             $ref: "#/parameters/rowFilter.shipmentLine.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.shipmentLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.shipmentLine.orderQuantity",
           },
           {
@@ -40349,9 +40727,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.shipmentLine.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLine.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.shipmentLine.orderQuantity",
@@ -40687,9 +41062,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.salesOrderLine.accountNumber",
           },
           {
@@ -40869,9 +41241,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.salesOrderLine.accountNumber",
           },
           {
@@ -41003,9 +41372,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLine.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesOrderLine.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLine.accountNumber",
@@ -41608,6 +41974,69 @@ export default {
           },
         },
         tags: ["salesOrderLocations"],
+      },
+    },
+    "/materialTypes": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialTypes.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialTypes.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialTypes.materialSubstanceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialTypes.materialFormId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialTypes.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialTypes.substanceName",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialTypes.formName",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/materialTypes",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["materialTypes"],
       },
     },
     "/user": {
@@ -43656,6 +44085,141 @@ export default {
         tags: ["nonConformanceSupplier"],
       },
     },
+    "/materialDimension": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialDimension.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimension.materialFormId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimension.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimension.isMetric",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimension.companyId",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/materialDimension",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["materialDimension"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.materialDimension",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["materialDimension"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialDimension.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimension.materialFormId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimension.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimension.isMetric",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimension.companyId",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["materialDimension"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialDimension.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimension.materialFormId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimension.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimension.isMetric",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialDimension.companyId",
+          },
+          {
+            $ref: "#/parameters/body.materialDimension",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["materialDimension"],
+      },
+    },
     "/salesOrders": {
       get: {
         parameters: [
@@ -44503,9 +45067,6 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrderLines.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.accountNumber",
           },
           {
@@ -44626,10 +45187,16 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.quantityShipped",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderLines.promisedDate",
+          },
+          {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.thumbnailPath",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.itemName",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLines.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.itemDescription",
@@ -46390,6 +46957,9 @@ export default {
             $ref: "#/parameters/rowFilter.materialSubstance.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.materialSubstance.code",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -46476,6 +47046,9 @@ export default {
             $ref: "#/parameters/rowFilter.materialSubstance.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.materialSubstance.code",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -46514,6 +47087,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.materialSubstance.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialSubstance.code",
           },
           {
             $ref: "#/parameters/body.materialSubstance",
@@ -48397,9 +48973,6 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLinePrices.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteLinePrices.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.quoteLinePrices.itemType",
           },
           {
@@ -48464,6 +49037,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLinePrices.configuration",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.quoteLinePrices.thumbnailPath",
@@ -51352,9 +51928,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.methodType",
           },
           {
-            $ref: "#/parameters/rowFilter.salesInvoiceLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.accountNumber",
           },
           {
@@ -51516,9 +52089,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.methodType",
           },
           {
-            $ref: "#/parameters/rowFilter.salesInvoiceLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.accountNumber",
           },
           {
@@ -51632,9 +52202,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.methodType",
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesInvoiceLine.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.accountNumber",
@@ -52035,6 +52602,132 @@ export default {
         tags: ["customFieldTables"],
       },
     },
+    "/materialGrade": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialGrade.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialGrade.materialSubstanceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialGrade.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialGrade.companyId",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/materialGrade",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["materialGrade"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.materialGrade",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["materialGrade"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialGrade.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialGrade.materialSubstanceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialGrade.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialGrade.companyId",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["materialGrade"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.materialGrade.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialGrade.materialSubstanceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialGrade.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialGrade.companyId",
+          },
+          {
+            $ref: "#/parameters/body.materialGrade",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["materialGrade"],
+      },
+    },
     "/companySettings": {
       get: {
         parameters: [
@@ -52064,6 +52757,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.salesJobCompletedNotificationGroup",
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.materialGeneratedIds",
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.useMetric",
           },
           {
             $ref: "#/parameters/select",
@@ -52152,6 +52851,12 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.salesJobCompletedNotificationGroup",
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.materialGeneratedIds",
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.useMetric",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -52190,6 +52895,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.salesJobCompletedNotificationGroup",
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.materialGeneratedIds",
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.useMetric",
           },
           {
             $ref: "#/parameters/body.companySettings",
@@ -56189,6 +56900,63 @@ export default {
         tags: ["(rpc) get_job_quantity_on_hand"],
       },
     },
+    "/rpc/get_material_naming_details": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "readable_id",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_material_naming_details"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                readable_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["readable_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_material_naming_details"],
+      },
+    },
     "/rpc/get_job_method": {
       get: {
         parameters: [
@@ -58346,10 +59114,6 @@ export default {
           format: "text",
           type: "string",
         },
-        itemReadableId: {
-          format: "text",
-          type: "string",
-        },
         itemType: {
           default: "Part",
           format: "text",
@@ -60492,10 +61256,6 @@ export default {
           format: "text",
           type: "string",
         },
-        itemReadableId: {
-          format: "text",
-          type: "string",
-        },
         description: {
           format: "text",
           type: "string",
@@ -60798,6 +61558,36 @@ export default {
       },
       type: "object",
     },
+    materialGrades: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        materialSubstanceId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialSubstance.id`.<fk table='materialSubstance' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        substanceName: {
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     receiptLines: {
       properties: {
         id: {
@@ -60818,10 +61608,6 @@ export default {
         itemId: {
           description:
             "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        itemReadableId: {
           format: "text",
           type: "string",
         },
@@ -60892,6 +61678,10 @@ export default {
         requiresBatchTracking: {
           format: "boolean",
           type: "boolean",
+        },
+        itemReadableId: {
+          format: "text",
+          type: "string",
         },
         thumbnailPath: {
           format: "text",
@@ -61131,10 +61921,6 @@ export default {
           format: "text",
           type: "string",
         },
-        itemReadableId: {
-          format: "text",
-          type: "string",
-        },
         itemType: {
           format: "text",
           type: "string",
@@ -61251,6 +62037,10 @@ export default {
         version: {
           format: "numeric",
           type: "number",
+        },
+        itemReadableId: {
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -61480,7 +62270,6 @@ export default {
         "companyId",
         "createdAt",
         "createdBy",
-        "itemReadableId",
         "order",
         "scrapQuantity",
         "kit",
@@ -61558,10 +62347,6 @@ export default {
         },
         customFields: {
           format: "jsonb",
-        },
-        itemReadableId: {
-          format: "text",
-          type: "string",
         },
         order: {
           default: 1,
@@ -61674,10 +62459,6 @@ export default {
         itemId: {
           description:
             "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        itemReadableId: {
           format: "text",
           type: "string",
         },
@@ -62179,18 +62960,6 @@ export default {
           format: "text",
           type: "string",
         },
-        grade: {
-          format: "text",
-          type: "string",
-        },
-        dimensions: {
-          format: "text",
-          type: "string",
-        },
-        finish: {
-          format: "text",
-          type: "string",
-        },
         approved: {
           default: false,
           format: "boolean",
@@ -62241,6 +63010,30 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+        dimensionId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialDimension.id`.<fk table='materialDimension' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        finishId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialFinish.id`.<fk table='materialFinish' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        gradeId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialGrade.id`.<fk table='materialGrade' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        materialTypeId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialType.id`.<fk table='materialType' column='id'/>",
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -63005,10 +63798,6 @@ export default {
         itemId: {
           description:
             "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        itemReadableId: {
           format: "text",
           type: "string",
         },
@@ -64603,6 +65392,40 @@ export default {
       },
       type: "object",
     },
+    materialDimensions: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        materialFormId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialForm.id`.<fk table='materialForm' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        isMetric: {
+          format: "boolean",
+          type: "boolean",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        formName: {
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     salesOrder: {
       required: [
         "id",
@@ -65427,10 +66250,6 @@ export default {
           format: "text",
           type: "string",
         },
-        itemReadableId: {
-          format: "text",
-          type: "string",
-        },
         serviceId: {
           format: "text",
           type: "string",
@@ -65564,7 +66383,17 @@ export default {
           format: "numeric",
           type: "number",
         },
+        jobOperationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `jobOperation.id`.<fk table='jobOperation' column='id'/>",
+          format: "text",
+          type: "string",
+        },
         thumbnailPath: {
+          format: "text",
+          type: "string",
+        },
+        itemReadableId: {
           format: "text",
           type: "string",
         },
@@ -66091,6 +66920,44 @@ export default {
       },
       type: "object",
     },
+    materialType: {
+      required: ["id", "name", "code", "materialSubstanceId", "materialFormId"],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        code: {
+          format: "text",
+          type: "string",
+        },
+        materialSubstanceId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialSubstance.id`.<fk table='materialSubstance' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        materialFormId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialForm.id`.<fk table='materialForm' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     purchasePayment: {
       required: [
         "id",
@@ -66298,6 +67165,34 @@ export default {
           type: "string",
         },
         processName: {
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
+    materialFinish: {
+      required: ["id", "name", "materialSubstanceId"],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        materialSubstanceId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialSubstance.id`.<fk table='materialSubstance' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -67246,6 +68141,36 @@ export default {
       },
       type: "object",
     },
+    materialFinishes: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        materialSubstanceId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialSubstance.id`.<fk table='materialSubstance' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        substanceName: {
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     openProductionOrders: {
       properties: {
         id: {
@@ -67355,10 +68280,6 @@ export default {
         itemId: {
           description:
             "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        itemReadableId: {
           format: "text",
           type: "string",
         },
@@ -68326,10 +69247,6 @@ export default {
           format: "text",
           type: "string",
         },
-        itemReadableId: {
-          format: "text",
-          type: "string",
-        },
         description: {
           format: "text",
           type: "string",
@@ -68391,6 +69308,10 @@ export default {
         },
         externalNotes: {
           format: "json",
+        },
+        itemReadableId: {
+          format: "text",
+          type: "string",
         },
         itemType: {
           enum: [
@@ -69640,7 +70561,6 @@ export default {
         "quoteId",
         "quoteLineId",
         "itemId",
-        "itemReadableId",
         "itemType",
         "methodType",
         "order",
@@ -69676,10 +70596,6 @@ export default {
         itemId: {
           description:
             "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        itemReadableId: {
           format: "text",
           type: "string",
         },
@@ -70101,10 +71017,6 @@ export default {
           format: "text",
           type: "string",
         },
-        itemReadableId: {
-          format: "text",
-          type: "string",
-        },
         serviceId: {
           format: "text",
           type: "string",
@@ -70255,7 +71167,7 @@ export default {
       type: "object",
     },
     materialForm: {
-      required: ["id", "name", "createdBy", "createdAt"],
+      required: ["id", "name", "createdBy", "createdAt", "code"],
       properties: {
         id: {
           default: "public.xid()",
@@ -70303,6 +71215,10 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+        code: {
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -70486,10 +71402,6 @@ export default {
           format: 'public."methodType"',
           type: "string",
         },
-        itemReadableId: {
-          format: "text",
-          type: "string",
-        },
         accountNumber: {
           format: "text",
           type: "string",
@@ -70614,6 +71526,10 @@ export default {
         updatedBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        itemReadableId: {
           format: "text",
           type: "string",
         },
@@ -71635,10 +72551,6 @@ export default {
           format: "text",
           type: "string",
         },
-        itemReadableId: {
-          format: "text",
-          type: "string",
-        },
         orderQuantity: {
           format: "numeric",
           type: "number",
@@ -72652,10 +73564,6 @@ export default {
           format: "text",
           type: "string",
         },
-        itemReadableId: {
-          format: "text",
-          type: "string",
-        },
         accountNumber: {
           format: "text",
           type: "string",
@@ -72803,6 +73711,10 @@ export default {
         },
         sentDate: {
           format: "date",
+          type: "string",
+        },
+        itemReadableId: {
+          format: "text",
           type: "string",
         },
         thumbnailPath: {
@@ -73679,6 +74591,10 @@ export default {
           format: "text",
           type: "string",
         },
+        dimensions: {
+          format: "text",
+          type: "string",
+        },
         finish: {
           format: "text",
           type: "string",
@@ -73687,7 +74603,7 @@ export default {
           format: "text",
           type: "string",
         },
-        dimensions: {
+        materialType: {
           format: "text",
           type: "string",
         },
@@ -74802,10 +75718,6 @@ export default {
           format: "text",
           type: "string",
         },
-        itemReadableId: {
-          format: "text",
-          type: "string",
-        },
         itemType: {
           format: "text",
           type: "string",
@@ -74905,6 +75817,10 @@ export default {
         },
         configuration: {
           format: "jsonb",
+        },
+        itemReadableId: {
+          format: "text",
+          type: "string",
         },
         thumbnailPath: {
           format: "text",
@@ -75592,7 +76508,6 @@ export default {
         "id",
         "jobId",
         "itemId",
-        "itemReadableId",
         "itemType",
         "methodType",
         "order",
@@ -75624,10 +76539,6 @@ export default {
         itemId: {
           description:
             "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        itemReadableId: {
           format: "text",
           type: "string",
         },
@@ -76288,10 +77199,6 @@ export default {
           format: "text",
           type: "string",
         },
-        itemReadableId: {
-          format: "text",
-          type: "string",
-        },
         orderQuantity: {
           format: "numeric",
           type: "number",
@@ -76359,6 +77266,10 @@ export default {
         fulfillmentId: {
           description:
             "Note:\nThis is a Foreign Key to `fulfillment.id`.<fk table='fulfillment' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        itemReadableId: {
           format: "text",
           type: "string",
         },
@@ -76445,10 +77356,6 @@ export default {
         itemId: {
           description:
             "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        itemReadableId: {
           format: "text",
           type: "string",
         },
@@ -76799,10 +77706,6 @@ export default {
         itemId: {
           description:
             "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        itemReadableId: {
           format: "text",
           type: "string",
         },
@@ -77157,6 +78060,46 @@ export default {
           type: "string",
         },
         paymentCountryName: {
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
+    materialTypes: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        materialSubstanceId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialSubstance.id`.<fk table='materialSubstance' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        materialFormId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialForm.id`.<fk table='materialForm' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        substanceName: {
+          format: "text",
+          type: "string",
+        },
+        formName: {
           format: "text",
           type: "string",
         },
@@ -77982,6 +78925,39 @@ export default {
       },
       type: "object",
     },
+    materialDimension: {
+      required: ["id", "materialFormId", "name", "isMetric"],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        materialFormId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialForm.id`.<fk table='materialForm' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        isMetric: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     salesOrders: {
       properties: {
         id: {
@@ -78506,10 +79482,6 @@ export default {
           format: "text",
           type: "string",
         },
-        itemReadableId: {
-          format: "text",
-          type: "string",
-        },
         accountNumber: {
           format: "text",
           type: "string",
@@ -78682,11 +79654,19 @@ export default {
           format: "numeric",
           type: "number",
         },
+        promisedDate: {
+          format: "date",
+          type: "string",
+        },
         thumbnailPath: {
           format: "text",
           type: "string",
         },
         itemName: {
+          format: "text",
+          type: "string",
+        },
+        itemReadableId: {
           format: "text",
           type: "string",
         },
@@ -79319,7 +80299,7 @@ export default {
       type: "object",
     },
     materialSubstance: {
-      required: ["id", "name", "createdBy", "createdAt"],
+      required: ["id", "name", "createdBy", "createdAt", "code"],
       properties: {
         id: {
           default: "public.xid()",
@@ -79367,6 +80347,10 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+        code: {
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -80629,10 +81613,6 @@ export default {
           format: "text",
           type: "string",
         },
-        itemReadableId: {
-          format: "text",
-          type: "string",
-        },
         itemType: {
           format: "text",
           type: "string",
@@ -80732,6 +81712,10 @@ export default {
         },
         configuration: {
           format: "jsonb",
+        },
+        itemReadableId: {
+          format: "text",
+          type: "string",
         },
         thumbnailPath: {
           format: "text",
@@ -81954,10 +82938,6 @@ export default {
           format: 'public."methodType"',
           type: "string",
         },
-        itemReadableId: {
-          format: "text",
-          type: "string",
-        },
         accountNumber: {
           format: "text",
           type: "string",
@@ -82248,6 +83228,34 @@ export default {
       },
       type: "object",
     },
+    materialGrade: {
+      required: ["id", "materialSubstanceId", "name"],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        materialSubstanceId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialSubstance.id`.<fk table='materialSubstance' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     companySettings: {
       required: [
         "id",
@@ -82257,6 +83265,8 @@ export default {
         "rfqReadyNotificationGroup",
         "inventoryJobCompletedNotificationGroup",
         "salesJobCompletedNotificationGroup",
+        "materialGeneratedIds",
+        "useMetric",
       ],
       properties: {
         id: {
@@ -82312,6 +83322,16 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+        materialGeneratedIds: {
+          default: true,
+          format: "boolean",
+          type: "boolean",
+        },
+        useMetric: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
         },
       },
       type: "object",
@@ -83350,12 +84370,6 @@ export default {
     },
     "rowFilter.quoteLine.itemId": {
       name: "itemId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.quoteLine.itemReadableId": {
-      name: "itemReadableId",
       required: false,
       in: "query",
       type: "string",
@@ -85754,12 +86768,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.supplierQuoteLine.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.supplierQuoteLine.description": {
       name: "description",
       required: false,
@@ -86045,6 +87053,45 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.materialGrades": {
+      name: "materialGrades",
+      description: "materialGrades",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/materialGrades",
+      },
+    },
+    "rowFilter.materialGrades.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialGrades.materialSubstanceId": {
+      name: "materialSubstanceId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialGrades.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialGrades.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialGrades.substanceName": {
+      name: "substanceName",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.receiptLines": {
       name: "receiptLines",
       description: "receiptLines",
@@ -86074,12 +87121,6 @@ export default {
     },
     "rowFilter.receiptLines.itemId": {
       name: "itemId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.receiptLines.itemReadableId": {
-      name: "itemReadableId",
       required: false,
       in: "query",
       type: "string",
@@ -86170,6 +87211,12 @@ export default {
     },
     "rowFilter.receiptLines.requiresBatchTracking": {
       name: "requiresBatchTracking",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.receiptLines.itemReadableId": {
+      name: "itemReadableId",
       required: false,
       in: "query",
       type: "string",
@@ -86456,12 +87503,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.jobMaterialWithMakeMethodId.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.jobMaterialWithMakeMethodId.itemType": {
       name: "itemType",
       required: false,
@@ -86614,6 +87655,12 @@ export default {
     },
     "rowFilter.jobMaterialWithMakeMethodId.version": {
       name: "version",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobMaterialWithMakeMethodId.itemReadableId": {
+      name: "itemReadableId",
       required: false,
       in: "query",
       type: "string",
@@ -86990,12 +88037,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.methodMaterial.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.methodMaterial.order": {
       name: "order",
       required: false,
@@ -87124,12 +88165,6 @@ export default {
     },
     "rowFilter.quoteMaterialWithMakeMethodId.itemId": {
       name: "itemId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.quoteMaterialWithMakeMethodId.itemReadableId": {
-      name: "itemReadableId",
       required: false,
       in: "query",
       type: "string",
@@ -87692,24 +88727,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.material.grade": {
-      name: "grade",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.material.dimensions": {
-      name: "dimensions",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.material.finish": {
-      name: "finish",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.material.approved": {
       name: "approved",
       required: false,
@@ -87766,6 +88783,30 @@ export default {
     },
     "rowFilter.material.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.material.dimensionId": {
+      name: "dimensionId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.material.finishId": {
+      name: "finishId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.material.gradeId": {
+      name: "gradeId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.material.materialTypeId": {
+      name: "materialTypeId",
       required: false,
       in: "query",
       type: "string",
@@ -88624,12 +89665,6 @@ export default {
     },
     "rowFilter.itemLedger.itemId": {
       name: "itemId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.itemLedger.itemReadableId": {
-      name: "itemReadableId",
       required: false,
       in: "query",
       type: "string",
@@ -90383,6 +91418,51 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.materialDimensions": {
+      name: "materialDimensions",
+      description: "materialDimensions",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/materialDimensions",
+      },
+    },
+    "rowFilter.materialDimensions.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialDimensions.materialFormId": {
+      name: "materialFormId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialDimensions.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialDimensions.isMetric": {
+      name: "isMetric",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialDimensions.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialDimensions.formName": {
+      name: "formName",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.salesOrder": {
       name: "salesOrder",
       description: "salesOrder",
@@ -91262,12 +92342,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.purchaseInvoiceLines.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.purchaseInvoiceLines.serviceId": {
       name: "serviceId",
       required: false,
@@ -91448,8 +92522,20 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.purchaseInvoiceLines.jobOperationId": {
+      name: "jobOperationId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.purchaseInvoiceLines.thumbnailPath": {
       name: "thumbnailPath",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.itemReadableId": {
+      name: "itemReadableId",
       required: false,
       in: "query",
       type: "string",
@@ -92051,6 +93137,51 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.materialType": {
+      name: "materialType",
+      description: "materialType",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/materialType",
+      },
+    },
+    "rowFilter.materialType.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialType.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialType.code": {
+      name: "code",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialType.materialSubstanceId": {
+      name: "materialSubstanceId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialType.materialFormId": {
+      name: "materialFormId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialType.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.purchasePayment": {
       name: "purchasePayment",
       description: "purchasePayment",
@@ -92290,6 +93421,39 @@ export default {
     },
     "rowFilter.supplierProcesses.processName": {
       name: "processName",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "body.materialFinish": {
+      name: "materialFinish",
+      description: "materialFinish",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/materialFinish",
+      },
+    },
+    "rowFilter.materialFinish.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialFinish.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialFinish.materialSubstanceId": {
+      name: "materialSubstanceId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialFinish.companyId": {
+      name: "companyId",
       required: false,
       in: "query",
       type: "string",
@@ -93374,6 +94538,45 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.materialFinishes": {
+      name: "materialFinishes",
+      description: "materialFinishes",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/materialFinishes",
+      },
+    },
+    "rowFilter.materialFinishes.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialFinishes.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialFinishes.materialSubstanceId": {
+      name: "materialSubstanceId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialFinishes.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialFinishes.substanceName": {
+      name: "substanceName",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.openProductionOrders": {
       name: "openProductionOrders",
       description: "openProductionOrders",
@@ -93484,12 +94687,6 @@ export default {
     },
     "rowFilter.purchaseOrderLine.itemId": {
       name: "itemId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.purchaseOrderLine.itemReadableId": {
-      name: "itemReadableId",
       required: false,
       in: "query",
       type: "string",
@@ -94610,12 +95807,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.supplierQuoteLines.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.supplierQuoteLines.description": {
       name: "description",
       required: false,
@@ -94696,6 +95887,12 @@ export default {
     },
     "rowFilter.supplierQuoteLines.externalNotes": {
       name: "externalNotes",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplierQuoteLines.itemReadableId": {
+      name: "itemReadableId",
       required: false,
       in: "query",
       type: "string",
@@ -96056,12 +97253,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.quoteMaterial.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.quoteMaterial.itemType": {
       name: "itemType",
       required: false,
@@ -96530,12 +97721,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.purchaseInvoiceLine.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.purchaseInvoiceLine.serviceId": {
       name: "serviceId",
       required: false,
@@ -96785,6 +97970,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.materialForm.code": {
+      name: "code",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.supplierQuotes": {
       name: "supplierQuotes",
       description: "supplierQuotes",
@@ -96995,12 +98186,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.salesInvoiceLines.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.salesInvoiceLines.accountNumber": {
       name: "accountNumber",
       required: false,
@@ -97165,6 +98350,12 @@ export default {
     },
     "rowFilter.salesInvoiceLines.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.itemReadableId": {
+      name: "itemReadableId",
       required: false,
       in: "query",
       type: "string",
@@ -98372,12 +99563,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.receiptLine.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.receiptLine.orderQuantity": {
       name: "orderQuantity",
       required: false,
@@ -99464,12 +100649,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.salesOrderLines.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.salesOrderLines.accountNumber": {
       name: "accountNumber",
       required: false,
@@ -99682,6 +100861,12 @@ export default {
     },
     "rowFilter.salesOrderLines.sentDate": {
       name: "sentDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLines.itemReadableId": {
+      name: "itemReadableId",
       required: false,
       in: "query",
       type: "string",
@@ -100769,6 +101954,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.materials.dimensions": {
+      name: "dimensions",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.materials.finish": {
       name: "finish",
       required: false,
@@ -100781,8 +101972,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.materials.dimensions": {
-      name: "dimensions",
+    "rowFilter.materials.materialType": {
+      name: "materialType",
       required: false,
       in: "query",
       type: "string",
@@ -102005,12 +103196,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.quoteLines.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.quoteLines.itemType": {
       name: "itemType",
       required: false,
@@ -102139,6 +103324,12 @@ export default {
     },
     "rowFilter.quoteLines.configuration": {
       name: "configuration",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLines.itemReadableId": {
+      name: "itemReadableId",
       required: false,
       in: "query",
       type: "string",
@@ -102896,12 +104087,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.jobMaterial.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.jobMaterial.itemType": {
       name: "itemType",
       required: false,
@@ -103628,12 +104813,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.shipmentLines.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.shipmentLines.orderQuantity": {
       name: "orderQuantity",
       required: false,
@@ -103724,6 +104903,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.shipmentLines.itemReadableId": {
+      name: "itemReadableId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.shipmentLines.thumbnailPath": {
       name: "thumbnailPath",
       required: false,
@@ -103810,12 +104995,6 @@ export default {
     },
     "rowFilter.shipmentLine.itemId": {
       name: "itemId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.shipmentLine.itemReadableId": {
-      name: "itemReadableId",
       required: false,
       in: "query",
       type: "string",
@@ -104173,12 +105352,6 @@ export default {
     },
     "rowFilter.salesOrderLine.itemId": {
       name: "itemId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.salesOrderLine.itemReadableId": {
-      name: "itemReadableId",
       required: false,
       in: "query",
       type: "string",
@@ -104662,6 +105835,57 @@ export default {
     },
     "rowFilter.salesOrderLocations.paymentCountryName": {
       name: "paymentCountryName",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "body.materialTypes": {
+      name: "materialTypes",
+      description: "materialTypes",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/materialTypes",
+      },
+    },
+    "rowFilter.materialTypes.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialTypes.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialTypes.materialSubstanceId": {
+      name: "materialSubstanceId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialTypes.materialFormId": {
+      name: "materialFormId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialTypes.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialTypes.substanceName": {
+      name: "substanceName",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialTypes.formName": {
+      name: "formName",
       required: false,
       in: "query",
       type: "string",
@@ -105515,6 +106739,45 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.materialDimension": {
+      name: "materialDimension",
+      description: "materialDimension",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/materialDimension",
+      },
+    },
+    "rowFilter.materialDimension.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialDimension.materialFormId": {
+      name: "materialFormId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialDimension.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialDimension.isMetric": {
+      name: "isMetric",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialDimension.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.salesOrders": {
       name: "salesOrders",
       description: "salesOrders",
@@ -106094,12 +107357,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.purchaseOrderLines.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.purchaseOrderLines.accountNumber": {
       name: "accountNumber",
       required: false,
@@ -106340,6 +107597,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.purchaseOrderLines.promisedDate": {
+      name: "promisedDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.purchaseOrderLines.thumbnailPath": {
       name: "thumbnailPath",
       required: false,
@@ -106348,6 +107611,12 @@ export default {
     },
     "rowFilter.purchaseOrderLines.itemName": {
       name: "itemName",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseOrderLines.itemReadableId": {
+      name: "itemReadableId",
       required: false,
       in: "query",
       type: "string",
@@ -107110,6 +108379,12 @@ export default {
     },
     "rowFilter.materialSubstance.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialSubstance.code": {
+      name: "code",
       required: false,
       in: "query",
       type: "string",
@@ -108515,12 +109790,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.quoteLinePrices.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.quoteLinePrices.itemType": {
       name: "itemType",
       required: false,
@@ -108649,6 +109918,12 @@ export default {
     },
     "rowFilter.quoteLinePrices.configuration": {
       name: "configuration",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.itemReadableId": {
+      name: "itemReadableId",
       required: false,
       in: "query",
       type: "string",
@@ -109967,12 +111242,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.salesInvoiceLine.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.salesInvoiceLine.accountNumber": {
       name: "accountNumber",
       required: false,
@@ -110291,6 +111560,39 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.materialGrade": {
+      name: "materialGrade",
+      description: "materialGrade",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/materialGrade",
+      },
+    },
+    "rowFilter.materialGrade.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialGrade.materialSubstanceId": {
+      name: "materialSubstanceId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialGrade.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialGrade.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.companySettings": {
       name: "companySettings",
       description: "companySettings",
@@ -110350,6 +111652,18 @@ export default {
     },
     "rowFilter.companySettings.salesJobCompletedNotificationGroup": {
       name: "salesJobCompletedNotificationGroup",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.companySettings.materialGeneratedIds": {
+      name: "materialGeneratedIds",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.companySettings.useMetric": {
+      name: "useMetric",
       required: false,
       in: "query",
       type: "string",

@@ -124,7 +124,6 @@ export default function EditPurchaseOrderLineRoute() {
     purchaseOrderId: line?.purchaseOrderId ?? "",
     purchaseOrderLineType: (line?.purchaseOrderLineType ?? "Part") as "Part",
     itemId: line?.itemId ?? "",
-    itemReadableId: line?.itemReadableId ?? "",
     accountNumber: line?.accountNumber ?? "",
     assetId: line?.assetId ?? "",
     description: line?.description ?? "",

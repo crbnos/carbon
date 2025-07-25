@@ -753,7 +753,6 @@ serve(async (req: Request) => {
             itemLedgerInserts.push({
               postingDate: today,
               itemId: receiptLine.itemId,
-              itemReadableId: receiptLine.itemReadableId ?? "",
               quantity: receivedQuantity,
               locationId: receiptLine.locationId,
               shelfId: receiptLine.shelfId,
@@ -773,7 +772,6 @@ serve(async (req: Request) => {
             itemLedgerInserts.push({
               postingDate: today,
               itemId: receiptLine.itemId,
-              itemReadableId: receiptLine.itemReadableId ?? "",
               quantity: receivedQuantity,
               locationId: receiptLine.locationId,
               shelfId: receiptLine.shelfId,
@@ -818,7 +816,6 @@ serve(async (req: Request) => {
               itemLedgerInserts.push({
                 postingDate: today,
                 itemId: receiptLine.itemId,
-                itemReadableId: receiptLine.itemReadableId ?? "",
                 quantity: quantityPerEntry,
                 locationId: receiptLine.locationId,
                 shelfId: receiptLine.shelfId,

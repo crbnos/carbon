@@ -93,11 +93,13 @@ export function UsedInTree({
   revisions: revisionsJson,
   itemReadableId,
   itemReadableIdWithRevision,
+  hasSizesInsteadOfRevisions = false,
 }: {
   tree: UsedInNode[];
   revisions?: Json;
   itemReadableId: string;
   itemReadableIdWithRevision: string;
+  hasSizesInsteadOfRevisions?: boolean;
 }) {
   const [filterText, setFilterText] = useState("");
 
@@ -137,11 +139,12 @@ export function UsedInTree({
           filterText={filterText}
           node={{
             key: (revisions?.[0]?.type as UsedInKey) ?? "Part",
-            name: "Revisions",
+            name: hasSizesInsteadOfRevisions ? "Sizes" : "Revisions",
             module: "parts",
             children: revisions,
           }}
           maxRevision={revisions?.[0]?.revision ?? ""}
+          hasSizesInsteadOfRevisions={hasSizesInsteadOfRevisions}
         />
         {tree.map((node) => (
           <UsedInItem
@@ -160,10 +163,12 @@ export function RevisionsItem({
   node,
   filterText,
   maxRevision,
+  hasSizesInsteadOfRevisions = false,
 }: {
   node: UsedInNode;
   filterText: string;
   maxRevision: string;
+  hasSizesInsteadOfRevisions?: boolean;
 }) {
   const { itemId } = useParams();
   const permissions = usePermissions();
@@ -219,7 +224,9 @@ export function RevisionsItem({
                 setSelectedRevision({
                   copyFromId: itemId,
                   type: node.key as "Part",
-                  revision: getNextRevision(maxRevision),
+                  revision: hasSizesInsteadOfRevisions
+                    ? ""
+                    : getNextRevision(maxRevision),
                 });
                 revisionDisclosure.onOpen();
               });
@@ -295,7 +302,8 @@ export function RevisionsItem({
                           }}
                         >
                           <DropdownMenuIcon icon={<LuStar />} />
-                          Set as Default Revision
+                          Set as Default{" "}
+                          {hasSizesInsteadOfRevisions ? "Size" : "Revision"}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -311,14 +319,19 @@ export function RevisionsItem({
         <RevisionForm
           initialValues={selectedRevision!}
           onClose={revisionDisclosure.onClose}
+          hasSizesInsteadOfRevisions={hasSizesInsteadOfRevisions}
         />
       )}
       {defaultDisclosure.isOpen && selectedRevision && (
         <Confirm
           action={path.to.defaultRevision(selectedRevision.id!)}
-          confirmText="Make Default"
-          title={`Make revision ${selectedRevision.revision} default?`}
-          text="This will replace all method materials of other revisions with this revision."
+          confirmText={`Make Default`}
+          title={`Make ${hasSizesInsteadOfRevisions ? "size" : "revision"} ${
+            selectedRevision.revision
+          } default?`}
+          text={`This will replace all method materials of other ${
+            hasSizesInsteadOfRevisions ? "sizes" : "revisions"
+          } with this ${hasSizesInsteadOfRevisions ? "size" : "revision"}.`}
           isOpen
           onSubmit={() => {
             defaultDisclosure.onClose();

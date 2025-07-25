@@ -34,6 +34,8 @@ import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { PurchaseInvoice } from "~/modules/invoicing";
 import { purchaseInvoiceLineValidator } from "~/modules/invoicing";
 import type { MethodItemType } from "~/modules/shared";
+import { useItems } from "~/stores";
+import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 
 type PurchaseInvoiceLineFormProps = {
@@ -52,6 +54,7 @@ const PurchaseInvoiceLineForm = ({
   const permissions = usePermissions();
   const { carbon } = useCarbon();
 
+  const [items] = useItems();
   const { company, defaults } = useUser();
   const { invoiceId } = useParams();
 
@@ -71,7 +74,6 @@ const PurchaseInvoiceLineForm = ({
   const [locationId, setLocationId] = useState(defaults.locationId ?? "");
   const [itemData, setItemData] = useState<{
     itemId: string;
-    itemReadableId: string;
     description: string;
     quantity: number;
     supplierUnitPrice: number;
@@ -85,7 +87,6 @@ const PurchaseInvoiceLineForm = ({
     taxPercent: number;
   }>({
     itemId: initialValues.itemId ?? "",
-    itemReadableId: initialValues.itemReadableId ?? "",
     description: initialValues.description ?? "",
     quantity: initialValues.quantity ?? 1,
     supplierUnitPrice: initialValues.supplierUnitPrice ?? 0,
@@ -129,7 +130,6 @@ const PurchaseInvoiceLineForm = ({
     setItemType(t as MethodItemType);
     setItemData({
       itemId: "",
-      itemReadableId: "",
       description: "",
       quantity: 1,
       supplierUnitPrice: 0,
@@ -183,7 +183,6 @@ const PurchaseInvoiceLineForm = ({
 
         setItemData({
           itemId: itemId,
-          itemReadableId: item.data?.readableIdWithRevision ?? "",
           description: item.data?.name ?? "",
           quantity: supplierPart?.data?.minimumOrderQuantity ?? 1,
           supplierUnitPrice:
@@ -259,13 +258,11 @@ const PurchaseInvoiceLineForm = ({
             <ModalCardHeader>
               <ModalCardTitle
                 className={cn(
-                  isEditing &&
-                    !itemData?.itemReadableId &&
-                    "text-muted-foreground"
+                  isEditing && !itemData?.itemId && "text-muted-foreground"
                 )}
               >
                 {isEditing
-                  ? itemData?.itemReadableId || "..."
+                  ? getItemReadableId(items, itemData?.itemId) ?? "..."
                   : "New Purchase Invoice Line"}
               </ModalCardTitle>
               <ModalCardDescription>
@@ -277,7 +274,6 @@ const PurchaseInvoiceLineForm = ({
             <ModalCardBody>
               <Hidden name="id" />
               <Hidden name="invoiceId" />
-              <Hidden name="itemReadableId" value={itemData.itemReadableId} />
               <Hidden name="invoiceLineType" value={itemType} />
               <Hidden name="description" value={itemData.description} />
               <Hidden

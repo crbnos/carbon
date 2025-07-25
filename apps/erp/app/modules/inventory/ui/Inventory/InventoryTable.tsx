@@ -16,12 +16,16 @@ import {
   LuBox,
   LuCheck,
   LuCirclePlay,
+  LuExpand,
   LuGlassWater,
   LuMoveDown,
   LuMoveUp,
   LuPackage,
+  LuPaintBucket,
+  LuPuzzle,
   LuRuler,
   LuShapes,
+  LuStar,
 } from "react-icons/lu";
 import {
   Hyperlink,
@@ -32,6 +36,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
+import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { useUrlParams } from "~/hooks";
 import type { action as mrpAction } from "~/routes/api+/mrp";
 import type { ListItem } from "~/types";
@@ -53,6 +58,10 @@ const InventoryTable = memo(
 
     const locations = useLocations();
     const unitOfMeasures = useUnitOfMeasure();
+
+    const filters = useFilters();
+    const materialSubstanceId = filters.getFilter("materialSubstanceId")?.[0];
+    const materialFormId = filters.getFilter("materialFormId")?.[0];
 
     const columns = useMemo<ColumnDef<InventoryItem>[]>(() => {
       return [
@@ -145,7 +154,7 @@ const InventoryTable = memo(
         },
         {
           accessorKey: "materialFormId",
-          header: "Form",
+          header: "Shape",
           cell: ({ row }) => {
             const form = forms.find(
               (f) => f.id === row.original.materialFormId
@@ -184,8 +193,79 @@ const InventoryTable = memo(
           },
         },
         {
-          accessorKey: "type",
+          accessorKey: "finish",
+          header: "Finish",
+          cell: (item) => item.getValue(),
+          meta: {
+            icon: <LuPaintBucket />,
+            filter: {
+              type: "fetcher",
+              endpoint: path.to.api.materialFinishes(materialSubstanceId),
+              transform: (data: { id: string; name: string }[] | null) =>
+                data?.map(({ name }) => ({
+                  value: name,
+                  label: name,
+                })) ?? [],
+            },
+          },
+        },
+        {
+          accessorKey: "grade",
+          header: "Grade",
+          cell: (item) => item.getValue(),
+          meta: {
+            icon: <LuStar />,
+            filter: {
+              type: "fetcher",
+              endpoint: path.to.api.materialGrades(materialSubstanceId),
+              transform: (data: { id: string; name: string }[] | null) =>
+                data?.map(({ name }) => ({
+                  value: name,
+                  label: name,
+                })) ?? [],
+            },
+          },
+        },
+        {
+          accessorKey: "dimension",
+          header: "Dimension",
+          cell: (item) => item.getValue(),
+          meta: {
+            icon: <LuExpand />,
+            filter: {
+              type: "fetcher",
+              endpoint: path.to.api.materialDimensions(materialFormId),
+              transform: (data: { id: string; name: string }[] | null) =>
+                data?.map(({ name }) => ({
+                  value: name,
+                  label: name,
+                })) ?? [],
+            },
+          },
+        },
+        {
+          accessorKey: "materialType",
           header: "Type",
+          cell: (item) => item.getValue(),
+          meta: {
+            icon: <LuPuzzle />,
+            filter: {
+              type: "fetcher",
+              endpoint: path.to.api.materialTypes(
+                materialSubstanceId,
+                materialFormId
+              ),
+              transform: (data: { id: string; name: string }[] | null) =>
+                data?.map(({ id, name }) => ({
+                  value: id,
+                  label: name,
+                })) ?? [],
+            },
+          },
+        },
+        {
+          accessorKey: "type",
+          header: "Item Type",
           cell: ({ row }) =>
             row.original.type && (
               <HStack>
@@ -226,11 +306,22 @@ const InventoryTable = memo(
           },
         },
       ];
-    }, [forms, params, substances, unitOfMeasures]);
+    }, [
+      forms,
+      materialFormId,
+      materialSubstanceId,
+      params,
+      substances,
+      unitOfMeasures,
+    ]);
 
     const defaultColumnVisibility = {
       active: false,
       type: false,
+      finish: false,
+      grade: false,
+      dimension: false,
+      materialType: false,
     };
 
     const defaultColumnPinning = {

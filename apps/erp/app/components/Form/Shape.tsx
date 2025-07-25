@@ -5,7 +5,7 @@ import { useFetcher } from "@remix-run/react";
 import { useMemo, useRef, useState } from "react";
 import { usePermissions } from "~/hooks";
 import type { getMaterialFormsList } from "~/modules/items";
-import { MaterialShapeForm } from "~/modules/items/ui/MaterialForms";
+import { MaterialShapeForm } from "~/modules/items/ui/MaterialShapes";
 import { path } from "~/utils/path";
 import { Enumerable } from "../Enumerable";
 
@@ -53,6 +53,7 @@ const Shape = (props: ShapeSelectProps) => {
           }}
           initialValues={{
             name: created,
+            code: created.slice(0, 3).toUpperCase(),
           }}
         />
       )}
@@ -62,7 +63,7 @@ const Shape = (props: ShapeSelectProps) => {
       options={options}
       {...props}
       inline={props.inline ? ShapePreview : undefined}
-      label={props?.label ?? "Form"}
+      label={props?.label ?? "Shape"}
     />
   );
 };
@@ -83,6 +84,8 @@ export const useShape = () => {
     return (materialFormsLoader.data?.data ?? []).map((c) => ({
       value: c.id,
       label: c.name,
+      helper: c.companyId === null ? "Standard" : undefined,
+      code: c.code,
     }));
   }, [materialFormsLoader.data?.data]);
 

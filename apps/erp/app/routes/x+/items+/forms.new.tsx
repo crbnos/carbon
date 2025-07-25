@@ -6,7 +6,7 @@ import { useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { materialFormValidator, upsertMaterialForm } from "~/modules/items";
-import { MaterialShapeForm } from "~/modules/items/ui/MaterialForms";
+import { MaterialShapeForm } from "~/modules/items/ui/MaterialShapes";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 
@@ -74,6 +74,7 @@ export default function NewMaterialFormsRoute() {
   const navigate = useNavigate();
   const initialValues = {
     name: "",
+    code: "",
     description: "",
   };
 

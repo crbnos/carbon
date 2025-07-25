@@ -189,7 +189,6 @@ serve(async (req: Request) => {
               documentId: jobId,
               companyId,
               itemId: job?.itemId!,
-              itemReadableId: item?.readableIdWithRevision,
               quantity: quantityReceivedToInventory,
               locationId,
               shelfId,
@@ -215,7 +214,6 @@ serve(async (req: Request) => {
                 documentId: jobId,
                 companyId,
                 itemId: job?.itemId!,
-                itemReadableId: item?.readableIdWithRevision,
                 quantity: 1,
                 locationId,
                 shelfId,
@@ -242,7 +240,6 @@ serve(async (req: Request) => {
               documentId: jobId,
               companyId,
               itemId: job?.itemId!,
-              itemReadableId: item?.readableIdWithRevision,
               quantity: quantityReceivedToInventory,
               locationId,
               shelfId,
@@ -365,7 +362,6 @@ serve(async (req: Request) => {
                     documentLineId: id,
                     companyId,
                     itemId: material.itemId,
-                    itemReadableId: material.itemReadableId,
                     quantity: -Number(material.quantityToIssue),
                     locationId: job?.locationId,
                     shelfId: material.defaultShelf
@@ -783,7 +779,6 @@ serve(async (req: Request) => {
                 description: item?.name,
                 estimatedQuantity: 0,
                 itemId: itemId!,
-                itemReadableId: item?.readableIdWithRevision,
                 itemType: item?.type,
                 jobId: jobOperation?.jobId!,
                 jobMakeMethodId: jobOperation?.jobMakeMethodId,
@@ -857,6 +852,13 @@ serve(async (req: Request) => {
             .selectAll()
             .executeTakeFirst();
 
+          // Get item details
+          const item = await trx
+            .selectFrom("item")
+            .where("id", "=", jobMaterial?.itemId!)
+            .select(["readableIdWithRevision"])
+            .executeTakeFirst();
+
           // Get job location
           const job = await trx
             .selectFrom("job")
@@ -890,7 +892,7 @@ serve(async (req: Request) => {
               type: "Consume",
               sourceDocument: "Job Material",
               sourceDocumentId: materialId,
-              sourceDocumentReadableId: jobMaterial?.itemReadableId,
+              sourceDocumentReadableId: item?.readableIdWithRevision ?? "",
               attributes: {
                 Job: job?.id!,
                 "Job Make Method": jobMaterial?.jobMakeMethodId!,
@@ -1039,7 +1041,6 @@ serve(async (req: Request) => {
                     documentId: splitActivityId,
                     companyId,
                     itemId: trackedEntity.sourceDocumentId,
-                    itemReadableId: trackedEntity.sourceDocumentReadableId,
                     quantity: -Number(trackedEntity.quantity),
                     locationId: job?.locationId,
                     shelfId: itemLedgers.find(
@@ -1055,7 +1056,6 @@ serve(async (req: Request) => {
                     documentId: splitActivityId,
                     companyId,
                     itemId: trackedEntity.sourceDocumentId,
-                    itemReadableId: trackedEntity.sourceDocumentReadableId,
                     quantity: quantity,
                     locationId: job?.locationId,
                     shelfId: itemLedgers.find(
@@ -1071,7 +1071,6 @@ serve(async (req: Request) => {
                     documentId: splitActivityId,
                     companyId,
                     itemId: trackedEntity.sourceDocumentId,
-                    itemReadableId: trackedEntity.sourceDocumentReadableId,
                     quantity: remainingQuantity,
                     locationId: job?.locationId,
                     shelfId: itemLedgers.find(
@@ -1109,7 +1108,6 @@ serve(async (req: Request) => {
                 documentId: job?.id!,
                 companyId,
                 itemId: trackedEntity.sourceDocumentId,
-                itemReadableId: trackedEntity.sourceDocumentReadableId,
                 quantity: -quantity,
                 locationId: job?.locationId,
                 shelfId: itemLedgers.find(
@@ -1212,6 +1210,13 @@ serve(async (req: Request) => {
             .selectAll()
             .executeTakeFirst();
 
+          // Get item details
+          const item = await trx
+            .selectFrom("item")
+            .where("id", "=", jobMaterial?.itemId!)
+            .select(["readableIdWithRevision"])
+            .executeTakeFirst();
+
           // Get job location
           const job = await trx
             .selectFrom("job")
@@ -1245,7 +1250,7 @@ serve(async (req: Request) => {
               type: "Unconsume",
               sourceDocument: "Job Material",
               sourceDocumentId: materialId,
-              sourceDocumentReadableId: jobMaterial?.itemReadableId,
+              sourceDocumentReadableId: item?.readableIdWithRevision ?? "",
               attributes: {
                 Job: job?.id!,
                 "Job Make Method": jobMaterial?.jobMakeMethodId!,
@@ -1306,7 +1311,6 @@ serve(async (req: Request) => {
                 documentId: job?.id!,
                 companyId,
                 itemId: trackedEntity.sourceDocumentId,
-                itemReadableId: trackedEntity.sourceDocumentReadableId,
                 quantity: quantity,
                 locationId: job?.locationId,
                 shelfId: itemLedgers.find(

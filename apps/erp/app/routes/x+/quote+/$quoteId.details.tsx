@@ -110,8 +110,6 @@ export default function QuoteDetailsRoute() {
     opportunity: Opportunity;
   }>(path.to.quote(quoteId));
 
-  console.log({ quoteData });
-
   if (!quoteData) throw new Error("Could not find quote data");
 
   const shipmentFormRef = useRef<QuoteShipmentFormRef>(null);

@@ -33,7 +33,8 @@ import {
 } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { MethodItemType, MethodType } from "~/modules/shared";
-import { useBom } from "~/stores";
+import { useBom, useItems } from "~/stores";
+import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 import type { jobOperationValidator } from "../../production.models";
 import { jobMaterialValidator } from "../../production.models";
@@ -67,7 +68,6 @@ const JobMaterialForm = ({
   );
   const [itemData, setItemData] = useState<{
     itemId: string;
-    itemReadableId: string;
     methodType: MethodType;
     description: string;
     unitCost: number;
@@ -75,7 +75,6 @@ const JobMaterialForm = ({
     quantity: number;
   }>({
     itemId: initialValues.itemId ?? "",
-    itemReadableId: initialValues.itemReadableId ?? "",
     methodType: initialValues.methodType ?? "Buy",
     description: initialValues.description ?? "",
     unitCost: initialValues.unitCost ?? 0,
@@ -88,7 +87,6 @@ const JobMaterialForm = ({
     setItemType(value as MethodItemType);
     setItemData({
       itemId: "",
-      itemReadableId: "",
       methodType: "" as "Buy",
       quantity: 1,
       description: "",
@@ -119,7 +117,6 @@ const JobMaterialForm = ({
     setItemData((d) => ({
       ...d,
       itemId,
-      itemReadableId: item.data?.readableIdWithRevision ?? "",
       description: item.data?.name ?? "",
       unitCost: itemCost.data?.unitCost ?? 0,
       unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
@@ -136,8 +133,7 @@ const JobMaterialForm = ({
   useEffect(() => {
     const newPath = path.to.jobMakeMethod(
       jobId,
-      initialValues.jobMakeMethodId!,
-      initialValues.id!
+      initialValues.jobMakeMethodId!
     );
 
     setSelectedMaterialId(initialValues.id ?? null);
@@ -158,6 +154,9 @@ const JobMaterialForm = ({
     jobData?.job?.status ?? ""
   );
 
+  const [items] = useItems();
+  const itemReadableId = getItemReadableId(items, itemData.itemId);
+
   return (
     <Card>
       <ValidatedForm
@@ -170,12 +169,11 @@ const JobMaterialForm = ({
         <CardHeader>
           <CardTitle className="line-clamp-2">{itemData.description}</CardTitle>
           <CardDescription className="flex items-center gap-2">
-            {itemData.itemReadableId} <Copy text={itemData.itemReadableId} />
+            {itemReadableId} <Copy text={itemReadableId ?? ""} />
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Hidden name="jobMakeMethodId" />
-          <Hidden name="itemReadableId" value={itemData.itemReadableId} />
           {itemData.methodType === "Make" && (
             <Hidden name="unitCost" value={itemData.unitCost} />
           )}

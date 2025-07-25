@@ -54,7 +54,8 @@ import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { MethodItemType, MethodType } from "~/modules/shared";
-import { useBom } from "~/stores";
+import { useBom, useItems, type Item as ItemType } from "~/stores";
+import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 import type { jobOperationValidator } from "../../production.models";
 import {
@@ -93,6 +94,7 @@ type TemporaryItems = {
 };
 
 function makeItems(
+  items: ItemType[],
   materials: Material[],
   orderState: OrderState,
   checkedState: CheckedState
@@ -102,21 +104,23 @@ function makeItems(
       ? orderState[material.id] ?? material.order
       : material.order;
     const checked = material.id ? checkedState[material.id] ?? false : false;
-    return makeItem(material, order, checked);
+    return makeItem(items, material, order, checked);
   });
 }
 
 function makeItem(
+  items: ItemType[],
   material: Material,
   order: number,
   checked: boolean
 ): ItemWithData {
+  const itemReadableId = getItemReadableId(items, material.itemId);
   return {
     id: material.id!,
     title: (
       <VStack spacing={0} className="py-1 cursor-pointer">
         <div className="flex items-center gap-2 group">
-          <h3 className="font-semibold truncate">{material.itemReadableId}</h3>
+          <h3 className="font-semibold truncate">{itemReadableId ?? ""}</h3>
           {material.itemId && material.itemType && (
             <Link to={getLinkToItemDetails(material.itemType, material.itemId)}>
               <LuExternalLink className="h-4 w-4 opacity-0 group-hover:opacity-100" />
@@ -184,7 +188,6 @@ const initialMethodMaterial: Omit<Material, "jobMakeMethodId" | "order"> & {
   description: string;
 } = {
   itemId: "",
-  itemReadableId: "",
   // @ts-ignore
   itemType: "Item" as const,
   methodType: "Buy" as const,
@@ -273,7 +276,9 @@ const JobBillOfMaterial = ({
     materialsById.set(id, material);
   });
 
+  const [storeItems] = useItems();
   const items = makeItems(
+    storeItems,
     Array.from(materialsById.values()),
     orderState,
     checkedState
@@ -637,7 +642,6 @@ function MaterialForm({
   const [itemType, setItemType] = useState<MethodItemType>(item.data.itemType);
   const [itemData, setItemData] = useState<{
     itemId: string;
-    itemReadableId: string;
     methodType: MethodType;
     description: string;
     unitCost: number;
@@ -648,7 +652,6 @@ function MaterialForm({
     requiresSerialTracking: boolean;
   }>({
     itemId: item.data.itemId ?? "",
-    itemReadableId: item.data.itemReadableId ?? "",
     methodType: item.data.methodType ?? "Buy",
     description: item.data.description ?? "",
     unitCost: item.data.unitCost ?? 0,
@@ -665,7 +668,6 @@ function MaterialForm({
 
     setItemData({
       itemId: "",
-      itemReadableId: "",
       methodType: "" as "Buy",
       quantity: 1,
       unitCost: 0,
@@ -704,7 +706,6 @@ function MaterialForm({
     setItemData((d) => ({
       ...d,
       itemId,
-      itemReadableId: item.data?.readableIdWithRevision ?? "",
       description: item.data?.name ?? "",
       unitCost: itemCost.data?.unitCost ?? 0,
       unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
@@ -743,7 +744,6 @@ function MaterialForm({
     >
       <Hidden name="id" />
       <Hidden name="jobMakeMethodId" />
-      <Hidden name="itemReadableId" value={itemData.itemReadableId} />
       <Hidden name="kit" value={itemData.kit.toString()} />
       <Hidden name="order" />
       <Hidden

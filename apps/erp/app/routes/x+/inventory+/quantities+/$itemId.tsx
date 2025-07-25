@@ -57,39 +57,35 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let [pickMethod] = await Promise.all([
-    getPickMethod(client, itemId, companyId, locationId),
-  ]);
+  // Ensure pick method exists for this item/location combination
+  const ensurePickMethod = await upsertPickMethod(client, {
+    itemId,
+    companyId,
+    locationId,
+    customFields: {},
+    createdBy: userId,
+  });
 
+  if (ensurePickMethod.error) {
+    throw redirect(
+      path.to.inventory,
+      await flash(
+        request,
+        error(ensurePickMethod.error, "Failed to ensure pick method exists")
+      )
+    );
+  }
+
+  // Now get the pick method (it should definitely exist)
+  const pickMethod = await getPickMethod(client, itemId, companyId, locationId);
   if (pickMethod.error || !pickMethod.data) {
-    const insertPickMethod = await upsertPickMethod(client, {
-      itemId,
-      companyId,
-      locationId,
-      customFields: {},
-      createdBy: userId,
-    });
-
-    if (insertPickMethod.error) {
-      throw redirect(
-        path.to.inventory,
-        await flash(
-          request,
-          error(insertPickMethod.error, "Failed to insert part inventory")
-        )
-      );
-    }
-
-    pickMethod = await getPickMethod(client, itemId, companyId, locationId);
-    if (pickMethod.error || !pickMethod.data) {
-      throw redirect(
-        path.to.inventory,
-        await flash(
-          request,
-          error(pickMethod.error, "Failed to load part inventory")
-        )
-      );
-    }
+    throw redirect(
+      path.to.inventory,
+      await flash(
+        request,
+        error(pickMethod.error, "Failed to load pick method")
+      )
+    );
   }
 
   const item = await getItem(client, itemId);

@@ -22,12 +22,14 @@ import { revisionValidator } from "../../items.models";
 
 type RevisionFormProps = {
   initialValues: z.infer<typeof revisionValidator>;
+  hasSizesInsteadOfRevisions?: boolean;
   open?: boolean;
   onClose: (data?: { id: string; name: string }) => void;
 };
 
 const RevisionForm = ({
   initialValues,
+  hasSizesInsteadOfRevisions = false,
   open = true,
   onClose,
 }: RevisionFormProps) => {
@@ -76,12 +78,14 @@ const RevisionForm = ({
           >
             <ModalDrawerHeader>
               <ModalDrawerTitle>
-                {isEditing ? "Edit" : "New"} Revision
+                {isEditing ? "Edit" : "New"}{" "}
+                {hasSizesInsteadOfRevisions ? "Size" : "Revision"}
               </ModalDrawerTitle>
               {!isEditing && (
                 <ModalDrawerDescription>
-                  A new revision will be created using a copy of the current
-                  revision
+                  A new {hasSizesInsteadOfRevisions ? "size" : "revision"} will
+                  be created using a copy of the current
+                  {hasSizesInsteadOfRevisions ? "size" : "revision"}
                 </ModalDrawerDescription>
               )}
             </ModalDrawerHeader>
@@ -93,8 +97,12 @@ const RevisionForm = ({
               <VStack spacing={4}>
                 <Input
                   name="revision"
-                  label="Revision"
-                  helperText="The revision number of the part"
+                  label={hasSizesInsteadOfRevisions ? "Size" : "Revision"}
+                  helperText={
+                    hasSizesInsteadOfRevisions
+                      ? "The size of the part"
+                      : "The revision number of the part"
+                  }
                 />
               </VStack>
             </ModalDrawerBody>

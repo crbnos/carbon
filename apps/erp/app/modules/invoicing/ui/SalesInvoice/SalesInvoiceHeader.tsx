@@ -32,6 +32,8 @@ import type { SalesInvoice, SalesInvoiceLine } from "~/modules/invoicing";
 import { salesInvoiceStatusType } from "~/modules/invoicing";
 import type { action } from "~/routes/x+/sales-invoice+/$invoiceId.post";
 import type { action as statusAction } from "~/routes/x+/sales-invoice+/$invoiceId.status";
+import { useItems } from "~/stores";
+import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 import SalesInvoicePostModal from "./SalesInvoicePostModal";
 import SalesInvoiceStatus from "./SalesInvoiceStatus";
@@ -55,6 +57,7 @@ const SalesInvoiceHeader = () => {
 
   if (!invoiceId) throw new Error("invoiceId not found");
 
+  const [items] = useItems();
   const routeData = useRouteData<{
     salesInvoice: SalesInvoice;
     salesInvoiceLines: SalesInvoiceLine[];
@@ -113,7 +116,7 @@ const SalesInvoiceHeader = () => {
     if (!carbon) throw new Error("carbon not found");
     const { data, error } = await carbon
       .from("salesInvoiceLine")
-      .select("itemId, itemReadableId, description, quantity")
+      .select("itemId, description, quantity")
       .eq("invoiceId", invoiceId)
       .in("invoiceLineType", ["Part", "Material", "Tool", "Consumable"])
       .is("salesOrderLineId", null);
@@ -126,6 +129,7 @@ const SalesInvoiceHeader = () => {
       setLinesNotAssociatedWithSO(
         data?.map((d) => ({
           ...d,
+          itemReadableId: getItemReadableId(items, d.itemId) ?? null,
           description: d.description ?? "",
           quantity: d.quantity,
         })) ?? []

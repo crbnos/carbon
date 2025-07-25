@@ -146,7 +146,6 @@ export const purchaseOrderLineValidator = z
       }),
     }),
     itemId: zfd.text(z.string().optional()),
-    itemReadableId: zfd.text(z.string().optional()),
     accountNumber: zfd.text(z.string().optional()),
     assetId: zfd.text(z.string().optional()),
     conversionFactor: zfd.numeric(z.number().optional()),
@@ -335,7 +334,6 @@ export const supplierQuoteLineValidator = z.object({
   id: zfd.text(z.string().optional()),
   supplierQuoteId: z.string(),
   itemId: z.string().min(1, { message: "Part is required" }),
-  itemReadableId: zfd.text(z.string().optional()),
   description: z.string().min(1, { message: "Description is required" }),
   supplierPartId: zfd.text(z.string().optional()),
   inventoryUnitOfMeasureCode: zfd.text(

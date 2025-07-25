@@ -71,6 +71,7 @@ import type {
 import { splitValidator } from "~/modules/inventory";
 import type { action as shipmentLinesUpdateAction } from "~/routes/x+/shipment+/lines.update";
 import { useItems } from "~/stores";
+import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 
 const ShipmentLines = () => {
@@ -78,6 +79,7 @@ const ShipmentLines = () => {
   if (!shipmentId) throw new Error("shipmentId not found");
 
   const fetcher = useFetcher<typeof shipmentLinesUpdateAction>();
+  const [items] = useItems();
 
   const routeData = useRouteData<{
     shipment: Shipment;
@@ -224,8 +226,12 @@ const ShipmentLines = () => {
               <Empty className="py-6" />
             ) : (
               shipmentLines
+                .map((line) => ({
+                  ...line,
+                  itemReadableId: getItemReadableId(items, line.itemId) ?? "",
+                }))
                 .sort((a, b) =>
-                  (a.itemReadableId || "").localeCompare(b.itemReadableId || "")
+                  a.itemReadableId.localeCompare(b.itemReadableId)
                 )
                 .map((line, index) => {
                   const tracking = routeData?.shipmentLineTracking?.find(
@@ -440,7 +446,10 @@ function ShipmentLineItem({
               </label>
               <HStack className="justify-center">
                 <span className="text-sm py-1.5">
-                  {line.outstandingQuantity || 0}
+                  {isReadOnly
+                    ? (line.outstandingQuantity || 0) -
+                      (line.shippedQuantity || 0)
+                    : line.outstandingQuantity || 0}
                 </span>
 
                 {(line.shippedQuantity || 0) >

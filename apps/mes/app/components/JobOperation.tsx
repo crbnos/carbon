@@ -194,6 +194,7 @@ import type {
 } from "~/services/inventory.service";
 import { getFileType } from "~/services/operations.service";
 import { useItems, usePeople } from "~/stores";
+import { getItemReadableId } from "~/utils/items";
 import FileDropzone from "./FileDropzone";
 import ItemThumbnail from "./ItemThumbnail";
 import ScrapReason from "./ScrapReason";
@@ -243,6 +244,7 @@ export const JobOperation = ({
 
   const navigate = useNavigate();
 
+  const [items] = useItems();
   const { downloadFile, downloadModel, getFilePath } = useFiles(job);
 
   const attributeRecordModal = useDisclosure();
@@ -763,7 +765,10 @@ export const JobOperation = ({
                                           >
                                             <VStack spacing={0}>
                                               <span className="font-semibold">
-                                                {material.itemReadableId}
+                                                {getItemReadableId(
+                                                  items,
+                                                  material.itemId ?? ""
+                                                )}
                                               </span>
                                               <span className="text-muted-foreground text-xs">
                                                 {material.description}
@@ -887,9 +892,10 @@ export const JobOperation = ({
                                                 >
                                                   <VStack spacing={0}>
                                                     <span className="font-semibold">
-                                                      {
-                                                        kittedChild.itemReadableId
-                                                      }
+                                                      {getItemReadableId(
+                                                        items,
+                                                        kittedChild.itemId
+                                                      )}
                                                     </span>
                                                     <span className="text-muted-foreground text-xs">
                                                       {kittedChild.description}
@@ -3302,10 +3308,14 @@ function SerialIssueModal({
     });
   }, []);
 
+  const [items] = useItems();
+
   return (
     <Modal open onOpenChange={onClose}>
       <ModalContent>
-        <ModalTitle>{material?.itemReadableId}</ModalTitle>
+        <ModalTitle>
+          {getItemReadableId(items, material?.itemId) ?? "Material"}
+        </ModalTitle>
         <ModalDescription>{material?.description}</ModalDescription>
         <ModalBody>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -3876,11 +3886,15 @@ function BatchIssueModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unconsumedBatch, material?.id, parentId, trackedInputs]);
 
+  const [items] = useItems();
+
   return (
     <Modal open onOpenChange={onClose}>
       <ModalContent>
         <ModalHeader>
-          <ModalTitle>{material?.itemReadableId}</ModalTitle>
+          <ModalTitle>
+            {getItemReadableId(items, material?.itemId) ?? "Material"}
+          </ModalTitle>
           <ModalDescription>{material?.description}</ModalDescription>
         </ModalHeader>
         <ModalBody>

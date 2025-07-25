@@ -20,7 +20,9 @@ import {
   SupplierInteractionLineDocuments,
   SupplierInteractionLineNotes,
 } from "~/modules/purchasing/ui/SupplierInteraction";
+import { useItems } from "~/stores";
 import { getCustomFields, setCustomFields } from "~/utils/form";
+import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -105,6 +107,7 @@ export default function EditPurchaseInvoiceLineRoute() {
   if (!invoiceId) throw notFound("invoiceId not found");
   if (!lineId) throw notFound("lineId not found");
 
+  const [items] = useItems();
   const { purchaseInvoiceLine, files } = useLoaderData<typeof loader>();
 
   const initialValues = {
@@ -112,7 +115,7 @@ export default function EditPurchaseInvoiceLineRoute() {
     invoiceId: purchaseInvoiceLine?.invoiceId ?? "",
     invoiceLineType: (purchaseInvoiceLine?.invoiceLineType ?? "Part") as "Part",
     itemId: purchaseInvoiceLine?.itemId ?? "",
-    itemReadableId: purchaseInvoiceLine?.itemReadableId ?? "",
+
     accountNumber: purchaseInvoiceLine?.accountNumber ?? "",
     assetId: purchaseInvoiceLine?.assetId ?? "",
     description: purchaseInvoiceLine?.description ?? "",
@@ -141,7 +144,7 @@ export default function EditPurchaseInvoiceLineRoute() {
         id={purchaseInvoiceLine?.id ?? ""}
         table="purchaseInvoiceLine"
         title="Notes"
-        subTitle={purchaseInvoiceLine?.itemReadableId ?? ""}
+        subTitle={getItemReadableId(items, purchaseInvoiceLine?.itemId) ?? ""}
         internalNotes={purchaseInvoiceLine?.internalNotes as JSONContent}
       />
 

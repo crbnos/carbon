@@ -160,7 +160,6 @@ export default function QuoteLine() {
     description: line.description ?? "",
     estimatorId: line.estimatorId ?? "",
     itemId: line.itemId ?? "",
-    itemReadableId: line.itemReadableId ?? "",
     methodType: line.methodType ?? "Make",
     modelUploadId: line.modelUploadId ?? undefined,
     noQuoteReason: line.noQuoteReason ?? undefined,

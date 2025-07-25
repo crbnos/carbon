@@ -6,7 +6,7 @@ import { Outlet, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { getMaterialForms } from "~/modules/items";
-import { MaterialFormsTable } from "~/modules/items/ui/MaterialForms";
+import { MaterialFormsTable } from "~/modules/items/ui/MaterialShapes";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

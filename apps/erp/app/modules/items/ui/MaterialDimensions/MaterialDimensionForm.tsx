@@ -16,24 +16,25 @@ import { useFetcher } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect } from "react";
 import type { z } from "zod";
-import { CustomFormFields, Hidden, Input, Submit } from "~/components/Form";
+import { Hidden, Input, Submit } from "~/components/Form";
+import Shape from "~/components/Form/Shape";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
-import { materialFormValidator } from "../../items.models";
+import { materialDimensionValidator } from "../../items.models";
 
-type MaterialShapeFormProps = {
-  initialValues: z.infer<typeof materialFormValidator>;
+type MaterialDimensionFormProps = {
+  initialValues: z.infer<typeof materialDimensionValidator>;
   type?: "modal" | "drawer";
   open?: boolean;
   onClose: (data?: { id: string; name: string }) => void;
 };
 
-const MaterialShapeForm = ({
+const MaterialDimensionForm = ({
   initialValues,
   open = true,
   type = "drawer",
   onClose,
-}: MaterialShapeFormProps) => {
+}: MaterialDimensionFormProps) => {
   const permissions = usePermissions();
   const fetcher = useFetcher<PostgrestResponse<{ id: string; name: string }>>();
 
@@ -47,10 +48,10 @@ const MaterialShapeForm = ({
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
-      toast.success(`Created material form`);
+      toast.success(`Created material dimension`);
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
       toast.error(
-        `Failed to create material form: ${fetcher.data.error.message}`
+        `Failed to create material dimension: ${fetcher.data.error.message}`
       );
     }
   }, [fetcher.data, fetcher.state, onClose, type]);
@@ -65,12 +66,12 @@ const MaterialShapeForm = ({
       >
         <ModalDrawerContent>
           <ValidatedForm
-            validator={materialFormValidator}
+            validator={materialDimensionValidator}
             method="post"
             action={
               isEditing
-                ? path.to.materialForm(initialValues.id!)
-                : path.to.newMaterialForm
+                ? path.to.materialDimension(initialValues.id!)
+                : path.to.newMaterialDimension
             }
             defaultValues={initialValues}
             fetcher={fetcher}
@@ -78,15 +79,15 @@ const MaterialShapeForm = ({
           >
             <ModalDrawerHeader>
               <ModalDrawerTitle>
-                {isEditing ? "Edit" : "New"} Material Shape
+                {isEditing ? "Edit" : "New"} Material Dimension
               </ModalDrawerTitle>
             </ModalDrawerHeader>
             <ModalDrawerBody>
               <Hidden name="id" />
               <Hidden name="type" value={type} />
               <VStack spacing={4}>
+                <Shape name="materialFormId" label="Shape" />
                 <Input name="name" label="Name" />
-                <CustomFormFields table="materialForm" />
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>
@@ -104,4 +105,4 @@ const MaterialShapeForm = ({
   );
 };
 
-export default MaterialShapeForm;
+export default MaterialDimensionForm;

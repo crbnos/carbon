@@ -405,7 +405,6 @@ serve(async (req: Request) => {
                 itemLedgerInserts.push({
                   postingDate: today,
                   itemId: invoiceLine.itemId!,
-                  itemReadableId: invoiceLine.itemReadableId!,
                   quantity: invoiceLineQuantityInInventoryUnit,
                   locationId: invoiceLine.locationId,
                   shelfId: invoiceLine.shelfId,

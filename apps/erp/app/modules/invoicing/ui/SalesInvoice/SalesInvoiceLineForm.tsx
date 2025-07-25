@@ -37,6 +37,8 @@ import type { SalesInvoice } from "~/modules/invoicing";
 import { salesInvoiceLineValidator } from "~/modules/invoicing";
 import type { MethodItemType } from "~/modules/shared";
 import { methodType } from "~/modules/shared";
+import { useItems } from "~/stores";
+import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 
 type SalesInvoiceLineFormProps = {
@@ -60,6 +62,7 @@ const SalesInvoiceLineForm = ({
 
   if (!invoiceId) throw new Error("invoiceId not found");
 
+  const [items] = useItems();
   const routeData = useRouteData<{
     salesInvoice: SalesInvoice;
   }>(path.to.salesInvoice(invoiceId));
@@ -72,7 +75,6 @@ const SalesInvoiceLineForm = ({
   const [locationId, setLocationId] = useState(defaults.locationId ?? "");
   const [itemData, setItemData] = useState<{
     itemId: string;
-    itemReadableId: string;
     methodType: string;
     description: string;
     quantity: number;
@@ -84,7 +86,6 @@ const SalesInvoiceLineForm = ({
     taxPercent: number;
   }>({
     itemId: initialValues.itemId ?? "",
-    itemReadableId: initialValues.itemReadableId ?? "",
     methodType: initialValues.methodType ?? "",
     description: initialValues.description ?? "",
     quantity: initialValues.quantity ?? 1,
@@ -128,7 +129,6 @@ const SalesInvoiceLineForm = ({
     setItemType(t as MethodItemType);
     setItemData({
       itemId: "",
-      itemReadableId: "",
       methodType: "",
       description: "",
       quantity: 1,
@@ -187,7 +187,6 @@ const SalesInvoiceLineForm = ({
           toast.error(errorMessage);
           setItemData({
             itemId: "",
-            itemReadableId: "",
             methodType: "",
             description: "",
             quantity: 1,
@@ -204,7 +203,6 @@ const SalesInvoiceLineForm = ({
         setItemData((prev) => ({
           ...prev,
           itemId: itemId,
-          itemReadableId: item.data?.readableIdWithRevision ?? "",
           description: item.data?.name ?? "",
           methodType: item.data?.defaultMethodType ?? "",
           unitPrice:
@@ -271,13 +269,11 @@ const SalesInvoiceLineForm = ({
             <ModalCardHeader>
               <ModalCardTitle
                 className={cn(
-                  isEditing &&
-                    !itemData?.itemReadableId &&
-                    "text-muted-foreground"
+                  isEditing && !itemData?.itemId && "text-muted-foreground"
                 )}
               >
                 {isEditing
-                  ? itemData?.itemReadableId || "..."
+                  ? getItemReadableId(items, itemData?.itemId) ?? "..."
                   : "New Sales Invoice Line"}
               </ModalCardTitle>
               <ModalCardDescription>
@@ -289,7 +285,6 @@ const SalesInvoiceLineForm = ({
             <ModalCardBody>
               <Hidden name="id" />
               <Hidden name="invoiceId" />
-              <Hidden name="itemReadableId" value={itemData.itemReadableId} />
               <Hidden name="invoiceLineType" value={itemType} />
               <Hidden name="description" value={itemData.description} />
               <Hidden

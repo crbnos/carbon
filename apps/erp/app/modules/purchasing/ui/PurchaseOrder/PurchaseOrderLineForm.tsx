@@ -39,6 +39,8 @@ import type { PurchaseOrder, PurchaseOrderLine } from "~/modules/purchasing";
 import { purchaseOrderLineValidator } from "~/modules/purchasing";
 import type { MethodItemType } from "~/modules/shared";
 import type { action } from "~/routes/x+/purchase-order+/$orderId.$lineId.details";
+import { useItems } from "~/stores";
+import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 import DeletePurchaseOrderLine from "./DeletePurchaseOrderLine";
 
@@ -55,7 +57,7 @@ const PurchaseOrderLineForm = ({
 }: PurchaseOrderLineFormProps) => {
   const permissions = usePermissions();
   const { carbon } = useCarbon();
-
+  const [items] = useItems();
   const { company } = useUser();
   const { orderId } = useParams();
   const fetcher = useFetcher<typeof action>();
@@ -76,7 +78,6 @@ const PurchaseOrderLineForm = ({
   const [locationId, setLocationId] = useState(initialValues.locationId);
   const [itemData, setItemData] = useState<{
     itemId: string;
-    itemReadableId: string;
     description: string;
     purchaseQuantity: number;
     supplierUnitPrice: number;
@@ -90,7 +91,6 @@ const PurchaseOrderLineForm = ({
     taxPercent: number;
   }>({
     itemId: initialValues.itemId ?? "",
-    itemReadableId: initialValues.itemReadableId ?? "",
     description: initialValues.description ?? "",
     purchaseQuantity: initialValues.purchaseQuantity ?? 1,
     supplierUnitPrice: initialValues.supplierUnitPrice ?? 0,
@@ -145,7 +145,6 @@ const PurchaseOrderLineForm = ({
     setItemType(t as MethodItemType);
     setItemData({
       itemId: "",
-      itemReadableId: "",
       description: "",
       purchaseQuantity: 1,
       supplierUnitPrice: 0,
@@ -199,7 +198,6 @@ const PurchaseOrderLineForm = ({
 
         setItemData({
           itemId: itemId,
-          itemReadableId: item.data?.readableIdWithRevision ?? "",
           description: item.data?.name ?? "",
           purchaseQuantity: supplierPart?.data?.minimumOrderQuantity ?? 1,
           supplierUnitPrice:
@@ -277,13 +275,11 @@ const PurchaseOrderLineForm = ({
               <ModalCardHeader>
                 <ModalCardTitle
                   className={cn(
-                    isEditing &&
-                      !itemData?.itemReadableId &&
-                      "text-muted-foreground"
+                    isEditing && !itemData?.itemId && "text-muted-foreground"
                   )}
                 >
                   {isEditing
-                    ? itemData?.itemReadableId || "..."
+                    ? getItemReadableId(items, itemData?.itemId) || "..."
                     : "New Purchase Order Line"}
                 </ModalCardTitle>
                 <ModalCardDescription>
@@ -299,7 +295,7 @@ const PurchaseOrderLineForm = ({
               <ModalCardBody>
                 <Hidden name="id" />
                 <Hidden name="purchaseOrderId" />
-                <Hidden name="itemReadableId" value={itemData.itemReadableId} />
+
                 <Hidden name="purchaseOrderLineType" value={itemType} />
                 <Hidden name="description" value={itemData.description} />
                 <Hidden

@@ -7,6 +7,7 @@ import {
   LuLayoutDashboard,
   LuSheet,
   LuShoppingCart,
+  LuSquareStack,
   LuWebhook,
   LuWorkflow,
 } from "react-icons/lu";
@@ -48,6 +49,12 @@ const settingsRoutes: AuthenticatedRouteGroup[] = [
   {
     name: "Modules",
     routes: [
+      {
+        name: "Items",
+        to: path.to.itemsSettings,
+        role: "employee",
+        icon: <LuSquareStack />,
+      },
       {
         name: "Purchasing",
         to: path.to.purchasingSettings,

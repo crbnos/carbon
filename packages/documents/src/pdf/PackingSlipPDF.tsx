@@ -263,16 +263,13 @@ const PackingSlipPDF = ({
 };
 
 function getLineQuantity(
-  line: Database["public"]["Tables"]["shipmentLine"]["Row"]
+  line: Database["public"]["Views"]["shipmentLines"]["Row"]
 ) {
-  if (line.shippedQuantity === line.orderQuantity) {
-    return `${line.shippedQuantity} ${line.unitOfMeasure}`;
-  }
   return `${line.shippedQuantity} / ${line.orderQuantity} ${line.unitOfMeasure}`;
 }
 
 function getLineDescription(
-  line: Database["public"]["Tables"]["shipmentLine"]["Row"]
+  line: Database["public"]["Views"]["shipmentLines"]["Row"]
 ) {
   return line.itemReadableId;
 }

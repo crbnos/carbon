@@ -1,4 +1,4 @@
-import { ValidatedForm } from "@carbon/form";
+import { Array, ValidatedForm } from "@carbon/form";
 import {
   ModalCard,
   ModalCardBody,
@@ -17,23 +17,29 @@ import { useEffect, useState } from "react";
 import type { z } from "zod";
 import { TrackingTypeIcon } from "~/components";
 import {
-  Boolean,
   CustomFormFields,
   DefaultMethodType,
   Hidden,
-  Input,
   InputControlled,
-  Number,
   Select,
   Submit,
-  TextArea,
   UnitOfMeasure,
 } from "~/components/Form";
-import Shape from "~/components/Form/Shape";
-import Substance from "~/components/Form/Substance";
-import { useNextItemId, usePermissions, useUser } from "~/hooks";
+import MaterialDimension from "~/components/Form/MaterialDimension";
+import MaterialFinish from "~/components/Form/MaterialFinish";
+import MaterialGrade from "~/components/Form/MaterialGrade";
+import MaterialType, { useMaterialTypes } from "~/components/Form/MaterialType";
+import Shape, { useShape } from "~/components/Form/Shape";
+import Substance, { useSubstance } from "~/components/Form/Substance";
+import { useNextItemId, usePermissions } from "~/hooks";
+import { useSettings } from "~/hooks/useSettings";
+import { getMaterialDescription, getMaterialId } from "~/utils/items";
 import { path } from "~/utils/path";
-import { itemTrackingTypes, materialValidator } from "../../items.models";
+import {
+  itemTrackingTypes,
+  materialValidator,
+  materialValidatorWithGeneratedIds,
+} from "../../items.models";
 
 type MaterialFormProps = {
   initialValues: z.infer<typeof materialValidator> & { tags?: string[] };
@@ -50,10 +56,34 @@ const MaterialForm = ({
   type = "card",
   onClose,
 }: MaterialFormProps) => {
-  const { company } = useUser();
-  const baseCurrency = company?.baseCurrencyCode;
+  const [materialId, setMaterialId] = useState(initialValues.id ?? "");
+  const [description, setDescription] = useState(
+    initialValues.description ?? ""
+  );
+
+  const [properties, setProperties] = useState<{
+    substance?: string;
+    substanceCode?: string;
+    shape?: string;
+    shapeCode?: string;
+    grade?: string;
+    dimensions?: string;
+    finish?: string;
+    materialType?: string;
+    materialTypeCode?: string;
+  }>({});
+  const [substanceId, setSubstanceId] = useState<string | undefined>();
+  const [formId, setFormId] = useState<string | undefined>();
 
   const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
+  const materialTypes = useMaterialTypes(substanceId, formId);
+  const substance = useSubstance();
+  const shape = useShape();
+
+  useEffect(() => {
+    setMaterialId(getMaterialId(properties));
+    setDescription(getMaterialDescription(properties));
+  }, [properties]);
 
   useEffect(() => {
     if (type !== "modal") return;
@@ -67,8 +97,16 @@ const MaterialForm = ({
   }, [fetcher.data, fetcher.state, onClose, type]);
 
   const { id, onIdChange, loading } = useNextItemId("Material");
+
+  useEffect(() => {
+    if (id) {
+      setMaterialId(id);
+    }
+  }, [id]);
+
   const permissions = usePermissions();
-  const isEditing = !!initialValues.id;
+  const companySettings = useSettings();
+  const useCustomId = companySettings.materialGeneratedIds === false;
 
   const [defaultMethodType, setDefaultMethodType] = useState<string>(
     initialValues.defaultMethodType ?? "Buy"
@@ -89,62 +127,141 @@ const MaterialForm = ({
       <ModalCard onClose={onClose}>
         <ModalCardContent>
           <ValidatedForm
-            action={isEditing ? undefined : path.to.newMaterial}
+            action={path.to.newMaterial}
             method="post"
-            validator={materialValidator}
+            validator={
+              useCustomId
+                ? materialValidator
+                : materialValidatorWithGeneratedIds
+            }
             defaultValues={initialValues}
             fetcher={fetcher}
           >
             <ModalCardHeader>
-              <ModalCardTitle>
-                {isEditing ? "Material Details" : "New Material"}
-              </ModalCardTitle>
-              {!isEditing && (
-                <ModalCardDescription>
-                  A material is a physical item used to make a part that can be
-                  used across multiple jobs
-                </ModalCardDescription>
-              )}
+              <ModalCardTitle>New Material</ModalCardTitle>
+              <ModalCardDescription>
+                A material is a physical item used to make a part that can be
+                used across multiple jobs
+              </ModalCardDescription>
             </ModalCardHeader>
             <ModalCardBody>
               <Hidden name="type" value={type} />
               <Hidden name="replenishmentSystem" value="Buy" />
+              {!useCustomId && (
+                <>
+                  <Hidden name="id" value={materialId} />
+                  <Hidden name="name" value={description} />
+                </>
+              )}
               <div
                 className={cn(
-                  "grid w-full gap-x-8 gap-y-4",
-                  isEditing
-                    ? "grid-cols-1 md:grid-cols-3"
-                    : "grid-cols-1 md:grid-cols-2"
+                  "grid w-full gap-x-8 gap-y-4 items-start",
+                  "grid-cols-1 md:grid-cols-2"
                 )}
               >
-                {isEditing ? (
-                  <Input name="id" label="Material ID" isReadOnly />
-                ) : (
-                  <InputControlled
-                    name="id"
-                    label="Material ID"
-                    helperText={
-                      startsWithLetter(id)
-                        ? "Use ... to get the next material ID"
-                        : undefined
-                    }
-                    value={id}
-                    onChange={onIdChange}
-                    isDisabled={loading}
-                    isUppercase
-                    autoFocus
-                  />
-                )}
+                {useCustomId && (
+                  <>
+                    <InputControlled
+                      name="id"
+                      label="Material ID"
+                      helperText={
+                        startsWithLetter(id)
+                          ? "Use ... to get the next material ID"
+                          : undefined
+                      }
+                      value={id}
+                      onChange={onIdChange}
+                      isDisabled={loading}
+                      isUppercase
+                      autoFocus
+                    />
 
-                <Input name="name" label="Short Description" />
-                <Substance name="materialSubstanceId" label="Substance" />
-                {isEditing && (
-                  <TextArea name="description" label="Long Description" />
+                    <InputControlled
+                      name="name"
+                      label="Short Description"
+                      value={description}
+                      onChange={(value) => {
+                        setDescription(value ?? "");
+                      }}
+                    />
+                  </>
                 )}
-                <Shape name="materialFormId" label="Form" />
-                <Input name="finish" label="Finish" />
-                <Input name="grade" label="Grade" />
-                <Input name="dimensions" label="Dimensions" />
+                <Substance
+                  name="materialSubstanceId"
+                  label="Substance"
+                  onChange={(value) => {
+                    setSubstanceId(value?.value as string | undefined);
+                    setProperties((prev) => ({
+                      ...prev,
+                      substance: (value?.label as string) ?? "",
+                      substanceCode:
+                        substance.find((s) => s.value === value?.value)?.code ??
+                        "",
+                    }));
+                  }}
+                />
+                <MaterialGrade
+                  name="gradeId"
+                  label="Grade"
+                  substanceId={substanceId}
+                  onChange={(value) => {
+                    setProperties((prev) => ({
+                      ...prev,
+                      grade: value?.name ?? "",
+                    }));
+                  }}
+                />
+                <Shape
+                  name="materialFormId"
+                  label="Shape"
+                  onChange={(value) => {
+                    setFormId(value?.value as string | undefined);
+                    setProperties((prev) => ({
+                      ...prev,
+                      shape: (value?.label as string) ?? "",
+                      shapeCode:
+                        shape.find((s) => s.value === value?.value)?.code ?? "",
+                    }));
+                  }}
+                />
+                <MaterialType
+                  name="materialTypeId"
+                  label="Type"
+                  substanceId={substanceId}
+                  formId={formId}
+                  onChange={(value) => {
+                    const code = materialTypes.find(
+                      (m) => m.value === value?.value
+                    )?.code;
+                    setProperties((prev) => ({
+                      ...prev,
+                      materialType: value?.label ?? "",
+                      materialTypeCode: code,
+                    }));
+                  }}
+                />
+                <MaterialFinish
+                  name="finishId"
+                  label="Finish"
+                  substanceId={substanceId}
+                  onChange={(value) => {
+                    setProperties((prev) => ({
+                      ...prev,
+                      finish: value?.name ?? "",
+                    }));
+                  }}
+                />
+                <MaterialDimension
+                  name="dimensionId"
+                  label="Dimensions"
+                  formId={formId}
+                  onChange={(value) => {
+                    setProperties((prev) => ({
+                      ...prev,
+                      dimensions: value?.name ?? "",
+                    }));
+                  }}
+                />
 
                 <Select
                   name="itemTrackingType"
@@ -163,32 +280,16 @@ const MaterialForm = ({
                 />
                 <UnitOfMeasure
                   name="unitOfMeasureCode"
-                  label="Unit of Measure"
+                  label="Inventory Unit of Measure"
                 />
 
-                {!isEditing && (
-                  <Number
-                    name="unitCost"
-                    label="Unit Cost"
-                    formatOptions={{
-                      style: "currency",
-                      currency: baseCurrency,
-                    }}
-                    minValue={0}
-                  />
-                )}
-                <Boolean name="active" label="Active" />
+                <Array name="sizes" label="Sizes" />
+
                 <CustomFormFields table="material" tags={initialValues.tags} />
               </div>
             </ModalCardBody>
             <ModalCardFooter>
-              <Submit
-                isDisabled={
-                  isEditing
-                    ? !permissions.can("update", "parts")
-                    : !permissions.can("create", "parts")
-                }
-              >
+              <Submit isDisabled={!permissions.can("create", "parts")}>
                 Save
               </Submit>
             </ModalCardFooter>

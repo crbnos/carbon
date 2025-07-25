@@ -204,7 +204,6 @@ const createPurchaseOrder = tool({
             .values({
               purchaseOrderId: purchaseOrderId,
               itemId: part.partId,
-              itemReadableId: item.readableIdWithRevision,
               description: item.name,
               purchaseOrderLineType: item.type,
               purchaseQuantity: part.quantity,

@@ -178,109 +178,48 @@ export const materialValidator = itemValidator.merge(
     id: z.string().min(1, { message: "Material ID is required" }).max(255),
     materialSubstanceId: zfd.text(z.string().optional()),
     materialFormId: zfd.text(z.string().optional()),
-    finish: z.string().optional(),
-    grade: z.string().optional(),
-    dimensions: z.string().optional(),
+    materialTypeId: zfd.text(z.string().optional()),
+    finishId: zfd.text(z.string().optional()),
+    gradeId: zfd.text(z.string().optional()),
+    dimensionId: zfd.text(z.string().optional()),
+    sizes: z.array(z.string()).optional(),
   })
 );
 
-export const methodMaterialValidator = z
-  .object({
-    id: zfd.text(z.string().optional()),
-    makeMethodId: z.string().min(20, { message: "Make method is required" }),
-    order: zfd.numeric(z.number().min(0)),
-    itemType: z.enum(methodItemType, {
-      errorMap: (issue, ctx) => ({
-        message: "Item type is required",
-      }),
+export const materialValidatorWithGeneratedIds = z.object({
+  id: z.string().min(1, { message: "" }),
+  materialSubstanceId: z.string().min(1, { message: "Substance is required" }),
+  materialFormId: z.string().min(1, { message: "Shape is required" }),
+  materialTypeId: zfd.text(z.string().optional()),
+  finishId: zfd.text(z.string().optional()),
+  gradeId: zfd.text(z.string().optional()),
+  dimensionId: zfd.text(z.string().optional()),
+  sizes: z.array(z.string()).optional(),
+});
+
+export const methodMaterialValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  makeMethodId: z.string().min(20, { message: "Make method is required" }),
+  order: zfd.numeric(z.number().min(0)),
+  itemType: z.enum(methodItemType, {
+    errorMap: (issue, ctx) => ({
+      message: "Item type is required",
     }),
-    kit: zfd.text(z.string().optional()).transform((value) => value === "true"),
-    methodType: z.enum(methodType, {
-      errorMap: (issue, ctx) => ({
-        message: "Method type is required",
-      }),
+  }),
+  kit: zfd.text(z.string().optional()).transform((value) => value === "true"),
+  methodType: z.enum(methodType, {
+    errorMap: (issue, ctx) => ({
+      message: "Method type is required",
     }),
-    itemId: z.string().optional(),
-    itemReadableId: z.string().optional(),
-    methodOperationId: zfd.text(z.string().optional()),
-    // description: z.string().min(1, { message: "Description is required" }),
-    quantity: zfd.numeric(z.number().min(0)),
-    unitOfMeasureCode: z
-      .string()
-      .min(1, { message: "Unit of Measure is required" }),
-  })
-  .refine(
-    (data) => {
-      if (data.itemType === "Part") {
-        return !!data.itemReadableId;
-      }
-      return true;
-    },
-    {
-      message: "Part ID is required",
-      path: ["itemId"],
-    }
-  )
-  .refine(
-    (data) => {
-      if (data.itemType === "Material") {
-        return !!data.itemReadableId;
-      }
-      return true;
-    },
-    {
-      message: "Material ID is required",
-      path: ["itemId"],
-    }
-  )
-  // .refine(
-  //   (data) => {
-  //     if (data.itemType === "Fixture") {
-  //       return !!data.itemReadableId;
-  //     }
-  //     return true;
-  //   },
-  //   {
-  //     message: "Fixture ID is required",
-  //     path: ["itemId"],
-  //   }
-  // )
-  .refine(
-    (data) => {
-      if (data.itemType === "Tool") {
-        return !!data.itemReadableId;
-      }
-      return true;
-    },
-    {
-      message: "Tool ID is required",
-      path: ["itemId"],
-    }
-  )
-  .refine(
-    (data) => {
-      if (data.itemType === "Consumable") {
-        return !!data.itemReadableId;
-      }
-      return true;
-    },
-    {
-      message: "Consumable ID is required",
-      path: ["itemId"],
-    }
-  );
-// .refine(
-//   (data) => {
-//     if (data.itemType === "Service") {
-//       return !!data.itemReadableId;
-//     }
-//     return true;
-//   },
-//   {
-//     message: "Service ID is required",
-//     path: ["itemId"],
-//   }
-// );
+  }),
+  itemId: z.string().optional(),
+  methodOperationId: zfd.text(z.string().optional()),
+  // description: z.string().min(1, { message: "Description is required" }),
+  quantity: zfd.numeric(z.number().min(0)),
+  unitOfMeasureCode: z
+    .string()
+    .min(1, { message: "Unit of Measure is required" }),
+});
 
 export const methodOperationValidator = z
   .object({
@@ -484,14 +423,42 @@ export const itemUnitSalePriceValidator = z.object({
   allowInvoiceDiscount: zfd.checkbox(),
 });
 
+export const materialDimensionValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" }).max(255),
+  materialFormId: z.string().min(1, { message: "Shape is required" }),
+});
+
+export const materialFinishValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  materialSubstanceId: z.string().min(1, { message: "Substance is required" }),
+  name: z.string().min(1, { message: "Name is required" }).max(255),
+});
+
 export const materialFormValidator = z.object({
   id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" }).max(255),
+  code: z.string().min(1, { message: "Code is required" }).max(10),
+});
+
+export const materialGradeValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  materialSubstanceId: z.string().min(1, { message: "Substance is required" }),
   name: z.string().min(1, { message: "Name is required" }).max(255),
 });
 
 export const materialSubstanceValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }).max(255),
+  code: z.string().min(1, { message: "Code is required" }).max(10),
+});
+
+export const materialTypeValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  materialSubstanceId: z.string().min(1, { message: "Substance is required" }),
+  materialFormId: z.string().min(1, { message: "Shape is required" }),
+  name: z.string().min(1, { message: "Name is required" }).max(255),
+  code: z.string().min(1, { message: "Code is required" }).max(10),
 });
 
 export const partValidator = itemValidator.merge(

@@ -187,7 +187,6 @@ export const quoteLineValidator = z.object({
   id: zfd.text(z.string().optional()),
   quoteId: z.string(),
   itemId: z.string().min(1, { message: "Part is required" }),
-  itemReadableId: zfd.text(z.string().optional()),
   status: z.enum(quoteLineStatusType, {
     errorMap: () => ({ message: "Status is required" }),
   }),
@@ -230,7 +229,6 @@ export const quoteMaterialValidator = z
       }),
     }),
     itemId: z.string().min(1, { message: "Item is required" }),
-    itemReadableId: z.string().min(1, { message: "Item ID is required" }),
     kit: zfd.text(z.string().optional()).transform((value) => value === "true"),
     description: z.string().min(1, { message: "Description is required" }),
     quoteOperationId: zfd.text(z.string().optional()),
@@ -243,7 +241,7 @@ export const quoteMaterialValidator = z
   .refine(
     (data) => {
       if (data.itemType === "Part") {
-        return !!data.itemReadableId;
+        return !!data.itemId;
       }
       return true;
     },
@@ -255,7 +253,7 @@ export const quoteMaterialValidator = z
   .refine(
     (data) => {
       if (data.itemType === "Material") {
-        return !!data.itemReadableId;
+        return !!data.itemId;
       }
       return true;
     },
@@ -267,7 +265,7 @@ export const quoteMaterialValidator = z
   .refine(
     (data) => {
       if (data.itemType === "Tool") {
-        return !!data.itemReadableId;
+        return !!data.itemId;
       }
       return true;
     },
@@ -279,7 +277,7 @@ export const quoteMaterialValidator = z
   .refine(
     (data) => {
       if (data.itemType === "Consumable") {
-        return !!data.itemReadableId;
+        return !!data.itemId;
       }
       return true;
     },
@@ -288,18 +286,6 @@ export const quoteMaterialValidator = z
       path: ["itemId"],
     }
   );
-// .refine(
-//   (data) => {
-//     if (data.itemType === "Service") {
-//       return !!data.itemReadableId;
-//     }
-//     return true;
-//   },
-//   {
-//     message: "Service ID is required",
-//     path: ["itemId"],
-//   }
-// );
 
 export const quoteOperationValidator = z
   .object({
@@ -626,7 +612,6 @@ export const salesOrderLineValidator = z
     assetId: zfd.text(z.string().optional()),
     description: zfd.text(z.string().optional()),
     itemId: zfd.text(z.string().optional()),
-    itemReadableId: zfd.text(z.string().optional()),
     locationId: z.string().min(0, { message: "Location is required" }),
     methodType: z
       .enum(methodType, {

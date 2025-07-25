@@ -22,7 +22,11 @@ import posthog from "posthog-js";
 import { LuArrowUpRight, LuX } from "react-icons/lu";
 import { RealtimeDataProvider } from "~/components";
 import { PrimaryNavigation, Topbar } from "~/components/Layout";
-import { getCompanies, getCompanyIntegrations } from "~/modules/settings";
+import {
+  getCompanies,
+  getCompanyIntegrations,
+  getCompanySettings,
+} from "~/modules/settings";
 import { getCustomFieldsSchemas } from "~/modules/shared/shared.server";
 import {
   getUser,
@@ -76,6 +80,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     stripeCustomer,
     customFields,
     integrations,
+    companySettings,
     savedViews,
     user,
     claims,
@@ -86,6 +91,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getStripeCustomerByCompanyId(companyId),
     getCustomFieldsSchemas(client, { companyId }),
     getCompanyIntegrations(client, companyId),
+    getCompanySettings(client, companyId),
     getSavedViews(client, userId, companyId),
     getUser(client, userId),
     getUserClaims(userId, companyId),
@@ -113,6 +119,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     },
     company,
     companies: companies.data ?? [],
+    companySettings: companySettings.data,
     customFields: customFields.data ?? [],
     defaults: defaults.data,
     integrations: integrations.data ?? [],

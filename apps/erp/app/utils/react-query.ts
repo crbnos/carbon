@@ -118,3 +118,12 @@ export const workCentersQuery = (companyId: string | null) => ({
   queryKey: ["workCenters", companyId ?? "null"],
   staleTime: RefreshRate.Low,
 });
+
+export const materialTypesQuery = (
+  substanceId: string,
+  formId: string,
+  companyId: string | null
+) => ({
+  queryKey: ["materialTypes", substanceId, formId, companyId ?? "null"],
+  staleTime: RefreshRate.Low,
+});

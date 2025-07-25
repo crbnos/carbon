@@ -819,7 +819,7 @@ export async function getQuoteLinesList(
 ) {
   return client
     .from("quoteLine")
-    .select("id, itemReadableId, description")
+    .select("id, description, ...item(readableIdWithRevision)")
     .eq("quoteId", quoteId);
 }
 

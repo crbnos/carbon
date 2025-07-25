@@ -95,6 +95,7 @@ const PartProperties = () => {
         | "active"
         | "defaultMethodType"
         | "itemTrackingType"
+        | "partId"
         | "name"
         | "replenishmentSystem"
         | "unitOfMeasureCode",
@@ -222,10 +223,31 @@ const PartProperties = () => {
             </Tooltip>
           </HStack>
         </HStack>
-        <VStack spacing={0}>
-          <span className="text-sm tracking-tight">
-            {routeData?.partSummary?.readableIdWithRevision}
-          </span>
+        <VStack spacing={1} className="pt-2">
+          <ValidatedForm
+            defaultValues={{
+              partId:
+                routeData?.partSummary?.readableIdWithRevision ?? undefined,
+            }}
+            validator={z.object({
+              partId: z.string(),
+            })}
+            className="w-full -mt-2"
+          >
+            <span className="text-sm">
+              <InputControlled
+                label=""
+                name="partId"
+                inline
+                size="sm"
+                value={routeData?.partSummary?.readableId ?? ""}
+                onBlur={(e) => {
+                  onUpdate("partId", e.target.value ?? null);
+                }}
+                className="text-muted-foreground"
+              />
+            </span>
+          </ValidatedForm>
           <ValidatedForm
             defaultValues={{
               name: routeData?.partSummary?.name ?? undefined,

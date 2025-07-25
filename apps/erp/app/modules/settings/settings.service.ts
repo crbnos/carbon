@@ -431,6 +431,17 @@ export async function updateCompany(
   return client.from("company").update(sanitize(company)).eq("id", companyId);
 }
 
+export async function updateMetricSettings(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  useMetric: boolean
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ useMetric }))
+    .eq("id", companyId);
+}
+
 export async function upsertApiKey(
   client: SupabaseClient<Database>,
   apiKey:
@@ -530,6 +541,27 @@ export async function updateLogoLightIcon(
   return client
     .from("company")
     .update(sanitize({ logoLightIcon }))
+    .eq("id", companyId);
+}
+
+export async function updateMaterialGeneratedIdsSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  materialGeneratedIds: boolean
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ materialGeneratedIds }))
+    .eq("id", companyId);
+}
+
+export async function updateMaterialUnitsSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  useMetric: boolean
+) {
+  return (client.from("companySettings") as any)
+    .update(sanitize({ useMetric }))
     .eq("id", companyId);
 }
 
