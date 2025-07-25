@@ -31,7 +31,7 @@ import MaterialGrade from "~/components/Form/MaterialGrade";
 import MaterialType, { useMaterialTypes } from "~/components/Form/MaterialType";
 import Shape, { useShape } from "~/components/Form/Shape";
 import Substance, { useSubstance } from "~/components/Form/Substance";
-import { useNextItemId, usePermissions, useUser } from "~/hooks";
+import { useNextItemId, usePermissions } from "~/hooks";
 import { useSettings } from "~/hooks/useSettings";
 import { getMaterialDescription, getMaterialId } from "~/utils/items";
 import { path } from "~/utils/path";
@@ -56,9 +56,6 @@ const MaterialForm = ({
   type = "card",
   onClose,
 }: MaterialFormProps) => {
-  const { company } = useUser();
-  const baseCurrency = company?.baseCurrencyCode;
-
   const [materialId, setMaterialId] = useState(initialValues.id ?? "");
   const [description, setDescription] = useState(
     initialValues.description ?? ""
@@ -167,7 +164,12 @@ const MaterialForm = ({
                     <InputControlled
                       name="id"
                       label="Material ID"
-                      value={materialId}
+                      helperText={
+                        startsWithLetter(id)
+                          ? "Use ... to get the next material ID"
+                          : undefined
+                      }
+                      value={id}
                       onChange={onIdChange}
                       isDisabled={loading}
                       isUppercase

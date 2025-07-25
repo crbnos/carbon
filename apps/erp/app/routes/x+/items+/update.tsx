@@ -300,6 +300,7 @@ export async function action({ request }: ActionFunctionArgs) {
         .from("item")
         .select("readableId, type")
         .eq("id", item)
+        .eq("type", "Part")
         .eq("companyId", companyId)
         .single();
 
@@ -307,6 +308,7 @@ export async function action({ request }: ActionFunctionArgs) {
         return json(itemData);
       }
       if (itemData.data?.type !== "Part") {
+        console.error("itemData.data?.type", itemData.data?.type);
         return json({ error: { message: "Item is not a part" }, data: null });
       }
 
@@ -366,6 +368,7 @@ export async function action({ request }: ActionFunctionArgs) {
         .from("item")
         .select("readableId, type")
         .eq("id", consumableItem)
+        .eq("type", "Consumable")
         .eq("companyId", companyId)
         .single();
 
@@ -437,6 +440,7 @@ export async function action({ request }: ActionFunctionArgs) {
         .from("item")
         .select("readableId, type")
         .eq("id", materialItem)
+        .eq("type", "Material")
         .eq("companyId", companyId)
         .single();
 
@@ -506,6 +510,7 @@ export async function action({ request }: ActionFunctionArgs) {
         .from("item")
         .select("readableId, type")
         .eq("id", toolItem)
+        .eq("type", "Tool")
         .eq("companyId", companyId)
         .single();
 

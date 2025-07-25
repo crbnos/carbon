@@ -7,7 +7,7 @@ ALTER TABLE "materialForm" ADD COLUMN "code" TEXT;
 COMMIT;
 
 -- Set materialGeneratedIds to false for all existing companies
-UPDATE "companySettings" SET "materialGeneratedIds" = false;
+UPDATE "companySettings" SET "materialGeneratedIds" = true;
 
 
 INSERT INTO "materialForm" ("id", "name", "code", "createdBy") VALUES
