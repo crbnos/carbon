@@ -53,6 +53,7 @@ const Substance = (props: SubstanceSelectProps) => {
           }}
           initialValues={{
             name: created,
+            code: created.slice(0, 3).toUpperCase(),
           }}
         />
       )}
@@ -84,6 +85,7 @@ export const useSubstance = () => {
       value: c.id,
       label: c.name,
       helper: c.companyId === null ? "Standard" : undefined,
+      code: c.code,
     }));
   }, [materialSubstances.data?.data]);
 

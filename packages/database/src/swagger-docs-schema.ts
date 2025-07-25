@@ -18190,6 +18190,9 @@ export default {
             $ref: "#/parameters/rowFilter.materialType.name",
           },
           {
+            $ref: "#/parameters/rowFilter.materialType.code",
+          },
+          {
             $ref: "#/parameters/rowFilter.materialType.materialSubstanceId",
           },
           {
@@ -18264,6 +18267,9 @@ export default {
             $ref: "#/parameters/rowFilter.materialType.name",
           },
           {
+            $ref: "#/parameters/rowFilter.materialType.code",
+          },
+          {
             $ref: "#/parameters/rowFilter.materialType.materialSubstanceId",
           },
           {
@@ -18290,6 +18296,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.materialType.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialType.code",
           },
           {
             $ref: "#/parameters/rowFilter.materialType.materialSubstanceId",
@@ -27847,6 +27856,9 @@ export default {
             $ref: "#/parameters/rowFilter.materialForm.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.materialForm.code",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -27933,6 +27945,9 @@ export default {
             $ref: "#/parameters/rowFilter.materialForm.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.materialForm.code",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -27971,6 +27986,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.materialForm.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialForm.code",
           },
           {
             $ref: "#/parameters/body.materialForm",
@@ -46939,6 +46957,9 @@ export default {
             $ref: "#/parameters/rowFilter.materialSubstance.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.materialSubstance.code",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -47025,6 +47046,9 @@ export default {
             $ref: "#/parameters/rowFilter.materialSubstance.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.materialSubstance.code",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -47063,6 +47087,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.materialSubstance.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materialSubstance.code",
           },
           {
             $ref: "#/parameters/body.materialSubstance",
@@ -66837,7 +66864,7 @@ export default {
       type: "object",
     },
     materialType: {
-      required: ["id", "name", "materialSubstanceId", "materialFormId"],
+      required: ["id", "name", "code", "materialSubstanceId", "materialFormId"],
       properties: {
         id: {
           default: "public.xid()",
@@ -66846,6 +66873,10 @@ export default {
           type: "string",
         },
         name: {
+          format: "text",
+          type: "string",
+        },
+        code: {
           format: "text",
           type: "string",
         },
@@ -71079,7 +71110,7 @@ export default {
       type: "object",
     },
     materialForm: {
-      required: ["id", "name", "createdBy", "createdAt"],
+      required: ["id", "name", "createdBy", "createdAt", "code"],
       properties: {
         id: {
           default: "public.xid()",
@@ -71127,6 +71158,10 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+        code: {
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -80207,7 +80242,7 @@ export default {
       type: "object",
     },
     materialSubstance: {
-      required: ["id", "name", "createdBy", "createdAt"],
+      required: ["id", "name", "createdBy", "createdAt", "code"],
       properties: {
         id: {
           default: "public.xid()",
@@ -80255,6 +80290,10 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+        code: {
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -93062,6 +93101,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.materialType.code": {
+      name: "code",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.materialType.materialSubstanceId": {
       name: "materialSubstanceId",
       required: false,
@@ -97864,6 +97909,12 @@ export default {
     },
     "rowFilter.materialForm.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialForm.code": {
+      name: "code",
       required: false,
       in: "query",
       type: "string",
@@ -108271,6 +108322,12 @@ export default {
     },
     "rowFilter.materialSubstance.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materialSubstance.code": {
+      name: "code",
       required: false,
       in: "query",
       type: "string",

@@ -24,3 +24,43 @@ export function getItemReadableId(
 export function getItemById(items: Item[], itemId: string): Item | undefined {
   return items.find((item) => item.id === itemId);
 }
+
+export function getMaterialDescription(material: {
+  materialType?: string;
+  substance?: string;
+  grade?: string;
+  shape?: string;
+  dimensions?: string;
+  finish?: string;
+}) {
+  return [
+    material.grade,
+    material.substance,
+    material.materialType,
+    material.shape,
+    material.dimensions,
+    material.finish,
+  ]
+    .filter((p) => !!p)
+    .join(" ");
+}
+
+export function getMaterialId(material: {
+  materialTypeCode?: string;
+  substanceCode?: string;
+  grade?: string;
+  shapeCode?: string;
+  dimensions?: string;
+  finish?: string;
+}) {
+  return [
+    material.grade,
+    material.substanceCode,
+    material.materialTypeCode,
+    material.shapeCode,
+    material.dimensions,
+    material.finish,
+  ]
+    .filter((p) => !!p)
+    .join("-");
+}

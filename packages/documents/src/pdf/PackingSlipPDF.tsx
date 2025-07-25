@@ -265,9 +265,6 @@ const PackingSlipPDF = ({
 function getLineQuantity(
   line: Database["public"]["Views"]["shipmentLines"]["Row"]
 ) {
-  if (line.shippedQuantity === line.orderQuantity) {
-    return `${line.shippedQuantity} ${line.unitOfMeasure}`;
-  }
   return `${line.shippedQuantity} / ${line.orderQuantity} ${line.unitOfMeasure}`;
 }
 

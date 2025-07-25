@@ -12294,6 +12294,7 @@ export type Database = {
       }
       materialForm: {
         Row: {
+          code: string
           companyId: string | null
           createdAt: string
           createdBy: string
@@ -12305,6 +12306,7 @@ export type Database = {
           updatedBy: string | null
         }
         Insert: {
+          code: string
           companyId?: string | null
           createdAt?: string
           createdBy: string
@@ -12316,6 +12318,7 @@ export type Database = {
           updatedBy?: string | null
         }
         Update: {
+          code?: string
           companyId?: string | null
           createdAt?: string
           createdBy?: string
@@ -12486,6 +12489,7 @@ export type Database = {
       }
       materialSubstance: {
         Row: {
+          code: string
           companyId: string | null
           createdAt: string
           createdBy: string
@@ -12497,6 +12501,7 @@ export type Database = {
           updatedBy: string | null
         }
         Insert: {
+          code: string
           companyId?: string | null
           createdAt?: string
           createdBy: string
@@ -12508,6 +12513,7 @@ export type Database = {
           updatedBy?: string | null
         }
         Update: {
+          code?: string
           companyId?: string | null
           createdAt?: string
           createdBy?: string
@@ -12621,6 +12627,7 @@ export type Database = {
       }
       materialType: {
         Row: {
+          code: string
           companyId: string | null
           id: string
           materialFormId: string
@@ -12628,6 +12635,7 @@ export type Database = {
           name: string
         }
         Insert: {
+          code: string
           companyId?: string | null
           id?: string
           materialFormId: string
@@ -12635,6 +12643,7 @@ export type Database = {
           name: string
         }
         Update: {
+          code?: string
           companyId?: string | null
           id?: string
           materialFormId?: string
@@ -40247,14 +40256,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -45827,6 +45836,14 @@ export type Database = {
           replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
           materialSubstanceId: string
           materialFormId: string
+          dimensionId: string
+          dimension: string
+          finishId: string
+          finish: string
+          gradeId: string
+          grade: string
+          materialType: string
+          materialTypeId: string
           thumbnailPath: string
           unitOfMeasureCode: string
           quantityOnHand: number
@@ -46039,6 +46056,23 @@ export type Database = {
           createdAt: string
           updatedBy: string
           updatedAt: string
+        }[]
+      }
+      get_material_naming_details: {
+        Args: {
+          readable_id: string
+        }
+        Returns: {
+          id: string
+          shape: string
+          substanceCode: string
+          substance: string
+          shapeCode: string
+          finish: string
+          grade: string
+          dimensions: string
+          materialType: string
+          materialTypeCode: string
         }[]
       }
       get_method_tree: {

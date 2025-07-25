@@ -1,52 +1,55 @@
 ALTER TABLE "companySettings" ADD COLUMN "materialGeneratedIds" BOOLEAN NOT NULL DEFAULT true;
 ALTER TABLE "companySettings" ADD COLUMN "useMetric" BOOLEAN NOT NULL DEFAULT FALSE;
 
+ALTER TABLE "materialSubstance" ADD COLUMN "code" TEXT;
+ALTER TABLE "materialForm" ADD COLUMN "code" TEXT;
+
 COMMIT;
 
 -- Set materialGeneratedIds to false for all existing companies
 UPDATE "companySettings" SET "materialGeneratedIds" = false;
 
 
-INSERT INTO "materialForm" ("id", "name", "createdBy") VALUES
-  ('angle', 'Angle', 'system'),
-  ('billet', 'Billet', 'system'),
-  ('channel', 'Channel', 'system'),
-  ('flatbar', 'Flat Bar', 'system'),
-  ('filament', 'Filament', 'system'),
-  ('hexbar', 'Hex Bar', 'system'),
-  ('pellet', 'Pellet', 'system'),
-  ('plate', 'Plate', 'system'),
-  ('rectbar', 'Rectangular Bar', 'system'),
-  ('recttube', 'Rectangular Tube', 'system'),
-  ('roundbar', 'Round Bar', 'system'),
-  ('roundtube', 'Round Tube', 'system'),
-  ('squaretube', 'Square Tube', 'system'),
-  ('sbeam', 'S-Beam', 'system'),
-  ('sheet', 'Sheet', 'system'),
-  ('squarebar', 'Square Bar', 'system'),
-  ('tbar', 'T-Bar', 'system'),
-  ('treadplate', 'Tread Plate', 'system'),
-  ('wbeam', 'W-Beam', 'system'),
-  ('widebar', 'Wide Bar', 'system');
+INSERT INTO "materialForm" ("id", "name", "code", "createdBy") VALUES
+  ('angle', 'Angle', 'ANGLE', 'system'),
+  ('billet', 'Billet', 'BIL', 'system'),
+  ('channel', 'Channel', 'CHAN', 'system'),
+  ('flatbar', 'Flat Bar', 'FLAT', 'system'),
+  ('filament', 'Filament', 'FIL', 'system'),
+  ('hexbar', 'Hex Bar', 'HEX', 'system'),
+  ('pellet', 'Pellet', 'PEL', 'system'),
+  ('plate', 'Plate', 'PLT', 'system'),
+  ('rectbar', 'Rectangular Bar', 'RECTBAR', 'system'),
+  ('recttube', 'Rectangular Tube', 'RECTTUBE', 'system'),
+  ('roundbar', 'Round Bar', 'ROUNDBAR', 'system'),
+  ('roundtube', 'Round Tube', 'ROUNDTUBE', 'system'),
+  ('squaretube', 'Square Tube', 'SQUARETUBE', 'system'),
+  ('sbeam', 'S-Beam', 'SBEAM', 'system'),
+  ('sheet', 'Sheet', 'SHEET', 'system'),
+  ('squarebar', 'Square Bar', 'SQBAR', 'system'),
+  ('tbar', 'T-Bar', 'TBAR', 'system'),
+  ('treadplate', 'Tread Plate', 'TREADPLATE', 'system'),
+  ('wbeam', 'W-Beam', 'WBEAM', 'system'),
+  ('widebar', 'Wide Bar', 'WIDEBAR', 'system');
 
-INSERT INTO "materialSubstance" ("id", "name", "createdBy") VALUES
-  ('steel', 'Steel', 'system'),
-  ('aluminum', 'Aluminum', 'system'),
-  ('brass', 'Brass', 'system'),
-  ('bronze', 'Bronze', 'system'),
-  ('copper', 'Copper', 'system'),
-  ('inconel', 'Inconel', 'system'),
-  ('magnesium', 'Magnesium', 'system'),
-  ('monel', 'Monel', 'system'),
-  ('nylon', 'Nylon', 'system'),
-  ('plastic', 'Plastic', 'system'),
-  ('pvc', 'PVC', 'system'),
-  ('rubber', 'Rubber', 'system'),
-  ('stainless', 'Stainless Steel', 'system'),
-  ('titanium', 'Titanium', 'system'),
-  ('tungsten', 'Tungsten', 'system'),
-  ('zinc', 'Zinc', 'system'),
-  ('zirconium', 'Zirconium', 'system');
+INSERT INTO "materialSubstance" ("id", "name", "code", "createdBy") VALUES
+  ('steel', 'Steel', 'STEEL', 'system'),
+  ('aluminum', 'Aluminum', 'AL', 'system'),
+  ('brass', 'Brass', 'BR', 'system'),
+  ('bronze', 'Bronze', 'BZ', 'system'),
+  ('copper', 'Copper', 'CU', 'system'),
+  ('inconel', 'Inconel', 'INC', 'system'),
+  ('magnesium', 'Magnesium', 'MAG', 'system'),
+  ('monel', 'Monel', 'MON', 'system'),
+  ('nylon', 'Nylon', 'NYL', 'system'),
+  ('plastic', 'Plastic', 'PLA', 'system'),
+  ('pvc', 'PVC', 'PVC', 'system'),
+  ('rubber', 'Rubber', 'RU', 'system'),
+  ('stainless', 'Stainless Steel', 'SS', 'system'),
+  ('titanium', 'Titanium', 'TI', 'system'),
+  ('tungsten', 'Tungsten', 'TU', 'system'),
+  ('zinc', 'Zinc', 'ZN', 'system'),
+  ('zirconium', 'Zirconium', 'ZR', 'system');
 
 
 CREATE TABLE "materialFinish" (
@@ -145,91 +148,92 @@ CREATE OR REPLACE VIEW "materialGrades" WITH(SECURITY_INVOKER=true) AS
 
 INSERT INTO "materialGrade" ("id", "materialSubstanceId", "name", "companyId") VALUES
   -- Steel grades
-  ('1018', 'steel', '1018', null),
-  ('1045', 'steel', '1045', null), 
-  ('4140', 'steel', '4140', null),
-  ('4340', 'steel', '4340', null),
-  ('a36', 'steel', 'A36', null),
-  ('1020', 'steel', '1020', null),
-  ('1095', 'steel', '1095', null),
-  ('4130', 'steel', '4130', null),
-  ('8620', 'steel', '8620', null),
-  ('d2', 'steel', 'D2', null),
+  ('steel-1018', 'steel', '1018', null),
+  ('steel-1045', 'steel', '1045', null), 
+  ('steel-4140', 'steel', '4140', null),
+  ('steel-4340', 'steel', '4340', null),
+  ('steel-a36', 'steel', 'A36', null),
+  ('steel-1020', 'steel', '1020', null),
+  ('steel-1095', 'steel', '1095', null),
+  ('steel-4130', 'steel', '4130', null),
+  ('steel-8620', 'steel', '8620', null),
+  ('steel-d2', 'steel', 'D2', null),
   
   -- Aluminum grades
-  ('6061', 'aluminum', '6061', null),
-  ('2024', 'aluminum', '2024', null),
-  ('5052', 'aluminum', '5052', null),
-  ('7075', 'aluminum', '7075', null),
-  ('3003', 'aluminum', '3003', null),
-  ('5083', 'aluminum', '5083', null),
-  ('6063', 'aluminum', '6063', null),
-  ('7050', 'aluminum', '7050', null),
-  ('2017', 'aluminum', '2017', null),
-  ('5086', 'aluminum', '5086', null),
+  ('aluminum-6061', 'aluminum', '6061', null),
+  ('aluminum-2024', 'aluminum', '2024', null),
+  ('aluminum-5052', 'aluminum', '5052', null),
+  ('aluminum-7075', 'aluminum', '7075', null),
+  ('aluminum-3003', 'aluminum', '3003', null),
+  ('aluminum-5083', 'aluminum', '5083', null),
+  ('aluminum-6063', 'aluminum', '6063', null),
+  ('aluminum-7050', 'aluminum', '7050', null),
+  ('aluminum-2017', 'aluminum', '2017', null),
+  ('aluminum-5086', 'aluminum', '5086', null),
 
   -- Stainless grades  
-  ('304', 'stainless', '304', null),
-  ('316', 'stainless', '316', null),
-  ('410', 'stainless', '410', null),
-  ('17-4', 'stainless', '17-4', null),
-  ('303', 'stainless', '303', null),
-  ('316l', 'stainless', '316L', null),
-  ('321', 'stainless', '321', null),
-  ('347', 'stainless', '347', null),
-  ('420', 'stainless', '420', null),
-  ('440c', 'stainless', '440C', null),
+  ('stainless-304', 'stainless', '304', null),
+  ('stainless-316', 'stainless', '316', null),
+  ('stainless-410', 'stainless', '410', null),
+  ('stainless-17-4', 'stainless', '17-4', null),
+  ('stainless-303', 'stainless', '303', null),
+  ('stainless-316l', 'stainless', '316L', null),
+  ('stainless-321', 'stainless', '321', null),
+  ('stainless-347', 'stainless', '347', null),
+  ('stainless-420', 'stainless', '420', null),
+  ('stainless-440c', 'stainless', '440C', null),
 
   -- Brass grades
-  ('360', 'brass', '360', null),
-  ('385', 'brass', '385', null),
-  ('230', 'brass', '230', null),
-  ('260', 'brass', '260', null),
-  ('353', 'brass', '353', null),
-  ('365', 'brass', '365', null),
+  ('brass-360', 'brass', '360', null),
+  ('brass-385', 'brass', '385', null),
+  ('brass-230', 'brass', '230', null),
+  ('brass-260', 'brass', '260', null),
+  ('brass-353', 'brass', '353', null),
+  ('brass-365', 'brass', '365', null),
   
   -- Bronze grades
-  ('544', 'bronze', '544', null),
-  ('932', 'bronze', '932', null),
-  ('954', 'bronze', '954', null),
-  ('903', 'bronze', '903', null),
-  ('905', 'bronze', '905', null),
-  ('863', 'bronze', '863', null),
+  ('bronze-544', 'bronze', '544', null),
+  ('bronze-932', 'bronze', '932', null),
+  ('bronze-954', 'bronze', '954', null),
+  ('bronze-903', 'bronze', '903', null),
+  ('bronze-905', 'bronze', '905', null),
+  ('bronze-863', 'bronze', '863', null),
   
   -- Titanium grades
-  ('gr1', 'titanium', 'Grade 1', null),
-  ('gr2', 'titanium', 'Grade 2', null),
-  ('gr3', 'titanium', 'Grade 3', null),
-  ('gr4', 'titanium', 'Grade 4', null),
-  ('gr5', 'titanium', 'Grade 5', null),
-  ('gr7', 'titanium', 'Grade 7', null),
-  ('gr9', 'titanium', 'Grade 9', null),
+  ('titanium-gr1', 'titanium', 'Grade 1', null),
+  ('titanium-gr2', 'titanium', 'Grade 2', null),
+  ('titanium-gr3', 'titanium', 'Grade 3', null),
+  ('titanium-gr4', 'titanium', 'Grade 4', null),
+  ('titanium-gr5', 'titanium', 'Grade 5', null),
+  ('titanium-gr7', 'titanium', 'Grade 7', null),
+  ('titanium-gr9', 'titanium', 'Grade 9', null),
   
   -- Inconel grades
-  ('600', 'inconel', '600', null),
-  ('625', 'inconel', '625', null),
-  ('718', 'inconel', '718', null),
-  ('601', 'inconel', '601', null),
-  ('617', 'inconel', '617', null),
-  ('722', 'inconel', '722', null),
-  ('725', 'inconel', '725', null),
+  ('inconel-600', 'inconel', '600', null),
+  ('inconel-625', 'inconel', '625', null),
+  ('inconel-718', 'inconel', '718', null),
+  ('inconel-601', 'inconel', '601', null),
+  ('inconel-617', 'inconel', '617', null),
+  ('inconel-722', 'inconel', '722', null),
+  ('inconel-725', 'inconel', '725', null),
   
   -- Copper grades
-  ('110', 'copper', 'C110', null),
-  ('101', 'copper', 'C101', null),
-  ('102', 'copper', 'C102', null),
-  ('145', 'copper', 'C145', null),
+  ('copper-110', 'copper', 'C110', null),
+  ('copper-101', 'copper', 'C101', null),
+  ('copper-102', 'copper', 'C102', null),
+  ('copper-145', 'copper', 'C145', null),
   
   -- Monel grades
-  ('400', 'monel', '400', null),
-  ('401', 'monel', '401', null),
-  ('404', 'monel', '404', null),
-  ('500', 'monel', '500', null);
+  ('monel-400', 'monel', '400', null),
+  ('monel-401', 'monel', '401', null),
+  ('monel-404', 'monel', '404', null),
+  ('monel-500', 'monel', '500', null);
 
 
 CREATE TABLE "materialType" (
   "id" TEXT NOT NULL PRIMARY KEY DEFAULT xid(),
   "name" TEXT NOT NULL,
+  "code" TEXT NOT NULL,
   "materialSubstanceId" TEXT NOT NULL,
   "materialFormId" TEXT NOT NULL,
   "companyId" TEXT,
@@ -237,6 +241,7 @@ CREATE TABLE "materialType" (
   CONSTRAINT "materialType_materialSubstanceId_fkey" FOREIGN KEY ("materialSubstanceId") REFERENCES "materialSubstance"("id"),
   CONSTRAINT "materialType_materialFormId_fkey" FOREIGN KEY ("materialFormId") REFERENCES "materialForm"("id"),
   CONSTRAINT "materialType_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id"),
+  CONSTRAINT "materialType_code_companyId_unique" UNIQUE ("materialSubstanceId", "materialFormId","code", "companyId"),
   CONSTRAINT "materialType_name_companyId_unique" UNIQUE ("materialSubstanceId", "materialFormId", "name", "companyId")
 );
 
@@ -253,46 +258,46 @@ CREATE OR REPLACE VIEW "materialTypes" WITH(SECURITY_INVOKER=true) AS
   LEFT JOIN "materialSubstance" ON "materialType"."materialSubstanceId" = "materialSubstance"."id"
   LEFT JOIN "materialForm" ON "materialType"."materialFormId" = "materialForm"."id";
 
-INSERT INTO "materialType" ("id", "name", "materialSubstanceId", "materialFormId", "companyId") VALUES
+INSERT INTO "materialType" ("id", "name", "code", "materialSubstanceId", "materialFormId", "companyId") VALUES
   -- Steel Plate types
-  ('hot-rolled-steel-plate', 'Hot Rolled', 'steel', 'plate', null),
-  ('cold-rolled-steel-plate', 'Cold Rolled', 'steel', 'plate', null),
-  ('pickled-oiled-steel-plate', 'Pickled & Oiled', 'steel', 'plate', null),
-  ('normalized-steel-plate', 'Normalized', 'steel', 'plate', null),
+  ('hot-rolled-steel-plate', 'Hot Rolled', 'HR', 'steel', 'plate', null),
+  ('cold-rolled-steel-plate', 'Cold Rolled', 'CR', 'steel', 'plate', null),
+  ('pickled-oiled-steel-plate', 'Pickled & Oiled', 'PO', 'steel', 'plate', null),
+  ('normalized-steel-plate', 'Normalized', 'NO', 'steel', 'plate', null),
   
   -- Aluminum Round Tube types
-  ('seamless-aluminum-roundtube', 'Seamless', 'aluminum', 'roundtube', null),
-  ('structural-aluminum-roundtube', 'Structural', 'aluminum', 'roundtube', null),
-  ('drawn-aluminum-roundtube', 'Drawn', 'aluminum', 'roundtube', null),
+  ('seamless-aluminum-roundtube', 'Seamless', 'SE', 'aluminum', 'roundtube', null),
+  ('structural-aluminum-roundtube', 'Structural', 'ST', 'aluminum', 'roundtube', null),
+  ('drawn-aluminum-roundtube', 'Drawn', 'DR', 'aluminum', 'roundtube', null),
   
   -- Steel Round Tube types
-  ('seamless-steel-roundtube', 'Seamless', 'steel', 'roundtube', null),
-  ('welded-steel-roundtube', 'Welded', 'steel', 'roundtube', null),
-  ('dom-steel-roundtube', 'DOM (Drawn Over Mandrel)', 'steel', 'roundtube', null),
+  ('seamless-steel-roundtube', 'Seamless', 'SE', 'steel', 'roundtube', null),
+  ('welded-steel-roundtube', 'Welded', 'WE', 'steel', 'roundtube', null),
+  ('dom-steel-roundtube', 'DOM (Drawn Over Mandrel)', 'DOM', 'steel', 'roundtube', null),
   
   -- Stainless Steel types
-  ('annealed-stainless-plate', 'Annealed', 'stainless', 'plate', null),
-  ('pickled-stainless-plate', 'Pickled', 'stainless', 'plate', null),
-  ('solution-annealed-stainless-plate', 'Solution Annealed', 'stainless', 'plate', null),
+  ('annealed-stainless-plate', 'Annealed', 'AN', 'stainless', 'plate', null),
+  ('pickled-stainless-plate', 'Pickled', 'PI', 'stainless', 'plate', null),
+  ('solution-annealed-stainless-plate', 'Solution Annealed', 'SA', 'stainless', 'plate', null),
   
   -- Aluminum Bar types
-  ('extruded-aluminum-roundbar', 'Extruded', 'aluminum', 'roundbar', null),
-  ('cold-finished-aluminum-roundbar', 'Cold Finished', 'aluminum', 'roundbar', null),
-  ('heat-treated-aluminum-roundbar', 'Heat Treated', 'aluminum', 'roundbar', null),
+  ('extruded-aluminum-roundbar', 'Extruded', 'EX', 'aluminum', 'roundbar', null),
+  ('cold-finished-aluminum-roundbar', 'Cold Finished', 'CF', 'aluminum', 'roundbar', null),
+  ('heat-treated-aluminum-roundbar', 'Heat Treated', 'HT', 'aluminum', 'roundbar', null),
   
   -- Steel Bar types
-  ('hot-rolled-steel-roundbar', 'Hot Rolled', 'steel', 'roundbar', null),
-  ('cold-finished-steel-roundbar', 'Cold Finished', 'steel', 'roundbar', null),
-  ('ground-steel-roundbar', 'Ground', 'steel', 'roundbar', null),
+  ('hot-rolled-steel-roundbar', 'Hot Rolled', 'HR', 'steel', 'roundbar', null),
+  ('cold-finished-steel-roundbar', 'Cold Finished', 'CF', 'steel', 'roundbar', null),
+  ('ground-steel-roundbar', 'Ground', 'GR', 'steel', 'roundbar', null),
   
   -- Sheet types
-  ('hot-rolled-steel-sheet', 'Hot Rolled', 'steel', 'sheet', null),
-  ('cold-rolled-steel-sheet', 'Cold Rolled', 'steel', 'sheet', null),
-  ('galvanized-steel-sheet', 'Galvanized', 'steel', 'sheet', null),
+  ('hot-rolled-steel-sheet', 'Hot Rolled', 'HR', 'steel', 'sheet', null),
+  ('cold-rolled-steel-sheet', 'Cold Rolled', 'CR', 'steel', 'sheet', null),
+  ('galvanized-steel-sheet', 'Galvanized', 'GA', 'steel', 'sheet', null),
   
   -- Aluminum Sheet types
-  ('rolled-aluminum-sheet', 'Rolled', 'aluminum', 'sheet', null),
-  ('treadplate-aluminum-sheet', 'Tread Plate', 'aluminum', 'sheet', null);
+  ('rolled-aluminum-sheet', 'Rolled', 'RL', 'aluminum', 'sheet', null),
+  ('treadplate-aluminum-sheet', 'Tread Plate', 'TR', 'aluminum', 'sheet', null);
 
 
 

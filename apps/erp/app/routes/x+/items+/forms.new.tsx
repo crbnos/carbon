@@ -74,6 +74,7 @@ export default function NewMaterialFormsRoute() {
   const navigate = useNavigate();
   const initialValues = {
     name: "",
+    code: "",
     description: "",
   };
 

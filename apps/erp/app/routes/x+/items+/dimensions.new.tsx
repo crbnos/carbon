@@ -9,8 +9,8 @@ import {
   materialDimensionValidator,
   upsertMaterialDimension,
 } from "~/modules/items";
-import { getMetricSettings } from "~/modules/items/items.server";
 import MaterialDimensionForm from "~/modules/items/ui/MaterialDimensions/MaterialDimensionForm";
+import { getCompanySettings } from "~/modules/settings";
 
 import { getParams, path } from "~/utils/path";
 
@@ -41,12 +41,12 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  const isMetric = await getMetricSettings(client, companyId);
+  const settings = await getCompanySettings(client, companyId);
 
   const insertMaterialDimension = await upsertMaterialDimension(client, {
     ...data,
     companyId,
-    isMetric,
+    isMetric: settings?.data?.useMetric ?? false,
   });
 
   if (insertMaterialDimension.error) {

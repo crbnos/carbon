@@ -952,7 +952,7 @@ export async function getMaterialFormsList(
 ) {
   return client
     .from("materialForm")
-    .select("id, name, companyId")
+    .select("id, name, code, companyId")
     .or(`companyId.eq.${companyId},companyId.is.null`)
     .order("name");
 }
@@ -1040,7 +1040,7 @@ export async function getMaterialSubstancesList(
 ) {
   return client
     .from("materialSubstance")
-    .select("id, name, companyId")
+    .select("id, name, code, companyId")
     .or(`companyId.eq.${companyId},companyId.is.null`)
     .order("name");
 }

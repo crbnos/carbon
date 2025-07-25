@@ -53,6 +53,7 @@ const Shape = (props: ShapeSelectProps) => {
           }}
           initialValues={{
             name: created,
+            code: created.slice(0, 3).toUpperCase(),
           }}
         />
       )}
@@ -84,6 +85,7 @@ export const useShape = () => {
       value: c.id,
       label: c.name,
       helper: c.companyId === null ? "Standard" : undefined,
+      code: c.code,
     }));
   }, [materialFormsLoader.data?.data]);
 

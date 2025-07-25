@@ -6,8 +6,8 @@ import { Outlet, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { getMaterialDimensions } from "~/modules/items";
-import { getMetricSettings } from "~/modules/items/items.server";
 import MaterialDimensionsTable from "~/modules/items/ui/MaterialDimensions/MaterialDimensionsTable";
+import { getCompanySettings } from "~/modules/settings/settings.service";
 
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -30,7 +30,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const isMetric = await getMetricSettings(client, companyId);
+  const settings = await getCompanySettings(client, companyId);
 
   const [materialDimensions] = await Promise.all([
     getMaterialDimensions(client, companyId, {
@@ -39,7 +39,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       sorts,
       search,
       filters,
-      isMetric,
+      isMetric: settings?.data?.useMetric ?? false,
     }),
   ]);
 

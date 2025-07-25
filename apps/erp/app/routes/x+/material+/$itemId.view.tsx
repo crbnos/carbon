@@ -127,6 +127,7 @@ export default function MaterialViewRoute() {
                   return (
                     <UsedInTree
                       tree={tree}
+                      hasSizesInsteadOfRevisions={true}
                       revisions={materialData.materialSummary?.revisions}
                       itemReadableId={
                         materialData.materialSummary?.readableId ?? ""

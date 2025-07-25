@@ -13,7 +13,7 @@ import {
 } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import type { z } from "zod";
 import { TrackingTypeIcon } from "~/components";
 import {
@@ -28,11 +28,12 @@ import {
 import MaterialDimension from "~/components/Form/MaterialDimension";
 import MaterialFinish from "~/components/Form/MaterialFinish";
 import MaterialGrade from "~/components/Form/MaterialGrade";
-import MaterialType from "~/components/Form/MaterialType";
-import Shape from "~/components/Form/Shape";
-import Substance from "~/components/Form/Substance";
+import MaterialType, { useMaterialTypes } from "~/components/Form/MaterialType";
+import Shape, { useShape } from "~/components/Form/Shape";
+import Substance, { useSubstance } from "~/components/Form/Substance";
 import { useNextItemId, usePermissions, useUser } from "~/hooks";
 import { useSettings } from "~/hooks/useSettings";
+import { getMaterialDescription, getMaterialId } from "~/utils/items";
 import { path } from "~/utils/path";
 import {
   itemTrackingTypes,
@@ -58,8 +59,6 @@ const MaterialForm = ({
   const { company } = useUser();
   const baseCurrency = company?.baseCurrencyCode;
 
-  const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
-
   const [materialId, setMaterialId] = useState(initialValues.id ?? "");
   const [description, setDescription] = useState(
     initialValues.description ?? ""
@@ -67,49 +66,27 @@ const MaterialForm = ({
 
   const [properties, setProperties] = useState<{
     substance?: string;
+    substanceCode?: string;
     shape?: string;
+    shapeCode?: string;
     grade?: string;
     dimensions?: string;
     finish?: string;
     materialType?: string;
+    materialTypeCode?: string;
   }>({});
   const [substanceId, setSubstanceId] = useState<string | undefined>();
   const [formId, setFormId] = useState<string | undefined>();
 
-  // const getMaterialFamily = useCallback(() => {
-  //   const base = [
-  //     properties.substance,
-  //     properties.grade,
-  //     properties.shape,
-  //     properties.finish,
-  //   ]
-  //     .filter((p) => !!p)
-  //     .join(" ");
-
-  //   return base.toUpperCase();
-  // }, [properties]);
-
-  const getDescription = useCallback(() => {
-    const base = [
-      properties.materialType,
-      properties.substance,
-      properties.grade,
-      properties.shape,
-      properties.dimensions,
-      properties.finish,
-    ]
-      .filter((p) => !!p)
-      .join(" ");
-
-    return base;
-  }, [properties]);
+  const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
+  const materialTypes = useMaterialTypes(substanceId, formId);
+  const substance = useSubstance();
+  const shape = useShape();
 
   useEffect(() => {
-    // const materialFamily = getMaterialFamily();
-    const d = getDescription();
-    setDescription(d);
-    setMaterialId(d.toUpperCase());
-  }, [getDescription]);
+    setMaterialId(getMaterialId(properties));
+    setDescription(getMaterialDescription(properties));
+  }, [properties]);
 
   useEffect(() => {
     if (type !== "modal") return;
@@ -215,6 +192,9 @@ const MaterialForm = ({
                     setProperties((prev) => ({
                       ...prev,
                       substance: (value?.label as string) ?? "",
+                      substanceCode:
+                        substance.find((s) => s.value === value?.value)?.code ??
+                        "",
                     }));
                   }}
                 />
@@ -237,6 +217,8 @@ const MaterialForm = ({
                     setProperties((prev) => ({
                       ...prev,
                       shape: (value?.label as string) ?? "",
+                      shapeCode:
+                        shape.find((s) => s.value === value?.value)?.code ?? "",
                     }));
                   }}
                 />
@@ -246,9 +228,13 @@ const MaterialForm = ({
                   substanceId={substanceId}
                   formId={formId}
                   onChange={(value) => {
+                    const code = materialTypes.find(
+                      (m) => m.value === value?.value
+                    )?.code;
                     setProperties((prev) => ({
                       ...prev,
-                      materialType: value?.name ?? "",
+                      materialType: value?.label ?? "",
+                      materialTypeCode: code,
                     }));
                   }}
                 />

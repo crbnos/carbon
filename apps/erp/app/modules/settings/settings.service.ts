@@ -431,6 +431,17 @@ export async function updateCompany(
   return client.from("company").update(sanitize(company)).eq("id", companyId);
 }
 
+export async function updateMetricSettings(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  useMetric: boolean
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ useMetric }))
+    .eq("id", companyId);
+}
+
 export async function upsertApiKey(
   client: SupabaseClient<Database>,
   apiKey:

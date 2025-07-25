@@ -94,6 +94,7 @@ export default function EditMaterialSubstancesRoute() {
   const initialValues = {
     id: materialSubstance?.id ?? undefined,
     name: materialSubstance?.name ?? "",
+    code: materialSubstance?.code ?? "",
     ...getCustomFields(materialSubstance?.customFields),
   };
 

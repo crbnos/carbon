@@ -2,7 +2,13 @@ import { Badge, MenuIcon, MenuItem } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { LuBookMarked, LuCircleCheck, LuPencil, LuTrash } from "react-icons/lu";
+import {
+  LuBookMarked,
+  LuCircleCheck,
+  LuCode,
+  LuPencil,
+  LuTrash,
+} from "react-icons/lu";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
@@ -43,6 +49,14 @@ const MaterialShapesTable = memo(
             ),
           meta: {
             icon: <LuBookMarked />,
+          },
+        },
+        {
+          accessorKey: "code",
+          header: "Code",
+          cell: ({ row }) => row.original.code,
+          meta: {
+            icon: <LuCode />,
           },
         },
         {

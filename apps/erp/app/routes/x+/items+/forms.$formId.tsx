@@ -86,6 +86,7 @@ export default function EditMaterialFormsRoute() {
   const initialValues = {
     id: materialForm?.id ?? undefined,
     name: materialForm?.name ?? "",
+    code: materialForm?.code ?? "",
     ...getCustomFields(materialForm?.customFields),
   };
 

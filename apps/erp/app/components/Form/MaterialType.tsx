@@ -1,9 +1,6 @@
 import { useFetcher } from "@remix-run/react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type {
-  MaterialType as MaterialTypeType,
-  getMaterialTypeList,
-} from "~/modules/items";
+import type { getMaterialTypeList } from "~/modules/items";
 import { path } from "~/utils/path";
 
 import type { ComboboxProps } from "@carbon/form";
@@ -18,7 +15,13 @@ type MaterialTypeSelectProps = Omit<
   substanceId?: string;
   formId?: string;
   inline?: boolean;
-  onChange?: (materialType: MaterialTypeType | null) => void;
+  onChange?: (
+    materialType: {
+      label: string;
+      value: string;
+      code: string;
+    } | null
+  ) => void;
 };
 
 const MaterialTypePreview = (
@@ -31,45 +34,18 @@ const MaterialTypePreview = (
 };
 
 const MaterialType = (props: MaterialTypeSelectProps) => {
-  const materialTypesLoader =
-    useFetcher<Awaited<ReturnType<typeof getMaterialTypeList>>>();
-
   const newTypeModal = useDisclosure();
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  useMount(() => {
-    if (props.substanceId && props.formId) {
-      materialTypesLoader.load(
-        path.to.api.materialTypes(props.substanceId, props.formId)
-      );
-    }
-  });
-
-  useEffect(() => {
-    if (props.substanceId && props.formId) {
-      materialTypesLoader.load(
-        path.to.api.materialTypes(props.substanceId, props.formId)
-      );
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.substanceId, props.formId]);
-
-  const options = useMemo(() => {
-    return (materialTypesLoader.data?.data ?? []).map((c) => ({
-      value: c.id,
-      label: c.name,
-      helper: c.companyId === null ? "Standard" : undefined,
-    }));
-  }, [materialTypesLoader.data?.data]);
+  const options = useMaterialTypes(props.substanceId!, props.formId!);
 
   const onChange = (newValue: { label: string; value: string } | null) => {
     const materialType =
-      materialTypesLoader.data?.data?.find(
-        (materialType) => materialType.id === newValue?.value
-      ) ?? null;
+      options.find((materialType) => materialType.value === newValue?.value) ??
+      null;
 
-    props.onChange?.(materialType as MaterialTypeType | null);
+    props.onChange?.(materialType);
   };
 
   return (
@@ -100,11 +76,41 @@ const MaterialType = (props: MaterialTypeSelectProps) => {
             name: created,
             materialSubstanceId: props.substanceId!,
             materialFormId: props.formId!,
+            code: created,
           }}
         />
       )}
     </>
   );
+};
+
+export const useMaterialTypes = (substanceId?: string, formId?: string) => {
+  const materialTypes =
+    useFetcher<Awaited<ReturnType<typeof getMaterialTypeList>>>();
+
+  useMount(() => {
+    if (substanceId && formId) {
+      materialTypes.load(path.to.api.materialTypes(substanceId, formId));
+    }
+  });
+
+  useEffect(() => {
+    if (substanceId && formId) {
+      materialTypes.load(path.to.api.materialTypes(substanceId, formId));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [substanceId, formId]);
+
+  const options = useMemo(() => {
+    return (materialTypes.data?.data ?? []).map((c) => ({
+      value: c.id,
+      label: c.name,
+      helper: c.companyId === null ? "Standard" : undefined,
+      code: c.code,
+    }));
+  }, [materialTypes.data?.data]);
+
+  return options;
 };
 
 export default MaterialType;

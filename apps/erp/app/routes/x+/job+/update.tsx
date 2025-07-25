@@ -34,6 +34,7 @@ export async function action({ request }: ActionFunctionArgs) {
         .from("job")
         .delete()
         .in("id", ids as string[])
+        .eq("companyId", companyId)
     );
   }
   if (typeof value !== "string" && value !== null) {
@@ -80,7 +81,8 @@ export async function action({ request }: ActionFunctionArgs) {
             updatedBy: userId,
             updatedAt: new Date().toISOString(),
           })
-          .in("id", ids as string[]),
+          .in("id", ids as string[])
+          .eq("companyId", companyId),
 
         client
           .from("jobMakeMethod")
@@ -90,7 +92,8 @@ export async function action({ request }: ActionFunctionArgs) {
             updatedAt: new Date().toISOString(),
           })
           .in("jobId", ids as string[])
-          .is("parentMaterialId", null),
+          .is("parentMaterialId", null)
+          .eq("companyId", companyId),
       ]);
 
       if (itemUpdate.error) {
@@ -138,6 +141,7 @@ export async function action({ request }: ActionFunctionArgs) {
             updatedAt: new Date().toISOString(),
           })
           .in("id", ids as string[])
+          .eq("companyId", companyId)
       );
     case "quantity":
     case "scrapQuantity":
@@ -148,7 +152,8 @@ export async function action({ request }: ActionFunctionArgs) {
           updatedBy: userId,
           updatedAt: new Date().toISOString(),
         })
-        .in("id", ids as string[]);
+        .in("id", ids as string[])
+        .eq("companyId", companyId);
 
       if (quantityUpdate.error) {
         return json(quantityUpdate);
@@ -175,6 +180,7 @@ export async function action({ request }: ActionFunctionArgs) {
             .from("job")
             .update({ salesOrderId: null, salesOrderLineId: null })
             .in("id", ids as string[])
+            .eq("companyId", companyId)
         );
       } else {
         return json({

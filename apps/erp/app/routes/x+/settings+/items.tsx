@@ -19,13 +19,14 @@ import { flash } from "@carbon/auth/session.server";
 import { Boolean, Submit, ValidatedForm, validator } from "@carbon/form";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useEffect } from "react";
-import { setMetricSettings } from "~/modules/items/items.server";
 import {
   getCompanySettings,
   materialIdsValidator,
   materialUnitsValidator,
   updateMaterialGeneratedIdsSetting,
+  updateMetricSettings,
 } from "~/modules/settings";
+
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -93,7 +94,7 @@ export async function action({ request }: ActionFunctionArgs) {
         return json({ success: false, message: "Invalid form data" });
       }
 
-      const materialUnitsResult = await setMetricSettings(
+      const materialUnitsResult = await updateMetricSettings(
         client,
         companyId,
         unitsValidation.data.useMetric
