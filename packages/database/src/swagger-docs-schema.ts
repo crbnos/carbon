@@ -56900,6 +56900,63 @@ export default {
         tags: ["(rpc) get_job_quantity_on_hand"],
       },
     },
+    "/rpc/get_material_naming_details": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "readable_id",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_material_naming_details"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                readable_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["readable_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_material_naming_details"],
+      },
+    },
     "/rpc/get_job_method": {
       get: {
         parameters: [

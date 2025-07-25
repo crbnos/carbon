@@ -91,8 +91,9 @@ const ToolProperties = () => {
         | "replenishmentSystem"
         | "defaultMethodType"
         | "itemTrackingType"
+        | "toolId"
         | "active",
-      value: string
+      value: string | null
     ) => {
       const formData = new FormData();
 
@@ -215,10 +216,31 @@ const ToolProperties = () => {
             </Tooltip>
           </HStack>
         </HStack>
-        <VStack spacing={0}>
-          <span className="text-sm tracking-tight">
-            {routeData?.toolSummary?.readableIdWithRevision}
-          </span>
+        <VStack spacing={1} className="pt-2">
+          <ValidatedForm
+            defaultValues={{
+              toolId:
+                routeData?.toolSummary?.readableIdWithRevision ?? undefined,
+            }}
+            validator={z.object({
+              toolId: z.string(),
+            })}
+            className="w-full -mt-2"
+          >
+            <span className="text-sm">
+              <InputControlled
+                label=""
+                name="toolId"
+                inline
+                size="sm"
+                value={routeData?.toolSummary?.readableId ?? ""}
+                onBlur={(e) => {
+                  onUpdate("toolId", e.target.value ?? null);
+                }}
+                className="text-muted-foreground"
+              />
+            </span>
+          </ValidatedForm>
           <ValidatedForm
             defaultValues={{
               name: routeData?.toolSummary?.name ?? undefined,

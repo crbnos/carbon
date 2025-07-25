@@ -123,7 +123,8 @@ const MaterialProperties = () => {
         | "gradeId"
         | "dimensionId"
         | "finishId"
-        | "materialTypeId",
+        | "materialTypeId"
+        | "materialId",
       value: string | null
     ) => {
       const formData = new FormData();
@@ -154,7 +155,8 @@ const MaterialProperties = () => {
         | "gradeId"
         | "dimensionId"
         | "finishId"
-        | "materialTypeId",
+        | "materialTypeId"
+        | "materialId",
       value: string | null
     ) => {
       console.log(settings.materialGeneratedIds);
@@ -301,10 +303,31 @@ const MaterialProperties = () => {
               </Tooltip>
             </HStack>
           </HStack>
-          <VStack spacing={0}>
-            <span className="text-sm tracking-tight">
-              {routeData?.materialSummary?.readableIdWithRevision}
-            </span>
+          <VStack spacing={1} className="pt-2">
+            <ValidatedForm
+              defaultValues={{
+                materialId:
+                  routeData?.materialSummary?.readableIdWithRevision ?? undefined,
+              }}
+              validator={z.object({
+                materialId: z.string(),
+              })}
+              className="w-full -mt-2"
+            >
+              <span className="text-sm">
+                <InputControlled
+                  label=""
+                  name="materialId"
+                  inline
+                  size="sm"
+                  value={routeData?.materialSummary?.readableId ?? ""}
+                  onBlur={(e) => {
+                    onUpdate("materialId", e.target.value ?? null);
+                  }}
+                  className="text-muted-foreground"
+                />
+              </span>
+            </ValidatedForm>
             <ValidatedForm
               defaultValues={{
                 name: routeData?.materialSummary?.name ?? undefined,

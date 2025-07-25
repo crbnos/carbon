@@ -40256,14 +40256,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -46065,9 +46065,9 @@ export type Database = {
         Returns: {
           id: string
           shape: string
-          substanceCode: string
-          substance: string
           shapeCode: string
+          substance: string
+          substanceCode: string
           finish: string
           grade: string
           dimensions: string

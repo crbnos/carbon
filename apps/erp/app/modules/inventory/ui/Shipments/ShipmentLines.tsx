@@ -446,7 +446,10 @@ function ShipmentLineItem({
               </label>
               <HStack className="justify-center">
                 <span className="text-sm py-1.5">
-                  {line.outstandingQuantity || 0}
+                  {isReadOnly
+                    ? (line.outstandingQuantity || 0) -
+                      (line.shippedQuantity || 0)
+                    : line.outstandingQuantity || 0}
                 </span>
 
                 {(line.shippedQuantity || 0) >
