@@ -2129,7 +2129,9 @@ export async function upsertPickMethod(
       })
 ) {
   if ("createdBy" in pickMethod) {
-    return client.from("pickMethod").insert(pickMethod);
+    return client.from("pickMethod").upsert(pickMethod, {
+      onConflict: "itemId,locationId",
+    });
   }
 
   return client
