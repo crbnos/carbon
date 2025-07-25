@@ -37,7 +37,7 @@ SELECT DISTINCT
   m."dimensions",
   m."companyId"
 FROM "material" m
-WHERE m."dimensions" IS NOT NULL
+WHERE m."dimensions" IS NOT NULL AND m."dimensions" != '' AND m."materialFormId" IS NOT NULL
   AND m."companyId" IS NOT NULL
   AND NOT EXISTS (
     SELECT 1 
@@ -82,7 +82,7 @@ SELECT DISTINCT
   m."finish",
   m."companyId"
 FROM "material" m
-WHERE m."finish" IS NOT NULL
+WHERE m."finish" IS NOT NULL AND m."finish" != '' AND m."materialSubstanceId" IS NOT NULL
   AND m."companyId" IS NOT NULL
   AND NOT EXISTS (
     SELECT 1 
@@ -127,7 +127,7 @@ SELECT DISTINCT
   m."grade",
   m."companyId"
 FROM "material" m
-WHERE m."grade" IS NOT NULL
+WHERE m."grade" IS NOT NULL AND m."grade" != '' AND m."materialSubstanceId" IS NOT NULL
   AND m."companyId" IS NOT NULL
   AND NOT EXISTS (
     SELECT 1 
