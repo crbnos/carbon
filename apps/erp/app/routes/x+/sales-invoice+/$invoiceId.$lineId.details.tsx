@@ -36,9 +36,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const salesInvoiceLine = await getSalesInvoiceLine(client, lineId);
 
+  const itemId = salesInvoiceLine?.data?.itemId;
+
   return defer({
     salesInvoiceLine: salesInvoiceLine?.data ?? null,
-    files: getOpportunityLineDocuments(client, companyId, lineId),
+    files: getOpportunityLineDocuments(client, companyId, lineId, itemId),
   });
 }
 
@@ -157,6 +159,7 @@ export default function EditSalesInvoiceLineRoute() {
               files={resolvedFiles ?? []}
               id={invoiceId}
               lineId={lineId}
+              itemId={salesInvoiceLine?.itemId}
               type="Sales Invoice"
             />
           )}

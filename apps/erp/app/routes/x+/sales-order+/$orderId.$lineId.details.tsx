@@ -66,13 +66,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const itemId = line.data.itemId;
+
   return defer({
     line: line?.data ?? null,
     itemReplenishment:
-      line.data.itemId && line.data.methodType === "Make"
-        ? getItemReplenishment(serviceRole, line.data.itemId, companyId)
+      itemId && line.data.methodType === "Make"
+        ? getItemReplenishment(serviceRole, itemId, companyId)
         : Promise.resolve({ data: null }),
-    files: getOpportunityLineDocuments(serviceRole, companyId, lineId),
+    files: getOpportunityLineDocuments(serviceRole, companyId, lineId, itemId),
     jobs: jobs?.data ?? [],
     shipments: shipments?.data ?? [],
   });
@@ -239,6 +241,7 @@ export default function EditSalesOrderLineRoute() {
               files={resolvedFiles ?? []}
               id={orderId}
               lineId={lineId}
+              itemId={line?.itemId}
               modelUpload={line ?? undefined}
               type="Sales Order"
             />

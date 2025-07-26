@@ -715,13 +715,27 @@ export async function getOpportunityDocuments(
 export async function getOpportunityLineDocuments(
   client: SupabaseClient<Database>,
   companyId: string,
-  lineId: string
+  lineId: string,
+  itemId?: string | null
 ) {
-  const result = await client.storage
-    .from("private")
-    .list(`${companyId}/opportunity-line/${lineId}`);
+  const [opportunityLineResult, itemResult] = await Promise.all([
+    client.storage
+      .from("private")
+      .list(`${companyId}/opportunity-line/${lineId}`),
+    itemId
+      ? client.storage.from("private").list(`${companyId}/parts/${itemId}`)
+      : Promise.resolve({ data: [] }),
+  ]);
 
-  return result.data?.map((f) => ({ ...f, bucket: "opportunity-line" })) ?? [];
+  const opportunityLineDocs =
+    opportunityLineResult.data?.map((f) => ({
+      ...f,
+      bucket: "opportunity-line",
+    })) ?? [];
+  const itemDocs =
+    itemResult.data?.map((f) => ({ ...f, bucket: "parts" })) ?? [];
+
+  return [...opportunityLineDocs, ...itemDocs];
 }
 
 export async function getQuote(

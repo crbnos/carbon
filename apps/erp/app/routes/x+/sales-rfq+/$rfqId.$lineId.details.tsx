@@ -44,9 +44,11 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     );
   }
 
+  const itemId = line.data.itemId;
+
   return defer({
     line: line.data,
-    files: getOpportunityLineDocuments(serviceRole, companyId, lineId),
+    files: getOpportunityLineDocuments(serviceRole, companyId, lineId, itemId),
   });
 };
 
@@ -138,6 +140,7 @@ export default function SalesRFQLine() {
               files={resolvedFiles ?? []}
               id={rfqId}
               lineId={lineId}
+              itemId={line?.itemId}
               modelUpload={line ?? undefined}
               type="Request for Quote"
             />

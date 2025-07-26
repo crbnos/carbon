@@ -69,7 +69,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   return defer({
     line: line.data,
     operations: operations?.data ?? [],
-    files: getOpportunityLineDocuments(serviceRole, companyId, lineId),
+    files: getOpportunityLineDocuments(serviceRole, companyId, lineId, itemId),
     pricesByQuantity: (prices?.data ?? []).reduce<
       Record<number, QuotationPrice>
     >((acc, price) => {
@@ -242,6 +242,7 @@ export default function QuoteLine() {
               files={resolvedFiles ?? []}
               id={quoteId}
               lineId={lineId}
+              itemId={line?.itemId}
               modelUpload={line ?? undefined}
               type="Quote"
             />
