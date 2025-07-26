@@ -4,6 +4,7 @@ import { z } from "npm:zod@^3.24.1";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/nanoid.ts";
+import { Transaction } from "https://esm.sh/v135/kysely@0.26.3/dist/cjs/kysely.d.ts";
 import { corsHeaders } from "../lib/headers.ts";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
@@ -252,6 +253,18 @@ serve(async (req: Request) => {
               .insertInto("itemLedger")
               .values(itemLedgerInserts)
               .execute();
+
+            // Update pickMethod defaultShelfId if needed for each inserted ledger
+            for (const ledger of itemLedgerInserts) {
+              await updatePickMethodDefaultShelfIfNeeded(
+                trx,
+                ledger.itemId,
+                ledger.locationId,
+                ledger.shelfId,
+                companyId,
+                userId
+              );
+            }
           }
         });
 
@@ -310,6 +323,11 @@ serve(async (req: Request) => {
                 .filter((material) => material.defaultShelf)
                 .map((material) => material.itemId)
             );
+            const itemIdsWithoutDefaultShelf = new Set(
+              materialsToIssue
+                .filter((material) => !material.defaultShelf)
+                .map((material) => material.itemId)
+            );
 
             const jobId = materialsToIssue[0].jobId;
 
@@ -338,12 +356,46 @@ serve(async (req: Request) => {
               .where("companyId", "=", companyId)
               .execute();
 
+            // For items without defaultShelf, find the shelf with the last positive adjustment
+            const shelfIdsForItemsWithoutDefault = new Map<
+              string,
+              string | null
+            >();
+
+            if (itemIdsWithoutDefaultShelf.size > 0) {
+              for (const itemId of itemIdsWithoutDefaultShelf) {
+                const shelfId = await getShelfWithHighestQuantity(
+                  trx,
+                  itemId,
+                  job?.locationId!
+                );
+                shelfIdsForItemsWithoutDefault.set(itemId, shelfId);
+              }
+            }
+
             const shelfIdsToUse = new Map(
               pickMethods.map((pickMethod) => [
                 pickMethod.itemId,
                 pickMethod.defaultShelfId,
               ])
             );
+
+            // Handle items with defaultShelf=true but null defaultShelfId
+            for (const pickMethod of pickMethods) {
+              if (pickMethod.defaultShelfId === null) {
+                const shelfId = await getShelfWithHighestQuantity(
+                  trx,
+                  pickMethod.itemId,
+                  job?.locationId!
+                );
+                shelfIdsToUse.set(pickMethod.itemId, shelfId);
+              }
+            }
+
+            // Add shelf IDs for items without default shelf
+            for (const [itemId, shelfId] of shelfIdsForItemsWithoutDefault) {
+              shelfIdsToUse.set(itemId, shelfId);
+            }
 
             const itemIdIsTracked = new Map(
               items.map((item) => [
@@ -354,6 +406,50 @@ serve(async (req: Request) => {
 
             for await (const material of materialsToIssue) {
               if (material.quantityToIssue) {
+                const proposedShelfId =
+                  shelfIdsToUse.get(material.itemId) ?? material.shelfId;
+
+                // Get current quantity on this shelf for diagnostics
+                const currentShelfQuantity = await trx
+                  .selectFrom("itemLedger")
+                  .select((eb) => eb.fn.sum("quantity").as("quantity"))
+                  .where("itemId", "=", material.itemId)
+                  .where("locationId", "=", job.locationId!)
+                  .where("shelfId", "=", proposedShelfId ?? "")
+                  .executeTakeFirst();
+
+                // Get all shelf quantities for this item for diagnostics
+                const allShelfQuantities = await trx
+                  .selectFrom("itemLedger")
+                  .select([
+                    "shelfId",
+                    (eb) => eb.fn.sum("quantity").as("quantity"),
+                  ])
+                  .where("itemId", "=", material.itemId)
+                  .where("locationId", "=", job.locationId!)
+                  .groupBy("shelfId")
+                  .having((eb) => eb.fn.sum("quantity"), ">", 0)
+                  .execute();
+
+                // Use shelf with highest quantity if proposed shelf has insufficient quantity
+                let finalShelfId = proposedShelfId;
+                const currentQuantity = Number(
+                  currentShelfQuantity?.quantity ?? 0
+                );
+                const quantityToIssue = Number(material.quantityToIssue);
+
+                if (
+                  currentQuantity < quantityToIssue &&
+                  allShelfQuantities.length > 0
+                ) {
+                  const bestShelf = allShelfQuantities.reduce((best, current) =>
+                    Number(current.quantity) > Number(best.quantity)
+                      ? current
+                      : best
+                  );
+                  finalShelfId = bestShelf.shelfId;
+                }
+
                 if (itemIdIsTracked.get(material.itemId)) {
                   itemLedgerInserts.push({
                     entryType: "Consumption",
@@ -364,9 +460,7 @@ serve(async (req: Request) => {
                     itemId: material.itemId,
                     quantity: -Number(material.quantityToIssue),
                     locationId: job?.locationId,
-                    shelfId: material.defaultShelf
-                      ? shelfIdsToUse.get(material.itemId)
-                      : material.shelfId,
+                    shelfId: finalShelfId,
                     createdBy: userId,
                   });
                 }
@@ -388,6 +482,18 @@ serve(async (req: Request) => {
                 .insertInto("itemLedger")
                 .values(itemLedgerInserts)
                 .execute();
+
+              // Update pickMethod defaultShelfId if needed for each inserted ledger
+              for (const ledger of itemLedgerInserts) {
+                await updatePickMethodDefaultShelfIfNeeded(
+                  trx,
+                  ledger.itemId,
+                  ledger.locationId,
+                  ledger.shelfId,
+                  companyId,
+                  userId
+                );
+              }
             }
           }
         });
@@ -670,19 +776,30 @@ serve(async (req: Request) => {
           ]);
 
           if (materialId) {
-            const [material, pickMethod] = await Promise.all([
-              trx
-                .selectFrom("jobMaterial")
-                .where("id", "=", materialId)
-                .selectAll()
-                .executeTakeFirst(),
-              trx
+            const material = await trx
+              .selectFrom("jobMaterial")
+              .where("id", "=", materialId)
+              .selectAll()
+              .executeTakeFirst();
+
+            let shelfId: string | null | undefined;
+            if (material?.defaultShelf) {
+              const pickMethod = await trx
                 .selectFrom("pickMethod")
                 .where("itemId", "=", itemId)
                 .where("locationId", "=", job?.locationId!)
                 .select("defaultShelfId")
-                .executeTakeFirst(),
-            ]);
+                .executeTakeFirst();
+              shelfId = pickMethod?.defaultShelfId;
+            } else {
+              shelfId =
+                material?.shelfId ??
+                (await getShelfWithHighestQuantity(
+                  trx,
+                  itemId,
+                  job?.locationId!
+                ));
+            }
 
             const quantityToIssue =
               adjustmentType === "Positive Adjmt."
@@ -703,9 +820,7 @@ serve(async (req: Request) => {
                 companyId,
                 itemId: material?.itemId!,
                 locationId: job?.locationId,
-                shelfId: material?.defaultShelf
-                  ? pickMethod?.defaultShelfId
-                  : material?.shelfId,
+                shelfId,
                 quantity:
                   adjustmentType === "Positive Adjmt."
                     ? Number(quantityToIssue)
@@ -729,8 +844,21 @@ serve(async (req: Request) => {
                 .insertInto("itemLedger")
                 .values(itemLedgerInserts)
                 .execute();
+
+              // Update pickMethod defaultShelfId if needed for each inserted ledger
+              for (const ledger of itemLedgerInserts) {
+                await updatePickMethodDefaultShelfIfNeeded(
+                  trx,
+                  ledger.itemId,
+                  ledger.locationId,
+                  ledger.shelfId,
+                  companyId,
+                  userId
+                );
+              }
             }
           } else {
+            let shelfId: string | null | undefined;
             if (item?.itemTrackingType === "Inventory") {
               const pickMethod = await trx
                 .selectFrom("pickMethod")
@@ -738,6 +866,14 @@ serve(async (req: Request) => {
                 .where("locationId", "=", job?.locationId!)
                 .select("defaultShelfId")
                 .executeTakeFirst();
+
+              shelfId =
+                pickMethod?.defaultShelfId ??
+                (await getShelfWithHighestQuantity(
+                  trx,
+                  itemId,
+                  job?.locationId!
+                ));
 
               itemLedgerInserts.push({
                 entryType: "Consumption",
@@ -751,24 +887,16 @@ serve(async (req: Request) => {
                     ? Number(quantity)
                     : -Number(quantity),
                 locationId: job?.locationId,
-                shelfId: pickMethod?.defaultShelfId,
+                shelfId,
                 createdBy: userId,
               });
             }
 
-            const [itemCost, pickMethod] = await Promise.all([
-              trx
-                .selectFrom("itemCost")
-                .where("itemId", "=", itemId!)
-                .select("unitCost")
-                .executeTakeFirst(),
-              trx
-                .selectFrom("pickMethod")
-                .where("itemId", "=", itemId!)
-                .where("locationId", "=", job?.locationId!)
-                .select("defaultShelfId")
-                .executeTakeFirst(),
-            ]);
+            const itemCost = await trx
+              .selectFrom("itemCost")
+              .where("itemId", "=", itemId!)
+              .select("unitCost")
+              .executeTakeFirst();
 
             await trx
               .insertInto("jobMaterial")
@@ -783,7 +911,7 @@ serve(async (req: Request) => {
                 jobId: jobOperation?.jobId!,
                 jobMakeMethodId: jobOperation?.jobMakeMethodId,
                 jobOperationId: id,
-                shelfId: pickMethod?.defaultShelfId,
+                shelfId,
                 methodType: "Pick",
                 quantity: 0,
                 quantityIssued: Number(quantity ?? 0),
@@ -796,6 +924,18 @@ serve(async (req: Request) => {
                 .insertInto("itemLedger")
                 .values(itemLedgerInserts)
                 .execute();
+
+              // Update pickMethod defaultShelfId if needed for each inserted ledger
+              for (const ledger of itemLedgerInserts) {
+                await updatePickMethodDefaultShelfIfNeeded(
+                  trx,
+                  ledger.itemId,
+                  ledger.locationId,
+                  ledger.shelfId,
+                  companyId,
+                  userId
+                );
+              }
             }
           }
         });
@@ -1131,6 +1271,18 @@ serve(async (req: Request) => {
               .insertInto("itemLedger")
               .values(itemLedgerInserts)
               .execute();
+
+            // Update pickMethod defaultShelfId if needed for each inserted ledger
+            for (const ledger of itemLedgerInserts) {
+              await updatePickMethodDefaultShelfIfNeeded(
+                trx,
+                ledger.itemId,
+                ledger.locationId,
+                ledger.shelfId,
+                companyId,
+                userId
+              );
+            }
           }
 
           const totalChildQuantity = children.reduce((sum, child) => {
@@ -1334,6 +1486,18 @@ serve(async (req: Request) => {
               .insertInto("itemLedger")
               .values(itemLedgerInserts)
               .execute();
+
+            // Update pickMethod defaultShelfId if needed for each inserted ledger
+            for (const ledger of itemLedgerInserts) {
+              await updatePickMethodDefaultShelfIfNeeded(
+                trx,
+                ledger.itemId,
+                ledger.locationId,
+                ledger.shelfId,
+                companyId,
+                userId
+              );
+            }
           }
 
           const totalChildQuantity = children.reduce((sum, child) => {
@@ -1380,3 +1544,83 @@ serve(async (req: Request) => {
     });
   }
 });
+
+// Utility function to get the shelf with the highest quantity
+async function getShelfWithHighestQuantity(
+  trx: Transaction<DB>,
+  itemId: string,
+  locationId: string
+): Promise<string | null> {
+  const shelfWithHighestQuantity = await trx
+    .selectFrom("itemLedger")
+    .where("itemId", "=", itemId)
+    .where("locationId", "=", locationId)
+    .where("shelfId", "is not", null)
+    .groupBy("shelfId")
+    .select(["shelfId", (eb) => eb.fn.sum("quantity").as("totalQuantity")])
+    .having((eb) => eb.fn.sum("quantity"), ">", 0)
+    .orderBy("totalQuantity", "desc")
+    .executeTakeFirst();
+
+  return shelfWithHighestQuantity?.shelfId ?? null;
+}
+
+// Utility function to update pickMethod defaultShelfId if this is the only non-null shelf
+async function updatePickMethodDefaultShelfIfNeeded(
+  trx: Transaction<DB>,
+  itemId: string,
+  locationId: string | null | undefined,
+  shelfId: string | null | undefined,
+  companyId: string,
+  userId: string
+): Promise<void> {
+  // Only proceed if shelfId and locationId are not null
+  if (!shelfId || !locationId) return;
+
+  // Check if there are other non-null shelves for this item/location
+  const otherShelves = await trx
+    .selectFrom("itemLedger")
+    .where("itemId", "=", itemId)
+    .where("locationId", "=", locationId)
+    .where("shelfId", "is not", null)
+    .where("shelfId", "!=", shelfId)
+    .select("shelfId")
+    .executeTakeFirst();
+
+  // If there are no other non-null shelves, update or insert pickMethod
+  if (!otherShelves) {
+    const existingPickMethod = await trx
+      .selectFrom("pickMethod")
+      .where("itemId", "=", itemId)
+      .where("locationId", "=", locationId)
+      .select("defaultShelfId")
+      .executeTakeFirst();
+
+    if (existingPickMethod) {
+      // Update existing pickMethod
+      await trx
+        .updateTable("pickMethod")
+        .set({
+          defaultShelfId: shelfId,
+          updatedBy: userId,
+          updatedAt: new Date().toISOString(),
+        })
+        .where("itemId", "=", itemId)
+        .where("locationId", "=", locationId)
+        .execute();
+    } else {
+      // Insert new pickMethod
+      await trx
+        .insertInto("pickMethod")
+        .values({
+          itemId,
+          locationId,
+          defaultShelfId: shelfId,
+          companyId,
+          createdBy: userId,
+          createdAt: new Date().toISOString(),
+        })
+        .execute();
+    }
+  }
+}

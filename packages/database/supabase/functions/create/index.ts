@@ -752,16 +752,16 @@ serve(async (req: Request) => {
       const {
         purchaseOrderId,
         receiptId: existingReceiptId,
-        locationId,
+        locationId: userLocationId,
       } = payload;
 
       console.log({
         function: "create",
         type,
         companyId,
-        locationId,
         purchaseOrderId,
         existingReceiptId,
+        userLocationId,
         userId,
       });
 
@@ -774,7 +774,7 @@ serve(async (req: Request) => {
 
         const [purchaseOrder, purchaseOrderLines, receipt] = await Promise.all([
           client
-            .from("purchaseOrder")
+            .from("purchaseOrders")
             .select("*")
             .eq("id", purchaseOrderId)
             .single(),
@@ -788,8 +788,8 @@ serve(async (req: Request) => {
               "Tool",
               "Fixture",
               "Consumable",
-            ])
-            .or(`locationId.eq.${locationId},locationId.is.null`),
+            ]),
+
           client
             .from("receipt")
             .select("*")
@@ -801,12 +801,24 @@ serve(async (req: Request) => {
         if (purchaseOrderLines.error)
           throw new Error(purchaseOrderLines.error.message);
 
+        let locationId = purchaseOrder.data.locationId;
+        if (
+          purchaseOrderLines.data.some(
+            (d) =>
+              d.locationId !== locationId && d.locationId === userLocationId
+          )
+        ) {
+          locationId = userLocationId;
+        }
+
         const items = await client
           .from("item")
           .select("id, itemTrackingType")
           .in(
             "id",
-            purchaseOrderLines.data.map((d) => d.itemId)
+            purchaseOrderLines.data
+              .filter((d) => d.locationId === locationId)
+              .map((d) => d.itemId)
           );
         const serializedItems = new Set(
           items.data

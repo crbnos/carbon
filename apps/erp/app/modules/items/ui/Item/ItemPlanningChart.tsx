@@ -79,12 +79,14 @@ export const ItemPlanningChart = ({
   locationId,
   plannedOrders = [],
   safetyStock,
+  conversionFactor = 1,
 }: {
   compact?: boolean;
   itemId: string;
   locationId: string;
   plannedOrders?: PlannedOrder[];
   safetyStock?: number;
+  conversionFactor?: number;
 }) => {
   const forecastFetcher = useFetcher<typeof forecastLoader>();
   const isFetching = forecastFetcher.state !== "idle" || !forecastFetcher.data;
@@ -142,8 +144,13 @@ export const ItemPlanningChart = ({
       }
 
       if (groupedData[periodId]) {
-        groupedData[periodId]["Planned"] +=
+        // Convert purchase quantity to inventory quantity for display
+        // Inventory Quantity = Purchase Quantity × Conversion Factor
+        const purchaseQuantityDelta =
           (order.quantity ?? 0) - (order.existingQuantity ?? 0);
+        const inventoryQuantityDelta = purchaseQuantityDelta * conversionFactor;
+
+        groupedData[periodId]["Planned"] += inventoryQuantityDelta;
       }
     });
 
@@ -197,7 +204,7 @@ export const ItemPlanningChart = ({
       period.Projection = runningProjection;
       return period;
     });
-  }, [forecastFetcher.data, plannedOrders]);
+  }, [forecastFetcher.data, plannedOrders, conversionFactor]);
 
   const combinedSupplyAndDemand = useMemo(() => {
     let projectedQuantity = forecastFetcher.data?.quantityOnHand ?? 0;
@@ -239,7 +246,10 @@ export const ItemPlanningChart = ({
           (item) => item.id === order.existingId
         );
         if (existingIndex >= 0) {
-          forecastData[existingIndex].quantity = order.quantity ?? 0;
+          // Convert purchase quantity to inventory quantity
+          const purchaseQuantity = order.quantity ?? 0;
+          const inventoryQuantity = purchaseQuantity * conversionFactor;
+          forecastData[existingIndex].quantity = inventoryQuantity;
         }
       }
     });
@@ -250,7 +260,7 @@ export const ItemPlanningChart = ({
       ...filteredPlannedOrders.map((order) => ({
         ...order,
         sourceType: "Planned" as SourceType,
-        quantity: order.quantity ?? 0,
+        quantity: (order.quantity ?? 0) * conversionFactor,
         documentReadableId: "Planned",
         documentId: null,
         id: null,
@@ -279,7 +289,7 @@ export const ItemPlanningChart = ({
         .toLowerCase()
         .includes(searchTerm.toLowerCase())
     );
-  }, [forecastFetcher.data, searchTerm, plannedOrders]);
+  }, [forecastFetcher.data, searchTerm, plannedOrders, conversionFactor]);
 
   if (
     forecastFetcher.data?.demand.length === 0 &&

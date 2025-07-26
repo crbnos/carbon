@@ -276,13 +276,21 @@ export function getPurchaseOrdersFromPlanning(
 ): PlannedOrder[] {
   const suppliers = supplierPartValidator.safeParse(itemPlanning.suppliers);
   const supplier = suppliers.data?.find(
-    (supplier) => supplier.id === supplierId
+    (supplier) => supplier.supplierId === supplierId
   );
 
   const item = items.find((item) => item.id === itemPlanning.id);
 
+  // Get the conversion factor from the selected supplier
+  const conversionFactor = supplier?.conversionFactor ?? 1;
+
   return calculateOrders({ itemPlanning, periods }).map((order) => ({
     ...order,
+    // Convert inventory quantity to purchase quantity by dividing by conversion factor
+    quantity:
+      conversionFactor > 0
+        ? Math.ceil(order.quantity / conversionFactor)
+        : order.quantity,
     supplierId: supplier?.supplierId ?? itemPlanning.preferredSupplierId,
     itemReadableId: item?.readableIdWithRevision,
     description: item?.name,

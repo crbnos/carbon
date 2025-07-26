@@ -28,6 +28,7 @@ import {
   LuCalendar,
   LuClock,
   LuHash,
+  LuMapPin,
   LuPencil,
   LuSquareUser,
   LuTag,
@@ -43,6 +44,8 @@ import {
   New,
   Table,
 } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
+import { useLocations } from "~/components/Form/Location";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
@@ -85,6 +88,7 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
 
   const [people] = usePeople();
   const [customers] = useCustomers();
+  const locations = useLocations();
 
   const permissions = usePermissions();
   const deleteModal = useDisclosure();
@@ -387,6 +391,28 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
         cell: (item) => item.getValue<number>(),
         meta: {
           icon: <LuHash />,
+        },
+      },
+      {
+        accessorKey: "locationId",
+        header: "Location",
+        cell: ({ row }) => (
+          <Enumerable
+            value={
+              locations.find((l) => l.value === row.original.locationId)
+                ?.label ?? null
+            }
+          />
+        ),
+        meta: {
+          icon: <LuMapPin />,
+          filter: {
+            type: "static",
+            options: locations.map((l) => ({
+              value: l.value,
+              label: <Enumerable value={l.label} />,
+            })),
+          },
         },
       },
       {

@@ -7,6 +7,7 @@ import { flash } from "@carbon/auth/session.server";
 import {
   Button,
   ClientOnly,
+  Combobox,
   HStack,
   Popover,
   PopoverContent,
@@ -32,6 +33,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LuCirclePlus, LuSettings2, LuTriangleAlert } from "react-icons/lu";
 import { SearchFilter } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { useLocations } from "~/components/Form/Location";
 import { ActiveFilters, Filter } from "~/components/Table/components/Filter";
 import type { ColumnFilter } from "~/components/Table/components/Filter/types";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
@@ -286,6 +288,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       }, {} as Record<string, boolean>)
     ).map(([tag]) => tag),
     tags: tags.data ?? [],
+    locationId,
   });
 }
 
@@ -311,7 +314,10 @@ function KanbanSchedule() {
     salesOrders,
     availableTags,
     tags,
+    locationId,
   } = useLoaderData<typeof loader>();
+
+  const locations = useLocations();
 
   const [items, setItems] = useState<Item[]>(initialItems);
   const [displaySettings, setDisplaySettings] = useLocalStorage(
@@ -411,45 +417,59 @@ function KanbanSchedule() {
           <Filter filters={filters} />
         </HStack>
 
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              leftIcon={<LuSettings2 />}
-              variant="secondary"
-              className="border-dashed border-border"
-            >
-              Display
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-48">
-            <VStack>
-              {[
-                { key: "showCustomer", label: "Customer" },
-                { key: "showDescription", label: "Description" },
-                { key: "showDueDate", label: "Due Date" },
-                { key: "showDuration", label: "Duration" },
-                { key: "showProgress", label: "Progress" },
-                { key: "showQuantity", label: "Quantity" },
-                { key: "showStatus", label: "Status" },
-                { key: "showSalesOrder", label: "Sales Order" },
-                { key: "showThumbnail", label: "Thumbnail" },
-              ].map(({ key, label }) => (
-                <Switch
-                  key={key}
-                  variant="small"
-                  label={label}
-                  checked={displaySettings[key as keyof typeof displaySettings]}
-                  onCheckedChange={(checked) =>
-                    setDisplaySettings((prev) => ({
-                      ...prev,
-                      [key]: checked,
-                    }))
-                  }
-                />
-              ))}
-            </VStack>
-          </PopoverContent>
-        </Popover>
+        <div className="flex items-center gap-2">
+          <Combobox
+            asButton
+            size="sm"
+            value={locationId}
+            options={locations}
+            onChange={(selected) => {
+              // hard refresh because initialValues update has no effect otherwise
+              window.location.href = getLocationPath(selected);
+            }}
+          />
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                leftIcon={<LuSettings2 />}
+                variant="secondary"
+                className="border-dashed border-border"
+              >
+                Display
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48">
+              <VStack>
+                {[
+                  { key: "showCustomer", label: "Customer" },
+                  { key: "showDescription", label: "Description" },
+                  { key: "showDueDate", label: "Due Date" },
+                  { key: "showDuration", label: "Duration" },
+                  { key: "showProgress", label: "Progress" },
+                  { key: "showQuantity", label: "Quantity" },
+                  { key: "showStatus", label: "Status" },
+                  { key: "showSalesOrder", label: "Sales Order" },
+                  { key: "showThumbnail", label: "Thumbnail" },
+                ].map(({ key, label }) => (
+                  <Switch
+                    key={key}
+                    variant="small"
+                    label={label}
+                    checked={
+                      displaySettings[key as keyof typeof displaySettings]
+                    }
+                    onCheckedChange={(checked) =>
+                      setDisplaySettings((prev) => ({
+                        ...prev,
+                        [key]: checked,
+                      }))
+                    }
+                  />
+                ))}
+              </VStack>
+            </PopoverContent>
+          </Popover>
+        </div>
       </HStack>
       {currentFilters.length > 0 && (
         <HStack className="px-4 py-1.5 justify-between bg-card border-b border-border w-full">
@@ -743,4 +763,8 @@ function useProgressByOperation(
   }, [accessToken]);
 
   return { progressByOperation };
+}
+
+function getLocationPath(locationId: string) {
+  return `${path.to.schedule}?location=${locationId}`;
 }
