@@ -324,8 +324,19 @@ function ShipmentLineItem({
   const splitDisclosure = useDisclosure();
   const deleteDisclosure = useDisclosure();
 
+  // Check if shipped quantity exceeds job quantity for job fulfillments
+  const isJobOverShipped =
+    line.fulfillment?.type === "Job" &&
+    (line.shippedQuantity || 0) > (line.fulfillment?.job?.quantity || 0);
+
   return (
-    <div className={cn("flex flex-col border-b p-6 gap-6 relative", className)}>
+    <div
+      className={cn(
+        "flex flex-col border-b p-6 gap-6 relative",
+
+        className
+      )}
+    >
       <div className="absolute top-6 right-6">
         {line.fulfillment?.type === "Job" ? (
           <div className="flex flex-col items-end gap-0">
@@ -396,8 +407,19 @@ function ShipmentLineItem({
         <div className="flex flex-grow items-center justify-between gap-2 pl-4 w-1/2">
           <HStack spacing={4}>
             <VStack spacing={1}>
-              <label className="text-xs text-muted-foreground">Shipped</label>
-
+              <div className="flex items-center justify-between gap-1 w-full">
+                <label className="text-xs text-muted-foreground">Shipped</label>
+                {isJobOverShipped && (
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <LuCircleAlert className="text-red-500" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Shipped quantity exceeds job quantity
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
               <NumberField
                 value={line.shippedQuantity || 0}
                 onChange={(value) => {
@@ -424,7 +446,10 @@ function ShipmentLineItem({
                 }}
               >
                 <NumberInput
-                  className="disabled:bg-transparent disabled:opacity-100 min-w-[100px]"
+                  className={cn(
+                    "disabled:bg-transparent disabled:opacity-100 min-w-[100px]",
+                    isJobOverShipped && "border-red-500 border-2"
+                  )}
                   isDisabled={
                     isReadOnly ||
                     (line.fulfillment?.type === "Job" &&

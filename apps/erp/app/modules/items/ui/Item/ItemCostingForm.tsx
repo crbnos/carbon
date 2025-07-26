@@ -74,25 +74,7 @@ const ItemCostingForm = ({ initialValues }: ItemCostingFormProps) => {
               helperText="Weighted average cost over last year calculated when the invoice is posted"
             />
 
-            {/* <Number
-              name="salesHistory"
-              label="Sales History"
-              formatOptions={{
-                style: "currency",
-                currency: baseCurrency,
-                
-              }}
-              isReadOnly
-            />
-            <Number
-              name="salesHistoryQty"
-              label="Sales History Qty"
-              formatOptions={{
-                maximumSignificantDigits: 3,
-              }}
-              isReadOnly
-            />
-            <Boolean name="costIsAdjusted" label="Cost Is Adjusted" /> */}
+            {/* <Boolean name="costIsAdjusted" label="Cost Is Adjusted" /> */}
             <CustomFormFields table="partCost" />
           </div>
         </CardContent>

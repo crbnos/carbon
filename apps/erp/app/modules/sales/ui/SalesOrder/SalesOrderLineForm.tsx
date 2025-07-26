@@ -244,7 +244,7 @@ const SalesOrderLineForm = ({
               <ModalCardBody>
                 <Hidden name="id" />
                 <Hidden name="salesOrderId" />
-                <Hidden name="itemId" value={itemData?.itemId} />
+
                 {!isEditing && (
                   <Hidden
                     name="description"
