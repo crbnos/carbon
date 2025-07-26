@@ -44,16 +44,12 @@ import type { OptimisticFileObject } from "~/modules/shared";
 import type { ModelUpload } from "~/types";
 import { stripSpecialCharacters } from "~/utils/string";
 
-const useOpportunityLineDocuments = ({
-  id,
-  lineId,
+const useJobDocuments = ({
+  jobId,
   itemId,
-  type,
 }: {
-  id: string;
-  lineId: string;
+  jobId: string;
   itemId?: string | null;
-  type: "Request for Quote" | "Sales Order" | "Quote" | "Sales Invoice";
 }) => {
   const permissions = usePermissions();
   const revalidator = useRevalidator();
@@ -61,32 +57,27 @@ const useOpportunityLineDocuments = ({
   const { company } = useUser();
   const submit = useSubmit();
 
-  const canDelete = permissions.can("delete", "sales");
-  const canUpdate = permissions.can("update", "sales");
+  const canDelete = permissions.can("delete", "production");
+  const canUpdate = permissions.can("update", "production");
 
   const getPath = useCallback(
-    (
-      file: { name: string },
-      bucket: "opportunity-line" | "parts" = "opportunity-line"
-    ) => {
+    (file: { name: string }, bucket: "job" | "parts" = "job") => {
       if (bucket === "parts" && itemId) {
         return `${company.id}/parts/${itemId}/${stripSpecialCharacters(
           file.name
         )}`;
       }
-      return `${company.id}/opportunity-line/${lineId}/${stripSpecialCharacters(
-        file.name
-      )}`;
+      return `${company.id}/job/${jobId}/${stripSpecialCharacters(file.name)}`;
     },
-    [company.id, lineId, itemId]
+    [company.id, jobId, itemId]
   );
 
   const deleteFile = useCallback(
     async (file: FileObject & { bucket?: string }) => {
-      const bucket = file.bucket === "parts" ? "parts" : "opportunity-line";
+      const bucket = file.bucket === "parts" ? "parts" : "job";
       const fileDelete = await carbon?.storage
         .from("private")
-        .remove([getPath(file, bucket as "opportunity-line" | "parts")]);
+        .remove([getPath(file, bucket as "job" | "parts")]);
 
       if (!fileDelete || fileDelete.error) {
         toast.error(fileDelete?.error?.message || "Error deleting file");
@@ -99,59 +90,20 @@ const useOpportunityLineDocuments = ({
     [getPath, carbon?.storage, revalidator]
   );
 
-  const deleteModel = useCallback(
-    async (lineId: string) => {
-      if (!lineId || !carbon) return;
+  const deleteModel = useCallback(async () => {
+    if (!carbon) return;
 
-      const [
-        salesRfqLineResult,
-        quoteLineResult,
-        salesOrderLineResult,
-        salesInvoiceLineResult,
-      ] = await Promise.all([
-        carbon
-          .from("salesRfqLine")
-          .update({ modelUploadId: null })
-          .eq("id", lineId),
-        carbon
-          .from("quoteLine")
-          .update({ modelUploadId: null })
-          .eq("id", lineId),
-        carbon
-          .from("salesOrderLine")
-          .update({ modelUploadId: null })
-          .eq("id", lineId),
-        carbon
-          .from("salesInvoiceLine")
-          .update({ modelUploadId: null })
-          .eq("id", lineId),
-      ]);
-
-      if (salesRfqLineResult.error) {
-        toast.error("Error removing model from RFQ line");
-        return;
-      }
-
-      if (quoteLineResult.error) {
-        toast.error("Error removing model from quote line");
-        return;
-      }
-
-      if (salesOrderLineResult.error) {
-        toast.error("Error removing model from sales order line");
-        return;
-      }
-
-      if (salesInvoiceLineResult.error) {
-        toast.error("Error removing model from sales invoice line");
-        return;
-      }
-
-      toast.success("Model removed from line");
-      revalidator.revalidate();
-    },
-    [carbon, revalidator]
-  );
+    const { error } = await carbon
+      .from("job")
+      .update({ modelUploadId: null })
+      .eq("id", jobId);
+    if (error) {
+      toast.error("Error removing model from job");
+      return;
+    }
+    toast.success("Model removed from job");
+    revalidator.revalidate();
+  }, [carbon, jobId, revalidator]);
 
   const downloadModel = useCallback(
     async (model: ModelUpload) => {
@@ -183,9 +135,9 @@ const useOpportunityLineDocuments = ({
 
   const download = useCallback(
     async (file: FileObject & { bucket?: string }) => {
-      const bucket = file.bucket === "parts" ? "parts" : "opportunity-line";
+      const bucket = file.bucket === "parts" ? "parts" : "job";
       const url = path.to.file.previewFile(
-        `private/${getPath(file, bucket as "opportunity-line" | "parts")}`
+        `private/${getPath(file, bucket as "job" | "parts")}`
       );
       try {
         const response = await fetch(url);
@@ -219,35 +171,32 @@ const useOpportunityLineDocuments = ({
       path: filePath,
       name,
       size,
-      bucket = "opportunity-line",
+      bucket = "job",
     }: {
       path: string;
       name: string;
       size: number;
-      bucket?: "opportunity-line" | "parts";
+      bucket?: "job" | "parts";
     }) => {
       const formData = new FormData();
       formData.append("path", filePath);
       formData.append("name", name);
       formData.append("size", Math.round(size / 1024).toString());
-      formData.append("sourceDocument", type);
-      formData.append("sourceDocumentId", id);
+      formData.append("sourceDocument", "Job");
+      formData.append("sourceDocumentId", jobId);
 
       submit(formData, {
         method: "post",
         action: path.to.newDocument,
         navigate: false,
-        fetcherKey: `opportunity-line:${name}`,
+        fetcherKey: `job:${name}`,
       });
     },
-    [id, submit, type]
+    [jobId, submit]
   );
 
   const upload = useCallback(
-    async (
-      files: File[],
-      bucket: "opportunity-line" | "parts" = "opportunity-line"
-    ) => {
+    async (files: File[], bucket: "job" | "parts" = "job") => {
       if (!carbon) {
         toast.error("Carbon client not available");
         return;
@@ -287,7 +236,7 @@ const useOpportunityLineDocuments = ({
   const moveFile = useCallback(
     async (
       file: FileObject & { bucket?: string },
-      targetBucket: "opportunity-line" | "parts"
+      targetBucket: "job" | "parts"
     ) => {
       if (!carbon) {
         toast.error("Carbon client not available");
@@ -299,8 +248,7 @@ const useOpportunityLineDocuments = ({
         return;
       }
 
-      const currentBucket =
-        file.bucket === "parts" ? "parts" : "opportunity-line";
+      const currentBucket = file.bucket === "parts" ? "parts" : "job";
 
       if (currentBucket === targetBucket) {
         toast.error("File is already in the selected bucket");
@@ -345,7 +293,7 @@ const useOpportunityLineDocuments = ({
 
         toast.success(
           `Moved ${file.name} to ${
-            targetBucket === "parts" ? "Parts" : "Opportunity Line"
+            targetBucket === "parts" ? "Item Master" : "Job"
           } bucket`
         );
         revalidator.revalidate();
@@ -371,23 +319,19 @@ const useOpportunityLineDocuments = ({
   };
 };
 
-type OpportunityLineDocumentsProps = {
+type JobDocumentsProps = {
   files: FileObject[];
-  id: string;
-  lineId: string;
+  jobId: string;
   itemId?: string | null;
-  type: "Request for Quote" | "Sales Order" | "Quote" | "Sales Invoice";
   modelUpload?: ModelUpload;
 };
 
-const OpportunityLineDocuments = ({
+const JobDocuments = ({
   files,
-  id,
-  lineId,
+  jobId,
   itemId,
   modelUpload,
-  type,
-}: OpportunityLineDocumentsProps) => {
+}: JobDocumentsProps) => {
   const {
     canDelete,
     canUpdate,
@@ -399,11 +343,9 @@ const OpportunityLineDocuments = ({
     getModelPath,
     moveFile,
     upload,
-  } = useOpportunityLineDocuments({
-    id,
-    lineId,
+  } = useJobDocuments({
+    jobId,
     itemId,
-    type,
   });
 
   const onDrop = useCallback(
@@ -433,15 +375,10 @@ const OpportunityLineDocuments = ({
         <HStack className="justify-between items-start">
           <CardHeader>
             <CardTitle>Files</CardTitle>
-            <CardDescription>Opportunity line documents</CardDescription>
+            <CardDescription>Job documents</CardDescription>
           </CardHeader>
           <CardAction>
-            <OpportunityLineDocumentForm
-              id={id}
-              type={type}
-              lineId={lineId}
-              itemId={itemId}
-            />
+            <JobDocumentForm jobId={jobId} itemId={itemId} />
           </CardAction>
         </HStack>
         <CardContent>
@@ -477,7 +414,7 @@ const OpportunityLineDocuments = ({
                         )
                       : "--"}
                   </Td>
-                  <Td>Opportunity Line</Td>
+                  <Td>Job</Td>
                   <Td>
                     <div className="flex justify-end w-full">
                       <DropdownMenu>
@@ -500,7 +437,7 @@ const OpportunityLineDocuments = ({
                           <DropdownMenuItem
                             destructive
                             disabled={!canDelete}
-                            onClick={() => deleteModel(lineId)}
+                            onClick={() => deleteModel()}
                           >
                             Delete
                           </DropdownMenuItem>
@@ -524,12 +461,12 @@ const OpportunityLineDocuments = ({
                               const bucket =
                                 (file as any).bucket === "parts"
                                   ? "parts"
-                                  : "opportunity-line";
+                                  : "job";
                               window.open(
                                 path.to.file.previewFile(
                                   `${"private"}/${getPath(
                                     file,
-                                    bucket as "opportunity-line" | "parts"
+                                    bucket as "job" | "parts"
                                   )}`
                                 ),
                                 "_blank"
@@ -546,7 +483,7 @@ const OpportunityLineDocuments = ({
                                 file,
                                 (file as any).bucket === "parts"
                                   ? "parts"
-                                  : "opportunity-line"
+                                  : "job"
                               )}
                               // @ts-ignore
                               type={type}
@@ -569,7 +506,9 @@ const OpportunityLineDocuments = ({
                         value={
                           (file as any).bucket === "parts"
                             ? "Item"
-                            : "Opportunity"
+                            : (file as any).bucket === "opportunity-line"
+                            ? "Opportunity"
+                            : "Job"
                         }
                       />
                     </Td>
@@ -587,35 +526,33 @@ const OpportunityLineDocuments = ({
                             <DropdownMenuItem onClick={() => download(file)}>
                               Download
                             </DropdownMenuItem>
-                            {itemId && (
-                              <DropdownMenuSub>
-                                <DropdownMenuSubTrigger disabled={!canUpdate}>
-                                  Move to
-                                </DropdownMenuSubTrigger>
-                                <DropdownMenuSubContent>
-                                  <DropdownMenuRadioGroup
-                                    value={
-                                      (file as any).bucket === "parts"
-                                        ? "parts"
-                                        : "opportunity-line"
-                                    }
-                                    onValueChange={(value) =>
-                                      moveFile(
-                                        file,
-                                        value as "opportunity-line" | "parts"
-                                      )
-                                    }
-                                  >
-                                    <DropdownMenuRadioItem value="opportunity-line">
-                                      Opportunity
-                                    </DropdownMenuRadioItem>
-                                    <DropdownMenuRadioItem value="parts">
-                                      Item
-                                    </DropdownMenuRadioItem>
-                                  </DropdownMenuRadioGroup>
-                                </DropdownMenuSubContent>
-                              </DropdownMenuSub>
-                            )}
+                            {itemId &&
+                              (file as any).bucket !== "opportunity-line" && (
+                                <DropdownMenuSub>
+                                  <DropdownMenuSubTrigger disabled={!canUpdate}>
+                                    Move to
+                                  </DropdownMenuSubTrigger>
+                                  <DropdownMenuSubContent>
+                                    <DropdownMenuRadioGroup
+                                      value={
+                                        (file as any).bucket === "parts"
+                                          ? "parts"
+                                          : "job"
+                                      }
+                                      onValueChange={(value) =>
+                                        moveFile(file, value as "job" | "parts")
+                                      }
+                                    >
+                                      <DropdownMenuRadioItem value="job">
+                                        Job
+                                      </DropdownMenuRadioItem>
+                                      <DropdownMenuRadioItem value="parts">
+                                        Item
+                                      </DropdownMenuRadioItem>
+                                    </DropdownMenuRadioGroup>
+                                  </DropdownMenuSubContent>
+                                </DropdownMenuSub>
+                              )}
                             <DropdownMenuItem
                               destructive
                               disabled={!canDelete}
@@ -649,27 +586,20 @@ const OpportunityLineDocuments = ({
   );
 };
 
-export default OpportunityLineDocuments;
+export default JobDocuments;
 
-type OpportunityLineDocumentFormProps = {
-  id: string;
-  lineId: string;
+type JobDocumentFormProps = {
+  jobId: string;
   itemId?: string | null;
-  type: "Request for Quote" | "Sales Order" | "Quote" | "Sales Invoice";
 };
 
-const OpportunityLineDocumentForm = ({
-  id,
-  lineId,
-  itemId,
-  type,
-}: OpportunityLineDocumentFormProps) => {
+const JobDocumentForm = ({ jobId, itemId }: JobDocumentFormProps) => {
   const permissions = usePermissions();
-  const { upload } = useOpportunityLineDocuments({ id, lineId, itemId, type });
+  const { upload } = useJobDocuments({ jobId, itemId });
 
   const uploadFiles = async (
     e: ChangeEvent<HTMLInputElement>,
-    bucket: "opportunity-line" | "parts" = "opportunity-line"
+    bucket: "job" | "parts" = "job"
   ) => {
     if (e.target.files) {
       upload(Array.from(e.target.files), bucket);
@@ -678,9 +608,9 @@ const OpportunityLineDocumentForm = ({
 
   return (
     <File
-      isDisabled={!permissions.can("update", "sales")}
+      isDisabled={!permissions.can("update", "production")}
       leftIcon={<LuUpload />}
-      onChange={(e) => uploadFiles(e, "opportunity-line")}
+      onChange={(e) => uploadFiles(e, "job")}
       multiple
     >
       New

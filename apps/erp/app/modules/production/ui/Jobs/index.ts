@@ -2,6 +2,7 @@ import { getDeadlineIcon } from "./Deadline";
 import JobBillOfMaterial from "./JobBillOfMaterial";
 import JobBillOfProcess from "./JobBillOfProcess";
 import JobBoMExplorer from "./JobBoMExplorer";
+import JobDocuments from "./JobDocuments";
 import JobEstimatesVsActuals from "./JobEstimatesVsActuals";
 import JobForm from "./JobForm";
 import JobHeader from "./JobHeader";
@@ -22,6 +23,7 @@ export {
   JobBillOfMaterial,
   JobBillOfProcess,
   JobBoMExplorer,
+  JobDocuments,
   JobEstimatesVsActuals,
   JobForm,
   JobHeader,

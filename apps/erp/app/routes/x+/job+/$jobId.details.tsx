@@ -25,7 +25,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 import { Suspense } from "react";
 import { LuShoppingCart } from "react-icons/lu";
-import { CadModel, Documents, Hyperlink, SupplierAvatar } from "~/components";
+import { CadModel, Hyperlink, SupplierAvatar } from "~/components";
 import { usePanels } from "~/components/Layout";
 import { usePermissions, useRealtime, useRouteData } from "~/hooks";
 import type { Job, JobPurchaseOrderLine } from "~/modules/production";
@@ -36,7 +36,7 @@ import {
   recalculateJobRequirements,
   upsertJob,
 } from "~/modules/production";
-import { JobNotes } from "~/modules/production/ui/Jobs";
+import { JobDocuments, JobNotes } from "~/modules/production/ui/Jobs";
 import PurchasingStatus from "~/modules/purchasing/ui/PurchaseOrder/PurchasingStatus";
 import { useItems } from "~/stores";
 import type { StorageItem } from "~/types";
@@ -155,13 +155,11 @@ export default function JobDetailsRoute() {
       >
         <Await resolve={jobData.files}>
           {(files) => (
-            <Documents
+            <JobDocuments
               files={files}
+              jobId={jobData.job.id ?? ""}
+              itemId={jobData.job.itemId}
               modelUpload={{ ...jobData.job }}
-              sourceDocument="Job"
-              sourceDocumentId={jobData.job.id ?? ""}
-              writeBucket="job"
-              writeBucketPermission="production"
             />
           )}
         </Await>

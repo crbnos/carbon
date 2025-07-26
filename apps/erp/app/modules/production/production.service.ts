@@ -156,30 +156,39 @@ export async function getJobDocuments(
   companyId: string,
   job: Job
 ): Promise<StorageItem[]> {
+  const promises: Promise<any>[] = [
+    client.storage.from("private").list(`${companyId}/job/${job.id}`),
+  ];
+
+  // Add opportunity line files if available
   if (job.salesOrderLineId || job.quoteLineId) {
     const opportunityLine = job.salesOrderLineId || job.quoteLineId;
-
-    const [opportunityLineFiles, jobFiles] = await Promise.all([
+    promises.push(
       client.storage
         .from("private")
-        .list(`${companyId}/opportunity-line/${opportunityLine}`),
-      client.storage.from("private").list(`${companyId}/job/${job.id}`),
-    ]);
-
-    // Combine and return both sets of files
-    return [
-      ...(opportunityLineFiles.data?.map((f) => ({
-        ...f,
-        bucket: "opportunity-line",
-      })) || []),
-      ...(jobFiles.data?.map((f) => ({ ...f, bucket: "job" })) || []),
-    ];
-  } else {
-    const jobFiles = await client.storage
-      .from("private")
-      .list(`${companyId}/job/${job.id}`);
-    return jobFiles.data?.map((f) => ({ ...f, bucket: "job" })) || [];
+        .list(`${companyId}/opportunity-line/${opportunityLine}`)
+    );
   }
+
+  // Add parts files if itemId is available
+  if (job.itemId) {
+    promises.push(
+      client.storage.from("private").list(`${companyId}/parts/${job.itemId}`)
+    );
+  }
+
+  const results = await Promise.all(promises);
+  const [jobFiles, opportunityLineFiles, partsFiles] = results;
+
+  // Combine and return all sets of files with their respective buckets
+  return [
+    ...(jobFiles.data?.map((f) => ({ ...f, bucket: "job" })) || []),
+    ...(opportunityLineFiles?.data?.map((f) => ({
+      ...f,
+      bucket: "opportunity-line",
+    })) || []),
+    ...(partsFiles?.data?.map((f) => ({ ...f, bucket: "parts" })) || []),
+  ];
 }
 
 export async function getJob(client: SupabaseClient<Database>, id: string) {
