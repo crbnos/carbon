@@ -6,6 +6,7 @@ import { VStack } from "@carbon/react";
 import { useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
+import { useShelves } from "~/components/Form/Shelf";
 import { useRouteData } from "~/hooks";
 import { InventoryDetails } from "~/modules/inventory";
 import type { Material, UnitOfMeasureListItem } from "~/modules/items";
@@ -190,7 +191,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function MaterialInventoryRoute() {
   const sharedMaterialsData = useRouteData<{
     locations: ListItem[];
-    shelves: ListItem[];
     unitOfMeasures: UnitOfMeasureListItem[];
   }>(path.to.materialRoot);
 
@@ -213,13 +213,15 @@ export default function MaterialInventoryRoute() {
   const [items] = useItems();
   const itemTrackingType = items.find((i) => i.id === itemId)?.itemTrackingType;
 
+  const shelves = useShelves(materialInventory?.locationId);
+
   return (
     <VStack spacing={2} className="p-2">
       <PickMethodForm
         key={initialValues.itemId}
         initialValues={initialValues}
         locations={sharedMaterialsData?.locations ?? []}
-        shelves={sharedMaterialsData?.shelves ?? []}
+        shelves={shelves.options}
         type="Material"
       />
       <InventoryDetails
@@ -228,7 +230,7 @@ export default function MaterialInventoryRoute() {
         itemTrackingType={itemTrackingType ?? "Inventory"}
         pickMethod={initialValues}
         quantities={quantities}
-        shelves={sharedMaterialsData?.shelves ?? []}
+        shelves={shelves.options}
       />
     </VStack>
   );

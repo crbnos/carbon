@@ -24,8 +24,8 @@ import { pickMethodValidator } from "../../items.models";
 type PickMethodFormProps = {
   initialValues: z.infer<typeof pickMethodValidator>;
   locations: ListItem[];
-  shelves: ListItem[];
   type: "Part" | "Material" | "Tool" | "Consumable";
+  shelves: { value: string; label: string }[];
 };
 
 const PickMethodForm = ({
@@ -36,10 +36,6 @@ const PickMethodForm = ({
 }: PickMethodFormProps) => {
   const permissions = usePermissions();
 
-  const shelfOptions = shelves.map((shelf) => ({
-    value: shelf.id,
-    label: shelf.name,
-  }));
   const locationOptions = locations.map((location) => ({
     label: location.name,
     value: location.id,
@@ -82,7 +78,7 @@ const PickMethodForm = ({
             <ComboboxFormField
               name="defaultShelfId"
               label="Default Shelf"
-              options={shelfOptions}
+              options={shelves}
               className="w-full"
             />
 

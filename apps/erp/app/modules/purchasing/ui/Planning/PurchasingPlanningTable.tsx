@@ -505,6 +505,27 @@ const OrderDrawer = memo(
                                       };
                                     }
                                   );
+
+                                  // Auto-select the newly added supplier if it's the only one
+                                  if (data.length === 1 && selectedItem.id) {
+                                    onSupplierChange(
+                                      selectedItem.id,
+                                      data[0].supplierId
+                                    );
+
+                                    const updatedOrders = orders.map(
+                                      (order) => ({
+                                        ...order,
+                                        supplierId: data[0].supplierId,
+                                      })
+                                    );
+                                    setOrders(selectedItem, updatedOrders);
+
+                                    toast.success(
+                                      "Supplier added and selected"
+                                    );
+                                    setActiveTab("ordering");
+                                  }
                                 }
                               });
                           }
