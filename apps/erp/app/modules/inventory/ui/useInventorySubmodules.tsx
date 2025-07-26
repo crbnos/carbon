@@ -1,4 +1,5 @@
 import {
+  LuArrowRightLeft,
   LuHandCoins,
   LuNetwork,
   LuQrCode,
@@ -25,6 +26,12 @@ const inventoryRoutes: AuthenticatedRouteGroup[] = [
         to: path.to.shipments,
         icon: <LuTruck />,
         table: "shipment",
+      },
+      {
+        name: "Transfers",
+        to: path.to.warehouseTransfers,
+        icon: <LuArrowRightLeft />,
+        table: "warehouseTransfer",
       },
     ],
   },

@@ -7815,6 +7815,267 @@ export default {
         tags: ["partners"],
       },
     },
+    "/warehouseTransferLine": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.transferId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.itemReadableId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.shippedQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.receivedQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.fromLocationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.fromShelfId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.toLocationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.toShelfId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.customFields",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/warehouseTransferLine",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["warehouseTransferLine"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.warehouseTransferLine",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["warehouseTransferLine"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.transferId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.itemReadableId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.shippedQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.receivedQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.fromLocationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.fromShelfId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.toLocationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.toShelfId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.customFields",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["warehouseTransferLine"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.transferId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.itemReadableId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.shippedQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.receivedQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.fromLocationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.fromShelfId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.toLocationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.toShelfId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransferLine.customFields",
+          },
+          {
+            $ref: "#/parameters/body.warehouseTransferLine",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["warehouseTransferLine"],
+      },
+    },
     "/jobMaterialWithMakeMethodId": {
       get: {
         parameters: [
@@ -30679,6 +30940,258 @@ export default {
           },
         },
         tags: ["receiptLine"],
+      },
+    },
+    "/warehouseTransfer": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.transferId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.fromLocationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.toLocationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.status",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.transferDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.expectedReceiptDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.reference",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.totalQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.shippedQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.receivedQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.customFields",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/warehouseTransfer",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["warehouseTransfer"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.warehouseTransfer",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["warehouseTransfer"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.transferId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.fromLocationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.toLocationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.status",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.transferDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.expectedReceiptDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.reference",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.totalQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.shippedQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.receivedQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.customFields",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["warehouseTransfer"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.transferId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.fromLocationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.toLocationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.status",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.transferDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.expectedReceiptDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.reference",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.totalQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.shippedQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.receivedQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.customFields",
+          },
+          {
+            $ref: "#/parameters/body.warehouseTransfer",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["warehouseTransfer"],
       },
     },
     "/companyIntegration": {
@@ -62016,6 +62529,123 @@ export default {
       },
       type: "object",
     },
+    warehouseTransferLine: {
+      required: [
+        "id",
+        "transferId",
+        "itemId",
+        "quantity",
+        "shippedQuantity",
+        "receivedQuantity",
+        "fromLocationId",
+        "toLocationId",
+        "companyId",
+        "createdBy",
+        "createdAt",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        transferId: {
+          description:
+            "Note:\nThis is a Foreign Key to `warehouseTransfer.id`.<fk table='warehouseTransfer' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        itemReadableId: {
+          format: "text",
+          type: "string",
+        },
+        quantity: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        shippedQuantity: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        receivedQuantity: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        fromLocationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        fromShelfId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shelf.id`.<fk table='shelf' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        toLocationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        toShelfId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shelf.id`.<fk table='shelf' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        unitOfMeasureCode: {
+          format: "text",
+          type: "string",
+        },
+        notes: {
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        customFields: {
+          format: "jsonb",
+        },
+      },
+      type: "object",
+    },
     jobMaterialWithMakeMethodId: {
       properties: {
         id: {
@@ -72740,6 +73370,120 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean",
+        },
+      },
+      type: "object",
+    },
+    warehouseTransfer: {
+      required: [
+        "id",
+        "transferId",
+        "fromLocationId",
+        "toLocationId",
+        "status",
+        "totalQuantity",
+        "shippedQuantity",
+        "receivedQuantity",
+        "companyId",
+        "createdBy",
+        "createdAt",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        transferId: {
+          format: "text",
+          type: "string",
+        },
+        fromLocationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        toLocationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        status: {
+          default: "Draft",
+          enum: [
+            "Draft",
+            "Confirmed",
+            "In Transit",
+            "Partially Received",
+            "Received",
+            "Cancelled",
+          ],
+          format: 'public."warehouseTransferStatus"',
+          type: "string",
+        },
+        transferDate: {
+          format: "date",
+          type: "string",
+        },
+        expectedReceiptDate: {
+          format: "date",
+          type: "string",
+        },
+        notes: {
+          format: "text",
+          type: "string",
+        },
+        reference: {
+          format: "text",
+          type: "string",
+        },
+        totalQuantity: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        shippedQuantity: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        receivedQuantity: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        customFields: {
+          format: "jsonb",
         },
       },
       type: "object",
@@ -87594,6 +88338,129 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.warehouseTransferLine": {
+      name: "warehouseTransferLine",
+      description: "warehouseTransferLine",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/warehouseTransferLine",
+      },
+    },
+    "rowFilter.warehouseTransferLine.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransferLine.transferId": {
+      name: "transferId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransferLine.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransferLine.itemReadableId": {
+      name: "itemReadableId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransferLine.quantity": {
+      name: "quantity",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransferLine.shippedQuantity": {
+      name: "shippedQuantity",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransferLine.receivedQuantity": {
+      name: "receivedQuantity",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransferLine.fromLocationId": {
+      name: "fromLocationId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransferLine.fromShelfId": {
+      name: "fromShelfId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransferLine.toLocationId": {
+      name: "toLocationId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransferLine.toShelfId": {
+      name: "toShelfId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransferLine.unitOfMeasureCode": {
+      name: "unitOfMeasureCode",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransferLine.notes": {
+      name: "notes",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransferLine.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransferLine.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransferLine.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransferLine.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransferLine.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransferLine.customFields": {
+      name: "customFields",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.jobMaterialWithMakeMethodId": {
       name: "jobMaterialWithMakeMethodId",
       description: "jobMaterialWithMakeMethodId",
@@ -99767,6 +100634,123 @@ export default {
     },
     "rowFilter.receiptLine.requiresBatchTracking": {
       name: "requiresBatchTracking",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "body.warehouseTransfer": {
+      name: "warehouseTransfer",
+      description: "warehouseTransfer",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/warehouseTransfer",
+      },
+    },
+    "rowFilter.warehouseTransfer.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransfer.transferId": {
+      name: "transferId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransfer.fromLocationId": {
+      name: "fromLocationId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransfer.toLocationId": {
+      name: "toLocationId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransfer.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransfer.transferDate": {
+      name: "transferDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransfer.expectedReceiptDate": {
+      name: "expectedReceiptDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransfer.notes": {
+      name: "notes",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransfer.reference": {
+      name: "reference",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransfer.totalQuantity": {
+      name: "totalQuantity",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransfer.shippedQuantity": {
+      name: "shippedQuantity",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransfer.receivedQuantity": {
+      name: "receivedQuantity",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransfer.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransfer.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransfer.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransfer.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransfer.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransfer.customFields": {
+      name: "customFields",
       required: false,
       in: "query",
       type: "string",

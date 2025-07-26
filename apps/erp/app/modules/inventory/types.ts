@@ -11,6 +11,8 @@ import type {
   getShippingMethods,
   getShipmentTracking,
   getTrackedEntities,
+  getWarehouseTransfers,
+  getWarehouseTransferLines,
 } from "./inventory.service";
 
 export type BatchProperty = NonNullable<
@@ -68,6 +70,14 @@ export type ShipmentSourceDocument =
 
 export type TrackedEntity = NonNullable<
   Awaited<ReturnType<typeof getTrackedEntities>>["data"]
+>[number];
+
+export type WarehouseTransfer = NonNullable<
+  Awaited<ReturnType<typeof getWarehouseTransfers>>["data"]
+>[number];
+
+export type WarehouseTransferLine = NonNullable<
+  Awaited<ReturnType<typeof getWarehouseTransferLines>>["data"]
 >[number];
 
 export interface Activity {
