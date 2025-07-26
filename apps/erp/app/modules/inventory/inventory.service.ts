@@ -15,6 +15,7 @@ import type {
   shelfValidator,
   shipmentValidator,
   shippingMethodValidator,
+  warehouseTransferValidator,
 } from "./inventory.models";
 
 export async function deleteBatchProperty(
@@ -860,4 +861,169 @@ export async function upsertShipment(
     .eq("id", shipment.id)
     .select("id")
     .single();
+}
+
+// Warehouse Transfer functions
+export async function getWarehouseTransfers(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+  }
+) {
+  let query = client
+    .from("warehouseTransfer")
+    .select(
+      "*, fromLocation:location!fromLocationId(name), toLocation:location!toLocationId(name)",
+      {
+        count: "exact",
+      }
+    )
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.or(
+      `transferId.ilike.%${args.search}%,reference.ilike.%${args.search}%`
+    );
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "transferId", ascending: false },
+  ]);
+  return query;
+}
+
+export async function getWarehouseTransfer(
+  client: SupabaseClient<Database>,
+  transferId: string
+) {
+  return client
+    .from("warehouseTransfer")
+    .select(
+      "*, fromLocation:location!fromLocationId(*), toLocation:location!toLocationId(*)"
+    )
+    .eq("id", transferId)
+    .single();
+}
+
+export async function getWarehouseTransferLines(
+  client: SupabaseClient<Database>,
+  transferId: string
+) {
+  return client
+    .from("warehouseTransferLine")
+    .select(
+      "*, item(*), fromShelf:shelf!fromShelfId(name), toShelf:shelf!toShelfId(name)"
+    )
+    .eq("transferId", transferId);
+}
+
+export async function deleteWarehouseTransfer(
+  client: SupabaseClient<Database>,
+  transferId: string
+) {
+  return client.from("warehouseTransfer").delete().eq("id", transferId);
+}
+
+export async function deleteWarehouseTransferLine(
+  client: SupabaseClient<Database>,
+  transferLineId: string
+) {
+  return client.from("warehouseTransferLine").delete().eq("id", transferLineId);
+}
+
+export async function upsertWarehouseTransfer(
+  client: SupabaseClient<Database>,
+  transfer:
+    | (Omit<z.infer<typeof warehouseTransferValidator>, "id" | "transferId"> & {
+        transferId: string;
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof warehouseTransferValidator>, "id" | "transferId"> & {
+        id: string;
+        transferId: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in transfer) {
+    return client
+      .from("warehouseTransfer")
+      .insert([transfer])
+      .select("*")
+      .single();
+  }
+  return client
+    .from("warehouseTransfer")
+    .update({
+      ...sanitize(transfer),
+      updatedAt: today(getLocalTimeZone()).toString(),
+    })
+    .eq("id", transfer.id)
+    .select("id")
+    .single();
+}
+
+export async function shipWarehouseTransfer(
+  client: SupabaseClient<Database>,
+  transferId: string,
+  quantity: number,
+  updatedBy: string
+) {
+  // Update all transfer lines to mark quantities as shipped
+  const linesUpdate = await client
+    .from("warehouseTransferLine")
+    .update({
+      shippedQuantity: quantity,
+      updatedBy,
+      updatedAt: new Date().toISOString(),
+    })
+    .eq("transferId", transferId);
+
+  if (linesUpdate.error) {
+    return linesUpdate;
+  }
+
+  // Update transfer status to In Transit
+  return client
+    .from("warehouseTransfer")
+    .update({
+      status: "In Transit",
+      updatedBy,
+      updatedAt: new Date().toISOString(),
+    })
+    .eq("id", transferId);
+}
+
+export async function receiveWarehouseTransfer(
+  client: SupabaseClient<Database>,
+  transferId: string,
+  quantity: number,
+  updatedBy: string
+) {
+  // Update all transfer lines to mark quantities as received
+  const linesUpdate = await client
+    .from("warehouseTransferLine")
+    .update({
+      receivedQuantity: quantity,
+      updatedBy,
+      updatedAt: new Date().toISOString(),
+    })
+    .eq("transferId", transferId);
+
+  if (linesUpdate.error) {
+    return linesUpdate;
+  }
+
+  // Update transfer status to Received
+  return client
+    .from("warehouseTransfer")
+    .update({
+      status: "Received",
+      updatedBy,
+      updatedAt: new Date().toISOString(),
+    })
+    .eq("id", transferId);
 }
