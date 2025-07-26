@@ -1,7 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { Outlet } from "@remix-run/react";
 import type { LoaderFunctionArgs, MetaFunction } from "@vercel/remix";
-import { getShelvesList } from "~/modules/inventory";
 import {
   getMaterialFormsList,
   getMaterialSubstancesList,
@@ -30,21 +29,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "parts",
   });
 
-  const [unitOfMeasures, locations, forms, substances, shelves] =
-    await Promise.all([
-      getUnitOfMeasuresList(client, companyId),
-      getLocationsList(client, companyId),
-      getMaterialFormsList(client, companyId),
-      getMaterialSubstancesList(client, companyId),
-      getShelvesList(client, companyId),
-    ]);
+  const [unitOfMeasures, locations, forms, substances] = await Promise.all([
+    getUnitOfMeasuresList(client, companyId),
+    getLocationsList(client, companyId),
+    getMaterialFormsList(client, companyId),
+    getMaterialSubstancesList(client, companyId),
+  ]);
 
   return {
     locations: locations?.data ?? [],
     unitOfMeasures: unitOfMeasures?.data ?? [],
     forms: forms?.data ?? [],
     substances: substances?.data ?? [],
-    shelves: shelves?.data ?? [],
   };
 }
 

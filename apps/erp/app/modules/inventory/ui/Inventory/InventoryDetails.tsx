@@ -14,7 +14,6 @@ import type {
   itemTrackingTypes,
   pickMethodValidator,
 } from "~/modules/items";
-import type { ListItem } from "~/types";
 import InventoryShelves from "./InventoryShelves";
 
 type InventoryDetailsProps = {
@@ -23,7 +22,7 @@ type InventoryDetailsProps = {
   itemTrackingType: (typeof itemTrackingTypes)[number];
   pickMethod: z.infer<typeof pickMethodValidator>;
   quantities: ItemQuantities | null;
-  shelves: ListItem[];
+  shelves: { value: string; label: string }[];
 };
 
 const InventoryDetails = ({

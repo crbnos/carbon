@@ -43,7 +43,6 @@ import type {
   itemTrackingTypes,
   pickMethodValidator,
 } from "~/modules/items";
-import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { inventoryAdjustmentValidator } from "../../inventory.models";
 
@@ -52,7 +51,7 @@ type InventoryShelvesProps = {
   itemShelfQuantities: ItemShelfQuantities[];
   itemUnitOfMeasureCode: string;
   itemTrackingType: (typeof itemTrackingTypes)[number];
-  shelves: ListItem[];
+  shelves: { value: string; label: string }[];
 };
 
 const InventoryShelves = ({
@@ -111,7 +110,7 @@ const InventoryShelves = ({
               <Tr>
                 <Th>Shelf</Th>
 
-                <Th>QoH</Th>
+                <Th>Quantity</Th>
                 <Th>Tracking ID</Th>
                 <Th className="flex flex-shrink-0 justify-end" />
               </Tr>
@@ -122,7 +121,7 @@ const InventoryShelves = ({
                 .map((item, index) => (
                   <Tr key={index}>
                     <Td>
-                      {shelves.find((s) => s.id === item.shelfId)?.name ||
+                      {shelves.find((s) => s.value === item.shelfId)?.label ||
                         item.shelfId}
                     </Td>
 

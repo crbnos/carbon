@@ -1,7 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { Outlet } from "@remix-run/react";
 import type { LoaderFunctionArgs, MetaFunction } from "@vercel/remix";
-import { getShelvesList } from "~/modules/inventory";
 import { getUnitOfMeasuresList } from "~/modules/items";
 import { getLocationsList } from "~/modules/resources";
 import type { Handle } from "~/utils/handle";
@@ -26,15 +25,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "parts",
   });
 
-  const [unitOfMeasures, locations, shelves] = await Promise.all([
+  const [unitOfMeasures, locations] = await Promise.all([
     getUnitOfMeasuresList(client, companyId),
     getLocationsList(client, companyId),
-    getShelvesList(client, companyId),
   ]);
 
   return {
     locations: locations?.data ?? [],
-    shelves: shelves?.data ?? [],
     unitOfMeasures: unitOfMeasures?.data ?? [],
   };
 }

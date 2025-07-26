@@ -4,7 +4,7 @@ import { Outlet } from "@remix-run/react";
 import type { LoaderFunctionArgs, MetaFunction } from "@vercel/remix";
 import { GroupedContentSidebar } from "~/components/Layout";
 import { CollapsibleSidebarProvider } from "~/components/Layout/Navigation";
-import { getShelvesList, useInventorySubmodules } from "~/modules/inventory";
+import { useInventorySubmodules } from "~/modules/inventory";
 import { getUnitOfMeasuresList } from "~/modules/items";
 import { getLocationsList } from "~/modules/resources";
 import type { Handle } from "~/utils/handle";
@@ -29,15 +29,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "inventory",
   });
 
-  const [unitOfMeasures, locations, shelves] = await Promise.all([
+  const [unitOfMeasures, locations] = await Promise.all([
     getUnitOfMeasuresList(client, companyId),
     getLocationsList(client, companyId),
-    getShelvesList(client, companyId),
   ]);
 
   return {
     locations: locations?.data ?? [],
-    shelves: shelves?.data ?? [],
     unitOfMeasures: unitOfMeasures?.data ?? [],
   };
 }

@@ -6,6 +6,7 @@ import { VStack } from "@carbon/react";
 import { useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
+import { useShelves } from "~/components/Form/Shelf";
 import { useRouteData } from "~/hooks";
 import { InventoryDetails } from "~/modules/inventory";
 
@@ -194,7 +195,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function ConsumableInventoryRoute() {
   const sharedConsumablesData = useRouteData<{
     locations: ListItem[];
-    shelves: ListItem[];
     unitOfMeasures: UnitOfMeasureListItem[];
   }>(path.to.consumableRoot);
 
@@ -214,6 +214,8 @@ export default function ConsumableInventoryRoute() {
     ...getCustomFields(consumableInventory.customFields ?? {}),
   };
 
+  const shelves = useShelves(consumableInventory?.locationId);
+
   const [items] = useItems();
   const itemTrackingType = items.find((i) => i.id === itemId)?.itemTrackingType;
 
@@ -223,7 +225,7 @@ export default function ConsumableInventoryRoute() {
         key={initialValues.itemId}
         initialValues={initialValues}
         locations={sharedConsumablesData?.locations ?? []}
-        shelves={sharedConsumablesData?.shelves ?? []}
+        shelves={shelves.options}
         type="Part"
       />
       <InventoryDetails
@@ -232,7 +234,7 @@ export default function ConsumableInventoryRoute() {
         itemTrackingType={itemTrackingType ?? "Inventory"}
         pickMethod={initialValues}
         quantities={quantities}
-        shelves={sharedConsumablesData?.shelves ?? []}
+        shelves={shelves.options}
       />
     </VStack>
   );

@@ -156,7 +156,7 @@ export const salesOrderToJobsTask = task({
                   sourceId: `${quoteId}:${line.id}`,
                   targetId: createJob.data.id,
                   companyId,
-                  createdBy: userId,
+                  userId,
                 },
               }
             );
@@ -175,7 +175,7 @@ export const salesOrderToJobsTask = task({
                   sourceId: data.itemId,
                   targetId: createJob.data.id,
                   companyId,
-                  createdBy: userId,
+                  userId,
                 },
               }
             );

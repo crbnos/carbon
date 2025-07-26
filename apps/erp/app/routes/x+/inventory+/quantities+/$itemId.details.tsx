@@ -4,7 +4,7 @@ import { flash } from "@carbon/auth/session.server";
 import { useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { useRouteData } from "~/hooks";
+import { useShelves } from "~/components/Form/Shelf";
 import { InventoryDetails } from "~/modules/inventory";
 import {
   getItem,
@@ -16,7 +16,6 @@ import {
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { useItems } from "~/stores/items";
-import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -144,14 +143,12 @@ export default function ItemInventoryRoute() {
   const { pickMethod, quantities, itemShelfQuantities, item } =
     useLoaderData<typeof loader>();
 
-  const routeData = useRouteData<{
-    shelves: ListItem[];
-  }>(path.to.inventoryRoot);
-
   const [items] = useItems();
   const itemTrackingType = items.find(
     (i) => i.id === item.id
   )?.itemTrackingType;
+
+  const shelves = useShelves(pickMethod?.locationId);
 
   return (
     <InventoryDetails
@@ -163,7 +160,7 @@ export default function ItemInventoryRoute() {
         defaultShelfId: pickMethod.defaultShelfId ?? undefined,
       }}
       quantities={quantities}
-      shelves={routeData?.shelves ?? []}
+      shelves={shelves.options}
     />
   );
 }
