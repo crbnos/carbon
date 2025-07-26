@@ -488,9 +488,17 @@ export async function action({ request }: ActionFunctionArgs) {
             }
 
             const periodId = order.periodId;
+
+            // Convert purchase quantity back to inventory quantity for supply forecast
+            // Inventory Quantity = Purchase Quantity × Conversion Factor
+            const conversionFactor = supplierPart?.conversionFactor ?? 1;
+            const purchaseQuantityDelta =
+              order.quantity - (order.existingQuantity ?? 0);
+            const inventoryQuantityDelta =
+              purchaseQuantityDelta * conversionFactor;
+
             supplyForecastByPeriod[periodId] =
-              (supplyForecastByPeriod[periodId] || 0) +
-              (order.quantity - (order.existingQuantity ?? 0));
+              (supplyForecastByPeriod[periodId] || 0) + inventoryQuantityDelta;
           }
 
           if (itemProcessed) {

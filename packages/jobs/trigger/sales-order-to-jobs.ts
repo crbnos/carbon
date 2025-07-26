@@ -198,7 +198,7 @@ export const salesOrderToJobsTask = task({
 
           await serviceRole.functions.invoke("scheduler", {
             body: {
-              type: "requirements",
+              type: "dependencies",
               id: createJob.data.id,
               companyId,
               userId,

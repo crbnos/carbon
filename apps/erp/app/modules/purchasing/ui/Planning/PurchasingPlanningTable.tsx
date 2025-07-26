@@ -278,9 +278,22 @@ const OrderDrawer = memo(
 
     const onAddOrder = useCallback(() => {
       if (selectedItem.id) {
+        // Get the conversion factor from the selected supplier
+        const supplier = (selectedItem.suppliers as SupplierPart[])?.find(
+          (s) => s.supplierId === selectedSupplier
+        );
+        const conversionFactor = supplier?.conversionFactor ?? 1;
+
+        // Convert inventory quantity to purchase quantity
+        const inventoryQuantity =
+          selectedItem.lotSize ?? selectedItem.minimumOrderQuantity ?? 0;
+        const purchaseQuantity =
+          conversionFactor > 0
+            ? Math.ceil(inventoryQuantity / conversionFactor)
+            : inventoryQuantity;
+
         const newOrder: PlannedOrder = {
-          quantity:
-            selectedItem.lotSize ?? selectedItem.minimumOrderQuantity ?? 0,
+          quantity: purchaseQuantity,
           dueDate: today(getLocalTimeZone())
             .add({ days: selectedItem.leadTime ?? 0 })
             .toString(),
@@ -292,7 +305,7 @@ const OrderDrawer = memo(
         };
         setOrders(selectedItem, [...orders, newOrder]);
       }
-    }, [selectedItem, orders, setOrders, periods]);
+    }, [selectedItem, orders, setOrders, periods, selectedSupplier]);
 
     const onRemoveOrder = useCallback(
       (index: number) => {
@@ -551,6 +564,37 @@ const OrderDrawer = memo(
                       <SupplierAvatar supplierId={selectedSupplier} />
                     </HStack>
                     <Separator />
+                    <HStack className="justify-between w-full">
+                      <span className="text-muted-foreground">
+                        Purchase Unit:
+                      </span>
+                      <span>
+                        {unitOfMeasureOptions.find(
+                          (uom) =>
+                            uom.value ===
+                            (selectedItem.suppliers as SupplierPart[])?.find(
+                              (s) => s.supplierId === selectedSupplier
+                            )?.supplierUnitOfMeasureCode
+                        )?.label ??
+                          selectedItem.unitOfMeasureCode ??
+                          "EA"}
+                      </span>
+                    </HStack>
+                    {(() => {
+                      const supplier = (
+                        selectedItem.suppliers as SupplierPart[]
+                      )?.find((s) => s.supplierId === selectedSupplier);
+                      const conversionFactor = supplier?.conversionFactor ?? 1;
+                      return conversionFactor !== 1 ? (
+                        <HStack className="justify-between w-full">
+                          <span className="text-muted-foreground">
+                            Conversion:
+                          </span>
+                          <span>1 Purchase = {conversionFactor} Inventory</span>
+                        </HStack>
+                      ) : null;
+                    })()}
+                    <Separator />
                     {selectedItem.reorderingPolicy === "Maximum Quantity" && (
                       <>
                         <HStack className="justify-between w-full">
@@ -652,7 +696,7 @@ const OrderDrawer = memo(
                         <Th>
                           <div className="flex items-center gap-2 text-right">
                             <LuPackage />
-                            <span>Quantity</span>
+                            <span>Purchase Qty</span>
                           </div>
                         </Th>
                         <Th>
@@ -769,6 +813,11 @@ const OrderDrawer = memo(
                     locationId={locationId}
                     safetyStock={selectedItem.demandAccumulationSafetyStock}
                     plannedOrders={orders}
+                    conversionFactor={
+                      (selectedItem.suppliers as SupplierPart[])?.find(
+                        (s) => s.supplierId === selectedSupplier
+                      )?.conversionFactor ?? 1
+                    }
                   />
                 </TabsContent>
               </div>

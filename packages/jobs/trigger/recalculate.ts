@@ -79,9 +79,9 @@ async function recalculateJobRequirements(
     userId: string;
   }
 ) {
-  return client.functions.invoke("scheduler", {
+  return client.functions.invoke("recalculate", {
     body: {
-      type: "requirements",
+      type: "jobRequirements",
       ...params,
     },
   });

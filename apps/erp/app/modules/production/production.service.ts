@@ -1,5 +1,6 @@
 import type { Database, Json } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
+import type { FileObject, StorageError } from "@supabase/storage-js";
 import {
   FunctionRegion,
   type PostgrestError,
@@ -156,9 +157,16 @@ export async function getJobDocuments(
   companyId: string,
   job: Job
 ): Promise<StorageItem[]> {
-  const promises: Promise<any>[] = [
-    client.storage.from("private").list(`${companyId}/job/${job.id}`),
-  ];
+  const promises: Promise<
+    | {
+        data: FileObject[];
+        error: null;
+      }
+    | {
+        data: null;
+        error: StorageError;
+      }
+  >[] = [client.storage.from("private").list(`${companyId}/job/${job.id}`)];
 
   // Add opportunity line files if available
   if (job.salesOrderLineId || job.quoteLineId) {

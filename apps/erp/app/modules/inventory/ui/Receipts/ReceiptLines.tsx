@@ -343,7 +343,7 @@ function ReceiptLineItem({
               onClick={splitDisclosure.onOpen}
             >
               <DropdownMenuIcon icon={<LuSplit />} />
-              Split shipment line
+              Split receipt line
             </DropdownMenuItem>
             <DropdownMenuItem
               destructive
@@ -351,7 +351,7 @@ function ReceiptLineItem({
               onClick={deleteDisclosure.onOpen}
             >
               <DropdownMenuIcon icon={<LuTrash />} />
-              Delete shipment line
+              Delete receipt line
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -429,7 +429,10 @@ function ReceiptLineItem({
               </label>
               <HStack className="justify-center">
                 <span className="text-sm py-1.5">
-                  {line.outstandingQuantity ?? 0}
+                  {isReadOnly
+                    ? (line.outstandingQuantity ?? 0) -
+                      (line.receivedQuantity ?? 0)
+                    : line.outstandingQuantity ?? 0}
                 </span>
 
                 {(line.receivedQuantity ?? 0) >
@@ -537,8 +540,8 @@ function ReceiptLineItem({
           )}
           {deleteDisclosure.isOpen && (
             <ConfirmDelete
-              name="Shipment Line"
-              text="Are you sure you want to delete this shipment line?"
+              name="Receipt Line"
+              text="Are you sure you want to delete this receipt line?"
               action={path.to.receiptLineDelete(line.id!)}
               onCancel={deleteDisclosure.onClose}
               onSubmit={deleteDisclosure.onClose}
@@ -1061,6 +1064,7 @@ function Shelf({
         value={shelfId ?? undefined}
         onChange={onChange}
         disabled={isReadOnly}
+        isReadOnly={isReadOnly}
         inline={ShelfPreview}
         onCreateOption={(option) => {
           newShelfModal.onOpen();
