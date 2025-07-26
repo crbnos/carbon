@@ -6,8 +6,6 @@
 
 <p align="center">Carbon is the open-source operating system for manufacturing.</p>
 
-
-
 ![ERP Screenshot](https://github.com/user-attachments/assets/2e09b891-d5e2-4f68-b924-a1c8ea42d24d)
 
 ![MES Screenshot](https://github.com/user-attachments/assets/b04f3644-91aa-4f74-af8d-6f3e12116a6b)
@@ -42,6 +40,8 @@ Features:
 - [x] API
 - [x] Webhooks
 - [ ] Accounting
+- [ ] Capacity Planning
+- [ ] Simulation
 
 Technical highlights:
 
@@ -130,7 +130,7 @@ In addition you must configure the following external services:
 | Trigger.dev | Job runner                 | [https://cloud.trigger.dev/login](https://cloud.trigger.dev/login)     |
 | Posthog     | Product analytics platform | [https://us.posthog.com/signup](https://us.posthog.com/signup)         |
 
-Each of these services has a free tier which should be plenty to support local development.
+Each of these services has a free tier which should be plenty to support local development. If you're self hosting, and you don't want to use Upstash or Posthog, it's pretty easy to replace upstash with a redis container in `@carbon/kv` and remove the Posthog analytics.
 
 ### Installation
 
