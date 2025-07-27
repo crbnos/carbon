@@ -1,10 +1,10 @@
 -- Warehouse Transfer Status
 CREATE TYPE "warehouseTransferStatus" AS ENUM (
   'Draft',
-  'Confirmed',
-  'In Transit',
-  'Partially Received',
-  'Received',
+  'To Ship and Receive',
+  'To Ship',
+  'To Receive',
+  'Completed',
   'Cancelled'
 );
 
@@ -19,26 +19,34 @@ CREATE TABLE "warehouseTransfer" (
   "expectedReceiptDate" DATE,
   "notes" TEXT,
   "reference" TEXT,
-  "totalQuantity" NUMERIC(18, 4) NOT NULL DEFAULT 0,
-  "shippedQuantity" NUMERIC(18, 4) NOT NULL DEFAULT 0,
-  "receivedQuantity" NUMERIC(18, 4) NOT NULL DEFAULT 0,
   "companyId" TEXT NOT NULL,
   "createdBy" TEXT NOT NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   "updatedBy" TEXT,
   "updatedAt" TIMESTAMP WITH TIME ZONE,
-  "customFields" JSONB
+  "customFields" JSONB,
+  "tags" TEXT[],
+
+  CONSTRAINT "warehouseTransfer_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "warehouseTransfer_transferId_key" UNIQUE ("transferId", "companyId"),
+  CONSTRAINT "warehouseTransfer_fromLocationId_fkey" FOREIGN KEY ("fromLocationId") REFERENCES "location"("id") ON DELETE RESTRICT,
+  CONSTRAINT "warehouseTransfer_toLocationId_fkey" FOREIGN KEY ("toLocationId") REFERENCES "location"("id") ON DELETE RESTRICT,
+  CONSTRAINT "warehouseTransfer_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE,
+  CONSTRAINT "warehouseTransfer_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON DELETE RESTRICT,
+  CONSTRAINT "warehouseTransfer_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON DELETE RESTRICT
 );
+
+INSERT INTO "customFieldTable" ("table", "name", "module") 
+VALUES ('warehouseTransfer', 'Warehouse Transfer', 'Inventory');
 
 -- Warehouse Transfer Line Table
 CREATE TABLE "warehouseTransferLine" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "transferId" TEXT NOT NULL,
   "itemId" TEXT NOT NULL,
-  "itemReadableId" TEXT,
-  "quantity" NUMERIC(18, 4) NOT NULL DEFAULT 0,
-  "shippedQuantity" NUMERIC(18, 4) NOT NULL DEFAULT 0,
-  "receivedQuantity" NUMERIC(18, 4) NOT NULL DEFAULT 0,
+  "quantity" NUMERIC NOT NULL DEFAULT 0,
+  "shippedQuantity" NUMERIC NOT NULL DEFAULT 0,
+  "receivedQuantity" NUMERIC NOT NULL DEFAULT 0,
   "fromLocationId" TEXT NOT NULL,
   "fromShelfId" TEXT,
   "toLocationId" TEXT NOT NULL,
@@ -50,62 +58,35 @@ CREATE TABLE "warehouseTransferLine" (
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   "updatedBy" TEXT,
   "updatedAt" TIMESTAMP WITH TIME ZONE,
-  "customFields" JSONB
+  "customFields" JSONB,
+
+  CONSTRAINT "warehouseTransferLine_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "warehouseTransferLine_transferId_fkey" FOREIGN KEY ("transferId") REFERENCES "warehouseTransfer"("id") ON DELETE CASCADE,
+  CONSTRAINT "warehouseTransferLine_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE RESTRICT,
+  CONSTRAINT "warehouseTransferLine_fromLocationId_fkey" FOREIGN KEY ("fromLocationId") REFERENCES "location"("id") ON DELETE RESTRICT,
+  CONSTRAINT "warehouseTransferLine_toLocationId_fkey" FOREIGN KEY ("toLocationId") REFERENCES "location"("id") ON DELETE RESTRICT,
+  CONSTRAINT "warehouseTransferLine_fromShelfId_fkey" FOREIGN KEY ("fromShelfId") REFERENCES "shelf"("id") ON DELETE SET NULL,
+  CONSTRAINT "warehouseTransferLine_toShelfId_fkey" FOREIGN KEY ("toShelfId") REFERENCES "shelf"("id") ON DELETE SET NULL,
+  CONSTRAINT "warehouseTransferLine_unitOfMeasureCode_fkey" FOREIGN KEY ("unitOfMeasureCode", "companyId") REFERENCES "unitOfMeasure"("code", "companyId") ON DELETE SET NULL,
+  CONSTRAINT "warehouseTransferLine_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE,
+  CONSTRAINT "warehouseTransferLine_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON DELETE RESTRICT,
+  CONSTRAINT "warehouseTransferLine_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON DELETE RESTRICT
 );
 
--- Primary Keys
-ALTER TABLE "warehouseTransfer" ADD CONSTRAINT "warehouseTransfer_pkey" PRIMARY KEY ("id");
-ALTER TABLE "warehouseTransferLine" ADD CONSTRAINT "warehouseTransferLine_pkey" PRIMARY KEY ("id");
+INSERT INTO "customFieldTable" ("table", "name", "module") 
+VALUES ('warehouseTransferLine', 'Warehouse Transfer Line', 'Inventory');
 
--- Foreign Key Constraints
-ALTER TABLE "warehouseTransfer" ADD CONSTRAINT "warehouseTransfer_fromLocationId_fkey" 
-  FOREIGN KEY ("fromLocationId") REFERENCES "location"("id") ON DELETE RESTRICT;
-
-ALTER TABLE "warehouseTransfer" ADD CONSTRAINT "warehouseTransfer_toLocationId_fkey" 
-  FOREIGN KEY ("toLocationId") REFERENCES "location"("id") ON DELETE RESTRICT;
-
-ALTER TABLE "warehouseTransfer" ADD CONSTRAINT "warehouseTransfer_companyId_fkey" 
-  FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE;
-
-ALTER TABLE "warehouseTransfer" ADD CONSTRAINT "warehouseTransfer_createdBy_fkey" 
-  FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON DELETE RESTRICT;
-
-ALTER TABLE "warehouseTransfer" ADD CONSTRAINT "warehouseTransfer_updatedBy_fkey" 
-  FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON DELETE RESTRICT;
-
-ALTER TABLE "warehouseTransferLine" ADD CONSTRAINT "warehouseTransferLine_transferId_fkey" 
-  FOREIGN KEY ("transferId") REFERENCES "warehouseTransfer"("id") ON DELETE CASCADE;
-
-ALTER TABLE "warehouseTransferLine" ADD CONSTRAINT "warehouseTransferLine_itemId_fkey" 
-  FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE RESTRICT;
-
-ALTER TABLE "warehouseTransferLine" ADD CONSTRAINT "warehouseTransferLine_fromLocationId_fkey" 
-  FOREIGN KEY ("fromLocationId") REFERENCES "location"("id") ON DELETE RESTRICT;
-
-ALTER TABLE "warehouseTransferLine" ADD CONSTRAINT "warehouseTransferLine_toLocationId_fkey" 
-  FOREIGN KEY ("toLocationId") REFERENCES "location"("id") ON DELETE RESTRICT;
-
-ALTER TABLE "warehouseTransferLine" ADD CONSTRAINT "warehouseTransferLine_fromShelfId_fkey" 
-  FOREIGN KEY ("fromShelfId") REFERENCES "shelf"("id") ON DELETE SET NULL;
-
-ALTER TABLE "warehouseTransferLine" ADD CONSTRAINT "warehouseTransferLine_toShelfId_fkey" 
-  FOREIGN KEY ("toShelfId") REFERENCES "shelf"("id") ON DELETE SET NULL;
-
-ALTER TABLE "warehouseTransferLine" ADD CONSTRAINT "warehouseTransferLine_unitOfMeasureCode_fkey" 
-  FOREIGN KEY ("unitOfMeasureCode", "companyId") REFERENCES "unitOfMeasure"("code", "companyId") ON DELETE SET NULL;
-
-ALTER TABLE "warehouseTransferLine" ADD CONSTRAINT "warehouseTransferLine_companyId_fkey" 
-  FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE;
-
-ALTER TABLE "warehouseTransferLine" ADD CONSTRAINT "warehouseTransferLine_createdBy_fkey" 
-  FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON DELETE RESTRICT;
-
-ALTER TABLE "warehouseTransferLine" ADD CONSTRAINT "warehouseTransferLine_updatedBy_fkey" 
-  FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON DELETE RESTRICT;
-
--- Unique Constraints
-ALTER TABLE "warehouseTransfer" ADD CONSTRAINT "warehouseTransfer_transferId_companyId_key" 
-  UNIQUE ("transferId", "companyId");
+INSERT INTO "sequence" ("table", "name", "prefix", "suffix", "next", "size", "step", "companyId")
+SELECT 
+  'warehouseTransfer',
+  'Warehouse Transfer',
+  'WT',
+  NULL,
+  0,
+  6,
+  1,
+  "id"
+FROM "company";
 
 -- Indexes
 CREATE INDEX "warehouseTransfer_companyId_idx" ON "warehouseTransfer"("companyId");

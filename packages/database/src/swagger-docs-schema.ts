@@ -7828,9 +7828,6 @@ export default {
             $ref: "#/parameters/rowFilter.warehouseTransferLine.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.warehouseTransferLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.warehouseTransferLine.quantity",
           },
           {
@@ -7944,9 +7941,6 @@ export default {
             $ref: "#/parameters/rowFilter.warehouseTransferLine.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.warehouseTransferLine.itemReadableId",
-          },
-          {
             $ref: "#/parameters/rowFilter.warehouseTransferLine.quantity",
           },
           {
@@ -8012,9 +8006,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.warehouseTransferLine.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.warehouseTransferLine.itemReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.warehouseTransferLine.quantity",
@@ -30973,15 +30964,6 @@ export default {
             $ref: "#/parameters/rowFilter.warehouseTransfer.reference",
           },
           {
-            $ref: "#/parameters/rowFilter.warehouseTransfer.totalQuantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.warehouseTransfer.shippedQuantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.warehouseTransfer.receivedQuantity",
-          },
-          {
             $ref: "#/parameters/rowFilter.warehouseTransfer.companyId",
           },
           {
@@ -30998,6 +30980,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.warehouseTransfer.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.tags",
           },
           {
             $ref: "#/parameters/select",
@@ -31086,15 +31071,6 @@ export default {
             $ref: "#/parameters/rowFilter.warehouseTransfer.reference",
           },
           {
-            $ref: "#/parameters/rowFilter.warehouseTransfer.totalQuantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.warehouseTransfer.shippedQuantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.warehouseTransfer.receivedQuantity",
-          },
-          {
             $ref: "#/parameters/rowFilter.warehouseTransfer.companyId",
           },
           {
@@ -31111,6 +31087,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.warehouseTransfer.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.tags",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -31153,15 +31132,6 @@ export default {
             $ref: "#/parameters/rowFilter.warehouseTransfer.reference",
           },
           {
-            $ref: "#/parameters/rowFilter.warehouseTransfer.totalQuantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.warehouseTransfer.shippedQuantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.warehouseTransfer.receivedQuantity",
-          },
-          {
             $ref: "#/parameters/rowFilter.warehouseTransfer.companyId",
           },
           {
@@ -31178,6 +31148,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.warehouseTransfer.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.warehouseTransfer.tags",
           },
           {
             $ref: "#/parameters/body.warehouseTransfer",
@@ -62562,10 +62535,6 @@ export default {
           format: "text",
           type: "string",
         },
-        itemReadableId: {
-          format: "text",
-          type: "string",
-        },
         quantity: {
           default: 0,
           format: "numeric",
@@ -73381,9 +73350,6 @@ export default {
         "fromLocationId",
         "toLocationId",
         "status",
-        "totalQuantity",
-        "shippedQuantity",
-        "receivedQuantity",
         "companyId",
         "createdBy",
         "createdAt",
@@ -73415,10 +73381,10 @@ export default {
           default: "Draft",
           enum: [
             "Draft",
-            "Confirmed",
-            "In Transit",
-            "Partially Received",
-            "Received",
+            "To Ship and Receive",
+            "To Ship",
+            "To Receive",
+            "Completed",
             "Cancelled",
           ],
           format: 'public."warehouseTransferStatus"',
@@ -73439,21 +73405,6 @@ export default {
         reference: {
           format: "text",
           type: "string",
-        },
-        totalQuantity: {
-          default: 0,
-          format: "numeric",
-          type: "number",
-        },
-        shippedQuantity: {
-          default: 0,
-          format: "numeric",
-          type: "number",
-        },
-        receivedQuantity: {
-          default: 0,
-          format: "numeric",
-          type: "number",
         },
         companyId: {
           description:
@@ -73484,6 +73435,13 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -88365,12 +88323,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.warehouseTransferLine.itemReadableId": {
-      name: "itemReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.warehouseTransferLine.quantity": {
       name: "quantity",
       required: false,
@@ -100701,24 +100653,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.warehouseTransfer.totalQuantity": {
-      name: "totalQuantity",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.warehouseTransfer.shippedQuantity": {
-      name: "shippedQuantity",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.warehouseTransfer.receivedQuantity": {
-      name: "receivedQuantity",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.warehouseTransfer.companyId": {
       name: "companyId",
       required: false,
@@ -100751,6 +100685,12 @@ export default {
     },
     "rowFilter.warehouseTransfer.customFields": {
       name: "customFields",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.warehouseTransfer.tags": {
+      name: "tags",
       required: false,
       in: "query",
       type: "string",

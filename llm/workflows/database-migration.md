@@ -66,6 +66,9 @@ CREATE INDEX "tableName_companyId_idx" ON "tableName" ("companyId");
 "updatedAt" TIMESTAMP WITH TIME ZONE
 ```
 
+- NEVER include an itemReadableId field.
+- NEVER include the number of decimal places in a NUMERIC field.
+
 #### Complete Table Example
 
 ```sql
