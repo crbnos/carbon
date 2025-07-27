@@ -1,7 +1,8 @@
-import { ValidatedForm } from "@carbon/form";
+import { InputControlled, ValidatedForm } from "@carbon/form";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
   VStack,
@@ -12,6 +13,7 @@ import {
   Hidden,
   Input,
   Location,
+  SequenceOrCustomId,
   Submit,
   TextArea,
 } from "~/components/Form";
@@ -21,7 +23,10 @@ type WarehouseTransferFormProps = {
   initialValues: z.infer<typeof warehouseTransferValidator>;
 };
 
-const WarehouseTransferForm = ({ initialValues }: WarehouseTransferFormProps) => {
+const WarehouseTransferForm = ({
+  initialValues,
+}: WarehouseTransferFormProps) => {
+  const isEditing = !!initialValues.id;
   return (
     <ValidatedForm
       validator={warehouseTransferValidator}
@@ -31,26 +36,48 @@ const WarehouseTransferForm = ({ initialValues }: WarehouseTransferFormProps) =>
     >
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>Transfer Details</CardTitle>
+          <CardTitle>{isEditing ? "Edit" : "New"} Transfer</CardTitle>
+          {!isEditing && (
+            <CardDescription>
+              A warehouse transfer is an inter-company movement of inventory
+              between two locations
+            </CardDescription>
+          )}
         </CardHeader>
         <CardContent>
+          <Hidden name="id" />
           <VStack spacing={4}>
-            <Hidden name="id" />
-            <Input name="transferId" label="Transfer ID" />
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full items-start">
+              {isEditing ? (
+                <InputControlled
+                  name="transferId"
+                  label="Transfer ID"
+                  isDisabled
+                  value={initialValues.transferId!}
+                />
+              ) : (
+                <SequenceOrCustomId
+                  name="transferId"
+                  label="Transfer ID"
+                  table="warehouseTransfer"
+                />
+              )}
+              <Input name="reference" label="Reference" />
               <Location name="fromLocationId" label="From Location" />
               <Location name="toLocationId" label="To Location" />
+              {isEditing && (
+                <>
+                  <DatePicker name="transferDate" label="Transfer Date" />
+                  <DatePicker
+                    name="expectedReceiptDate"
+                    label="Expected Receipt Date"
+                  />
+                </>
+              )}
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <DatePicker name="transferDate" label="Transfer Date" />
-              <DatePicker name="expectedReceiptDate" label="Expected Receipt Date" />
-            </div>
-            
-            <Input name="reference" label="Reference" />
+
             <TextArea name="notes" label="Notes" />
-            
+
             <Submit>Save Transfer</Submit>
           </VStack>
         </CardContent>

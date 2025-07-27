@@ -197,46 +197,46 @@ export const splitValidator = z.object({
 
 export const warehouseTransferStatusType = [
   "Draft",
-  "Confirmed",
-  "In Transit",
-  "Partially Received",
-  "Received",
-  "Cancelled"
+  "To Ship and Receive",
+  "To Ship",
+  "To Receive",
+  "Completed",
+  "Cancelled",
 ] as const;
 
-export const warehouseTransferValidator = z.object({
-  id: z.string().min(1),
-  transferId: z.string().min(1, { message: "Transfer ID is required" }),
-  fromLocationId: z.string().min(1, { message: "From Location is required" }),
-  toLocationId: z.string().min(1, { message: "To Location is required" }),
-  status: z.enum(warehouseTransferStatusType).optional(),
-  transferDate: zfd.text(z.string().optional()),
-  expectedReceiptDate: zfd.text(z.string().optional()),
-  notes: zfd.text(z.string().optional()),
-  reference: zfd.text(z.string().optional()),
-}).refine(
-  (data) => data.fromLocationId !== data.toLocationId,
-  {
+export const warehouseTransferValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    transferId: zfd.text(z.string().optional()),
+    fromLocationId: z.string().min(1, { message: "From Location is required" }),
+    toLocationId: z.string().min(1, { message: "To Location is required" }),
+    status: z.enum(warehouseTransferStatusType).optional(),
+    transferDate: zfd.text(z.string().optional()),
+    expectedReceiptDate: zfd.text(z.string().optional()),
+    notes: zfd.text(z.string().optional()),
+    reference: zfd.text(z.string().optional()),
+  })
+  .refine((data) => data.fromLocationId !== data.toLocationId, {
     message: "From and To locations must be different",
-    path: ["toLocationId"]
-  }
-);
+    path: ["toLocationId"],
+  });
 
-export const warehouseTransferLineValidator = z.object({
-  id: z.string().min(1).optional(),
-  transferId: z.string().min(1, { message: "Transfer ID is required" }),
-  itemId: z.string().min(1, { message: "Item is required" }),
-  quantity: zfd.numeric(z.number().min(0.0001, { message: "Quantity must be greater than 0" })),
-  fromLocationId: z.string().min(1, { message: "From Location is required" }),
-  fromShelfId: zfd.text(z.string().optional()),
-  toLocationId: z.string().min(1, { message: "To Location is required" }),
-  toShelfId: zfd.text(z.string().optional()),
-  unitOfMeasureCode: zfd.text(z.string().optional()),
-  notes: zfd.text(z.string().optional()),
-}).refine(
-  (data) => data.fromLocationId !== data.toLocationId,
-  {
+export const warehouseTransferLineValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    transferId: z.string().min(1, { message: "Transfer ID is required" }),
+    itemId: z.string().min(1, { message: "Item is required" }),
+    quantity: zfd.numeric(
+      z.number().min(0.0001, { message: "Quantity must be greater than 0" })
+    ),
+    fromLocationId: z.string().min(1, { message: "From Location is required" }),
+    fromShelfId: zfd.text(z.string().optional()),
+    toLocationId: z.string().min(1, { message: "To Location is required" }),
+    toShelfId: zfd.text(z.string().optional()),
+    unitOfMeasureCode: zfd.text(z.string().optional()),
+    notes: zfd.text(z.string().optional()),
+  })
+  .refine((data) => data.fromLocationId !== data.toLocationId, {
     message: "From and To locations must be different",
-    path: ["toLocationId"]
-  }
-);
+    path: ["toLocationId"],
+  });

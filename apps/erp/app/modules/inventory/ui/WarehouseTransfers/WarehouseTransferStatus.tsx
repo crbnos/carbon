@@ -9,14 +9,14 @@ const WarehouseTransferStatus = ({ status }: Props) => {
   switch (status) {
     case "Draft":
       return <Badge variant="secondary">Draft</Badge>;
-    case "Confirmed":
-      return <Badge variant="yellow">Confirmed</Badge>;
-    case "In Transit":
-      return <Badge variant="blue">In Transit</Badge>;
-    case "Partially Received":
-      return <Badge variant="yellow">Partially Received</Badge>;
-    case "Received":
-      return <Badge variant="green">Received</Badge>;
+    case "To Ship and Receive":
+      return <Badge variant="yellow">To Ship and Receive</Badge>;
+    case "To Ship":
+      return <Badge variant="blue">To Ship</Badge>;
+    case "To Receive":
+      return <Badge variant="blue">To Receive</Badge>;
+    case "Completed":
+      return <Badge variant="green">Completed</Badge>;
     case "Cancelled":
       return <Badge variant="destructive">Cancelled</Badge>;
     default:

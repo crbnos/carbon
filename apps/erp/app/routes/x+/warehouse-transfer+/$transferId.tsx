@@ -2,17 +2,20 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
-import { Outlet, useLoaderData } from "@remix-run/react";
+import { Outlet, useLoaderData, useParams } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { getWarehouseTransfer, getWarehouseTransferLines } from "~/modules/inventory";
+import { PanelProvider } from "~/components/Layout/Panels";
+import {
+  getWarehouseTransfer,
+  getWarehouseTransferLines,
+} from "~/modules/inventory";
 import WarehouseTransferHeader from "~/modules/inventory/ui/WarehouseTransfers/WarehouseTransferHeader";
-import WarehouseTransferLines from "~/modules/inventory/ui/WarehouseTransfers/WarehouseTransferLines";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: "Warehouse Transfer Details",
+  breadcrumb: "Warehouse Transfer",
   to: path.to.warehouseTransfers,
 };
 
@@ -44,7 +47,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       path.to.warehouseTransfers,
       await flash(
         request,
-        error(warehouseTransferLines.error, "Failed to load warehouse transfer lines")
+        error(
+          warehouseTransferLines.error,
+          "Failed to load warehouse transfer lines"
+        )
       )
     );
   }
@@ -56,16 +62,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function WarehouseTransferRoute() {
-  const { warehouseTransfer, warehouseTransferLines } = useLoaderData<typeof loader>();
+  const { warehouseTransfer } = useLoaderData<typeof loader>();
+  const params = useParams();
+  const { transferId } = params;
+  if (!transferId) throw new Error("Could not find transferId");
 
   return (
-    <VStack spacing={4} className="h-full p-4">
-      <WarehouseTransferHeader warehouseTransfer={warehouseTransfer} />
-      <WarehouseTransferLines 
-        warehouseTransferLines={warehouseTransferLines}
-        transferId={warehouseTransfer.id}
-      />
-      <Outlet />
-    </VStack>
+    <PanelProvider>
+      <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
+        <WarehouseTransferHeader warehouseTransfer={warehouseTransfer} />
+        <div className="flex h-[calc(100dvh-99px)] overflow-y-auto scrollbar-hide w-full">
+          <VStack
+            spacing={4}
+            className="h-full p-2 w-full max-w-5xl mx-auto pb-32"
+          >
+            <Outlet />
+          </VStack>
+        </div>
+      </div>
+    </PanelProvider>
   );
 }

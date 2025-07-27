@@ -1219,15 +1219,16 @@ export const path = {
     shippingMethod: (id: string) =>
       generatePath(`${x}/inventory/shipping-methods/${id}`),
     warehouseTransfers: `${x}/inventory/warehouse-transfers`,
-    warehouseTransfer: (id: string) => generatePath(`${x}/warehouse-transfer/${id}`),
+    warehouseTransfer: (id: string) =>
+      generatePath(`${x}/warehouse-transfer/${id}`),
     warehouseTransferDetails: (id: string) =>
-      generatePath(`${x}/warehouse-transfer/${id}/details`),
-    warehouseTransferShip: (id: string) => 
+      generatePath(`${x}/warehouse-transfer/${id}`),
+    warehouseTransferShip: (id: string) =>
       generatePath(`${x}/warehouse-transfer/${id}/ship`),
-    warehouseTransferReceive: (id: string) => 
+    warehouseTransferReceive: (id: string) =>
       generatePath(`${x}/warehouse-transfer/${id}/receive`),
     newWarehouseTransfer: `${x}/warehouse-transfer/new`,
-    deleteWarehouseTransfer: (id: string) => 
+    deleteWarehouseTransfer: (id: string) =>
       generatePath(`${x}/warehouse-transfer/${id}/delete`),
     shippingMethods: `${x}/inventory/shipping-methods`,
     supplier: (id: string) => generatePath(`${x}/supplier/${id}`),

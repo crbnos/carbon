@@ -34345,12 +34345,10 @@ export type Database = {
           fromLocationId: string
           id: string
           notes: string | null
-          receivedQuantity: number
           reference: string | null
-          shippedQuantity: number
           status: Database["public"]["Enums"]["warehouseTransferStatus"]
+          tags: string[] | null
           toLocationId: string
-          totalQuantity: number
           transferDate: string | null
           transferId: string
           updatedAt: string | null
@@ -34365,12 +34363,10 @@ export type Database = {
           fromLocationId: string
           id?: string
           notes?: string | null
-          receivedQuantity?: number
           reference?: string | null
-          shippedQuantity?: number
           status?: Database["public"]["Enums"]["warehouseTransferStatus"]
+          tags?: string[] | null
           toLocationId: string
-          totalQuantity?: number
           transferDate?: string | null
           transferId: string
           updatedAt?: string | null
@@ -34385,12 +34381,10 @@ export type Database = {
           fromLocationId?: string
           id?: string
           notes?: string | null
-          receivedQuantity?: number
           reference?: string | null
-          shippedQuantity?: number
           status?: Database["public"]["Enums"]["warehouseTransferStatus"]
+          tags?: string[] | null
           toLocationId?: string
-          totalQuantity?: number
           transferDate?: string | null
           transferId?: string
           updatedAt?: string | null
@@ -34521,7 +34515,6 @@ export type Database = {
           fromShelfId: string | null
           id: string
           itemId: string
-          itemReadableId: string | null
           notes: string | null
           quantity: number
           receivedQuantity: number
@@ -34542,7 +34535,6 @@ export type Database = {
           fromShelfId?: string | null
           id?: string
           itemId: string
-          itemReadableId?: string | null
           notes?: string | null
           quantity?: number
           receivedQuantity?: number
@@ -34563,7 +34555,6 @@ export type Database = {
           fromShelfId?: string | null
           id?: string
           itemId?: string
-          itemReadableId?: string | null
           notes?: string | null
           quantity?: number
           receivedQuantity?: number
@@ -47588,10 +47579,10 @@ export type Database = {
       trackingSource: "Purchased" | "Manufactured"
       warehouseTransferStatus:
         | "Draft"
-        | "Confirmed"
-        | "In Transit"
-        | "Partially Received"
-        | "Received"
+        | "To Ship and Receive"
+        | "To Ship"
+        | "To Receive"
+        | "Completed"
         | "Cancelled"
     }
     CompositeTypes: {
