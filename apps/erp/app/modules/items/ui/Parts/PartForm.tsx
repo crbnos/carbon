@@ -36,7 +36,6 @@ import {
   Number,
   Select,
   Submit,
-  TextArea,
   UnitOfMeasure,
 } from "~/components/Form";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
@@ -247,9 +246,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                 )}
 
                 <Input name="name" label="Short Description" />
-                <div className="md:col-span-full">
-                  <TextArea name="description" label="Long Description" />
-                </div>
+
                 <Select
                   name="itemTrackingType"
                   label="Tracking Type"
