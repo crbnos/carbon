@@ -1,0 +1,1 @@
+CREATE INDEX "item_readableId_idx" ON "item" USING btree ("readableId", "companyId");
