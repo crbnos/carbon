@@ -56031,6 +56031,63 @@ export default {
         tags: ["(rpc) get_company_id_from_api_key"],
       },
     },
+    "/rpc/uuid_to_base58": {
+      get: {
+        parameters: [
+          {
+            format: "uuid",
+            in: "query",
+            name: "_uuid",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) uuid_to_base58"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                _uuid: {
+                  format: "uuid",
+                  type: "string",
+                },
+              },
+              required: ["_uuid"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) uuid_to_base58"],
+      },
+    },
     "/rpc/get_assigned_job_operations": {
       get: {
         parameters: [
@@ -62839,7 +62896,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('sp'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -71765,7 +71822,7 @@ export default {
       required: ["id", "location", "feedback"],
       properties: {
         id: {
-          default: "public.id('fb'::text)",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -78776,7 +78833,7 @@ export default {
       required: ["id"],
       properties: {
         id: {
-          default: "public.id('tm'::text)",
+          default: "public.id()",
           description:
             "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
           format: "text",
@@ -81289,7 +81346,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.id('i'::text)",
+          default: "public.id('item'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",

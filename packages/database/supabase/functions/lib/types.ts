@@ -46710,6 +46710,12 @@ export type Database = {
         }
         Returns: Json
       }
+      uuid_to_base58: {
+        Args: {
+          _uuid: string
+        }
+        Returns: string
+      }
       xid: {
         Args: {
           _at?: string
