@@ -89,6 +89,18 @@ const payloadValidator = z.discriminatedUnion("type", [
       })
     ),
   }),
+  z.object({
+    type: z.literal("warehouseTransferToShipment"),
+    id: z.string(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("warehouseTransferToReceipt"),
+    id: z.string(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
 ]);
 
 serve(async (req: Request) => {
@@ -737,10 +749,12 @@ serve(async (req: Request) => {
             return acc;
           }, []);
 
-          await trx
-            .insertInto("salesInvoiceLine")
-            .values(salesInvoiceLines)
-            .execute();
+          if (salesInvoiceLines.length > 0) {
+            await trx
+              .insertInto("salesInvoiceLine")
+              .values(salesInvoiceLines)
+              .execute();
+          }
         });
 
         return new Response(
@@ -1530,6 +1544,150 @@ serve(async (req: Request) => {
 
         convertedId = insertedPurchaseOrderId;
 
+        break;
+      }
+
+      case "warehouseTransferToShipment": {
+        const warehouseTransferId = id;
+        const [warehouseTransfer, warehouseTransferLines] = await Promise.all([
+          client
+            .from("warehouseTransfer")
+            .select("*")
+            .eq("id", warehouseTransferId)
+            .single(),
+          client
+            .from("warehouseTransferLine")
+            .select("*")
+            .eq("transferId", warehouseTransferId),
+        ]);
+
+        if (warehouseTransfer.error)
+          throw new Error(warehouseTransfer.error.message);
+        if (warehouseTransferLines.error)
+          throw new Error(warehouseTransferLines.error.message);
+
+        let shipmentId = "";
+
+        await db.transaction().execute(async (trx) => {
+          // Create shipment for outbound transfer
+          shipmentId = await getNextSequence(trx, "shipment", companyId);
+
+          const shipment = await trx
+            .insertInto("shipment")
+            .values({
+              shipmentId,
+              status: "Draft",
+              sourceDocument: "Outbound Transfer",
+              sourceDocumentId: warehouseTransferId,
+              sourceDocumentReadableId: warehouseTransfer.data.transferId,
+              locationId: warehouseTransfer.data.fromLocationId,
+              createdBy: userId,
+              companyId,
+            })
+            .returning(["id"])
+            .executeTakeFirstOrThrow();
+
+          if (!shipment.id) throw new Error("Failed to create shipment");
+          shipmentId = shipment.id;
+
+          // Create shipment lines
+          const shipmentLineInserts = warehouseTransferLines.data.map(
+            (line) => ({
+              shipmentId,
+              lineId: line.id,
+              itemId: line.itemId,
+              locationId: line.fromLocationId,
+              shelfId: line.fromShelfId,
+              orderQuantity: line.quantity,
+              shippedQuantity: 0,
+              unitOfMeasure: line.unitOfMeasureCode || "EA",
+              unitPrice: 0,
+              companyId,
+              createdBy: userId,
+            })
+          );
+
+          if (shipmentLineInserts.length > 0) {
+            await trx
+              .insertInto("shipmentLine")
+              .values(shipmentLineInserts)
+              .execute();
+          }
+        });
+
+        convertedId = shipmentId;
+        break;
+      }
+
+      case "warehouseTransferToReceipt": {
+        const warehouseTransferId = id;
+        const [warehouseTransfer, warehouseTransferLines] = await Promise.all([
+          client
+            .from("warehouseTransfer")
+            .select("*")
+            .eq("id", warehouseTransferId)
+            .single(),
+          client
+            .from("warehouseTransferLine")
+            .select("*")
+            .eq("transferId", warehouseTransferId),
+        ]);
+
+        if (warehouseTransfer.error)
+          throw new Error(warehouseTransfer.error.message);
+        if (warehouseTransferLines.error)
+          throw new Error(warehouseTransferLines.error.message);
+
+        let receiptId = "";
+
+        await db.transaction().execute(async (trx) => {
+          // Create receipt for inbound transfer
+          receiptId = await getNextSequence(trx, "receipt", companyId);
+
+          const receipt = await trx
+            .insertInto("receipt")
+            .values({
+              receiptId,
+              status: "Draft",
+              sourceDocument: "Inbound Transfer",
+              sourceDocumentId: warehouseTransferId,
+              sourceDocumentReadableId: warehouseTransfer.data.transferId,
+              locationId: warehouseTransfer.data.toLocationId,
+              createdBy: userId,
+              companyId,
+            })
+            .returning(["id"])
+            .executeTakeFirstOrThrow();
+
+          if (!receipt.id) throw new Error("Failed to create receipt");
+          receiptId = receipt.id;
+
+          // Create receipt lines
+          const receiptLineInserts = warehouseTransferLines.data.map(
+            (line) => ({
+              receiptId,
+              lineId: line.id,
+              itemId: line.itemId,
+              locationId: line.toLocationId,
+              shelfId: line.toShelfId,
+              orderQuantity: line.quantity,
+              receivedQuantity: 0,
+              unitOfMeasure: line.unitOfMeasureCode || "EA",
+              unitPrice: 0,
+              companyId,
+              createdBy: userId,
+            })
+          );
+
+          if (receiptLineInserts.length > 0) {
+            await trx
+              .insertInto("receiptLine")
+              .values(receiptLineInserts)
+              .execute();
+          }
+        });
+
+        convertedId = receiptId;
         break;
       }
 

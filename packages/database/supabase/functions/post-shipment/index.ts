@@ -1142,6 +1142,138 @@ serve(async (req: Request) => {
         });
         break;
       }
+      case "Outbound Transfer": {
+        if (!shipment.data.sourceDocumentId)
+          throw new Error("Shipment has no sourceDocumentId");
+
+        const [warehouseTransfer, warehouseTransferLines] = await Promise.all([
+          client
+            .from("warehouseTransfer")
+            .select("*")
+            .eq("id", shipment.data.sourceDocumentId)
+            .single(),
+          client
+            .from("warehouseTransferLine")
+            .select("*")
+            .eq("transferId", shipment.data.sourceDocumentId),
+        ]);
+
+        if (warehouseTransfer.error)
+          throw new Error("Failed to fetch warehouse transfer");
+        if (warehouseTransferLines.error)
+          throw new Error("Failed to fetch warehouse transfer lines");
+
+        const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] = [];
+        const warehouseTransferLineUpdates: Record<
+          string,
+          Database["public"]["Tables"]["warehouseTransferLine"]["Update"]
+        > = {};
+
+        // Process each shipment line
+        for await (const shipmentLine of shipmentLines.data) {
+          const warehouseTransferLine = warehouseTransferLines.data.find(
+            (line) => line.id === shipmentLine.lineId
+          );
+
+          if (!warehouseTransferLine) continue;
+
+          const shippedQuantity = shipmentLine.shippedQuantity ?? 0;
+
+          // Update warehouse transfer line shipped quantity
+          const newShippedQuantity = 
+            (warehouseTransferLine.shippedQuantity ?? 0) + shippedQuantity;
+
+          warehouseTransferLineUpdates[warehouseTransferLine.id] = {
+            shippedQuantity: newShippedQuantity,
+          };
+
+          // Create item ledger entry for negative adjustment at source
+          if (shippedQuantity !== 0) {
+            itemLedgerInserts.push({
+              postingDate: today,
+              itemId: shipmentLine.itemId,
+              quantity: -shippedQuantity, // Negative for outbound transfer
+              locationId: shipmentLine.locationId,
+              shelfId: shipmentLine.shelfId,
+              entryType: "Transfer",
+              documentType: "Transfer Shipment",
+              documentId: warehouseTransfer.data?.transferId,
+              externalDocumentId: shipment.data?.externalDocumentId ?? undefined,
+              createdBy: userId,
+              companyId,
+            });
+          }
+        }
+
+        // Check if all lines are fully shipped
+        const allLinesFullyShipped = warehouseTransferLines.data.every((line) => {
+          const updates = warehouseTransferLineUpdates[line.id];
+          const shippedQty = updates?.shippedQuantity ?? line.shippedQuantity ?? 0;
+          return shippedQty >= (line.quantity ?? 0);
+        });
+
+        // Check if all lines are fully received
+        const allLinesFullyReceived = warehouseTransferLines.data.every((line) => {
+          const receivedQty = line.receivedQuantity ?? 0;
+          return receivedQty >= (line.quantity ?? 0);
+        });
+
+        // Determine new warehouse transfer status
+        let newStatus: Database["public"]["Tables"]["warehouseTransfer"]["Row"]["status"] = 
+          warehouseTransfer.data.status;
+
+        if (allLinesFullyShipped && allLinesFullyReceived) {
+          newStatus = "Completed";
+        } else if (allLinesFullyShipped && !allLinesFullyReceived) {
+          newStatus = "To Receive";
+        } else if (!allLinesFullyShipped && allLinesFullyReceived) {
+          newStatus = "To Ship";
+        }
+
+        await db.transaction().execute(async (trx) => {
+          // Update warehouse transfer lines
+          for await (const [lineId, update] of Object.entries(
+            warehouseTransferLineUpdates
+          )) {
+            await trx
+              .updateTable("warehouseTransferLine")
+              .set(update)
+              .where("id", "=", lineId)
+              .execute();
+          }
+
+          // Update warehouse transfer status
+          await trx
+            .updateTable("warehouseTransfer")
+            .set({
+              status: newStatus,
+              updatedBy: userId,
+            })
+            .where("id", "=", warehouseTransfer.data.id)
+            .execute();
+
+          // Create item ledger entries
+          if (itemLedgerInserts.length > 0) {
+            await trx
+              .insertInto("itemLedger")
+              .values(itemLedgerInserts)
+              .returning(["id"])
+              .execute();
+          }
+
+          // Update shipment status
+          await trx
+            .updateTable("shipment")
+            .set({
+              status: "Posted",
+              postedBy: userId,
+            })
+            .where("id", "=", shipmentId)
+            .execute();
+        });
+
+        break;
+      }
       default: {
         throw new Error(
           `Invalid source document type: ${shipment.data.sourceDocument}`

@@ -11,7 +11,7 @@ import {
   HStack,
   toast,
 } from "@carbon/react";
-import { Link } from "@remix-run/react";
+import { Link, useFetcher } from "@remix-run/react";
 import { useCallback, useEffect, useState } from "react";
 import {
   LuCheckCheck,
@@ -19,9 +19,11 @@ import {
   LuCirclePlus,
   LuCircleStop,
   LuHandCoins,
+  LuLoaderCircle,
   LuTruck,
 } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
+import type { action as statusAction } from "~/routes/x+/warehouse-transfer+/$transferId.status";
 import { path } from "~/utils/path";
 import type { Receipt, Shipment, WarehouseTransfer } from "../../types";
 import { ReceiptStatus } from "../Receipts";
@@ -36,6 +38,7 @@ const WarehouseTransferHeader = ({
   warehouseTransfer,
 }: WarehouseTransferHeaderProps) => {
   const permissions = usePermissions();
+  const statusFetcher = useFetcher<typeof statusAction>();
 
   const { receipts, shipments, ship, receive } =
     useWarehouseTransferRelatedDocuments(warehouseTransfer.id);
@@ -52,37 +55,53 @@ const WarehouseTransferHeader = ({
           <WarehouseTransferStatus status={warehouseTransfer.status} />
         </HStack>
         <HStack>
-          <Button
-            leftIcon={<LuCheckCheck />}
-            variant={
-              warehouseTransfer.status === "Draft" ? "primary" : "secondary"
-            }
-            onClick={() => {
-              // TODO: Implement confirm functionality
-              toast.success("Confirmed warehouse transfer");
-            }}
-            isDisabled={
-              !["Draft"].includes(warehouseTransfer.status) ||
-              !permissions.can("update", "inventory")
-            }
+          <statusFetcher.Form
+            method="post"
+            action={path.to.warehouseTransferStatus(warehouseTransfer.id)}
           >
-            Confirm
-          </Button>
+            <input type="hidden" name="status" value="To Ship and Receive" />
+            <Button
+              type="submit"
+              leftIcon={<LuCheckCheck />}
+              variant={
+                warehouseTransfer.status === "Draft" ? "primary" : "secondary"
+              }
+              isDisabled={
+                !["Draft"].includes(warehouseTransfer.status) ||
+                statusFetcher.state !== "idle" ||
+                !permissions.can("update", "inventory")
+              }
+              isLoading={
+                statusFetcher.state !== "idle" &&
+                statusFetcher.formData?.get("status") === "To Ship and Receive"
+              }
+            >
+              Confirm
+            </Button>
+          </statusFetcher.Form>
 
-          <Button
-            variant="secondary"
-            leftIcon={<LuCircleStop />}
-            onClick={() => {
-              // TODO: Implement cancel functionality
-              toast.success("Cancelled warehouse transfer");
-            }}
-            isDisabled={
-              ["Cancelled", "Completed"].includes(warehouseTransfer.status) ||
-              !permissions.can("update", "inventory")
-            }
+          <statusFetcher.Form
+            method="post"
+            action={path.to.warehouseTransferStatus(warehouseTransfer.id)}
           >
-            Cancel
-          </Button>
+            <input type="hidden" name="status" value="Cancelled" />
+            <Button
+              type="submit"
+              variant="secondary"
+              leftIcon={<LuCircleStop />}
+              isDisabled={
+                ["Cancelled", "Completed"].includes(warehouseTransfer.status) ||
+                statusFetcher.state !== "idle" ||
+                !permissions.can("update", "inventory")
+              }
+              isLoading={
+                statusFetcher.state !== "idle" &&
+                statusFetcher.formData?.get("status") === "Cancelled"
+              }
+            >
+              Cancel
+            </Button>
+          </statusFetcher.Form>
 
           {shipments.length > 0 ? (
             <DropdownMenu>
@@ -212,6 +231,28 @@ const WarehouseTransferHeader = ({
               Receive
             </Button>
           )}
+          <statusFetcher.Form
+            method="post"
+            action={path.to.warehouseTransferStatus(warehouseTransfer.id)}
+          >
+            <input type="hidden" name="status" value="Draft" />
+            <Button
+              type="submit"
+              variant="secondary"
+              leftIcon={<LuLoaderCircle />}
+              isDisabled={
+                ["Draft"].includes(warehouseTransfer.status ?? "") ||
+                statusFetcher.state !== "idle" ||
+                !permissions.can("update", "inventory")
+              }
+              isLoading={
+                statusFetcher.state !== "idle" &&
+                statusFetcher.formData?.get("status") === "Draft"
+              }
+            >
+              Reopen
+            </Button>
+          </statusFetcher.Form>
         </HStack>
       </HStack>
     </div>

@@ -1222,12 +1222,20 @@ export const path = {
     warehouseTransfer: (id: string) =>
       generatePath(`${x}/warehouse-transfer/${id}`),
     warehouseTransferDetails: (id: string) =>
-      generatePath(`${x}/warehouse-transfer/${id}`),
+      generatePath(`${x}/warehouse-transfer/${id}/details`),
+    warehouseTransferStatus: (id: string) =>
+      generatePath(`${x}/warehouse-transfer/${id}/status`),
     warehouseTransferShip: (id: string) =>
       generatePath(`${x}/warehouse-transfer/${id}/ship`),
     warehouseTransferReceive: (id: string) =>
       generatePath(`${x}/warehouse-transfer/${id}/receive`),
+    warehouseTransferLines: (id: string) =>
+      generatePath(`${x}/warehouse-transfer/${id}/lines`),
     newWarehouseTransfer: `${x}/warehouse-transfer/new`,
+    newWarehouseTransferLine: (transferId: string) =>
+      generatePath(`${x}/warehouse-transfer/${transferId}/lines/new`),
+    warehouseTransferLine: (transferId: string, lineId: string) =>
+      generatePath(`${x}/warehouse-transfer/${transferId}/lines/${lineId}`),
     deleteWarehouseTransfer: (id: string) =>
       generatePath(`${x}/warehouse-transfer/${id}/delete`),
     shippingMethods: `${x}/inventory/shipping-methods`,
