@@ -37,8 +37,8 @@ All tables in Carbon follow these patterns:
 ##### ID Generation
 
 ```sql
--- Always use xid() for primary keys
-"id" TEXT NOT NULL DEFAULT xid()
+-- Always use id() for primary keys
+"id" TEXT NOT NULL DEFAULT id()
 ```
 
 ##### Multi-Tenancy
@@ -70,7 +70,7 @@ CREATE INDEX "tableName_companyId_idx" ON "tableName" ("companyId");
 
 ```sql
 CREATE TABLE "entityyName" (
-    "id" TEXT NOT NULL DEFAULT xid(),
+    "id" TEXT NOT NULL DEFAULT id('entity'),
     "companyId" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT,
@@ -151,7 +151,7 @@ CREATE POLICY "DELETE" ON "entityName"
 
 #### Common Column Types
 
-- **IDs**: `TEXT NOT NULL DEFAULT xid()`
+- **IDs**: `TEXT NOT NULL DEFAULT id()`
 - **Names**: `TEXT NOT NULL`
 - **Financial**: `NUMERIC` or `DECIMAL`
 - **Quantities**: `INTEGER`
@@ -209,7 +209,7 @@ export const entityFormValidator = zfd.formData({
 
 ## Best Practices
 
-- Always use `xid()` for primary keys
+- Always use `id()` for primary keys
 - Include `companyId` in all business tables
 - Use composite primary keys `("id", "companyId")`
 - Follow the standardized RLS policy naming (SELECT, INSERT, UPDATE, DELETE)
@@ -234,7 +234,7 @@ export const entityFormValidator = zfd.formData({
 ## Migration Checklist
 
 - [ ] Migration file created with `npm run db:migrate <name>`
-- [ ] Table includes `id` with `DEFAULT xid()`
+- [ ] Table includes `id` with `DEFAULT id()`
 - [ ] Table includes `companyId` with proper foreign key
 - [ ] Composite primary key on `("id", "companyId")`
 - [ ] Standard audit columns included

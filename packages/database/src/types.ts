@@ -5787,7 +5787,7 @@ export type Database = {
           active?: boolean
           companyId: string
           employeeTypeId: string
-          id: string
+          id?: string
         }
         Update: {
           active?: boolean
@@ -11942,7 +11942,7 @@ export type Database = {
           externalId?: Json | null
           finishId?: string | null
           gradeId?: string | null
-          id: string
+          id?: string
           materialFormId?: string | null
           materialSubstanceId?: string | null
           materialTypeId?: string | null
@@ -17219,7 +17219,7 @@ export type Database = {
           customFields?: Json | null
           externalId?: Json | null
           fromDate?: string | null
-          id: string
+          id?: string
           tags?: string[] | null
           toDate?: string | null
           updatedAt?: string | null
@@ -28134,7 +28134,7 @@ export type Database = {
           createdBy: string
           customFields?: Json | null
           fromDate?: string | null
-          id: string
+          id?: string
           itemId?: string | null
           serviceType: Database["public"]["Enums"]["serviceType"]
           tags?: string[] | null
@@ -28350,7 +28350,7 @@ export type Database = {
           createdAt?: string
           createdBy: string
           customFields?: Json | null
-          id: string
+          id?: string
           locationId: string
           name: string
           tags?: string[] | null
@@ -46589,6 +46589,12 @@ export type Database = {
           company: string
         }
         Returns: boolean
+      }
+      id: {
+        Args: {
+          _prefix?: string
+        }
+        Returns: string
       }
       increment_webhook_error: {
         Args: {

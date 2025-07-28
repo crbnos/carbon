@@ -58132,6 +58132,62 @@ export default {
         tags: ["(rpc) get_purchasing_planning"],
       },
     },
+    "/rpc/id": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "_prefix",
+            required: false,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) id"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                _prefix: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) id"],
+      },
+    },
     "/rpc/get_custom_field_unique_values": {
       get: {
         parameters: [
@@ -58569,7 +58625,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('actc'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -58632,7 +58688,7 @@ export default {
       required: ["id", "name", "companyId", "createdAt", "createdBy"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('nqr'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -58678,7 +58734,7 @@ export default {
       required: ["id", "name", "companyId", "createdAt", "createdBy"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('ss'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -58738,6 +58794,7 @@ export default {
       ],
       properties: {
         id: {
+          default: "public.id('svc'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -59080,7 +59137,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -59349,7 +59406,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -59461,7 +59518,7 @@ export default {
       required: ["id", "customerId", "addressId", "name"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -59507,7 +59564,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('otok'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -59561,7 +59618,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('ncsl'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -59821,7 +59878,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('ncsol'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -59940,7 +59997,7 @@ export default {
       required: ["id", "name", "companyId", "createdAt", "createdBy"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('sr'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -59995,7 +60052,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('cusage'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -60293,7 +60350,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -60351,7 +60408,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('make'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -60432,7 +60489,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('shift'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -60718,7 +60775,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('view'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -60834,7 +60891,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('pq'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -60922,7 +60979,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('ncat'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -61013,7 +61070,7 @@ export default {
       required: ["id", "companyId", "supplierId"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('si'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -61044,7 +61101,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('rec'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -61180,7 +61237,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('cpg'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -61227,7 +61284,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -61349,7 +61406,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('qo'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -61707,7 +61764,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('inv'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -61765,7 +61822,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('pgp'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -62276,7 +62333,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('mmat'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -62944,6 +63001,7 @@ export default {
       required: ["id", "approved", "companyId", "createdBy", "createdAt"],
       properties: {
         id: {
+          default: "public.id('mat'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -63152,7 +63210,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('qoa'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -63589,7 +63647,7 @@ export default {
       required: ["id", "name", "companyId", "createdBy", "createdAt"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('dept'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -63732,7 +63790,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('il'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -63852,7 +63910,7 @@ export default {
       required: ["id", "name", "active", "companyId", "createdAt", "createdBy"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('sterm'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -63916,7 +63974,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('ncat'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -64195,7 +64253,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('cp'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -64278,7 +64336,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('ncrl'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -64451,7 +64509,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('si'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -64685,7 +64743,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('plan'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -64751,7 +64809,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('loc'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -64959,7 +65017,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('pr'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -65052,7 +65110,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('pgi'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -65345,7 +65403,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('ncc'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -65441,7 +65499,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('so'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -65612,7 +65670,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('jot'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -65754,7 +65812,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('ea'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -65955,7 +66013,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('jmm'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -66049,7 +66107,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -66158,7 +66216,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('ful'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -66428,7 +66486,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -66672,7 +66730,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('acts'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -66838,7 +66896,7 @@ export default {
       required: ["id", "employeeId", "shiftId"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('eshift'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -66924,7 +66982,7 @@ export default {
       required: ["id", "name", "code", "materialSubstanceId", "materialFormId"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('mtype'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -66972,7 +67030,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('ppay'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -67050,7 +67108,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('uom'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -67175,7 +67233,7 @@ export default {
       required: ["id", "name", "materialSubstanceId"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('finish'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -67203,7 +67261,7 @@ export default {
       required: ["id", "name", "version", "status", "createdAt", "createdBy"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('pro'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -67373,7 +67431,7 @@ export default {
       required: ["id", "documentId", "type", "userId", "createdAt"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -67430,7 +67488,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('job'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -67622,7 +67680,7 @@ export default {
       required: ["id", "email", "companyId", "isCustomer"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('con'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -67781,7 +67839,7 @@ export default {
       required: ["id", "startDate", "endDate", "periodType", "createdAt"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('per'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -67852,7 +67910,7 @@ export default {
       required: ["id", "purchaseOrderId", "status", "createdAt", "createdBy"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -67906,7 +67964,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('ncw'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -68010,7 +68068,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('pgs'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -68251,7 +68309,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -68705,7 +68763,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('wh'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -68941,6 +68999,7 @@ export default {
       ],
       properties: {
         id: {
+          default: "public.id('sh'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -69018,7 +69077,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('smeth'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -69100,7 +69159,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "extensions.uuid_generate_v4()",
+          default: "public.id('doc'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -69439,7 +69498,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('pi'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -69625,7 +69684,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('uatr'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -69703,7 +69762,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('jnote'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -69767,7 +69826,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('acct'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -69888,7 +69947,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('jo'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -70147,7 +70206,7 @@ export default {
       required: ["id", "name", "createdAt", "createdBy"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('uatc'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -70576,7 +70635,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('qmat'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -70703,7 +70762,7 @@ export default {
       required: ["id", "name", "companyId", "createdAt", "createdBy"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('cs'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -70797,7 +70856,7 @@ export default {
       required: ["id", "customerId", "contactId"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -70914,7 +70973,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('ocod'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -70973,7 +71032,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -71170,7 +71229,7 @@ export default {
       required: ["id", "name", "createdBy", "createdAt", "code"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('shape'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -71560,7 +71619,7 @@ export default {
       required: ["id", "supplierId", "contactId"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -71613,7 +71672,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('ocli'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -71706,7 +71765,7 @@ export default {
       required: ["id", "location", "feedback"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('fb'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -72014,7 +72073,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('sh'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -72357,7 +72416,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -72470,7 +72529,7 @@ export default {
       required: ["id", "name", "customFields", "createdAt", "createdBy"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('gt'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -72530,7 +72589,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -72667,7 +72726,7 @@ export default {
       required: ["id", "salesOrderId", "status", "createdAt", "createdBy"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -72724,7 +72783,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('sq'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -72898,7 +72957,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('ncr'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -72962,6 +73021,7 @@ export default {
       required: ["id", "companyId", "employeeTypeId", "active"],
       properties: {
         id: {
+          default: "public.id('emp'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -72990,7 +73050,7 @@ export default {
       required: ["id", "userAttributeId", "userId", "createdAt", "createdBy"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('uatv'::text)",
           format: "text",
           type: "string",
         },
@@ -73112,7 +73172,7 @@ export default {
       required: ["id", "invoiceId", "status", "createdAt"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -73158,7 +73218,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('ap'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -73250,7 +73310,7 @@ export default {
       required: ["id", "name", "companyId", "createdAt", "taxPercent"],
       properties: {
         id: {
-          default: "extensions.uuid_generate_v4()",
+          default: "public.id('cust'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -73376,7 +73436,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('po'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -73877,7 +73937,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('cplan'::text)",
           description:
             "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
           format: "text",
@@ -74089,7 +74149,7 @@ export default {
       required: ["id", "rfqId", "revisionId", "status", "rfqDate", "companyId"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('srfq'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -74369,7 +74429,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('curr'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -74437,7 +74497,7 @@ export default {
       required: ["id", "companyId"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('addr'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -74656,7 +74716,7 @@ export default {
       required: ["id", "modelPath", "companyId", "createdBy"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('model'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -74728,7 +74788,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('cl'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -74861,7 +74921,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('jl'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -75123,7 +75183,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -75223,7 +75283,7 @@ export default {
       required: ["id", "procedureId", "key", "value", "createdAt", "createdBy"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -75401,7 +75461,7 @@ export default {
       required: ["id", "name", "createdAt", "createdBy", "customFields"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('nct'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -75527,7 +75587,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('abil'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -75610,7 +75670,7 @@ export default {
           type: "string",
         },
         id: {
-          default: "public.xid()",
+          default: "public.id('cp'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -75631,7 +75691,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('qot'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -76320,7 +76380,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('mop'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -76525,7 +76585,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('jmat'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -76803,7 +76863,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('bp'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -76946,7 +77006,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('ncpol'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -77016,7 +77076,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('ncit'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -77338,7 +77398,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -77678,7 +77738,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -77896,7 +77956,7 @@ export default {
       required: ["id", "name", "baseCurrencyCode"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -78233,7 +78293,7 @@ export default {
       required: ["id", "supplierId", "addressId", "name"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -78446,7 +78506,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('pterm'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -78665,7 +78725,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('ncte'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -78716,7 +78776,7 @@ export default {
       required: ["id"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('tm'::text)",
           description:
             "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
           format: "text",
@@ -78878,7 +78938,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('ncs'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -78929,7 +78989,7 @@ export default {
       required: ["id", "materialFormId", "name", "isMetric"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('mdim'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -79193,7 +79253,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('nc'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -79353,7 +79413,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('gcr'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -79428,7 +79488,7 @@ export default {
       required: ["id", "invoiceId", "paymentId"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('pipr'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -79716,7 +79776,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('ncjo'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -79850,7 +79910,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -80111,7 +80171,7 @@ export default {
       required: ["id", "name", "key", "companyId", "createdBy", "createdAt"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('api'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -80253,7 +80313,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('n'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -80302,7 +80362,7 @@ export default {
       required: ["id", "name", "createdBy", "createdAt", "code"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('sub'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -80369,7 +80429,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('qmm'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -80743,7 +80803,7 @@ export default {
       required: ["id", "name", "companyId", "createdAt", "taxPercent"],
       properties: {
         id: {
-          default: "extensions.uuid_generate_v4()",
+          default: "public.id('sup'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -81098,7 +81158,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('supl'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -81168,7 +81228,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('qop'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -81229,7 +81289,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('i'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -81542,7 +81602,7 @@ export default {
       required: ["id", "purchaseOrderId", "type", "userId", "createdAt"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -81792,7 +81852,7 @@ export default {
       required: ["id", "name", "date", "companyId", "createdBy", "createdAt"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('hol'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -81860,7 +81920,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('pe'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -81953,7 +82013,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('hook'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -82051,7 +82111,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('wc'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -82169,7 +82229,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('g'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -82295,7 +82355,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('sp'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -82366,7 +82426,7 @@ export default {
       required: ["id", "name", "active", "companyId", "createdBy", "createdAt"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('ipg'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -82512,7 +82572,7 @@ export default {
       required: ["id", "companyId", "customerId"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('opp'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -82553,7 +82613,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('cf'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -82694,7 +82754,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('quote'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -82897,7 +82957,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -83089,7 +83149,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -83232,7 +83292,7 @@ export default {
       required: ["id", "materialSubstanceId", "name"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('grade'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -83340,6 +83400,7 @@ export default {
       required: ["id", "approved", "companyId", "createdBy", "createdAt"],
       properties: {
         id: {
+          default: "public.id('part'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -83503,7 +83564,7 @@ export default {
       required: ["id", "salesOrderId", "type", "userId", "createdAt"],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
