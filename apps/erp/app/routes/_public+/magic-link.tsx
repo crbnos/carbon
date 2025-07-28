@@ -40,10 +40,10 @@ export default function ConfirmMagicLink() {
         <Heading
           {...fade}
           transition={{ duration: 0.8, ease: "easeInOut", delay: 0.5 }}
-          size="h1"
+          size="h3"
           className="m-0"
         >
-          Welcome Back
+          Magic Link Authentication
         </Heading>
 
         <Button
