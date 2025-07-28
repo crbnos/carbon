@@ -966,64 +966,51 @@ export async function upsertWarehouseTransfer(
     .single();
 }
 
-export async function shipWarehouseTransfer(
+export async function updateWarehouseTransferStatus(
   client: SupabaseClient<Database>,
   transferId: string,
-  quantity: number,
+  status: Database["public"]["Tables"]["warehouseTransfer"]["Row"]["status"],
   updatedBy: string
 ) {
-  // Update all transfer lines to mark quantities as shipped
-  const linesUpdate = await client
-    .from("warehouseTransferLine")
-    .update({
-      shippedQuantity: quantity,
-      updatedBy,
-      updatedAt: new Date().toISOString(),
-    })
-    .eq("transferId", transferId);
-
-  if (linesUpdate.error) {
-    return linesUpdate;
-  }
-
-  // Update transfer status to In Transit
   return client
     .from("warehouseTransfer")
     .update({
-      status: "In Transit",
+      status,
       updatedBy,
       updatedAt: new Date().toISOString(),
     })
     .eq("id", transferId);
 }
 
-export async function receiveWarehouseTransfer(
+export async function upsertWarehouseTransferLine(
   client: SupabaseClient<Database>,
-  transferId: string,
-  quantity: number,
-  updatedBy: string
+  line:
+    | Database["public"]["Tables"]["warehouseTransferLine"]["Insert"]
+    | (Database["public"]["Tables"]["warehouseTransferLine"]["Update"] & {
+        id: string;
+      })
 ) {
-  // Update all transfer lines to mark quantities as received
-  const linesUpdate = await client
-    .from("warehouseTransferLine")
-    .update({
-      receivedQuantity: quantity,
-      updatedBy,
-      updatedAt: new Date().toISOString(),
-    })
-    .eq("transferId", transferId);
-
-  if (linesUpdate.error) {
-    return linesUpdate;
+  if ("id" in line && line.id) {
+    // Update existing line
+    const { id, ...updateData } = line;
+    return client
+      .from("warehouseTransferLine")
+      .update({
+        ...updateData,
+        updatedAt: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .select()
+      .single();
+  } else {
+    // Insert new line
+    return client
+      .from("warehouseTransferLine")
+      .insert({
+        ...line,
+        createdAt: new Date().toISOString(),
+      } as Database["public"]["Tables"]["warehouseTransferLine"]["Insert"])
+      .select()
+      .single();
   }
-
-  // Update transfer status to Received
-  return client
-    .from("warehouseTransfer")
-    .update({
-      status: "Received",
-      updatedBy,
-      updatedAt: new Date().toISOString(),
-    })
-    .eq("id", transferId);
 }

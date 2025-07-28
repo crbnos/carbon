@@ -999,6 +999,280 @@ serve(async (req: Request) => {
         });
         break;
       }
+      case "Inbound Transfer": {
+        if (!receipt.data.sourceDocumentId)
+          throw new Error("Receipt has no sourceDocumentId");
+
+        const [warehouseTransfer, warehouseTransferLines] = await Promise.all([
+          client
+            .from("warehouseTransfer")
+            .select("*")
+            .eq("id", receipt.data.sourceDocumentId)
+            .single(),
+          client
+            .from("warehouseTransferLine")
+            .select("*")
+            .eq("transferId", receipt.data.sourceDocumentId),
+        ]);
+
+        if (warehouseTransfer.error)
+          throw new Error("Failed to fetch warehouse transfer");
+        if (warehouseTransferLines.error)
+          throw new Error("Failed to fetch warehouse transfer lines");
+
+        // Get item costs for valuation
+        const transferItemIds = warehouseTransferLines.data
+          .map((line) => line.itemId)
+          .filter(Boolean) as string[];
+        const itemCosts = await client
+          .from("itemCost")
+          .select("itemId, itemPostingGroupId, unitCost")
+          .in("itemId", transferItemIds);
+
+        if (itemCosts.error) {
+          throw new Error("Failed to fetch item costs");
+        }
+
+        const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
+          [];
+        const journalLineInserts: Omit<
+          Database["public"]["Tables"]["journalLine"]["Insert"],
+          "journalId"
+        >[] = [];
+        const warehouseTransferLineUpdates: Record<
+          string,
+          Database["public"]["Tables"]["warehouseTransferLine"]["Update"]
+        > = {};
+
+        // Cache for inventory posting groups to avoid repeated queries
+        const inventoryPostingGroups: Record<
+          string,
+          Database["public"]["Tables"]["postingGroupInventory"]["Row"] | null
+        > = {};
+
+        // Process each receipt line
+        for await (const receiptLine of receiptLines.data) {
+          const warehouseTransferLine = warehouseTransferLines.data.find(
+            (line) => line.id === receiptLine.lineId
+          );
+
+          if (!warehouseTransferLine) continue;
+
+          const receivedQuantity = receiptLine.receivedQuantity ?? 0;
+          if (receivedQuantity === 0) continue;
+
+          // Update warehouse transfer line received quantity
+          const newReceivedQuantity =
+            (warehouseTransferLine.receivedQuantity ?? 0) + receivedQuantity;
+
+          warehouseTransferLineUpdates[warehouseTransferLine.id] = {
+            receivedQuantity: newReceivedQuantity,
+          };
+
+          // Get item cost for this item
+          const itemCost = itemCosts.data?.find(
+            (cost) => cost.itemId === receiptLine.itemId
+          );
+          const unitCost = itemCost?.unitCost ?? 0;
+          const totalValue = Math.abs(receivedQuantity) * unitCost;
+
+          // Create item ledger entry for positive adjustment at destination
+          itemLedgerInserts.push({
+            postingDate: today,
+            itemId: receiptLine.itemId,
+            quantity: receivedQuantity,
+            locationId: receiptLine.locationId,
+            shelfId: receiptLine.shelfId,
+            entryType: "Transfer",
+            documentType: "Transfer Receipt",
+            documentId: warehouseTransfer.data?.transferId,
+            externalDocumentId: receipt.data?.externalDocumentId ?? undefined,
+            createdBy: userId,
+            companyId,
+          });
+
+          // Create journal entries for inventory movement if there's value
+          if (totalValue > 0 && itemCost?.itemPostingGroupId) {
+            const fromLocationId = warehouseTransferLine.fromLocationId;
+            const toLocationId = receiptLine.locationId;
+
+            // Get inventory posting groups for both locations
+            const fromGroupKey = `${itemCost.itemPostingGroupId}-${fromLocationId}`;
+            const toGroupKey = `${itemCost.itemPostingGroupId}-${toLocationId}`;
+
+            // Fetch from location posting group if not cached
+            if (!(fromGroupKey in inventoryPostingGroups)) {
+              const fromPostingGroup = await getInventoryPostingGroup(
+                client,
+                companyId,
+                {
+                  itemPostingGroupId: itemCost.itemPostingGroupId,
+                  locationId: fromLocationId,
+                }
+              );
+              inventoryPostingGroups[fromGroupKey] =
+                fromPostingGroup.data ?? null;
+            }
+
+            // Fetch to location posting group if not cached
+            if (!(toGroupKey in inventoryPostingGroups)) {
+              const toPostingGroup = await getInventoryPostingGroup(
+                client,
+                companyId,
+                {
+                  itemPostingGroupId: itemCost.itemPostingGroupId,
+                  locationId: toLocationId,
+                }
+              );
+              inventoryPostingGroups[toGroupKey] = toPostingGroup.data ?? null;
+            }
+
+            const fromPostingGroup = inventoryPostingGroups[fromGroupKey];
+            const toPostingGroup = inventoryPostingGroups[toGroupKey];
+
+            if (fromPostingGroup && toPostingGroup) {
+              const journalLineReference = nanoid();
+
+              // Credit (subtract) inventory from source location
+              journalLineInserts.push({
+                accountNumber: fromPostingGroup.inventoryAccount,
+                description: `Transfer Out - ${warehouseTransfer.data?.transferId}`,
+                amount: credit("asset", totalValue),
+                quantity: Math.abs(receivedQuantity),
+                documentType: "Receipt",
+                documentId: receipt.data?.id,
+                externalDocumentId: warehouseTransfer.data?.transferId,
+                documentLineReference: `transfer-receipt:${receiptLine.lineId}`,
+                journalLineReference,
+                companyId,
+              });
+
+              // Debit (add) inventory to destination location
+              journalLineInserts.push({
+                accountNumber: toPostingGroup.inventoryAccount,
+                description: `Transfer In - ${warehouseTransfer.data?.transferId}`,
+                amount: debit("asset", totalValue),
+                quantity: Math.abs(receivedQuantity),
+                documentType: "Receipt",
+                documentId: receipt.data?.id,
+                externalDocumentId: warehouseTransfer.data?.transferId,
+                documentLineReference: `transfer-receipt:${receiptLine.lineId}`,
+                journalLineReference,
+                companyId,
+              });
+            }
+          }
+        }
+
+        // Check if all lines are fully received
+        const allLinesFullyReceived = warehouseTransferLines.data.every(
+          (line) => {
+            const updates = warehouseTransferLineUpdates[line.id];
+            const receivedQty =
+              updates?.receivedQuantity ?? line.receivedQuantity ?? 0;
+            return receivedQty >= (line.quantity ?? 0);
+          }
+        );
+
+        // Check if all lines are fully shipped
+        const allLinesFullyShipped = warehouseTransferLines.data.every(
+          (line) => {
+            const shippedQty = line.shippedQuantity ?? 0;
+            return shippedQty >= (line.quantity ?? 0);
+          }
+        );
+
+        // Determine new warehouse transfer status
+        let newStatus: Database["public"]["Tables"]["warehouseTransfer"]["Row"]["status"] =
+          warehouseTransfer.data.status;
+
+        if (allLinesFullyReceived && allLinesFullyShipped) {
+          newStatus = "Completed";
+        } else if (allLinesFullyReceived && !allLinesFullyShipped) {
+          newStatus = "To Ship";
+        } else if (!allLinesFullyReceived && allLinesFullyShipped) {
+          newStatus = "To Receive";
+        }
+
+        const accountingPeriodId = await getCurrentAccountingPeriod(
+          client,
+          companyId,
+          db
+        );
+
+        await db.transaction().execute(async (trx) => {
+          // Update warehouse transfer lines
+          for await (const [lineId, update] of Object.entries(
+            warehouseTransferLineUpdates
+          )) {
+            await trx
+              .updateTable("warehouseTransferLine")
+              .set(update)
+              .where("id", "=", lineId)
+              .execute();
+          }
+
+          // Update warehouse transfer status
+          await trx
+            .updateTable("warehouseTransfer")
+            .set({
+              status: newStatus,
+              updatedBy: userId,
+            })
+            .where("id", "=", warehouseTransfer.data.id)
+            .execute();
+
+          // Create journal entries if there are any
+          if (journalLineInserts.length > 0) {
+            const journal = await trx
+              .insertInto("journal")
+              .values({
+                accountingPeriodId,
+                description: `Transfer Receipt ${receipt.data.receiptId}`,
+                postingDate: today,
+                companyId,
+              })
+              .returning(["id"])
+              .execute();
+
+            const journalId = journal[0].id;
+            if (!journalId) throw new Error("Failed to insert journal");
+
+            await trx
+              .insertInto("journalLine")
+              .values(
+                journalLineInserts.map((journalLine) => ({
+                  ...journalLine,
+                  journalId,
+                }))
+              )
+              .returning(["id"])
+              .execute();
+          }
+
+          // Create item ledger entries
+          if (itemLedgerInserts.length > 0) {
+            await trx
+              .insertInto("itemLedger")
+              .values(itemLedgerInserts)
+              .returning(["id"])
+              .execute();
+          }
+
+          // Update receipt status
+          await trx
+            .updateTable("receipt")
+            .set({
+              status: "Posted",
+              postingDate: today,
+              postedBy: userId,
+            })
+            .where("id", "=", receiptId)
+            .execute();
+        });
+
+        break;
+      }
       default: {
         break;
       }
