@@ -16,7 +16,6 @@ import { useProgress } from "~/hooks";
 import { path } from "~/utils/path";
 import {
   formatDuration,
-  getAllLessonsForTopic,
   getLessonContext,
   getNextLesson,
   getPreviousLesson,
@@ -314,11 +313,9 @@ export default function LessonRoute() {
               Lessons in this topic
             </h3>
             <div className="flex flex-col gap-1">
-              {getAllLessonsForTopic(topic).map((topicLesson) => {
+              {topic.lessons.map((topicLesson) => {
                 const isCompleted = completedLessons.includes(topicLesson.id);
-                const isSupplemental = topic.supplemental?.some(
-                  (lesson: any) => lesson.id === topicLesson.id
-                );
+
                 return (
                   <Link
                     key={topicLesson.id}
@@ -341,11 +338,6 @@ export default function LessonRoute() {
                         }
                       >
                         {topicLesson.name}
-                        {isSupplemental && (
-                          <span className="ml-1 text-xs text-muted-foreground">
-                            (Supplemental)
-                          </span>
-                        )}
                       </span>
                     </div>
                     <span className="text-muted-foreground text-xs">

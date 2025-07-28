@@ -63,20 +63,12 @@ export function getLessonContext(lessonId: string) {
   return null;
 }
 
-export function getAllLessonsForTopic(topic: any) {
-  const allLessons = [...topic.lessons];
-  if (topic.supplemental) {
-    allLessons.push(...topic.supplemental);
-  }
-  return allLessons;
-}
-
 export function getNextLesson(lessonId: string) {
   const context = getLessonContext(lessonId);
   if (!context) return null;
 
   const { topic } = context;
-  const allLessons = getAllLessonsForTopic(topic);
+  const allLessons = topic.lessons;
   const currentIndex = allLessons.findIndex((lesson) => lesson.id === lessonId);
 
   if (currentIndex === -1 || currentIndex === allLessons.length - 1) {
@@ -91,7 +83,7 @@ export function getPreviousLesson(lessonId: string) {
   if (!context) return null;
 
   const { topic } = context;
-  const allLessons = getAllLessonsForTopic(topic);
+  const allLessons = topic.lessons;
   const currentIndex = allLessons.findIndex((lesson) => lesson.id === lessonId);
 
   if (currentIndex <= 0) {

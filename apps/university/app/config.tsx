@@ -271,28 +271,28 @@ export const modules: Config = [
                 id: "users-permissions",
                 name: "Users and Permissions",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/39927f9213224b91a071f4b907ee55bd?sid=1fb2d1f0-28e3-43f4-a0b4-e490a36c8e4c",
                 description:
                   "Learn how to setup your users in Carbon. This includes creating users, setting permissions, and managing access levels.",
-                duration: 0,
+                duration: 150,
               },
               {
                 id: "locations-resources",
                 name: "Locations and Resources",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/f05bf13276d341a284670b0792b216c4?sid=324008b1-08bd-4c10-80ee-d1ad23e033a0",
                 description:
                   "Learn how to setup your work centers, machines, and processes in Carbon. This is essential for manufacturing and resource planning.",
-                duration: 0,
+                duration: 301,
               },
               {
                 id: "integrations",
                 name: "Integrations",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/ee50229e2f294170878038639479a18e?sid=49a1a785-5a45-42b8-bc30-809f2e50fb43",
                 description:
                   "Learn how to setup your integrations in Carbon to connect with other business systems and tools.",
-                duration: 0,
+                duration: 91,
               },
             ],
           },
@@ -329,10 +329,10 @@ export const modules: Config = [
                 id: "import-tools",
                 name: "Import Tools",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/48df93ff658342e19a75c178a744c032?sid=0da5594c-26f9-4b51-aa80-670d02ad839c",
                 description:
                   "Learn how to use Carbon's built-in import tools to efficiently migrate your data from other systems.",
-                duration: 0,
+                duration: 174,
               },
             ],
             supplemental: [
@@ -382,29 +382,38 @@ export const modules: Config = [
               {
                 id: "parts-materials-consumables-tools",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/acad6206adde4d1185e83f57393f36e9?sid=3cec60b1-91e3-454b-a6dd-f08fe1035ef2",
                 name: "Parts, Materials and Tools",
                 description:
                   "Learn the differences between various item types and when to use each one in your business processes.",
-                duration: 0,
+                duration: 140,
+              },
+              {
+                id: "raw-materials",
+                loomUrl:
+                  "https://www.loom.com/share/4a8a1ad61bb44521b421e08f7152953c?sid=05cd0ff7-da25-4042-8967-ae0e19179cf1",
+                name: "Raw Materials",
+                description:
+                  "Learn how to define and manage raw materials in Carbon.",
+                duration: 242,
               },
               {
                 id: "method-types",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/bdd3c9479b8445a7abee54427c51bb57?sid=c2847cd1-6a40-486b-bf71-f3977c6ef598",
                 name: "Method Types",
                 description:
                   "Understand the different method types available for items and how they affect manufacturing processes.",
-                duration: 0,
+                duration: 289,
               },
               {
                 id: "tracking-types",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/30a89f804dd543ef98ccd37496e14bae?sid=a5995cf6-7a4f-450b-9e99-b1beae61a444",
                 name: "Tracking Types",
                 description:
                   "Learn about different tracking types and how they help manage inventory and traceability.",
-                duration: 0,
+                duration: 242,
               },
             ],
           },
@@ -430,49 +439,49 @@ export const modules: Config = [
               {
                 id: "methods",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/2d8403ecd2d5482da7034fd7f0b21969?sid=241d93bc-31c9-44e5-803a-88da0f24d49a",
                 name: "Methods",
                 description:
                   "Learn how to create and manage manufacturing methods that define how items are produced.",
-                duration: 0,
+                duration: 179,
               },
 
               {
                 id: "bill-of-materials",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/95252bd69ff74ddd8147bc0267d8d3d8?sid=dbecc174-40f2-48b0-9881-574d7e36c39b",
                 name: "Bill of Materials",
                 description:
                   "Learn how to create and manage bills of materials that define what components are needed.",
-                duration: 0,
+                duration: 173,
               },
               {
                 id: "bill-of-process",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/f4b8f9d550334e41b2b2708b5b73a7c6?sid=daf88059-7d31-4c24-93fa-ec3c4d0d6b3a",
                 name: "Bill of Process",
                 description:
                   "Understand how to create and manage bills of process that define the manufacturing steps.",
-                duration: 0,
+                duration: 269,
               },
 
               {
                 id: "revisions-versions",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/4281db40849c42aa856120058ced3d7b?sid=43ac885f-9111-47c8-9959-0d9171d65d4c",
                 name: "Revisions and Versions",
                 description:
                   "Master the revision and version control system for managing changes to methods and bills.",
-                duration: 0,
+                duration: 212,
               },
               {
                 id: "get-method-save-method",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/77f4a8f65c234b2c8f853ed8596003be?sid=87764c32-8656-4179-9d4b-77fe0a41ab11",
                 name: "Get Method and Save Method",
                 description:
                   "Learn how to retrieve and save methods programmatically using Carbon's API.",
-                duration: 0,
+                duration: 200,
               },
             ],
           },
@@ -503,7 +512,7 @@ export const modules: Config = [
                 name: "Procedures",
                 description:
                   "Learn how to create and manage procedures that define the manufacturing steps.",
-                duration: 330,
+                duration: 0,
               },
               {
                 id: "subassemblies-vs-kits",
@@ -512,7 +521,7 @@ export const modules: Config = [
                 name: "Subassemblies vs Kits",
                 description:
                   "Learn the difference between subassemblies and kits and when to use each one.",
-                duration: 330,
+                duration: 0,
               },
               {
                 id: "product-configurator",
@@ -521,7 +530,7 @@ export const modules: Config = [
                 name: "Product Configurator",
                 description:
                   "Learn how to use Carbon's product configurator to create complex, configurable products.",
-                duration: 330,
+                duration: 328,
               },
             ],
             supplemental: [],
@@ -556,21 +565,30 @@ export const modules: Config = [
             ],
             lessons: [
               {
-                id: "planning",
-                loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
-                name: "Planning",
-                description:
-                  "See how Carbon's planning tools help you forecast demand and generate replenishment requirements.",
-                duration: 0,
-              },
-              {
                 id: "inventory-management",
                 loomUrl:
                   "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Inventory Levels",
                 description:
                   "Learn how to monitor and manage inventory levels, set reorder points, and handle stock movements.",
+                duration: 0,
+              },
+              {
+                id: "purchasing-planning",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                name: "Purchasing Planning",
+                description:
+                  "See how Carbon's purchasing planning tools help you forecast demand and generate replenishment requirements.",
+                duration: 0,
+              },
+              {
+                id: "production-planning",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                name: "Production Planning",
+                description:
+                  "See how Carbon's production planning tools help you forecast demand and generate replenishment requirements.",
                 duration: 0,
               },
             ],
@@ -1435,11 +1453,11 @@ export const modules: Config = [
               {
                 id: "integrations",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/ee50229e2f294170878038639479a18e?sid=49a1a785-5a45-42b8-bc30-809f2e50fb43",
                 name: "Integrations",
                 description:
                   "Learn how to integrate Carbon with other business systems and tools.",
-                duration: 0,
+                duration: 91,
               },
               {
                 id: "applications",
