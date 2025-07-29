@@ -66,7 +66,7 @@ import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { usePermissions } from "~/hooks";
 import { itemTypes } from "~/modules/inventory/inventory.models";
 import { itemReorderingPolicies } from "~/modules/items/items.models";
-import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
+import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
 import {
   getProductionOrdersFromPlanning,
@@ -295,7 +295,7 @@ const OrderDrawer = memo(
               <span>{row.readableIdWithRevision}</span>
               <Link
                 // @ts-ignore
-                to={getLinkToItemDetails(row.type, row.id)}
+                to={getLinkToItemPlanning(row.type, row.id)}
               >
                 <LuExternalLink />
               </Link>

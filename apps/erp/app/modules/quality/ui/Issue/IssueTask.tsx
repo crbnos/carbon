@@ -24,7 +24,6 @@ import {
   LuChevronRight,
   LuCircleCheck,
   LuCirclePlay,
-  LuCircleX,
   LuLoaderCircle,
 } from "react-icons/lu";
 import { Assignee } from "~/components";
@@ -107,7 +106,7 @@ export function TaskItem({
     taskId: task.id!,
     type,
   });
-  
+
   const { id } = useParams();
   const routeData = useRouteData<{ nonConformance: Issue }>(path.to.issue(id!));
   const submit = useSubmit();
@@ -147,7 +146,7 @@ export function TaskItem({
               onChange={(value) => {
                 setContent(value);
                 onUpdateContent(value);
-                
+
                 // Auto-start issue when typing in task if issue status is "Registered"
                 if (
                   routeData?.nonConformance?.status === "Registered" &&
@@ -192,19 +191,6 @@ export function TaskItem({
           />
         </HStack>
         <HStack>
-          {currentStatus === "Pending" && (
-            <Button
-              isDisabled={isDisabled}
-              variant="secondary"
-              size="sm"
-              leftIcon={<LuCircleX />}
-              onClick={() => {
-                onOperationStatusChange(task.id!, "Skipped");
-              }}
-            >
-              Skip
-            </Button>
-          )}
           <Button
             isDisabled={isDisabled}
             leftIcon={statusAction.icon}

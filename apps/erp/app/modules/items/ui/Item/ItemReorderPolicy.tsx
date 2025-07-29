@@ -56,7 +56,7 @@ export function getReorderPolicyDescription(
       return "Manually reorder the item";
     case "Demand-Based Reorder":
       const demandAccumulationPeriod = itemPlanning.demandAccumulationPeriod;
-      return `Order to a minimum of ${demandAccumulationPeriod} days of stock`;
+      return `Order enough to cover the next ${demandAccumulationPeriod} weeks`;
     case "Fixed Reorder Quantity":
       const reorderQuantity = itemPlanning.reorderQuantity;
       return `When stock is below ${reorderPoint}, order ${reorderQuantity} units`;
