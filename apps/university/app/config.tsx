@@ -567,11 +567,11 @@ export const modules: Config = [
               {
                 id: "inventory-management",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/66045f3ef31c4d93b734fad7df0006dc?sid=5f896ab7-1765-411c-afd2-c320a4df18a7",
                 name: "Inventory Levels",
                 description:
                   "Learn how to monitor and manage inventory levels, set reorder points, and handle stock movements.",
-                duration: 0,
+                duration: 171,
               },
               {
                 id: "planning",
