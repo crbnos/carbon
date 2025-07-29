@@ -576,10 +576,18 @@ export const modules: Config = [
               {
                 id: "planning",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/2eda5d04792a4f91af2c6c375ec46bc3?sid=8b74758d-0273-429b-8a51-aeee9f74a7b6",
                 name: "Planning",
                 description:
                   "See how Carbon's planning tools help you forecast demand and generate replenishment requirements.",
+                duration: 370,
+              },
+              {
+                id: "reorder-policy",
+                loomUrl: "",
+                name: "Reorder Policies",
+                description:
+                  "Learn how different reorder-policies affect planning",
                 duration: 0,
               },
             ],

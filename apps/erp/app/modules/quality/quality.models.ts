@@ -21,7 +21,7 @@ export const nonConformanceInvestigationType = [
 
 export const nonConformanceRequiredAction = [
   "Corrective Action",
-  "Preventive Action",
+  "Preventative Action",
   "Containment Action",
   "Verification",
   "Customer Communication",

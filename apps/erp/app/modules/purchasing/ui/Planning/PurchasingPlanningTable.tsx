@@ -82,7 +82,7 @@ import { itemTypes } from "~/modules/inventory/inventory.models";
 import { itemReorderingPolicies } from "~/modules/items/items.models";
 import type { SupplierPart } from "~/modules/items/types";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
-import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
+import { getLinkToItemPlanning } from "~/modules/items/ui/Item/ItemForm";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
 import {
   getPurchaseOrdersFromPlanning,
@@ -399,7 +399,7 @@ const OrderDrawer = memo(
               <DrawerTitle className="flex items-center gap-2">
                 <span>{selectedItem.readableIdWithRevision}</span>
                 <Link
-                  to={getLinkToItemDetails(
+                  to={getLinkToItemPlanning(
                     selectedItem.type as "Part",
                     selectedItem.id
                   )}

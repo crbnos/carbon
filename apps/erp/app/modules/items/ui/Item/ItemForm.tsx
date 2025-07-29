@@ -202,3 +202,20 @@ export function getLinkToItemManufacturing(type: MethodItemType, id: string) {
       return getLinkToItemDetails(type, id);
   }
 }
+
+export function getLinkToItemPlanning(type: MethodItemType, id: string) {
+  switch (type) {
+    case "Part":
+      return path.to.partPlanning(id);
+    case "Material":
+      return path.to.materialPlanning(id);
+    case "Tool":
+      return path.to.toolPlanning(id);
+    case "Consumable":
+      return path.to.consumablePlanning(id);
+    // case "Service":
+    //   return path.to.serviceDetails(id);
+    default:
+      throw new Error("Invalid type");
+  }
+}
