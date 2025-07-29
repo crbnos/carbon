@@ -574,21 +574,12 @@ export const modules: Config = [
                 duration: 0,
               },
               {
-                id: "purchasing-planning",
+                id: "planning",
                 loomUrl:
                   "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
-                name: "Purchasing Planning",
+                name: "Planning",
                 description:
-                  "See how Carbon's purchasing planning tools help you forecast demand and generate replenishment requirements.",
-                duration: 0,
-              },
-              {
-                id: "production-planning",
-                loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
-                name: "Production Planning",
-                description:
-                  "See how Carbon's production planning tools help you forecast demand and generate replenishment requirements.",
+                  "See how Carbon's planning tools help you forecast demand and generate replenishment requirements.",
                 duration: 0,
               },
             ],
