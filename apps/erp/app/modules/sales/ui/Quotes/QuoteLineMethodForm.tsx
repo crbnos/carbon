@@ -1,22 +1,18 @@
-import { SelectControlled, Hidden, Combobox } from "@carbon/form";
+import { Combobox, Hidden, SelectControlled } from "@carbon/form";
 import { useMount, VStack } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
-import { PostgrestResponse } from "@supabase/supabase-js";
-import { useState, useEffect, useMemo } from "react";
+import type { PostgrestResponse } from "@supabase/supabase-js";
+import { useEffect, useMemo, useState } from "react";
 import { path } from "~/utils/path";
+import type { getQuoteLinesList } from "../../sales.service";
 
 export function QuoteLineMethodForm() {
   const quoteFetcher =
     useFetcher<
       PostgrestResponse<{ id: string; quoteId: string; revisionId: number }>
     >();
-  const quoteLineFetcher = useFetcher<
-    PostgrestResponse<{
-      id: string;
-      itemReadableId: string;
-      description: string;
-    }>
-  >();
+  const quoteLineFetcher =
+    useFetcher<Awaited<ReturnType<typeof getQuoteLinesList>>>();
 
   // const quotesLoading = quoteFetcher.state === "loading";
   // const quoteLinesLoading = quoteLineFetcher.state === "loading";
@@ -53,7 +49,7 @@ export function QuoteLineMethodForm() {
   const quoteLineOptions = useMemo(
     () =>
       quoteLineFetcher.data?.data?.map((quoteLine) => ({
-        label: quoteLine.itemReadableId,
+        label: quoteLine.readableIdWithRevision ?? "",
         value: quoteLine.id,
       })) ?? [],
     [quoteLineFetcher.data]
