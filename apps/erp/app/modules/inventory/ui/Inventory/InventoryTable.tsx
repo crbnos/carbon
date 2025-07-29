@@ -8,6 +8,7 @@ import {
   TooltipTrigger,
   VStack,
 } from "@carbon/react";
+import { useNumberFormatter } from "@react-aria/i18n";
 import { useFetcher } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
@@ -32,6 +33,7 @@ import {
   ItemThumbnail,
   MethodItemTypeIcon,
   Table,
+  TrackingTypeIcon,
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
@@ -62,6 +64,7 @@ const InventoryTable = memo(
     const filters = useFilters();
     const materialSubstanceId = filters.getFilter("materialSubstanceId")?.[0];
     const materialFormId = filters.getFilter("materialFormId")?.[0];
+    const numberFormatter = useNumberFormatter();
 
     const columns = useMemo<ColumnDef<InventoryItem>[]>(() => {
       return [
@@ -97,7 +100,12 @@ const InventoryTable = memo(
         {
           accessorKey: "quantityOnHand",
           header: "On Hand",
-          cell: ({ row }) => row.original.quantityOnHand,
+          cell: ({ row }) =>
+            row.original.itemTrackingType === "Non-Inventory" ? (
+              <TrackingTypeIcon type="Non-Inventory" />
+            ) : (
+              numberFormatter.format(row.original.quantityOnHand)
+            ),
           meta: {
             icon: <LuPackage />,
           },
@@ -106,7 +114,8 @@ const InventoryTable = memo(
         {
           accessorKey: "quantityOnPurchaseOrder",
           header: "On Purchase Order",
-          cell: ({ row }) => row.original.quantityOnPurchaseOrder,
+          cell: ({ row }) =>
+            numberFormatter.format(row.original.quantityOnPurchaseOrder),
           meta: {
             icon: <LuMoveUp className="text-emerald-500" />,
           },
@@ -114,7 +123,8 @@ const InventoryTable = memo(
         {
           accessorKey: "quantityOnProductionOrder",
           header: "On Jobs",
-          cell: ({ row }) => row.original.quantityOnProductionOrder,
+          cell: ({ row }) =>
+            numberFormatter.format(row.original.quantityOnProductionOrder),
           meta: {
             icon: <LuMoveUp className="text-emerald-500" />,
           },
@@ -122,7 +132,8 @@ const InventoryTable = memo(
         {
           accessorKey: "quantityOnProductionDemand",
           header: "On Jobs",
-          cell: ({ row }) => row.original.quantityOnProductionDemand,
+          cell: ({ row }) =>
+            numberFormatter.format(row.original.quantityOnProductionDemand),
           meta: {
             icon: <LuMoveDown className="text-red-500" />,
           },
@@ -130,7 +141,8 @@ const InventoryTable = memo(
         {
           accessorKey: "quantityOnSalesOrder",
           header: "On Sales Order",
-          cell: ({ row }) => row.original.quantityOnSalesOrder,
+          cell: ({ row }) =>
+            numberFormatter.format(row.original.quantityOnSalesOrder),
           meta: {
             icon: <LuMoveDown className="text-red-500" />,
           },
@@ -310,6 +322,7 @@ const InventoryTable = memo(
       forms,
       materialFormId,
       materialSubstanceId,
+      numberFormatter,
       params,
       substances,
       unitOfMeasures,

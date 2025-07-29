@@ -584,11 +584,12 @@ export const modules: Config = [
               },
               {
                 id: "reorder-policy",
-                loomUrl: "",
+                loomUrl:
+                  "https://www.loom.com/share/3f80467543934dc3b0fe8978abf09825?sid=32db62c3-bbb7-43f8-a66b-8b8d726c3667",
                 name: "Reorder Policies",
                 description:
                   "Learn how different reorder-policies affect planning",
-                duration: 0,
+                duration: 236,
               },
             ],
           },
