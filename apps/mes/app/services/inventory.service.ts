@@ -5,7 +5,7 @@ import { zfd } from "zod-form-data";
 
 export const inventoryAdjustmentValidator = z.object({
   itemId: z.string().min(1, { message: "Item ID is required" }),
-  locationId: z.string().min(20, { message: "Location is required" }),
+  locationId: z.string().min(1, { message: "Location is required" }),
   shelfId: zfd.text(z.string().optional()),
   entryType: z.enum(["Positive Adjmt.", "Negative Adjmt."]),
   quantity: zfd.numeric(z.number().min(1, { message: "Quantity is required" })),

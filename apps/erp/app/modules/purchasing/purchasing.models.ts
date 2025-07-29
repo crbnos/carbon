@@ -86,7 +86,7 @@ export const purchaseOrderValidator = z.object({
       message: "Type is required",
     }),
   }),
-  supplierId: z.string().min(36, { message: "Supplier is required" }),
+  supplierId: z.string().min(1, { message: "Supplier is required" }),
   supplierLocationId: zfd.text(z.string().optional()),
   supplierContactId: zfd.text(z.string().optional()),
   supplierReference: zfd.text(z.string().optional()),
@@ -139,7 +139,7 @@ export const purchaseOrderDeliveryValidator = z
 export const purchaseOrderLineValidator = z
   .object({
     id: zfd.text(z.string().optional()),
-    purchaseOrderId: z.string().min(20, { message: "Order is required" }),
+    purchaseOrderId: z.string().min(1, { message: "Order is required" }),
     purchaseOrderLineType: z.enum(methodItemType, {
       errorMap: (issue, ctx) => ({
         message: "Type is required",
@@ -259,7 +259,7 @@ export const supplierLocationValidator = z.object({
 });
 
 export const supplierPaymentValidator = z.object({
-  supplierId: z.string().min(36, { message: "Supplier is required" }),
+  supplierId: z.string().min(1, { message: "Supplier is required" }),
   invoiceSupplierId: zfd.text(z.string().optional()),
   invoiceSupplierLocationId: zfd.text(z.string().optional()),
   invoiceSupplierContactId: zfd.text(z.string().optional()),
@@ -268,14 +268,14 @@ export const supplierPaymentValidator = z.object({
 
 export const supplierProcessValidator = z.object({
   id: zfd.text(z.string().optional()),
-  supplierId: z.string().min(36, { message: "Supplier is required" }),
+  supplierId: z.string().min(1, { message: "Supplier is required" }),
   processId: z.string().min(1, { message: "Process is required" }),
   minimumCost: zfd.numeric(z.number().min(0)),
   leadTime: zfd.numeric(z.number().min(0)),
 });
 
 export const supplierShippingValidator = z.object({
-  supplierId: z.string().min(36, { message: "Supplier is required" }),
+  supplierId: z.string().min(1, { message: "Supplier is required" }),
   shippingSupplierId: zfd.text(z.string().optional()),
   shippingSupplierLocationId: zfd.text(z.string().optional()),
   shippingSupplierContactId: zfd.text(z.string().optional()),
@@ -305,7 +305,7 @@ export const supplierQuoteValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     supplierQuoteId: zfd.text(z.string().optional()),
-    supplierId: z.string().min(36, { message: "Supplier is required" }),
+    supplierId: z.string().min(1, { message: "Supplier is required" }),
     supplierLocationId: zfd.text(z.string().optional()),
     supplierContactId: zfd.text(z.string().optional()),
     supplierReference: zfd.text(z.string().optional()),

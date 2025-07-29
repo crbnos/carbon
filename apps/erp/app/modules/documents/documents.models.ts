@@ -21,10 +21,10 @@ export const documentValidator = z.object({
   description: z.string().optional(),
   labels: z.array(z.string().min(1).max(50)).optional(),
   readGroups: z
-    .array(z.string().min(36, { message: "Invalid selection" }))
+    .array(z.string().min(1, { message: "Invalid selection" }))
     .min(1, { message: "Read permissions are required" }),
   writeGroups: z
-    .array(z.string().min(36, { message: "Invalid selection" }))
+    .array(z.string().min(1, { message: "Invalid selection" }))
     .min(1, { message: "Write permissions are required" }),
 });
 

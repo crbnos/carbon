@@ -71,7 +71,7 @@ export const customFieldValidator = z
 export const digitalQuoteValidator = z.object({
   digitalQuoteEnabled: zfd.checkbox(),
   digitalQuoteNotificationGroup: z
-    .array(z.string().min(36, { message: "Invalid selection" }))
+    .array(z.string().min(1, { message: "Invalid selection" }))
     .optional(),
   digitalQuoteIncludesPurchaseOrders: zfd.checkbox(),
 });
@@ -95,7 +95,7 @@ export const productLabelSizeValidator = z.object({
 
 export const rfqReadyValidator = z.object({
   rfqReadyNotificationGroup: z
-    .array(z.string().min(36, { message: "Invalid selection" }))
+    .array(z.string().min(1, { message: "Invalid selection" }))
     .optional(),
 });
 

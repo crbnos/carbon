@@ -197,7 +197,7 @@ export const baseJobOperationValidator = z.object({
       message: "Operation type is required",
     }),
   }),
-  processId: z.string().min(20, { message: "Process is required" }),
+  processId: z.string().min(1, { message: "Process is required" }),
   procedureId: zfd.text(z.string().optional()),
   description: zfd.text(
     z.string().min(0, { message: "Description is required" })
@@ -558,7 +558,7 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
 const baseMaterialValidator = z.object({
   id: zfd.text(z.string().optional()),
   description: z.string().min(1, { message: "Description is required" }),
-  jobMakeMethodId: z.string().min(20, { message: "Make method is required" }),
+  jobMakeMethodId: z.string().min(1, { message: "Make method is required" }),
   itemType: z.enum(methodItemType, {
     errorMap: (issue, ctx) => ({
       message: "Item type is required",

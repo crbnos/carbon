@@ -51,7 +51,7 @@ export const salesInvoiceStatusType = [
 export const purchaseInvoiceValidator = z.object({
   id: zfd.text(z.string().optional()),
   invoiceId: zfd.text(z.string().optional()),
-  supplierId: z.string().min(36, { message: "Supplier is required" }),
+  supplierId: z.string().min(1, { message: "Supplier is required" }),
   supplierReference: zfd.text(z.string().optional()),
   paymentTermId: zfd.text(z.string().optional()),
   currencyCode: zfd.text(z.string().optional()),
@@ -78,7 +78,7 @@ export const purchaseInvoiceDeliveryValidator = z.object({
 export const purchaseInvoiceLineValidator = z
   .object({
     id: zfd.text(z.string().optional()),
-    invoiceId: z.string().min(20, { message: "Invoice is required" }),
+    invoiceId: z.string().min(1, { message: "Invoice is required" }),
     invoiceLineType: z.enum(methodItemType, {
       errorMap: (issue, ctx) => ({
         message: "Type is required",
@@ -149,7 +149,7 @@ export const purchaseInvoiceLineValidator = z
 export const salesInvoiceValidator = z.object({
   id: zfd.text(z.string().optional()),
   invoiceId: zfd.text(z.string().optional()),
-  customerId: z.string().min(36, { message: "Customer is required" }),
+  customerId: z.string().min(1, { message: "Customer is required" }),
   customerReference: zfd.text(z.string().optional()),
   paymentTermId: zfd.text(z.string().optional()),
   currencyCode: zfd.text(z.string().optional()),
@@ -189,7 +189,7 @@ export const salesInvoiceShipmentValidator = z.object({
 export const salesInvoiceLineValidator = z
   .object({
     id: zfd.text(z.string().optional()),
-    invoiceId: z.string().min(20, { message: "Invoice is required" }),
+    invoiceId: z.string().min(1, { message: "Invoice is required" }),
     invoiceLineType: z.enum(methodItemType, {
       errorMap: (issue, ctx) => ({
         message: "Type is required",

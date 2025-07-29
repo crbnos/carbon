@@ -13,7 +13,7 @@ export const abilityValidator = z
       z.number().min(0, { message: "Shadow is required" })
     ),
     employees: z
-      .array(z.string().min(36, { message: "Invalid selection" }))
+      .array(z.string().min(1, { message: "Invalid selection" }))
       .min(1, { message: "Group members are required" })
       .optional(),
   })
@@ -36,19 +36,19 @@ export const abilityNameValidator = z.object({
 });
 
 export const contractorValidator = z.object({
-  id: z.string().min(20, { message: "Supplier Contact is required" }),
-  supplierId: z.string().min(20, { message: "Supplier is required" }),
+  id: z.string().min(1, { message: "Supplier Contact is required" }),
+  supplierId: z.string().min(1, { message: "Supplier is required" }),
   hoursPerWeek: zfd.numeric(
     z.number().min(0, { message: "Hours are required" })
   ),
   // abilities: z
-  //   .array(z.string().min(20, { message: "Invalid ability" }))
+  //   .array(z.string().min(1, { message: "Invalid ability" }))
   //   .optional(),
   assignee: zfd.text(z.string().optional()),
 });
 
 export const employeeAbilityValidator = z.object({
-  employeeId: z.string().min(36, { message: "Employee is required" }),
+  employeeId: z.string().min(1, { message: "Employee is required" }),
   trainingStatus: z.string().min(1, { message: "Status is required" }),
   trainingPercent: zfd.numeric(z.number().optional()),
   trainingDays: zfd.numeric(z.number().optional()),
@@ -80,12 +80,12 @@ export const locationValidator = z
   });
 
 export const partnerValidator = z.object({
-  id: z.string().min(20, { message: "Supplier Location is required" }),
+  id: z.string().min(1, { message: "Supplier Location is required" }),
   supplierId: zfd.text(z.string().optional()),
   hoursPerWeek: zfd.numeric(
     z.number().min(0, { message: "Hours are required" })
   ),
-  // abilityId: z.string().min(20, { message: "Invalid ability" }),
+  // abilityId: z.string().min(1, { message: "Invalid ability" }),
 });
 
 export const processValidator = z
@@ -101,7 +101,7 @@ export const processValidator = z
       })
       .optional(),
     workCenters: z
-      .array(z.string().min(20, { message: "Invalid work center" }))
+      .array(z.string().min(1, { message: "Invalid work center" }))
       .optional(),
   })
   .refine((data) => {
@@ -125,11 +125,11 @@ export const workCenterValidator = z.object({
     errorMap: (issue, ctx) => ({ message: "Standard factor is required" }),
   }),
   laborRate: zfd.numeric(z.number().min(0)),
-  locationId: z.string().min(20, { message: "Location is required" }),
+  locationId: z.string().min(1, { message: "Location is required" }),
   machineRate: zfd.numeric(z.number().min(0)),
   overheadRate: zfd.numeric(z.number().min(0)),
   processes: z
-    .array(z.string().min(20, { message: "Invalid process" }))
+    .array(z.string().min(1, { message: "Invalid process" }))
     .optional(),
   // requiredAbilityId: zfd.text(z.string().optional()),
 });

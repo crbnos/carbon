@@ -1,6 +1,6 @@
 import { cn, VStack } from "@carbon/react";
 import type { ComponentProps } from "react";
-import { FaGhost } from "react-icons/fa";
+import { LuCircleDashed } from "react-icons/lu";
 
 export default function Empty({
   className,
@@ -12,7 +12,7 @@ export default function Empty({
       className={cn("w-full h-full justify-center items-center", className)}
       {...props}
     >
-      <FaGhost className="size-8" />
+      <LuCircleDashed className="size-8 text-muted-foreground" />
       <h3 className="text-xs text-muted-foreground">
         Pretty empty around here
       </h3>

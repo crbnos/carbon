@@ -87,7 +87,7 @@ export const batchPropertyOrderValidator = z.object({
 
 export const inventoryAdjustmentValidator = z.object({
   itemId: z.string().min(1, { message: "Item ID is required" }),
-  locationId: z.string().min(20, { message: "Location is required" }),
+  locationId: z.string().min(1, { message: "Location is required" }),
   shelfId: zfd.text(z.string().optional()),
   adjustmentType: z.enum([...itemLedgerTypes, "Set Quantity"]),
   quantity: zfd.numeric(z.number()),

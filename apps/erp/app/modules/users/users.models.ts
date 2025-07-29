@@ -4,7 +4,7 @@ import { zfd } from "zod-form-data";
 export const bulkPermissionsValidator = z.object({
   editType: z.string().min(1, { message: "Update type is required" }),
   userIds: z
-    .array(z.string().min(36, { message: "Invalid selection" }))
+    .array(z.string().min(1, { message: "Invalid selection" }))
     .min(1, { message: "Group members are required" }),
   data: z
     .string()
@@ -13,8 +13,8 @@ export const bulkPermissionsValidator = z.object({
 });
 
 export const createCustomerAccountValidator = z.object({
-  id: z.string().min(20, "Customer contact is required"),
-  customer: z.string().min(36, { message: "Customer is required" }),
+  id: z.string().min(1, "Customer contact is required"),
+  customer: z.string().min(1, { message: "Customer is required" }),
 });
 
 export const createEmployeeValidator = z.object({
@@ -24,19 +24,19 @@ export const createEmployeeValidator = z.object({
     .email("Must be a valid email"),
   firstName: z.string().min(1, { message: "First name is required" }),
   lastName: z.string().min(1, { message: "Last name is required" }),
-  employeeType: z.string().min(20, { message: "Employee type is required" }),
+  employeeType: z.string().min(1, { message: "Employee type is required" }),
   locationId: z.string().min(1, { message: "Location is required" }),
 });
 
 export const createSupplierAccountValidator = z.object({
-  id: z.string().min(20, "Supplier contact is required"),
-  supplier: z.string().min(36, { message: "Supplier is required" }),
+  id: z.string().min(1, "Supplier contact is required"),
+  supplier: z.string().min(1, { message: "Supplier is required" }),
 });
 
 export const deactivateUsersValidator = z.object({
   redirectTo: z.string(),
   users: z
-    .array(z.string().min(36, { message: "Invalid user id" }))
+    .array(z.string().min(1, { message: "Invalid user id" }))
     .min(1, { message: "Group members are required" }),
 });
 
@@ -63,7 +63,7 @@ export const employeeTypePermissionsValidator = z.array(
 
 export const employeeValidator = z.object({
   id: z.string(),
-  employeeType: z.string().min(20, { message: "Employee type is required" }),
+  employeeType: z.string().min(1, { message: "Employee type is required" }),
   data: z
     .string()
     .startsWith("{", { message: "Invalid JSON" })
@@ -74,19 +74,19 @@ export const groupValidator = z.object({
   id: z.string(),
   name: z.string().min(1, { message: "Name is required" }),
   selections: z
-    .array(z.string().min(36, { message: "Invalid selection" }))
+    .array(z.string().min(1, { message: "Invalid selection" }))
     .min(1, { message: "Group members are required" }),
 });
 
 export const resendInviteValidator = z.object({
   users: z
-    .array(z.string().min(36, { message: "Invalid user id" }))
+    .array(z.string().min(1, { message: "Invalid user id" }))
     .min(1, { message: "Users are required" }),
 });
 
 export const revokeInviteValidator = z.object({
   users: z
-    .array(z.string().min(36, { message: "Invalid user id" }))
+    .array(z.string().min(1, { message: "Invalid user id" }))
     .min(1, { message: "Users are required" }),
 });
 

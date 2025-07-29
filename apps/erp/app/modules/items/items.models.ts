@@ -155,7 +155,7 @@ export const consumableValidator = itemValidator.merge(
 export const customerPartValidator = z.object({
   id: zfd.text(z.string().optional()),
   itemId: z.string().min(1, { message: "Item ID is required" }),
-  customerId: z.string().min(36, { message: "Customer is required" }),
+  customerId: z.string().min(1, { message: "Customer is required" }),
   customerPartId: z.string(),
   customerPartRevision: zfd.text(z.string().optional()),
 });
@@ -199,7 +199,7 @@ export const materialValidatorWithGeneratedIds = z.object({
 
 export const methodMaterialValidator = z.object({
   id: zfd.text(z.string().optional()),
-  makeMethodId: z.string().min(20, { message: "Make method is required" }),
+  makeMethodId: z.string().min(1, { message: "Make method is required" }),
   order: zfd.numeric(z.number().min(0)),
   itemType: z.enum(methodItemType, {
     errorMap: (issue, ctx) => ({
@@ -236,7 +236,7 @@ export const methodOperationValidator = z
         message: "Operation type is required",
       }),
     }),
-    processId: z.string().min(20, { message: "Process is required" }),
+    processId: z.string().min(1, { message: "Process is required" }),
     workCenterId: zfd.text(z.string().optional()),
     procedureId: zfd.text(z.string().optional()),
     description: zfd.text(
@@ -369,7 +369,7 @@ export const itemPostingGroupValidator = z.object({
 export const itemPlanningValidator = z
   .object({
     itemId: z.string().min(1, { message: "Item ID is required" }),
-    locationId: z.string().min(20, { message: "Location is required" }),
+    locationId: z.string().min(1, { message: "Location is required" }),
     reorderingPolicy: z.enum(itemReorderingPolicies, {
       errorMap: (issue, ctx) => ({
         message: "Reordering policy is required",
@@ -471,7 +471,7 @@ export const partValidator = itemValidator.merge(
 
 export const pickMethodValidator = z.object({
   itemId: z.string().min(1, { message: "Item ID is required" }),
-  locationId: z.string().min(20, { message: "Location is required" }),
+  locationId: z.string().min(1, { message: "Location is required" }),
   defaultShelfId: zfd.text(z.string().optional()),
 });
 
@@ -503,7 +503,7 @@ export const serviceValidator = itemValidator.merge(
 export const supplierPartValidator = z.object({
   id: zfd.text(z.string().optional()),
   itemId: z.string().min(1, { message: "Item ID is required" }),
-  supplierId: z.string().min(36, { message: "Supplier ID is required" }),
+  supplierId: z.string().min(1, { message: "Supplier ID is required" }),
   supplierPartId: z.string().optional(),
   supplierUnitOfMeasureCode: zfd.text(z.string().optional()),
   minimumOrderQuantity: zfd.numeric(z.number().min(0)),

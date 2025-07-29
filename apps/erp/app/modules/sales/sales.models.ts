@@ -78,7 +78,7 @@ export const customerValidator = z.object({
 });
 
 export const customerPaymentValidator = z.object({
-  customerId: z.string().min(36, { message: "Customer is required" }),
+  customerId: z.string().min(1, { message: "Customer is required" }),
   invoiceCustomerId: zfd.text(z.string().optional()),
   invoiceCustomerLocationId: zfd.text(z.string().optional()),
   invoiceCustomerContactId: zfd.text(z.string().optional()),
@@ -86,7 +86,7 @@ export const customerPaymentValidator = z.object({
 });
 
 export const customerShippingValidator = z.object({
-  customerId: z.string().min(36, { message: "Customer is required" }),
+  customerId: z.string().min(1, { message: "Customer is required" }),
   shippingCustomerId: zfd.text(z.string().optional()),
   shippingCustomerLocationId: zfd.text(z.string().optional()),
   shippingCustomerContactId: zfd.text(z.string().optional()),
@@ -159,7 +159,7 @@ export const quoteValidator = z.object({
   quoteId: zfd.text(z.string().optional()),
   salesPersonId: zfd.text(z.string().optional()),
   estimatorId: zfd.text(z.string().optional()),
-  customerId: z.string().min(36, { message: "Customer is required" }),
+  customerId: z.string().min(1, { message: "Customer is required" }),
   customerLocationId: zfd.text(z.string().optional()),
   customerContactId: zfd.text(z.string().optional()),
   customerEngineeringContactId: zfd.text(z.string().optional()),
@@ -216,7 +216,7 @@ export const quoteMaterialValidator = z
     id: zfd.text(z.string().optional()),
     quoteMakeMethodId: z
       .string()
-      .min(20, { message: "Make method is required" }),
+      .min(1, { message: "Make method is required" }),
     order: zfd.numeric(z.number().min(0)),
     itemType: z.enum(methodItemType, {
       errorMap: (issue, ctx) => ({
@@ -304,7 +304,7 @@ export const quoteOperationValidator = z
         message: "Operation type is required",
       }),
     }),
-    processId: z.string().min(20, { message: "Process is required" }),
+    processId: z.string().min(1, { message: "Process is required" }),
     procedureId: zfd.text(z.string().optional()),
     workCenterId: zfd.text(z.string().optional()),
     description: zfd.text(
@@ -553,7 +553,7 @@ export const salesOrderValidator = z.object({
   orderDate: z.string().min(1, { message: "Order Date is required" }),
   status: z.enum(salesOrderStatusType).optional(),
   notes: zfd.text(z.string().optional()),
-  customerId: z.string().min(36, { message: "Customer is required" }),
+  customerId: z.string().min(1, { message: "Customer is required" }),
   customerLocationId: zfd.text(z.string().optional()),
   customerContactId: zfd.text(z.string().optional()),
   customerEngineeringContactId: zfd.text(z.string().optional()),
@@ -600,7 +600,7 @@ export const salesOrderShipmentValidator = z
 export const salesOrderLineValidator = z
   .object({
     id: zfd.text(z.string().optional()),
-    salesOrderId: z.string().min(20, { message: "Order is required" }),
+    salesOrderId: z.string().min(1, { message: "Order is required" }),
     salesOrderLineType: z.enum(salesOrderLineType, {
       errorMap: (issue, ctx) => ({
         message: "Type is required",
@@ -703,7 +703,7 @@ export const salesRfqValidator = z.object({
   customerLocationId: zfd.text(z.string().optional()),
   customerContactId: zfd.text(z.string().optional()),
   customerEngineeringContactId: zfd.text(z.string().optional()),
-  customerId: z.string().min(36, { message: "Customer is required" }),
+  customerId: z.string().min(1, { message: "Customer is required" }),
   customerReference: zfd.text(z.string().optional()),
   expirationDate: zfd.text(z.string().optional()),
   externalNotes: zfd.text(z.string().optional()),
@@ -726,7 +726,7 @@ export const salesRfqDragValidator = z.object({
 
 export const salesRfqLineValidator = z.object({
   id: zfd.text(z.string().optional()),
-  salesRfqId: z.string().min(20, { message: "RFQ is required" }),
+  salesRfqId: z.string().min(1, { message: "RFQ is required" }),
   customerPartId: z.string().min(1, { message: "Part Number is required" }),
   customerPartRevision: zfd.text(z.string().optional()),
   itemId: zfd.text(z.string().optional()),

@@ -175,7 +175,7 @@ export const journalLineValidator = z.object({
 export const accountSubcategoryValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }),
-  accountCategoryId: z.string().min(20, { message: "Category is required" }),
+  accountCategoryId: z.string().min(1, { message: "Category is required" }),
 });
 
 export const currencyValidator = z.object({

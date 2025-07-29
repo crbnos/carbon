@@ -58,7 +58,7 @@ export const attributeTextValidator = z.object({
 
 export const attributeUserValidator = z.object({
   ...attributeDefaults,
-  value: z.string().min(36, { message: "User is required" }),
+  value: z.string().min(1, { message: "User is required" }),
 });
 
 export const deleteUserAttributeValueValidator = z.object({
