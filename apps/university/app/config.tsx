@@ -508,20 +508,20 @@ export const modules: Config = [
               {
                 id: "procedures",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/e567df69608744ca8c2b16cb5751f76d?sid=42c982fe-2f53-49d3-9364-d3c8fe56d2ee",
                 name: "Procedures",
                 description:
                   "Learn how to create and manage procedures that define the manufacturing steps.",
-                duration: 0,
+                duration: 215,
               },
               {
                 id: "subassemblies-vs-kits",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/48d6f4a04c6e4b0484a1e0b875fd3a0d?sid=b87c0d16-b51b-45e3-8d47-ed90ff9f3eff",
                 name: "Subassemblies vs Kits",
                 description:
                   "Learn the difference between subassemblies and kits and when to use each one.",
-                duration: 0,
+                duration: 214,
               },
               {
                 id: "product-configurator",
