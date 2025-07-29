@@ -12,8 +12,8 @@ export default function Empty({
       className={cn("w-full h-full justify-center items-center", className)}
       {...props}
     >
-      <FaGhost className="size-12" />
-      <h3 className="text-base text-muted-foreground">
+      <FaGhost className="size-8" />
+      <h3 className="text-xs text-muted-foreground">
         Pretty empty around here
       </h3>
       {children}
