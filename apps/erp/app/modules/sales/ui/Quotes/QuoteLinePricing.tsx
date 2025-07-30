@@ -28,7 +28,7 @@ import {
   Tr,
   VStack,
 } from "@carbon/react";
-import { useFetcher, useParams } from "@remix-run/react";
+import { useFetcher, useParams, useSubmit } from "@remix-run/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   LuChevronDown,
@@ -72,12 +72,31 @@ const QuoteLinePricing = ({
   const { quoteId, lineId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
   if (!lineId) throw new Error("Could not find lineId");
-  const [prices, setPrices] =
-    useState<Record<number, QuotationPrice>>(pricesByQuantity);
+
+  // Consolidated state for all editable fields
+  const [editableFields, setEditableFields] = useState({
+    prices: pricesByQuantity,
+    unitCost: line.unitCost ?? 0,
+    additionalCharges: line.additionalCharges || {},
+    taxPercent: line.taxPercent ?? 0,
+  });
+
+  const submit = useSubmit();
 
   useEffect(() => {
-    setPrices(pricesByQuantity);
-  }, [pricesByQuantity]);
+    setEditableFields((prev) => ({
+      ...prev,
+      prices: pricesByQuantity,
+      unitCost: line.unitCost ?? 0,
+      additionalCharges: line.additionalCharges || {},
+      taxPercent: line.taxPercent ?? 0,
+    }));
+  }, [
+    pricesByQuantity,
+    line.unitCost,
+    line.additionalCharges,
+    line.taxPercent,
+  ]);
 
   const unitPricePrecision = line.unitPricePrecision ?? 2;
 
@@ -98,15 +117,20 @@ const QuoteLinePricing = ({
   }, [fetcher.data]);
 
   const optimisticUnitCost = useMemo<number>(() => {
-    if (!line.itemId) return line.unitCost ?? 0;
+    if (!line.itemId) return editableFields.unitCost;
     if (fetcher.formAction === path.to.itemCostUpdate(line.itemId)) {
       const submitted = fetcher.formData?.get("unitCost");
       if (submitted) {
         return Number(submitted);
       }
     }
-    return line.unitCost ?? 0;
-  }, [line.itemId, line.unitCost, fetcher.formAction, fetcher.formData]);
+    return editableFields.unitCost;
+  }, [
+    line.itemId,
+    editableFields.unitCost,
+    fetcher.formAction,
+    fetcher.formData,
+  ]);
 
   const { id: userId, company } = useUser();
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
@@ -129,10 +153,18 @@ const QuoteLinePricing = ({
       ) as z.infer<typeof quoteLineAdditionalChargesValidator>;
     }
     const parsedAdditionalCharges =
-      quoteLineAdditionalChargesValidator.safeParse(line.additionalCharges);
+      quoteLineAdditionalChargesValidator.safeParse(
+        editableFields.additionalCharges
+      );
 
     return parsedAdditionalCharges.success ? parsedAdditionalCharges.data : {};
-  }, [line, fetcher.formAction, fetcher.formData, lineId, quoteId]);
+  }, [
+    editableFields.additionalCharges,
+    fetcher.formAction,
+    fetcher.formData,
+    lineId,
+    quoteId,
+  ]);
 
   const additionalChargesByQuantity = quantities.map((quantity) => {
     const charges = Object.values(additionalCharges).reduce((acc, charge) => {
@@ -141,6 +173,27 @@ const QuoteLinePricing = ({
     }, 0);
     return charges;
   });
+
+  // Submission function using useSubmit with fetcherKey
+  const submitFieldUpdates = useCallback(
+    (action: string, data: Record<string, any>) => {
+      const formData = new FormData();
+      Object.entries(data).forEach(([key, value]) => {
+        formData.append(
+          key,
+          typeof value === "object" ? JSON.stringify(value) : String(value)
+        );
+      });
+
+      submit(formData, {
+        method: "post",
+        action,
+        navigate: false,
+        fetcherKey: `quote-line-pricing-${lineId}`,
+      });
+    },
+    [submit, lineId]
+  );
 
   const onUpdateChargeDescription = useCallback(
     (chargeId: string, description: string) => {
@@ -152,15 +205,18 @@ const QuoteLinePricing = ({
         },
       };
 
-      const formData = new FormData();
+      // Update local state
+      setEditableFields((prev) => ({
+        ...prev,
+        additionalCharges: updatedCharges,
+      }));
 
-      formData.set("additionalCharges", JSON.stringify(updatedCharges));
-      fetcher.submit(formData, {
-        method: "post",
-        action: path.to.quoteLineCost(quoteId, lineId),
+      // Submit using the new submission function
+      submitFieldUpdates(path.to.quoteLineCost(quoteId, lineId), {
+        additionalCharges: updatedCharges,
       });
     },
-    [additionalCharges, fetcher, lineId, quoteId]
+    [additionalCharges, submitFieldUpdates, lineId, quoteId]
   );
 
   const onUpdateChargeAmount = useCallback(
@@ -176,14 +232,18 @@ const QuoteLinePricing = ({
         },
       };
 
-      const formData = new FormData();
-      formData.set("additionalCharges", JSON.stringify(updatedCharges));
-      fetcher.submit(formData, {
-        method: "post",
-        action: path.to.quoteLineCost(quoteId, lineId),
+      // Update local state
+      setEditableFields((prev) => ({
+        ...prev,
+        additionalCharges: updatedCharges,
+      }));
+
+      // Submit using the new submission function
+      submitFieldUpdates(path.to.quoteLineCost(quoteId, lineId), {
+        additionalCharges: updatedCharges,
       });
     },
-    [additionalCharges, fetcher, lineId, quoteId]
+    [additionalCharges, submitFieldUpdates, lineId, quoteId]
   );
 
   const unitCostsByQuantity = quantities.map((quantity, index) => {
@@ -203,8 +263,8 @@ const QuoteLinePricing = ({
   });
 
   const netPricesByQuantity = quantities.map((quantity, index) => {
-    const price = prices[quantity]?.unitPrice ?? 0;
-    const discount = prices[quantity]?.discountPercent ?? 0;
+    const price = editableFields.prices[quantity]?.unitPrice ?? 0;
+    const discount = editableFields.prices[quantity]?.discountPercent ?? 0;
     const netPrice = price * (1 - discount);
     return netPrice;
   });
@@ -229,64 +289,90 @@ const QuoteLinePricing = ({
     });
   };
 
-  const onUpdateCost = async (value: number) => {
-    if (!line.itemId) return;
-    const formData = new FormData();
-    formData.append("unitCost", value.toString());
-    fetcher.submit(formData, {
-      method: "post",
-      action: path.to.itemCostUpdate(line.itemId),
-    });
-  };
+  const onUpdateCost = useCallback(
+    (value: number) => {
+      if (!line.itemId) return;
 
-  const onUpdatePrice = async (
-    key: "leadTime" | "unitPrice" | "discountPercent" | "shippingCost",
-    quantity: number,
-    value: number
-  ) => {
-    const unitPricePrecision = line.unitPricePrecision ?? 2;
+      // Update local state
+      setEditableFields((prev) => ({
+        ...prev,
+        unitCost: value,
+      }));
 
-    const hasPrice = !!prices[quantity];
-    const oldPrices = { ...prices };
-    const newPrices = { ...oldPrices };
-    if (!hasPrice) {
-      newPrices[quantity] = {
-        quoteId,
+      // Submit using the new submission function
+      submitFieldUpdates(path.to.itemCostUpdate(line.itemId), {
+        unitCost: value,
+      });
+    },
+    [line.itemId, submitFieldUpdates]
+  );
+
+  const onUpdatePrice = useCallback(
+    (
+      key: "leadTime" | "unitPrice" | "discountPercent" | "shippingCost",
+      quantity: number,
+      value: number
+    ) => {
+      const unitPricePrecision = line.unitPricePrecision ?? 2;
+
+      const hasPrice = !!editableFields.prices[quantity];
+      const oldPrices = { ...editableFields.prices };
+      const newPrices = { ...oldPrices };
+      if (!hasPrice) {
+        newPrices[quantity] = {
+          quoteId,
+          quoteLineId: lineId,
+          quantity,
+          leadTime: 0,
+          unitPrice: 0,
+          discountPercent: 0,
+          exchangeRate: exchangeRate ?? 1,
+          shippingCost: 0,
+          createdBy: userId,
+        } as unknown as QuotationPrice;
+      }
+      let roundedValue = value;
+      if (key === "unitPrice") {
+        // Round the value to the precision of the quote line
+        roundedValue = Number(value.toFixed(unitPricePrecision));
+      }
+      newPrices[quantity] = { ...newPrices[quantity], [key]: roundedValue };
+
+      // Update local state
+      setEditableFields((prev) => ({
+        ...prev,
+        prices: newPrices,
+      }));
+
+      // Submit using the new submission function
+      const submitData: Record<string, any> = {
+        hasPrice: hasPrice.toString(),
+        quantity: quantity.toString(),
         quoteLineId: lineId,
-        quantity,
-        leadTime: 0,
-        unitPrice: 0,
-        discountPercent: 0,
-        exchangeRate: exchangeRate ?? 1,
-        shippingCost: 0,
-        createdBy: userId,
-      } as unknown as QuotationPrice;
-    }
-    let roundedValue = value;
-    if (key === "unitPrice") {
-      // Round the value to the precision of the quote line
-      roundedValue = Number(value.toFixed(unitPricePrecision));
-    }
-    newPrices[quantity] = { ...newPrices[quantity], [key]: roundedValue };
+      };
 
-    setPrices(newPrices);
+      if (hasPrice) {
+        submitData.key = key;
+        submitData.value = roundedValue.toString();
+      } else {
+        submitData.price = JSON.stringify(newPrices[quantity]);
+      }
 
-    const formData = new FormData();
-    formData.append("hasPrice", hasPrice.toString());
-    formData.append("quantity", quantity.toString());
-    formData.append("quoteLineId", lineId);
-    if (hasPrice) {
-      formData.append("key", key);
-      formData.append("value", roundedValue.toString());
-    } else {
-      formData.append("price", JSON.stringify(newPrices[quantity]));
-    }
-
-    fetcher.submit(formData, {
-      method: "post",
-      action: path.to.quoteLinePriceUpdate(quoteId, lineId),
-    });
-  };
+      submitFieldUpdates(
+        path.to.quoteLinePriceUpdate(quoteId, lineId),
+        submitData
+      );
+    },
+    [
+      editableFields.prices,
+      line.unitPricePrecision,
+      quoteId,
+      lineId,
+      exchangeRate,
+      userId,
+      submitFieldUpdates,
+    ]
+  );
 
   return (
     <Card>
@@ -414,7 +500,7 @@ const QuoteLinePricing = ({
                 </HStack>
               </Td>
               {quantities.map((quantity) => {
-                const leadTime = prices[quantity]?.leadTime ?? 0;
+                const leadTime = editableFields.prices[quantity]?.leadTime ?? 0;
                 return (
                   <Td
                     key={quantity.toString()}
@@ -507,7 +593,7 @@ const QuoteLinePricing = ({
                   </HStack>
                 </Td>
                 {quantities.map((quantity, index) => {
-                  const price = prices[quantity]?.unitPrice ?? 0;
+                  const price = editableFields.prices[quantity]?.unitPrice ?? 0;
                   const cost = unitCostsByQuantity[index];
 
                   const markup = price ? (price - cost) / cost : 0;
@@ -521,7 +607,7 @@ const QuoteLinePricing = ({
                           maximumFractionDigits: 2,
                         }}
                         onChange={(value) => {
-                          if (Number.isFinite(value) && value !== price) {
+                          if (Number.isFinite(value) && value !== markup) {
                             onUpdatePrice(
                               "unitPrice",
                               quantity,
@@ -549,7 +635,7 @@ const QuoteLinePricing = ({
                 </HStack>
               </Td>
               {quantities.map((quantity) => {
-                const price = prices[quantity]?.unitPrice;
+                const price = editableFields.prices[quantity]?.unitPrice;
                 return (
                   <Td key={quantity.toString()}>
                     <NumberField
@@ -585,7 +671,8 @@ const QuoteLinePricing = ({
                 </HStack>
               </Td>
               {quantities.map((quantity, index) => {
-                const discount = prices[quantity]?.discountPercent;
+                const discount =
+                  editableFields.prices[quantity]?.discountPercent;
 
                 return (
                   <Td key={index}>
@@ -702,7 +789,8 @@ const QuoteLinePricing = ({
                 </HStack>
               </Td>
               {quantities.map((quantity) => {
-                const shippingCost = prices[quantity]?.shippingCost;
+                const shippingCost =
+                  editableFields.prices[quantity]?.shippingCost;
                 return (
                   <Td key={quantity.toString()}>
                     <NumberField
@@ -875,7 +963,7 @@ const QuoteLinePricing = ({
               {quantities.map((quantity, index) => {
                 const price =
                   (netPricesByQuantity[index] ?? 0) * quantity +
-                  (prices[quantity]?.shippingCost ?? 0) +
+                  (editableFields.prices[quantity]?.shippingCost ?? 0) +
                   (additionalChargesByQuantity[index] ?? 0);
                 return (
                   <Td key={index} className="group-hover:bg-muted/50">
@@ -893,7 +981,7 @@ const QuoteLinePricing = ({
                 </HStack>
               </Td>
               {quantities.map((quantity, index) => {
-                const taxPercent = line.taxPercent ?? 0;
+                const taxPercent = editableFields.taxPercent;
                 return (
                   <Td key={index} className="group-hover:bg-muted/50">
                     <NumberField
@@ -902,9 +990,26 @@ const QuoteLinePricing = ({
                         style: "percent",
                         maximumFractionDigits: 2,
                       }}
+                      onChange={(value) => {
+                        if (Number.isFinite(value) && value !== taxPercent) {
+                          setEditableFields((prev) => ({
+                            ...prev,
+                            taxPercent: value,
+                          }));
+
+                          // Use the quote line update endpoint for tax percent
+                          submitFieldUpdates(
+                            path.to.quoteLine(quoteId, lineId),
+                            {
+                              taxPercent: value,
+                            }
+                          );
+                        }
+                      }}
                     >
                       <NumberInput
                         className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
+                        isDisabled={!isEditable}
                         size="sm"
                       />
                     </NumberField>
@@ -921,9 +1026,9 @@ const QuoteLinePricing = ({
               {quantities.map((quantity, index) => {
                 const subtotal =
                   (netPricesByQuantity[index] ?? 0) * quantity +
-                  (prices[quantity]?.shippingCost ?? 0) +
+                  (editableFields.prices[quantity]?.shippingCost ?? 0) +
                   (additionalChargesByQuantity[index] ?? 0);
-                const tax = subtotal * (line.taxPercent ?? 0);
+                const tax = subtotal * editableFields.taxPercent;
                 const price = subtotal + tax;
                 return (
                   <Td key={index} className="group-hover:bg-muted/50">
@@ -943,7 +1048,8 @@ const QuoteLinePricing = ({
                     </HStack>
                   </Td>
                   {quantities.map((quantity, index) => {
-                    const exchangeRate = prices[quantity]?.exchangeRate;
+                    const exchangeRate =
+                      editableFields.prices[quantity]?.exchangeRate;
                     return (
                       <Td key={index} className="group-hover:bg-muted/50">
                         <VStack spacing={0}>
@@ -962,11 +1068,12 @@ const QuoteLinePricing = ({
                   {quantities.map((quantity, index) => {
                     const subtotal =
                       (netPricesByQuantity[index] ?? 0) * quantity +
-                      (prices[quantity]?.shippingCost ?? 0) +
+                      (editableFields.prices[quantity]?.shippingCost ?? 0) +
                       (additionalChargesByQuantity[index] ?? 0);
-                    const tax = subtotal * (line.taxPercent ?? 0);
+                    const tax = subtotal * editableFields.taxPercent;
                     const price = subtotal + tax;
-                    const exchangeRate = prices[quantity]?.exchangeRate;
+                    const exchangeRate =
+                      editableFields.prices[quantity]?.exchangeRate;
                     const convertedPrice = price * (exchangeRate ?? 1);
                     return (
                       <Td key={index} className="group-hover:bg-muted/50">

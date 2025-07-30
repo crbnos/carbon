@@ -632,20 +632,20 @@ export const modules: Config = [
               {
                 id: "recording-rfq",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/881c83e9df8044db848aee8c2ea782bd?sid=f4ca14ef-bc59-4a8f-94a6-d6e120ee3bb3",
                 name: "Recording an RFQ",
                 description:
                   "Learn how to record and manage Request for Quote (RFQ) documents from customers.",
-                duration: 0,
+                duration: 206,
               },
               {
                 id: "quote-overview",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/e19760ef2466485ba70a35a63d49e263?sid=7e51c567-87b3-4962-9dc5-73c3bf8851ad",
                 name: "Quote Overview",
                 description:
                   "Understand the structure and components of a quote in Carbon.",
-                duration: 0,
+                duration: 210,
               },
 
               {
