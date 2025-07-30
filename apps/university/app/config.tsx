@@ -651,11 +651,11 @@ export const modules: Config = [
               {
                 id: "digital-quotes",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/c70ee886c10a4223a32c4deb438abd7f?sid=84183d2b-fc13-457b-9687-4ad4ef2ed932",
                 name: "Digital Quotes",
                 description:
                   "Create professional digital quotes that can be easily shared with customers.",
-                duration: 0,
+                duration: 177,
               },
               {
                 id: "quote-revisions",

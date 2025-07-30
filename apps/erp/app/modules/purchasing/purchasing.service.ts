@@ -208,7 +208,7 @@ export async function getPurchaseOrders(
   }
 
   query = setGenericQueryFilters(query, args, [
-    { column: "id", ascending: false },
+    { column: "purchaseOrderId", ascending: false },
   ]);
 
   return query;
@@ -574,7 +574,7 @@ export async function getSupplierQuotes(
   }
 
   query = setGenericQueryFilters(query, args, [
-    { column: "id", ascending: false },
+    { column: "supplierQuoteId", ascending: false },
   ]);
   return query;
 }

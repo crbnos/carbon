@@ -244,7 +244,7 @@ export async function getJobs(
 
   if (args) {
     query = setGenericQueryFilters(query, args, [
-      { column: "id", ascending: false },
+      { column: "jobId", ascending: false },
     ]);
   }
 
