@@ -660,11 +660,11 @@ export const modules: Config = [
               {
                 id: "quote-revisions",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/e8fb3ede8b06488ca07c023bd15c4ef0?sid=b6673d7d-7b4b-4787-97fa-e7be99c0a68e",
                 name: "Quote Revisions",
                 description:
                   "Learn how to manage quote revisions and track changes throughout the quoting process.",
-                duration: 0,
+                duration: 66,
               },
               {
                 id: "converting-quotes-orders",
