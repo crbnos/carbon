@@ -666,15 +666,6 @@ export const modules: Config = [
                   "Learn how to manage quote revisions and track changes throughout the quoting process.",
                 duration: 66,
               },
-              {
-                id: "converting-quotes-orders",
-                loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
-                name: "Converting Quotes to Orders",
-                description:
-                  "Master the process of converting approved quotes into sales orders.",
-                duration: 0,
-              },
             ],
           },
           {
@@ -700,20 +691,20 @@ export const modules: Config = [
               {
                 id: "quote-methods",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/41958983c4b1449ca3c40e583e0daf65?sid=9d310e66-2e6d-4e6f-acc2-b8fcfd41eb63",
                 name: "Quote Methods",
                 description:
                   "Learn how to use different quote methods to standardize your estimation process and ensure consistency.",
-                duration: 0,
+                duration: 202,
               },
               {
                 id: "quote-costing",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/ac92c17f4937456681e52a413858d8ed?sid=1ed44514-06e8-4c3a-9b8b-d3c8d892ef0d",
                 name: "Quote Costing and Pricing",
                 description:
                   "Master the art of calculating accurate costs for quotes including materials, labor, and overhead.",
-                duration: 0,
+                duration: 186,
               },
             ],
           },

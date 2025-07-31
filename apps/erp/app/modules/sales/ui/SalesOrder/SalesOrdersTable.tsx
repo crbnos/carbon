@@ -25,6 +25,7 @@ import {
   LuEllipsisVertical,
   LuFactory,
   LuLoader,
+  LuMapPin,
   LuPencil,
   LuQrCode,
   LuSquareUser,
@@ -53,6 +54,7 @@ import {
   parseDate,
   today,
 } from "@internationalized/date";
+import { useLocations } from "~/components/Form/Location";
 import { usePaymentTerm } from "~/components/Form/PaymentTerm";
 import { useShippingMethod } from "~/components/Form/ShippingMethod";
 import type { jobStatus } from "~/modules/production/production.models";
@@ -82,6 +84,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
   const [customers] = useCustomers();
   const shippingMethods = useShippingMethod();
   const paymentTerms = usePaymentTerm();
+  const locations = useLocations();
   const todaysDate = useMemo(() => today(getLocalTimeZone()), []);
 
   const { edit } = useSalesOrder();
@@ -346,6 +349,28 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
         },
       },
       {
+        accessorKey: "locationId",
+        header: "Location",
+        cell: ({ row }) => (
+          <Enumerable
+            value={
+              locations.find((l) => l.value === row.original.locationId)
+                ?.label ?? null
+            }
+          />
+        ),
+        meta: {
+          icon: <LuMapPin />,
+          filter: {
+            type: "static",
+            options: locations.map((l) => ({
+              value: l.value,
+              label: <Enumerable value={l.label} />,
+            })),
+          },
+        },
+      },
+      {
         accessorKey: "paymentTermId",
         header: "Payment Method",
         cell: (item) => (
@@ -432,6 +457,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
   }, [
     customers,
     people,
+    locations,
     customColumns,
     todaysDate,
     currencyFormatter,
