@@ -325,7 +325,6 @@ export async function processStripeEvent({
   const eventType = event.type;
 
   if (eventType === "checkout.session.completed") {
-    const slackClient = getSlackClient();
     const data = event.data.object as Stripe.Checkout.Session;
     const { customer } = data;
 
@@ -351,24 +350,11 @@ export async function processStripeEvent({
           companyId,
           userId,
         }),
-        slackClient.sendMessage({
-          channel: "#sales",
-          text: "New Customer 🔔",
-          blocks: [
-            {
-              type: "section",
-              text: {
-                type: "mrkdwn",
-                text:
-                  `*New Signup* 🔔\n\n` +
-                  `*Contact Information*\n` +
-                  `• Company: ${data.customer_details?.name}\n\n` +
-                  `• Email: ${data.customer_details?.email}\n\n` +
-                  `• Plan: $${data.line_items?.data[0]?.description}\n\n`,
-              },
-            },
-          ],
-        }),
+        sendNewCustomerNotification(
+          customer,
+          companyId,
+          data.customer_details?.email
+        ),
       ]);
     } catch (error) {
       console.error("Error processing webhook:", error);
@@ -412,6 +398,48 @@ export async function processStripeEvent({
       throw new Error("Stripe webhook handler failed");
     }
   }
+}
+
+async function sendNewCustomerNotification(
+  customerId: string,
+  companyId: string,
+  email?: string
+) {
+  const slackClient = getSlackClient();
+  const subscriptions = await stripe.subscriptions.list({
+    customer: customerId,
+    limit: 1,
+    status: "all",
+    expand: ["data.default_payment_method"],
+  });
+
+  const serviceRole = getCarbonServiceRole();
+
+  const subscription = subscriptions.data[0];
+
+  const [company, plan] = await Promise.all([
+    serviceRole.from("company").select("*").eq("id", companyId).single(),
+    getPlanByPriceId(serviceRole, subscription.items.data[0].price.id),
+  ]);
+
+  slackClient.sendMessage({
+    channel: "#sales",
+    text: "New Customer 🔔",
+    blocks: [
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text:
+            `*New Signup* 🔔\n\n` +
+            `*Contact Information*\n` +
+            `• Company: ${company.data?.name}\n\n` +
+            `• Email: ${email ?? company.data?.email}\n\n` +
+            `• Plan: $${plan.data?.name}\n\n`,
+        },
+      },
+    ],
+  });
 }
 
 export async function syncStripeDataToKV(
