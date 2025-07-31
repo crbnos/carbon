@@ -739,11 +739,11 @@ export const modules: Config = [
               {
                 id: "sales-orders",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/c5fa13046aaa445a99c43c24434ff2b0?sid=21e5dcc9-cc76-4098-b97e-069212095616",
                 name: "Sales Orders",
                 description:
                   "Learn how to create and manage sales orders in Carbon.",
-                duration: 0,
+                duration: 235,
               },
               {
                 id: "make-to-order-parts",
