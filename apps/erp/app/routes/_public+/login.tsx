@@ -53,7 +53,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 const ratelimit = new Ratelimit({
   redis,
-  limiter: Ratelimit.slidingWindow(5, "1 h"), // 5 submissions per hour
+  limiter: Ratelimit.slidingWindow(5, "1 h"),
   analytics: true,
 });
 

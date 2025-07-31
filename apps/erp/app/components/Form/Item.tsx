@@ -334,6 +334,7 @@ const Item = ({
           }}
           initialValues={{
             id: "",
+            revision: "0",
             name: created,
             description: "",
             itemTrackingType: "Inventory",
@@ -405,6 +406,7 @@ const Item = ({
           }}
           initialValues={{
             id: "",
+            revision: "0",
             name: created,
             description: "",
             itemTrackingType: "Inventory",

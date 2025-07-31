@@ -48,6 +48,7 @@ const Part = ({ itemReplenishmentSystem, ...props }: PartSelectProps) => {
           }}
           initialValues={{
             id: "",
+            revision: "0",
             name: created,
             description: "",
             itemTrackingType: "Inventory" as "Inventory",

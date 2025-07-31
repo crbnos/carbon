@@ -464,6 +464,7 @@ export const materialTypeValidator = z.object({
 export const partValidator = itemValidator.merge(
   z.object({
     id: z.string().min(1, { message: "Part ID is required" }).max(255),
+    revision: z.string().min(1, { message: "Revision is required" }),
     modelUploadId: zfd.text(z.string().optional()),
     lotSize: zfd.numeric(z.number().min(0).optional()),
   })
@@ -514,6 +515,7 @@ export const supplierPartValidator = z.object({
 export const toolValidator = itemValidator.merge(
   z.object({
     id: z.string().min(1, { message: "Tool ID is required" }).max(255),
+    revision: z.string().min(1, { message: "Revision is required" }),
     modelUploadId: zfd.text(z.string().optional()),
     unitOfMeasureCode: z
       .string()

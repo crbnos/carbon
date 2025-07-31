@@ -238,6 +238,11 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
                     autoFocus
                   />
                 )}
+                <Input
+                  name="revision"
+                  label="Revision"
+                  isReadOnly={isEditing}
+                />
 
                 <Input name="name" label="Short Description" />
                 <Select

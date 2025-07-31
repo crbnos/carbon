@@ -123,6 +123,7 @@ const Tool = ({ name, label, helperText, ...props }: ToolSelectProps) => {
           }}
           initialValues={{
             id: "",
+            revision: "0",
             name: created,
             description: "",
             itemTrackingType: "Inventory",

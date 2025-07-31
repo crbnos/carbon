@@ -23,6 +23,7 @@ import { flushSync } from "react-dom";
 import {
   LuChevronRight,
   LuEllipsisVertical,
+  LuPencil,
   LuPlus,
   LuSearch,
   LuStar,
@@ -274,7 +275,7 @@ export function RevisionsItem({
                         />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        {/* <DropdownMenuItem
+                        <DropdownMenuItem
                           onSelect={() => {
                             flushSync(() => {
                               setSelectedRevision({
@@ -288,7 +289,7 @@ export function RevisionsItem({
                         >
                           <DropdownMenuIcon icon={<LuPencil />} />
                           Edit
-                        </DropdownMenuItem> */}
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                           onSelect={() => {
                             flushSync(() => {

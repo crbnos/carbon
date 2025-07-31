@@ -73,6 +73,7 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function PartsNewRoute() {
   const initialValues = {
     id: "",
+    revision: "0",
     name: "",
     description: "",
     itemTrackingType: "Inventory" as "Inventory",

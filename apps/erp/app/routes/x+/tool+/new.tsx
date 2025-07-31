@@ -60,6 +60,7 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function ToolsNewRoute() {
   const initialValues = {
     id: "",
+    revision: "0",
     name: "",
     description: "",
     replenishmentSystem: "Buy" as const,

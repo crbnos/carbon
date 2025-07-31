@@ -1999,6 +1999,7 @@ export async function upsertPart(
       .from("item")
       .insert({
         readableId: part.id,
+        revision: part.revision ?? "0",
         name: part.name,
         type: "Part",
         replenishmentSystem: part.replenishmentSystem,
@@ -3012,6 +3013,7 @@ export async function upsertTool(
       .from("item")
       .insert({
         readableId: tool.id,
+        revision: tool.revision ?? "0",
         name: tool.name,
         type: "Tool",
         replenishmentSystem: tool.replenishmentSystem,

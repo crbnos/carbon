@@ -244,6 +244,11 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                     isUppercase
                   />
                 )}
+                <Input
+                  name="revision"
+                  label="Revision"
+                  isReadOnly={isEditing}
+                />
 
                 <Input name="name" label="Short Description" />
 
