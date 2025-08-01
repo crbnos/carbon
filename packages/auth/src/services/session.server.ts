@@ -39,7 +39,7 @@ const sessionStorage = createCookieSessionStorage({
     sameSite: "lax",
     secrets: [SESSION_SECRET],
     secure: VERCEL_ENV === "production",
-    domain: VERCEL_ENV === "production" ? DOMAIN : undefined, // eg. carbonos.dev
+    domain: VERCEL_ENV === "production" ? DOMAIN : undefined, // eg. carbon.ms
   },
 });
 

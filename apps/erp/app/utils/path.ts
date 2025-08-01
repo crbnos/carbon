@@ -7,7 +7,7 @@ const file = "/file"; // from ~/routes/file+ folder
 const onboarding = "/onboarding"; // from ~/routes/onboarding+ folder
 const mes = SUPABASE_URL.includes("localhost")
   ? "http://localhost:3001"
-  : "https://mes.carbonos.dev";
+  : "https://mes.carbon.ms";
 
 export const path = {
   to: {
@@ -271,8 +271,8 @@ export const path = {
       quote: (id: string) => generatePath(`${file}/quote/${id}.pdf`),
     },
     legal: {
-      termsAndConditions: "https://carbonos.dev/terms",
-      privacyPolicy: "https://carbonos.dev/privacy",
+      termsAndConditions: "https://carbon.ms/terms",
+      privacyPolicy: "https://carbon.ms/privacy",
     },
     onboarding: {
       company: `${onboarding}/company`,

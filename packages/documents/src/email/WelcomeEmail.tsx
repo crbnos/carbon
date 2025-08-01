@@ -76,12 +76,12 @@ export const WelcomeEmail = ({ firstName = "Huckleberry" }: Props) => {
             <br />
             <br />
             In the meantime, you can start by exploring{" "}
-            <Link href="https://learn.carbonos.dev">Carbon University</Link> to
-            get a feel for the platform.
+            <Link href="https://learn.carbon.ms">Carbon University</Link> to get
+            a feel for the platform.
           </Text>
 
           <Section className="text-center mt-[50px] mb-[50px]">
-            <Button href="https://learn.carbonos.dev">Get started</Button>
+            <Button href="https://learn.carbon.ms">Get started</Button>
           </Section>
         </Container>
       </Body>

@@ -217,7 +217,7 @@ export default function OnboardingPlan() {
                             asChild
                           >
                             <a
-                              href="https://learn.carbonos.dev"
+                              href="https://learn.carbon.ms"
                               target="_blank"
                               rel="noreferrer"
                             >

@@ -5,7 +5,7 @@ import { useUser } from "./useUser";
 export function useFlags() {
   const user = useUser();
   const edition = useEdition();
-  const isInternal = ["carbon.us.org", "carbonos.dev", "blackcatlabs.xyz"].some(
+  const isInternal = ["@carbon.us.org", "@carbonos.dev", "@carbon.ms"].some(
     (email) => user.email.includes(email)
   );
 

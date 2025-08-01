@@ -105,7 +105,7 @@ Some services access `process.env` directly:
 
 - Development: Uses `http://localhost:3000` and local Supabase instance
 - Preview: Uses Vercel preview URLs
-- Production: Uses `https://app.carbonos.dev` and production services
+- Production: Uses `https://app.carbon.ms` and production services
 
 ## Adding New Environment Variables
 

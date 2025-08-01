@@ -44,7 +44,7 @@ const events: Stripe.WebhookEndpointCreateParams.EnabledEvent[] = [
 ];
 
 // const webhookUrl = `https://${VERCEL_URL}/api/webhook/stripe`;
-const webhookUrl = `https://app.carbonos.dev/api/webhook/stripe`;
+const webhookUrl = `https://app.carbon.ms/api/webhook/stripe`;
 if (webhookUrl.includes("localhost")) {
   throw new Error("Cannot register webhook in local development mode");
 }

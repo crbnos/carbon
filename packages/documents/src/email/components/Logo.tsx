@@ -4,7 +4,7 @@ export function Logo() {
   return (
     <Section className="mt-[32px]">
       <Img
-        src="https://app.carbonos.dev/carbon-word-light.png"
+        src="https://app.carbon.ms/carbon-word-light.png"
         width="auto"
         height="45"
         alt="Carbon"

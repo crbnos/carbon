@@ -18,11 +18,11 @@ interface JobTravelerProps extends PDF {
 }
 
 function getStartPath(operationId: string) {
-  return `https://mes.carbonos.dev/x/start/${operationId}`;
+  return `https://mes.carbon.ms/x/start/${operationId}`;
 }
 
 function getEndPath(operationId: string) {
-  return `https://mes.carbonos.dev/x/end/${operationId}`;
+  return `https://mes.carbon.ms/x/end/${operationId}`;
 }
 
 // Initialize tailwind-styled-components

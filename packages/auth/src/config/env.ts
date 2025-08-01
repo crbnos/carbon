@@ -163,7 +163,7 @@ export const CLOUDFLARE_TURNSTILE_SECRET_KEY = getEnv(
 
 export function getAppUrl() {
   if (VERCEL_ENV === "production" || NODE_ENV === "production") {
-    return "https://app.carbonos.dev";
+    return "https://app.carbon.ms";
   }
 
   if (VERCEL_ENV === "preview") {

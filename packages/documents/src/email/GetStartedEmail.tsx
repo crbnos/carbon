@@ -19,7 +19,7 @@ interface Props {
 
 export const GetStartedEmail = ({
   firstName = "Huckleberry",
-  universityUrl = "https://learn.carbonos.dev",
+  universityUrl = "https://learn.carbon.ms",
 }: Props) => {
   const text = `Hi ${firstName}, Just checking in to help you get started. Here are a few things you can try today.`;
   const themeClasses = getEmailThemeClasses();

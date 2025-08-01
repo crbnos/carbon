@@ -191,7 +191,7 @@ function UniversityBanner() {
         <input
           type="hidden"
           name="redirectTo"
-          value="https://learn.carbonos.dev"
+          value="https://learn.carbon.ms"
         />
         <Button
           type="submit"
