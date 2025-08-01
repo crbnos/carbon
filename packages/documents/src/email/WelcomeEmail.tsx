@@ -69,10 +69,9 @@ export const WelcomeEmail = ({ firstName = "Huckleberry" }: Props) => {
             <br />
             <br />
             Feel free to email me at{" "}
-            <Link href="mailto:brad@carbonos.dev">brad@carbonos.dev</Link> if
-            you have any questions. I'm happy to to help you get started and
-            answer any questions about the things that makes your business
-            unique.
+            <Link href="mailto:brad@carbon.ms">brad@carbon.ms</Link> if you have
+            any questions. I'm happy to to help you get started and answer any
+            questions about the things that makes your business unique.
             <br />
             <br />
             In the meantime, you can start by exploring{" "}

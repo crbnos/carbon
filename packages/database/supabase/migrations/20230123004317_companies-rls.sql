@@ -73,7 +73,7 @@ CREATE POLICY "Users can view other users from their same company" ON "user" FOR
 );
 
 INSERT INTO "user" ("id", "email", "firstName", "lastName")
-VALUES ('system', 'system@carbonos.dev', 'System', 'Operation');
+VALUES ('system', 'system@carbon.ms', 'System', 'Operation');
 
 
 ALTER TABLE "userPermission" ENABLE ROW LEVEL SECURITY;

@@ -62,7 +62,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const invitationEmail = await resend.emails.send({
-    from: "Carbon <no-reply@carbonos.dev>",
+    from: "Carbon <no-reply@carbon.ms>",
     to: result.email,
     subject: `You have been invited to join ${company.data?.name} on Carbon`,
     headers: {

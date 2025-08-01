@@ -43,7 +43,7 @@ export const onboardTask = task({
 
     if (sendOnboardingEmail) {
       await resend.emails.send({
-        from: "Brad from Carbon <brad@carbonos.dev>",
+        from: "Brad from Carbon <brad@carbon.ms>",
         to: user.data.email,
         subject: `Welcome to Carbon`,
         html: await render(
@@ -58,7 +58,7 @@ export const onboardTask = task({
 
     if (sendOnboardingEmail) {
       await resend.emails.send({
-        from: "Brad from Carbon <brad@carbonos.dev>",
+        from: "Brad from Carbon <brad@carbon.ms>",
         to: user.data.email,
         subject: `Get the most out of Carbon`,
         html: render(

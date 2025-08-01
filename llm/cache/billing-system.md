@@ -102,7 +102,7 @@ The system handles various Stripe webhook events:
 
 For plans with `userBasedPricing = true`:
 
-- Counts active users per company (excluding @carbonos.dev emails)
+- Counts active users per company (excluding @carbon.ms emails)
 - Automatically updates Stripe subscription quantity
 - Triggered when users are added/removed from companies
 

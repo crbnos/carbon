@@ -95,7 +95,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
     setCustomers(customers.data ?? []);
     setPeople(
       // @ts-ignore
-      people.data?.filter((p) => !p.email?.includes("@carbonos.dev")) ?? []
+      people.data?.filter((p) => !p.email?.includes("@carbon.ms")) ?? []
     );
 
     idb.setItem("items", items.data);

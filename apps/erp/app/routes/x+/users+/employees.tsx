@@ -57,7 +57,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return json({
     count: employees.count ?? 0,
     employees:
-      employees.data?.filter((e) => !e.email?.includes("@carbonos.dev")) ?? [],
+      employees.data?.filter((e) => !e.email?.includes("@carbon.ms")) ?? [],
     employeeTypes: employeeTypes.data,
   });
 }

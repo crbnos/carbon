@@ -24,7 +24,7 @@ export async function sendVerificationCode(email: string) {
     );
 
     const result = await resend.emails.send({
-      from: "Carbon <no-reply@carbonos.dev>",
+      from: "Carbon <no-reply@carbon.ms>",
       to: email,
       subject: "Verify your email address",
       html,
