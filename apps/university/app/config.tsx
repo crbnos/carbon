@@ -748,28 +748,28 @@ export const modules: Config = [
               {
                 id: "make-to-order-parts",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/46e6b22c21494a00830f106273e3fe2d?sid=9ed38380-6e97-4948-b6d2-ce1cb87aee9e",
                 name: "Make to Order Parts",
                 description:
                   "Understand how to handle make-to-order parts and production planning.",
-                duration: 0,
+                duration: 187,
               },
               {
                 id: "shipping-orders",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/77ceffd533f94ffe9ef5b54499b6e267?sid=c8e70b7b-808e-4b05-8960-076f0ef8d653",
                 name: "Shipping Orders",
                 description: "Learn how to process and track order shipments.",
-                duration: 0,
+                duration: 148,
               },
               {
                 id: "sales-invoices",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/45713271bd444f939dcde717ca720faa?sid=9c45d855-b6fe-4b27-99f9-c019dc28d386",
                 name: "Sales Invoices",
                 description:
                   "Master the creation and management of sales invoices.",
-                duration: 0,
+                duration: 276,
               },
             ],
           },
