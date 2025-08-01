@@ -10,6 +10,7 @@ declare global {
       POSTHOG_PROJECT_PUBLIC_KEY: string;
       VERCEL_URL: string;
       VERCEL_ENV: string;
+      CLOUDFLARE_TURNSTILE_SITE_KEY: string;
     };
   }
 }
@@ -35,6 +36,8 @@ declare global {
       UPSTASH_REDIS_REST_TOKEN: string;
       VERCEL_URL: string;
       VERCEL_ENV: string;
+      CLOUDFLARE_TURNSTILE_SITE_KEY: string;
+      CLOUDFLARE_TURNSTILE_SECRET_KEY: string;
     }
   }
 }
@@ -149,6 +152,14 @@ export const SUPABASE_URL = getEnv("SUPABASE_URL", { isSecret: false });
 export const SUPABASE_ANON_KEY = getEnv("SUPABASE_ANON_KEY", {
   isSecret: false,
 });
+export const CLOUDFLARE_TURNSTILE_SITE_KEY = getEnv(
+  "CLOUDFLARE_TURNSTILE_SITE_KEY",
+  { isSecret: false, isRequired: false }
+);
+export const CLOUDFLARE_TURNSTILE_SECRET_KEY = getEnv(
+  "CLOUDFLARE_TURNSTILE_SECRET_KEY",
+  { isRequired: false }
+);
 
 export function getAppUrl() {
   if (VERCEL_ENV === "production" || NODE_ENV === "production") {
@@ -173,6 +184,7 @@ export function getBrowserEnv() {
     VERCEL_ENV,
     VERCEL_URL,
     NODE_ENV,
+    CLOUDFLARE_TURNSTILE_SITE_KEY,
   };
 }
 

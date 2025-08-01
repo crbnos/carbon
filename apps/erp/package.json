@@ -18,6 +18,7 @@
     "@dnd-kit/sortable": "^8.0.0",
     "@epic-web/remember": "^1.1.0",
     "@internationalized/date": "^3.5.2",
+    "@marsidev/react-turnstile": "^1.1.0",
     "@modelcontextprotocol/sdk": "1.7.0",
     "@monaco-editor/react": "^4.6.0",
     "@nanostores/react": "^0.7.1",

@@ -30,6 +30,7 @@ export const magicLinkValidator = z.object({
     .min(1, { message: "Email is required" })
     .email("Must be a valid email"),
   redirectTo: zfd.text(z.string().optional()),
+  turnstileToken: zfd.text(z.string().optional()),
 });
 
 export const resetPasswordValidator = z.object({

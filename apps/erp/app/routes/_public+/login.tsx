@@ -1,6 +1,9 @@
 import {
   assertIsPost,
   carbonClient,
+  CarbonEdition,
+  CLOUDFLARE_TURNSTILE_SECRET_KEY,
+  CLOUDFLARE_TURNSTILE_SITE_KEY,
   error,
   magicLinkValidator,
 } from "@carbon/auth";
@@ -20,6 +23,9 @@ import {
   toast,
   VStack,
 } from "@carbon/react";
+import { useMode } from "@carbon/remix";
+import { Edition } from "@carbon/utils";
+import { Turnstile } from "@marsidev/react-turnstile";
 import { useFetcher, useSearchParams } from "@remix-run/react";
 import { Ratelimit } from "@upstash/ratelimit";
 import type {
@@ -77,7 +83,40 @@ export async function action({ request }: ActionFunctionArgs): FormActionData {
     return json(error(validation.error, "Invalid email address"));
   }
 
-  const { email } = validation.data;
+  const { email, turnstileToken } = validation.data;
+
+  if (
+    CarbonEdition === Edition.Cloud &&
+    CLOUDFLARE_TURNSTILE_SITE_KEY !== "1x00000000000000000000AA"
+  ) {
+    const verifyResponse = await fetch(
+      "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          secret: CLOUDFLARE_TURNSTILE_SECRET_KEY,
+          response: turnstileToken ?? "",
+          remoteip: ip,
+        }),
+      }
+    );
+
+    const verifyData = await verifyResponse.json();
+
+    if (!verifyData.success) {
+      return json(
+        error(null, "Bot verification failed. Please try again."),
+        await flash(
+          request,
+          error(null, "Bot verification failed. Please try again.")
+        )
+      );
+    }
+  }
+
   const user = await getUserByEmail(email);
 
   if (user.data && user.data.active) {
@@ -110,8 +149,10 @@ export default function LoginRoute() {
   const redirectTo = searchParams.get("redirectTo") ?? undefined;
   const [mode, setMode] = useState<"login" | "signup" | "verify">("login");
   const [signupEmail, setSignupEmail] = useState<string>("");
+  const [turnstileToken, setTurnstileToken] = useState<string>("");
 
   const fetcher = useFetcher<Result & { mode?: string; email?: string }>();
+  const theme = useMode();
 
   useEffect(() => {
     if (fetcher.data?.success && fetcher.data.mode) {
@@ -193,6 +234,7 @@ export default function LoginRoute() {
             action="/login"
           >
             <Hidden name="redirectTo" value={redirectTo} type="hidden" />
+            <Hidden name="turnstileToken" value={turnstileToken} />
             <VStack spacing={4}>
               {fetcher.data?.success === false && fetcher.data?.message && (
                 <Alert variant="destructive">
@@ -203,9 +245,25 @@ export default function LoginRoute() {
               )}
 
               <Input name="email" label="" placeholder="Email Address" />
+              {CarbonEdition === Edition.Cloud && (
+                <div className="w-full flex justify-center">
+                  <Turnstile
+                    siteKey={CLOUDFLARE_TURNSTILE_SITE_KEY}
+                    onSuccess={(token) => setTurnstileToken(token)}
+                    onError={() => setTurnstileToken("")}
+                    onExpire={() => setTurnstileToken("")}
+                    options={{
+                      theme: theme === "dark" ? "dark" : "light",
+                    }}
+                  />
+                </div>
+              )}
 
               <Submit
-                isDisabled={fetcher.state !== "idle"}
+                isDisabled={
+                  fetcher.state !== "idle" ||
+                  (CarbonEdition === Edition.Cloud && !turnstileToken)
+                }
                 isLoading={fetcher.state === "submitting"}
                 size="lg"
                 className="w-full"
