@@ -1981,6 +1981,7 @@ export async function upsertConsumable(
   if (updateItem.error) return updateItem;
   return updateConsumable;
 }
+
 export async function upsertPart(
   client: SupabaseClient<Database>,
   part:
