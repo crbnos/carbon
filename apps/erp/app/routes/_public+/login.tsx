@@ -245,19 +245,6 @@ export default function LoginRoute() {
               )}
 
               <Input name="email" label="" placeholder="Email Address" />
-              {CarbonEdition === Edition.Cloud && (
-                <div className="w-full flex justify-center">
-                  <Turnstile
-                    siteKey={CLOUDFLARE_TURNSTILE_SITE_KEY}
-                    onSuccess={(token) => setTurnstileToken(token)}
-                    onError={() => setTurnstileToken("")}
-                    onExpire={() => setTurnstileToken("")}
-                    options={{
-                      theme: theme === "dark" ? "dark" : "light",
-                    }}
-                  />
-                </div>
-              )}
 
               <Submit
                 isDisabled={
@@ -271,6 +258,19 @@ export default function LoginRoute() {
               >
                 Continue with Email
               </Submit>
+              {CarbonEdition === Edition.Cloud && (
+                <div className="w-full flex justify-center">
+                  <Turnstile
+                    siteKey={CLOUDFLARE_TURNSTILE_SITE_KEY}
+                    onSuccess={(token) => setTurnstileToken(token)}
+                    onError={() => setTurnstileToken("")}
+                    onExpire={() => setTurnstileToken("")}
+                    options={{
+                      theme: theme === "dark" ? "dark" : "light",
+                    }}
+                  />
+                </div>
+              )}
               <Separator />
               <Button
                 type="button"
