@@ -217,7 +217,7 @@ export default function SalesDashboard() {
   }, [customers]);
 
   const [interval, setInterval] = useState("month");
-  const [selectedKpi, setSelectedKpi] = useState("salesFunnel");
+  const [selectedKpi, setSelectedKpi] = useState("salesOrderRevenue");
   const [dateRange, setDateRange] = useState<DateRange | null>(() => {
     const end = today("UTC");
     const start = end.add({ months: -1 });
