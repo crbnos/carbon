@@ -1,0 +1,153 @@
+# Permissions
+
+There are two types of permissions in the system:
+
+1. **Module permissions** - These are permissions that are specific to a module. For example, a user may have permission to view the sales module, but not to create, update or delete sales.
+2. **Role permissions** - These are permissions that are specific to a role. For example, customers may be able to view the sales module, but a customer role limits the data to only their own sales, where an employee with the same permission can view all sales.
+
+A user's permissions are stored in the `userPermissions` table and the role is stored in the `auth.users` table in the `raw_app_meta_data` column.
+
+The JSON permissions data in that column something like this:
+
+```json
+{
+  "role": "employee",
+  ...
+  "sales_view": true,
+  "sales_create": true,
+  "sales_update": true,
+  "sales_delete": false,
+  ...
+  "purchasing_view": false,
+  "purchasing_create": false,
+  "purchasing_update": false,
+  "purchasing_delete": false,
+  ...
+}
+```
+
+Each user has a **role**, which may be one of the following:
+
+- `employee`
+- `customer`
+- `supplier`
+
+Additionally, each user has a set of permissions for each module. Generally, the permissions are:
+
+- `<module>_view`
+- `<module>_create`
+- `<module>_update`
+- `<module>_delete`
+
+Permissions are managed within the user module. **An employees' permissions are set according to the default permissions for their employee type when the user is created**. Each employee may then be fined tuned for individual permissions in the users module. There is also an option to bulk update permissions for employees.
+
+Currently, all customers and suppliers have hard-coded permissions, which are set when the customer account or supplier account is created.
+
+## Permissions in the Code
+
+There are three places where permissions can be used in the code. In order of precedence, they are:
+
+1. **Database row-level security (RLS)** - an in-database policy, written in SQL, that limits the data that a user can see or modify.
+2. **Server-side permission checks** - a helper function that checks the user's permissions before making a call to the database.
+3. **Client-side permission checks** - a helper function that checks the user's permissions before making a call to the server.
+
+It is most important to use RLS. But server-side and client-side mechanisms can be used as additional security measures. RLS is expensive, so we use server-side and client-side checks to avoid making unnecessary calls to the database.
+
+### Database Row-Level Security
+
+Here is an example of how to use RLS policies to limit a user's rights to modify a table using the `get_my_claim` function. This is SQL that's run against the database to create a security policy for the `customer` table. If you're not familiar with the `::bolean` and `::jsonb` syntax, that's just casting the value to a boolean or jsonb type. The `get_my_claim` function is a custom function that returns the value of a claim from the user's permissions record. The `auth.uid()` function returns the user's ID.
+
+```sql
+-- SQL
+
+-- Standardized policy names: SELECT, INSERT, UPDATE, DELETE
+CREATE POLICY "SELECT" ON "entityName"
+  FOR SELECT
+  TO authenticated
+  USING (
+    "companyId" IN (
+      SELECT "companyId"
+      FROM get_companies_with_employee_permission('module_view')
+    )
+  );
+
+CREATE POLICY "INSERT" ON "entityName"
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    "companyId" IN (
+      SELECT "companyId"
+      FROM get_companies_with_employee_permission('module_create')
+    )
+  );
+
+CREATE POLICY "UPDATE" ON "entityName"
+  FOR UPDATE
+  TO authenticated
+  USING (
+    "companyId" IN (
+      SELECT "companyId"
+      FROM get_companies_with_employee_permission('module_update')
+    )
+  );
+
+CREATE POLICY "DELETE" ON "entityName"
+  FOR DELETE
+  TO authenticated
+  USING (
+    "companyId" IN (
+      SELECT "companyId"
+      FROM get_companies_with_employee_permission('module_delete')
+    )
+  );
+```
+
+### Server-Side Permission Checks
+
+We provide a helper function called `requirePermissions` that can be used to check the user's permissions before making a call to the database. This method is almost always called in an action (data write) or a loader (data fetch).
+
+Here is an example of how to use it in a loader:
+
+```tsx
+export async function loader({ request }: LoaderFunctionArgs) {
+  const { client } = requirePermissions(request, {
+    view: "sales",
+    role: "employee",
+  });
+
+  // call to the database
+}
+```
+
+In this example, the user must have the `sales_view` permission and the `employee` role in order to access the loader. If the user does not have the required permissions, an `Access denied` error will be thrown, and the user will be redirected to the root page.
+
+We can also required multiple permissions. In the next example, the user must have the `sales_update` permission and the `users_update` permission in order to invoke the action:
+
+```tsx
+export async function action({ request }: ActionFunctionArgs) {
+  const { client } = requirePermissions(request, {
+    update: ["sales", "users"],
+  });
+
+  // call to the database
+}
+```
+
+### Client-Side Permission Checks
+
+Finally, we can use client-side permission checks to limit what the user can do in the UI. This is done using the `usePermissions` hook. It provides two methods:
+
+1. `can` - a function that takes a module (sales) and an action (view, create, update, delete) and returns a boolean indicating whether the user has the required permission.
+2. `is` - a function that takes a role (employee, customer, supplier) and returns a boolean indicating whether the user has the required role.
+
+Here's an example of how we might use client-side permission checks to hide the NewSalesForm component if the user does not have the `sales_create` permission:
+
+```tsx
+import { usePermissions } from "~/hooks";
+
+export default function SalesList() {
+  const permissions = usePermissions();
+
+  return <>{permissions.can("create", "sales") && <NewSalesForm />}</>;
+}
+```

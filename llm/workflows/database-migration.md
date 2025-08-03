@@ -114,7 +114,7 @@ CREATE POLICY "SELECT" ON "entityName"
   USING (
     "companyId" IN (
       SELECT "companyId"
-      FROM get_companies_with_employee_permission(auth.uid(), 'module:view')
+      FROM get_companies_with_employee_permission('module_view')
     )
   );
 
@@ -124,7 +124,7 @@ CREATE POLICY "INSERT" ON "entityName"
   WITH CHECK (
     "companyId" IN (
       SELECT "companyId"
-      FROM get_companies_with_employee_permission(auth.uid(), 'module:create')
+      FROM get_companies_with_employee_permission('module_create')
     )
   );
 
@@ -134,7 +134,7 @@ CREATE POLICY "UPDATE" ON "entityName"
   USING (
     "companyId" IN (
       SELECT "companyId"
-      FROM get_companies_with_employee_permission(auth.uid(), 'module:update')
+      FROM get_companies_with_employee_permission('module_update')
     )
   );
 
@@ -144,7 +144,7 @@ CREATE POLICY "DELETE" ON "entityName"
   USING (
     "companyId" IN (
       SELECT "companyId"
-      FROM get_companies_with_employee_permission(auth.uid(), 'module:delete')
+      FROM get_companies_with_employee_permission('module_delete')
     )
   );
 ```

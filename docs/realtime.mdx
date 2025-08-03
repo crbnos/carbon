@@ -1,0 +1,102 @@
+# Realtime
+
+There are two basic use cases for realtime data in Carbon ERP:
+
+1. Listening for async events to complete
+2. Minimizing the number of requests for popular data
+
+## Listening for async events to complete
+
+When a user performs an action that triggers an async event (a job is inserted into a queue), the UI should listen for updates to the table to be updated.
+
+This can be done easily with the `useRealtime` hook:
+
+```tsx
+// listen for udpates to the receipt table
+useRealtime("receipt");
+```
+
+A smaller subset of the table can be listened to by passing a second argument. Here we listen for the rows with an `id` of `1`, `2`, or `3`:
+
+```tsx
+useRealtime("receipt", "id=in.(1,2,3)");
+```
+
+Whenever a row is updated, the data for the page will be re-fetched.
+
+## Minimizing the number of requests for popular data
+
+Some data like the list of parts, customers, and suppliers are used on many pages. And regularly refetching thousands of rows is not ideal. To avoid making a request for this data on every page, we load it once in the `<RealtimeDataProvider>` on page load. We then put the data from each table into a nanostore hook that has a getter and setter that can be accessed from any page. For example:
+
+```tsx
+import { useParts } from "~/stores";
+
+const [parts, setParts] = useParts();
+```
+
+Without realtime, this data would quickly become stale. To keep data fresh, the `<RealtimeDataProvider>` listens for updates to the table and update the nanostore hook accordingly. This means that the data will be updated on every page that uses the hook.
+
+Here is the basic pattern for listening to updates to a table in the `<RealtimeDataProvider>` component and updating the store:
+
+```tsx
+const { supabase } = useSupabase();
+const [, setParts] = useParts();
+
+useEffect(() => {
+  // fetch the all parts from the database and setParts to it's initial value
+  fetchData();
+
+  // listen for updates to the table and update the parts store
+  const channel = supabase
+    .channel("realtime:core")
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "part",
+      },
+      (payload) => {
+        switch (payload.eventType) {
+          case "INSERT":
+            const { new: inserted } = payload;
+            setParts((parts) => [
+              ...parts,
+              {
+                id: inserted.id,
+                name: inserted.name,
+                replenishmentSystem: inserted.replenishmentSystem,
+              },
+            ]);
+            break;
+          case "UPDATE":
+            const { new: updated } = payload;
+            setParts((parts) =>
+              parts.map((p) => {
+                if (p.id === updated.id) {
+                  return {
+                    ...p,
+                    name: updated.name,
+                    replenishmentSystem: updated.replenishmentSystem,
+                  };
+                }
+                return p;
+              })
+            );
+            break;
+          case "DELETE":
+            const { old: deleted } = payload;
+            setParts((parts) => parts.filter((p) => p.id !== deleted.id));
+            break;
+          default:
+            break;
+        }
+      }
+    )
+    .subscribe();
+
+  return () => {
+    if (channel) supabase?.removeChannel(channel);
+  };
+}, []);
+```

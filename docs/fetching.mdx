@@ -1,0 +1,161 @@
+# Fetching
+
+The convention is to fetch data on the server and pass it to the UI with the `useLoaderData` hook. Here's how that works:
+
+1. Data is fetched on the server in a `loader` function
+2. The `loader` function gets a `client` by calling `requirePermissions`
+3. The `client` is passed to the server-side service, and returns both `{ data, error }`
+4. The `loader` function redirects in the case of an error and returns the data in the case of no error
+5. The component uses the `useLoaderData` hook to expose the data to the UI
+
+<Callout>
+  Fetching should not be done with a `useEffect` hook. This is because the
+  `useEffect` hook is not called on the server, so the data will not be
+  available on the first render. Instead, use the `useLoaderData` hook.
+</Callout>
+
+Here's an example of simple route that fetches data from a service and displays it in a table:
+
+```tsx
+// app/routes/x+/resources+/partners.tsx
+
+// loader is run on the server
+export async function loader({ request }: LoaderFunctionArgs) {
+  const { client } = await requirePermissions(request, {
+    view: "resources",
+    role: "employee",
+  });
+
+  const url = new URL(request.url);
+  const searchParams = new URLSearchParams(url.search);
+  const name = searchParams.get("name");
+  const { limit, offset, sorts } = getGenericQueryFilters(searchParams);
+
+  const partners = await getPartners(client, {
+    name,
+    limit,
+    offset,
+    sorts,
+  });
+
+  if (partners.error) {
+    return redirect(
+      path.to.resources,
+      await flash(request, error(partners.error, "Failed to load partners"))
+    );
+  }
+
+  return json({
+    partners: partners.data ?? [],
+    count: partners.count ?? 0,
+  });
+}
+
+// data is passed to the UI with the useLoaderData hook
+export default function Route() {
+  const { partners, count } = useLoaderData<typeof loader>();
+
+  return (
+    <VStack spacing={0}>
+      <PartnersTable data={partners} count={count} />
+      <Outlet />
+    </VStack>
+  );
+}
+```
+
+Here's an example of two services that fetch data from the database. The `.server.ts` file extension ensures that the code is only executed on the server:
+
+```tsx
+// app/modules/resources/resources.server.ts
+
+export async function getPartner(
+  client: SupabaseClient<Database>,
+  partnerId: string
+) {
+  // select a single row from the partner table
+  return client
+    .from("partner")
+    .select(`id, hoursPerWeek, supplier(name)`)
+    .eq("id", partnerId)
+    .single();
+}
+
+export async function getPartners(
+  client: SupabaseClient<Database>,
+  args?: GenericQueryFilters & { name: string | null }
+) {
+  // select the partner id, supplier name, and hours per week
+  let query = client
+    .from("partner")
+    .select(`id, supplier(name), hoursPerWeek`, { count: "exact" })
+    .eq("active", true);
+
+  if (args?.name) {
+    // if a name argument is provided, filter by name
+    query = query.ilike("name", `%${args.name}%`);
+  }
+
+  if (args) {
+    // sort by supplier name by default
+    query = setGenericQueryFilters(query, args, "supplier(name)");
+  }
+
+  return query;
+}
+```
+
+If a query becomes complex, the convention is to create a SQL view in the database and query that instead. Here's an example of a view that joins the `partner` and `supplier` tables:
+
+<Tabs
+  items={[
+    "SQL",
+    "TypeScript",
+  ]}
+>   
+  <Tab>
+```sql
+CREATE OR REPLACE VIEW "partners" WITH (security_invoker=on) AS
+  SELECT 
+    p.id AS "supplierLocationId", 
+    p."active", 
+    p."hoursPerWeek", 
+    s.id AS "supplierId", 
+    s.name AS "supplierName", 
+    a.city,
+    a.state,
+    array_agg(pa."abilityId") AS "abilityIds"
+  FROM "partner" p 
+    INNER JOIN "supplierLocation" sl 
+      ON sl.id = p.id
+    INNER JOIN "supplier" s
+      ON s.id = sl."supplierId"
+    INNER JOIN "address" a 
+      ON a.id = sl."addressId"
+    INNER JOIN "partnerAbility" pa
+      ON pa."partnerId" = p.id
+  WHERE p."active" = true
+  GROUP BY p.id, p.active, p."hoursPerWeek", s.id, a.id, s.name, a.city, a.state
+;
+```
+  </Tab>
+  <Tab>
+```ts
+export async function getPartner(
+  client: SupabaseClient<Database>,
+  partnerId: string
+) {
+  return client
+    .from("partners")
+    .select("*")
+    .eq("supplierLocationId", partnerId)
+    .single();
+}
+```
+  </Tab>
+</Tabs>
+<Callout>
+  For more information on query building, see the [Supabase
+  documentation](https://supabase.io/docs/reference/javascript/select)
+</Callout>
+```

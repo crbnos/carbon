@@ -1,0 +1,200 @@
+# Data Writes
+
+Data writes should include:
+
+1. An HTML form
+2. Client-side validation in the component
+3. Server-side validation in an action
+4. A call to the service layer to perform the write
+
+## Validation
+
+Client-side validation and server-side validation can be done with the same validator. The convention is to store all validators for a module in `app/<module>/services/<module>.form.ts`. We use `zod` and `zod-form-data` for form validation. Here's an example of a simple validator:
+
+```ts
+import { z } from "zod";
+import { zfd } from "zod-form-data";
+
+export const personValidator = z.object({
+  // optional, parsed as string or undefined
+  id: zfd.text(z.string().optional()),
+  // required, parsed as string
+  name: z.string().min(1, { message: "Name is required" }),
+  // optional, parsed as number or undefined
+  age: zfd.numeric(z.number().optional()),
+  // required, parsed as boolean
+  male: zfd.checkbox(),
+});
+```
+
+In this example, we have a validator for a person form. For most fields, `z.string()` will suffice, but sometimes, we want to parse the validated form values as numbers or booleans. In those cases, we use `zfd.numeric()` and `zfd.checkbox()`. There are fancier things you can do, but this example should cover 90% of use cases.
+
+<Callout>
+  For more information on the validators, see the [remix-validated-form
+  documentation](https://www.remix-validated-form.io/)
+</Callout>
+
+## Client-Side Validation
+
+On the client-side, there are two major components to be aware of:
+
+1. Our form validation component from the [remix-validated-form](https://www.remix-validated-form.io/) package called `ValidatedForm` which accepts a `validator` prop.
+2. Our form input components from `~/components/Form` which are designed to be used inside of `ValidatedForm`
+
+Here's an example of how they work together on the client-side:
+
+```tsx
+import { ValidatedForm } from "remix-validated-form";
+import { Boolean, Hidden, Input, Numeric, Submit } from "~/components/Form";
+import { personValidator } from "~/modules/people";
+
+
+const Form = ({initialValues}: FormProps) => {
+  return (
+    <ValidatedForm
+      method="post"
+      action="/path/to/the/action/route"
+      validator={personValidator}
+      defaultValues={initialValues}
+    >
+      <Hidden name="id" />
+      <Input name="name" label="Name">
+      <Numeric name="age" min={0} />
+      <Boolean name="male" label="Male" />
+      <Submit>Save</Submit>
+    </ValidatedForm>
+  )
+}
+```
+
+The form is validated on the client-side before the form is submitted. If the form is invalid, the user can't submit the form until they fix the errors. If the form is valid, the user can submit the form and the server-side validation will run with the same validator.
+
+## Server-Side Validation
+
+On the server-side, we use the same validator in the `action` function to validate the form data. If the form data is invalid, we return the form with the errors. If the form data is valid, we call the service layer to perform the write.
+
+```tsx
+import { validator, validationError } from "@carbon/form";
+import { createPerson, personValidator } from "~/modules/people";
+
+export async function action({ request }: ActionFunctionArgs) {
+  const { client } = await requirePermissions(request);
+
+  const validation = await validator(personValidator).validate(await request.formData());
+
+  if (validation.error) {
+    return validationError(validation.error);
+  }
+
+  const { name, male, age } = validation.data;
+
+  await createPerson(client, {
+    name,
+    male,
+    age
+  });
+
+  return redirect(
+    "/path/to/the/next/page",
+    await flash(request, success("Person created."))
+  );
+```
+
+## Service Layer
+
+Finally, let's have a look at our service layer. The service layer is where we perform the actual write to the database using the `client` returned from `requirePermissions`. The convention is to store all service layer functions in `app/<module>/services/<module>.server.ts`. Including `.server` in the filename is important because it tells Remix to only include the file in the server bundle.
+
+Here's an example of a simple service layer function:
+
+```ts
+export async function createPerson(
+  client: SupabaseClient<Database>,
+  person: {
+    name: string;
+    male: boolean;
+    age?: number;
+  }
+) {
+  return client.from("people").insert(person);
+}
+```
+
+<Callout>
+  For more information on the service layer, see the [Supabase
+  documentation](https://supabase.io/docs/reference/javascript/insert)
+</Callout>
+
+## Transactions
+
+When a database transaction is needed, use a deno-based edge function. The reason for this is that the supabase client currently does not support transactions.
+
+To create a new edge function run `npm run db:function:new <name-of-function>`
+
+This will create a new edge function in `packages/database/supabase/functions/<name-of-function>`.
+
+The pattern for the transaction looks like this:
+
+```ts
+import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
+import { format } from "https://deno.land/std@0.91.0/datetime/mod.ts";
+import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.33.1";
+
+import type { Database } from "../../../src/types.ts";
+import { getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import { corsHeaders } from "../lib/headers.ts";
+import { getSupabaseServiceRole } from "../lib/supabase.ts";
+
+// Use the supabase types to define a subset of the database we'll transact with
+interface DB {
+  generalLedger: Database["public"]["Tables"]["generalLedger"]["Update"];
+  partLedger: Database["public"]["Tables"]["partLedger"]["Insert"];
+  valueLedger: Database["public"]["Tables"]["valueLedger"]["Insert"];
+}
+
+const pool = getConnectionPool(1);
+const db = getDatabaseClient<DB>(pool);
+
+serve(async (req: Request) => {
+  try {
+    if (req.method === "OPTIONS") {
+      return new Response("ok", { headers: corsHeaders });
+    }
+
+    await db.transaction().execute(async (trx) => {
+      await trx
+        .updateTable("partLedger")
+        .set({
+          expectedCost: 0,
+        })
+        .where("id", "=", partLedgerId)
+        .execute();
+
+      const generalLedgerIds = await trx
+        .insertInto("generalLedger")
+        .values(generalLedgerInserts)
+        .execute();
+
+      const valueLedgerIds = await trx
+        .insertInto("valueLedger")
+        .values(valueLedgerInserts)
+        .execute();
+    });
+
+    return new Response(
+      JSON.stringify({
+        data: null,
+        error: null,
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  } catch (err) {
+    console.error(err);
+    return new Response(JSON.stringify(err), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500,
+    });
+  }
+});
+```
