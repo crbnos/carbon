@@ -1,5 +1,5 @@
 {
-  "name": "university",
+  "name": "academy",
   "type": "module",
   "dependencies": {
     "@carbon/auth": "*",

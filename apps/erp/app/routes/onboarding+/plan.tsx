@@ -30,7 +30,7 @@ const PLANS = {
     features: [
       "ERP, MES, QMS",
       "Cloud-Hosted",
-      "Self-Onboarding with Carbon University",
+      "Self-Onboarding with Carbon Academy",
     ],
   },
   BUSINESS: {

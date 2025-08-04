@@ -164,7 +164,7 @@ export default function AuthenticatedRoute() {
         <RealtimeDataProvider>
           <TooltipProvider>
             <div className="flex flex-col h-screen">
-              {/* {user?.acknowledgedUniversity ? null : <UniversityBanner />} */}
+              {user?.acknowledgedUniversity ? null : <AcademyBanner />}
               <Topbar />
               <div className="flex flex-1 h-[calc(100vh-49px)] relative">
                 <PrimaryNavigation />
@@ -180,14 +180,14 @@ export default function AuthenticatedRoute() {
   );
 }
 
-function UniversityBanner() {
+function AcademyBanner() {
   const fetcher = useFetcher<{}>();
 
   return (
     <div className="fixed bottom-3 left-1/2 -translate-x-1/2 flex items-center justify-between gap-10  bg-[#212278] dark:bg-[#2f31ae] text-white py-1 px-2 rounded-lg z-50 shadow-md">
       <div />
       <fetcher.Form method="post" action={path.to.acknowledge}>
-        <input type="hidden" name="intent" value="university" />
+        <input type="hidden" name="intent" value="academy" />
         <input
           type="hidden"
           name="redirectTo"
@@ -200,11 +200,11 @@ function UniversityBanner() {
           className="hover:bg-transparent text-white hover:text-white"
           rightIcon={<LuArrowUpRight />}
         >
-          <span>Introducing Carbon University</span>
+          <span>Introducing Carbon Academy</span>
         </Button>
       </fetcher.Form>
       <fetcher.Form method="post" action={path.to.acknowledge}>
-        <input type="hidden" name="intent" value="university" />
+        <input type="hidden" name="intent" value="academy" />
         <IconButton
           type="submit"
           aria-label="Close"

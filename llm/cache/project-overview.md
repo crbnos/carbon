@@ -6,7 +6,7 @@ Carbon is a manufacturing system built with modern web technologies. It consists
 
 1. **ERP (Enterprise Resource Planning)** - Located at `/apps/erp/`
 2. **MES (Manufacturing Execution System)** - Located at `/apps/mes/`
-3. **University (Training App)** - Located at `/apps/university/`
+3. **Academy (Training App)** - Located at `/apps/academy/`
 
 ## Technology Stack
 
@@ -89,28 +89,35 @@ The ERP app organizes business logic into modules:
 The system supports external links for sharing quotes and customer portals:
 
 ### Database Structure
+
 - `externalLink` table stores external link records
 - Fields: `id` (UUID), `documentType` (enum), `documentId`, `customerId`, `createdAt`, `expiresAt`, `companyId`
 - Document types: `'Quote'`, `'Customer'` (added in 2025-07-11 migration)
 
 ### URL Structure
+
 External links follow these patterns:
+
 - **Quote Links**: `/share/quote/{externalLinkId}`
   - Example: `https://domain.com/share/quote/123e4567-e89b-12d3-a456-426614174000`
 - **Customer Portal Links**: Expected pattern `/share/customer/{externalLinkId}` (route not yet implemented)
 
 ### Path Configuration
+
 In `/apps/erp/app/utils/path.ts`:
+
 - `path.to.externalQuote(id)` generates `/share/quote/${id}`
 - Quote sharing implemented in `QuoteHeader.tsx` using `window.location.origin + path.to.externalQuote(externalLinkId)`
 
 ### Services
+
 - `upsertExternalLink()` - Create/update external links
 - `getCustomerPortals()` - List customer portal links
 - `getCustomerPortal()` - Get specific customer portal
 - `deleteCustomerPortal()` - Delete customer portal link
 
 ### Current Implementation Status
+
 - ✅ Quote external links fully implemented (`/share/quote/{id}`)
 - ⚠️ Customer portal links have database support but no public route yet
 - ⚠️ Customer portal form exists but routes incomplete (`path.to.customerPortal()`, `path.to.newCustomerPortal` not defined)

@@ -1,6 +1,6 @@
 Your environment:
 
-- This project is a manufacturing system called Carbon. It contains apps for ERP, MES, and a training app called university.
+- This project is a manufacturing system called Carbon. It contains apps for ERP, MES, and a training app called academy.
 
 - Any time you want to know about the project, first use the Task tool to query the files in llm/cache/. Do this constantly, literally any time you want to know anything. Don't check the code first, ALWAYS check the cache.
 - There are some specific workflows I have defined in llm/workflows/. ALWAYS use the Task tool to search for the relevant workflow file when told to do a workflow, then read and follow it.

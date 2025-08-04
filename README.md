@@ -79,12 +79,12 @@ The monorepo follows the Turborepo convention of grouping packages into one of t
 
 ### `/apps`
 
-| Package Name | Description     | Local Command            |
-| ------------ | --------------- | ------------------------ |
-| `erp`        | ERP Application | `npm run dev`            |
-| `mes`        | MES             | `npm run dev:mes`        |
-| `university` | University      | `npm run dev:university` |
-| `starter`    | Starter         | `npm run dev:starter`    |
+| Package Name | Description     | Local Command         |
+| ------------ | --------------- | --------------------- |
+| `erp`        | ERP Application | `npm run dev`         |
+| `mes`        | MES             | `npm run dev:mes`     |
+| `academy`    | Academy         | `npm run dev:academy` |
+| `starter`    | Starter         | `npm run dev:starter` |
 
 ### `/packages`
 
@@ -198,7 +198,7 @@ After installation you should be able run the apps locally.
 | --------------- | ------------------------------------------------------------------------------------------------------------------ |
 | ERP             | [http://localhost:3000](http://localhost:3000)                                                                     |
 | MES             | [http://localhost:3001](http://localhost:3001)                                                                     |
-| University      | [http://localhost:4111](http://localhost:4111)                                                                     |
+| Academy         | [http://localhost:4111](http://localhost:4111)                                                                     |
 | Starter         | [http://localhost:4000](http://localhost:4000)                                                                     |
 | Postgres        | [postgresql://postgres:postgres@localhost:54322/postgres](postgresql://postgres:postgres@localhost:54322/postgres) |
 | Supabase Studio | [http://localhost:54323/project/default](http://localhost:54323/project/default)                                   |

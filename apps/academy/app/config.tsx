@@ -114,11 +114,11 @@ export const modules: Config = [
               {
                 id: "what-is-carbon",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/d7a7162c40d547ef806ce3767981f645?sid=86f5681a-bc5f-4ae8-a750-ba2008cde1d4",
                 name: "What is Carbon?",
                 description:
                   "Meet Carbon, the next generation of accessible, scalable, and data-centric ERP/MES/QMS software. Carbon was designed from the ground up to be approachable and easy to get started with, but highly flexible and capable of scaling up to the largest projects.",
-                duration: 0,
+                duration: 216,
               },
               {
                 id: "carbon-modules",

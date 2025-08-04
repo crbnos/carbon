@@ -30,7 +30,7 @@ function createSymlink(targetPath: string, sourcePath: string) {
 
 // Create symlinks in apps directory
 if (existsSync(APPS_DIR)) {
-  const apps = ["erp", "mes", "university", "starter"];
+  const apps = ["erp", "mes", "academy", "starter"];
   apps.forEach((app) => {
     const appEnvPath = join(APPS_DIR, app, ".env");
     createSymlink(appEnvPath, ROOT_ENV_PATH);

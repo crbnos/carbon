@@ -62,7 +62,7 @@ export function links() {
 export const meta: MetaFunction = () => {
   return [
     {
-      title: "Carbon University",
+      title: "Carbon Academy",
     },
   ];
 };

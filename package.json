@@ -52,7 +52,7 @@
     "dev:stripe": "npm run -w @carbon/stripe dev:stripe",
     "dev:mes": "turbo run dev --filter=./apps/mes",
     "dev:starter": "turbo run dev --filter=./apps/starter --filter=./packages/",
-    "dev:university": "turbo run dev --filter=./apps/university --filter=./packages/",
+    "dev:academy": "turbo run dev --filter=./apps/academy --filter=./packages/",
     "dev:packages": "turbo run dev --filter=./packages/*",
     "generate:types": "tsx scripts/generate-db-types.ts",
     "generate:swagger": "tsx scripts/generate-swagger-docs.ts && npx prettier --write ./packages/database/src/swagger-docs-schema.ts ",

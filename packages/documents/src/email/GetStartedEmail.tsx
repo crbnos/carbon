@@ -14,12 +14,12 @@ import {
 
 interface Props {
   firstName?: string;
-  universityUrl?: string;
+  academyUrl?: string;
 }
 
 export const GetStartedEmail = ({
   firstName = "Huckleberry",
-  universityUrl = "https://learn.carbon.ms",
+  academyUrl = "https://learn.carbon.ms",
 }: Props) => {
   const text = `Hi ${firstName}, Just checking in to help you get started. Here are a few things you can try today.`;
   const themeClasses = getEmailThemeClasses();
@@ -71,9 +71,7 @@ export const GetStartedEmail = ({
             <li className="mb-2">
               <Text>
                 <strong>
-                  <a
-                    href={`${universityUrl}/course/carbon-overview/the-basics`}
-                  >
+                  <a href={`${academyUrl}/course/carbon-overview/the-basics`}>
                     The Basics
                   </a>
                 </strong>{" "}
@@ -85,7 +83,7 @@ export const GetStartedEmail = ({
               <Text>
                 <strong>
                   <a
-                    href={`${universityUrl}/course/getting-started/setting-up-company`}
+                    href={`${academyUrl}/course/getting-started/setting-up-company`}
                   >
                     Setting up Your Company
                   </a>
@@ -97,7 +95,7 @@ export const GetStartedEmail = ({
               <Text>
                 <strong>
                   <a
-                    href={`${universityUrl}/course/parts-materials/defining-item`}
+                    href={`${academyUrl}/course/parts-materials/defining-item`}
                   >
                     Defining Items
                   </a>
@@ -109,9 +107,7 @@ export const GetStartedEmail = ({
             <li className="mb-2">
               <Text>
                 <strong>
-                  <a
-                    href={`${universityUrl}/course/selling/quoting-estimating`}
-                  >
+                  <a href={`${academyUrl}/course/selling/quoting-estimating`}>
                     Quoting and Estimating
                   </a>
                 </strong>{" "}
@@ -123,7 +119,7 @@ export const GetStartedEmail = ({
               <Text>
                 <strong>
                   <a
-                    href={`${universityUrl}/course/manufacturing/managing-production`}
+                    href={`${academyUrl}/course/manufacturing/managing-production`}
                   >
                     Managing Production
                   </a>
@@ -135,7 +131,7 @@ export const GetStartedEmail = ({
             <li className="mb-2">
               <Text>
                 <strong>
-                  <a href={`${universityUrl}/course/buying/purchasing-basics`}>
+                  <a href={`${academyUrl}/course/buying/purchasing-basics`}>
                     Purchasing Basics
                   </a>
                 </strong>{" "}
@@ -146,7 +142,7 @@ export const GetStartedEmail = ({
             <li className="mb-2">
               <Text>
                 <strong>
-                  <a href={`${universityUrl}/course/developing/using-api`}>
+                  <a href={`${academyUrl}/course/developing/using-api`}>
                     Using the API
                   </a>
                 </strong>{" "}

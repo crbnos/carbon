@@ -9,7 +9,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const intent = formData.get("intent") as string;
   const redirectTo = formData.get("redirectTo") as string | null;
 
-  if (intent === "university") {
+  if (intent === "academy") {
     await client
       .from("user")
       .update({

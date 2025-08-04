@@ -64,7 +64,7 @@ export const onboardTask = task({
         html: render(
           GetStartedEmail({
             firstName: user.data.firstName,
-            universityUrl: "https://learn.carbon.ms",
+            academyUrl: "https://learn.carbon.ms",
           })
         ),
       });

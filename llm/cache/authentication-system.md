@@ -270,11 +270,11 @@ Environment variables in `packages/auth/src/config/env.ts`:
 1. **WelcomeEmail**: Sent immediately after user creation
 
 - Personal welcome from founder Brad
-- Link to Carbon University
+- Link to Carbon Academy
 - Located at `packages/documents/src/email/WelcomeEmail.tsx`
 
 2. **GetStartedEmail**: Sent 1 minute after welcome email
-   - Contains links to specific Carbon University courses
+   - Contains links to specific Carbon Academy courses
    - Covers basics, company setup, items, quoting, production, purchasing, and API
    - Located at `packages/documents/src/email/GetStartedEmail.tsx`
 

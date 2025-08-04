@@ -75,8 +75,8 @@ export const WelcomeEmail = ({ firstName = "Huckleberry" }: Props) => {
             <br />
             <br />
             In the meantime, you can start by exploring{" "}
-            <Link href="https://learn.carbon.ms">Carbon University</Link> to get
-            a feel for the platform.
+            <Link href="https://learn.carbon.ms">Carbon Academy</Link> to get a
+            feel for the platform.
           </Text>
 
           <Section className="text-center mt-[50px] mb-[50px]">
