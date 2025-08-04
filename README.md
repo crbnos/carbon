@@ -4,7 +4,23 @@
    </a>
 </p>
 
-<p align="center">Carbon is the open-source operating system for manufacturing.</p>
+<p align="center">
+    The open-source operating system for manufacturing
+    <br />
+    <br />
+    <a href="https://discord.gg/yGUJWhNqzy">Discord</a>
+    ·
+    <a href="https://carbon.ms">Website</a>
+    ·
+    <a href="https://github.com/crbnos/carbon/issues">Issues</a>
+  </p>
+</p>
+<p align="center">
+  <a href="https://go.midday.ai/K7GwMoQ">
+    <img src="https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase" />
+  </a>
+</p>
+
 
 ![ERP Screenshot](https://github.com/user-attachments/assets/2e09b891-d5e2-4f68-b924-a1c8ea42d24d)
 
