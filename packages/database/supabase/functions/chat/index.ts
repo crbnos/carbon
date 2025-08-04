@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { createAnthropic } from "npm:@ai-sdk/anthropic";
-import { APICallError, LanguageModelV1CallOptions } from "npm:ai";
+import { createAnthropic } from "npm:@ai-sdk/anthropic@1.2.12";
+import { APICallError, LanguageModelV1CallOptions } from "npm:ai@4.3.19";
 import { z } from "npm:zod";
 import { corsHeaders } from "../lib/headers.ts";
 

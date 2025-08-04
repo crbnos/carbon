@@ -341,32 +341,60 @@ export function Agent() {
 
       setIsRateLimited(false);
 
-      if (result.finishReason === "tool-calls") {
-        for await (const toolCall of result.toolCalls) {
-          await addToolCalls(result.toolCalls);
+      // Handle different finish reasons from the AI SDK
+      switch (result.finishReason) {
+        case "tool-calls":
+          // Handle tool calls
+          for await (const toolCall of result.toolCalls) {
+            await addToolCalls(result.toolCalls);
 
-          const toolResponse = await carbon.functions.invoke("mcp", {
-            body: JSON.stringify({
-              jsonrpc: "2.0",
-              method: "tools/call",
-              id: ++idRef.current,
-              params: {
-                name: toolCall.toolName,
-                arguments: JSON.parse(toolCall.args),
+            const toolResponse = await carbon.functions.invoke("mcp", {
+              body: JSON.stringify({
+                jsonrpc: "2.0",
+                method: "tools/call",
+                id: ++idRef.current,
+                params: {
+                  name: toolCall.toolName,
+                  arguments: JSON.parse(toolCall.args),
+                },
+              }),
+              headers: {
+                "x-company-id": companyId,
+                "x-user-id": userId,
               },
-            }),
-            headers: {
-              "x-company-id": companyId,
-              "x-user-id": userId,
-            },
-          });
+            });
 
-          const response = toolResponse?.data;
+            const response = toolResponse?.data;
 
-          if ("content" in response?.result) {
-            await addToolResult(toolCall, response.result.content);
+            if ("content" in response?.result) {
+              await addToolResult(toolCall, response.result.content);
+            }
           }
-        }
+          break;
+
+        case "end-turn":
+        case "end_turn":
+          // End turn means the assistant has completed its response
+          // No additional action needed, just set status to ready
+          break;
+
+        case "stop":
+          // Normal completion
+          break;
+
+        case "length":
+          // Maximum token length reached
+          console.warn("Maximum token length reached");
+          break;
+
+        case "error":
+          // Error occurred during generation
+          console.error("Error during generation");
+          break;
+
+        default:
+          // Unknown finish reason
+          console.warn(`Unknown finish reason: ${result.finishReason}`);
       }
 
       setStatus("ready");
