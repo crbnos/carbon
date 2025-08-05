@@ -9,8 +9,6 @@ import {
   CardHeader,
   CardTitle,
   IconButton,
-  toast,
-  useMount,
   VStack,
 } from "@carbon/react";
 import { getCheckoutUrl } from "@carbon/stripe/stripe.server";
@@ -125,11 +123,6 @@ export default function OnboardingPlan() {
   );
 
   const fetcher = useFetcher<typeof action>();
-  useMount(() => {
-    toast.error(
-      "Self-signup is temporarily disabled. Please check back in an hour."
-    );
-  });
 
   return (
     <>
@@ -191,7 +184,7 @@ export default function OnboardingPlan() {
                             className="w-full"
                             variant="primary"
                             type="submit"
-                            isDisabled={true || fetcher.state !== "idle"}
+                            isDisabled={fetcher.state !== "idle"}
                             isLoading={
                               fetcher.state !== "idle" &&
                               fetcher.formData?.get("planId") === plan.id
