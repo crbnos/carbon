@@ -23,7 +23,6 @@ import {
   Shelf,
   Submit,
   TextArea,
-  UnitOfMeasure,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import type { MethodItemType } from "~/modules/shared/types";
@@ -42,13 +41,13 @@ const warehouseTransferLineFormValidator = z.discriminatedUnion("type", [
     quantity: zfd.numeric(z.number().min(0.0001)),
     fromShelfId: zfd.text(z.string().optional()),
     toShelfId: zfd.text(z.string().optional()),
-    unitOfMeasureCode: zfd.text(z.string().optional()),
     notes: zfd.text(z.string().optional()),
   }),
   z.object({
     type: z.literal("update"),
     id: z.string().min(1),
     transferId: z.string().min(1),
+    itemId: z.string().min(1),
     fromLocationId: z.string().min(1),
     toLocationId: z.string().min(1),
     quantity: zfd.numeric(z.number().min(0.0001)),
@@ -76,10 +75,9 @@ const WarehouseTransferLineForm = ({
     throw new Error("transferId is required");
   }
 
-  const [itemData, setItemData] = useState<{
-    itemId: string;
-    unitOfMeasureCode: string;
-  }>();
+  const [itemId, setItemId] = useState<string>(
+    initialValues.type === "update" ? initialValues.itemId : ""
+  );
 
   const [items] = useItems();
   const [itemType, setItemType] = useState<MethodItemType>(
@@ -92,17 +90,17 @@ const WarehouseTransferLineForm = ({
     ? !permissions.can("update", "inventory")
     : !permissions.can("create", "inventory");
 
-  const action = path.to.warehouseTransferLines(transferId);
+  const action = initialValues.id
+    ? path.to.warehouseTransferLine(transferId, initialValues.id)
+    : path.to.newWarehouseTransferLine(transferId);
 
   const fetcher = useFetcher<{ success: boolean; message: string }>();
 
   useEffect(() => {
-    if (fetcher.data?.success) {
-      onClose();
-    } else if (fetcher.data?.message) {
+    if (fetcher.data?.success === false) {
       toast.error(fetcher.data.message);
     }
-  }, [fetcher.data?.success, fetcher.data?.message, onClose]);
+  }, [fetcher.data?.success, fetcher.data?.message]);
 
   return (
     <Drawer
@@ -138,14 +136,9 @@ const WarehouseTransferLineForm = ({
                 label="Item"
                 type={itemType}
                 onTypeChange={(t) => setItemType(t as MethodItemType)}
-                value={itemData?.itemId}
+                value={itemId}
                 onChange={(value) => {
-                  setItemData({
-                    itemId: value?.value as string,
-                    unitOfMeasureCode:
-                      items.find((item) => item.id === value?.value)
-                        ?.unitOfMeasureCode ?? "",
-                  });
+                  setItemId(value?.value as string);
                 }}
               />
               <Number
@@ -153,12 +146,6 @@ const WarehouseTransferLineForm = ({
                 label="Quantity"
                 minValue={0.0001}
                 step={0.0001}
-              />
-              <UnitOfMeasure
-                name="unitOfMeasureCode"
-                label="Unit of Measure"
-                value={itemData?.unitOfMeasureCode}
-                disabled
               />
               <Shelf
                 name="fromShelfId"

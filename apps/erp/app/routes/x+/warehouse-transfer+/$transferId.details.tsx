@@ -6,9 +6,11 @@ import { useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
-import type { WarehouseTransfer, WarehouseTransferLine } from "~/modules/inventory";
+import type {
+  WarehouseTransfer,
+  WarehouseTransferLine,
+} from "~/modules/inventory";
 import {
-  getWarehouseTransfer,
   upsertWarehouseTransfer,
   warehouseTransferValidator,
 } from "~/modules/inventory";
@@ -26,17 +28,21 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   const formData = await request.formData();
-  const validation = await validator(warehouseTransferValidator).validate(formData);
+  const validation = await validator(warehouseTransferValidator).validate(
+    formData
+  );
 
   if (validation.error) {
     return validationError(validation.error);
   }
 
-  const { id, ...data } = validation.data;
+  const { id, transferId, ...data } = validation.data;
   if (!id) throw new Error("id not found");
+  if (!transferId) throw new Error("transferId not found");
 
   const updateTransfer = await upsertWarehouseTransfer(client, {
     id,
+    transferId,
     ...data,
     updatedBy: userId,
     customFields: setCustomFields(formData),
@@ -72,6 +78,9 @@ export default function WarehouseTransferDetailsRoute() {
 
   const initialValues = {
     ...routeData.warehouseTransfer,
+    expectedReceiptDate:
+      routeData.warehouseTransfer.expectedReceiptDate ?? undefined,
+    transferDate: routeData.warehouseTransfer.transferDate ?? undefined,
     transferId: routeData.warehouseTransfer.transferId ?? undefined,
     reference: routeData.warehouseTransfer.reference ?? undefined,
     notes: routeData.warehouseTransfer.notes ?? undefined,
@@ -80,12 +89,12 @@ export default function WarehouseTransferDetailsRoute() {
 
   return (
     <div className="flex flex-col gap-2 pb-16 w-full">
-      <WarehouseTransferForm 
+      <WarehouseTransferForm
         key={initialValues.id}
         initialValues={initialValues}
       />
-      
-      <WarehouseTransferLines 
+
+      <WarehouseTransferLines
         warehouseTransferLines={routeData.warehouseTransferLines}
         transferId={transferId}
         warehouseTransfer={routeData.warehouseTransfer}

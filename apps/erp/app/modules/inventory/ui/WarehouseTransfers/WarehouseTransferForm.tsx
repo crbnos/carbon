@@ -17,6 +17,7 @@ import {
   Submit,
   TextArea,
 } from "~/components/Form";
+import { usePermissions } from "~/hooks";
 import { warehouseTransferValidator } from "../../inventory.models";
 
 type WarehouseTransferFormProps = {
@@ -26,7 +27,12 @@ type WarehouseTransferFormProps = {
 const WarehouseTransferForm = ({
   initialValues,
 }: WarehouseTransferFormProps) => {
+  const permissions = usePermissions();
   const isEditing = !!initialValues.id;
+  const canEdit =
+    permissions.can("update", "inventory") &&
+    ["Draft"].includes(initialValues.status ?? "");
+
   return (
     <ValidatedForm
       validator={warehouseTransferValidator}
@@ -78,7 +84,7 @@ const WarehouseTransferForm = ({
 
             <TextArea name="notes" label="Notes" />
 
-            <Submit>Save Transfer</Submit>
+            <Submit disabled={!canEdit}>Save Transfer</Submit>
           </VStack>
         </CardContent>
       </Card>

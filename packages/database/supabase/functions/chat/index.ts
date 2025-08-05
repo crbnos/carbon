@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { createAnthropic } from "npm:@ai-sdk/anthropic@1.2.12";
 import { APICallError, LanguageModelV1CallOptions } from "npm:ai@4.3.19";
-import { z } from "npm:zod";
+import { z } from "npm:zod@3.24.2";
 import { corsHeaders } from "../lib/headers.ts";
 
 import SupabaseClient from "https://esm.sh/v135/@supabase/supabase-js@2.33.1/dist/module/SupabaseClient.d.ts";
