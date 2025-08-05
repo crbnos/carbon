@@ -11,16 +11,21 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   Progress,
   toast,
   useDebounce,
   useDisclosure,
 } from "@carbon/react";
+import { formatDate } from "@carbon/utils";
 import { Editor, generateHTML } from "@carbon/react/Editor";
 import { useFetchers, useParams, useSubmit } from "@remix-run/react";
 import { nanoid } from "nanoid";
 import { useCallback, useRef, useState } from "react";
 import {
+  LuCalendar,
   LuChevronRight,
   LuCircleCheck,
   LuCirclePlay,
@@ -189,6 +194,12 @@ export function TaskItem({
             value={task.assignee ?? undefined}
             disabled={isDisabled}
           />
+          {type === "action" && (
+            <TaskDueDate
+              task={task as IssueActionTask}
+              isDisabled={isDisabled}
+            />
+          )}
         </HStack>
         <HStack>
           <Button
@@ -403,4 +414,79 @@ function getTable(type: "investigation" | "action" | "approval" | "review") {
     case "review":
       return "nonConformanceReviewer";
   }
+}
+
+function TaskDueDate({
+  task,
+  isDisabled,
+}: {
+  task: IssueActionTask;
+  isDisabled: boolean;
+}) {
+  const submit = useSubmit();
+  const [isOpen, setIsOpen] = useState(false);
+  const permissions = usePermissions();
+
+  const canEdit = permissions.can("update", "quality") && !isDisabled;
+
+  const handleDateChange = (date: string | null) => {
+    submit(
+      {
+        id: task.id!,
+        dueDate: date || "",
+      },
+      {
+        method: "post",
+        action: path.to.issueActionDueDate(task.id!),
+        navigate: false,
+      }
+    );
+    setIsOpen(false);
+  };
+
+  if (!canEdit) {
+    return (
+      <HStack className="text-sm text-muted-foreground">
+        <LuCalendar className="w-4 h-4" />
+        <span>{task.dueDate ? formatDate(task.dueDate) : "No due date"}</span>
+      </HStack>
+    );
+  }
+
+  return (
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-auto px-2 py-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <LuCalendar className="w-4 h-4 mr-1" />
+          <span>
+            {task.dueDate ? formatDate(task.dueDate) : "Set due date"}
+          </span>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-3" align="start">
+        <div className="space-y-2">
+          <input
+            type="date"
+            value={task.dueDate || ""}
+            onChange={(e) => handleDateChange(e.target.value || null)}
+            className="w-full px-3 py-2 border rounded-md text-sm"
+          />
+          {task.dueDate && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleDateChange(null)}
+              className="w-full"
+            >
+              Clear due date
+            </Button>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
 }
