@@ -13,11 +13,12 @@ import {
   DropdownMenuTrigger,
   Switch,
 } from "@carbon/react";
-import { useMode } from "@carbon/remix";
-import { themes } from "@carbon/utils";
+import { useEdition, useMode } from "@carbon/remix";
+import { Edition, themes } from "@carbon/utils";
 import { Form, Link, useFetcher } from "@remix-run/react";
 import { useRef, useState } from "react";
 import {
+  LuCreditCard,
   LuFileText,
   LuHouse,
   LuLogOut,
@@ -28,7 +29,7 @@ import {
   LuUser,
 } from "react-icons/lu";
 import { Avatar } from "~/components";
-import { useUser } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import { useTheme } from "~/hooks/useTheme";
 import type { action } from "~/root";
 import { path } from "~/utils/path";
@@ -36,6 +37,8 @@ import { path } from "~/utils/path";
 const AvatarMenu = () => {
   const user = useUser();
   const name = `${user.firstName} ${user.lastName}`;
+  const { isOwner } = usePermissions();
+  const edition = useEdition();
 
   const mode = useMode();
   const theme = useTheme();
@@ -154,6 +157,15 @@ const AvatarMenu = () => {
             Account Settings
           </Link>
         </DropdownMenuItem>
+
+        {edition === Edition.Cloud && isOwner() && (
+          <DropdownMenuItem asChild>
+            <Link to={path.to.settings}>
+              <DropdownMenuIcon icon={<LuCreditCard />} />
+              <span>Manage Subscription</span>
+            </Link>
+          </DropdownMenuItem>
+        )}
 
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
