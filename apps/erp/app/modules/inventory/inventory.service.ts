@@ -906,6 +906,21 @@ export async function getWarehouseTransfer(
     .single();
 }
 
+export async function getWarehouseTransferLine(
+  client: SupabaseClient<Database>,
+  transferId: string,
+  lineId: string
+) {
+  return client
+    .from("warehouseTransferLine")
+    .select(
+      "*, warehouseTransfer(*, fromLocation:location!fromLocationId(name), toLocation:location!toLocationId(name))"
+    )
+    .eq("id", lineId)
+    .eq("transferId", transferId)
+    .single();
+}
+
 export async function getWarehouseTransferLines(
   client: SupabaseClient<Database>,
   transferId: string
@@ -991,7 +1006,6 @@ export async function upsertWarehouseTransferLine(
       })
 ) {
   if ("id" in line && line.id) {
-    // Update existing line
     const { id, ...updateData } = line;
     return client
       .from("warehouseTransferLine")
@@ -1003,7 +1017,6 @@ export async function upsertWarehouseTransferLine(
       .select()
       .single();
   } else {
-    // Insert new line
     return client
       .from("warehouseTransferLine")
       .insert({

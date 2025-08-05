@@ -942,6 +942,9 @@ export const path = {
     newToolSupplier: (id: string) =>
       generatePath(`${x}/tool/${id}/view/purchasing/new`),
     newUom: `${x}/items/uom/new`,
+    newWarehouseTransfer: `${x}/warehouse-transfer/new`,
+    newWarehouseTransferLine: (transferId: string) =>
+      generatePath(`${x}/warehouse-transfer/${transferId}/details/new`),
     newWorkCenter: `${x}/resources/work-centers/new`,
     newWebhook: `${x}/settings/webhooks/new`,
 
@@ -1229,13 +1232,10 @@ export const path = {
       generatePath(`${x}/warehouse-transfer/${id}/ship`),
     warehouseTransferReceive: (id: string) =>
       generatePath(`${x}/warehouse-transfer/${id}/receive`),
-    warehouseTransferLines: (id: string) =>
-      generatePath(`${x}/warehouse-transfer/${id}/lines`),
-    newWarehouseTransfer: `${x}/warehouse-transfer/new`,
-    newWarehouseTransferLine: (transferId: string) =>
-      generatePath(`${x}/warehouse-transfer/${transferId}/lines/new`),
+    warehouseTransferLines: (transferId: string) =>
+      generatePath(`${x}/warehouse-transfer/${transferId}/lines`),
     warehouseTransferLine: (transferId: string, lineId: string) =>
-      generatePath(`${x}/warehouse-transfer/${transferId}/lines/${lineId}`),
+      generatePath(`${x}/warehouse-transfer/${transferId}/details/${lineId}`),
     deleteWarehouseTransfer: (id: string) =>
       generatePath(`${x}/warehouse-transfer/${id}/delete`),
     shippingMethods: `${x}/inventory/shipping-methods`,
