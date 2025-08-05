@@ -97,13 +97,13 @@ const IssueHeader = () => {
         </statusFetcher.Form>
 
         <statusFetcher.Form method="post" action={path.to.issueStatus(id)}>
-          <input type="hidden" name="status" value="In Progress" />
+          <input type="hidden" name="status" value="Registered" />
           <Button
             type="submit"
             leftIcon={<LuLoaderCircle />}
             variant={status === "Closed" ? "primary" : "secondary"}
             isDisabled={
-              status !== "Closed" ||
+              !["In Progress", "Closed"].includes(status ?? "") ||
               statusFetcher.state !== "idle" ||
               !permissions.can("update", "quality")
             }
