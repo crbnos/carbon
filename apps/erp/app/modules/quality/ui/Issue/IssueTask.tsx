@@ -3,6 +3,7 @@ import type { JSONContent } from "@carbon/react";
 import {
   Button,
   cn,
+  DatePicker,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -19,8 +20,9 @@ import {
   useDebounce,
   useDisclosure,
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { Editor, generateHTML } from "@carbon/react/Editor";
+import { formatDate } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import { useFetchers, useParams, useSubmit } from "@remix-run/react";
 import { nanoid } from "nanoid";
 import { useCallback, useRef, useState } from "react";
@@ -428,6 +430,14 @@ function TaskDueDate({
   const permissions = usePermissions();
 
   const canEdit = permissions.can("update", "quality") && !isDisabled;
+  const fetchers = useFetchers();
+  const pendingUpdate = fetchers.find(
+    (f) =>
+      f.formData?.get("id") === task.id &&
+      f.key === `nonConformanceTask:${task.id}`
+  );
+
+  const pendingValue = pendingUpdate?.formData?.get("dueDate") ?? task.dueDate;
 
   const handleDateChange = (date: string | null) => {
     submit(
@@ -439,9 +449,9 @@ function TaskDueDate({
         method: "post",
         action: path.to.issueActionDueDate(task.id!),
         navigate: false,
+        fetcherKey: `nonConformanceTask:${task.id}`,
       }
     );
-    setIsOpen(false);
   };
 
   if (!canEdit) {
@@ -455,29 +465,25 @@ function TaskDueDate({
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
+      <PopoverTrigger disabled={isDisabled} asChild>
         <Button
-          variant="ghost"
+          variant="secondary"
           size="sm"
-          className="h-auto px-2 py-1 text-sm text-muted-foreground hover:text-foreground"
+          leftIcon={<LuCalendar />}
+          isDisabled={isDisabled}
         >
-          <LuCalendar className="w-4 h-4 mr-1" />
-          <span>
-            {task.dueDate ? formatDate(task.dueDate) : "Set due date"}
-          </span>
+          {pendingValue ? formatDate(String(pendingValue)) : "Due Date"}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-3" align="start">
         <div className="space-y-2">
-          <input
-            type="date"
-            value={task.dueDate || ""}
-            onChange={(e) => handleDateChange(e.target.value || null)}
-            className="w-full px-3 py-2 border rounded-md text-sm"
+          <DatePicker
+            value={pendingValue ? parseDate(String(pendingValue)) : null}
+            onChange={(date) => handleDateChange(date?.toString() || null)}
           />
-          {task.dueDate && (
+          {pendingValue && (
             <Button
-              variant="ghost"
+              variant="secondary"
               size="sm"
               onClick={() => handleDateChange(null)}
               className="w-full"

@@ -107,6 +107,14 @@ const ActionsTable = memo(({ data, issueTypes, count }: ActionsTableProps) => {
         },
       },
       {
+        accessorKey: "dueDate",
+        header: "Due Date",
+        cell: ({ row }) => formatDate(row.original.dueDate),
+        meta: {
+          icon: <LuCalendar />,
+        },
+      },
+      {
         accessorKey: "nonConformanceStatus",
         header: "Issue Status",
         cell: ({ row }) =>
