@@ -31,9 +31,7 @@ import type { ListItem } from "~/types";
 import {
   issueValidator,
   nonConformanceApprovalRequirement,
-  nonConformanceInvestigationType,
   nonConformancePriority,
-  nonConformanceRequiredAction,
   nonConformanceSource,
 } from "../../quality.models";
 import type { IssueWorkflow } from "../../types";
@@ -45,12 +43,16 @@ type IssueFormProps = {
   initialValues: IssueFormValues;
   nonConformanceWorkflows: IssueWorkflow[];
   nonConformanceTypes: ListItem[];
+  investigationTypes: ListItem[];
+  requiredActions: ListItem[];
 };
 
 const IssueForm = ({
   initialValues,
   nonConformanceWorkflows,
   nonConformanceTypes,
+  investigationTypes,
+  requiredActions,
 }: IssueFormProps) => {
   const permissions = usePermissions();
   const isEditing = initialValues.id !== undefined;
@@ -156,9 +158,9 @@ const IssueForm = ({
               <MultiSelect
                 name="investigationTypes"
                 label="Investigation Types"
-                options={nonConformanceInvestigationType.map((type) => ({
-                  label: type,
-                  value: type,
+                options={investigationTypes.map((type) => ({
+                  label: type.name,
+                  value: type.id,
                 }))}
                 value={workflow.investigationTypes}
                 onChange={(value) => {
@@ -171,9 +173,9 @@ const IssueForm = ({
               <MultiSelect
                 name="requiredActions"
                 label="Required Actions"
-                options={nonConformanceRequiredAction.map((action) => ({
-                  label: action,
-                  value: action,
+                options={requiredActions.map((action) => ({
+                  label: action.name,
+                  value: action.id,
                 }))}
                 value={workflow.requiredActions}
                 onChange={(value) => {

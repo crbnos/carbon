@@ -137,10 +137,8 @@ export const issueValidator = z.object({
   priority: z.enum(nonConformancePriority),
   source: z.enum(nonConformanceSource),
   name: z.string().min(1, { message: "Name is required" }),
-  investigationTypes: z
-    .array(z.enum(nonConformanceInvestigationType))
-    .optional(),
-  requiredActions: z.array(z.enum(nonConformanceRequiredAction)).optional(),
+  investigationTypes: z.array(z.string()).optional(),
+  requiredActions: z.array(z.string()).optional(),
   approvalRequirements: z
     .array(z.enum(nonConformanceApprovalRequirement))
     .optional(),
@@ -178,10 +176,8 @@ export const issueWorkflowValidator = z.object({
     }),
   priority: z.enum(nonConformancePriority),
   source: z.enum(nonConformanceSource),
-  investigationTypes: z
-    .array(z.enum(nonConformanceInvestigationType))
-    .optional(),
-  requiredActions: z.array(z.enum(nonConformanceRequiredAction)).optional(),
+  investigationTypes: z.array(z.string()).optional(),
+  requiredActions: z.array(z.string()).optional(),
   approvalRequirements: z
     .array(z.enum(nonConformanceApprovalRequirement))
     .optional(),

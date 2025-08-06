@@ -31,8 +31,6 @@ import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 import {
   nonConformanceApprovalRequirement,
-  nonConformanceInvestigationType,
-  nonConformanceRequiredAction,
   nonConformanceSource,
 } from "../../quality.models";
 import type { Issue } from "../../types";
@@ -47,6 +45,8 @@ const IssueProperties = () => {
   const routeData = useRouteData<{
     nonConformance: Issue;
     nonConformanceTypes: ListItem[];
+    investigationTypes: ListItem[];
+    requiredActions: ListItem[];
     files: Promise<StorageItem[]>;
     tags: { name: string }[];
   }>(path.to.issue(id));
@@ -74,8 +74,8 @@ const IssueProperties = () => {
       field:
         | "source"
         | "priority"
-        | "investigationTypes"
-        | "requiredActions"
+        | "investigationTypeIds"
+        | "requiredActionIds"
         | "approvalRequirements"
         | "name"
         | "description"
@@ -356,49 +356,49 @@ const IssueProperties = () => {
 
       <ValidatedForm
         defaultValues={{
-          investigationTypes:
-            routeData?.nonConformance?.investigationTypes ?? [],
+          investigationTypeIds:
+            routeData?.nonConformance?.investigationTypeIds ?? [],
         }}
         validator={z.object({
-          investigationTypes: z.array(z.string()).optional(),
+          investigationTypeIds: z.array(z.string()).optional(),
         })}
         className="w-full"
       >
         <MultiSelect
-          options={nonConformanceInvestigationType.map((type) => ({
-            value: type,
-            label: type,
+          options={(routeData?.investigationTypes ?? []).map((type) => ({
+            value: type.id,
+            label: type.name,
           }))}
           isReadOnly={disableStructureUpdate}
           label="Investigation Types"
-          name="investigationTypes"
+          name="investigationTypeIds"
           inline
           onChange={(value) => {
-            onUpdate("investigationTypes", value.map((v) => v.value).join(","));
+            onUpdate("investigationTypeIds", value.map((v) => v.value).join(","));
           }}
         />
       </ValidatedForm>
 
       <ValidatedForm
         defaultValues={{
-          requiredActions: routeData?.nonConformance?.requiredActions ?? [],
+          requiredActionIds: routeData?.nonConformance?.requiredActionIds ?? [],
         }}
         validator={z.object({
-          requiredActions: z.array(z.string()).optional(),
+          requiredActionIds: z.array(z.string()).optional(),
         })}
         className="w-full"
       >
         <MultiSelect
-          options={nonConformanceRequiredAction.map((type) => ({
-            value: type,
-            label: type,
+          options={(routeData?.requiredActions ?? []).map((type) => ({
+            value: type.id,
+            label: type.name,
           }))}
           isReadOnly={disableStructureUpdate}
           label="Required Actions"
-          name="requiredActions"
+          name="requiredActionIds"
           inline
           onChange={(value) => {
-            onUpdate("requiredActions", value.map((v) => v.value).join(","));
+            onUpdate("requiredActionIds", value.map((v) => v.value).join(","));
           }}
         />
       </ValidatedForm>

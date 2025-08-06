@@ -1630,6 +1630,78 @@ export const nonConformanceTypes: Omit<
   },
 ];
 
+export const nonConformanceInvestigationTypes: Omit<
+  Database["public"]["Tables"]["nonConformanceInvestigationType"]["Insert"],
+  "companyId"
+>[] = [
+  {
+    name: "Root Cause Analysis",
+    sortOrder: 1,
+    createdBy: "system",
+  },
+  {
+    name: "Inventory",
+    sortOrder: 2,
+    createdBy: "system",
+  },
+  {
+    name: "WIP",
+    sortOrder: 3,
+    createdBy: "system",
+  },
+  {
+    name: "Finished Goods",
+    sortOrder: 4,
+    createdBy: "system",
+  },
+  {
+    name: "Incoming Materials",
+    sortOrder: 5,
+    createdBy: "system",
+  },
+  {
+    name: "Process",
+    sortOrder: 6,
+    createdBy: "system",
+  },
+  {
+    name: "Documentation",
+    sortOrder: 7,
+    createdBy: "system",
+  },
+];
+
+export const nonConformanceRequiredActions: Omit<
+  Database["public"]["Tables"]["nonConformanceRequiredAction"]["Insert"],
+  "companyId"
+>[] = [
+  {
+    name: "Corrective Action",
+    sortOrder: 1,
+    createdBy: "system",
+  },
+  {
+    name: "Preventive Action",
+    sortOrder: 2,
+    createdBy: "system",
+  },
+  {
+    name: "Containment Action",
+    sortOrder: 3,
+    createdBy: "system",
+  },
+  {
+    name: "Verification",
+    sortOrder: 4,
+    createdBy: "system",
+  },
+  {
+    name: "Customer Communication",
+    sortOrder: 5,
+    createdBy: "system",
+  },
+];
+
 export const paymentTerms: Omit<
   Database["public"]["Tables"]["paymentTerm"]["Insert"],
   "companyId"

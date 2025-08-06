@@ -171,16 +171,16 @@ serve(async (req: Request) => {
 
         const currentInvestigationTasks =
           investigationTasks.data?.reduce<Record<string, string>>((acc, d) => {
-            if (d.investigationType && !acc[d.investigationType]) {
-              acc[d.investigationType] = d.id;
+            if (d.investigationTypeId && !acc[d.investigationTypeId]) {
+              acc[d.investigationTypeId] = d.id;
             }
             return acc;
           }, {}) ?? {};
 
         const currentActionTasks =
           actionTasks.data?.reduce<Record<string, string>>((acc, d) => {
-            if (d.actionType && !acc[d.actionType]) {
-              acc[d.actionType] = d.id;
+            if (d.actionTypeId && !acc[d.actionTypeId]) {
+              acc[d.actionTypeId] = d.id;
             }
             return acc;
           }, {}) ?? {};
@@ -198,25 +198,25 @@ serve(async (req: Request) => {
         const approvalTasksToDelete: string[] = [];
         const reviewersToDelete: string[] = [];
 
-        Object.keys(currentInvestigationTasks).forEach((investigationType) => {
+        Object.keys(currentInvestigationTasks).forEach((investigationTypeId) => {
           if (
-            !(nonConformance.data?.investigationTypes ?? []).some(
-              (d) => d === investigationType
+            !(nonConformance.data?.investigationTypeIds ?? []).some(
+              (d) => d === investigationTypeId
             )
           ) {
             investigationTasksToDelete.push(
-              currentInvestigationTasks[investigationType]
+              currentInvestigationTasks[investigationTypeId]
             );
           }
         });
 
-        Object.keys(currentActionTasks).forEach((actionType) => {
+        Object.keys(currentActionTasks).forEach((actionTypeId) => {
           if (
-            !(nonConformance.data?.requiredActions ?? []).some(
-              (d) => d === actionType
+            !(nonConformance.data?.requiredActionIds ?? []).some(
+              (d) => d === actionTypeId
             )
           ) {
-            actionTasksToDelete.push(currentActionTasks[actionType]);
+            actionTasksToDelete.push(currentActionTasks[actionTypeId]);
           }
         });
 
@@ -240,12 +240,12 @@ serve(async (req: Request) => {
         const reviewerInserts: Database["public"]["Tables"]["nonConformanceReviewer"]["Insert"][] =
           [];
 
-        nonConformance.data?.investigationTypes?.forEach(
-          (investigationType) => {
-            if (!currentInvestigationTasks[investigationType]) {
+        nonConformance.data?.investigationTypeIds?.forEach(
+          (investigationTypeId) => {
+            if (!currentInvestigationTasks[investigationTypeId]) {
               investigationTaskInserts.push({
                 nonConformanceId: id,
-                investigationType,
+                investigationTypeId,
                 companyId,
                 createdBy: userId,
               });
@@ -253,11 +253,11 @@ serve(async (req: Request) => {
           }
         );
 
-        nonConformance.data?.requiredActions?.forEach((actionType) => {
-          if (!currentActionTasks[actionType]) {
+        nonConformance.data?.requiredActionIds?.forEach((actionTypeId) => {
+          if (!currentActionTasks[actionTypeId]) {
             actionTaskInserts.push({
               nonConformanceId: id,
-              actionType,
+              actionTypeId,
               companyId,
               createdBy: userId,
             });
