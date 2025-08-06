@@ -3,6 +3,7 @@ import {
   LuDraftingCompass,
   LuListChecks,
   LuOctagonX,
+  LuSearch,
   LuShapes,
   LuShieldX,
   LuWorkflow,
@@ -58,6 +59,11 @@ const qualityRoutes: AuthenticatedRouteGroup[] = [
         name: "Gauge Types",
         to: path.to.gaugeTypes,
         icon: <LuShapes />,
+      },
+      {
+        name: "Investigation Types",
+        to: path.to.investigationTypes,
+        icon: <LuSearch />,
       },
       {
         name: "Issue Types",

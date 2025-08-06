@@ -9,24 +9,6 @@ export const gaugeCalibrationStatus = [
 ] as const;
 export const gaugeRole = ["Master", "Standard"] as const;
 
-export const nonConformanceInvestigationType = [
-  "Root Cause Analysis",
-  "Inventory",
-  "WIP",
-  "Finished Goods",
-  "Incoming Materials",
-  "Process",
-  "Documentation",
-] as const;
-
-export const nonConformanceRequiredAction = [
-  "Corrective Action",
-  "Preventive Action",
-  "Containment Action",
-  "Verification",
-  "Customer Communication",
-] as const;
-
 export const nonConformanceApprovalRequirement = ["MRB"] as const;
 
 export const nonConformanceSource = ["Internal", "External"] as const;
@@ -137,8 +119,8 @@ export const issueValidator = z.object({
   priority: z.enum(nonConformancePriority),
   source: z.enum(nonConformanceSource),
   name: z.string().min(1, { message: "Name is required" }),
-  investigationTypes: z.array(z.string()).optional(),
-  requiredActions: z.array(z.string()).optional(),
+  investigationTypeIds: z.array(z.string()).optional(),
+  requiredActionIds: z.array(z.string()).optional(),
   approvalRequirements: z
     .array(z.enum(nonConformanceApprovalRequirement))
     .optional(),
@@ -154,6 +136,12 @@ export const issueValidator = z.object({
 
 export const nonConformanceReviewerValidator = z.object({
   title: z.string().min(1, { message: "Title is required" }),
+});
+
+export const investigationTypeValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" }),
+  active: zfd.checkbox(),
 });
 
 export const issueTypeValidator = z.object({
@@ -176,8 +164,8 @@ export const issueWorkflowValidator = z.object({
     }),
   priority: z.enum(nonConformancePriority),
   source: z.enum(nonConformanceSource),
-  investigationTypes: z.array(z.string()).optional(),
-  requiredActions: z.array(z.string()).optional(),
+  investigationTypeIds: z.array(z.string()).optional(),
+  requiredActionIds: z.array(z.string()).optional(),
   approvalRequirements: z
     .array(z.enum(nonConformanceApprovalRequirement))
     .optional(),

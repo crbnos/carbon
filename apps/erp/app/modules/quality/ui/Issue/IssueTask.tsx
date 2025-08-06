@@ -121,9 +121,9 @@ export function TaskItem({
 
   const taskTitle =
     type === "investigation"
-      ? (task as IssueInvestigationTask).investigationType
+      ? (task as IssueInvestigationTask).name
       : type === "action"
-      ? (task as IssueActionTask).actionType
+      ? (task as IssueActionTask).name
       : (task as IssueReviewer).title;
 
   return (

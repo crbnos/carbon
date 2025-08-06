@@ -539,6 +539,8 @@ export const path = {
       ),
     deleteIssueWorkflow: (id: string) =>
       generatePath(`${x}/issue-workflow/delete/${id}`),
+    deleteInvestigationType: (id: string) =>
+      generatePath(`${x}/quality/investigation-types/delete/${id}`),
     deleteIssueType: (id: string) =>
       generatePath(`${x}/quality/issue-types/delete/${id}`),
     deleteNoQuoteReason: (id: string) =>
@@ -693,6 +695,8 @@ export const path = {
     issueReview: (id: string) => generatePath(`${x}/issue/${id}/review`),
     issueWorkflow: (id: string) => generatePath(`${x}/issue-workflow/${id}`),
     issueWorkflows: `${x}/quality/issue-workflows`,
+    investigationType: (id: string) => generatePath(`${x}/quality/investigation-types/${id}`),
+    investigationTypes: `${x}/quality/investigation-types`,
     issueType: (id: string) => generatePath(`${x}/quality/issue-types/${id}`),
     issueTypes: `${x}/quality/issue-types`,
     items: `${x}/items`,
@@ -862,6 +866,7 @@ export const path = {
     newIssue: `${x}/issue/new`,
     newIssueAssociation: (id: string) =>
       generatePath(`${x}/issue/${id}/association/new`),
+    newInvestigationType: `${x}/quality/investigation-types/new`,
     newIssueType: `${x}/quality/issue-types/new`,
     newIssueWorkflow: `${x}/issue-workflow/new`,
     newNote: `${x}/shared/notes/new`,

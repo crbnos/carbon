@@ -68,14 +68,16 @@ function ActionTasksList({
       </HStack>
       <CardContent>
         <VStack spacing={3}>
-          {tasks.map((task) => (
-            <TaskItem
-              key={task.id}
-              task={task}
-              type="action"
-              isDisabled={isDisabled}
-            />
-          ))}
+          {tasks
+            .sort((a, b) => a.name?.localeCompare(b.name ?? "") ?? 0)
+            .map((task) => (
+              <TaskItem
+                key={task.id}
+                task={task}
+                type="action"
+                isDisabled={isDisabled}
+              />
+            ))}
         </VStack>
       </CardContent>
     </Card>

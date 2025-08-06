@@ -1,10 +1,9 @@
 -- Create custom investigation types table
 CREATE TABLE "nonConformanceInvestigationType" (
-  "id" TEXT NOT NULL DEFAULT xid(),
+  "id" TEXT NOT NULL DEFAULT id("nct"),
   "companyId" TEXT NOT NULL,
   "name" TEXT NOT NULL,
   "active" BOOLEAN NOT NULL DEFAULT true,
-  "sortOrder" INTEGER NOT NULL DEFAULT 1,
   "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
   "createdBy" TEXT NOT NULL,
   "updatedAt" TIMESTAMP WITH TIME ZONE,
@@ -19,11 +18,10 @@ CREATE TABLE "nonConformanceInvestigationType" (
 
 -- Create custom required actions table
 CREATE TABLE "nonConformanceRequiredAction" (
-  "id" TEXT NOT NULL DEFAULT xid(),
+  "id" TEXT NOT NULL DEFAULT id("nca"),
   "companyId" TEXT NOT NULL,
   "name" TEXT NOT NULL,
   "active" BOOLEAN NOT NULL DEFAULT true,
-  "sortOrder" INTEGER NOT NULL DEFAULT 1,
   "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
   "createdBy" TEXT NOT NULL,
   "updatedAt" TIMESTAMP WITH TIME ZONE,
@@ -38,9 +36,7 @@ CREATE TABLE "nonConformanceRequiredAction" (
 
 -- Create indexes
 CREATE INDEX "nonConformanceInvestigationType_companyId_idx" ON "nonConformanceInvestigationType" ("companyId");
-CREATE INDEX "nonConformanceInvestigationType_sortOrder_idx" ON "nonConformanceInvestigationType" ("sortOrder");
 CREATE INDEX "nonConformanceRequiredAction_companyId_idx" ON "nonConformanceRequiredAction" ("companyId");
-CREATE INDEX "nonConformanceRequiredAction_sortOrder_idx" ON "nonConformanceRequiredAction" ("sortOrder");
 
 -- RLS policies for nonConformanceInvestigationType
 CREATE POLICY "SELECT" ON "public"."nonConformanceInvestigationType"
@@ -129,37 +125,39 @@ ALTER TABLE "nonConformanceInvestigationType" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "nonConformanceRequiredAction" ENABLE ROW LEVEL SECURITY;
 
 -- Populate all existing companies with default investigation types
-INSERT INTO "nonConformanceInvestigationType" ("companyId", "name", "sortOrder", "createdBy")
+INSERT INTO "nonConformanceInvestigationType" ("companyId", "name", "createdBy")
 SELECT 
   c."id" as "companyId",
   inv_type.name,
-  inv_type.sort_order,
   'system' as "createdBy"
 FROM "company" c
 CROSS JOIN (
   VALUES 
-    ('Root Cause Analysis', 1),
-    ('Inventory', 2),
-    ('WIP', 3),
-    ('Finished Goods', 4),
-    ('Incoming Materials', 5),
-    ('Process', 6),
-    ('Documentation', 7)
-) AS inv_type(name, sort_order);
+    ('Root Cause Analysis'),
+    ('Inventory'),
+    ('WIP'),
+    ('Finished Goods'),
+    ('Incoming Materials'),
+    ('Process'),
+    ('Documentation')
+) AS inv_type(name);
 
 -- Populate all existing companies with default required actions
-INSERT INTO "nonConformanceRequiredAction" ("companyId", "name", "sortOrder", "createdBy")
+INSERT INTO "nonConformanceRequiredAction" ("companyId", "name", "createdBy")
 SELECT 
   c."id" as "companyId",
   action_type.name,
-  action_type.sort_order,
   'system' as "createdBy"
 FROM "company" c
 CROSS JOIN (
   VALUES 
-    ('Corrective Action', 1),
-    ('Preventive Action', 2),
-    ('Containment Action', 3),
-    ('Verification', 4),
-    ('Customer Communication', 5)
-) AS action_type(name, sort_order);
+    ('Corrective Action'),
+    ('Preventive Action'),
+    ('Containment Action'),
+    ('Verification'),
+    ('Customer Communication')
+) AS action_type(name);
+
+-- Add investigation type IDs and required action IDs to workflow table
+ALTER TABLE "nonConformanceWorkflow" ADD COLUMN "investigationTypeIds" TEXT[];
+ALTER TABLE "nonConformanceWorkflow" ADD COLUMN "requiredActionIds" TEXT[];

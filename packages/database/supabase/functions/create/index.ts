@@ -198,17 +198,19 @@ serve(async (req: Request) => {
         const approvalTasksToDelete: string[] = [];
         const reviewersToDelete: string[] = [];
 
-        Object.keys(currentInvestigationTasks).forEach((investigationTypeId) => {
-          if (
-            !(nonConformance.data?.investigationTypeIds ?? []).some(
-              (d) => d === investigationTypeId
-            )
-          ) {
-            investigationTasksToDelete.push(
-              currentInvestigationTasks[investigationTypeId]
-            );
+        Object.keys(currentInvestigationTasks).forEach(
+          (investigationTypeId) => {
+            if (
+              !(nonConformance.data?.investigationTypeIds ?? []).some(
+                (d) => d === investigationTypeId
+              )
+            ) {
+              investigationTasksToDelete.push(
+                currentInvestigationTasks[investigationTypeId]
+              );
+            }
           }
-        });
+        );
 
         Object.keys(currentActionTasks).forEach((actionTypeId) => {
           if (

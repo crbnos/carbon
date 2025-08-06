@@ -60,14 +60,14 @@ const IssueForm = ({
   const [workflow, setWorkflow] = useState<{
     priority: string;
     source: string;
-    investigationTypes: string[];
-    requiredActions: string[];
+    investigationTypeIds: string[];
+    requiredActionIds: string[];
     approvalRequirements: string[];
   }>({
     priority: initialValues.priority,
     source: initialValues.source,
-    investigationTypes: initialValues.investigationTypes ?? [],
-    requiredActions: initialValues.requiredActions ?? [],
+    investigationTypeIds: initialValues.investigationTypeIds ?? [],
+    requiredActionIds: initialValues.requiredActionIds ?? [],
     approvalRequirements: initialValues.approvalRequirements ?? [],
   });
 
@@ -78,12 +78,13 @@ const IssueForm = ({
       const selectedWorkflow = nonConformanceWorkflows.find(
         (w) => w.id === value.value
       );
+      console.log(selectedWorkflow);
       if (selectedWorkflow) {
         setWorkflow({
           priority: selectedWorkflow.priority,
           source: selectedWorkflow.source,
-          investigationTypes: selectedWorkflow.investigationTypes ?? [],
-          requiredActions: selectedWorkflow.requiredActions ?? [],
+          investigationTypeIds: selectedWorkflow.investigationTypeIds ?? [],
+          requiredActionIds: selectedWorkflow.requiredActionIds ?? [],
           approvalRequirements: selectedWorkflow.approvalRequirements ?? [],
         });
       }
@@ -156,32 +157,32 @@ const IssueForm = ({
 
             <VStack spacing={4}>
               <MultiSelect
-                name="investigationTypes"
+                name="investigationTypeIds"
                 label="Investigation Types"
                 options={investigationTypes.map((type) => ({
                   label: type.name,
                   value: type.id,
                 }))}
-                value={workflow.investigationTypes}
+                value={workflow.investigationTypeIds}
                 onChange={(value) => {
                   setWorkflow({
                     ...workflow,
-                    investigationTypes: value.map((v) => v.value),
+                    investigationTypeIds: value.map((v) => v.value),
                   });
                 }}
               />
               <MultiSelect
-                name="requiredActions"
+                name="requiredActionIds"
                 label="Required Actions"
                 options={requiredActions.map((action) => ({
                   label: action.name,
                   value: action.id,
                 }))}
-                value={workflow.requiredActions}
+                value={workflow.requiredActionIds}
                 onChange={(value) => {
                   setWorkflow({
                     ...workflow,
-                    requiredActions: value.map((v) => v.value),
+                    requiredActionIds: value.map((v) => v.value),
                   });
                 }}
               />

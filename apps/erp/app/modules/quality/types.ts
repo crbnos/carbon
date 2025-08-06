@@ -4,6 +4,7 @@ import type {
   getGaugeCalibrationRecords,
   getGauges,
   getGaugeTypes,
+  getInvestigationTypes,
   getIssue,
   getIssueActionTasks,
   getIssueApprovalTasks,
@@ -46,6 +47,10 @@ export type IssueAssociationNode = {
 export type IssueStatus = Database["public"]["Enums"]["nonConformanceStatus"];
 
 export type Issue = NonNullable<Awaited<ReturnType<typeof getIssue>>["data"]>;
+
+export type InvestigationType = NonNullable<
+  Awaited<ReturnType<typeof getInvestigationTypes>>["data"]
+>[number];
 
 export type IssueType = NonNullable<
   Awaited<ReturnType<typeof getIssueTypes>>["data"]

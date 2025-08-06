@@ -16,24 +16,27 @@ import { useState } from "react";
 import type { z } from "zod";
 import { Hidden, Input, Submit } from "~/components/Form";
 import { usePermissions, useUser } from "~/hooks";
+import type { ListItem } from "~/types";
 import { getPrivateUrl, path } from "~/utils/path";
 import {
   issueWorkflowValidator,
   nonConformanceApprovalRequirement,
-  nonConformanceInvestigationType,
   nonConformancePriority,
-  nonConformanceRequiredAction,
   nonConformanceSource,
 } from "../../quality.models";
 import { getPriorityIcon } from "../Issue/IssueIcons";
 
 type IssueWorkflowFormProps = {
   initialValues: z.infer<typeof issueWorkflowValidator>;
+  investigationTypes: ListItem[];
+  requiredActions: ListItem[];
   onClose: () => void;
 };
 
 const IssueWorkflowForm = ({
   initialValues,
+  investigationTypes,
+  requiredActions,
   onClose,
 }: IssueWorkflowFormProps) => {
   const permissions = usePermissions();
@@ -172,20 +175,21 @@ const IssueWorkflowForm = ({
           />
         </div>
         <MultiSelect
-          name="investigationTypes"
+          name="investigationTypeIds"
           label="Investigation Types"
-          options={nonConformanceInvestigationType.map((type) => ({
-            label: type,
-            value: type,
+          options={investigationTypes.map((type) => ({
+            label: type.name,
+            value: type.id,
           }))}
+          value={initialValues.investigationTypeIds}
         />
 
         <MultiSelect
-          name="requiredActions"
+          name="requiredActionIds"
           label="Required Actions"
-          options={nonConformanceRequiredAction.map((action) => ({
-            label: action,
-            value: action,
+          options={requiredActions.map((action) => ({
+            label: action.name,
+            value: action.id,
           }))}
         />
 

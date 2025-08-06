@@ -19,10 +19,10 @@ export function useIssueNavigation() {
     throw new Error("Could not find source in routeData");
 
   const hasInvestigations =
-    (routeData.nonConformance.investigationTypes?.length ?? 0) > 0;
+    (routeData.nonConformance.investigationTypeIds?.length ?? 0) > 0;
 
   const hasActions =
-    (routeData.nonConformance.requiredActions?.length ?? 0) > 0;
+    (routeData.nonConformance.requiredActionIds?.length ?? 0) > 0;
 
   const requiresManagementReview =
     routeData.nonConformance.approvalRequirements?.includes("MRB");
