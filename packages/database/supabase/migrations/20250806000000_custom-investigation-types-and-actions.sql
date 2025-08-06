@@ -1,6 +1,6 @@
 -- Create custom investigation types table
 CREATE TABLE "nonConformanceInvestigationType" (
-  "id" TEXT NOT NULL DEFAULT id("nct"),
+  "id" TEXT NOT NULL DEFAULT id('nct'),
   "companyId" TEXT NOT NULL,
   "name" TEXT NOT NULL,
   "active" BOOLEAN NOT NULL DEFAULT true,
@@ -18,7 +18,7 @@ CREATE TABLE "nonConformanceInvestigationType" (
 
 -- Create custom required actions table
 CREATE TABLE "nonConformanceRequiredAction" (
-  "id" TEXT NOT NULL DEFAULT id("nca"),
+  "id" TEXT NOT NULL DEFAULT id('nca'),
   "companyId" TEXT NOT NULL,
   "name" TEXT NOT NULL,
   "active" BOOLEAN NOT NULL DEFAULT true,
@@ -157,7 +157,3 @@ CROSS JOIN (
     ('Verification'),
     ('Customer Communication')
 ) AS action_type(name);
-
--- Add investigation type IDs and required action IDs to workflow table
-ALTER TABLE "nonConformanceWorkflow" ADD COLUMN "investigationTypeIds" TEXT[];
-ALTER TABLE "nonConformanceWorkflow" ADD COLUMN "requiredActionIds" TEXT[];

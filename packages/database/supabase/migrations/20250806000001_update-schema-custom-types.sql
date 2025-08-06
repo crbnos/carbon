@@ -39,10 +39,10 @@ WHERE "investigationTypes" IS NOT NULL AND ARRAY_LENGTH("investigationTypes", 1)
 UPDATE "nonConformance" 
 SET "requiredActionIds" = (
   SELECT ARRAY_AGG(rac."id")
-  FROM UNNEST("requiredActionTypes") AS req_action(name)
+  FROM UNNEST("requiredActions") AS req_action(name)
   JOIN "nonConformanceRequiredAction" rac ON rac."name" = req_action.name::text AND rac."companyId" = "nonConformance"."companyId"
 )
-WHERE "requiredActionTypes" IS NOT NULL AND ARRAY_LENGTH("requiredActionTypes", 1) > 0;
+WHERE "requiredActions" IS NOT NULL AND ARRAY_LENGTH("requiredActions", 1) > 0;
 
 -- Migrate existing data from ENUM to foreign key in investigation task table
 UPDATE "nonConformanceInvestigationTask" 
@@ -56,9 +56,9 @@ WHERE ict."name" = "nonConformanceInvestigationTask"."investigationType"::text
 UPDATE "nonConformanceActionTask" 
 SET "actionTypeId" = rac."id"
 FROM "nonConformanceRequiredAction" rac
-WHERE rac."name" = "nonConformanceActionTask"."requiredActionType"::text 
+WHERE rac."name" = "nonConformanceActionTask"."actionType"::text 
   AND rac."companyId" = "nonConformanceActionTask"."companyId"
-  AND "nonConformanceActionTask"."requiredActionType" IS NOT NULL;
+  AND "nonConformanceActionTask"."actionType" IS NOT NULL;
 
 -- Migrate existing workflow data from ENUM arrays to foreign key arrays
 UPDATE "nonConformanceWorkflow" 
@@ -80,10 +80,10 @@ WHERE "requiredActions" IS NOT NULL AND ARRAY_LENGTH("requiredActions", 1) > 0;
 DROP VIEW IF EXISTS "qualityActions";
 
 ALTER TABLE "nonConformanceInvestigationTask" DROP COLUMN "investigationType";
-ALTER TABLE "nonConformanceActionTask" DROP COLUMN "requiredActionType";
+ALTER TABLE "nonConformanceActionTask" DROP COLUMN "actionType";
 
 ALTER TABLE "nonConformance" DROP COLUMN "investigationTypes";
-ALTER TABLE "nonConformance" DROP COLUMN "requiredActionTypes";
+ALTER TABLE "nonConformance" DROP COLUMN "requiredActions";
 ALTER TABLE "nonConformanceWorkflow" DROP COLUMN "investigationTypes";
 ALTER TABLE "nonConformanceWorkflow" DROP COLUMN "requiredActions";
 
