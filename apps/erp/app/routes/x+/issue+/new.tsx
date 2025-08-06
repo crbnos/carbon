@@ -34,12 +34,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "quality",
   });
 
-  const [workflows, types, investigationTypes, requiredActions] = await Promise.all([
-    getIssueWorkflowsList(client, companyId),
-    getIssueTypesList(client, companyId),
-    getInvestigationTypesList(client, companyId),
-    getRequiredActionsList(client, companyId),
-  ]);
+  const [workflows, types, investigationTypes, requiredActions] =
+    await Promise.all([
+      getIssueWorkflowsList(client, companyId),
+      getIssueTypesList(client, companyId),
+      getInvestigationTypesList(client, companyId),
+      getRequiredActionsList(client, companyId),
+    ]);
 
   return json({
     workflows: workflows.data ?? [],
@@ -125,7 +126,8 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function IssueNewRoute() {
-  const { workflows, types, investigationTypes, requiredActions } = useLoaderData<typeof loader>();
+  const { workflows, types, investigationTypes, requiredActions } =
+    useLoaderData<typeof loader>();
 
   const { defaults } = useUser();
   const [params] = useUrlParams();
@@ -144,7 +146,7 @@ export default function IssueNewRoute() {
     nonConformanceId: undefined,
     approvalRequirements: [],
     customerId: customerId ?? "",
-    investigationTypes: [],
+    investigationTypeIds: [],
     itemId: "",
     jobId: jobId ?? "",
     locationId: defaults.locationId ?? "",
@@ -156,7 +158,7 @@ export default function IssueNewRoute() {
     purchaseOrderId: purchaseOrderId ?? "",
     purchaseOrderLineId: purchaseOrderLineId ?? "",
     quantity: 1,
-    requiredActions: [],
+    requiredActionIds: [],
     salesOrderId: salesOrderId ?? "",
     salesOrderLineId: salesOrderLineId ?? "",
     shipmentId: shipmentId ?? "",

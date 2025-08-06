@@ -11,6 +11,7 @@ import type {
   gaugeCalibrationStatus,
   gaugeTypeValidator,
   gaugeValidator,
+  investigationTypeValidator,
   issueTypeValidator,
   issueValidator,
   issueWorkflowValidator,
@@ -118,6 +119,16 @@ export async function deleteIssueAssociation(
     default:
       throw new Error(`Invalid type: ${type}`);
   }
+}
+
+export async function deleteInvestigationType(
+  client: SupabaseClient<Database>,
+  investigationTypeId: string
+) {
+  return client
+    .from("nonConformanceInvestigationType")
+    .delete()
+    .eq("id", investigationTypeId);
 }
 
 export async function deleteIssueType(
@@ -349,10 +360,9 @@ export async function getIssueInvestigationTasks(
 ) {
   return client
     .from("nonConformanceInvestigationTask")
-    .select("*")
+    .select("*, ...nonConformanceInvestigationType(name)")
     .eq("nonConformanceId", id)
-    .eq("companyId", companyId)
-    .order("investigationType", { ascending: true });
+    .eq("companyId", companyId);
 }
 
 export async function getIssueActionTasks(
@@ -362,10 +372,9 @@ export async function getIssueActionTasks(
 ) {
   return client
     .from("nonConformanceActionTask")
-    .select("*")
+    .select("*, ...nonConformanceRequiredAction(name)")
     .eq("nonConformanceId", id)
-    .eq("companyId", companyId)
-    .order("actionType", { ascending: true });
+    .eq("companyId", companyId);
 }
 
 export async function getIssueApprovalTasks(
@@ -666,30 +675,6 @@ export async function getIssueTypesList(
     .order("name");
 }
 
-export async function getInvestigationTypesList(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return client
-    .from("nonConformanceInvestigationType")
-    .select("id, name")
-    .eq("companyId", companyId)
-    .eq("active", true)
-    .order("sortOrder");
-}
-
-export async function getRequiredActionsList(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return client
-    .from("nonConformanceRequiredAction")
-    .select("id, name")
-    .eq("companyId", companyId)
-    .eq("active", true)
-    .order("sortOrder");
-}
-
 export async function getInvestigationTypes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -706,12 +691,49 @@ export async function getInvestigationTypes(
 
   if (args) {
     query = setGenericQueryFilters(query, args, [
-      { column: "sortOrder", ascending: true },
       { column: "name", ascending: true },
     ]);
+  } else {
+    query = query.order("name");
   }
 
-  return query;
+  const result = await query;
+  return result;
+}
+
+export async function getInvestigationType(
+  client: SupabaseClient<Database>,
+  investigationTypeId: string
+) {
+  return client
+    .from("nonConformanceInvestigationType")
+    .select("*")
+    .eq("id", investigationTypeId)
+    .single();
+}
+
+export async function getInvestigationTypesList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("nonConformanceInvestigationType")
+    .select("id, name")
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .order("name");
+}
+
+export async function getRequiredActionsList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("nonConformanceRequiredAction")
+    .select("id, name")
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .order("name");
 }
 
 export async function getRequiredActions(
@@ -730,23 +752,11 @@ export async function getRequiredActions(
 
   if (args) {
     query = setGenericQueryFilters(query, args, [
-      { column: "sortOrder", ascending: true },
       { column: "name", ascending: true },
     ]);
   }
 
   return query;
-}
-
-export async function getInvestigationType(
-  client: SupabaseClient<Database>,
-  investigationTypeId: string
-) {
-  return client
-    .from("nonConformanceInvestigationType")
-    .select("*")
-    .eq("id", investigationTypeId)
-    .single();
 }
 
 export async function getRequiredAction(
@@ -758,16 +768,6 @@ export async function getRequiredAction(
     .select("*")
     .eq("id", requiredActionId)
     .single();
-}
-
-export async function deleteInvestigationType(
-  client: SupabaseClient<Database>,
-  investigationTypeId: string
-) {
-  return client
-    .from("nonConformanceInvestigationType")
-    .delete()
-    .eq("id", investigationTypeId);
 }
 
 export async function deleteRequiredAction(
@@ -993,12 +993,15 @@ export async function upsertIssue(
         customFields?: Json;
       })
 ) {
+  console.log({ nonConformance });
   if ("createdBy" in nonConformance) {
-    return client
+    const result = await client
       .from("nonConformance")
       .insert([nonConformance])
       .select("id")
       .single();
+
+    return result;
   } else {
     return client
       .from("nonConformance")
@@ -1063,15 +1066,13 @@ export async function upsertIssueType(
 export async function upsertInvestigationType(
   client: SupabaseClient<Database>,
   investigationType:
-    | (Omit<z.infer<typeof issueTypeValidator>, "id"> & {
+    | (Omit<z.infer<typeof investigationTypeValidator>, "id"> & {
         companyId: string;
-        sortOrder?: number;
         active?: boolean;
         createdBy: string;
       })
-    | (Omit<z.infer<typeof issueTypeValidator>, "id"> & {
+    | (Omit<z.infer<typeof investigationTypeValidator>, "id"> & {
         id: string;
-        sortOrder?: number;
         active?: boolean;
         updatedBy: string;
       })
@@ -1079,7 +1080,7 @@ export async function upsertInvestigationType(
   if ("createdBy" in investigationType) {
     return client
       .from("nonConformanceInvestigationType")
-      .insert([{ sortOrder: 1, active: true, ...investigationType }])
+      .insert([investigationType])
       .select("id");
   } else {
     return client

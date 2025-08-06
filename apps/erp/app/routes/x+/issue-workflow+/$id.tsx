@@ -8,7 +8,9 @@ import { useLoaderData, useNavigate, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import {
+  getInvestigationTypesList,
   getIssueWorkflow,
+  getRequiredActionsList,
   issueWorkflowValidator,
   upsertIssueWorkflow,
 } from "~/modules/quality";
@@ -23,7 +25,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "quality",
     role: "employee",
     bypassRls: true,
@@ -32,7 +34,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const [workflow] = await Promise.all([getIssueWorkflow(client, id)]);
+  const [workflow, investigationTypes, requiredActions] = await Promise.all([
+    getIssueWorkflow(client, id),
+    getInvestigationTypesList(client, companyId),
+    getRequiredActionsList(client, companyId),
+  ]);
 
   if (workflow.error) {
     throw redirect(
@@ -46,6 +52,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return json({
     workflow: workflow.data,
+    investigationTypes: investigationTypes.data ?? [],
+    requiredActions: requiredActions.data ?? [],
   });
 }
 
@@ -92,26 +100,32 @@ export default function IssueWorkflowRoute() {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
 
-  const loaderData = useLoaderData<typeof loader>();
+  const { workflow, investigationTypes, requiredActions } =
+    useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const onClose = () => {
     navigate(path.to.issueWorkflows);
   };
 
   const initialValues = {
-    id: loaderData?.workflow?.id,
-    name: loaderData?.workflow?.name,
-    content: JSON.stringify(loaderData?.workflow?.content),
-    priority: (loaderData?.workflow?.priority ?? "Medium") as "Medium",
-    source: (loaderData?.workflow?.source ?? "Internal") as "Internal",
-    investigationTypes: loaderData?.workflow?.investigationTypes ?? [],
-    requiredActions: loaderData?.workflow?.requiredActions ?? [],
-    approvalRequirements: loaderData?.workflow?.approvalRequirements ?? [],
+    id: workflow?.id,
+    name: workflow?.name,
+    content: JSON.stringify(workflow?.content),
+    priority: (workflow?.priority ?? "Medium") as "Medium",
+    source: (workflow?.source ?? "Internal") as "Internal",
+    investigationTypeIds: workflow?.investigationTypeIds ?? [],
+    requiredActionIds: workflow?.requiredActionIds ?? [],
+    approvalRequirements: workflow?.approvalRequirements ?? [],
   };
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-49px)] bg-card">
-      <IssueWorkflowForm initialValues={initialValues} onClose={onClose} />
+      <IssueWorkflowForm
+        initialValues={initialValues}
+        investigationTypes={investigationTypes}
+        requiredActions={requiredActions}
+        onClose={onClose}
+      />
     </ScrollArea>
   );
 }

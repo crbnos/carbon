@@ -40,15 +40,19 @@ const MultiSelectPreview = (
           {value.length} selected
         </Badge>
       ) : (
-        value.sort().map((label: string) => (
-          <Badge
-            className="max-w-[160px] truncate border dark:border-none dark:shadow-button-base"
-            key={label}
-            variant="secondary"
-          >
-            {label}
-          </Badge>
-        ))
+        value.sort().map((val: string) => {
+          const option = options.find((opt) => opt.value === val);
+          const label = option ? option.label : val;
+          return (
+            <Badge
+              className="max-w-[160px] truncate border dark:border-none dark:shadow-button-base"
+              key={val}
+              variant="secondary"
+            >
+              {label}
+            </Badge>
+          );
+        })
       )}
     </div>
   );
@@ -76,7 +80,7 @@ const MultiSelect = ({
   return (
     <FormControl isInvalid={!!error}>
       {label && <FormLabel htmlFor={name}>{label}</FormLabel>}
-      {value.filter(Boolean).map((selection, index) => (
+      {value?.filter(Boolean).map((selection, index) => (
         <input
           key={`${name}[${index}]`}
           type="hidden"
@@ -87,7 +91,7 @@ const MultiSelect = ({
 
       <MultiSelectBase
         {...props}
-        value={value.filter(Boolean)}
+        value={value?.filter(Boolean)}
         inline={props.inline ? MultiSelectPreview : undefined}
         onChange={(newValue) => {
           setValue(newValue ?? []);

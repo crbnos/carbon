@@ -51,6 +51,8 @@ const IssueProperties = () => {
     tags: { name: string }[];
   }>(path.to.issue(id));
 
+  console.log(routeData);
+
   const optimisticAssignment = useOptimisticAssignment({
     id: id,
     table: "nonConformance",
@@ -373,8 +375,12 @@ const IssueProperties = () => {
           label="Investigation Types"
           name="investigationTypeIds"
           inline
+          value={routeData?.nonConformance?.investigationTypeIds ?? []}
           onChange={(value) => {
-            onUpdate("investigationTypeIds", value.map((v) => v.value).join(","));
+            onUpdate(
+              "investigationTypeIds",
+              value.map((v) => v.value).join(",")
+            );
           }}
         />
       </ValidatedForm>
@@ -397,6 +403,7 @@ const IssueProperties = () => {
           label="Required Actions"
           name="requiredActionIds"
           inline
+          value={routeData?.nonConformance?.requiredActionIds ?? []}
           onChange={(value) => {
             onUpdate("requiredActionIds", value.map((v) => v.value).join(","));
           }}

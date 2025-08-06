@@ -3,20 +3,32 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { ScrollArea } from "@carbon/react";
-import { useNavigate } from "@remix-run/react";
+import { useLoaderData, useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { issueWorkflowValidator } from "~/modules/quality/quality.models";
-import { upsertIssueWorkflow } from "~/modules/quality/quality.service";
+import {
+  getInvestigationTypesList,
+  getRequiredActionsList,
+  upsertIssueWorkflow,
+} from "~/modules/quality/quality.service";
 import IssueWorkflowForm from "~/modules/quality/ui/IssueWorkflows/IssueWorkflowForm";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     create: "quality",
   });
 
-  return null;
+  const [investigationTypes, requiredActions] = await Promise.all([
+    getInvestigationTypesList(client, companyId),
+    getRequiredActionsList(client, companyId),
+  ]);
+
+  return json({
+    investigationTypes: investigationTypes.data ?? [],
+    requiredActions: requiredActions.data ?? [],
+  });
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -56,14 +68,16 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewIssueWorkflowRoute() {
+  const { investigationTypes, requiredActions } =
+    useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const initialValues = {
     name: "",
     content: "{}",
     priority: "Medium" as const,
     source: "Internal" as const,
-    investigationTypes: [],
-    requiredActions: [],
+    investigationTypeIds: [],
+    requiredActionIds: [],
     approvalRequirements: [],
   };
 
@@ -71,6 +85,8 @@ export default function NewIssueWorkflowRoute() {
     <ScrollArea className="w-full h-[calc(100dvh-49px)] bg-card">
       <IssueWorkflowForm
         initialValues={initialValues}
+        investigationTypes={investigationTypes}
+        requiredActions={requiredActions}
         onClose={() => navigate(-1)}
       />
     </ScrollArea>

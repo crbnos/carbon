@@ -30,6 +30,10 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     companyId
   );
 
+  if (investigationTasks.error) {
+    console.error(investigationTasks.error);
+  }
+
   return json({
     investigationTasks: investigationTasks.data || [],
   });
@@ -74,14 +78,16 @@ function InvestigationTasksList({
       </HStack>
       <CardContent>
         <VStack spacing={3}>
-          {tasks.map((task) => (
-            <TaskItem
-              key={task.id}
-              task={task}
-              type="investigation"
-              isDisabled={isDisabled}
-            />
-          ))}
+          {tasks
+            .sort((a, b) => a.name?.localeCompare(b.name ?? "") ?? 0)
+            .map((task) => (
+              <TaskItem
+                key={task.id}
+                task={task}
+                type="investigation"
+                isDisabled={isDisabled}
+              />
+            ))}
         </VStack>
       </CardContent>
     </Card>

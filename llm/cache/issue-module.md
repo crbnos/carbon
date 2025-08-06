@@ -7,11 +7,13 @@ The Issue module is part of the quality management system in Carbon ERP. It hand
 ## Issue Status Flow
 
 Issues have the following status progression:
+
 1. **Registered** - Initial status when an issue is created
 2. **In Progress** - Status when work begins on the issue
 3. **Closed** - Final status when the issue is resolved
 
 ### Status Transitions
+
 - **Start Button**: Visible when status is "Registered", changes status to "In Progress"
 - **Complete Button**: Visible when status is "In Progress", changes status to "Closed"
 - **Reopen Button**: Visible when status is "Closed", changes status back to "In Progress"
@@ -21,18 +23,21 @@ Issues have the following status progression:
 Issues can have three types of tasks that are created automatically based on the issue configuration:
 
 ### 1. Investigation Tasks
-- Created based on `investigationTypes` array in the issue
+
+- Created based on `investigationTypeIds` array in the issue
 - Each investigation type creates one task
 - Stored in `nonConformanceInvestigationTask` table
 - Examples: Root Cause Analysis, Material Analysis, Process Review
 
 ### 2. Action Tasks
-- Created based on `requiredActions` array in the issue
+
+- Created based on `requiredActionIds` array in the issue
 - Each action type creates one task
 - Stored in `nonConformanceActionTask` table
 - Examples: Corrective Action, Preventive Action, Containment
 
 ### 3. Approval Tasks
+
 - Created based on `approvalRequirements` array in the issue
 - Each approval type creates one task
 - Stored in `nonConformanceApprovalTask` table
@@ -41,12 +46,14 @@ Issues can have three types of tasks that are created automatically based on the
 ## Task Status
 
 All tasks have the following statuses:
+
 - **Pending** - Initial status (tasks do NOT auto-start)
 - **In Progress** - When work is actively being done
 - **Completed** - When the task is finished
 - **Skipped** - When the task is not applicable
 
 ### Task Actions
+
 - **Start**: Changes status from "Pending" to "In Progress"
 - **Complete**: Changes status from "In Progress" to "Completed"
 - **Skip**: Available only when status is "Pending", changes to "Skipped"
