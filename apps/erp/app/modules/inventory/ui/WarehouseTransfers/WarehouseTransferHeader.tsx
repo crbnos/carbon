@@ -40,7 +40,7 @@ const WarehouseTransferHeader = ({
   const permissions = usePermissions();
   const statusFetcher = useFetcher<typeof statusAction>();
 
-  const { receipts, shipments, ship, receive } =
+  const { receipts, shipments, ship, receive, hasShippedItems } =
     useWarehouseTransferRelatedDocuments(warehouseTransfer.id);
 
   return (
@@ -186,7 +186,7 @@ const WarehouseTransferHeader = ({
                   disabled={
                     !["To Receive", "To Ship and Receive"].includes(
                       warehouseTransfer.status ?? ""
-                    )
+                    ) || !hasShippedItems
                   }
                   onClick={() => {
                     receive(warehouseTransfer);
@@ -215,12 +215,12 @@ const WarehouseTransferHeader = ({
               isDisabled={
                 !["To Receive", "To Ship and Receive"].includes(
                   warehouseTransfer.status ?? ""
-                )
+                ) || !hasShippedItems
               }
               variant={
                 ["To Receive", "To Ship and Receive"].includes(
                   warehouseTransfer.status ?? ""
-                )
+                ) && hasShippedItems
                   ? "primary"
                   : "secondary"
               }
@@ -272,6 +272,8 @@ export const useWarehouseTransferRelatedDocuments = (
     Pick<Shipment, "id" | "shipmentId" | "status">[]
   >([]);
 
+  const [hasShippedItems, setHasShippedItems] = useState(false);
+
   const { carbon } = useCarbon();
 
   const ship = useCallback((warehouseTransfer: WarehouseTransfer) => {
@@ -289,7 +291,7 @@ export const useWarehouseTransferRelatedDocuments = (
   const getRelatedDocuments = useCallback(
     async (warehouseTransferId: string) => {
       if (!carbon || !warehouseTransferId) return;
-      const [receipts, shipments] = await Promise.all([
+      const [receipts, shipments, warehouseTransferLines] = await Promise.all([
         carbon
           .from("receipt")
           .select("id, receiptId, status")
@@ -300,6 +302,10 @@ export const useWarehouseTransferRelatedDocuments = (
           .select("id, shipmentId, status")
           .eq("sourceDocument", "Outbound Transfer")
           .eq("sourceDocumentId", warehouseTransferId),
+        carbon
+          .from("warehouseTransferLine")
+          .select("shippedQuantity")
+          .eq("transferId", warehouseTransferId),
       ]);
 
       if (receipts.error) {
@@ -313,6 +319,14 @@ export const useWarehouseTransferRelatedDocuments = (
       } else {
         setShipments(shipments.data);
       }
+
+      // Check if any lines have been shipped
+      if (!warehouseTransferLines.error) {
+        const hasShipped = warehouseTransferLines.data.some(
+          (line) => (line.shippedQuantity ?? 0) > 0
+        );
+        setHasShippedItems(hasShipped);
+      }
     },
     [carbon]
   );
@@ -321,5 +335,5 @@ export const useWarehouseTransferRelatedDocuments = (
     getRelatedDocuments(warehouseTransferId);
   }, [getRelatedDocuments, warehouseTransferId]);
 
-  return { receipts, shipments, ship, receive };
+  return { receipts, shipments, ship, receive, hasShippedItems };
 };

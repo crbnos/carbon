@@ -123,11 +123,11 @@ export const modules: Config = [
               {
                 id: "carbon-modules",
                 loomUrl:
-                  "https://www.loom.com/share/6d0edd4106e4440a9df253a711b1fc85?sid=d84101c2-7673-495f-a97c-e662d46ed974",
+                  "https://www.loom.com/share/8adc024df71a4d3297da362eb1ecec97?sid=687ef385-5393-41ba-b634-a5084e91196f",
                 name: "Carbon's Modules",
                 description:
                   "Learn about Carbon's modular architecture and how different modules work together to provide comprehensive business management capabilities.",
-                duration: 205,
+                duration: 328,
               },
               {
                 id: "architecture-overview",

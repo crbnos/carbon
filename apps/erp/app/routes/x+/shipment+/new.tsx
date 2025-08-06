@@ -80,6 +80,33 @@ export async function loader({ request }: LoaderFunctionArgs) {
       }
 
       throw redirect(path.to.shipmentDetails(purchaseOrderShipment.data.id));
+    case "Outbound Transfer":
+      const warehouseTransferShipment = await serviceRole.functions.invoke<{
+        id: string;
+      }>("create", {
+        body: {
+          type: "shipmentFromWarehouseTransfer",
+          companyId,
+          warehouseTransferId: sourceDocumentId,
+          shipmentId: undefined,
+          userId: userId,
+        },
+        region: FunctionRegion.UsEast1,
+      });
+      if (!warehouseTransferShipment.data || warehouseTransferShipment.error) {
+        console.error(warehouseTransferShipment.error);
+        throw redirect(
+          path.to.warehouseTransferDetails(sourceDocumentId),
+          await flash(
+            request,
+            error(warehouseTransferShipment.error, "Failed to create shipment")
+          )
+        );
+      }
+
+      throw redirect(
+        path.to.shipmentDetails(warehouseTransferShipment.data.id)
+      );
     default:
       const defaultShipment = await serviceRole.functions.invoke<{
         id: string;

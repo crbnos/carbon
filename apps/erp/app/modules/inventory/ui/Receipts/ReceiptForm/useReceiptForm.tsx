@@ -1,10 +1,10 @@
 import { useCarbon } from "@carbon/auth";
 import { useParams } from "@remix-run/react";
 import { useCallback, useEffect, useState } from "react";
-import { z } from "zod";
+import type { z } from "zod";
 import { useUser } from "~/hooks";
-import { receiptStatusType } from "~/modules/inventory";
-import { receiptValidator } from "~/modules/inventory/inventory.models";
+import type { receiptStatusType } from "~/modules/inventory";
+import type { receiptValidator } from "~/modules/inventory/inventory.models";
 import type { ReceiptSourceDocument } from "~/modules/inventory/types";
 import type { ListItem } from "~/types";
 
@@ -65,6 +65,29 @@ export default function useReceiptForm({
               );
             }
           });
+        break;
+
+      case "Inbound Transfer":
+        carbon
+          ?.from("warehouseTransfer")
+          .select("id, transferId")
+          .eq("companyId", user.company.id)
+          .or(
+            "status.eq.To Ship and Receive, status.eq.To Receive, status.eq.To Ship"
+          )
+          .then((response) => {
+            if (response.error) {
+              setError(response.error.message);
+            } else {
+              setSourceDocuments(
+                response.data.map((d) => ({
+                  name: d.transferId,
+                  id: d.id,
+                }))
+              );
+            }
+          });
+        break;
 
       default:
         setSourceDocuments([]);

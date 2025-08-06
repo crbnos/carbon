@@ -12,6 +12,7 @@ import {
   LuCreditCard,
   LuQrCode,
   LuShoppingCart,
+  LuTruck,
 } from "react-icons/lu";
 
 import { usePermissions, useRouteData } from "~/hooks";
@@ -117,10 +118,13 @@ function SourceDocumentLink({
   sourceDocumentId?: string;
   sourceDocumentReadableId?: string;
 }) {
+  const permissions = usePermissions();
+  
   if (!sourceDocument || !sourceDocumentId || !sourceDocumentReadableId)
     return null;
   switch (sourceDocument) {
     case "Purchase Order":
+      if (!permissions.can("view", "purchasing")) return null;
       return (
         <Button variant="secondary" leftIcon={<LuShoppingCart />} asChild>
           <Link to={path.to.purchaseOrderDetails(sourceDocumentId!)}>
@@ -129,10 +133,20 @@ function SourceDocumentLink({
         </Button>
       );
     case "Purchase Invoice":
+      if (!permissions.can("view", "invoicing")) return null;
       return (
         <Button variant="secondary" leftIcon={<LuCreditCard />} asChild>
           <Link to={path.to.purchaseInvoice(sourceDocumentId!)}>
             Purchase Invoice
+          </Link>
+        </Button>
+      );
+    case "Inbound Transfer":
+      if (!permissions.can("view", "inventory")) return null;
+      return (
+        <Button variant="secondary" leftIcon={<LuTruck />} asChild>
+          <Link to={path.to.warehouseTransferDetails(sourceDocumentId!)}>
+            Warehouse Transfer
           </Link>
         </Button>
       );

@@ -39,6 +39,20 @@ const payloadValidator = z.discriminatedUnion("type", [
     userId: z.string(),
   }),
   z.object({
+    type: z.literal("receiptFromInboundTransfer"),
+    warehouseTransferId: z.string(),
+    receiptId: z.string().optional(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("receiptFromWarehouseTransfer"),
+    warehouseTransferId: z.string(),
+    receiptId: z.string().optional(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
     type: z.literal("receiptLineSplit"),
     quantity: z.number(),
     locationId: z.string(),
@@ -57,6 +71,13 @@ const payloadValidator = z.discriminatedUnion("type", [
     type: z.literal("shipmentFromPurchaseOrder"),
     locationId: z.string(),
     purchaseOrderId: z.string(),
+    shipmentId: z.string().optional(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("shipmentFromWarehouseTransfer"),
+    warehouseTransferId: z.string(),
     shipmentId: z.string().optional(),
     companyId: z.string(),
     userId: z.string(),
@@ -971,6 +992,370 @@ serve(async (req: Request) => {
         });
       }
     }
+    case "receiptFromInboundTransfer": {
+      const { warehouseTransferId, receiptId: existingReceiptId } = payload;
+
+      console.log({
+        function: "create",
+        type,
+        companyId,
+        warehouseTransferId,
+        existingReceiptId,
+        userId,
+      });
+
+      try {
+        const client = await getSupabaseServiceRole(
+          req.headers.get("Authorization"),
+          req.headers.get("carbon-key") ?? "",
+          companyId
+        );
+
+        const [warehouseTransfer, warehouseTransferLines, receipt] =
+          await Promise.all([
+            client
+              .from("warehouseTransfer")
+              .select("*")
+              .eq("id", warehouseTransferId)
+              .single(),
+            client
+              .from("warehouseTransferLine")
+              .select("*")
+              .eq("transferId", warehouseTransferId),
+            client
+              .from("receipt")
+              .select("*")
+              .eq("id", existingReceiptId)
+              .maybeSingle(),
+          ]);
+
+        if (!warehouseTransfer.data)
+          throw new Error("Warehouse transfer not found");
+        if (warehouseTransferLines.error)
+          throw new Error(warehouseTransferLines.error.message);
+
+        const locationId = warehouseTransfer.data.toLocationId;
+
+        const items = await client
+          .from("item")
+          .select("id, itemTrackingType")
+          .in(
+            "id",
+            warehouseTransferLines.data
+              .map((d) => d.itemId)
+              .filter(Boolean) as string[]
+          );
+        const serializedItems = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Serial")
+            .map((d) => d.id)
+        );
+        const batchItems = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Batch")
+            .map((d) => d.id)
+        );
+
+        const hasReceipt = !!receipt.data?.id;
+
+        const previouslyReceivedQuantitiesByLine = (
+          warehouseTransferLines.data ?? []
+        ).reduce<Record<string, number>>((acc, d) => {
+          if (d.id) acc[d.id] = d.receivedQuantity ?? 0;
+          return acc;
+        }, {});
+
+        const receiptLineItems = warehouseTransferLines.data.reduce<
+          ReceiptLineItem[]
+        >((acc, d) => {
+          if (!d.itemId || !d.quantity) return acc;
+
+          const serialTracking = serializedItems.has(d.itemId);
+          const batchTracking = batchItems.has(d.itemId);
+          // For unshipped lines, we want all lines where shippedQuantity < quantity
+          const quantityToReceive = Math.max(
+            0,
+            (d.shippedQuantity ?? 0) -
+              (previouslyReceivedQuantitiesByLine[d.id] ?? 0)
+          );
+
+          if (quantityToReceive === 0) return acc;
+
+          acc.push({
+            lineId: d.id,
+            itemId: d.itemId,
+            locationId: d.toLocationId ?? locationId,
+            shelfId: d.toShelfId,
+            requiresSerialTracking: serialTracking,
+            requiresBatchTracking: batchTracking,
+            receivedQuantity: quantityToReceive,
+            outstandingQuantity: quantityToReceive,
+            unitPrice: 0, // Transfers don't have a unit price
+            conversionFactor: 1,
+            unitOfMeasure: d.unitOfMeasureCode ?? "EA",
+            companyId,
+            createdBy: userId,
+            orderQuantity: d.quantity ?? 0,
+          });
+
+          return acc;
+        }, []);
+
+        if (receiptLineItems.length === 0) {
+          throw new Error("No lines to receive");
+        }
+
+        const result = await db.transaction().execute(async (trx) => {
+          const receiptId = await getNextSequence(trx, "receipt", companyId);
+
+          let id: string;
+          if (hasReceipt) {
+            id = receipt.data!.id;
+            await trx
+              .updateTable("receipt")
+              .set({
+                sourceDocument: "Inbound Transfer",
+                sourceDocumentId: warehouseTransferId,
+                sourceDocumentReadableId: warehouseTransfer.data.transferId,
+                locationId,
+                updatedBy: userId,
+              })
+              .where("id", "=", id)
+              .execute();
+          } else {
+            const insertReceipt = await trx
+              .insertInto("receipt")
+              .values({
+                receiptId,
+                sourceDocument: "Inbound Transfer",
+                sourceDocumentId: warehouseTransferId,
+                sourceDocumentReadableId: warehouseTransfer.data.transferId,
+                locationId,
+                status: "Draft",
+                companyId,
+                createdBy: userId,
+              })
+              .returning(["id"])
+              .execute();
+
+            id = insertReceipt[0]?.id ?? "";
+          }
+
+          await trx
+            .deleteFrom("receiptLine")
+            .where("receiptId", "=", id)
+            .execute();
+
+          await trx
+            .insertInto("receiptLine")
+            .values(
+              receiptLineItems.map((lineItem) => ({
+                ...lineItem,
+                receiptId: id,
+              }))
+            )
+            .execute();
+
+          return { id };
+        });
+
+        return new Response(JSON.stringify(result, null, 2), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 201,
+        });
+      } catch (err) {
+        console.error(err);
+        return new Response(JSON.stringify(err), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        });
+      }
+    }
+    case "receiptFromWarehouseTransfer": {
+      const { warehouseTransferId, receiptId: existingReceiptId } = payload;
+
+      console.log({
+        function: "create",
+        type,
+        companyId,
+        warehouseTransferId,
+        existingReceiptId,
+        userId,
+      });
+
+      try {
+        const client = await getSupabaseServiceRole(
+          req.headers.get("Authorization"),
+          req.headers.get("carbon-key") ?? "",
+          companyId
+        );
+
+        const [warehouseTransfer, warehouseTransferLines, receipt] =
+          await Promise.all([
+            client
+              .from("warehouseTransfer")
+              .select("*")
+              .eq("id", warehouseTransferId)
+              .single(),
+            client
+              .from("warehouseTransferLine")
+              .select("*")
+              .eq("transferId", warehouseTransferId),
+            client
+              .from("receipt")
+              .select("*")
+              .eq("id", existingReceiptId)
+              .maybeSingle(),
+          ]);
+
+        if (!warehouseTransfer.data)
+          throw new Error("Warehouse transfer not found");
+        if (warehouseTransferLines.error)
+          throw new Error(warehouseTransferLines.error.message);
+
+        const locationId = warehouseTransfer.data.toLocationId;
+
+        const items = await client
+          .from("item")
+          .select("id, itemTrackingType")
+          .in(
+            "id",
+            warehouseTransferLines.data
+              .map((d) => d.itemId)
+              .filter(Boolean) as string[]
+          );
+        const serializedItems = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Serial")
+            .map((d) => d.id)
+        );
+        const batchItems = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Batch")
+            .map((d) => d.id)
+        );
+
+        const hasReceipt = !!receipt.data?.id;
+
+        const previouslyReceivedQuantitiesByLine = (
+          warehouseTransferLines.data ?? []
+        ).reduce<Record<string, number>>((acc, d) => {
+          if (d.id) acc[d.id] = d.receivedQuantity ?? 0;
+          return acc;
+        }, {});
+
+        const receiptLineItems = warehouseTransferLines.data.reduce<
+          ReceiptLineItem[]
+        >((acc, d) => {
+          if (!d.itemId || !d.quantity) return acc;
+
+          const serialTracking = serializedItems.has(d.itemId);
+          const batchTracking = batchItems.has(d.itemId);
+          const quantityToReceive = Math.max(
+            0,
+            (d.shippedQuantity ?? 0) -
+              (previouslyReceivedQuantitiesByLine[d.id] ?? 0)
+          );
+
+          if (quantityToReceive === 0) return acc;
+
+          acc.push({
+            lineId: d.id,
+            itemId: d.itemId,
+            locationId: d.toLocationId ?? locationId,
+            shelfId: d.toShelfId,
+            requiresSerialTracking: serialTracking,
+            requiresBatchTracking: batchTracking,
+            receivedQuantity: quantityToReceive,
+            outstandingQuantity: quantityToReceive,
+            unitPrice: 0, // Transfers don't have a unit price
+            conversionFactor: 1,
+            unitOfMeasure: d.unitOfMeasureCode ?? "EA",
+            companyId,
+            createdBy: userId,
+            orderQuantity: d.quantity ?? 0,
+          });
+
+          return acc;
+        }, []);
+
+        if (receiptLineItems.length === 0) {
+          throw new Error("No lines to receive");
+        }
+
+        const result = await db.transaction().execute(async (trx) => {
+          const receiptId = await getNextSequence(trx, "receipt", companyId);
+
+          let id: string;
+          if (hasReceipt) {
+            id = receipt.data!.id;
+            await trx
+              .updateTable("receipt")
+              .set({
+                sourceDocument: "Inbound Transfer",
+                sourceDocumentId: warehouseTransferId,
+                sourceDocumentReadableId: warehouseTransfer.data.transferId,
+                locationId,
+                updatedBy: userId,
+              })
+              .where("id", "=", id)
+              .execute();
+          } else {
+            const insertReceipt = await trx
+              .insertInto("receipt")
+              .values({
+                receiptId,
+                sourceDocument: "Inbound Transfer",
+                sourceDocumentId: warehouseTransferId,
+                sourceDocumentReadableId: warehouseTransfer.data.transferId,
+                locationId,
+                status: "Draft",
+                companyId,
+                createdBy: userId,
+              })
+              .returning(["id"])
+              .execute();
+
+            id = insertReceipt[0]?.id ?? "";
+          }
+
+          await trx
+            .insertInto("receiptLine")
+            .values(
+              receiptLineItems.map((d) => ({
+                receiptId: id,
+                lineId: d.lineId,
+                itemId: d.itemId,
+                locationId: d.locationId,
+                shelfId: d.shelfId,
+                requiresSerialTracking: d.requiresSerialTracking,
+                requiresBatchTracking: d.requiresBatchTracking,
+                receivedQuantity: d.receivedQuantity,
+                outstandingQuantity: d.outstandingQuantity,
+                unitPrice: d.unitPrice,
+                conversionFactor: d.conversionFactor,
+                unitOfMeasure: d.unitOfMeasure,
+                orderQuantity: d.orderQuantity,
+                companyId,
+                createdBy: userId,
+              }))
+            )
+            .execute();
+
+          return { id };
+        });
+
+        return new Response(JSON.stringify(result), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (err) {
+        console.error(err);
+        return new Response(JSON.stringify(err), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        });
+      }
+    }
     case "receiptLineSplit": {
       const { receiptId, receiptLineId, quantity, locationId } = payload;
 
@@ -1102,6 +1487,183 @@ serve(async (req: Request) => {
             status: 201,
           }
         );
+      } catch (err) {
+        console.error(err);
+        return new Response(JSON.stringify(err), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        });
+      }
+    }
+    case "shipmentFromWarehouseTransfer": {
+      const { warehouseTransferId, shipmentId: existingShipmentId } = payload;
+
+      console.log({
+        function: "create",
+        type,
+        companyId,
+        warehouseTransferId,
+        existingShipmentId,
+        userId,
+      });
+
+      try {
+        const client = await getSupabaseServiceRole(
+          req.headers.get("Authorization"),
+          req.headers.get("carbon-key") ?? "",
+          companyId
+        );
+
+        const [warehouseTransfer, warehouseTransferLines, shipment] =
+          await Promise.all([
+            client
+              .from("warehouseTransfer")
+              .select("*")
+              .eq("id", warehouseTransferId)
+              .single(),
+            client
+              .from("warehouseTransferLine")
+              .select("*")
+              .eq("transferId", warehouseTransferId),
+            client
+              .from("shipment")
+              .select("*")
+              .eq("id", existingShipmentId)
+              .maybeSingle(),
+          ]);
+
+        if (!warehouseTransfer.data)
+          throw new Error("Warehouse transfer not found");
+        if (warehouseTransferLines.error)
+          throw new Error(warehouseTransferLines.error.message);
+
+        const locationId = warehouseTransfer.data.toLocationId;
+
+        const items = await client
+          .from("item")
+          .select("id, itemTrackingType")
+          .in(
+            "id",
+            warehouseTransferLines.data
+              .map((d) => d.itemId)
+              .filter(Boolean) as string[]
+          );
+        const serializedItems = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Serial")
+            .map((d) => d.id)
+        );
+        const batchItems = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Batch")
+            .map((d) => d.id)
+        );
+
+        const hasShipment = !!shipment.data?.id;
+
+        const previouslyShippedQuantitiesByLine = (
+          warehouseTransferLines.data ?? []
+        ).reduce<Record<string, number>>((acc, d) => {
+          if (d.id) acc[d.id] = d.shippedQuantity ?? 0;
+          return acc;
+        }, {});
+
+        const shipmentLineItems = warehouseTransferLines.data.reduce<
+          ShipmentLineItem[]
+        >((acc, d) => {
+          if (!d.itemId || !d.quantity) return acc;
+
+          const serialTracking = serializedItems.has(d.itemId);
+          const batchTracking = batchItems.has(d.itemId);
+          // For unshipped lines, we want all lines where shippedQuantity < quantity
+          const quantityToShip = Math.max(
+            0,
+            (d.quantity ?? 0) - (previouslyShippedQuantitiesByLine[d.id] ?? 0)
+          );
+
+          if (quantityToShip === 0) return acc;
+
+          acc.push({
+            lineId: d.id,
+            itemId: d.itemId,
+            locationId: d.fromLocationId ?? locationId,
+            shelfId: d.fromShelfId,
+            requiresSerialTracking: serialTracking,
+            requiresBatchTracking: batchTracking,
+            shippedQuantity: quantityToShip,
+            outstandingQuantity: quantityToShip,
+            unitPrice: 0, // Transfers don't have a unit price
+            unitOfMeasure: d.unitOfMeasureCode ?? "EA",
+            companyId,
+            createdBy: userId,
+            orderQuantity: d.quantity ?? 0,
+          });
+
+          return acc;
+        }, []);
+
+        if (shipmentLineItems.length === 0) {
+          throw new Error("No lines to ship");
+        }
+
+        const result = await db.transaction().execute(async (trx) => {
+          const shipmentId = await getNextSequence(trx, "shipment", companyId);
+
+          let id: string;
+          if (hasShipment) {
+            id = shipment.data!.id;
+            await trx
+              .updateTable("shipment")
+              .set({
+                sourceDocument: "Outbound Transfer",
+                sourceDocumentId: warehouseTransferId,
+                sourceDocumentReadableId: warehouseTransfer.data.transferId,
+                locationId,
+                updatedBy: userId,
+              })
+              .where("id", "=", id)
+              .execute();
+          } else {
+            const insertShipment = await trx
+              .insertInto("shipment")
+              .values({
+                shipmentId,
+                sourceDocument: "Outbound Transfer",
+                sourceDocumentId: warehouseTransferId,
+                sourceDocumentReadableId: warehouseTransfer.data.transferId,
+                locationId,
+                status: "Draft",
+                companyId,
+                createdBy: userId,
+              })
+              .returning(["id"])
+              .execute();
+
+            id = insertShipment[0]?.id ?? "";
+          }
+
+          await trx
+            .deleteFrom("shipmentLine")
+            .where("shipmentId", "=", id)
+            .execute();
+
+          await trx
+            .insertInto("shipmentLine")
+            .values(
+              shipmentLineItems.map((lineItem) => ({
+                ...lineItem,
+                shipmentId: id,
+              }))
+            )
+            .execute();
+
+          return { id };
+        });
+
+        return new Response(JSON.stringify(result, null, 2), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 201,
+        });
       } catch (err) {
         console.error(err);
         return new Response(JSON.stringify(err), {
