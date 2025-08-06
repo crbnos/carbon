@@ -9,9 +9,11 @@ import { Suspense } from "react";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { getItemFiles } from "~/modules/items";
 import {
+  getInvestigationTypesList,
   getIssue,
   getIssueAssociations,
   getIssueTypesList,
+  getRequiredActionsList,
 } from "~/modules/quality";
 import type { IssueAssociationNode } from "~/modules/quality/types";
 import {
@@ -39,9 +41,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const [nonConformance, nonConformanceTypes, tags] = await Promise.all([
+  const [nonConformance, nonConformanceTypes, investigationTypes, requiredActions, tags] = await Promise.all([
     getIssue(client, id),
     getIssueTypesList(client, companyId),
+    getInvestigationTypesList(client, companyId),
+    getRequiredActionsList(client, companyId),
     getTagsList(client, companyId, "nonConformance"),
   ]);
 
@@ -55,6 +59,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return defer({
     nonConformance: nonConformance.data,
     nonConformanceTypes: nonConformanceTypes.data ?? [],
+    investigationTypes: investigationTypes.data ?? [],
+    requiredActions: requiredActions.data ?? [],
     files: getItemFiles(client, id, companyId),
     associations: getIssueAssociations(client, id, companyId),
     tags: tags.data ?? [],

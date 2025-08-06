@@ -666,6 +666,120 @@ export async function getIssueTypesList(
     .order("name");
 }
 
+export async function getInvestigationTypesList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("nonConformanceInvestigationType")
+    .select("id, name")
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .order("sortOrder");
+}
+
+export async function getRequiredActionsList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("nonConformanceRequiredAction")
+    .select("id, name")
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .order("sortOrder");
+}
+
+export async function getInvestigationTypes(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("nonConformanceInvestigationType")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "sortOrder", ascending: true },
+      { column: "name", ascending: true },
+    ]);
+  }
+
+  return query;
+}
+
+export async function getRequiredActions(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("nonConformanceRequiredAction")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "sortOrder", ascending: true },
+      { column: "name", ascending: true },
+    ]);
+  }
+
+  return query;
+}
+
+export async function getInvestigationType(
+  client: SupabaseClient<Database>,
+  investigationTypeId: string
+) {
+  return client
+    .from("nonConformanceInvestigationType")
+    .select("*")
+    .eq("id", investigationTypeId)
+    .single();
+}
+
+export async function getRequiredAction(
+  client: SupabaseClient<Database>,
+  requiredActionId: string
+) {
+  return client
+    .from("nonConformanceRequiredAction")
+    .select("*")
+    .eq("id", requiredActionId)
+    .single();
+}
+
+export async function deleteInvestigationType(
+  client: SupabaseClient<Database>,
+  investigationTypeId: string
+) {
+  return client
+    .from("nonConformanceInvestigationType")
+    .delete()
+    .eq("id", investigationTypeId);
+}
+
+export async function deleteRequiredAction(
+  client: SupabaseClient<Database>,
+  requiredActionId: string
+) {
+  return client
+    .from("nonConformanceRequiredAction")
+    .delete()
+    .eq("id", requiredActionId);
+}
+
 export async function getIssueType(
   client: SupabaseClient<Database>,
   nonConformanceTypeId: string
@@ -943,5 +1057,63 @@ export async function upsertIssueType(
       .from("nonConformanceType")
       .update(sanitize(nonConformanceType))
       .eq("id", nonConformanceType.id);
+  }
+}
+
+export async function upsertInvestigationType(
+  client: SupabaseClient<Database>,
+  investigationType:
+    | (Omit<z.infer<typeof issueTypeValidator>, "id"> & {
+        companyId: string;
+        sortOrder?: number;
+        active?: boolean;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof issueTypeValidator>, "id"> & {
+        id: string;
+        sortOrder?: number;
+        active?: boolean;
+        updatedBy: string;
+      })
+) {
+  if ("createdBy" in investigationType) {
+    return client
+      .from("nonConformanceInvestigationType")
+      .insert([{ sortOrder: 1, active: true, ...investigationType }])
+      .select("id");
+  } else {
+    return client
+      .from("nonConformanceInvestigationType")
+      .update(sanitize(investigationType))
+      .eq("id", investigationType.id);
+  }
+}
+
+export async function upsertRequiredAction(
+  client: SupabaseClient<Database>,
+  requiredAction:
+    | (Omit<z.infer<typeof issueTypeValidator>, "id"> & {
+        companyId: string;
+        sortOrder?: number;
+        active?: boolean;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof issueTypeValidator>, "id"> & {
+        id: string;
+        sortOrder?: number;
+        active?: boolean;
+        updatedBy: string;
+      })
+) {
+  if ("createdBy" in requiredAction) {
+    return client
+      .from("nonConformanceRequiredAction")
+      .insert([{ sortOrder: 1, active: true, ...requiredAction }])
+      .select("id");
+  } else {
+    return client
+      .from("nonConformanceRequiredAction")
+      .update(sanitize(requiredAction))
+      .eq("id", requiredAction.id);
   }
 }
