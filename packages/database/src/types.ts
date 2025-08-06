@@ -14945,7 +14945,6 @@ export type Database = {
           createdBy: string
           id: string
           name: string
-          sortOrder: number
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -14956,7 +14955,6 @@ export type Database = {
           createdBy: string
           id?: string
           name: string
-          sortOrder?: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -14967,7 +14965,6 @@ export type Database = {
           createdBy?: string
           id?: string
           name?: string
-          sortOrder?: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -15620,7 +15617,6 @@ export type Database = {
           createdBy: string
           id: string
           name: string
-          sortOrder: number
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -15631,7 +15627,6 @@ export type Database = {
           createdBy: string
           id?: string
           name: string
-          sortOrder?: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -15642,7 +15637,6 @@ export type Database = {
           createdBy?: string
           id?: string
           name?: string
-          sortOrder?: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
