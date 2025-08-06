@@ -42,7 +42,7 @@ const WarehouseTransferForm = ({
     >
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>{isEditing ? "Edit" : "New"} Transfer</CardTitle>
+          <CardTitle>{isEditing ? "Warehouse" : "New"} Transfer</CardTitle>
           {!isEditing && (
             <CardDescription>
               A warehouse transfer is an inter-company movement of inventory
@@ -84,7 +84,7 @@ const WarehouseTransferForm = ({
 
             <TextArea name="notes" label="Notes" />
 
-            <Submit disabled={!canEdit}>Save Transfer</Submit>
+            <Submit disabled={!canEdit}>Save</Submit>
           </VStack>
         </CardContent>
       </Card>

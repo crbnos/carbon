@@ -64,6 +64,7 @@ export default function useShipmentForm({
               );
             }
           });
+        break;
       case "Purchase Order":
         carbon
           ?.from("purchaseOrder")
@@ -82,6 +83,26 @@ export default function useShipmentForm({
               );
             }
           });
+        break;
+      case "Outbound Transfer":
+        carbon
+          ?.from("warehouseTransfer")
+          .select("id, transferId")
+          .eq("companyId", user.company.id)
+          .or("status.eq.To Ship and Receive, status.eq.To Ship")
+          .then((response) => {
+            if (response.error) {
+              setError(response.error.message);
+            } else {
+              setSourceDocuments(
+                response.data.map((d) => ({
+                  name: d.transferId,
+                  id: d.id,
+                }))
+              );
+            }
+          });
+        break;
       default:
         setSourceDocuments([]);
     }

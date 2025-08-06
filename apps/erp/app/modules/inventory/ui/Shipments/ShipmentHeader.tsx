@@ -20,6 +20,7 @@ import {
   LuCreditCard,
   LuQrCode,
   LuShoppingCart,
+  LuTruck,
 } from "react-icons/lu";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemTracking, Shipment, ShipmentLine } from "~/modules/inventory";
@@ -359,6 +360,15 @@ function SourceDocumentLink({
         <Button variant="secondary" leftIcon={<LuShoppingCart />} asChild>
           <Link to={path.to.purchaseOrderDetails(sourceDocumentId!)}>
             Purchase Order
+          </Link>
+        </Button>
+      );
+    case "Outbound Transfer":
+      if (!permissions.can("view", "inventory")) return null;
+      return (
+        <Button variant="secondary" leftIcon={<LuTruck />} asChild>
+          <Link to={path.to.warehouseTransferDetails(sourceDocumentId!)}>
+            Warehouse Transfer
           </Link>
         </Button>
       );

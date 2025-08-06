@@ -104,6 +104,16 @@ const ReceiptsTable = memo(({ data, count }: ReceiptsTableProps) => {
                   {row.original.sourceDocumentReadableId}
                 </Hyperlink>
               );
+            case "Inbound Transfer":
+              return (
+                <Hyperlink
+                  to={path.to.warehouseTransferDetails(
+                    row.original.sourceDocumentId!
+                  )}
+                >
+                  {row.original.sourceDocumentReadableId}
+                </Hyperlink>
+              );
             default:
               return null;
           }

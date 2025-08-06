@@ -113,6 +113,36 @@ export async function action({ request }: ActionFunctionArgs) {
           );
         }
         break;
+      case "Outbound Transfer":
+        const warehouseTransferShipment = await serviceRole.functions.invoke<{
+          id: string;
+        }>("create", {
+          body: {
+            type: "shipmentFromWarehouseTransfer",
+            companyId,
+            warehouseTransferId: data.sourceDocumentId,
+            shipmentId: id,
+            userId: userId,
+          },
+          region: FunctionRegion.UsEast1,
+        });
+        if (
+          !warehouseTransferShipment.data ||
+          warehouseTransferShipment.error
+        ) {
+          console.error(warehouseTransferShipment.error);
+          throw redirect(
+            path.to.shipment(id),
+            await flash(
+              request,
+              error(
+                warehouseTransferShipment.error,
+                "Failed to create shipment"
+              )
+            )
+          );
+        }
+        break;
       default:
         throw new Error(`Unsupported source document: ${data.sourceDocument}`);
     }
@@ -159,8 +189,10 @@ export default function ShipmentDetailsRoute() {
     shipmentId: routeData.shipment.shipmentId ?? undefined,
     trackingNumber: routeData.shipment.trackingNumber ?? undefined,
     shippingMethodId: routeData.shipment.shippingMethodId ?? undefined,
-    sourceDocument: (routeData.shipment.sourceDocument ??
-      "Sales Order") as "Sales Order",
+    sourceDocument: (routeData.shipment.sourceDocument ?? "Sales Order") as
+      | "Sales Order"
+      | "Purchase Order"
+      | "Outbound Transfer",
     sourceDocumentId: routeData.shipment.sourceDocumentId ?? undefined,
     sourceDocumentReadableId:
       routeData.shipment.sourceDocumentReadableId ?? undefined,

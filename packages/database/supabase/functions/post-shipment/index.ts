@@ -1163,7 +1163,8 @@ serve(async (req: Request) => {
         if (warehouseTransferLines.error)
           throw new Error("Failed to fetch warehouse transfer lines");
 
-        const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] = [];
+        const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
+          [];
         const warehouseTransferLineUpdates: Record<
           string,
           Database["public"]["Tables"]["warehouseTransferLine"]["Update"]
@@ -1180,7 +1181,7 @@ serve(async (req: Request) => {
           const shippedQuantity = shipmentLine.shippedQuantity ?? 0;
 
           // Update warehouse transfer line shipped quantity
-          const newShippedQuantity = 
+          const newShippedQuantity =
             (warehouseTransferLine.shippedQuantity ?? 0) + shippedQuantity;
 
           warehouseTransferLineUpdates[warehouseTransferLine.id] = {
@@ -1198,7 +1199,8 @@ serve(async (req: Request) => {
               entryType: "Transfer",
               documentType: "Transfer Shipment",
               documentId: warehouseTransfer.data?.transferId,
-              externalDocumentId: shipment.data?.externalDocumentId ?? undefined,
+              externalDocumentId:
+                shipment.data?.externalDocumentId ?? undefined,
               createdBy: userId,
               companyId,
             });
@@ -1206,20 +1208,25 @@ serve(async (req: Request) => {
         }
 
         // Check if all lines are fully shipped
-        const allLinesFullyShipped = warehouseTransferLines.data.every((line) => {
-          const updates = warehouseTransferLineUpdates[line.id];
-          const shippedQty = updates?.shippedQuantity ?? line.shippedQuantity ?? 0;
-          return shippedQty >= (line.quantity ?? 0);
-        });
+        const allLinesFullyShipped = warehouseTransferLines.data.every(
+          (line) => {
+            const updates = warehouseTransferLineUpdates[line.id];
+            const shippedQty =
+              updates?.shippedQuantity ?? line.shippedQuantity ?? 0;
+            return shippedQty >= (line.quantity ?? 0);
+          }
+        );
 
         // Check if all lines are fully received
-        const allLinesFullyReceived = warehouseTransferLines.data.every((line) => {
-          const receivedQty = line.receivedQuantity ?? 0;
-          return receivedQty >= (line.quantity ?? 0);
-        });
+        const allLinesFullyReceived = warehouseTransferLines.data.every(
+          (line) => {
+            const receivedQty = line.receivedQuantity ?? 0;
+            return receivedQty >= (line.quantity ?? 0);
+          }
+        );
 
         // Determine new warehouse transfer status
-        let newStatus: Database["public"]["Tables"]["warehouseTransfer"]["Row"]["status"] = 
+        let newStatus: Database["public"]["Tables"]["warehouseTransfer"]["Row"]["status"] =
           warehouseTransfer.data.status;
 
         if (allLinesFullyShipped && allLinesFullyReceived) {
@@ -1247,6 +1254,7 @@ serve(async (req: Request) => {
             .updateTable("warehouseTransfer")
             .set({
               status: newStatus,
+              transferDate: today,
               updatedBy: userId,
             })
             .where("id", "=", warehouseTransfer.data.id)
@@ -1274,6 +1282,7 @@ serve(async (req: Request) => {
 
         break;
       }
+
       default: {
         throw new Error(
           `Invalid source document type: ${shipment.data.sourceDocument}`

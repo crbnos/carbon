@@ -27,11 +27,17 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
     case "Sales Invoice":
       return `invoiced ${ledgerRecord.quantity} units for sale`;
     case "Transfer Shipment":
-      return `shipped ${-1 * ledgerRecord.quantity} units for transfer`;
+      return `shipped ${-1 * ledgerRecord.quantity} units${
+        ledgerRecord.shelf?.name ? ` from ${ledgerRecord.shelf.name}` : ""
+      } for transfer`;
     case "Transfer Receipt":
-      return `received ${ledgerRecord.quantity} units from transfer`;
+      return `received ${ledgerRecord.quantity} units${
+        ledgerRecord.shelf?.name ? ` to ${ledgerRecord.shelf.name}` : ""
+      } from transfer`;
     case "Direct Transfer":
-      return `directly transferred ${ledgerRecord.quantity} units`;
+      return `directly transferred ${ledgerRecord.quantity} units${
+        ledgerRecord.shelf?.name ? ` to ${ledgerRecord.shelf.name}` : ""
+      }`;
     case "Inventory Receipt":
       return `received ${ledgerRecord.quantity} units into inventory`;
     case "Inventory Shipment":

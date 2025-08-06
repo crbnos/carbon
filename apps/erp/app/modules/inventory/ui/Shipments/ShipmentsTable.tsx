@@ -114,6 +114,16 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
                   {row.original.sourceDocumentReadableId}
                 </Hyperlink>
               );
+            case "Outbound Transfer":
+              return (
+                <Hyperlink
+                  to={path.to.warehouseTransferDetails(
+                    row.original.sourceDocumentId!
+                  )}
+                >
+                  {row.original.sourceDocumentReadableId}
+                </Hyperlink>
+              );
             default:
               return null;
           }

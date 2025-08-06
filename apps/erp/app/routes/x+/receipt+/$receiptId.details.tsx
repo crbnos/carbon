@@ -83,6 +83,30 @@ export async function action({ request }: ActionFunctionArgs) {
           );
         }
         break;
+
+      case "Inbound Transfer":
+        const warehouseTransferReceipt = await serviceRole.functions.invoke<{
+          id: string;
+        }>("create", {
+          body: {
+            type: "receiptFromInboundTransfer",
+            companyId,
+            warehouseTransferId: data.sourceDocumentId,
+            receiptId: id,
+            userId: userId,
+          },
+        });
+        if (!warehouseTransferReceipt.data || warehouseTransferReceipt.error) {
+          throw redirect(
+            path.to.receipt(id),
+            await flash(
+              request,
+              error(warehouseTransferReceipt.error, "Failed to create receipt")
+            )
+          );
+        }
+        break;
+
       default:
         throw new Error("Unsupported source document");
     }
@@ -129,7 +153,7 @@ export default function ReceiptDetailsRoute() {
     receiptId: routeData.receipt.receiptId ?? undefined,
     externalDocumentId: routeData.receipt.externalDocumentId ?? undefined,
     sourceDocument: (routeData.receipt.sourceDocument ??
-      "Purchase Order") as "Purchase Order",
+      "Purchase Order") as "Purchase Order" | "Inbound Transfer",
     sourceDocumentId: routeData.receipt.sourceDocumentId ?? undefined,
     sourceDocumentReadableId:
       routeData.receipt.sourceDocumentReadableId ?? undefined,
