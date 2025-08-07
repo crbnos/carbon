@@ -1,0 +1,2 @@
+ALTER TABLE "customField" ALTER COLUMN "id" DROP DEFAULT;
+ALTER TABLE "customField" ALTER COLUMN "id" SET DEFAULT id();
