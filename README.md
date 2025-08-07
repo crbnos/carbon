@@ -21,7 +21,6 @@
   <img src="https://img.shields.io/badge/React-23272F?style=for-the-badge&logo=react&logoColor=white" alt="React" />
 </p>
 
-
 ![ERP Screenshot](https://github.com/user-attachments/assets/2e09b891-d5e2-4f68-b924-a1c8ea42d24d)
 
 ![MES Screenshot](https://github.com/user-attachments/assets/b04f3644-91aa-4f74-af8d-6f3e12116a6b)
@@ -178,6 +177,7 @@ $ cp ./.env.example ./.env
 
 - `TRIGGER_PUBLIC_API_KEY=[Public 'dev' API Key, starting 'pk_dev*']`
 - `TRIGGER_API_KEY=[Server 'dev' API Key, starting 'tr_dev*']`
+- `TRIGGER_PROJECT_ID=[Public 'project' key, starting 'proj*]`
 
 4. In Posthog go to [https://[region].posthog.com/project/[project-id]/settings/project-details](https://[region].posthog.com/project/[project-id]/settings/project-details) to find your Project ID and Project API key:
 
