@@ -1,0 +1,20 @@
+INSERT INTO "materialDimension" ("id", "materialFormId", "name", "isMetric", "companyId") VALUES
+-- Sheet dimensions (gauge sizes) - Imperial
+  ('sheet-30-gauge', 'sheet', '30GA', false, null),
+  ('sheet-28-gauge', 'sheet', '28GA', false, null),
+  ('sheet-26-gauge', 'sheet', '26GA', false, null),
+  ('sheet-24-gauge', 'sheet', '24GA', false, null),
+  ('sheet-22-gauge', 'sheet', '22GA', false, null),
+  ('sheet-20-gauge', 'sheet', '20GA', false, null),
+  ('sheet-18-gauge', 'sheet', '18GA', false, null),
+  ('sheet-16-gauge', 'sheet', '16GA', false, null),
+  ('sheet-14-gauge', 'sheet', '14GA', false, null),
+  ('sheet-12-gauge', 'sheet', '12GA', false, null),
+  ('sheet-11-gauge', 'sheet', '11GA', false, null),
+  ('sheet-10-gauge', 'sheet', '10GA', false, null),
+  ('sheet-8-gauge', 'sheet', '8GA', false, null),
+  ('sheet-7-gauge', 'sheet', '7GA', false, null),
+  ('sheet-6-gauge', 'sheet', '6GA', false, null),
+  ('sheet-5-gauge', 'sheet', '5GA', false, null),
+  ('sheet-4-gauge', 'sheet', '4GA', false, null),
+  ('sheet-3-gauge', 'sheet', '3GA', false, null);
