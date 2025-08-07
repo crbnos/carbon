@@ -33,6 +33,19 @@ export function getMaterialDescription(material: {
   dimensions?: string;
   finish?: string;
 }) {
+  if (material.substance === "Aluminum") {
+    return [
+      material.grade,
+      material.finish,
+      material.substance,
+      material.materialType,
+      material.shape,
+      material.dimensions,
+    ]
+      .filter((p) => !!p)
+      .join(" ");
+  }
+
   return [
     material.grade,
     material.substance,
@@ -53,6 +66,18 @@ export function getMaterialId(material: {
   dimensions?: string;
   finish?: string;
 }) {
+  if (material.substanceCode === "AL") {
+    return [
+      material.grade,
+      material.finish,
+      material.substanceCode,
+      material.materialTypeCode,
+      material.shapeCode,
+      material.dimensions,
+    ]
+      .filter((p) => !!p)
+      .join("-");
+  }
   return [
     material.grade,
     material.substanceCode,
