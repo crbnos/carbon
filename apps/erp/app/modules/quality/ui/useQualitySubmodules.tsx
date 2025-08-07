@@ -6,6 +6,7 @@ import {
   LuSearch,
   LuShapes,
   LuShieldX,
+  LuSquareCheck,
   LuWorkflow,
 } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
@@ -55,6 +56,11 @@ const qualityRoutes: AuthenticatedRouteGroup[] = [
   {
     name: "Configure",
     routes: [
+      {
+        name: "Action Types",
+        to: path.to.requiredActions,
+        icon: <LuSquareCheck />,
+      },
       {
         name: "Gauge Types",
         to: path.to.gaugeTypes,

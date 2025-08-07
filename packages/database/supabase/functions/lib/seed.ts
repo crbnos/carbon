@@ -1636,37 +1636,30 @@ export const nonConformanceInvestigationTypes: Omit<
 >[] = [
   {
     name: "Root Cause Analysis",
-    sortOrder: 1,
     createdBy: "system",
   },
   {
     name: "Inventory",
-    sortOrder: 2,
     createdBy: "system",
   },
   {
     name: "WIP",
-    sortOrder: 3,
     createdBy: "system",
   },
   {
     name: "Finished Goods",
-    sortOrder: 4,
     createdBy: "system",
   },
   {
     name: "Incoming Materials",
-    sortOrder: 5,
     createdBy: "system",
   },
   {
     name: "Process",
-    sortOrder: 6,
     createdBy: "system",
   },
   {
     name: "Documentation",
-    sortOrder: 7,
     createdBy: "system",
   },
 ];
@@ -1677,27 +1670,22 @@ export const nonConformanceRequiredActions: Omit<
 >[] = [
   {
     name: "Corrective Action",
-    sortOrder: 1,
     createdBy: "system",
   },
   {
     name: "Preventive Action",
-    sortOrder: 2,
     createdBy: "system",
   },
   {
     name: "Containment Action",
-    sortOrder: 3,
     createdBy: "system",
   },
   {
     name: "Verification",
-    sortOrder: 4,
     createdBy: "system",
   },
   {
     name: "Customer Communication",
-    sortOrder: 5,
     createdBy: "system",
   },
 ];
