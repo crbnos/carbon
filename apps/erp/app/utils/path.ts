@@ -541,6 +541,8 @@ export const path = {
       generatePath(`${x}/issue-workflow/delete/${id}`),
     deleteInvestigationType: (id: string) =>
       generatePath(`${x}/quality/investigation-types/delete/${id}`),
+    deleteRequiredAction: (id: string) =>
+      generatePath(`${x}/quality/required-actions/delete/${id}`),
     deleteIssueType: (id: string) =>
       generatePath(`${x}/quality/issue-types/delete/${id}`),
     deleteNoQuoteReason: (id: string) =>
@@ -697,6 +699,8 @@ export const path = {
     issueWorkflows: `${x}/quality/issue-workflows`,
     investigationType: (id: string) => generatePath(`${x}/quality/investigation-types/${id}`),
     investigationTypes: `${x}/quality/investigation-types`,
+    requiredAction: (id: string) => generatePath(`${x}/quality/required-actions/${id}`),
+    requiredActions: `${x}/quality/required-actions`,
     issueType: (id: string) => generatePath(`${x}/quality/issue-types/${id}`),
     issueTypes: `${x}/quality/issue-types`,
     items: `${x}/items`,
@@ -867,6 +871,7 @@ export const path = {
     newIssueAssociation: (id: string) =>
       generatePath(`${x}/issue/${id}/association/new`),
     newInvestigationType: `${x}/quality/investigation-types/new`,
+    newRequiredAction: `${x}/quality/required-actions/new`,
     newIssueType: `${x}/quality/issue-types/new`,
     newIssueWorkflow: `${x}/issue-workflow/new`,
     newNote: `${x}/shared/notes/new`,

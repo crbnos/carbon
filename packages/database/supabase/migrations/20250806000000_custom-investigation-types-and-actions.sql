@@ -157,3 +157,25 @@ CROSS JOIN (
     ('Verification'),
     ('Customer Communication')
 ) AS action_type(name);
+
+-- Create trigger function to remove deleted investigation type IDs from arrays
+CREATE OR REPLACE FUNCTION remove_investigation_type_from_arrays()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Remove from nonConformance.investigationTypeIds arrays
+  UPDATE "nonConformance" 
+  SET "investigationTypeIds" = array_remove("investigationTypeIds", OLD."id")
+  WHERE "companyId" = OLD."companyId" 
+    AND OLD."id" = ANY("investigationTypeIds");
+
+  -- Remove from nonConformanceWorkflow.investigationTypeIds arrays  
+  UPDATE "nonConformanceWorkflow"
+  SET "investigationTypeIds" = array_remove("investigationTypeIds", OLD."id")
+  WHERE "companyId" = OLD."companyId"
+    AND OLD."id" = ANY("investigationTypeIds");
+
+  RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+

@@ -3,19 +3,15 @@ import { VStack } from "@carbon/react";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json } from "@vercel/remix";
-import {
-  getIssueTypesList,
-  getQualityActions,
-  getRequiredActionsList,
-} from "~/modules/quality";
-import ActionsTable from "~/modules/quality/ui/Actions/ActionsTable";
+import { getRequiredActions } from "~/modules/quality";
+import RequiredActionsTable from "~/modules/quality/ui/RequiredActions/RequiredActionsTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
-  breadcrumb: "Actions",
-  to: path.to.qualityActions,
+  breadcrumb: "Required Actions",
+  to: path.to.requiredActions,
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -30,42 +26,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [actions, issueTypes, requiredActions] = await Promise.all([
-    getQualityActions(client, companyId, {
+  return json(
+    await getRequiredActions(client, companyId, {
       search,
       limit,
       offset,
       sorts,
       filters,
-    }),
-    getIssueTypesList(client, companyId),
-    getRequiredActionsList(client, companyId),
-  ]);
-
-  if (actions.error) {
-    console.error(actions.error);
-  }
-
-  return json({
-    actions: actions.data ?? [],
-    count: actions.count ?? 0,
-    issueTypes: issueTypes.data ?? [],
-    requiredActions: requiredActions.data ?? [],
-  });
+    })
+  );
 }
 
-export default function ActionsRoute() {
-  const { actions, count, issueTypes, requiredActions } =
-    useLoaderData<typeof loader>();
+export default function RequiredActionsRoute() {
+  const { data, count } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <ActionsTable
-        data={actions}
-        count={count}
-        issueTypes={issueTypes}
-        requiredActions={requiredActions}
-      />
+      <RequiredActionsTable data={data ?? []} count={count ?? 0} />
       <Outlet />
     </VStack>
   );

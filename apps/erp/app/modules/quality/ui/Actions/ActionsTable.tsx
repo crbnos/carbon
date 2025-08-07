@@ -19,189 +19,191 @@ import { usePermissions } from "~/hooks";
 import { usePeople } from "~/stores/people";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
-import {
-  nonConformanceRequiredAction,
-  nonConformanceTaskStatus,
-} from "../../quality.models";
+import { nonConformanceTaskStatus } from "../../quality.models";
 import type { QualityAction } from "../../types";
 import IssueStatus from "../Issue/IssueStatus";
 
 type ActionsTableProps = {
   data: QualityAction[];
   issueTypes: ListItem[];
+  requiredActions: ListItem[];
   count: number;
 };
 
-const ActionsTable = memo(({ data, issueTypes, count }: ActionsTableProps) => {
-  const navigate = useNavigate();
-  const permissions = usePermissions();
+const ActionsTable = memo(
+  ({ data, issueTypes, requiredActions, count }: ActionsTableProps) => {
+    const navigate = useNavigate();
+    const permissions = usePermissions();
 
-  const [people] = usePeople();
+    const [people] = usePeople();
 
-  const columns = useMemo<ColumnDef<QualityAction>[]>(() => {
-    const defaultColumns: ColumnDef<QualityAction>[] = [
-      {
-        accessorKey: "readableNonConformanceId",
-        header: "Issue",
-        cell: ({ row }) => (
-          <Hyperlink to={path.to.issueActions(row.original.nonConformanceId!)}>
-            <div className="flex flex-col gap-0">
-              <span className="text-sm font-medium">
-                {row.original.readableNonConformanceId}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {row.original.nonConformanceName}
-              </span>
-            </div>
-          </Hyperlink>
-        ),
-        meta: {
-          icon: <LuBookMarked />,
-        },
-      },
-      {
-        accessorKey: "actionType",
-        header: "Action Type",
-        cell: ({ row }) => <Enumerable value={row.original.actionType} />,
-        meta: {
-          icon: <LuFileText />,
-          filter: {
-            type: "static",
-            options: nonConformanceRequiredAction.map((action) => ({
-              label: action,
-              value: action,
-            })),
-          },
-        },
-      },
-      {
-        accessorKey: "status",
-        header: "Action Status",
-        cell: ({ row }) => <ActionStatus status={row.original.status} />,
-        meta: {
-          icon: <LuCircleGauge />,
-          filter: {
-            type: "static",
-            options: nonConformanceTaskStatus.map((status) => ({
-              label: <ActionStatus status={status} />,
-              value: status,
-            })),
-          },
-        },
-      },
-      {
-        accessorKey: "assignee",
-        header: "Assignee",
-        cell: ({ row }) => (
-          <EmployeeAvatar employeeId={row.original.assignee} />
-        ),
-        meta: {
-          filter: {
-            type: "static",
-            options: people.map((employee) => ({
-              value: employee.id,
-              label: employee.name,
-            })),
-          },
-          icon: <LuUser />,
-        },
-      },
-      {
-        accessorKey: "dueDate",
-        header: "Due Date",
-        cell: ({ row }) => formatDate(row.original.dueDate),
-        meta: {
-          icon: <LuCalendar />,
-        },
-      },
-      {
-        accessorKey: "nonConformanceStatus",
-        header: "Issue Status",
-        cell: ({ row }) =>
-          row.original.nonConformanceStatus && (
-            <IssueStatus status={row.original.nonConformanceStatus as any} />
+    const columns = useMemo<ColumnDef<QualityAction>[]>(() => {
+      const defaultColumns: ColumnDef<QualityAction>[] = [
+        {
+          accessorKey: "readableNonConformanceId",
+          header: "Issue",
+          cell: ({ row }) => (
+            <Hyperlink
+              to={path.to.issueActions(row.original.nonConformanceId!)}
+            >
+              <div className="flex flex-col gap-0">
+                <span className="text-sm font-medium">
+                  {row.original.readableNonConformanceId}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {row.original.nonConformanceName}
+                </span>
+              </div>
+            </Hyperlink>
           ),
-        meta: {
-          icon: <LuOctagonX />,
-        },
-      },
-      {
-        accessorKey: "nonConformanceTypeName",
-        header: "Issue Type",
-        cell: ({ row }) => (
-          <Enumerable value={row.original.nonConformanceTypeName} />
-        ),
-        meta: {
-          icon: <LuOctagonX />,
-          filter: {
-            type: "static",
-            options: issueTypes.map((type) => ({
-              label: type.name,
-              value: type.name,
-            })),
+          meta: {
+            icon: <LuBookMarked />,
           },
         },
-      },
-
-      {
-        accessorKey: "dueDate",
-        header: "Due Date",
-        cell: ({ row }) => formatDate(row.original.dueDate),
-        meta: {
-          icon: <LuCalendar />,
+        {
+          accessorKey: "actionType",
+          header: "Action Type",
+          cell: ({ row }) => <Enumerable value={row.original.actionType} />,
+          meta: {
+            icon: <LuFileText />,
+            filter: {
+              type: "static",
+              options: requiredActions.map((action) => ({
+                label: action.name,
+                value: action.id,
+              })),
+            },
+          },
         },
-      },
-      {
-        accessorKey: "completedDate",
-        header: "Completed Date",
-        cell: ({ row }) => formatDate(row.original.completedDate),
-        meta: {
-          icon: <LuCalendar />,
+        {
+          accessorKey: "status",
+          header: "Action Status",
+          cell: ({ row }) => <ActionStatus status={row.original.status} />,
+          meta: {
+            icon: <LuCircleGauge />,
+            filter: {
+              type: "static",
+              options: nonConformanceTaskStatus.map((status) => ({
+                label: <ActionStatus status={status} />,
+                value: status,
+              })),
+            },
+          },
         },
-      },
-      {
-        accessorKey: "createdAt",
-        header: "Created",
-        cell: ({ row }) => formatDate(row.original.createdAt),
-        meta: {
-          icon: <LuCalendar />,
+        {
+          accessorKey: "assignee",
+          header: "Assignee",
+          cell: ({ row }) => (
+            <EmployeeAvatar employeeId={row.original.assignee} />
+          ),
+          meta: {
+            filter: {
+              type: "static",
+              options: people.map((employee) => ({
+                value: employee.id,
+                label: employee.name,
+              })),
+            },
+            icon: <LuUser />,
+          },
         },
+        {
+          accessorKey: "dueDate",
+          header: "Due Date",
+          cell: ({ row }) => formatDate(row.original.dueDate),
+          meta: {
+            icon: <LuCalendar />,
+          },
+        },
+        {
+          accessorKey: "nonConformanceStatus",
+          header: "Issue Status",
+          cell: ({ row }) =>
+            row.original.nonConformanceStatus && (
+              <IssueStatus status={row.original.nonConformanceStatus as any} />
+            ),
+          meta: {
+            icon: <LuOctagonX />,
+          },
+        },
+        {
+          accessorKey: "nonConformanceTypeName",
+          header: "Issue Type",
+          cell: ({ row }) => (
+            <Enumerable value={row.original.nonConformanceTypeName} />
+          ),
+          meta: {
+            icon: <LuOctagonX />,
+            filter: {
+              type: "static",
+              options: issueTypes.map((type) => ({
+                label: type.name,
+                value: type.name,
+              })),
+            },
+          },
+        },
+
+        {
+          accessorKey: "dueDate",
+          header: "Due Date",
+          cell: ({ row }) => formatDate(row.original.dueDate),
+          meta: {
+            icon: <LuCalendar />,
+          },
+        },
+        {
+          accessorKey: "completedDate",
+          header: "Completed Date",
+          cell: ({ row }) => formatDate(row.original.completedDate),
+          meta: {
+            icon: <LuCalendar />,
+          },
+        },
+        {
+          accessorKey: "createdAt",
+          header: "Created",
+          cell: ({ row }) => formatDate(row.original.createdAt),
+          meta: {
+            icon: <LuCalendar />,
+          },
+        },
+      ];
+      return defaultColumns;
+    }, [requiredActions, people, issueTypes]);
+
+    const renderContextMenu = useCallback(
+      (row: QualityAction) => {
+        return (
+          <>
+            <MenuItem
+              disabled={!permissions.can("update", "quality")}
+              onClick={() => {
+                navigate(`${path.to.issue(row.nonConformanceId!)}`);
+              }}
+            >
+              <MenuIcon icon={<LuPencil />} />
+              View Issue
+            </MenuItem>
+          </>
+        );
       },
-    ];
-    return defaultColumns;
-  }, [people, issueTypes]);
+      [navigate, permissions]
+    );
 
-  const renderContextMenu = useCallback(
-    (row: QualityAction) => {
-      return (
-        <>
-          <MenuItem
-            disabled={!permissions.can("update", "quality")}
-            onClick={() => {
-              navigate(`${path.to.issue(row.nonConformanceId!)}`);
-            }}
-          >
-            <MenuIcon icon={<LuPencil />} />
-            View Issue
-          </MenuItem>
-        </>
-      );
-    },
-    [navigate, permissions]
-  );
-
-  return (
-    <Table<QualityAction>
-      data={data}
-      columns={columns}
-      count={count}
-      renderContextMenu={renderContextMenu}
-      title="Actions"
-      table="nonConformanceActionTask"
-      withSavedView
-    />
-  );
-});
+    return (
+      <Table<QualityAction>
+        data={data}
+        columns={columns}
+        count={count}
+        renderContextMenu={renderContextMenu}
+        title="Actions"
+        table="nonConformanceActionTask"
+        withSavedView
+      />
+    );
+  }
+);
 
 ActionsTable.displayName = "ActionsTable";
 export default ActionsTable;

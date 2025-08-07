@@ -456,10 +456,14 @@ function TaskDueDate({
 
   if (!canEdit) {
     return (
-      <HStack className="text-sm text-muted-foreground">
-        <LuCalendar className="w-4 h-4" />
+      <Button
+        variant="secondary"
+        size="sm"
+        leftIcon={<LuCalendar />}
+        isDisabled
+      >
         <span>{task.dueDate ? formatDate(task.dueDate) : "No due date"}</span>
-      </HStack>
+      </Button>
     );
   }
 

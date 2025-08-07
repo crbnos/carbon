@@ -144,6 +144,12 @@ export const investigationTypeValidator = z.object({
   active: zfd.checkbox(),
 });
 
+export const requiredActionValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" }),
+  active: zfd.checkbox(),
+});
+
 export const issueTypeValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }),
