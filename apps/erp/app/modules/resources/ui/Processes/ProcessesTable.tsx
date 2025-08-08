@@ -24,12 +24,12 @@ import {
 } from "react-icons/lu";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { useWorkCenters } from "~/components/Form/WorkCenter";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { type Process } from "~/modules/resources";
 import { standardFactorType } from "~/modules/shared";
 import { usePeople } from "~/stores";
-import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
 type ProcessesTableProps = {
@@ -49,6 +49,7 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
   const permissions = usePermissions();
   const [params] = useUrlParams();
   const [people] = usePeople();
+  const { options: workCenters } = useWorkCenters({});
 
   const customColumns = useCustomColumns<Process>("process");
   const columns = useMemo<ColumnDef<Process>[]>(() => {
@@ -95,19 +96,31 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
         header: "Work Centers",
         cell: ({ row }) => (
           <span className="flex gap-2 items-center flex-wrap py-2">
-            {((row.original.workCenters ?? []) as Array<ListItem>).map((wc) => (
-              <Enumerable
-                key={wc.name}
-                onClick={() => navigate(path.to.workCenter(wc.id))}
-                variant="secondary"
-                className="cursor-pointer"
-                value={wc.name}
-              />
-            ))}
+            {((row.original.workCenters ?? []) as Array<string>).map((wc) => {
+              const workCenter = workCenters.find((w) => w.value === wc);
+              return (
+                <Enumerable
+                  key={workCenter?.label}
+                  onClick={() =>
+                    navigate(path.to.workCenter(workCenter?.value!))
+                  }
+                  className="cursor-pointer"
+                  value={workCenter?.label ?? null}
+                />
+              );
+            })}
           </span>
         ),
         meta: {
           icon: <LuBuilding2 />,
+          filter: {
+            type: "static",
+            options: workCenters.map((w) => ({
+              value: w.value,
+              label: <Enumerable value={w.label} />,
+            })),
+            isArray: true,
+          },
         },
       },
       {
@@ -180,7 +193,7 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
       },
     ];
     return [...defaultColumns, ...customColumns];
-  }, [people, customColumns, navigate]);
+  }, [workCenters, people, customColumns, navigate]);
 
   const renderContextMenu = useCallback(
     (row: (typeof data)[number]) => {

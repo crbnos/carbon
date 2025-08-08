@@ -36,6 +36,7 @@ import {
 } from "react-icons/lu";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { useProcesses } from "~/components/Form/Process";
 import { Confirm } from "~/components/Modals";
 import {
   useCurrencyFormatter,
@@ -76,6 +77,7 @@ const WorkCentersTable = memo(
       useState<WorkCenter | null>(null);
 
     const formatter = useCurrencyFormatter();
+    const processes = useProcesses();
 
     const onActivate = (data: WorkCenter) => {
       setSelectedWorkCenter(data);
@@ -127,20 +129,29 @@ const WorkCentersTable = memo(
           header: "Processes",
           cell: ({ row }) => (
             <span className="flex gap-2 items-center flex-wrap py-2">
-              {((row.original.processes ?? []) as Array<ListItem>).map(
-                (process) => (
+              {((row.original.processes ?? []) as Array<string>).map((p) => {
+                const process = processes.find((proc) => proc.value === p);
+                return (
                   <Enumerable
-                    key={process.name}
-                    value={process.name}
-                    onClick={() => navigate(path.to.process(process.id))}
+                    key={process?.label}
+                    value={process?.label ?? null}
+                    onClick={() => navigate(path.to.process(process?.value!))}
                     className="cursor-pointer"
                   />
-                )
-              )}
+                );
+              })}
             </span>
           ),
           meta: {
             icon: <LuCog />,
+            filter: {
+              type: "static",
+              options: processes.map((process) => ({
+                value: process.value,
+                label: <Enumerable value={process.label} />,
+              })),
+              isArray: true,
+            },
           },
         },
         {
