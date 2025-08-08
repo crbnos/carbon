@@ -1,16 +1,13 @@
 {
   "name": "@carbon/lib",
-  "type": "module",
   "dependencies": {
     "@carbon/auth": "*",
     "@carbon/database": "*",
     "@carbon/kv": "*",
-    "@slack/bolt": "~4.4.0",
-    "@slack/oauth": "~3.0.3",
-    "@slack/web-api": "~7.6.0",
     "@supabase/supabase-js": "^2.40.0",
     "@trigger.dev/sdk": "3.3.12",
-    "resend": "^3.1.0"
+    "resend": "^3.1.0",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@carbon/logger": "*",

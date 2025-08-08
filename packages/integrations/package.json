@@ -3,7 +3,9 @@
   "version": "*",
   "exports": {
     ".": "./src/index.ts",
-    "./exchange-rates/exchange-rates.server": "./src/exchange-rates/exchange-rates.server.ts"
+    "./exchange-rates/exchange-rates.server": "./src/exchange-rates/exchange-rates.server.ts",
+    "./slack": "./src/slack/lib/index.ts",
+    "./onshape": "./src/onshape/lib/index.ts"
   },
   "jest": {
     "preset": "@carbon/jest/node"
@@ -15,7 +17,12 @@
     "lint": "TIMING=1 eslint \"src/**/*.ts*\"",
     "test": "jest"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@slack/bolt": "~4.4.0",
+    "@slack/oauth": "~3.0.3",
+    "@slack/web-api": "~7.6.0",
+    "zod": "^3.24.1"
+  },
   "devDependencies": {
     "@carbon/tsconfig": "*",
     "typescript": "^5.2.2"

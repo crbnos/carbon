@@ -23,6 +23,7 @@ export default defineConfig({
   },
   ssr: {
     noExternal: [
+      "@slack/bolt",
       "react-tweet",
       "react-dropzone",
       "react-icons",

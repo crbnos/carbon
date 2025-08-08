@@ -1,6 +1,7 @@
 import { LogLevel, App as SlackApp } from "@slack/bolt";
 import { InstallProvider } from "@slack/oauth";
 import { WebClient } from "@slack/web-api";
+import { z } from "zod";
 
 import {
   SLACK_CLIENT_ID,
@@ -9,6 +10,30 @@ import {
   SLACK_SIGNING_SECRET,
   SLACK_STATE_SECRET,
 } from "@carbon/auth";
+
+export const slackAuthResponseSchema = z.object({
+  ok: z.literal(true),
+  app_id: z.string(),
+  authed_user: z.object({
+    id: z.string(),
+  }),
+  code: z.string(),
+  scope: z.string(),
+  token_type: z.literal("bot"),
+  access_token: z.string(),
+  bot_user_id: z.string(),
+  team: z.object({
+    id: z.string(),
+    name: z.string(),
+  }),
+  incoming_webhook: z.object({
+    channel: z.string(),
+    channel_id: z.string(),
+    configuration_url: z.string().url(),
+    url: z.string().url(),
+  }),
+  state: z.any(),
+});
 
 let slackInstaller: InstallProvider | null = null;
 
@@ -47,11 +72,11 @@ export const createSlackWebClient = ({ token }: { token: string }) => {
   return new WebClient(token);
 };
 
-export const getInstallUrl = ({
-  teamId,
+export const getSlackInstallUrl = ({
+  companyId,
   userId,
 }: {
-  teamId: string;
+  companyId: string;
   userId: string;
 }) => {
   return getSlackInstaller().generateInstallUrl({
@@ -66,6 +91,6 @@ export const getInstallUrl = ({
       "files:read",
     ],
     redirectUri: SLACK_OAUTH_REDIRECT_URL,
-    metadata: JSON.stringify({ teamId, userId }),
+    metadata: JSON.stringify({ companyId, userId }),
   });
 };

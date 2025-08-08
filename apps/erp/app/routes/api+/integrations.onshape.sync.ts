@@ -1,6 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { onShapeDataValidator } from "@carbon/integrations";
+import { onShapeDataValidator } from "@carbon/integrations/onshape";
 import { FunctionRegion } from "@supabase/supabase-js";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
 
