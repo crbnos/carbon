@@ -100,8 +100,7 @@ export default function WorkCenterRoute() {
     machineRate: workCenter?.machineRate ?? 0,
     name: workCenter?.name ?? "",
     overheadRate: workCenter?.overheadRate ?? 0,
-    // @ts-ignore
-    processes: (workCenter?.processes ?? []).map((p) => p.id) ?? [],
+    processes: workCenter?.processes ?? [],
     requiredAbilityId: workCenter?.requiredAbilityId ?? undefined,
     ...getCustomFields(workCenter?.customFields),
   };

@@ -94,8 +94,7 @@ export default function ProcessRoute() {
     name: process.name!,
     processType: process.processType ?? "Inside",
     defaultStandardFactor: process.defaultStandardFactor ?? "Minutes/Piece",
-    // @ts-ignore
-    workCenters: (process.workCenters ?? []).map((wc) => wc.id) ?? [],
+    workCenters: process.workCenters ?? [],
     // @ts-ignore
     suppliers: (process.suppliers ?? []).map((s) => s.id) ?? [],
     ...getCustomFields(process.customFields),
