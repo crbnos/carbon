@@ -1,6 +1,7 @@
 {
   "name": "@carbon/integrations",
   "version": "*",
+  "type": "module",
   "exports": {
     ".": "./src/index.ts",
     "./exchange-rates/exchange-rates.server": "./src/exchange-rates/exchange-rates.server.ts",
