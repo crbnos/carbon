@@ -641,11 +641,11 @@ export const modules: Config = [
               {
                 id: "quote-overview",
                 loomUrl:
-                  "https://www.loom.com/share/e19760ef2466485ba70a35a63d49e263?sid=7e51c567-87b3-4962-9dc5-73c3bf8851ad",
+                  "https://www.loom.com/share/043ced81ea304fa089802006374b1556?sid=aef9124a-eaf9-4320-835f-d218a73d62cc",
                 name: "Quote Overview",
                 description:
                   "Understand the structure and components of a quote in Carbon.",
-                duration: 210,
+                duration: 108,
               },
 
               {
