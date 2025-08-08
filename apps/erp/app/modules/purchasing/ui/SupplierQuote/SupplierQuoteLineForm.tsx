@@ -79,14 +79,12 @@ const SupplierQuoteLineForm = ({
     supplierPartId: string;
     description: string;
     itemId: string;
-    itemReadableId: string;
     inventoryUom: string;
     purchaseUom: string;
     conversionFactor: number;
   }>({
     supplierPartId: initialValues.supplierPartId ?? "",
     itemId: initialValues.itemId ?? "",
-    itemReadableId: initialValues.itemReadableId ?? "",
     description: initialValues.description ?? "",
     inventoryUom: initialValues.inventoryUnitOfMeasureCode ?? "",
     purchaseUom: initialValues.purchaseUnitOfMeasureCode ?? "",
@@ -184,7 +182,7 @@ const SupplierQuoteLineForm = ({
                 <ModalCardHeader>
                   <ModalCardTitle>
                     {isEditing
-                      ? itemData?.itemReadableId ?? "Supplier Quote Line"
+                      ? "Supplier Quote Line"
                       : "New Supplier Quote Line"}
                   </ModalCardTitle>
                   <ModalCardDescription>
@@ -220,10 +218,6 @@ const SupplierQuoteLineForm = ({
                 <Hidden name="id" />
                 <Hidden name="supplierQuoteId" />
                 <Hidden
-                  name="itemReadableId"
-                  value={itemData?.itemReadableId}
-                />
-                <Hidden
                   name="inventoryUnitOfMeasureCode"
                   value={itemData?.inventoryUom}
                 />
@@ -247,7 +241,6 @@ const SupplierQuoteLineForm = ({
                           setItemData({
                             ...itemData,
                             itemId: "",
-                            itemReadableId: "",
                             description: "",
                             inventoryUom: "",
                             purchaseUom: "",

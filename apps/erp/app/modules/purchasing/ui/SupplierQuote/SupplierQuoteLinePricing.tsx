@@ -240,9 +240,7 @@ const SupplierQuoteLinePricing = ({
                 </HStack>
               </Td>
               {quantities.map((quantity, index) => {
-                const price =
-                  (prices[quantity]?.supplierUnitPrice ?? 0) *
-                  (prices[quantity]?.exchangeRate ?? 1);
+                const price = prices[quantity]?.unitPrice ?? 0;
                 return (
                   <Td key={index} className="group-hover:bg-muted/50">
                     <VStack spacing={0}>
@@ -382,10 +380,10 @@ const SupplierQuoteLinePricing = ({
                   {quantities.map((quantity, index) => {
                     const subtotal =
                       ((prices[quantity]?.supplierUnitPrice ?? 0) * quantity +
-                        (prices[quantity]?.supplierShippingCost ?? 0)) *
+                        (prices[quantity]?.supplierShippingCost ?? 0)) /
                       (prices[quantity]?.exchangeRate ?? 1);
                     const tax =
-                      (prices[quantity]?.supplierTaxAmount ?? 0) *
+                      (prices[quantity]?.supplierTaxAmount ?? 0) /
                       (prices[quantity]?.exchangeRate ?? 1);
                     const price = subtotal + tax;
 
