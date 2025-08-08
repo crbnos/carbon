@@ -96,14 +96,13 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
         cell: ({ row }) => (
           <span className="flex gap-2 items-center flex-wrap py-2">
             {((row.original.workCenters ?? []) as Array<ListItem>).map((wc) => (
-              <Badge
+              <Enumerable
                 key={wc.name}
-                variant="secondary"
                 onClick={() => navigate(path.to.workCenter(wc.id))}
+                variant="secondary"
                 className="cursor-pointer"
-              >
-                {wc.name}
-              </Badge>
+                value={wc.name}
+              />
             ))}
           </span>
         ),
