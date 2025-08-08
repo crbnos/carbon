@@ -26,6 +26,11 @@ declare global {
       SESSION_SECRET: string;
       SESSION_KEY: string;
       SESSION_ERROR_KEY: string;
+      SLACK_CLIENT_ID: string;
+      SLACK_CLIENT_SECRET: string;
+      SLACK_OAUTH_REDIRECT_URL: string;
+      SLACK_SIGNING_SECRET: string;
+      SLACK_STATE_SECRET: string;
       STRIPE_SECRET_KEY: string;
       STRIPE_WEBHOOK_SECRET: string;
       STRIPE_BYPASS_COMPANY_IDS: string;
@@ -109,9 +114,29 @@ export const RESEND_DOMAIN =
   getEnv("RESEND_DOMAIN", {
     isRequired: false,
   }) ?? "carbon.ms";
+
 export const SLACK_BOT_TOKEN = getEnv("SLACK_BOT_TOKEN", {
   isRequired: false,
 });
+export const SLACK_CLIENT_ID = getEnv("SLACK_CLIENT_ID", {
+  isRequired: false,
+});
+export const SLACK_CLIENT_SECRET = getEnv("SLACK_CLIENT_SECRET", {
+  isRequired: false,
+  isSecret: true,
+});
+export const SLACK_OAUTH_REDIRECT_URL = getEnv("SLACK_OAUTH_REDIRECT_URL", {
+  isRequired: false,
+});
+export const SLACK_SIGNING_SECRET = getEnv("SLACK_SIGNING_SECRET", {
+  isRequired: false,
+  isSecret: true,
+});
+export const SLACK_STATE_SECRET = getEnv("SLACK_STATE_SECRET", {
+  isRequired: false,
+  isSecret: true,
+});
+
 export const SUPABASE_SERVICE_ROLE_KEY = getEnv("SUPABASE_SERVICE_ROLE_KEY");
 export const SESSION_SECRET = getEnv("SESSION_SECRET");
 export const SESSION_KEY = "auth";
