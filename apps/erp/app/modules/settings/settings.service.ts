@@ -474,7 +474,7 @@ export async function upsertIntegration(
     updatedBy: string;
   }
 ) {
-  return client.from("companyIntegration").upsert([update]);
+  return client.from("companyIntegration").upsert([update]).select().single();
 }
 
 export async function updateDigitalQuoteSetting(

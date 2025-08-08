@@ -16,12 +16,14 @@ export const integrations = [
   PaperlessParts,
   Onshape,
   Slack,
+  Sage,
   QuickBooks,
   Xero,
   Zapier,
 ];
 
 export { Onshape, Logo as OnshapeLogo } from "./onshape/config";
-export * from "./onshape/lib";
+export { Slack } from "./slack/config";
 
+// TODO: export as @carbon/integrations/paperless
 export { PaperlessPartsClient } from "./paperless-parts/lib/client";

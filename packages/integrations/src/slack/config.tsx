@@ -5,16 +5,47 @@ export const Slack: IntegrationConfig = {
   name: "Slack",
   id: "slack",
   category: "Assistant",
-  active: false,
+  active: true,
   logo: Logo,
-  shortDescription:
-    "Integrating with Carbon enables you to use Carbon Assistant within your Slack workspace.",
+  shortDescription: "Use the Carbon Assistant in your Slack workspace.",
   description:
-    "Integrating Carbon with Slack brings powerful capabilities directly into your team's communication hub. With this integration, you can seamlessly interact with Carbon without leaving your Slack workspace, enabling quick access to insights and actions.",
+    "Integrating Carbon with Slack allows you to use the Carbon Assistant to complete tasks from your Slack workspace.",
   images: [],
   settings: [],
   schema: z.object({}),
-  onInitialize: () => {},
+  onInitialize: async () => {
+    const response = await fetch("/api/integrations/slack/install").then(
+      (res) => res.json()
+    );
+
+    const { url } = response;
+
+    const width = 600;
+    const height = 800;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2.5;
+
+    const popup = window.open(
+      url,
+      "",
+      `toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width=${width}, height=${height}, top=${top}, left=${left}`
+    );
+
+    if (!popup) {
+      window.location.href = url;
+      return;
+    }
+
+    const listener = (e: MessageEvent) => {
+      if (e.data === "app_oauth_completed") {
+        window.location.reload();
+        window.removeEventListener("message", listener);
+        popup.close();
+      }
+    };
+
+    window.addEventListener("message", listener);
+  },
   onUninstall: () => {},
 };
 
