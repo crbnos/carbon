@@ -127,7 +127,7 @@ export const modules: Config = [
                 name: "Carbon's Modules",
                 description:
                   "Learn about Carbon's modular architecture and how different modules work together to provide comprehensive business management capabilities.",
-                duration: 353,
+                duration: 371,
               },
               {
                 id: "architecture-overview",
