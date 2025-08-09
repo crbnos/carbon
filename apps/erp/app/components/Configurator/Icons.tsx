@@ -1,5 +1,6 @@
 import { cn } from "@carbon/react";
 import {
+  LuAtom,
   LuCalendar,
   LuHash,
   LuList,
@@ -29,6 +30,8 @@ export function ConfiguratorDataTypeIcon({
       return <LuList className={cn("w-4 h-4 text-orange-600", className)} />;
     case "date":
       return <LuCalendar className={cn("w-4 h-4 text-red-600", className)} />;
+    case "material":
+      return <LuAtom className={cn("w-4 h-4 text-yellow-600", className)} />;
     default:
       return null;
   }

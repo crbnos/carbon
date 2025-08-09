@@ -1,4 +1,4 @@
-import { Badge, MenuIcon, MenuItem } from "@carbon/react";
+import { Badge, Copy, MenuIcon, MenuItem } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -6,6 +6,7 @@ import {
   LuCircleCheck,
   LuDessert,
   LuGlassWater,
+  LuKeySquare,
   LuPencil,
   LuTrash,
 } from "react-icons/lu";
@@ -67,6 +68,19 @@ const MaterialFinishesTable = memo(
           },
         },
 
+        {
+          accessorKey: "id",
+          header: "ID",
+          cell: ({ row }) => (
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-xs">{row.original.id}</span>
+              <Copy text={row.original.id!} />
+            </div>
+          ),
+          meta: {
+            icon: <LuKeySquare />,
+          },
+        },
         {
           accessorKey: "companyId",
           header: "Standard",

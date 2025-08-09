@@ -35,6 +35,15 @@ import type {
   getUnitOfMeasuresList,
 } from "./items.service";
 
+export type MaterialConfigurationData = {
+  materialId?: string;
+  materialSubstanceId?: string;
+  materialFormId?: string;
+  materialTypeId?: string;
+  materialGradeId?: string;
+  materialFinishId?: string;
+};
+
 export type ConfigurationParameter = NonNullable<
   Awaited<ReturnType<typeof getConfigurationParameters>>["parameters"]
 >[number];
