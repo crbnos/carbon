@@ -85,6 +85,8 @@ export const useWorkCenters = (args: {
     workCenterFetcher.load(path.to.api.workCenters);
   });
 
+  console.log({ args, data: workCenterFetcher.data });
+
   const options = useMemo(
     () =>
       workCenterFetcher.data?.data
@@ -92,15 +94,13 @@ export const useWorkCenters = (args: {
             .filter((f) => {
               if (processId && locationId) {
                 return (
-                  // @ts-ignore
-                  (f.processes ?? []).map((p) => p.id).includes(processId) &&
+                  (f.processes ?? []).includes(processId) &&
                   f.locationId === locationId
                 );
               }
 
               if (processId) {
-                // @ts-ignore
-                return (f.processes ?? []).map((p) => p.id).includes(processId);
+                return (f.processes ?? []).includes(processId);
               }
 
               if (locationId) {
