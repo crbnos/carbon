@@ -119,6 +119,7 @@ export const issueValidator = z.object({
   priority: z.enum(nonConformancePriority),
   source: z.enum(nonConformanceSource),
   name: z.string().min(1, { message: "Name is required" }),
+  description: zfd.text(z.string().optional()),
   investigationTypeIds: z.array(z.string()).optional(),
   requiredActionIds: z.array(z.string()).optional(),
   approvalRequirements: z
