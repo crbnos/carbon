@@ -1,10 +1,11 @@
 import type * as Monaco from "monaco-editor";
-import {
-  typeMap,
-  type ConfiguratorDataType,
-  type Parameter,
-  type ReturnType,
+import type {
+  ConfiguratorDataType,
+  MaterialValue,
+  Parameter,
+  ReturnType,
 } from "./types";
+import { typeMap } from "./types";
 
 const MATERIAL_TYPE =
   "{ id: string; materialFormId: string | null; materialSubstanceId: string | null; materialTypeId: string | null; dimensionId: string | null; finishId: string | null; gradeId: string | null; }";
@@ -163,7 +164,7 @@ function configure(params: Params): ${returnTypeStr} {
 export function getDefaultValue(
   type: ConfiguratorDataType,
   listOptions: string[] | null
-): string | import("./types").MaterialValue {
+): string | MaterialValue {
   switch (type) {
     case "numeric":
       return "1";
@@ -180,7 +181,7 @@ export function getDefaultValue(
         materialFormId: "plate",
         materialSubstanceId: "steel",
         materialTypeId: null,
-        dimensionId: "plate-1-4",
+        dimensionId: "plate-1/4",
         finishId: null,
         gradeId: "steel-a36",
       };
