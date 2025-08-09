@@ -125,9 +125,9 @@ class ResourceManager {
     processes?.forEach((process) => {
       if (process.workCenters) {
         // only consider work centers at this location
-        const workCenterIds = process.workCenters
-          .map((wc) => wc.id)
-          .filter((wc) => workCenters?.some((w) => w.id === wc));
+        const workCenterIds = process.workCenters.filter((wcId) =>
+          workCenters?.some((w) => w.id === wcId)
+        );
         this.workCentersByProcess.set(process.id!, workCenterIds);
       }
     });
