@@ -301,6 +301,13 @@ serve(async (req: Request) => {
           throw new Error("Failed to get related work centers");
         }
 
+        const hydratedConfiguration = await hydrateConfiguration(
+          client,
+          configuration,
+          itemId,
+          companyId
+        );
+
         const [methodTrees, configurationRules] = await Promise.all([
           getMethodTree(client, makeMethod.data.id!),
           isConfigured
@@ -372,7 +379,7 @@ serve(async (req: Request) => {
                 const mod = await importTypeScript(
                   configurationCodeByField[fieldKey]
                 );
-                const result = await mod.configure(configuration);
+                const result = await mod.configure(hydratedConfiguration);
                 return (result ?? defaultValue) as T;
               } catch (err) {
                 console.error(err);
@@ -517,7 +524,7 @@ serve(async (req: Request) => {
               const mod = await importTypeScript(
                 configurationCodeByField[bopConfigurationKey]
               );
-              bopConfiguration = await mod.configure(configuration);
+              bopConfiguration = await mod.configure(hydratedConfiguration);
             }
 
             if (bopConfiguration) {
@@ -756,7 +763,7 @@ serve(async (req: Request) => {
               const mod = await importTypeScript(
                 configurationCodeByField[bomConfigurationKey]
               );
-              bomConfiguration = await mod.configure(configuration);
+              bomConfiguration = await mod.configure(hydratedConfiguration);
             }
 
             if (bomConfiguration) {
@@ -1179,6 +1186,13 @@ serve(async (req: Request) => {
           throw new Error("Failed to get related work centers");
         }
 
+        const hydratedConfiguration = await hydrateConfiguration(
+          client,
+          configuration,
+          itemId,
+          companyId
+        );
+
         const [methodTrees] = await Promise.all([
           getMethodTree(client, makeMethod.data.id!),
         ]);
@@ -1243,7 +1257,7 @@ serve(async (req: Request) => {
               try {
                 const code = configurationCodeByField[fieldKey];
                 const mod = await importTypeScript(code);
-                const result = await mod.configure(configuration);
+                const result = await mod.configure(hydratedConfiguration);
 
                 return (result ?? defaultValue) as T;
               } catch (err) {
@@ -1392,7 +1406,7 @@ serve(async (req: Request) => {
               const mod = await importTypeScript(
                 configurationCodeByField[bopConfigurationKey]
               );
-              bopConfiguration = await mod.configure(configuration);
+              bopConfiguration = await mod.configure(hydratedConfiguration);
             }
 
             if (bopConfiguration) {
@@ -1617,7 +1631,7 @@ serve(async (req: Request) => {
               const mod = await importTypeScript(
                 configurationCodeByField[bomConfigurationKey]
               );
-              bomConfiguration = await mod.configure(configuration);
+              bomConfiguration = await mod.configure(hydratedConfiguration);
             }
 
             if (bomConfiguration) {
@@ -4602,4 +4616,97 @@ async function insertProcedureDataForJobOperation(
     })
     .where("id", "=", operationId)
     .execute();
+}
+
+async function hydrateConfiguration(
+  client: SupabaseClient<Database>,
+  configuration: Record<string, unknown> | undefined,
+  itemId: string | undefined | null,
+  companyId: string
+): Promise<Record<string, unknown> | undefined> {
+  try {
+    if (!configuration || !itemId || Object.keys(configuration).length === 0) {
+      return configuration;
+    }
+
+    const materialParams = await client
+      .from("configurationParameter")
+      .select("key")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId)
+      .eq("dataType", "material");
+
+    if (materialParams.error) return configuration;
+
+    const materialKeys = new Set((materialParams.data ?? []).map((p) => p.key));
+
+    if (materialKeys.size === 0) return configuration;
+
+    const entries = Object.entries(configuration).filter(
+      ([key, value]) =>
+        materialKeys.has(key) && typeof value === "string" && value
+    );
+
+    if (entries.length === 0) return configuration;
+
+    const itemIds = entries.map(([, value]) => value as string);
+
+    // Get items that correspond to the item IDs
+    const items = await client
+      .from("item")
+      .select("id, readableId")
+      .in("id", itemIds)
+      .eq("companyId", companyId);
+
+    if (items.error) return configuration;
+
+    // Create map of itemId to readableId (which is the materialId)
+    const itemIdToMaterialId = new Map(
+      items.data?.map((i) => [i.id, i.readableId]) ?? []
+    );
+
+    const materialIds = items.data?.map((i) => i.readableId) ?? [];
+
+    // Get material details using the readableIds (which are the material IDs)
+    const materials = await client
+      .from("material")
+      .select(
+        "id, materialFormId, materialSubstanceId, materialTypeId, dimensionId, finishId, gradeId"
+      )
+      .in("id", materialIds)
+      .eq("companyId", companyId);
+
+    if (materials.error) return configuration;
+
+    const materialsByMaterialId = new Map(
+      materials.data?.map((m) => [m.id, m]) ?? []
+    );
+
+    const transformed: Record<string, unknown> = { ...configuration };
+
+    for (const [key, value] of entries) {
+      const itemId = value as string;
+      const materialId = itemIdToMaterialId.get(itemId);
+
+      if (materialId) {
+        const material = materialsByMaterialId.get(materialId);
+        if (material) {
+          transformed[key] = {
+            id: itemId,
+            materialFormId: material.materialFormId ?? null,
+            materialSubstanceId: material.materialSubstanceId ?? null,
+            materialTypeId: material.materialTypeId ?? null,
+            dimensionId: material.dimensionId ?? null,
+            finishId: material.finishId ?? null,
+            gradeId: material.gradeId ?? null,
+          };
+        }
+      }
+    }
+
+    return transformed;
+  } catch (err) {
+    console.error(err);
+    return configuration;
+  }
 }

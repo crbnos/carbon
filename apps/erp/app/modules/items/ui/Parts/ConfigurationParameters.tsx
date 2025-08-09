@@ -911,59 +911,115 @@ function ConfigurableParameter({
           </VStack>
         </ValidatedForm>
       ) : (
-        <div className="flex flex-1 justify-between items-center w-full">
-          <HStack spacing={2} className="w-1/2">
-            <IconButton
-              aria-label="Reorder"
-              icon={<LuGripVertical />}
-              variant="ghost"
-              {...attributes}
-              {...listeners}
-              className="cursor-grab"
-            />
-            <HStack spacing={4} className="flex-1">
-              <div className="bg-muted border rounded-full flex items-center justify-center p-2">
-                <ConfiguratorDataTypeIcon
-                  type={parameter.dataType}
-                  className="w-4 h-4"
-                />
-              </div>
-              <VStack spacing={0}>
-                <span className="text-sm font-medium">{parameter.label}</span>
+        <div className="flex flex-col gap-2 w-full">
+          <div className="flex flex-1 justify-between items-center w-full">
+            <HStack spacing={2} className="w-1/2">
+              <IconButton
+                aria-label="Reorder"
+                icon={<LuGripVertical />}
+                variant="ghost"
+                {...attributes}
+                {...listeners}
+                className="cursor-grab"
+              />
+              <HStack spacing={4} className="flex-1">
+                <div className="bg-muted border rounded-full flex items-center justify-center p-2">
+                  <ConfiguratorDataTypeIcon
+                    type={parameter.dataType}
+                    className="w-4 h-4"
+                  />
+                </div>
+                <VStack spacing={0}>
+                  <span className="text-sm font-medium">{parameter.label}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {parameter.key}
+                  </span>
+                </VStack>
+              </HStack>
+            </HStack>
+            <div className="flex items-center justify-end gap-2">
+              <HStack spacing={2}>
                 <span className="text-xs text-muted-foreground">
-                  {parameter.key}
+                  {isUpdated ? "Updated" : "Created"} {formatRelativeTime(date)}
                 </span>
-              </VStack>
-            </HStack>
-          </HStack>
-          <div className="flex items-center justify-end gap-2">
-            <HStack spacing={2}>
-              <span className="text-xs text-muted-foreground">
-                {isUpdated ? "Updated" : "Created"} {formatRelativeTime(date)}
-              </span>
-              <EmployeeAvatar employeeId={person} withName={false} />
-            </HStack>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  aria-label="Open menu"
-                  icon={<LuEllipsisVertical />}
-                  variant="ghost"
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={disclosure.onOpen}>
-                  Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  destructive
-                  onClick={deleteParameterDisclosure.onOpen}
-                >
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                <EmployeeAvatar employeeId={person} withName={false} />
+              </HStack>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <IconButton
+                    aria-label="Open menu"
+                    icon={<LuEllipsisVertical />}
+                    variant="ghost"
+                  />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={disclosure.onOpen}>
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    destructive
+                    onClick={deleteParameterDisclosure.onOpen}
+                  >
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
+          {parameter.dataType === "material" && (
+            <div className="py-4 px-8 bg-muted/30 rounded-md">
+              <div className="grid grid-cols-1 gap-2">
+                <div>
+                  <span className="text-xs text-muted-foreground">ID</span>
+                  <div className="text-sm font-mono">{parameter.key}.id</div>
+                </div>
+                <div>
+                  <span className="text-xs text-muted-foreground">
+                    Material Form
+                  </span>
+                  <div className="text-sm font-mono">
+                    {parameter.key}.materialFormId
+                  </div>
+                </div>
+                <div>
+                  <span className="text-xs text-muted-foreground">
+                    Substance
+                  </span>
+                  <div className="text-sm font-mono">
+                    {parameter.key}.materialSubstanceId
+                  </div>
+                </div>
+                <div>
+                  <span className="text-xs text-muted-foreground">
+                    Dimension
+                  </span>
+                  <div className="text-sm font-mono">
+                    {parameter.key}.dimensionId
+                  </div>
+                </div>
+                <div>
+                  <span className="text-xs text-muted-foreground">Grade</span>
+                  <div className="text-sm font-mono">
+                    {parameter.key}.gradeId
+                  </div>
+                </div>
+                <div>
+                  <span className="text-xs text-muted-foreground">Finish</span>
+                  <div className="text-sm font-mono">
+                    {parameter.key}.finishId
+                  </div>
+                </div>
+                <div>
+                  <span className="text-xs text-muted-foreground">
+                    Material Type
+                  </span>
+                  <div className="text-sm font-mono">
+                    {parameter.key}.materialTypeId
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
       {deleteParameterDisclosure.isOpen && (

@@ -241,14 +241,18 @@ export default function Configurator({
     try {
       // Create parameters object from the panel
       const parametersObj = parameters.reduce((acc, v) => {
-        acc[v.name] =
-          v.type === "numeric"
-            ? Number(v.value)
-            : v.type === "boolean"
-            ? v.value === "true"
-            : v.value;
+        if (v.type === "material") {
+          acc[v.name] = v.value;
+        } else {
+          acc[v.name] =
+            v.type === "numeric"
+              ? Number(v.value)
+              : v.type === "boolean"
+              ? v.value === "true"
+              : v.value;
+        }
         return acc;
-      }, {} as Record<string, string | number | boolean>);
+      }, {} as Record<string, any>);
 
       // Execute the code
       const fn = new Function(

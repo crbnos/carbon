@@ -21,6 +21,7 @@ export const configurationParameterDataTypes = [
   "numeric",
   "boolean",
   "list",
+  "material",
 ] as const;
 
 export const itemTrackingTypes = [

@@ -2,6 +2,7 @@ import {
   Alert,
   AlertTitle,
   Button,
+  Combobox,
   Input,
   Label,
   Modal,
@@ -31,10 +32,12 @@ import { zfd } from "zod-form-data";
 import type {
   ConfigurationParameter,
   ConfigurationParameterGroup,
+  MaterialConfigurationData,
 } from "~/modules/items/types";
+import { useMaterials } from "~/stores/items";
 
 interface FormData {
-  [key: string]: string | number | boolean;
+  [key: string]: string | number | boolean | MaterialConfigurationData;
 }
 
 interface ParameterFieldProps {
@@ -59,6 +62,10 @@ function getParameterSchema(parameter: ConfigurationParameter) {
       });
     case "boolean":
       return z.boolean();
+    case "material":
+      return z.string({
+        required_error: `${parameter.label} is required`,
+      });
     default:
       return z.any();
   }
@@ -75,6 +82,7 @@ function generateConfigurationSchema(parameters: ConfigurationParameter[]) {
 
 function ParameterField({ parameter }: ParameterFieldProps) {
   const { formData, setFormData } = useConfigurator();
+  const materials = useMaterials();
 
   const handleChange = (value: string | number | boolean) => {
     setFormData({ ...formData, [parameter.key]: value });
@@ -168,6 +176,28 @@ function ParameterField({ parameter }: ParameterFieldProps) {
             id={parameter.key}
             checked={(formData[parameter.key] as boolean) || false}
             onCheckedChange={handleChange}
+          />
+        </div>
+      );
+
+    case "material":
+      return (
+        <div className="space-y-2">
+          <Label
+            className="text-xs text-muted-foreground"
+            htmlFor={parameter.key}
+          >
+            {parameter.label}
+          </Label>
+          <Combobox
+            id={parameter.key}
+            options={materials.map((material) => ({
+              label: material.name,
+              value: material.id,
+              helper: material.readableIdWithRevision,
+            }))}
+            value={formData[parameter.key] as string}
+            onChange={(value) => handleChange(value)}
           />
         </div>
       );
