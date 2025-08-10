@@ -2,6 +2,7 @@ import {
   SLACK_CLIENT_ID,
   SLACK_CLIENT_SECRET,
   SLACK_OAUTH_REDIRECT_URL,
+  VERCEL_URL,
 } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { Slack } from "@carbon/integrations";
@@ -123,7 +124,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
       const requestUrl = new URL(request.url);
 
-      if (process.env.NODE_ENV === "development") {
+      if (!VERCEL_URL || VERCEL_URL.includes("localhost")) {
         requestUrl.protocol = "http";
       }
 
