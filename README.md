@@ -189,6 +189,13 @@ $ cp ./.env.example ./.env
 - `STRIPE_SECRET_KEY="sk_test_*************"`
 - `STRIP_WEBHOOK_SECRET="whsec_************"`
 
+6. Signing in requires you to setup one of two methods:
+   - Email requires a `RESEND_API_KEY="re_**********"`
+   - Sign-in with Google requires a [Google auth client](https://supabase.com/docs/guides/auth/social-login/auth-google) with these variables:
+     - `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID="******.apps.googleusercontent.com"`
+     - `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET="GOCSPX-****************"`
+     - `SUPABASE_AUTH_EXTERNAL_GOOGLE_REDIRECT_URI="http://127.0.0.1:54321/auth/v1/callback"`
+
 Then you can run the following:
 
 ```bash
@@ -202,11 +209,6 @@ Finally, start the apps and packages:
 $ npm run dev
 $ npm run dev:mes        # npm run dev in all apps & packages
 ```
-
-You can now sign in with:
-
-username: <your-email@address.com>
-password: carbon
 
 After installation you should be able run the apps locally.
 
