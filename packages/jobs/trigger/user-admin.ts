@@ -2,7 +2,12 @@ import { task } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
 
 import type { Result } from "@carbon/auth";
-import { CarbonEdition, getAppUrl, getCarbonServiceRole } from "@carbon/auth";
+import {
+  CarbonEdition,
+  getAppUrl,
+  getCarbonServiceRole,
+  RESEND_DOMAIN,
+} from "@carbon/auth";
 import { deactivateUser } from "@carbon/auth/users.server";
 import { InviteEmail } from "@carbon/documents/email";
 import { resend } from "@carbon/lib/resend.server";
@@ -82,7 +87,7 @@ export const userAdminTask = task({
         }
 
         const invitationEmail = await resend.emails.send({
-          from: "Carbon <no-reply@carbon.ms>",
+          from: `Carbon <no-reply@${RESEND_DOMAIN}>`,
           to: user.data.email,
           subject: `You have been invited to join ${company.data?.name} on Carbon`,
           headers: {

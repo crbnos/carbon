@@ -1,4 +1,4 @@
-import { assertIsPost, getAppUrl, success } from "@carbon/auth";
+import { assertIsPost, getAppUrl, RESEND_DOMAIN, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { InviteEmail } from "@carbon/documents/email";
@@ -9,8 +9,8 @@ import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { nanoid } from "nanoid";
 import {
-  CreateSupplierModal,
   createSupplierAccountValidator,
+  CreateSupplierModal,
 } from "~/modules/users";
 import { createSupplierAccount } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
@@ -62,7 +62,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const invitationEmail = await resend.emails.send({
-    from: "Carbon <no-reply@carbon.ms>",
+    from: `Carbon <no-reply@${RESEND_DOMAIN}>`,
     to: result.email,
     subject: `You have been invited to join ${company.data?.name} on Carbon`,
     headers: {

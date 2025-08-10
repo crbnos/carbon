@@ -105,6 +105,10 @@ export const NOVU_APPLICATION_ID = getEnv("NOVU_APPLICATION_ID", {
   isSecret: false,
 });
 export const NOVU_SECRET_KEY = getEnv("NOVU_SECRET_KEY");
+export const RESEND_DOMAIN =
+  getEnv("RESEND_DOMAIN", {
+    isRequired: false,
+  }) ?? "carbon.ms";
 export const SLACK_BOT_TOKEN = getEnv("SLACK_BOT_TOKEN", {
   isRequired: false,
 });

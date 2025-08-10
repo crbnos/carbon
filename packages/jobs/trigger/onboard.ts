@@ -1,4 +1,4 @@
-import { getCarbonServiceRole } from "@carbon/auth";
+import { getCarbonServiceRole, RESEND_DOMAIN } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { GetStartedEmail, WelcomeEmail } from "@carbon/documents/email";
 import { resend } from "@carbon/lib/resend.server";
@@ -28,6 +28,12 @@ export const onboardTask = task({
       throw new Error(user.error.message);
     }
 
+    const from = `Brad from Carbon <${
+      RESEND_DOMAIN === "carbon.ms"
+        ? "brad@carbon.ms"
+        : `no-reply@${RESEND_DOMAIN}`
+    }>`;
+
     await resend.contacts.create({
       email: user.data.email,
       firstName: user.data.firstName,
@@ -43,7 +49,7 @@ export const onboardTask = task({
 
     if (sendOnboardingEmail) {
       await resend.emails.send({
-        from: "Brad from Carbon <brad@carbon.ms>",
+        from,
         to: user.data.email,
         subject: `Welcome to Carbon`,
         html: await render(
@@ -58,7 +64,7 @@ export const onboardTask = task({
 
     if (sendOnboardingEmail) {
       await resend.emails.send({
-        from: "Brad from Carbon <brad@carbon.ms>",
+        from,
         to: user.data.email,
         subject: `Get the most out of Carbon`,
         html: render(

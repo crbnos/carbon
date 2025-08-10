@@ -2,6 +2,7 @@ import { VerificationEmail } from "@carbon/documents/email";
 import { redis } from "@carbon/kv";
 import { resend } from "@carbon/lib/resend.server";
 import { render } from "@react-email/components";
+import { RESEND_DOMAIN } from "../config/env";
 
 export async function sendVerificationCode(email: string) {
   try {
@@ -24,7 +25,7 @@ export async function sendVerificationCode(email: string) {
     );
 
     const result = await resend.emails.send({
-      from: "Carbon <no-reply@carbon.ms>",
+      from: `Carbon <no-reply@${RESEND_DOMAIN}>`,
       to: email,
       subject: "Verify your email address",
       html,

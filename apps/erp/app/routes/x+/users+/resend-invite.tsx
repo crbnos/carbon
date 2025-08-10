@@ -1,4 +1,10 @@
-import { error, getAppUrl, getCarbonServiceRole, success } from "@carbon/auth";
+import {
+  error,
+  getAppUrl,
+  getCarbonServiceRole,
+  RESEND_DOMAIN,
+  success,
+} from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { InviteEmail } from "@carbon/documents/email";
@@ -65,7 +71,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     const invitationEmail = await resend.emails.send({
-      from: "Carbon <no-reply@carbon.ms>",
+      from: `Carbon <no-reply@${RESEND_DOMAIN}>`,
       to: user.data.email,
       subject: `You have been invited to join ${company.data?.name} on Carbon`,
       headers: {

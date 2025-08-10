@@ -190,7 +190,9 @@ $ cp ./.env.example ./.env
 - `STRIP_WEBHOOK_SECRET="whsec_************"`
 
 6. Signing in requires you to setup one of two methods:
-   - Email requires a `RESEND_API_KEY="re_**********"`
+   - Email requires a Resend API key:
+     - `RESEND_API_KEY="re_**********"`
+     - `RESEND_DOMAIN="carbon.ms"`
    - Sign-in with Google requires a [Google auth client](https://supabase.com/docs/guides/auth/social-login/auth-google) with these variables:
      - `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID="******.apps.googleusercontent.com"`
      - `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET="GOCSPX-****************"`
