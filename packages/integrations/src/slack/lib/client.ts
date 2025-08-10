@@ -1,4 +1,4 @@
-import { LogLevel, App as SlackApp } from "@slack/bolt";
+import * as Bolt from "@slack/bolt";
 import { InstallProvider } from "@slack/oauth";
 import { WebClient } from "@slack/web-api";
 import { z } from "zod";
@@ -44,7 +44,7 @@ export const createSlackApp = ({
   token: string;
   botId: string;
 }) => {
-  return new SlackApp({
+  return new Bolt.App({
     signingSecret: SLACK_SIGNING_SECRET,
     token,
     botId,
@@ -62,7 +62,9 @@ export const getSlackInstaller = (): InstallProvider => {
       clientSecret: SLACK_CLIENT_SECRET,
       stateSecret: SLACK_STATE_SECRET,
       logLevel:
-        process.env.NODE_ENV === "development" ? LogLevel.DEBUG : undefined,
+        process.env.NODE_ENV === "development"
+          ? Bolt.LogLevel.DEBUG
+          : undefined,
     });
   }
   return slackInstaller;
