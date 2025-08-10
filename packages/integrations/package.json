@@ -5,7 +5,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./exchange-rates/exchange-rates.server": "./src/exchange-rates/exchange-rates.server.ts",
-    "./slack": "./src/slack/lib/index.ts",
+    "./slack.server": "./src/slack/lib/index.ts",
     "./onshape": "./src/onshape/lib/index.ts"
   },
   "jest": {

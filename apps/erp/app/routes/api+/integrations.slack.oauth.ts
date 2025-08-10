@@ -10,10 +10,14 @@ import {
   createSlackApp,
   getSlackInstaller,
   slackAuthResponseSchema,
-} from "@carbon/integrations/slack";
+} from "@carbon/integrations/slack.server";
 import { json, redirect, type LoaderFunctionArgs } from "@vercel/remix";
 import z from "zod";
 import { upsertIntegration } from "~/modules/settings/settings.service";
+
+export const config = {
+  runtime: "nodejs",
+};
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, userId, companyId } = await requirePermissions(request, {
