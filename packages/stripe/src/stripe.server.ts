@@ -92,7 +92,7 @@ export async function createStripeCustomer({
         },
       },
       {
-        idempotencyKey: `${companyId}-${userId}`,
+        maxNetworkRetries: 3,
       }
     );
 
