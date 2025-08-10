@@ -47,7 +47,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { client, userId } = await requirePermissions(request, {
     update: "parts",
   });
 
@@ -61,11 +61,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
 
   if (validation.error) {
+    console.error(validation.error);
     return validationError(validation.error);
   }
 
   const updatePartManufacturing = await upsertItemManufacturing(client, {
     ...validation.data,
+    requiresConfiguration: validation.data.requiresConfiguration ?? false,
     itemId,
     updatedBy: userId,
     customFields: setCustomFields(formData),

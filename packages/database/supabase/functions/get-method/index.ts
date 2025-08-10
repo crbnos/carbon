@@ -89,22 +89,37 @@ serve(async (req: Request) => {
 
     switch (type) {
       case "itemToItem": {
-        const [sourceMakeMethod, targetMakeMethod] = await Promise.all([
-          client
-            .from("activeMakeMethods")
-            .select("*")
-            .eq("itemId", sourceId)
-            .eq("companyId", companyId)
-            .single(),
-          client
-            .from("activeMakeMethods")
-            .select("*")
-            .eq("itemId", targetId)
-            .eq("companyId", companyId)
-            .single(),
-        ]);
+        const [sourceMakeMethod, targetMakeMethod, targetItemReplenishment] =
+          await Promise.all([
+            client
+              .from("activeMakeMethods")
+              .select("*")
+              .eq("itemId", sourceId)
+              .eq("companyId", companyId)
+              .single(),
+            client
+              .from("activeMakeMethods")
+              .select("*")
+              .eq("itemId", targetId)
+              .eq("companyId", companyId)
+              .single(),
+            client
+              .from("itemReplenishment")
+              .select("*")
+              .eq("itemId", targetId)
+              .eq("companyId", companyId)
+              .single(),
+          ]);
         if (sourceMakeMethod.error || targetMakeMethod.error) {
           throw new Error("Failed to get make methods");
+        }
+
+        if (targetItemReplenishment.error) {
+          throw new Error("Failed to get target item replenishment");
+        }
+
+        if (targetItemReplenishment.data?.requiresConfiguration) {
+          throw new Error("Cannot override method of configured item");
         }
 
         if (
@@ -2020,7 +2035,7 @@ serve(async (req: Request) => {
 
         const itemId = makeMethod.data?.itemId;
 
-        const [jobOperations] = await Promise.all([
+        const [jobOperations, itemReplenishment] = await Promise.all([
           client
             .from("jobOperationsWithMakeMethods")
             .select(
@@ -2028,10 +2043,24 @@ serve(async (req: Request) => {
             )
             .eq("jobId", jobMakeMethod.data.jobId)
             .eq("companyId", companyId),
+          client
+            .from("itemReplenishment")
+            .select("*")
+            .eq("itemId", itemId)
+            .eq("companyId", companyId)
+            .single(),
         ]);
 
         if (jobOperations.error) {
           throw new Error("Failed to get job operations");
+        }
+
+        if (itemReplenishment.error) {
+          throw new Error("Failed to get item replenishment");
+        }
+
+        if (itemReplenishment.data?.requiresConfiguration) {
+          throw new Error("Cannot override method of configured item");
         }
 
         const [jobMethodTrees] = await Promise.all([
@@ -2305,9 +2334,23 @@ serve(async (req: Request) => {
 
         const itemId = makeMethod.data?.itemId;
 
-        const [jobMethodTrees] = await Promise.all([
+        const [jobMethodTrees, itemReplenishment] = await Promise.all([
           getJobMethodTree(client, jobMakeMethod.data.id),
+          client
+            .from("itemReplenishment")
+            .select("*")
+            .eq("itemId", itemId)
+            .eq("companyId", companyId)
+            .single(),
         ]);
+
+        if (itemReplenishment.error) {
+          throw new Error("Failed to get item replenishment");
+        }
+
+        if (itemReplenishment.data?.requiresConfiguration) {
+          throw new Error("Cannot override method of configured item");
+        }
 
         if (jobMethodTrees.error) {
           throw new Error("Failed to get method tree");
@@ -2867,12 +2910,26 @@ serve(async (req: Request) => {
 
         const itemId = makeMethod.data?.itemId;
 
-        const [quoteMethodTrees] = await Promise.all([
+        const [quoteMethodTrees, itemReplenishment] = await Promise.all([
           getQuoteMethodTree(client, quoteMakeMethod.data.id),
+          client
+            .from("itemReplenishment")
+            .select("*")
+            .eq("itemId", itemId)
+            .eq("companyId", companyId)
+            .single(),
         ]);
 
         if (quoteMethodTrees.error) {
           throw new Error("Failed to get method tree");
+        }
+
+        if (itemReplenishment.error) {
+          throw new Error("Failed to get item replenishment");
+        }
+
+        if (itemReplenishment.data?.requiresConfiguration) {
+          throw new Error("Cannot override method of configured item");
         }
 
         const quoteMethodTree = quoteMethodTrees
@@ -3126,7 +3183,7 @@ serve(async (req: Request) => {
 
         const itemId = makeMethod.data?.itemId;
 
-        const [quoteOperations] = await Promise.all([
+        const [quoteOperations, itemReplenishment] = await Promise.all([
           client
             .from("quoteOperationsWithMakeMethods")
             .select(
@@ -3134,10 +3191,24 @@ serve(async (req: Request) => {
             )
             .eq("quoteLineId", quoteMakeMethod.data.quoteLineId)
             .eq("companyId", companyId),
+          client
+            .from("itemReplenishment")
+            .select("*")
+            .eq("itemId", itemId)
+            .eq("companyId", companyId)
+            .single(),
         ]);
 
         if (quoteOperations.error) {
           throw new Error("Failed to get quote operations");
+        }
+
+        if (itemReplenishment.error) {
+          throw new Error("Failed to get item replenishment");
+        }
+
+        if (itemReplenishment.data?.requiresConfiguration) {
+          throw new Error("Cannot override method of configured item");
         }
 
         const [quoteMethodTrees] = await Promise.all([
