@@ -64,7 +64,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     let offset = 0;
     let allDocuments: Array<{ id: string; name: string }> = [];
 
-    while (true) {
+    while (true && offset < 100) {
       const response = await onshapeClient.getElements(did, vid, limit, offset);
 
       if (!response || response.length === 0) {
