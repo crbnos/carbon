@@ -123,7 +123,7 @@ async function handleBlockActions(
   const slackClient = createSlackWebClient({ token: slackToken });
 
   switch (action.action_id) {
-    case "open_ncr_modal":
+    case "ncr":
       const serviceRole = await getCarbonServiceRole();
       const [types, workflows] = await Promise.all([
         getIssueTypesList(serviceRole, companyId),
