@@ -18,7 +18,6 @@ export const config = {
   runtime: "nodejs",
 };
 
-// Slack interactive payload schema
 const slackInteractivePayloadSchema = z.object({
   type: z.string(),
   team: z.object({
@@ -41,7 +40,6 @@ const slackInteractivePayloadSchema = z.object({
 
 export async function action({ request }: ActionFunctionArgs) {
   try {
-    // Verify the request is from Slack
     const formData = await request.formData();
     const payloadString = formData.get("payload") as string;
 
@@ -53,10 +51,8 @@ export async function action({ request }: ActionFunctionArgs) {
       JSON.parse(payloadString)
     );
 
-    // Get the service role client
     const serviceRole = await getCarbonServiceRole();
 
-    // Get the Slack integration for this team
     const integration = await getIntegration(
       serviceRole,
       "slack",
@@ -80,7 +76,6 @@ export async function action({ request }: ActionFunctionArgs) {
       });
     }
 
-    // Handle different interaction types
     switch (payload.type) {
       case "block_actions":
         return handleBlockActions(payload, companyId, slackToken);
@@ -94,7 +89,6 @@ export async function action({ request }: ActionFunctionArgs) {
         );
 
       case "view_closed":
-        // User closed the modal without submitting
         return json({ ok: true });
 
       default:
@@ -130,14 +124,12 @@ async function handleBlockActions(
 
   switch (action.action_id) {
     case "open_ncr_modal":
-      // Get lists for the modal
       const serviceRole = await getCarbonServiceRole();
       const [types, workflows] = await Promise.all([
         getIssueTypesList(serviceRole, companyId),
         getIssueWorkflowsList(serviceRole, companyId),
       ]);
 
-      // Open the NCR creation modal
       await slackClient.views.open({
         trigger_id: payload.trigger_id,
         view: {
@@ -296,7 +288,6 @@ async function handleViewSubmission(
   }
 
   try {
-    // Extract form values
     const values = view.state.values;
     const title = values.title_block.title.value;
     const description = values.description_block?.description?.value || "";
@@ -305,11 +296,9 @@ async function handleViewSubmission(
     const severity =
       values.severity_block?.severity?.selected_option?.value || "Medium";
 
-    // Parse metadata
     const metadata = JSON.parse(view.private_metadata);
     const { channel_id, user_id } = metadata;
 
-    // Get next sequence number
     const nextSequence = await getNextSequence(
       serviceRole,
       "nonConformance",
@@ -320,15 +309,14 @@ async function handleViewSubmission(
       throw new Error("Failed to get next sequence number");
     }
 
-    // Create the non-conformance
     const createResult = await upsertIssue(serviceRole, {
       nonConformanceId: nextSequence.data,
       approvalRequirements: [],
       companyId,
-      createdBy: "system", // TODO: Map Slack user to system user
+      createdBy: "system",
       description,
       investigationTypeIds: [],
-      locationId: "", // TODO
+      locationId: "",
       name: title,
       nonConformanceTypeId: typeId,
       nonConformanceWorkflowId: workflowId,
@@ -345,7 +333,6 @@ async function handleViewSubmission(
     const ncrId = createResult.data.id;
     const slackClient = createSlackWebClient({ token: slackToken });
 
-    // Post initial message to channel
     const threadMessage = await slackClient.chat.postMessage({
       channel: channel_id,
       unfurl_links: false,
@@ -403,7 +390,6 @@ async function handleViewSubmission(
       ],
     });
 
-    // Store the thread mapping in the database
     if (threadMessage.ts) {
       await serviceRole.from("slackDocumentThread").insert({
         documentType: "nonConformance",
@@ -414,7 +400,6 @@ async function handleViewSubmission(
         createdBy: user_id,
       });
 
-      // Trigger async job to sync additional details
       await tasks.trigger("slack-document-created", {
         documentType: "nonConformance",
         documentId: ncrId,
@@ -424,14 +409,12 @@ async function handleViewSubmission(
       });
     }
 
-    // Close the modal with success
     return json({
       response_action: "clear",
     });
   } catch (error) {
     console.error("Error creating NCR:", error);
 
-    // Show error in modal
     return json({
       response_action: "errors",
       errors: {
