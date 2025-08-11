@@ -205,10 +205,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         .map((wc) => ({
           id: wc.id!,
           title: wc.name!,
-          type:
-            (wc.processes as { id: string; name: string }[] | undefined)?.map(
-              (p) => p.id
-            ) ?? [],
+          type: wc.processes ?? [],
           active: activeWorkCenters.has(wc.id),
         }))
         .sort((a, b) => a.title.localeCompare(b.title)) satisfies Column[],
