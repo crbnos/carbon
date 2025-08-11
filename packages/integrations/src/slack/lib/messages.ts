@@ -1,14 +1,13 @@
 import type { KnownBlock } from "@slack/types";
 
-export type DocumentType =
-  | "nonConformance"
-  | "quote"
-  | "salesOrder"
-  | "job"
-  | "purchaseOrder"
-  | "invoice"
-  | "receipt"
-  | "shipment";
+export type DocumentType = "nonConformance";
+// | "quote"
+// | "salesOrder"
+// | "job"
+// | "purchaseOrder"
+// | "invoice"
+// | "receipt"
+// | "shipment";
 
 export interface BaseDocumentData {
   id: string;
@@ -34,35 +33,9 @@ export interface NonConformanceData extends BaseDocumentData {
   requiredActions?: string[];
 }
 
-export interface QuoteData extends BaseDocumentData {
-  documentType: "quote";
-  quoteId: string;
-  customerName?: string;
-  expirationDate?: string;
-}
+export type DocumentData = NonConformanceData;
 
-export interface SalesOrderData extends BaseDocumentData {
-  documentType: "salesOrder";
-  salesOrderId: string;
-  customerName?: string;
-  deliveryDate?: string;
-}
-
-export interface JobData extends BaseDocumentData {
-  documentType: "job";
-  jobId: string;
-  partNumber?: string;
-  quantity?: number;
-  dueDate?: string;
-}
-
-export type DocumentData =
-  | NonConformanceData
-  | QuoteData
-  | SalesOrderData
-  | JobData;
-
-export interface TaskUpdate {
+export interface IssueTaskUpdate {
   taskType: "investigation" | "action" | "approval";
   taskName: string;
   status: string;
@@ -72,22 +45,19 @@ export interface TaskUpdate {
   notes?: string;
 }
 
-export interface StatusUpdate {
+export interface IssueStatusUpdate {
   previousStatus: string;
   newStatus: string;
   updatedBy: string;
   reason?: string;
 }
 
-export interface AssignmentUpdate {
+export interface IssueAssignmentUpdate {
   previousAssignee?: string;
   newAssignee: string;
   updatedBy: string;
 }
 
-/**
- * Get document type display info
- */
 function getDocumentTypeInfo(documentType: DocumentType): {
   emoji: string;
   name: string;
@@ -98,37 +68,6 @@ function getDocumentTypeInfo(documentType: DocumentType): {
       emoji: "⚠️",
       name: "Issue",
       urlPath: "/x/issue",
-    },
-    quote: {
-      emoji: "💰",
-      name: "Quote",
-      urlPath: "/x/quote",
-    },
-    salesOrder: {
-      emoji: "📦",
-      name: "Sales Order",
-      urlPath: "/x/sales-order",
-    },
-    job: { emoji: "🔧", name: "Job", urlPath: "/x/job" },
-    purchaseOrder: {
-      emoji: "📋",
-      name: "Purchase Order",
-      urlPath: "/x/purchase-order",
-    },
-    invoice: {
-      emoji: "🧾",
-      name: "Invoice",
-      urlPath: "/x/invoice",
-    },
-    receipt: {
-      emoji: "📥",
-      name: "Receipt",
-      urlPath: "/x/receipt",
-    },
-    shipment: {
-      emoji: "🚚",
-      name: "Shipment",
-      urlPath: "/x/shipment",
     },
   };
 
@@ -142,14 +81,8 @@ function getDocumentIdentifier(data: DocumentData): string {
   switch (data.documentType) {
     case "nonConformance":
       return (data as NonConformanceData).nonConformanceId;
-    case "quote":
-      return (data as QuoteData).quoteId;
-    case "salesOrder":
-      return (data as SalesOrderData).salesOrderId;
-    case "job":
-      return (data as JobData).jobId;
+
     default:
-      // @ts-expect-error - this is a fallback for unknown document types
       throw new Error(`Unknown document type: ${data.documentType}`);
   }
 }
@@ -273,42 +206,6 @@ function getDocumentSpecificFields(data: DocumentData): any[] {
         });
       }
       break;
-
-    case "quote":
-      const quoteData = data as QuoteData;
-      if (quoteData.customerName) {
-        fields.push({
-          type: "mrkdwn",
-          text: `*Customer:*\n${quoteData.customerName}`,
-        });
-      }
-      break;
-
-    case "salesOrder":
-      const soData = data as SalesOrderData;
-      if (soData.customerName) {
-        fields.push({
-          type: "mrkdwn",
-          text: `*Customer:*\n${soData.customerName}`,
-        });
-      }
-      break;
-
-    case "job":
-      const jobData = data as JobData;
-      if (jobData.partNumber) {
-        fields.push({
-          type: "mrkdwn",
-          text: `*Part Number:*\n${jobData.partNumber}`,
-        });
-      }
-      if (jobData.quantity) {
-        fields.push({
-          type: "mrkdwn",
-          text: `*Quantity:*\n${jobData.quantity.toLocaleString()}`,
-        });
-      }
-      break;
   }
 
   return fields;
@@ -348,36 +245,6 @@ function getDocumentSpecificSections(data: DocumentData): KnownBlock[] {
         });
       }
       break;
-
-    case "quote":
-      const quoteData = data as QuoteData;
-      if (quoteData.expirationDate) {
-        sections.push({
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: `*Expires:* <!date^${Math.floor(
-              new Date(quoteData.expirationDate).getTime() / 1000
-            )}^{date_short_pretty}|${quoteData.expirationDate}>`,
-          },
-        });
-      }
-      break;
-
-    case "job":
-      const jobData = data as JobData;
-      if (jobData.dueDate) {
-        sections.push({
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: `*Due Date:* <!date^${Math.floor(
-              new Date(jobData.dueDate).getTime() / 1000
-            )}^{date_short_pretty}|${jobData.dueDate}>`,
-          },
-        });
-      }
-      break;
   }
 
   return sections;
@@ -389,7 +256,7 @@ function getDocumentSpecificSections(data: DocumentData): KnownBlock[] {
 export function formatStatusUpdate(
   documentType: DocumentType,
   documentIdentifier: string,
-  update: StatusUpdate
+  update: IssueStatusUpdate
 ): KnownBlock[] {
   const typeInfo = getDocumentTypeInfo(documentType);
 
@@ -432,7 +299,7 @@ export function formatStatusUpdate(
 export function formatTaskUpdate(
   documentType: DocumentType,
   documentIdentifier: string,
-  update: TaskUpdate
+  update: IssueTaskUpdate
 ): KnownBlock[] {
   const taskTypeLabel = {
     investigation: "Investigation",
@@ -516,7 +383,7 @@ export function formatTaskUpdate(
 export function formatAssignmentUpdate(
   documentType: DocumentType,
   documentIdentifier: string,
-  update: AssignmentUpdate
+  update: IssueAssignmentUpdate
 ): KnownBlock[] {
   const typeInfo = getDocumentTypeInfo(documentType);
 
