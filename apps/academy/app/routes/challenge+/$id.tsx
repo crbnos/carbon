@@ -1,6 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { Alert, AlertDescription, AlertTitle, Button, cn } from "@carbon/react";
-import type { ActionFunctionArgs } from "@remix-run/node";
 import {
   Form,
   Link,
@@ -8,6 +7,7 @@ import {
   useParams,
   useSubmit,
 } from "@remix-run/react";
+import type { ActionFunctionArgs } from "@vercel/remix";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ConfettiExplosion from "react-confetti-explosion";
 import {

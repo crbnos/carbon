@@ -1,6 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
-import { json, type ActionFunctionArgs } from "@remix-run/node";
+import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 

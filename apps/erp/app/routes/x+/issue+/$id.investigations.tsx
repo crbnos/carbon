@@ -7,8 +7,8 @@ import {
   HStack,
   VStack,
 } from "@carbon/react";
-import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useParams } from "@remix-run/react";
+import { json, type LoaderFunctionArgs } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
 
 import type { Issue, IssueInvestigationTask } from "~/modules/quality";

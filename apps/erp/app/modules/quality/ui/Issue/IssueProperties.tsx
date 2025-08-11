@@ -31,10 +31,11 @@ import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 import {
   nonConformanceApprovalRequirement,
+  nonConformancePriority,
   nonConformanceSource,
 } from "../../quality.models";
 import type { Issue } from "../../types";
-import { getSourceIcon } from "./IssueIcons";
+import { getPriorityIcon, getSourceIcon } from "./IssueIcons";
 
 const IssueProperties = () => {
   const { id } = useParams();
@@ -351,6 +352,47 @@ const IssueProperties = () => {
           onChange={(value) => {
             if (value) {
               onUpdate("source", value.value);
+            }
+          }}
+        />
+      </ValidatedForm>
+
+      <ValidatedForm
+        defaultValues={{
+          priority: routeData?.nonConformance?.priority ?? "",
+        }}
+        validator={z.object({
+          priority: z.string().optional(),
+        })}
+        className="w-full"
+      >
+        <Select
+          options={nonConformancePriority.map((priority) => ({
+            value: priority,
+            label: (
+              <div className="flex gap-2 items-center">
+                {getPriorityIcon(priority, false)}
+                <span>{priority}</span>
+              </div>
+            ),
+          }))}
+          isReadOnly={disableStructureUpdate}
+          label="Priority"
+          name="priority"
+          inline={(value, options) => {
+            return (
+              <div className="flex gap-2 items-center">
+                {getPriorityIcon(
+                  value as "Low" | "Medium" | "High" | "Critical",
+                  false
+                )}
+                <span>{value}</span>
+              </div>
+            );
+          }}
+          onChange={(value) => {
+            if (value) {
+              onUpdate("priority", value.value);
             }
           }}
         />

@@ -17,9 +17,9 @@ import {
   useDisclosure,
   VStack,
 } from "@carbon/react";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
 import { useFetcher, useLoaderData, useParams } from "@remix-run/react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
+import { json } from "@vercel/remix";
 import { LuCirclePlus } from "react-icons/lu";
 
 import { assertIsPost, error } from "@carbon/auth";
