@@ -477,7 +477,9 @@ const OpportunityLineDocuments = ({
                         )
                       : "--"}
                   </Td>
-                  <Td>Opportunity Line</Td>
+                  <Td>
+                    <Enumerable value="Opportunity Line" />
+                  </Td>
                   <Td>
                     <div className="flex justify-end w-full">
                       <DropdownMenu>

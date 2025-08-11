@@ -1,6 +1,12 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { tasks } from "npm:@trigger.dev/sdk@3.0.0/v3";
 import { z } from "npm:zod@^3.24.1";
+import {
+  slackDocumentAssignmentUpdate,
+  slackDocumentCreated,
+  slackDocumentStatusUpdate,
+  slackDocumentTaskUpdate,
+} from "../../../../jobs/trigger/slack-document-sync.ts";
 import { corsHeaders } from "../lib/headers.ts";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";
 
@@ -19,9 +25,9 @@ type DocumentType = z.infer<typeof documentTypeSchema>;
 
 const metadataSchema = z.record(z.unknown()).optional();
 
-const payloadValidator = z.discriminatedUnion("updateType", [
+const payloadValidator = z.discriminatedUnion("type", [
   z.object({
-    updateType: z.literal("created"),
+    type: z.literal("created"),
     documentType: documentTypeSchema,
     documentId: z.string(),
     companyId: z.string(),
@@ -34,7 +40,7 @@ const payloadValidator = z.discriminatedUnion("updateType", [
       .optional(),
   }),
   z.object({
-    updateType: z.literal("status-update"),
+    type: z.literal("status-update"),
     documentType: documentTypeSchema,
     documentId: z.string(),
     companyId: z.string(),
@@ -42,12 +48,11 @@ const payloadValidator = z.discriminatedUnion("updateType", [
       previousStatus: z.string(),
       newStatus: z.string(),
       updatedBy: z.string(),
-      reason: z.string().optional(),
       metadata: metadataSchema,
     }),
   }),
   z.object({
-    updateType: z.literal("task-update"),
+    type: z.literal("task-update"),
     documentType: documentTypeSchema,
     documentId: z.string(),
     companyId: z.string(),
@@ -63,7 +68,7 @@ const payloadValidator = z.discriminatedUnion("updateType", [
     }),
   }),
   z.object({
-    updateType: z.literal("assignment-update"),
+    type: z.literal("assignment-update"),
     documentType: documentTypeSchema,
     documentId: z.string(),
     companyId: z.string(),
@@ -75,7 +80,7 @@ const payloadValidator = z.discriminatedUnion("updateType", [
     }),
   }),
   z.object({
-    updateType: z.literal("custom"),
+    type: z.literal("custom"),
     documentType: documentTypeSchema,
     documentId: z.string(),
     companyId: z.string(),
@@ -101,18 +106,12 @@ serve(async (req: Request) => {
   try {
     const body = await req.json();
     const validatedPayload = payloadValidator.parse(body);
-    const {
-      updateType,
-      documentType,
-      documentId,
-      companyId,
-      payload,
-      ...otherData
-    } = validatedPayload;
+    const { type, documentType, documentId, companyId, payload, ...otherData } =
+      validatedPayload;
 
     console.log({
       function: "slack-document-sync",
-      updateType,
+      type,
       documentType,
       documentId,
       companyId,
@@ -124,6 +123,7 @@ serve(async (req: Request) => {
       req.headers.get("carbon-key") ?? "",
       companyId
     );
+
     const { data: integration } = await serviceRole
       .from("companyIntegration")
       .select("metadata")
@@ -167,47 +167,59 @@ serve(async (req: Request) => {
     }
 
     // Trigger the appropriate Trigger.dev job
-    switch (updateType) {
+    switch (type) {
       case "created": {
         const createdData = otherData as Extract<
           ValidatedPayload,
-          { updateType: "created" }
+          { type: "created" }
         >;
-        await tasks.trigger("slack-document-created", {
-          documentType,
-          documentId,
-          companyId,
-          channelId: createdData.channelId,
-          threadTs: createdData.threadTs,
-        });
+        await tasks.trigger<typeof slackDocumentCreated>(
+          "slack-document-created",
+          {
+            documentType,
+            documentId,
+            companyId,
+            channelId: createdData.channelId,
+            threadTs: createdData.threadTs,
+          }
+        );
         break;
       }
 
       case "status-update":
-        await tasks.trigger("slack-document-status-update", {
-          documentType,
-          documentId,
-          companyId,
-          ...payload,
-        });
+        await tasks.trigger<typeof slackDocumentStatusUpdate>(
+          "slack-document-status-update",
+          {
+            documentType,
+            documentId,
+            companyId,
+            ...payload,
+          }
+        );
         break;
 
       case "task-update":
-        await tasks.trigger("slack-document-task-update", {
-          documentType,
-          documentId,
-          companyId,
-          ...payload,
-        });
+        await tasks.trigger<typeof slackDocumentTaskUpdate>(
+          "slack-document-task-update",
+          {
+            documentType,
+            documentId,
+            companyId,
+            ...payload,
+          }
+        );
         break;
 
       case "assignment-update":
-        await tasks.trigger("slack-document-assignment-update", {
-          documentType,
-          documentId,
-          companyId,
-          ...payload,
-        });
+        await tasks.trigger<typeof slackDocumentAssignmentUpdate>(
+          "slack-document-assignment-update",
+          {
+            documentType,
+            documentId,
+            companyId,
+            ...payload,
+          }
+        );
         break;
 
       case "custom":
@@ -216,7 +228,7 @@ serve(async (req: Request) => {
         break;
 
       default:
-        throw new Error(`Invalid updateType ${updateType}`);
+        throw new Error(`Invalid type ${type}`);
     }
 
     return new Response(

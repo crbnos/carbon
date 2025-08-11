@@ -310,7 +310,7 @@ export async function getIssues(
 
   if (args) {
     query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: false },
+      { column: "nonConformanceId", ascending: false },
     ]);
   }
 
@@ -993,7 +993,6 @@ export async function upsertIssue(
         customFields?: Json;
       })
 ) {
-  console.log({ nonConformance });
   if ("createdBy" in nonConformance) {
     const result = await client
       .from("nonConformance")

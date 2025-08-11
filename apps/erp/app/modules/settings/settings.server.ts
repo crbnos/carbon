@@ -24,9 +24,31 @@ export async function clearCompanyIntegrationCache(
   const cacheKey = `integrations:${companyId}`;
 
   try {
-    await redis.del(cacheKey);
+    // Clear both old and new key formats
+    await redis.del(cacheKey, `json:${cacheKey}`);
   } catch (error) {
     console.error("Redis cache invalidation error:", error);
+  }
+}
+
+export async function clearAllIntegrationCaches(): Promise<void> {
+  try {
+    // Clear both old and new key patterns
+    const oldPattern = "integrations:*";
+    const newPattern = "json:integrations:*";
+
+    const [oldKeys, newKeys] = await Promise.all([
+      redis.keys(oldPattern),
+      redis.keys(newPattern),
+    ]);
+
+    const allKeys = [...oldKeys, ...newKeys];
+    if (allKeys.length > 0) {
+      console.log(`Clearing ${allKeys.length} integration cache entries`);
+      await redis.del(...allKeys);
+    }
+  } catch (error) {
+    console.error("Error clearing all integration caches:", error);
   }
 }
 
@@ -85,12 +107,67 @@ export async function getCompanyIntegrations(
   const cacheKey = `integrations:${companyId}`;
 
   try {
-    const cached = await redis.get(cacheKey);
-    if (cached) {
-      return JSON.parse(cached as string);
+    // Try the new prefixed key first
+    let cached = await redis.get(`json:${cacheKey}`);
+    if (cached && typeof cached === "string") {
+      try {
+        return JSON.parse(cached);
+      } catch (parseError) {
+        console.error(
+          `JSON parse error for prefixed cache key json:${cacheKey}:`,
+          parseError
+        );
+        await redis.del(`json:${cacheKey}`);
+      }
+    }
+
+    // Fallback to old key format for backwards compatibility
+    cached = await redis.get(cacheKey);
+    if (cached !== null && cached !== undefined) {
+      // Log the type and content for debugging
+      console.log(`Cache hit for ${cacheKey}:`, {
+        type: typeof cached,
+        isArray: Array.isArray(cached),
+        value: cached,
+        constructor: cached?.constructor?.name,
+      });
+
+      // Handle different response types from Upstash
+      if (Array.isArray(cached)) {
+        // Direct array return from Upstash
+        return cached as CompanyIntegration[];
+      } else if (typeof cached === "object" && cached !== null) {
+        // Object return from Upstash - could be a parsed JSON already
+        return cached as CompanyIntegration[];
+      } else if (typeof cached === "string") {
+        // String return - needs JSON parsing
+        try {
+          return JSON.parse(cached);
+        } catch (parseError) {
+          console.error(
+            `JSON parse error for cache key ${cacheKey}:`,
+            parseError
+          );
+          console.error("Cached value that failed to parse:", cached);
+          await redis.del(cacheKey);
+        }
+      } else {
+        console.warn(
+          `Unexpected cache format for key ${cacheKey}:`,
+          typeof cached,
+          cached
+        );
+        await redis.del(cacheKey);
+      }
     }
   } catch (error) {
     console.error("Redis cache read error:", error);
+    // Clear the corrupted cache entry
+    try {
+      await redis.del(cacheKey);
+    } catch (deleteError) {
+      console.error("Failed to delete corrupted cache entry:", deleteError);
+    }
   }
 
   const { data, error } = await client
@@ -105,11 +182,18 @@ export async function getCompanyIntegrations(
   const integrations = data || [];
 
   try {
-    await redis.setex(
-      cacheKey,
-      INTEGRATION_CACHE_TTL,
-      JSON.stringify(integrations)
-    );
+    // Force string storage to avoid Upstash automatic deserialization issues
+    const serializedData = JSON.stringify(integrations);
+    if (typeof serializedData === "string" && serializedData.length > 0) {
+      // Use a prefixed key to ensure we know this is a JSON string
+      await redis.setex(
+        `json:${cacheKey}`,
+        INTEGRATION_CACHE_TTL,
+        serializedData
+      );
+    } else {
+      console.error("Failed to serialize integrations data for cache");
+    }
   } catch (error) {
     console.error("Redis cache write error:", error);
   }

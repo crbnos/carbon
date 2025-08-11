@@ -55,6 +55,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Sync status update to Slack (non-blocking)
   try {
     const hasSlack = await hasSlackIntegration(client, companyId);
+
     if (hasSlack) {
       await syncIssueStatusToSlack(client, {
         nonConformanceId: id,
@@ -62,7 +63,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
         previousStatus,
         newStatus: status,
         updatedBy: userId,
-        reason: formData.get("reason") as string | undefined,
       });
     }
   } catch (error) {

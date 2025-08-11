@@ -414,7 +414,9 @@ const JobDocuments = ({
                         )
                       : "--"}
                   </Td>
-                  <Td>Job</Td>
+                  <Td>
+                    <Enumerable value="Job" />
+                  </Td>
                   <Td>
                     <div className="flex justify-end w-full">
                       <DropdownMenu>

@@ -80850,7 +80850,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.id('dst'::text)",
+          default: "public.id('slack'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
