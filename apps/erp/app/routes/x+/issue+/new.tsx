@@ -19,7 +19,9 @@ import {
 } from "~/modules/quality";
 import IssueForm from "~/modules/quality/ui/Issue/IssueForm";
 
+import { createIssueSlackThreadWithMessage } from "@carbon/integrations/slack.server";
 import { getNextSequence } from "~/modules/settings";
+import { hasSlackIntegration } from "~/modules/settings/settings.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -52,7 +54,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     create: "quality",
   });
 
@@ -122,6 +124,20 @@ export async function action({ request }: ActionFunctionArgs) {
       await flash(request, error("Failed to create tasks"))
     );
   }
+
+  try {
+    const hasSlack = await hasSlackIntegration(client, companyId);
+    if (hasSlack) {
+      await createIssueSlackThreadWithMessage(serviceRole, {
+        nonConformanceId: ncrId,
+        companyId,
+        createdBy: userId,
+      });
+    }
+  } catch (error) {
+    console.error("Failed to create Slack notification:", error);
+  }
+
   throw redirect(path.to.issue(ncrId!));
 }
 

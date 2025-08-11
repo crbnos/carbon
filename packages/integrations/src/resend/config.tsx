@@ -34,8 +34,6 @@ export const Resend: IntegrationConfig = {
     apiKey: z.string().min(1, { message: "API Key is required" }),
     fromEmail: z.string().email(),
   }),
-  onInitialize: () => {},
-  onUninstall: () => {},
 };
 
 function Logo(props: SVGProps<SVGSVGElement>) {

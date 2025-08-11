@@ -15,8 +15,6 @@ export const ExchangeRates: IntegrationConfig = {
     "Automatically update the currency exchange rates for your company.",
   images: [],
   settings: [],
-  onInitialize: () => {},
-  onUninstall: () => {},
   schema: z.object({}),
 };
 

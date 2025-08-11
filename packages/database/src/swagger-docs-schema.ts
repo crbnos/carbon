@@ -45708,6 +45708,186 @@ export default {
         tags: ["purchaseInvoicePaymentRelation"],
       },
     },
+    "/slackDocumentThread": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.slackDocumentThread.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.slackDocumentThread.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.slackDocumentThread.documentType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.slackDocumentThread.documentId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.slackDocumentThread.channelId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.slackDocumentThread.threadTs",
+          },
+          {
+            $ref: "#/parameters/rowFilter.slackDocumentThread.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.slackDocumentThread.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.slackDocumentThread.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.slackDocumentThread.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/slackDocumentThread",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["slackDocumentThread"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.slackDocumentThread",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["slackDocumentThread"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.slackDocumentThread.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.slackDocumentThread.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.slackDocumentThread.documentType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.slackDocumentThread.documentId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.slackDocumentThread.channelId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.slackDocumentThread.threadTs",
+          },
+          {
+            $ref: "#/parameters/rowFilter.slackDocumentThread.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.slackDocumentThread.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.slackDocumentThread.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.slackDocumentThread.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["slackDocumentThread"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.slackDocumentThread.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.slackDocumentThread.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.slackDocumentThread.documentType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.slackDocumentThread.documentId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.slackDocumentThread.channelId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.slackDocumentThread.threadTs",
+          },
+          {
+            $ref: "#/parameters/rowFilter.slackDocumentThread.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.slackDocumentThread.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.slackDocumentThread.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.slackDocumentThread.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.slackDocumentThread",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["slackDocumentThread"],
+      },
+    },
     "/purchaseOrderLines": {
       get: {
         parameters: [
@@ -80657,6 +80837,70 @@ export default {
       },
       type: "object",
     },
+    slackDocumentThread: {
+      required: [
+        "id",
+        "companyId",
+        "documentType",
+        "documentId",
+        "channelId",
+        "threadTs",
+        "createdAt",
+        "createdBy",
+      ],
+      properties: {
+        id: {
+          default: "public.id('dst'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        documentType: {
+          format: "text",
+          type: "string",
+        },
+        documentId: {
+          format: "text",
+          type: "string",
+        },
+        channelId: {
+          format: "text",
+          type: "string",
+        },
+        threadTs: {
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     purchaseOrderLines: {
       properties: {
         id: {
@@ -108875,6 +109119,75 @@ export default {
     },
     "rowFilter.purchaseInvoicePaymentRelation.paymentId": {
       name: "paymentId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "body.slackDocumentThread": {
+      name: "slackDocumentThread",
+      description: "slackDocumentThread",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/slackDocumentThread",
+      },
+    },
+    "rowFilter.slackDocumentThread.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.slackDocumentThread.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.slackDocumentThread.documentType": {
+      name: "documentType",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.slackDocumentThread.documentId": {
+      name: "documentId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.slackDocumentThread.channelId": {
+      name: "channelId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.slackDocumentThread.threadTs": {
+      name: "threadTs",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.slackDocumentThread.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.slackDocumentThread.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.slackDocumentThread.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.slackDocumentThread.updatedBy": {
+      name: "updatedBy",
       required: false,
       in: "query",
       type: "string",

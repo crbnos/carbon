@@ -57,8 +57,6 @@ export const Onshape: IntegrationConfig = {
     secretKey: z.string().min(1, { message: "Secret Key is required" }),
     companyId: z.string().min(1, { message: "Company ID is required" }),
   }),
-  onInitialize: () => {},
-  onUninstall: () => {},
 };
 
 function SetupInstructions({ companyId }: { companyId: string }) {

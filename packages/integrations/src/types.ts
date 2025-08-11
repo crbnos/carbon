@@ -18,6 +18,6 @@ export type IntegrationConfig = {
     value: unknown;
   }[];
   schema: ZodType;
-  onInitialize: () => void | Promise<void>;
-  onUninstall: () => void | Promise<void>;
+  onInitialize?: () => void | Promise<void>;
+  onUninstall?: () => void | Promise<void>;
 };

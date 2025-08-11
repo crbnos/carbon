@@ -13,8 +13,6 @@ export const Xero: IntegrationConfig = {
   shortDescription:
     "Automatically post transactions from sales and purchase invoices.",
   images: [],
-  onInitialize: () => {},
-  onUninstall: () => {},
   settings: [],
   schema: z.object({}),
 };

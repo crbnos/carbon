@@ -13,8 +13,6 @@ export const QuickBooks: IntegrationConfig = {
   shortDescription:
     "Automatically post transactions from sales and purchase invoices.",
   images: [],
-  onInitialize: () => {},
-  onUninstall: () => {},
   settings: [],
   schema: z.object({}),
 };

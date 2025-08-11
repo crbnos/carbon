@@ -48,8 +48,9 @@ function IntegrationCard({
   const handleInstall = async () => {
     if (integration.settings.some((setting) => setting.required)) {
       navigate(path.to.integration(integration.id));
+    } else if (integration.onInitialize) {
+      await integration.onInitialize?.();
     } else {
-      integration.onInitialize?.();
       const formData = new FormData();
       fetcher.submit(formData, {
         method: "post",

@@ -4,7 +4,7 @@ import { flash } from "@carbon/auth/session.server";
 import { integrations as availableIntegrations } from "@carbon/integrations";
 import { redirect } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
-import { deactivateIntegration } from "~/modules/settings";
+import { deactivateIntegration } from "~/modules/settings/settings.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
