@@ -3,6 +3,7 @@ import { Onshape } from "./onshape/config";
 import { PaperlessParts } from "./paperless-parts/config";
 import { QuickBooks } from "./quickbooks/config";
 import { Resend } from "./resend/config";
+import { Sage } from "./sage/config";
 import { Slack } from "./slack/config";
 import { Xero } from "./xero/config";
 import { Zapier } from "./zapier/config";
