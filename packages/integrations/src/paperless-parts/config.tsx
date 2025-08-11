@@ -38,8 +38,6 @@ export const PaperlessParts: IntegrationConfig = {
       .string()
       .min(1, { message: "Webhook Signing Secret is required" }),
   }),
-  onInitialize: () => {},
-  onUninstall: () => {},
 };
 
 function SetupInstructions({ companyId }: { companyId: string }) {

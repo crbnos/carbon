@@ -5,11 +5,8 @@ import { validationError, validator } from "@carbon/form";
 import { integrations as availableIntegrations } from "@carbon/integrations";
 import { redirect, useLoaderData, useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
-import {
-  IntegrationForm,
-  getIntegration,
-  upsertIntegration,
-} from "~/modules/settings";
+import { IntegrationForm, getIntegration } from "~/modules/settings";
+import { upsertCompanyIntegration } from "~/modules/settings/settings.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -65,7 +62,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { active, ...data } = validation.data;
 
-  const update = await upsertIntegration(client, {
+  const update = await upsertCompanyIntegration(client, {
     id: integrationId,
     active: true,
     metadata: {

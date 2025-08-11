@@ -12,8 +12,6 @@ export const Zapier: IntegrationConfig = {
     "Integrating with Zapier enables you to automate tasks and workflows in your business by connecting Carbon to other apps.",
   shortDescription: "Automate tasks and workflows in your business.",
   images: [],
-  onInitialize: () => {},
-  onUninstall: () => {},
   settings: [],
   schema: z.object({}),
 };

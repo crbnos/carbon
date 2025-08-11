@@ -1,6 +1,6 @@
 import { SUPABASE_URL } from "@carbon/auth";
 
-import type { Database, Json } from "@carbon/database";
+import type { Database } from "@carbon/database";
 import { FunctionRegion, type SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
@@ -14,27 +14,6 @@ import type {
   sequenceValidator,
   webhookValidator,
 } from "./settings.models";
-
-export async function deactivateIntegration(
-  client: SupabaseClient<Database>,
-  args: {
-    id: string;
-    companyId: string;
-    updatedBy: string;
-  }
-) {
-  const { id, companyId, updatedBy } = args;
-
-  return client
-    .from("companyIntegration")
-    .update({
-      active: false,
-      updatedBy,
-      updatedAt: new Date().toISOString(),
-    })
-    .eq("id", id)
-    .eq("companyId", companyId);
-}
 
 export async function deleteApiKey(
   client: SupabaseClient<Database>,
@@ -462,19 +441,6 @@ export async function upsertApiKey(
       .single();
   }
   return client.from("apiKey").update(sanitize(apiKey)).eq("id", apiKey.id);
-}
-
-export async function upsertIntegration(
-  client: SupabaseClient<Database>,
-  update: {
-    id: string;
-    active: boolean;
-    metadata: Json;
-    companyId: string;
-    updatedBy: string;
-  }
-) {
-  return client.from("companyIntegration").upsert([update]).select().single();
 }
 
 export async function updateDigitalQuoteSetting(

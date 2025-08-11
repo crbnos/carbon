@@ -9,11 +9,13 @@ import { Slack } from "@carbon/integrations";
 import {
   createSlackApp,
   getSlackInstaller,
-  slackAuthResponseSchema,
+  slackOAuthCallbackSchema,
+  slackOAuthTokenResponseSchema,
 } from "@carbon/integrations/slack.server";
 import { json, redirect, type LoaderFunctionArgs } from "@vercel/remix";
 import z from "zod";
-import { upsertIntegration } from "~/modules/settings/settings.service";
+import { upsertCompanyIntegration } from "~/modules/settings/settings.server";
+import { path } from "~/utils/path";
 
 export const config = {
   runtime: "nodejs",
@@ -27,7 +29,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const searchParams = Object.fromEntries(url.searchParams.entries());
 
-  const slackAuthResponse = slackAuthResponseSchema.safeParse(searchParams);
+  const slackAuthResponse = slackOAuthCallbackSchema.safeParse(searchParams);
 
   if (!slackAuthResponse.success) {
     return json({ error: "Invalid Slack auth response" }, { status: 400 });
@@ -47,7 +49,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     .safeParse(JSON.parse(veryfiedState?.metadata ?? "{}"));
 
   if (!parsedMetadata.success) {
-    console.error("Invalid metadata", parsedMetadata.error.errors);
     return json({ error: "Invalid metadata" }, { status: 400 });
   }
 
@@ -59,43 +60,79 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return json({ error: "Invalid user" }, { status: 400 });
   }
 
+  // Validate required environment variables
+  if (!SLACK_CLIENT_ID || !SLACK_CLIENT_SECRET || !SLACK_OAUTH_REDIRECT_URL) {
+    return json({ error: "Slack OAuth not configured" }, { status: 500 });
+  }
+
   try {
-    const slackOauthAccessUrl = [
-      "https://slack.com/api/oauth.v2.access",
-      `?client_id=${SLACK_CLIENT_ID}`,
-      `&client_secret=${SLACK_CLIENT_SECRET}`,
-      `&code=${data.code}`,
-      `&redirect_uri=${SLACK_OAUTH_REDIRECT_URL}`,
-    ].join("");
+    const body = new URLSearchParams({
+      client_id: SLACK_CLIENT_ID,
+      client_secret: SLACK_CLIENT_SECRET,
+      code: data.code,
+      redirect_uri: SLACK_OAUTH_REDIRECT_URL,
+    });
 
-    const response = await fetch(slackOauthAccessUrl);
-    const json = await response.json();
+    const response = await fetch("https://slack.com/api/oauth.v2.access", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: body.toString(),
+    });
 
-    const parsedJson = slackAuthResponseSchema.safeParse(json);
-
-    if (!parsedJson.success) {
-      console.error(
-        "Invalid JSON response from slack",
-        parsedJson.error.errors
-      );
+    if (!response.ok) {
       return json(
-        { error: "Failed to exchange code for token" },
+        { error: "Failed to exchange code for token - HTTP error" },
         { status: 500 }
       );
     }
 
-    const createdSlackIntegration = await upsertIntegration(client, {
+    const responseText = await response.text();
+
+    let responseData;
+    try {
+      responseData = JSON.parse(responseText);
+    } catch (parseError) {
+      return json(
+        { error: "Invalid JSON response from Slack" },
+        { status: 500 }
+      );
+    }
+
+    // Check if Slack returned an error
+    if (!responseData.ok) {
+      return json(
+        { error: `Slack OAuth error: ${responseData.error}` },
+        { status: 400 }
+      );
+    }
+
+    const parsedJson = slackOAuthTokenResponseSchema.safeParse(responseData);
+
+    if (!parsedJson.success) {
+      return json(
+        { error: "Failed to parse Slack OAuth response" },
+        { status: 500 }
+      );
+    }
+
+    const { data: tokenData } = parsedJson;
+
+    const createdSlackIntegration = await upsertCompanyIntegration(client, {
       id: Slack.id,
       active: true,
       metadata: {
-        access_token: data.access_token,
-        team_id: data.team.id,
-        team_name: data.team.name,
-        channel: data.incoming_webhook.channel,
-        channel_id: data.incoming_webhook.channel_id,
-        slack_configuration_url: data.incoming_webhook.configuration_url,
-        url: data.incoming_webhook.url,
-        bot_user_id: data.bot_user_id,
+        access_token: tokenData.access_token,
+        team_id: tokenData.team.id,
+        team_name: tokenData.team.name,
+        ...(tokenData.incoming_webhook && {
+          channel: tokenData.incoming_webhook.channel,
+          channel_id: tokenData.incoming_webhook.channel_id,
+          slack_configuration_url: tokenData.incoming_webhook.configuration_url,
+          url: tokenData.incoming_webhook.url,
+        }),
+        bot_user_id: tokenData.bot_user_id,
       },
       updatedBy: userId,
       companyId: companyId,
@@ -103,27 +140,30 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
     if (createdSlackIntegration?.data?.metadata) {
       const slackApp = createSlackApp({
-        token: data.access_token,
-        botId: data.bot_user_id,
+        token: tokenData.access_token,
+        botId: tokenData.bot_user_id,
       });
 
-      try {
-        await slackApp.client.chat.postMessage({
-          channel: data.incoming_webhook.channel_id,
-          unfurl_links: false,
-          unfurl_media: false,
-          blocks: [
-            {
-              type: "section",
-              text: {
-                type: "mrkdwn",
-                text: "Ahoy maties! 🦜🏴‍☠️ Here be your new Cargh-bon bot. Use `/carbon` to get started.",
+      // Only try to post a message if we have webhook configuration
+      if (tokenData.incoming_webhook?.channel_id) {
+        try {
+          await slackApp.client.chat.postMessage({
+            channel: tokenData.incoming_webhook.channel_id,
+            unfurl_links: false,
+            unfurl_media: false,
+            blocks: [
+              {
+                type: "section",
+                text: {
+                  type: "mrkdwn",
+                  text: "Ahoy maties! 🦜🏴‍☠️ Here be your new Cargh-bon bot. Use `/` to get started.",
+                },
               },
-            },
-          ],
-        });
-      } catch (err) {
-        console.error(err);
+            ],
+          });
+        } catch (err) {
+          // Silently fail if welcome message can't be posted
+        }
       }
 
       const requestUrl = new URL(request.url);
@@ -132,8 +172,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
         requestUrl.protocol = "http";
       }
 
-      return redirect(
-        `${requestUrl.origin}/all-done?event=app_oauth_completed`
+      const redirectUrl = `${requestUrl.origin}${path.to.integrations}`;
+
+      return redirect(redirectUrl);
+    } else {
+      return json(
+        { error: "Failed to save Slack integration" },
+        { status: 500 }
       );
     }
   } catch (err) {
@@ -142,6 +187,4 @@ export async function loader({ request }: LoaderFunctionArgs) {
       { status: 500 }
     );
   }
-
-  return json({ error: "Failed to exchange code for token" }, { status: 500 });
 }
