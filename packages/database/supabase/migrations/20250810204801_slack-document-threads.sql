@@ -3,7 +3,7 @@ DROP TABLE IF EXISTS "nonConformanceSlackThread";
 
 -- Create generic document thread mapping table
 CREATE TABLE "slackDocumentThread" (
-  "id" TEXT NOT NULL DEFAULT id('dst'),
+  "id" TEXT NOT NULL DEFAULT id('slack'),
   "companyId" TEXT NOT NULL,
   "documentType" TEXT NOT NULL, -- e.g., 'nonConformance', 'quote', 'salesOrder', 'job'
   "documentId" TEXT NOT NULL,   -- The ID of the document in its respective table
@@ -29,37 +29,9 @@ CREATE INDEX "slackDocumentThread_channelId_threadTs_idx" ON "slackDocumentThrea
 -- Enable Row Level Security
 ALTER TABLE "slackDocumentThread" ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies using modern pattern
-CREATE POLICY "SELECT" ON "public"."slackDocumentThread"
-FOR SELECT USING (
-  "companyId" = ANY (
-    (SELECT get_companies_with_employee_permission('integration_view'))::text[]
-  )
-);
-
-CREATE POLICY "INSERT" ON "public"."slackDocumentThread"
-FOR INSERT WITH CHECK (
-  "companyId" = ANY (
-    (SELECT get_companies_with_employee_permission('integration_create'))::text[]
-  )
-);
-
-CREATE POLICY "UPDATE" ON "public"."slackDocumentThread"
-FOR UPDATE USING (
-  "companyId" = ANY (
-    (SELECT get_companies_with_employee_permission('integration_update'))::text[]
-  )
-);
-
-CREATE POLICY "DELETE" ON "public"."slackDocumentThread"
-FOR DELETE USING (
-  "companyId" = ANY (
-    (SELECT get_companies_with_employee_permission('integration_delete'))::text[]
-  )
-);
 
 -- Create an enum for document types to ensure consistency
-CREATE TYPE document_thread_type AS ENUM (
+CREATE TYPE documentThreadType AS ENUM (
   'nonConformance',
   'quote', 
   'salesOrder',
@@ -73,4 +45,4 @@ CREATE TYPE document_thread_type AS ENUM (
 -- Add check constraint to ensure documentType uses valid values
 ALTER TABLE "slackDocumentThread" 
 ADD CONSTRAINT "slackDocumentThread_documentType_check" 
-CHECK ("documentType"::document_thread_type IS NOT NULL);
+CHECK ("documentType"::documentThreadType IS NOT NULL);

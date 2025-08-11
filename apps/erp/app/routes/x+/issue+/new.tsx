@@ -1,7 +1,13 @@
-import { assertIsPost, error, getCarbonServiceRole } from "@carbon/auth";
+import {
+  assertIsPost,
+  error,
+  getCarbonServiceRole,
+  VERCEL_URL,
+} from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { createIssueSlackThread } from "@carbon/integrations/slack.service";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { useLoaderData } from "@remix-run/react";
 import { FunctionRegion } from "@supabase/supabase-js";
@@ -19,7 +25,6 @@ import {
 } from "~/modules/quality";
 import IssueForm from "~/modules/quality/ui/Issue/IssueForm";
 
-import { createIssueSlackThreadWithMessage } from "@carbon/integrations/slack.server";
 import { getNextSequence } from "~/modules/settings";
 import { hasSlackIntegration } from "~/modules/settings/settings.server";
 import { setCustomFields } from "~/utils/form";
@@ -128,10 +133,17 @@ export async function action({ request }: ActionFunctionArgs) {
   try {
     const hasSlack = await hasSlackIntegration(client, companyId);
     if (hasSlack) {
-      await createIssueSlackThreadWithMessage(serviceRole, {
-        nonConformanceId: ncrId,
+      await createIssueSlackThread(serviceRole, {
+        carbonUrl: `${VERCEL_URL || "http://localhost:3000"}${path.to.issue(
+          ncrId
+        )}`,
         companyId,
-        createdBy: userId,
+        description: validation.data.description,
+        id: ncrId,
+        nonConformanceId: nextSequence.data,
+        severity: validation.data.priority,
+        title: validation.data.name,
+        userId: userId,
       });
     }
   } catch (error) {

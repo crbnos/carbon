@@ -71,6 +71,10 @@ export const createSlackApp = ({
   });
 };
 
+export const createSlackWebClient = ({ token }: { token: string }) => {
+  return new WebClient(token);
+};
+
 export const getSlackInstaller = (): InstallProvider => {
   if (!slackInstaller) {
     if (!SLACK_CLIENT_ID || !SLACK_CLIENT_SECRET) {
@@ -90,10 +94,6 @@ export const getSlackInstaller = (): InstallProvider => {
   return slackInstaller;
 };
 
-export const createSlackWebClient = ({ token }: { token: string }) => {
-  return new WebClient(token);
-};
-
 export const getSlackInstallUrl = ({
   companyId,
   userId,
@@ -103,14 +103,16 @@ export const getSlackInstallUrl = ({
 }) => {
   return getSlackInstaller().generateInstallUrl({
     scopes: [
-      "incoming-webhook",
-      "chat:write",
-      "chat:write.public",
-      "team:read",
       "assistant:write",
-      "im:history",
+      "chat:write.public",
+      "chat:write",
       "commands",
       "files:read",
+      "im:history",
+      "incoming-webhook",
+      "team:read",
+      "users:read",
+      "users:read.email",
     ],
     redirectUri: SLACK_OAUTH_REDIRECT_URL,
     metadata: JSON.stringify({ companyId, userId }),

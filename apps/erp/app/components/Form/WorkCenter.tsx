@@ -85,8 +85,6 @@ export const useWorkCenters = (args: {
     workCenterFetcher.load(path.to.api.workCenters);
   });
 
-  console.log({ args, data: workCenterFetcher.data });
-
   const options = useMemo(
     () =>
       workCenterFetcher.data?.data
