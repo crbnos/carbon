@@ -319,12 +319,11 @@ export async function getCarbonEmployeeFromSlackId(
       const location = await client
         .from("location")
         .select("id")
-        .eq("companyId", carbonCompanyId)
-        .single();
+        .eq("companyId", carbonCompanyId);
       return {
         data: {
           id: "system",
-          locationId: location.data?.id,
+          locationId: location.data?.[0]?.id,
         },
         error: null,
       };
