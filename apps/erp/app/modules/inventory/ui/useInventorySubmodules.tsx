@@ -5,6 +5,7 @@ import {
   LuQrCode,
   LuTally5,
   LuTruck,
+  LuWarehouse,
 } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
@@ -62,6 +63,13 @@ const inventoryRoutes: AuthenticatedRouteGroup[] = [
   {
     name: "Configure",
     routes: [
+      {
+        name: "Shelves",
+        to: path.to.shelves,
+        role: "employee",
+        icon: <LuWarehouse />,
+        table: "shelf",
+      },
       {
         name: "Shipping Methods",
         to: path.to.shippingMethods,

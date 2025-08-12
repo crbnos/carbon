@@ -39,6 +39,13 @@ export async function deleteReceiptLine(
   return client.from("receiptLine").delete().eq("id", receiptLineId);
 }
 
+export async function deleteShelf(
+  client: SupabaseClient<Database>,
+  shelfId: string
+) {
+  return client.from("shelf").delete().eq("id", shelfId);
+}
+
 export async function deleteShipment(
   client: SupabaseClient<Database>,
   shipmentId: string
@@ -332,6 +339,40 @@ export async function getShelvesListForLocation(
     .eq("companyId", companyId)
     .eq("locationId", locationId)
     .order("name");
+}
+
+export async function getShelves(
+  client: SupabaseClient<Database>,
+  locationId: string,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+  }
+) {
+  let query = client
+    .from("shelf")
+    .select("*", {
+      count: "exact",
+    })
+    .eq("companyId", companyId)
+    .eq("locationId", locationId);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "name", ascending: true },
+  ]);
+
+  return query;
+}
+
+export async function getShelf(
+  client: SupabaseClient<Database>,
+  shelfId: string
+) {
+  return client.from("shelf").select("*").eq("id", shelfId).single();
 }
 
 export async function getShipments(

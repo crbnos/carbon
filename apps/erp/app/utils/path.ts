@@ -608,6 +608,8 @@ export const path = {
     deleteShift: (id: string) =>
       generatePath(`${x}/people/shifts/delete/${id}`),
     deleteShipment: (id: string) => generatePath(`${x}/shipment/${id}/delete`),
+    deleteShelf: (id: string) =>
+      generatePath(`${x}/inventory/shelves/delete/${id}`),
     deleteShippingMethod: (id: string) =>
       generatePath(`${x}/inventory/shipping-methods/delete/${id}`),
     deleteSupplierContact: (supplierId: string, id: string) =>
@@ -697,9 +699,11 @@ export const path = {
     issueReview: (id: string) => generatePath(`${x}/issue/${id}/review`),
     issueWorkflow: (id: string) => generatePath(`${x}/issue-workflow/${id}`),
     issueWorkflows: `${x}/quality/issue-workflows`,
-    investigationType: (id: string) => generatePath(`${x}/quality/investigation-types/${id}`),
+    investigationType: (id: string) =>
+      generatePath(`${x}/quality/investigation-types/${id}`),
     investigationTypes: `${x}/quality/investigation-types`,
-    requiredAction: (id: string) => generatePath(`${x}/quality/required-actions/${id}`),
+    requiredAction: (id: string) =>
+      generatePath(`${x}/quality/required-actions/${id}`),
     requiredActions: `${x}/quality/required-actions`,
     issueType: (id: string) => generatePath(`${x}/quality/issue-types/${id}`),
     issueTypes: `${x}/quality/issue-types`,
@@ -1217,6 +1221,7 @@ export const path = {
     settings: `${x}/settings`,
     sequences: `${x}/settings/sequences`,
     shelf: (id: string) => generatePath(`${x}/inventory/shelves/${id}`),
+    shelves: `${x}/inventory/shelves`,
     shift: (id: string) => generatePath(`${x}/people/shifts/${id}`),
     shifts: `${x}/people/shifts`,
     shipments: `${x}/inventory/shipments`,

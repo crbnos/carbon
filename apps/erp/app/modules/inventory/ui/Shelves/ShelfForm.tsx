@@ -77,7 +77,11 @@ const ShelfForm = ({
 
               <VStack spacing={4}>
                 <Input name="name" label="Name" />
-                <Location name="locationId" label="Location" />
+                <Location
+                  isReadOnly={isEditing}
+                  name="locationId"
+                  label="Location"
+                />
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>

@@ -1,34 +1,44 @@
-import { assertIsPost, error, success } from "@carbon/auth";
+import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ClientActionFunctionArgs } from "@remix-run/react";
-import { useNavigate, useSearchParams } from "@remix-run/react";
+import { useLoaderData, useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { useUser } from "~/hooks";
-import { ShelfForm, shelfValidator, upsertShelf } from "~/modules/inventory";
-import { setCustomFields } from "~/utils/form";
+import {
+  ShelfForm,
+  getShelf,
+  shelfValidator,
+  upsertShelf,
+} from "~/modules/inventory";
+import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 import { getCompanyId, shelvesQuery } from "~/utils/react-query";
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, {
-    create: "inventory",
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { client } = await requirePermissions(request, {
+    view: "inventory",
+    role: "employee",
   });
 
-  return null;
+  const { shelfId } = params;
+  if (!shelfId) throw notFound("shelfId not found");
+
+  const shelf = await getShelf(client, shelfId);
+
+  return json({
+    shelf: shelf?.data ?? null,
+  });
 }
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "inventory",
+  const { client, userId } = await requirePermissions(request, {
+    update: "inventory",
   });
 
   const formData = await request.formData();
-  const modal = formData.get("type") === "modal";
-
   const validation = await validator(shelfValidator).validate(formData);
 
   if (validation.error) {
@@ -36,26 +46,26 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const { id, ...data } = validation.data;
+  if (!id) throw new Error("id not found");
 
-  const createShelf = await upsertShelf(client, {
+  const updateShelf = await upsertShelf(client, {
+    id,
     ...data,
-    companyId,
+    updatedBy: userId,
     customFields: setCustomFields(formData),
-    createdBy: userId,
   });
-  if (createShelf.error) {
+
+  if (updateShelf.error) {
     return json(
       {},
-      await flash(request, error(createShelf.error, "Failed to insert shelf"))
+      await flash(request, error(updateShelf.error, "Failed to update shelf"))
     );
   }
 
-  return modal
-    ? json(createShelf, { status: 201 })
-    : redirect(
-        `${path.to.shelves}?${getParams(request)}`,
-        await flash(request, success("Shelf created"))
-      );
+  throw redirect(
+    `${path.to.shelves}?${getParams(request)}`,
+    await flash(request, success("Updated shelf"))
+  );
 }
 
 export async function clientAction({
@@ -80,22 +90,22 @@ export async function clientAction({
   return await serverAction();
 }
 
-export default function NewShelfRoute() {
+export default function EditShelfRoute() {
+  const { shelf } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const { defaults } = useUser();
-  const locationId =
-    (searchParams.get("location") || defaults.locationId) ?? "";
 
   const initialValues = {
-    name: "",
-    locationId,
+    id: shelf?.id ?? undefined,
+    name: shelf?.name ?? "",
+    locationId: shelf?.locationId ?? "",
+    ...getCustomFields(shelf?.customFields),
   };
 
   return (
     <ShelfForm
+      key={initialValues.id}
       initialValues={initialValues}
-      locationId={locationId}
+      locationId={initialValues.locationId}
       onClose={() => navigate(-1)}
     />
   );
