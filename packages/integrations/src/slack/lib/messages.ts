@@ -1,25 +1,24 @@
 import type { KnownBlock } from "@slack/types";
 
-export type DocumentType = "nonConformance";
-// | "quote"
-// | "salesOrder"
-// | "job"
-// | "purchaseOrder"
-// | "invoice"
-// | "receipt"
-// | "shipment";
+export type DocumentType =
+  | "nonConformance"
+  | "quote"
+  | "salesOrder"
+  | "job"
+  | "purchaseOrder"
+  | "invoice"
+  | "receipt"
+  | "shipment";
 
 export interface BaseDocumentData {
-  id: string;
   documentType: DocumentType;
-  title: string;
+  id: string;
+  readableId: string;
+  title?: string;
   description?: string;
-  status: string;
+  status?: string;
   createdBy?: string;
   createdAt?: string;
-  updatedAt?: string;
-  assignedTo?: string;
-  metadata?: Record<string, any>;
 }
 
 export interface NonConformanceData extends BaseDocumentData {
@@ -39,7 +38,8 @@ export interface IssueTaskUpdate {
   taskType: "investigation" | "action" | "approval";
   taskName: string;
   status: string;
-  assignedTo?: string;
+  assignee?: string | null;
+  readableId?: string;
   completedBy?: string;
   completedAt?: string;
   notes?: string;
@@ -109,14 +109,14 @@ export function formatDocumentCreated(
       type: "section",
       text: {
         type: "mrkdwn",
-        text: `*${data.title}*\n${
+        text: `*${data.title || "No title"}*\n${
           data.description || "_No description provided_"
         }`,
       },
       fields: [
         {
           type: "mrkdwn",
-          text: `*Status:*\n${data.status}`,
+          text: `*Status:*\n${data.status || "Unknown"}`,
         },
         {
           type: "mrkdwn",
@@ -258,15 +258,28 @@ export function formatStatusUpdate(
   documentIdentifier: string,
   update: IssueStatusUpdate
 ): KnownBlock[] {
-  const typeInfo = getDocumentTypeInfo(documentType);
+  const emoji = getStatusEmoji(update.newStatus);
 
   const blocks: KnownBlock[] = [
     {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: `${typeInfo.emoji} *Status Updated*\n\`${update.previousStatus}\` → \`${update.newStatus}\``,
+        text: `${emoji} *Issue Status Updated*\n${documentIdentifier}`,
       },
+    },
+    {
+      type: "section",
+      fields: [
+        {
+          type: "mrkdwn",
+          text: `*From:*\n${update.previousStatus}`,
+        },
+        {
+          type: "mrkdwn",
+          text: `*To:*\n${update.newStatus}`,
+        },
+      ],
     },
   ];
 
@@ -285,7 +298,9 @@ export function formatStatusUpdate(
     elements: [
       {
         type: "mrkdwn",
-        text: `Updated by <@${update.updatedBy}> • #${documentIdentifier}`,
+        text: `Updated by <@${update.updatedBy}> at <!date^${Math.floor(
+          Date.now() / 1000
+        )}^{date_short_pretty} {time}|${new Date().toISOString()}>`,
       },
     ],
   });
@@ -307,13 +322,7 @@ export function formatTaskUpdate(
     approval: "Approval",
   }[update.taskType];
 
-  const statusEmoji =
-    {
-      Pending: "⏳",
-      "In Progress": "🔄",
-      Completed: "✅",
-      Skipped: "⏭️",
-    }[update.status] || "📋";
+  const statusEmoji = getTaskStatusEmoji(update.status);
 
   const blocks: KnownBlock[] = [
     {
@@ -327,10 +336,10 @@ export function formatTaskUpdate(
 
   const fields: any[] = [];
 
-  if (update.assignedTo) {
+  if (update.assignee) {
     fields.push({
       type: "mrkdwn",
-      text: `*Assigned to:*\n<@${update.assignedTo}>`,
+      text: `*Assigned to:*\n<@${update.assignee}>`,
     });
   }
 
@@ -385,30 +394,46 @@ export function formatAssignmentUpdate(
   documentIdentifier: string,
   update: IssueAssignmentUpdate
 ): KnownBlock[] {
-  const typeInfo = getDocumentTypeInfo(documentType);
-
   const blocks: KnownBlock[] = [
     {
       type: "section",
       text: {
         type: "mrkdwn",
-        text: `${typeInfo.emoji} *Assignment Updated*\n${
-          update.previousAssignee
-            ? `<@${update.previousAssignee}> → <@${update.newAssignee}>`
-            : `Assigned to <@${update.newAssignee}>`
-        }`,
+        text: `🎯 *Assignment Updated*\n${documentIdentifier}`,
       },
     },
-    {
-      type: "context",
-      elements: [
-        {
-          type: "mrkdwn",
-          text: `Updated by <@${update.updatedBy}> • #${documentIdentifier}`,
-        },
-      ],
-    },
   ];
+
+  const fields: any[] = [];
+
+  if (update.previousAssignee) {
+    fields.push({
+      type: "mrkdwn",
+      text: `*Previous Assignee:*\n<@${update.previousAssignee}>`,
+    });
+  }
+
+  fields.push({
+    type: "mrkdwn",
+    text: `*New Assignee:*\n<@${update.newAssignee}>`,
+  });
+
+  blocks.push({
+    type: "section",
+    fields,
+  });
+
+  blocks.push({
+    type: "context",
+    elements: [
+      {
+        type: "mrkdwn",
+        text: `Updated by <@${update.updatedBy}> at <!date^${Math.floor(
+          Date.now() / 1000
+        )}^{date_short_pretty} {time}|${new Date().toISOString()}>`,
+      },
+    ],
+  });
 
   return blocks;
 }
@@ -444,6 +469,50 @@ export function formatSimpleNotification(
   }
 
   return blocks;
+}
+
+/**
+ * Get status emoji based on status string
+ */
+export function getStatusEmoji(status: string): string {
+  const statusLower = status.toLowerCase();
+
+  if (statusLower.includes("closed") || statusLower.includes("complete")) {
+    return "✅";
+  } else if (
+    statusLower.includes("progress") ||
+    statusLower.includes("review")
+  ) {
+    return "🚀";
+  } else if (statusLower.includes("pending") || statusLower.includes("open")) {
+    return "📋";
+  } else if (
+    statusLower.includes("rejected") ||
+    statusLower.includes("cancelled")
+  ) {
+    return "❌";
+  }
+
+  return "📌";
+}
+
+/**
+ * Get task status emoji based on status string
+ */
+export function getTaskStatusEmoji(status: string): string {
+  const statusLower = status.toLowerCase();
+
+  if (statusLower.includes("completed")) {
+    return "✅";
+  } else if (statusLower.includes("progress")) {
+    return "⏳";
+  } else if (statusLower.includes("skipped")) {
+    return "⏭️";
+  } else if (statusLower.includes("pending")) {
+    return "⏸️";
+  }
+
+  return "📝";
 }
 
 // Backward compatibility exports for NCR-specific functions

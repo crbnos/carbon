@@ -322,7 +322,6 @@ serve(async (req: Request) => {
           ) {
             // @ts-ignore -- content is json
             const contentFromWorkflow = workflow?.data?.content?.content ?? [];
-
             const insertedContent = {
               type: "doc",
               content: contentFromWorkflow,
@@ -337,11 +336,16 @@ serve(async (req: Request) => {
               });
             }
 
+            console.log({
+              description: nonConformance.data?.description,
+              insertedContent,
+            });
+
             if (insertedContent.content.length > 0) {
               await trx
                 .updateTable("nonConformance")
                 .set({
-                  content: insertedContent.content,
+                  content: JSON.stringify(insertedContent),
                 })
                 .where("id", "=", id)
                 .execute();

@@ -5,9 +5,10 @@
   "exports": {
     ".": "./src/index.ts",
     "./exchange-rates/exchange-rates.server": "./src/exchange-rates/exchange-rates.server.ts",
+    "./notifications": "./src/notifications/index.ts",
     "./onshape": "./src/onshape/lib/index.ts",
     "./slack.server": "./src/slack.server.ts",
-    "./slack.service": "./src/slack/lib/service.ts"
+    "./slack/messages": "./src/slack/lib/messages.ts"
   },
   "jest": {
     "preset": "@carbon/jest/node"

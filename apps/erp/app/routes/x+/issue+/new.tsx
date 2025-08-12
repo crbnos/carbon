@@ -7,7 +7,7 @@ import {
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { createIssueSlackThread } from "@carbon/integrations/slack.service";
+import { notifyIssueCreated } from "@carbon/integrations/notifications";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { useLoaderData } from "@remix-run/react";
 import { FunctionRegion } from "@supabase/supabase-js";
@@ -26,7 +26,7 @@ import {
 import IssueForm from "~/modules/quality/ui/Issue/IssueForm";
 
 import { getNextSequence } from "~/modules/settings";
-import { hasSlackIntegration } from "~/modules/settings/settings.server";
+import { getCompanyIntegrations } from "~/modules/settings/settings.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -131,23 +131,25 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   try {
-    const hasSlack = await hasSlackIntegration(client, companyId);
-    if (hasSlack) {
-      await createIssueSlackThread(serviceRole, {
-        carbonUrl: `${VERCEL_URL || "http://localhost:3000"}${path.to.issue(
-          ncrId
-        )}`,
+    const integrations = await getCompanyIntegrations(client, companyId);
+    await notifyIssueCreated(
+      { client, serviceRole },
+      integrations,
+      {
         companyId,
-        description: validation.data.description,
-        id: ncrId,
-        nonConformanceId: nextSequence.data,
-        severity: validation.data.priority,
-        title: validation.data.name,
-        userId: userId,
-      });
-    }
+        userId,
+        carbonUrl: `${VERCEL_URL || "http://localhost:3000"}${path.to.issue(ncrId)}`,
+        issue: {
+          id: ncrId,
+          nonConformanceId: nextSequence.data,
+          title: validation.data.name,
+          description: validation.data.description,
+          severity: validation.data.priority,
+        },
+      }
+    );
   } catch (error) {
-    console.error("Failed to create Slack notification:", error);
+    console.error("Failed to send notifications:", error);
   }
 
   throw redirect(path.to.issue(ncrId!));
