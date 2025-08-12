@@ -315,8 +315,19 @@ export async function getCarbonEmployeeFromSlackId(
       .select("id")
       .eq("email", email)
       .single();
-    if (user.error) {
-      throw new Error("User not found");
+    if (user.error || !user.data?.id) {
+      const location = await client
+        .from("location")
+        .select("id")
+        .eq("companyId", carbonCompanyId)
+        .single();
+      return {
+        data: {
+          id: "system",
+          locationId: location.data?.id,
+        },
+        error: null,
+      };
     }
     return client
       .from("employeeJob")
