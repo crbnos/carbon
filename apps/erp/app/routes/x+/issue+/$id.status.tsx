@@ -58,11 +58,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     if (hasSlack) {
       await syncIssueStatusToSlack(client, {
-        nonConformanceId: id,
         companyId,
-        previousStatus,
         newStatus: status,
-        updatedBy: userId,
+        nonConformanceId: id,
+        previousStatus,
+        userId,
       });
     }
   } catch (error) {

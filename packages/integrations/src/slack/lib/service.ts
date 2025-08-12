@@ -1,6 +1,13 @@
 import { getCarbonServiceRole } from "@carbon/auth";
 import type { Database } from "@carbon/database";
+import type {
+  slackDocumentAssignmentUpdate,
+  slackDocumentCreated,
+  slackDocumentStatusUpdate,
+  slackDocumentTaskUpdate,
+} from "@carbon/jobs/trigger/slack-document-sync";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { tasks } from "@trigger.dev/sdk/v3";
 import { createSlackWebClient } from "./client";
 
 export type DocumentType = "nonConformance";
@@ -244,6 +251,15 @@ export async function getSlackAuth(
   };
 }
 
+export async function getSlackUserIdForCarbonUser(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  userId: string
+): Promise<string | null> {
+  const auth = await getSlackAuth(client, companyId, userId);
+  return auth?.slackUserId || null;
+}
+
 export async function getSlackDocumentThread(
   client: SupabaseClient<Database>,
   documentType: DocumentType,
@@ -323,6 +339,7 @@ export async function syncDocumentToSlack(
     documentType: DocumentType;
     documentId: string;
     companyId: string;
+    userId: string;
     type:
       | "created"
       | "status-update"
@@ -333,25 +350,131 @@ export async function syncDocumentToSlack(
   }
 ) {
   const serviceRole = getCarbonServiceRole();
-  const thread = await getSlackDocumentThread(
-    serviceRole,
-    data.documentType,
-    data.documentId,
-    data.companyId
-  );
+  const [thread, slackUserId] = await Promise.all([
+    getSlackDocumentThread(
+      serviceRole,
+      data.documentType,
+      data.documentId,
+      data.companyId
+    ),
+    getSlackUserIdForCarbonUser(serviceRole, data.companyId, data.userId),
+  ]);
 
   if (thread.data) {
-    return serviceRole.functions.invoke("slack-document-sync", {
-      body: {
-        documentType: data.documentType,
-        documentId: data.documentId,
-        companyId: data.companyId,
-        type: data.type,
-        channelId: thread.data.channelId,
-        threadTs: thread.data.threadTs,
-        payload: data.payload,
-      },
-    });
+    try {
+      // Check if Slack integration is enabled for this company
+      const { data: integration } = await serviceRole
+        .from("companyIntegration")
+        .select("metadata")
+        .eq("companyId", data.companyId)
+        .eq("active", true)
+        .single();
+
+      if (!integration?.metadata) {
+        console.log("Slack integration not active for company", data.companyId);
+        return {
+          data: { success: true, message: "Slack integration not active" },
+          error: null,
+        };
+      }
+
+      const metadata = integration.metadata as Record<string, unknown>;
+
+      // Check if notifications are enabled for this document type
+      const notificationKey = `${data.documentType}_notifications_enabled`;
+      if (metadata[notificationKey] === false) {
+        console.log(
+          `${data.documentType} notifications disabled for company`,
+          data.companyId
+        );
+        return {
+          data: {
+            success: true,
+            message: `${data.documentType} notifications disabled`,
+          },
+          error: null,
+        };
+      }
+
+      // Trigger the appropriate Trigger.dev job
+      let result;
+      switch (data.type) {
+        case "created":
+          result = await tasks.trigger<typeof slackDocumentCreated>(
+            "slack-document-created",
+            {
+              documentType: data.documentType,
+              documentId: data.documentId,
+              companyId: data.companyId,
+              channelId: thread.data.channelId,
+              threadTs: thread.data.threadTs,
+            }
+          );
+          break;
+
+        case "status-update":
+          result = await tasks.trigger<typeof slackDocumentStatusUpdate>(
+            "slack-document-status-update",
+            {
+              documentType: data.documentType,
+              documentId: data.documentId,
+              companyId: data.companyId,
+              previousStatus: data.payload.previousStatus,
+              newStatus: data.payload.newStatus,
+              updatedBy: slackUserId || data.payload.updatedBy,
+            }
+          );
+          break;
+
+        case "task-update":
+          result = await tasks.trigger<typeof slackDocumentTaskUpdate>(
+            "slack-document-task-update",
+            {
+              documentType: data.documentType,
+              documentId: data.documentId,
+              companyId: data.companyId,
+              taskType: data.payload.taskType,
+              taskName: data.payload.taskName,
+              status: data.payload.status,
+              assignedTo: data.payload.assignedTo,
+              completedBy: data.payload.completedBy || slackUserId,
+              completedAt: data.payload.completedAt,
+              notes: data.payload.notes,
+            }
+          );
+          break;
+
+        case "assignment-update":
+          result = await tasks.trigger<typeof slackDocumentAssignmentUpdate>(
+            "slack-document-assignment-update",
+            {
+              documentType: data.documentType,
+              documentId: data.documentId,
+              companyId: data.companyId,
+              previousAssignee: data.payload.previousAssignee,
+              newAssignee: data.payload.newAssignee,
+              updatedBy: slackUserId || data.payload.updatedBy,
+            }
+          );
+          break;
+
+        case "custom":
+          // For now, just log custom updates
+          console.log(`Custom update for ${data.documentType}:`, data.payload);
+          return { data: { success: true }, error: null };
+
+        default:
+          throw new Error(`Invalid type ${data.type}`);
+      }
+
+      return { data: { success: true, taskId: result.id }, error: null };
+    } catch (error) {
+      console.error("slack-document-sync error:", error);
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : "Unknown error",
+      };
+    }
   }
 
   return { data: null, error: null };
@@ -363,6 +486,7 @@ export async function syncDocumentCreatedToSlack(
     documentType: DocumentType;
     documentId: string;
     companyId: string;
+    userId: string;
     channelId: string;
     threadTs: string;
     metadata?: Record<string, any>;
@@ -372,6 +496,7 @@ export async function syncDocumentCreatedToSlack(
     documentType: data.documentType,
     documentId: data.documentId,
     companyId: data.companyId,
+    userId: data.userId,
     type: "created",
     payload: {
       channelId: data.channelId,
@@ -387,9 +512,9 @@ export async function syncDocumentStatusToSlack(
     documentType: DocumentType;
     documentId: string;
     companyId: string;
+    userId: string;
     previousStatus: string;
     newStatus: string;
-    updatedBy: string;
     reason?: string;
     metadata?: Record<string, any>;
   }
@@ -398,11 +523,13 @@ export async function syncDocumentStatusToSlack(
     documentType: data.documentType,
     documentId: data.documentId,
     companyId: data.companyId,
+    userId: data.userId,
     type: "status-update",
     payload: {
       previousStatus: data.previousStatus,
       newStatus: data.newStatus,
-      updatedBy: data.updatedBy,
+      updatedBy: data.userId,
+      reason: data.reason,
       metadata: data.metadata,
     },
   });
@@ -414,9 +541,9 @@ export async function syncDocumentAssignmentToSlack(
     documentType: DocumentType;
     documentId: string;
     companyId: string;
+    userId: string;
     previousAssignee?: string;
     newAssignee: string;
-    updatedBy: string;
     metadata?: Record<string, any>;
   }
 ) {
@@ -424,11 +551,12 @@ export async function syncDocumentAssignmentToSlack(
     documentType: data.documentType,
     documentId: data.documentId,
     companyId: data.companyId,
+    userId: data.userId,
     type: "assignment-update",
     payload: {
       previousAssignee: data.previousAssignee,
       newAssignee: data.newAssignee,
-      updatedBy: data.updatedBy,
+      updatedBy: data.userId,
       metadata: data.metadata,
     },
   });
@@ -440,6 +568,7 @@ export async function syncDocumentCustomToSlack(
     documentType: DocumentType;
     documentId: string;
     companyId: string;
+    userId: string;
     customType: string;
     payload: Record<string, any>;
   }
@@ -448,6 +577,7 @@ export async function syncDocumentCustomToSlack(
     documentType: data.documentType,
     documentId: data.documentId,
     companyId: data.companyId,
+    userId: data.userId,
     type: "custom",
     payload: {
       customType: data.customType,
@@ -461,9 +591,9 @@ export async function syncIssueStatusToSlack(
   data: {
     nonConformanceId: string;
     companyId: string;
+    userId: string;
     previousStatus: string;
     newStatus: string;
-    updatedBy: string;
     reason?: string;
   }
 ) {
@@ -471,9 +601,10 @@ export async function syncIssueStatusToSlack(
     documentType: "nonConformance",
     documentId: data.nonConformanceId,
     companyId: data.companyId,
+    userId: data.userId,
     previousStatus: data.previousStatus,
     newStatus: data.newStatus,
-    updatedBy: data.updatedBy,
+    reason: data.reason,
   });
 }
 
@@ -482,26 +613,27 @@ export async function syncIssueTaskToSlack(
   data: {
     nonConformanceId: string;
     companyId: string;
+    userId: string;
     taskType: "investigation" | "action" | "approval";
     taskName: string;
     status: string;
     assignedTo?: string;
-    completedBy?: string;
     completedAt?: string;
     notes?: string;
   }
 ) {
-  return syncDocumentCustomToSlack(client, {
+  return syncDocumentToSlack(client, {
     documentType: "nonConformance",
     documentId: data.nonConformanceId,
     companyId: data.companyId,
-    customType: "task-update",
+    userId: data.userId,
+    type: "task-update",
     payload: {
       taskType: data.taskType,
       taskName: data.taskName,
       status: data.status,
       assignedTo: data.assignedTo,
-      completedBy: data.completedBy,
+      completedBy: data.status === "Completed" ? data.userId : undefined,
       completedAt: data.completedAt,
       notes: data.notes,
     },
@@ -513,18 +645,18 @@ export async function syncIssueAssignmentToSlack(
   data: {
     nonConformanceId: string;
     companyId: string;
+    userId: string;
     previousAssignee?: string;
     newAssignee: string;
-    updatedBy: string;
   }
 ) {
   return syncDocumentAssignmentToSlack(client, {
     documentType: "nonConformance",
     documentId: data.nonConformanceId,
     companyId: data.companyId,
+    userId: data.userId,
     previousAssignee: data.previousAssignee,
     newAssignee: data.newAssignee,
-    updatedBy: data.updatedBy,
   });
 }
 

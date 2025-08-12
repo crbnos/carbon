@@ -501,9 +501,9 @@ async function postToSlackThread(params: {
   text?: string;
 }) {
   const { token, channelId, threadTs, blocks, text } = params;
-  
+
   const client = new WebClient(token);
-  
+
   return await client.chat.postMessage({
     channel: channelId,
     thread_ts: threadTs,
@@ -515,23 +515,22 @@ async function postToSlackThread(params: {
 /**
  * Format document creation message for Slack
  */
-function formatDocumentCreated(
-  data: DocumentData,
-  baseUrl: string
-): any[] {
+function formatDocumentCreated(data: DocumentData, baseUrl: string): any[] {
   const blocks: any[] = [];
-  
+
   if (data.documentType === "nonConformance") {
     const ncData = data as NonConformanceData;
-    
+
     blocks.push({
       type: "section",
       text: {
         type: "mrkdwn",
-        text: `*Non-Conformance Created: ${ncData.nonConformanceId}*\n${ncData.title || "No title"}`,
+        text: `*Non-Conformance Created: ${ncData.nonConformanceId}*\n${
+          ncData.title || "No title"
+        }`,
       },
     });
-    
+
     if (ncData.description) {
       blocks.push({
         type: "section",
@@ -541,54 +540,56 @@ function formatDocumentCreated(
         },
       });
     }
-    
+
     const fields: any[] = [];
-    
+
     if (ncData.status) {
       fields.push({
         type: "mrkdwn",
         text: `*Status:*\n${ncData.status}`,
       });
     }
-    
+
     if (ncData.severity) {
       fields.push({
         type: "mrkdwn",
         text: `*Severity:*\n${ncData.severity}`,
       });
     }
-    
+
     if (ncData.typeName) {
       fields.push({
         type: "mrkdwn",
         text: `*Type:*\n${ncData.typeName}`,
       });
     }
-    
+
     if (ncData.workflowName) {
       fields.push({
         type: "mrkdwn",
         text: `*Workflow:*\n${ncData.workflowName}`,
       });
     }
-    
+
     if (fields.length > 0) {
       blocks.push({
         type: "section",
         fields,
       });
     }
-    
+
     if (ncData.investigationTypes && ncData.investigationTypes.length > 0) {
       blocks.push({
         type: "section",
         text: {
           type: "mrkdwn",
-          text: `*Investigation Types:*\n${ncData.investigationTypes.join(", ")}`,
+          text: `*Investigation Types:*\n${ncData.investigationTypes.join(
+            ", "
+          )}`,
         },
       });
     }
-    
+
     if (ncData.requiredActions && ncData.requiredActions.length > 0) {
       blocks.push({
         type: "section",
@@ -598,7 +599,7 @@ function formatDocumentCreated(
         },
       });
     }
-    
+
     blocks.push({
       type: "actions",
       elements: [
@@ -614,11 +615,11 @@ function formatDocumentCreated(
       ],
     });
   }
-  
+
   blocks.push({
     type: "divider",
   });
-  
+
   return blocks;
 }
 
@@ -631,9 +632,9 @@ function formatStatusUpdate(
   update: StatusUpdate
 ): any[] {
   const blocks: any[] = [];
-  
+
   const emoji = getStatusEmoji(update.newStatus);
-  
+
   blocks.push({
     type: "section",
     text: {
@@ -641,7 +642,7 @@ function formatStatusUpdate(
       text: `${emoji} *Status Updated*\n${documentIdentifier}`,
     },
   });
-  
+
   blocks.push({
     type: "section",
     fields: [
@@ -655,7 +656,7 @@ function formatStatusUpdate(
       },
     ],
   });
-  
+
   if (update.reason) {
     blocks.push({
       type: "section",
@@ -665,17 +666,19 @@ function formatStatusUpdate(
       },
     });
   }
-  
+
   blocks.push({
     type: "context",
     elements: [
       {
         type: "mrkdwn",
-        text: `Updated by ${update.updatedBy} at <!date^${Math.floor(Date.now() / 1000)}^{date_short_pretty} {time}|${new Date().toISOString()}>`,
+        text: `Updated by <@${update.updatedBy}> at <!date^${Math.floor(
+          Date.now() / 1000
+        )}^{date_short_pretty} {time}|${new Date().toISOString()}>`,
       },
     ],
   });
-  
+
   return blocks;
 }
 
@@ -688,13 +691,15 @@ function formatTaskUpdate(
   update: TaskUpdate
 ): any[] {
   const blocks: any[] = [];
-  
+
   const emoji = getTaskStatusEmoji(update.status);
-  const taskTypeLabel = 
-    update.taskType === "investigation" ? "Investigation" :
-    update.taskType === "action" ? "Action" :
-    "Approval";
-  
+  const taskTypeLabel =
+    update.taskType === "investigation"
+      ? "Investigation"
+      : update.taskType === "action"
+      ? "Action"
+      : "Approval";
+
   blocks.push({
     type: "section",
     text: {
@@ -702,7 +707,7 @@ function formatTaskUpdate(
       text: `${emoji} *${taskTypeLabel} Task Updated*\n${documentIdentifier}`,
     },
   });
-  
+
   const fields: any[] = [
     {
       type: "mrkdwn",
@@ -713,26 +718,26 @@ function formatTaskUpdate(
       text: `*Status:*\n${update.status}`,
     },
   ];
-  
+
   if (update.assignedTo) {
     fields.push({
       type: "mrkdwn",
       text: `*Assigned To:*\n${update.assignedTo}`,
     });
   }
-  
+
   if (update.completedBy) {
     fields.push({
       type: "mrkdwn",
       text: `*Completed By:*\n${update.completedBy}`,
     });
   }
-  
+
   blocks.push({
     type: "section",
     fields,
   });
-  
+
   if (update.notes) {
     blocks.push({
       type: "section",
@@ -742,7 +747,7 @@ function formatTaskUpdate(
       },
     });
   }
-  
+
   if (update.completedAt) {
     blocks.push({
       type: "context",
@@ -754,7 +759,7 @@ function formatTaskUpdate(
       ],
     });
   }
-  
+
   return blocks;
 }
 
@@ -767,7 +772,7 @@ function formatAssignmentUpdate(
   update: AssignmentUpdate
 ): any[] {
   const blocks: any[] = [];
-  
+
   blocks.push({
     type: "section",
     text: {
@@ -775,36 +780,38 @@ function formatAssignmentUpdate(
       text: `👤 *Assignment Updated*\n${documentIdentifier}`,
     },
   });
-  
+
   const fields: any[] = [];
-  
+
   if (update.previousAssignee) {
     fields.push({
       type: "mrkdwn",
       text: `*Previous Assignee:*\n${update.previousAssignee}`,
     });
   }
-  
+
   fields.push({
     type: "mrkdwn",
     text: `*New Assignee:*\n${update.newAssignee}`,
   });
-  
+
   blocks.push({
     type: "section",
     fields,
   });
-  
+
   blocks.push({
     type: "context",
     elements: [
       {
         type: "mrkdwn",
-        text: `Updated by ${update.updatedBy} at <!date^${Math.floor(Date.now() / 1000)}^{date_short_pretty} {time}|${new Date().toISOString()}>`,
+        text: `Updated by <@${update.updatedBy}> at <!date^${Math.floor(
+          Date.now() / 1000
+        )}^{date_short_pretty} {time}|${new Date().toISOString()}>`,
       },
     ],
   });
-  
+
   return blocks;
 }
 
@@ -813,17 +820,23 @@ function formatAssignmentUpdate(
  */
 function getStatusEmoji(status: string): string {
   const statusLower = status.toLowerCase();
-  
+
   if (statusLower.includes("closed") || statusLower.includes("complete")) {
     return "✅";
-  } else if (statusLower.includes("progress") || statusLower.includes("review")) {
-    return "🔄";
+  } else if (
+    statusLower.includes("progress") ||
+    statusLower.includes("review")
+  ) {
+    return "🚀";
   } else if (statusLower.includes("pending") || statusLower.includes("open")) {
     return "📋";
-  } else if (statusLower.includes("rejected") || statusLower.includes("cancelled")) {
+  } else if (
+    statusLower.includes("rejected") ||
+    statusLower.includes("cancelled")
+  ) {
     return "❌";
   }
-  
+
   return "📌";
 }
 
@@ -832,7 +845,7 @@ function getStatusEmoji(status: string): string {
  */
 function getTaskStatusEmoji(status: string): string {
   const statusLower = status.toLowerCase();
-  
+
   if (statusLower.includes("completed")) {
     return "✅";
   } else if (statusLower.includes("progress")) {
@@ -842,7 +855,7 @@ function getTaskStatusEmoji(status: string): string {
   } else if (statusLower.includes("pending")) {
     return "⏸️";
   }
-  
+
   return "📝";
 }
 

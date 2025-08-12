@@ -52,15 +52,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
       const hasSlack = await hasSlackIntegration(client, companyId);
       if (hasSlack) {
         await syncIssueTaskToSlack(client, {
-          nonConformanceId,
-          companyId,
-          taskType: type as "investigation" | "action" | "approval",
-          taskName,
-          status,
           assignedTo: assignee || undefined,
-          completedBy: status === "Completed" ? userId : undefined,
           completedAt:
             status === "Completed" ? new Date().toISOString() : undefined,
+          companyId,
+          nonConformanceId,
+          status,
+          taskName,
+          taskType: type as "investigation" | "action" | "approval",
+          userId,
         });
       }
     } catch (error) {
