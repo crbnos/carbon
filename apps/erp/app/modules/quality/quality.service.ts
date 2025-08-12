@@ -862,7 +862,9 @@ export async function updateIssueTaskStatus(
   return client
     .from(table)
     .update({ status, updatedBy: userId, assignee: finalAssignee })
-    .eq("id", id);
+    .eq("id", id)
+    .select("nonConformanceId")
+    .single();
 }
 
 export async function upsertGauge(

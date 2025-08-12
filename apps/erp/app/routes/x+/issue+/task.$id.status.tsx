@@ -29,8 +29,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     | "approval"
     | "review";
   const assignee = formData.get("assignee") as string;
-  const nonConformanceId = formData.get("nonConformanceId") as string;
-  const taskName = formData.get("taskName") as string;
 
   const update = await updateIssueTaskStatus(client, {
     id,
@@ -46,27 +44,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // Sync task update to Slack if we have the required info (non-blocking)
-  if (nonConformanceId && taskName && type !== "review") {
-    try {
-      const hasSlack = await hasSlackIntegration(client, companyId);
-      if (hasSlack) {
-        await syncIssueTaskToSlack(client, {
-          assignedTo: assignee || undefined,
-          completedAt:
-            status === "Completed" ? new Date().toISOString() : undefined,
-          companyId,
-          nonConformanceId,
-          status,
-          taskName,
-          taskType: type as "investigation" | "action" | "approval",
-          userId,
-        });
-      }
-    } catch (error) {
-      console.error("Failed to sync task to Slack:", error);
-      // Continue without blocking the main operation
+  try {
+    const hasSlack = await hasSlackIntegration(client, companyId);
+    if (hasSlack && update.data?.nonConformanceId) {
+      await syncIssueTaskToSlack(client, {
+        completedAt:
+          status === "Completed" ? new Date().toISOString() : undefined,
+        companyId,
+        id,
+        nonConformanceId: update.data.nonConformanceId,
+        status,
+        taskType: type as "investigation" | "action" | "approval",
+        userId,
+      });
     }
+  } catch (error) {
+    console.error("Failed to sync task to Slack:", error);
+    // Continue without blocking the main operation
   }
 
   return json({});

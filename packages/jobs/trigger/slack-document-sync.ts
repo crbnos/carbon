@@ -1,8 +1,9 @@
 import { getCarbonServiceRole, VERCEL_URL } from "@carbon/auth";
+import type { Database } from "@carbon/database";
 import { WebClient } from "@slack/web-api";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { task } from "@trigger.dev/sdk/v3";
 
-// Type definitions
 type DocumentType =
   | "nonConformance"
   | "quote"
@@ -45,7 +46,8 @@ interface TaskUpdate {
   taskType: "investigation" | "action" | "approval";
   taskName: string;
   status: string;
-  assignedTo?: string;
+  assignee?: string | null;
+  readableId?: string;
   completedBy?: string;
   completedAt?: string;
   notes?: string;
@@ -57,9 +59,6 @@ interface AssignmentUpdate {
   updatedBy: string;
 }
 
-/**
- * Post initial document creation message to Slack
- */
 export const slackDocumentCreated = task({
   id: "slack-document-created",
   run: async (payload: {
@@ -75,7 +74,6 @@ export const slackDocumentCreated = task({
     try {
       const serviceRole = await getCarbonServiceRole();
 
-      // Get the document details based on type
       const documentData = await getDocumentData(
         serviceRole,
         documentType,
@@ -87,7 +85,6 @@ export const slackDocumentCreated = task({
         throw new Error(`${documentType} ${documentId} not found`);
       }
 
-      // Get the Slack integration
       const { data: integration } = await serviceRole
         .from("companyIntegration")
         .select("metadata")
@@ -102,7 +99,6 @@ export const slackDocumentCreated = task({
       const slackToken = (integration.metadata as any)?.access_token as string;
       const baseUrl = VERCEL_URL || "http://localhost:3000";
 
-      // Post detailed information to the thread
       await postToSlackThread({
         token: slackToken,
         channelId,
@@ -118,9 +114,6 @@ export const slackDocumentCreated = task({
   },
 });
 
-/**
- * Post status update to Slack thread
- */
 export const slackDocumentStatusUpdate = task({
   id: "slack-document-status-update",
   run: async (payload: {
@@ -145,7 +138,6 @@ export const slackDocumentStatusUpdate = task({
     try {
       const serviceRole = await getCarbonServiceRole();
 
-      // Get the Slack thread for this document
       const { data: thread } = await serviceRole
         .from("slackDocumentThread")
         .select("channelId, threadTs")
@@ -158,7 +150,6 @@ export const slackDocumentStatusUpdate = task({
         return { success: true, message: "No Slack thread found" };
       }
 
-      // Get the Slack integration
       const { data: integration } = await serviceRole
         .from("companyIntegration")
         .select("metadata")
@@ -172,8 +163,7 @@ export const slackDocumentStatusUpdate = task({
 
       const slackToken = (integration.metadata as any).access_token as string;
 
-      // Get the document identifier for display
-      const documentIdentifier = await getDocumentIdentifier(
+      const documentIdentifier = await getDocumentReadableId(
         serviceRole,
         documentType,
         documentId,
@@ -187,7 +177,6 @@ export const slackDocumentStatusUpdate = task({
         reason,
       };
 
-      // Post status update to the thread
       await postToSlackThread({
         token: slackToken,
         channelId: thread.channelId,
@@ -210,9 +199,6 @@ export const slackDocumentStatusUpdate = task({
   },
 });
 
-/**
- * Post task update to Slack thread (mainly for non-conformances)
- */
 export const slackDocumentTaskUpdate = task({
   id: "slack-document-task-update",
   run: async (payload: {
@@ -222,10 +208,8 @@ export const slackDocumentTaskUpdate = task({
     taskType: "investigation" | "action" | "approval";
     taskName: string;
     status: string;
-    assignedTo?: string;
-    completedBy?: string;
+    assignee?: string | null;
     completedAt?: string;
-    notes?: string;
   }) => {
     const {
       documentType,
@@ -234,16 +218,13 @@ export const slackDocumentTaskUpdate = task({
       taskType,
       taskName,
       status,
-      assignedTo,
-      completedBy,
+      assignee,
       completedAt,
-      notes,
     } = payload;
 
     try {
       const serviceRole = await getCarbonServiceRole();
 
-      // Get the Slack thread for this document
       const { data: thread } = await serviceRole
         .from("slackDocumentThread")
         .select("channelId, threadTs")
@@ -256,7 +237,6 @@ export const slackDocumentTaskUpdate = task({
         return { success: true, message: "No Slack thread found" };
       }
 
-      // Get the Slack integration
       const { data: integration } = await serviceRole
         .from("companyIntegration")
         .select("metadata")
@@ -270,8 +250,7 @@ export const slackDocumentTaskUpdate = task({
 
       const slackToken = (integration.metadata as any).access_token as string;
 
-      // Get the document identifier for display
-      const documentIdentifier = await getDocumentIdentifier(
+      const documentIdentifier = await getDocumentReadableId(
         serviceRole,
         documentType,
         documentId,
@@ -282,13 +261,10 @@ export const slackDocumentTaskUpdate = task({
         taskType,
         taskName,
         status,
-        assignedTo,
-        completedBy,
+        assignee,
         completedAt,
-        notes,
       };
 
-      // Post task update to the thread
       await postToSlackThread({
         token: slackToken,
         channelId: thread.channelId,
@@ -307,9 +283,6 @@ export const slackDocumentTaskUpdate = task({
   },
 });
 
-/**
- * Post assignment update to Slack thread
- */
 export const slackDocumentAssignmentUpdate = task({
   id: "slack-document-assignment-update",
   run: async (payload: {
@@ -332,7 +305,6 @@ export const slackDocumentAssignmentUpdate = task({
     try {
       const serviceRole = await getCarbonServiceRole();
 
-      // Get the Slack thread for this document
       const { data: thread } = await serviceRole
         .from("slackDocumentThread")
         .select("channelId, threadTs")
@@ -345,7 +317,6 @@ export const slackDocumentAssignmentUpdate = task({
         return { success: true, message: "No Slack thread found" };
       }
 
-      // Get the Slack integration
       const { data: integration } = await serviceRole
         .from("companyIntegration")
         .select("metadata")
@@ -359,8 +330,7 @@ export const slackDocumentAssignmentUpdate = task({
 
       const slackToken = (integration.metadata as any).access_token as string;
 
-      // Get the document identifier for display
-      const documentIdentifier = await getDocumentIdentifier(
+      const documentIdentifier = await getDocumentReadableId(
         serviceRole,
         documentType,
         documentId,
@@ -373,7 +343,6 @@ export const slackDocumentAssignmentUpdate = task({
         updatedBy,
       };
 
-      // Post assignment update to the thread
       await postToSlackThread({
         token: slackToken,
         channelId: thread.channelId,
@@ -396,11 +365,8 @@ export const slackDocumentAssignmentUpdate = task({
   },
 });
 
-/**
- * Helper function to get document data based on type
- */
 async function getDocumentData(
-  serviceRole: any,
+  serviceRole: SupabaseClient<Database>,
   documentType: DocumentType,
   documentId: string,
   companyId: string
@@ -409,53 +375,25 @@ async function getDocumentData(
     case "nonConformance": {
       const { data } = await serviceRole
         .from("nonConformance")
-        .select(
-          `
-          *,
-          type:typeId(name),
-          workflow:workflowId(name)
-        `
-        )
+        .select("*")
         .eq("id", documentId)
         .eq("companyId", companyId)
         .single();
 
       if (!data) return null;
 
-      // Get investigation and action tasks
-      const [investigations, actions] = await Promise.all([
-        serviceRole
-          .from("nonConformanceInvestigationTask")
-          .select("investigationType")
-          .eq("nonConformanceId", documentId)
-          .eq("companyId", companyId),
-        serviceRole
-          .from("nonConformanceActionTask")
-          .select("actionType")
-          .eq("nonConformanceId", documentId)
-          .eq("companyId", companyId),
-      ]);
-
       return {
         documentType: "nonConformance",
         id: data.id,
         nonConformanceId: data.nonConformanceId,
-        title: data.title,
+        title: data.name,
         description: data.description,
         status: data.status,
-        severity: data.severity,
-        typeId: data.typeId,
-        typeName: data.type?.name,
-        workflowName: data.workflow?.name,
         createdBy: data.createdBy,
         createdAt: data.createdAt,
-        investigationTypes:
-          investigations.data?.map((i) => i.investigationType) || [],
-        requiredActions: actions.data?.map((a) => a.actionType) || [],
       } as NonConformanceData;
     }
 
-    // Add other document types here in the future
     case "quote":
     case "salesOrder":
     case "job":
@@ -465,11 +403,8 @@ async function getDocumentData(
   }
 }
 
-/**
- * Helper function to get document identifier for display
- */
-async function getDocumentIdentifier(
-  serviceRole: any,
+async function getDocumentReadableId(
+  serviceRole: SupabaseClient<Database>,
   documentType: DocumentType,
   documentId: string,
   companyId: string
@@ -484,15 +419,11 @@ async function getDocumentIdentifier(
       return data?.nonConformanceId || documentId;
     }
 
-    // Add other document types here
     default:
       return documentId;
   }
 }
 
-/**
- * Helper function to post messages to a Slack thread
- */
 async function postToSlackThread(params: {
   token: string;
   channelId: string;
@@ -512,9 +443,6 @@ async function postToSlackThread(params: {
   });
 }
 
-/**
- * Format document creation message for Slack
- */
 function formatDocumentCreated(data: DocumentData, baseUrl: string): any[] {
   const blocks: any[] = [];
 
@@ -623,9 +551,6 @@ function formatDocumentCreated(data: DocumentData, baseUrl: string): any[] {
   return blocks;
 }
 
-/**
- * Format status update message for Slack
- */
 function formatStatusUpdate(
   documentType: DocumentType,
   documentIdentifier: string,
@@ -639,7 +564,7 @@ function formatStatusUpdate(
     type: "section",
     text: {
       type: "mrkdwn",
-      text: `${emoji} *Status Updated*\n${documentIdentifier}`,
+      text: `${emoji} *Issue Status Updated*\n${documentIdentifier}`,
     },
   });
 
@@ -682,9 +607,6 @@ function formatStatusUpdate(
   return blocks;
 }
 
-/**
- * Format task update message for Slack
- */
 function formatTaskUpdate(
   documentType: DocumentType,
   documentIdentifier: string,
@@ -719,17 +641,17 @@ function formatTaskUpdate(
     },
   ];
 
-  if (update.assignedTo) {
+  if (update.assignee) {
     fields.push({
       type: "mrkdwn",
-      text: `*Assigned To:*\n${update.assignedTo}`,
+      text: `*Assigned To:*\n<@${update.assignee}>`,
     });
   }
 
   if (update.completedBy) {
     fields.push({
       type: "mrkdwn",
-      text: `*Completed By:*\n${update.completedBy}`,
+      text: `*Completed By:*\n<@${update.completedBy}>`,
     });
   }
 
@@ -763,9 +685,6 @@ function formatTaskUpdate(
   return blocks;
 }
 
-/**
- * Format assignment update message for Slack
- */
 function formatAssignmentUpdate(
   documentType: DocumentType,
   documentIdentifier: string,
@@ -815,9 +734,6 @@ function formatAssignmentUpdate(
   return blocks;
 }
 
-/**
- * Get emoji for status
- */
 function getStatusEmoji(status: string): string {
   const statusLower = status.toLowerCase();
 
@@ -840,9 +756,6 @@ function getStatusEmoji(status: string): string {
   return "📌";
 }
 
-/**
- * Get emoji for task status
- */
 function getTaskStatusEmoji(status: string): string {
   const statusLower = status.toLowerCase();
 
@@ -859,7 +772,6 @@ function getTaskStatusEmoji(status: string): string {
   return "📝";
 }
 
-// Backward compatibility exports
 export const slackNcrCreated = slackDocumentCreated;
 export const slackNcrStatusUpdate = slackDocumentStatusUpdate;
 export const slackNcrTaskUpdate = slackDocumentTaskUpdate;
