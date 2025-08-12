@@ -322,6 +322,7 @@ serve(async (req: Request) => {
           ) {
             // @ts-ignore -- content is json
             const contentFromWorkflow = workflow?.data?.content?.content ?? [];
+
             const insertedContent = {
               type: "doc",
               content: contentFromWorkflow,
@@ -336,13 +337,15 @@ serve(async (req: Request) => {
               });
             }
 
-            await trx
-              .updateTable("nonConformance")
-              .set({
-                content: insertedContent,
-              })
-              .where("id", "=", id)
-              .execute();
+            if (insertedContent.content.length > 0) {
+              await trx
+                .updateTable("nonConformance")
+                .set({
+                  content: insertedContent.content,
+                })
+                .where("id", "=", id)
+                .execute();
+            }
           }
 
           if (investigationTaskInserts.length > 0) {

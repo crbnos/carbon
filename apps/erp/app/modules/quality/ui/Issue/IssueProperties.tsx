@@ -299,7 +299,7 @@ const IssueProperties = () => {
             label: <Enumerable value={type.name} />,
           }))}
           isReadOnly={disableStructureUpdate}
-          label="Non-conformance Type"
+          label="Issue Type"
           name="nonConformanceTypeId"
           inline={(value, options) => {
             return (
@@ -313,7 +313,7 @@ const IssueProperties = () => {
           }}
           onChange={(value) => {
             if (value) {
-              onUpdate("source", value.value);
+              onUpdate("nonConformanceTypeId", value.value);
             }
           }}
         />

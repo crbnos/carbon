@@ -98,28 +98,11 @@ const IssueWorkflowForm = ({
               <span className="hidden md:inline">Issue</span> Workflow
             </Heading>
             <p className="text-sm text-muted-foreground">
-              Non-conformance workflows are used as a starting point for issues.
-              Each issue workflow uses a workflow to create the issue. A single
+              Issue workflows are used as a starting point for issues. Each
+              issue workflow uses a workflow to create the issue. A single
               workflow can be used in multiple workflows.
             </p>
           </VStack>
-          {/* <div className="ml-auto">
-            <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-            <IconButton aria-labell="More options" icon={<LuEllipsisVertical />} variant="secondary" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-            <DropdownMenuItem>
-            <span>Duplicate</span>
-            </DropdownMenuItem>
-            
-            <DropdownMenuSeparator />
-            <DropdownMenuItem destructive>
-            <span>Delete</span>
-            </DropdownMenuItem>
-            </DropdownMenuContent>
-            </DropdownMenu>
-            </div> */}
         </HStack>
         <Input name="name" label="Name" />
         <VStack spacing={2}>
