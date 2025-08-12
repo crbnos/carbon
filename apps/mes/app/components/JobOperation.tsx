@@ -855,7 +855,7 @@ export const JobOperation = ({
                                             material.requiresSerialTracking) && (
                                             <IconButton
                                               aria-label="Issue Material"
-                                              variant="ghost"
+                                              variant="secondary"
                                               icon={<LuQrCode />}
                                               className="h-8 w-8"
                                               onClick={() => {
@@ -991,7 +991,7 @@ export const JobOperation = ({
                                                   kittedChild.requiresSerialTracking) && (
                                                   <IconButton
                                                     aria-label="Issue Material"
-                                                    variant="ghost"
+                                                    variant="secondary"
                                                     icon={<LuQrCode />}
                                                     className="h-8 w-8"
                                                     onClick={() => {
