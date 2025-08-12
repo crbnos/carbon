@@ -3,6 +3,8 @@ import {
   NOVU_SECRET_KEY,
   VERCEL_URL,
 } from "@carbon/auth";
+
+import { notifyTaskAssigned } from "@carbon/integrations/notifications";
 import {
   getSubscriberId,
   NotificationEvent,
@@ -16,6 +18,14 @@ import { task } from "@trigger.dev/sdk/v3";
 
 const novu = new Novu(NOVU_SECRET_KEY!);
 const isLocal = VERCEL_URL === undefined || VERCEL_URL.includes("localhost");
+
+// Helper function to get company integrations
+async function getCompanyIntegrations(client: any, companyId: string) {
+  return client
+    .from("companyIntegration")
+    .select("*")
+    .eq("companyId", companyId);
+}
 
 export const notifyTask = task({
   id: "notify",
@@ -234,6 +244,50 @@ export const notifyTask = task({
       throw new Error(
         `No description found for notification type ${payload.event} with documentId ${payload.documentId}`
       );
+    }
+
+    // Send integration notifications for non-conformance assignment events (e.g., Slack)
+    if (
+      payload.event === NotificationEvent.NonConformanceAssignment &&
+      payload.recipient.type === "user"
+    ) {
+      console.log(
+        "Processing non-conformance assignment notification for integrations",
+        {
+          event: payload.event,
+          companyId: payload.companyId,
+          documentId: payload.documentId,
+          recipientUserId: payload.recipient.userId,
+          from: payload.from,
+        }
+      );
+
+      try {
+        const integrationsResult = await getCompanyIntegrations(
+          client,
+          payload.companyId
+        );
+
+        if (integrationsResult.data && integrationsResult.data.length > 0) {
+          await notifyTaskAssigned({ client }, integrationsResult.data, {
+            companyId: payload.companyId,
+            userId: payload.from || "system",
+            carbonUrl: `${VERCEL_URL}/x/issue/${payload.documentId}`,
+            task: {
+              id: payload.documentId,
+              table: "nonConformance",
+              assignee: payload.recipient.userId,
+              title: description,
+            },
+          });
+        }
+      } catch (error) {
+        console.error(
+          "Failed to send integration assignment notification:",
+          error
+        );
+        // Continue without blocking the main operation
+      }
     }
 
     if (payload.recipient.type === "user") {

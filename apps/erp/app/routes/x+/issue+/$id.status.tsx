@@ -1,15 +1,11 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { syncIssueStatusToSlack } from "@carbon/integrations/slack.server";
+import { notifyIssueStatusChanged } from "@carbon/integrations/notifications";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
-import {
-  getIssue,
-  nonConformanceStatus,
-  updateIssueStatus,
-} from "~/modules/quality";
-import { hasSlackIntegration } from "~/modules/settings/settings.server";
+import { nonConformanceStatus, updateIssueStatus } from "~/modules/quality";
+import { getCompanyIntegrations } from "~/modules/settings/settings.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -33,9 +29,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const currentIssue = await getIssue(client, id);
-  const previousStatus = currentIssue.data?.status || "";
-
   const [update] = await Promise.all([
     updateIssueStatus(client, {
       id,
@@ -52,21 +45,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // Sync status update to Slack (non-blocking)
+  // Send status update notifications (non-blocking)
   try {
-    const hasSlack = await hasSlackIntegration(client, companyId);
-
-    if (hasSlack) {
-      await syncIssueStatusToSlack(client, {
-        companyId,
-        newStatus: status,
+    const integrations = await getCompanyIntegrations(client, companyId);
+    await notifyIssueStatusChanged({ client }, integrations, {
+      companyId,
+      userId,
+      carbonUrl: `${path.to.issue(id)}`, // We might need the full URL here
+      issue: {
+        id,
+        status,
         nonConformanceId: id,
-        previousStatus,
-        userId,
-      });
-    }
+        title: "", // We might need to get the title from the issue data
+      },
+    });
   } catch (error) {
-    console.error("Failed to sync status to Slack:", error);
+    console.error("Failed to send notifications:", error);
     // Continue without blocking the main operation
   }
 

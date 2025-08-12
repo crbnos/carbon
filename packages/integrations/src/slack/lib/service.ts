@@ -466,14 +466,30 @@ export async function syncDocumentToSlack(
           break;
 
         case "assignment-update":
+          let previousAssignee: string | undefined;
+          let newAssignee: string | undefined;
+          if (data.payload.previousAssignee) {
+            previousAssignee = await getSlackUserIdByCarbonId(
+              client,
+              slackAuth.slackToken,
+              data.payload.previousAssignee || ""
+            );
+          }
+          if (data.payload.newAssignee) {
+            newAssignee = await getSlackUserIdByCarbonId(
+              client,
+              slackAuth.slackToken,
+              data.payload.newAssignee || ""
+            );
+          }
           result = await tasks.trigger<typeof slackDocumentAssignmentUpdate>(
             "slack-document-assignment-update",
             {
               documentType: data.documentType,
               documentId: data.documentId,
               companyId: data.companyId,
-              previousAssignee: data.payload.previousAssignee,
-              newAssignee: data.payload.newAssignee,
+              previousAssignee,
+              newAssignee,
               updatedBy: slackAuth.slackUserId || data.payload.updatedBy,
             }
           );
@@ -635,15 +651,40 @@ export async function syncIssueTaskToSlack(
     companyId: string;
     completedAt?: string;
     id: string;
-    nonConformanceId: string;
     status: string;
-    taskType: "investigation" | "action" | "approval";
+    taskType: "investigation" | "action" | "review";
     userId: string;
   }
 ) {
+  let nonConformanceId = "";
+  if (data.taskType === "investigation") {
+    const nonConformance = await client
+      .from("nonConformanceInvestigationTask")
+      .select("nonConformanceId")
+      .eq("id", data.id)
+      .single();
+    nonConformanceId = nonConformance.data?.nonConformanceId || "";
+  }
+  if (data.taskType === "action") {
+    const nonConformance = await client
+      .from("nonConformanceActionTask")
+      .select("nonConformanceId")
+      .eq("id", data.id)
+      .single();
+    nonConformanceId = nonConformance.data?.nonConformanceId || "";
+  }
+  if (data.taskType === "review") {
+    const nonConformance = await client
+      .from("nonConformanceApprovalTask")
+      .select("nonConformanceId")
+      .eq("id", data.id)
+      .single();
+    nonConformanceId = nonConformance.data?.nonConformanceId || "";
+  }
+
   return syncDocumentToSlack(client, {
     documentType: "nonConformance",
-    documentId: data.nonConformanceId,
+    documentId: nonConformanceId,
     companyId: data.companyId,
     userId: data.userId,
     type: "task-update",
