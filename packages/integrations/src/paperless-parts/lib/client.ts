@@ -2040,12 +2040,12 @@ export class PaperlessPartsClient<
      * @description Creates a new account.
      *
      * @tags Customers
-     * @name CreateAccoumt
+     * @name CreateAccount
      * @summary Create new Account
      * @request POST:/accounts/public
      * @secure
      */
-    createAccoumt: (
+    createAccount: (
       data: {
         /**
          * (Required) Account Name (must be non-null and non-blank)
