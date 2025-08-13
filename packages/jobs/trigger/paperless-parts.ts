@@ -1,5 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth";
 import type { Database } from "@carbon/database";
+import { PaperlessPartsClient } from "@carbon/integrations/paperless-parts";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { task } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
@@ -103,7 +104,7 @@ export const paperlessPartsTask = task({
     console.info(`📦 Payload:`, payload);
 
     const carbon = getCarbonServiceRole();
-    // const paperless = new PaperlessPartsClient(payload.apiKey);
+    const paperless = new PaperlessPartsClient(payload.apiKey);
 
     switch (payload.payload.type) {
       case "quote.created":
@@ -152,11 +153,11 @@ export const paperlessPartsTask = task({
         // If the customer does not exist, create a new customer in CarbonOS
         if (ppQuote.data.contact?.account) {
           const paperlessPartsCustomerId = ppQuote.data.contact?.account?.id;
+          // @ts-expect-error - JSONB column
           const existingCustomer = await carbon
             .from("customer")
             .select("id")
             .eq("companyId", payload.companyId)
-            // @ts-expect-error - JSONB column
             .eq("externalId->paperlessPartsId", paperlessPartsCustomerId)
             .maybeSingle();
 
@@ -242,7 +243,6 @@ export const paperlessPartsTask = task({
           `
           )
           .eq("contact.companyId", payload.companyId)
-          // @ts-expect-error - JSONB column
           .eq("contact.externalId->paperlessPartsId", paperlessPartsContactId)
           .maybeSingle();
 
@@ -299,69 +299,134 @@ export const paperlessPartsTask = task({
           throw new Error("Failed to get next sequence number for quote");
         }
 
-        const newCarbonQuote = await carbon
+        // Create a quote object from the Paperless Parts data
+        const quote = {
+          companyId: payload.companyId,
+          customerId: customerId,
+          customerContactId: customerContactId,
+          quoteId: nextSequence.data.toString(),
+          name: `Quote for ${
+            ppQuote.data.contact?.account?.name ||
+            `${ppQuote.data.contact?.first_name} ${ppQuote.data.contact?.last_name}`
+          }`,
+          status: "Draft" as const,
+          currencyCode: "USD",
+          createdBy: "system",
+          exchangeRate: 1 as number | undefined,
+          exchangeRateUpdatedAt: undefined as string | undefined,
+          expirationDate: undefined as string | undefined,
+          externalId: {
+            paperlessPartsId: quotePayload.uuid,
+          },
+        };
+
+        const [customerPayment, customerShipping, employee, opportunity] =
+          await Promise.all([
+            getCustomerPayment(carbon, quote.customerId),
+            getCustomerShipping(carbon, quote.customerId),
+            getEmployeeJob(carbon, quote.createdBy, quote.companyId),
+            carbon
+              .from("opportunity")
+              .insert([
+                { companyId: quote.companyId, customerId: quote.customerId },
+              ])
+              .select("id")
+              .single(),
+          ]);
+
+        if (customerPayment.error) return customerPayment;
+        if (customerShipping.error) return customerShipping;
+
+        const {
+          paymentTermId,
+          invoiceCustomerId,
+          invoiceCustomerContactId,
+          invoiceCustomerLocationId,
+        } = customerPayment.data;
+
+        const { shippingMethodId, shippingTermId } = customerShipping.data;
+
+        if (quote.currencyCode) {
+          const currency = await getCurrencyByCode(
+            carbon,
+            quote.companyId,
+            quote.currencyCode
+          );
+          if (currency.data) {
+            quote.exchangeRate = currency.data.exchangeRate ?? undefined;
+            quote.exchangeRateUpdatedAt = new Date().toISOString();
+          }
+        } else {
+          quote.exchangeRate = 1;
+          quote.exchangeRateUpdatedAt = new Date().toISOString();
+        }
+
+        const locationId = employee?.data?.locationId ?? null;
+        const insert = await carbon
           .from("quote")
-          .insert({
-            quoteId: nextSequence.data,
-            companyId: payload.companyId,
-            customerId,
-            customerContactId,
-            createdBy: "system",
-            currencyCode: "USD",
-          })
-          .select()
-          .single();
-
-        if (newCarbonQuote.error || !newCarbonQuote.data) {
-          throw new Error("Failed to create quote in CarbonOS");
-        }
-        console.info("🔰 New CarbonOS quote created");
-
-        // Create a new QuoteShipment
-        const newQuoteShipment = await carbon
-          .from("quoteShipment")
-          .insert({
-            companyId: payload.companyId,
-            id: newCarbonQuote.data.id,
-          })
-          .select()
-          .single();
-
-        if (newQuoteShipment.error || !newQuoteShipment.data) {
-          throw new Error("Failed to create quote shipment in CarbonOS");
-        }
-        console.info("🔰 New CarbonOS quoteShipment created");
-
-        // Create a new QuotePayment
-        const newQuotePayment = await carbon
-          .from("quotePayment")
-          .insert({
-            companyId: payload.companyId,
-            id: newCarbonQuote.data.id,
-          })
-          .select()
-          .single();
-
-        if (newQuotePayment.error || !newQuotePayment.data) {
-          throw new Error("Failed to create quote payment in CarbonOS");
-        }
-        console.info("🔰 New CarbonOS quotePayment created");
-
-        // Create a new Opportunity for the quote
-        const newOpportunity = await carbon
-          .from("opportunity")
-          .insert({
-            quoteId: newCarbonQuote.data.id,
-            companyId: payload.companyId,
-          })
-          .select()
-          .single();
-
-        if (newOpportunity.error || !newOpportunity.data) {
-          throw new Error("Failed to create opportunity in CarbonOS");
+          .insert([
+            {
+              ...quote,
+              opportunityId: opportunity.data?.id,
+            },
+          ])
+          .select("id, quoteId");
+        if (insert.error) {
+          return insert;
         }
 
-        console.info("🔰 New CarbonOS opportunity created");
+        const quoteId = insert.data?.[0]?.id;
+        if (!quoteId) return insert;
+
+        const [shipment, payment, externalLink] = await Promise.all([
+          carbon.from("quoteShipment").insert([
+            {
+              id: quoteId,
+              locationId: locationId,
+              shippingMethodId: shippingMethodId,
+              shippingTermId: shippingTermId,
+              companyId: quote.companyId,
+            },
+          ]),
+          carbon.from("quotePayment").insert([
+            {
+              id: quoteId,
+              invoiceCustomerId: invoiceCustomerId,
+              invoiceCustomerContactId: invoiceCustomerContactId,
+              invoiceCustomerLocationId: invoiceCustomerLocationId,
+              paymentTermId: paymentTermId,
+              companyId: quote.companyId,
+            },
+          ]),
+          upsertExternalLink(carbon, {
+            documentType: "Quote" as const,
+            documentId: quoteId,
+            customerId: quote.customerId,
+            expiresAt: quote.expirationDate,
+            companyId: quote.companyId,
+          }),
+        ]);
+
+        if (shipment.error) {
+          await deleteQuote(carbon, quoteId);
+          return payment;
+        }
+        if (payment.error) {
+          await deleteQuote(carbon, quoteId);
+          return payment;
+        }
+        if (opportunity.error) {
+          await deleteQuote(carbon, quoteId);
+          return opportunity;
+        }
+        if (externalLink.data) {
+          await carbon
+            .from("quote")
+            .update({ externalLinkId: externalLink.data.id })
+            .eq("id", quoteId);
+        }
+
+        console.info("🔰 New CarbonOS quote created from Paperless Parts");
 
         result = {
           success: true,
@@ -433,4 +498,79 @@ async function getNextSequence(
     sequence_name: table,
     company_id: companyId,
   });
+}
+
+async function getCustomerPayment(
+  client: SupabaseClient<Database>,
+  customerId: string
+) {
+  return client
+    .from("customerPayment")
+    .select("*")
+    .eq("customerId", customerId)
+    .single();
+}
+
+async function getCustomerShipping(
+  client: SupabaseClient<Database>,
+  customerId: string
+) {
+  return client
+    .from("customerShipping")
+    .select("*")
+    .eq("customerId", customerId)
+    .single();
+}
+
+async function getEmployeeJob(
+  client: SupabaseClient<Database>,
+  employeeId: string,
+  companyId: string
+) {
+  return client
+    .from("employeeJob")
+    .select("*")
+    .eq("id", employeeId)
+    .eq("companyId", companyId)
+    .single();
+}
+
+async function getCurrencyByCode(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  currencyCode: string
+) {
+  return client
+    .from("currency")
+    .select("exchangeRate")
+    .eq("companyId", companyId)
+    .eq("code", currencyCode)
+    .single();
+}
+
+async function deleteQuote(client: SupabaseClient<Database>, quoteId: string) {
+  return client.from("quote").delete().eq("id", quoteId);
+}
+
+async function upsertExternalLink(
+  client: SupabaseClient<Database>,
+  externalLink: {
+    documentType: "Quote" | "SupplierQuote" | "Customer";
+    documentId: string;
+    customerId: string;
+    expiresAt?: string;
+    companyId: string;
+  }
+) {
+  return client
+    .from("externalLink")
+    .insert({
+      documentType: externalLink.documentType,
+      documentId: externalLink.documentId,
+      customerId: externalLink.customerId,
+      expiresAt: externalLink.expiresAt,
+      companyId: externalLink.companyId,
+    })
+    .select("id")
+    .single();
 }
