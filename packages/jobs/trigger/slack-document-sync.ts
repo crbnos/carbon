@@ -1,7 +1,6 @@
 import { getCarbonServiceRole, VERCEL_URL } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import {
-  type DocumentData,
   type DocumentType,
   type IssueAssignmentUpdate,
   type IssueStatusUpdate,
@@ -343,7 +342,7 @@ async function getDocumentData(
   documentType: DocumentType,
   documentId: string,
   companyId: string
-): Promise<DocumentData | null> {
+): Promise<any | null> {
   switch (documentType) {
     case "nonConformance": {
       const { data } = await serviceRole
@@ -368,9 +367,78 @@ async function getDocumentData(
       } as NonConformanceData;
     }
 
-    case "quote":
-    case "salesOrder":
-    case "job":
+    case "quote": {
+      const { data } = await serviceRole
+        .from("quote")
+        .select("id, quoteId, customerReference, status, createdBy, createdAt")
+        .eq("id", documentId)
+        .eq("companyId", companyId)
+        .single();
+
+      if (!data) return null;
+
+      return {
+        documentType: "quote",
+        id: data.id,
+        readableId: data.quoteId,
+        title: data.customerReference,
+        description: data.customerReference,
+        status: data.status,
+        createdBy: data.createdBy,
+        createdAt: data.createdAt,
+      };
+    }
+
+    case "salesOrder": {
+      const { data } = await serviceRole
+        .from("salesOrder")
+        .select(
+          "id, salesOrderId, customerReference, status, createdBy, createdAt"
+        )
+        .eq("id", documentId)
+        .eq("companyId", companyId)
+        .single();
+
+      if (!data) return null;
+
+      return {
+        documentType: "salesOrder",
+        id: data.id,
+        readableId: data.salesOrderId,
+        title: data.customerReference,
+        description: data.customerReference,
+        status: data.status,
+        createdBy: data.createdBy,
+        createdAt: data.createdAt,
+      };
+    }
+
+    case "job": {
+      const { data } = await serviceRole
+        .from("job")
+        .select("id, jobId, status, createdBy, createdAt")
+        .eq("id", documentId)
+        .eq("companyId", companyId)
+        .single();
+
+      if (!data) return null;
+
+      return {
+        documentType: "job",
+        id: data.id,
+        readableId: data.jobId,
+        title: data.jobId,
+        description: data.jobId,
+        status: data.status,
+        createdBy: data.createdBy,
+        createdAt: data.createdAt,
+      };
+    }
+
+    case "purchaseOrder":
+    case "invoice":
+    case "receipt":
+    case "shipment":
     default:
       console.warn(`Document type ${documentType} not yet implemented`);
       return null;
