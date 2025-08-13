@@ -401,7 +401,7 @@ const Documents = ({
                             Download
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            disabled={!canDelete || file.bucket !== writeBucket}
+                            disabled={!canDelete}
                             onClick={() => deleteFile(file)}
                             destructive
                           >
