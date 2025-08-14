@@ -139,6 +139,7 @@ export async function action({ request }: ActionFunctionArgs) {
         ],
       }),
     ]);
+
     if (seed.error) {
       console.error(seed.error);
       throw new Error("Fatal: failed to seed company");

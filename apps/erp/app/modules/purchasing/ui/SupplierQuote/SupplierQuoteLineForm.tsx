@@ -231,7 +231,6 @@ const SupplierQuoteLineForm = ({
                         type={itemType}
                         value={itemData.itemId}
                         includeInactive
-                        replenishmentSystem="Buy"
                         onChange={(value) => {
                           onItemChange(value?.value as string);
                         }}
