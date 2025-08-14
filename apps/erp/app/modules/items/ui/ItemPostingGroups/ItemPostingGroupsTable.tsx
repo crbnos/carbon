@@ -10,103 +10,98 @@ import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
 import type { ItemPostingGroup } from "../../types";
 
-type ItemPostingGroupsTableProps = {
+type ItemGroupsTableProps = {
   data: ItemPostingGroup[];
   count: number;
 };
 
-const ItemPostingGroupsTable = memo(
-  ({ data, count }: ItemPostingGroupsTableProps) => {
-    const [params] = useUrlParams();
-    const navigate = useNavigate();
-    const permissions = usePermissions();
+const ItemGroupsTable = memo(({ data, count }: ItemGroupsTableProps) => {
+  const [params] = useUrlParams();
+  const navigate = useNavigate();
+  const permissions = usePermissions();
 
-    const rows = useMemo(() => data, [data]);
-    const customColumns =
-      useCustomColumns<ItemPostingGroup>("itemPostingGroup");
+  const rows = useMemo(() => data, [data]);
+  const customColumns = useCustomColumns<ItemPostingGroup>("itemGroup");
 
-    const columns = useMemo<ColumnDef<(typeof rows)[number]>[]>(() => {
-      const defaultColumns: ColumnDef<(typeof rows)[number]>[] = [
-        {
-          accessorKey: "name",
-          header: "Name",
-          cell: ({ row }) => (
-            <Enumerable
-              value={row.original.name}
-              onClick={() =>
-                navigate(
-                  `${path.to.itemPostingGroup(
-                    row.original.id
-                  )}?${params.toString()}`
-                )
-              }
-              className="cursor-pointer"
-            />
-          ),
-        },
-        {
-          accessorKey: "description",
-          header: "Description",
-          cell: (item) => item.getValue(),
-        },
-      ];
-      return [...defaultColumns, ...customColumns];
-    }, [navigate, params, customColumns]);
-
-    const renderContextMenu = useCallback(
-      (row: (typeof rows)[number]) => {
-        return (
-          <>
-            <MenuItem
-              disabled={!permissions.can("update", "parts")}
-              onClick={() => {
-                navigate(
-                  `${path.to.itemPostingGroup(row.id)}?${params.toString()}`
-                );
-              }}
-            >
-              <MenuIcon icon={<LuPencil />} />
-              Edit Item Group
-            </MenuItem>
-            <MenuItem
-              destructive
-              disabled={!permissions.can("delete", "parts")}
-              onClick={() => {
-                navigate(
-                  `${path.to.deleteItemPostingGroup(
-                    row.id
-                  )}?${params.toString()}`
-                );
-              }}
-            >
-              <MenuIcon icon={<LuTrash />} />
-              Delete Item Group
-            </MenuItem>
-          </>
-        );
+  const columns = useMemo<ColumnDef<(typeof rows)[number]>[]>(() => {
+    const defaultColumns: ColumnDef<(typeof rows)[number]>[] = [
+      {
+        accessorKey: "name",
+        header: "Name",
+        cell: ({ row }) => (
+          <Enumerable
+            value={row.original.name}
+            onClick={() =>
+              navigate(
+                `${path.to.itemPostingGroup(
+                  row.original.id
+                )}?${params.toString()}`
+              )
+            }
+            className="cursor-pointer"
+          />
+        ),
       },
-      [navigate, params, permissions]
-    );
+      {
+        accessorKey: "description",
+        header: "Description",
+        cell: (item) => item.getValue(),
+      },
+    ];
+    return [...defaultColumns, ...customColumns];
+  }, [navigate, params, customColumns]);
 
-    return (
-      <Table<(typeof rows)[number]>
-        data={data}
-        columns={columns}
-        count={count}
-        primaryAction={
-          permissions.can("create", "parts") && (
-            <New
-              label="Posting Group"
-              to={`${path.to.newItemPostingGroup}?${params.toString()}`}
-            />
-          )
-        }
-        renderContextMenu={renderContextMenu}
-        title="Item Posting Groups"
-      />
-    );
-  }
-);
+  const renderContextMenu = useCallback(
+    (row: (typeof rows)[number]) => {
+      return (
+        <>
+          <MenuItem
+            disabled={!permissions.can("update", "parts")}
+            onClick={() => {
+              navigate(
+                `${path.to.itemPostingGroup(row.id)}?${params.toString()}`
+              );
+            }}
+          >
+            <MenuIcon icon={<LuPencil />} />
+            Edit Item Group
+          </MenuItem>
+          <MenuItem
+            destructive
+            disabled={!permissions.can("delete", "parts")}
+            onClick={() => {
+              navigate(
+                `${path.to.deleteItemPostingGroup(row.id)}?${params.toString()}`
+              );
+            }}
+          >
+            <MenuIcon icon={<LuTrash />} />
+            Delete Item Group
+          </MenuItem>
+        </>
+      );
+    },
+    [navigate, params, permissions]
+  );
 
-ItemPostingGroupsTable.displayName = "ItemPostingGroupsTable";
-export default ItemPostingGroupsTable;
+  return (
+    <Table<(typeof rows)[number]>
+      data={data}
+      columns={columns}
+      count={count}
+      primaryAction={
+        permissions.can("create", "parts") && (
+          <New
+            label="Group"
+            to={`${path.to.newItemPostingGroup}?${params.toString()}`}
+          />
+        )
+      }
+      renderContextMenu={renderContextMenu}
+      title="Item Groups"
+    />
+  );
+});
+
+ItemGroupsTable.displayName = "ItemGroupsTable";
+export default ItemGroupsTable;

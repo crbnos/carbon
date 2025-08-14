@@ -5,6 +5,7 @@ import {
   LuBeef,
   LuDessert,
   LuGlassWater,
+  LuGroup,
   LuHammer,
   LuPizza,
   LuPuzzle,
@@ -67,7 +68,7 @@ const itemsRoutes: AuthenticatedRouteGroup[] = [
   //   ],
   // },
   {
-    name: "Configure",
+    name: "Configure Materials",
     routes: [
       {
         name: "Dimensions",
@@ -105,12 +106,17 @@ const itemsRoutes: AuthenticatedRouteGroup[] = [
         icon: <LuPuzzle />,
         role: "employee",
       },
-      // {
-      //   name: "Posting Groups",
-      //   to: path.to.itemPostingGroups,
-      //   role: "employee",
-      //   icon: <PiPiggyBank />,
-      // },
+    ],
+  },
+  {
+    name: "Configure",
+    routes: [
+      {
+        name: "Groups",
+        to: path.to.itemPostingGroups,
+        role: "employee",
+        icon: <LuGroup />,
+      },
       {
         name: "Units",
         to: path.to.uoms,

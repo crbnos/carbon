@@ -81,6 +81,7 @@ export const itemValidator = z.object({
       message: "Part type is required",
     }),
   }),
+  postingGroupId: zfd.text(z.string().optional()),
   unitOfMeasureCode: z
     .string()
     .min(1, { message: "Unit of Measure is required" }),
