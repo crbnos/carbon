@@ -5,6 +5,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./exchange-rates/exchange-rates.server": "./src/exchange-rates/exchange-rates.server.ts",
+    "./accounting": "./src/accounting/index.ts",
     "./notifications": "./src/notifications/index.ts",
     "./onshape": "./src/onshape/lib/index.ts",
     "./slack.server": "./src/slack.server.ts",
