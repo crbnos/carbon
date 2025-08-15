@@ -48,6 +48,11 @@ export const docsQuery = () => ({
   staleTime: RefreshRate.Never,
 });
 
+export const itemPostingGroupsQuery = (companyId: string | null) => ({
+  queryKey: ["itemPostingGroups", companyId ?? "null"],
+  staleTime: RefreshRate.Low,
+});
+
 export const locationsQuery = (companyId: string | null) => ({
   queryKey: ["locations", companyId ?? "null"],
   staleTime: RefreshRate.Low,

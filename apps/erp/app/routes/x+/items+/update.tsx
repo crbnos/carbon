@@ -288,6 +288,61 @@ export async function action({ request }: ActionFunctionArgs) {
           .in("id", items as string[])
           .eq("companyId", companyId)
       );
+    case "itemPostingGroupId":
+      // Update itemCost table for all selected items
+      const itemCostUpdates = await Promise.all(
+        (items as string[]).map(async (itemId) => {
+          // First check if itemCost record exists
+          const existingCost = await client
+            .from("itemCost")
+            .select("itemId")
+            .eq("itemId", itemId)
+            .single();
+
+          if (existingCost.data) {
+            // Update existing record
+            return client
+              .from("itemCost")
+              .update({
+                itemPostingGroupId: value || null,
+                updatedBy: userId,
+                updatedAt: new Date().toISOString(),
+              })
+              .eq("itemId", itemId);
+          } else {
+            // Create new record
+            return client.from("itemCost").insert({
+              itemId,
+              itemPostingGroupId: value || null,
+              costingMethod: "Standard",
+              standardCost: 0,
+              unitCost: 0,
+              costIsAdjusted: false,
+              companyId,
+              createdBy: userId,
+              updatedBy: userId,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            });
+          }
+        })
+      );
+
+      // Check for any errors
+      const errors = itemCostUpdates.filter((result) => result.error);
+      if (errors.length > 0) {
+        return json({
+          error: {
+            message: errors[0].error?.message || "Failed to update item costs",
+          },
+          data: null,
+        });
+      }
+
+      return json({
+        data: null,
+        error: null,
+      });
     case "partId":
       if (items.length > 1) {
         return json({
