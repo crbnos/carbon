@@ -1,4 +1,4 @@
-import { Array, ValidatedForm } from "@carbon/form";
+import { ValidatedForm } from "@carbon/form";
 import {
   ModalCard,
   ModalCardBody,
@@ -21,6 +21,7 @@ import {
   DefaultMethodType,
   Hidden,
   InputControlled,
+  ItemPostingGroup,
   Select,
   Submit,
   UnitOfMeasure,
@@ -283,7 +284,7 @@ const MaterialForm = ({
                   label="Inventory Unit of Measure"
                 />
 
-                <Array name="sizes" label="Sizes" />
+                <ItemPostingGroup name="postingGroupId" label="Item Group" />
 
                 <CustomFormFields table="material" tags={initialValues.tags} />
               </div>

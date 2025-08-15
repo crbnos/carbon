@@ -22,6 +22,7 @@ import {
   Hidden,
   Input,
   InputControlled,
+  ItemPostingGroup,
   Number,
   Select,
   Submit,
@@ -157,6 +158,9 @@ const ConsumableForm = ({
                   name="unitOfMeasureCode"
                   label="Unit of Measure"
                 />
+                {!isEditing && (
+                  <ItemPostingGroup name="postingGroupId" label="Item Group" />
+                )}
                 {!isEditing && (
                   <Number
                     name="unitCost"

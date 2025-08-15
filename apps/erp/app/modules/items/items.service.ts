@@ -1918,14 +1918,27 @@ export async function upsertConsumable(
     if (itemInsert.error) return itemInsert;
     const itemId = itemInsert.data?.id;
 
-    const consumableInsert = await client.from("consumable").upsert({
-      id: consumable.id,
-      companyId: consumable.companyId,
-      createdBy: consumable.createdBy,
-      customFields: consumable.customFields,
-    });
+    const [consumableInsert, itemCostUpdate] = await Promise.all([
+      client.from("consumable").upsert({
+        id: consumable.id,
+        companyId: consumable.companyId,
+        createdBy: consumable.createdBy,
+        customFields: consumable.customFields,
+      }),
+      client
+        .from("itemCost")
+        .update(
+          sanitize({
+            itemPostingGroupId: consumable.postingGroupId,
+          })
+        )
+        .eq("itemId", itemId),
+    ]);
 
     if (consumableInsert.error) return consumableInsert;
+    if (itemCostUpdate.error) {
+      console.error(itemCostUpdate.error);
+    }
 
     const costUpdate = await client
       .from("itemCost")
@@ -2017,14 +2030,27 @@ export async function upsertPart(
     if (itemInsert.error) return itemInsert;
     const itemId = itemInsert.data?.id;
 
-    const partInsert = await client.from("part").upsert({
-      id: part.id,
-      companyId: part.companyId,
-      createdBy: part.createdBy,
-      customFields: part.customFields,
-    });
+    const [partInsert, itemCostUpdate] = await Promise.all([
+      client.from("part").upsert({
+        id: part.id,
+        companyId: part.companyId,
+        createdBy: part.createdBy,
+        customFields: part.customFields,
+      }),
+      client
+        .from("itemCost")
+        .update(
+          sanitize({
+            itemPostingGroupId: part.postingGroupId,
+          })
+        )
+        .eq("itemId", itemId),
+    ]);
 
     if (partInsert.error) return partInsert;
+    if (itemCostUpdate.error) {
+      console.error(itemCostUpdate.error);
+    }
 
     if (part.replenishmentSystem !== "Make") {
       const costUpdate = await client
@@ -2545,6 +2571,21 @@ export async function upsertMaterial(
         const firstError = itemInserts.find((insert) => insert.error);
         return firstError!;
       }
+      const itemCostUpdate = await Promise.all(
+        itemInserts.map((insert) =>
+          client
+            .from("itemCost")
+            .update(
+              sanitize({
+                itemPostingGroupId: material.postingGroupId,
+              })
+            )
+            .eq("itemId", insert.data?.id ?? "")
+        )
+      );
+      if (itemCostUpdate.some((update) => update.error)) {
+        console.error(itemCostUpdate.find((update) => update.error));
+      }
     } else {
       const itemInsert = await client
         .from("item")
@@ -2563,6 +2604,18 @@ export async function upsertMaterial(
         .select("id")
         .single();
       if (itemInsert.error) return itemInsert;
+      const itemId = itemInsert.data?.id;
+      const itemCostUpdate = await client
+        .from("itemCost")
+        .update(
+          sanitize({
+            itemPostingGroupId: material.postingGroupId,
+          })
+        )
+        .eq("itemId", itemId);
+      if (itemCostUpdate.error) {
+        console.error(itemCostUpdate.error);
+      }
     }
 
     const materialInsert = await client.from("material").upsert({
@@ -3031,14 +3084,27 @@ export async function upsertTool(
     if (itemInsert.error) return itemInsert;
     const itemId = itemInsert.data?.id;
 
-    const toolInsert = await client.from("tool").upsert({
-      id: tool.id,
-      companyId: tool.companyId,
-      createdBy: tool.createdBy,
-      customFields: tool.customFields,
-    });
+    const [toolInsert, itemCostUpdate] = await Promise.all([
+      client.from("tool").upsert({
+        id: tool.id,
+        companyId: tool.companyId,
+        createdBy: tool.createdBy,
+        customFields: tool.customFields,
+      }),
+      client
+        .from("itemCost")
+        .update(
+          sanitize({
+            itemPostingGroupId: tool.postingGroupId,
+          })
+        )
+        .eq("itemId", itemId),
+    ]);
 
     if (toolInsert.error) return toolInsert;
+    if (itemCostUpdate.error) {
+      console.error(itemCostUpdate.error);
+    }
 
     const costUpdate = await client
       .from("itemCost")

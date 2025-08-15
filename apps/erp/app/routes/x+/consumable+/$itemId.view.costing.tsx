@@ -93,6 +93,7 @@ export default function ConsumableCostingRoute() {
         key={itemCost.itemId}
         initialValues={{
           ...itemCost,
+          itemPostingGroupId: itemCost.itemPostingGroupId ?? undefined,
           ...getCustomFields(itemCost.customFields),
         }}
       />

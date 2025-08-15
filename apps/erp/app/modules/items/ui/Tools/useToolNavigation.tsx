@@ -55,12 +55,12 @@ export function useToolNavigation() {
       isActive: (pathname: string) => pathname.includes("manufacturing"),
     },
     {
-      name: "Costing",
+      name: "Accounting",
       to: path.to.toolCosting(itemId),
       role: ["employee"],
       permission: "purchasing",
       icon: LuTags,
-      shortcut: "Command+Shift+c",
+      shortcut: "Command+Shift+a",
     },
     {
       name: "Planning",

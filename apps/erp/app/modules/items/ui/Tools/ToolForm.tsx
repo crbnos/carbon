@@ -32,6 +32,7 @@ import {
   Hidden,
   Input,
   InputControlled,
+  ItemPostingGroup,
   Number,
   Select,
   Submit,
@@ -280,6 +281,9 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
                   name="unitOfMeasureCode"
                   label="Unit of Measure"
                 />
+                {!isEditing && (
+                  <ItemPostingGroup name="postingGroupId" label="Item Group" />
+                )}
                 {!isEditing && (
                   <Number
                     name="unitCost"

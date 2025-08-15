@@ -7,7 +7,13 @@ import {
   CardTitle,
 } from "@carbon/react";
 import type { z } from "zod";
-import { CustomFormFields, Hidden, Number, Submit } from "~/components/Form";
+import {
+  CustomFormFields,
+  Hidden,
+  ItemPostingGroup,
+  Number,
+  Submit,
+} from "~/components/Form";
 import { usePermissions, useUser } from "~/hooks";
 import { itemCostValidator } from "../../items.models";
 
@@ -39,11 +45,16 @@ const ItemCostingForm = ({ initialValues }: ItemCostingFormProps) => {
         defaultValues={initialValues}
       >
         <CardHeader>
-          <CardTitle>Costing</CardTitle>
+          <CardTitle>Costing & Posting</CardTitle>
         </CardHeader>
         <CardContent>
           <Hidden name="itemId" />
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full items-start">
+            <ItemPostingGroup
+              name="itemPostingGroupId"
+              label="Item Group"
+              helperText="Group used together with the supplier type, customer type, and location to determine the account"
+            />
             {/* <Select
               name="costingMethod"
               label="Part Costing Method"
@@ -52,7 +63,6 @@ const ItemCostingForm = ({ initialValues }: ItemCostingFormProps) => {
                 if (newValue) setItemCostingMethod(newValue.value);
               }}
             />
-            <ItemPostingGroup name="itemPostingGroupId" label="Posting Group" />
             <Number
               name="standardCost"
               label="Standard Cost"
