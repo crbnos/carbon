@@ -43,6 +43,12 @@ declare global {
       VERCEL_ENV: string;
       CLOUDFLARE_TURNSTILE_SITE_KEY: string;
       CLOUDFLARE_TURNSTILE_SECRET_KEY: string;
+      QUICKBOOKS_CLIENT_ID: string;
+      QUICKBOOKS_CLIENT_SECRET: string;
+      QUICKBOOKS_REDIRECT_URI: string;
+      XERO_CLIENT_ID: string;
+      XERO_CLIENT_SECRET: string;
+      XERO_REDIRECT_URI: string;
     }
   }
 }
@@ -189,6 +195,28 @@ export const CLOUDFLARE_TURNSTILE_SECRET_KEY = getEnv(
   "CLOUDFLARE_TURNSTILE_SECRET_KEY",
   { isRequired: false }
 );
+
+export const QUICKBOOKS_CLIENT_ID = getEnv("QUICKBOOKS_CLIENT_ID", {
+  isRequired: false,
+});
+export const QUICKBOOKS_CLIENT_SECRET = getEnv("QUICKBOOKS_CLIENT_SECRET", {
+  isRequired: false,
+  isSecret: true,
+});
+export const QUICKBOOKS_REDIRECT_URI = getEnv("QUICKBOOKS_REDIRECT_URI", {
+  isRequired: false,
+});
+
+export const XERO_CLIENT_ID = getEnv("XERO_CLIENT_ID", {
+  isRequired: false,
+});
+export const XERO_CLIENT_SECRET = getEnv("XERO_CLIENT_SECRET", {
+  isRequired: false,
+  isSecret: true,
+});
+export const XERO_REDIRECT_URI = getEnv("XERO_REDIRECT_URI", {
+  isRequired: false,
+});
 
 export function getAppUrl() {
   if (VERCEL_ENV === "production" || NODE_ENV === "production") {

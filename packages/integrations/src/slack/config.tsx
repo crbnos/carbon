@@ -37,7 +37,7 @@ export const Slack: IntegrationConfig = {
     }
 
     const listener = (e: MessageEvent) => {
-      if (e.data === "app_oauth_completed") {
+      if (e.data === "slack-oauth-success") {
         window.location.reload();
         window.removeEventListener("message", listener);
         popup.close();

@@ -8,8 +8,10 @@
     "./accounting": "./src/accounting/index.ts",
     "./notifications": "./src/notifications/index.ts",
     "./onshape": "./src/onshape/lib/index.ts",
+    "./quickbooks": "./src/accounting/services/quickbooks.ts",
     "./slack.server": "./src/slack.server.ts",
-    "./slack/messages": "./src/slack/lib/messages.ts"
+    "./slack/messages": "./src/slack/lib/messages.ts",
+    "./xero": "./src/accounting/services/xero.ts"
   },
   "jest": {
     "preset": "@carbon/jest/node"
