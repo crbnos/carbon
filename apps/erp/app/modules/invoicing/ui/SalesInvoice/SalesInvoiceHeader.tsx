@@ -178,20 +178,6 @@ const SalesInvoiceHeader = () => {
               </Button>
             )}
 
-            {(relatedDocs.shipments.length === 1 ||
-              routeData?.salesInvoice.shipmentId) && (
-              <Button variant="secondary" leftIcon={<LuTruck />} asChild>
-                <Link
-                  to={path.to.shipment(
-                    routeData?.salesInvoice.shipmentId ??
-                      relatedDocs.shipments[0].id
-                  )}
-                >
-                  Shipment
-                </Link>
-              </Button>
-            )}
-
             {relatedDocs.salesOrders.length > 1 && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -211,35 +197,40 @@ const SalesInvoiceHeader = () => {
               </DropdownMenu>
             )}
 
-            {relatedDocs.shipments.length > 1 &&
-              !routeData.salesInvoice.shipmentId && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="secondary"
-                      leftIcon={<LuTruck />}
-                      rightIcon={<LuChevronDown />}
-                    >
-                      Shipments
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    {relatedDocs.shipments.map((shipment) => (
-                      <DropdownMenuItem key={shipment.id} asChild>
-                        <Link to={path.to.shipment(shipment.id)}>
-                          <DropdownMenuIcon icon={<LuTruck />} />
-                          <HStack spacing={8}>
-                            <span>{shipment.readableId}</span>
-                            <ShipmentStatus
-                              status={shipment.status as "Posted"}
-                            />
-                          </HStack>
-                        </Link>
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
+            {relatedDocs.shipments.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    leftIcon={<LuTruck />}
+                    rightIcon={
+                      relatedDocs.shipments.length > 1 ? (
+                        <LuChevronDown />
+                      ) : undefined
+                    }
+                  >
+                    {relatedDocs.shipments.length === 1
+                      ? "Shipment"
+                      : "Shipments"}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  {relatedDocs.shipments.map((shipment) => (
+                    <DropdownMenuItem key={shipment.id} asChild>
+                      <Link to={path.to.shipment(shipment.id)}>
+                        <DropdownMenuIcon icon={<LuTruck />} />
+                        <HStack spacing={8}>
+                          <span>{shipment.readableId}</span>
+                          <ShipmentStatus
+                            status={shipment.status as "Posted"}
+                          />
+                        </HStack>
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             <Button
               leftIcon={<LuCheckCheck />}
               variant={
