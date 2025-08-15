@@ -30,6 +30,7 @@ export default function ModelRoute() {
         key={model.modelPath}
         file={null}
         url={getPublicModelUrl(model.modelPath)}
+        withProperties={false}
       />
     </div>
   );
