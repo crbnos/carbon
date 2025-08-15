@@ -1,9 +1,11 @@
 import * as OV from "online-3d-viewer";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocale } from "react-aria-components";
 import * as THREE from "three";
 import { useMount } from "./hooks";
 import { IconButton } from "./IconButton";
 import { Spinner } from "./Spinner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./Tabs";
 import { cn } from "./utils/cn";
 
 export const supportedModelTypes = [
@@ -36,6 +38,7 @@ export function ModelViewer({
   mode = "dark",
   color,
   className,
+  withProperties = true,
   onDataUrl,
   resetZoomButton = true,
 }: {
@@ -43,6 +46,7 @@ export function ModelViewer({
   url: string | null;
   mode?: "dark" | "light";
   color?: `#${string}`;
+  withProperties?: boolean;
   onDataUrl?: (dataUrl: string) => void;
   resetZoomButton?: boolean;
   className?: string;
@@ -50,6 +54,11 @@ export function ModelViewer({
   const parentDiv = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<OV.EmbeddedViewer | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [modelInfo, setModelInfo] = useState<{
+    surfaceArea: number;
+    volume: number;
+    dimensions: { x: number; y: number; z: number };
+  } | null>(null);
 
   useMount(() => {
     if (file || url) {
@@ -67,7 +76,7 @@ export function ModelViewer({
             ? new OV.RGBAColor(20, 22, 25, 0)
             : new OV.RGBAColor(255, 255, 255, 0),
           defaultColor: new OV.RGBColor(0, 125, 125),
-          onModelLoaded: (model) => {
+          onModelLoaded: () => {
             if (viewerRef.current) {
               const viewer3D = viewerRef.current.GetViewer();
               updateColor(color ?? (isDarkMode ? darkColor : lightColor));
@@ -113,6 +122,29 @@ export function ModelViewer({
                 scene.add(pointLight);
 
                 viewer3D.Render();
+              }
+
+              let model;
+              if (withProperties) {
+                model = viewer.GetModel();
+              }
+
+              if (model) {
+                // Calculate model dimensions and properties
+                const boundingBox = OV.GetBoundingBox(model);
+                const surfaceArea = OV.CalculateSurfaceArea(model);
+                const volume = OV.CalculateVolume(model);
+                const dimensions = {
+                  x: boundingBox.max.x - boundingBox.min.x,
+                  y: boundingBox.max.y - boundingBox.min.y,
+                  z: boundingBox.max.z - boundingBox.min.z,
+                };
+
+                setModelInfo({
+                  surfaceArea,
+                  volume,
+                  dimensions,
+                });
               }
             }
 
@@ -243,6 +275,15 @@ export function ModelViewer({
     }
   }, [isDarkMode, color]);
 
+  const { locale } = useLocale();
+  const formatter = useMemo(() => {
+    return new Intl.NumberFormat(locale, {
+      style: "decimal",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    });
+  }, [locale]);
+
   return (
     <>
       <div
@@ -250,7 +291,8 @@ export function ModelViewer({
         role={"img"}
         aria-label="Canvas showing the model in the 3D Viewer"
         className={cn(
-          "h-full w-full items-center justify-center rounded-lg relative border border-border bg-gradient-to-bl from-card from-50% via-card to-background min-h-[400px] shadow-md dark:border-none dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)]",
+          "h-full w-full items-center justify-center rounded-lg border border-border bg-gradient-to-bl from-card from-50% via-card to-background min-h-[400px] shadow-md dark:border-none dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)] relative",
+
           className
         )}
       >
@@ -287,6 +329,48 @@ export function ModelViewer({
                 variant="ghost"
                 onClick={resetZoom}
               />
+            )}
+            {modelInfo && withProperties && (
+              <div className="absolute top-2 left-2 text-xs z-10 text-foreground">
+                <Tabs defaultValue="dimensions" className="w-full gap-0">
+                  <TabsList className="grid w-full grid-cols-2 mb-1">
+                    <TabsTrigger className="text-xs" value="dimensions">
+                      Dimensions
+                    </TabsTrigger>
+                    <TabsTrigger className="text-xs" value="properties">
+                      Properties
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="properties">
+                    <div className="flex flex-col gap-1 pt-1 p-2 items-start justify-start font-mono">
+                      <div>
+                        Surface Area: {formatter.format(modelInfo.surfaceArea)}{" "}
+                        mm<sup>2</sup>
+                      </div>
+                      <div>
+                        Volume: {formatter.format(modelInfo.volume)} mm
+                        <sup>3</sup>
+                      </div>
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="dimensions">
+                    <div className="flex flex-col gap-1 pt-1 p-2 items-start justify-start font-mono">
+                      <div className="flex items-center gap-1.5">
+                        <div className="size-2 bg-green-500 rounded-full" />
+                        W: {formatter.format(modelInfo.dimensions.x)}mm
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="size-2 bg-blue-500 rounded-full" />
+                        H: {formatter.format(modelInfo.dimensions.y)}mm
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="size-2 bg-red-500 rounded-full" />
+                        L: {formatter.format(modelInfo.dimensions.z)}mm
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </div>
             )}
           </>
         )}
