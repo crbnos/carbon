@@ -1,6 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth";
 import type { Database } from "@carbon/database";
-import { PaperlessPartsClient } from "@carbon/integrations/paperless-parts";
+import { getPaperlessParts } from "@carbon/integrations/paperless-parts";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { task } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
@@ -56,7 +56,11 @@ const payloadSchema = z.discriminatedUnion("type", [
     type: z.literal("order.created"),
     created: z.string(),
     object: z.string(),
-    data: z.any(),
+    data: z.object({
+      uuid: z.string(),
+      status: z.string(),
+      number: z.number().optional(),
+    }),
   }),
   z.object({
     type: z.literal("order.status_changed"),
@@ -104,7 +108,7 @@ export const paperlessPartsTask = task({
     console.info(`📦 Payload:`, payload);
 
     const carbon = getCarbonServiceRole();
-    const paperless = new PaperlessPartsClient(payload.apiKey);
+    const paperless = await getPaperlessParts(payload.apiKey);
 
     switch (payload.payload.type) {
       case "quote.created":
@@ -142,7 +146,7 @@ export const paperlessPartsTask = task({
         if (!ppQuote.data.contact) {
           // This should never happen based on the validation rules in Paperless Parts
           throw new Error(
-            "Quote contact not found in Paperless Parts - cannot create CarbonOS Quote"
+            "Quote contact not found in Paperless Parts - cannot create Carbon Quote"
           );
         }
 
@@ -150,7 +154,7 @@ export const paperlessPartsTask = task({
         let customerContactId: string;
         // If the Paperless Parts quote contact has an account, get the customer from Carbon
         // based on the Paperless Parts ID
-        // If the customer does not exist, create a new customer in CarbonOS
+        // If the customer does not exist, create a new customer in Carbon
         if (ppQuote.data.contact?.account) {
           const paperlessPartsCustomerId = ppQuote.data.contact?.account?.id;
           // @ts-expect-error - JSONB column
@@ -180,13 +184,13 @@ export const paperlessPartsTask = task({
               .single();
 
             if (newCustomer.error || !newCustomer.data) {
-              throw new Error("Failed to create customer in CarbonOS");
+              throw new Error("Failed to create customer in Carbon");
             }
 
             customerId = newCustomer.data.id;
           }
         } else {
-          // If the quote contact does not have an account, we need to create a new customer in CarbonOS
+          // If the quote contact does not have an account, we need to create a new customer in Carbon
           // and also create a corresponding account in Paperless Parts
           const customerName = `${ppQuote.data.contact?.first_name} ${ppQuote.data.contact?.last_name}`;
 
@@ -220,10 +224,10 @@ export const paperlessPartsTask = task({
             .single();
 
           if (newCustomer.error || !newCustomer.data) {
-            throw new Error("Failed to create customer in CarbonOS");
+            throw new Error("Failed to create customer in Carbon");
           }
 
-          console.info("🔰 New CarbonOS customer created");
+          console.info("🔰 New Carbon customer created");
 
           customerId = newCustomer.data.id;
         }
@@ -249,7 +253,7 @@ export const paperlessPartsTask = task({
         if (existingCustomerContact.data) {
           customerContactId = existingCustomerContact.data.id;
         } else {
-          // If there is no matching contact in CarbonOS, we need to create a new contact in CarbonOS
+          // If there is no matching contact in Carbon, we need to create a new contact in Carbon
           const newContact = await carbon
             .from("contact")
             .insert({
@@ -265,10 +269,10 @@ export const paperlessPartsTask = task({
             .single();
 
           if (newContact.error || !newContact.data) {
-            throw new Error("Failed to create contact in CarbonOS");
+            throw new Error("Failed to create contact in Carbon");
           }
 
-          console.info("🔰 New CarbonOS contact created");
+          console.info("🔰 New Carbon contact created");
 
           const newCustomerContact = await carbon
             .from("customerContact")
@@ -280,7 +284,7 @@ export const paperlessPartsTask = task({
             .single();
 
           if (newCustomerContact.error || !newCustomerContact.data) {
-            throw new Error("Failed to create customer contact in CarbonOS");
+            throw new Error("Failed to create customer contact in Carbon");
           }
 
           console.info("🔰 OS customerContact created");
@@ -288,7 +292,7 @@ export const paperlessPartsTask = task({
           customerContactId = newCustomerContact.data.id;
         }
 
-        // Create a new quote in CarbonOS
+        // Create a new quote in Carbon
         const nextSequence = await getNextSequence(
           carbon,
           "quote",
@@ -426,7 +430,7 @@ export const paperlessPartsTask = task({
             .eq("id", quoteId);
         }
 
-        console.info("🔰 New CarbonOS quote created from Paperless Parts");
+        console.info("🔰 New Carbon quote created from Paperless Parts");
 
         result = {
           success: true,

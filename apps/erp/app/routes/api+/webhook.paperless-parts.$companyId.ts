@@ -89,10 +89,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
       return json({ success: false }, { status: 401 });
     }
 
+    const payload = JSON.parse(payloadText);
+    console.log("payload", payload);
+
     await tasks.trigger<typeof paperlessPartsTask>("paperless-parts", {
       apiKey,
       companyId,
-      payload: JSON.parse(payloadText),
+      payload,
     });
 
     return json({ success: true });
