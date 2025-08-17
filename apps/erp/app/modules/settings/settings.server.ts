@@ -263,7 +263,9 @@ export async function upsertCompanyIntegration(
 ) {
   const result = await client
     .from("companyIntegration")
-    .upsert([update])
+    .upsert([update], {
+      onConflict: "id,companyId",
+    })
     .select()
     .single();
 

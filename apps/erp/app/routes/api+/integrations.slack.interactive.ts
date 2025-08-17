@@ -96,7 +96,7 @@ export async function action({ request }: ActionFunctionArgs) {
       payload.data.team.id
     );
 
-    if (!integration.data || integration.error) {
+    if (!integration.data?.[0] || integration.error) {
       console.error("Failed to get Slack integration", integration.error);
       return json({
         response_type: "ephemeral",
@@ -104,7 +104,7 @@ export async function action({ request }: ActionFunctionArgs) {
       });
     }
 
-    const { companyId, metadata } = integration.data;
+    const { companyId, metadata } = integration.data?.[0];
     const slackToken = (metadata as any)?.access_token as string;
 
     if (!slackToken) {

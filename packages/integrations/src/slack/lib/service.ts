@@ -287,8 +287,7 @@ export async function getSlackIntegrationByTeamId(
     .from("companyIntegration")
     .select("*")
     .eq("metadata->>team_id", teamId)
-    .eq("id", "slack")
-    .maybeSingle();
+    .eq("id", "slack");
 }
 
 export async function getCarbonEmployeeFromSlackId(
