@@ -19,6 +19,7 @@ type DatePickerProps = {
   minValue?: CalendarDate;
   maxValue?: CalendarDate;
   inline?: boolean;
+  helperText?: string;
   value?: string;
   onChange?: (date: string | null) => void;
 };
@@ -30,6 +31,7 @@ const DatePicker = ({
   minValue,
   maxValue,
   inline = false,
+  helperText,
   value,
   onChange,
 }: DatePickerProps) => {
@@ -84,6 +86,7 @@ const DatePicker = ({
         maxValue={maxValue}
         onChange={handleChange}
         inline={inline ? DatePickerPreview : undefined}
+        helperText={helperText}
       />
       {error && <FormErrorMessage>{error}</FormErrorMessage>}
     </FormControl>

@@ -4,7 +4,7 @@ import { useDatePickerState } from "@react-stately/datepicker";
 import type { DatePickerProps } from "@react-types/datepicker";
 import type { ReactNode } from "react";
 import { useRef } from "react";
-import { LuBan, LuCalendarClock } from "react-icons/lu";
+import { LuBan, LuCalendarClock, LuInfo } from "react-icons/lu";
 import { Button } from "../Button";
 import { HStack } from "../HStack";
 import { IconButton } from "../IconButton";
@@ -15,13 +15,17 @@ import {
   PopoverFooter,
   PopoverTrigger,
 } from "../Popover";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../Tooltip";
 import { useOutsideClick } from "../hooks";
 import { FieldButton } from "./components/Button";
 import { Calendar } from "./components/Calendar";
 import DateField from "./components/DateField";
 
 const DatePicker = (
-  props: DatePickerProps<CalendarDate> & { inline?: ReactNode }
+  props: DatePickerProps<CalendarDate> & {
+    inline?: ReactNode;
+    helperText?: string;
+  }
 ) => {
   const state = useDatePickerState({
     ...props,
@@ -44,16 +48,31 @@ const DatePicker = (
           {props.inline ? (
             <>
               <div className="flex-grow">{props.inline}</div>
-              <PopoverTrigger asChild>
-                <IconButton
-                  icon={<LuCalendarClock />}
-                  variant="secondary"
-                  size="sm"
-                  aria-label="Open date picker"
-                  isDisabled={props.isDisabled}
-                  {...buttonProps}
-                />
-              </PopoverTrigger>
+              <HStack spacing={0}>
+                {props.helperText && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <IconButton
+                        icon={<LuInfo />}
+                        variant="ghost"
+                        size="sm"
+                        aria-label="Helper information"
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent>{props.helperText}</TooltipContent>
+                  </Tooltip>
+                )}
+                <PopoverTrigger asChild>
+                  <IconButton
+                    icon={<LuCalendarClock />}
+                    variant="secondary"
+                    size="sm"
+                    aria-label="Open date picker"
+                    isDisabled={props.isDisabled}
+                    {...buttonProps}
+                  />
+                </PopoverTrigger>
+              </HStack>
             </>
           ) : (
             <>
