@@ -97,6 +97,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
 
     if (!integration.data || integration.error) {
+      console.error("Failed to get Slack integration", integration.error);
       return json({
         response_type: "ephemeral",
         text: "Slack integration not found for this workspace.",
@@ -107,6 +108,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const slackToken = (metadata as any)?.access_token as string;
 
     if (!slackToken) {
+      console.error("Slack token not found");
       return json({
         response_type: "ephemeral",
         text: "Slack token not found. Please reconfigure the integration.",
@@ -182,7 +184,7 @@ async function handleShortcut(
 ) {
   // Handle different shortcut types based on callback_id
   const callbackId = payload.callback_id;
-
+  console.log({ function: "handleShortcut", callbackId });
   switch (callbackId) {
     case "create_ncr_modal":
       return handleCreateNcrShortcut(
@@ -377,6 +379,7 @@ async function handleViewSubmission(
   serviceRole: SupabaseClient<Database>,
   integration: any
 ) {
+  console.log({ function: "handleViewSubmission", payload });
   const view = payload.view;
 
   if (view.callback_id !== "create_ncr_modal") {
