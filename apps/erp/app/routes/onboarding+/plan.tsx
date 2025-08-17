@@ -68,7 +68,7 @@ export async function loader({ request }: ActionFunctionArgs) {
     throw new Error("Failed to load plans");
   }
 
-  return json({ plans: plans.data?.filter((p) => p.public) });
+  return json({ plans: plans.data?.filter((p) => p.public), companyId });
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -109,7 +109,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function OnboardingPlan() {
-  const { plans } = useLoaderData<typeof loader>();
+  const { plans, companyId } = useLoaderData<typeof loader>();
   const { locale } = useLocale();
   const formatter = useMemo(
     () =>
@@ -122,6 +122,7 @@ export default function OnboardingPlan() {
     [locale]
   );
 
+  console.log({ companyId });
   const fetcher = useFetcher<typeof action>();
 
   return (
