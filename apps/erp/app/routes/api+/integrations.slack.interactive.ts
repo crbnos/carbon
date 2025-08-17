@@ -128,7 +128,7 @@ export async function action({ request }: ActionFunctionArgs) {
           companyId,
           slackToken,
           serviceRole,
-          integration.data
+          integration.data?.[0]
         );
 
       case "view_closed":
@@ -377,7 +377,7 @@ async function handleViewSubmission(
   companyId: string,
   slackToken: string,
   serviceRole: SupabaseClient<Database>,
-  integration: any
+  integration: Database["public"]["Tables"]["companyIntegration"]["Row"]
 ) {
   console.log({ function: "handleViewSubmission", payload });
   const view = payload.view;
