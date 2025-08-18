@@ -11,6 +11,7 @@ import {
   LuMap,
   LuOctagonX,
   LuPencil,
+  LuSquareStack,
   LuTrash,
   LuUser,
 } from "react-icons/lu";
@@ -23,6 +24,8 @@ import { useLocations } from "~/components/Form/Location";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
+import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
+import { useItems } from "~/stores/items";
 import { usePeople } from "~/stores/people";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
@@ -50,6 +53,7 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
   const customColumns = useCustomColumns<Issue>("nonConformance");
   const locations = useLocations();
   const [people] = usePeople();
+  const [items] = useItems();
 
   const columns = useMemo<ColumnDef<Issue>[]>(() => {
     const defaultColumns: ColumnDef<Issue>[] = [
@@ -70,6 +74,33 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
         ),
         meta: {
           icon: <LuBookMarked />,
+        },
+      },
+      {
+        accessorKey: "itemId",
+        header: "Item",
+        cell: ({ row }) => {
+          const item = items.find((item) => item.id === row.original.itemId);
+          if (!item) return null;
+          // @ts-expect-error - TODO: fix this
+          const link = getLinkToItemDetails(item.type, item.id);
+          return (
+            <div className="flex flex-col text-sm">
+              <Hyperlink to={link}>{item.readableIdWithRevision}</Hyperlink>
+              <span className="text-xs text-muted-foreground">{item.name}</span>
+            </div>
+          );
+        },
+        meta: {
+          filter: {
+            type: "static",
+            options: items.map((item) => ({
+              label: item.name,
+              helperText: item.readableIdWithRevision,
+              value: item.id,
+            })),
+          },
+          icon: <LuSquareStack />,
         },
       },
       {
@@ -110,6 +141,7 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
           },
         },
       },
+
       {
         accessorKey: "priority",
         header: "Priority",
@@ -208,7 +240,7 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
       },
     ];
     return [...defaultColumns, ...customColumns];
-  }, [customColumns, locations, people, types]);
+  }, [customColumns, items, locations, people, types]);
 
   const renderContextMenu = useCallback(
     (row: Issue) => {
