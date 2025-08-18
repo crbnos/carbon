@@ -2,16 +2,20 @@ import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type z from "zod";
 import type { PaperlessPartsClient } from "./client";
-import type { ContactSchema } from "./schemas";
+import type { AddressSchema, ContactSchema } from "./schemas";
 
 export async function getCarbonCustomerIdAndContactId(
   carbon: SupabaseClient<Database>,
   paperless: PaperlessPartsClient<unknown>,
-  company: Database["public"]["Tables"]["company"]["Row"],
-  contact: z.infer<typeof ContactSchema>
+  args: {
+    company: Database["public"]["Tables"]["company"]["Row"];
+    contact: z.infer<typeof ContactSchema>;
+  }
 ) {
   let customerId: string;
   let customerContactId: string;
+
+  const { company, contact } = args;
 
   if (!contact) {
     throw new Error("Missing contact from Paperless Parts");
@@ -24,7 +28,6 @@ export async function getCarbonCustomerIdAndContactId(
   if (contact.account) {
     const paperlessPartsCustomerId = contact.account?.id;
 
-    // @ts-expect-error - JSONB column
     const existingCustomer = await carbon
       .from("customer")
       .select("id")
@@ -164,5 +167,243 @@ export async function getCarbonCustomerIdAndContactId(
   return {
     customerId,
     customerContactId,
+  };
+}
+
+export async function getCarbonLocationIds(
+  carbon: SupabaseClient<Database>,
+  paperless: PaperlessPartsClient<unknown>,
+  args: {
+    customerId: string;
+    company: Database["public"]["Tables"]["company"]["Row"];
+    billingInfo?: z.infer<typeof AddressSchema>;
+    shippingInfo?: z.infer<typeof AddressSchema>;
+  }
+) {
+  let invoiceLocationId: string | null = null;
+  let shipmentLocationId: string | null = null;
+
+  const { customerId, company, billingInfo, shippingInfo } = args;
+
+  // Handle billing info / invoice location
+  if (billingInfo) {
+    const paperlessPartsBillingId = billingInfo.id;
+
+    const existingInvoiceLocation = await carbon
+      .from("customerLocation")
+      .select("id")
+      .eq("customerId", customerId)
+      .eq("externalId->paperlessPartsId", paperlessPartsBillingId!)
+      .maybeSingle();
+
+    if (existingInvoiceLocation.data) {
+      invoiceLocationId = existingInvoiceLocation.data.id;
+    } else {
+      // Try to find existing address by addressLine1 and city
+      const existingAddress = await carbon
+        .from("address")
+        .select("id")
+        .eq("companyId", company.id)
+        .ilike("addressLine1", billingInfo.address1!)
+        .ilike("city", billingInfo.city!)
+        .maybeSingle();
+
+      let addressId: string;
+
+      if (existingAddress.data) {
+        // Check if there's already a customer location for this address and customer
+        const existingCustomerLocation = await carbon
+          .from("customerLocation")
+          .select("id")
+          .eq("customerId", customerId)
+          .eq("addressId", existingAddress.data.id)
+          .maybeSingle();
+
+        if (existingCustomerLocation.data) {
+          invoiceLocationId = existingCustomerLocation.data.id;
+        } else {
+          addressId = existingAddress.data.id;
+        }
+      }
+
+      if (!invoiceLocationId) {
+        if (!addressId) {
+          let countryCode = billingInfo.country;
+
+          if (countryCode.length == 3) {
+            const country = await carbon
+              .from("country")
+              .select("alpha2")
+              .eq("alpha3", countryCode)
+              .maybeSingle();
+
+            if (country.data) {
+              countryCode = country.data.alpha2;
+            }
+          }
+
+          if (countryCode.length > 3) {
+            countryCode = countryCode.slice(0, 2);
+          }
+
+          // Create new address
+          const newAddress = await carbon
+            .from("address")
+            .insert({
+              companyId: company.id,
+              addressLine1: billingInfo.address1!,
+              addressLine2: billingInfo.address2 || null,
+              city: billingInfo.city!,
+              stateProvince: billingInfo.state!,
+              postalCode: billingInfo.postal_code!,
+              countryCode,
+            })
+            .select()
+            .single();
+
+          if (newAddress.error || !newAddress.data) {
+            console.error(newAddress.error);
+            throw new Error("Failed to create billing address in Carbon");
+          }
+
+          addressId = newAddress.data.id;
+        }
+
+        // Create customer location
+        const newCustomerLocation = await carbon
+          .from("customerLocation")
+          .insert({
+            name: billingInfo.facility_name || billingInfo.business_name,
+            customerId,
+            addressId,
+            externalId: {
+              paperlessPartsId: billingInfo.id,
+            },
+          })
+          .select()
+          .single();
+
+        if (newCustomerLocation.error || !newCustomerLocation.data) {
+          throw new Error(
+            "Failed to create customer billing location in Carbon"
+          );
+        }
+
+        invoiceLocationId = newCustomerLocation.data.id;
+      }
+    }
+  }
+
+  // Handle shipping info / shipment location
+  if (shippingInfo) {
+    const paperlessPartsShippingId = shippingInfo.id;
+
+    const existingShipmentLocation = await carbon
+      .from("customerLocation")
+      .select("id")
+      .eq("customerId", customerId)
+      .eq("externalId->paperlessPartsId", paperlessPartsShippingId!)
+      .maybeSingle();
+
+    if (existingShipmentLocation.data) {
+      shipmentLocationId = existingShipmentLocation.data.id;
+    } else {
+      // Try to find existing address by addressLine1 and city
+      const existingAddress = await carbon
+        .from("address")
+        .select("id")
+        .eq("companyId", company.id)
+        .ilike("addressLine1", shippingInfo.address1!)
+        .ilike("city", shippingInfo.city!)
+        .maybeSingle();
+
+      let addressId: string;
+
+      if (existingAddress.data) {
+        // Check if there's already a customer location for this address and customer
+        const existingCustomerLocation = await carbon
+          .from("customerLocation")
+          .select("id")
+          .eq("customerId", customerId)
+          .eq("addressId", existingAddress.data.id)
+          .maybeSingle();
+
+        if (existingCustomerLocation.data) {
+          shipmentLocationId = existingCustomerLocation.data.id;
+        } else {
+          addressId = existingAddress.data.id;
+        }
+      }
+
+      if (!shipmentLocationId) {
+        if (!addressId) {
+          let countryCode = shippingInfo.country;
+
+          if (countryCode.length == 3) {
+            const country = await carbon
+              .from("country")
+              .select("alpha2")
+              .eq("alpha3", countryCode)
+              .maybeSingle();
+
+            if (country.data) {
+              countryCode = country.data.alpha2;
+            }
+          }
+
+          if (countryCode.length > 3) {
+            countryCode = countryCode.slice(0, 2);
+          }
+          // Create new address
+          const newAddress = await carbon
+            .from("address")
+            .insert({
+              companyId: company.id,
+              addressLine1: shippingInfo.address1!,
+              addressLine2: shippingInfo.address2 || null,
+              city: shippingInfo.city!,
+              stateProvince: shippingInfo.state!,
+              postalCode: shippingInfo.postal_code!,
+              countryCode,
+            })
+            .select()
+            .single();
+
+          if (newAddress.error || !newAddress.data) {
+            console.error(newAddress.error);
+            throw new Error("Failed to create shipping address in Carbon");
+          }
+
+          addressId = newAddress.data.id;
+        }
+
+        // Create customer location
+        const newCustomerLocation = await carbon
+          .from("customerLocation")
+          .insert({
+            name: shippingInfo.facility_name || shippingInfo.business_name,
+            customerId,
+            addressId,
+            externalId: {
+              paperlessPartsId: shippingInfo.id,
+            },
+          })
+          .select()
+          .single();
+
+        if (newCustomerLocation.error || !newCustomerLocation.data) {
+          throw new Error(
+            "Failed to create customer shipping location in Carbon"
+          );
+        }
+
+        shipmentLocationId = newCustomerLocation.data.id;
+      }
+    }
+  }
+
+  return {
+    invoiceLocationId,
+    shipmentLocationId,
   };
 }

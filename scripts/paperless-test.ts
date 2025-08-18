@@ -5,6 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "../packages/database/src/types";
 import {
   getCarbonCustomerIdAndContactId,
+  getCarbonLocationIds,
   getPaperlessParts,
 } from "../packages/integrations/src/paperless-parts/lib/index";
 import { OrderSchema } from "../packages/integrations/src/paperless-parts/lib/schemas";
@@ -31,13 +32,12 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const orderData = OrderSchema.parse(order.data);
     console.log(orderData);
 
-    const { customerId, customerContactId } =
-      await getCarbonCustomerIdAndContactId(
-        carbon,
-        paperless,
-        company.data!,
-        orderData.contact!
-      );
+    const [{ customerId, customerContactId }, ,] = await Promise.all([
+      getCarbonCustomerIdAndContactId(carbon, paperless, {
+        company: company.data!,
+        contact: orderData.contact!,
+      }),
+    ]);
 
     if (!customerId) {
       throw new Error("Failed to get customer ID");
@@ -46,89 +46,99 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
       throw new Error("Failed to get customer contact ID");
     }
 
-    const [customerPayment, customerShipping, employee, opportunity] =
-      await Promise.all([
-        getCustomerPayment(carbon, customerId),
-        getCustomerShipping(carbon, customerId),
-        getEmployeeJob(carbon, salesOrder.createdBy, companyId),
-        carbon
-          .from("opportunity")
-          .insert([
-            {
-              companyId: companyId,
-              customerId: customerId,
-            },
-          ])
-          .select("id")
-          .single(),
-      ]);
+    const { shipmentLocationId, invoiceLocationId } =
+      await getCarbonLocationIds(carbon, paperless, {
+        company: company.data!,
+        customerId,
+        billingInfo: orderData.billing_info,
+        shippingInfo: orderData.shipping_info,
+      });
 
-    if (customerPayment.error) return customerPayment;
-    if (customerShipping.error) return customerShipping;
+    console.log({ shipmentLocationId, invoiceLocationId });
 
-    const {
-      paymentTermId,
-      invoiceCustomerId,
-      invoiceCustomerContactId,
-      invoiceCustomerLocationId,
-    } = customerPayment.data;
+    // const [customerPayment, customerShipping, employee, opportunity] =
+    //   await Promise.all([
+    //     getCustomerPayment(carbon, customerId),
+    //     getCustomerShipping(carbon, customerId),
+    //     getEmployeeJob(carbon, salesOrder.createdBy, companyId),
+    //     carbon
+    //       .from("opportunity")
+    //       .insert([
+    //         {
+    //           companyId: companyId,
+    //           customerId: customerId,
+    //         },
+    //       ])
+    //       .select("id")
+    //       .single(),
+    //   ]);
 
-    const { shippingMethodId, shippingTermId } = customerShipping.data;
+    // if (customerPayment.error) return customerPayment;
+    // if (customerShipping.error) return customerShipping;
 
-    const locationId = employee?.data?.locationId ?? null;
+    // const {
+    //   paymentTermId,
+    //   invoiceCustomerId,
+    //   invoiceCustomerContactId,
+    //   invoiceCustomerLocationId,
+    // } = customerPayment.data;
 
-    let salesOrderInsert: Database["public"]["Tables"]["salesOrder"]["Insert"] =
-      {
-        companyId: companyId,
-        createdBy: employee?.data?.id ?? "system",
-        currencyCode: company.data?.baseCurrencyCode,
-        customerId: customerId,
-        opportunityId: opportunity.data?.id,
-      };
+    // const { shippingMethodId, shippingTermId } = customerShipping.data;
 
-    const insertedSalesOrder = await carbon
-      .from("salesOrder")
-      .insert([salesOrderInsert])
-      .select("id, salesOrderId");
+    // const locationId = employee?.data?.locationId ?? null;
 
-    if (order.error) return order;
+    // let salesOrderInsert: Database["public"]["Tables"]["salesOrder"]["Insert"] =
+    //   {
+    //     companyId: companyId,
+    //     createdBy: employee?.data?.id ?? "system",
+    //     currencyCode: company.data?.baseCurrencyCode,
+    //     customerId: customerId,
+    //     opportunityId: opportunity.data?.id,
+    //   };
 
-    const salesOrderId = order.data[0].id;
+    // const insertedSalesOrder = await carbon
+    //   .from("salesOrder")
+    //   .insert([salesOrderInsert])
+    //   .select("id, salesOrderId");
 
-    const [shipment, payment] = await Promise.all([
-      carbon.from("salesOrderShipment").insert([
-        {
-          id: salesOrderId,
-          locationId: locationId,
-          shippingMethodId: shippingMethodId,
-          shippingTermId: shippingTermId,
-          companyId: companyId,
-        },
-      ]),
-      carbon.from("salesOrderPayment").insert([
-        {
-          id: salesOrderId,
-          invoiceCustomerId: invoiceCustomerId,
-          invoiceCustomerContactId: invoiceCustomerContactId,
-          invoiceCustomerLocationId: invoiceCustomerLocationId,
-          paymentTermId: paymentTermId,
-          companyId: companyId,
-        },
-      ]),
-    ]);
+    // if (order.error) return order;
 
-    if (shipment.error) {
-      await deleteSalesOrder(carbon, salesOrderId);
-      return payment;
-    }
-    if (payment.error) {
-      await deleteSalesOrder(carbon, salesOrderId);
-      return payment;
-    }
-    if (opportunity.error) {
-      await deleteSalesOrder(carbon, salesOrderId);
-      return opportunity;
-    }
+    // const salesOrderId = order.data[0].id;
+
+    // const [shipment, payment] = await Promise.all([
+    //   carbon.from("salesOrderShipment").insert([
+    //     {
+    //       id: salesOrderId,
+    //       locationId: locationId,
+    //       shippingMethodId: shippingMethodId,
+    //       shippingTermId: shippingTermId,
+    //       companyId: companyId,
+    //     },
+    //   ]),
+    //   carbon.from("salesOrderPayment").insert([
+    //     {
+    //       id: salesOrderId,
+    //       invoiceCustomerId: invoiceCustomerId,
+    //       invoiceCustomerContactId: invoiceCustomerContactId,
+    //       invoiceCustomerLocationId: invoiceCustomerLocationId,
+    //       paymentTermId: paymentTermId,
+    //       companyId: companyId,
+    //     },
+    //   ]),
+    // ]);
+
+    // if (shipment.error) {
+    //   await deleteSalesOrder(carbon, salesOrderId);
+    //   return payment;
+    // }
+    // if (payment.error) {
+    //   await deleteSalesOrder(carbon, salesOrderId);
+    //   return payment;
+    // }
+    // if (opportunity.error) {
+    //   await deleteSalesOrder(carbon, salesOrderId);
+    //   return opportunity;
+    // }
   } else {
     console.error("No order data found");
     return;
