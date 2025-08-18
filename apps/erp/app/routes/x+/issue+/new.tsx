@@ -132,22 +132,20 @@ export async function action({ request }: ActionFunctionArgs) {
 
   try {
     const integrations = await getCompanyIntegrations(client, companyId);
-    await notifyIssueCreated(
-      { client, serviceRole },
-      integrations,
-      {
-        companyId,
-        userId,
-        carbonUrl: `${VERCEL_URL || "http://localhost:3000"}${path.to.issue(ncrId)}`,
-        issue: {
-          id: ncrId,
-          nonConformanceId: nextSequence.data,
-          title: validation.data.name,
-          description: validation.data.description,
-          severity: validation.data.priority,
-        },
-      }
-    );
+    await notifyIssueCreated({ client, serviceRole }, integrations, {
+      companyId,
+      userId,
+      carbonUrl: `https://${
+        VERCEL_URL || "http://localhost:3000"
+      }${path.to.issue(ncrId)}`,
+      issue: {
+        id: ncrId,
+        nonConformanceId: nextSequence.data,
+        title: validation.data.name,
+        description: validation.data.description ?? "",
+        severity: validation.data.priority,
+      },
+    });
   } catch (error) {
     console.error("Failed to send notifications:", error);
   }

@@ -50,7 +50,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await notifyTaskStatusChanged({ client }, integrations, {
         companyId,
         userId,
-        carbonUrl: `${VERCEL_URL}${path.to.issue(
+        carbonUrl: `https://${VERCEL_URL}${path.to.issue(
           update.data.nonConformanceId
         )}`,
         task: {

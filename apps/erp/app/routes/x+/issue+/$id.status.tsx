@@ -1,4 +1,4 @@
-import { assertIsPost, error, success } from "@carbon/auth";
+import { assertIsPost, error, success, VERCEL_URL } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { notifyIssueStatusChanged } from "@carbon/integrations/notifications";
@@ -51,7 +51,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     await notifyIssueStatusChanged({ client }, integrations, {
       companyId,
       userId,
-      carbonUrl: `${path.to.issue(id)}`, // We might need the full URL here
+      carbonUrl: `https://${VERCEL_URL}${path.to.issue(id)}`, // We might need the full URL here
       issue: {
         id,
         status,

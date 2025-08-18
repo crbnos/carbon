@@ -21,6 +21,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@carbon/utils": "*",
     "@slack/bolt": "~4.4.0",
     "@slack/oauth": "~3.0.3",
     "@slack/web-api": "~7.6.0",

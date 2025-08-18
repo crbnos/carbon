@@ -7,6 +7,7 @@ import type {
   slackDocumentTaskUpdate,
 } from "@carbon/jobs/trigger/slack-document-sync";
 import { redis } from "@carbon/kv";
+import { isUrl } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { tasks } from "@trigger.dev/sdk/v3";
 import { createSlackWebClient } from "./client";
@@ -91,20 +92,24 @@ export async function createIssueSlackThread(
           },
         ],
       },
-      {
-        type: "actions",
-        elements: [
-          {
-            type: "button",
-            text: {
-              type: "plain_text",
-              text: "View in Carbon",
+      ...(data.carbonUrl && isUrl(data.carbonUrl)
+        ? [
+            {
+              type: "actions",
+              elements: [
+                {
+                  type: "button",
+                  text: {
+                    type: "plain_text",
+                    text: "View in Carbon",
+                  },
+                  url: data.carbonUrl,
+                  action_id: "view_in_carbon",
+                },
+              ],
             },
-            url: data.carbonUrl,
-            action_id: "view_in_carbon",
-          },
-        ],
-      },
+          ]
+        : []),
     ];
 
     console.log({ blocks, data });
