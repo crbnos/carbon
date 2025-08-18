@@ -33,6 +33,7 @@ export const slackOAuthTokenResponseSchema = z.object({
     id: z.string(),
     name: z.string(),
   }),
+
   // incoming_webhook is only present when the app has incoming-webhook scope
   incoming_webhook: z
     .object({
