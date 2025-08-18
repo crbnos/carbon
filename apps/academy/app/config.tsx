@@ -872,11 +872,11 @@ export const modules: Config = [
               {
                 id: "closing-job",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/8527c3c29e394999899e21664ef59c8b?sid=2389f47a-9e40-484f-af3f-f1e21e57a791",
                 name: "Closing a Job",
                 description:
                   "Learn the proper process for completing and closing jobs in the production system.",
-                duration: 0,
+                duration: 221,
               },
             ],
           },
