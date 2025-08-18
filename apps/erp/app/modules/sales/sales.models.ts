@@ -550,7 +550,7 @@ export const salesConfirmValidator = z
 export const salesOrderValidator = z.object({
   id: zfd.text(z.string().optional()),
   salesOrderId: zfd.text(z.string().optional()),
-  orderDate: z.string().min(1, { message: "Order Date is required" }),
+  orderDate: zfd.text(z.string().optional()),
   status: z.enum(salesOrderStatusType).optional(),
   notes: zfd.text(z.string().optional()),
   customerId: z.string().min(1, { message: "Customer is required" }),

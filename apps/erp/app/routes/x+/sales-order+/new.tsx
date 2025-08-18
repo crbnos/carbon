@@ -2,7 +2,6 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { getLocalTimeZone, today } from "@internationalized/date";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { useUrlParams, useUser } from "~/hooks";
@@ -84,7 +83,7 @@ export default function SalesOrderNewRoute() {
     id: undefined,
     salesOrderId: undefined,
     customerId: customerId ?? "",
-    orderDate: today(getLocalTimeZone()).toString(),
+    orderDate: "",
     status: "Draft" as const,
     currencyCode: company?.baseCurrencyCode ?? "USD",
     locationId: defaults?.locationId ?? "",

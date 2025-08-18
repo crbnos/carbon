@@ -180,6 +180,7 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
               <DatePicker
                 name="orderDate"
                 label="Order Date"
+                helperText="This is typically the date the purchase order was  received from the customer"
                 isDisabled={isCustomer}
               />
 

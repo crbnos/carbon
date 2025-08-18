@@ -271,7 +271,8 @@ export async function action(args: ActionFunctionArgs) {
       .from("salesOrder")
       .update({
         status: "To Ship and Invoice",
-        orderDate: today(getLocalTimeZone()).toString(),
+        orderDate:
+          salesOrder.data.orderDate ?? today(getLocalTimeZone()).toString(),
         updatedAt: today(getLocalTimeZone()).toString(),
         updatedBy: userId,
       })
