@@ -55,61 +55,65 @@ export async function createIssueSlackThread(
 
     const slackClient = createSlackWebClient({ token: auth?.slackToken });
 
+    const blocks = [
+      {
+        type: "header",
+        text: {
+          type: "plain_text",
+          text: `Issue ${data.nonConformanceId}`,
+        },
+      },
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: `*${data.title}*\n${
+            data.description || "_No description provided_"
+          }`,
+        },
+        fields: [
+          {
+            type: "mrkdwn",
+            text: `*Status:*\nRegistered`,
+          },
+          {
+            type: "mrkdwn",
+            text: `*Severity:*\n${data.severity}`,
+          },
+        ],
+      },
+      {
+        type: "context",
+        elements: [
+          {
+            type: "mrkdwn",
+            text: `Created by <@${auth.slackUserId}>`,
+          },
+        ],
+      },
+      {
+        type: "actions",
+        elements: [
+          {
+            type: "button",
+            text: {
+              type: "plain_text",
+              text: "View in Carbon",
+            },
+            url: data.carbonUrl,
+            action_id: "view_in_carbon",
+          },
+        ],
+      },
+    ];
+
+    console.log({ blocks, data });
+
     const threadMessage = await slackClient.chat.postMessage({
       channel: auth.channelId,
       unfurl_links: false,
       unfurl_media: false,
-      blocks: [
-        {
-          type: "header",
-          text: {
-            type: "plain_text",
-            text: `Issue ${data.nonConformanceId}`,
-          },
-        },
-        {
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: `*${data.title}*\n${
-              data.description || "_No description provided_"
-            }`,
-          },
-          fields: [
-            {
-              type: "mrkdwn",
-              text: `*Status:*\nRegistered`,
-            },
-            {
-              type: "mrkdwn",
-              text: `*Severity:*\n${data.severity}`,
-            },
-          ],
-        },
-        {
-          type: "context",
-          elements: [
-            {
-              type: "mrkdwn",
-              text: `Created by <@${auth.slackUserId}>`,
-            },
-          ],
-        },
-        {
-          type: "actions",
-          elements: [
-            {
-              type: "button",
-              text: {
-                type: "plain_text",
-                text: "View in Carbon",
-              },
-              url: data.carbonUrl,
-              action_id: "view_in_carbon",
-            },
-          ],
-        },
-      ],
+      blocks,
     });
 
     if (threadMessage.ts) {
