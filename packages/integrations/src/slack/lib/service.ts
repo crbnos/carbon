@@ -248,15 +248,11 @@ export async function getSlackUserIdByCarbonId(
     return cachedUserId;
   }
 
-  console.log({ cachedUserId });
-
   const user = await client
     .from("user")
     .select("email")
     .eq("id", userId)
     .single();
-
-  console.log({ user });
 
   if (user.error || !user.data?.email) {
     return null;
@@ -267,8 +263,6 @@ export async function getSlackUserIdByCarbonId(
     const slackUser = await slackClient.users.lookupByEmail({
       email: user.data.email,
     });
-
-    console.log({ slackUser });
 
     if (slackUser.ok && slackUser.user?.id) {
       await redis.set(`slack-user:${userId}`, slackUser.user.id);
