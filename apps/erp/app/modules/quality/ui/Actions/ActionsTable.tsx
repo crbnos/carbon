@@ -70,7 +70,7 @@ const ActionsTable = memo(
               type: "static",
               options: requiredActions.map((action) => ({
                 label: action.name,
-                value: action.id,
+                value: action.name,
               })),
             },
           },
