@@ -297,10 +297,20 @@ export async function getCarbonEmployeeFromSlackId(
   carbonCompanyId: string
 ) {
   try {
+    console.log({
+      function: "getCarbonEmployeeFromSlackId",
+      accessToken,
+      slackUserId,
+      carbonCompanyId,
+    });
     const slackClient = createSlackWebClient({ token: accessToken });
 
     const userInfo = await slackClient.users.info({
       user: slackUserId,
+    });
+
+    console.log({
+      userInfo,
     });
 
     if (!userInfo.ok || !userInfo.user?.profile?.email) {
@@ -308,6 +318,8 @@ export async function getCarbonEmployeeFromSlackId(
     }
 
     const email = userInfo.user.profile.email;
+
+    console.log({ email });
 
     const user = await client
       .from("user")
