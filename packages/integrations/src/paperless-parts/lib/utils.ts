@@ -1,5 +1,5 @@
 import type { Database } from "@carbon/database";
-import { textToTiptap } from "@carbon/utils";
+import { supportedModelTypes, textToTiptap } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type z from "zod";
@@ -11,6 +11,333 @@ import type {
   OrderSchema,
   SalesPersonSchema,
 } from "./schemas";
+
+/**
+ * Strip special characters from filename for safe storage
+ */
+function stripSpecialCharacters(inputString: string): string {
+  // Keep only characters that are valid for S3 keys
+  return inputString?.replace(/[^a-zA-Z0-9/!_\-.*'() &$@=;:+,?]/g, "");
+}
+
+/**
+ * Download file from external URL and convert to File object
+ */
+async function downloadFileFromUrl(
+  url: string,
+  filename: string
+): Promise<File | null> {
+  try {
+    console.log(`Downloading file from: ${url}`);
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      console.error(
+        `Failed to download file from ${url}: ${response.statusText}`
+      );
+      return null;
+    }
+
+    const blob = await response.blob();
+    const file = new File([blob], filename, { type: blob.type });
+
+    console.log(`Successfully downloaded: ${filename} (${blob.size} bytes)`);
+    return file;
+  } catch (error) {
+    console.error(`Error downloading file from ${url}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Check if file extension is a supported model type
+ */
+function isModelFile(filename: string): boolean {
+  const extension = filename.toLowerCase().split(".").pop() || "";
+  return supportedModelTypes.includes(extension);
+}
+
+/**
+ * Upload CAD model file and create model record
+ */
+async function uploadModelFile(
+  carbon: SupabaseClient<Database>,
+  args: {
+    file: File;
+    companyId: string;
+    salesOrderLineId: string;
+  }
+): Promise<boolean> {
+  const { file, companyId, salesOrderLineId } = args;
+
+  try {
+    const modelId = nanoid();
+    const fileExtension = file.name.split(".").pop();
+    const modelPath = `${companyId}/models/${modelId}.${fileExtension}`;
+
+    console.log(`Uploading CAD model ${file.name} to ${modelPath}`);
+
+    // Upload model to storage
+    const modelUpload = await carbon.storage
+      .from("private")
+      .upload(modelPath, file, {
+        upsert: true,
+      });
+
+    if (modelUpload.error) {
+      console.error(`Failed to upload model ${file.name}:`, modelUpload.error);
+      return false;
+    }
+
+    if (!modelUpload.data?.path) {
+      console.error(`No path returned for uploaded model ${file.name}`);
+      return false;
+    }
+
+    // Create model record
+    const modelRecord = await carbon.from("modelUpload").insert({
+      id: modelId,
+      modelPath: modelUpload.data.path,
+      name: file.name,
+      size: file.size,
+      companyId,
+      createdBy: "system",
+    });
+
+    if (modelRecord.error) {
+      console.error(
+        `Failed to create model record for ${file.name}:`,
+        modelRecord.error
+      );
+      return false;
+    }
+
+    // Link model to sales order line
+    const lineUpdate = await carbon
+      .from("salesOrderLine")
+      .update({ modelUploadId: modelId })
+      .eq("id", salesOrderLineId);
+
+    if (lineUpdate.error) {
+      console.error(
+        `Failed to link model to sales order line:`,
+        lineUpdate.error
+      );
+      return false;
+    }
+
+    console.log(
+      `Successfully uploaded CAD model ${file.name} and linked to line ${salesOrderLineId}`
+    );
+    return true;
+  } catch (error) {
+    console.error(`Error uploading model ${file.name}:`, error);
+    return false;
+  }
+}
+
+/**
+ * Upload file to Carbon storage and create document record using upsertDocument
+ */
+async function uploadFileToOpportunityLine(
+  carbon: SupabaseClient<Database>,
+  args: {
+    file: File;
+    companyId: string;
+    lineId: string;
+    sourceDocumentType: string;
+    sourceDocumentId: string;
+  }
+): Promise<boolean> {
+  const { file, companyId, lineId, sourceDocumentType, sourceDocumentId } =
+    args;
+
+  try {
+    // Create storage path similar to OpportunityLineDocuments
+    const storagePath = `${companyId}/opportunity-line/${lineId}/${stripSpecialCharacters(
+      file.name
+    )}`;
+
+    console.log(`Uploading ${file.name} to ${storagePath}`);
+
+    const fileUpload = await carbon.storage
+      .from("private")
+      .upload(storagePath, file, {
+        cacheControl: `${12 * 60 * 60}`,
+        upsert: true,
+      });
+
+    if (fileUpload.error) {
+      console.error(`Failed to upload file ${file.name}:`, fileUpload.error);
+      return false;
+    }
+
+    if (!fileUpload.data?.path) {
+      console.error(`No path returned for uploaded file ${file.name}`);
+      return false;
+    }
+
+    // Create document record using a simpler approach
+    // Since we're in a backend context, we'll use a minimal document record
+    const documentType = getDocumentTypeFromFilename(file.name);
+    const documentData = {
+      name: file.name,
+      path: fileUpload.data.path,
+      size: Math.round(file.size / 1024), // Convert to KB
+      sourceDocument: sourceDocumentType as "Sales Order",
+      sourceDocumentId,
+      companyId,
+      type: documentType,
+      readGroups: ["system"],
+      writeGroups: ["system"],
+      createdBy: "system",
+      active: true,
+    };
+
+    console.log(`Document data for ${file.name}:`, {
+      ...documentData,
+      type: documentType,
+    });
+
+    const documentInsert = await carbon
+      .from("document")
+      .insert(documentData)
+      .select("id")
+      .single();
+
+    if (documentInsert.error) {
+      console.error(
+        `Failed to create document record for ${file.name}:`,
+        documentInsert.error
+      );
+      return false;
+    }
+
+    console.log(
+      `Successfully uploaded and created document record for ${file.name}`
+    );
+    return true;
+  } catch (error) {
+    console.error(`Error uploading file ${file.name}:`, error);
+    return false;
+  }
+}
+
+/**
+ * Simple document type detection from filename
+ */
+function getDocumentTypeFromFilename(
+  filename: string
+): Database["public"]["Enums"]["documentType"] {
+  const extension = filename.toLowerCase().split(".").pop() || "";
+
+  if (["pdf"].includes(extension)) return "PDF";
+  if (["jpg", "jpeg", "png", "gif", "bmp", "svg"].includes(extension))
+    return "Image";
+  if (["doc", "docx"].includes(extension)) return "Document";
+  if (["xls", "xlsx"].includes(extension)) return "Spreadsheet";
+  if (["ppt", "pptx"].includes(extension)) return "Presentation";
+  if (["txt"].includes(extension)) return "Text";
+  if (["zip", "rar", "7z"].includes(extension)) return "Archive";
+  if (["mp4", "avi", "mov"].includes(extension)) return "Video";
+  if (["mp3", "wav"].includes(extension)) return "Audio";
+  if (["step", "stp", "iges", "igs", "dwg", "dxf"].includes(extension))
+    return "Model";
+
+  return "Other";
+}
+
+/**
+ * Download and upload supporting files for a component
+ */
+async function processSupportingFiles(
+  carbon: SupabaseClient<Database>,
+  args: {
+    supportingFiles: Array<{ filename?: string; url?: string }>;
+    companyId: string;
+    lineId: string;
+    sourceDocumentType: string;
+    sourceDocumentId: string;
+  }
+): Promise<void> {
+  const {
+    supportingFiles,
+    companyId,
+    lineId,
+    sourceDocumentType,
+    sourceDocumentId,
+  } = args;
+
+  if (!supportingFiles?.length) {
+    return;
+  }
+
+  console.log(
+    `Processing ${supportingFiles.length} supporting files for line ${lineId}`
+  );
+
+  for (const supportingFile of supportingFiles) {
+    if (!supportingFile.url || !supportingFile.filename) {
+      console.warn(
+        "Skipping supporting file with missing URL or filename:",
+        supportingFile
+      );
+      continue;
+    }
+
+    try {
+      // Download the file
+      const file = await downloadFileFromUrl(
+        supportingFile.url,
+        supportingFile.filename
+      );
+
+      if (!file) {
+        console.error(
+          `Failed to download supporting file: ${supportingFile.filename}`
+        );
+        continue;
+      }
+
+      // Check if this is a CAD model file
+      if (isModelFile(file.name)) {
+        console.log(`Processing ${file.name} as CAD model`);
+        const uploadSuccess = await uploadModelFile(carbon, {
+          file,
+          companyId,
+          salesOrderLineId: lineId,
+        });
+
+        if (!uploadSuccess) {
+          console.error(
+            `Failed to upload CAD model: ${supportingFile.filename}`
+          );
+        }
+      } else {
+        console.log(`Processing ${file.name} as document`);
+        // Upload as regular document
+        const uploadSuccess = await uploadFileToOpportunityLine(carbon, {
+          file,
+          companyId,
+          lineId,
+          sourceDocumentType,
+          sourceDocumentId,
+        });
+
+        if (!uploadSuccess) {
+          console.error(
+            `Failed to upload supporting file: ${supportingFile.filename}`
+          );
+        }
+      }
+    } catch (error) {
+      console.error(
+        `Error processing supporting file ${supportingFile.filename}:`,
+        error
+      );
+    }
+  }
+}
 
 export async function getCustomerIdAndContactId(
   carbon: SupabaseClient<Database>,
@@ -669,21 +996,50 @@ export async function createPartFromComponent(
   args: {
     companyId: string;
     createdBy: string;
-    component: {
-      id?: number;
-      part_number?: string;
-      part_name?: string;
-      part_uuid?: string;
-      revision?: string;
-      description?: string | null;
-      thumbnail_url?: string;
-      part_url?: string;
-    };
+    component: z.infer<
+      typeof OrderSchema
+    >["order_items"][number]["components"][number];
   }
 ): Promise<{ itemId: string; partId: string }> {
   const { companyId, createdBy, component } = args;
 
-  console.log(component);
+  console.log("material_operations");
+  console.log(component.material_operations);
+  console.log("material");
+  console.log(component.material);
+  console.log("shop_operations");
+  console.log(component.shop_operations);
+
+  // Log costing variables and quantities if they exist
+  if (component.material_operations) {
+    component.material_operations.forEach((operation: any) => {
+      if (operation.costing_variables) {
+        operation.costing_variables.forEach((cv: any) => {
+          console.log("material costing_variable", cv.costing_variable);
+        });
+      }
+      if (operation.quantities) {
+        operation.quantities.forEach((q: any) => {
+          console.log("material quantity", q.quantity);
+        });
+      }
+    });
+  }
+
+  if (component.shop_operations) {
+    component.shop_operations.forEach((operation: any) => {
+      if (operation.costing_variables) {
+        operation.costing_variables.forEach((cv: any) => {
+          console.log("shop costing_variable", cv.costing_variable);
+        });
+      }
+      if (operation.quantities) {
+        operation.quantities.forEach((q: any) => {
+          console.log("shop quantity", q.quantity);
+        });
+      }
+    });
+  }
 
   // Generate a readable ID for the part
   const partId =
@@ -813,6 +1169,7 @@ export async function insertOrderLines(
   carbon: SupabaseClient<Database>,
   args: {
     salesOrderId: string;
+    opportunityId: string;
     companyId: string;
     createdBy: string;
     orderItems: z.infer<typeof OrderSchema>["order_items"];
@@ -824,20 +1181,33 @@ export async function insertOrderLines(
     return;
   }
 
-  const linesToInsert: Database["public"]["Tables"]["salesOrderLine"]["Insert"][] =
-    [];
+  let insertedLinesCount = 0;
 
   for (const orderItem of orderItems) {
     if (!orderItem.components?.length) {
       // Handle order items without components as comment lines
       if (orderItem.description || orderItem.public_notes) {
-        linesToInsert.push({
-          salesOrderId,
-          salesOrderLineType: "Comment",
-          description: orderItem.description || orderItem.public_notes || "",
-          companyId,
-          createdBy,
-        });
+        const commentLine: Database["public"]["Tables"]["salesOrderLine"]["Insert"] =
+          {
+            salesOrderId,
+            salesOrderLineType: "Comment",
+            description: orderItem.description || orderItem.public_notes || "",
+            companyId,
+            createdBy,
+          };
+
+        const result = await carbon
+          .from("salesOrderLine")
+          .insert(commentLine)
+          .select("id")
+          .single();
+
+        if (result.error) {
+          console.error("Failed to insert comment line:", result.error);
+          continue;
+        }
+
+        insertedLinesCount++;
       }
       continue;
     }
@@ -873,6 +1243,10 @@ export async function insertOrderLines(
             companyId,
             createdBy,
             quantitySent: component.deliver_quantity,
+            // TODO: use the order date and the lead time to calculate the promsied date
+            /* 
+            SL:  I was hoping that Carbon could take the date the order was pushed and calculate the ship date based on the lead time selected. So let's say the lead time is 3 business days. If I push it tomorrow 8/20 at 7 AM that would be a ship date of 8/22, but if the order comes in a 11 AM that would roll into the next business day and the ship date would be 8/25. It would be nice if it also accounted for days off automatically because we pushed orders the past couple weeks thru but didn't tack on the extra day since labor day is 9/1. 
+            */
             promisedDate: orderItem.ships_on
               ? new Date(orderItem.ships_on).toISOString()
               : null,
@@ -884,7 +1258,54 @@ export async function insertOrderLines(
               : null,
           };
 
-        linesToInsert.push(salesOrderLine);
+        // Insert the line first to get the line ID
+        const lineResult = await carbon
+          .from("salesOrderLine")
+          .insert(salesOrderLine)
+          .select("id")
+          .single();
+
+        if (lineResult.error) {
+          console.error(
+            `Failed to insert sales order line for component ${component.part_uuid}:`,
+            lineResult.error
+          );
+          continue;
+        }
+
+        const lineId = lineResult.data.id;
+        insertedLinesCount++;
+
+        // Now process supporting files with the actual line ID
+        if (
+          !orderItem.export_controlled &&
+          (orderItem.filename || component.supporting_files?.length)
+        ) {
+          console.log("orderItem.filename");
+          console.log(orderItem.filename);
+          try {
+            console.log(
+              `Processing supporting files for line ${lineId} (component ${component.part_uuid})`
+            );
+
+            await processSupportingFiles(carbon, {
+              supportingFiles: component.supporting_files as Array<{
+                filename?: string;
+                url?: string;
+              }>,
+              companyId,
+              lineId, // Use the actual line ID
+              sourceDocumentType: "Sales Order",
+              sourceDocumentId: salesOrderId,
+            });
+          } catch (error) {
+            console.error(
+              `Failed to process supporting files for component ${component.part_uuid}:`,
+              error
+            );
+            // Continue processing instead of failing the entire order
+          }
+        }
       } catch (error) {
         console.error(
           `Failed to process component ${component.part_uuid}:`,
@@ -896,18 +1317,10 @@ export async function insertOrderLines(
     }
   }
 
-  if (linesToInsert.length === 0) {
-    console.warn("No valid order lines to insert");
+  if (insertedLinesCount === 0) {
+    console.warn("No valid order lines were inserted");
     return;
   }
 
-  // Insert all lines in a single operation
-  const result = await carbon.from("salesOrderLine").insert(linesToInsert);
-
-  if (result.error) {
-    console.error("Failed to insert order lines:", result.error);
-    throw new Error(`Failed to insert order lines: ${result.error.message}`);
-  }
-
-  console.log(`Successfully inserted ${linesToInsert.length} order lines`);
+  console.log(`Successfully inserted ${insertedLinesCount} order lines`);
 }

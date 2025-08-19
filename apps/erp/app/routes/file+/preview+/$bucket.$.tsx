@@ -1,6 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { supportedModelTypes } from "@carbon/react";
+import { supportedModelTypes } from "@carbon/utils";
 import { type LoaderFunctionArgs } from "@vercel/remix";
 
 const supportedFileTypes: Record<string, string> = {
