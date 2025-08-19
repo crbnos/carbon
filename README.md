@@ -39,7 +39,10 @@ We built Carbon to solve these problems ☝️.
 
 Carbon is designed to make it easy for you to extend the platform by building your own apps through our API. We provide some examples to get you started in the [examples](https://github.com/crbnos/carbon/blob/main/examples) folder.
 
-![Carbon Architecture](https://github.com/user-attachments/assets/ed6dc66b-e9cb-435e-b5a9-9daf933f4a1d)
+![Carbon Functonality](https://github.com/user-attachments/assets/150c3025-ddcb-4ae4-b7b4-27c670d6cb81)
+
+![Carbon Architecture](https://github.com/user-attachments/assets/3674b2d0-28c7-415f-a8ea-4d8c796337eb)
+
 
 Features:
 
