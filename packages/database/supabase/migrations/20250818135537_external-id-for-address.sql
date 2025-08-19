@@ -15,3 +15,20 @@ ALTER TABLE "supplierLocation" ADD COLUMN "externalId" JSONB;
 
 -- Create GIN index on external_id column
 CREATE INDEX idx_supplierLocation_external_id ON "supplierLocation" USING GIN ("externalId");
+
+
+ALTER TABLE "salesOrder" ADD COLUMN "externalId" JSONB;
+
+-- Create GIN index on external_id column
+CREATE INDEX idx_salesOrder_external_id ON "salesOrder" USING GIN ("externalId");
+
+
+ALTER TABLE "purchaseOrder" ADD COLUMN "externalId" JSONB;
+
+-- Create GIN index on external_id column
+CREATE INDEX idx_purchaseOrder_external_id ON "purchaseOrder" USING GIN ("externalId");
+
+
+
+
+

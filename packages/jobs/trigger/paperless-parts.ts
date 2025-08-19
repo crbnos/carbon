@@ -1,6 +1,15 @@
 import { getCarbonServiceRole } from "@carbon/auth";
 import type { Database } from "@carbon/database";
-import { getPaperlessParts } from "@carbon/integrations/paperless-parts";
+import {
+  getCarbonOrderStatus,
+  getCustomerIdAndContactId,
+  getCustomerLocationIds,
+  getEmployeeAndSalesPersonId,
+  getOrderLocationId,
+  getPaperlessParts,
+  insertOrderLines,
+  OrderSchema,
+} from "@carbon/integrations/paperless-parts";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { task } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
@@ -110,6 +119,16 @@ export const paperlessPartsTask = task({
     const carbon = getCarbonServiceRole();
     const paperless = await getPaperlessParts(payload.apiKey);
 
+    const company = await carbon
+      .from("company")
+      .select("*")
+      .eq("id", payload.companyId)
+      .single();
+
+    if (company.error || !company.data) {
+      throw new Error("Failed to fetch company from Carbon");
+    }
+
     switch (payload.payload.type) {
       case "quote.created":
         console.info(`📫 Processing quote created event`);
@@ -150,146 +169,19 @@ export const paperlessPartsTask = task({
           );
         }
 
-        let customerId: string;
-        let customerContactId: string;
-        // If the Paperless Parts quote contact has an account, get the customer from Carbon
-        // based on the Paperless Parts ID
-        // If the customer does not exist, create a new customer in Carbon
-        if (ppQuote.data.contact?.account) {
-          const paperlessPartsCustomerId = ppQuote.data.contact?.account?.id;
-          // @ts-expect-error - JSONB column
-          const existingCustomer = await carbon
-            .from("customer")
-            .select("id")
-            .eq("companyId", payload.companyId)
-            .eq("externalId->paperlessPartsId", paperlessPartsCustomerId)
-            .maybeSingle();
+        let {
+          customerId: quoteCustomerId,
+          customerContactId: quoteCustomerContactId,
+        } = await getCustomerIdAndContactId(carbon, paperless, {
+          company: company.data,
+          contact: ppQuote.data.contact,
+        });
 
-          if (existingCustomer.data) {
-            customerId = existingCustomer.data.id;
-          } else {
-            const customerName = ppQuote.data.contact?.account?.name!;
-            const newCustomer = await carbon
-              .from("customer")
-              .insert({
-                companyId: payload.companyId,
-                name: customerName,
-                externalId: {
-                  paperlessPartsId: ppQuote.data.contact.account.id,
-                },
-                currencyCode: "USD",
-                createdBy: "system",
-              })
-              .select()
-              .single();
-
-            if (newCustomer.error || !newCustomer.data) {
-              throw new Error("Failed to create customer in Carbon");
-            }
-
-            customerId = newCustomer.data.id;
-          }
-        } else {
-          // If the quote contact does not have an account, we need to create a new customer in Carbon
-          // and also create a corresponding account in Paperless Parts
-          const customerName = `${ppQuote.data.contact?.first_name} ${ppQuote.data.contact?.last_name}`;
-
-          // Create a new account in Paperless Parts
-          const newPaperlessPartsAccount =
-            await paperless.accounts.createAccount({
-              name: customerName,
-            });
-
-          if (
-            newPaperlessPartsAccount.error ||
-            !newPaperlessPartsAccount.data
-          ) {
-            throw new Error("Failed to create account in Paperless Parts");
-          }
-
-          const newPaperlessPartsAccountId = newPaperlessPartsAccount.data.id;
-
-          const newCustomer = await carbon
-            .from("customer")
-            .insert({
-              companyId: payload.companyId,
-              name: customerName,
-              externalId: {
-                paperlessPartsId: newPaperlessPartsAccountId,
-              },
-              currencyCode: "USD",
-              createdBy: "system",
-            })
-            .select()
-            .single();
-
-          if (newCustomer.error || !newCustomer.data) {
-            throw new Error("Failed to create customer in Carbon");
-          }
-
-          console.info("🔰 New Carbon customer created");
-
-          customerId = newCustomer.data.id;
+        if (!quoteCustomerId) {
+          throw new Error("Failed to get customer ID");
         }
-
-        // Get the contact ID from Carbon based on the Paperless Parts ID
-        const paperlessPartsContactId = ppQuote.data.contact?.id;
-        const existingCustomerContact = await carbon
-          .from("customerContact")
-          .select(
-            `
-            id,
-            contact!inner (
-              id,
-              companyId,
-              externalId
-            )
-          `
-          )
-          .eq("contact.companyId", payload.companyId)
-          .eq("contact.externalId->paperlessPartsId", paperlessPartsContactId)
-          .maybeSingle();
-
-        if (existingCustomerContact.data) {
-          customerContactId = existingCustomerContact.data.id;
-        } else {
-          // If there is no matching contact in Carbon, we need to create a new contact in Carbon
-          const newContact = await carbon
-            .from("contact")
-            .insert({
-              companyId: payload.companyId,
-              firstName: ppQuote.data.contact?.first_name!,
-              lastName: ppQuote.data.contact?.last_name!,
-              email: ppQuote.data.contact?.email!,
-              externalId: {
-                paperlessPartsId: ppQuote.data.contact?.id,
-              },
-            })
-            .select()
-            .single();
-
-          if (newContact.error || !newContact.data) {
-            throw new Error("Failed to create contact in Carbon");
-          }
-
-          console.info("🔰 New Carbon contact created");
-
-          const newCustomerContact = await carbon
-            .from("customerContact")
-            .insert({
-              customerId,
-              contactId: newContact.data.id,
-            })
-            .select()
-            .single();
-
-          if (newCustomerContact.error || !newCustomerContact.data) {
-            throw new Error("Failed to create customer contact in Carbon");
-          }
-
-          console.info("🔰 OS customerContact created");
-
-          customerContactId = newCustomerContact.data.id;
+        if (!quoteCustomerContactId) {
+          throw new Error("Failed to get customer contact ID");
         }
 
         // Create a new quote in Carbon
@@ -306,15 +198,15 @@ export const paperlessPartsTask = task({
         // Create a quote object from the Paperless Parts data
         const quote = {
           companyId: payload.companyId,
-          customerId: customerId,
-          customerContactId: customerContactId,
+          customerId: quoteCustomerId,
+          customerContactId: quoteCustomerContactId,
           quoteId: nextSequence.data.toString(),
           name: `Quote for ${
             ppQuote.data.contact?.account?.name ||
             `${ppQuote.data.contact?.first_name} ${ppQuote.data.contact?.last_name}`
           }`,
           status: "Draft" as const,
-          currencyCode: "USD",
+          currencyCode: company.data.baseCurrencyCode,
           createdBy: "system",
           exchangeRate: 1 as number | undefined,
           exchangeRateUpdatedAt: undefined as string | undefined,
@@ -324,31 +216,38 @@ export const paperlessPartsTask = task({
           },
         };
 
-        const [customerPayment, customerShipping, employee, opportunity] =
-          await Promise.all([
-            getCustomerPayment(carbon, quote.customerId),
-            getCustomerShipping(carbon, quote.customerId),
-            getEmployeeJob(carbon, quote.createdBy, quote.companyId),
-            carbon
-              .from("opportunity")
-              .insert([
-                { companyId: quote.companyId, customerId: quote.customerId },
-              ])
-              .select("id")
-              .single(),
-          ]);
+        const [
+          quoteCustomerPayment,
+          quoteCustomerShipping,
+          quoteEmployee,
+          quoteOpportunity,
+        ] = await Promise.all([
+          getCustomerPayment(carbon, quote.customerId),
+          getCustomerShipping(carbon, quote.customerId),
+          getEmployeeJob(carbon, quote.createdBy, quote.companyId),
+          carbon
+            .from("opportunity")
+            .insert([
+              { companyId: quote.companyId, customerId: quote.customerId },
+            ])
+            .select("id")
+            .single(),
+        ]);
 
-        if (customerPayment.error) return customerPayment;
-        if (customerShipping.error) return customerShipping;
+        if (quoteCustomerPayment.error) return quoteCustomerPayment;
+        if (quoteCustomerShipping.error) return quoteCustomerShipping;
 
         const {
-          paymentTermId,
-          invoiceCustomerId,
-          invoiceCustomerContactId,
-          invoiceCustomerLocationId,
-        } = customerPayment.data;
+          paymentTermId: quotePaymentTermId,
+          invoiceCustomerId: quoteInvoiceCustomerId,
+          invoiceCustomerContactId: quoteInvoiceCustomerContactId,
+          invoiceCustomerLocationId: quoteInvoiceCustomerLocationId,
+        } = quoteCustomerPayment.data;
 
-        const { shippingMethodId, shippingTermId } = customerShipping.data;
+        const {
+          shippingMethodId: quoteShippingMethodId,
+          shippingTermId: quoteShippingTermId,
+        } = quoteCustomerShipping.data;
 
         if (quote.currencyCode) {
           const currency = await getCurrencyByCode(
@@ -365,13 +264,13 @@ export const paperlessPartsTask = task({
           quote.exchangeRateUpdatedAt = new Date().toISOString();
         }
 
-        const locationId = employee?.data?.locationId ?? null;
+        const quoteLocationId = quoteEmployee?.data?.locationId ?? null;
         const insert = await carbon
           .from("quote")
           .insert([
             {
               ...quote,
-              opportunityId: opportunity.data?.id,
+              opportunityId: quoteOpportunity.data?.id,
             },
           ])
           .select("id, quoteId");
@@ -382,51 +281,52 @@ export const paperlessPartsTask = task({
         const quoteId = insert.data?.[0]?.id;
         if (!quoteId) return insert;
 
-        const [shipment, payment, externalLink] = await Promise.all([
-          carbon.from("quoteShipment").insert([
-            {
-              id: quoteId,
-              locationId: locationId,
-              shippingMethodId: shippingMethodId,
-              shippingTermId: shippingTermId,
+        const [quoteShipment, quotePayment, quoteExternalLink] =
+          await Promise.all([
+            carbon.from("quoteShipment").insert([
+              {
+                id: quoteId,
+                locationId: quoteLocationId,
+                shippingMethodId: quoteShippingMethodId,
+                shippingTermId: quoteShippingTermId,
+                companyId: quote.companyId,
+              },
+            ]),
+            carbon.from("quotePayment").insert([
+              {
+                id: quoteId,
+                invoiceCustomerId: quoteInvoiceCustomerId,
+                invoiceCustomerContactId: quoteInvoiceCustomerContactId,
+                invoiceCustomerLocationId: quoteInvoiceCustomerLocationId,
+                paymentTermId: quotePaymentTermId,
+                companyId: quote.companyId,
+              },
+            ]),
+            upsertExternalLink(carbon, {
+              documentType: "Quote" as const,
+              documentId: quoteId,
+              customerId: quote.customerId,
+              expiresAt: quote.expirationDate,
               companyId: quote.companyId,
-            },
-          ]),
-          carbon.from("quotePayment").insert([
-            {
-              id: quoteId,
-              invoiceCustomerId: invoiceCustomerId,
-              invoiceCustomerContactId: invoiceCustomerContactId,
-              invoiceCustomerLocationId: invoiceCustomerLocationId,
-              paymentTermId: paymentTermId,
-              companyId: quote.companyId,
-            },
-          ]),
-          upsertExternalLink(carbon, {
-            documentType: "Quote" as const,
-            documentId: quoteId,
-            customerId: quote.customerId,
-            expiresAt: quote.expirationDate,
-            companyId: quote.companyId,
-          }),
-        ]);
+            }),
+          ]);
 
-        if (shipment.error) {
+        if (quoteShipment.error) {
           await deleteQuote(carbon, quoteId);
-          return payment;
+          return quoteShipment;
         }
-        if (payment.error) {
+        if (quotePayment.error) {
           await deleteQuote(carbon, quoteId);
-          return payment;
+          return quotePayment;
         }
-        if (opportunity.error) {
+        if (quoteOpportunity.error) {
           await deleteQuote(carbon, quoteId);
-          return opportunity;
+          return quoteOpportunity;
         }
-        if (externalLink.data) {
+        if (quoteExternalLink.data) {
           await carbon
             .from("quote")
-            .update({ externalLinkId: externalLink.data.id })
+            .update({ externalLinkId: quoteExternalLink.data.id })
             .eq("id", quoteId);
         }
 
@@ -438,19 +338,289 @@ export const paperlessPartsTask = task({
         };
         break;
       case "order.created":
-        console.info(`📫 Processing order created event`);
-        result = {
-          success: true,
-          message: "Order created event processed successfully",
-        };
-        break;
       case "order.status_changed":
-        console.info(`📫 Processing order status changed event`);
-        result = {
-          success: true,
-          message: "Order status changed event processed successfully",
-        };
+        console.info(`📫 Processing order event`);
+
+        const orderPayload = payload.payload.data;
+        const orderNumber = orderPayload.number;
+
+        if (!orderNumber) {
+          throw new Error("Order number is required");
+        }
+
+        const order = await paperless.orders.orderDetails(orderNumber);
+
+        if (order.error || !order.data) {
+          throw new Error("Failed to fetch order details from Paperless Parts");
+        }
+
+        const orderData = OrderSchema.parse(order.data);
+        let shouldCreateOrder = payload.payload.type !== "order.status_changed";
+
+        if (!shouldCreateOrder) {
+          const existingOrder = await carbon
+            .from("salesOrder")
+            .select("id")
+            .eq("externalId->>paperlessId", orderData.uuid)
+            .eq("companyId", payload.companyId)
+            .maybeSingle();
+
+          if (existingOrder?.data?.id) {
+            console.log("Order already exists", existingOrder.data.id);
+            result = {
+              success: true,
+              message: "Order already exists",
+            };
+            break;
+          } else {
+            shouldCreateOrder = true;
+          }
+        }
+
+        if (shouldCreateOrder) {
+          const [
+            existingOrder,
+            {
+              customerId: orderCustomerId,
+              customerContactId: orderCustomerContactId,
+            },
+            { createdBy: orderCreatedBy, salesPersonId: orderSalesPersonId },
+            orderLocationId,
+          ] = await Promise.all([
+            carbon
+              .from("salesOrder")
+              .select("id")
+              .eq("externalId->>paperlessId", orderData.uuid)
+              .eq("companyId", payload.companyId)
+              .maybeSingle(),
+            getCustomerIdAndContactId(carbon, paperless, {
+              company: company.data,
+              contact: orderData.contact!,
+            }),
+            getEmployeeAndSalesPersonId(carbon, {
+              company: company.data,
+              estimator: orderData.estimator!,
+              salesPerson: orderData.sales_person!,
+            }),
+            getOrderLocationId(carbon, {
+              company: company.data,
+              sendFrom: orderData.send_from_facility,
+            }),
+          ]);
+
+          if (existingOrder?.data?.id) {
+            console.log("Order already exists", existingOrder.data.id);
+            result = {
+              success: true,
+              message: "Order already exists",
+            };
+            break;
+          }
+
+          if (!orderCustomerId) {
+            throw new Error("Failed to get customer ID");
+          }
+          if (!orderCustomerContactId) {
+            throw new Error("Failed to get customer contact ID");
+          }
+
+          const {
+            shipmentLocationId: orderShipmentLocationId,
+            invoiceLocationId: orderInvoiceLocationId,
+          } = await getCustomerLocationIds(carbon, {
+            company: company.data,
+            customerId: orderCustomerId,
+            billingInfo: orderData.billing_info,
+            shippingInfo: orderData.shipping_info,
+          });
+
+          const [
+            salesOrderSequence,
+            orderCustomerPayment,
+            orderCustomerShipping,
+            orderOpportunity,
+          ] = await Promise.all([
+            getNextSequence(carbon, "salesOrder", payload.companyId),
+            getCustomerPayment(carbon, orderCustomerId),
+            getCustomerShipping(carbon, orderCustomerId),
+            carbon
+              .from("opportunity")
+              .insert([
+                {
+                  customerId: orderCustomerId,
+                  companyId: payload.companyId,
+                },
+              ])
+              .select("id")
+              .single(),
+          ]);
+
+          if (salesOrderSequence.error) {
+            throw new Error("Failed to get sequence");
+          }
+          if (orderCustomerPayment.error) {
+            throw new Error("Failed to get customer payment");
+          }
+          if (orderCustomerShipping.error) {
+            throw new Error("Failed to get customer shipping");
+          }
+
+          const {
+            paymentTermId: orderPaymentTermId,
+            invoiceCustomerId: orderInvoiceCustomerId,
+            invoiceCustomerContactId: orderInvoiceCustomerContactId,
+            invoiceCustomerLocationId: orderInvoiceCustomerLocationId,
+          } = orderCustomerPayment.data;
+
+          const {
+            shippingMethodId: orderShippingMethodId,
+            shippingTermId: orderShippingTermId,
+          } = orderCustomerShipping.data;
+          if (orderOpportunity.error) {
+            throw new Error("Failed to create opportunity");
+          }
+
+          if (!salesOrderSequence.data) {
+            throw new Error(
+              "Failed to get next sequence number for sales order"
+            );
+          }
+
+          const salesOrderId = crypto.randomUUID();
+          const status = getCarbonOrderStatus(orderData.status);
+
+          const [salesOrder, orderShipment, orderPayment] = await Promise.all([
+            carbon.from("salesOrder").insert([
+              {
+                id: salesOrderId,
+                orderDate: new Date(orderData.created ?? "").toISOString(),
+                receiptRequestedDate: orderData.due_date,
+                status,
+                notes: orderData.notes,
+                customerId: orderCustomerId,
+                customerContactId: orderCustomerContactId,
+                customerReference:
+                  orderData.payment_details?.purchase_order_number ?? "",
+                salesOrderId: salesOrderSequence.data.toString(),
+                subtotal: parseFloat(
+                  orderData.payment_details?.subtotal ?? "0"
+                ),
+                tax: parseFloat(orderData.payment_details?.tax_cost ?? "0"),
+                total: parseFloat(
+                  orderData.payment_details?.total_price ?? "0"
+                ),
+                currencyCode: company.data.baseCurrencyCode,
+                exchangeRate: 1,
+                salesPersonId: orderSalesPersonId,
+                locationId: orderLocationId,
+                createdBy: orderCreatedBy,
+                companyId: payload.companyId,
+                opportunityId: orderOpportunity.data?.id,
+                internalNotes: orderData.private_notes
+                  ? {
+                      type: "doc",
+                      content: [
+                        {
+                          type: "paragraph",
+                          content: [
+                            { type: "text", text: orderData.private_notes },
+                          ],
+                        },
+                      ],
+                    }
+                  : null,
+                externalId: {
+                  paperlessId: orderData.uuid,
+                },
+              },
+            ]),
+            carbon.from("salesOrderShipment").insert([
+              {
+                id: salesOrderId,
+                locationId: orderLocationId,
+                customerId: orderCustomerId,
+                shippingCost: parseFloat(
+                  orderData.payment_details?.shipping_cost ?? "0"
+                ),
+                customerLocationId: orderShipmentLocationId,
+                shippingMethodId: orderShippingMethodId,
+                shippingTermId: orderShippingTermId,
+                companyId: payload.companyId,
+              },
+            ]),
+            carbon.from("salesOrderPayment").insert([
+              {
+                id: salesOrderId,
+                invoiceCustomerId: orderInvoiceCustomerId,
+                invoiceCustomerContactId: orderInvoiceCustomerContactId,
+                invoiceCustomerLocationId:
+                  orderInvoiceCustomerId === orderCustomerId
+                    ? orderInvoiceLocationId ?? orderInvoiceCustomerLocationId
+                    : orderInvoiceCustomerLocationId,
+                paymentTermId: orderPaymentTermId,
+                companyId: payload.companyId,
+              },
+            ]),
+          ]);
+
+          if (orderShipment.error) {
+            console.log("Failed to create shipment", orderShipment.error);
+            await deleteSalesOrder(carbon, salesOrderId);
+            result = {
+              success: false,
+              message: "Failed to create shipment",
+            };
+            break;
+          }
+          if (orderPayment.error) {
+            console.log("Failed to create payment", orderPayment.error);
+            await deleteSalesOrder(carbon, salesOrderId);
+            result = {
+              success: false,
+              message: "Failed to create payment",
+            };
+            break;
+          }
+          if (salesOrder.error) {
+            console.log("Failed to create sales order", salesOrder.error);
+            result = {
+              success: false,
+              message: "Failed to create sales order",
+            };
+            break;
+          }
+
+          // Insert order lines after successful sales order creation
+          try {
+            await insertOrderLines(carbon, {
+              salesOrderId,
+              companyId: payload.companyId,
+              createdBy: orderCreatedBy,
+              orderItems: orderData.order_items || [],
+            });
+            console.log("✅ Order lines successfully created");
+          } catch (error) {
+            console.error("Failed to insert order lines:", error);
+            await deleteSalesOrder(carbon, salesOrderId);
+            result = {
+              success: false,
+              message: "Failed to insert order lines",
+            };
+            break;
+          }
+
+          console.info(
+            "🔰 New Carbon sales order created from Paperless Parts"
+          );
+
+          result = {
+            success: true,
+            message: "Order created event processed successfully",
+          };
+        }
+
         break;
+
       case "integration_action.requested":
         console.info(`📫 Processing integration action requested event`);
         result = {
@@ -554,6 +724,13 @@ async function getCurrencyByCode(
 
 async function deleteQuote(client: SupabaseClient<Database>, quoteId: string) {
   return client.from("quote").delete().eq("id", quoteId);
+}
+
+async function deleteSalesOrder(
+  client: SupabaseClient<Database>,
+  salesOrderId: string
+) {
+  return client.from("salesOrder").delete().eq("id", salesOrderId);
 }
 
 async function upsertExternalLink(

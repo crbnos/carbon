@@ -126,7 +126,7 @@ export const OrderItemSchema = z.object({
   id: z.number().optional(),
   components: z.array(ComponentSchema).optional(),
   description: z.string().nullable().optional(),
-  expedite_revenue: z.string().optional(), // API returns as string
+  expedite_revenue: z.string().nullable().optional(), // API returns as string or null
   export_controlled: z.boolean().optional(),
   filename: z.string().optional(),
   lead_days: z.number().optional(),
@@ -172,7 +172,7 @@ export const PaymentDetailsSchema = z.object({
 export const ShippingOptionSchema = z.object({
   customers_account_number: z.string().nullable().optional(),
   customers_carrier: z.string().nullable().optional(),
-  shipping_method: z.string().optional(),
+  shipping_method: z.string().nullable().optional(),
   type: z.string().optional(),
 });
 

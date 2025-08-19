@@ -4,12 +4,16 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "../packages/database/src/types";
 import {
-  getCarbonCustomerIdAndContactId,
-  getCarbonLocationIds,
+  getCarbonOrderStatus,
+  getCustomerIdAndContactId,
+  getCustomerLocationIds,
+  getEmployeeAndSalesPersonId,
+  getOrderLocationId,
   getPaperlessParts,
+  insertOrderLines,
 } from "../packages/integrations/src/paperless-parts/lib/index";
 import { OrderSchema } from "../packages/integrations/src/paperless-parts/lib/schemas";
-const orderNumber = 1;
+const orderNumber = 5;
 const apiKey = "3c82924535cc39a51cbb59c1350754f92fb65742";
 const companyId = "SanLTzPk93kscfQ7oCnSSu";
 
@@ -30,14 +34,38 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const order = await paperless.orders.orderDetails(orderNumber);
   if (order.data) {
     const orderData = OrderSchema.parse(order.data);
-    console.log(orderData);
 
-    const [{ customerId, customerContactId }, ,] = await Promise.all([
-      getCarbonCustomerIdAndContactId(carbon, paperless, {
+    const [
+      existingOrder,
+      { customerId, customerContactId },
+      { createdBy, salesPersonId },
+      locationId,
+    ] = await Promise.all([
+      carbon
+        .from("salesOrder")
+        .select("id")
+        .eq("externalId->>paperlessId", orderData.uuid)
+        .eq("companyId", companyId)
+        .maybeSingle(),
+      getCustomerIdAndContactId(carbon, paperless, {
         company: company.data!,
         contact: orderData.contact!,
       }),
+      getEmployeeAndSalesPersonId(carbon, {
+        company: company.data!,
+        estimator: orderData.estimator!,
+        salesPerson: orderData.sales_person!,
+      }),
+      getOrderLocationId(carbon, {
+        company: company.data!,
+        sendFrom: orderData.send_from_facility,
+      }),
     ]);
+
+    if (existingOrder?.data?.id) {
+      console.log("Order already exists", existingOrder.data.id);
+      return;
+    }
 
     if (!customerId) {
       throw new Error("Failed to get customer ID");
@@ -47,98 +75,149 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
     }
 
     const { shipmentLocationId, invoiceLocationId } =
-      await getCarbonLocationIds(carbon, paperless, {
+      await getCustomerLocationIds(carbon, {
         company: company.data!,
         customerId,
         billingInfo: orderData.billing_info,
         shippingInfo: orderData.shipping_info,
       });
 
-    console.log({ shipmentLocationId, invoiceLocationId });
+    const [customerPayment, customerShipping, sequence, opportunity] =
+      await Promise.all([
+        getCustomerPayment(carbon, customerId),
+        getCustomerShipping(carbon, customerId),
+        getNextSequence(carbon, "salesOrder", companyId),
+        carbon
+          .from("opportunity")
+          .insert([
+            {
+              customerId,
+              companyId,
+            },
+          ])
+          .select("id")
+          .single(),
+      ]);
 
-    // const [customerPayment, customerShipping, employee, opportunity] =
-    //   await Promise.all([
-    //     getCustomerPayment(carbon, customerId),
-    //     getCustomerShipping(carbon, customerId),
-    //     getEmployeeJob(carbon, salesOrder.createdBy, companyId),
-    //     carbon
-    //       .from("opportunity")
-    //       .insert([
-    //         {
-    //           companyId: companyId,
-    //           customerId: customerId,
-    //         },
-    //       ])
-    //       .select("id")
-    //       .single(),
-    //   ]);
+    if (customerPayment.error) {
+      throw new Error("Failed to get customer payment");
+    }
+    if (customerShipping.error) {
+      throw new Error("Failed to get customer shipping");
+    }
+    if (sequence.error) {
+      throw new Error("Failed to get sequence");
+    }
+    if (opportunity.error) {
+      throw new Error("Failed to create opportunity");
+    }
 
-    // if (customerPayment.error) return customerPayment;
-    // if (customerShipping.error) return customerShipping;
+    const {
+      paymentTermId,
+      invoiceCustomerId,
+      invoiceCustomerContactId,
+      invoiceCustomerLocationId,
+    } = customerPayment.data;
 
-    // const {
-    //   paymentTermId,
-    //   invoiceCustomerId,
-    //   invoiceCustomerContactId,
-    //   invoiceCustomerLocationId,
-    // } = customerPayment.data;
+    const { shippingMethodId, shippingTermId } = customerShipping.data;
 
-    // const { shippingMethodId, shippingTermId } = customerShipping.data;
+    let salesOrderInsert: Database["public"]["Tables"]["salesOrder"]["Insert"] =
+      {
+        salesOrderId: sequence.data,
+        companyId: companyId,
+        createdBy: createdBy,
+        currencyCode: company.data?.baseCurrencyCode,
+        customerId,
+        customerContactId: customerContactId,
+        customerLocationId: shipmentLocationId,
+        customerReference:
+          orderData.payment_details?.purchase_order_number ?? "",
+        locationId,
+        opportunityId: opportunity.data?.id,
+        orderDate: new Date(orderData.created ?? "").toISOString(),
+        salesPersonId,
+        status: getCarbonOrderStatus(orderData.status),
+        internalNotes: orderData.private_notes
+          ? {
+              type: "doc",
+              content: [
+                {
+                  type: "paragraph",
+                  content: [{ type: "text", text: orderData.private_notes }],
+                },
+              ],
+            }
+          : null,
+        externalId: {
+          paperlessId: orderData.uuid,
+        },
+      };
 
-    // const locationId = employee?.data?.locationId ?? null;
+    const insertedSalesOrder = await carbon
+      .from("salesOrder")
+      .insert([salesOrderInsert])
+      .select("id, salesOrderId");
 
-    // let salesOrderInsert: Database["public"]["Tables"]["salesOrder"]["Insert"] =
-    //   {
-    //     companyId: companyId,
-    //     createdBy: employee?.data?.id ?? "system",
-    //     currencyCode: company.data?.baseCurrencyCode,
-    //     customerId: customerId,
-    //     opportunityId: opportunity.data?.id,
-    //   };
+    if (insertedSalesOrder.error) {
+      console.error("Failed to create sales order", insertedSalesOrder.error);
+      return insertedSalesOrder;
+    }
 
-    // const insertedSalesOrder = await carbon
-    //   .from("salesOrder")
-    //   .insert([salesOrderInsert])
-    //   .select("id, salesOrderId");
+    const salesOrderId = insertedSalesOrder.data[0].id;
 
-    // if (order.error) return order;
+    const [shipment, payment] = await Promise.all([
+      carbon.from("salesOrderShipment").insert([
+        {
+          id: salesOrderId,
+          locationId: locationId,
+          customerId,
+          shippingCost: orderData.payment_details?.shipping_cost ?? 0,
+          customerLocationId: shipmentLocationId,
+          shippingMethodId: shippingMethodId,
+          shippingTermId: shippingTermId,
+          companyId: companyId,
+        },
+      ]),
+      carbon.from("salesOrderPayment").insert([
+        {
+          id: salesOrderId,
+          invoiceCustomerId: invoiceCustomerId,
+          invoiceCustomerContactId: invoiceCustomerContactId,
+          invoiceCustomerLocationId:
+            invoiceCustomerId === customerId
+              ? invoiceLocationId ?? invoiceCustomerLocationId
+              : invoiceCustomerLocationId,
+          paymentTermId: paymentTermId,
+          companyId: companyId,
+        },
+      ]),
+    ]);
 
-    // const salesOrderId = order.data[0].id;
+    if (shipment.error) {
+      console.log("Failed to create shipment", shipment.error);
+      await deleteSalesOrder(carbon, salesOrderId);
+      return payment;
+    }
+    if (payment.error) {
+      console.log("Failed to create payment", payment.error);
+      await deleteSalesOrder(carbon, salesOrderId);
+      return payment;
+    }
 
-    // const [shipment, payment] = await Promise.all([
-    //   carbon.from("salesOrderShipment").insert([
-    //     {
-    //       id: salesOrderId,
-    //       locationId: locationId,
-    //       shippingMethodId: shippingMethodId,
-    //       shippingTermId: shippingTermId,
-    //       companyId: companyId,
-    //     },
-    //   ]),
-    //   carbon.from("salesOrderPayment").insert([
-    //     {
-    //       id: salesOrderId,
-    //       invoiceCustomerId: invoiceCustomerId,
-    //       invoiceCustomerContactId: invoiceCustomerContactId,
-    //       invoiceCustomerLocationId: invoiceCustomerLocationId,
-    //       paymentTermId: paymentTermId,
-    //       companyId: companyId,
-    //     },
-    //   ]),
-    // ]);
-
-    // if (shipment.error) {
-    //   await deleteSalesOrder(carbon, salesOrderId);
-    //   return payment;
-    // }
-    // if (payment.error) {
-    //   await deleteSalesOrder(carbon, salesOrderId);
-    //   return payment;
-    // }
-    // if (opportunity.error) {
-    //   await deleteSalesOrder(carbon, salesOrderId);
-    //   return opportunity;
-    // }
+    // Insert order lines after successful sales order creation
+    try {
+      await insertOrderLines(carbon, {
+        salesOrderId,
+        companyId,
+        createdBy,
+        orderItems: orderData.order_items || [],
+      });
+      console.log("✅ Order and order lines successfully created");
+    } catch (error) {
+      console.error("Failed to insert order lines:", error);
+      await deleteSalesOrder(carbon, salesOrderId);
+      return { error };
+    }
   } else {
     console.error("No order data found");
     return;
@@ -178,62 +257,9 @@ async function getCustomerShipping(
     .single();
 }
 
-async function getEmployeeJob(
-  client: SupabaseClient<Database>,
-  employeeId: string,
-  companyId: string
-) {
-  return client
-    .from("employeeJob")
-    .select("*")
-    .eq("id", employeeId)
-    .eq("companyId", companyId)
-    .single();
-}
-
-async function getCurrencyByCode(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  currencyCode: string
-) {
-  return client
-    .from("currency")
-    .select("exchangeRate")
-    .eq("companyId", companyId)
-    .eq("code", currencyCode)
-    .single();
-}
-
-async function deleteQuote(client: SupabaseClient<Database>, quoteId: string) {
-  return client.from("quote").delete().eq("id", quoteId);
-}
-
 async function deleteSalesOrder(
   client: SupabaseClient<Database>,
   salesOrderId: string
 ) {
   return client.from("salesOrder").delete().eq("id", salesOrderId);
-}
-
-async function upsertExternalLink(
-  client: SupabaseClient<Database>,
-  externalLink: {
-    documentType: "Quote" | "SupplierQuote" | "Customer";
-    documentId: string;
-    customerId: string;
-    expiresAt?: string;
-    companyId: string;
-  }
-) {
-  return client
-    .from("externalLink")
-    .insert({
-      documentType: externalLink.documentType,
-      documentId: externalLink.documentId,
-      customerId: externalLink.customerId,
-      expiresAt: externalLink.expiresAt,
-      companyId: externalLink.companyId,
-    })
-    .select("id")
-    .single();
 }
