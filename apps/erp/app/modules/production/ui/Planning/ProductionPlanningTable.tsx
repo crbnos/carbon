@@ -593,17 +593,24 @@ const ProductionPlanningTable = memo(
         }
       });
       return initialMap;
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [data]);
+    }, [data, periods]);
 
     // Store orders in a map keyed by item id
-    const [ordersMap, setOrdersMap] =
-      useState<Record<string, ProductionOrder[]>>(getOrders);
+    const [ordersMap, setOrdersMap] = useState<
+      Record<string, ProductionOrder[]>
+    >(() => {
+      const initialMap: Record<string, ProductionOrder[]> = {};
+      data.forEach((item) => {
+        if (item.id) {
+          initialMap[item.id] = getProductionOrdersFromPlanning(item, periods);
+        }
+      });
+      return initialMap;
+    });
 
     useEffect(() => {
       setOrdersMap(getOrders());
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [data]);
+    }, [getOrders]);
 
     const onBulkUpdate = useCallback(
       (selectedRows: typeof data, action: "order") => {
