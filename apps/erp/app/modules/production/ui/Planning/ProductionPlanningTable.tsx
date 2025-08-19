@@ -592,7 +592,8 @@ const ProductionPlanningTable = memo(
         }
       });
       return initialMap;
-    }, [data, periods]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [data]);
 
     // Store orders in a map keyed by item id
     const [ordersMap, setOrdersMap] =
@@ -600,7 +601,8 @@ const ProductionPlanningTable = memo(
 
     useEffect(() => {
       setOrdersMap(getOrders());
-    }, [data, periods, getOrders]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [data]);
 
     const onBulkUpdate = useCallback(
       (selectedRows: typeof data, action: "order") => {
