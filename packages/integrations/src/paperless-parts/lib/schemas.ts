@@ -11,8 +11,8 @@ export const AddressSchema = z.object({
   city: z.string().optional(),
   country: z.string().optional(),
   facility_name: z.string().nullable().optional(),
-  phone: z.string().optional(),
-  phone_ext: z.string().optional(),
+  phone: z.string().optional().nullable(),
+  phone_ext: z.string().optional().nullable(),
   postal_code: z.string().optional(),
   state: z.string().optional(),
 });
@@ -44,8 +44,8 @@ export const ContactSchema = z.object({
   id: z.number().optional(),
   last_name: z.string().optional(),
   notes: z.string().optional(),
-  phone: z.string().optional(),
-  phone_ext: z.string().optional(),
+  phone: z.string().optional().nullable(),
+  phone_ext: z.string().optional().nullable(),
 });
 
 // Company schema for customer
@@ -55,8 +55,8 @@ export const CompanySchema = z.object({
   id: z.number().nullable().optional(),
   metrics: AccountMetricsSchema.optional(),
   notes: z.string().nullable().optional(),
-  phone: z.string().optional(),
-  phone_ext: z.string().optional(),
+  phone: z.string().optional().nullable(),
+  phone_ext: z.string().optional().nullable(),
 });
 
 // Customer schema
@@ -67,8 +67,8 @@ export const CustomerSchema = z.object({
   first_name: z.string().optional(),
   last_name: z.string().optional(),
   notes: z.string().optional(),
-  phone: z.string().optional(),
-  phone_ext: z.string().optional(),
+  phone: z.string().optional().nullable(),
+  phone_ext: z.string().optional().nullable(),
 });
 
 // Sales person schema
@@ -85,8 +85,8 @@ export const FacilitySchema = z.object({
   name: z.string().optional(),
   address: AddressSchema.optional(),
   is_default: z.boolean().optional(),
-  phone: z.string().optional(),
-  phone_ext: z.string().optional(),
+  phone: z.string().optional().nullable(),
+  phone_ext: z.string().optional().nullable(),
   url: z.string().optional(),
 });
 
@@ -106,13 +106,13 @@ export const ComponentSchema = z.object({
   obtain_method: z.string().optional(),
   parent_ids: z.array(z.number()).optional(),
   part_custom_attrs: z.array(z.unknown()).optional(),
-  part_name: z.string().optional(),
-  part_number: z.string().optional(),
+  part_name: z.string().optional().nullable(),
+  part_number: z.string().optional().nullable(),
   part_url: z.string().url().optional(),
   part_uuid: z.string().uuid().optional(),
   process: z.unknown().nullable().optional(),
   purchased_component: z.unknown().nullable().optional(),
-  revision: z.string().optional(),
+  revision: z.string().optional().nullable(),
   shop_operations: z.array(z.unknown()).optional(),
   supporting_files: z.array(z.unknown()).optional(),
   thumbnail_url: z.string().url().optional(),
@@ -187,7 +187,7 @@ export const OrderSchema = z.object({
   contact: ContactSchema.optional(),
   customer: CustomerSchema.optional(),
   deliver_by: z.string().nullable().optional(),
-  estimator: SalesPersonSchema.optional(),
+  estimator: SalesPersonSchema.optional().nullable(),
   send_from_facility: FacilitySchema.optional(),
   erp_code: z.string().nullable().optional(),
   number: z.number().optional(),
@@ -198,8 +198,8 @@ export const OrderSchema = z.object({
   quote_erp_code: z.string().nullable().optional(),
   quote_number: z.number().optional(),
   quote_revision_number: z.number().nullable().optional(),
-  sales_person: SalesPersonSchema.optional(),
-  salesperson: SalesPersonSchema.optional(),
+  sales_person: SalesPersonSchema.optional().nullable(),
+  salesperson: SalesPersonSchema.optional().nullable(),
   shipments: ShipmentSchema.optional(),
   shipping_info: AddressSchema.optional(),
   shipping_option: ShippingOptionSchema.optional(),
@@ -214,7 +214,7 @@ export const OrderSchema = z.object({
       "cancelled",
     ])
     .optional(),
-  quote_rfq_number: z.string().optional(),
+  quote_rfq_number: z.string().nullable().optional(),
 });
 
 // Export the inferred type

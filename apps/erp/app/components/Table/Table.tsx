@@ -119,6 +119,13 @@ const Table = <T extends object>({
     setInternalData(data);
   }, [data]);
 
+  /* Clear row selection when data changes */
+  useEffect(() => {
+    if (withSelectableRows) {
+      setRowSelection({});
+    }
+  }, [data.length, withSelectableRows]);
+
   /* Selectable Rows */
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 

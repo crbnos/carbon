@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import { textToTiptap } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type z from "zod";
@@ -682,9 +683,11 @@ export async function createPartFromComponent(
 ): Promise<{ itemId: string; partId: string }> {
   const { companyId, createdBy, component } = args;
 
+  console.log(component);
+
   // Generate a readable ID for the part
   const partId =
-    component.part_number || component.part_uuid || `PP-${component.id}`;
+    component.part_number || component.part_name || `PP-${component.id}`;
   const revision = component.revision || "0";
   const name =
     component.part_name || component.part_number || `Part ${component.id}`;
@@ -746,7 +749,7 @@ export async function createPartFromComponent(
   }
 
   // Create the part record
-  const partInsert = await carbon.from("part").insert({
+  const partInsert = await carbon.from("part").upsert({
     id: partId,
     companyId,
     createdBy,
@@ -869,8 +872,15 @@ export async function insertOrderLines(
             addOnCost,
             companyId,
             createdBy,
+            quantitySent: component.deliver_quantity,
             promisedDate: orderItem.ships_on
               ? new Date(orderItem.ships_on).toISOString()
+              : null,
+            internalNotes: orderItem.private_notes
+              ? textToTiptap(orderItem.private_notes)
+              : null,
+            externalNotes: orderItem.public_notes
+              ? textToTiptap(orderItem.public_notes)
               : null,
           };
 
