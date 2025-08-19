@@ -1,4 +1,4 @@
-import { assertIsPost, error, VERCEL_URL } from "@carbon/auth";
+import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { notifyTaskStatusChanged } from "@carbon/integrations/notifications";
@@ -50,7 +50,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await notifyTaskStatusChanged({ client }, integrations, {
         companyId,
         userId,
-        carbonUrl: `https://${VERCEL_URL}${path.to.issue(
+        carbonUrl: `https://app.carbon.ms${path.to.issue(
           update.data.nonConformanceId
         )}`,
         task: {

@@ -1,4 +1,4 @@
-import { getCarbonServiceRole, VERCEL_URL } from "@carbon/auth";
+import { getCarbonServiceRole } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import {
   createIssueSlackThread,
@@ -448,9 +448,7 @@ async function handleViewSubmission(
       createIssueSlackThread(
         serviceRole,
         {
-          carbonUrl: `${VERCEL_URL || "http://localhost:3000"}${path.to.issue(
-            ncrId
-          )}`,
+          carbonUrl: `https://app.carbon.ms${path.to.issue(ncrId)}`,
           companyId,
           description,
           id: ncrId,

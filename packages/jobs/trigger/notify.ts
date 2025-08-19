@@ -272,7 +272,7 @@ export const notifyTask = task({
           await notifyTaskAssigned({ client }, integrationsResult.data, {
             companyId: payload.companyId,
             userId: payload.from || "system",
-            carbonUrl: `https://${VERCEL_URL}/x/issue/${payload.documentId}`,
+            carbonUrl: `https://app.carbon.ms/x/issue/${payload.documentId}`,
             task: {
               id: payload.documentId,
               table: "nonConformance",
