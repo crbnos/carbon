@@ -578,7 +578,8 @@ const ProductionPlanningTable = memo(
       if (bulkUpdateFetcher.data?.success === true) {
         toast.success("Orders submitted");
       }
-    }, [bulkUpdateFetcher.data]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [bulkUpdateFetcher.data?.success]);
 
     const isDisabled =
       !permissions.can("create", "production") ||
