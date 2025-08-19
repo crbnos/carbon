@@ -169,7 +169,8 @@ function calculateOrders({ itemPlanning, periods }: BaseOrderParams): {
           reorderPoint - (projectedQuantity + orderedQuantity);
 
         let day = 0;
-        while (remainingQuantityNeeded > 0 && day < 5) {
+        let maxIterations = 100; // Safety counter to prevent infinite loops
+        while (remainingQuantityNeeded > 0 && day < 5 && maxIterations-- > 0) {
           const dueDate = parseDate(period.startDate).add({ days: day });
           const startDate = dueDate.subtract({
             days: leadTime,
@@ -201,7 +202,8 @@ function calculateOrders({ itemPlanning, periods }: BaseOrderParams): {
           reorderPoint - (projectedQuantity + orderedQuantity);
 
         let day = 0;
-        while (remainingQuantityNeeded > 0 && day < 5) {
+        let maxIterations = 100; // Safety counter to prevent infinite loops
+        while (remainingQuantityNeeded > 0 && day < 5 && maxIterations-- > 0) {
           const dueDate = parseDate(period.startDate).add({ days: day });
           const startDate = dueDate.subtract({
             days: leadTime,
@@ -213,6 +215,11 @@ function calculateOrders({ itemPlanning, periods }: BaseOrderParams): {
 
           // Adjust quantity based on order constraints
           let orderQuantity = Math.max(minimumOrderQuantity, requiredQuantity);
+
+          // Ensure orderQuantity is positive to prevent infinite loop
+          if (orderQuantity <= 0) {
+            break;
+          }
 
           // Round to nearest multiple if specified
           if (orderMultiple && orderMultiple > 1) {
