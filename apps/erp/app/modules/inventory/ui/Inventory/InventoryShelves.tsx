@@ -78,7 +78,7 @@ const InventoryShelves = ({
   const [selectedShelfId, setSelectedShelfId] = useState<string | null>(null);
 
   const openAdjustmentModal = (shelfId?: string) => {
-    setSelectedShelfId(shelfId || pickMethod.defaultShelfId || null);
+    setSelectedShelfId(shelfId || null);
     adjustmentModal.onOpen();
   };
 
