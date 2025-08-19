@@ -284,7 +284,8 @@ const OrderDrawer = memo(
         setOrders(row, []);
         onClose();
       }
-    }, [fetcher.data, onClose, row, setOrders]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [fetcher.data?.success]);
 
     // Memoize drawer content
     const drawerContent = useMemo(
