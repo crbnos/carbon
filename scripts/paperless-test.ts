@@ -13,7 +13,7 @@ import {
   insertOrderLines,
 } from "../packages/integrations/src/paperless-parts/lib/index";
 import { OrderSchema } from "../packages/integrations/src/paperless-parts/lib/schemas";
-const orderNumber = 884;
+const orderNumber = 868;
 const apiKey = "7fb257095cc635004ecb149c0978c2010f44b99e";
 const companyId = "SanLTzPk93kscfQ7oCnSSu";
 
@@ -78,8 +78,8 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
       await getCustomerLocationIds(carbon, {
         company: company.data!,
         customerId,
-        billingInfo: orderData.billing_info,
-        shippingInfo: orderData.shipping_info,
+        billingInfo: orderData.billing_info ?? undefined,
+        shippingInfo: orderData.shipping_info ?? undefined,
       });
 
     const [customerPayment, customerShipping, sequence, opportunity] =
@@ -208,6 +208,7 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
     try {
       await insertOrderLines(carbon, {
         salesOrderId,
+        opportunityId: opportunity.data?.id,
         companyId,
         createdBy,
         orderItems: orderData.order_items || [],

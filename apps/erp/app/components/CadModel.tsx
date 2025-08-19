@@ -6,11 +6,10 @@ import {
   cn,
   ModelViewer,
   Spinner,
-  supportedModelTypes,
   toast,
 } from "@carbon/react";
 import { useMode } from "@carbon/remix";
-import { convertKbToString } from "@carbon/utils";
+import { convertKbToString, supportedModelTypes } from "@carbon/utils";
 import { useFetcher } from "@remix-run/react";
 import { nanoid } from "nanoid";
 import { useState } from "react";

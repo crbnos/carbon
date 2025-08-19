@@ -1,4 +1,5 @@
-import { supportedModelTypes, VStack, type JSONContent } from "@carbon/react";
+import { VStack, type JSONContent } from "@carbon/react";
+import { supportedModelTypes } from "@carbon/utils";
 import type { DragEndEvent } from "@dnd-kit/core";
 import { DndContext } from "@dnd-kit/core";
 import { Outlet, useParams, useSubmit } from "@remix-run/react";

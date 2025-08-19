@@ -1,6 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth";
 import { redis } from "@carbon/kv";
-import { supportedModelTypes } from "@carbon/react";
+import { supportedModelTypes } from "@carbon/utils";
 import { Ratelimit } from "@upstash/ratelimit";
 import { type LoaderFunctionArgs } from "@vercel/remix";
 import { getJobByOperationId } from "~/modules/production";

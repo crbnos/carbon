@@ -345,7 +345,7 @@ const useOpportunityLineDocuments = ({
 
         toast.success(
           `Moved ${file.name} to ${
-            targetBucket === "parts" ? "Parts" : "Opportunity Line"
+            targetBucket === "parts" ? "Parts" : "Opportunity"
           } bucket`
         );
         revalidator.revalidate();
@@ -478,7 +478,7 @@ const OpportunityLineDocuments = ({
                       : "--"}
                   </Td>
                   <Td>
-                    <Enumerable value="Opportunity Line" />
+                    <Enumerable value="Opportunity" />
                   </Td>
                   <Td>
                     <div className="flex justify-end w-full">

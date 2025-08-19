@@ -9,3 +9,24 @@ export const convertKbToString = (kb: number) => {
   const gb = mb / 1024;
   return `${gb.toFixed(2)} GB`;
 };
+
+export const supportedModelTypes = [
+  "3dm",
+  "3ds",
+  "3mf",
+  "amf",
+  "bim",
+  "brep",
+  "dae",
+  "fbx",
+  "fcstd",
+  "gltf",
+  "ifc",
+  "iges",
+  "obj",
+  "off",
+  "ply",
+  "step",
+  "stl",
+  "stp",
+];

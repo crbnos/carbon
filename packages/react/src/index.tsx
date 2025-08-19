@@ -200,7 +200,7 @@ import {
   ModalDrawerTypeProvider,
   useModalDrawerType,
 } from "./ModalDrawer";
-import { ModelViewer, supportedModelTypes } from "./ModelViewer";
+import { ModelViewer } from "./ModelViewer";
 import type { MultiSelectProps } from "./MultiSelect";
 import { MultiSelect } from "./MultiSelect";
 import type { NumberFieldProps } from "./Number";
@@ -567,7 +567,6 @@ export {
   multiSelectTriggerVariants,
   reactNodeToString,
   shortcutKeyVariants,
-  supportedModelTypes,
   toast,
   useModalCardType,
   useModalDrawerType,

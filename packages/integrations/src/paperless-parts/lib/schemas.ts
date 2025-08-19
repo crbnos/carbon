@@ -38,12 +38,12 @@ export const AccountSchema = z.object({
 
 // Contact schema
 export const ContactSchema = z.object({
-  account: AccountSchema.optional(),
+  account: AccountSchema.optional().nullable(),
   email: z.string().email().optional(),
   first_name: z.string().optional(),
   id: z.number().optional(),
   last_name: z.string().optional(),
-  notes: z.string().optional(),
+  notes: z.string().optional().nullable(),
   phone: z.string().optional().nullable(),
   phone_ext: z.string().optional().nullable(),
 });
@@ -53,8 +53,8 @@ export const CompanySchema = z.object({
   business_name: z.string().optional(),
   erp_code: z.string().nullable().optional(),
   id: z.number().nullable().optional(),
-  metrics: AccountMetricsSchema.optional(),
-  notes: z.string().nullable().optional(),
+  metrics: AccountMetricsSchema.optional().nullable(),
+  notes: z.string().nullable().optional().nullable(),
   phone: z.string().optional().nullable(),
   phone_ext: z.string().optional().nullable(),
 });
@@ -62,11 +62,11 @@ export const CompanySchema = z.object({
 // Customer schema
 export const CustomerSchema = z.object({
   id: z.number().nullable().optional(),
-  company: CompanySchema.optional(),
+  company: CompanySchema.optional().nullable(),
   email: z.string().email().optional(),
   first_name: z.string().optional(),
   last_name: z.string().optional(),
-  notes: z.string().optional(),
+  notes: z.string().optional().nullable(),
   phone: z.string().optional().nullable(),
   phone_ext: z.string().optional().nullable(),
 });
@@ -144,7 +144,7 @@ export const OrderItemSchema = z.object({
   ships_on: z.string().optional(), // Date string
   total_price: z.string().optional(), // API returns as string
   unit_price: z.string().optional(), // API returns as string
-  base_price: z.string().optional(), // API returns as string
+  base_price: z.string().optional().nullable(), // API returns as string
   add_on_fees: z.unknown().nullable().optional(),
   unit_price_before_discounts: z.string().optional(), // API returns as string
   ordered_add_ons: z.array(z.unknown()).optional(),
@@ -157,14 +157,14 @@ export const PaymentDetailsSchema = z.object({
   card_last4: z.string().nullable().optional(),
   net_payout: z.string().optional(), // API returns as string
   payment_type: z.enum(["credit_card", "purchase_order"]).nullable().optional(),
-  purchase_order_number: z.string().optional(),
+  purchase_order_number: z.string().optional().nullable(),
   purchasing_dept_contact_email: z.string().email().nullable().optional(),
-  purchasing_dept_contact_name: z.string().optional(),
+  purchasing_dept_contact_name: z.string().optional().nullable(),
   shipping_cost: z.string().optional(), // API returns as string
   subtotal: z.string().optional(), // API returns as string
   tax_cost: z.string().optional(), // API returns as string
   tax_rate: z.string().optional(), // API returns as string
-  payment_terms: z.string().optional(),
+  payment_terms: z.string().optional().nullable(),
   total_price: z.string().optional(), // API returns as string
 });
 
@@ -182,7 +182,7 @@ export const ShipmentSchema = z.array(z.unknown()); // Empty array in the exampl
 // Main Order schema
 export const OrderSchema = z.object({
   uuid: z.string().uuid().optional(),
-  billing_info: AddressSchema.optional(),
+  billing_info: AddressSchema.optional().nullable(),
   created: z.string().optional(), // Loosened datetime restriction
   contact: ContactSchema.optional(),
   customer: CustomerSchema.optional(),
@@ -201,8 +201,8 @@ export const OrderSchema = z.object({
   sales_person: SalesPersonSchema.optional().nullable(),
   salesperson: SalesPersonSchema.optional().nullable(),
   shipments: ShipmentSchema.optional(),
-  shipping_info: AddressSchema.optional(),
-  shipping_option: ShippingOptionSchema.optional(),
+  shipping_info: AddressSchema.optional().nullable(),
+  shipping_option: ShippingOptionSchema.optional().nullable(),
   ships_on: z.string().optional(), // Date string
   status: z
     .enum([

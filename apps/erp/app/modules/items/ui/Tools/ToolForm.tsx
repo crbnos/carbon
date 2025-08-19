@@ -13,10 +13,9 @@ import {
   ModalCardTitle,
   VStack,
   cn,
-  supportedModelTypes,
   toast,
 } from "@carbon/react";
-import { convertKbToString } from "@carbon/utils";
+import { convertKbToString, supportedModelTypes } from "@carbon/utils";
 import { useFetcher } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";

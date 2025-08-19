@@ -8,27 +8,6 @@ import { Spinner } from "./Spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./Tabs";
 import { cn } from "./utils/cn";
 
-export const supportedModelTypes = [
-  "3dm",
-  "3ds",
-  "3mf",
-  "amf",
-  "bim",
-  "brep",
-  "dae",
-  "fbx",
-  "fcstd",
-  "gltf",
-  "ifc",
-  "iges",
-  "obj",
-  "off",
-  "ply",
-  "step",
-  "stl",
-  "stp",
-];
-
 const darkColor = "#9797a5";
 const lightColor = "#8c8a8a";
 
