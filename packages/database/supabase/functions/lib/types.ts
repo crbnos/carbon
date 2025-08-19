@@ -20960,6 +20960,7 @@ export type Database = {
           customFields: Json | null
           exchangeRate: number | null
           exchangeRateUpdatedAt: string | null
+          externalId: Json | null
           externalNotes: Json | null
           id: string
           internalNotes: Json | null
@@ -20990,6 +20991,7 @@ export type Database = {
           customFields?: Json | null
           exchangeRate?: number | null
           exchangeRateUpdatedAt?: string | null
+          externalId?: Json | null
           externalNotes?: Json | null
           id?: string
           internalNotes?: Json | null
@@ -21020,6 +21022,7 @@ export type Database = {
           customFields?: Json | null
           exchangeRate?: number | null
           exchangeRateUpdatedAt?: string | null
+          externalId?: Json | null
           externalNotes?: Json | null
           id?: string
           internalNotes?: Json | null
@@ -26236,6 +26239,7 @@ export type Database = {
           customFields: Json | null
           exchangeRate: number | null
           exchangeRateUpdatedAt: string | null
+          externalId: Json | null
           externalNotes: Json | null
           id: string
           internalNotes: Json | null
@@ -26267,6 +26271,7 @@ export type Database = {
           customFields?: Json | null
           exchangeRate?: number | null
           exchangeRateUpdatedAt?: string | null
+          externalId?: Json | null
           externalNotes?: Json | null
           id?: string
           internalNotes?: Json | null
@@ -26298,6 +26303,7 @@ export type Database = {
           customFields?: Json | null
           exchangeRate?: number | null
           exchangeRateUpdatedAt?: string | null
+          externalId?: Json | null
           externalNotes?: Json | null
           id?: string
           internalNotes?: Json | null

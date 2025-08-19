@@ -1,10 +1,17 @@
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { nanoid } from "nanoid";
 import type z from "zod";
 import type { PaperlessPartsClient } from "./client";
-import type { AddressSchema, ContactSchema } from "./schemas";
+import type {
+  AddressSchema,
+  ContactSchema,
+  FacilitySchema,
+  OrderSchema,
+  SalesPersonSchema,
+} from "./schemas";
 
-export async function getCarbonCustomerIdAndContactId(
+export async function getCustomerIdAndContactId(
   carbon: SupabaseClient<Database>,
   paperless: PaperlessPartsClient<unknown>,
   args: {
@@ -32,38 +39,68 @@ export async function getCarbonCustomerIdAndContactId(
       .from("customer")
       .select("id")
       .eq("companyId", company.id)
-      .eq("externalId->paperlessPartsId", paperlessPartsCustomerId!)
+      .eq("externalId->>paperlessPartsId", String(paperlessPartsCustomerId!))
       .maybeSingle();
 
     if (existingCustomer.data) {
       customerId = existingCustomer.data.id;
     } else {
       const customerName = contact.account?.name!;
-      const newCustomer = await carbon
+
+      // Try to find existing customer by name
+      const existingCustomerByName = await carbon
         .from("customer")
-        .upsert(
-          {
-            companyId: company.id,
-            name: customerName,
+        .select("id")
+        .eq("companyId", company.id)
+        .eq("name", customerName)
+        .maybeSingle();
+
+      if (existingCustomerByName.data) {
+        // Update the existing customer with the external ID
+        const updatedCustomer = await carbon
+          .from("customer")
+          .update({
             externalId: {
               paperlessPartsId: contact.account.id,
             },
-            currencyCode: company.baseCurrencyCode,
-            createdBy: "system",
-          },
-          {
-            onConflict: "name, companyId",
-          }
-        )
-        .select()
-        .single();
+          })
+          .eq("id", existingCustomerByName.data.id)
+          .select()
+          .single();
 
-      if (newCustomer.error || !newCustomer.data) {
-        console.error(newCustomer.error);
-        throw new Error("Failed to create customer in Carbon");
+        if (updatedCustomer.error || !updatedCustomer.data) {
+          console.error(updatedCustomer.error);
+          throw new Error("Failed to update customer externalId in Carbon");
+        }
+
+        customerId = updatedCustomer.data.id;
+      } else {
+        const newCustomer = await carbon
+          .from("customer")
+          .upsert(
+            {
+              companyId: company.id,
+              name: customerName,
+              externalId: {
+                paperlessPartsId: contact.account.id,
+              },
+              currencyCode: company.baseCurrencyCode,
+              createdBy: "system",
+            },
+            {
+              onConflict: "name, companyId",
+            }
+          )
+          .select()
+          .single();
+
+        if (newCustomer.error || !newCustomer.data) {
+          console.error(newCustomer.error);
+          throw new Error("Failed to create customer in Carbon");
+        }
+
+        customerId = newCustomer.data.id;
       }
-
-      customerId = newCustomer.data.id;
     }
   } else {
     // If the quote contact does not have an account, we need to create a new customer in Carbon
@@ -119,7 +156,10 @@ export async function getCarbonCustomerIdAndContactId(
           `
     )
     .eq("contact.companyId", company.id)
-    .eq("contact.externalId->paperlessPartsId", paperlessPartsContactId!)
+    .eq(
+      "contact.externalId->>paperlessPartsId",
+      String(paperlessPartsContactId!)
+    )
     .maybeSingle();
 
   if (existingCustomerContact.data) {
@@ -170,9 +210,8 @@ export async function getCarbonCustomerIdAndContactId(
   };
 }
 
-export async function getCarbonLocationIds(
+export async function getCustomerLocationIds(
   carbon: SupabaseClient<Database>,
-  paperless: PaperlessPartsClient<unknown>,
   args: {
     customerId: string;
     company: Database["public"]["Tables"]["company"]["Row"];
@@ -193,7 +232,7 @@ export async function getCarbonLocationIds(
       .from("customerLocation")
       .select("id")
       .eq("customerId", customerId)
-      .eq("externalId->paperlessPartsId", paperlessPartsBillingId!)
+      .eq("externalId->>paperlessPartsId", String(paperlessPartsBillingId!))
       .maybeSingle();
 
     if (existingInvoiceLocation.data) {
@@ -273,7 +312,10 @@ export async function getCarbonLocationIds(
         const newCustomerLocation = await carbon
           .from("customerLocation")
           .insert({
-            name: billingInfo.facility_name || billingInfo.business_name,
+            name:
+              billingInfo.city && billingInfo.state
+                ? `${billingInfo.city}, ${billingInfo.state}`
+                : billingInfo.city || billingInfo.state || "",
             customerId,
             addressId,
             externalId: {
@@ -302,7 +344,7 @@ export async function getCarbonLocationIds(
       .from("customerLocation")
       .select("id")
       .eq("customerId", customerId)
-      .eq("externalId->paperlessPartsId", paperlessPartsShippingId!)
+      .eq("externalId->>paperlessPartsId", String(paperlessPartsShippingId!))
       .maybeSingle();
 
     if (existingShipmentLocation.data) {
@@ -406,4 +448,456 @@ export async function getCarbonLocationIds(
     invoiceLocationId,
     shipmentLocationId,
   };
+}
+
+export async function getEmployeeAndSalesPersonId(
+  carbon: SupabaseClient<Database>,
+  args: {
+    company: Database["public"]["Tables"]["company"]["Row"];
+    estimator?: z.infer<typeof SalesPersonSchema>;
+    salesPerson?: z.infer<typeof SalesPersonSchema>;
+  }
+) {
+  const { company, estimator, salesPerson } = args;
+
+  const employees = await carbon
+    .from("employees")
+    .select("id, email")
+    .or(`email.eq.${estimator?.email},email.eq.${salesPerson?.email}`)
+    .eq("companyId", company.id);
+
+  if (employees.error) {
+    console.error(employees.error);
+    return {
+      salesPersonId: null,
+      estimatorId: null,
+      createdBy: "system",
+    };
+  }
+
+  const salesPersonId = employees.data?.find(
+    (employee) => employee.email === salesPerson?.email
+  )?.id;
+  const estimatorId = employees.data?.find(
+    (employee) => employee.email === estimator?.email
+  )?.id;
+
+  return {
+    salesPersonId,
+    estimatorId,
+    createdBy: estimatorId ?? "system",
+  };
+}
+
+export async function getOrderLocationId(
+  carbon: SupabaseClient<Database>,
+  args: {
+    company: Database["public"]["Tables"]["company"]["Row"];
+    sendFrom?: z.infer<typeof FacilitySchema>;
+  }
+): Promise<string | null> {
+  const { company, sendFrom } = args;
+
+  const locations = await carbon
+    .from("location")
+    .select("id, name")
+    .eq("companyId", company.id);
+
+  if (sendFrom) {
+    const location = locations.data?.find(
+      (location) => location.name.toLowerCase() === sendFrom.name.toLowerCase()
+    );
+
+    if (location) {
+      return location.id;
+    }
+  }
+
+  const hq = locations.data?.filter((location) =>
+    location.name.toLowerCase().includes("headquarters")
+  );
+
+  if (hq?.length) {
+    return hq[0].id;
+  }
+
+  return locations.data?.[0]?.id ?? null;
+}
+
+export function getCarbonOrderStatus(
+  status: z.infer<typeof OrderSchema>["status"]
+): Database["public"]["Enums"]["salesOrderStatus"] {
+  switch (status) {
+    case "confirmed":
+      return "Confirmed";
+    case "pending":
+    case "on_hold":
+      return "Needs Approval";
+    case "in_process":
+      return "Confirmed";
+    case "completed":
+      return "Completed";
+    case "cancelled":
+      return "Cancelled";
+    default:
+      return "Draft";
+  }
+}
+
+/**
+ * Find existing part by Paperless Parts external ID
+ */
+export async function findPartByExternalId(
+  carbon: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    paperlessPartsId: string | number;
+  }
+): Promise<{ itemId: string; partId: string; revision: string | null } | null> {
+  const { companyId, paperlessPartsId } = args;
+
+  const existingPart = await carbon
+    .from("item")
+    .select("id, readableId, revision")
+    .eq("companyId", companyId)
+    .eq("externalId->>paperlessPartsId", String(paperlessPartsId))
+    .maybeSingle();
+
+  if (existingPart.data) {
+    return {
+      itemId: existingPart.data.id,
+      partId: existingPart.data.readableId,
+      revision: existingPart.data.revision,
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Download and process thumbnail from URL, upload to Carbon storage
+ */
+async function downloadAndUploadThumbnail(
+  carbon: SupabaseClient<Database>,
+  args: {
+    thumbnailUrl: string;
+    companyId: string;
+    itemId: string;
+  }
+): Promise<string | null> {
+  const { thumbnailUrl, companyId, itemId } = args;
+
+  try {
+    // Download the thumbnail from the URL
+    const response = await fetch(thumbnailUrl);
+    if (!response.ok) {
+      console.error(`Failed to download thumbnail: ${response.statusText}`);
+      return null;
+    }
+
+    const imageBuffer = await response.arrayBuffer();
+    const blob = new Blob([imageBuffer]);
+
+    // Create FormData to send to image resizer
+    const formData = new FormData();
+    formData.append("file", blob);
+    formData.append("contained", "true");
+
+    // Process the image through the resizer
+    const supabaseUrl = process.env.SUPABASE_URL;
+    if (!supabaseUrl) {
+      console.error("SUPABASE_URL environment variable not found");
+      return null;
+    }
+
+    const resizerResponse = await fetch(
+      `${supabaseUrl}/functions/v1/image-resizer`,
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    if (!resizerResponse.ok) {
+      console.error(`Image resizer failed: ${resizerResponse.statusText}`);
+      return null;
+    }
+
+    // Get content type from response to determine file extension
+    const contentType =
+      resizerResponse.headers.get("Content-Type") || "image/png";
+    const isJpg = contentType.includes("image/jpeg");
+    const fileExtension = isJpg ? "jpg" : "png";
+
+    const processedImageBuffer = await resizerResponse.arrayBuffer();
+    const processedBlob = new Blob([processedImageBuffer], {
+      type: contentType,
+    });
+
+    // Generate filename and create File object
+    const fileName = `${nanoid()}.${fileExtension}`;
+    const thumbnailFile = new File([processedBlob], fileName, {
+      type: contentType,
+    });
+
+    // Upload to private bucket
+    const storagePath = `${companyId}/thumbnails/${itemId}/${fileName}`;
+    const { data, error } = await carbon.storage
+      .from("private")
+      .upload(storagePath, thumbnailFile, {
+        upsert: true,
+      });
+
+    if (error) {
+      console.error("Failed to upload thumbnail to storage:", error);
+      return null;
+    }
+
+    return data?.path || null;
+  } catch (error) {
+    console.error("Error processing thumbnail:", error);
+    return null;
+  }
+}
+
+/**
+ * Create new item and part from Paperless Parts component data
+ */
+export async function createPartFromComponent(
+  carbon: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    createdBy: string;
+    component: {
+      id?: number;
+      part_number?: string;
+      part_name?: string;
+      part_uuid?: string;
+      revision?: string;
+      description?: string | null;
+      thumbnail_url?: string;
+      part_url?: string;
+    };
+  }
+): Promise<{ itemId: string; partId: string }> {
+  const { companyId, createdBy, component } = args;
+
+  // Generate a readable ID for the part
+  const partId =
+    component.part_number || component.part_uuid || `PP-${component.id}`;
+  const revision = component.revision || "0";
+  const name =
+    component.part_name || component.part_number || `Part ${component.id}`;
+
+  // Create the item first
+  const itemInsert = await carbon
+    .from("item")
+    .insert({
+      readableId: partId,
+      revision,
+      name,
+      description: component.description,
+      type: "Part",
+      replenishmentSystem: "Make",
+      defaultMethodType: "Make",
+      itemTrackingType: "Inventory",
+      unitOfMeasureCode: "EA",
+      active: true,
+      companyId,
+      createdBy,
+      externalId: {
+        paperlessPartsId: component.part_uuid,
+      },
+    })
+    .select("id")
+    .single();
+
+  if (itemInsert.error) {
+    console.error("Failed to create item:", itemInsert.error);
+    throw new Error(`Failed to create item: ${itemInsert.error.message}`);
+  }
+
+  const itemId = itemInsert.data.id;
+
+  // Download and upload thumbnail if available
+  let thumbnailPath: string | null = null;
+  if (component.thumbnail_url) {
+    thumbnailPath = await downloadAndUploadThumbnail(carbon, {
+      thumbnailUrl: component.thumbnail_url,
+      companyId,
+      itemId,
+    });
+
+    // Update the item with the thumbnail path
+    if (thumbnailPath) {
+      const thumbnailUpdate = await carbon
+        .from("item")
+        .update({ thumbnailPath })
+        .eq("id", itemId);
+
+      if (thumbnailUpdate.error) {
+        console.error(
+          "Failed to update item with thumbnail path:",
+          thumbnailUpdate.error
+        );
+        // Don't throw here, just log the error and continue
+      }
+    }
+  }
+
+  // Create the part record
+  const partInsert = await carbon.from("part").insert({
+    id: partId,
+    companyId,
+    createdBy,
+    externalId: {
+      paperlessPartsId: component.part_uuid,
+    },
+  });
+
+  if (partInsert.error) {
+    console.error("Failed to create part:", partInsert.error);
+    throw new Error(`Failed to create part: ${partInsert.error.message}`);
+  }
+
+  return { itemId, partId };
+}
+
+/**
+ * Get or create part from Paperless Parts component
+ */
+export async function getOrCreatePart(
+  carbon: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    createdBy: string;
+    component: {
+      id?: number;
+      part_number?: string;
+      part_name?: string;
+      part_uuid?: string;
+      revision?: string;
+      description?: string | null;
+      thumbnail_url?: string;
+      part_url?: string;
+    };
+  }
+): Promise<{ itemId: string; partId: string }> {
+  const { companyId, component } = args;
+
+  if (!component.part_uuid) {
+    throw new Error("Component part_uuid is required");
+  }
+
+  // First, try to find existing part by external ID
+  const existingPart = await findPartByExternalId(carbon, {
+    companyId,
+    paperlessPartsId: component.part_uuid,
+  });
+
+  if (existingPart) {
+    return existingPart;
+  }
+
+  // If not found, create new part
+  return createPartFromComponent(carbon, args);
+}
+
+/**
+ * Insert sales order lines from Paperless Parts order items
+ */
+export async function insertOrderLines(
+  carbon: SupabaseClient<Database>,
+  args: {
+    salesOrderId: string;
+    companyId: string;
+    createdBy: string;
+    orderItems: z.infer<typeof OrderSchema>["order_items"];
+  }
+): Promise<void> {
+  const { salesOrderId, companyId, createdBy, orderItems } = args;
+
+  if (!orderItems?.length) {
+    return;
+  }
+
+  const linesToInsert: Database["public"]["Tables"]["salesOrderLine"]["Insert"][] =
+    [];
+
+  for (const orderItem of orderItems) {
+    if (!orderItem.components?.length) {
+      // Handle order items without components as comment lines
+      if (orderItem.description || orderItem.public_notes) {
+        linesToInsert.push({
+          salesOrderId,
+          salesOrderLineType: "Comment",
+          description: orderItem.description || orderItem.public_notes || "",
+          companyId,
+          createdBy,
+        });
+      }
+      continue;
+    }
+
+    // Process each component in the order item
+    for (const component of orderItem.components) {
+      try {
+        const { itemId } = await getOrCreatePart(carbon, {
+          companyId,
+          createdBy,
+          component,
+        });
+
+        // Calculate quantities
+        const saleQuantity =
+          component.deliver_quantity || orderItem.quantity || 1;
+        const unitPrice = orderItem.unit_price
+          ? parseFloat(orderItem.unit_price)
+          : 0;
+        const addOnCost = orderItem.add_on_fees
+          ? parseFloat(String(orderItem.add_on_fees))
+          : 0;
+
+        const salesOrderLine: Database["public"]["Tables"]["salesOrderLine"]["Insert"] =
+          {
+            salesOrderId,
+            salesOrderLineType: "Part",
+            itemId,
+            description: component.description || orderItem.description,
+            saleQuantity,
+            unitPrice,
+            addOnCost,
+            companyId,
+            createdBy,
+            promisedDate: orderItem.ships_on
+              ? new Date(orderItem.ships_on).toISOString()
+              : null,
+          };
+
+        linesToInsert.push(salesOrderLine);
+      } catch (error) {
+        console.error(
+          `Failed to process component ${component.part_uuid}:`,
+          error
+        );
+        // Continue with other components instead of failing the entire order
+        continue;
+      }
+    }
+  }
+
+  if (linesToInsert.length === 0) {
+    console.warn("No valid order lines to insert");
+    return;
+  }
+
+  // Insert all lines in a single operation
+  const result = await carbon.from("salesOrderLine").insert(linesToInsert);
+
+  if (result.error) {
+    console.error("Failed to insert order lines:", result.error);
+    throw new Error(`Failed to insert order lines: ${result.error.message}`);
+  }
+
+  console.log(`Successfully inserted ${linesToInsert.length} order lines`);
 }
