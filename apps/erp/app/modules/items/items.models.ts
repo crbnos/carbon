@@ -376,7 +376,7 @@ export const itemPlanningValidator = z
         message: "Reordering policy is required",
       }),
     }),
-    demandAccumulationPeriod: zfd.numeric(z.number().min(0).optional()),
+    demandAccumulationPeriod: zfd.numeric(z.number().min(1).optional()),
     demandAccumulationSafetyStock: zfd.numeric(z.number().min(0).optional()),
     reorderPoint: zfd.numeric(z.number().min(0).optional()).optional(),
     reorderQuantity: zfd.numeric(z.number().min(0)).optional(),
