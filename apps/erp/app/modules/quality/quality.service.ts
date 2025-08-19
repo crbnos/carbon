@@ -1,4 +1,4 @@
-import type { Database, Json } from "@carbon/database";
+import { fetchAllFromTable, type Database, type Json } from "@carbon/database";
 import { parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
@@ -187,10 +187,14 @@ export async function getGaugesList(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  return client
-    .from("gauge")
-    .select("id, name:gaugeId, description")
-    .eq("companyId", companyId);
+  return fetchAllFromTable<{
+    id: string;
+    name: string;
+    gaugeId: string;
+    description: string;
+  }>(client, "gauge", "id, name:gaugeId, description", (query) =>
+    query.eq("companyId", companyId)
+  );
 }
 
 export async function getGaugeCalibrationRecord(

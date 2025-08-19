@@ -1,4 +1,5 @@
 import type { Database, Json } from "@carbon/database";
+import { fetchAllFromTable } from "@carbon/database";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { FunctionRegion, type SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
@@ -393,14 +394,17 @@ export async function getConsumablesList(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  let query = client
-    .from("item")
-    .select("id, name, readableIdWithRevision")
-    .eq("type", "Consumable")
-    .eq("companyId", companyId)
-    .eq("active", true);
-
-  return query.order("name");
+  return fetchAllFromTable<{
+    id: string;
+    name: string;
+    readableIdWithRevision: string;
+  }>(client, "item", "id, name, readableIdWithRevision", (query) =>
+    query
+      .eq("type", "Consumable")
+      .eq("companyId", companyId)
+      .eq("active", true)
+      .order("name")
+  );
 }
 export async function getItem(client: SupabaseClient<Database>, id: string) {
   return client.from("item").select("*").eq("id", id).single();
@@ -811,14 +815,17 @@ export async function getMaterialsList(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  let query = client
-    .from("item")
-    .select("id, name, readableIdWithRevision")
-    .eq("type", "Material")
-    .or(`companyId.eq.${companyId},companyId.is.null`)
-    .eq("active", true);
-
-  return query.order("name");
+  return fetchAllFromTable<{
+    id: string;
+    name: string;
+    readableIdWithRevision: string;
+  }>(client, "item", "id, name, readableIdWithRevision", (query) =>
+    query
+      .eq("type", "Material")
+      .or(`companyId.eq.${companyId},companyId.is.null`)
+      .eq("active", true)
+      .order("name")
+  );
 }
 
 export async function getMaterialDimension(
@@ -1325,14 +1332,17 @@ export async function getPartsList(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  let query = client
-    .from("item")
-    .select("id, name, readableIdWithRevision")
-    .eq("type", "Part")
-    .eq("companyId", companyId)
-    .eq("active", true);
-
-  return query.order("name");
+  return fetchAllFromTable<{
+    id: string;
+    name: string;
+    readableIdWithRevision: string;
+  }>(client, "item", "id, name, readableIdWithRevision", (query) =>
+    query
+      .eq("type", "Part")
+      .eq("companyId", companyId)
+      .eq("active", true)
+      .order("name")
+  );
 }
 
 export async function getPartUsedIn(
@@ -1518,15 +1528,16 @@ export async function getServicesList(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  let query = client
-    .from("item")
-    .select("id, name")
-    .eq("type", "Service")
-    .eq("companyId", companyId)
-    .eq("active", true)
-    .order("name");
-
-  return query;
+  return fetchAllFromTable<{
+    id: string;
+    name: string;
+  }>(client, "item", "id, name", (query) =>
+    query
+      .eq("type", "Service")
+      .eq("companyId", companyId)
+      .eq("active", true)
+      .order("name")
+  );
 }
 
 export async function getSupplierParts(
@@ -1589,14 +1600,17 @@ export async function getToolsList(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  let query = client
-    .from("item")
-    .select("id, name, readableIdWithRevision")
-    .eq("type", "Tool")
-    .eq("companyId", companyId)
-    .eq("active", true);
-
-  return query.order("name");
+  return fetchAllFromTable<{
+    id: string;
+    name: string;
+    readableIdWithRevision: string;
+  }>(client, "item", "id, name, readableIdWithRevision", (query) =>
+    query
+      .eq("type", "Tool")
+      .eq("companyId", companyId)
+      .eq("active", true)
+      .order("name")
+  );
 }
 
 export async function getUnitOfMeasure(

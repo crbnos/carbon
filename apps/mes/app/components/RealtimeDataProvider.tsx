@@ -1,6 +1,7 @@
 "use client";
 
 import { useCarbon } from "@carbon/auth";
+import { fetchAllFromTable } from "@carbon/database";
 import idb from "localforage";
 import { useEffect } from "react";
 import { useUser } from "~/hooks";
@@ -39,20 +40,22 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
     if (!carbon || !accessToken || hydratedFromServer) return;
 
     const [items, people] = await Promise.all([
-      carbon
-        .from("item")
-        .select(
-          "id, readableIdWithRevision, name, type, replenishmentSystem, itemTrackingType, active"
-        )
-        .eq("companyId", companyId)
-        .order("readableId", { ascending: true })
-        .order("revision", { ascending: false }),
-
-      carbon
-        .from("employees")
-        .select("id, name, email, avatarUrl")
-        .eq("companyId", companyId)
-        .order("name"),
+      fetchAllFromTable(
+        carbon,
+        "item",
+        "id, readableIdWithRevision, name, type, replenishmentSystem, itemTrackingType, active",
+        (query) =>
+          query
+            .eq("companyId", companyId)
+            .order("readableId", { ascending: true })
+            .order("revision", { ascending: false })
+      ),
+      fetchAllFromTable(
+        carbon,
+        "employees",
+        "id, name, email, avatarUrl",
+        (query) => query.eq("companyId", companyId).order("name")
+      ),
     ]);
 
     if (items.error) {

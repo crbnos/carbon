@@ -1,4 +1,4 @@
-import type { Database, Json } from "@carbon/database";
+import { fetchAllFromTable, type Database, type Json } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
 import type { FileObject, StorageError } from "@supabase/storage-js";
 import {
@@ -266,11 +266,12 @@ export async function getJobsList(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  return client
-    .from("job")
-    .select("id, jobId")
-    .eq("companyId", companyId)
-    .order("jobId");
+  return fetchAllFromTable<{
+    id: string;
+    jobId: string;
+  }>(client, "job", "id, jobId", (query) =>
+    query.eq("companyId", companyId).order("jobId")
+  );
 }
 
 export async function getJobMakeMethodById(
@@ -623,12 +624,16 @@ export async function getProceduresList(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  return client
-    .from("procedure")
-    .select("*")
-    .eq("companyId", companyId)
-    .order("name", { ascending: true })
-    .order("version", { ascending: false });
+  return fetchAllFromTable<{
+    id: string;
+    name: string;
+    version: number;
+  }>(client, "procedure", "id, name, version", (query) =>
+    query
+      .eq("companyId", companyId)
+      .order("name", { ascending: true })
+      .order("version", { ascending: false })
+  );
 }
 
 export async function getProductionEvent(

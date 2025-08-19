@@ -1,6 +1,7 @@
 "use client";
 
 import { useCarbon } from "@carbon/auth";
+import { fetchAllFromTable } from "@carbon/database";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { useEffect, useRef } from "react";
 import { useUser } from "~/hooks";
@@ -49,29 +50,45 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
     if (!carbon || !accessToken || hydratedFromServer) return;
 
     const [items, suppliers, customers, people] = await Promise.all([
-      carbon
-        .from("item")
-        .select(
-          "id, readableIdWithRevision, unitOfMeasureCode, name, type, replenishmentSystem, active, itemTrackingType"
-        )
-        .eq("companyId", companyId)
-        .order("readableId", { ascending: true })
-        .order("revision", { ascending: false }),
-      carbon
-        .from("supplier")
-        .select("id, name")
-        .eq("companyId", companyId)
-        .order("name"),
-      carbon
-        .from("customer")
-        .select("id, name")
-        .eq("companyId", companyId)
-        .order("name"),
-      carbon
-        .from("employees")
-        .select("id, name, email, avatarUrl")
-        .eq("companyId", companyId)
-        .order("name"),
+      fetchAllFromTable<{
+        id: string;
+        readableIdWithRevision: string;
+        unitOfMeasureCode: string;
+        name: string;
+        type: string;
+        replenishmentSystem: string;
+        active: boolean;
+        itemTrackingType: string;
+      }>(
+        carbon,
+        "item",
+        "id, readableIdWithRevision, unitOfMeasureCode, name, type, replenishmentSystem, active, itemTrackingType",
+        (query) =>
+          query
+            .eq("companyId", companyId)
+            .order("readableId", { ascending: true })
+            .order("revision", { ascending: false })
+      ),
+      fetchAllFromTable<{
+        id: string;
+        name: string;
+      }>(carbon, "supplier", "id, name", (query) =>
+        query.eq("companyId", companyId).order("name")
+      ),
+      fetchAllFromTable<{
+        id: string;
+        name: string;
+      }>(carbon, "customer", "id, name", (query) =>
+        query.eq("companyId", companyId).order("name")
+      ),
+      fetchAllFromTable<{
+        id: string;
+        name: string;
+        email: string;
+        avatarUrl: string;
+      }>(carbon, "employees", "id, name, email, avatarUrl", (query) =>
+        query.eq("companyId", companyId).order("name")
+      ),
     ]);
 
     if (items.error) {

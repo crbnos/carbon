@@ -1,4 +1,4 @@
-import type { Database, Json } from "@carbon/database";
+import { fetchAllFromTable, type Database, type Json } from "@carbon/database";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
@@ -319,12 +319,12 @@ export async function getShelvesList(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  return client
-    .from("shelf")
-    .select("id, name")
-    .eq("active", true)
-    .eq("companyId", companyId)
-    .order("name");
+  return fetchAllFromTable<{
+    id: string;
+    name: string;
+  }>(client, "shelf", "id, name", (query) =>
+    query.eq("active", true).eq("companyId", companyId).order("name")
+  );
 }
 
 export async function getShelvesListForLocation(
@@ -332,13 +332,16 @@ export async function getShelvesListForLocation(
   companyId: string,
   locationId: string
 ) {
-  return client
-    .from("shelf")
-    .select("id, name")
-    .eq("active", true)
-    .eq("companyId", companyId)
-    .eq("locationId", locationId)
-    .order("name");
+  return fetchAllFromTable<{
+    id: string;
+    name: string;
+  }>(client, "shelf", "id, name", (query) =>
+    query
+      .eq("active", true)
+      .eq("companyId", companyId)
+      .eq("locationId", locationId)
+      .order("name")
+  );
 }
 
 export async function getShelves(

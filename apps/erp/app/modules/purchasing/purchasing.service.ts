@@ -1,4 +1,4 @@
-import type { Database, Json } from "@carbon/database";
+import { fetchAllFromTable, type Database, type Json } from "@carbon/database";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import {
   FunctionRegion,
@@ -625,11 +625,12 @@ export async function getSupplierQuotesList(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  return client
-    .from("supplierQuote")
-    .select("id, supplierQuoteId")
-    .eq("companyId", companyId)
-    .order("createdAt", { ascending: false });
+  return fetchAllFromTable<{
+    id: string;
+    supplierQuoteId: string;
+  }>(client, "supplierQuote", "id, supplierQuoteId", (query) =>
+    query.eq("companyId", companyId).order("createdAt", { ascending: false })
+  );
 }
 
 export async function getSupplierShipping(
@@ -681,11 +682,12 @@ export async function getSuppliersList(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  return client
-    .from("supplier")
-    .select("id, name")
-    .eq("companyId", companyId)
-    .order("name");
+  return fetchAllFromTable<{
+    id: string;
+    name: string;
+  }>(client, "supplier", "id, name", (query) =>
+    query.eq("companyId", companyId).order("name")
+  );
 }
 
 export async function getSupplierStatus(

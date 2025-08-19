@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import { fetchAllFromTable } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
@@ -224,11 +225,12 @@ export async function getSuppliers(
 }
 
 export async function getUsers(client: SupabaseClient<Database>) {
-  return client
-    .from("user")
-    .select("id, firstName, lastName, fullName, email, avatarUrl")
-    .eq("active", true)
-    .order("lastName");
+  return fetchAllFromTable(
+    client,
+    "user",
+    "id, firstName, lastName, fullName, email, avatarUrl",
+    (query) => query.eq("active", true).order("lastName")
+  );
 }
 
 export async function insertEmployeeType(

@@ -1,4 +1,4 @@
-import type { Database, Json } from "@carbon/database";
+import { fetchAllFromTable, type Database, type Json } from "@carbon/database";
 import { getLocalTimeZone, now, today } from "@internationalized/date";
 import {
   FunctionRegion,
@@ -443,11 +443,12 @@ export async function getCustomersList(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  return client
-    .from("customer")
-    .select("id, name")
-    .eq("companyId", companyId)
-    .order("name");
+  return fetchAllFromTable<{
+    id: string;
+    name: string;
+  }>(client, "customer", "id, name", (query) =>
+    query.eq("companyId", companyId).order("name")
+  );
 }
 
 export async function getCustomerStatus(
@@ -785,11 +786,13 @@ export async function getQuotesList(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  return client
-    .from("quote")
-    .select("id, quoteId, revisionId")
-    .eq("companyId", companyId)
-    .order("createdAt", { ascending: false });
+  return fetchAllFromTable<{
+    id: string;
+    quoteId: string;
+    revisionId: string;
+  }>(client, "quote", "id, quoteId, revisionId", (query) =>
+    query.eq("companyId", companyId).order("createdAt", { ascending: false })
+  );
 }
 
 export async function getQuoteAssembliesByLine(
@@ -1246,10 +1249,12 @@ export async function getSalesOrdersList(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  return client
-    .from("salesOrder")
-    .select("id, salesOrderId")
-    .eq("companyId", companyId);
+  return fetchAllFromTable<{
+    id: string;
+    salesOrderId: string;
+  }>(client, "salesOrder", "id, salesOrderId", (query) =>
+    query.eq("companyId", companyId)
+  );
 }
 
 export async function getSalesOrderPayment(
