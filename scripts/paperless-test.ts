@@ -13,8 +13,8 @@ import {
   insertOrderLines,
 } from "../packages/integrations/src/paperless-parts/lib/index";
 import { OrderSchema } from "../packages/integrations/src/paperless-parts/lib/schemas";
-const orderNumber = 5;
-const apiKey = "3c82924535cc39a51cbb59c1350754f92fb65742";
+const orderNumber = 884;
+const apiKey = "7fb257095cc635004ecb149c0978c2010f44b99e";
 const companyId = "SanLTzPk93kscfQ7oCnSSu";
 
 dotenv.config();

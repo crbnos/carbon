@@ -12,5 +12,6 @@ export * from "./labels";
 export * from "./math";
 export * from "./ssr";
 export * from "./themes";
+export * from "./tiptap";
 export * from "./types";
 export * from "./url";
