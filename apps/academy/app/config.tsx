@@ -845,29 +845,29 @@ export const modules: Config = [
               {
                 id: "job-overview",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/ad79b6a529fb43ff864f4908eeaf1511?sid=2a041ddf-50be-4e13-9885-694c253af623",
                 name: "Job Overview",
                 description:
                   "Learn the fundamentals of job management and how jobs drive production in Carbon.",
-                duration: 0,
+                duration: 292,
               },
               {
                 id: "scheduling",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/013963290f7b41f8a4625e89a95782e6?sid=33b51ee6-fd6f-4608-ab36-40f72a6a1043",
                 name: "Scheduling",
                 description:
                   "Learn how to schedule jobs and manage production timelines effectively.",
-                duration: 0,
+                duration: 205,
               },
               {
                 id: "production-planning",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/fbd4cab0151e472f982d980e14c324af?sid=92cee3c0-fca6-4353-a701-3e8c7aa90160",
                 name: "Production Planning",
                 description:
                   "Learn how to plan production activities and coordinate resources effectively.",
-                duration: 0,
+                duration: 498,
               },
               {
                 id: "closing-job",
