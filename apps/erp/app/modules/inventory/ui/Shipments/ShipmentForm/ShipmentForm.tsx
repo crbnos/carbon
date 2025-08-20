@@ -22,12 +22,12 @@ import type { z } from "zod";
 import {
   Combobox,
   CustomFormFields,
+  DefaultDisabledSubmit,
   Hidden,
   Input,
   Location,
   Select,
   ShippingMethod,
-  Submit,
 } from "~/components/Form";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
@@ -162,7 +162,8 @@ const ShipmentForm = ({ initialValues, status }: ShipmentFormProps) => {
             </VStack>
           </CardContent>
           <CardFooter>
-            <Submit
+            <DefaultDisabledSubmit
+              formId={formId}
               isDisabled={
                 isEditing
                   ? !permissions.can("update", "inventory")
@@ -170,7 +171,7 @@ const ShipmentForm = ({ initialValues, status }: ShipmentFormProps) => {
               }
             >
               Save
-            </Submit>
+            </DefaultDisabledSubmit>
           </CardFooter>
         </ValidatedForm>
       </Card>

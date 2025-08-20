@@ -1,4 +1,4 @@
-import { ValidatedForm } from "@carbon/form";
+import { DefaultDisabledSubmit, ValidatedForm } from "@carbon/form";
 import {
   Card,
   CardAction,
@@ -26,7 +26,6 @@ import {
   Input,
   Location,
   Select,
-  Submit,
 } from "~/components/Form";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
@@ -161,7 +160,8 @@ const ReceiptForm = ({ initialValues, status }: ReceiptFormProps) => {
             </VStack>
           </CardContent>
           <CardFooter>
-            <Submit
+            <DefaultDisabledSubmit
+              formId={formId}
               isDisabled={
                 isEditing
                   ? !permissions.can("update", "inventory")
@@ -169,7 +169,7 @@ const ReceiptForm = ({ initialValues, status }: ReceiptFormProps) => {
               }
             >
               Save
-            </Submit>
+            </DefaultDisabledSubmit>
           </CardFooter>
         </ValidatedForm>
       </Card>

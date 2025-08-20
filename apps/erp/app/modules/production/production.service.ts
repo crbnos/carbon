@@ -292,45 +292,17 @@ export async function getJobMaterialsWithQuantityOnHand(
   locationId: string,
   args?: { search: string | null } & GenericQueryFilters
 ) {
-  let query = client
-    .from("jobMaterial")
-    .select("id, ...item(readableIdWithRevision)", {
+  return client.rpc(
+    "get_job_quantity_on_hand",
+    {
+      job_id: jobId,
+      company_id: companyId,
+      location_id: locationId,
+    },
+    {
       count: "exact",
-    })
-    .eq("jobId", jobId);
-
-  if (args?.search) {
-    query = query.or(
-      `item.readableIdWithRevision.ilike.%${args.search}%,description.ilike.%${args.search}%`
-    );
-  }
-
-  if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: true },
-    ]);
-  }
-
-  const { data: jobMaterials, count, error } = await query;
-  const jobMaterialIds = new Set(jobMaterials?.map((material) => material.id));
-
-  if (error) return { error };
-
-  const jobQuantities = await client.rpc("get_job_quantity_on_hand", {
-    job_id: jobId,
-    company_id: companyId,
-    location_id: locationId,
-  });
-
-  return {
-    data: jobQuantities.error
-      ? null
-      : jobQuantities.data?.filter((material) =>
-          jobMaterialIds.has(material.id)
-        ) ?? [],
-    count: count,
-    error: jobQuantities.error,
-  };
+    }
+  );
 }
 
 export async function getJobMethodTree(

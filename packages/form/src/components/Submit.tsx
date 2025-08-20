@@ -12,11 +12,30 @@ import {
 import { useBlocker, useNavigation } from "@remix-run/react";
 import { forwardRef } from "react";
 import { useIsSubmitting } from "../hooks";
+import { useFormContext } from "../userFacingFormContext";
 
 type SubmitProps = ButtonProps & {
   formId?: string;
   withBlocker?: boolean;
 };
+
+export function DefaultDisabledSubmit({
+  children,
+  formId,
+  isDisabled,
+}: {
+  children: React.ReactNode;
+  formId: string;
+  isDisabled: boolean;
+}) {
+  const { touchedFields } = useFormContext(formId);
+  const isTouched = Object.keys(touchedFields).length > 0;
+  return (
+    <Submit formId={formId} isDisabled={!isTouched || isDisabled}>
+      {children}
+    </Submit>
+  );
+}
 
 export const Submit = forwardRef<HTMLButtonElement, SubmitProps>(
   ({ formId, children, isDisabled, withBlocker = true, ...props }, ref) => {

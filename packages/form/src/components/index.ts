@@ -23,7 +23,7 @@ import Radios from "./Radios";
 import type { SelectProps } from "./Select";
 import Select from "./Select";
 import SelectControlled from "./SelectControlled";
-import Submit from "./Submit";
+import Submit, { DefaultDisabledSubmit } from "./Submit";
 import TextArea from "./Textarea";
 import TextAreaControlled from "./TextareaControlled";
 import TimePicker from "./TimePicker";
@@ -38,6 +38,7 @@ export {
   CreatableMultiSelect,
   DatePicker,
   DateTimePicker,
+  DefaultDisabledSubmit,
   Hidden,
   Input,
   InputControlled,
