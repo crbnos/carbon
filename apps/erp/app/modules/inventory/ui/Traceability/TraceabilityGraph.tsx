@@ -252,13 +252,9 @@ export function TraceabilityGraph({
     node
       .append("circle")
       .attr("r", (d) => 20 + (d.depth || 0) * 2) // Slightly larger circles for deeper nodes
-      .attr("fill", (d) =>
-        d.data.id === selectedId
-          ? "#2DD4BF"
-          : d.type === "entity"
-          ? "#2563EB"
-          : "#7C3AED"
-      ) // blue-600 for entities, rose-600 for activities
+      .attr("stroke", (d) => (d.data.id === selectedId ? "#2DD4BF" : "none"))
+      .attr("stroke-width", (d) => (d.data.id === selectedId ? 3 : 0))
+      .attr("fill", (d) => (d.type === "entity" ? "#2563EB" : "#7C3AED")) // blue-600 for entities, rose-600 for activities
       .attr("filter", "url(#drop-shadow)")
       .style("filter", "url(#glow)")
       .on("click", (event, d) => {
