@@ -46,7 +46,7 @@ const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
   const columns = useMemo<ColumnDef<JobMaterial>[]>(() => {
     return [
       {
-        accessorKey: "itemReadableId",
+        accessorKey: "readableIdWithRevision",
         header: "Item",
         cell: ({ row }) => (
           <HStack className="py-1">

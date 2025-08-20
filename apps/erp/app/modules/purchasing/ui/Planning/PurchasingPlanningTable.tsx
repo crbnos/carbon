@@ -865,14 +865,25 @@ const PlanningTable = memo(
       () => {
         const initial: Record<string, string> = {};
         data.forEach((item) => {
-          initial[item.id] =
-            // @ts-expect-error
-            item.preferredSupplierId ?? item.suppliers?.[0]?.supplierId;
+          // If there's a preferred supplier, use it
+          if (item.preferredSupplierId) {
+            initial[item.id] = item.preferredSupplierId;
+          }
+          // If there's only one supplier, auto-select it regardless of preference
+          else if ((item.suppliers as SupplierPart[])?.length === 1) {
+            initial[item.id] = (item.suppliers as SupplierPart[])[0].supplierId;
+          }
+          // Otherwise, use the first available supplier if any
+          else if ((item.suppliers as SupplierPart[])?.length > 0) {
+            initial[item.id] = (item.suppliers as SupplierPart[])[0].supplierId;
+          }
         });
+
         return initial;
       }
     );
 
+    console.log(suppliersMap);
     const isDisabled =
       !permissions.can("create", "production") ||
       bulkUpdateFetcher.state !== "idle" ||
