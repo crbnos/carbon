@@ -65,10 +65,12 @@ async function uploadModelFile(
   args: {
     file: File;
     companyId: string;
+    itemId: string;
     salesOrderLineId: string;
+    createdBy: string;
   }
 ): Promise<boolean> {
-  const { file, companyId, salesOrderLineId } = args;
+  const { file, companyId, itemId, salesOrderLineId, createdBy } = args;
 
   try {
     const modelId = nanoid();
@@ -101,7 +103,7 @@ async function uploadModelFile(
       name: file.name,
       size: file.size,
       companyId,
-      createdBy: "system",
+      createdBy,
     });
 
     if (modelRecord.error) {
@@ -113,10 +115,13 @@ async function uploadModelFile(
     }
 
     // Link model to sales order line
-    const lineUpdate = await carbon
-      .from("salesOrderLine")
-      .update({ modelUploadId: modelId })
-      .eq("id", salesOrderLineId);
+    const [lineUpdate] = await Promise.all([
+      carbon
+        .from("salesOrderLine")
+        .update({ modelUploadId: modelId })
+        .eq("id", salesOrderLineId),
+      carbon.from("item").update({ modelUploadId: modelId }).eq("id", itemId),
+    ]);
 
     if (lineUpdate.error) {
       console.error(
@@ -147,10 +152,17 @@ async function uploadFileToOpportunityLine(
     lineId: string;
     sourceDocumentType: string;
     sourceDocumentId: string;
+    createdBy: string;
   }
 ): Promise<boolean> {
-  const { file, companyId, lineId, sourceDocumentType, sourceDocumentId } =
-    args;
+  const {
+    file,
+    companyId,
+    lineId,
+    sourceDocumentType,
+    sourceDocumentId,
+    createdBy,
+  } = args;
 
   try {
     // Create storage path similar to OpportunityLineDocuments
@@ -177,8 +189,9 @@ async function uploadFileToOpportunityLine(
       return false;
     }
 
-    // Create document record using a simpler approach
-    // Since we're in a backend context, we'll use a minimal document record
+    if (createdBy === "system") {
+      return true; // Skip document creation if we don't have a user id
+    }
     const documentType = getDocumentTypeFromFilename(file.name);
     const documentData = {
       name: file.name,
@@ -188,9 +201,9 @@ async function uploadFileToOpportunityLine(
       sourceDocumentId,
       companyId,
       type: documentType,
-      readGroups: ["system"],
-      writeGroups: ["system"],
-      createdBy: "system",
+      readGroups: [createdBy],
+      writeGroups: [createdBy],
+      createdBy,
       active: true,
     };
 
@@ -256,16 +269,20 @@ async function processSupportingFiles(
     supportingFiles: Array<{ filename?: string; url?: string }>;
     companyId: string;
     lineId: string;
+    itemId: string;
     sourceDocumentType: string;
     sourceDocumentId: string;
+    createdBy: string;
   }
 ): Promise<void> {
   const {
     supportingFiles,
     companyId,
     lineId,
+    itemId,
     sourceDocumentType,
     sourceDocumentId,
+    createdBy,
   } = args;
 
   if (!supportingFiles?.length) {
@@ -305,7 +322,9 @@ async function processSupportingFiles(
         const uploadSuccess = await uploadModelFile(carbon, {
           file,
           companyId,
+          itemId,
           salesOrderLineId: lineId,
+          createdBy,
         });
 
         if (!uploadSuccess) {
@@ -322,6 +341,7 @@ async function processSupportingFiles(
           lineId,
           sourceDocumentType,
           sourceDocumentId,
+          createdBy,
         });
 
         if (!uploadSuccess) {
@@ -345,12 +365,13 @@ export async function getCustomerIdAndContactId(
   args: {
     company: Database["public"]["Tables"]["company"]["Row"];
     contact: z.infer<typeof ContactSchema>;
+    createdBy?: string;
   }
 ) {
   let customerId: string;
   let customerContactId: string;
 
-  const { company, contact } = args;
+  const { company, contact, createdBy = "system" } = args;
 
   if (!contact) {
     throw new Error("Missing contact from Paperless Parts");
@@ -413,7 +434,7 @@ export async function getCustomerIdAndContactId(
                 paperlessPartsId: contact.account.id,
               },
               currencyCode: company.baseCurrencyCode,
-              createdBy: "system",
+              createdBy,
             },
             {
               onConflict: "name, companyId",
@@ -784,9 +805,10 @@ export async function getEmployeeAndSalesPersonId(
     company: Database["public"]["Tables"]["company"]["Row"];
     estimator?: z.infer<typeof SalesPersonSchema>;
     salesPerson?: z.infer<typeof SalesPersonSchema>;
+    createdBy?: string;
   }
 ) {
-  const { company, estimator, salesPerson } = args;
+  const { company, estimator, salesPerson, createdBy = "system" } = args;
 
   const employees = await carbon
     .from("employees")
@@ -799,7 +821,7 @@ export async function getEmployeeAndSalesPersonId(
     return {
       salesPersonId: null,
       estimatorId: null,
-      createdBy: "system",
+      createdBy,
     };
   }
 
@@ -813,7 +835,7 @@ export async function getEmployeeAndSalesPersonId(
   return {
     salesPersonId,
     estimatorId,
-    createdBy: estimatorId ?? "system",
+    createdBy: estimatorId ?? createdBy,
   };
 }
 
@@ -1003,42 +1025,69 @@ export async function createPartFromComponent(
 ): Promise<{ itemId: string; partId: string }> {
   const { companyId, createdBy, component } = args;
 
-  console.log("material_operations");
-  console.log(component.material_operations);
-  console.log("material");
-  console.log(component.material);
-  console.log("shop_operations");
-  console.log(component.shop_operations);
+  const operations: Omit<
+    Database["public"]["Tables"]["methodOperation"]["Insert"],
+    "makeMethodId"
+  >[] = [];
 
-  // Log costing variables and quantities if they exist
-  if (component.material_operations) {
-    component.material_operations.forEach((operation: any) => {
-      if (operation.costing_variables) {
-        operation.costing_variables.forEach((cv: any) => {
-          console.log("material costing_variable", cv.costing_variable);
-        });
-      }
-      if (operation.quantities) {
-        operation.quantities.forEach((q: any) => {
-          console.log("material quantity", q.quantity);
-        });
-      }
-    });
-  }
+  // // Log costing variables and quantities if they exist
+  // if (component.material_operations) {
+  //   component.material_operations.forEach((operation: any) => {
+  //     console.log("material operation", operation);
+  //     if (operation.costing_variables) {
+  //       operation.costing_variables.forEach((cv: any) => {
+  //         console.log("material costing_variable", cv.costing_variable);
+  //       });
+  //     }
+  //     if (operation.quantities) {
+  //       operation.quantities.forEach((q: any) => {
+  //         console.log("material quantity", q.quantity);
+  //       });
+  //     }
+  //   });
+  // }
 
   if (component.shop_operations) {
-    component.shop_operations.forEach((operation: any) => {
-      if (operation.costing_variables) {
-        operation.costing_variables.forEach((cv: any) => {
-          console.log("shop costing_variable", cv.costing_variable);
-        });
+    for await (const [
+      index,
+      operation,
+    ] of component.shop_operations.entries()) {
+      if (operation.category === "operation") {
+        const processId = await getOrCreateProcess(
+          carbon,
+          operation,
+          companyId,
+          createdBy
+        );
+        if (processId) {
+          operations.push({
+            order: operation.position ?? index + 1,
+            operationOrder: "After Previous",
+            description: operation.operation_definition_name,
+            processId: processId.id,
+            companyId,
+            createdBy,
+            setupTime: operation.setup_time,
+            setupUnit: "Total Minutes",
+            laborTime: operation.runtime,
+            laborUnit: "Minutes/Piece",
+            workInstruction: operation.notes
+              ? textToTiptap(operation.notes)
+              : {},
+          });
+        }
       }
-      if (operation.quantities) {
-        operation.quantities.forEach((q: any) => {
-          console.log("shop quantity", q.quantity);
-        });
-      }
-    });
+      // if (operation.costing_variables) {
+      //   operation.costing_variables.forEach((cv: any) => {
+      //     console.log("shop costing_variable", cv);
+      //   });
+      // }
+      // if (operation.quantities) {
+      //   operation.quantities.forEach((q: any) => {
+      //     console.log("shop quantity", q.quantity);
+      //   });
+      // }
+    }
   }
 
   // Generate a readable ID for the part
@@ -1080,7 +1129,7 @@ export async function createPartFromComponent(
 
   // Download and upload thumbnail if available
   let thumbnailPath: string | null = null;
-  if (component.thumbnail_url) {
+  if (!component.export_controlled && component.thumbnail_url) {
     thumbnailPath = await downloadAndUploadThumbnail(carbon, {
       thumbnailUrl: component.thumbnail_url,
       companyId,
@@ -1105,18 +1154,36 @@ export async function createPartFromComponent(
   }
 
   // Create the part record
-  const partInsert = await carbon.from("part").upsert({
-    id: partId,
-    companyId,
-    createdBy,
-    externalId: {
-      paperlessPartsId: component.part_uuid,
-    },
-  });
+  const [partInsert, makeMethod] = await Promise.all([
+    carbon.from("part").upsert({
+      id: partId,
+      companyId,
+      createdBy,
+      externalId: {
+        paperlessPartsId: component.part_uuid,
+      },
+    }),
+    carbon.from("makeMethod").select("id").eq("itemId", itemId).single(),
+  ]);
 
   if (partInsert.error) {
     console.error("Failed to create part:", partInsert.error);
-    throw new Error(`Failed to create part: ${partInsert.error.message}`);
+  }
+  if (makeMethod.error) {
+    console.error("Failed to create make method:", makeMethod.error);
+  }
+
+  console.log({ makeMethod });
+  const makeMethodId = makeMethod.data?.id;
+
+  if (makeMethodId) {
+    const result = await carbon.from("methodOperation").insert(
+      operations.map((operation) => ({
+        ...operation,
+        makeMethodId,
+      }))
+    );
+    console.log({ result });
   }
 
   return { itemId, partId };
@@ -1162,6 +1229,41 @@ export async function getOrCreatePart(
   return createPartFromComponent(carbon, args);
 }
 
+async function getOrCreateProcess(
+  carbon: SupabaseClient<Database>,
+  operation: any,
+  companyId: string,
+  createdBy: string
+) {
+  const process = await carbon
+    .from("process")
+    .select("id, processType")
+    .eq("name", operation.name)
+    .eq("companyId", companyId)
+    .single();
+  if (process.data) {
+    return process.data;
+  }
+
+  const processInsert = await carbon
+    .from("process")
+    .insert({
+      name: operation.name,
+      processType: operation.is_outside_service === true ? "Outside" : "Inside",
+      companyId,
+      createdBy,
+      defaultStandardFactor: "Minutes/Piece",
+    })
+    .select("id, processType")
+    .single();
+
+  if (processInsert.error) {
+    console.error("Failed to create process:", processInsert.error);
+    return null;
+  }
+  return processInsert.data ?? null;
+}
+
 /**
  * Insert sales order lines from Paperless Parts order items
  */
@@ -1170,12 +1272,13 @@ export async function insertOrderLines(
   args: {
     salesOrderId: string;
     opportunityId: string;
+    locationId: string;
     companyId: string;
     createdBy: string;
     orderItems: z.infer<typeof OrderSchema>["order_items"];
   }
 ): Promise<void> {
-  const { salesOrderId, companyId, createdBy, orderItems } = args;
+  const { salesOrderId, locationId, companyId, createdBy, orderItems } = args;
 
   if (!orderItems?.length) {
     return;
@@ -1236,6 +1339,8 @@ export async function insertOrderLines(
             salesOrderId,
             salesOrderLineType: "Part",
             itemId,
+            locationId,
+            unitOfMeasureCode: "EA",
             description: component.description || orderItem.description,
             saleQuantity,
             unitPrice,
@@ -1279,10 +1384,6 @@ export async function insertOrderLines(
         // Now process supporting files with the actual line ID
         if (!orderItem.export_controlled) {
           try {
-            console.log(
-              `Processing supporting files for line ${lineId} (component ${component.part_uuid})`
-            );
-
             let supportingFiles = [
               {
                 filename: orderItem.filename,
@@ -1305,9 +1406,11 @@ export async function insertOrderLines(
             await processSupportingFiles(carbon, {
               supportingFiles,
               companyId,
+              itemId,
               lineId, // Use the actual line ID
               sourceDocumentType: "Sales Order",
               sourceDocumentId: salesOrderId,
+              createdBy,
             });
           } catch (error) {
             console.error(

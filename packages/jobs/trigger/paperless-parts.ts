@@ -169,13 +169,23 @@ export const paperlessPartsTask = task({
           );
         }
 
-        let {
-          customerId: quoteCustomerId,
-          customerContactId: quoteCustomerContactId,
-        } = await getCustomerIdAndContactId(carbon, paperless, {
-          company: company.data,
-          contact: ppQuote.data.contact,
-        });
+        const [
+          {
+            customerId: quoteCustomerId,
+            customerContactId: quoteCustomerContactId,
+          },
+          { createdBy: quoteCreatedBy },
+        ] = await Promise.all([
+          getCustomerIdAndContactId(carbon, paperless, {
+            company: company.data,
+            contact: ppQuote.data.contact,
+          }),
+          getEmployeeAndSalesPersonId(carbon, {
+            company: company.data,
+            estimator: ppQuote.data.estimator,
+            salesPerson: ppQuote.data.sales_person,
+          }),
+        ]);
 
         if (!quoteCustomerId) {
           throw new Error("Failed to get customer ID");
@@ -207,7 +217,7 @@ export const paperlessPartsTask = task({
           }`,
           status: "Draft" as const,
           currencyCode: company.data.baseCurrencyCode,
-          createdBy: "system",
+          createdBy: quoteCreatedBy,
           exchangeRate: 1 as number | undefined,
           exchangeRateUpdatedAt: undefined as string | undefined,
           expirationDate: undefined as string | undefined,
@@ -595,6 +605,7 @@ export const paperlessPartsTask = task({
             await insertOrderLines(carbon, {
               salesOrderId,
               opportunityId: orderOpportunity.data?.id,
+              locationId: orderLocationId!,
               companyId: payload.companyId,
               createdBy: orderCreatedBy,
               orderItems: orderData.order_items || [],
