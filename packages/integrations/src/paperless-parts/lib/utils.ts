@@ -1277,22 +1277,33 @@ export async function insertOrderLines(
         insertedLinesCount++;
 
         // Now process supporting files with the actual line ID
-        if (
-          !orderItem.export_controlled &&
-          (orderItem.filename || component.supporting_files?.length)
-        ) {
-          console.log("orderItem.filename");
-          console.log(orderItem.filename);
+        if (!orderItem.export_controlled) {
           try {
             console.log(
               `Processing supporting files for line ${lineId} (component ${component.part_uuid})`
             );
 
+            let supportingFiles = [
+              {
+                filename: orderItem.filename,
+                url: component.part_url,
+              },
+            ];
+
+            if (component.supporting_files) {
+              const validSupportingFiles = (
+                component.supporting_files as unknown as Array<{
+                  filename?: string;
+                  url?: string;
+                }>
+              ).filter((file): file is { filename: string; url: string } =>
+                Boolean(file.filename && file.url)
+              );
+              supportingFiles.push(...validSupportingFiles);
+            }
+
             await processSupportingFiles(carbon, {
-              supportingFiles: component.supporting_files as Array<{
-                filename?: string;
-                url?: string;
-              }>,
+              supportingFiles,
               companyId,
               lineId, // Use the actual line ID
               sourceDocumentType: "Sales Order",
