@@ -2374,6 +2374,9 @@ export default {
             $ref: "#/parameters/rowFilter.customerLocation.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.customerLocation.externalId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -2451,6 +2454,9 @@ export default {
             $ref: "#/parameters/rowFilter.customerLocation.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.customerLocation.externalId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -2480,6 +2486,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customerLocation.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerLocation.externalId",
           },
           {
             $ref: "#/parameters/body.customerLocation",
@@ -15457,6 +15466,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrder.customerEngineeringContactId",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrder.externalId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -15603,6 +15615,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrder.customerEngineeringContactId",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrder.externalId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -15701,6 +15716,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrder.customerEngineeringContactId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrder.externalId",
           },
           {
             $ref: "#/parameters/body.salesOrder",
@@ -33520,6 +33538,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrder.jobReadableId",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrder.externalId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -33663,6 +33684,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrder.jobReadableId",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrder.externalId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -33758,6 +33782,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrder.jobReadableId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrder.externalId",
           },
           {
             $ref: "#/parameters/body.purchaseOrder",
@@ -35296,6 +35323,9 @@ export default {
             $ref: "#/parameters/rowFilter.address.companyId",
           },
           {
+            $ref: "#/parameters/rowFilter.address.externalId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -35385,6 +35415,9 @@ export default {
             $ref: "#/parameters/rowFilter.address.companyId",
           },
           {
+            $ref: "#/parameters/rowFilter.address.externalId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -35426,6 +35459,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.address.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.address.externalId",
           },
           {
             $ref: "#/parameters/body.address",
@@ -43087,6 +43123,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierLocation.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.supplierLocation.externalId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -43164,6 +43203,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierLocation.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.supplierLocation.externalId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -43193,6 +43235,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierLocation.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierLocation.externalId",
           },
           {
             $ref: "#/parameters/body.supplierLocation",
@@ -60605,6 +60650,9 @@ export default {
           },
           type: "array",
         },
+        externalId: {
+          format: "jsonb",
+        },
       },
       type: "object",
     },
@@ -66712,7 +66760,6 @@ export default {
         "salesOrderId",
         "revisionId",
         "status",
-        "orderDate",
         "currencyCode",
         "customerId",
         "companyId",
@@ -66875,6 +66922,9 @@ export default {
             "Note:\nThis is a Foreign Key to `customerContact.id`.<fk table='customerContact' column='id'/>",
           format: "text",
           type: "string",
+        },
+        externalId: {
+          format: "jsonb",
         },
       },
       type: "object",
@@ -74913,6 +74963,9 @@ export default {
           format: "text",
           type: "string",
         },
+        externalId: {
+          format: "jsonb",
+        },
       },
       type: "object",
     },
@@ -75866,6 +75919,9 @@ export default {
             "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
           format: "text",
           type: "string",
+        },
+        externalId: {
+          format: "jsonb",
         },
       },
       type: "object",
@@ -79652,6 +79708,9 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+        externalId: {
+          format: "jsonb",
         },
       },
       type: "object",
@@ -86322,6 +86381,12 @@ export default {
     },
     "rowFilter.customerLocation.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.customerLocation.externalId": {
+      name: "externalId",
       required: false,
       in: "query",
       type: "string",
@@ -93330,6 +93395,12 @@ export default {
     },
     "rowFilter.salesOrder.customerEngineeringContactId": {
       name: "customerEngineeringContactId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrder.externalId": {
+      name: "externalId",
       required: false,
       in: "query",
       type: "string",
@@ -102409,6 +102480,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.purchaseOrder.externalId": {
+      name: "externalId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.salesOrderLines": {
       name: "salesOrderLines",
       description: "salesOrderLines",
@@ -103590,6 +103667,12 @@ export default {
     },
     "rowFilter.address.companyId": {
       name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.address.externalId": {
+      name: "externalId",
       required: false,
       in: "query",
       type: "string",
@@ -107874,6 +107957,12 @@ export default {
     },
     "rowFilter.supplierLocation.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplierLocation.externalId": {
+      name: "externalId",
       required: false,
       in: "query",
       type: "string",

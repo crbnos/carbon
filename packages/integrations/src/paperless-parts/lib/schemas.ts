@@ -90,6 +90,50 @@ export const FacilitySchema = z.object({
   url: z.string().optional(),
 });
 
+// Costing variable schema
+export const CostingVariableSchema = z.object({
+  label: z.string().nullable().optional(),
+  variable_class: z.string().nullable().optional(),
+  value_type: z
+    .enum(["number", "currency", "boolean", "string", "table", "date"])
+    .nullable()
+    .optional(),
+  value: z.number().nullable().optional(),
+  row: z.record(z.string(), z.unknown()).nullable().optional(),
+  options: z.unknown().nullable().optional(),
+  type: z
+    .enum(["number", "currency", "boolean", "string", "table", "date"])
+    .nullable()
+    .optional(),
+});
+
+// Shop operation quantity schema
+export const ShopOperationQuantitySchema = z.object({
+  price: z.string().nullable().optional(), // API returns as string
+  manual_price: z.string().nullable().optional(),
+  lead_time: z.number().nullable().optional(),
+  manual_lead_time: z.number().nullable().optional(),
+  quantity: z.number().nullable().optional(),
+});
+
+// Shop operation schema
+export const ShopOperationSchema = z.object({
+  id: z.number().nullable().optional(),
+  category: z.string().nullable().optional(),
+  cost: z.string().nullable().optional(), // API returns as string
+  costing_variables: z.array(CostingVariableSchema).nullable().optional(),
+  is_finish: z.boolean().nullable().optional(),
+  is_outside_service: z.boolean().nullable().optional(),
+  name: z.string().nullable().optional(),
+  operation_definition_name: z.string().nullable().optional(),
+  operation_definition_erp_code: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  quantities: z.array(ShopOperationQuantitySchema).nullable().optional(),
+  position: z.number().nullable().optional(),
+  runtime: z.number().nullable().optional(),
+  setup_time: z.number().nullable().optional(),
+});
+
 // Component schema
 export const ComponentSchema = z.object({
   id: z.number().optional(),
@@ -113,7 +157,7 @@ export const ComponentSchema = z.object({
   process: z.unknown().nullable().optional(),
   purchased_component: z.unknown().nullable().optional(),
   revision: z.string().optional().nullable(),
-  shop_operations: z.array(z.unknown()).optional(),
+  shop_operations: z.array(ShopOperationSchema).optional(),
   supporting_files: z.array(z.unknown()).optional(),
   thumbnail_url: z.string().url().optional(),
   type: z.string().optional(),

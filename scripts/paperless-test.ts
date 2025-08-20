@@ -13,14 +13,14 @@ import {
   insertOrderLines,
 } from "../packages/integrations/src/paperless-parts/lib/index";
 import { OrderSchema } from "../packages/integrations/src/paperless-parts/lib/schemas";
-const orderNumber = 868;
+const orderNumber = 879;
 const apiKey = "7fb257095cc635004ecb149c0978c2010f44b99e";
-const companyId = "SanLTzPk93kscfQ7oCnSSu";
+const companyId = "XnwmVKtf9NGwjkco3NoSTu";
 
 dotenv.config();
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_URL = process.env.SUPABASE_URL!;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 (async () => {
   const carbon = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -209,6 +209,7 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
       await insertOrderLines(carbon, {
         salesOrderId,
         opportunityId: opportunity.data?.id,
+        locationId: locationId!,
         companyId,
         createdBy,
         orderItems: orderData.order_items || [],
