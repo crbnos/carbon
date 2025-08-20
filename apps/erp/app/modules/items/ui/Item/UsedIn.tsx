@@ -469,7 +469,7 @@ function getUseInLink(
       if (!child.documentId) return "#";
       return `${path.to.jobMaterials(
         child.documentId
-      )}?filter=itemReadableId:eq:${itemReadableIdWithRevision}`;
+      )}?filter=readableIdWithRevision:eq:${itemReadableIdWithRevision}`;
     case "methodMaterials":
       if (!child.documentId || !child.itemType) return "#";
       return getPathToMakeMethod(
