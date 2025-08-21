@@ -289,7 +289,10 @@ const MaterialForm = ({
               </div>
             </ModalCardBody>
             <ModalCardFooter>
-              <Submit isDisabled={!permissions.can("create", "parts")}>
+              <Submit
+                isLoading={fetcher.state !== "idle"}
+                isDisabled={!permissions.can("create", "parts")}
+              >
                 Save
               </Submit>
             </ModalCardFooter>

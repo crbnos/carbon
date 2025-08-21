@@ -69,15 +69,6 @@ export const batchPropertyValidator = z
       return true;
     },
     { message: "List options are required", path: ["listOptions"] }
-  )
-  .refine(
-    (data) => {
-      return data.label.match(/^[a-zA-Z0-9 ]+$/);
-    },
-    {
-      message: "Only alphanumeric characters and spaces are allowed",
-      path: ["label"],
-    }
   );
 
 export const batchPropertyOrderValidator = z.object({

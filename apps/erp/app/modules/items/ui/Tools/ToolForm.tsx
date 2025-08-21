@@ -342,6 +342,7 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
             </ModalCardBody>
             <ModalCardFooter>
               <Submit
+                isLoading={fetcher.state !== "idle"}
                 isDisabled={
                   isEditing
                     ? !permissions.can("update", "parts")

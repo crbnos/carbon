@@ -178,6 +178,7 @@ const ConsumableForm = ({
             </ModalCardBody>
             <ModalCardFooter>
               <Submit
+                isLoading={fetcher.state !== "idle"}
                 isDisabled={
                   isEditing
                     ? !permissions.can("update", "parts")

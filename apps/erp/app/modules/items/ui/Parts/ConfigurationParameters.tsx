@@ -1062,7 +1062,12 @@ function useConfigurationParameters(parameter?: ConfigurationParameter) {
 
   const updateKey = (e: React.ChangeEvent<HTMLInputElement>) => {
     const label = e.target.value;
-    setKey(label.toLowerCase().replace(/ /g, "_"));
+    setKey(
+      label
+        .toLowerCase()
+        .replace(/ /g, "_")
+        .replace(/[^a-z0-9_]/g, "")
+    );
   };
 
   return {

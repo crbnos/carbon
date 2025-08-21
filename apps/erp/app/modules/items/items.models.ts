@@ -123,15 +123,7 @@ export const configurationParameterValidator = z
     },
     { message: "List options are required", path: ["listOptions"] }
   )
-  .refine(
-    (data) => {
-      return data.label.match(/^[a-zA-Z0-9 ]+$/);
-    },
-    {
-      message: "Only alphanumeric characters and spaces are allowed",
-      path: ["label"],
-    }
-  )
+
   .refine(
     (data) => {
       return data.key?.match(/^[a-zA-Z0-9]+(_[a-zA-Z0-9]+)*$/);
