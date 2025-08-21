@@ -36,6 +36,7 @@ import {
   LuPaintBucket,
   LuPencil,
   LuPuzzle,
+  LuRuler,
   LuShapes,
   LuStar,
   LuTag,
@@ -54,6 +55,7 @@ import {
   TrackingTypeIcon,
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { ConfirmDelete } from "~/components/Modals";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { usePermissions } from "~/hooks";
@@ -79,6 +81,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
   const [selectedItem, setSelectedItem] = useState<Material | null>(null);
 
   const [people] = usePeople();
+  const unitsOfMeasure = useUnitOfMeasure();
   const customColumns = useCustomColumns<Material>("material");
 
   const filters = useFilters();
@@ -254,6 +257,21 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
         },
       },
       {
+        accessorKey: "unitOfMeasureCode",
+        header: "Unit of Measure",
+        cell: ({ row }) => <Enumerable value={row.original.unitOfMeasure} />,
+        meta: {
+          filter: {
+            type: "static",
+            options: unitsOfMeasure.map((unit) => ({
+              value: unit.value,
+              label: <Enumerable value={unit.label} />,
+            })),
+          },
+          icon: <LuRuler />,
+        },
+      },
+      {
         accessorKey: "defaultMethodType",
         header: "Default Method",
         cell: (item) => (
@@ -370,7 +388,14 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
       },
     ];
     return [...defaultColumns, ...customColumns];
-  }, [tags, people, customColumns, materialSubstanceId, materialFormId]);
+  }, [
+    materialSubstanceId,
+    materialFormId,
+    unitsOfMeasure,
+    tags,
+    people,
+    customColumns,
+  ]);
 
   const fetcher = useFetcher<typeof action>();
   useEffect(() => {
