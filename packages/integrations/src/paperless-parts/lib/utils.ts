@@ -1053,29 +1053,36 @@ export async function createPartFromComponent(
       operation,
     ] of component.shop_operations.entries()) {
       if (operation.category === "operation") {
-        const processId = await getOrCreateProcess(
+        const process = await getOrCreateProcess(
           carbon,
           operation,
           companyId,
           createdBy
         );
-        if (processId) {
+        if (process) {
           operations.push({
             order: operation.position ?? index + 1,
             operationOrder: "After Previous",
-            description: operation.operation_definition_name,
-            processId: processId.id,
+            operationType:
+              process.processType === "Inside" ? "Inside" : "Outside",
+            description:
+              operation.operation_definition_name ??
+              operation.name ??
+              `Operation ${operation.position ?? index + 1}`,
+            processId: process.id,
             companyId,
             createdBy,
-            setupTime: operation.setup_time,
+            setupTime: operation.setup_time ?? 0,
             setupUnit: "Total Minutes",
-            laborTime: operation.runtime,
+            laborTime: operation.runtime ?? 0,
             laborUnit: "Minutes/Piece",
             workInstruction: operation.notes
               ? textToTiptap(operation.notes)
               : {},
           });
         }
+      } else {
+        console.error("operation.category is not operation", operation);
       }
       // if (operation.costing_variables) {
       //   operation.costing_variables.forEach((cv: any) => {
@@ -1173,17 +1180,21 @@ export async function createPartFromComponent(
     console.error("Failed to create make method:", makeMethod.error);
   }
 
-  console.log({ makeMethod });
   const makeMethodId = makeMethod.data?.id;
 
   if (makeMethodId) {
-    const result = await carbon.from("methodOperation").insert(
+    const operationInsert = await carbon.from("methodOperation").insert(
       operations.map((operation) => ({
         ...operation,
         makeMethodId,
       }))
     );
-    console.log({ result });
+    if (operationInsert.error) {
+      console.error(
+        "Failed to create method operations:",
+        operationInsert.error
+      );
+    }
   }
 
   return { itemId, partId };
@@ -1229,16 +1240,22 @@ export async function getOrCreatePart(
   return createPartFromComponent(carbon, args);
 }
 
+let servicePrefix = "Service: ";
+
 async function getOrCreateProcess(
   carbon: SupabaseClient<Database>,
   operation: any,
   companyId: string,
   createdBy: string
 ) {
+  let operationName = operation.name;
+  if (operation.name?.startsWith(servicePrefix)) {
+    operationName = operation.name.substring(servicePrefix.length);
+  }
   const process = await carbon
     .from("process")
     .select("id, processType")
-    .eq("name", operation.name)
+    .eq("name", operationName)
     .eq("companyId", companyId)
     .single();
   if (process.data) {
@@ -1248,7 +1265,7 @@ async function getOrCreateProcess(
   const processInsert = await carbon
     .from("process")
     .insert({
-      name: operation.name,
+      name: operationName,
       processType: operation.is_outside_service === true ? "Outside" : "Inside",
       companyId,
       createdBy,
