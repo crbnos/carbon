@@ -383,6 +383,7 @@ INSERT INTO "materialDimension" ("id", "materialFormId", "name", "isMetric", "co
   ('plate-1-5', 'plate', '1.5"', false, null),
   ('plate-2', 'plate', '2"', false, null),
   
+  
   -- Plate dimensions (metric thicknesses)
   ('plate-6mm', 'plate', '6mm', true, null),
   ('plate-8mm', 'plate', '8mm', true, null),

@@ -12,7 +12,7 @@ import {
 } from "react-icons/lu";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { useSubstance } from "~/components/Form/Substance";
+import { useShape } from "~/components/Form/Shape";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import type { MaterialDimension } from "../../types";
@@ -27,7 +27,7 @@ const MaterialDimensionsTable = memo(
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const permissions = usePermissions();
-    const substances = useSubstance();
+    const shapes = useShape();
 
     const rows = useMemo(() => data, [data]);
 
@@ -41,9 +41,9 @@ const MaterialDimensionsTable = memo(
             icon: <LuShapes />,
             filter: {
               type: "static",
-              options: substances.map((substance) => ({
-                label: <Enumerable value={substance.label} />,
-                value: substance.label,
+              options: shapes.map((shape) => ({
+                label: <Enumerable value={shape.label} />,
+                value: shape.label,
               })),
             },
           },
@@ -96,7 +96,7 @@ const MaterialDimensionsTable = memo(
         },
       ];
       return [...defaultColumns];
-    }, [params, substances]);
+    }, [params, shapes]);
 
     const renderContextMenu = useCallback(
       (row: (typeof rows)[number]) => {
