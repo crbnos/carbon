@@ -2388,6 +2388,7 @@ export type Database = {
         Row: {
           companyId: string
           configurationParameterGroupId: string | null
+          constraints: Json | null
           createdAt: string
           createdBy: string
           dataType: Database["public"]["Enums"]["configurationParameterDataType"]
@@ -2403,6 +2404,7 @@ export type Database = {
         Insert: {
           companyId: string
           configurationParameterGroupId?: string | null
+          constraints?: Json | null
           createdAt?: string
           createdBy: string
           dataType: Database["public"]["Enums"]["configurationParameterDataType"]
@@ -2418,6 +2420,7 @@ export type Database = {
         Update: {
           companyId?: string
           configurationParameterGroupId?: string | null
+          constraints?: Json | null
           createdAt?: string
           createdBy?: string
           dataType?: Database["public"]["Enums"]["configurationParameterDataType"]
@@ -26232,7 +26235,7 @@ export type Database = {
           internalNotes: Json | null
           locationId: string | null
           opportunityId: string | null
-          orderDate: string
+          orderDate: string | null
           revisionId: number
           salesOrderId: string
           salesPersonId: string | null
@@ -26263,7 +26266,7 @@ export type Database = {
           internalNotes?: Json | null
           locationId?: string | null
           opportunityId?: string | null
-          orderDate?: string
+          orderDate?: string | null
           revisionId?: number
           salesOrderId: string
           salesPersonId?: string | null
@@ -26294,7 +26297,7 @@ export type Database = {
           internalNotes?: Json | null
           locationId?: string | null
           opportunityId?: string | null
-          orderDate?: string
+          orderDate?: string | null
           revisionId?: number
           salesOrderId?: string
           salesPersonId?: string | null
@@ -46711,6 +46714,7 @@ export type Database = {
           methodType: Database["public"]["Enums"]["methodType"]
           parentMaterialId: string
           order: number
+          kit: boolean
           isRoot: boolean
         }[]
       }

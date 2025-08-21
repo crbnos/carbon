@@ -823,7 +823,7 @@ serve(async (req: Request) => {
 
               const jobMakeMethods = await trx
                 .selectFrom("jobMakeMethod")
-                .select(["id"])
+                .select(["id", "parentMaterialId"])
                 .where(
                   "parentMaterialId",
                   "in",
@@ -831,11 +831,24 @@ serve(async (req: Request) => {
                 )
                 .execute();
 
+              // Create proper mapping from parentMaterialId to jobMakeMethodId
+              const materialIdToJobMakeMethodId: Record<string, string> = {};
+              jobMakeMethods.forEach((jmm) => {
+                if (jmm.parentMaterialId && jmm.id) {
+                  materialIdToJobMakeMethodId[jmm.parentMaterialId] = jmm.id;
+                }
+              });
+
+              // Use proper correlation instead of index-based assumption
               for (const [index, child] of madeChildren.entries()) {
-                const makeMethodId = jobMakeMethods[index].id ?? null;
+                const materialId = madeMaterialIds[index]?.id;
+                const jobMakeMethodId = materialId
+                  ? materialIdToJobMakeMethodId[materialId]
+                  : null;
+
                 // prevent an infinite loop
-                if (child.data.itemId !== itemId) {
-                  await traverseMethod(child, makeMethodId);
+                if (child.data.itemId !== itemId && jobMakeMethodId) {
+                  await traverseMethod(child, jobMakeMethodId);
                 }
               }
             }
@@ -1114,7 +1127,7 @@ serve(async (req: Request) => {
 
               const jobMakeMethods = await trx
                 .selectFrom("jobMakeMethod")
-                .select(["id"])
+                .select(["id", "parentMaterialId"])
                 .where(
                   "parentMaterialId",
                   "in",
@@ -1122,11 +1135,24 @@ serve(async (req: Request) => {
                 )
                 .execute();
 
+              // Create proper mapping from parentMaterialId to jobMakeMethodId
+              const materialIdToJobMakeMethodId: Record<string, string> = {};
+              jobMakeMethods.forEach((jmm) => {
+                if (jmm.parentMaterialId && jmm.id) {
+                  materialIdToJobMakeMethodId[jmm.parentMaterialId] = jmm.id;
+                }
+              });
+
+              // Use proper correlation instead of index-based assumption
               for (const [index, child] of madeChildren.entries()) {
-                const makeMethodId = jobMakeMethods[index].id ?? null;
+                const materialId = madeMaterialIds[index]?.id;
+                const jobMakeMethodId = materialId
+                  ? materialIdToJobMakeMethodId[materialId]
+                  : null;
+
                 // prevent an infinite loop
-                if (child.data.itemId !== itemId) {
-                  await traverseMethod(child, makeMethodId);
+                if (child.data.itemId !== itemId && jobMakeMethodId) {
+                  await traverseMethod(child, jobMakeMethodId);
                 }
               }
             }
@@ -1691,7 +1717,7 @@ serve(async (req: Request) => {
 
               const quoteMakeMethods = await trx
                 .selectFrom("quoteMakeMethod")
-                .select(["id"])
+                .select(["id", "parentMaterialId"])
                 .where(
                   "parentMaterialId",
                   "in",
@@ -1699,11 +1725,24 @@ serve(async (req: Request) => {
                 )
                 .execute();
 
+              // Create proper mapping from parentMaterialId to quoteMakeMethodId
+              const materialIdToQuoteMakeMethodId: Record<string, string> = {};
+              quoteMakeMethods.forEach((qmm) => {
+                if (qmm.parentMaterialId && qmm.id) {
+                  materialIdToQuoteMakeMethodId[qmm.parentMaterialId] = qmm.id;
+                }
+              });
+
+              // Use proper correlation instead of index-based assumption
               for (const [index, child] of madeChildren.entries()) {
-                const makeMethodId = quoteMakeMethods[index].id ?? null;
+                const materialId = madeMaterialIds[index]?.id;
+                const quoteMakeMethodId = materialId
+                  ? materialIdToQuoteMakeMethodId[materialId]
+                  : null;
+
                 // prevent an infinite loop
-                if (child.data.itemId !== itemId) {
-                  await traverseMethod(child, makeMethodId);
+                if (child.data.itemId !== itemId && quoteMakeMethodId) {
+                  await traverseMethod(child, quoteMakeMethodId);
                 }
               }
             }
@@ -1977,7 +2016,7 @@ serve(async (req: Request) => {
 
               const quoteMakeMethods = await trx
                 .selectFrom("quoteMakeMethod")
-                .select(["id"])
+                .select(["id", "parentMaterialId"])
                 .where(
                   "parentMaterialId",
                   "in",
@@ -1985,11 +2024,24 @@ serve(async (req: Request) => {
                 )
                 .execute();
 
+              // Create proper mapping from parentMaterialId to quoteMakeMethodId
+              const materialIdToQuoteMakeMethodId: Record<string, string> = {};
+              quoteMakeMethods.forEach((qmm) => {
+                if (qmm.parentMaterialId && qmm.id) {
+                  materialIdToQuoteMakeMethodId[qmm.parentMaterialId] = qmm.id;
+                }
+              });
+
+              // Use proper correlation instead of index-based assumption
               for (const [index, child] of madeChildren.entries()) {
-                const makeMethodId = quoteMakeMethods[index].id ?? null;
+                const materialId = madeMaterialIds[index]?.id;
+                const quoteMakeMethodId = materialId
+                  ? materialIdToQuoteMakeMethodId[materialId]
+                  : null;
+
                 // prevent an infinite loop
-                if (child.data.itemId !== itemId) {
-                  await traverseMethod(child, makeMethodId);
+                if (child.data.itemId !== itemId && quoteMakeMethodId) {
+                  await traverseMethod(child, quoteMakeMethodId);
                 }
               }
             }

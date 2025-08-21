@@ -2559,6 +2559,15 @@ export async function upsertMaterial(
         const firstError = itemInserts.find((insert) => insert.error);
         return firstError!;
       }
+
+      const itemIds = itemInserts.map((insert) => insert.data!.id);
+
+      await client
+        .from("itemCost")
+        .update({
+          unitCost: material.unitCost,
+        })
+        .in("itemId", itemIds);
     } else {
       const itemInsert = await client
         .from("item")
@@ -2577,6 +2586,13 @@ export async function upsertMaterial(
         .select("id")
         .single();
       if (itemInsert.error) return itemInsert;
+
+      await client
+        .from("itemCost")
+        .update({
+          unitCost: material.unitCost,
+        })
+        .eq("itemId", itemInsert.data!.id);
     }
 
     const materialInsert = await client.from("material").upsert({
@@ -2614,6 +2630,7 @@ export async function upsertMaterial(
     defaultMethodType: material.defaultMethodType,
     itemTrackingType: material.itemTrackingType,
     unitOfMeasureCode: material.unitOfMeasureCode,
+    unitCost: material.unitCost,
     active: material.active,
   };
 
