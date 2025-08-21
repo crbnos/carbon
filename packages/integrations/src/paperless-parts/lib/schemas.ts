@@ -98,7 +98,7 @@ export const CostingVariableSchema = z.object({
     .enum(["number", "currency", "boolean", "string", "table", "date"])
     .nullable()
     .optional(),
-  value: z.number().nullable().optional(),
+  value: z.any().nullable().optional(),
   row: z.record(z.string(), z.unknown()).nullable().optional(),
   options: z.unknown().nullable().optional(),
   type: z

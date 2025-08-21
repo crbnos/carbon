@@ -33,7 +33,7 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    allowedHosts: ["6be9ee07664a.ngrok-free.app"],
+    allowedHosts: ["8d53c60dbab3.ngrok-free.app"],
   },
   plugins: [
     remix({
