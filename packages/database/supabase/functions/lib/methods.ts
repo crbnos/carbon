@@ -202,8 +202,8 @@ export const getRatesFromWorkCenters =
     }
 
     const relatedWorkCenters = workCenters.filter((wc) => {
-      const processes = (wc.processes ?? []) as { id: string }[];
-      return wc.active && processes.some((p) => p.id === processId);
+      const processes = wc.processes ?? [];
+      return wc.active && processes.some((p) => p === processId);
     });
 
     if (relatedWorkCenters.length > 0) {

@@ -1404,6 +1404,15 @@ serve(async (req: Request) => {
                 }),
               ]);
 
+              const operationRates = getLaborAndOverheadRates(
+                processId,
+                op.workCenterId
+              );
+              console.log({
+                processId,
+                ...operationRates,
+              });
+
               quoteOperationsInserts.push({
                 quoteId,
                 quoteLineId,
