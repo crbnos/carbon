@@ -2391,7 +2391,6 @@ export type Database = {
         Row: {
           companyId: string
           configurationParameterGroupId: string | null
-          constraints: Json | null
           createdAt: string
           createdBy: string
           dataType: Database["public"]["Enums"]["configurationParameterDataType"]
@@ -2407,7 +2406,6 @@ export type Database = {
         Insert: {
           companyId: string
           configurationParameterGroupId?: string | null
-          constraints?: Json | null
           createdAt?: string
           createdBy: string
           dataType: Database["public"]["Enums"]["configurationParameterDataType"]
@@ -2423,7 +2421,6 @@ export type Database = {
         Update: {
           companyId?: string
           configurationParameterGroupId?: string | null
-          constraints?: Json | null
           createdAt?: string
           createdBy?: string
           dataType?: Database["public"]["Enums"]["configurationParameterDataType"]
