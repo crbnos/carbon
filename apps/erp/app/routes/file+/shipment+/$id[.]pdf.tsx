@@ -390,7 +390,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         poStream.on("error", reject);
       });
 
-      const poHeaders = new Headers({ "Content-Type": "application/pdf" });
+      const poHeaders = new Headers({
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${shipment.data.shipmentId}.pdf"`,
+      });
       return new Response(poBody, { status: 200, headers: poHeaders });
     }
     default:
