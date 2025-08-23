@@ -1451,6 +1451,24 @@ export const modules: Config = [
                 duration: 91,
               },
               {
+                id: "paperless-integration",
+                loomUrl:
+                  "https://www.loom.com/share/2b389bfbd0f54118b676e0231ba2e8c9?sid=2c66f9a6-90b9-442c-94c0-cb8376db9a62",
+                name: "Paperless Parts Integration",
+                description:
+                  "Learn how to sync orders from Paperless Parts to Carbon.",
+                duration: 160,
+              },
+              {
+                id: "slack-integration",
+                loomUrl:
+                  "https://www.loom.com/share/253cdac4af074328922e558b4fa8e784?sid=13adf6f0-71f3-4bc4-9ce0-07e2e7fb2d7f",
+                name: "Slack Integration",
+                description:
+                  "Learn how to integrate Carbon with Slack for real-time notifications and updates.",
+                duration: 89,
+              },
+              {
                 id: "applications",
                 loomUrl:
                   "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
