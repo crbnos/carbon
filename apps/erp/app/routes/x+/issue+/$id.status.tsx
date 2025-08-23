@@ -1,7 +1,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { notifyIssueStatusChanged } from "@carbon/integrations/notifications";
+import { notifyIssueStatusChanged } from "@carbon/ee/notifications";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { nonConformanceStatus, updateIssueStatus } from "~/modules/quality";

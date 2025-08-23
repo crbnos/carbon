@@ -1,8 +1,8 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { integrations as availableIntegrations } from "@carbon/ee";
 import { validationError, validator } from "@carbon/form";
-import { integrations as availableIntegrations } from "@carbon/integrations";
 import { redirect, useLoaderData, useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { IntegrationForm, getIntegration } from "~/modules/settings";

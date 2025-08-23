@@ -27,5 +27,5 @@ export { Onshape, Logo as OnshapeLogo } from "./onshape/config";
 export { Slack } from "./slack/config";
 export * from "./slack/lib/messages";
 
-// TODO: export as @carbon/integrations/paperless
+// TODO: export as @carbon/ee/paperless
 export { PaperlessPartsClient } from "./paperless-parts/lib/client";

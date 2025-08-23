@@ -1,5 +1,5 @@
+import { integrations as availableIntegrations } from "@carbon/ee";
 import { Boolean, Input, Submit, ValidatedForm } from "@carbon/form";
-import { integrations as availableIntegrations } from "@carbon/integrations";
 import {
   Badge,
   Button,

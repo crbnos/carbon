@@ -43,7 +43,6 @@ Carbon is designed to make it easy for you to extend the platform by building yo
 
 ![Carbon Architecture](https://github.com/user-attachments/assets/3674b2d0-28c7-415f-a8ea-4d8c796337eb)
 
-
 Features:
 
 - [x] ERP
@@ -111,7 +110,7 @@ The monorepo follows the Turborepo convention of grouping packages into one of t
 | `eslint-config-carbon` | Shared, extendable eslint configuration for apps and packages           |
 | `@carbon/database`     | Database schema, migrations and types                                   |
 | `@carbon/documents`    | Transactional PDFs and email templates                                  |
-| `@carbon/integrations` | Integration definitions and configurations                              |
+| `@carbon/ee`           | Integration definitions and configurations                              |
 | `@carbon/jest`         | Jest preset configuration shared across apps and packages               |
 | `@carbon/jobs`         | Background jobs and workers                                             |
 | `@carbon/logger`       | Shared logger used across apps                                          |
