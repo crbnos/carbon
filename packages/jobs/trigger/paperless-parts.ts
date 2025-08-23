@@ -347,6 +347,7 @@ export const paperlessPartsTask = task({
           message: "Quote sent event processed successfully",
         };
         break;
+      case "order.status_changed":
       case "order.created":
         console.info(`📫 Processing order created event`);
 
@@ -472,55 +473,58 @@ export const paperlessPartsTask = task({
           throw new Error("Failed to get next sequence number for sales order");
         }
 
-        const salesOrderId = crypto.randomUUID();
-        const status = getCarbonOrderStatus(orderData.status);
-
-        const salesOrder = await carbon.from("salesOrder").insert([
-          {
-            id: salesOrderId,
-            orderDate: new Date(orderData.created ?? "").toISOString(),
-            receiptRequestedDate: orderData.due_date,
-            status,
-            notes: orderData.notes,
-            customerId: orderCustomerId,
-            customerContactId: orderCustomerContactId,
-            customerReference:
-              orderData.payment_details?.purchase_order_number ?? "",
-            salesOrderId: salesOrderSequence.data.toString(),
-            subtotal: parseFloat(orderData.payment_details?.subtotal ?? "0"),
-            tax: parseFloat(orderData.payment_details?.tax_cost ?? "0"),
-            total: parseFloat(orderData.payment_details?.total_price ?? "0"),
-            currencyCode: company.data.baseCurrencyCode,
-            exchangeRate: 1,
-            salesPersonId: orderSalesPersonId,
-            locationId: orderLocationId,
-            createdBy: orderCreatedBy,
-            companyId: payload.companyId,
-            opportunityId: orderOpportunity.data?.id,
-            internalNotes: orderData.private_notes
-              ? {
-                  type: "doc",
-                  content: [
-                    {
-                      type: "paragraph",
-                      content: [
-                        { type: "text", text: orderData.private_notes },
-                      ],
-                    },
-                  ],
-                }
-              : null,
-            externalId: {
-              paperlessId: orderData.uuid,
+        const salesOrderInsert = await carbon
+          .from("salesOrder")
+          .insert([
+            {
+              salesOrderId: salesOrderSequence.data,
+              companyId: payload.companyId,
+              createdBy: orderCreatedBy,
+              currencyCode: company.data?.baseCurrencyCode,
+              customerId: orderCustomerId,
+              customerContactId: orderCustomerContactId,
+              customerLocationId: orderShipmentLocationId,
+              customerReference:
+                orderData.payment_details?.purchase_order_number ?? "",
+              locationId: orderLocationId,
+              opportunityId: orderOpportunity.data?.id,
+              orderDate: new Date(orderData.created ?? "").toISOString(),
+              salesPersonId: orderSalesPersonId,
+              status: getCarbonOrderStatus(orderData.status),
+              internalNotes: orderData.private_notes
+                ? {
+                    type: "doc",
+                    content: [
+                      {
+                        type: "paragraph",
+                        content: [
+                          { type: "text", text: orderData.private_notes },
+                        ],
+                      },
+                    ],
+                  }
+                : null,
+              externalId: {
+                paperlessId: orderData.uuid,
+              },
             },
-          },
-        ]);
+          ])
+          .select("id, salesOrderId");
 
-        if (salesOrder.error) {
-          console.log("Failed to create sales order", salesOrder.error);
+        if (salesOrderInsert.error) {
+          console.log("Failed to create sales order", salesOrderInsert.error);
           result = {
             success: false,
             message: "Failed to create sales order",
+          };
+          break;
+        }
+        const salesOrderId = salesOrderInsert.data?.[0]?.id;
+        if (!salesOrderId) {
+          console.log("Failed to get sales order ID");
+          result = {
+            success: false,
+            message: "Failed to get sales order ID",
           };
           break;
         }
