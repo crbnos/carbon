@@ -358,6 +358,14 @@ export const paperlessPartsTask = task({
           throw new Error("Order number is required");
         }
 
+        const order = await paperless.orders.orderDetails(orderNumber);
+
+        if (order.error || !order.data) {
+          throw new Error("Failed to fetch order details from Paperless Parts");
+        }
+
+        const orderData = OrderSchema.parse(order.data);
+
         // Check if order already exists
         const existingOrder = await carbon
           .from("salesOrder")
@@ -368,20 +376,29 @@ export const paperlessPartsTask = task({
 
         if (existingOrder?.data?.id) {
           console.log("Order already exists", existingOrder.data.id);
+
+          const status = getCarbonOrderStatus(orderData.status);
+
+          const update = await carbon
+            .from("salesOrder")
+            .update({ status })
+            .eq("id", existingOrder.data.id);
+
+          if (update.error) {
+            console.log("Failed to update sales order", update.error);
+            result = {
+              success: false,
+              message: "Failed to update sales order",
+            };
+            break;
+          }
+
           result = {
             success: true,
             message: "Order already exists",
           };
           break;
         }
-
-        const order = await paperless.orders.orderDetails(orderNumber);
-
-        if (order.error || !order.data) {
-          throw new Error("Failed to fetch order details from Paperless Parts");
-        }
-
-        const orderData = OrderSchema.parse(order.data);
 
         const [
           {
