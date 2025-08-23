@@ -1,8 +1,5 @@
 import { getCarbonServiceRole, VERCEL_URL } from "@carbon/auth";
 import type { Database } from "@carbon/database";
-import { WebClient } from "@slack/web-api";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { task } from "@trigger.dev/sdk/v3";
 import {
   type DocumentType,
   type IssueAssignmentUpdate,
@@ -13,7 +10,10 @@ import {
   formatDocumentCreated,
   formatStatusUpdate,
   formatTaskUpdate,
-} from "../../ee/src/slack/lib/messages";
+} from "@carbon/ee/slack/messages";
+import { WebClient } from "@slack/web-api";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { task } from "@trigger.dev/sdk/v3";
 
 export const slackDocumentCreated = task({
   id: "slack-document-created",
