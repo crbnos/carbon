@@ -5,13 +5,13 @@ import {
   VERCEL_URL,
 } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { Slack } from "@carbon/integrations";
+import { Slack } from "@carbon/ee";
 import {
   createSlackApp,
   getSlackInstaller,
   slackOAuthCallbackSchema,
   slackOAuthTokenResponseSchema,
-} from "@carbon/integrations/slack.server";
+} from "@carbon/ee/slack.server";
 import { json, redirect, type LoaderFunctionArgs } from "@vercel/remix";
 import z from "zod";
 import { upsertCompanyIntegration } from "~/modules/settings/settings.server";

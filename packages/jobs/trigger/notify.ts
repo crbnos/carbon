@@ -4,7 +4,6 @@ import {
   VERCEL_URL,
 } from "@carbon/auth";
 
-import { notifyTaskAssigned } from "@carbon/integrations/notifications";
 import {
   getSubscriberId,
   NotificationEvent,
@@ -15,6 +14,7 @@ import {
 } from "@carbon/notifications";
 import { Novu } from "@novu/node";
 import { task } from "@trigger.dev/sdk/v3";
+import { notifyTaskAssigned } from "../../ee/src/notifications";
 
 const novu = new Novu(NOVU_SECRET_KEY!);
 const isLocal = VERCEL_URL === undefined || VERCEL_URL.includes("localhost");

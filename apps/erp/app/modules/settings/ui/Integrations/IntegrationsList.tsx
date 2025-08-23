@@ -1,4 +1,4 @@
-import type { IntegrationConfig } from "@carbon/integrations";
+import type { IntegrationConfig } from "@carbon/ee";
 import {
   Badge,
   Button,

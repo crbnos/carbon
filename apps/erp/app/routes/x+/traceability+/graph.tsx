@@ -9,22 +9,25 @@ import {
 } from "@carbon/react";
 import { useUrlParams } from "@carbon/remix";
 import { Link, useLoaderData, useNavigation } from "@remix-run/react";
-import { json, LoaderFunctionArgs, redirect } from "@vercel/remix";
+import type { LoaderFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import { ParentSize } from "@visx/responsive";
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Empty } from "~/components";
-import {
-  GraphData,
-  GraphNode,
-  GraphLink,
-  TrackedEntity,
+import type {
+  Activity,
   ActivityInput,
   ActivityOutput,
-  Activity,
+  GraphData,
+  GraphLink,
+  GraphNode,
+  TrackedEntity,
 } from "~/modules/inventory";
-import { TraceabilityGraph } from "~/modules/inventory/ui/Traceability/TraceabilityGraph";
-import { TraceabilitySidebar } from "~/modules/inventory/ui/Traceability/TraceabilityGraph";
-import { Handle } from "~/utils/handle";
+import {
+  TraceabilityGraph,
+  TraceabilitySidebar,
+} from "~/modules/inventory/ui/Traceability/TraceabilityGraph";
+import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {

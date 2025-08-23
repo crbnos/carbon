@@ -1,7 +1,7 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { notifyTaskStatusChanged } from "@carbon/integrations/notifications";
+import { notifyTaskStatusChanged } from "@carbon/ee/notifications";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
 import type { IssueInvestigationTask } from "~/modules/quality";
 import { updateIssueTaskStatus } from "~/modules/quality";

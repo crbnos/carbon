@@ -1,8 +1,8 @@
 import { assertIsPost, error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { notifyIssueCreated } from "@carbon/ee/notifications";
 import { validationError, validator } from "@carbon/form";
-import { notifyIssueCreated } from "@carbon/integrations/notifications";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { useLoaderData } from "@remix-run/react";
 import { FunctionRegion } from "@supabase/supabase-js";

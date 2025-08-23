@@ -14,7 +14,7 @@
     "@carbon/database": "*",
     "@carbon/documents": "*",
     "@carbon/lib": "*",
-    "@carbon/integrations": "*",
+    "@carbon/ee": "*",
     "@carbon/notifications": "*",
     "@internationalized/date": "^3.5.2",
     "@novu/node": "^2.0.1",
