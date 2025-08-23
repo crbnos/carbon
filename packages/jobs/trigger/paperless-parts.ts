@@ -1,8 +1,5 @@
 import { getCarbonServiceRole } from "@carbon/auth";
 import type { Database } from "@carbon/database";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { task } from "@trigger.dev/sdk/v3";
-import { z } from "zod";
 import {
   getCarbonOrderStatus,
   getCustomerIdAndContactId,
@@ -12,7 +9,10 @@ import {
   getPaperlessParts,
   insertOrderLines,
   OrderSchema,
-} from "../../ee/src/paperless-parts/lib";
+} from "@carbon/ee/paperless-parts";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { task } from "@trigger.dev/sdk/v3";
+import { z } from "zod";
 
 const payloadSchema = z.discriminatedUnion("type", [
   z.object({
