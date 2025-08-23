@@ -1,5 +1,5 @@
 import { useCarbon } from "@carbon/auth";
-import { OnshapeLogo } from "@carbon/integrations";
+import { OnshapeLogo } from "@carbon/ee";
 import {
   Badge,
   Button,
@@ -59,6 +59,7 @@ export const OnshapeSync = ({
   makeMethodId: string;
   isDisabled: boolean;
 }) => {
+  const [initialized, setInitialized] = useState(false);
   const [documentId, setDocumentId] = useState<string | null>(null);
   const [versionId, setVersionId] = useState<string | null>(null);
   const [elementId, setElementId] = useState<string | null>(null);
@@ -92,11 +93,12 @@ export const OnshapeSync = ({
     | { data: null; error: string }
   >({});
 
-  useMount(() => {
-    if (!isDisabled) {
+  useEffect(() => {
+    if (!isDisabled && initialized) {
       documentsFetcher.load(path.to.api.onShapeDocuments);
     }
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialized]);
 
   useEffect(() => {
     if (documentsFetcher.data?.error) {
@@ -122,11 +124,11 @@ export const OnshapeSync = ({
   >({});
 
   useEffect(() => {
-    if (documentId && !isDisabled) {
+    if (documentId && !isDisabled && initialized) {
       versionsFetcher.load(path.to.api.onShapeVersions(documentId));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [documentId]);
+  }, [documentId, initialized]);
 
   const versionOptions =
     useMemo(() => {
@@ -146,11 +148,11 @@ export const OnshapeSync = ({
   >({});
 
   useEffect(() => {
-    if (documentId && versionId && !isDisabled) {
+    if (documentId && versionId && !isDisabled && initialized) {
       elementsFetcher.load(path.to.api.onShapeElements(documentId, versionId));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [documentId, versionId]);
+  }, [documentId, versionId, initialized]);
 
   const elementOptions =
     useMemo(() => {
@@ -347,17 +349,32 @@ export const OnshapeSync = ({
           {isDataLoading ? (
             <Spinner className="size-3" />
           ) : (
-            <Button
-              variant={bomRows.length > 0 ? "secondary" : "primary"}
-              isLoading={bomFetcher.state !== "idle"}
-              isDisabled={
-                isDisabled || !isReadyForSync || bomFetcher.state !== "idle"
-              }
-              size="sm"
-              onClick={loadBom}
-            >
-              {bomRows.length > 0 ? "Refresh" : "Sync"}
-            </Button>
+            <div className="flex gap-2">
+              {!initialized && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setInitialized(true)}
+                  isDisabled={isDisabled}
+                >
+                  Fetch
+                </Button>
+              )}
+              <Button
+                variant={bomRows.length > 0 ? "secondary" : "primary"}
+                isLoading={bomFetcher.state !== "idle"}
+                isDisabled={
+                  isDisabled ||
+                  !isReadyForSync ||
+                  bomFetcher.state !== "idle" ||
+                  !initialized
+                }
+                size="sm"
+                onClick={loadBom}
+              >
+                {bomRows.length > 0 ? "Refresh" : "Sync"}
+              </Button>
+            </div>
           )}
         </div>
       </div>
