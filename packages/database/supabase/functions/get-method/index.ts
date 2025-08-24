@@ -873,6 +873,7 @@ serve(async (req: Request) => {
           throw new Error("Invalid targetId");
         }
         const itemId = sourceId;
+        const isConfigured = !!configuration;
 
         const [makeMethod, jobMakeMethod, workCenters, supplierProcesses] =
           await Promise.all([
@@ -903,8 +904,22 @@ serve(async (req: Request) => {
           throw new Error("Failed to get job make method");
         }
 
-        const [methodTrees] = await Promise.all([
+        const hydratedConfiguration = await hydrateConfiguration(
+          client,
+          configuration,
+          itemId,
+          companyId
+        );
+
+        const [methodTrees, configurationRules] = await Promise.all([
           getMethodTree(client, makeMethod.data.id!),
+          isConfigured
+            ? client
+                .from("configurationRule")
+                .select("*")
+                .eq("itemId", itemId)
+                .eq("companyId", companyId)
+            : Promise.resolve({ data: [] }),
         ]);
 
         if (methodTrees.error) {
@@ -920,6 +935,14 @@ serve(async (req: Request) => {
         const getOutsideOperationRates = getRatesFromSupplierProcesses(
           supplierProcesses?.data
         );
+
+        // Get configuration code by field
+        const configurationCodeByField = configurationRules.data?.reduce<
+          Record<string, string>
+        >((acc, rule) => {
+          acc[rule.field] = rule.code;
+          return acc;
+        }, {});
 
         await db.transaction().execute(async (trx) => {
           // Delete existing jobMakeMethodOperation, jobMakeMethodMaterial
@@ -938,6 +961,38 @@ serve(async (req: Request) => {
               .where("id", "=", jobMakeMethodId)
               .execute(),
           ]);
+
+          function getFieldKey(field: string, id: string) {
+            return `${field}:${id}`;
+          }
+
+          async function getConfiguredValue<T>({
+            id,
+            field,
+            defaultValue,
+          }: {
+            id: string;
+            field: string;
+            defaultValue: T;
+          }): Promise<T> {
+            if (!configurationCodeByField) return defaultValue;
+            const fieldKey = getFieldKey(field, id);
+
+            if (configurationCodeByField?.[fieldKey]) {
+              try {
+                const mod = await importTypeScript(
+                  configurationCodeByField[fieldKey]
+                );
+                const result = await mod.configure(hydratedConfiguration);
+                return (result ?? defaultValue) as T;
+              } catch (err) {
+                console.error(err);
+                return defaultValue;
+              }
+            }
+
+            return defaultValue;
+          }
 
           // traverse method tree and create:
           // - jobMakeMethod
@@ -1776,6 +1831,7 @@ serve(async (req: Request) => {
           throw new Error("Invalid targetId");
         }
         const itemId = sourceId;
+        const isConfigured = !!configuration;
 
         const [makeMethod, quoteMakeMethod, workCenters, supplierProcesses] =
           await Promise.all([
@@ -1806,8 +1862,22 @@ serve(async (req: Request) => {
           throw new Error("Failed to get quote make method");
         }
 
-        const [methodTrees] = await Promise.all([
+        const hydratedConfiguration = await hydrateConfiguration(
+          client,
+          configuration,
+          itemId,
+          companyId
+        );
+
+        const [methodTrees, configurationRules] = await Promise.all([
           getMethodTree(client, makeMethod.data.id!),
+          isConfigured
+            ? client
+                .from("configurationRule")
+                .select("*")
+                .eq("itemId", itemId)
+                .eq("companyId", companyId)
+            : Promise.resolve({ data: [] }),
         ]);
 
         if (methodTrees.error) {
@@ -1823,6 +1893,14 @@ serve(async (req: Request) => {
         const getOutsideOperationRates = getRatesFromSupplierProcesses(
           supplierProcesses?.data
         );
+
+        // Get configuration code by field
+        const configurationCodeByField = configurationRules.data?.reduce<
+          Record<string, string>
+        >((acc, rule) => {
+          acc[rule.field] = rule.code;
+          return acc;
+        }, {});
 
         await db.transaction().execute(async (trx) => {
           // Delete existing quoteMakeMethodOperation, quoteMakeMethodMaterial
@@ -1841,6 +1919,38 @@ serve(async (req: Request) => {
               .where("id", "=", quoteMakeMethodId)
               .execute(),
           ]);
+
+          function getFieldKey(field: string, id: string) {
+            return `${field}:${id}`;
+          }
+
+          async function getConfiguredValue<T>({
+            id,
+            field,
+            defaultValue,
+          }: {
+            id: string;
+            field: string;
+            defaultValue: T;
+          }): Promise<T> {
+            if (!configurationCodeByField) return defaultValue;
+            const fieldKey = getFieldKey(field, id);
+
+            if (configurationCodeByField?.[fieldKey]) {
+              try {
+                const mod = await importTypeScript(
+                  configurationCodeByField[fieldKey]
+                );
+                const result = await mod.configure(hydratedConfiguration);
+                return (result ?? defaultValue) as T;
+              } catch (err) {
+                console.error(err);
+                return defaultValue;
+              }
+            }
+
+            return defaultValue;
+          }
 
           // traverse method tree and create:
           // - quoteMakeMethod

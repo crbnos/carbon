@@ -2278,15 +2278,28 @@ export async function upsertQuoteLineMethod(
     configuration?: Record<string, unknown>;
   }
 ) {
+  const body: {
+    type: "itemToQuoteLine";
+    sourceId: string;
+    targetId: string;
+    companyId: string;
+    userId: string;
+    configuration?: Record<string, unknown>;
+  } = {
+    type: "itemToQuoteLine",
+    sourceId: lineMethod.itemId,
+    targetId: `${lineMethod.quoteId}:${lineMethod.quoteLineId}`,
+    companyId: lineMethod.companyId,
+    userId: lineMethod.userId,
+  };
+
+  // Only add configuration if it exists
+  if (lineMethod.configuration !== undefined) {
+    body.configuration = lineMethod.configuration;
+  }
+
   return client.functions.invoke("get-method", {
-    body: {
-      type: "itemToQuoteLine",
-      sourceId: lineMethod.itemId,
-      targetId: `${lineMethod.quoteId}:${lineMethod.quoteLineId}`,
-      companyId: lineMethod.companyId,
-      configuration: lineMethod.configuration,
-      userId: lineMethod.userId,
-    },
+    body,
     region: FunctionRegion.UsEast1,
   });
 }
@@ -2333,16 +2346,31 @@ export async function upsertQuoteMaterialMakeMethod(
     targetId: string;
     companyId: string;
     userId: string;
+    configuration?: Record<string, unknown>;
   }
 ) {
+  const body: {
+    type: "itemToQuoteMakeMethod";
+    sourceId: string;
+    targetId: string;
+    companyId: string;
+    userId: string;
+    configuration?: Record<string, unknown>;
+  } = {
+    type: "itemToQuoteMakeMethod",
+    sourceId: quoteMethod.sourceId,
+    targetId: quoteMethod.targetId,
+    companyId: quoteMethod.companyId,
+    userId: quoteMethod.userId,
+  };
+
+  // Only add configuration if it exists
+  if (quoteMethod.configuration !== undefined) {
+    body.configuration = quoteMethod.configuration;
+  }
+
   const { error } = await client.functions.invoke("get-method", {
-    body: {
-      type: "itemToQuoteMakeMethod",
-      sourceId: quoteMethod.sourceId,
-      targetId: quoteMethod.targetId,
-      companyId: quoteMethod.companyId,
-      userId: quoteMethod.userId,
-    },
+    body,
     region: FunctionRegion.UsEast1,
   });
 

@@ -18,6 +18,10 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const type = formData.get("type") as string;
+  const configurationStr = formData.get("configuration") as string | null;
+  const configuration = configurationStr
+    ? JSON.parse(configurationStr)
+    : undefined;
 
   const serviceRole = getCarbonServiceRole();
 
@@ -27,14 +31,21 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (["item", "quoteLine"].includes(type)) {
+    const jobMethodPayload: any = {
+      ...validation.data,
+      companyId,
+      userId,
+    };
+
+    // Only add configuration if it exists
+    if (configuration !== undefined && type === "item") {
+      jobMethodPayload.configuration = configuration;
+    }
+
     const jobMethod = await upsertJobMethod(
       serviceRole,
       type === "item" ? "itemToJob" : "quoteLineToJob",
-      {
-        ...validation.data,
-        companyId,
-        userId,
-      }
+      jobMethodPayload
     );
 
     const [calculateQuantities, calculateDependencies] = await Promise.all([
@@ -68,11 +79,21 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (type === "method") {
-    const makeMethod = await upsertJobMaterialMakeMethod(serviceRole, {
+    const makeMethodPayload: any = {
       ...validation.data,
       companyId,
       userId,
-    });
+    };
+
+    // Only add configuration if it exists
+    if (configuration !== undefined) {
+      makeMethodPayload.configuration = configuration;
+    }
+
+    const makeMethod = await upsertJobMaterialMakeMethod(
+      serviceRole,
+      makeMethodPayload
+    );
 
     if (makeMethod.error) {
       return json({

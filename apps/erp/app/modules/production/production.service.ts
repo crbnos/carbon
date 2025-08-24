@@ -1347,14 +1347,31 @@ export async function upsertJobMethod(
     targetId: string;
     companyId: string;
     userId: string;
-    configuration?: any;
+    configuration?: Record<string, unknown>;
   }
 ) {
+  const body: {
+    type: "itemToJob" | "quoteLineToJob";
+    sourceId: string;
+    targetId: string;
+    companyId: string;
+    userId: string;
+    configuration?: Record<string, unknown>;
+  } = {
+    type,
+    sourceId: jobMethod.sourceId,
+    targetId: jobMethod.targetId,
+    companyId: jobMethod.companyId,
+    userId: jobMethod.userId,
+  };
+
+  // Only add configuration if it exists
+  if (jobMethod.configuration !== undefined) {
+    body.configuration = jobMethod.configuration;
+  }
+
   const getMethodResult = await client.functions.invoke("get-method", {
-    body: {
-      type,
-      ...jobMethod,
-    },
+    body,
     region: FunctionRegion.UsEast1,
   });
   if (getMethodResult.error) {
@@ -1374,16 +1391,31 @@ export async function upsertJobMaterialMakeMethod(
     targetId: string;
     companyId: string;
     userId: string;
+    configuration?: Record<string, unknown>;
   }
 ) {
+  const body: {
+    type: "itemToJobMakeMethod";
+    sourceId: string;
+    targetId: string;
+    companyId: string;
+    userId: string;
+    configuration?: Record<string, unknown>;
+  } = {
+    type: "itemToJobMakeMethod",
+    sourceId: jobMaterial.sourceId,
+    targetId: jobMaterial.targetId,
+    companyId: jobMaterial.companyId,
+    userId: jobMaterial.userId,
+  };
+
+  // Only add configuration if it exists
+  if (jobMaterial.configuration !== undefined) {
+    body.configuration = jobMaterial.configuration;
+  }
+
   const { error } = await client.functions.invoke("get-method", {
-    body: {
-      type: "itemToJobMakeMethod",
-      sourceId: jobMaterial.sourceId,
-      targetId: jobMaterial.targetId,
-      companyId: jobMaterial.companyId,
-      userId: jobMaterial.userId,
-    },
+    body,
     region: FunctionRegion.UsEast1,
   });
 

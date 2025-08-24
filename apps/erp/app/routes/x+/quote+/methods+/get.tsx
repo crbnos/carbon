@@ -17,6 +17,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const type = formData.get("type") as string;
+  const configurationStr = formData.get("configuration") as string | null;
+  const configuration = configurationStr ? JSON.parse(configurationStr) : undefined;
 
   const serviceRole = getCarbonServiceRole();
   if (type === "item") {
@@ -28,13 +30,20 @@ export async function action({ request }: ActionFunctionArgs) {
     const [quoteId, quoteLineId] = validation.data.targetId.split(":");
     const itemId = validation.data.sourceId;
 
-    const lineMethod = await upsertQuoteLineMethod(serviceRole, {
+    const lineMethodPayload: any = {
       itemId,
       quoteId,
       quoteLineId,
       companyId,
       userId,
-    });
+    };
+    
+    // Only add configuration if it exists
+    if (configuration !== undefined) {
+      lineMethodPayload.configuration = configuration;
+    }
+    
+    const lineMethod = await upsertQuoteLineMethod(serviceRole, lineMethodPayload);
 
     return json({
       error: lineMethod.error ? "Failed to get quote line method" : null,
@@ -64,11 +73,18 @@ export async function action({ request }: ActionFunctionArgs) {
       return validationError(validation.error);
     }
 
-    const makeMethod = await upsertQuoteMaterialMakeMethod(serviceRole, {
+    const makeMethodPayload: any = {
       ...validation.data,
       companyId,
       userId,
-    });
+    };
+    
+    // Only add configuration if it exists
+    if (configuration !== undefined) {
+      makeMethodPayload.configuration = configuration;
+    }
+    
+    const makeMethod = await upsertQuoteMaterialMakeMethod(serviceRole, makeMethodPayload);
 
     if (makeMethod.error) {
       return json({

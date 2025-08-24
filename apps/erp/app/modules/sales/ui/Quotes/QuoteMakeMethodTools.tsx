@@ -50,6 +50,7 @@ import type {
   ConfigurationParameter,
   ConfigurationParameterGroup,
 } from "~/modules/items";
+import { getConfigurationParameters } from "~/modules/items";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import MakeMethodVersionStatus from "~/modules/items/ui/Item/MakeMethodVersionStatus";
 import type { MethodItemType } from "~/modules/shared/types";
@@ -167,6 +168,16 @@ const QuoteMakeMethodTools = () => {
   const [selectedMakeMethod, setSelectedMakeMethod] = useState<string | null>(
     null
   );
+  const [sourceItemRequiresConfiguration, setSourceItemRequiresConfiguration] =
+    useState(false);
+  const [
+    sourceItemConfigurationParameters,
+    setSourceItemConfigurationParameters,
+  ] = useState<{
+    groups: ConfigurationParameterGroup[];
+    parameters: ConfigurationParameter[];
+  }>({ groups: [], parameters: [] });
+  const [pendingGetMethodData, setPendingGetMethodData] = useState<any>(null);
 
   const getMakeMethods = async (itemId: string) => {
     setMakeMethods([]);
@@ -274,7 +285,61 @@ const QuoteMakeMethodTools = () => {
               fetcher={fetcher}
               action={path.to.quoteMethodGet}
               validator={getMethodValidator}
-              onSubmit={getMethodModal.onClose}
+              onSubmit={async (data, e) => {
+                if (e) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }
+                
+                const sourceId = data.sourceId as string;
+                const type = data.type as string;
+
+                // Only check configuration for "item" and "method" types, not "quoteLine"
+                if (sourceId && carbon && (type === "item" || type === "method")) {
+                  // Store the form data for later use
+                  setPendingGetMethodData(data);
+
+                  // Check if the source item requires configuration
+                  const { data: replenishmentData } = await carbon
+                    .from("itemReplenishment")
+                    .select("requiresConfiguration, companyId")
+                    .eq("itemId", sourceId)
+                    .single();
+
+                  if (replenishmentData?.requiresConfiguration) {
+                    // Get configuration parameters for the source item
+                    const companyId = replenishmentData?.companyId;
+                    if (!companyId) {
+                      toast.error("Unable to get company ID");
+                      return;
+                    }
+                    const configParams = await getConfigurationParameters(
+                      carbon,
+                      sourceId,
+                      companyId
+                    );
+
+                    setSourceItemRequiresConfiguration(true);
+                    setSourceItemConfigurationParameters(configParams);
+                    getMethodModal.onClose();
+                    configuratorModal.onOpen();
+                  } else {
+                    // No configuration needed, proceed with normal submission
+                    fetcher.submit(data, {
+                      method: "post",
+                      action: path.to.quoteMethodGet,
+                    });
+                    getMethodModal.onClose();
+                  }
+                } else {
+                  // No sourceId, no carbon, or type is "quoteLine" - proceed with normal submission
+                  fetcher.submit(data, {
+                    method: "post",
+                    action: path.to.quoteMethodGet,
+                  });
+                  getMethodModal.onClose();
+                }
+              }}
             >
               <ModalHeader>
                 <ModalTitle>Get Method</ModalTitle>
@@ -499,23 +564,66 @@ const QuoteMakeMethodTools = () => {
 
       {configuratorModal.isOpen && (
         <Suspense fallback={null}>
-          <Await resolve={lineData?.configurationParameters}>
-            {(configurationParameters) => (
-              <ConfiguratorModal
-                open
-                destructive
-                initialValues={
-                  (line?.configuration || {}) as Record<string, any>
+          {sourceItemRequiresConfiguration ? (
+            // Configurator for source item when getting method
+            <ConfiguratorModal
+              open
+              destructive
+              initialValues={{} as Record<string, any>}
+              groups={sourceItemConfigurationParameters.groups}
+              parameters={sourceItemConfigurationParameters.parameters}
+              onClose={() => {
+                configuratorModal.onClose();
+                setSourceItemRequiresConfiguration(false);
+                setSourceItemConfigurationParameters({
+                  groups: [],
+                  parameters: [],
+                });
+              }}
+              onSubmit={(config: Record<string, any>) => {
+                // Submit the get method with configuration
+                if (pendingGetMethodData) {
+                  const dataWithConfig = {
+                    ...pendingGetMethodData,
+                    configuration: JSON.stringify(config),
+                  };
+
+                  fetcher.submit(dataWithConfig, {
+                    method: "post",
+                    action: path.to.quoteMethodGet,
+                  });
+
+                  setPendingGetMethodData(null);
                 }
-                groups={configurationParameters?.groups ?? []}
-                parameters={configurationParameters?.parameters ?? []}
-                onClose={configuratorModal.onClose}
-                onSubmit={(config: Record<string, any>) => {
-                  saveConfiguration(config);
-                }}
-              />
-            )}
-          </Await>
+
+                configuratorModal.onClose();
+                setSourceItemRequiresConfiguration(false);
+                setSourceItemConfigurationParameters({
+                  groups: [],
+                  parameters: [],
+                });
+              }}
+            />
+          ) : (
+            // Regular configurator for line configuration
+            <Await resolve={lineData?.configurationParameters}>
+              {(configurationParameters) => (
+                <ConfiguratorModal
+                  open
+                  destructive
+                  initialValues={
+                    (line?.configuration || {}) as Record<string, any>
+                  }
+                  groups={configurationParameters?.groups ?? []}
+                  parameters={configurationParameters?.parameters ?? []}
+                  onClose={configuratorModal.onClose}
+                  onSubmit={(config: Record<string, any>) => {
+                    saveConfiguration(config);
+                  }}
+                />
+              )}
+            </Await>
+          )}
         </Suspense>
       )}
     </>

@@ -517,7 +517,7 @@ type ConfiguratorStepProps = {
 
 function ConfiguratorStep({ group, parameters }: ConfiguratorStepProps) {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 w-full">
       {parameters.map((parameter) => (
         <ParameterField key={parameter.id} parameter={parameter} />
       ))}

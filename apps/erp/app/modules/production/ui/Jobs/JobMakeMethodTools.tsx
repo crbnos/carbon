@@ -53,6 +53,7 @@ import type {
   ConfigurationParameter,
   ConfigurationParameterGroup,
 } from "~/modules/items";
+import { getConfigurationParameters } from "~/modules/items";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import MakeMethodVersionStatus from "~/modules/items/ui/Item/MakeMethodVersionStatus";
 import { QuoteLineMethodForm } from "~/modules/sales/ui/Quotes/QuoteLineMethodForm";
@@ -193,6 +194,16 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
   const [selectedMakeMethod, setSelectedMakeMethod] = useState<string | null>(
     null
   );
+  const [sourceItemRequiresConfiguration, setSourceItemRequiresConfiguration] =
+    useState(false);
+  const [
+    sourceItemConfigurationParameters,
+    setSourceItemConfigurationParameters,
+  ] = useState<{
+    groups: ConfigurationParameterGroup[];
+    parameters: ConfigurationParameter[];
+  }>({ groups: [], parameters: [] });
+  const [pendingGetMethodData, setPendingGetMethodData] = useState<any>(null);
 
   const getMakeMethods = async (itemId: string) => {
     setMakeMethods([]);
@@ -332,7 +343,66 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
               fetcher={fetcher}
               action={path.to.jobMethodGet}
               validator={getJobMethodValidator}
-              onSubmit={getMethodModal.onClose}
+              onSubmit={async (data, e) => {
+                if (e) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }
+                
+                const sourceId = data.sourceId as string;
+                // Get type from the form element since it's not in validated data
+                const formElement = e?.target as HTMLFormElement;
+                const formData = new FormData(formElement);
+                const type = formData.get("type") as string;
+
+                // Only check configuration for "item" and "method" types, not "quoteLine"
+                if (sourceId && carbon && (type === "item" || type === "method")) {
+                  // Store the form data for later use (include type which isn't in validated data)
+                  setPendingGetMethodData({ ...data, type });
+
+                  // Check if the source item requires configuration
+                  const { data: replenishmentData } = await carbon
+                    .from("itemReplenishment")
+                    .select("requiresConfiguration, companyId")
+                    .eq("itemId", sourceId)
+                    .single();
+
+                  if (replenishmentData?.requiresConfiguration) {
+                    // Get configuration parameters for the source item
+                    const companyId = replenishmentData?.companyId;
+                    if (!companyId) {
+                      toast.error("Unable to get company ID");
+                      return;
+                    }
+                    const configParams = await getConfigurationParameters(
+                      carbon,
+                      sourceId,
+                      companyId
+                    );
+
+                    setSourceItemRequiresConfiguration(true);
+                    setSourceItemConfigurationParameters(configParams);
+                    getMethodModal.onClose();
+                    configuratorModal.onOpen();
+                  } else {
+                    // No configuration needed, proceed with normal submission
+                    fetcher.submit({ ...data, type }, {
+                      method: "post",
+                      action: path.to.jobMethodGet,
+                    });
+                    getMethodModal.onClose();
+                  }
+                } else {
+                  // No sourceId, no carbon, or type is "quoteLine" - proceed with normal submission
+                  // Need to include type for jobs since it's not in validated data
+                  const dataWithType = type ? { ...data, type } : data;
+                  fetcher.submit(dataWithType, {
+                    method: "post",
+                    action: path.to.jobMethodGet,
+                  });
+                  getMethodModal.onClose();
+                }
+              }}
             >
               <ModalHeader>
                 <ModalTitle>Get Method</ModalTitle>
@@ -538,23 +608,66 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
 
       {configuratorModal.isOpen && (
         <Suspense fallback={null}>
-          <Await resolve={routeData?.configurationParameters}>
-            {(configurationParameters) => (
-              <ConfiguratorModal
-                open
-                destructive
-                initialValues={
-                  (routeData?.job.configuration || {}) as Record<string, any>
+          {sourceItemRequiresConfiguration ? (
+            // Configurator for source item when getting method
+            <ConfiguratorModal
+              open
+              destructive
+              initialValues={{} as Record<string, any>}
+              groups={sourceItemConfigurationParameters.groups}
+              parameters={sourceItemConfigurationParameters.parameters}
+              onClose={() => {
+                configuratorModal.onClose();
+                setSourceItemRequiresConfiguration(false);
+                setSourceItemConfigurationParameters({
+                  groups: [],
+                  parameters: [],
+                });
+              }}
+              onSubmit={(config: Record<string, any>) => {
+                // Submit the get method with configuration
+                if (pendingGetMethodData) {
+                  const dataWithConfig = {
+                    ...pendingGetMethodData,
+                    configuration: JSON.stringify(config),
+                  };
+
+                  fetcher.submit(dataWithConfig, {
+                    method: "post",
+                    action: path.to.jobMethodGet,
+                  });
+
+                  setPendingGetMethodData(null);
                 }
-                groups={configurationParameters?.groups ?? []}
-                parameters={configurationParameters?.parameters ?? []}
-                onClose={configuratorModal.onClose}
-                onSubmit={(config: Record<string, any>) => {
-                  saveConfiguration(config);
-                }}
-              />
-            )}
-          </Await>
+
+                configuratorModal.onClose();
+                setSourceItemRequiresConfiguration(false);
+                setSourceItemConfigurationParameters({
+                  groups: [],
+                  parameters: [],
+                });
+              }}
+            />
+          ) : (
+            // Regular configurator for job configuration
+            <Await resolve={routeData?.configurationParameters}>
+              {(configurationParameters) => (
+                <ConfiguratorModal
+                  open
+                  destructive
+                  initialValues={
+                    (routeData?.job.configuration || {}) as Record<string, any>
+                  }
+                  groups={configurationParameters?.groups ?? []}
+                  parameters={configurationParameters?.parameters ?? []}
+                  onClose={configuratorModal.onClose}
+                  onSubmit={(config: Record<string, any>) => {
+                    saveConfiguration(config);
+                  }}
+                />
+              )}
+            </Await>
+          )}
         </Suspense>
       )}
     </>
