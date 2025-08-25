@@ -5,14 +5,16 @@ const serviceRole = getCarbonServiceRole();
 
 export const mrp = schedules.task({
   id: "mrp",
-  // Run every 3 hours
-  cron: "0 */3 * * *",
+  cron: "0 */3 * * *", // Run every 3 hours
+  maxDuration: 600, // 600 seconds or 10 minutes
   run: async () => {
     console.log(
       `🕒 Scheduled MRP Calculation Started: ${new Date().toISOString()}`
     );
 
-    const companies = await serviceRole.from("company").select("id, name");
+    const companies = await serviceRole
+      .from("companyPlan")
+      .select("id, ...company(name)");
 
     if (companies.error) {
       console.error(
