@@ -456,16 +456,16 @@ export async function getCustomerIdAndContactId(
     // and also create a corresponding account in Paperless Parts
     const customerName = `${contact.first_name} ${contact.last_name}`;
 
-    // Create a new account in Paperless Parts
-    const newPaperlessPartsAccount = await paperless.accounts.createAccount({
-      name: customerName,
-    });
+    // // Create a new account in Paperless Parts
+    // const newPaperlessPartsAccount = await paperless.accounts.createAccount({
+    //   name: customerName,
+    // });
 
-    if (newPaperlessPartsAccount.error || !newPaperlessPartsAccount.data) {
-      throw new Error("Failed to create account in Paperless Parts");
-    }
+    // if (newPaperlessPartsAccount.error || !newPaperlessPartsAccount.data) {
+    //   throw new Error("Failed to create account in Paperless Parts");
+    // }
 
-    const newPaperlessPartsAccountId = newPaperlessPartsAccount.data.id;
+    // const newPaperlessPartsAccountId = newPaperlessPartsAccount.data.id;
 
     const newCustomer = await carbon
       .from("customer")
@@ -473,7 +473,7 @@ export async function getCustomerIdAndContactId(
         companyId: company.id,
         name: customerName,
         externalId: {
-          paperlessPartsId: newPaperlessPartsAccountId,
+          paperlessPartsId: "newPaperlessPartsAccountId",
         },
         currencyCode: company.baseCurrencyCode,
         createdBy: "system",
@@ -1060,6 +1060,7 @@ export async function createPartFromComponent(
           createdBy
         );
         if (process) {
+          console.log({ operation });
           operations.push({
             order: operation.position ?? index + 1,
             operationOrder: "After Previous",
@@ -1072,10 +1073,10 @@ export async function createPartFromComponent(
             processId: process.id,
             companyId,
             createdBy,
-            setupTime: operation.setup_time ?? 0,
+            setupTime: (operation.setup_time ?? 0) * 60,
             setupUnit: "Total Minutes",
-            laborTime: operation.runtime ?? 0,
-            laborUnit: "Minutes/Piece",
+            machineTime: (operation.runtime ?? 0) * 60,
+            machineUnit: "Minutes/Piece",
             workInstruction: operation.notes
               ? textToTiptap(operation.notes)
               : {},
