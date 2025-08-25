@@ -1,7 +1,11 @@
 import { getCarbonServiceRole } from "@carbon/auth";
 import type { paperlessPartsTask } from "@carbon/jobs/trigger/paperless-parts";
 import { tasks } from "@trigger.dev/sdk/v3";
-import { json, type ActionFunctionArgs } from "@vercel/remix";
+import type {
+  LoaderFunctionArgs,
+  type ActionFunctionArgs,
+} from "@vercel/remix";
+import { json } from "@vercel/remix";
 import crypto from "crypto";
 import { z } from "zod";
 import { getIntegration } from "~/modules/settings/settings.service";
@@ -28,6 +32,17 @@ function createHmacSignature(
     .createHmac("sha256", signingSecretBytes)
     .update(messageBytes)
     .digest("hex");
+}
+
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { companyId } = params;
+  if (!companyId) {
+    return json({ success: false }, { status: 400 });
+  }
+
+  return json({
+    success: true,
+  });
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
