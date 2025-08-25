@@ -5,7 +5,7 @@ config();
 
 export default defineConfig({
   project: process.env.TRIGGER_PROJECT_ID!,
-  maxDuration: 60,
+  maxDuration: 300,
   runtime: "node",
   logLevel: "log",
   retries: {

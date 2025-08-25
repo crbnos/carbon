@@ -6,7 +6,6 @@ const serviceRole = getCarbonServiceRole();
 export const mrp = schedules.task({
   id: "mrp",
   cron: "0 */3 * * *", // Run every 3 hours
-  maxDuration: 600, // 600 seconds or 10 minutes
   run: async () => {
     console.log(
       `🕒 Scheduled MRP Calculation Started: ${new Date().toISOString()}`
