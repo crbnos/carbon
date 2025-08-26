@@ -268,7 +268,13 @@ There are two ways to use the API:
 
 ### From another Codebase
 
-Navigate to settings in the ERP to generate an API key. If you're self-hosting you can also use the supabase service key instead of the public key for root access. In that case you don't needto include the `carbon-key` header.
+First, set up the necessary credentials in environment variables. For the example below: 
+
+1. Navigate to settings in the ERP to generate an API key. Set this in `CARBON_API_KEY`
+2. Get the Supabase URL to call (this is `SUPABASE_URL` in your `.env` if hosting locally, e.g. http://localhost:54321). Set this as `CARBON_API_URL`.
+3. Get the `SUPABASE_ANON_KEY` e.g. from your .env file. Set this as `CARBON_PUBLIC_KEY`.
+
+If you're self-hosting you can also use the supabase service key instead of the public key for root access. In that case you don't need to include the `carbon-key` header.
 
 ```ts
 import { Database } from "@carbon/database";
