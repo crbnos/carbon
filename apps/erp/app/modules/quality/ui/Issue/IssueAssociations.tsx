@@ -26,6 +26,7 @@ import {
   useMount,
   VStack,
 } from "@carbon/react";
+import { getItemReadableId } from "@carbon/utils";
 import { Link, useFetcher, useParams } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
@@ -51,7 +52,6 @@ import { LevelLine } from "~/components/TreeView";
 import { usePermissions } from "~/hooks";
 import type { action as associationAction } from "~/routes/x+/issue+/$id.association.new";
 import { useItems } from "~/stores";
-import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 import { issueAssociationValidator } from "../../quality.models";
 import type { IssueAssociationKey, IssueAssociationNode } from "../../types";

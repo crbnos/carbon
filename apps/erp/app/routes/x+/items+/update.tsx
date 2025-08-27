@@ -1,8 +1,8 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { Database } from "@carbon/database";
+import { getMaterialDescription, getMaterialId } from "@carbon/utils";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { getCompanySettings } from "~/modules/settings";
-import { getMaterialDescription, getMaterialId } from "~/utils/items";
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {

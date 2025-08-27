@@ -15,7 +15,7 @@ import {
   Tr,
   VStack,
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
+import { formatDate, getItemReadableId } from "@carbon/utils";
 import { useLocale } from "@react-aria/i18n";
 import { Link, useParams } from "@remix-run/react";
 import { motion } from "framer-motion";
@@ -25,7 +25,6 @@ import { SupplierAvatar } from "~/components";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { useCurrencyFormatter, useRouteData, useUser } from "~/hooks";
 import { useItems } from "~/stores";
-import { getItemReadableId } from "~/utils/items";
 import { getPrivateUrl, path } from "~/utils/path";
 import type {
   PurchaseOrderLine,

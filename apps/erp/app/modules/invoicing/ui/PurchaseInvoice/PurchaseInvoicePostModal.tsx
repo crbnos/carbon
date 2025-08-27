@@ -17,11 +17,11 @@ import {
   VStack,
 } from "@carbon/react";
 
+import { getItemReadableId } from "@carbon/utils";
 import { useFetcher } from "@remix-run/react";
 import { useEffect } from "react";
 import type { action } from "~/routes/x+/purchase-invoice+/$invoiceId.post";
 import { useItems } from "~/stores";
-import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 
 type PurchaseInvoicePostModalProps = {

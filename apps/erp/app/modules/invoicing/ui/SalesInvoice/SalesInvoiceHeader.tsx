@@ -13,6 +13,7 @@ import {
   IconButton,
   useDisclosure,
 } from "@carbon/react";
+import { getItemReadableId } from "@carbon/utils";
 import { Link, useFetcher, useParams } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
@@ -33,7 +34,6 @@ import { salesInvoiceStatusType } from "~/modules/invoicing";
 import type { action } from "~/routes/x+/sales-invoice+/$invoiceId.post";
 import type { action as statusAction } from "~/routes/x+/sales-invoice+/$invoiceId.status";
 import { useItems } from "~/stores";
-import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 import SalesInvoicePostModal from "./SalesInvoicePostModal";
 import SalesInvoiceStatus from "./SalesInvoiceStatus";

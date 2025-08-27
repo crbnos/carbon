@@ -36,7 +36,7 @@ import {
   VStack,
 } from "@carbon/react";
 import type { TrackedEntityAttributes } from "@carbon/utils";
-import { labelSizes } from "@carbon/utils";
+import { getItemReadableId, labelSizes } from "@carbon/utils";
 import {
   Outlet,
   useFetcher,
@@ -71,7 +71,6 @@ import type {
 import { splitValidator } from "~/modules/inventory";
 import type { action as shipmentLinesUpdateAction } from "~/routes/x+/shipment+/lines.update";
 import { useItems } from "~/stores";
-import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 
 const ShipmentLines = () => {

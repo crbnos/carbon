@@ -136,6 +136,7 @@ import {
   formatDateTime,
   formatDurationMilliseconds,
   formatRelativeTime,
+  getItemReadableId,
   labelSizes,
 } from "@carbon/utils";
 import {
@@ -194,7 +195,6 @@ import type {
 } from "~/services/inventory.service";
 import { getFileType } from "~/services/operations.service";
 import { useItems, usePeople } from "~/stores";
-import { getItemReadableId } from "~/utils/items";
 import FileDropzone from "./FileDropzone";
 import ItemThumbnail from "./ItemThumbnail";
 import ScrapReason from "./ScrapReason";

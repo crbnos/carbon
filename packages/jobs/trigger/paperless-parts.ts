@@ -108,6 +108,7 @@ export const paperlessPartsTask = task({
   retry: {
     maxAttempts: 1,
   },
+  maxDuration: 5 * 60,
   run: async (payload: z.infer<typeof paperlessPartsSchema>) => {
     let result: { success: boolean; message: string };
 

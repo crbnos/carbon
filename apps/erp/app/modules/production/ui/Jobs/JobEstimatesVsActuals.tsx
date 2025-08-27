@@ -36,7 +36,7 @@ import type { z } from "zod";
 import { MethodIcon, TimeTypeIcon } from "~/components/Icons";
 
 import { useCarbon } from "@carbon/auth";
-import { formatDurationMilliseconds } from "@carbon/utils";
+import { formatDurationMilliseconds, getItemReadableId } from "@carbon/utils";
 import {
   getLocalTimeZone,
   now,
@@ -49,7 +49,6 @@ import { EmployeeAvatar, EmployeeAvatarGroup } from "~/components";
 import { useCurrencyFormatter, usePercentFormatter, useUser } from "~/hooks";
 import { useItems } from "~/stores";
 import { makeDurations } from "~/utils/duration";
-import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 import type { jobOperationValidator } from "../../production.models";
 import type { getJobMaterialsByMethodId } from "../../production.service";

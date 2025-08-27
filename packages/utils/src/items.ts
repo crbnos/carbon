@@ -1,4 +1,7 @@
-import type { Item } from "~/stores/items";
+type Item = {
+  id: string;
+  readableIdWithRevision: string;
+};
 
 /**
  * Get the readable ID for an item given its ID
