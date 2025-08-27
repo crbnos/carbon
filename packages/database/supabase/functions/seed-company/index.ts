@@ -53,7 +53,26 @@ serve(async (req: Request) => {
       companyId
     );
 
+    const company = await client
+      .from("company")
+      .select("*")
+      .eq("id", companyId)
+      .single();
+    if (company.error) throw new Error(company.error.message);
+    if (!company.data) throw new Error("Company not found");
+
     await db.transaction().execute(async (trx) => {
+      await trx
+        .withSchema("storage")
+        // @ts-expect-error - it's legit, chill typescript
+        .insertInto("buckets")
+        .values({
+          id: companyId,
+          name: companyId,
+          public: false,
+        })
+        .execute();
+
       await trx
         .insertInto("userToCompany")
         .values([{ userId, companyId, role: "employee" }])
