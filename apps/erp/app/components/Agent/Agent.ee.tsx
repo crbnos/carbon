@@ -402,7 +402,7 @@ export function Agent() {
     } catch (error) {
       console.error(error);
       setStatus("error");
-      toast.error("An error occurred");
+      toast.error("Anthropic API is overloaded. Please try again later.");
     } finally {
       abortControllerRef.current = null;
     }
