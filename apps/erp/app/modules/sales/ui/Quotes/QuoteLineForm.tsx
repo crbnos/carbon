@@ -42,6 +42,7 @@ import {
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { Quotation, QuotationLine } from "../../types";
 
+import { getItemReadableId } from "@carbon/utils";
 import { MethodIcon, MethodItemTypeIcon } from "~/components";
 import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
 import { QuoteLineStatusIcon } from "~/components/Icons";
@@ -53,7 +54,6 @@ import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/quote+/$quoteId.new";
 import { useItems } from "~/stores";
-import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 import { quoteLineStatusType, quoteLineValidator } from "../../sales.models";
 import DeleteQuoteLine from "./DeleteQuoteLine";

@@ -11,6 +11,7 @@ import {
   cn,
   toast,
 } from "@carbon/react";
+import { getMaterialDescription, getMaterialId } from "@carbon/utils";
 import { useFetcher } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
@@ -34,7 +35,6 @@ import Shape, { useShape } from "~/components/Form/Shape";
 import Substance, { useSubstance } from "~/components/Form/Substance";
 import { useNextItemId, usePermissions, useUser } from "~/hooks";
 import { useSettings } from "~/hooks/useSettings";
-import { getMaterialDescription, getMaterialId } from "~/utils/items";
 import { path } from "~/utils/path";
 import {
   itemTrackingTypes,

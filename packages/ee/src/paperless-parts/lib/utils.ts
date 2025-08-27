@@ -1,9 +1,17 @@
+import { openai } from "@ai-sdk/openai";
 import type { Database } from "@carbon/database";
-import { supportedModelTypes, textToTiptap } from "@carbon/utils";
+import {
+  getMaterialDescription,
+  getMaterialId,
+  openAiCategorizationModel,
+  supportedModelTypes,
+  textToTiptap,
+} from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { generateObject } from "ai";
 import { nanoid } from "nanoid";
-import type z from "zod";
-import type { PaperlessPartsClient } from "./client";
+import { z } from "zod";
+import type { PaperlessPartsClient, QuoteCostingVariable } from "./client";
 import type {
   AddressSchema,
   ContactSchema,
@@ -55,6 +63,660 @@ async function downloadFileFromUrl(
 function isModelFile(filename: string): boolean {
   const extension = filename.toLowerCase().split(".").pop() || "";
   return supportedModelTypes.includes(extension);
+}
+const substanceSchema = z.object({
+  substanceId: z
+    .string()
+    .describe("The ID of the best matching material substance"),
+  confidence: z
+    .number()
+    .min(0)
+    .max(1)
+    .describe("Confidence level of the match (0-1)"),
+  reasoning: z
+    .string()
+    .describe("Brief explanation of why this substance was chosen"),
+});
+
+async function determineMaterialSubstance(
+  carbon: SupabaseClient<Database>,
+  materialInfo: {
+    description: string;
+    materialName: string;
+    materialDisplayName: string;
+    materialFamily: string;
+    materialClass: string;
+    processName: string;
+  }
+): Promise<z.infer<typeof substanceSchema> | null> {
+  const substances = await carbon
+    .from("materialSubstance")
+    .select("id, name")
+    .is("companyId", null);
+
+  if (substances.error || !substances.data?.length) {
+    console.error("Failed to fetch material substances:", substances.error);
+    return null;
+  }
+
+  try {
+    const availableSubstances = substances.data
+      .map((s) => `${s.id}: ${s.name}`)
+      .join("\n");
+
+    const { object } = await generateObject({
+      model: openai(openAiCategorizationModel),
+      schema: substanceSchema,
+      prompt: `
+      Based on the following material information, determine the best matching material substance from the available options.
+      
+      Material Information:
+      - Description: ${materialInfo.description}
+      - Material Name: ${materialInfo.materialName}
+      - Material Display Name: ${materialInfo.materialDisplayName}
+      - Material Family: ${materialInfo.materialFamily}
+      - Material Class: ${materialInfo.materialClass}
+      - Process Name: ${materialInfo.processName}
+      
+      Available Material Substances:
+      ${availableSubstances}
+      
+      Select the substance that best matches the material information provided. Consider material type, grade, and common industry terminology.
+      `,
+      temperature: 0.2,
+    });
+
+    return object;
+  } catch (error) {
+    console.error("Failed to determine material substance using AI:", error);
+    return null;
+  }
+}
+
+const materialPropertiesSchema = z.object({
+  gradeId: z
+    .string()
+    .describe("The ID of the best matching material grade")
+    .nullable(),
+  dimensionId: z
+    .string()
+    .describe("The ID of the best matching material dimension")
+    .nullable(),
+  finishId: z
+    .string()
+    .describe("The ID of the best matching material finish")
+    .nullable(),
+  typeId: z
+    .string()
+    .describe("The ID of the best matching material type")
+    .nullable(),
+  quantity: z.number().describe("The quantity of the material properties"),
+  confidence: z.number().describe("Confidence level of the match (0-1)"),
+  reasoning: z
+    .string()
+    .describe("Brief explanation of why this material properties were chosen"),
+});
+
+// Cache for material properties by substance ID
+type MaterialPropertiesCache = {
+  grades: Array<{ id: string; name: string }>;
+  dimensions: Array<{ id: string; name: string; materialFormId: string }>;
+  finishes: Array<{ id: string; name: string }>;
+  types: Array<{ id: string; name: string; code: string }>;
+  forms: Array<{ id: string; name: string; code: string }>;
+  substance: { id: string; name: string; code: string };
+  timestamp: number;
+};
+
+const materialPropertiesCache = new Map<string, MaterialPropertiesCache>();
+
+// Cache TTL in milliseconds (30 minutes)
+const CACHE_TTL = 30 * 60 * 1000;
+
+/**
+ * Clean expired cache entries
+ */
+function cleanExpiredCache(): void {
+  const now = Date.now();
+  for (const [key, value] of materialPropertiesCache.entries()) {
+    if (now - value.timestamp > CACHE_TTL) {
+      materialPropertiesCache.delete(key);
+    }
+  }
+}
+
+/**
+ * Get cached material properties or fetch from database if not cached
+ */
+async function getCachedMaterialProperties(
+  carbon: SupabaseClient<Database>,
+  substanceId: string
+): Promise<MaterialPropertiesCache | null> {
+  // Clean expired entries periodically
+  if (materialPropertiesCache.size > 0) {
+    cleanExpiredCache();
+  }
+
+  // Check if we have cached data for this substance
+  const cached = materialPropertiesCache.get(substanceId);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached;
+  }
+
+  // Fetch from database
+  const [grades, dimensions, finishes, types, forms, substance] =
+    await Promise.all([
+      carbon
+        .from("materialGrade")
+        .select("id, name")
+        .is("companyId", null)
+        .eq("materialSubstanceId", substanceId),
+      carbon
+        .from("materialDimension")
+        .select("id, name, materialFormId")
+        .is("companyId", null)
+        .or("materialFormId.eq.plate,materialFormId.eq.sheet"),
+      carbon
+        .from("materialFinish")
+        .select("id, name")
+        .is("companyId", null)
+        .eq("materialSubstanceId", substanceId),
+      carbon
+        .from("materialType")
+        .select("id, name, code")
+        .is("companyId", null)
+        .eq("materialSubstanceId", substanceId),
+      carbon
+        .from("materialForm")
+        .select("id, name, code")
+        .or("code.eq.plate,code.eq.sheet")
+        .is("companyId", null),
+      carbon
+        .from("materialSubstance")
+        .select("id, name, code")
+        .eq("id", substanceId)
+        .single(),
+    ]);
+
+  // Check for any errors
+  if (
+    grades.error ||
+    dimensions.error ||
+    finishes.error ||
+    types.error ||
+    forms.error ||
+    substance.error
+  ) {
+    console.error("Error fetching material properties:", {
+      grades: grades.error,
+      dimensions: dimensions.error,
+      finishes: finishes.error,
+      types: types.error,
+      forms: forms.error,
+      substance: substance.error,
+    });
+    return null;
+  }
+
+  if (!substance.data) {
+    console.error(`Substance not found for ID: ${substanceId}`);
+    return null;
+  }
+
+  // Create cache entry
+  const cacheEntry: MaterialPropertiesCache = {
+    grades: grades.data || [],
+    dimensions: dimensions.data || [],
+    finishes: finishes.data || [],
+    types: types.data || [],
+    forms: forms.data || [],
+    substance: substance.data,
+    timestamp: Date.now(),
+  };
+
+  // Cache the result
+  materialPropertiesCache.set(substanceId, cacheEntry);
+
+  return cacheEntry;
+}
+
+/**
+ * Clear all cached material properties
+ */
+export function clearMaterialPropertiesCache(): void {
+  materialPropertiesCache.clear();
+  console.log("Material properties cache cleared");
+}
+
+/**
+ * Get current cache statistics
+ */
+export function getMaterialPropertiesCacheStats(): {
+  size: number;
+  substances: string[];
+  oldestEntry?: number;
+  newestEntry?: number;
+} {
+  const substances = Array.from(materialPropertiesCache.keys());
+  const timestamps = Array.from(materialPropertiesCache.values()).map(
+    (v) => v.timestamp
+  );
+
+  return {
+    size: materialPropertiesCache.size,
+    substances,
+    oldestEntry: timestamps.length > 0 ? Math.min(...timestamps) : undefined,
+    newestEntry: timestamps.length > 0 ? Math.max(...timestamps) : undefined,
+  };
+}
+
+export type MaterialNamingDetails = {
+  // IDs for database operations
+  gradeId?: string | null;
+  dimensionId?: string | null;
+  finishId?: string | null;
+  formId?: string;
+  typeId?: string | null;
+
+  // Names for getMaterialDescription
+  materialType?: string;
+  substance?: string;
+  grade?: string;
+  shape?: string;
+  dimensions?: string;
+  finish?: string;
+
+  // Codes for getMaterialId
+  materialTypeCode?: string;
+  substanceCode?: string;
+  shapeCode?: string;
+
+  // Other properties
+  quantity?: number;
+  confidence?: number;
+  reasoning?: string;
+};
+
+type PaperlessPartsMaterialInput = {
+  description?: string;
+  material?: {
+    display_name?: string;
+    family?: string;
+    material_class?: string;
+    name?: string;
+  };
+  material_operations?: {
+    costing_variables?: QuoteCostingVariable[];
+  }[];
+  process?: {
+    name?: string;
+  };
+  quantities?: {
+    quantity?: number;
+  }[];
+};
+
+async function determineMaterialProperties(
+  carbon: SupabaseClient<Database>,
+  substanceId: string,
+  materialInfo: PaperlessPartsMaterialInput
+): Promise<MaterialNamingDetails | null> {
+  // Get cached or fresh material properties
+  const materialProperties = await getCachedMaterialProperties(
+    carbon,
+    substanceId
+  );
+
+  if (!materialProperties) {
+    return null;
+  }
+
+  const { grades, dimensions, finishes, types, forms, substance } =
+    materialProperties;
+
+  const { object } = await generateObject({
+    model: openai(openAiCategorizationModel),
+    schema: materialPropertiesSchema,
+    prompt: `
+    Based on the following material information, determine the best matching material properties from the available options.
+
+    If the material is sheet metal, the quantity returned should be the parts per sheet. Use the materialFormId from the dimension to determine the formId to return.
+    
+    Material Information:
+    - Description: ${materialInfo.description}
+    - Material Name: ${materialInfo.material?.name}
+    - Material Display Name: ${materialInfo.material?.display_name}
+    - Material Family: ${materialInfo.material?.family}
+    - Material Class: ${materialInfo.material?.material_class}
+    - Process Name: ${materialInfo.process?.name}
+
+    - Material Metadata:
+    ${materialInfo.material_operations
+      ?.map((op) =>
+        op.costing_variables
+          ?.map((cv) => `- ${cv.label}: ${cv.value}`)
+          .join("\n")
+      )
+      .filter(Boolean)
+      .join("\n")}
+    
+    Available Material Properties:
+    - Grades: ${grades.map((g) => `${g.id}: ${g.name}`).join("\n")}
+    - Dimensions: ${dimensions
+      .map((d) => `${d.id}: ${d.name}, ${d.materialFormId}`)
+      .join("\n")}
+    - Finishes: ${finishes.map((f) => `${f.id}: ${f.name}`).join("\n")}
+    - Types: ${types.map((t) => `${t.id}: ${t.name}`).join("\n")}
+    
+    Select the properties that best match the material information provided. Consider material type, grade, and common industry terminology.
+    `,
+    temperature: 0.2,
+  });
+
+  if (object.confidence < 0.5) {
+    return null;
+  }
+
+  const dimension = dimensions.find((d) => d.id === object.dimensionId);
+  const form = forms.find((f) => f.id === dimension?.materialFormId);
+  const grade = grades.find((g) => g.id === object.gradeId);
+  const finish = finishes.find((f) => f.id === object.finishId);
+  const type = types.find((t) => t.id === object.typeId);
+
+  // Return enhanced structure with both IDs, names, and codes
+  return {
+    // IDs for database operations
+    gradeId: object.gradeId,
+    dimensionId: object.dimensionId,
+    finishId: object.finishId,
+    formId: dimension?.materialFormId,
+    typeId: object.typeId,
+
+    // Names for getMaterialDescription
+    materialType: type?.name,
+    substance: substance.name,
+    grade: grade?.name,
+    shape: form?.name,
+    dimensions: dimension?.name,
+    finish: finish?.name,
+
+    // Codes for getMaterialId
+    materialTypeCode: type?.code,
+    substanceCode: substance.code,
+    shapeCode: form?.code,
+
+    // Other properties
+    quantity: object.quantity,
+    confidence: object.confidence,
+    reasoning: object.reasoning,
+  };
+}
+
+/**
+ * Get material properties with names and codes needed for getMaterialId and getMaterialDescription
+ *
+ * @example
+ * ```typescript
+ * const materialProps = await getMaterialProperties(client, materialId, companyId);
+ * if (materialProps) {
+ *   const newMaterialId = getMaterialId(materialProps);
+ *   const newDescription = getMaterialDescription(materialProps);
+ * }
+ * ```
+ *
+ * @param carbon - Supabase client
+ * @param materialId - The material ID (readableId)
+ * @param companyId - The company ID
+ * @returns Material naming details with both names and codes
+ */
+export async function getMaterialProperties(
+  carbon: SupabaseClient<Database>,
+  materialId: string,
+  companyId: string
+): Promise<MaterialNamingDetails | null> {
+  try {
+    const materialNamingDetails = await carbon
+      .rpc("get_material_naming_details", { readable_id: materialId })
+      .single();
+
+    if (materialNamingDetails.error || !materialNamingDetails.data) {
+      console.error(
+        "Failed to get material naming details:",
+        materialNamingDetails.error
+      );
+      return null;
+    }
+
+    const details = materialNamingDetails.data;
+
+    return {
+      // IDs for database operations (not available from this function)
+      gradeId: null,
+      dimensionId: null,
+      finishId: null,
+      formId: undefined,
+      typeId: null,
+
+      // Names for getMaterialDescription
+      materialType: details.materialType,
+      substance: details.substance,
+      grade: details.grade,
+      shape: details.shape,
+      dimensions: details.dimensions,
+      finish: details.finish,
+
+      // Codes for getMaterialId
+      materialTypeCode: details.materialTypeCode,
+      substanceCode: details.substanceCode,
+      shapeCode: details.shapeCode,
+
+      // Other properties
+      quantity: undefined,
+      confidence: undefined,
+      reasoning: undefined,
+    };
+  } catch (error) {
+    console.error("Error getting material properties:", error);
+    return null;
+  }
+}
+
+export async function getOrCreateMaterial(
+  carbon: SupabaseClient<Database>,
+  args: {
+    input: PaperlessPartsMaterialInput;
+    createdBy: string;
+    companyId: string;
+  }
+): Promise<{
+  itemId: string;
+  unitOfMeasureCode: string;
+  quantity: number;
+}> | null {
+  if (
+    args.input.process?.name?.toLowerCase().includes("laser") ||
+    args.input.process?.name?.toLowerCase().includes("plasma") ||
+    args.input.process?.name?.toLowerCase().includes("jet")
+  ) {
+    const materialInfo = {
+      description: args.input.description || "",
+      materialName: args.input.material?.name || "",
+      materialDisplayName: args.input.material?.display_name || "",
+      materialFamily: args.input.material?.family || "",
+      materialClass: args.input.material?.material_class || "",
+      processName: args.input.process?.name || "",
+    };
+
+    const substanceResult = await determineMaterialSubstance(
+      carbon,
+      materialInfo
+    );
+
+    if (!substanceResult) {
+      return null;
+    }
+
+    const materialPropertiesResult = await determineMaterialProperties(
+      carbon,
+      substanceResult.substanceId,
+      args.input
+    );
+
+    if (!materialPropertiesResult) {
+      return null;
+    }
+
+    console.log({
+      quantity: materialPropertiesResult.quantity,
+      quantities: args.input.quantities,
+    });
+
+    // Use quantity from material properties AI determination, fallback to input quantity
+    const quantity = materialPropertiesResult.quantity
+      ? 1 / materialPropertiesResult.quantity
+      : args.input.quantities?.[0]?.quantity || 1;
+
+    let materialQuery = carbon
+      .from("material")
+      .select("id")
+      .eq("companyId", args.companyId);
+
+    if (substanceResult.substanceId) {
+      materialQuery = materialQuery.eq(
+        "materialSubstanceId",
+        substanceResult.substanceId
+      );
+    } else {
+      materialQuery = materialQuery.is("materialSubstanceId", null);
+    }
+
+    if (materialPropertiesResult?.gradeId) {
+      materialQuery = materialQuery.eq(
+        "gradeId",
+        materialPropertiesResult.gradeId
+      );
+    } else {
+      materialQuery = materialQuery.is("gradeId", null);
+    }
+
+    if (materialPropertiesResult?.dimensionId) {
+      materialQuery = materialQuery.eq(
+        "dimensionId",
+        materialPropertiesResult.dimensionId
+      );
+    } else {
+      materialQuery = materialQuery.is("dimensionId", null);
+    }
+
+    if (materialPropertiesResult?.finishId) {
+      materialQuery = materialQuery.eq(
+        "finishId",
+        materialPropertiesResult.finishId
+      );
+    } else {
+      materialQuery = materialQuery.is("finishId", null);
+    }
+
+    if (materialPropertiesResult?.typeId) {
+      materialQuery = materialQuery.eq(
+        "materialTypeId",
+        materialPropertiesResult.typeId
+      );
+    } else {
+      materialQuery = materialQuery.is("materialTypeId", null);
+    }
+
+    const materialResult = await materialQuery.single();
+
+    if (materialResult.data) {
+      const item = await carbon
+        .from("item")
+        .select("id, revision, unitOfMeasureCode")
+        .eq("companyId", args.companyId)
+        .eq("readableId", materialResult.data.id);
+
+      if (item.error || !item.data?.length) {
+        console.error(`Failed to find item:`, item.error);
+        return null;
+      }
+
+      return {
+        itemId: item.data[0].id,
+        unitOfMeasureCode: item.data[0].unitOfMeasureCode ?? "EA",
+        quantity,
+      };
+    } else {
+      const readableId = getMaterialId({
+        materialTypeCode: materialPropertiesResult?.materialTypeCode,
+        substanceCode: materialPropertiesResult?.substanceCode,
+        grade: materialPropertiesResult?.grade,
+        shapeCode: materialPropertiesResult?.shapeCode,
+        dimensions: materialPropertiesResult?.dimensions,
+        finish: materialPropertiesResult?.finish,
+      });
+      const description = getMaterialDescription({
+        materialType: materialPropertiesResult?.materialType,
+        substance: materialPropertiesResult?.substance,
+        grade: materialPropertiesResult?.grade,
+        shape: materialPropertiesResult?.shape,
+        dimensions: materialPropertiesResult?.dimensions,
+        finish: materialPropertiesResult?.finish,
+      });
+
+      const itemInsert = await carbon
+        .from("item")
+        .insert({
+          readableId,
+          name: description,
+          type: "Material",
+          replenishmentSystem: "Buy",
+          defaultMethodType: "Buy",
+          itemTrackingType: "Inventory",
+          unitOfMeasureCode: "EA",
+          active: true,
+          companyId: args.companyId,
+          createdBy: args.createdBy,
+        })
+        .select("id, unitOfMeasureCode")
+        .single();
+
+      if (itemInsert.error) {
+        console.error(`Failed to insert item:`, itemInsert.error);
+        return null;
+      }
+
+      const materialData = {
+        id: readableId,
+        companyId: args.companyId,
+        materialSubstanceId: substanceResult.substanceId,
+        materialFormId: materialPropertiesResult?.formId,
+        gradeId: materialPropertiesResult?.gradeId,
+        dimensionId: materialPropertiesResult?.dimensionId,
+        finishId: materialPropertiesResult?.finishId,
+        materialTypeId: materialPropertiesResult?.typeId,
+        createdBy: args.createdBy,
+      };
+
+      const materialInsert = await carbon
+        .from("material")
+        .upsert(materialData)
+        .select("id")
+        .single();
+
+      if (materialInsert.error) {
+        console.error(`Failed to insert material:`, materialInsert.error);
+        return null;
+      }
+
+      return {
+        itemId: itemInsert.data.id,
+        unitOfMeasureCode: itemInsert.data.unitOfMeasureCode ?? "EA",
+        quantity,
+      };
+    }
+  }
+
+  return null;
 }
 
 /**
@@ -452,42 +1114,119 @@ export async function getCustomerIdAndContactId(
       }
     }
   } else {
-    // If the quote contact does not have an account, we need to create a new customer in Carbon
-    // and also create a corresponding account in Paperless Parts
+    // If the quote contact does not have an account, first search for existing accounts
+    // in Paperless Parts by name before creating a new one
     const customerName = `${contact.first_name} ${contact.last_name}`;
 
-    // // Create a new account in Paperless Parts
-    // const newPaperlessPartsAccount = await paperless.accounts.createAccount({
-    //   name: customerName,
-    // });
+    // Search for existing accounts in Paperless Parts by name
+    const existingAccountsResponse = await paperless.accounts.listAccounts({
+      search: customerName,
+    });
 
-    // if (newPaperlessPartsAccount.error || !newPaperlessPartsAccount.data) {
-    //   throw new Error("Failed to create account in Paperless Parts");
-    // }
+    let paperlessPartsAccountId: number;
+    let existingPaperlessAccount = null;
 
-    // const newPaperlessPartsAccountId = newPaperlessPartsAccount.data.id;
-
-    const newCustomer = await carbon
-      .from("customer")
-      .insert({
-        companyId: company.id,
-        name: customerName,
-        externalId: {
-          paperlessPartsId: "newPaperlessPartsAccountId",
-        },
-        currencyCode: company.baseCurrencyCode,
-        createdBy: "system",
-      })
-      .select()
-      .single();
-
-    if (newCustomer.error || !newCustomer.data) {
-      throw new Error("Failed to create customer in Carbon");
+    if (
+      existingAccountsResponse.data &&
+      existingAccountsResponse.data.length > 0
+    ) {
+      // Look for an exact name match
+      existingPaperlessAccount = existingAccountsResponse.data.find(
+        (account) => account.name === customerName
+      );
     }
 
-    console.info("🔰 New Carbon customer created");
+    if (existingPaperlessAccount) {
+      // Use the existing account ID
+      paperlessPartsAccountId = existingPaperlessAccount.id!;
+      console.info(
+        `🔗 Found existing Paperless Parts account: ${customerName}`
+      );
+    } else {
+      // Create a new account in Paperless Parts
+      const newPaperlessPartsAccount = await paperless.accounts.createAccount({
+        name: customerName,
+      });
 
-    customerId = newCustomer.data.id;
+      if (newPaperlessPartsAccount.error || !newPaperlessPartsAccount.data) {
+        throw new Error("Failed to create account in Paperless Parts");
+      }
+
+      paperlessPartsAccountId = newPaperlessPartsAccount.data.id;
+      console.info("🔰 New Paperless Parts account created");
+    }
+
+    // Check if customer already exists in Carbon with this paperless account ID
+    const existingCustomerByPaperlessId = await carbon
+      .from("customer")
+      .select("id")
+      .eq("companyId", company.id)
+      .eq("externalId->>paperlessPartsId", String(paperlessPartsAccountId))
+      .maybeSingle();
+
+    if (existingCustomerByPaperlessId.data) {
+      customerId = existingCustomerByPaperlessId.data.id;
+    } else {
+      // Try to find existing customer by name in Carbon
+      const existingCustomerByName = await carbon
+        .from("customer")
+        .select("id")
+        .eq("companyId", company.id)
+        .eq("name", customerName)
+        .maybeSingle();
+
+      if (existingCustomerByName.data) {
+        // Update the existing customer with the external ID
+        const updatedCustomer = await carbon
+          .from("customer")
+          .update({
+            externalId: {
+              paperlessPartsId: paperlessPartsAccountId,
+            },
+          })
+          .eq("id", existingCustomerByName.data.id)
+          .select()
+          .single();
+
+        if (updatedCustomer.error || !updatedCustomer.data) {
+          console.error(updatedCustomer.error);
+          throw new Error("Failed to update customer externalId in Carbon");
+        }
+
+        customerId = updatedCustomer.data.id;
+        console.info(
+          "🔗 Updated existing Carbon customer with Paperless Parts ID"
+        );
+      } else {
+        // Create a new customer in Carbon
+        const newCustomer = await carbon
+          .from("customer")
+          .upsert(
+            {
+              companyId: company.id,
+              name: customerName,
+              externalId: {
+                paperlessPartsId: paperlessPartsAccountId,
+              },
+              currencyCode: company.baseCurrencyCode,
+              createdBy,
+            },
+            {
+              onConflict: "name, companyId",
+            }
+          )
+          .select()
+          .single();
+
+        if (newCustomer.error || !newCustomer.data) {
+          console.error(newCustomer.error);
+          throw new Error("Failed to create customer in Carbon");
+        }
+
+        console.info("🔰 New Carbon customer created");
+        customerId = newCustomer.data.id;
+      }
+    }
   }
 
   // Get the contact ID from Carbon based on the Paperless Parts ID
@@ -1029,23 +1768,29 @@ export async function createPartFromComponent(
     Database["public"]["Tables"]["methodOperation"]["Insert"],
     "makeMethodId"
   >[] = [];
+  const materials: Omit<
+    Database["public"]["Tables"]["methodMaterial"]["Insert"],
+    "makeMethodId"
+  >[] = [];
 
-  // // Log costing variables and quantities if they exist
-  // if (component.material_operations) {
-  //   component.material_operations.forEach((operation: any) => {
-  //     console.log("material operation", operation);
-  //     if (operation.costing_variables) {
-  //       operation.costing_variables.forEach((cv: any) => {
-  //         console.log("material costing_variable", cv.costing_variable);
-  //       });
-  //     }
-  //     if (operation.quantities) {
-  //       operation.quantities.forEach((q: any) => {
-  //         console.log("material quantity", q.quantity);
-  //       });
-  //     }
-  //   });
-  // }
+  if (component.material_operations || component.material) {
+    const material = await getOrCreateMaterial(carbon, {
+      companyId,
+      createdBy,
+      input: component,
+    });
+
+    if (material) {
+      materials.push({
+        itemId: material.itemId,
+        itemType: "Material",
+        quantity: material.quantity,
+        companyId,
+        createdBy,
+        unitOfMeasureCode: "EA",
+      });
+    }
+  }
 
   if (component.shop_operations) {
     for await (const [
@@ -1060,7 +1805,7 @@ export async function createPartFromComponent(
           createdBy
         );
         if (process) {
-          console.log({ operation });
+          // console.log({ operation });
           operations.push({
             order: operation.position ?? index + 1,
             operationOrder: "After Previous",
@@ -1184,17 +1929,34 @@ export async function createPartFromComponent(
   const makeMethodId = makeMethod.data?.id;
 
   if (makeMethodId) {
-    const operationInsert = await carbon.from("methodOperation").insert(
-      operations.map((operation) => ({
-        ...operation,
-        makeMethodId,
-      }))
-    );
-    if (operationInsert.error) {
-      console.error(
-        "Failed to create method operations:",
-        operationInsert.error
+    if (operations.length) {
+      const operationInsert = await carbon.from("methodOperation").insert(
+        operations.map((operation) => ({
+          ...operation,
+          makeMethodId,
+        }))
       );
+      if (operationInsert.error) {
+        console.error(
+          "Failed to create method operations:",
+          operationInsert.error
+        );
+      }
+    }
+
+    if (materials.length) {
+      const materialInsert = await carbon.from("methodMaterial").insert(
+        materials.map((material) => ({
+          ...material,
+          makeMethodId,
+        }))
+      );
+      if (materialInsert.error) {
+        console.error(
+          "Failed to create method materials:",
+          materialInsert.error
+        );
+      }
     }
   }
 
@@ -1341,6 +2103,8 @@ export async function insertOrderLines(
           createdBy,
           component,
         });
+
+        // console.log("component", component);
 
         // Calculate quantities
         const saleQuantity =

@@ -16,7 +16,7 @@ import {
   useKeyboardShortcuts,
   VStack,
 } from "@carbon/react";
-import { prettifyKeyboardShortcut } from "@carbon/utils";
+import { getItemReadableId, prettifyKeyboardShortcut } from "@carbon/utils";
 import { Link, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
 import { LuCirclePlus, LuEllipsisVertical, LuTrash } from "react-icons/lu";
@@ -32,7 +32,6 @@ import type { Supplier } from "~/modules/purchasing/types";
 import type { MethodItemType } from "~/modules/shared";
 import { methodItemType } from "~/modules/shared";
 import { useItems } from "~/stores";
-import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 import type { SalesInvoice, SalesInvoiceLine } from "../../types";
 import DeleteSalesInvoiceLine from "./DeleteSalesInvoiceLine";

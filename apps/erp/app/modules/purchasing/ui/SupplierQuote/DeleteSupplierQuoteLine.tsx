@@ -1,7 +1,7 @@
+import { getItemReadableId } from "@carbon/utils";
 import { useParams } from "@remix-run/react";
 import { ConfirmDelete } from "~/components/Modals";
 import { useItems } from "~/stores";
-import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 
 export default function DeleteSupplierQuoteLine({
