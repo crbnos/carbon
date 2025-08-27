@@ -13,7 +13,7 @@ import {
   Tr,
   VStack,
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
+import { formatDate, getItemReadableId } from "@carbon/utils";
 import { useLocale } from "@react-aria/i18n";
 import { Link, useParams } from "@remix-run/react";
 import { motion } from "framer-motion";
@@ -28,7 +28,6 @@ import {
   useUser,
 } from "~/hooks";
 import { useItems } from "~/stores";
-import { getItemReadableId } from "~/utils/items";
 import { getPrivateUrl, path } from "~/utils/path";
 import type {
   SalesInvoice,

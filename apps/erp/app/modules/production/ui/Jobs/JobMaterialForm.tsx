@@ -18,6 +18,7 @@ import {
 
 import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
+import { getItemReadableId } from "@carbon/utils";
 import { useEffect, useState } from "react";
 import type { z } from "zod";
 import {
@@ -34,7 +35,6 @@ import {
 import { usePermissions, useRouteData } from "~/hooks";
 import type { MethodItemType, MethodType } from "~/modules/shared";
 import { useBom, useItems } from "~/stores";
-import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 import type { jobOperationValidator } from "../../production.models";
 import { jobMaterialValidator } from "../../production.models";

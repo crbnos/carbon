@@ -65,6 +65,7 @@ import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useUser } from "~/hooks";
 
 import type { Database } from "@carbon/database";
+import { getItemReadableId } from "@carbon/utils";
 import { ConfigurationEditor } from "~/components/Configurator/ConfigurationEditor";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import {
@@ -73,7 +74,6 @@ import {
   type MethodType,
 } from "~/modules/shared";
 import { useBom, useItems, type Item as ItemType } from "~/stores";
-import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 import type { methodOperationValidator } from "../../items.models";
 import { methodMaterialValidator } from "../../items.models";

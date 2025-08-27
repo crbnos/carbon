@@ -44,9 +44,9 @@ import {
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 
 import { useCarbon } from "@carbon/auth";
+import { getItemReadableId } from "@carbon/utils";
 import { methodType } from "~/modules/shared";
 import { useItems } from "~/stores";
-import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 import { salesOrderLineValidator } from "../../sales.models";
 import type {

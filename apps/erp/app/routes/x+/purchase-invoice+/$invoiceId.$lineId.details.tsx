@@ -4,6 +4,7 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import { Spinner } from "@carbon/react";
+import { getItemReadableId } from "@carbon/utils";
 import { Await, Outlet, useLoaderData, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
@@ -22,7 +23,6 @@ import {
 } from "~/modules/purchasing/ui/SupplierInteraction";
 import { useItems } from "~/stores";
 import { getCustomFields, setCustomFields } from "~/utils/form";
-import { getItemReadableId } from "~/utils/items";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
