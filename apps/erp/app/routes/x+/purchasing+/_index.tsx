@@ -104,14 +104,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
           }
         )
         .in("status", OPEN_PURCHASE_ORDER_STATUSES)
-        .eq("companyId", companyId),
+        .eq("companyId", companyId)
+        .limit(10),
       client
         .from("purchaseInvoice")
         .select("id, invoiceId, status, supplierId, assignee, createdAt", {
           count: "exact",
         })
         .in("status", OPEN_INVOICE_STATUSES)
-        .eq("companyId", companyId),
+        .eq("companyId", companyId)
+        .limit(10),
       client
         .from("supplierQuote")
         .select(
@@ -121,7 +123,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
           }
         )
         .in("status", OPEN_SUPPLIER_QUOTE_STATUSES)
-        .eq("companyId", companyId),
+        .eq("companyId", companyId)
+        .limit(10),
     ]);
 
   return defer({

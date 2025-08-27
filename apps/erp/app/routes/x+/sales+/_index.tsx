@@ -94,21 +94,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
         count: "exact",
       })
       .in("status", OPEN_SALES_ORDER_STATUSES)
-      .eq("companyId", companyId),
+      .eq("companyId", companyId)
+      .limit(10),
     client
       .from("quote")
       .select("id, quoteId, status, customerId, assignee, createdAt", {
         count: "exact",
       })
       .in("status", OPEN_QUOTE_STATUSES)
-      .eq("companyId", companyId),
+      .eq("companyId", companyId)
+      .limit(10),
     client
       .from("salesRfq")
       .select("id, rfqId, status, customerId, assignee, createdAt", {
         count: "exact",
       })
       .in("status", OPEN_RFQ_STATUSES)
-      .eq("companyId", companyId),
+      .eq("companyId", companyId)
+      .limit(10),
   ]);
 
   return defer({
