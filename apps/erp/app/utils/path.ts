@@ -1234,6 +1234,7 @@ export const path = {
     shipmentLinesTracking: (id: string) =>
       generatePath(`${x}/shipment/lines/tracking`),
     shipmentPost: (id: string) => generatePath(`${x}/shipment/${id}/post`),
+    shipmentVoid: (id: string) => generatePath(`${x}/shipment/${id}/void`),
     shippingMethod: (id: string) =>
       generatePath(`${x}/inventory/shipping-methods/${id}`),
     warehouseTransfers: `${x}/inventory/warehouse-transfers`,

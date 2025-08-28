@@ -21,6 +21,7 @@ import {
   LuQrCode,
   LuShoppingCart,
   LuTruck,
+  LuX,
 } from "react-icons/lu";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemTracking, Shipment, ShipmentLine } from "~/modules/inventory";
@@ -33,6 +34,7 @@ import type { SalesInvoice } from "~/modules/invoicing/types";
 import SalesInvoiceStatus from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceStatus";
 import { path } from "~/utils/path";
 import ShipmentPostModal from "./ShipmentPostModal";
+import ShipmentVoidModal from "./ShipmentVoidModal";
 import ShipmentStatus from "./ShipmentStatus";
 
 const ShipmentHeader = () => {
@@ -52,6 +54,7 @@ const ShipmentHeader = () => {
 
   const permissions = usePermissions();
   const postModal = useDisclosure();
+  const voidModal = useDisclosure();
   const navigate = useNavigate();
 
   const canPost =
@@ -59,6 +62,7 @@ const ShipmentHeader = () => {
     routeData.shipmentLines.some((line) => (line.shippedQuantity ?? 0) !== 0);
 
   const isPosted = routeData.shipment.status === "Posted";
+  const isVoided = routeData.shipment.status === "Voided";
   // const isInvoiced = routeData.shipment.invoiced;
   const hasTrackingLabels = routeData.shipmentLineTracking.some(
     (line) => "Split Entity ID" in (line.attributes as TrackedEntityAttributes)
@@ -322,11 +326,22 @@ const ShipmentHeader = () => {
             >
               Post
             </Button>
+            {isPosted && !isVoided && (
+              <Button
+                variant="destructive"
+                onClick={voidModal.onOpen}
+                isDisabled={!permissions.is("employee")}
+                leftIcon={<LuX />}
+              >
+                Void
+              </Button>
+            )}
           </HStack>
         </HStack>
       </div>
 
       {postModal.isOpen && <ShipmentPostModal onClose={postModal.onClose} />}
+      {voidModal.isOpen && <ShipmentVoidModal onClose={voidModal.onClose} />}
     </>
   );
 };

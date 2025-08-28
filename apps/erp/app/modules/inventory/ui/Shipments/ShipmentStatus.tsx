@@ -17,6 +17,8 @@ const ShipmentStatus = ({ status, invoiced }: ShipmentStatusProps) => {
       return <Status color="orange">{status}</Status>;
     case "Posted":
       return <Status color="green">{status}</Status>;
+    case "Voided":
+      return <Status color="red">{status}</Status>;
     default:
       return null;
   }
