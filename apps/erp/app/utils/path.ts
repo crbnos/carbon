@@ -1155,6 +1155,8 @@ export const path = {
       generatePath(`${x}/sales-invoice/${id}/shipment`),
     salesInvoiceStatus: (id: string) =>
       generatePath(`${x}/sales-invoice/${id}/status`),
+    salesInvoiceVoid: (id: string) =>
+      generatePath(`${x}/sales-invoice/${id}/void`),
     salesInvoices: `${x}/sales/invoices`,
     salesOrder: (id: string) => generatePath(`${x}/sales-order/${id}`),
     salesOrderConfirm: (id: string) =>

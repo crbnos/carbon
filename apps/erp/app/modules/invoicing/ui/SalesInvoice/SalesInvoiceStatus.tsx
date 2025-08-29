@@ -15,10 +15,10 @@ const SalesInvoicingStatus = ({ status }: SalesInvoicingStatusProps) => {
     case "Pending":
     case "Partially Paid":
       return <Status color="orange">{status}</Status>;
+    case "Voided":
     case "Overdue":
       return <Status color="red">{status}</Status>;
     case "Credit Note Issued":
-    case "Voided":
     case "Paid":
       return <Status color="blue">{status}</Status>;
     default:

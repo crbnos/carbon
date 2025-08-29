@@ -20,8 +20,8 @@ import {
   LuCreditCard,
   LuQrCode,
   LuShoppingCart,
+  LuTicketX,
   LuTruck,
-  LuX,
 } from "react-icons/lu";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemTracking, Shipment, ShipmentLine } from "~/modules/inventory";
@@ -335,7 +335,7 @@ const ShipmentHeader = () => {
                 variant="destructive"
                 onClick={voidModal.onOpen}
                 isDisabled={isVoided || !permissions.is("employee")}
-                leftIcon={<LuX />}
+                leftIcon={<LuTicketX />}
               >
                 Void
               </Button>

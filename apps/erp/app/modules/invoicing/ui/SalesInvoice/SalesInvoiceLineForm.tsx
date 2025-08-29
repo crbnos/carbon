@@ -1,4 +1,6 @@
 import {
+  Alert,
+  AlertTitle,
   cn,
   FormControl,
   FormLabel,
@@ -20,6 +22,7 @@ import { ValidatedForm } from "@carbon/form";
 import { getItemReadableId } from "@carbon/utils";
 import { useParams } from "@remix-run/react";
 import { useEffect, useState } from "react";
+import { LuCircleAlert } from "react-icons/lu";
 import type { z } from "zod";
 import { MethodIcon } from "~/components";
 import {
@@ -118,7 +121,10 @@ const SalesInvoiceLineForm = ({
   ]);
 
   const isEditing = initialValues.id !== undefined;
+  const hasInvalidMethodType = itemData.methodType === "Make";
   const isDisabled = !isEditable
+    ? true
+    : hasInvalidMethodType
     ? true
     : isEditing
     ? !permissions.can("update", "purchasing")
@@ -170,20 +176,13 @@ const SalesInvoiceLineForm = ({
 
         const itemCost = item?.data?.itemCost?.[0];
         const trackingType = item?.data?.itemTrackingType;
-        const methodType = item?.data?.defaultMethodType;
 
-        // Check if item requires a sales order
-        if (
-          trackingType === "Batch" ||
-          trackingType === "Serial" ||
-          methodType === "Make"
-        ) {
+        // Check if item requires a sales order (excluding Make items which can be changed to Pick)
+        if (trackingType === "Batch" || trackingType === "Serial") {
           const errorMessage =
             trackingType === "Batch"
               ? "Batch items require a sales order"
-              : trackingType === "Serial"
-              ? "Serial items require a sales order"
-              : "Make items require a sales order";
+              : "Serial items require a sales order";
           toast.error(errorMessage);
           setItemData({
             itemId: "",
@@ -297,6 +296,15 @@ const SalesInvoiceLineForm = ({
               />
 
               <VStack>
+                {itemData.methodType === "Make" && (
+                  <Alert variant="destructive" className="mb-4">
+                    <LuCircleAlert className="w-4 h-4" />
+                    <AlertTitle>
+                      Make items cannot be invoiced directly. Change method to
+                      Pick to continue.
+                    </AlertTitle>
+                  </Alert>
+                )}
                 <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
                   <Item
                     name="itemId"
@@ -326,29 +334,31 @@ const SalesInvoiceLineForm = ({
                     itemType
                   ) && (
                     <>
-                      <SelectControlled
-                        name="methodType"
-                        label="Method"
-                        options={
-                          methodType.map((m) => ({
-                            label: (
-                              <span className="flex items-center gap-2">
-                                <MethodIcon type={m} />
-                                {m}
-                              </span>
-                            ),
-                            value: m,
-                          })) ?? []
-                        }
-                        value={itemData.methodType}
-                        onChange={(newValue) => {
-                          if (newValue)
-                            setItemData((d) => ({
-                              ...d,
-                              methodType: newValue?.value,
-                            }));
-                        }}
-                      />
+                      <div className="space-y-2">
+                        <SelectControlled
+                          name="methodType"
+                          label="Method"
+                          options={
+                            methodType.map((m) => ({
+                              label: (
+                                <span className="flex items-center gap-2">
+                                  <MethodIcon type={m} />
+                                  {m}
+                                </span>
+                              ),
+                              value: m,
+                            })) ?? []
+                          }
+                          value={itemData.methodType}
+                          onChange={(newValue) => {
+                            if (newValue)
+                              setItemData((d) => ({
+                                ...d,
+                                methodType: newValue?.value,
+                              }));
+                          }}
+                        />
+                      </div>
 
                       <NumberControlled
                         name="quantity"
