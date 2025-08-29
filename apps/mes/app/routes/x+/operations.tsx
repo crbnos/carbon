@@ -1,4 +1,4 @@
-import { getCarbonServiceRole } from "@carbon/auth";
+import { getCarbonServiceRole, useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
   Button,
@@ -11,12 +11,22 @@ import {
   SidebarTrigger,
   Spinner,
   Switch,
+  toast,
+  useInterval,
   useLocalStorage,
+  useMount,
   VStack,
 } from "@carbon/react";
 import { json, redirect, useLoaderData } from "@remix-run/react";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "@vercel/remix";
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  getLocalTimeZone,
+  now,
+  parseAbsolute,
+  toZoned,
+} from "@internationalized/date";
 import { LuSettings2, LuTriangleAlert } from "react-icons/lu";
 
 import type { ColumnFilter } from "~/components/Filter";
@@ -24,7 +34,7 @@ import { ActiveFilters, Filter, useFilters } from "~/components/Filter";
 import type { Column, DisplaySettings, Item } from "~/components/Kanban";
 import { Kanban } from "~/components/Kanban";
 import SearchFilter from "~/components/SearchFilter";
-import { useUrlParams } from "~/hooks";
+import { useUrlParams, useUser } from "~/hooks";
 import { getLocation } from "~/services/location.server";
 import { getFilters, setFilters } from "~/services/operation.server";
 import {
@@ -51,18 +61,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const savedFilters = await getFilters(request);
 
   if (saved) {
-    if (savedFilters || filterParam.length === 0) {
-      const savedFiltersArray = savedFilters?.split(",") ?? [];
+    if (savedFilters && typeof savedFilters === "string") {
+      const savedFiltersArray = savedFilters.split(",");
       const newUrl = new URL(request.url);
       newUrl.searchParams.delete("saved");
       savedFiltersArray.forEach((filter) => {
         newUrl.searchParams.append("filter", filter);
       });
       return redirect(newUrl.toString());
+    } else if (filterParam.length === 0) {
+      // No saved filters and no current filters, just remove the saved param
+      const newUrl = new URL(request.url);
+      newUrl.searchParams.delete("saved");
+      return redirect(newUrl.toString());
     }
   } else {
     // Save current filters if they differ from saved ones
-    const savedFilters = await getFilters(request);
     const currentFiltersString = filterParam?.filter(Boolean).join(",");
     if (savedFilters !== currentFiltersString) {
       headers.append(
@@ -236,6 +250,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
           salesOrderLineId: op.salesOrderLineId,
           status: op.operationStatus,
           thumbnailPath: op.thumbnailPath,
+          quantity: op.operationQuantity,
+          quantityCompleted: op.quantityComplete,
+          quantityScrapped: op.quantityScrapped,
+          setupDuration: operation.setupDuration,
+          laborDuration: operation.laborDuration,
+          machineDuration: operation.machineDuration,
         };
       }) ?? []) satisfies Item[],
       processes: processes.data ?? [],
@@ -276,11 +296,27 @@ const defaultDisplaySettings: DisplaySettings = {
 const DISPLAY_SETTINGS_KEY = "kanban-schedule-display-settings";
 
 function KanbanSchedule() {
-  const { columns, items, processes, workCenters, availableTags } =
-    useLoaderData<typeof loader>();
+  const {
+    columns,
+    items: initialItems,
+    processes,
+    workCenters,
+    availableTags,
+  } = useLoaderData<typeof loader>();
+  const [items, setItems] = useState(initialItems);
   const [displaySettings, setDisplaySettings] = useLocalStorage(
     DISPLAY_SETTINGS_KEY,
     defaultDisplaySettings
+  );
+
+  const sortItems = useCallback((items: Item[]) => {
+    return items.sort((a, b) => a.priority - b.priority);
+  }, []);
+
+  const { progressByOperation } = useProgressByOperation(
+    items,
+    setItems,
+    sortItems
   );
 
   const [people] = usePeople();
@@ -411,7 +447,7 @@ function KanbanSchedule() {
                 items={items}
                 {...displaySettings}
                 showEmployee={false}
-                showProgress={false}
+                progressByItemId={progressByOperation}
               />
             ) : hasFilters ? (
               <div className="flex flex-col w-full h-full items-center justify-center gap-4">
@@ -438,4 +474,229 @@ function KanbanSchedule() {
       </div>
     </div>
   );
+}
+
+interface Event {
+  id: string;
+  jobOperationId: string;
+  duration: number | null;
+  startTime: string | null;
+  endTime: string | null;
+  employeeId: string | null;
+}
+
+interface Progress {
+  totalDuration: number;
+  progress: number;
+  active: boolean;
+  employees?: Set<string>;
+}
+
+function useProgressByOperation(
+  items: Item[],
+  setItems: React.Dispatch<React.SetStateAction<Item[]>>,
+  sortItems: (items: Item[]) => Item[]
+) {
+  const {
+    company: { id: companyId },
+  } = useUser();
+  const { carbon, accessToken } = useCarbon();
+
+  const [productionEventsByOperation, setProductionEventsByOperation] =
+    useState<Record<string, Event[]>>({});
+
+  const [progressByOperation, setProgressByOperation] = useState<
+    Record<string, Progress>
+  >({});
+
+  const getProductionEvents = useCallback(
+    async (operationIds: string[]) => {
+      if (!carbon) return;
+
+      const { data, error } = await carbon
+        .from("productionEvent")
+        .select(
+          "id, jobOperationId, duration, startTime, endTime, duration, employeeId"
+        )
+        .eq("companyId", companyId)
+        .in("jobOperationId", operationIds);
+
+      if (error) {
+        toast.error(error.message);
+      }
+
+      if (data) {
+        setProductionEventsByOperation(
+          data.reduce<Record<string, Event[]>>((acc, event) => {
+            acc[event.jobOperationId] = [
+              ...(acc[event.jobOperationId] ?? []),
+              event,
+            ];
+            return acc;
+          }, {})
+        );
+      }
+    },
+    [carbon, companyId]
+  );
+
+  useMount(() => {
+    getProductionEvents(items.map((item) => item.id));
+  });
+
+  const getProgress = useCallback(() => {
+    const timeNow = now(getLocalTimeZone());
+    const progress: Record<string, Progress> = {};
+
+    Object.entries(productionEventsByOperation).forEach(
+      ([operationId, events]) => {
+        const operation = items.find((item) => item.id === operationId);
+        const totalDuration =
+          (operation?.setupDuration ?? 0) +
+          (operation?.laborDuration ?? 0) +
+          (operation?.machineDuration ?? 0);
+
+        let currentProgress = 0;
+        let active = false;
+        let employees: Set<string> = new Set();
+        events.forEach((event) => {
+          if (event.endTime && event.duration) {
+            currentProgress += event.duration * 1000;
+          } else if (event.startTime) {
+            active = true;
+
+            if (event.employeeId) {
+              employees.add(event.employeeId);
+            }
+
+            const startTime = toZoned(
+              parseAbsolute(event.startTime, getLocalTimeZone()),
+              getLocalTimeZone()
+            );
+
+            const difference = timeNow.compare(startTime);
+            if (difference > 0) {
+              currentProgress += difference;
+            }
+          }
+        });
+
+        progress[operationId] = {
+          totalDuration,
+          progress: currentProgress,
+          active,
+          employees,
+        };
+      }
+    );
+
+    return { progress };
+  }, [productionEventsByOperation, items]);
+
+  useInterval(() => {
+    const { progress } = getProgress();
+
+    setProgressByOperation(progress);
+  }, 5000);
+
+  useEffect(() => {
+    if (Object.keys(productionEventsByOperation).length > 0) {
+      const { progress } = getProgress();
+      setProgressByOperation(progress);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productionEventsByOperation]);
+
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  useMount(() => {
+    if (!channelRef.current && carbon && accessToken) {
+      carbon.realtime.setAuth(accessToken);
+      channelRef.current = carbon
+        .channel(`kanban-schedule:${companyId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "jobOperation",
+            filter: `id=in.(${items.map((item) => item.id).join(",")})`,
+          },
+          (payload) => {
+            switch (payload.eventType) {
+              case "UPDATE": {
+                const { new: updated } = payload;
+                setItems((prevItems: Item[]) =>
+                  sortItems(
+                    prevItems.map((item: Item) => {
+                      if (item.id === updated.id) {
+                        return {
+                          ...item,
+                          columnId: updated.workCenterId,
+                          priority: updated.priority,
+                        };
+                      }
+                      return item;
+                    })
+                  )
+                );
+                break;
+              }
+              case "DELETE": {
+                const { old: deleted } = payload;
+                setItems((prevItems: Item[]) =>
+                  sortItems(
+                    prevItems.filter((item: Item) => item.id !== deleted.id)
+                  )
+                );
+                break;
+              }
+            }
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "productionEvent",
+            filter: `companyId=eq.${companyId}`,
+          },
+          (payload) => {
+            if (payload.new) {
+              const event = payload.new as Event;
+              if (items.some((item) => item.id === event.jobOperationId)) {
+                setProductionEventsByOperation((prev) => ({
+                  ...prev,
+                  [event.jobOperationId]: [
+                    ...(prev[event.jobOperationId] ?? []),
+                    event,
+                  ],
+                }));
+              }
+            } else if (payload.old) {
+              const event = payload.old as Event;
+              if (items.some((item) => item.id === event.jobOperationId)) {
+                setProductionEventsByOperation((prev) => ({
+                  ...prev,
+                  [event.jobOperationId]: (
+                    prev[event.jobOperationId] ?? []
+                  ).filter((e) => e.id !== event.id),
+                }));
+              }
+            }
+          }
+        )
+        .subscribe();
+    }
+  });
+
+  useEffect(() => {
+    return () => {
+      if (channelRef.current) {
+        carbon?.removeChannel(channelRef.current);
+      }
+    };
+  }, [carbon]);
+
+  return { progressByOperation };
 }

@@ -16,16 +16,25 @@ import { useUrlParams } from "~/hooks";
 import type { Column, ColumnDragData, DisplaySettings, Item } from "../types";
 import { ItemCard } from "./ItemCard";
 
+interface Progress {
+  totalDuration: number;
+  progress: number;
+  active: boolean;
+  employees?: Set<string>;
+}
+
 type ColumnCardProps = {
   column: Column;
   items: Item[];
   isOverlay?: boolean;
+  progressByItemId?: Record<string, Progress>;
 } & DisplaySettings;
 
 export function ColumnCard({
   column,
   items,
   isOverlay,
+  progressByItemId,
   ...displaySettings
 }: ColumnCardProps) {
   const [params] = useUrlParams();
@@ -117,7 +126,12 @@ export function ColumnCard({
         <div className="flex flex-col gap-2 p-2">
           <SortableContext items={itemsIds}>
             {items.map((item) => (
-              <ItemCard key={item.id!} item={item} {...displaySettings} />
+              <ItemCard
+                key={item.id!}
+                item={item}
+                progressByItemId={progressByItemId}
+                {...displaySettings}
+              />
             ))}
           </SortableContext>
         </div>

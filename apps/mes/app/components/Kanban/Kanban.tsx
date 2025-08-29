@@ -20,14 +20,27 @@ import { BoardContainer, ColumnCard } from "./components/ColumnCard";
 import type { Column, DisplaySettings, Item } from "./types";
 import { coordinateGetter, hasDraggableData } from "./utils";
 
+interface Progress {
+  totalDuration: number;
+  progress: number;
+  active: boolean;
+  employees?: Set<string>;
+}
+
 type KanbanProps = {
   columns: Column[];
   items: Item[];
+  progressByItemId?: Record<string, Progress>;
 } & DisplaySettings;
 
 const COLUMN_ORDER_KEY = "kanban-column-order";
 
-const Kanban = ({ columns, items, ...displaySettings }: KanbanProps) => {
+const Kanban = ({
+  columns,
+  items,
+  progressByItemId,
+  ...displaySettings
+}: KanbanProps) => {
   const [columnOrder, setColumnOrder] = useState<string[]>(() => {
     // Get stored column order from localStorage
     const storedOrder = localStorage.getItem(COLUMN_ORDER_KEY);
@@ -127,6 +140,7 @@ const Kanban = ({ columns, items, ...displaySettings }: KanbanProps) => {
                 key={col.id}
                 column={col}
                 items={items.filter((item) => item.columnId === col.id)}
+                progressByItemId={progressByItemId}
                 {...displaySettings}
               />
             );
@@ -145,6 +159,7 @@ const Kanban = ({ columns, items, ...displaySettings }: KanbanProps) => {
                   items={items.filter(
                     (item) => item.columnId === activeColumn.id
                   )}
+                  progressByItemId={progressByItemId}
                   {...displaySettings}
                 />
               )}
