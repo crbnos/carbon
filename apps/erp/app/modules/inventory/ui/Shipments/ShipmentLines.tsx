@@ -209,6 +209,8 @@ const ShipmentLines = () => {
   );
 
   const isPosted = routeData?.shipment?.status === "Posted";
+  const isVoided = routeData?.shipment?.status === "Voided";
+  const isReadOnly = isPosted || isVoided;
 
   return (
     <>
@@ -255,7 +257,7 @@ const ShipmentLines = () => {
                           );
                         }) ?? false
                       }
-                      isReadOnly={isPosted}
+                      isReadOnly={isReadOnly}
                       onUpdate={onUpdateShipmentLine}
                       className={
                         index === shipmentLines.length - 1 ? "border-none" : ""

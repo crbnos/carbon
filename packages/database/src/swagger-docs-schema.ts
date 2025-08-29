@@ -73400,7 +73400,7 @@ export default {
         },
         status: {
           default: "Draft",
-          enum: ["Draft", "Pending", "Posted"],
+          enum: ["Draft", "Pending", "Posted", "Voided"],
           format: 'public."shipmentStatus"',
           type: "string",
         },

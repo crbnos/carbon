@@ -34,8 +34,8 @@ import type { SalesInvoice } from "~/modules/invoicing/types";
 import SalesInvoiceStatus from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceStatus";
 import { path } from "~/utils/path";
 import ShipmentPostModal from "./ShipmentPostModal";
-import ShipmentVoidModal from "./ShipmentVoidModal";
 import ShipmentStatus from "./ShipmentStatus";
+import ShipmentVoidModal from "./ShipmentVoidModal";
 
 const ShipmentHeader = () => {
   const { shipmentId } = useParams();
@@ -221,7 +221,7 @@ const ShipmentHeader = () => {
                         ) : (
                           <Button
                             leftIcon={<LuCreditCard />}
-                            variant={"primary"}
+                            variant={isVoided ? "secondary" : "primary"}
                             isDisabled={!isPosted}
                             onClick={() => {
                               invoice(routeData?.shipment);
@@ -319,18 +319,22 @@ const ShipmentHeader = () => {
               </>
             )}
             <Button
-              variant={canPost && !isPosted ? "primary" : "secondary"}
+              variant={
+                canPost && !isPosted && !isVoided ? "primary" : "secondary"
+              }
               onClick={postModal.onOpen}
-              isDisabled={!canPost || isPosted || !permissions.is("employee")}
+              isDisabled={
+                !canPost || isPosted || isVoided || !permissions.is("employee")
+              }
               leftIcon={<LuCheckCheck />}
             >
               Post
             </Button>
-            {isPosted && !isVoided && (
+            {(isPosted || isVoided) && (
               <Button
                 variant="destructive"
                 onClick={voidModal.onOpen}
-                isDisabled={!permissions.is("employee")}
+                isDisabled={isVoided || !permissions.is("employee")}
                 leftIcon={<LuX />}
               >
                 Void

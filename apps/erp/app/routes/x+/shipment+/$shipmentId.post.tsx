@@ -110,6 +110,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     const postShipment = await serviceRole.functions.invoke("post-shipment", {
       body: {
+        type: "post",
         shipmentId: shipmentId,
         userId: userId,
         companyId: companyId,

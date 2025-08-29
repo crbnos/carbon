@@ -1,4 +1,4 @@
-import { error, getCarbonServiceRole } from "@carbon/auth";
+import { error, getCarbonServiceRole, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { FunctionRegion } from "@supabase/supabase-js";
@@ -29,13 +29,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
         path.to.shipmentDetails(shipmentId),
         await flash(
           request,
-          error(new Error("Can only void posted shipments"), "Invalid operation")
+          error(
+            new Error("Can only void posted shipments"),
+            "Invalid operation"
+          )
         )
       );
     }
 
-    const voidShipment = await serviceRole.functions.invoke("void-shipment", {
+    const voidShipment = await serviceRole.functions.invoke("post-shipment", {
       body: {
+        type: "void",
         shipmentId: shipmentId,
         userId: userId,
         companyId: companyId,
@@ -53,21 +57,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    throw redirect(
+    return redirect(
       path.to.shipmentDetails(shipmentId),
-      await flash(request, {
-        type: "success",
-        title: "Shipment voided",
-        message: "The shipment has been successfully voided",
-      })
+      await flash(request, success("Shipment voided"))
     );
   } catch (err) {
     throw redirect(
       path.to.shipmentDetails(shipmentId),
-      await flash(
-        request,
-        error(err, "Failed to void shipment")
-      )
+      await flash(request, error(err, "Failed to void shipment"))
     );
   }
 }
