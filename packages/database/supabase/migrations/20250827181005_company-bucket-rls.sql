@@ -78,6 +78,7 @@ DROP POLICY IF EXISTS "Thumbnail insert requires parts_update" ON storage.object
 DROP POLICY IF EXISTS "Thumbnail update requires parts_update" ON storage.objects;
 DROP POLICY IF EXISTS "Thumbnail delete requires parts_delete" ON storage.objects;
 
+DROP POLICY IF EXISTS "Shared Private Bucket" ON storage.objects;
 CREATE POLICY "Shared Private Bucket" ON storage.objects
 FOR ALL USING (
     bucket_id = 'private'
@@ -90,6 +91,7 @@ FOR ALL USING (
 );
 
 -- Create comprehensive policy for company buckets
+DROP POLICY IF EXISTS "Company bucket access" ON storage.objects;
 CREATE POLICY "Company bucket access" ON storage.objects
 FOR ALL USING (
   bucket_id = ANY (
@@ -100,5 +102,3 @@ FOR ALL USING (
   )
 );
 
-
-CREATE INDEX idx_objects_bucket_id ON storage.objects(bucket_id);

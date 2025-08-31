@@ -994,7 +994,13 @@ serve(async (req: Request) => {
                 .execute();
 
               await trx
-                .deleteFrom("shipment")
+                .updateTable("shipment")
+                .set({
+                  invoiced: false,
+                  status: "Voided",
+                  updatedAt: today,
+                  updatedBy: userId,
+                })
                 .where("id", "=", shipment.id)
                 .execute();
             }
