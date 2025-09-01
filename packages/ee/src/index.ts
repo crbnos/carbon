@@ -2,6 +2,7 @@ import { ExchangeRates } from "./exchange-rates/config";
 import { Onshape } from "./onshape/config";
 import { PaperlessParts } from "./paperless-parts/config";
 import { QuickBooks } from "./quickbooks/config";
+import { Radan } from "./radan/config";
 import { Resend } from "./resend/config";
 import { Sage } from "./sage/config";
 import { Slack } from "./slack/config";
@@ -13,12 +14,13 @@ export type { IntegrationConfig } from "./types";
 
 export const integrations = [
   ExchangeRates,
-  Resend,
   PaperlessParts,
   Onshape,
+  QuickBooks,
+  Resend,
+  Radan,
   Slack,
   Sage,
-  QuickBooks,
   Xero,
   Zapier,
 ];
