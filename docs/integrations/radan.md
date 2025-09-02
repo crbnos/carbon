@@ -44,7 +44,7 @@ And here's what a success looks like:
 
 > **⚠️ Heads Up!**
 >
-> There is mechanism in Carbon to determine which file is relevant for nesting so we must send them all (in the documents array)
+> There is no mechanism in Carbon to determine which file is relevant for nesting so we must send them all (in the documents array)
 
 ```json
 {
