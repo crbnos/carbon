@@ -43526,14 +43526,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -47232,6 +47232,54 @@ export type Database = {
           version: number
         }[]
       }
+      get_radan_v1: {
+        Args: {
+          company_id: string
+          processes: string[]
+        }
+        Returns: {
+          id: string
+          jobId: string
+          operationOrder: number
+          priority: number
+          processId: string
+          workCenterId: string
+          description: string
+          setupTime: number
+          setupUnit: Database["public"]["Enums"]["factor"]
+          laborTime: number
+          laborUnit: Database["public"]["Enums"]["factor"]
+          machineTime: number
+          machineUnit: Database["public"]["Enums"]["factor"]
+          operationOrderType: Database["public"]["Enums"]["methodOperationOrder"]
+          jobMakeMethodId: string
+          assignee: string
+          tags: string[]
+          jobReadableId: string
+          jobStatus: Database["public"]["Enums"]["jobStatus"]
+          jobDueDate: string
+          jobDeadlineType: Database["public"]["Enums"]["deadlineType"]
+          jobCustomerId: string
+          jobLocationName: string
+          salesOrderReadableId: string
+          salesOrderId: string
+          salesOrderLineId: string
+          parentMaterialId: string
+          itemReadableId: string
+          itemDescription: string
+          operationStatus: Database["public"]["Enums"]["jobOperationStatus"]
+          operationQuantity: number
+          quantityComplete: number
+          quantityScrapped: number
+          materialItemReadableId: string
+          materialItemDescription: string
+          materialSubstance: string
+          materialForm: string
+          materialDimension: string
+          materialFinish: string
+          materialGrade: string
+        }[]
+      }
       get_recent_job_operations_by_employee: {
         Args: {
           employee_id: string
@@ -47486,6 +47534,54 @@ export type Database = {
           step: number
         }
         Returns: string
+      }
+      radan_v1: {
+        Args: {
+          company_id: string
+          processes: string[]
+        }
+        Returns: {
+          id: string
+          jobId: string
+          operationOrder: number
+          priority: number
+          processId: string
+          workCenterId: string
+          description: string
+          setupTime: number
+          setupUnit: Database["public"]["Enums"]["factor"]
+          laborTime: number
+          laborUnit: Database["public"]["Enums"]["factor"]
+          machineTime: number
+          machineUnit: Database["public"]["Enums"]["factor"]
+          operationOrderType: Database["public"]["Enums"]["methodOperationOrder"]
+          jobMakeMethodId: string
+          assignee: string
+          tags: string[]
+          jobReadableId: string
+          jobStatus: Database["public"]["Enums"]["jobStatus"]
+          jobDueDate: string
+          jobDeadlineType: Database["public"]["Enums"]["deadlineType"]
+          jobCustomerId: string
+          jobLocationName: string
+          salesOrderReadableId: string
+          salesOrderId: string
+          salesOrderLineId: string
+          parentMaterialId: string
+          itemReadableId: string
+          itemDescription: string
+          operationStatus: Database["public"]["Enums"]["jobOperationStatus"]
+          operationQuantity: number
+          quantityComplete: number
+          quantityScrapped: number
+          materialItemReadableId: string
+          materialItemDescription: string
+          materialSubstance: string
+          materialForm: string
+          materialDimension: string
+          materialFinish: string
+          materialGrade: string
+        }[]
       }
       suppliers_search: {
         Args: {

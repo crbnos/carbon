@@ -16,6 +16,7 @@ import {
 } from "@carbon/react";
 import { SUPPORT_EMAIL } from "@carbon/utils";
 import { useParams } from "@remix-run/react";
+import { Processes } from "~/components/Form";
 import { usePermissions, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 
@@ -121,6 +122,10 @@ export function IntegrationForm({
                           label={setting.label}
                           description={setting.label}
                         />
+                      );
+                    case "processes":
+                      return (
+                        <Processes name={setting.name} label={setting.label} />
                       );
                     default:
                       return null;
