@@ -41,7 +41,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const [nonConformance, nonConformanceTypes, investigationTypes, requiredActions, tags] = await Promise.all([
+  const [
+    nonConformance,
+    nonConformanceTypes,
+    investigationTypes,
+    requiredActions,
+    tags,
+  ] = await Promise.all([
     getIssue(client, id),
     getIssueTypesList(client, companyId),
     getInvestigationTypesList(client, companyId),
@@ -68,7 +74,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function IssueRoute() {
-  const { associations, nonConformance } = useLoaderData<typeof loader>();
+  const { associations } = useLoaderData<typeof loader>();
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
 
@@ -85,6 +91,13 @@ export default function IssueRoute() {
                     {(resolvedAssociations) => {
                       // Transform the raw associations data into the tree structure expected by IssueAssociationsTree
                       const tree: IssueAssociationNode[] = [
+                        {
+                          key: "items",
+                          name: "Item",
+                          pluralName: "Items",
+                          module: "parts",
+                          children: resolvedAssociations.items,
+                        },
                         {
                           key: "jobOperations",
                           name: "Job Operation",
@@ -146,7 +159,11 @@ export default function IssueRoute() {
                         <IssueAssociationsTree
                           tree={tree}
                           nonConformanceId={id}
-                          itemId={nonConformance.itemId ?? undefined}
+                          items={
+                            resolvedAssociations.items?.map(
+                              (i) => i.documentId
+                            ) ?? undefined
+                          }
                         />
                       );
                     }}

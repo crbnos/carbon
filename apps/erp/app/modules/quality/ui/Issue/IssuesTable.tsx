@@ -223,6 +223,40 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
         },
       },
       {
+        id: "items",
+        header: "Items",
+        cell: ({ row }) => (
+          <span className="flex gap-2 items-center flex-wrap py-2">
+            {((row.original.items ?? []) as Array<string>).map((i) => {
+              const item = items.find((x) => x.id === i);
+              if (!item) return null;
+              return (
+                <Enumerable
+                  key={item?.id}
+                  value={item?.readableIdWithRevision ?? null}
+                  onClick={() =>
+                    // @ts-ignore
+                    navigate(getLinkToItemDetails(item.type, item.id))
+                  }
+                  className="cursor-pointer"
+                />
+              );
+            })}
+          </span>
+        ),
+        meta: {
+          icon: <LuSquareStack />,
+          filter: {
+            type: "static",
+            options: items.map((item) => ({
+              value: item.id,
+              label: <Enumerable value={item.readableIdWithRevision} />,
+            })),
+            isArray: true,
+          },
+        },
+      },
+      {
         accessorKey: "openDate",
         header: "Open Date",
         cell: ({ row }) => formatDate(row.original.openDate),
@@ -240,7 +274,7 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
       },
     ];
     return [...defaultColumns, ...customColumns];
-  }, [customColumns, items, locations, people, types]);
+  }, [customColumns, items, locations, navigate, people, types]);
 
   const renderContextMenu = useCallback(
     (row: Issue) => {

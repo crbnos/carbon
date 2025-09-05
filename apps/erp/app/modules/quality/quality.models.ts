@@ -34,6 +34,7 @@ export const nonConformancePriority = [
 ] as const;
 
 export const nonConformanceAssociationType = [
+  "items",
   "customers",
   "suppliers",
   "jobOperations",

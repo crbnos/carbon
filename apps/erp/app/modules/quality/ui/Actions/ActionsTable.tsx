@@ -9,6 +9,7 @@ import {
   LuFileText,
   LuOctagonX,
   LuPencil,
+  LuSquareStack,
   LuUser,
 } from "react-icons/lu";
 import { EmployeeAvatar, Hyperlink, Table } from "~/components";
@@ -16,6 +17,8 @@ import { EmployeeAvatar, Hyperlink, Table } from "~/components";
 import { formatDate } from "@carbon/utils";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions } from "~/hooks";
+import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
+import { useItems } from "~/stores";
 import { usePeople } from "~/stores/people";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
@@ -36,6 +39,7 @@ const ActionsTable = memo(
     const permissions = usePermissions();
 
     const [people] = usePeople();
+    const [items] = useItems();
 
     const columns = useMemo<ColumnDef<QualityAction>[]>(() => {
       const defaultColumns: ColumnDef<QualityAction>[] = [
@@ -108,6 +112,40 @@ const ActionsTable = memo(
           },
         },
         {
+          id: "items",
+          header: "Items",
+          cell: ({ row }) => (
+            <span className="flex gap-2 items-center flex-wrap py-2">
+              {((row.original.items ?? []) as Array<string>).map((i) => {
+                const item = items.find((x) => x.id === i);
+                if (!item) return null;
+                return (
+                  <Enumerable
+                    key={item?.id}
+                    value={item?.readableIdWithRevision ?? null}
+                    onClick={() =>
+                      // @ts-ignore
+                      navigate(getLinkToItemDetails(item.type, item.id))
+                    }
+                    className="cursor-pointer"
+                  />
+                );
+              })}
+            </span>
+          ),
+          meta: {
+            icon: <LuSquareStack />,
+            filter: {
+              type: "static",
+              options: items.map((item) => ({
+                value: item.id,
+                label: <Enumerable value={item.readableIdWithRevision} />,
+              })),
+              isArray: true,
+            },
+          },
+        },
+        {
           accessorKey: "dueDate",
           header: "Due Date",
           cell: ({ row }) => formatDate(row.original.dueDate),
@@ -170,7 +208,7 @@ const ActionsTable = memo(
         },
       ];
       return defaultColumns;
-    }, [requiredActions, people, issueTypes]);
+    }, [requiredActions, people, items, issueTypes, navigate]);
 
     const renderContextMenu = useCallback(
       (row: QualityAction) => {
