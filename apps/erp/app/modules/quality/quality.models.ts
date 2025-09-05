@@ -100,9 +100,9 @@ export const issueAssociationValidator = z
   })
   .refine(
     (data) => {
-      // For types other than customer, supplier, or trackedEntity, lineId is required
+      // For types other than items, customer, supplier, or trackedEntity, lineId is required
       if (
-        !["customers", "suppliers", "trackedEntities"].includes(data.type) &&
+        !["items", "customers", "suppliers", "trackedEntities"].includes(data.type) &&
         !data.lineId
       ) {
         return false;

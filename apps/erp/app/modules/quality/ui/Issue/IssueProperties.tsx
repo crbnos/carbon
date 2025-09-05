@@ -16,15 +16,14 @@ import {
   toast,
 } from "@carbon/react";
 import { useFetcher, useParams } from "@remix-run/react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { LuCopy, LuKeySquare, LuLink } from "react-icons/lu";
 import { z } from "zod";
 import { Assignee, useOptimisticAssignment } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { Item, Tags } from "~/components/Form";
+import { Tags } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { MethodItemType } from "~/modules/shared/types";
 import type { action } from "~/routes/x+/items+/update";
 import type { ListItem, StorageItem } from "~/types";
 import { path } from "~/utils/path";
@@ -145,7 +144,6 @@ const IssueProperties = () => {
 
   const disableStructureUpdate =
     !permissions.can("delete", "quality") || isStarted;
-  const [itemType, setItemType] = useState<MethodItemType | "Item">("Item");
 
   return (
     <VStack
@@ -256,32 +254,6 @@ const IssueProperties = () => {
           isReadOnly={!permissions.can("update", "quality")}
         />
       </VStack>
-
-      <ValidatedForm
-        defaultValues={{
-          itemId: routeData?.nonConformance?.itemId ?? "",
-        }}
-        validator={z.object({
-          itemId: z.string().optional(),
-        })}
-        className="w-full"
-      >
-        <Item
-          isReadOnly={disableStructureUpdate}
-          label="Item"
-          name="itemId"
-          inline
-          type={itemType}
-          onTypeChange={(type) => {
-            setItemType(type);
-          }}
-          onChange={(value) => {
-            if (value) {
-              onUpdate("itemId", value.value);
-            }
-          }}
-        />
-      </ValidatedForm>
 
       <ValidatedForm
         defaultValues={{

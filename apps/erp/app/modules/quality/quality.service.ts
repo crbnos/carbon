@@ -421,9 +421,9 @@ export async function getIssueAssociations(
       .select(
         `
       id,
-      itemId
+      itemId,
       ...item(
-        redableIdWithRevision
+        readableIdWithRevision
       )
       `
       )
@@ -1041,6 +1041,7 @@ export async function upsertIssue(
           nonConformanceId: result.data.id,
           itemId,
           companyId: nonConformance.companyId,
+          createdBy: nonConformance.createdBy,
         },
       ]);
 

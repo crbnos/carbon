@@ -29,6 +29,24 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { type, id, lineId } = validation.data;
 
   switch (type) {
+    case "items":
+      const { error: itemError } = await client
+        .from("nonConformanceItem")
+        .insert({
+          itemId: id,
+          nonConformanceId,
+          createdBy: userId,
+          companyId: companyId,
+        });
+
+      if (itemError) {
+        return json({
+          success: false,
+          message: "Failed to create issue item",
+        });
+      }
+      break;
+
     case "customers":
       const { error: customerError } = await client
         .from("nonConformanceCustomer")

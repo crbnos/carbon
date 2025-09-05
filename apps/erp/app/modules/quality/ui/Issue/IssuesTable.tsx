@@ -1,4 +1,4 @@
-import { MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+import { Badge, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -24,7 +24,6 @@ import { useLocations } from "~/components/Form/Location";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import { useItems } from "~/stores/items";
 import { usePeople } from "~/stores/people";
 import type { ListItem } from "~/types";
@@ -76,33 +75,7 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
           icon: <LuBookMarked />,
         },
       },
-      {
-        accessorKey: "itemId",
-        header: "Item",
-        cell: ({ row }) => {
-          const item = items.find((item) => item.id === row.original.itemId);
-          if (!item) return null;
-          // @ts-expect-error - TODO: fix this
-          const link = getLinkToItemDetails(item.type, item.id);
-          return (
-            <div className="flex flex-col text-sm">
-              <Hyperlink to={link}>{item.readableIdWithRevision}</Hyperlink>
-              <span className="text-xs text-muted-foreground">{item.name}</span>
-            </div>
-          );
-        },
-        meta: {
-          filter: {
-            type: "static",
-            options: items.map((item) => ({
-              label: item.name,
-              helperText: item.readableIdWithRevision,
-              value: item.id,
-            })),
-          },
-          icon: <LuSquareStack />,
-        },
-      },
+
       {
         accessorKey: "status",
         header: "Status",
@@ -231,15 +204,9 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
               const item = items.find((x) => x.id === i);
               if (!item) return null;
               return (
-                <Enumerable
-                  key={item?.id}
-                  value={item?.readableIdWithRevision ?? null}
-                  onClick={() =>
-                    // @ts-ignore
-                    navigate(getLinkToItemDetails(item.type, item.id))
-                  }
-                  className="cursor-pointer"
-                />
+                <Badge variant="outline" key={item?.id}>
+                  {item?.readableIdWithRevision}
+                </Badge>
               );
             })}
           </span>
@@ -250,7 +217,9 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
             type: "static",
             options: items.map((item) => ({
               value: item.id,
-              label: <Enumerable value={item.readableIdWithRevision} />,
+              label: (
+                <Badge variant="outline">{item.readableIdWithRevision}</Badge>
+              ),
             })),
             isArray: true,
           },
@@ -274,7 +243,7 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
       },
     ];
     return [...defaultColumns, ...customColumns];
-  }, [customColumns, items, locations, navigate, people, types]);
+  }, [customColumns, items, locations, people, types]);
 
   const renderContextMenu = useCallback(
     (row: Issue) => {

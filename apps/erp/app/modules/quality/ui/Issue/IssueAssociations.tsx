@@ -30,6 +30,7 @@ import { getItemReadableId } from "@carbon/utils";
 import { Link, useFetcher, useParams } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
+import { AiOutlinePartition } from "react-icons/ai";
 import {
   LuChevronRight,
   LuCirclePlus,
@@ -46,10 +47,11 @@ import {
   LuTruck,
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
-import { Customer, Supplier } from "~/components/Form";
+import { Customer, Item, Supplier } from "~/components/Form";
 import { ConfirmDelete } from "~/components/Modals";
 import { LevelLine } from "~/components/TreeView";
 import { usePermissions } from "~/hooks";
+import type { MethodItemType } from "~/modules/shared";
 import type { action as associationAction } from "~/routes/x+/issue+/$id.association.new";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -282,6 +284,8 @@ export function IssueAssociationItem({
 
 function getAssociationIcon(key: IssueAssociationKey) {
   switch (key) {
+    case "items":
+      return <AiOutlinePartition />;
     case "customers":
       return <LuSquareUser />;
     case "suppliers":
@@ -301,6 +305,26 @@ function getAssociationIcon(key: IssueAssociationKey) {
     default:
       return <LuFileText />;
   }
+}
+
+function NewItemAssociation() {
+  const [itemType, setItemType] = useState<MethodItemType | "Item">("Item");
+  const onTypeChange = (t: MethodItemType | "Item") => {
+    setItemType(t as MethodItemType);
+  };
+
+  return (
+    <>
+      <Item
+        name="id"
+        label={itemType}
+        // @ts-ignore
+        type={itemType}
+        replenishmentSystem="Buy"
+        onTypeChange={onTypeChange}
+      />
+    </>
+  );
 }
 
 function NewCustomerAssociation() {
@@ -871,6 +895,8 @@ function NewAssociationModal({
 
   function renderFields(type: IssueAssociationKey) {
     switch (type) {
+      case "items":
+        return <NewItemAssociation />;
       case "customers":
         return <NewCustomerAssociation />;
       case "suppliers":

@@ -1,4 +1,4 @@
-import { MenuIcon, MenuItem, Status } from "@carbon/react";
+import { Badge, MenuIcon, MenuItem, Status } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -17,7 +17,6 @@ import { EmployeeAvatar, Hyperlink, Table } from "~/components";
 import { formatDate } from "@carbon/utils";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions } from "~/hooks";
-import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import { useItems } from "~/stores";
 import { usePeople } from "~/stores/people";
 import type { ListItem } from "~/types";
@@ -120,15 +119,9 @@ const ActionsTable = memo(
                 const item = items.find((x) => x.id === i);
                 if (!item) return null;
                 return (
-                  <Enumerable
-                    key={item?.id}
-                    value={item?.readableIdWithRevision ?? null}
-                    onClick={() =>
-                      // @ts-ignore
-                      navigate(getLinkToItemDetails(item.type, item.id))
-                    }
-                    className="cursor-pointer"
-                  />
+                  <Badge variant="outline" key={item?.id}>
+                    {item?.readableIdWithRevision}
+                  </Badge>
                 );
               })}
             </span>
@@ -139,7 +132,9 @@ const ActionsTable = memo(
               type: "static",
               options: items.map((item) => ({
                 value: item.id,
-                label: <Enumerable value={item.readableIdWithRevision} />,
+                label: (
+                  <Badge variant="outline">{item.readableIdWithRevision}</Badge>
+                ),
               })),
               isArray: true,
             },
@@ -208,7 +203,7 @@ const ActionsTable = memo(
         },
       ];
       return defaultColumns;
-    }, [requiredActions, people, items, issueTypes, navigate]);
+    }, [requiredActions, people, items, issueTypes]);
 
     const renderContextMenu = useCallback(
       (row: QualityAction) => {

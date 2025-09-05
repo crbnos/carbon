@@ -1,6 +1,3 @@
-
-
-
 CREATE TABLE "nonConformanceItem" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "nonConformanceId" TEXT NOT NULL,
@@ -15,6 +12,7 @@ CREATE TABLE "nonConformanceItem" (
   CONSTRAINT "nonConformanceItem_nonConformanceId_fkey" FOREIGN KEY ("nonConformanceId") REFERENCES "nonConformance"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "nonConformanceItem_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON UPDATE CASCADE ON DELETE CASCADE,
   CONSTRAINT "nonConformanceItem_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceItem_unique" UNIQUE ("nonConformanceId", "itemId"),
   CONSTRAINT "nonConformanceItem_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
   CONSTRAINT "nonConformanceItem_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
 );
@@ -60,11 +58,12 @@ FOR DELETE USING (
   )
 );
 
-INSERT INTO "nonConformanceItem" ("nonConformanceId", "itemId", "companyId")
+INSERT INTO "nonConformanceItem" ("nonConformanceId", "itemId", "companyId", "createdBy")
 SELECT 
   ncr."id",
   ncr."itemId",
-  ncr."companyId"
+  ncr."companyId",
+  ncr."createdBy"
 FROM "nonConformance" ncr
 WHERE ncr."itemId" IS NOT NULL
 AND ncr."companyId" IS NOT NULL;
