@@ -1,7 +1,7 @@
 import { useRouteData, useUrlParams } from "@carbon/remix";
 import { path } from "~/utils/path";
 import type { SavedView } from "~/modules/shared/types";
-import { Route } from "~/types";
+import type { Route } from "~/types";
 
 type SavedViews = SavedView[];
 

@@ -772,6 +772,40 @@ export async function getProductionPlanning(
   return query;
 }
 
+export async function getProductionProjections(
+  client: SupabaseClient<Database>,
+  locationId: string,
+  periods: string[],
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+  }
+) {
+  let query = client.rpc(
+    "get_production_projections",
+    {
+      location_id: locationId,
+      company_id: companyId,
+      periods,
+    },
+    {
+      count: "exact",
+    }
+  );
+
+  if (args?.search) {
+    query = query.or(
+      `name.ilike.%${args.search}%,readableIdWithRevision.ilike.%${args.search}%`
+    );
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "readableIdWithRevision", ascending: true },
+  ]);
+
+  return query;
+}
+
 export async function getProductionQuantity(
   client: SupabaseClient<Database>,
   id: string
@@ -1691,4 +1725,103 @@ export async function upsertScrapReason(
       .update(sanitize(scrapReason))
       .eq("id", scrapReason.id);
   }
+}
+
+export async function getDemandForecasts(
+  client: SupabaseClient<Database>,
+  params: {
+    itemId: string;
+    locationId: string;
+    companyId: string;
+    periodIds: string[];
+  }
+) {
+  return client
+    .from("demandForecast")
+    .select("*")
+    .eq("itemId", params.itemId)
+    .eq("locationId", params.locationId)
+    .eq("companyId", params.companyId)
+    .in("periodId", params.periodIds);
+}
+
+export async function upsertDemandForecasts(
+  client: SupabaseClient<Database>,
+  forecasts: Array<{
+    itemId: string;
+    locationId: string;
+    periodId: string;
+    forecastQuantity: number;
+    companyId: string;
+    createdBy: string;
+    updatedBy?: string;
+  }>
+) {
+  // Delete existing forecasts with 0 quantity, upsert others
+  const toDelete = forecasts.filter((f) => f.forecastQuantity === 0);
+  const toUpsert = forecasts.filter((f) => f.forecastQuantity > 0);
+
+  const promises = [];
+
+  if (toDelete.length > 0) {
+    for (const forecast of toDelete) {
+      promises.push(
+        client
+          .from("demandForecast")
+          .delete()
+          .eq("itemId", forecast.itemId)
+          .eq("locationId", forecast.locationId)
+          .eq("periodId", forecast.periodId)
+          .eq("companyId", forecast.companyId)
+      );
+    }
+  }
+
+  if (toUpsert.length > 0) {
+    promises.push(
+      client.from("demandForecast").upsert(
+        toUpsert.map((f) => ({
+          ...f,
+          updatedBy: f.updatedBy ?? f.createdBy ?? "system",
+          updatedAt: new Date().toISOString(),
+        })),
+        {
+          onConflict: "itemId,locationId,periodId,companyId",
+        }
+      )
+    );
+  }
+
+  const results = await Promise.all(promises);
+  const hasError = results.some((r) => r.error);
+
+  return {
+    data: hasError ? null : toUpsert,
+    error: hasError ? results.find((r) => r.error)?.error : null,
+  };
+}
+
+export async function deleteFutureDemandForecasts(
+  client: SupabaseClient<Database>,
+  params: {
+    itemId: string;
+    locationId: string;
+    companyId: string;
+    futurePeriodIds: string[];
+  }
+) {
+  const { itemId, locationId, companyId, futurePeriodIds } = params;
+
+  const result = await client
+    .from("demandForecast")
+    .delete()
+    .eq("itemId", itemId)
+    .eq("locationId", locationId)
+    .eq("companyId", companyId)
+    .in("periodId", futurePeriodIds);
+
+  return {
+    data: result.data,
+    error: result.error,
+  };
 }

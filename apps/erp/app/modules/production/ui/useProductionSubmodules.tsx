@@ -1,4 +1,5 @@
 import {
+  LuChartLine,
   LuHardHat,
   LuListChecks,
   LuSquareChartGantt,
@@ -30,6 +31,12 @@ const productionRoutes: AuthenticatedRouteGroup[] = [
         to: path.to.productionPlanning,
         icon: <LuSquareChartGantt />,
         table: "production-planning",
+      },
+      {
+        name: "Projections",
+        to: path.to.productionProjections,
+        icon: <LuChartLine />,
+        table: "production-projection",
       },
       {
         name: "Schedule",

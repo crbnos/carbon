@@ -1,8 +1,9 @@
 import { assertIsPost, error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import type {
+  ClientActionFunctionArgs} from "@remix-run/react";
 import {
-  ClientActionFunctionArgs,
   useNavigate,
   useParams,
 } from "@remix-run/react";

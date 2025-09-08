@@ -20,13 +20,12 @@ import { Select, Submit, ValidatedForm, validator } from "@carbon/form";
 import { labelSizes } from "@carbon/utils";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useEffect } from "react";
-import { getCompanySettings } from "~/modules/settings";
-import type { Handle } from "~/utils/handle";
-import { path } from "~/utils/path";
-import {
+import { getCompanySettings ,
   productLabelSizeValidator,
   updateProductLabelSize,
 } from "~/modules/settings";
+import type { Handle } from "~/utils/handle";
+import { path } from "~/utils/path";
 export const handle: Handle = {
   breadcrumb: "Labels",
   to: path.to.labelsSettings,

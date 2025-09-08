@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useUser } from "~/hooks";
 import type { z } from "zod";
 import type { ShipmentSourceDocument } from "~/modules/inventory/types";
-import { shipmentStatusType, shipmentValidator } from "~/modules/inventory";
+import type { shipmentStatusType, shipmentValidator } from "~/modules/inventory";
 import type { ListItem } from "~/types";
 
 export default function useShipmentForm({

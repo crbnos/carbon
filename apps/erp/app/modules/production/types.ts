@@ -12,6 +12,7 @@ import type {
   getProcedures,
   getProductionEvents,
   getProductionPlanning,
+  getProductionProjections,
   getProductionQuantities,
   getScrapReasons,
 } from "./production.service";
@@ -48,6 +49,10 @@ export type ProductionEvent = NonNullable<
 
 export type ProductionQuantity = NonNullable<
   Awaited<ReturnType<typeof getProductionQuantities>>["data"]
+>[number];
+
+export type ProductionProjection = NonNullable<
+  Awaited<ReturnType<typeof getProductionProjections>>["data"]
 >[number];
 
 export type Procedures = NonNullable<

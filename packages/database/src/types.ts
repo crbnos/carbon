@@ -40110,14 +40110,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -47397,6 +47397,89 @@ export type Database = {
         Returns: string[]
       }
       get_production_planning: {
+        Args: {
+          company_id: string
+          location_id: string
+          periods: string[]
+        }
+        Returns: {
+          id: string
+          readableIdWithRevision: string
+          name: string
+          active: boolean
+          type: Database["public"]["Enums"]["itemType"]
+          itemTrackingType: Database["public"]["Enums"]["itemTrackingType"]
+          replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          thumbnailPath: string
+          unitOfMeasureCode: string
+          leadTime: number
+          manufacturingBlocked: boolean
+          lotSize: number
+          reorderingPolicy: Database["public"]["Enums"]["itemReorderingPolicy"]
+          demandAccumulationPeriod: number
+          demandAccumulationSafetyStock: number
+          reorderPoint: number
+          reorderQuantity: number
+          minimumOrderQuantity: number
+          maximumOrderQuantity: number
+          orderMultiple: number
+          quantityOnHand: number
+          maximumInventoryQuantity: number
+          week1: number
+          week2: number
+          week3: number
+          week4: number
+          week5: number
+          week6: number
+          week7: number
+          week8: number
+          week9: number
+          week10: number
+          week11: number
+          week12: number
+          week13: number
+          week14: number
+          week15: number
+          week16: number
+          week17: number
+          week18: number
+          week19: number
+          week20: number
+          week21: number
+          week22: number
+          week23: number
+          week24: number
+          week25: number
+          week26: number
+          week27: number
+          week28: number
+          week29: number
+          week30: number
+          week31: number
+          week32: number
+          week33: number
+          week34: number
+          week35: number
+          week36: number
+          week37: number
+          week38: number
+          week39: number
+          week40: number
+          week41: number
+          week42: number
+          week43: number
+          week44: number
+          week45: number
+          week46: number
+          week47: number
+          week48: number
+          week49: number
+          week50: number
+          week51: number
+          week52: number
+        }[]
+      }
+      get_production_projections: {
         Args: {
           company_id: string
           location_id: string

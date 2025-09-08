@@ -840,3 +840,15 @@ export const scrapReasonValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }),
 });
+
+export const productionProjectionsValidator = z.object({
+  itemId: z.string().min(1, { message: "Item is required" }),
+  locationId: z.string().min(1, { message: "Location is required" }),
+  periods: z.array(z.string()).optional(),
+  ...Object.fromEntries(
+    Array.from({ length: 52 }, (_, i) => [
+      `week${i}`,
+      zfd.numeric(z.number().min(0).optional()),
+    ])
+  ),
+});

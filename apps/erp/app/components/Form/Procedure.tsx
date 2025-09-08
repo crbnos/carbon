@@ -3,7 +3,7 @@ import { Combobox } from "@carbon/form";
 import { HStack, useMount } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useMemo } from "react";
-import { getProceduresList } from "~/modules/production/production.service";
+import type { getProceduresList } from "~/modules/production/production.service";
 import ProcedureStatus from "~/modules/production/ui/Procedures/ProcedureStatus";
 import { path } from "~/utils/path";
 
