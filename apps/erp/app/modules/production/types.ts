@@ -21,6 +21,10 @@ export type ActiveProductionEvent = NonNullable<
   Awaited<ReturnType<typeof getActiveProductionEvents>>["data"]
 >[number];
 
+export type DemandForecast = NonNullable<
+  Awaited<ReturnType<typeof getProductionProjections>>["data"]
+>[number];
+
 export type Job = NonNullable<Awaited<ReturnType<typeof getJob>>["data"]>;
 
 export type JobMakeMethod = NonNullable<
@@ -49,10 +53,6 @@ export type ProductionEvent = NonNullable<
 
 export type ProductionQuantity = NonNullable<
   Awaited<ReturnType<typeof getProductionQuantities>>["data"]
->[number];
-
-export type ProductionProjection = NonNullable<
-  Awaited<ReturnType<typeof getProductionProjections>>["data"]
 >[number];
 
 export type Procedures = NonNullable<

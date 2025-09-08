@@ -16,24 +16,24 @@ import type { z } from "zod";
 import { Hidden, Item, Location, Number, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
-import { productionProjectionsValidator } from "../../production.models";
+import { demandForecastsValidator } from "../../production.models";
 
 type LoaderData = {
   periods?: Array<{ id: string; name: string }>;
-  initialValues?: z.infer<typeof productionProjectionsValidator>;
+  initialValues?: z.infer<typeof demandForecastsValidator>;
 };
 
-type ProductionProjectionsFormProps = {
-  initialValues?: z.infer<typeof productionProjectionsValidator>;
+type DemandForecastsFormProps = {
+  initialValues?: z.infer<typeof demandForecastsValidator>;
   isEditing?: boolean;
   onClose: () => void;
 };
 
-const ProductionProjectionsForm = ({
+const DemandForecastsForm = ({
   initialValues: propInitialValues,
   isEditing = false,
   onClose,
-}: ProductionProjectionsFormProps) => {
+}: DemandForecastsFormProps) => {
   const permissions = usePermissions();
   const fetcher = useFetcher<{ id: string }>();
   const loaderData = useLoaderData<LoaderData>();
@@ -67,15 +67,15 @@ const ProductionProjectionsForm = ({
     >
       <DrawerContent>
         <ValidatedForm
-          validator={productionProjectionsValidator}
+          validator={demandForecastsValidator}
           method="post"
           action={
             isEditing
-              ? path.to.productionProjection(
+              ? path.to.demandForecast(
                   initialValues.itemId!,
                   initialValues.locationId!
                 )
-              : path.to.newProductionProjection
+              : path.to.newDemandForecast
           }
           defaultValues={initialValues}
           fetcher={fetcher}
@@ -141,4 +141,4 @@ const ProductionProjectionsForm = ({
   );
 };
 
-export default ProductionProjectionsForm;
+export default DemandForecastsForm;

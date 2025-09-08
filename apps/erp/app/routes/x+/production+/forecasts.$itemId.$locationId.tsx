@@ -6,12 +6,12 @@ import { getLocalTimeZone, startOfWeek, today } from "@internationalized/date";
 import { useLoaderData, useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { productionProjectionsValidator } from "~/modules/production/production.models";
+import { demandForecastsValidator } from "~/modules/production/production.models";
 import {
   getDemandForecasts,
   upsertDemandForecasts,
 } from "~/modules/production/production.service";
-import ProductionProjectionsForm from "~/modules/production/ui/Projections/ProductionProjectionsForm";
+import DemandForecastsForm from "~/modules/production/ui/Forecast/DemandForecastForm";
 import { getPeriods } from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 
@@ -83,7 +83,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const formData = await request.formData();
-  const validation = await validator(productionProjectionsValidator).validate(
+  const validation = await validator(demandForecastsValidator).validate(
     formData
   );
 
@@ -127,7 +127,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   return redirect(
-    path.to.productionProjections + `?location=${routeLocationId}`,
+    path.to.demandForecasts + `?location=${routeLocationId}`,
     await flash(request, success("Demand forecasts updated successfully"))
   );
 }
@@ -138,7 +138,7 @@ export default function EditProjectionRoute() {
   const navigate = useNavigate();
 
   return (
-    <ProductionProjectionsForm
+    <DemandForecastsForm
       initialValues={initialValues}
       isEditing
       onClose={() => navigate(-1)}

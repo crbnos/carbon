@@ -126,34 +126,74 @@ function calculateOrders({ itemPlanning, periods }: BaseOrderParams): {
 
         // If projected stock is below safety stock, create order
         if (projectedStock < demandAccumulationSafetyStock) {
-          let orderQuantity = demandAccumulationSafetyStock - projectedStock;
+          let totalOrderQuantity =
+            demandAccumulationSafetyStock - projectedStock;
 
           // Apply lot sizing rules
-          if (lotSize > 0) {
-            orderQuantity = Math.min(orderQuantity, lotSize);
-          }
           if (maximumOrderQuantity > 0) {
-            orderQuantity = Math.min(orderQuantity, maximumOrderQuantity);
+            totalOrderQuantity = Math.min(
+              totalOrderQuantity,
+              maximumOrderQuantity
+            );
           }
-          orderQuantity = Math.max(orderQuantity, minimumOrderQuantity);
+          totalOrderQuantity = Math.max(
+            totalOrderQuantity,
+            minimumOrderQuantity
+          );
 
           if (orderMultiple > 0) {
-            orderQuantity =
-              Math.ceil(orderQuantity / orderMultiple) * orderMultiple;
+            totalOrderQuantity =
+              Math.ceil(totalOrderQuantity / orderMultiple) * orderMultiple;
           }
 
-          const dueDate = parseDate(currentPeriod.startDate);
-          const startDate = dueDate.subtract({ days: leadTime });
+          // If we have a lot size and need to split orders
+          if (lotSize > 0 && totalOrderQuantity > lotSize) {
+            const numberOfBatches = Math.ceil(totalOrderQuantity / lotSize);
+            const daysInPeriod = 7; // Assuming weekly periods
 
-          orders.push({
-            startDate: startDate.toString(),
-            dueDate: dueDate.toString(),
-            quantity: orderQuantity,
-            periodId: currentPeriod.id,
-            isASAP: startDate.compare(todaysDate) < 0,
-          });
+            for (let batch = 0; batch < numberOfBatches; batch++) {
+              const batchQuantity = Math.min(
+                lotSize,
+                totalOrderQuantity - batch * lotSize
+              );
 
-          orderedQuantity += orderQuantity;
+              // Spread due dates evenly across the period
+              const dueDateOffset = Math.floor(
+                (batch * daysInPeriod) / numberOfBatches
+              );
+              const dueDate = parseDate(currentPeriod.startDate).add({
+                days: dueDateOffset,
+              });
+              const startDate = dueDate.subtract({ days: leadTime });
+
+              orders.push({
+                startDate: startDate.toString(),
+                dueDate: dueDate.toString(),
+                quantity: batchQuantity,
+                periodId: currentPeriod.id,
+                isASAP: startDate.compare(todaysDate) < 0,
+              });
+            }
+          } else {
+            // Single order for the period
+            const orderQuantity =
+              lotSize > 0
+                ? Math.min(totalOrderQuantity, lotSize)
+                : totalOrderQuantity;
+
+            const dueDate = parseDate(currentPeriod.startDate);
+            const startDate = dueDate.subtract({ days: leadTime });
+
+            orders.push({
+              startDate: startDate.toString(),
+              dueDate: dueDate.toString(),
+              quantity: orderQuantity,
+              periodId: currentPeriod.id,
+              isASAP: startDate.compare(todaysDate) < 0,
+            });
+          }
+
+          orderedQuantity += totalOrderQuantity;
         }
       }
 

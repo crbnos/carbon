@@ -15,8 +15,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   const { itemId, locationId } = params;
+
   if (!itemId || !locationId) {
-    throw new Error("Item ID and Location ID are required");
+    return json(
+      {},
+      await flash(
+        request,
+        error("Item ID and Location ID are required", "Missing parameters")
+      )
+    );
   }
 
   // Get current date to determine future periods
@@ -37,27 +44,25 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Only delete forecasts for future periods (current week and beyond)
   const futurePeriodIds = periods.data?.map((p) => p.id) ?? [];
 
-  const deleteDemand = await deleteFutureDemandForecasts(client, {
+  const result = await deleteFutureDemandForecasts(client, {
     itemId,
     locationId,
     companyId,
     futurePeriodIds,
   });
 
-  if (deleteDemand.error) {
+  if (result.error) {
     return json(
-      {
-        success: false,
-      },
+      {},
       await flash(
         request,
-        error(deleteDemand.error, "Failed to delete demand forecasts")
+        error("Failed to delete demand forecasts", "Delete failed")
       )
     );
   }
 
   return redirect(
-    path.to.productionProjections + `?location=${locationId}`,
+    path.to.demandForecasts + `?location=${locationId}`,
     await flash(request, success("Demand forecasts deleted successfully"))
   );
 }

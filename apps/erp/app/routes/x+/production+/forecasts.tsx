@@ -7,7 +7,8 @@ import { Outlet, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { getProductionProjections } from "~/modules/production";
-import { ProductionProjectionsTable } from "~/modules/production/ui/Projections";
+import DemandForecastsTable from "~/modules/production/ui/Forecast/DemandForecastTable";
+
 import { getLocationsList } from "~/modules/resources";
 import { getPeriods } from "~/modules/shared/shared.service";
 import { getUserDefaults } from "~/modules/users/users.server";
@@ -17,8 +18,8 @@ import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
-  breadcrumb: "Projections",
-  to: path.to.productionProjections,
+  breadcrumb: "Forecasts",
+  to: path.to.demandForecasts,
 };
 
 export const WEEKS_TO_PROJECT = 12 * 4;
@@ -113,12 +114,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 }
 
-export default function ProductionProjectionsRoute() {
-  const { projections, count, locationId, periods } = useLoaderData<typeof loader>();
+export default function DemandForecastsRoute() {
+  const { projections, count, locationId, periods } =
+    useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <ProductionProjectionsTable
+      <DemandForecastsTable
         data={projections}
         count={count}
         locationId={locationId}

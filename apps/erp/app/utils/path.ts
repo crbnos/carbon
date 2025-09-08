@@ -566,10 +566,8 @@ export const path = {
       generatePath(`${x}/job/methods/event/delete/${id}`),
     deleteProductionQuantity: (id: string) =>
       generatePath(`${x}/job/methods/quantity/delete/${id}`),
-    deleteProductionProjections: (itemId: string, locationId: string) =>
-      generatePath(
-        `${x}/production/projections/delete/${itemId}/${locationId}`
-      ),
+    deleteDemandForecasts: (itemId: string, locationId: string) =>
+      generatePath(`${x}/production/forecasts/delete/${itemId}/${locationId}`),
     deletePurchaseInvoice: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}/delete`),
     deletePurchaseInvoiceLine: (invoiceId: string, lineId: string) =>
@@ -637,6 +635,9 @@ export const path = {
       generatePath(`${x}/settings/webhooks/delete/${id}`),
     deleteWorkCenter: (id: string) =>
       generatePath(`${x}/resources/work-centers/delete/${id}`),
+    demandForecast: (itemId: string, locationId: string) =>
+      generatePath(`${x}/production/forecasts/${itemId}/${locationId}`),
+    demandForecasts: `${x}/production/forecasts`,
     department: (id: string) => generatePath(`${x}/people/departments/${id}`),
     departments: `${x}/people/departments`,
     document: (id: string) => generatePath(`${x}/documents/search/${id}`),
@@ -889,7 +890,7 @@ export const path = {
       generatePath(`${x}/procedure/${id}/attributes/new`),
     newProcedureParameter: (id: string) =>
       generatePath(`${x}/procedure/${id}/parameters/new`),
-    newProductionProjection: `${x}/production/projections/new`,
+    newDemandForecast: `${x}/production/forecasts/new`,
     newItemPostingGroup: `${x}/items/groups/new`,
     newMaterialDimension: `${x}/items/dimensions/new`,
     newMaterialFinish: `${x}/items/finishes/new`,
@@ -1028,9 +1029,6 @@ export const path = {
     processes: `${x}/resources/processes`,
     production: `${x}/production`,
     productionPlanning: `${x}/production/planning`,
-    productionProjection: (itemId: string, locationId: string) =>
-      generatePath(`${x}/production/projections/${itemId}/${locationId}`),
-    productionProjections: `${x}/production/projections`,
 
     productionPlanningItem: (itemId: string) =>
       generatePath(`${x}/production/planning/${itemId}`),

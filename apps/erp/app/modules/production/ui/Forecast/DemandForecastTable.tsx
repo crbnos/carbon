@@ -28,10 +28,10 @@ import ItemThumbnail from "~/components/ItemThumbnail";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
-import type { ProductionProjection } from "../../types";
+import type { DemandForecast } from "../../types";
 
-type ProductionProjectionsTableProps = {
-  data: ProductionProjection[];
+type DemandForecastsTableProps = {
+  data: DemandForecast[];
   count: number;
   locationId: string;
   periods: { id: string; startDate: string; endDate: string }[];
@@ -42,8 +42,8 @@ const defaultColumnPinning = {
   right: ["actions"],
 };
 
-const ProductionProjectionsTable = memo(
-  ({ data, count, locationId, periods }: ProductionProjectionsTableProps) => {
+const DemandForecastsTable = memo(
+  ({ data, count, locationId, periods }: DemandForecastsTableProps) => {
     const numberFormatter = useNumberFormatter();
     const dateFormatter = useDateFormatter({
       month: "short",
@@ -52,15 +52,16 @@ const ProductionProjectionsTable = memo(
     const [params] = useUrlParams();
     const permissions = usePermissions();
     const locations = useLocations();
-    const [selectedItem, setSelectedItem] =
-      useState<ProductionProjection | null>(null);
+    const [selectedItem, setSelectedItem] = useState<DemandForecast | null>(
+      null
+    );
 
-    const columns = useMemo<ColumnDef<ProductionProjection>[]>(() => {
-      const periodColumns: ColumnDef<ProductionProjection>[] = periods.map(
+    const columns = useMemo<ColumnDef<DemandForecast>[]>(() => {
+      const periodColumns: ColumnDef<DemandForecast>[] = periods.map(
         (period, index) => {
           const isCurrentWeek = index === 0;
           const weekNumber = index + 1;
-          const weekKey = `week${weekNumber}` as keyof ProductionProjection;
+          const weekKey = `week${weekNumber}` as keyof DemandForecast;
           const startDate = parseDate(period.startDate).toDate(
             getLocalTimeZone()
           );
@@ -95,7 +96,7 @@ const ProductionProjectionsTable = memo(
           header: "Part ID",
           cell: ({ row }) => (
             <Hyperlink
-              to={path.to.productionProjection(row.original.id!, locationId)}
+              to={path.to.demandForecast(row.original.id!, locationId)}
             >
               <HStack className="py-1 cursor-pointer">
                 <ItemThumbnail
@@ -139,7 +140,7 @@ const ProductionProjectionsTable = memo(
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem asChild>
                       <Link
-                        to={path.to.productionProjection(
+                        to={path.to.demandForecast(
                           row.original.id!,
                           locationId
                         )}
@@ -166,12 +167,12 @@ const ProductionProjectionsTable = memo(
 
     return (
       <>
-        <Table<ProductionProjection>
+        <Table<DemandForecast>
           data={data}
           columns={columns}
           count={count}
           defaultColumnPinning={defaultColumnPinning}
-          title="Projections"
+          title="Demand Forecasts"
           table="production-planning"
           withSavedView
           withSelectableRows
@@ -197,10 +198,7 @@ const ProductionProjectionsTable = memo(
 
         {selectedItem && (
           <ConfirmDelete
-            action={path.to.deleteProductionProjections(
-              selectedItem.id!,
-              locationId
-            )}
+            action={path.to.deleteDemandForecasts(selectedItem.id!, locationId)}
             name={`${selectedItem.readableIdWithRevision} forecasts`}
             text={`Are you sure you want to delete all forecasts for ${selectedItem.readableIdWithRevision}? This action cannot be undone.`}
             onCancel={() => setSelectedItem(null)}
@@ -212,9 +210,9 @@ const ProductionProjectionsTable = memo(
   }
 );
 
-ProductionProjectionsTable.displayName = "ProductionProjectionsTable";
-export default ProductionProjectionsTable;
+DemandForecastsTable.displayName = "DemandForecastsTable";
+export default DemandForecastsTable;
 
 function getLocationPath(locationId: string) {
-  return `${path.to.productionProjections}?location=${locationId}`;
+  return `${path.to.demandForecasts}?location=${locationId}`;
 }
