@@ -56,6 +56,28 @@ const InventoryDetails = ({
         <Card>
           <CardHeader className="pb-8">
             <CardDescription>
+              <VStack>Days Remaining</VStack>
+            </CardDescription>
+            <CardTitle className="text-4xl">
+              {`${formatter.format(quantities?.daysRemaining ?? 0)}`}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader className="pb-8">
+            <CardDescription>
+              <VStack>Daily Usage</VStack>
+            </CardDescription>
+            <CardTitle className="text-4xl ">
+              <div className="flex justify-start items-center gap-1">
+                {`${formatter.format(quantities?.usageLast30Days ?? 0)}`}
+              </div>
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader className="pb-8">
+            <CardDescription>
               <VStack>Quantity on Purchase Order</VStack>
             </CardDescription>
             <CardTitle className="text-4xl ">

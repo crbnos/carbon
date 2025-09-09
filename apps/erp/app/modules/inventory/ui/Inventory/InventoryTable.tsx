@@ -15,8 +15,10 @@ import { memo, useMemo } from "react";
 import {
   LuBookMarked,
   LuBox,
+  LuCalculator,
   LuCheck,
   LuCirclePlay,
+  LuClock,
   LuExpand,
   LuGlassWater,
   LuMoveDown,
@@ -111,6 +113,32 @@ const InventoryTable = memo(
           },
         },
 
+        {
+          accessorKey: "daysRemaining",
+          header: "Days",
+          cell: ({ row }) => numberFormatter.format(row.original.daysRemaining),
+          meta: {
+            icon: <LuClock />,
+          },
+        },
+        {
+          accessorKey: "usageLast30Days",
+          header: "Usage/Day (30d)",
+          cell: ({ row }) =>
+            numberFormatter.format(row.original.usageLast30Days),
+          meta: {
+            icon: <LuCalculator />,
+          },
+        },
+        {
+          accessorKey: "usageLast90Days",
+          header: "Usage/Day (90d)",
+          cell: ({ row }) =>
+            numberFormatter.format(row.original.usageLast90Days),
+          meta: {
+            icon: <LuCalculator />,
+          },
+        },
         {
           accessorKey: "quantityOnPurchaseOrder",
           header: "On Purchase Order",

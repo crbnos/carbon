@@ -43914,14 +43914,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -47055,6 +47055,9 @@ export type Database = {
           quantityOnPurchaseOrder: number
           quantityOnProductionOrder: number
           quantityOnProductionDemand: number
+          usageLast30Days: number
+          usageLast90Days: number
+          daysRemaining: number
         }[]
       }
       get_item_quantities_by_tracking_id: {
