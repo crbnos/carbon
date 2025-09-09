@@ -17,10 +17,12 @@ import {
   LuBox,
   LuCalculator,
   LuCheck,
+  LuCircleCheck,
   LuCirclePlay,
   LuClock,
   LuExpand,
   LuGlassWater,
+  LuLoaderCircle,
   LuMoveDown,
   LuMoveUp,
   LuPackage,
@@ -42,6 +44,14 @@ import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { useUrlParams } from "~/hooks";
+import {
+  itemReorderingPolicies,
+  itemReplenishmentSystems,
+} from "~/modules/items";
+import {
+  ItemReorderPolicy,
+  getReorderPolicyDescription,
+} from "~/modules/items/ui/Item/ItemReorderPolicy";
 import type { action as mrpAction } from "~/routes/api+/mrp";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
@@ -117,6 +127,59 @@ const InventoryTable = memo(
           accessorKey: "daysRemaining",
           header: "Days",
           cell: ({ row }) => numberFormatter.format(row.original.daysRemaining),
+          meta: {
+            icon: <LuClock />,
+          },
+        },
+        {
+          accessorKey: "reorderingPolicy",
+          header: "Reorder Policy",
+          cell: ({ row }) => {
+            return (
+              <HStack>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <ItemReorderPolicy
+                      reorderingPolicy={row.original.reorderingPolicy}
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {getReorderPolicyDescription(row.original)}
+                  </TooltipContent>
+                </Tooltip>
+              </HStack>
+            );
+          },
+          meta: {
+            filter: {
+              type: "static",
+              options: itemReorderingPolicies.map((policy) => ({
+                label: <ItemReorderPolicy reorderingPolicy={policy} />,
+                value: policy,
+              })),
+            },
+            icon: <LuCircleCheck />,
+          },
+        },
+        {
+          accessorKey: "replenishmentSystem",
+          header: "Replenishment",
+          cell: (item) => <Enumerable value={item.getValue<string>()} />,
+          meta: {
+            filter: {
+              type: "static",
+              options: itemReplenishmentSystems.map((type) => ({
+                value: type,
+                label: <Enumerable value={type} />,
+              })),
+            },
+            icon: <LuLoaderCircle />,
+          },
+        },
+        {
+          accessorKey: "leadTime",
+          header: "Lead Time",
+          cell: ({ row }) => numberFormatter.format(row.original.leadTime),
           meta: {
             icon: <LuClock />,
           },

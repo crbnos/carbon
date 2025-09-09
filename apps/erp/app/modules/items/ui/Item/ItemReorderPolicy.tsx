@@ -11,6 +11,7 @@ import type {
   PurchasingPlanningItem,
 } from "~/modules/purchasing";
 import type { Item } from "~/stores";
+import type { ItemReorderingPolicy } from "../../types";
 
 export function ItemReorderPolicy({
   reorderingPolicy,
@@ -47,9 +48,14 @@ export function ItemReorderPolicy({
   }
 }
 
-export function getReorderPolicyDescription(
-  itemPlanning: ProductionPlanningItem | PurchasingPlanningItem
-) {
+export function getReorderPolicyDescription(itemPlanning: {
+  reorderingPolicy: ItemReorderingPolicy;
+  reorderPoint: number;
+  reorderQuantity: number;
+  maximumInventoryQuantity: number;
+  demandAccumulationPeriod: number;
+  demandAccumulationSafetyStock: number;
+}) {
   const reorderPoint = itemPlanning.reorderPoint;
   switch (itemPlanning.reorderingPolicy) {
     case "Manual Reorder":

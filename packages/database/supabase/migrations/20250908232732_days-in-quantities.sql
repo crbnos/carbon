@@ -23,6 +23,17 @@ CREATE OR REPLACE FUNCTION get_inventory_quantities(company_id TEXT, location_id
     "materialTypeId" TEXT,
     "thumbnailPath" TEXT,
     "unitOfMeasureCode" TEXT,
+    "leadTime" INTEGER,
+    "lotSize" INTEGER,
+    "reorderingPolicy" "itemReorderingPolicy",
+    "demandAccumulationPeriod" INTEGER,
+    "demandAccumulationSafetyStock" NUMERIC,
+    "reorderPoint" INTEGER,
+    "reorderQuantity" INTEGER,
+    "minimumOrderQuantity" INTEGER,
+    "maximumOrderQuantity" INTEGER,
+    "maximumInventoryQuantity" NUMERIC,
+    "orderMultiple" INTEGER,
     "quantityOnHand" NUMERIC,
     "quantityOnSalesOrder" NUMERIC,
     "quantityOnPurchaseOrder" NUMERIC,
@@ -152,6 +163,17 @@ SELECT
     ELSE i."thumbnailPath"
   END AS "thumbnailPath",
   i."unitOfMeasureCode",
+  ir."leadTime",
+  ir."lotSize",
+  ip."reorderingPolicy",
+  ip."demandAccumulationPeriod",
+  ip."demandAccumulationSafetyStock",
+  ip."reorderPoint",
+  ip."reorderQuantity",
+  ip."minimumOrderQuantity",
+  ip."maximumOrderQuantity",
+  ip."maximumInventoryQuantity",
+  ip."orderMultiple",
   COALESCE(il."quantityOnHand", 0) AS "quantityOnHand",
   COALESCE(so."quantityOnSalesOrder", 0) AS "quantityOnSalesOrder",
   COALESCE(po."quantityOnPurchaseOrder", 0) AS "quantityOnPurchaseOrder",
@@ -177,6 +199,8 @@ FROM
   LEFT JOIN "materialFinish" mf ON m."finishId" = mf."id"
   LEFT JOIN "materialGrade" mg ON m."gradeId" = mg."id"
   LEFT JOIN "materialType" mt ON m."materialTypeId" = mt."id"
+  LEFT JOIN "itemReplenishment" ir ON i."id" = ir."itemId"
+  LEFT JOIN "itemPlanning" ip ON i."id" = ip."itemId" AND ip."locationId" = location_id
 WHERE
   i."itemTrackingType" <> 'Non-Inventory' AND i."companyId" = company_id;
   END;

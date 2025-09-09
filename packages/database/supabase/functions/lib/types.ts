@@ -47050,6 +47050,17 @@ export type Database = {
           materialTypeId: string
           thumbnailPath: string
           unitOfMeasureCode: string
+          leadTime: number
+          lotSize: number
+          reorderingPolicy: Database["public"]["Enums"]["itemReorderingPolicy"]
+          demandAccumulationPeriod: number
+          demandAccumulationSafetyStock: number
+          reorderPoint: number
+          reorderQuantity: number
+          minimumOrderQuantity: number
+          maximumOrderQuantity: number
+          maximumInventoryQuantity: number
+          orderMultiple: number
           quantityOnHand: number
           quantityOnSalesOrder: number
           quantityOnPurchaseOrder: number
