@@ -3,20 +3,25 @@ import type {
   getBatchProperties,
   getInventoryItems,
   getItemLedgerPage,
+  getKanbans,
   getReceiptLines,
   getReceiptTracking,
   getReceipts,
-  getShipments,
   getShipmentLines,
-  getShippingMethods,
   getShipmentTracking,
+  getShipments,
+  getShippingMethods,
   getTrackedEntities,
-  getWarehouseTransfers,
   getWarehouseTransferLines,
+  getWarehouseTransfers,
 } from "./inventory.service";
 
 export type BatchProperty = NonNullable<
   Awaited<ReturnType<typeof getBatchProperties>>["data"]
+>[number];
+
+export type Kanban = NonNullable<
+  Awaited<ReturnType<typeof getKanbans>>["data"]
 >[number];
 
 export type InventoryItem = NonNullable<

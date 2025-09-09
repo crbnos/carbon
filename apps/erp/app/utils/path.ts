@@ -545,6 +545,8 @@ export const path = {
       generatePath(`${x}/quality/required-actions/delete/${id}`),
     deleteIssueType: (id: string) =>
       generatePath(`${x}/quality/issue-types/delete/${id}`),
+    deleteKanban: (id: string) =>
+      generatePath(`${x}/inventory/kanbans/delete/${id}`),
     deleteNoQuoteReason: (id: string) =>
       generatePath(`${x}/sales/no-quote-reasons/delete/${id}`),
     deleteCustomerPortal: (id: string) =>
@@ -661,7 +663,6 @@ export const path = {
     externalQuote: (id: string) => generatePath(`/share/quote/${id}`),
     feedback: `${x}/feedback`,
     fiscalYears: `${x}/accounting/years`,
-
     gauge: (id: string) => generatePath(`${x}/quality/gauges/${id}`),
     gauges: `${x}/quality/gauges`,
     gaugeCalibrationRecord: (id: string) =>
@@ -707,9 +708,6 @@ export const path = {
     investigationType: (id: string) =>
       generatePath(`${x}/quality/investigation-types/${id}`),
     investigationTypes: `${x}/quality/investigation-types`,
-    requiredAction: (id: string) =>
-      generatePath(`${x}/quality/required-actions/${id}`),
-    requiredActions: `${x}/quality/required-actions`,
     issueType: (id: string) => generatePath(`${x}/quality/issue-types/${id}`),
     issueTypes: `${x}/quality/issue-types`,
     items: `${x}/items`,
@@ -756,6 +754,9 @@ export const path = {
     jobRecalculate: (id: string) => generatePath(`${x}/job/${id}/recalculate`),
     jobRelease: (id: string) => generatePath(`${x}/job/${id}/release`),
     jobStatus: (id: string) => generatePath(`${x}/job/${id}/status`),
+    kanban: (id: string) => generatePath(`${x}/inventory/kanbans/${id}`),
+    kanbans: `${x}/inventory/kanbans`,
+
     labelsSettings: `${x}/settings/labels`,
     location: (id: string) => generatePath(`${x}/resources/locations/${id}`),
     locations: `${x}/resources/locations`,
@@ -868,6 +869,7 @@ export const path = {
     newJobOperationAttribute: `${x}/job/methods/operation/attribute/new`,
     newJobOperationParameter: `${x}/job/methods/operation/parameter/new`,
     newJobOperationTool: `${x}/job/methods/operation/tool/new`,
+    newKanban: `${x}/inventory/kanbans/new`,
     newLocation: `${x}/resources/locations/new`,
     newMakeMethodVersion: `${x}/items/methods/version/new`,
     newMaterial: `${x}/material/new`,
@@ -1142,6 +1144,9 @@ export const path = {
     receiptPost: (id: string) => generatePath(`${x}/receipt/${id}/post`),
     receiptRoot: `${x}/receipt`,
     refreshSession: "/refresh-session",
+    requiredAction: (id: string) =>
+      generatePath(`${x}/quality/required-actions/${id}`),
+    requiredActions: `${x}/quality/required-actions`,
     resendInvite: `${x}/users/resend-invite`,
     resources: `${x}/resources`,
     revision: (id: string) => generatePath(`${x}/items/revisions/${id}`),

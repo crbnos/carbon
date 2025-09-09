@@ -11,6 +11,7 @@ import type {
   batchPropertyOrderValidator,
   batchPropertyValidator,
   inventoryAdjustmentValidator,
+  kanbanValidator,
   receiptValidator,
   shelfValidator,
   shipmentValidator,
@@ -23,6 +24,27 @@ export async function deleteBatchProperty(
   id: string
 ) {
   return client.from("batchProperty").delete().eq("id", id);
+}
+
+export async function deleteWarehouseTransfer(
+  client: SupabaseClient<Database>,
+  transferId: string
+) {
+  return client.from("warehouseTransfer").delete().eq("id", transferId);
+}
+
+export async function deleteWarehouseTransferLine(
+  client: SupabaseClient<Database>,
+  transferLineId: string
+) {
+  return client.from("warehouseTransferLine").delete().eq("id", transferLineId);
+}
+
+export async function deleteKanban(
+  client: SupabaseClient<Database>,
+  kanbanId: string
+) {
+  return client.from("kanban").delete().eq("id", kanbanId);
 }
 
 export async function deleteReceipt(
@@ -175,6 +197,45 @@ export async function getInventoryItemsCount(
   query = setGenericQueryFilters(query, args);
 
   return query;
+}
+
+export async function getKanbans(
+  client: SupabaseClient<Database>,
+  locationId: string,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+  }
+) {
+  let query = client
+    .from("kanbans")
+    .select("*", {
+      count: "exact",
+    })
+    .eq("companyId", companyId)
+    .eq("locationId", locationId);
+
+  if (args.search) {
+    query = query.or(
+      `name.ilike.%${args.search}%,readableIdWithRevision.ilike.%${args.search}%`
+    );
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "readableIdWithRevision", ascending: false },
+  ]);
+  return query;
+}
+
+export async function getKanban(
+  client: SupabaseClient<Database>,
+  kanbanId: string
+) {
+  return client
+    .from("kanban")
+    .select("*, item!itemId(*), location!locationId(*)")
+    .eq("id", kanbanId)
+    .single();
 }
 
 export async function getReceipts(
@@ -637,6 +698,76 @@ export async function getTrackedEntitiesByOperationId(
     jobOperation.data.jobMakeMethodId
   );
 }
+
+export async function getWarehouseTransfers(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+  }
+) {
+  let query = client
+    .from("warehouseTransfer")
+    .select(
+      "*, fromLocation:location!fromLocationId(name), toLocation:location!toLocationId(name)",
+      {
+        count: "exact",
+      }
+    )
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.or(
+      `transferId.ilike.%${args.search}%,reference.ilike.%${args.search}%`
+    );
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "transferId", ascending: false },
+  ]);
+  return query;
+}
+
+export async function getWarehouseTransfer(
+  client: SupabaseClient<Database>,
+  transferId: string
+) {
+  return client
+    .from("warehouseTransfer")
+    .select(
+      "*, fromLocation:location!fromLocationId(*), toLocation:location!toLocationId(*)"
+    )
+    .eq("id", transferId)
+    .single();
+}
+
+export async function getWarehouseTransferLine(
+  client: SupabaseClient<Database>,
+  transferId: string,
+  lineId: string
+) {
+  return client
+    .from("warehouseTransferLine")
+    .select(
+      "*, warehouseTransfer(*, fromLocation:location!fromLocationId(name), toLocation:location!toLocationId(name))"
+    )
+    .eq("id", lineId)
+    .eq("transferId", transferId)
+    .single();
+}
+
+export async function getWarehouseTransferLines(
+  client: SupabaseClient<Database>,
+  transferId: string
+) {
+  return client
+    .from("warehouseTransferLine")
+    .select(
+      "*, item(*), fromShelf:shelf!fromShelfId(name), toShelf:shelf!toShelfId(name)"
+    )
+    .eq("transferId", transferId);
+}
+
 export async function insertManualInventoryAdjustment(
   client: SupabaseClient<Database>,
   inventoryAdjustment: z.infer<typeof inventoryAdjustmentValidator> & {
@@ -907,90 +1038,39 @@ export async function upsertShipment(
     .single();
 }
 
-// Warehouse Transfer functions
-export async function getWarehouseTransfers(
+export async function upsertKanban(
   client: SupabaseClient<Database>,
-  companyId: string,
-  args: GenericQueryFilters & {
-    search: string | null;
-  }
+  kanban:
+    | (Omit<z.infer<typeof kanbanValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof kanbanValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
 ) {
-  let query = client
-    .from("warehouseTransfer")
-    .select(
-      "*, fromLocation:location!fromLocationId(name), toLocation:location!toLocationId(name)",
-      {
-        count: "exact",
-      }
-    )
-    .eq("companyId", companyId);
-
-  if (args.search) {
-    query = query.or(
-      `transferId.ilike.%${args.search}%,reference.ilike.%${args.search}%`
-    );
+  if ("createdBy" in kanban) {
+    return client
+      .from("kanban")
+      .insert({
+        ...kanban,
+      })
+      .select("id")
+      .single();
   }
-
-  query = setGenericQueryFilters(query, args, [
-    { column: "transferId", ascending: false },
-  ]);
-  return query;
-}
-
-export async function getWarehouseTransfer(
-  client: SupabaseClient<Database>,
-  transferId: string
-) {
   return client
-    .from("warehouseTransfer")
-    .select(
-      "*, fromLocation:location!fromLocationId(*), toLocation:location!toLocationId(*)"
-    )
-    .eq("id", transferId)
+    .from("kanban")
+    .update({
+      ...sanitize(kanban),
+      updatedAt: today(getLocalTimeZone()).toString(),
+    })
+    .eq("id", kanban.id)
+    .select("id")
     .single();
 }
-
-export async function getWarehouseTransferLine(
-  client: SupabaseClient<Database>,
-  transferId: string,
-  lineId: string
-) {
-  return client
-    .from("warehouseTransferLine")
-    .select(
-      "*, warehouseTransfer(*, fromLocation:location!fromLocationId(name), toLocation:location!toLocationId(name))"
-    )
-    .eq("id", lineId)
-    .eq("transferId", transferId)
-    .single();
-}
-
-export async function getWarehouseTransferLines(
-  client: SupabaseClient<Database>,
-  transferId: string
-) {
-  return client
-    .from("warehouseTransferLine")
-    .select(
-      "*, item(*), fromShelf:shelf!fromShelfId(name), toShelf:shelf!toShelfId(name)"
-    )
-    .eq("transferId", transferId);
-}
-
-export async function deleteWarehouseTransfer(
-  client: SupabaseClient<Database>,
-  transferId: string
-) {
-  return client.from("warehouseTransfer").delete().eq("id", transferId);
-}
-
-export async function deleteWarehouseTransferLine(
-  client: SupabaseClient<Database>,
-  transferLineId: string
-) {
-  return client.from("warehouseTransferLine").delete().eq("id", transferLineId);
-}
-
 export async function upsertWarehouseTransfer(
   client: SupabaseClient<Database>,
   transfer:
