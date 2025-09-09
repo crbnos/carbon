@@ -1,8 +1,8 @@
-import bwipjs from "@bwip-js/node";
 import type { Database } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
 import { Image, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { createTw } from "react-pdf-tailwind";
+import { generateQRCode } from "../qr/qr-code";
 import type { Company, PDF } from "../types";
 import { Header, Note, Template } from "./components";
 
@@ -284,17 +284,26 @@ const JobTravelerPDF = ({
             .map((operation, index) => {
               const setupQrCode =
                 operation.setupTime > 0
-                  ? generateQRCode(`${getStartPath(operation.id)}?type=Setup`)
+                  ? generateQRCode(
+                      `${getStartPath(operation.id)}?type=Setup`,
+                      10
+                    )
                   : null;
               let laborQrCode =
                 operation.laborTime > 0
-                  ? generateQRCode(`${getStartPath(operation.id)}?type=Labor`)
+                  ? generateQRCode(
+                      `${getStartPath(operation.id)}?type=Labor`,
+                      10
+                    )
                   : null;
               let machiningQrCode =
                 operation.machineTime > 0
-                  ? generateQRCode(`${getStartPath(operation.id)}?type=Machine`)
+                  ? generateQRCode(
+                      `${getStartPath(operation.id)}?type=Machine`,
+                      10
+                    )
                   : null;
-              let completeQrCode = generateQRCode(getEndPath(operation.id));
+              let completeQrCode = generateQRCode(getEndPath(operation.id), 10);
 
               if (
                 setupQrCode === null &&
@@ -302,7 +311,8 @@ const JobTravelerPDF = ({
                 machiningQrCode === null
               ) {
                 laborQrCode = generateQRCode(
-                  `${getStartPath(operation.id)}?type=Labor`
+                  `${getStartPath(operation.id)}?type=Labor`,
+                  10
                 );
               }
 
@@ -372,17 +382,6 @@ const JobTravelerPDF = ({
     </Template>
   );
 };
-
-async function generateQRCode(text: string): Promise<string> {
-  const buffer = await bwipjs.toBuffer({
-    bcid: "qrcode",
-    text,
-    scale: 2,
-    height: 10,
-    width: 10,
-  });
-  return `data:image/png;base64,${buffer.toString("base64")}`;
-}
 
 export default JobTravelerPDF;
 

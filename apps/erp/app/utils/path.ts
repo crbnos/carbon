@@ -159,6 +159,7 @@ export const path = {
     },
     file: {
       cadModel: (id: string) => generatePath(`${file}/model/${id}`),
+      kanbanQrCode: (id: string) => generatePath(`${file}/kanban/${id}.png`),
       jobTraveler: (id: string) => generatePath(`${file}/traveler/${id}.pdf`),
       nonConformance: (id: string) => generatePath(`${file}/issue/${id}.pdf`),
       operationLabelsPdf: (

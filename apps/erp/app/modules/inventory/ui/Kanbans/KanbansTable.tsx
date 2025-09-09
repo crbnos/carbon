@@ -1,4 +1,13 @@
-import { Combobox, HStack, MenuItem, VStack } from "@carbon/react";
+import {
+  Combobox,
+  HStack,
+  IconButton,
+  MenuItem,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  VStack,
+} from "@carbon/react";
 import { Link } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -8,6 +17,7 @@ import {
   LuMapPin,
   LuPackage,
   LuPencil,
+  LuQrCode,
   LuRefreshCw,
   LuTrash,
   LuUser,
@@ -69,6 +79,35 @@ const KanbansTable = memo(({ data, count, locationId }: KanbansTableProps) => {
           },
           icon: <LuPackage />,
         },
+      },
+      {
+        id: "links",
+        header: "",
+        cell: ({ row }) => (
+          <HStack>
+            <Popover>
+              <PopoverTrigger>
+                <IconButton
+                  aria-label="QR Code"
+                  variant="secondary"
+                  icon={<LuQrCode />}
+                />
+              </PopoverTrigger>
+              <PopoverContent
+                align="center"
+                className="size-[236px] overflow-hidden z-[100] bg-white p-4"
+              >
+                <iframe
+                  seamless
+                  title={"Kanban QR Code"}
+                  width="198"
+                  height="198"
+                  src={path.to.file.kanbanQrCode(row.original.id!)}
+                />
+              </PopoverContent>
+            </Popover>
+          </HStack>
+        ),
       },
       {
         accessorKey: "quantity",

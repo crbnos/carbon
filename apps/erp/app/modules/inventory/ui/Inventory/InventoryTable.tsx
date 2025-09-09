@@ -132,6 +132,14 @@ const InventoryTable = memo(
           },
         },
         {
+          accessorKey: "leadTime",
+          header: "Lead Time",
+          cell: ({ row }) => numberFormatter.format(row.original.leadTime),
+          meta: {
+            icon: <LuClock />,
+          },
+        },
+        {
           accessorKey: "reorderingPolicy",
           header: "Reorder Policy",
           cell: ({ row }) => {
@@ -176,14 +184,7 @@ const InventoryTable = memo(
             icon: <LuLoaderCircle />,
           },
         },
-        {
-          accessorKey: "leadTime",
-          header: "Lead Time",
-          cell: ({ row }) => numberFormatter.format(row.original.leadTime),
-          meta: {
-            icon: <LuClock />,
-          },
-        },
+
         {
           accessorKey: "usageLast30Days",
           header: "Usage/Day (30d)",

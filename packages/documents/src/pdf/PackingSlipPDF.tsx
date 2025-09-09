@@ -5,6 +5,7 @@ import type { TrackedEntityAttributes } from "@carbon/utils";
 import { formatCityStatePostalCode } from "@carbon/utils";
 import { Image, Text, View } from "@react-pdf/renderer";
 import { createTw } from "react-pdf-tailwind";
+import { generateQRCode } from "../qr/qr-code";
 import type { PDF } from "../types";
 import { Header, Note, Summary, Template } from "./components";
 
@@ -224,7 +225,7 @@ const PackingSlipPDF = ({
                       {trackedEntitiesForLine.length > 0 && (
                         <View>
                           {trackedEntitiesForLine.map((entity) => {
-                            const qrCodeDataUrl = generateQRCode(entity.id);
+                            const qrCodeDataUrl = generateQRCode(entity.id, 8);
                             return (
                               <View
                                 key={entity.id}
@@ -280,17 +281,6 @@ function getLineDescriptionDetails(
   return line.description;
 }
 
-async function generateQRCode(text: string): Promise<string> {
-  const buffer = await bwipjs.toBuffer({
-    bcid: "qrcode",
-    text,
-    scale: 2, // Reduced scale for smaller QR code
-    height: 8, // Reduced height
-    width: 8, // Reduced width
-  });
-  return `data:image/png;base64,${buffer.toString("base64")}`;
-}
-
 async function generateBarcode(text: string): Promise<string> {
   const buffer = await bwipjs.toBuffer({
     bcid: "code128", // Barcode type
@@ -302,5 +292,4 @@ async function generateBarcode(text: string): Promise<string> {
   });
   return `data:image/png;base64,${buffer.toString("base64")}`;
 }
-
 export default PackingSlipPDF;

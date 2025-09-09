@@ -1,7 +1,7 @@
-import { Document, Page, View, Text, Image } from "@react-pdf/renderer";
-import bwipjs from "@bwip-js/node";
+import type { LabelSize, ProductLabelItem } from "@carbon/utils";
+import { Document, Image, Page, Text, View } from "@react-pdf/renderer";
 import { createTw } from "react-pdf-tailwind";
-import { LabelSize, ProductLabelItem } from "@carbon/utils";
+import { generateQRCode } from "../qr/qr-code";
 
 interface ProductLabelProps {
   items: ProductLabelItem[];
@@ -176,7 +176,10 @@ const ProductLabelPDF = ({ items, labelSize }: ProductLabelProps) => {
 
                       <View style={tw("flex items-center justify-center")}>
                         <Image
-                          src={generateQRCode(item.trackedEntityId)}
+                          src={generateQRCode(
+                            item.trackedEntityId,
+                            qrCodeSize / 72
+                          )}
                           style={{
                             width: qrCodeSize,
                             height: qrCodeSize,
@@ -207,15 +210,5 @@ const ProductLabelPDF = ({ items, labelSize }: ProductLabelProps) => {
     </Document>
   );
 };
-
-async function generateQRCode(text: string): Promise<string> {
-  const buffer = await bwipjs.toBuffer({
-    bcid: "qrcode", // QR code type
-    text: text, // Text to encode
-    scale: 3, // Scaling factor
-    includetext: false, // No human-readable text for QR codes
-  });
-  return `data:image/png;base64,${buffer.toString("base64")}`;
-}
 
 export default ProductLabelPDF;
