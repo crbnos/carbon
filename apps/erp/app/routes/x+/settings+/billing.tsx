@@ -35,7 +35,7 @@ import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: "Payment",
-  to: path.to.settingsPayment,
+  to: path.to.billing,
 };
 
 const transferOwnershipValidator = z.object({
@@ -177,7 +177,7 @@ export default function PaymentSettings() {
         spacing={4}
         className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
       >
-        <Heading size="h3">Payment</Heading>
+        <Heading size="h3">Billing</Heading>
         {edition === Edition.Cloud && isOwner() && (
           <>
             <Card>
@@ -232,7 +232,7 @@ export default function PaymentSettings() {
                 </VStack>
               </CardContent>
               <CardFooter>
-                <Form method="post" action={path.to.settingsPayment}>
+                <Form method="post" action={path.to.billing}>
                   <input type="hidden" name="intent" value="billing-portal" />
                   <Button type="submit">Manage Subscription</Button>
                 </Form>

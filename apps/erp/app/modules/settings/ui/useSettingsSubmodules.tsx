@@ -26,8 +26,8 @@ const settingsRoutes: AuthenticatedRouteGroup[] = [
         icon: <LuFactory />,
       },
       {
-        name: "Payment",
-        to: path.to.settingsPayment,
+        name: "Billing",
+        to: path.to.billing,
         role: "employee",
         icon: <LuCreditCard />,
         requiresOwnership: true,

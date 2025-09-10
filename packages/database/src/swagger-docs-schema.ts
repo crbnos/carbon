@@ -14295,6 +14295,87 @@ export default {
         tags: ["location"],
       },
     },
+    "/kanbans": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.kanbans.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbans.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbans.replenishmentSystem",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbans.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbans.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbans.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbans.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbans.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbans.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbans.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbans.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbans.readableIdWithRevision",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbans.locationName",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/kanbans",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["kanbans"],
+      },
+    },
     "/companies": {
       get: {
         parameters: [
@@ -63638,7 +63719,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -63687,7 +63768,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -66899,6 +66980,75 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+      },
+      type: "object",
+    },
+    kanbans: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        replenishmentSystem: {
+          enum: ["Buy", "Make", "Buy and Make"],
+          format: 'public."itemReplenishmentSystem"',
+          type: "string",
+        },
+        quantity: {
+          format: "integer",
+          type: "integer",
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        readableIdWithRevision: {
+          format: "text",
+          type: "string",
+        },
+        locationName: {
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -93569,6 +93719,93 @@ export default {
     },
     "rowFilter.location.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "body.kanbans": {
+      name: "kanbans",
+      description: "kanbans",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/kanbans",
+      },
+    },
+    "rowFilter.kanbans.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.kanbans.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.kanbans.replenishmentSystem": {
+      name: "replenishmentSystem",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.kanbans.quantity": {
+      name: "quantity",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.kanbans.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.kanbans.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.kanbans.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.kanbans.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.kanbans.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.kanbans.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.kanbans.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.kanbans.readableIdWithRevision": {
+      name: "readableIdWithRevision",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.kanbans.locationName": {
+      name: "locationName",
       required: false,
       in: "query",
       type: "string",

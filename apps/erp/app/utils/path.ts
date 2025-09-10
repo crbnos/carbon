@@ -326,6 +326,7 @@ export const path = {
       generatePath(`${x}/inventory/batch-property/${itemId}/property`),
     batchPropertyOrder: (itemId: string) =>
       generatePath(`${x}/inventory/batch-property/${itemId}/property/order`),
+    billing: `${x}/settings/billing`,
     bulkEditPermissions: `${x}/users/bulk-edit-permissions`,
     bulkUpdateItems: `${x}/items/update`,
     bulkUpdateProductionPlanning: `${x}/production/planning/update`,
@@ -350,7 +351,6 @@ export const path = {
     company: `${x}/settings/company`,
     companySwitch: (companyId: string) =>
       generatePath(`${x}/settings/company/switch/${companyId}`),
-    settingsPayment: `${x}/settings/payment`,
     configurationParameter: (itemId: string) =>
       generatePath(`${x}/part/${itemId}/parameter`),
     configurationParameterGroup: (itemId: string) =>

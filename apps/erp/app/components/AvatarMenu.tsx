@@ -160,7 +160,7 @@ const AvatarMenu = () => {
 
         {edition === Edition.Cloud && isOwner() && (
           <DropdownMenuItem asChild>
-            <Link to={path.to.settingsPayment}>
+            <Link to={path.to.billing}>
               <DropdownMenuIcon icon={<LuCreditCard />} />
               <span>Manage Subscription</span>
             </Link>
