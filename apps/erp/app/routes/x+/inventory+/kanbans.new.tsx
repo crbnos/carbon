@@ -24,7 +24,6 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   const formData = await request.formData();
-  const modal = formData.get("type") === "modal";
 
   const validation = await validator(kanbanValidator).validate(formData);
 
@@ -39,6 +38,7 @@ export async function action({ request }: ActionFunctionArgs) {
     companyId,
     createdBy: userId,
   });
+
   if (createKanban.error) {
     return json(
       {},
@@ -46,12 +46,10 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  return modal
-    ? json(createKanban, { status: 201 })
-    : redirect(
-        `${path.to.kanbans}?${getParams(request)}`,
-        await flash(request, success("Kanban created"))
-      );
+  throw redirect(
+    `${path.to.kanbans}?${getParams(request)}`,
+    await flash(request, success("Kanban created"))
+  );
 }
 
 export default function NewKanbanRoute() {
@@ -66,6 +64,7 @@ export default function NewKanbanRoute() {
     quantity: 1,
     replenishmentSystem: "Buy" as const,
     locationId,
+    conversionFactor: 1,
   };
 
   return (

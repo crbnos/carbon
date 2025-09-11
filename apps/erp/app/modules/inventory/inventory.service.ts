@@ -231,11 +231,7 @@ export async function getKanban(
   client: SupabaseClient<Database>,
   kanbanId: string
 ) {
-  return client
-    .from("kanban")
-    .select("*, item!itemId(*), location!locationId(*)")
-    .eq("id", kanbanId)
-    .single();
+  return client.from("kanbans").select("*").eq("id", kanbanId).single();
 }
 
 export async function getReceipts(

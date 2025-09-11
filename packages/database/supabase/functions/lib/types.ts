@@ -11630,40 +11630,49 @@ export type Database = {
       kanban: {
         Row: {
           companyId: string
+          conversionFactor: number
           createdAt: string
           createdBy: string
           id: string
           itemId: string
           locationId: string
+          purchaseUnitOfMeasureCode: string | null
           quantity: number
           replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
           shelfId: string | null
+          supplierId: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
         Insert: {
           companyId: string
+          conversionFactor?: number
           createdAt?: string
           createdBy: string
           id?: string
           itemId: string
           locationId: string
+          purchaseUnitOfMeasureCode?: string | null
           quantity: number
           replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
           shelfId?: string | null
+          supplierId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
         Update: {
           companyId?: string
+          conversionFactor?: number
           createdAt?: string
           createdBy?: string
           id?: string
           itemId?: string
           locationId?: string
+          purchaseUnitOfMeasureCode?: string | null
           quantity?: number
           replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
           shelfId?: string | null
+          supplierId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -11774,10 +11783,52 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "kanban_purchaseUnitOfMeasureCode_fkey"
+            columns: ["purchaseUnitOfMeasureCode", "companyId"]
+            isOneToOne: false
+            referencedRelation: "unitOfMeasure"
+            referencedColumns: ["code", "companyId"]
+          },
+          {
             foreignKeyName: "kanban_shelfId_fkey"
             columns: ["shelfId"]
             isOneToOne: false
             referencedRelation: "shelf"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kanban_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["supplierId"]
+          },
+          {
+            foreignKeyName: "kanban_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["supplierId"]
+          },
+          {
+            foreignKeyName: "kanban_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderSuppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kanban_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "supplier"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kanban_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
           {
@@ -39326,6 +39377,7 @@ export type Database = {
       kanbans: {
         Row: {
           companyId: string | null
+          conversionFactor: number | null
           createdAt: string | null
           createdBy: string | null
           id: string | null
@@ -39333,12 +39385,17 @@ export type Database = {
           locationId: string | null
           locationName: string | null
           name: string | null
+          purchaseUnitOfMeasureCode: string | null
           quantity: number | null
           readableIdWithRevision: string | null
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
           shelfId: string | null
+          shelfName: string | null
+          supplierId: string | null
+          supplierName: string | null
+          thumbnailPath: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -39449,10 +39506,52 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "kanban_purchaseUnitOfMeasureCode_fkey"
+            columns: ["purchaseUnitOfMeasureCode", "companyId"]
+            isOneToOne: false
+            referencedRelation: "unitOfMeasure"
+            referencedColumns: ["code", "companyId"]
+          },
+          {
             foreignKeyName: "kanban_shelfId_fkey"
             columns: ["shelfId"]
             isOneToOne: false
             referencedRelation: "shelf"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kanban_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["supplierId"]
+          },
+          {
+            foreignKeyName: "kanban_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["supplierId"]
+          },
+          {
+            foreignKeyName: "kanban_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderSuppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kanban_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "supplier"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kanban_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
             referencedColumns: ["id"]
           },
           {
@@ -40469,14 +40568,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -44273,14 +44372,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -44816,14 +44915,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]

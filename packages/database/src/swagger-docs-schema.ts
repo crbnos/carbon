@@ -14317,6 +14317,15 @@ export default {
             $ref: "#/parameters/rowFilter.kanbans.shelfId",
           },
           {
+            $ref: "#/parameters/rowFilter.kanbans.supplierId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbans.purchaseUnitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbans.conversionFactor",
+          },
+          {
             $ref: "#/parameters/rowFilter.kanbans.companyId",
           },
           {
@@ -14339,6 +14348,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.kanbans.locationName",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbans.shelfName",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbans.thumbnailPath",
           },
           {
             $ref: "#/parameters/select",
@@ -54820,6 +54835,15 @@ export default {
             $ref: "#/parameters/rowFilter.kanban.shelfId",
           },
           {
+            $ref: "#/parameters/rowFilter.kanban.supplierId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanban.purchaseUnitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanban.conversionFactor",
+          },
+          {
             $ref: "#/parameters/rowFilter.kanban.companyId",
           },
           {
@@ -54912,6 +54936,15 @@ export default {
             $ref: "#/parameters/rowFilter.kanban.shelfId",
           },
           {
+            $ref: "#/parameters/rowFilter.kanban.supplierId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanban.purchaseUnitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanban.conversionFactor",
+          },
+          {
             $ref: "#/parameters/rowFilter.kanban.companyId",
           },
           {
@@ -54956,6 +54989,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.kanban.shelfId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanban.supplierId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanban.purchaseUnitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanban.conversionFactor",
           },
           {
             $ref: "#/parameters/rowFilter.kanban.companyId",
@@ -67030,6 +67072,20 @@ export default {
           format: "text",
           type: "string",
         },
+        supplierId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplier.id`.<fk table='supplier' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        purchaseUnitOfMeasureCode: {
+          format: "text",
+          type: "string",
+        },
+        conversionFactor: {
+          format: "numeric",
+          type: "number",
+        },
         companyId: {
           description:
             "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
@@ -67065,6 +67121,14 @@ export default {
           type: "string",
         },
         locationName: {
+          format: "text",
+          type: "string",
+        },
+        shelfName: {
+          format: "text",
+          type: "string",
+        },
+        thumbnailPath: {
           format: "text",
           type: "string",
         },
@@ -86041,6 +86105,7 @@ export default {
         "replenishmentSystem",
         "quantity",
         "locationId",
+        "conversionFactor",
         "companyId",
         "createdAt",
         "createdBy",
@@ -86079,6 +86144,21 @@ export default {
             "Note:\nThis is a Foreign Key to `shelf.id`.<fk table='shelf' column='id'/>",
           format: "text",
           type: "string",
+        },
+        supplierId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplier.id`.<fk table='supplier' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        purchaseUnitOfMeasureCode: {
+          format: "text",
+          type: "string",
+        },
+        conversionFactor: {
+          default: 1,
+          format: "numeric",
+          type: "number",
         },
         companyId: {
           description:
@@ -93792,6 +93872,24 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.kanbans.supplierId": {
+      name: "supplierId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.kanbans.purchaseUnitOfMeasureCode": {
+      name: "purchaseUnitOfMeasureCode",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.kanbans.conversionFactor": {
+      name: "conversionFactor",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.kanbans.companyId": {
       name: "companyId",
       required: false,
@@ -93836,6 +93934,18 @@ export default {
     },
     "rowFilter.kanbans.locationName": {
       name: "locationName",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.kanbans.shelfName": {
+      name: "shelfName",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.kanbans.thumbnailPath": {
+      name: "thumbnailPath",
       required: false,
       in: "query",
       type: "string",
@@ -115253,6 +115363,24 @@ export default {
     },
     "rowFilter.kanban.shelfId": {
       name: "shelfId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.kanban.supplierId": {
+      name: "supplierId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.kanban.purchaseUnitOfMeasureCode": {
+      name: "purchaseUnitOfMeasureCode",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.kanban.conversionFactor": {
+      name: "conversionFactor",
       required: false,
       in: "query",
       type: "string",

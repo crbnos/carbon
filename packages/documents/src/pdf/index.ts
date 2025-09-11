@@ -10,6 +10,7 @@ import SalesOrderPDF from "./SalesOrderPDF";
 export {
   IssuePDF,
   JobTravelerPDF,
+  KanbanLabelPDF,
   PackingSlipPDF,
   ProductLabelPDF,
   PurchaseOrderPDF,

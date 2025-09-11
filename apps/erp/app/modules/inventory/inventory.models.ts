@@ -126,6 +126,9 @@ export const kanbanValidator = z.object({
   ),
   locationId: z.string().min(1, { message: "Location is required" }),
   shelfId: zfd.text(z.string().optional()),
+  supplierId: zfd.text(z.string().optional()),
+  purchaseUnitOfMeasureCode: zfd.text(z.string().optional()),
+  conversionFactor: zfd.numeric(z.number().min(0).default(1)),
 });
 
 export const receiptValidator = z.object({

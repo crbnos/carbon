@@ -74,6 +74,10 @@ export default function EditKanbanRoute() {
     quantity: kanban?.quantity ?? 1,
     replenishmentSystem: kanban?.replenishmentSystem ?? "Buy",
     locationId: kanban?.locationId ?? "",
+    shelfId: kanban?.shelfId ?? "",
+    supplierId: kanban?.supplierId ?? "",
+    purchaseUnitOfMeasureCode: kanban?.purchaseUnitOfMeasureCode ?? "",
+    conversionFactor: kanban?.conversionFactor ?? 1,
   };
 
   return (

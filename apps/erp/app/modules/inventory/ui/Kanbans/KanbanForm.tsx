@@ -13,14 +13,21 @@ import {
   toast,
   VStack,
 } from "@carbon/react";
-import { useFetcher } from "@remix-run/react";
 import { useState } from "react";
 import type { z } from "zod";
 import { Enumerable } from "~/components/Enumerable";
-import { Item, Location, Number, Shelf, Submit } from "~/components/Form";
+import {
+  ConversionFactor,
+  Item,
+  Location,
+  Number,
+  Shelf,
+  Submit,
+  Supplier,
+  UnitOfMeasure,
+} from "~/components/Form";
 import { useUser } from "~/hooks";
 import type { MethodItemType } from "~/modules/shared/types";
-import { path } from "~/utils/path";
 import {
   kanbanValidator,
   replenishmentSystemTypes,
@@ -35,8 +42,6 @@ type KanbanFormProps = {
 };
 
 const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
-  const fetcher = useFetcher<{ success: boolean; message: string }>();
-
   const [selectedReplenishmentSystem, setSelectedReplenishmentSystem] =
     useState<string>(initialValues.replenishmentSystem || "Buy");
 
@@ -46,19 +51,31 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
     initialValues.shelfId || null
   );
   const [itemType, setItemType] = useState<MethodItemType | "Item">("Item");
-  const onTypeChange = (type: MethodItemType) => {
-    setItemType(type);
-  };
+  const [itemId, setItemId] = useState<string>(initialValues.itemId || "");
+
+  const [supplierId, setSupplierId] = useState<string>(
+    initialValues.supplierId || ""
+  );
+  const [purchaseUnitOfMeasureCode, setPurchaseUnitOfMeasureCode] =
+    useState<string>(initialValues.purchaseUnitOfMeasureCode || "");
+  const [inventoryUnitOfMeasureCode, setInventoryUnitOfMeasureCode] =
+    useState<string>("");
+  const [conversionFactor, setConversionFactor] = useState<number>(
+    initialValues.conversionFactor || 1
+  );
 
   const { carbon } = useCarbon();
   const { company } = useUser();
 
   const onItemChange = async (value: { value: string } | null) => {
     if (!carbon || !value) return;
+
+    setItemId(value.value);
+
     const [item, shelf] = await Promise.all([
       carbon
         .from("item")
-        .select("replenishmentSystem")
+        .select("replenishmentSystem, unitOfMeasureCode")
         .eq("id", value.value)
         .single(),
       carbon
@@ -77,6 +94,62 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
     if (shelf.data?.defaultShelfId) {
       setShelfId(shelf.data.defaultShelfId);
     }
+
+    // Set inventory unit of measure from item
+    const itemUnitOfMeasure = item.data?.unitOfMeasureCode || "";
+    setInventoryUnitOfMeasureCode(itemUnitOfMeasure);
+
+    // If there's no supplier selected, set purchase unit to match inventory unit
+    if (!supplierId) {
+      setPurchaseUnitOfMeasureCode(itemUnitOfMeasure);
+      setConversionFactor(1);
+    } else {
+      // If there's a supplier, look up supplier part for this item/supplier combo
+      const supplierPart = await carbon
+        .from("supplierPart")
+        .select("supplierUnitOfMeasureCode, conversionFactor")
+        .eq("itemId", value.value)
+        .eq("supplierId", supplierId)
+        .eq("companyId", company.id)
+        .maybeSingle();
+
+      if (supplierPart.data) {
+        setPurchaseUnitOfMeasureCode(
+          supplierPart.data.supplierUnitOfMeasureCode || itemUnitOfMeasure
+        );
+        setConversionFactor(supplierPart.data.conversionFactor || 1);
+      } else {
+        setPurchaseUnitOfMeasureCode(itemUnitOfMeasure);
+        setConversionFactor(1);
+      }
+    }
+  };
+
+  const onSupplierChange = async (value: { value: string } | null) => {
+    setSupplierId(value?.value || "");
+
+    // If we have both item and supplier, look up supplier part
+    if (carbon && value?.value && itemId) {
+      const supplierPart = await carbon
+        .from("supplierPart")
+        .select("supplierUnitOfMeasureCode, conversionFactor")
+        .eq("itemId", itemId)
+        .eq("supplierId", value.value)
+        .eq("companyId", company.id)
+        .maybeSingle();
+
+      if (supplierPart.data) {
+        setPurchaseUnitOfMeasureCode(
+          supplierPart.data.supplierUnitOfMeasureCode ||
+            inventoryUnitOfMeasureCode
+        );
+        setConversionFactor(supplierPart.data.conversionFactor || 1);
+      }
+    } else if (!value?.value) {
+      // If supplier is cleared, reset to inventory unit of measure
+      setPurchaseUnitOfMeasureCode(inventoryUnitOfMeasureCode);
+      setConversionFactor(1);
+    }
   };
 
   const [locationId, setLocationId] = useState<string>(
@@ -91,14 +164,9 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
     <Drawer open onOpenChange={onClose}>
       <DrawerContent>
         <ValidatedForm
-          fetcher={fetcher}
           method="post"
-          action={
-            isEditing ? path.to.kanban(initialValues.id!) : path.to.newKanban
-          }
           validator={kanbanValidator}
           defaultValues={initialValues}
-          onSubmit={onClose}
           className="flex flex-col h-full"
         >
           <DrawerHeader>
@@ -121,10 +189,8 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
                 <Item
                   name="itemId"
                   label="Item"
-                  type="Item"
-                  itemType={itemType}
-                  // @ts-ignore
-                  onTypeChange={onTypeChange}
+                  type={itemType}
+                  onTypeChange={(t) => setItemType(t as MethodItemType)}
                   onChange={onItemChange}
                   isReadOnly={isEditing}
                 />
@@ -141,7 +207,9 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
                   name="replenishmentSystem"
                   label="Replenishment System"
                   onChange={(value) => {
-                    console.log(value);
+                    if (value) {
+                      setSelectedReplenishmentSystem(value.value);
+                    }
                   }}
                   options={replenishmentSystemTypes
                     .filter((type) => type !== "Buy and Make")
@@ -150,6 +218,44 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
                       label: <Enumerable value={type} />,
                     }))}
                 />
+
+                {selectedReplenishmentSystem === "Buy" && (
+                  <>
+                    <Supplier
+                      name="supplierId"
+                      label="Supplier"
+                      value={supplierId}
+                      onChange={onSupplierChange}
+                    />
+
+                    <UnitOfMeasure
+                      name="purchaseUnitOfMeasureCode"
+                      label="Purchase Unit of Measure"
+                      value={purchaseUnitOfMeasureCode}
+                      onChange={(value) => {
+                        if (
+                          value &&
+                          typeof value === "object" &&
+                          "value" in value
+                        ) {
+                          setPurchaseUnitOfMeasureCode(value.value);
+                        } else {
+                          setPurchaseUnitOfMeasureCode("");
+                        }
+                      }}
+                    />
+
+                    <ConversionFactor
+                      name="conversionFactor"
+                      label="Conversion Factor"
+                      inventoryCode={inventoryUnitOfMeasureCode}
+                      purchasingCode={purchaseUnitOfMeasureCode}
+                      value={conversionFactor}
+                      onChange={setConversionFactor}
+                      helperText="Number of inventory units per purchase unit"
+                    />
+                  </>
+                )}
 
                 <Location
                   name="locationId"

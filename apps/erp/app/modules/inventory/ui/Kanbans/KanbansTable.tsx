@@ -1,12 +1,20 @@
 import {
   Combobox,
   Copy,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
   HStack,
   IconButton,
   MenuItem,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   VStack,
 } from "@carbon/react";
 import { Link } from "@remix-run/react";
@@ -14,20 +22,30 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import {
   LuCalendar,
+  LuContainer,
   LuHash,
   LuLink,
   LuMapPin,
   LuPackage,
   LuPencil,
+  LuPrinter,
   LuQrCode,
   LuRefreshCw,
+  LuTag,
   LuTrash,
   LuUser,
 } from "react-icons/lu";
-import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
+import {
+  EmployeeAvatar,
+  Hyperlink,
+  New,
+  SupplierAvatar,
+  Table,
+} from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { usePermissions, useUrlParams } from "~/hooks";
+import { useSuppliers } from "~/stores";
 import { useItems } from "~/stores/items";
 import { usePeople } from "~/stores/people";
 import { path } from "~/utils/path";
@@ -41,6 +59,7 @@ type KanbansTableProps = {
 
 const defaultColumnVisibility = {
   createdBy: false,
+  supplierName: false,
   createdAt: false,
   updatedBy: false,
   updatedAt: false,
@@ -52,6 +71,7 @@ const KanbansTable = memo(({ data, count, locationId }: KanbansTableProps) => {
   const permissions = usePermissions();
   const [people] = usePeople();
   const [items] = useItems();
+  const [suppliers] = useSuppliers();
   const locations = useLocations();
 
   const columns = useMemo<ColumnDef<Kanban>[]>(
@@ -87,15 +107,32 @@ const KanbansTable = memo(({ data, count, locationId }: KanbansTableProps) => {
         header: "",
         cell: ({ row }) => (
           <HStack>
-            <Popover>
-              <PopoverTrigger>
+            <Tooltip>
+              <TooltipTrigger>
+                <IconButton
+                  aria-label="Labels"
+                  variant="secondary"
+                  icon={<LuTag />}
+                  onClick={() => {
+                    window.open(
+                      path.to.file.kanbanLabelsPdf([row.original.id!]),
+                      "_blank"
+                    );
+                  }}
+                />
+              </TooltipTrigger>
+              <TooltipContent>Print Label</TooltipContent>
+            </Tooltip>
+
+            <HoverCard>
+              <HoverCardTrigger>
                 <IconButton
                   aria-label="QR Code"
                   variant="secondary"
                   icon={<LuQrCode />}
                 />
-              </PopoverTrigger>
-              <PopoverContent
+              </HoverCardTrigger>
+              <HoverCardContent
                 align="center"
                 className="size-[236px] overflow-hidden z-[100] bg-white p-4"
               >
@@ -106,8 +143,8 @@ const KanbansTable = memo(({ data, count, locationId }: KanbansTableProps) => {
                   height="198"
                   src={path.to.file.kanbanQrCode(row.original.id!)}
                 />
-              </PopoverContent>
-            </Popover>
+              </HoverCardContent>
+            </HoverCard>
             <Copy
               text={`${
                 typeof window === "undefined" ? "" : window.location.origin
@@ -121,7 +158,17 @@ const KanbansTable = memo(({ data, count, locationId }: KanbansTableProps) => {
       {
         accessorKey: "quantity",
         header: "Reorder Qty.",
-        cell: ({ row }) => row.original.quantity,
+        cell: ({ row }) => {
+          const { quantity, purchaseUnitOfMeasureCode } = row.original;
+          const baseQuantity = quantity || 0;
+
+          return (
+            <span>
+              {baseQuantity}
+              {purchaseUnitOfMeasureCode && ` ${purchaseUnitOfMeasureCode}`}
+            </span>
+          );
+        },
         meta: {
           icon: <LuHash />,
         },
@@ -144,11 +191,26 @@ const KanbansTable = memo(({ data, count, locationId }: KanbansTableProps) => {
         },
       },
       {
-        accessorKey: "locationName",
-        header: "Location",
+        accessorKey: "supplierId",
+        header: "Supplier",
         cell: ({ row }) => (
-          <Enumerable value={row.original.locationName || ""} />
+          <SupplierAvatar supplierId={row.original.supplierId} />
         ),
+        meta: {
+          icon: <LuContainer />,
+          filter: {
+            type: "static",
+            options: suppliers.map((supplier) => ({
+              value: supplier.id,
+              label: supplier.name,
+            })),
+          },
+        },
+      },
+      {
+        accessorKey: "shelfName",
+        header: "Shelf",
+        cell: ({ row }) => row.original.shelfName || "",
         meta: {
           icon: <LuMapPin />,
         },
@@ -211,7 +273,7 @@ const KanbansTable = memo(({ data, count, locationId }: KanbansTableProps) => {
         },
       },
     ],
-    [items, params, people]
+    [items, params, people, suppliers]
   );
 
   const renderContextMenu = useCallback(
@@ -243,6 +305,30 @@ const KanbansTable = memo(({ data, count, locationId }: KanbansTableProps) => {
     [params, permissions]
   );
 
+  const renderActions = useCallback((selectedRows: typeof data) => {
+    const handlePrintLabels = () => {
+      const selectedIds = selectedRows
+        .map((row) => row.id)
+        .filter(Boolean) as string[];
+      if (selectedIds.length > 0) {
+        window.open(path.to.file.kanbanLabelsPdf(selectedIds), "_blank");
+      }
+    };
+
+    return (
+      <DropdownMenuContent align="end" className="min-w-[200px]">
+        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuItem onClick={handlePrintLabels}>
+            <LuPrinter className="mr-2 h-4 w-4" />
+            Print Labels ({selectedRows.length})
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    );
+  }, []);
+
   return (
     <Table<Kanban>
       count={count}
@@ -266,10 +352,12 @@ const KanbansTable = memo(({ data, count, locationId }: KanbansTableProps) => {
           )}
         </div>
       }
+      renderActions={renderActions}
       renderContextMenu={renderContextMenu}
       title="Kanbans"
       table="kanban"
       withSavedView
+      withSelectableRows
     />
   );
 });
