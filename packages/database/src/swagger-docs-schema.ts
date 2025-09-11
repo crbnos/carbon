@@ -14326,6 +14326,9 @@ export default {
             $ref: "#/parameters/rowFilter.kanbans.conversionFactor",
           },
           {
+            $ref: "#/parameters/rowFilter.kanbans.autoRelease",
+          },
+          {
             $ref: "#/parameters/rowFilter.kanbans.companyId",
           },
           {
@@ -14351,6 +14354,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.kanbans.shelfName",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbans.supplierName",
           },
           {
             $ref: "#/parameters/rowFilter.kanbans.thumbnailPath",
@@ -54844,6 +54850,9 @@ export default {
             $ref: "#/parameters/rowFilter.kanban.conversionFactor",
           },
           {
+            $ref: "#/parameters/rowFilter.kanban.autoRelease",
+          },
+          {
             $ref: "#/parameters/rowFilter.kanban.companyId",
           },
           {
@@ -54945,6 +54954,9 @@ export default {
             $ref: "#/parameters/rowFilter.kanban.conversionFactor",
           },
           {
+            $ref: "#/parameters/rowFilter.kanban.autoRelease",
+          },
+          {
             $ref: "#/parameters/rowFilter.kanban.companyId",
           },
           {
@@ -54998,6 +55010,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.kanban.conversionFactor",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanban.autoRelease",
           },
           {
             $ref: "#/parameters/rowFilter.kanban.companyId",
@@ -67086,6 +67101,10 @@ export default {
           format: "numeric",
           type: "number",
         },
+        autoRelease: {
+          format: "boolean",
+          type: "boolean",
+        },
         companyId: {
           description:
             "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
@@ -67125,6 +67144,10 @@ export default {
           type: "string",
         },
         shelfName: {
+          format: "text",
+          type: "string",
+        },
+        supplierName: {
           format: "text",
           type: "string",
         },
@@ -86106,6 +86129,7 @@ export default {
         "quantity",
         "locationId",
         "conversionFactor",
+        "autoRelease",
         "companyId",
         "createdAt",
         "createdBy",
@@ -86159,6 +86183,11 @@ export default {
           default: 1,
           format: "numeric",
           type: "number",
+        },
+        autoRelease: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
         },
         companyId: {
           description:
@@ -93890,6 +93919,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.kanbans.autoRelease": {
+      name: "autoRelease",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.kanbans.companyId": {
       name: "companyId",
       required: false,
@@ -93940,6 +93975,12 @@ export default {
     },
     "rowFilter.kanbans.shelfName": {
       name: "shelfName",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.kanbans.supplierName": {
+      name: "supplierName",
       required: false,
       in: "query",
       type: "string",
@@ -115381,6 +115422,12 @@ export default {
     },
     "rowFilter.kanban.conversionFactor": {
       name: "conversionFactor",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.kanban.autoRelease": {
+      name: "autoRelease",
       required: false,
       in: "query",
       type: "string",

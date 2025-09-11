@@ -1,5 +1,5 @@
 import { useCarbon } from "@carbon/auth";
-import { SelectControlled, ValidatedForm } from "@carbon/form";
+import { Boolean, Hidden, SelectControlled, ValidatedForm } from "@carbon/form";
 import {
   Button,
   Drawer,
@@ -45,7 +45,7 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
   const [selectedReplenishmentSystem, setSelectedReplenishmentSystem] =
     useState<string>(initialValues.replenishmentSystem || "Buy");
 
-  const isEditing = Boolean(initialValues.id);
+  const isEditing = !!initialValues.id;
 
   const [shelfId, setShelfId] = useState<string | null>(
     initialValues.shelfId || null
@@ -180,11 +180,14 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
             </DrawerDescription>
           </DrawerHeader>
           <DrawerBody>
+            {isEditing && <Hidden name="id" value={initialValues.id} />}
+            {selectedReplenishmentSystem === "Make" && (
+              <Hidden
+                name="purchaseUnitOfMeasureCode"
+                value={purchaseUnitOfMeasureCode}
+              />
+            )}
             <VStack spacing={4}>
-              {isEditing && (
-                <input type="hidden" name="id" value={initialValues.id} />
-              )}
-
               <div className="grid grid-cols-1 gap-4 w-full">
                 <Item
                   name="itemId"
@@ -273,6 +276,18 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
                     if (value) setShelfId(value?.id ?? null);
                   }}
                 />
+
+                {selectedReplenishmentSystem === "Make" && (
+                  <Boolean
+                    name="autoRelease"
+                    label="Auto Release"
+                    description={
+                      selectedReplenishmentSystem === "Make"
+                        ? "Automatically release the job when the kanban is scanned."
+                        : undefined
+                    }
+                  />
+                )}
               </div>
             </VStack>
           </DrawerBody>

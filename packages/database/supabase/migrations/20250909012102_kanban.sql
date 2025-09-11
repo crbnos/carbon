@@ -8,6 +8,7 @@ CREATE TABLE "kanban" (
   "supplierId" TEXT,
   "purchaseUnitOfMeasureCode" TEXT,
   "conversionFactor" NUMERIC NOT NULL DEFAULT 1,
+  "autoRelease" BOOLEAN NOT NULL DEFAULT FALSE,
   "companyId" TEXT NOT NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   "createdBy" TEXT NOT NULL,

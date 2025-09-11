@@ -1,4 +1,5 @@
 import {
+  Checkbox,
   Combobox,
   Copy,
   DropdownMenuContent,
@@ -22,6 +23,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import {
   LuCalendar,
+  LuCheck,
   LuContainer,
   LuHash,
   LuLink,
@@ -215,7 +217,24 @@ const KanbansTable = memo(({ data, count, locationId }: KanbansTableProps) => {
           icon: <LuMapPin />,
         },
       },
-
+      {
+        accessorKey: "autoRelease",
+        header: "Auto Release",
+        cell: ({ row }) =>
+          row.original.replenishmentSystem === "Make" ? (
+            <Checkbox isChecked={row.original.autoRelease ?? false} />
+          ) : null,
+        meta: {
+          icon: <LuCheck />,
+          filter: {
+            type: "static",
+            options: [
+              { value: "true", label: "Yes" },
+              { value: "false", label: "No" },
+            ],
+          },
+        },
+      },
       {
         accessorKey: "createdBy",
         header: "Created By",

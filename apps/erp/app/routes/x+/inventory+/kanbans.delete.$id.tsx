@@ -67,7 +67,7 @@ export default function DeleteKanbanRoute() {
   return (
     <ConfirmDelete
       action={path.to.deleteKanban(id)}
-      name={`Kanban for ${kanban.item?.name || kanban.itemId}`}
+      name={`Kanban for ${kanban.name || kanban.itemId}`}
       text={`Are you sure you want to delete this kanban card? This cannot be undone.`}
       onCancel={onCancel}
     />

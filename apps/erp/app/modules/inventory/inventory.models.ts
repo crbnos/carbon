@@ -121,6 +121,7 @@ export const kanbanValidator = z.object({
   id: zfd.text(z.string().optional()),
   itemId: z.string().min(1, { message: "Item is required" }),
   replenishmentSystem: z.enum(replenishmentSystemTypes).default("Buy"),
+  autoRelease: zfd.checkbox(),
   quantity: zfd.numeric(
     z.number().int().min(1, { message: "Quantity must be at least 1" })
   ),

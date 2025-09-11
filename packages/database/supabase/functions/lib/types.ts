@@ -11629,6 +11629,7 @@ export type Database = {
       }
       kanban: {
         Row: {
+          autoRelease: boolean
           companyId: string
           conversionFactor: number
           createdAt: string
@@ -11645,6 +11646,7 @@ export type Database = {
           updatedBy: string | null
         }
         Insert: {
+          autoRelease?: boolean
           companyId: string
           conversionFactor?: number
           createdAt?: string
@@ -11661,6 +11663,7 @@ export type Database = {
           updatedBy?: string | null
         }
         Update: {
+          autoRelease?: boolean
           companyId?: string
           conversionFactor?: number
           createdAt?: string
@@ -39376,6 +39379,7 @@ export type Database = {
       }
       kanbans: {
         Row: {
+          autoRelease: boolean | null
           companyId: string | null
           conversionFactor: number | null
           createdAt: string | null
@@ -44915,14 +44919,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]

@@ -65,6 +65,7 @@ export default function NewKanbanRoute() {
     replenishmentSystem: "Buy" as const,
     locationId,
     conversionFactor: 1,
+    autoRelease: false,
   };
 
   return (

@@ -78,6 +78,7 @@ export default function EditKanbanRoute() {
     supplierId: kanban?.supplierId ?? "",
     purchaseUnitOfMeasureCode: kanban?.purchaseUnitOfMeasureCode ?? "",
     conversionFactor: kanban?.conversionFactor ?? 1,
+    autoRelease: kanban?.autoRelease ?? false,
   };
 
   return (
