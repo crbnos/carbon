@@ -17,7 +17,8 @@ import { useFetcher } from "@remix-run/react";
 import { useState } from "react";
 import type { z } from "zod";
 import { Enumerable } from "~/components/Enumerable";
-import { Item, Location, Number, Submit } from "~/components/Form";
+import { Item, Location, Number, Shelf, Submit } from "~/components/Form";
+import { useUser } from "~/hooks";
 import type { MethodItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import {
@@ -41,25 +42,49 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
 
   const isEditing = Boolean(initialValues.id);
 
+  const [shelfId, setShelfId] = useState<string | null>(
+    initialValues.shelfId || null
+  );
   const [itemType, setItemType] = useState<MethodItemType | "Item">("Item");
   const onTypeChange = (type: MethodItemType) => {
     setItemType(type);
   };
 
   const { carbon } = useCarbon();
+  const { company } = useUser();
 
   const onItemChange = async (value: { value: string } | null) => {
     if (!carbon || !value) return;
-    const item = await carbon
-      .from("item")
-      .select("replenishmentSystem")
-      .eq("id", value.value)
-      .single();
+    const [item, shelf] = await Promise.all([
+      carbon
+        .from("item")
+        .select("replenishmentSystem")
+        .eq("id", value.value)
+        .single(),
+      carbon
+        .from("pickMethod")
+        .select("defaultShelfId")
+        .eq("itemId", value.value)
+        .eq("companyId", company.id)
+        .eq("locationId", locationId)
+        .maybeSingle(),
+    ]);
     if (item.error) {
       toast.error("Failed to load item details");
       return;
     }
     setSelectedReplenishmentSystem(item.data?.replenishmentSystem || "Buy");
+    if (shelf.data?.defaultShelfId) {
+      setShelfId(shelf.data.defaultShelfId);
+    }
+  };
+
+  const [locationId, setLocationId] = useState<string>(
+    initialValues.locationId || ""
+  );
+  const onLocationChange = (value: { value: string } | null) => {
+    setLocationId(value?.value || "");
+    setShelfId(null);
   };
 
   return (
@@ -129,7 +154,18 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
                 <Location
                   name="locationId"
                   label="Location"
+                  onChange={onLocationChange}
                   isReadOnly={isEditing}
+                />
+
+                <Shelf
+                  name="shelfId"
+                  label="Shelf"
+                  locationId={locationId}
+                  value={shelfId ?? undefined}
+                  onChange={(value) => {
+                    if (value) setShelfId(value?.id ?? null);
+                  }}
                 />
               </div>
             </VStack>

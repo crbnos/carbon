@@ -2,6 +2,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { generateQRCodeBuffer } from "@carbon/documents/qr";
 import { json, type LoaderFunctionArgs } from "@vercel/remix";
 import { getKanban } from "~/modules/inventory/inventory.service";
+import { path } from "~/utils/path";
 
 export const config = { runtime: "nodejs" };
 
@@ -21,7 +22,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const url = new URL(request.url);
   const baseUrl = `${url.protocol}//${url.host}`;
-  const kanbanUrl = `${baseUrl}/api/kanban/${id}`;
+  const kanbanUrl = `${baseUrl}${path.to.api.kanban(id)}`;
 
   const buffer = await generateQRCodeBuffer(kanbanUrl, 36);
 

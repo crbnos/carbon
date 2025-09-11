@@ -63,6 +63,7 @@ export const path = {
           `${api}/production/methods/${id}/bom.csv?withOperations=${withOperations}`
         ),
       jobs: `${api}/production/jobs`,
+      kanban: (id: string) => generatePath(`${api}/kanban/${id}`),
       locations: `${api}/resources/locations`,
       materialDimensions: (formId: string) =>
         generatePath(`${api}/items/dimensions/${formId}`),
@@ -159,6 +160,10 @@ export const path = {
     },
     file: {
       cadModel: (id: string) => generatePath(`${file}/model/${id}`),
+      kanbanLabelsPdf: (ids: string | string[]) => {
+        const idString = Array.isArray(ids) ? ids.join(",") : ids;
+        return generatePath(`${file}/kanban/labels.pdf?ids=${idString}`);
+      },
       kanbanQrCode: (id: string) => generatePath(`${file}/kanban/${id}.png`),
       jobTraveler: (id: string) => generatePath(`${file}/traveler/${id}.pdf`),
       nonConformance: (id: string) => generatePath(`${file}/issue/${id}.pdf`),
@@ -198,6 +203,8 @@ export const path = {
 
         return generatePath(url);
       },
+      preview: (bucket: string, path: string) =>
+        generatePath(`${file}/preview/${bucket}/${path}`),
       previewImage: (bucket: string, path: string) =>
         generatePath(`${file}/preview/image?file=${bucket}/${path}`),
       previewFile: (path: string) => generatePath(`${file}/preview/${path}`),

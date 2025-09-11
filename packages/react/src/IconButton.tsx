@@ -12,9 +12,9 @@ export interface IconButtonProps
 }
 
 const iconSizes = {
-  sm: "w-4 h-4",
-  md: "w-5 h-5",
-  lg: "w-6 h-6",
+  sm: "size-3",
+  md: "size-5",
+  lg: "size-6",
 } as const;
 
 const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(

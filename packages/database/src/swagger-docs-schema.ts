@@ -14314,6 +14314,9 @@ export default {
             $ref: "#/parameters/rowFilter.kanbans.locationId",
           },
           {
+            $ref: "#/parameters/rowFilter.kanbans.shelfId",
+          },
+          {
             $ref: "#/parameters/rowFilter.kanbans.companyId",
           },
           {
@@ -54814,6 +54817,9 @@ export default {
             $ref: "#/parameters/rowFilter.kanban.locationId",
           },
           {
+            $ref: "#/parameters/rowFilter.kanban.shelfId",
+          },
+          {
             $ref: "#/parameters/rowFilter.kanban.companyId",
           },
           {
@@ -54903,6 +54909,9 @@ export default {
             $ref: "#/parameters/rowFilter.kanban.locationId",
           },
           {
+            $ref: "#/parameters/rowFilter.kanban.shelfId",
+          },
+          {
             $ref: "#/parameters/rowFilter.kanban.companyId",
           },
           {
@@ -54944,6 +54953,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.kanban.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanban.shelfId",
           },
           {
             $ref: "#/parameters/rowFilter.kanban.companyId",
@@ -67009,6 +67021,12 @@ export default {
         locationId: {
           description:
             "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        shelfId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shelf.id`.<fk table='shelf' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -86056,6 +86074,12 @@ export default {
           format: "text",
           type: "string",
         },
+        shelfId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shelf.id`.<fk table='shelf' column='id'/>",
+          format: "text",
+          type: "string",
+        },
         companyId: {
           description:
             "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
@@ -93758,6 +93782,12 @@ export default {
     },
     "rowFilter.kanbans.locationId": {
       name: "locationId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.kanbans.shelfId": {
+      name: "shelfId",
       required: false,
       in: "query",
       type: "string",
@@ -115217,6 +115247,12 @@ export default {
     },
     "rowFilter.kanban.locationId": {
       name: "locationId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.kanban.shelfId": {
+      name: "shelfId",
       required: false,
       in: "query",
       type: "string",

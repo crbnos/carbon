@@ -11637,6 +11637,7 @@ export type Database = {
           locationId: string
           quantity: number
           replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          shelfId: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -11649,6 +11650,7 @@ export type Database = {
           locationId: string
           quantity: number
           replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          shelfId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -11661,6 +11663,7 @@ export type Database = {
           locationId?: string
           quantity?: number
           replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          shelfId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -11768,6 +11771,13 @@ export type Database = {
             columns: ["locationId"]
             isOneToOne: false
             referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kanban_shelfId_fkey"
+            columns: ["shelfId"]
+            isOneToOne: false
+            referencedRelation: "shelf"
             referencedColumns: ["id"]
           },
           {
@@ -39328,6 +39338,7 @@ export type Database = {
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
+          shelfId: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -39435,6 +39446,13 @@ export type Database = {
             columns: ["locationId"]
             isOneToOne: false
             referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kanban_shelfId_fkey"
+            columns: ["shelfId"]
+            isOneToOne: false
+            referencedRelation: "shelf"
             referencedColumns: ["id"]
           },
           {

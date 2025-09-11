@@ -1,5 +1,6 @@
 import {
   Combobox,
+  Copy,
   HStack,
   IconButton,
   MenuItem,
@@ -14,6 +15,7 @@ import { memo, useCallback, useMemo } from "react";
 import {
   LuCalendar,
   LuHash,
+  LuLink,
   LuMapPin,
   LuPackage,
   LuPencil,
@@ -106,6 +108,13 @@ const KanbansTable = memo(({ data, count, locationId }: KanbansTableProps) => {
                 />
               </PopoverContent>
             </Popover>
+            <Copy
+              text={`${
+                typeof window === "undefined" ? "" : window.location.origin
+              }${path.to.api.kanban(row.original.id!)}`}
+              icon={<LuLink />}
+              size="md"
+            />
           </HStack>
         ),
       },

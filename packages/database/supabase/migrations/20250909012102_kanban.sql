@@ -4,6 +4,7 @@ CREATE TABLE "kanban" (
   "replenishmentSystem" "itemReplenishmentSystem" NOT NULL DEFAULT 'Buy',
   "quantity" INTEGER NOT NULL,
   "locationId" TEXT NOT NULL,
+  "shelfId" TEXT,
   "companyId" TEXT NOT NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   "createdBy" TEXT NOT NULL,
@@ -13,6 +14,7 @@ CREATE TABLE "kanban" (
   CONSTRAINT "kanban_pkey" PRIMARY KEY ("id", "companyId"),
   CONSTRAINT "kanban_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE,
   CONSTRAINT "kanban_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "location"("id") ON DELETE CASCADE,
+  CONSTRAINT "kanban_shelfId_fkey" FOREIGN KEY ("shelfId") REFERENCES "shelf"("id") ON DELETE CASCADE,
   CONSTRAINT "kanban_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE,
   CONSTRAINT "kanban_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON DELETE CASCADE,
   CONSTRAINT "kanban_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON DELETE CASCADE
