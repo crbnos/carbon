@@ -3,13 +3,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
-import { upsertMethodOperationAttribute } from "~/modules/items";
-import { operationAttributeValidator } from "~/modules/shared";
+import { upsertJobOperationStep } from "~/modules/production";
+import { operationStepValidator } from "~/modules/shared";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "parts",
+  const { client, companyId, userId } = await requirePermissions(request, {
+    update: "production",
   });
 
   const { id } = params;
@@ -18,9 +18,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const formData = await request.formData();
-  const validation = await validator(operationAttributeValidator).validate(
-    formData
-  );
+  const validation = await validator(operationStepValidator).validate(formData);
 
   if (validation.error) {
     return json({ success: false, message: "Invalid form data" });
@@ -28,11 +26,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id: _id, ...data } = validation.data;
 
-  const update = await upsertMethodOperationAttribute(client, {
+  const update = await upsertJobOperationStep(client, {
     id,
     ...data,
     minValue: data.minValue ?? null,
     maxValue: data.maxValue ?? null,
+    companyId,
     updatedBy: userId,
     updatedAt: new Date().toISOString(),
   });
@@ -43,26 +42,26 @@ export async function action({ request, params }: ActionFunctionArgs) {
       },
       await flash(
         request,
-        error(update.error, "Failed to update method operation attribute")
+        error(update.error, "Failed to update job operation attribute")
       )
     );
   }
 
-  const methodOperationAttributeId = update.data?.id;
-  if (!methodOperationAttributeId) {
+  const operationAttributeId = update.data?.id;
+  if (!operationAttributeId) {
     return json(
       {
         id: null,
       },
       await flash(
         request,
-        error(update.error, "Failed to update method operation attribute")
+        error(update.error, "Failed to update job operation attribute")
       )
     );
   }
 
   return json(
-    { id: methodOperationAttributeId },
-    await flash(request, success("Method operation attribute updated"))
+    { id: operationAttributeId },
+    await flash(request, success("Job operation attribute updated"))
   );
 }

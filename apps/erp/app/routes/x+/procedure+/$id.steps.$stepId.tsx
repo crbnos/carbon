@@ -5,8 +5,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "@vercel/remix";
-import { upsertProcedureAttribute } from "~/modules/production/production.service";
-import { procedureAttributeValidator } from "~/modules/production/production.models";
+import { procedureStepValidator } from "~/modules/production/production.models";
+import { upsertProcedureStep } from "~/modules/production/production.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -17,7 +17,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { attributeId } = params;
   if (!attributeId) throw notFound("attribute id is not found");
 
-  const validation = await validator(procedureAttributeValidator).validate(
+  const validation = await validator(procedureStepValidator).validate(
     await request.formData()
   );
 
@@ -31,7 +31,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const update = await upsertProcedureAttribute(client, {
+  const update = await upsertProcedureStep(client, {
     id: attributeId,
     ...validation.data,
     updatedBy: userId,

@@ -74,7 +74,7 @@ FOR DELETE USING (
   )
 );
 
-CREATE TYPE "procedureAttributeType" AS ENUM (
+CREATE TYPE "procedureStepType" AS ENUM (
   'Value',
   'Measurement',
   'Checkbox',
@@ -84,14 +84,14 @@ CREATE TYPE "procedureAttributeType" AS ENUM (
   'File'
 );
 
-CREATE TABLE "procedureAttribute" (
+CREATE TABLE "procedureStep" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "procedureId" TEXT NOT NULL,
   "name" TEXT NOT NULL,
   "description" TEXT,
   "required" BOOLEAN DEFAULT FALSE,
   "sortOrder" DOUBLE PRECISION NOT NULL DEFAULT 1,
-  "type" "procedureAttributeType" NOT NULL,
+  "type" "procedureStepType" NOT NULL,
   "unitOfMeasureCode" TEXT,
   "minValue" DECIMAL,
   "maxValue" DECIMAL,
@@ -103,25 +103,25 @@ CREATE TABLE "procedureAttribute" (
   "updatedAt" TIMESTAMP WITH TIME ZONE,
   "updatedBy" TEXT,
 
-  CONSTRAINT "procedureAttribute_pkey" PRIMARY KEY ("id"),
-  CONSTRAINT "procedureAttribute_procedureId_fkey" FOREIGN KEY ("procedureId") REFERENCES "procedure"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "procedureAttribute_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "procedureAttribute_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
-  CONSTRAINT "procedureAttribute_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE,
-  CONSTRAINT "procedureAttribute_uom_measurement_only" CHECK (
+  CONSTRAINT "procedureStep_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "procedureStep_procedureId_fkey" FOREIGN KEY ("procedureId") REFERENCES "procedure"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "procedureStep_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "procedureStep_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "procedureStep_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "procedureStep_uom_measurement_only" CHECK (
     ("type" = 'Measurement' AND "unitOfMeasureCode" IS NOT NULL) OR
     ("type" != 'Measurement' AND "unitOfMeasureCode" IS NULL)
   ),
-  CONSTRAINT "procedureAttribute_unitOfMeasureCode_fkey" FOREIGN KEY ("unitOfMeasureCode", "companyId") REFERENCES "unitOfMeasure"("code", "companyId") ON DELETE RESTRICT ON UPDATE CASCADE
+  CONSTRAINT "procedureStep_unitOfMeasureCode_fkey" FOREIGN KEY ("unitOfMeasureCode", "companyId") REFERENCES "unitOfMeasure"("code", "companyId") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
-CREATE INDEX "procedureAttribute_procedureId_idx" ON "procedureAttribute" ("procedureId");
-CREATE INDEX "procedureAttribute_companyId_idx" ON "procedureAttribute" ("companyId");
+CREATE INDEX "procedureStep_procedureId_idx" ON "procedureStep" ("procedureId");
+CREATE INDEX "procedureStep_companyId_idx" ON "procedureStep" ("companyId");
 
-ALTER TABLE "procedureAttribute" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "procedureStep" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "SELECT" ON "public"."procedureAttribute"
+CREATE POLICY "SELECT" ON "public"."procedureStep"
 FOR SELECT USING (
   "companyId" = ANY (
     (
@@ -131,7 +131,7 @@ FOR SELECT USING (
   )
 );
 
-CREATE POLICY "INSERT" ON "public"."procedureAttribute"
+CREATE POLICY "INSERT" ON "public"."procedureStep"
 FOR INSERT WITH CHECK (
   "companyId" = ANY (
     (
@@ -141,7 +141,7 @@ FOR INSERT WITH CHECK (
   )
 );
 
-CREATE POLICY "UPDATE" ON "public"."procedureAttribute"
+CREATE POLICY "UPDATE" ON "public"."procedureStep"
 FOR UPDATE USING (
   "companyId" = ANY (
     (
@@ -151,7 +151,7 @@ FOR UPDATE USING (
   )
 );
 
-CREATE POLICY "DELETE" ON "public"."procedureAttribute"
+CREATE POLICY "DELETE" ON "public"."procedureStep"
 FOR DELETE USING (
   "companyId" = ANY (
     (
@@ -195,7 +195,7 @@ CREATE TABLE "methodOperationAttribute" (
   "description" TEXT,
   "required" BOOLEAN DEFAULT FALSE,
   "sortOrder" DOUBLE PRECISION NOT NULL DEFAULT 1,
-  "type" "procedureAttributeType" NOT NULL,
+  "type" "procedureStepType" NOT NULL,
   "unitOfMeasureCode" TEXT,
   "minValue" DECIMAL,
   "maxValue" DECIMAL,
@@ -266,7 +266,7 @@ CREATE TABLE "quoteOperationAttribute" (
   "description" TEXT,
   "required" BOOLEAN DEFAULT FALSE,
   "sortOrder" DOUBLE PRECISION NOT NULL DEFAULT 1,
-  "type" "procedureAttributeType" NOT NULL,
+  "type" "procedureStepType" NOT NULL,
   "unitOfMeasureCode" TEXT,
   "minValue" DECIMAL,
   "maxValue" DECIMAL,
@@ -338,7 +338,7 @@ CREATE TABLE "jobOperationAttribute" (
   "description" TEXT,
   "required" BOOLEAN DEFAULT FALSE,
   "sortOrder" DOUBLE PRECISION NOT NULL DEFAULT 1,
-  "type" "procedureAttributeType" NOT NULL,
+  "type" "procedureStepType" NOT NULL,
   "unitOfMeasureCode" TEXT,
   "minValue" DECIMAL,
   "maxValue" DECIMAL,

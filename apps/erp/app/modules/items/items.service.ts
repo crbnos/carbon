@@ -8,8 +8,8 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
-  operationAttributeValidator,
   operationParameterValidator,
+  operationStepValidator,
   operationToolValidator,
 } from "../shared";
 import type {
@@ -271,11 +271,11 @@ export async function deleteMethodMaterial(
   return client.from("methodMaterial").delete().eq("id", id);
 }
 
-export async function deleteMethodOperationAttribute(
+export async function deleteMethodOperationStep(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("methodOperationAttribute").delete().eq("id", id);
+  return client.from("methodOperationStep").delete().eq("id", id);
 }
 
 export async function deleteMethodOperationParameter(
@@ -1135,7 +1135,7 @@ export async function getMethodOperationsByMakeMethodId(
   return client
     .from("methodOperation")
     .select(
-      "*, methodOperationTool(*), methodOperationParameter(*), methodOperationAttribute(*)"
+      "*, methodOperationTool(*), methodOperationParameter(*), methodOperationStep(*)"
     )
     .eq("makeMethodId", makeMethodId)
     .order("order", { ascending: true });
@@ -2429,15 +2429,15 @@ export async function upsertMethodOperation(
     .single();
 }
 
-export async function upsertMethodOperationAttribute(
+export async function upsertMethodOperationStep(
   client: SupabaseClient<Database>,
-  methodOperationAttribute:
-    | (Omit<z.infer<typeof operationAttributeValidator>, "id"> & {
+  methodOperationStep:
+    | (Omit<z.infer<typeof operationStepValidator>, "id"> & {
         companyId: string;
         createdBy: string;
       })
     | (Omit<
-        z.infer<typeof operationAttributeValidator>,
+        z.infer<typeof operationStepValidator>,
         "id" | "minValue" | "maxValue"
       > & {
         id: string;
@@ -2447,18 +2447,18 @@ export async function upsertMethodOperationAttribute(
         updatedAt: string;
       })
 ) {
-  if ("createdBy" in methodOperationAttribute) {
+  if ("createdBy" in methodOperationStep) {
     return client
-      .from("methodOperationAttribute")
-      .insert(methodOperationAttribute)
+      .from("methodOperationStep")
+      .insert(methodOperationStep)
       .select("id")
       .single();
   }
 
   return client
-    .from("methodOperationAttribute")
-    .update(sanitize(methodOperationAttribute))
-    .eq("id", methodOperationAttribute.id)
+    .from("methodOperationStep")
+    .update(sanitize(methodOperationStep))
+    .eq("id", methodOperationStep.id)
     .select("id")
     .single();
 }

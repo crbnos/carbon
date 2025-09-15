@@ -96,30 +96,30 @@ import { usePermissions, useUser } from "~/hooks";
 import { useTags } from "~/hooks/useTags";
 
 import type {
-  OperationAttribute,
   OperationParameter,
+  OperationStep,
   OperationTool,
 } from "~/modules/shared";
 import {
   methodOperationOrders,
-  operationAttributeValidator,
   operationParameterValidator,
+  operationStepValidator,
   operationToolValidator,
   operationTypes,
-  procedureAttributeType,
+  procedureStepType,
   standardFactorType,
 } from "~/modules/shared";
 
-import type { action as editMethodOperationAttributeAction } from "~/routes/x+/items+/methods+/operation.attribute.$id";
 import type { action as editMethodOperationParameterAction } from "~/routes/x+/items+/methods+/operation.parameter.$id";
 import type { action as newMethodOperationParameterAction } from "~/routes/x+/items+/methods+/operation.parameter.new";
+import type { action as editMethodOperationStepAction } from "~/routes/x+/items+/methods+/operation.step.$id";
 import type { action as editMethodOperationToolAction } from "~/routes/x+/items+/methods+/operation.tool.$id";
 import type { action as newMethodOperationToolAction } from "~/routes/x+/items+/methods+/operation.tool.new";
 
 import Procedure from "~/components/Form/Procedure";
 import { SupplierProcessPreview } from "~/components/Form/SupplierProcess";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
-import { ProcedureAttributeTypeIcon } from "~/components/Icons";
+import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { useTools } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import { methodOperationValidator } from "../../items.models";
@@ -145,7 +145,7 @@ type BillOfProcessProps = {
   operations: (Operation & {
     methodOperationTool: OperationTool[];
     methodOperationParameter: OperationParameter[];
-    methodOperationAttribute: OperationAttribute[];
+    methodOperationStep: OperationStep[];
   })[];
   parameters?: ConfigurationParameter[];
   tags: { name: string }[];
@@ -440,9 +440,9 @@ const BillOfProcess = ({
     const parameters =
       initialOperations.find((o) => o.id === item.id)
         ?.methodOperationParameter ?? [];
-    const attributes =
-      initialOperations.find((o) => o.id === item.id)
-        ?.methodOperationAttribute ?? [];
+    const steps =
+      initialOperations.find((o) => o.id === item.id)?.methodOperationStep ??
+      [];
 
     const hasProcedure = !!item.data.procedureId;
 
@@ -599,15 +599,15 @@ const BillOfProcess = ({
                 </TooltipContent>
               </Tooltip>
             )}
-            {!hasProcedure && attributes.length > 0 && (
-              <Count count={attributes.length} />
+            {!hasProcedure && steps.length > 0 && (
+              <Count count={steps.length} />
             )}
           </span>
         ),
         content: (
           <div className="flex w-full flex-col py-4">
             <AttributesForm
-              attributes={attributes}
+              steps={steps}
               operationId={item.id!}
               temporaryItems={temporaryItems}
               isDisabled={
@@ -1643,7 +1643,7 @@ function AttributesForm({
   operationId,
   configurable,
   isDisabled,
-  attributes,
+  steps,
   temporaryItems,
   rulesByField,
   onConfigure,
@@ -1651,21 +1651,21 @@ function AttributesForm({
   operationId: string;
   configurable: boolean;
   isDisabled: boolean;
-  attributes: OperationAttribute[];
+  steps: OperationStep[];
   temporaryItems: TemporaryItems;
   rulesByField: Map<string, ConfigurationRule>;
   onConfigure?: (c: Configuration) => void;
 }) {
   const fetcher = useFetcher<typeof newMethodOperationParameterAction>();
-  const [type, setType] = useState<OperationAttribute["type"]>("Task");
+  const [type, setType] = useState<OperationStep["type"]>("Task");
   const [description, setDescription] = useState<JSONContent>({});
   const [numericControls, setNumericControls] = useState<string[]>([]);
   const typeOptions = useMemo(
     () =>
-      procedureAttributeType.map((type) => ({
+      procedureStepType.map((type) => ({
         label: (
           <HStack>
-            <ProcedureAttributeTypeIcon type={type} className="mr-2" />
+            <ProcedureStepTypeIcon type={type} className="mr-2" />
             {type}
           </HStack>
         ),
@@ -1701,9 +1701,9 @@ function AttributesForm({
     return (
       <Alert className="max-w-[420px] mx-auto my-8">
         <LuTriangleAlert />
-        <AlertTitle>Cannot add attributes to unsaved operation</AlertTitle>
+        <AlertTitle>Cannot add steps to unsaved operation</AlertTitle>
         <AlertDescription>
-          Please save the operation before adding attributes.
+          Please save the operation before adding steps.
         </AlertDescription>
       </Alert>
     );
@@ -1718,9 +1718,9 @@ function AttributesForm({
       {!isDisabled && (
         <div className="p-6 border bg-card rounded-lg mb-6">
           <ValidatedForm
-            action={path.to.newMethodOperationAttribute}
+            action={path.to.newMethodOperationStep}
             method="post"
-            validator={operationAttributeValidator}
+            validator={operationStepValidator}
             fetcher={fetcher}
             resetAfterSubmit
             defaultValues={{
@@ -1733,10 +1733,8 @@ function AttributesForm({
               maxValue: 0,
               listValues: [],
               sortOrder:
-                attributes.reduce(
-                  (acc, a) => Math.max(acc, a.sortOrder ?? 0),
-                  0
-                ) + 1,
+                steps.reduce((acc, a) => Math.max(acc, a.sortOrder ?? 0), 0) +
+                1,
               operationId,
             }}
             onSubmit={() => {
@@ -1757,7 +1755,7 @@ function AttributesForm({
                   value={type}
                   onChange={(option) => {
                     if (option) {
-                      setType(option.value as OperationAttribute["type"]);
+                      setType(option.value as OperationStep["type"]);
                     }
                   }}
                 />
@@ -1837,9 +1835,9 @@ function AttributesForm({
         </div>
       )}
 
-      {attributes.length > 0 && (
+      {steps.length > 0 && (
         <div className="border bg-card rounded-lg">
-          {[...attributes]
+          {[...steps]
             .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
             .map((a, index) => (
               <AttributesListItem
@@ -1847,7 +1845,7 @@ function AttributesForm({
                 attribute={a}
                 operationId={operationId}
                 typeOptions={typeOptions}
-                className={index === attributes.length - 1 ? "border-none" : ""}
+                className={index === steps.length - 1 ? "border-none" : ""}
                 configurable={configurable}
                 rulesByField={rulesByField}
                 onConfigure={onConfigure}
@@ -1855,7 +1853,7 @@ function AttributesForm({
             ))}
         </div>
       )}
-      {attributes.length === 0 && isDisabled && (
+      {steps.length === 0 && isDisabled && (
         <div className="flex flex-1 py-24 justify-between items-center w-full">
           <Empty />
         </div>
@@ -1873,7 +1871,7 @@ function AttributesListItem({
   rulesByField,
   onConfigure,
 }: {
-  attribute: OperationAttribute;
+  attribute: OperationStep;
   operationId: string;
   typeOptions: { label: JSX.Element; value: string }[];
   className?: string;
@@ -1896,7 +1894,7 @@ function AttributesListItem({
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof editMethodOperationAttributeAction>();
+  const fetcher = useFetcher<typeof editMethodOperationStepAction>();
 
   useEffect(() => {
     if (submitted.current && fetcher.state === "idle") {
@@ -1906,7 +1904,7 @@ function AttributesListItem({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetcher.state]);
 
-  const [type, setType] = useState<OperationAttribute["type"]>(attribute.type);
+  const [type, setType] = useState<OperationStep["type"]>(attribute.type);
   const [numericControls, setNumericControls] = useState<string[]>(() => {
     const controls = [];
     if (type === "Measurement") {
@@ -1964,9 +1962,9 @@ function AttributesListItem({
     <div className={cn("border-b p-6", className)}>
       {disclosure.isOpen ? (
         <ValidatedForm
-          action={path.to.methodOperationAttribute(id)}
+          action={path.to.methodOperationStep(id)}
           method="post"
-          validator={operationAttributeValidator}
+          validator={operationStepValidator}
           fetcher={fetcher}
           resetAfterSubmit
           onSubmit={() => {
@@ -1988,7 +1986,7 @@ function AttributesListItem({
                 options={typeOptions}
                 onChange={(option) => {
                   if (option) {
-                    setType(option.value as OperationAttribute["type"]);
+                    setType(option.value as OperationStep["type"]);
                   }
                 }}
               />
@@ -2125,7 +2123,7 @@ function AttributesListItem({
           <HStack spacing={4} className="w-1/2">
             <HStack spacing={4} className="flex-1">
               <div className="bg-muted border rounded-full flex items-center justify-center p-2">
-                <ProcedureAttributeTypeIcon type={type} />
+                <ProcedureStepTypeIcon type={type} />
               </div>
               <VStack spacing={0}>
                 <HStack>
@@ -2244,7 +2242,7 @@ function AttributesListItem({
       )}
       {deleteModalDisclosure.isOpen && (
         <ConfirmDelete
-          action={path.to.deleteMethodOperationAttribute(id)}
+          action={path.to.deleteMethodOperationStep(id)}
           isOpen={deleteModalDisclosure.isOpen}
           name={name}
           text={`Are you sure you want to delete the ${name} attribute from this operation? This cannot be undone.`}

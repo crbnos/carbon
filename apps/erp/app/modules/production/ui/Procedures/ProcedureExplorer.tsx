@@ -62,20 +62,16 @@ import {
 import type { z } from "zod";
 import { Empty } from "~/components";
 import { UnitOfMeasure } from "~/components/Form";
-import { ProcedureAttributeTypeIcon } from "~/components/Icons";
+import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import { procedureAttributeType } from "~/modules/shared";
+import { procedureStepType } from "~/modules/shared";
 import { getPrivateUrl, path } from "~/utils/path";
 import {
-  procedureAttributeValidator,
   procedureParameterValidator,
+  procedureStepValidator,
 } from "../../production.models";
-import type {
-  Procedure,
-  ProcedureAttribute,
-  ProcedureParameter,
-} from "../../types";
+import type { Procedure, ProcedureParameter, ProcedureStep } from "../../types";
 
 export default function ProcedureExplorer() {
   const { id } = useParams();
@@ -89,18 +85,18 @@ export default function ProcedureExplorer() {
     success: boolean;
   }>();
 
-  const procedureAttributeDisclosure = useDisclosure();
+  const procedureStepDisclosure = useDisclosure();
   const deleteAttributeDisclosure = useDisclosure();
   const procedureParameterDisclosure = useDisclosure();
   const deleteParameterDisclosure = useDisclosure();
 
   const [selectedAttribute, setSelectedAttribute] =
-    useState<ProcedureAttribute | null>(null);
+    useState<ProcedureStep | null>(null);
   const [selectedParameter, setSelectedParameter] =
     useState<ProcedureParameter | null>(null);
 
   const attributes = useMemo(
-    () => procedureData?.procedure.procedureAttribute ?? [],
+    () => procedureData?.procedure.procedureStep ?? [],
     [procedureData]
   );
   const parameters = useMemo(
@@ -167,14 +163,14 @@ export default function ProcedureExplorer() {
       formData.append("updates", JSON.stringify(updates));
       sortOrderFetcher.submit(formData, {
         method: "post",
-        action: path.to.procedureAttributeOrder(id),
+        action: path.to.procedureStepOrder(id),
       });
     },
     2500,
     true
   );
 
-  const onDeleteAttribute = (attribute: ProcedureAttribute) => {
+  const onDeleteAttribute = (attribute: ProcedureStep) => {
     if (isDisabled) return;
     setSelectedAttribute(attribute);
     deleteAttributeDisclosure.onOpen();
@@ -193,12 +189,12 @@ export default function ProcedureExplorer() {
     deleteParameterDisclosure.onClose();
   };
 
-  const onEditAttribute = (attribute: ProcedureAttribute) => {
+  const onEditAttribute = (attribute: ProcedureStep) => {
     if (isDisabled) return;
     flushSync(() => {
       setSelectedAttribute(attribute);
     });
-    procedureAttributeDisclosure.onOpen();
+    procedureStepDisclosure.onOpen();
   };
 
   const onEditParameter = (parameter: ProcedureParameter) => {
@@ -231,7 +227,7 @@ export default function ProcedureExplorer() {
 
   const attributeMap = useMemo(
     () =>
-      attributes.reduce<Record<string, ProcedureAttribute>>(
+      attributes.reduce<Record<string, ProcedureStep>>(
         (acc, attr) => ({ ...acc, [attr.id]: attr }),
         {}
       ) ?? {},
@@ -272,7 +268,7 @@ export default function ProcedureExplorer() {
                       value={sortId}
                       dragListener={!isDisabled}
                     >
-                      <ProcedureAttributeItem
+                      <ProcedureStepItem
                         key={sortId}
                         isDisabled={isDisabled}
                         attribute={attributeMap[sortId]}
@@ -293,7 +289,7 @@ export default function ProcedureExplorer() {
                         flushSync(() => {
                           setSelectedAttribute(null);
                         });
-                        procedureAttributeDisclosure.onOpen();
+                        procedureStepDisclosure.onOpen();
                       }}
                     >
                       Add Step
@@ -317,7 +313,7 @@ export default function ProcedureExplorer() {
                       flushSync(() => {
                         setSelectedAttribute(null);
                       });
-                      procedureAttributeDisclosure.onOpen();
+                      procedureStepDisclosure.onOpen();
                     }}
                   >
                     Add Step
@@ -404,16 +400,16 @@ export default function ProcedureExplorer() {
           </TabsContent>
         </Tabs>
       </VStack>
-      {procedureAttributeDisclosure.isOpen && (
-        <ProcedureAttributeForm
+      {procedureStepDisclosure.isOpen && (
+        <ProcedureStepForm
           // @ts-ignore
           initialValues={procedureAttribtueInitialValues}
           isDisabled={isDisabled}
-          onClose={procedureAttributeDisclosure.onClose}
+          onClose={procedureStepDisclosure.onClose}
         />
       )}
       {deleteAttributeDisclosure.isOpen && selectedAttribute && (
-        <DeleteProcedureAttribute
+        <DeleteProcedureStep
           attribute={selectedAttribute}
           onCancel={onDeleteCancel}
         />
@@ -435,19 +431,19 @@ export default function ProcedureExplorer() {
   );
 }
 
-type ProcedureAttributeProps = {
-  attribute: ProcedureAttribute;
+type ProcedureStepProps = {
+  attribute: ProcedureStep;
   isDisabled: boolean;
-  onEdit: (attribute: ProcedureAttribute) => void;
-  onDelete: (attribute: ProcedureAttribute) => void;
+  onEdit: (attribute: ProcedureStep) => void;
+  onDelete: (attribute: ProcedureStep) => void;
 };
 
-function ProcedureAttributeItem({
+function ProcedureStepItem({
   attribute,
   isDisabled,
   onEdit,
   onDelete,
-}: ProcedureAttributeProps) {
+}: ProcedureStepProps) {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
   const permissions = usePermissions();
@@ -470,7 +466,7 @@ function ProcedureAttributeItem({
         <HStack>
           <Tooltip>
             <TooltipTrigger>
-              <ProcedureAttributeTypeIcon
+              <ProcedureStepTypeIcon
                 type={attribute.type}
                 className="flex-shrink-0"
               />
@@ -538,11 +534,11 @@ function ProcedureAttributeItem({
   );
 }
 
-function DeleteProcedureAttribute({
+function DeleteProcedureStep({
   attribute,
   onCancel,
 }: {
-  attribute: ProcedureAttribute;
+  attribute: ProcedureStep;
   onCancel: () => void;
 }) {
   const { id } = useParams();
@@ -551,7 +547,7 @@ function DeleteProcedureAttribute({
 
   return (
     <ConfirmDelete
-      action={path.to.deleteProcedureAttribute(id, attribute.id)}
+      action={path.to.deleteProcedureStep(id, attribute.id)}
       name={attribute.name ?? "this attribute"}
       text={`Are you sure you want to delete the attribute: ${attribute.name}? This cannot be undone.`}
       onCancel={onCancel}
@@ -626,21 +622,19 @@ function ProcedureParameterItem({
     </VStack>
   );
 }
-function ProcedureAttributeForm({
+function ProcedureStepForm({
   initialValues,
   isDisabled,
   onClose,
 }: {
-  initialValues: z.infer<typeof procedureAttributeValidator>;
+  initialValues: z.infer<typeof procedureStepValidator>;
   isDisabled: boolean;
   onClose: () => void;
 }) {
   const { id: procedureId } = useParams();
   if (!procedureId) throw new Error("id not found");
 
-  const [type, setType] = useState<ProcedureAttribute["type"]>(
-    initialValues.type
-  );
+  const [type, setType] = useState<ProcedureStep["type"]>(initialValues.type);
 
   const [numericControls, setNumericControls] = useState<string[]>(() => {
     const controls = [];
@@ -691,10 +685,10 @@ function ProcedureAttributeForm({
 
   const typeOptions = useMemo(
     () =>
-      procedureAttributeType.map((type) => ({
+      procedureStepType.map((type) => ({
         label: (
           <HStack>
-            <ProcedureAttributeTypeIcon type={type} className="mr-2" />
+            <ProcedureStepTypeIcon type={type} className="mr-2" />
             {type}
           </HStack>
         ),
@@ -737,11 +731,11 @@ function ProcedureAttributeForm({
           method="post"
           action={
             isEditing
-              ? path.to.procedureAttribute(procedureId, initialValues.id!)
-              : path.to.newProcedureAttribute(procedureId)
+              ? path.to.procedureStep(procedureId, initialValues.id!)
+              : path.to.newProcedureStep(procedureId)
           }
           defaultValues={initialValues}
-          validator={procedureAttributeValidator}
+          validator={procedureStepValidator}
           fetcher={fetcher}
           className="flex flex-col h-full"
         >
@@ -761,7 +755,7 @@ function ProcedureAttributeForm({
                 value={type}
                 onChange={(option) => {
                   if (option) {
-                    setType(option.value as ProcedureAttribute["type"]);
+                    setType(option.value as ProcedureStep["type"]);
                   }
                 }}
               />

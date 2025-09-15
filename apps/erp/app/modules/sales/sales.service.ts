@@ -13,8 +13,8 @@ import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { getCurrencyByCode } from "../accounting";
 import type {
-  operationAttributeValidator,
   operationParameterValidator,
+  operationStepValidator,
   operationToolValidator,
 } from "../shared";
 import { upsertExternalLink } from "../shared/shared.service";
@@ -246,11 +246,11 @@ export async function deleteQuoteOperation(
   return client.from("quoteOperation").delete().eq("id", quoteOperationId);
 }
 
-export async function deleteQuoteOperationAttribute(
+export async function deleteQuoteOperationStep(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("quoteOperationAttribute").delete().eq("id", id);
+  return client.from("quoteOperationStep").delete().eq("id", id);
 }
 
 export async function deleteQuoteOperationParameter(
@@ -1073,7 +1073,7 @@ export async function getQuoteOperationsByMethodId(
   return client
     .from("quoteOperation")
     .select(
-      "*, quoteOperationTool(*), quoteOperationParameter(*), quoteOperationAttribute(*)"
+      "*, quoteOperationTool(*), quoteOperationParameter(*), quoteOperationStep(*)"
     )
     .eq("quoteMakeMethodId", quoteMakeMethodId)
     .order("order", { ascending: true });
@@ -2424,15 +2424,15 @@ export async function upsertQuoteOperation(
     .single();
 }
 
-export async function upsertQuoteOperationAttribute(
+export async function upsertQuoteOperationStep(
   client: SupabaseClient<Database>,
-  quoteOperationAttribute:
-    | (Omit<z.infer<typeof operationAttributeValidator>, "id"> & {
+  quoteOperationStep:
+    | (Omit<z.infer<typeof operationStepValidator>, "id"> & {
         companyId: string;
         createdBy: string;
       })
     | (Omit<
-        z.infer<typeof operationAttributeValidator>,
+        z.infer<typeof operationStepValidator>,
         "id" | "minValue" | "maxValue"
       > & {
         id: string;
@@ -2442,18 +2442,18 @@ export async function upsertQuoteOperationAttribute(
         updatedAt: string;
       })
 ) {
-  if ("createdBy" in quoteOperationAttribute) {
+  if ("createdBy" in quoteOperationStep) {
     return client
-      .from("quoteOperationAttribute")
-      .insert(quoteOperationAttribute)
+      .from("quoteOperationStep")
+      .insert(quoteOperationStep)
       .select("id")
       .single();
   }
 
   return client
-    .from("quoteOperationAttribute")
-    .update(sanitize(quoteOperationAttribute))
-    .eq("id", quoteOperationAttribute.id)
+    .from("quoteOperationStep")
+    .update(sanitize(quoteOperationStep))
+    .eq("id", quoteOperationStep.id)
     .select("id")
     .single();
 }

@@ -92,12 +92,12 @@ import {
 import { useUrlParams, useUser } from "~/hooks";
 import type { productionEventType } from "~/services/models";
 import {
-  attributeRecordValidator,
   finishValidator,
   issueValidator,
   nonScrapQuantityValidator,
   productionEventValidator,
   scrapQuantityValidator,
+  stepRecordValidator,
 } from "~/services/models";
 import type {
   Job,
@@ -186,7 +186,7 @@ import {
 } from "react-icons/lu";
 import {
   MethodIcon,
-  ProcedureAttributeTypeIcon,
+  ProcedureStepTypeIcon,
   TrackingTypeIcon,
 } from "~/components/Icons";
 import type {
@@ -275,6 +275,7 @@ export const JobOperation = ({
     setEventType,
     setSelectedMaterial,
     setupProductionEvent,
+    activeStep,
   } = useOperation(originalOperation, events, trackedEntities, isModalOpen);
 
   const controlsHeight = useMemo(() => {
@@ -597,7 +598,10 @@ export const JobOperation = ({
                                       <Progress
                                         value={
                                           (attributes.filter(
-                                            (a) => a.jobOperationAttributeRecord
+                                            (a) =>
+                                              a.jobOperationStepRecord[
+                                                activeStep
+                                              ]
                                           ).length /
                                             attributes.length) *
                                           100
@@ -607,7 +611,10 @@ export const JobOperation = ({
                                       <span className="text-xs text-muted-foreground">
                                         {
                                           attributes.filter(
-                                            (a) => a.jobOperationAttributeRecord
+                                            (a) =>
+                                              a.jobOperationStepRecord[
+                                                activeStep
+                                              ]
                                           ).length
                                         }{" "}
                                         of {attributes.length} complete
@@ -625,6 +632,7 @@ export const JobOperation = ({
                                   .map((a, index) => (
                                     <AttributesListItem
                                       key={`attribute-${a.id}`}
+                                      activeStep={activeStep}
                                       attribute={a}
                                       onRecord={onRecordAttributeRecord}
                                       onDelete={onDeleteAttributeRecord}
@@ -1387,6 +1395,7 @@ export const JobOperation = ({
                                         .map((a, index) => (
                                           <AttributesListItem
                                             key={`attribute-${a.id}`}
+                                            activeStep={activeStep}
                                             attribute={a}
                                             compact={true}
                                             onRecord={onRecordAttributeRecord}
@@ -1797,7 +1806,7 @@ export const JobOperation = ({
             {(resolvedProcedure) => {
               const { attributes } = resolvedProcedure;
               const allAttributesRecorded = attributes.every(
-                (a) => a.jobOperationAttributeRecord !== null
+                (a) => a.jobOperationStepRecord !== null
               );
               return (
                 <QuantityModal
@@ -1833,6 +1842,7 @@ export const JobOperation = ({
       {attributeRecordModal.isOpen && selectedAttribute ? (
         <RecordModal
           key={selectedAttribute.id}
+          activeStep={activeStep}
           attribute={selectedAttribute}
           onClose={onDeselectAttribute}
         />
@@ -1841,7 +1851,7 @@ export const JobOperation = ({
       {attributeRecordDeleteModal.isOpen && selectedAttribute && (
         <DeleteAttributeRecordModal
           onClose={onDeselectAttribute}
-          id={selectedAttribute.id}
+          id={selectedAttribute?.jobOperationStepRecord[activeStep]?.id}
           title="Delete Step"
           description="Are you sure you want to delete this step?"
         />
@@ -2315,6 +2325,8 @@ function useOperation(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trackedEntities, trackedEntityParam]);
 
+  const activeStep = 0;
+
   return {
     active,
     availableEntities,
@@ -2323,6 +2335,7 @@ function useOperation(
     ...activeEvents,
     progress,
     operation: operationState,
+    activeStep,
     activeTab,
     eventType,
     scrapModal,
@@ -4245,6 +4258,7 @@ function IssueModal({
   );
 }
 function AttributesListItem({
+  activeStep,
   attribute,
   compact = false,
   operationId,
@@ -4252,6 +4266,7 @@ function AttributesListItem({
   onRecord,
   onDelete,
 }: {
+  activeStep: number;
   attribute: JobOperationAttribute;
   compact?: boolean;
   operationId?: string;
@@ -4275,7 +4290,7 @@ function AttributesListItem({
         <HStack spacing={4} className="w-2/3">
           <HStack spacing={4} className="flex-1">
             <div className="bg-muted border rounded-full flex items-center justify-center p-2">
-              <ProcedureAttributeTypeIcon type={type} />
+              <ProcedureStepTypeIcon type={type} />
             </div>
             <VStack spacing={0}>
               <HStack>
@@ -4295,11 +4310,16 @@ function AttributesListItem({
                 </span>
               )}
             </VStack>
-            {!compact && <PreviewAttributeRecord attribute={attribute} />}
+            {!compact && (
+              <PreviewAttributeRecord
+                attribute={attribute}
+                activeStep={activeStep}
+              />
+            )}
           </HStack>
         </HStack>
         <div className="flex items-center justify-end gap-2">
-          {attribute.jobOperationAttributeRecord ? (
+          {attribute.jobOperationStepRecord[activeStep] ? (
             <div className="flex items-center gap-2">
               {type !== "Task" &&
                 (compact ? (
@@ -4308,23 +4328,23 @@ function AttributesListItem({
                     variant="secondary"
                     icon={<LuCircleCheck />}
                     isDisabled={
-                      attribute.jobOperationAttributeRecord?.createdBy !==
-                      user?.id
+                      attribute.jobOperationStepRecord[activeStep]
+                        ?.createdBy !== user?.id
                     }
                     onClick={() => onRecord(attribute)}
                     className={cn(
                       "text-emerald-500",
                       attribute.minValue !== null &&
-                        attribute.jobOperationAttributeRecord?.numericValue !=
-                          null &&
-                        attribute.jobOperationAttributeRecord.numericValue <
-                          attribute.minValue &&
+                        attribute.jobOperationStepRecord[activeStep]
+                          ?.numericValue != null &&
+                        attribute.jobOperationStepRecord[activeStep]
+                          ?.numericValue < attribute.minValue &&
                         "text-red-500",
                       attribute.maxValue !== null &&
-                        attribute.jobOperationAttributeRecord?.numericValue !=
-                          null &&
-                        attribute.jobOperationAttributeRecord.numericValue >
-                          attribute.maxValue &&
+                        attribute.jobOperationStepRecord[activeStep]
+                          ?.numericValue != null &&
+                        attribute.jobOperationStepRecord[activeStep]
+                          ?.numericValue > attribute.maxValue &&
                         "text-red-500"
                     )}
                   />
@@ -4341,15 +4361,19 @@ function AttributesListItem({
                 aria-label="Delete attribute"
                 variant="secondary"
                 icon={<LuTrash />}
-                isDisabled={attribute.createdBy !== user?.id}
+                isDisabled={
+                  attribute.jobOperationStepRecord[activeStep]?.createdBy !==
+                  user?.id
+                }
                 onClick={() => onDelete(attribute)}
               />
             </div>
           ) : type === "Task" ? (
             <fetcher.Form method="post" action={path.to.record}>
+              <input type="hidden" name="index" value={activeStep} />
               <input
                 type="hidden"
-                name="jobOperationAttributeId"
+                name="jobOperationStepId"
                 value={attribute.id}
               />
 
@@ -4416,70 +4440,83 @@ function AttributesListItem({
 }
 
 function PreviewAttributeRecord({
+  activeStep,
   attribute,
 }: {
+  activeStep: number;
   attribute: JobOperationAttribute;
 }) {
   const [employees] = usePeople();
   const numberFormatter = useNumberFormatter();
 
-  if (!attribute.jobOperationAttributeRecord) return null;
+  if (!attribute.jobOperationStepRecord) return null;
   return (
     <div className="min-w-[200px] truncate text-right font-medium">
       {attribute.type === "Task" && (
         <Checkbox
-          checked={attribute.jobOperationAttributeRecord.booleanValue ?? false}
+          checked={
+            attribute.jobOperationStepRecord[activeStep]?.booleanValue ?? false
+          }
         />
       )}
       {attribute.type === "Checkbox" && (
         <Checkbox
-          checked={attribute.jobOperationAttributeRecord.booleanValue ?? false}
+          checked={
+            attribute.jobOperationStepRecord[activeStep]?.booleanValue ?? false
+          }
         />
       )}
       {attribute.type === "Value" && (
-        <p className="text-sm">{attribute.jobOperationAttributeRecord.value}</p>
+        <p className="text-sm">
+          {attribute.jobOperationStepRecord[activeStep]?.value}
+        </p>
       )}
       {attribute.type === "Measurement" &&
-        typeof attribute.jobOperationAttributeRecord?.numericValue ===
+        typeof attribute.jobOperationStepRecord[activeStep]?.numericValue ===
           "number" && (
           <p
             className={cn(
               "text-sm",
               attribute.minValue !== null &&
-                attribute.jobOperationAttributeRecord.numericValue <
+                attribute.jobOperationStepRecord[activeStep]?.numericValue <
                   attribute.minValue &&
                 "text-red-500",
               attribute.maxValue !== null &&
-                attribute.jobOperationAttributeRecord.numericValue >
+                attribute.jobOperationStepRecord[activeStep]?.numericValue >
                   attribute.maxValue &&
                 "text-red-500"
             )}
           >
             {numberFormatter.format(
-              attribute.jobOperationAttributeRecord.numericValue
+              attribute.jobOperationStepRecord[activeStep]?.numericValue
             )}{" "}
             {attribute.unitOfMeasureCode}
           </p>
         )}
       {attribute.type === "Timestamp" && (
         <p className="text-sm">
-          {formatDateTime(attribute.jobOperationAttributeRecord.value ?? "")}
+          {formatDateTime(
+            attribute.jobOperationStepRecord[activeStep]?.value ?? ""
+          )}
         </p>
       )}
       {attribute.type === "List" && (
-        <p className="text-sm">{attribute.jobOperationAttributeRecord.value}</p>
+        <p className="text-sm">
+          {attribute.jobOperationStepRecord[activeStep]?.value}
+        </p>
       )}
       {attribute.type === "Person" && (
         <p className="text-sm">
           {
             employees.find(
-              (e) => e.id === attribute.jobOperationAttributeRecord?.userValue
+              (e) =>
+                e.id === attribute.jobOperationStepRecord[activeStep]?.userValue
             )?.name
           }
         </p>
       )}
       {attribute.type === "File" &&
-        attribute.jobOperationAttributeRecord?.value && (
+        attribute.jobOperationStepRecord[activeStep]?.value && (
           <div className="flex justify-end gap-2 text-sm">
             <LuPaperclip className="size-4 text-muted-foreground" />
           </div>
@@ -4530,9 +4567,11 @@ function ParametersListItem({
 
 function RecordModal({
   attribute,
+  activeStep,
   onClose,
 }: {
   attribute: JobOperationAttribute;
+  activeStep: number;
   onClose: () => void;
 }) {
   const [employees] = usePeople();
@@ -4557,7 +4596,7 @@ function RecordModal({
     setFile(fileUpload);
     toast.info(`Uploading ${fileUpload.name}`);
 
-    const fileName = `${company.id}/job/${attribute.operationId}/${fileUpload.name}`;
+    const fileName = `${company.id}/job/${attribute.operationId}/${activeStep}/${fileUpload.name}`;
 
     const upload = await carbon?.storage
       .from("private")
@@ -4581,7 +4620,7 @@ function RecordModal({
   }, [fetcher.data?.success, onClose]);
 
   const [booleanControlled, setBooleanControlled] = useState(
-    attribute?.jobOperationAttributeRecord?.booleanValue ?? false
+    attribute?.jobOperationStepRecord[activeStep]?.booleanValue ?? false
   );
 
   return (
@@ -4596,17 +4635,19 @@ function RecordModal({
       <ModalContent>
         <ValidatedForm
           method="post"
-          validator={attributeRecordValidator}
+          validator={stepRecordValidator}
           action={path.to.record}
           onSubmit={onClose}
           defaultValues={{
-            jobOperationAttributeId: attribute.id,
+            index: activeStep,
+            jobOperationStepId: attribute.id,
             value:
-              attribute?.jobOperationAttributeRecord?.value ??
+              attribute?.jobOperationStepRecord[activeStep]?.value ??
               (attribute.type === "Timestamp" ? new Date().toISOString() : ""),
             numericValue:
-              attribute?.jobOperationAttributeRecord?.numericValue ?? 0,
-            userValue: attribute?.jobOperationAttributeRecord?.userValue ?? "",
+              attribute?.jobOperationStepRecord[activeStep]?.numericValue ?? 0,
+            userValue:
+              attribute?.jobOperationStepRecord[activeStep]?.userValue ?? "",
           }}
           fetcher={fetcher}
         >
@@ -4614,7 +4655,9 @@ function RecordModal({
             <ModalTitle>{attribute.name}</ModalTitle>
           </ModalHeader>
           <ModalBody>
-            <Hidden name="jobOperationAttributeId" />
+            <Hidden name="id" />
+            <Hidden name="jobOperationStepId" />
+            <Hidden name="index" />
             {attribute.type === "Checkbox" && (
               <Hidden
                 name="booleanValue"

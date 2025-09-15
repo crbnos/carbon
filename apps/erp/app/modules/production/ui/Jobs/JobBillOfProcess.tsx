@@ -108,22 +108,22 @@ import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useRouteData, useUrlParams, useUser } from "~/hooks";
 import type {
-  OperationAttribute,
   OperationParameter,
+  OperationStep,
   OperationTool,
 } from "~/modules/shared";
 import {
   methodOperationOrders,
-  operationAttributeValidator,
   operationParameterValidator,
+  operationStepValidator,
   operationToolValidator,
   operationTypes,
-  procedureAttributeType,
+  procedureStepType,
 } from "~/modules/shared";
 
-import type { action as editJobOperationAttributeAction } from "~/routes/x+/job+/methods+/operation.attribute.$id";
 import type { action as editJobOperationParameterAction } from "~/routes/x+/job+/methods+/operation.parameter.$id";
 import type { action as newJobOperationParameterAction } from "~/routes/x+/job+/methods+/operation.parameter.new";
+import type { action as editJobOperationStepAction } from "~/routes/x+/job+/methods+/operation.step.$id";
 import type { action as editJobOperationToolAction } from "~/routes/x+/job+/methods+/operation.tool.$id";
 import type { action as newJobOperationToolAction } from "~/routes/x+/job+/methods+/operation.tool.new";
 
@@ -133,7 +133,7 @@ import { SupplierProcessPreview } from "~/components/Form/SupplierProcess";
 import UnitOfMeasure, {
   useUnitOfMeasure,
 } from "~/components/Form/UnitOfMeasure";
-import { ProcedureAttributeTypeIcon } from "~/components/Icons";
+import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { usePeople, useTools } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import {
@@ -156,9 +156,9 @@ type ItemWithData = Item & {
   data: Operation;
 };
 
-type JobOperationAttribute = OperationAttribute & {
-  jobOperationAttributeRecord?:
-    | Database["public"]["Tables"]["jobOperationAttributeRecord"]["Row"]
+type JobOperationStep = OperationStep & {
+  jobOperationStepRecord?:
+    | Database["public"]["Tables"]["jobOperationStepRecord"]["Row"]
     | null;
 };
 
@@ -168,7 +168,7 @@ type JobBillOfProcessProps = {
   operations: (Operation & {
     jobOperationTool: OperationTool[];
     jobOperationParameter: OperationParameter[];
-    jobOperationAttribute: JobOperationAttribute[];
+    jobOperationStep: JobOperationStep[];
   })[];
   tags: { name: string }[];
 };
@@ -681,9 +681,8 @@ const JobBillOfProcess = ({
     const parameters =
       initialOperations.find((o) => o.id === item.id)?.jobOperationParameter ??
       [];
-    const attributes =
-      initialOperations.find((o) => o.id === item.id)?.jobOperationAttribute ??
-      [];
+    const steps =
+      initialOperations.find((o) => o.id === item.id)?.jobOperationStep ?? [];
 
     const tabs = [
       {
@@ -784,13 +783,13 @@ const JobBillOfProcess = ({
         label: (
           <span className="flex items-center gap-2">
             <span>Steps</span>
-            {attributes.length > 0 && <Count count={attributes.length} />}
+            {steps.length > 0 && <Count count={steps.length} />}
           </span>
         ),
         content: (
           <div className="flex w-full flex-col py-4">
-            <AttributesForm
-              attributes={attributes}
+            <StepsForm
+              steps={steps}
               operationId={item.id!}
               isDisabled={
                 selectedItemId === null || !!temporaryItems[selectedItemId]
@@ -992,27 +991,27 @@ const JobBillOfProcess = ({
 
 export default JobBillOfProcess;
 
-function AttributesForm({
+function StepsForm({
   operationId,
   isDisabled,
-  attributes,
+  steps,
   temporaryItems,
 }: {
   operationId: string;
   isDisabled: boolean;
-  attributes: JobOperationAttribute[];
+  steps: JobOperationStep[];
   temporaryItems: TemporaryItems;
 }) {
   const fetcher = useFetcher<typeof newJobOperationParameterAction>();
-  const [type, setType] = useState<OperationAttribute["type"]>("Task");
+  const [type, setType] = useState<OperationStep["type"]>("Task");
   const [description, setDescription] = useState<JSONContent>({});
   const [numericControls, setNumericControls] = useState<string[]>([]);
   const typeOptions = useMemo(
     () =>
-      procedureAttributeType.map((type) => ({
+      procedureStepType.map((type) => ({
         label: (
           <HStack>
-            <ProcedureAttributeTypeIcon type={type} className="mr-2" />
+            <ProcedureStepTypeIcon type={type} className="mr-2" />
             {type}
           </HStack>
         ),
@@ -1048,9 +1047,9 @@ function AttributesForm({
     return (
       <Alert className="max-w-[420px] mx-auto my-8">
         <LuTriangleAlert />
-        <AlertTitle>Cannot add attributes to unsaved operation</AlertTitle>
+        <AlertTitle>Cannot add steps to unsaved operation</AlertTitle>
         <AlertDescription>
-          Please save the operation before adding attributes.
+          Please save the operation before adding steps.
         </AlertDescription>
       </Alert>
     );
@@ -1063,9 +1062,9 @@ function AttributesForm({
     >
       <div className="p-6 border rounded-lg bg-card mb-6">
         <ValidatedForm
-          action={path.to.newJobOperationAttribute}
+          action={path.to.newJobOperationStep}
           method="post"
-          validator={operationAttributeValidator}
+          validator={operationStepValidator}
           fetcher={fetcher}
           resetAfterSubmit
           defaultValues={{
@@ -1078,10 +1077,7 @@ function AttributesForm({
             maxValue: 0,
             listValues: [],
             sortOrder:
-              attributes.reduce(
-                (acc, a) => Math.max(acc, a.sortOrder ?? 0),
-                0
-              ) + 1,
+              steps.reduce((acc, a) => Math.max(acc, a.sortOrder ?? 0), 0) + 1,
             operationId,
           }}
           onSubmit={() => {
@@ -1101,7 +1097,7 @@ function AttributesForm({
                 value={type}
                 onChange={(option) => {
                   if (option) {
-                    setType(option.value as OperationAttribute["type"]);
+                    setType(option.value as OperationStep["type"]);
                   }
                 }}
               />
@@ -1180,17 +1176,17 @@ function AttributesForm({
         </ValidatedForm>
       </div>
 
-      {attributes.length > 0 && (
+      {steps.length > 0 && (
         <div className="border rounded-lg ">
-          {[...attributes]
+          {[...steps]
             .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
             .map((a, index) => (
-              <AttributesListItem
+              <StepsListItem
                 key={a.id}
                 attribute={a}
                 operationId={operationId}
                 typeOptions={typeOptions}
-                className={index === attributes.length - 1 ? "border-none" : ""}
+                className={index === steps.length - 1 ? "border-none" : ""}
               />
             ))}
         </div>
@@ -1199,13 +1195,13 @@ function AttributesForm({
   );
 }
 
-function AttributesListItem({
+function StepsListItem({
   attribute,
   operationId,
   typeOptions,
   className,
 }: {
-  attribute: JobOperationAttribute;
+  attribute: JobOperationStep;
   operationId: string;
   typeOptions: { label: JSX.Element; value: string }[];
   className?: string;
@@ -1225,7 +1221,7 @@ function AttributesListItem({
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof editJobOperationAttributeAction>();
+  const fetcher = useFetcher<typeof editJobOperationStepAction>();
   const [description, setDescription] = useState<JSONContent>(() => {
     try {
       return attribute.description ? JSON.parse(attribute.description) : {};
@@ -1242,7 +1238,7 @@ function AttributesListItem({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetcher.state]);
 
-  const [type, setType] = useState<OperationAttribute["type"]>(attribute.type);
+  const [type, setType] = useState<OperationStep["type"]>(attribute.type);
   const [numericControls, setNumericControls] = useState<string[]>(() => {
     const controls = [];
     if (type === "Measurement") {
@@ -1290,9 +1286,9 @@ function AttributesListItem({
     <div className={cn("border-b p-6", className)}>
       {disclosure.isOpen ? (
         <ValidatedForm
-          action={path.to.jobOperationAttribute(id)}
+          action={path.to.jobOperationStep(id)}
           method="post"
-          validator={operationAttributeValidator}
+          validator={operationStepValidator}
           fetcher={fetcher}
           resetAfterSubmit
           onSubmit={() => {
@@ -1314,7 +1310,7 @@ function AttributesListItem({
                 options={typeOptions}
                 onChange={(option) => {
                   if (option) {
-                    setType(option.value as OperationAttribute["type"]);
+                    setType(option.value as OperationStep["type"]);
                   }
                 }}
               />
@@ -1399,7 +1395,7 @@ function AttributesListItem({
           <HStack spacing={4} className="w-1/2">
             <HStack spacing={4} className="flex-1">
               <div className="bg-muted border rounded-full flex items-center justify-center p-2">
-                <ProcedureAttributeTypeIcon type={type} />
+                <ProcedureStepTypeIcon type={type} />
               </div>
               <VStack spacing={0}>
                 <HStack>
@@ -1449,8 +1445,8 @@ function AttributesListItem({
                   </span>
                 )}
               </VStack>
-              {attribute.jobOperationAttributeRecord && (
-                <PreviewAttributeRecord attribute={attribute} />
+              {attribute.jobOperationStepRecord && (
+                <PreviewStepRecord attribute={attribute} />
               )}
             </HStack>
           </HStack>
@@ -1486,7 +1482,7 @@ function AttributesListItem({
       )}
       {deleteModalDisclosure.isOpen && (
         <ConfirmDelete
-          action={path.to.deleteJobOperationAttribute(id)}
+          action={path.to.deleteJobOperationStep(id)}
           isOpen={deleteModalDisclosure.isOpen}
           name={name}
           text={`Are you sure you want to delete the ${name} attribute from this operation? This cannot be undone.`}
@@ -1502,46 +1498,41 @@ function AttributesListItem({
   );
 }
 
-function PreviewAttributeRecord({
-  attribute,
-}: {
-  attribute: JobOperationAttribute;
-}) {
+function PreviewStepRecord({ attribute }: { attribute: JobOperationStep }) {
   const unitOfMeasures = useUnitOfMeasure();
   const [employees] = usePeople();
   const numberFormatter = useNumberFormatter();
 
-  if (!attribute.jobOperationAttributeRecord) return null;
+  if (!attribute.jobOperationStepRecord) return null;
   return (
     <div className="min-w-[200px] truncate text-right font-medium">
       {attribute.type === "Checkbox" && (
         <Checkbox
-          checked={attribute.jobOperationAttributeRecord.booleanValue ?? false}
+          checked={attribute.jobOperationStepRecord.booleanValue ?? false}
         />
       )}
       {attribute.type === "Value" && (
-        <p className="text-sm">{attribute.jobOperationAttributeRecord.value}</p>
+        <p className="text-sm">{attribute.jobOperationStepRecord.value}</p>
       )}
       {attribute.type === "Measurement" &&
-        typeof attribute.jobOperationAttributeRecord?.numericValue ===
-          "number" && (
+        typeof attribute.jobOperationStepRecord?.numericValue === "number" && (
           <p
             className={cn(
               "text-sm",
               attribute.minValue !== null &&
                 attribute.minValue !== undefined &&
-                attribute.jobOperationAttributeRecord.numericValue <
+                attribute.jobOperationStepRecord.numericValue <
                   attribute.minValue &&
                 "text-red-500",
               attribute.maxValue !== null &&
                 attribute.maxValue !== undefined &&
-                attribute.jobOperationAttributeRecord.numericValue >
+                attribute.jobOperationStepRecord.numericValue >
                   attribute.maxValue &&
                 "text-red-500"
             )}
           >
             {numberFormatter.format(
-              attribute.jobOperationAttributeRecord.numericValue
+              attribute.jobOperationStepRecord.numericValue
             )}{" "}
             {
               unitOfMeasures.find(
@@ -1552,34 +1543,33 @@ function PreviewAttributeRecord({
         )}
       {attribute.type === "Timestamp" && (
         <p className="text-sm">
-          {formatDateTime(attribute.jobOperationAttributeRecord.value ?? "")}
+          {formatDateTime(attribute.jobOperationStepRecord.value ?? "")}
         </p>
       )}
       {attribute.type === "List" && (
-        <p className="text-sm">{attribute.jobOperationAttributeRecord.value}</p>
+        <p className="text-sm">{attribute.jobOperationStepRecord.value}</p>
       )}
       {attribute.type === "Person" && (
         <p className="text-sm">
           {
             employees.find(
-              (e) => e.id === attribute.jobOperationAttributeRecord?.userValue
+              (e) => e.id === attribute.jobOperationStepRecord?.userValue
             )?.name
           }
         </p>
       )}
-      {attribute.type === "File" &&
-        attribute.jobOperationAttributeRecord?.value && (
-          <div className="flex justify-end gap-2 text-sm">
-            <LuPaperclip className="size-4 text-muted-foreground" />
-            <a
-              href={getPrivateUrl(attribute.jobOperationAttributeRecord.value)}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              View File
-            </a>
-          </div>
-        )}
+      {attribute.type === "File" && attribute.jobOperationStepRecord?.value && (
+        <div className="flex justify-end gap-2 text-sm">
+          <LuPaperclip className="size-4 text-muted-foreground" />
+          <a
+            href={getPrivateUrl(attribute.jobOperationStepRecord.value)}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            View File
+          </a>
+        </div>
+      )}
     </div>
   );
 }
@@ -2612,8 +2602,8 @@ function ProcedureSyncModal({
               <AlertTitle>Potential Data Loss</AlertTitle>
               <AlertDescription>
                 Syncing the procedure will update the operation with the new
-                work instructions, attributes, and parameters. Any attributes
-                that are not part of the procedure will be removed.
+                work instructions, steps, and parameters. Any steps that are not
+                part of the procedure will be removed.
               </AlertDescription>
             </Alert>
           </ModalBody>

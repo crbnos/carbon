@@ -2,12 +2,12 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
-import { deleteQuoteOperationAttribute } from "~/modules/sales";
+import { deleteJobOperationStep } from "~/modules/production";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client } = await requirePermissions(request, {
-    delete: "parts",
+    delete: "production",
   });
 
   const { id } = params;
@@ -15,11 +15,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error("id not found");
   }
 
-  const deleteOperationAttribute = await deleteQuoteOperationAttribute(
-    client,
-    id
-  );
-  if (deleteOperationAttribute.error) {
+  const deleteOperationStep = await deleteJobOperationStep(client, id);
+  if (deleteOperationStep.error) {
     return json(
       {
         id: null,
@@ -27,8 +24,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await flash(
         request,
         error(
-          deleteOperationAttribute.error,
-          "Failed to delete quote operation parameter"
+          deleteOperationStep.error,
+          "Failed to delete job operation attribute"
         )
       )
     );

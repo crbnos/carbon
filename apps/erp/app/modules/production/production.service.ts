@@ -12,8 +12,8 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
-  operationAttributeValidator,
   operationParameterValidator,
+  operationStepValidator,
   operationToolValidator,
 } from "../shared";
 import type {
@@ -22,8 +22,8 @@ import type {
   jobOperationValidator,
   jobStatus,
   jobValidator,
-  procedureAttributeValidator,
   procedureParameterValidator,
+  procedureStepValidator,
   procedureValidator,
   productionEventValidator,
   productionQuantityValidator,
@@ -52,11 +52,11 @@ export async function deleteJobOperation(
   return client.from("jobOperation").delete().eq("id", jobOperationId);
 }
 
-export async function deleteJobOperationAttribute(
+export async function deleteJobOperationStep(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("jobOperationAttribute").delete().eq("id", id);
+  return client.from("jobOperationStep").delete().eq("id", id);
 }
 
 export async function deleteJobOperationParameter(
@@ -80,15 +80,15 @@ export async function deleteProcedure(
   return client.from("procedure").delete().eq("id", procedureId);
 }
 
-export async function deleteProcedureAttribute(
+export async function deleteProcedureStep(
   client: SupabaseClient<Database>,
-  procedureAttributeId: string,
+  procedureStepId: string,
   companyId: string
 ) {
   return client
-    .from("procedureAttribute")
+    .from("procedureStep")
     .delete()
-    .eq("id", procedureAttributeId)
+    .eq("id", procedureStepId)
     .eq("companyId", companyId);
 }
 
@@ -505,24 +505,26 @@ export async function getJobOperationAttachments(
   if (jobOperationIds.length === 0) return {};
 
   const { data: operationAttributes } = await client
-    .from("jobOperationAttribute")
-    .select("*, jobOperationAttributeRecord(*)")
+    .from("jobOperationStep")
+    .select("*, jobOperationStepRecord(*)")
     .in("operationId", jobOperationIds);
 
   if (!operationAttributes) return {};
 
   const attachmentsByOperation: Record<string, string[]> = {};
-
   operationAttributes.forEach((attr) => {
-    if (attr.jobOperationAttributeRecord) {
-      if (attr.type === "File" && attr.jobOperationAttributeRecord?.value) {
-        if (!attachmentsByOperation[attr.operationId]) {
-          attachmentsByOperation[attr.operationId] = [];
+    if (
+      attr.jobOperationStepRecord &&
+      Array.isArray(attr.jobOperationStepRecord)
+    ) {
+      attr.jobOperationStepRecord.forEach((record) => {
+        if (attr.type === "File" && record.value) {
+          if (!attachmentsByOperation[attr.operationId]) {
+            attachmentsByOperation[attr.operationId] = [];
+          }
+          attachmentsByOperation[attr.operationId].push(record.value);
         }
-        attachmentsByOperation[attr.operationId].push(
-          attr.jobOperationAttributeRecord?.value
-        );
-      }
+      });
     }
   });
 
@@ -547,7 +549,7 @@ export async function getJobOperationsByMethodId(
   return client
     .from("jobOperation")
     .select(
-      "*, jobOperationTool(*), jobOperationParameter(*), jobOperationAttribute(*, jobOperationAttributeRecord(*))"
+      "*, jobOperationTool(*), jobOperationParameter(*), jobOperationStep(*, jobOperationStepRecord(*))"
     )
     .eq("jobMakeMethodId", jobMakeMethodId)
     .order("order", { ascending: true });
@@ -572,17 +574,17 @@ export async function getProcedure(
 ) {
   return client
     .from("procedure")
-    .select("*, procedureAttribute(*), procedureParameter(*)")
+    .select("*, procedureStep(*), procedureParameter(*)")
     .eq("id", id)
     .single();
 }
 
-export async function getProcedureAttributes(
+export async function getProcedureSteps(
   client: SupabaseClient<Database>,
   procedureId: string
 ) {
   return client
-    .from("procedureAttribute")
+    .from("procedureStep")
     .select("*")
     .eq("procedureId", procedureId);
 }
@@ -1116,7 +1118,7 @@ export async function updateJobOperationStatus(
     .single();
 }
 
-export async function updateProcedureAttributeOrder(
+export async function updateProcedureStepOrder(
   client: SupabaseClient<Database>,
   updates: {
     id: string;
@@ -1125,10 +1127,7 @@ export async function updateProcedureAttributeOrder(
   }[]
 ) {
   const updatePromises = updates.map(({ id, sortOrder, updatedBy }) =>
-    client
-      .from("procedureAttribute")
-      .update({ sortOrder, updatedBy })
-      .eq("id", id)
+    client.from("procedureStep").update({ sortOrder, updatedBy }).eq("id", id)
   );
   return Promise.all(updatePromises);
 }
@@ -1324,15 +1323,15 @@ export async function upsertJobOperation(
   return operationInsert;
 }
 
-export async function upsertJobOperationAttribute(
+export async function upsertJobOperationStep(
   client: SupabaseClient<Database>,
-  jobOperationAttribute:
-    | (Omit<z.infer<typeof operationAttributeValidator>, "id"> & {
+  jobOperationStep:
+    | (Omit<z.infer<typeof operationStepValidator>, "id"> & {
         companyId: string;
         createdBy: string;
       })
     | (Omit<
-        z.infer<typeof operationAttributeValidator>,
+        z.infer<typeof operationStepValidator>,
         "id" | "minValue" | "maxValue"
       > & {
         id: string;
@@ -1342,18 +1341,18 @@ export async function upsertJobOperationAttribute(
         updatedAt: string;
       })
 ) {
-  if ("createdBy" in jobOperationAttribute) {
+  if ("createdBy" in jobOperationStep) {
     return client
-      .from("jobOperationAttribute")
-      .insert(jobOperationAttribute)
+      .from("jobOperationStep")
+      .insert(jobOperationStep)
       .select("id")
       .single();
   }
 
   return client
-    .from("jobOperationAttribute")
-    .update(sanitize(jobOperationAttribute))
-    .eq("id", jobOperationAttribute.id)
+    .from("jobOperationStep")
+    .update(sanitize(jobOperationStep))
+    .eq("id", jobOperationStep.id)
     .select("id")
     .single();
 }
@@ -1590,7 +1589,7 @@ export async function upsertProcedure(
   if (copyFromId) {
     const procedure = await client
       .from("procedure")
-      .select("*, procedureAttribute(*), procedureParameter(*)")
+      .select("*, procedureStep(*), procedureParameter(*)")
       .eq("id", copyFromId)
       .single();
 
@@ -1598,7 +1597,7 @@ export async function upsertProcedure(
       return procedure;
     }
 
-    const attributes = procedure.data.procedureAttribute ?? [];
+    const attributes = procedure.data.procedureStep ?? [];
     const parameters = procedure.data.procedureParameter ?? [];
     const workInstruction = (procedure.data.content ?? {}) as JSONContent;
 
@@ -1611,7 +1610,7 @@ export async function upsertProcedure(
           })
           .eq("id", insert.data.id),
         attributes.length > 0
-          ? client.from("procedureAttribute").insert(
+          ? client.from("procedureStep").insert(
               attributes.map((attribute) => {
                 const { id, procedureId, ...rest } = attribute;
                 return {
@@ -1649,29 +1648,29 @@ export async function upsertProcedure(
   return insert;
 }
 
-export async function upsertProcedureAttribute(
+export async function upsertProcedureStep(
   client: SupabaseClient<Database>,
-  procedureAttribute:
-    | (Omit<z.infer<typeof procedureAttributeValidator>, "id"> & {
+  procedureStep:
+    | (Omit<z.infer<typeof procedureStepValidator>, "id"> & {
         companyId: string;
         createdBy: string;
       })
-    | (Omit<z.infer<typeof procedureAttributeValidator>, "id"> & {
+    | (Omit<z.infer<typeof procedureStepValidator>, "id"> & {
         id: string;
         updatedBy: string;
       })
 ) {
-  if ("id" in procedureAttribute) {
+  if ("id" in procedureStep) {
     return client
-      .from("procedureAttribute")
-      .update(sanitize(procedureAttribute))
-      .eq("id", procedureAttribute.id)
+      .from("procedureStep")
+      .update(sanitize(procedureStep))
+      .eq("id", procedureStep.id)
       .select("id")
       .single();
   }
   return client
-    .from("procedureAttribute")
-    .insert([procedureAttribute])
+    .from("procedureStep")
+    .insert([procedureStep])
     .select("id")
     .single();
 }

@@ -505,8 +505,8 @@ ALTER TABLE "batchProperty" ALTER COLUMN "id" SET DEFAULT id('bp');
 ALTER TABLE "procedure" ALTER COLUMN "id" DROP DEFAULT;
 ALTER TABLE "procedure" ALTER COLUMN "id" SET DEFAULT id('pro');
 
-ALTER TABLE "procedureAttribute" ALTER COLUMN "id" DROP DEFAULT;
-ALTER TABLE "procedureAttribute" ALTER COLUMN "id" SET DEFAULT id();
+ALTER TABLE "procedureStep" ALTER COLUMN "id" DROP DEFAULT;
+ALTER TABLE "procedureStep" ALTER COLUMN "id" SET DEFAULT id();
 
 ALTER TABLE "procedureParameter" ALTER COLUMN "id" DROP DEFAULT;
 ALTER TABLE "procedureParameter" ALTER COLUMN "id" SET DEFAULT id();

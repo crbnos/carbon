@@ -4,8 +4,8 @@ import type { StorageItem } from "~/types";
 import type {
   methodItemType,
   methodType,
-  operationAttributeValidator,
   operationParameterValidator,
+  operationStepValidator,
   operationToolValidator,
   standardFactorType,
 } from "./shared.models";
@@ -48,7 +48,7 @@ export type Note = NonNullable<
   Awaited<ReturnType<typeof getNotes>>["data"]
 >[number];
 
-export type OperationAttribute = z.infer<typeof operationAttributeValidator> & {
+export type OperationStep = z.infer<typeof operationStepValidator> & {
   createdBy: string;
   createdAt: string;
   updatedBy: string | null;

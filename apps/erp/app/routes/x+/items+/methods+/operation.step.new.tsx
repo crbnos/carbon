@@ -3,30 +3,27 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
-import { upsertJobOperationAttribute } from "~/modules/production";
-import { operationAttributeValidator } from "~/modules/shared";
+import { upsertMethodOperationStep } from "~/modules/items";
+import { operationStepValidator } from "~/modules/shared";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {
-    create: "production",
+    create: "parts",
   });
 
   const formData = await request.formData();
-  const validation = await validator(operationAttributeValidator).validate(
-    formData
-  );
+  const validation = await validator(operationStepValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);
   }
 
-  const insert = await upsertJobOperationAttribute(client, {
+  const insert = await upsertMethodOperationStep(client, {
     ...validation.data,
     companyId,
     createdBy: userId,
   });
-
   if (insert.error) {
     return json(
       {
@@ -34,23 +31,23 @@ export async function action({ request }: ActionFunctionArgs) {
       },
       await flash(
         request,
-        error(insert.error, "Failed to insert job operation attribute")
+        error(insert.error, "Failed to insert method operation step")
       )
     );
   }
 
-  const jobOperationAttributeId = insert.data?.id;
-  if (!jobOperationAttributeId) {
+  const methodOperationStepId = insert.data?.id;
+  if (!methodOperationStepId) {
     return json(
       {
         id: null,
       },
       await flash(
         request,
-        error(insert.error, "Failed to insert job operation attribute")
+        error(insert.error, "Failed to insert method operation step")
       )
     );
   }
 
-  return json({ id: jobOperationAttributeId });
+  return json({ id: methodOperationStepId });
 }

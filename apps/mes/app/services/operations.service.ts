@@ -5,11 +5,11 @@ import { nanoid } from "nanoid";
 import type { z } from "zod";
 import { sanitize } from "~/utils/supabase";
 import type {
-  attributeRecordValidator,
   documentTypes,
   nonScrapQuantityValidator,
   productionEventValidator,
   scrapQuantityValidator,
+  stepRecordValidator,
 } from "./models";
 import type { BaseOperationWithDetails, Job, StorageItem } from "./types";
 
@@ -18,9 +18,9 @@ export async function deleteAttributeRecord(
   args: { id: string; companyId: string; userId: string }
 ) {
   return client
-    .from("jobOperationAttributeRecord")
+    .from("jobOperationStepRecord")
     .delete()
-    .eq("jobOperationAttributeId", args.id)
+    .eq("id", args.id)
     .eq("companyId", args.companyId)
     .eq("createdBy", args.userId);
 }
@@ -150,8 +150,8 @@ export async function getJobOperationProcedure(
 ) {
   const [attributes, parameters] = await Promise.all([
     client
-      .from("jobOperationAttribute")
-      .select("*, jobOperationAttributeRecord(*)")
+      .from("jobOperationStep")
+      .select("*, jobOperationStepRecord(*)")
       .eq("operationId", operationId),
     client
       .from("jobOperationParameter")
@@ -170,8 +170,8 @@ export async function getJobAttributesByOperationId(
   operationId: string
 ) {
   return client
-    .from("jobOperationAttribute")
-    .select("*, jobOperationAttributeRecord(*)")
+    .from("jobOperationStep")
+    .select("*, jobOperationStepRecord(*)")
     .eq("operationId", operationId);
 }
 
@@ -583,13 +583,13 @@ export async function getWorkCentersByCompany(
 
 export async function insertAttributeRecord(
   client: SupabaseClient<Database>,
-  data: z.infer<typeof attributeRecordValidator> & {
+  data: z.infer<typeof stepRecordValidator> & {
     companyId: string;
     createdBy: string;
   }
 ) {
-  return client.from("jobOperationAttributeRecord").upsert(data, {
-    onConflict: "jobOperationAttributeId",
+  return client.from("jobOperationStepRecord").upsert(data, {
+    onConflict: "jobOperationStepId, index",
     ignoreDuplicates: false,
   });
 }

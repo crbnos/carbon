@@ -9,7 +9,7 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json } from "@vercel/remix";
-import { attributeRecordValidator } from "~/services/models";
+import { stepRecordValidator } from "~/services/models";
 import { insertAttributeRecord } from "~/services/operations.service";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -17,9 +17,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { companyId, userId } = await requirePermissions(request, {});
 
   const formData = await request.formData();
-  const validation = await validator(attributeRecordValidator).validate(
-    formData
-  );
+  const validation = await validator(stepRecordValidator).validate(formData);
   const serviceRole = await getCarbonServiceRole();
 
   if (validation.error) {

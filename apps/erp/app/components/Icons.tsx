@@ -230,11 +230,11 @@ export const QuoteLineStatusIcon = ({
   }
 };
 
-export const ProcedureAttributeTypeIcon = ({
+export const ProcedureStepTypeIcon = ({
   type,
   className,
 }: {
-  type: Database["public"]["Enums"]["procedureAttributeType"];
+  type: Database["public"]["Enums"]["procedureStepType"];
   className?: string;
 }) => {
   switch (type) {

@@ -1,11 +1,11 @@
-import { json } from "@vercel/remix";
 import type { ActionFunctionArgs } from "@vercel/remix";
+import { json } from "@vercel/remix";
 
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 
-import { updateProcedureAttributeOrder } from "~/modules/production";
+import { updateProcedureStepOrder } from "~/modules/production";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -29,7 +29,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     })
   );
 
-  const updateSortOrders = await updateProcedureAttributeOrder(client, updates);
+  const updateSortOrders = await updateProcedureStepOrder(client, updates);
   if (updateSortOrders.some((update) => update.error))
     return json(
       {},

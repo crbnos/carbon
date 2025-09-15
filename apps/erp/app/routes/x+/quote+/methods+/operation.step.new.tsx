@@ -3,8 +3,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
-import { upsertMethodOperationAttribute } from "~/modules/items";
-import { operationAttributeValidator } from "~/modules/shared";
+import { upsertQuoteOperationStep } from "~/modules/sales";
+import { operationStepValidator } from "~/modules/shared";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -13,15 +13,13 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   const formData = await request.formData();
-  const validation = await validator(operationAttributeValidator).validate(
-    formData
-  );
+  const validation = await validator(operationStepValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);
   }
 
-  const insert = await upsertMethodOperationAttribute(client, {
+  const insert = await upsertQuoteOperationStep(client, {
     ...validation.data,
     companyId,
     createdBy: userId,
@@ -33,23 +31,23 @@ export async function action({ request }: ActionFunctionArgs) {
       },
       await flash(
         request,
-        error(insert.error, "Failed to insert method operation attribute")
+        error(insert.error, "Failed to insert quote operation step")
       )
     );
   }
 
-  const methodOperationAttributeId = insert.data?.id;
-  if (!methodOperationAttributeId) {
+  const quoteOperationStepId = insert.data?.id;
+  if (!quoteOperationStepId) {
     return json(
       {
         id: null,
       },
       await flash(
         request,
-        error(insert.error, "Failed to insert method operation attribute")
+        error(insert.error, "Failed to insert quote operation step")
       )
     );
   }
 
-  return json({ id: methodOperationAttributeId });
+  return json({ id: quoteOperationStepId });
 }

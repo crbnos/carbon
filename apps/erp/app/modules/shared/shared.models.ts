@@ -72,7 +72,7 @@ export const noteValidator = z.object({
 
 export const operationTypes = ["Inside", "Outside"] as const;
 
-export const procedureAttributeType = [
+export const procedureStepType = [
   "Task",
   "Value",
   "Measurement",
@@ -95,7 +95,7 @@ export const feedbackValidator = z.object({
   location: z.string(),
 });
 
-export const operationAttributeValidator = z
+export const operationStepValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     operationId: z.string().min(1, { message: "Operation is required" }),
@@ -110,7 +110,7 @@ export const operationAttributeValidator = z
           return {};
         }
       }),
-    type: z.enum(procedureAttributeType, {
+    type: z.enum(procedureStepType, {
       errorMap: () => ({ message: "Type is required" }),
     }),
     unitOfMeasureCode: zfd.text(z.string().optional()),

@@ -41,8 +41,9 @@ export const jobOperationStatus = [
   "Canceled",
 ] as const;
 
-export const attributeRecordValidator = z.object({
-  jobOperationAttributeId: z.string(),
+export const stepRecordValidator = z.object({
+  index: zfd.numeric(z.number()),
+  jobOperationStepId: z.string(),
   value: zfd.text(z.string().optional()),
   numericValue: zfd.numeric(z.number().optional()),
   booleanValue: zfd

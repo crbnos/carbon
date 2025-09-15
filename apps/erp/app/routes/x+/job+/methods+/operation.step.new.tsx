@@ -3,29 +3,28 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
-import { upsertQuoteOperationAttribute } from "~/modules/sales";
-import { operationAttributeValidator } from "~/modules/shared";
+import { upsertJobOperationStep } from "~/modules/production";
+import { operationStepValidator } from "~/modules/shared";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {
-    create: "parts",
+    create: "production",
   });
 
   const formData = await request.formData();
-  const validation = await validator(operationAttributeValidator).validate(
-    formData
-  );
+  const validation = await validator(operationStepValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);
   }
 
-  const insert = await upsertQuoteOperationAttribute(client, {
+  const insert = await upsertJobOperationStep(client, {
     ...validation.data,
     companyId,
     createdBy: userId,
   });
+
   if (insert.error) {
     return json(
       {
@@ -33,23 +32,23 @@ export async function action({ request }: ActionFunctionArgs) {
       },
       await flash(
         request,
-        error(insert.error, "Failed to insert quote operation attribute")
+        error(insert.error, "Failed to insert job operation attribute")
       )
     );
   }
 
-  const quoteOperationAttributeId = insert.data?.id;
-  if (!quoteOperationAttributeId) {
+  const jobOperationStepId = insert.data?.id;
+  if (!jobOperationStepId) {
     return json(
       {
         id: null,
       },
       await flash(
         request,
-        error(insert.error, "Failed to insert quote operation attribute")
+        error(insert.error, "Failed to insert job operation attribute")
       )
     );
   }
 
-  return json({ id: quoteOperationAttributeId });
+  return json({ id: jobOperationStepId });
 }

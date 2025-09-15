@@ -3,8 +3,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
-import { upsertQuoteOperationAttribute } from "~/modules/sales";
-import { operationAttributeValidator } from "~/modules/shared";
+import { upsertQuoteOperationStep } from "~/modules/sales";
+import { operationStepValidator } from "~/modules/shared";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -18,9 +18,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const formData = await request.formData();
-  const validation = await validator(operationAttributeValidator).validate(
-    formData
-  );
+  const validation = await validator(operationStepValidator).validate(formData);
 
   if (validation.error) {
     return json({ success: false, message: "Invalid form data" });
@@ -28,7 +26,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id: _id, ...data } = validation.data;
 
-  const update = await upsertQuoteOperationAttribute(client, {
+  const update = await upsertQuoteOperationStep(client, {
     id,
     ...data,
     minValue: data.minValue ?? null,

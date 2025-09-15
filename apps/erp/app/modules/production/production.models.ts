@@ -5,7 +5,7 @@ import {
   methodOperationOrders,
   methodType,
   operationTypes,
-  procedureAttributeType,
+  procedureStepType,
   standardFactorType,
 } from "../shared";
 
@@ -710,13 +710,13 @@ export const procedureValidator = z.object({
   copyFromId: zfd.text(z.string().optional()),
 });
 
-export const procedureAttributeValidator = z
+export const procedureStepValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     procedureId: z.string().min(1, { message: "Procedure is required" }),
     name: z.string().min(1, { message: "Name is required" }),
     description: zfd.text(z.string().optional()),
-    type: z.enum(procedureAttributeType, {
+    type: z.enum(procedureStepType, {
       errorMap: () => ({ message: "Type is required" }),
     }),
     unitOfMeasureCode: zfd.text(z.string().optional()),
