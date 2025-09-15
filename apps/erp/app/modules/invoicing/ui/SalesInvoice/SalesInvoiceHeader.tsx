@@ -21,6 +21,8 @@ import {
   LuCheckCheck,
   LuChevronDown,
   LuDollarSign,
+  LuEye,
+  LuFile,
   LuPanelLeft,
   LuPanelRight,
   LuTicketX,
@@ -235,6 +237,29 @@ const SalesInvoiceHeader = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  leftIcon={<LuEye />}
+                  variant="secondary"
+                  rightIcon={<LuChevronDown />}
+                >
+                  Preview
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem asChild>
+                  <a
+                    target="_blank"
+                    href={path.to.file.salesInvoice(invoiceId)}
+                    rel="noreferrer"
+                  >
+                    <DropdownMenuIcon icon={<LuFile />} />
+                    PDF
+                  </a>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               leftIcon={<LuCheckCheck />}
               variant={
