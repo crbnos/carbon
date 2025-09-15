@@ -8,6 +8,8 @@ import { Spinner } from "./Spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./Tabs";
 import { cn } from "./utils/cn";
 
+type UnitSystem = "metric" | "imperial";
+
 const darkColor = "#9797a5";
 const lightColor = "#8c8a8a";
 
@@ -33,6 +35,7 @@ export function ModelViewer({
   const parentDiv = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<OV.EmbeddedViewer | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [unitSystem, setUnitSystem] = useState<UnitSystem>("metric");
   const [modelInfo, setModelInfo] = useState<{
     surfaceArea: number;
     volume: number;
@@ -255,13 +258,59 @@ export function ModelViewer({
   }, [isDarkMode, color]);
 
   const { locale } = useLocale();
+
+  // Conversion functions
+  const mmToInches = (mm: number) => mm / 25.4;
+  const mm2ToInches2 = (mm2: number) => mm2 / (25.4 * 25.4);
+  const mm3ToInches3 = (mm3: number) => mm3 / (25.4 * 25.4 * 25.4);
+
   const formatter = useMemo(() => {
+    const decimals = unitSystem === "imperial" ? 6 : 2;
     return new Intl.NumberFormat(locale, {
       style: "decimal",
       minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
+      maximumFractionDigits: decimals,
     });
-  }, [locale]);
+  }, [locale, unitSystem]);
+
+  // Helper functions to get converted values
+  const getDisplayValue = (
+    value: number,
+    type: "linear" | "area" | "volume"
+  ) => {
+    if (unitSystem === "imperial") {
+      switch (type) {
+        case "linear":
+          return mmToInches(value);
+        case "area":
+          return mm2ToInches2(value);
+        case "volume":
+          return mm3ToInches3(value);
+      }
+    }
+    return value;
+  };
+
+  const getUnit = (type: "linear" | "area" | "volume") => {
+    if (unitSystem === "imperial") {
+      switch (type) {
+        case "linear":
+          return "in";
+        case "area":
+          return "in²";
+        case "volume":
+          return "in³";
+      }
+    }
+    switch (type) {
+      case "linear":
+        return "mm";
+      case "area":
+        return "mm²";
+      case "volume":
+        return "mm³";
+    }
+  };
 
   return (
     <>
@@ -310,46 +359,84 @@ export function ModelViewer({
               />
             )}
             {modelInfo && withProperties && (
-              <div className="absolute top-2 left-2 text-xs z-10 text-foreground">
-                <Tabs defaultValue="dimensions" className="w-full gap-0">
-                  <TabsList className="grid w-full grid-cols-2 mb-1">
-                    <TabsTrigger className="text-xs" value="dimensions">
-                      Dimensions
-                    </TabsTrigger>
-                    <TabsTrigger className="text-xs" value="properties">
-                      Properties
-                    </TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="properties">
-                    <div className="flex flex-col gap-1 pt-1 p-2 items-start justify-start font-mono">
-                      <div>
-                        Surface Area: {formatter.format(modelInfo.surfaceArea)}{" "}
-                        mm<sup>2</sup>
+              <>
+                <div className="absolute top-2 left-2 text-xs z-10 text-foreground">
+                  <Tabs defaultValue="dimensions" className="w-full gap-0">
+                    <TabsList className="grid w-full grid-cols-2 mb-1">
+                      <TabsTrigger className="text-xs" value="dimensions">
+                        Dimensions
+                      </TabsTrigger>
+                      <TabsTrigger className="text-xs" value="properties">
+                        Properties
+                      </TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="properties">
+                      <div className="flex flex-col gap-1 pt-1 p-2 items-start justify-start font-mono">
+                        <div>
+                          Surface Area:{" "}
+                          {formatter.format(
+                            getDisplayValue(modelInfo.surfaceArea, "area")
+                          )}{" "}
+                          {getUnit("area")}
+                        </div>
+                        <div>
+                          Volume:{" "}
+                          {formatter.format(
+                            getDisplayValue(modelInfo.volume, "volume")
+                          )}{" "}
+                          {getUnit("volume")}
+                        </div>
                       </div>
-                      <div>
-                        Volume: {formatter.format(modelInfo.volume)} mm
-                        <sup>3</sup>
+                    </TabsContent>
+                    <TabsContent value="dimensions">
+                      <div className="flex flex-col gap-1 pt-1 p-2 items-start justify-start font-mono">
+                        <div className="flex items-center gap-1.5">
+                          <div className="size-2 bg-green-500 rounded-full" />
+                          W:{" "}
+                          {formatter.format(
+                            getDisplayValue(modelInfo.dimensions.x, "linear")
+                          )}{" "}
+                          {getUnit("linear")}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="size-2 bg-blue-500 rounded-full" />
+                          H:{" "}
+                          {formatter.format(
+                            getDisplayValue(modelInfo.dimensions.y, "linear")
+                          )}{" "}
+                          {getUnit("linear")}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="size-2 bg-red-500 rounded-full" />
+                          L:{" "}
+                          {formatter.format(
+                            getDisplayValue(modelInfo.dimensions.z, "linear")
+                          )}{" "}
+                          {getUnit("linear")}
+                        </div>
                       </div>
-                    </div>
-                  </TabsContent>
-                  <TabsContent value="dimensions">
-                    <div className="flex flex-col gap-1 pt-1 p-2 items-start justify-start font-mono">
-                      <div className="flex items-center gap-1.5">
-                        <div className="size-2 bg-green-500 rounded-full" />
-                        W: {formatter.format(modelInfo.dimensions.x)}mm
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <div className="size-2 bg-blue-500 rounded-full" />
-                        H: {formatter.format(modelInfo.dimensions.y)}mm
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <div className="size-2 bg-red-500 rounded-full" />
-                        L: {formatter.format(modelInfo.dimensions.z)}mm
-                      </div>
-                    </div>
-                  </TabsContent>
-                </Tabs>
-              </div>
+                    </TabsContent>
+                  </Tabs>
+                </div>
+                <div className="absolute top-2 right-2 text-xs z-10 text-foreground">
+                  <Tabs
+                    value={unitSystem}
+                    onValueChange={(value) =>
+                      setUnitSystem(value as UnitSystem)
+                    }
+                    className="w-full gap-0"
+                  >
+                    <TabsList className="grid w-full grid-cols-2 mb-1">
+                      <TabsTrigger className="text-xs" value="metric">
+                        mm
+                      </TabsTrigger>
+                      <TabsTrigger className="text-xs" value="imperial">
+                        in
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
+              </>
             )}
           </>
         )}
