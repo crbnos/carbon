@@ -37,7 +37,7 @@ import { Editor, generateHTML } from "@carbon/react/Editor";
 import { formatRelativeTime } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { useFetcher, useFetchers, useParams } from "@remix-run/react";
-import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
+import { AnimatePresence, LayoutGroup, motion, Reorder } from "framer-motion";
 import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -47,6 +47,7 @@ import {
   LuCirclePlus,
   LuDollarSign,
   LuEllipsisVertical,
+  LuGripVertical,
   LuHammer,
   LuInfo,
   LuList,
@@ -834,8 +835,50 @@ function AttributesForm({
   temporaryItems: TemporaryItems;
 }) {
   const fetcher = useFetcher<typeof newQuoteOperationParameterAction>();
+  const sortOrderFetcher = useFetcher<{ success: boolean }>();
   const [type, setType] = useState<OperationStep["type"]>("Task");
   const [numericControls, setNumericControls] = useState<string[]>([]);
+
+  // Initialize sort order state based on existing steps
+  const [sortOrder, setSortOrder] = useState<string[]>(() =>
+    [...steps]
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+      .map((step) => step.id || "")
+  );
+
+  // Update sort order when steps change
+  useEffect(() => {
+    if (steps && steps.length > 0) {
+      const sorted = [...steps]
+        .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+        .map((step) => step.id || "");
+      setSortOrder(sorted);
+    }
+  }, [steps]);
+
+  const onReorder = (newOrder: string[]) => {
+    if (isDisabled) return;
+
+    const updates: Record<string, number> = {};
+    newOrder.forEach((id, index) => {
+      updates[id] = index + 1;
+    });
+    setSortOrder(newOrder);
+    updateSortOrder(updates);
+  };
+
+  const updateSortOrder = useDebounce(
+    (updates: Record<string, number>) => {
+      let formData = new FormData();
+      formData.append("updates", JSON.stringify(updates));
+      sortOrderFetcher.submit(formData, {
+        method: "post",
+        action: path.to.quoteOperationStepOrder(operationId),
+      });
+    },
+    1000,
+    true
+  );
 
   const [description, setDescription] = useState<JSONContent>({});
 
@@ -1013,17 +1056,35 @@ function AttributesForm({
 
       {steps.length > 0 && (
         <div className="border bg-card rounded-lg">
-          {[...steps]
-            .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
-            .map((a, index) => (
-              <AttributesListItem
-                key={a.id}
-                attribute={a}
-                operationId={operationId}
-                typeOptions={typeOptions}
-                className={index === steps.length - 1 ? "border-none" : ""}
-              />
-            ))}
+          <Reorder.Group
+            axis="y"
+            values={sortOrder}
+            onReorder={onReorder}
+            className="w-full"
+          >
+            {sortOrder.map((stepId) => {
+              const step = steps.find((s) => s.id === stepId);
+              if (!step) return null;
+              const index = sortOrder.indexOf(stepId);
+              return (
+                <Reorder.Item
+                  key={stepId}
+                  value={stepId}
+                  dragListener={!isDisabled}
+                >
+                  <AttributesListItem
+                    attribute={step}
+                    operationId={operationId}
+                    typeOptions={typeOptions}
+                    isDisabled={isDisabled}
+                    className={
+                      index === sortOrder.length - 1 ? "border-none" : ""
+                    }
+                  />
+                </Reorder.Item>
+              );
+            })}
+          </Reorder.Group>
         </div>
       )}
     </Loading>
@@ -1034,11 +1095,13 @@ function AttributesListItem({
   attribute,
   operationId,
   typeOptions,
+  isDisabled = false,
   className,
 }: {
   attribute: OperationStep;
   operationId: string;
   typeOptions: { label: JSX.Element; value: string }[];
+  isDisabled?: boolean;
   className?: string;
 }) {
   const {
@@ -1229,6 +1292,13 @@ function AttributesListItem({
       ) : (
         <div className="flex flex-1 justify-between items-center w-full">
           <HStack spacing={4} className="w-1/2">
+            <IconButton
+              aria-label="Drag handle"
+              icon={<LuGripVertical />}
+              variant="ghost"
+              disabled={isDisabled}
+              className="cursor-grab"
+            />
             <HStack spacing={4} className="flex-1">
               <div className="bg-muted border rounded-full flex items-center justify-center p-2">
                 <ProcedureStepTypeIcon type={type} />

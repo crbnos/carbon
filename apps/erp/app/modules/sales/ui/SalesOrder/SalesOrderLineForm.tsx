@@ -1,4 +1,5 @@
 import {
+  Badge,
   CardAction,
   cn,
   DropdownMenu,
@@ -41,7 +42,13 @@ import {
   Submit,
   UnitOfMeasure,
 } from "~/components/Form";
-import { usePermissions, useRouteData, useUser } from "~/hooks";
+import {
+  useCurrencyFormatter,
+  usePercentFormatter,
+  usePermissions,
+  useRouteData,
+  useUser,
+} from "~/hooks";
 
 import { useCarbon } from "@carbon/auth";
 import { getItemReadableId } from "@carbon/utils";
@@ -120,6 +127,9 @@ const SalesOrderLineForm = ({
     });
   };
 
+  const currencyFormatter = useCurrencyFormatter();
+  const percentFormatter = usePercentFormatter();
+
   const onChange = async (itemId: string) => {
     if (!itemId) return;
     if (!carbon || !company.id) return;
@@ -185,7 +195,11 @@ const SalesOrderLineForm = ({
   return (
     <>
       <ModalCardProvider type={type}>
-        <ModalCard onClose={onClose}>
+        <ModalCard
+          onClose={onClose}
+          isCollapsible={isEditing}
+          defaultCollapsed={isEditing}
+        >
           <ModalCardContent size="xxlarge">
             <ValidatedForm
               defaultValues={initialValues}
@@ -213,19 +227,48 @@ const SalesOrderLineForm = ({
                       : "New Sales Order Line"}
                   </ModalCardTitle>
                   <ModalCardDescription>
-                    {isEditing
-                      ? itemData?.description || lineType
-                      : "A sales order line contains order details for a particular item"}
+                    {isEditing ? (
+                      <div className="flex flex-col items-start gap-1">
+                        <span>{itemData?.description}</span>
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant="outline"
+                            className="flex items-center gap-2"
+                          >
+                            {initialValues?.saleQuantity}
+                            <MethodIcon type={itemData.methodType} />
+                          </Badge>
+                          <Badge variant="green">
+                            {currencyFormatter.format(
+                              (initialValues?.unitPrice ?? 0) +
+                                (initialValues?.addOnCost ?? 0) +
+                                (initialValues?.shippingCost ?? 0)
+                            )}{" "}
+                            {initialValues?.unitOfMeasureCode}
+                          </Badge>
+                          {initialValues?.taxPercent > 0 ? (
+                            <Badge variant="red">
+                              {percentFormatter.format(
+                                initialValues?.taxPercent
+                              )}{" "}
+                              Tax
+                            </Badge>
+                          ) : null}
+                        </div>
+                      </div>
+                    ) : (
+                      "A sales order line contains order details for a particular item"
+                    )}
                   </ModalCardDescription>
                 </ModalCardHeader>
                 {isEditing && permissions.can("update", "sales") && (
-                  <CardAction>
+                  <CardAction className="pr-12">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <IconButton
                           icon={<BsThreeDotsVertical />}
                           aria-label="More"
-                          variant="secondary"
+                          variant="ghost"
                         />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">

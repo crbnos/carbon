@@ -1,4 +1,5 @@
 import {
+  Badge,
   CardAction,
   DropdownMenu,
   DropdownMenuContent,
@@ -162,7 +163,11 @@ const SupplierQuoteLineForm = ({
   return (
     <>
       <ModalCardProvider type={type}>
-        <ModalCard onClose={onClose}>
+        <ModalCard
+          onClose={onClose}
+          defaultCollapsed={isEditing}
+          isCollapsible={isEditing}
+        >
           <ModalCardContent size="xxlarge">
             <ValidatedForm
               defaultValues={initialValues}
@@ -186,19 +191,28 @@ const SupplierQuoteLineForm = ({
                       : "New Supplier Quote Line"}
                   </ModalCardTitle>
                   <ModalCardDescription>
-                    {isEditing
-                      ? itemData?.description
-                      : "A quote line contains pricing and lead times for a particular part"}
+                    {isEditing ? (
+                      <div className="flex flex-col items-start gap-1">
+                        <span>{itemData?.description}</span>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">
+                            {initialValues?.quantity.join(", ")}
+                          </Badge>
+                        </div>
+                      </div>
+                    ) : (
+                      "A quote line contains pricing and lead times for a particular part"
+                    )}
                   </ModalCardDescription>
                 </ModalCardHeader>
                 {isEditing && permissions.can("update", "purchasing") && (
-                  <CardAction>
+                  <CardAction className="pr-12">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <IconButton
                           icon={<BsThreeDotsVertical />}
                           aria-label="More"
-                          variant="secondary"
+                          variant="ghost"
                         />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">

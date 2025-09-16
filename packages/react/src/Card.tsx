@@ -1,6 +1,7 @@
 import type { HTMLAttributes } from "react";
 import { createContext, forwardRef, useContext, useState } from "react";
 import { LuChevronDown, LuChevronUp } from "react-icons/lu";
+import { IconButton } from "./IconButton";
 import { cn } from "./utils/cn";
 
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
@@ -51,17 +52,19 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
           {...props}
         >
           {isCollapsible && (
-            <button
-              type="button"
+            <IconButton
+              aria-label={isCollapsed ? "Expand" : "Collapse"}
+              variant="ghost"
               onClick={toggle}
-              className="absolute right-4 top-4 p-4 text-muted-foreground hover:text-foreground"
-            >
-              {isCollapsed ? (
-                <LuChevronDown className="w-6 h-6" />
-              ) : (
-                <LuChevronUp className="w-6 h-6" />
-              )}
-            </button>
+              className="absolute right-8 top-8"
+              icon={
+                isCollapsed ? (
+                  <LuChevronDown className="size-6" />
+                ) : (
+                  <LuChevronUp className="size-6" />
+                )
+              }
+            />
           )}
           {children}
         </div>

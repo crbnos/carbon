@@ -747,6 +747,8 @@ export const path = {
       generatePath(`${x}/job/methods/${jobId}/operation/delete`),
     jobOperationStep: (id: string) =>
       generatePath(`${x}/job/methods/operation/step/${id}`),
+    jobOperationStepOrder: (operationId: string) =>
+      generatePath(`${x}/job/methods/operation/${operationId}/step/order`),
     jobOperationParameter: (id: string) =>
       generatePath(`${x}/job/methods/operation/parameter/${id}`),
     jobOperationProcedureSync: `${x}/job/methods/operation/procedure/sync`,
@@ -821,6 +823,8 @@ export const path = {
     methodOperationsDelete: `${x}/items/methods/operation/delete`,
     methodOperationStep: (id: string) =>
       generatePath(`${x}/items/methods/operation/step/${id}`),
+    methodOperationStepOrder: (operationId: string) =>
+      generatePath(`${x}/items/methods/operation/${operationId}/step/order`),
     methodOperationParameter: (id: string) =>
       generatePath(`${x}/items/methods/operation/parameter/${id}`),
     methodOperationTool: (id: string) =>
@@ -1131,6 +1135,8 @@ export const path = {
     quoteOperationsDelete: `${x}/quote/methods/operation/delete`,
     quoteOperationStep: (id: string) =>
       generatePath(`${x}/quote/methods/operation/step/${id}`),
+    quoteOperationStepOrder: (operationId: string) =>
+      generatePath(`${x}/quote/methods/operation/${operationId}/step/order`),
     quoteOperationParameter: (id: string) =>
       generatePath(`${x}/quote/methods/operation/parameter/${id}`),
     quoteOperationTool: (id: string) =>

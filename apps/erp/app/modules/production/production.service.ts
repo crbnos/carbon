@@ -1102,6 +1102,57 @@ export async function updateJobOperationOrder(
   return Promise.all(updatePromises);
 }
 
+export async function updateJobOperationStepOrder(
+  client: SupabaseClient<Database>,
+  updates: {
+    id: string;
+    sortOrder: number;
+    updatedBy: string;
+  }[]
+) {
+  const updatePromises = updates.map(({ id, sortOrder, updatedBy }) =>
+    client
+      .from("jobOperationStep")
+      .update({ sortOrder, updatedBy })
+      .eq("id", id)
+  );
+  return Promise.all(updatePromises);
+}
+
+export async function updateQuoteOperationStepOrder(
+  client: SupabaseClient<Database>,
+  updates: {
+    id: string;
+    sortOrder: number;
+    updatedBy: string;
+  }[]
+) {
+  const updatePromises = updates.map(({ id, sortOrder, updatedBy }) =>
+    client
+      .from("quoteOperationStep")
+      .update({ sortOrder, updatedBy })
+      .eq("id", id)
+  );
+  return Promise.all(updatePromises);
+}
+
+export async function updateMethodOperationStepOrder(
+  client: SupabaseClient<Database>,
+  updates: {
+    id: string;
+    sortOrder: number;
+    updatedBy: string;
+  }[]
+) {
+  const updatePromises = updates.map(({ id, sortOrder, updatedBy }) =>
+    client
+      .from("methodOperationStep")
+      .update({ sortOrder, updatedBy })
+      .eq("id", id)
+  );
+  return Promise.all(updatePromises);
+}
+
 export async function updateJobOperationStatus(
   client: SupabaseClient<Database>,
   id: string,

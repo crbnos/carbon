@@ -1,4 +1,5 @@
 import {
+  Badge,
   Button,
   CardAction,
   DropdownMenu,
@@ -39,7 +40,12 @@ import {
   SelectControlled,
   Submit,
 } from "~/components/Form";
-import { usePermissions, useRouteData, useUser } from "~/hooks";
+import {
+  usePercentFormatter,
+  usePermissions,
+  useRouteData,
+  useUser,
+} from "~/hooks";
 import type { Quotation, QuotationLine } from "../../types";
 
 import { getItemReadableId } from "@carbon/utils";
@@ -117,6 +123,8 @@ const QuoteLineForm = ({
   const [configurationValues, setConfigurationValues] = useState<
     Record<string, any> | ""
   >("");
+
+  const percentFormatter = usePercentFormatter();
 
   const onCustomerPartChange = async (customerPartId: string) => {
     if (!carbon || !routeData?.quote?.customerId) return;
@@ -242,7 +250,11 @@ const QuoteLineForm = ({
   return (
     <>
       <ModalCardProvider type={type}>
-        <ModalCard onClose={onClose}>
+        <ModalCard
+          onClose={onClose}
+          defaultCollapsed={isEditing}
+          isCollapsible={isEditing}
+        >
           <ModalCardContent size="xxlarge">
             <ValidatedForm
               fetcher={fetcher}
@@ -268,19 +280,40 @@ const QuoteLineForm = ({
                       : "New Quote Line"}
                   </ModalCardTitle>
                   <ModalCardDescription>
-                    {isEditing
-                      ? itemData?.description
-                      : "A quote line contains pricing and lead times for a particular part"}
+                    {isEditing ? (
+                      <div className="flex flex-col items-start gap-1">
+                        <span>{itemData?.description}</span>
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant="outline"
+                            className="flex items-center gap-2"
+                          >
+                            <MethodIcon type={itemData.methodType} />
+                            {initialValues?.quantity.join(", ")}
+                          </Badge>
+                          {initialValues?.taxPercent > 0 ? (
+                            <Badge variant="red">
+                              {percentFormatter.format(
+                                initialValues?.taxPercent
+                              )}{" "}
+                              Tax
+                            </Badge>
+                          ) : null}
+                        </div>
+                      </div>
+                    ) : (
+                      "A quote line contains pricing and lead times for a particular part"
+                    )}
                   </ModalCardDescription>
                 </ModalCardHeader>
                 {isEditing && permissions.can("update", "sales") && (
-                  <CardAction>
+                  <CardAction className="pr-12">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <IconButton
                           icon={<BsThreeDotsVertical />}
                           aria-label="More"
-                          variant="secondary"
+                          variant="ghost"
                         />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">

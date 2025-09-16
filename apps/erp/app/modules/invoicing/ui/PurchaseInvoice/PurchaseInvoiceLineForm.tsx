@@ -1,4 +1,5 @@
 import {
+  Badge,
   cn,
   FormControl,
   FormLabel,
@@ -31,7 +32,13 @@ import {
   Submit,
   UnitOfMeasure,
 } from "~/components/Form";
-import { usePermissions, useRouteData, useUser } from "~/hooks";
+import {
+  useCurrencyFormatter,
+  usePercentFormatter,
+  usePermissions,
+  useRouteData,
+  useUser,
+} from "~/hooks";
 import type { PurchaseInvoice } from "~/modules/invoicing";
 import { purchaseInvoiceLineValidator } from "~/modules/invoicing";
 import type { MethodItemType } from "~/modules/shared";
@@ -124,6 +131,9 @@ const PurchaseInvoiceLineForm = ({
     : isEditing
     ? !permissions.can("update", "purchasing")
     : !permissions.can("create", "purchasing");
+
+  const currencyFormatter = useCurrencyFormatter();
+  const percentFormatter = usePercentFormatter();
 
   const onTypeChange = (t: MethodItemType | "Item") => {
     if (t === itemType) return;
@@ -239,7 +249,11 @@ const PurchaseInvoiceLineForm = ({
 
   return (
     <ModalCardProvider type={type}>
-      <ModalCard onClose={onClose}>
+      <ModalCard
+        onClose={onClose}
+        defaultCollapsed={isEditing}
+        isCollapsible={isEditing}
+      >
         <ModalCardContent size="xxlarge">
           <ValidatedForm
             defaultValues={initialValues}
@@ -266,9 +280,29 @@ const PurchaseInvoiceLineForm = ({
                   : "New Purchase Invoice Line"}
               </ModalCardTitle>
               <ModalCardDescription>
-                {isEditing
-                  ? itemData?.description || itemType
-                  : "A purchase invoice line contains invoice details for a particular item"}
+                {isEditing ? (
+                  <div className="flex flex-col items-start gap-1">
+                    <span>{itemData?.description}</span>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">{initialValues?.quantity}</Badge>
+                      <Badge variant="green">
+                        {currencyFormatter.format(
+                          (initialValues?.supplierUnitPrice ?? 0) +
+                            (initialValues?.supplierShippingCost ?? 0)
+                        )}{" "}
+                        {initialValues?.purchaseUnitOfMeasureCode}
+                      </Badge>
+                      {initialValues?.taxPercent > 0 ? (
+                        <Badge variant="red">
+                          {percentFormatter.format(initialValues?.taxPercent)}{" "}
+                          Tax
+                        </Badge>
+                      ) : null}
+                    </div>
+                  </div>
+                ) : (
+                  "A purchase invoice line contains invoice details for a particular item"
+                )}
               </ModalCardDescription>
             </ModalCardHeader>
             <ModalCardBody>

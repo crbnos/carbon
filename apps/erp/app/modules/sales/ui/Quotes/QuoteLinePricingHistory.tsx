@@ -104,7 +104,7 @@ const QuoteLinePricingHistory = ({
                       {relatedSalesOrderLines.map((line) => (
                         <CarouselItem
                           key={line.id}
-                          className="pl-4 basis-full lg:basis-1/2 xl:basis-1/3"
+                          className="pl-4 basis-full lg:basis-1/2"
                         >
                           <Card className="w-full p-0 bg-gradient-to-b from-card to-card via-card dark:from-card dark:to-card dark:via-card">
                             <CardContent className="p-4">

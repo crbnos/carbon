@@ -993,7 +993,8 @@ export async function getQuoteLinePricesByItemIds(
     .in("itemId", itemIds)
     .neq("quoteId", currentQuoteId)
     .order("quoteCreatedAt", { ascending: false })
-    .order("qty", { ascending: true });
+    .order("qty", { ascending: true })
+    .limit(10);
 }
 
 export async function getQuoteMaterials(
@@ -1322,7 +1323,8 @@ export async function getSalesOrderLinesByItemIds(
     .select("*")
     .in("itemId", itemIds)
     .order("orderDate", { ascending: false })
-    .order("createdAt", { ascending: false });
+    .order("createdAt", { ascending: false })
+    .limit(10);
 }
 
 export async function getSalesOrderLine(

@@ -1,4 +1,5 @@
 import {
+  Badge,
   CardAction,
   DropdownMenu,
   DropdownMenuContent,
@@ -179,7 +180,11 @@ const SalesRFQLineForm = ({
   return (
     <>
       <ModalCardProvider type={type}>
-        <ModalCard onClose={onClose}>
+        <ModalCard
+          onClose={onClose}
+          isCollapsible={isEditing}
+          defaultCollapsed={isEditing}
+        >
           <ModalCardContent>
             <ValidatedForm
               defaultValues={initialValues}
@@ -199,23 +204,36 @@ const SalesRFQLineForm = ({
                 <ModalCardHeader>
                   <ModalCardTitle>
                     {isEditing
-                      ? itemData?.customerPartId ?? "RFQ Line"
+                      ? `${itemData?.customerPartId}${
+                          itemData?.customerPartRevision
+                            ? `.${itemData?.customerPartRevision}`
+                            : ""
+                        }`
                       : "New RFQ Line"}
                   </ModalCardTitle>
                   <ModalCardDescription>
-                    {isEditing
-                      ? itemData?.description
-                      : "An RFQ line contains part and quantity information about the requested item"}
+                    {isEditing ? (
+                      <div className="flex flex-col items-start gap-1">
+                        <span>{itemData?.description}</span>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline">
+                            {initialValues?.quantity.join(", ")}
+                          </Badge>
+                        </div>
+                      </div>
+                    ) : (
+                      "An RFQ line contains part and quantity information about the requested item"
+                    )}
                   </ModalCardDescription>
                 </ModalCardHeader>
                 {isEditing && permissions.can("update", "sales") && (
-                  <CardAction>
+                  <CardAction className="pr-12">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <IconButton
                           icon={<BsThreeDotsVertical />}
                           aria-label="More"
-                          variant="secondary"
+                          variant="ghost"
                         />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">

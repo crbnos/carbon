@@ -16,6 +16,7 @@ import {
   CardHeader,
   CardTitle,
   Checkbox,
+  cn,
   Count,
   DropdownMenu,
   DropdownMenuContent,
@@ -33,17 +34,16 @@ import {
   ModalHeader,
   ModalTitle,
   ScrollArea,
+  toast,
   ToggleGroup,
   ToggleGroupItem,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  VStack,
-  cn,
-  toast,
   useDebounce,
   useDisclosure,
   useMount,
+  VStack,
 } from "@carbon/react";
 import { Editor, generateHTML } from "@carbon/react/Editor";
 import {
@@ -54,7 +54,7 @@ import {
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { useFetcher, useFetchers, useParams } from "@remix-run/react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
-import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
+import { AnimatePresence, LayoutGroup, motion, Reorder } from "framer-motion";
 import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -65,6 +65,7 @@ import {
   LuCirclePlus,
   LuDollarSign,
   LuEllipsisVertical,
+  LuGripVertical,
   LuHammer,
   LuInfo,
   LuListChecks,
@@ -158,7 +159,7 @@ type ItemWithData = Item & {
 
 type JobOperationStep = OperationStep & {
   jobOperationStepRecord?:
-    | Database["public"]["Tables"]["jobOperationStepRecord"]["Row"]
+    | Database["public"]["Tables"]["jobOperationStepRecord"]["Row"][]
     | null;
 };
 
@@ -1003,9 +1004,52 @@ function StepsForm({
   temporaryItems: TemporaryItems;
 }) {
   const fetcher = useFetcher<typeof newJobOperationParameterAction>();
+  const sortOrderFetcher = useFetcher<{ success: boolean }>();
   const [type, setType] = useState<OperationStep["type"]>("Task");
   const [description, setDescription] = useState<JSONContent>({});
   const [numericControls, setNumericControls] = useState<string[]>([]);
+
+  // Initialize sort order state based on existing steps
+  const [sortOrder, setSortOrder] = useState<string[]>(() =>
+    [...steps]
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+      .map((step) => step.id || "")
+  );
+
+  // Update sort order when steps change
+  useEffect(() => {
+    if (steps && steps.length > 0) {
+      const sorted = [...steps]
+        .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+        .map((step) => step.id || "");
+      setSortOrder(sorted);
+    }
+  }, [steps]);
+
+  const onReorder = (newOrder: string[]) => {
+    if (isDisabled) return;
+
+    const updates: Record<string, number> = {};
+    newOrder.forEach((id, index) => {
+      updates[id] = index + 1;
+    });
+    setSortOrder(newOrder);
+    updateSortOrder(updates);
+  };
+
+  const updateSortOrder = useDebounce(
+    (updates: Record<string, number>) => {
+      let formData = new FormData();
+      formData.append("updates", JSON.stringify(updates));
+      sortOrderFetcher.submit(formData, {
+        method: "post",
+        action: path.to.jobOperationStepOrder(operationId),
+      });
+    },
+    1000,
+    true
+  );
+
   const typeOptions = useMemo(
     () =>
       procedureStepType.map((type) => ({
@@ -1178,17 +1222,35 @@ function StepsForm({
 
       {steps.length > 0 && (
         <div className="border rounded-lg ">
-          {[...steps]
-            .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
-            .map((a, index) => (
-              <StepsListItem
-                key={a.id}
-                attribute={a}
-                operationId={operationId}
-                typeOptions={typeOptions}
-                className={index === steps.length - 1 ? "border-none" : ""}
-              />
-            ))}
+          <Reorder.Group
+            axis="y"
+            values={sortOrder}
+            onReorder={onReorder}
+            className="w-full"
+          >
+            {sortOrder.map((stepId) => {
+              const step = steps.find((s) => s.id === stepId);
+              if (!step) return null;
+              const index = sortOrder.indexOf(stepId);
+              return (
+                <Reorder.Item
+                  key={stepId}
+                  value={stepId}
+                  dragListener={!isDisabled}
+                >
+                  <StepsListItem
+                    attribute={step}
+                    operationId={operationId}
+                    typeOptions={typeOptions}
+                    isDisabled={isDisabled}
+                    className={
+                      index === sortOrder.length - 1 ? "border-none" : ""
+                    }
+                  />
+                </Reorder.Item>
+              );
+            })}
+          </Reorder.Group>
         </div>
       )}
     </Loading>
@@ -1199,11 +1261,13 @@ function StepsListItem({
   attribute,
   operationId,
   typeOptions,
+  isDisabled = false,
   className,
 }: {
   attribute: JobOperationStep;
   operationId: string;
   typeOptions: { label: JSX.Element; value: string }[];
+  isDisabled?: boolean;
   className?: string;
 }) {
   const {
@@ -1391,93 +1455,103 @@ function StepsListItem({
           </VStack>
         </ValidatedForm>
       ) : (
-        <div className="flex flex-1 justify-between items-center w-full">
-          <HStack spacing={4} className="w-1/2">
-            <HStack spacing={4} className="flex-1">
-              <div className="bg-muted border rounded-full flex items-center justify-center p-2">
-                <ProcedureStepTypeIcon type={type} />
-              </div>
-              <VStack spacing={0}>
-                <HStack>
-                  <p className="text-foreground text-sm font-medium">
-                    {attribute.name}
-                  </p>
-                  {attribute.description &&
-                  Object.keys(attribute.description).length > 0 ? (
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <LuInfo className="text-muted-foreground size-3" />
-                      </TooltipTrigger>
-                      <TooltipContent side="right">
-                        <p
-                          className="prose prose-sm dark:prose-invert text-foreground text-sm"
-                          dangerouslySetInnerHTML={{
-                            __html: generateHTML(attribute.description),
-                          }}
-                        />
-                      </TooltipContent>
-                    </Tooltip>
-                  ) : null}
-                </HStack>
-                {attribute.type === "Measurement" && (
-                  <span className="text-xs text-muted-foreground">
-                    {attribute.minValue !== null && attribute.maxValue !== null
-                      ? `Must be between ${attribute.minValue} and ${
-                          attribute.maxValue
-                        } ${
-                          unitOfMeasures.find(
-                            (u) => u.value === unitOfMeasureCode
-                          )?.label
-                        }`
-                      : attribute.minValue !== null
-                      ? `Must be > ${attribute.minValue} ${
-                          unitOfMeasures.find(
-                            (u) => u.value === unitOfMeasureCode
-                          )?.label
-                        }`
-                      : attribute.maxValue !== null
-                      ? `Must be < ${attribute.maxValue} ${
-                          unitOfMeasures.find(
-                            (u) => u.value === unitOfMeasureCode
-                          )?.label
-                        }`
-                      : null}
-                  </span>
-                )}
-              </VStack>
-              {attribute.jobOperationStepRecord && (
-                <PreviewStepRecord attribute={attribute} />
-              )}
+        <div className="flex flex-col gap-2 w-full">
+          <div className="flex flex-1 justify-between items-center w-full">
+            <HStack spacing={4} className="w-1/2">
+              <IconButton
+                aria-label="Drag handle"
+                icon={<LuGripVertical />}
+                variant="ghost"
+                disabled={isDisabled}
+                className="cursor-grab"
+              />
+              <HStack spacing={4} className="flex-1">
+                <div className="bg-muted border rounded-full flex items-center justify-center p-2">
+                  <ProcedureStepTypeIcon type={type} />
+                </div>
+                <VStack spacing={0}>
+                  <HStack>
+                    <p className="text-foreground text-sm font-medium">
+                      {attribute.name}
+                    </p>
+                    {attribute.description &&
+                    Object.keys(attribute.description).length > 0 ? (
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <LuInfo className="text-muted-foreground size-3" />
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                          <p
+                            className="prose prose-sm dark:prose-invert text-foreground text-sm"
+                            dangerouslySetInnerHTML={{
+                              __html: generateHTML(attribute.description),
+                            }}
+                          />
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : null}
+                  </HStack>
+                  {attribute.type === "Measurement" && (
+                    <span className="text-xs text-muted-foreground">
+                      {attribute.minValue !== null &&
+                      attribute.maxValue !== null
+                        ? `Must be between ${attribute.minValue} and ${
+                            attribute.maxValue
+                          } ${
+                            unitOfMeasures.find(
+                              (u) => u.value === unitOfMeasureCode
+                            )?.label
+                          }`
+                        : attribute.minValue !== null
+                        ? `Must be > ${attribute.minValue} ${
+                            unitOfMeasures.find(
+                              (u) => u.value === unitOfMeasureCode
+                            )?.label
+                          }`
+                        : attribute.maxValue !== null
+                        ? `Must be < ${attribute.maxValue} ${
+                            unitOfMeasures.find(
+                              (u) => u.value === unitOfMeasureCode
+                            )?.label
+                          }`
+                        : null}
+                    </span>
+                  )}
+                </VStack>
+              </HStack>
             </HStack>
-          </HStack>
-          <div className="flex items-center justify-end gap-2">
-            <HStack spacing={2}>
-              <span className="text-xs text-muted-foreground">
-                {isUpdated ? "Updated" : "Created"} {formatRelativeTime(date)}
-              </span>
-              <EmployeeAvatar employeeId={person} withName={false} />
-            </HStack>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  aria-label="Open menu"
-                  icon={<LuEllipsisVertical />}
-                  variant="ghost"
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={disclosure.onOpen}>
-                  Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  destructive
-                  onClick={deleteModalDisclosure.onOpen}
-                >
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex items-center justify-end gap-2">
+              <HStack spacing={2}>
+                <span className="text-xs text-muted-foreground">
+                  {isUpdated ? "Updated" : "Created"} {formatRelativeTime(date)}
+                </span>
+                <EmployeeAvatar employeeId={person} withName={false} />
+              </HStack>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <IconButton
+                    aria-label="Open menu"
+                    icon={<LuEllipsisVertical />}
+                    variant="ghost"
+                  />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={disclosure.onOpen}>
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    destructive
+                    onClick={deleteModalDisclosure.onOpen}
+                  >
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
+          {attribute.jobOperationStepRecord && (
+            <PreviewStepRecords attribute={attribute} />
+          )}
         </div>
       )}
       {deleteModalDisclosure.isOpen && (
@@ -1498,42 +1572,90 @@ function StepsListItem({
   );
 }
 
-function PreviewStepRecord({ attribute }: { attribute: JobOperationStep }) {
+function PreviewStepRecords({ attribute }: { attribute: JobOperationStep }) {
+  if (
+    !attribute.jobOperationStepRecord ||
+    !Array.isArray(attribute.jobOperationStepRecord)
+  ) {
+    return null;
+  }
+
+  const records = attribute.jobOperationStepRecord;
+
+  return (
+    <div className="mt-4">
+      <div className="border rounded-lg overflow-hidden">
+        {records.map((record, index) => (
+          <div
+            key={record.id || index}
+            className={cn(
+              "flex flex-1 items-center justify-between px-3 py-2",
+              index !== records.length - 1 && "border-b"
+            )}
+          >
+            <div className="flex w-1/2 items-center justify-between gap-2">
+              <span className="text-xs text-muted-foreground font-medium">
+                Record {index + 1}
+              </span>
+              <div className="text-right font-medium">
+                <PreviewStepRecord attribute={attribute} record={record} />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 w-1/2">
+              <HStack spacing={2}>
+                <span className="text-xs text-muted-foreground">
+                  Created {formatRelativeTime(record.createdAt ?? "")}
+                </span>
+                <EmployeeAvatar
+                  employeeId={record.createdBy}
+                  withName={false}
+                />
+              </HStack>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PreviewStepRecord({
+  attribute,
+  record,
+}: {
+  attribute: JobOperationStep;
+  record: any;
+}) {
   const unitOfMeasures = useUnitOfMeasure();
   const [employees] = usePeople();
   const numberFormatter = useNumberFormatter();
 
-  if (!attribute.jobOperationStepRecord) return null;
   return (
-    <div className="min-w-[200px] truncate text-right font-medium">
+    <>
+      {attribute.type === "Task" && (
+        <Checkbox checked={record.booleanValue ?? false} />
+      )}
       {attribute.type === "Checkbox" && (
-        <Checkbox
-          checked={attribute.jobOperationStepRecord.booleanValue ?? false}
-        />
+        <Checkbox checked={record.booleanValue ?? false} />
       )}
-      {attribute.type === "Value" && (
-        <p className="text-sm">{attribute.jobOperationStepRecord.value}</p>
-      )}
+      {attribute.type === "Value" && <p className="text-sm">{record.value}</p>}
       {attribute.type === "Measurement" &&
-        typeof attribute.jobOperationStepRecord?.numericValue === "number" && (
+        typeof record.numericValue === "number" && (
           <p
             className={cn(
               "text-sm",
               attribute.minValue !== null &&
                 attribute.minValue !== undefined &&
-                attribute.jobOperationStepRecord.numericValue <
-                  attribute.minValue &&
+                record.numericValue < attribute.minValue &&
                 "text-red-500",
               attribute.maxValue !== null &&
                 attribute.maxValue !== undefined &&
-                attribute.jobOperationStepRecord.numericValue >
-                  attribute.maxValue &&
+                record.numericValue > attribute.maxValue &&
                 "text-red-500"
             )}
           >
-            {numberFormatter.format(
-              attribute.jobOperationStepRecord.numericValue
-            )}{" "}
+            {numberFormatter.format(record.numericValue)}{" "}
             {
               unitOfMeasures.find(
                 (u) => u.value === attribute.unitOfMeasureCode
@@ -1542,27 +1664,19 @@ function PreviewStepRecord({ attribute }: { attribute: JobOperationStep }) {
           </p>
         )}
       {attribute.type === "Timestamp" && (
-        <p className="text-sm">
-          {formatDateTime(attribute.jobOperationStepRecord.value ?? "")}
-        </p>
+        <p className="text-sm">{formatDateTime(record.value ?? "")}</p>
       )}
-      {attribute.type === "List" && (
-        <p className="text-sm">{attribute.jobOperationStepRecord.value}</p>
-      )}
+      {attribute.type === "List" && <p className="text-sm">{record.value}</p>}
       {attribute.type === "Person" && (
         <p className="text-sm">
-          {
-            employees.find(
-              (e) => e.id === attribute.jobOperationStepRecord?.userValue
-            )?.name
-          }
+          {employees.find((e) => e.id === record.userValue)?.name}
         </p>
       )}
-      {attribute.type === "File" && attribute.jobOperationStepRecord?.value && (
-        <div className="flex justify-end gap-2 text-sm">
+      {attribute.type === "File" && record.value && (
+        <div className="flex justify-end gap-2 text-xs">
           <LuPaperclip className="size-4 text-muted-foreground" />
           <a
-            href={getPrivateUrl(attribute.jobOperationStepRecord.value)}
+            href={getPrivateUrl(record.value)}
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -1570,7 +1684,7 @@ function PreviewStepRecord({ attribute }: { attribute: JobOperationStep }) {
           </a>
         </div>
       )}
-    </div>
+    </>
   );
 }
 

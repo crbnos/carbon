@@ -1,6 +1,7 @@
 import {
   Alert,
   AlertTitle,
+  Badge,
   cn,
   FormControl,
   FormLabel,
@@ -36,7 +37,13 @@ import {
   Shelf,
   Submit,
 } from "~/components/Form";
-import { usePermissions, useRouteData, useUser } from "~/hooks";
+import {
+  useCurrencyFormatter,
+  usePercentFormatter,
+  usePermissions,
+  useRouteData,
+  useUser,
+} from "~/hooks";
 import type { SalesInvoice } from "~/modules/invoicing";
 import { salesInvoiceLineValidator } from "~/modules/invoicing";
 import type { MethodItemType } from "~/modules/shared";
@@ -48,6 +55,7 @@ type SalesInvoiceLineFormProps = {
   initialValues: z.infer<typeof salesInvoiceLineValidator> & {
     taxPercent?: number;
   };
+  isSalesOrderLine?: boolean;
   type?: "card" | "modal";
   onClose?: () => void;
 };
@@ -55,6 +63,7 @@ type SalesInvoiceLineFormProps = {
 const SalesInvoiceLineForm = ({
   initialValues,
   type,
+  isSalesOrderLine = false,
   onClose,
 }: SalesInvoiceLineFormProps) => {
   const permissions = usePermissions();
@@ -121,7 +130,8 @@ const SalesInvoiceLineForm = ({
   ]);
 
   const isEditing = initialValues.id !== undefined;
-  const hasInvalidMethodType = itemData.methodType === "Make";
+  const hasInvalidMethodType =
+    itemData.methodType === "Make" && !isSalesOrderLine;
   const isDisabled = !isEditable
     ? true
     : hasInvalidMethodType
@@ -247,9 +257,16 @@ const SalesInvoiceLineForm = ({
     }));
   };
 
+  const currencyFormatter = useCurrencyFormatter();
+  const percentFormatter = usePercentFormatter();
+
   return (
     <ModalCardProvider type={type}>
-      <ModalCard onClose={onClose}>
+      <ModalCard
+        onClose={onClose}
+        isCollapsible={isEditing}
+        defaultCollapsed={isEditing}
+      >
         <ModalCardContent size="xxlarge">
           <ValidatedForm
             defaultValues={initialValues}
@@ -276,9 +293,36 @@ const SalesInvoiceLineForm = ({
                   : "New Sales Invoice Line"}
               </ModalCardTitle>
               <ModalCardDescription>
-                {isEditing
-                  ? itemData?.description || itemType
-                  : "A sales invoice line contains invoice details for a particular item"}
+                {isEditing ? (
+                  <div className="flex flex-col items-start gap-1">
+                    <span>{itemData?.description}</span>
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant="outline"
+                        className="flex items-center gap-2"
+                      >
+                        {initialValues?.quantity}{" "}
+                        <MethodIcon type={itemData.methodType} />
+                      </Badge>
+                      <Badge variant="green">
+                        {currencyFormatter.format(
+                          (initialValues?.unitPrice ?? 0) +
+                            (initialValues?.addOnCost ?? 0) +
+                            (initialValues?.shippingCost ?? 0)
+                        )}{" "}
+                        {initialValues?.unitOfMeasureCode}
+                      </Badge>
+                      {initialValues?.taxPercent > 0 ? (
+                        <Badge variant="red">
+                          {percentFormatter.format(initialValues?.taxPercent)}{" "}
+                          Tax
+                        </Badge>
+                      ) : null}
+                    </div>
+                  </div>
+                ) : (
+                  "A sales invoice line contains invoice details for a particular item"
+                )}
               </ModalCardDescription>
             </ModalCardHeader>
             <ModalCardBody>
@@ -296,7 +340,7 @@ const SalesInvoiceLineForm = ({
               />
 
               <VStack>
-                {itemData.methodType === "Make" && (
+                {hasInvalidMethodType && (
                   <Alert variant="destructive" className="mb-4">
                     <LuCircleAlert className="w-4 h-4" />
                     <AlertTitle>
@@ -408,7 +452,16 @@ const SalesInvoiceLineForm = ({
                         }
                       />
 
-                      <Number name="addOnCost" label="Add On Cost" />
+                      <Number
+                        name="addOnCost"
+                        label="Add On Cost"
+                        formatOptions={{
+                          style: "currency",
+                          currency:
+                            routeData?.salesInvoice?.currencyCode ??
+                            company.baseCurrencyCode,
+                        }}
+                      />
 
                       <NumberControlled
                         name="taxAmount"

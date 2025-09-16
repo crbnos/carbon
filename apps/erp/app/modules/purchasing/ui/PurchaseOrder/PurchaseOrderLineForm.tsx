@@ -35,7 +35,13 @@ import {
   Submit,
   UnitOfMeasure,
 } from "~/components/Form";
-import { usePermissions, useRouteData, useUser } from "~/hooks";
+import {
+  useCurrencyFormatter,
+  usePercentFormatter,
+  usePermissions,
+  useRouteData,
+  useUser,
+} from "~/hooks";
 import type { PurchaseOrder, PurchaseOrderLine } from "~/modules/purchasing";
 import { purchaseOrderLineValidator } from "~/modules/purchasing";
 import type { MethodItemType } from "~/modules/shared";
@@ -139,6 +145,8 @@ const PurchaseOrderLineForm = ({
     : !permissions.can("create", "purchasing");
 
   const deleteDisclosure = useDisclosure();
+  const currencyFormatter = useCurrencyFormatter();
+  const percentFormatter = usePercentFormatter();
 
   const onTypeChange = (t: MethodItemType | "Item") => {
     if (t === itemType) return;
@@ -255,7 +263,11 @@ const PurchaseOrderLineForm = ({
   return (
     <>
       <ModalCardProvider type={type}>
-        <ModalCard onClose={onClose}>
+        <ModalCard
+          onClose={onClose}
+          defaultCollapsed={isEditing}
+          isCollapsible={isEditing}
+        >
           <ModalCardContent size="xxlarge">
             <ValidatedForm
               defaultValues={initialValues}
@@ -286,7 +298,27 @@ const PurchaseOrderLineForm = ({
                   {isOutsideProcessing ? (
                     <Badge variant="default">Outside Processing</Badge>
                   ) : isEditing ? (
-                    itemData?.description || itemType
+                    <div className="flex flex-col items-start gap-1">
+                      <span>{itemData?.description}</span>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">
+                          {initialValues?.purchaseQuantity}
+                        </Badge>
+                        <Badge variant="green">
+                          {currencyFormatter.format(
+                            (initialValues?.supplierUnitPrice ?? 0) +
+                              (initialValues?.supplierShippingCost ?? 0)
+                          )}{" "}
+                          {initialValues?.purchaseUnitOfMeasureCode}
+                        </Badge>
+                        {initialValues?.taxPercent > 0 ? (
+                          <Badge variant="red">
+                            {percentFormatter.format(initialValues?.taxPercent)}{" "}
+                            Tax
+                          </Badge>
+                        ) : null}
+                      </div>
+                    </div>
                   ) : (
                     "A purchase order line contains order details for a particular item"
                   )}

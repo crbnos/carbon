@@ -118,6 +118,7 @@ export default function EditSalesInvoiceLineRoute() {
     methodType: (salesInvoiceLine?.methodType ?? "Pick") as "Pick",
     itemId: salesInvoiceLine?.itemId ?? "",
     accountNumber: salesInvoiceLine?.accountNumber ?? "",
+    addOnCost: salesInvoiceLine?.addOnCost ?? 0,
     assetId: salesInvoiceLine?.assetId ?? "",
     description: salesInvoiceLine?.description ?? "",
     quantity: salesInvoiceLine?.quantity ?? 1,
@@ -137,6 +138,7 @@ export default function EditSalesInvoiceLineRoute() {
       <SalesInvoiceLineForm
         key={initialValues.id}
         initialValues={initialValues}
+        isSalesOrderLine={salesInvoiceLine?.salesOrderLineId !== undefined}
       />
       <OpportunityLineNotes
         id={salesInvoiceLine?.id ?? ""}
