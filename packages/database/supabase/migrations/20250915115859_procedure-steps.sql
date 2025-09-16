@@ -1,45 +1,44 @@
+-- First, rename the tables before creating foreign key constraints
+
+-- Drop and recreate RLS policies for jobOperationAttribute before renaming
+DROP POLICY IF EXISTS "SELECT" ON "public"."jobOperationAttribute";
+DROP POLICY IF EXISTS "INSERT" ON "public"."jobOperationAttribute";
+DROP POLICY IF EXISTS "UPDATE" ON "public"."jobOperationAttribute";
+DROP POLICY IF EXISTS "DELETE" ON "public"."jobOperationAttribute";
+
+-- Rename jobOperationAttribute table to jobOperationStep
+ALTER TABLE "jobOperationAttribute" RENAME TO "jobOperationStep";
+
 -- Update jobOperationStepRecord to support multiple rows per operation attribute
-ALTER TABLE "jobOperationStepRecord" DROP CONSTRAINT "jobOperationStepRecord_pkey";
+ALTER TABLE "jobOperationAttributeRecord" DROP CONSTRAINT "jobOperationAttributeRecord_pkey";
 
 -- Add an id column as the new primary key
-ALTER TABLE "jobOperationStepRecord" ADD COLUMN "id" TEXT NOT NULL DEFAULT id('step');
+ALTER TABLE "jobOperationAttributeRecord" ADD COLUMN "id" TEXT NOT NULL DEFAULT id('step');
 
 -- Add an index column to order the records
-ALTER TABLE "jobOperationStepRecord" ADD COLUMN "index" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "jobOperationAttributeRecord" ADD COLUMN "index" INTEGER NOT NULL DEFAULT 0;
 
 -- Set the new primary key
-ALTER TABLE "jobOperationStepRecord" ADD CONSTRAINT "jobOperationStepRecord_pkey" PRIMARY KEY ("id");
+ALTER TABLE "jobOperationAttributeRecord" ADD CONSTRAINT "jobOperationAttributeRecord_pkey" PRIMARY KEY ("id");
 
 -- Update the column name from jobOperationAttributeId to jobOperationStepId
-ALTER TABLE "jobOperationStepRecord" RENAME COLUMN "jobOperationAttributeId" TO "jobOperationStepId";
+ALTER TABLE "jobOperationAttributeRecord" RENAME COLUMN "jobOperationAttributeId" TO "jobOperationStepId";
 
 -- Drop the existing foreign key constraint
-ALTER TABLE "jobOperationStepRecord" DROP CONSTRAINT IF EXISTS "jobOperationStepRecord_jobOperationAttributeId_fkey";
+ALTER TABLE "jobOperationAttributeRecord" DROP CONSTRAINT IF EXISTS "jobOperationAttributeRecord_jobOperationAttributeId_fkey";
 
--- Drop the existing foreign key constraint for jobOperationAttributeRecord
-ALTER TABLE "jobOperationStepRecord" DROP CONSTRAINT IF EXISTS "jobOperationAttributeRecord_jobOperationAttributeId_fkey";
+-- Rename jobOperationAttributeRecord table to jobOperationStepRecord first
+ALTER TABLE "jobOperationAttributeRecord" RENAME TO "jobOperationStepRecord";
 
-
--- Add the new foreign key constraint
+-- Add the new foreign key constraint (now that jobOperationStep table exists)
 ALTER TABLE "jobOperationStepRecord" ADD CONSTRAINT "jobOperationStepRecord_jobOperationStepId_fkey" 
   FOREIGN KEY ("jobOperationStepId") REFERENCES "jobOperationStep"("id") ON DELETE CASCADE;
-
 
 -- Create a unique constraint on jobOperationStepId and index to ensure ordering
 ALTER TABLE "jobOperationStepRecord" ADD CONSTRAINT "jobOperationStepRecord_jobOperationStepId_index_fkey" UNIQUE ("jobOperationStepId", "index");
 
 -- Add index for better query performance
 CREATE INDEX "jobOperationStepRecord_jobOperationStepId_index_idx" ON "jobOperationStepRecord"("jobOperationStepId", "index");
-
-
--- Rename jobOperationStep table to jobOperationStep
-ALTER TABLE "jobOperationStep" RENAME TO "jobOperationStep";
-
--- Drop and recreate RLS policies for the renamed table
-DROP POLICY IF EXISTS "SELECT" ON "public"."jobOperationStep";
-DROP POLICY IF EXISTS "INSERT" ON "public"."jobOperationStep";
-DROP POLICY IF EXISTS "UPDATE" ON "public"."jobOperationStep";
-DROP POLICY IF EXISTS "DELETE" ON "public"."jobOperationStep";
 
 CREATE POLICY "SELECT" ON "public"."jobOperationStep"
 FOR SELECT USING (
@@ -82,8 +81,7 @@ FOR DELETE USING (
 );
 
 
--- Rename the table itself
-ALTER TABLE "jobOperationStepRecord" RENAME TO "jobOperationStepRecord";
+-- Update RLS policies for jobOperationStepRecord (already renamed above)
 
 -- Update RLS policies for the renamed table
 DROP POLICY IF EXISTS "SELECT" ON "public"."jobOperationStepRecord";
@@ -131,8 +129,7 @@ FOR DELETE USING (
   )
 );
 
--- Rename procedureStepType enum to procedureStepType
-ALTER TYPE "procedureStepType" RENAME TO "procedureStepType";
+-- procedureStepType enum doesn't need renaming (already correct name)
 
 
 -- Rename methodOperationAttribute to methodOperationStep
@@ -237,8 +234,7 @@ FOR DELETE USING (
 
 
 
--- Rename procedureStep table to procedureStep
-ALTER TABLE "procedureStep" RENAME TO "procedureStep";
+-- procedureStep table doesn't need renaming (already correct name)
 
 -- Update RLS policies for the renamed table
 DROP POLICY IF EXISTS "SELECT" ON "public"."procedureStep";

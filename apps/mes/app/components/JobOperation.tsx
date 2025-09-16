@@ -235,12 +235,11 @@ export const JobOperation = ({
   const trackedEntityParam = params.get("trackedEntityId");
   const trackedEntityId = trackedEntityParam ?? trackedEntities[0]?.id;
 
-  const trackedEntity = trackedEntities.find(
-    (entity) => entity.id === trackedEntityId
-  );
-
   const parentIsSerial = method?.requiresSerialTracking;
   const parentIsBatch = method?.requiresBatchTracking;
+
+  const serialIndex =
+    trackedEntities.findIndex((entity) => entity.id === trackedEntityId) ?? 0;
 
   const navigate = useNavigate();
 
@@ -249,6 +248,16 @@ export const JobOperation = ({
 
   const attributeRecordModal = useDisclosure();
   const attributeRecordDeleteModal = useDisclosure();
+  const [activeStep, setActiveStep] = useState(
+    parentIsSerial ? serialIndex : 0
+  );
+  const [hasMultipleRecords, setHasMultipleRecords] = useState(false);
+
+  useEffect(() => {
+    if (parentIsSerial) {
+      setActiveStep(serialIndex);
+    }
+  }, [parentIsSerial, serialIndex]);
 
   const isModalOpen =
     attributeRecordModal.isOpen || attributeRecordDeleteModal.isOpen;
@@ -275,8 +284,13 @@ export const JobOperation = ({
     setEventType,
     setSelectedMaterial,
     setupProductionEvent,
-    activeStep,
-  } = useOperation(originalOperation, events, trackedEntities, isModalOpen);
+  } = useOperation({
+    operation: originalOperation,
+    events,
+    trackedEntities,
+    pauseInterval: isModalOpen,
+    procedure,
+  });
 
   const controlsHeight = useMemo(() => {
     let operations = 1;
@@ -500,10 +514,7 @@ export const JobOperation = ({
               <div className="flex flex-col flex-shrink items-end">
                 {parentIsSerial ? (
                   <Heading size="h2">
-                    {/* @ts-ignore */}
-                    {trackedEntity?.attributes?.[`Operation ${operationId}`] ??
-                      1}{" "}
-                    of {operation.operationQuantity}
+                    {serialIndex + 1} of {operation.operationQuantity}
                   </Heading>
                 ) : (
                   <Heading size="h2">{operation.operationQuantity}</Heading>
@@ -593,34 +604,134 @@ export const JobOperation = ({
                               <HStack className="justify-between w-full">
                                 <Heading size="h3">Steps</Heading>
                                 <div className="flex items-center gap-2">
-                                  {attributes.length > 0 && (
-                                    <>
-                                      <Progress
-                                        value={
-                                          (attributes.filter(
-                                            (a) =>
-                                              a.jobOperationStepRecord[
-                                                activeStep
-                                              ]
-                                          ).length /
-                                            attributes.length) *
-                                          100
-                                        }
-                                        className="h-2 w-24"
-                                      />
-                                      <span className="text-xs text-muted-foreground">
-                                        {
-                                          attributes.filter(
-                                            (a) =>
-                                              a.jobOperationStepRecord[
-                                                activeStep
-                                              ]
-                                          ).length
-                                        }{" "}
-                                        of {attributes.length} complete
-                                      </span>
-                                    </>
-                                  )}
+                                  {attributes.length > 0 &&
+                                    (() => {
+                                      const maxRecords = parentIsSerial
+                                        ? trackedEntities.length
+                                        : operation.operationQuantity +
+                                          operation.quantityScrapped;
+
+                                      const isRecordSetStarted =
+                                        recordSetIsStarted(
+                                          attributes,
+                                          activeStep
+                                        );
+
+                                      const canCreateNewRecord =
+                                        !parentIsSerial && isRecordSetStarted;
+
+                                      const canNavigateNext =
+                                        isRecordSetStarted &&
+                                        activeStep <
+                                          operation.operationQuantity +
+                                            operation.quantityScrapped -
+                                            1;
+
+                                      const showNavigation =
+                                        hasMultipleRecords ||
+                                        attributes.some(
+                                          (att) =>
+                                            att.jobOperationStepRecord.length >
+                                            1
+                                        );
+
+                                      return (
+                                        <div className="flex flex-col items-end justify-center gap-2">
+                                          <div className="flex items-center gap-1">
+                                            {showNavigation &&
+                                              !parentIsSerial && (
+                                                <>
+                                                  <IconButton
+                                                    aria-label="Previous record set"
+                                                    variant="secondary"
+                                                    icon={<LuChevronLeft />}
+                                                    onClick={() => {
+                                                      setActiveStep(
+                                                        activeStep - 1
+                                                      );
+                                                    }}
+                                                    isDisabled={
+                                                      activeStep === 0
+                                                    }
+                                                  />
+                                                  <span className="text-sm font-medium px-2 min-w-[60px] text-center">
+                                                    Record {activeStep + 1}
+                                                  </span>
+                                                  <IconButton
+                                                    aria-label="Next record set"
+                                                    variant="secondary"
+                                                    icon={<LuChevronRight />}
+                                                    onClick={() => {
+                                                      setActiveStep(
+                                                        activeStep + 1
+                                                      );
+                                                    }}
+                                                    isDisabled={
+                                                      !canNavigateNext
+                                                    }
+                                                  />
+                                                </>
+                                              )}
+                                            {canCreateNewRecord &&
+                                              !showNavigation && (
+                                                <Button
+                                                  aria-label="Add new record set"
+                                                  variant="secondary"
+                                                  leftIcon={<LuCirclePlus />}
+                                                  onClick={() => {
+                                                    const nextIndex =
+                                                      activeStep + 1;
+                                                    if (
+                                                      nextIndex >= maxRecords
+                                                    ) {
+                                                      toast.warning(
+                                                        "Maximum number of records reached"
+                                                      );
+                                                      return;
+                                                    }
+                                                    setHasMultipleRecords(true);
+                                                    setActiveStep(nextIndex);
+                                                  }}
+                                                  isDisabled={
+                                                    activeStep + 1 >= maxRecords
+                                                  }
+                                                >
+                                                  New Record
+                                                </Button>
+                                              )}
+                                            {parentIsSerial && (
+                                              <Heading size="h2">
+                                                {serialIndex + 1} of{" "}
+                                                {operation.operationQuantity}
+                                              </Heading>
+                                            )}
+                                          </div>
+
+                                          <Progress
+                                            value={
+                                              (attributes.filter((a) =>
+                                                a.jobOperationStepRecord.some(
+                                                  (r) => r.index === activeStep
+                                                )
+                                              ).length /
+                                                attributes.length) *
+                                              100
+                                            }
+                                            className="h-2 w-24"
+                                          />
+                                          <span className="text-xs text-muted-foreground">
+                                            {
+                                              attributes.filter((a) =>
+                                                a.jobOperationStepRecord.some(
+                                                  (r) => r.index === activeStep
+                                                )
+                                              ).length
+                                            }{" "}
+                                            of {attributes.length} complete
+                                          </span>
+                                        </div>
+                                      );
+                                    })()}
                                 </div>
                               </HStack>
                               <div className="border rounded-lg">
@@ -1317,6 +1428,13 @@ export const JobOperation = ({
                                     size="sm"
                                     isDisabled={entity.id === trackedEntityId}
                                     onClick={() => {
+                                      const entityIndex =
+                                        trackedEntities.findIndex(
+                                          (e) => e.id === entity.id
+                                        );
+                                      if (entityIndex !== -1) {
+                                        setActiveStep(entityIndex);
+                                      }
                                       setParams({
                                         trackedEntityId: entity.id,
                                       });
@@ -1381,6 +1499,122 @@ export const JobOperation = ({
                             className="w-full flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
                             spacing={0}
                           >
+                            {attributes.length > 0 &&
+                              (() => {
+                                const maxRecords = parentIsSerial
+                                  ? trackedEntities.length
+                                  : operation.operationQuantity +
+                                    operation.quantityScrapped;
+
+                                const isRecordSetStarted = recordSetIsStarted(
+                                  attributes,
+                                  activeStep
+                                );
+
+                                const canCreateNewRecord =
+                                  !parentIsSerial && isRecordSetStarted;
+
+                                const canNavigateNext =
+                                  isRecordSetStarted &&
+                                  activeStep <
+                                    operation.operationQuantity +
+                                      operation.quantityScrapped -
+                                      1;
+
+                                const showNavigation =
+                                  hasMultipleRecords ||
+                                  attributes.some(
+                                    (att) =>
+                                      att.jobOperationStepRecord.length > 1
+                                  );
+
+                                return (
+                                  <div className="flex flex-col items-end justify-center gap-1 w-full px-4">
+                                    <div className="flex items-center gap-1">
+                                      {showNavigation && !parentIsSerial && (
+                                        <>
+                                          <IconButton
+                                            aria-label="Previous record set"
+                                            variant="secondary"
+                                            icon={<LuChevronLeft />}
+                                            onClick={() => {
+                                              setActiveStep(activeStep - 1);
+                                            }}
+                                            isDisabled={activeStep === 0}
+                                          />
+                                          <span className="text-sm font-medium px-2 min-w-[60px] text-center">
+                                            Record {activeStep + 1}
+                                          </span>
+                                          <IconButton
+                                            aria-label="Next record set"
+                                            variant="secondary"
+                                            icon={<LuChevronRight />}
+                                            onClick={() => {
+                                              setActiveStep(activeStep + 1);
+                                            }}
+                                            isDisabled={!canNavigateNext}
+                                          />
+                                        </>
+                                      )}
+                                      {canCreateNewRecord &&
+                                        !showNavigation && (
+                                          <Button
+                                            aria-label="Add new record set"
+                                            variant="secondary"
+                                            leftIcon={<LuCirclePlus />}
+                                            onClick={() => {
+                                              const nextIndex = activeStep + 1;
+                                              if (nextIndex >= maxRecords) {
+                                                toast.warning(
+                                                  "Maximum number of records reached"
+                                                );
+                                                return;
+                                              }
+                                              setHasMultipleRecords(true);
+                                              setActiveStep(nextIndex);
+                                            }}
+                                            isDisabled={
+                                              activeStep + 1 >= maxRecords
+                                            }
+                                          >
+                                            New Record
+                                          </Button>
+                                        )}
+                                      {parentIsSerial && (
+                                        <Heading size="h2">
+                                          {serialIndex + 1} of{" "}
+                                          {operation.operationQuantity}
+                                        </Heading>
+                                      )}
+                                    </div>
+
+                                    <div className="flex flex-col justify-center items-end gap-1">
+                                      <Progress
+                                        value={
+                                          (attributes.filter((a) =>
+                                            a.jobOperationStepRecord.some(
+                                              (r) => r.index === activeStep
+                                            )
+                                          ).length /
+                                            attributes.length) *
+                                          100
+                                        }
+                                        className="h-2 w-24"
+                                      />
+                                      <span className="text-xs text-muted-foreground">
+                                        {
+                                          attributes.filter((a) =>
+                                            a.jobOperationStepRecord.some(
+                                              (r) => r.index === activeStep
+                                            )
+                                          ).length
+                                        }{" "}
+                                        of {attributes.length} completed
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
                             {attributes.length > 0 && (
                               <>
                                 <div className="flex flex-col items-start justify-between w-full">
@@ -1831,6 +2065,12 @@ export const JobOperation = ({
           onClose={serialModal.onClose}
           onCancel={() => navigate(path.to.operations)}
           onSelect={(entity) => {
+            const entityIndex = availableEntities.findIndex(
+              (e) => e.id === entity.id
+            );
+            if (entityIndex !== -1) {
+              setActiveStep(entityIndex);
+            }
             setParams({
               trackedEntityId: entity.id,
             });
@@ -1851,7 +2091,11 @@ export const JobOperation = ({
       {attributeRecordDeleteModal.isOpen && selectedAttribute && (
         <DeleteAttributeRecordModal
           onClose={onDeselectAttribute}
-          id={selectedAttribute?.jobOperationStepRecord[activeStep]?.id}
+          id={
+            selectedAttribute?.jobOperationStepRecord.find(
+              (r) => r.index === activeStep
+            )?.id ?? ""
+          }
           title="Delete Step"
           description="Are you sure you want to delete this step?"
         />
@@ -1866,6 +2110,22 @@ type Message = {
   createdAt: string;
   note: string;
 };
+
+function recordSetIsStarted(
+  attributes: JobOperationAttribute[],
+  activeStep: number
+) {
+  return attributes.some((att) =>
+    att.jobOperationStepRecord.some(
+      (record) =>
+        record.index === activeStep &&
+        (record.value !== null ||
+          record.numericValue !== null ||
+          record.booleanValue !== null ||
+          record.userValue !== null)
+    )
+  );
+}
 
 function OperationChat({ operation }: { operation: OperationWithDetails }) {
   const user = useUser();
@@ -2079,12 +2339,22 @@ function OperationChat({ operation }: { operation: OperationWithDetails }) {
   );
 }
 
-function useOperation(
-  operation: OperationWithDetails,
-  events: ProductionEvent[],
-  trackedEntities: TrackedEntity[],
-  pauseInterval: boolean
-) {
+function useOperation({
+  operation,
+  events,
+  trackedEntities,
+  pauseInterval,
+  procedure,
+}: {
+  operation: OperationWithDetails;
+  events: ProductionEvent[];
+  trackedEntities: TrackedEntity[];
+  pauseInterval: boolean;
+  procedure: Promise<{
+    attributes: JobOperationAttribute[];
+    parameters: JobOperationParameter[];
+  }>;
+}) {
   const [params] = useUrlParams();
   const trackedEntityParam = params.get("trackedEntityId");
   const { carbon, accessToken } = useCarbon();
@@ -2325,8 +2595,6 @@ function useOperation(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trackedEntities, trackedEntityParam]);
 
-  const activeStep = 0;
-
   return {
     active,
     availableEntities,
@@ -2335,7 +2603,7 @@ function useOperation(
     ...activeEvents,
     progress,
     operation: operationState,
-    activeStep,
+
     activeTab,
     eventType,
     scrapModal,
@@ -4283,6 +4551,9 @@ function AttributesListItem({
   const hasDescription = description && Object.keys(description).length > 0;
 
   if (!operationId) return null;
+  const record = attribute.jobOperationStepRecord.find(
+    (r) => r.index === activeStep
+  );
 
   return (
     <div className={cn("border-b hover:bg-muted/30 p-6", className)}>
@@ -4319,7 +4590,7 @@ function AttributesListItem({
           </HStack>
         </HStack>
         <div className="flex items-center justify-end gap-2">
-          {attribute.jobOperationStepRecord[activeStep] ? (
+          {record ? (
             <div className="flex items-center gap-2">
               {type !== "Task" &&
                 (compact ? (
@@ -4327,24 +4598,17 @@ function AttributesListItem({
                     aria-label="Update attribute"
                     variant="secondary"
                     icon={<LuCircleCheck />}
-                    isDisabled={
-                      attribute.jobOperationStepRecord[activeStep]
-                        ?.createdBy !== user?.id
-                    }
+                    isDisabled={record?.createdBy !== user?.id}
                     onClick={() => onRecord(attribute)}
                     className={cn(
                       "text-emerald-500",
                       attribute.minValue !== null &&
-                        attribute.jobOperationStepRecord[activeStep]
-                          ?.numericValue != null &&
-                        attribute.jobOperationStepRecord[activeStep]
-                          ?.numericValue < attribute.minValue &&
+                        record?.numericValue != null &&
+                        record?.numericValue < attribute.minValue &&
                         "text-red-500",
                       attribute.maxValue !== null &&
-                        attribute.jobOperationStepRecord[activeStep]
-                          ?.numericValue != null &&
-                        attribute.jobOperationStepRecord[activeStep]
-                          ?.numericValue > attribute.maxValue &&
+                        record?.numericValue != null &&
+                        record?.numericValue > attribute.maxValue &&
                         "text-red-500"
                     )}
                   />
@@ -4361,10 +4625,7 @@ function AttributesListItem({
                 aria-label="Delete attribute"
                 variant="secondary"
                 icon={<LuTrash />}
-                isDisabled={
-                  attribute.jobOperationStepRecord[activeStep]?.createdBy !==
-                  user?.id
-                }
+                isDisabled={record?.createdBy !== user?.id}
                 onClick={() => onDelete(attribute)}
               />
             </div>
@@ -4450,77 +4711,50 @@ function PreviewAttributeRecord({
   const numberFormatter = useNumberFormatter();
 
   if (!attribute.jobOperationStepRecord) return null;
+  const record = attribute.jobOperationStepRecord.find(
+    (r) => r.index === activeStep
+  );
+
   return (
     <div className="min-w-[200px] truncate text-right font-medium">
       {attribute.type === "Task" && (
-        <Checkbox
-          checked={
-            attribute.jobOperationStepRecord[activeStep]?.booleanValue ?? false
-          }
-        />
+        <Checkbox checked={record?.booleanValue ?? false} />
       )}
       {attribute.type === "Checkbox" && (
-        <Checkbox
-          checked={
-            attribute.jobOperationStepRecord[activeStep]?.booleanValue ?? false
-          }
-        />
+        <Checkbox checked={record?.booleanValue ?? false} />
       )}
-      {attribute.type === "Value" && (
-        <p className="text-sm">
-          {attribute.jobOperationStepRecord[activeStep]?.value}
-        </p>
-      )}
+      {attribute.type === "Value" && <p className="text-sm">{record?.value}</p>}
       {attribute.type === "Measurement" &&
-        typeof attribute.jobOperationStepRecord[activeStep]?.numericValue ===
-          "number" && (
+        typeof record?.numericValue === "number" && (
           <p
             className={cn(
               "text-sm",
               attribute.minValue !== null &&
-                attribute.jobOperationStepRecord[activeStep]?.numericValue <
-                  attribute.minValue &&
+                record?.numericValue < attribute.minValue &&
                 "text-red-500",
               attribute.maxValue !== null &&
-                attribute.jobOperationStepRecord[activeStep]?.numericValue >
-                  attribute.maxValue &&
+                record?.numericValue > attribute.maxValue &&
                 "text-red-500"
             )}
           >
-            {numberFormatter.format(
-              attribute.jobOperationStepRecord[activeStep]?.numericValue
-            )}{" "}
+            {numberFormatter.format(record?.numericValue)}{" "}
             {attribute.unitOfMeasureCode}
           </p>
         )}
       {attribute.type === "Timestamp" && (
-        <p className="text-sm">
-          {formatDateTime(
-            attribute.jobOperationStepRecord[activeStep]?.value ?? ""
-          )}
-        </p>
+        <p className="text-sm">{formatDateTime(record?.value ?? "")}</p>
       )}
-      {attribute.type === "List" && (
-        <p className="text-sm">
-          {attribute.jobOperationStepRecord[activeStep]?.value}
-        </p>
-      )}
+      {attribute.type === "List" && <p className="text-sm">{record?.value}</p>}
       {attribute.type === "Person" && (
         <p className="text-sm">
-          {
-            employees.find(
-              (e) =>
-                e.id === attribute.jobOperationStepRecord[activeStep]?.userValue
-            )?.name
-          }
+          {employees.find((e) => e.id === record?.userValue)?.name}
         </p>
       )}
-      {attribute.type === "File" &&
-        attribute.jobOperationStepRecord[activeStep]?.value && (
-          <div className="flex justify-end gap-2 text-sm">
-            <LuPaperclip className="size-4 text-muted-foreground" />
-          </div>
-        )}
+      {attribute.type === "File" && record?.value && (
+        <div className="flex justify-end gap-2 text-sm">
+          <LuPaperclip className="size-4 text-muted-foreground" />
+        </div>
+      )}
     </div>
   );
 }
@@ -4596,7 +4830,7 @@ function RecordModal({
     setFile(fileUpload);
     toast.info(`Uploading ${fileUpload.name}`);
 
-    const fileName = `${company.id}/job/${attribute.operationId}/${activeStep}/${fileUpload.name}`;
+    const fileName = `${company.id}/job/${attribute.operationId}/${fileUpload.name}`;
 
     const upload = await carbon?.storage
       .from("private")
@@ -4619,8 +4853,12 @@ function RecordModal({
     }
   }, [fetcher.data?.success, onClose]);
 
+  const record = attribute?.jobOperationStepRecord.find(
+    (r) => r.index === activeStep
+  );
+
   const [booleanControlled, setBooleanControlled] = useState(
-    attribute?.jobOperationStepRecord[activeStep]?.booleanValue ?? false
+    record?.booleanValue ?? false
   );
 
   return (
@@ -4642,17 +4880,17 @@ function RecordModal({
             index: activeStep,
             jobOperationStepId: attribute.id,
             value:
-              attribute?.jobOperationStepRecord[activeStep]?.value ??
+              record?.value ??
               (attribute.type === "Timestamp" ? new Date().toISOString() : ""),
-            numericValue:
-              attribute?.jobOperationStepRecord[activeStep]?.numericValue ?? 0,
-            userValue:
-              attribute?.jobOperationStepRecord[activeStep]?.userValue ?? "",
+            numericValue: record?.numericValue ?? 0,
+            userValue: record?.userValue ?? "",
           }}
           fetcher={fetcher}
         >
           <ModalHeader>
-            <ModalTitle>{attribute.name}</ModalTitle>
+            <ModalTitle>
+              {attribute.name} - Set {activeStep + 1}
+            </ModalTitle>
           </ModalHeader>
           <ModalBody>
             <Hidden name="id" />

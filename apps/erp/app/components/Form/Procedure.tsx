@@ -14,7 +14,7 @@ type ProcedureSelectProps = Omit<ComboboxProps, "options"> & {
 };
 
 const Procedure = (props: ProcedureSelectProps) => {
-  const options = useProcedures({
+  const { options, loading } = useProcedures({
     processId: props?.processId,
   });
 
@@ -23,6 +23,7 @@ const Procedure = (props: ProcedureSelectProps) => {
       <Combobox
         options={options}
         isOptional={props?.isOptional ?? true}
+        isLoading={loading}
         {...props}
         label={props?.label ?? "Procedure"}
       />
@@ -42,6 +43,8 @@ export const useProcedures = (args: { processId?: string }) => {
   useMount(() => {
     procedureFetcher.load(path.to.api.procedures);
   });
+
+  const loading = procedureFetcher.state !== "idle";
 
   const options = useMemo(
     () =>
@@ -64,7 +67,9 @@ export const useProcedures = (args: { processId?: string }) => {
                       v{c.version}
                     </span>
                   </HStack>
-                  <ProcedureStatus status={c.status} />
+                  <ProcedureStatus
+                    status={c.status as "Active" | "Draft" | "Archived"}
+                  />
                 </div>
               ),
             }))
@@ -72,5 +77,5 @@ export const useProcedures = (args: { processId?: string }) => {
     [procedureFetcher.data, processId]
   );
 
-  return options;
+  return { options, loading };
 };

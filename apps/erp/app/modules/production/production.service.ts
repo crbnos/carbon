@@ -646,7 +646,9 @@ export async function getProceduresList(
     id: string;
     name: string;
     version: number;
-  }>(client, "procedure", "id, name, version", (query) =>
+    processId: string;
+    status: string;
+  }>(client, "procedure", "id, name, version, processId, status", (query) =>
     query
       .eq("companyId", companyId)
       .order("name", { ascending: true })

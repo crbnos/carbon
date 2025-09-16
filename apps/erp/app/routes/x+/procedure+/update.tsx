@@ -1,5 +1,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import type { ClientActionFunctionArgs } from "@remix-run/react";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
+import { getCompanyId, proceduresQuery } from "~/utils/react-query";
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, userId } = await requirePermissions(request, {
@@ -34,4 +36,12 @@ export async function action({ request }: ActionFunctionArgs) {
     default:
       return json({ error: { message: "Invalid field" }, data: null });
   }
+}
+
+export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
+  window.clientCache?.setQueryData(
+    proceduresQuery(getCompanyId()).queryKey,
+    null
+  );
+  return await serverAction();
 }
