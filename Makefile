@@ -8,6 +8,7 @@ help:
 	@echo ""
 	@echo "Targets:"
 	@echo "  make upstream-reset FORCE=1   - HARD reset to upstream (git reset --hard + git clean -xfd)"
+	@echo "  make upstream-sync            - Sync your fork with upstream (fetch upstream, rebase/push your default branch)"
 	@echo "  make install                  - npm install for monorepo (workspaces)"
 	@echo "  make ci                       - deterministic install (npm ci)"
 	@echo "  make clean                    - remove node_modules and build caches"
@@ -82,11 +83,10 @@ upstream-reset:
 	@echo "✅ Repo cleaned to upstream HEAD"
 
 # -------------------------------------------------------------------
-# 1.1) Reset repo to clean upstream state
+# 1.1) Sync fork with upstream
 # -------------------------------------------------------------------
-
 upstream-sync:
-	@bash scripts/upstream-sync.sh
+	@bash scripts/upstream-sync.sh || { echo '❌ scripts/upstream-sync.sh not found or failed'; exit 1; }
 
 # -------------------------------------------------------------------
 # 2) Deep cleanup of local artifacts
