@@ -10,7 +10,7 @@ RUN npm ci --workspaces
 
 FROM deps AS build
 # Build only ERP and its deps
-RUN npx turbo@1.13.2 run build --filter=./apps/erp
+RUN npx turbo@1.13.2 run build --filter=./apps/mes
 
 FROM node:20-alpine
 WORKDIR /repo
@@ -18,7 +18,7 @@ ENV NODE_ENV=production
 ENV PORT=3000
 # Production needs only built app + node_modules
 COPY --from=deps /repo/node_modules ./node_modules
-COPY --from=build /repo/apps/erp ./apps/erp
-EXPOSE 3000
-WORKDIR /repo/apps/erp
+COPY --from=build /repo/apps/mes ./apps/mes
+EXPOSE 3001
+WORKDIR /repo/apps/mes
 CMD ["npm","run","start"]

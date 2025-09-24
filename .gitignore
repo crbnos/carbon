@@ -5,6 +5,7 @@ node_modules
 .next
 .vercel
 .trigger
+.sst
 dist
 dist-ssr
 *.local
@@ -19,8 +20,10 @@ scripts/paperless-test.ts
 # local env files
 .env
 .env.local
+.env.dev
 .env.development.local
 .env.test.local
+.env.prod
 .env.production
 .env.production.local
 !packages/apps/**/.env

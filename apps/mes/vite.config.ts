@@ -35,7 +35,7 @@ export default defineConfig({
   },
   plugins: [
     remix({
-      presets: [vercelPreset()],
+      presets: process.env.VERCEL === "1" ? [vercelPreset()] : [],
       future: {
         unstable_singleFetch: false,
       },
