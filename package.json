@@ -1,5 +1,6 @@
 {
   "devDependencies": {
+    "@types/aws-lambda": "8.10.152",
     "csv-parse": "^5.5.0",
     "eslint": "^8.23.1",
     "eslint-config-carbon": "*",
@@ -26,8 +27,8 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "build:packages": "turbo run build --filter=./packages/*",
     "build:app": "turbo run build --filter=!www",
+    "build:packages": "turbo run build --filter=./packages/*",
     "ci:migrations": "npm run -w ci ci:migrations",
     "clean": "turbo run clean && rimraf ./node_modules && rimraf ./package-lock.json",
     "db:build": "run-s db:kill db:start setup",
@@ -47,20 +48,20 @@
     "db:types": "npm run db:types -w @carbon/database",
     "deploy": "turbo run deploy",
     "dev": "run-p dev:erp dev:jobs dev:stripe",
+    "dev:academy": "turbo run dev --filter=./apps/academy --filter=./packages/",
     "dev:erp": "turbo run dev --filter=./apps/erp --filter=./packages/ ",
     "dev:jobs": "npm run -w @carbon/jobs dev:jobs",
-    "dev:stripe": "npm run -w @carbon/stripe dev:stripe",
     "dev:mes": "turbo run dev --filter=./apps/mes",
-    "dev:starter": "turbo run dev --filter=./apps/starter --filter=./packages/",
-    "dev:academy": "turbo run dev --filter=./apps/academy --filter=./packages/",
     "dev:packages": "turbo run dev --filter=./packages/*",
-    "generate:types": "tsx scripts/generate-db-types.ts",
-    "generate:swagger": "tsx scripts/generate-swagger-docs.ts && npx prettier --write ./packages/database/src/swagger-docs-schema.ts ",
+    "dev:starter": "turbo run dev --filter=./apps/starter --filter=./packages/",
+    "dev:stripe": "npm run -w @carbon/stripe dev:stripe",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "generate:swagger": "tsx scripts/generate-swagger-docs.ts && npx prettier --write ./packages/database/src/swagger-docs-schema.ts ",
+    "generate:types": "tsx scripts/generate-db-types.ts",
     "lint": "turbo run lint",
     "novu:sync": "npx novu@latest sync --bridge-url https://app.carbon.ms/api/novu --secret-key $NOVU_SECRET_KEY --api-url https://api.novu.co",
-    "predb:build": "tsx scripts/setup-env-files.ts",
     "postdb:build": "run-s generate:types generate:swagger",
+    "predb:build": "tsx scripts/setup-env-files.ts",
     "prepare": "npx husky install",
     "setup": "turbo run setup",
     "test": "turbo run test",
@@ -72,5 +73,8 @@
     "examples/*",
     "packages/*"
   ],
-  "packageManager": "npm@10.7.0"
+  "packageManager": "npm@10.7.0",
+  "dependencies": {
+    "sst": "3.17.14"
+  }
 }
