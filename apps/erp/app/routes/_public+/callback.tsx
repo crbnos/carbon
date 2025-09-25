@@ -2,6 +2,7 @@ import {
   assertIsPost,
   callbackValidator,
   carbonClient,
+  CONTROLLED_ENVIRONMENT,
   error,
   getCarbonServiceRole,
 } from "@carbon/auth";
@@ -21,7 +22,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { useEffect, useRef, useState } from "react";
 
-import { Alert, AlertDescription, AlertTitle, VStack } from "@carbon/react";
+import { Alert, AlertDescription, AlertTitle, cn, VStack } from "@carbon/react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { path } from "~/utils/path";
 
@@ -154,7 +155,12 @@ export default function AuthCallback() {
           </VStack>
         </div>
       ) : (
-        <div className="hexagon-loader-container">
+        <div
+          className={cn(
+            "hexagon-loader-container",
+            CONTROLLED_ENVIRONMENT && "grayscale"
+          )}
+        >
           <div className="hexagon-loader">
             <div className="hexagon" />
             <div className="hexagon" />

@@ -132,7 +132,7 @@ export async function action({ request }: ActionFunctionArgs): FormActionData {
   } else if (CarbonEdition === Edition.Enterprise) {
     // Enterprise edition does not support signup
     return json(
-      { success: false, message: "Invalid email/password combination" },
+      { success: false, message: "User record not found" },
       await flash(request, error(null, "Failed to sign in"))
     );
   } else {

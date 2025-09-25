@@ -2,6 +2,7 @@ import {
   assertIsPost,
   callbackValidator,
   carbonClient,
+  CONTROLLED_ENVIRONMENT,
   error,
   getCarbonServiceRole,
 } from "@carbon/auth";
@@ -26,6 +27,7 @@ import {
   AlertDescription,
   AlertTitle,
   Button,
+  cn,
   VStack,
 } from "@carbon/react";
 import { LuTriangleAlert } from "react-icons/lu";
@@ -163,7 +165,12 @@ export default function AuthCallback() {
           </VStack>
         </div>
       ) : (
-        <div className="hexagon-loader-container">
+        <div
+          className={cn(
+            "hexagon-loader-container",
+            CONTROLLED_ENVIRONMENT && "grayscale"
+          )}
+        >
           <div className="hexagon-loader">
             <div className="hexagon" />
             <div className="hexagon" />
