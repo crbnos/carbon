@@ -2,13 +2,14 @@
   "private": true,
   "name": "ci",
   "version": "0.0.1",
-  "description": "Deployment scripts for supabase ",
+  "description": "Deployment scripts for Carbon",
   "dependencies": {
     "@supabase/supabase-js": "2.39.8",
     "execa": "8.0.1"
   },
   "scripts": {
     "ci:migrations": "tsx src/migrations.ts",
+    "ci:deploy": "tsx src/deploy.ts",
     "test": "tsx src/test.ts"
   }
 }

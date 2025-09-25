@@ -207,7 +207,6 @@ const JobProperties = () => {
         <Suspense fallback={null}>
           <Await resolve={routeData?.trackedEntities}>
             {(entities) => {
-              console.log("entities", entities);
               const trackingType = routeData?.job?.itemTrackingType ?? "";
 
               if (!["Batch", "Serial"].includes(trackingType)) {
@@ -219,7 +218,6 @@ const JobProperties = () => {
               return (
                 <>
                   {trackedEntities.map((entity, index) => {
-                    console.log("entity", entity);
                     const trackingNumber: string =
                       // @ts-ignore
                       entity?.attributes?.["Batch Number"]?.toString() ?? "";

@@ -73,16 +73,6 @@ export function getEnv(
 /**
  * Server env
  */
-export const AUTODESK_BUCKET_NAME = getEnv("AUTODESK_BUCKET_NAME", {
-  isRequired: false,
-});
-
-export const AUTODESK_CLIENT_ID = getEnv("AUTODESK_CLIENT_ID", {
-  isRequired: false,
-});
-export const AUTODESK_CLIENT_SECRET = getEnv("AUTODESK_CLIENT_SECRET", {
-  isRequired: false,
-});
 
 const CARBON_EDITION = getEnv("CARBON_EDITION", {
   isRequired: false,

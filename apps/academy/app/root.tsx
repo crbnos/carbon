@@ -1,4 +1,9 @@
-import { error, getBrowserEnv, getCarbon } from "@carbon/auth";
+import {
+  CONTROLLED_ENVIRONMENT,
+  error,
+  getBrowserEnv,
+  getCarbon,
+} from "@carbon/auth";
 import {
   getOrRefreshAuthSession,
   getSessionFlash,
@@ -179,7 +184,7 @@ function Document({
         <Toaster position="bottom-right" visibleToasts={5} />
         <ScrollRestoration />
         <Scripts />
-        <Analytics />
+        {!CONTROLLED_ENVIRONMENT && <Analytics />}
       </body>
     </html>
   );

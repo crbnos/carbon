@@ -14,7 +14,6 @@
   "exports": {
     ".": "./src/index.ts",
     "./auth.server": "./src/services/auth.server.ts",
-    "./autodesk.server": "./src/services/autodesk.server.ts",
     "./company.server": "./src/services/company.server.ts",
     "./session.server": "./src/services/session.server.ts",
     "./users.server": "./src/services/users.server.ts",

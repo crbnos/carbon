@@ -10,7 +10,6 @@ const file = `/file`;
 export const path = {
   to: {
     api: {
-      autodeskToken: `${api}/autodesk/token`,
       batchNumbers: (itemId: string) =>
         generatePath(`${api}/batch-numbers?itemId=${itemId}`),
       serialNumbers: (itemId: string) =>

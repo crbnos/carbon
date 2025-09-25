@@ -1,4 +1,4 @@
-import { error, getBrowserEnv } from "@carbon/auth";
+import { CONTROLLED_ENVIRONMENT, error, getBrowserEnv } from "@carbon/auth";
 import { getSessionFlash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { Button, Heading, toast } from "@carbon/react";
@@ -164,7 +164,7 @@ function Document({
 
         <ScrollRestoration />
         <Scripts />
-        <Analytics />
+        {!CONTROLLED_ENVIRONMENT && <Analytics />}
       </body>
     </html>
   );
