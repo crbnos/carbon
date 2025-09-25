@@ -30,6 +30,7 @@
     "build:app": "turbo run build --filter=!www",
     "build:packages": "turbo run build --filter=./packages/*",
     "ci:migrations": "npm run -w ci ci:migrations",
+    "ci:deploy": "npm run -w ci ci:deploy",
     "clean": "turbo run clean && rimraf ./node_modules && rimraf ./package-lock.json",
     "db:build": "run-s db:kill db:start setup",
     "db:function:new": "npm run db:function:new -w @carbon/database",
