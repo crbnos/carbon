@@ -6,7 +6,7 @@ export default $config({
       name: "carbon",
       home: "aws",
       region: "us-gov-east-1",
-      removal: input?.stage === "production" ? "retain" : "remove",
+      removal: input?.stage === "prod" ? "retain" : "remove",
     };
   },
   async run() {
@@ -16,13 +16,12 @@ export default $config({
       forceUpgrade: "v2",
     });
     const erp = cluster.addService("CarbonERPService", {
-      image:
-        "453096467244.dkr.ecr.us-gov-east-1.amazonaws.com/carbon/erp:latest",
+      image: `${process.env.AWS_ACCOUNT_ID}.dkr.ecr.us-gov-east-1.amazonaws.com/carbon/erp:latest`,
       loadBalancer: {
         domain: {
           name: "itar.carbon.ms",
           dns: false,
-          cert: process.env.ACM_CERTIFICATE_ARN,
+          cert: `arn:aws-us-gov:acm:us-gov-east-1:${process.env.AWS_ACCOUNT_ID}:certificate/65266e53-a298-427a-842c-9d5300ccd811`,
         },
         rules: [
           { listen: "80/http", redirect: "443/https" },
@@ -74,17 +73,16 @@ export default $config({
     });
 
     const mes = cluster.addService("CarbonMESService", {
-      image:
-        "453096467244.dkr.ecr.us-gov-east-1.amazonaws.com/carbon/mes:latest",
+      image: `${process.env.AWS_ACCOUNT_ID}.dkr.ecr.us-gov-east-1.amazonaws.com/carbon/mes:latest`,
       loadBalancer: {
         domain: {
           name: "mes.itar.carbon.ms",
           dns: false,
-          cert: process.env.ACM_CERTIFICATE_ARN,
+          cert: `arn:aws-us-gov:acm:us-gov-east-1:${process.env.AWS_ACCOUNT_ID}:certificate/30136c8d-2553-494b-a081-2d85f9d6429f`,
         },
         rules: [
           { listen: "80/http", redirect: "443/https" },
-          { listen: "443/https", forward: "3001/http" },
+          { listen: "443/https", forward: "3000/http" },
         ],
       },
       environment: {
@@ -180,9 +178,6 @@ export default $config({
       rules: [rateLimitRule, awsManagedRules],
     });
 
-    return {
-      erpLoadBalancer: erp.loadBalancer.dns,
-      mesLoadBalancer: mes.loadBalancer.dns,
-    };
+    return {};
   },
 });
