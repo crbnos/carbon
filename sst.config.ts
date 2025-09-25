@@ -1,13 +1,5 @@
 /// <reference path="./.sst/platform/config.d.ts" />
 
-/**
- * ## AWS Load Balancer Web Application Firewall (WAF)
- *
- * Enable WAF for an AWS Load Balancer.
- *
- * The WAF is configured to enable a rate limit and enables AWS managed rules.
- *
- */
 export default $config({
   app(input) {
     return {
@@ -26,8 +18,16 @@ export default $config({
     const erp = cluster.addService("CarbonERPService", {
       image:
         "453096467244.dkr.ecr.us-gov-east-1.amazonaws.com/carbon/erp:latest",
-      public: {
-        ports: [{ listen: "80/http", forward: "3000/http" }],
+      loadBalancer: {
+        domain: {
+          name: "itar.carbon.ms",
+          dns: false,
+          cert: process.env.ACM_CERTIFICATE_ARN,
+        },
+        rules: [
+          { listen: "80/http", redirect: "443/https" },
+          { listen: "443/https", forward: "3000/http" },
+        ],
       },
       environment: {
         AUTODESK_BUCKET_NAME: process.env.AUTODESK_BUCKET_NAME,
@@ -39,7 +39,7 @@ export default $config({
         CLOUDFLARE_TURNSTILE_SITE_KEY:
           process.env.CLOUDFLARE_TURNSTILE_SITE_KEY,
         CONTROLLED_ENVIRONMENT: process.env.CONTROLLED_ENVIRONMENT,
-        DOMAIN: process.env.DOMAIN,
+        DOMAIN: "carbon.ms",
         EXCHANGE_RATES_API_KEY: process.env.EXCHANGE_RATES_API_KEY,
         NOVU_APPLICATION_ID: process.env.NOVU_APPLICATION_ID,
         NOVU_SECRET_KEY: process.env.NOVU_SECRET_KEY,
@@ -68,16 +68,24 @@ export default $config({
         TRIGGER_SECRET_KEY: process.env.TRIGGER_SECRET_KEY,
         UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
         UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
-        VERCEL_ENV: process.env.VERCEL_ENV,
-        VERCEL_URL: process.env.VERCEL_URL,
+        VERCEL_ENV: "production",
+        VERCEL_URL: "itar.carbon.ms",
       },
     });
 
     const mes = cluster.addService("CarbonMESService", {
       image:
         "453096467244.dkr.ecr.us-gov-east-1.amazonaws.com/carbon/mes:latest",
-      public: {
-        ports: [{ listen: "80/http", forward: "3001/http" }],
+      loadBalancer: {
+        domain: {
+          name: "mes.itar.carbon.ms",
+          dns: false,
+          cert: process.env.ACM_CERTIFICATE_ARN,
+        },
+        rules: [
+          { listen: "80/http", redirect: "443/https" },
+          { listen: "443/https", forward: "3001/http" },
+        ],
       },
       environment: {
         AUTODESK_BUCKET_NAME: process.env.AUTODESK_BUCKET_NAME,
@@ -89,7 +97,7 @@ export default $config({
         CLOUDFLARE_TURNSTILE_SITE_KEY:
           process.env.CLOUDFLARE_TURNSTILE_SITE_KEY,
         CONTROLLED_ENVIRONMENT: process.env.CONTROLLED_ENVIRONMENT,
-        DOMAIN: process.env.DOMAIN,
+        DOMAIN: "carbon.ms",
         EXCHANGE_RATES_API_KEY: process.env.EXCHANGE_RATES_API_KEY,
         NOVU_APPLICATION_ID: process.env.NOVU_APPLICATION_ID,
         NOVU_SECRET_KEY: process.env.NOVU_SECRET_KEY,
@@ -118,8 +126,8 @@ export default $config({
         TRIGGER_SECRET_KEY: process.env.TRIGGER_SECRET_KEY,
         UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
         UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
-        VERCEL_ENV: process.env.VERCEL_ENV,
-        VERCEL_URL: process.env.VERCEL_URL,
+        VERCEL_ENV: "production",
+        VERCEL_URL: "mes.itar.carbon.ms",
       },
     });
 
@@ -173,8 +181,8 @@ export default $config({
     });
 
     return {
-      erpUrl: erp.url,
-      mesUrl: mes.url,
+      erpLoadBalancer: erp.loadBalancer.dns,
+      mesLoadBalancer: mes.loadBalancer.dns,
     };
   },
 });

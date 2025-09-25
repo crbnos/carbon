@@ -18,10 +18,6 @@ declare module "sst" {
     "CarbonVpc2": {
       "type": "sst.aws.Vpc"
     }
-    "ERPApi": {
-      "type": "sst.aws.ApiGatewayV2"
-      "url": string
-    }
   }
 }
 /// <reference path="sst-env.d.ts" />
