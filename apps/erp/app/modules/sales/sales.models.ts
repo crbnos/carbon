@@ -731,7 +731,7 @@ export const salesRfqLineValidator = z.object({
   customerPartId: z.string().min(1, { message: "Part Number is required" }),
   customerPartRevision: zfd.text(z.string().optional()),
   itemId: zfd.text(z.string().optional()),
-  description: z.string().min(1, { message: "Description is required" }),
+  description: zfd.text(z.string().optional()),
   quantity: z.array(
     zfd.numeric(z.number().min(0.00001, { message: "Quantity is required" }))
   ),

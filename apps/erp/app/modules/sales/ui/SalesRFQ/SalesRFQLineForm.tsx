@@ -299,7 +299,7 @@ const SalesRFQLineForm = ({
                       />
                       <InputControlled
                         name="description"
-                        label="Short Description"
+                        label="Description"
                         value={itemData.description}
                         isReadOnly={!!itemData.itemId}
                       />
