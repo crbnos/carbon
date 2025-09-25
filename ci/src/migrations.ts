@@ -61,6 +61,7 @@ async function migrate(): Promise<void> {
       console.log(`✅ 🔑 Setting up environment for ${workspace.id}`);
 
       let $$ = $({
+        // @ts-ignore
         env: {
           SUPABASE_ACCESS_TOKEN:
             access_token === null ? SUPABASE_ACCESS_TOKEN : access_token,
