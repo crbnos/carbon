@@ -5,7 +5,7 @@ export default $config({
     return {
       name: "carbon",
       home: "aws",
-      region: "us-gov-east-1",
+      region: process.env.AWS_REGION,
       removal: input?.stage === "prod" ? "retain" : "remove",
     };
   },
@@ -21,7 +21,7 @@ export default $config({
         domain: {
           name: "itar.carbon.ms",
           dns: false,
-          cert: `arn:aws-us-gov:acm:us-gov-east-1:${process.env.AWS_ACCOUNT_ID}:certificate/65266e53-a298-427a-842c-9d5300ccd811`,
+          cert: process.env.CERT_ARN_ERP,
         },
         rules: [
           { listen: "80/http", redirect: "443/https" },
@@ -68,7 +68,7 @@ export default $config({
         UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
         UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
         VERCEL_ENV: "production",
-        VERCEL_URL: "itar.carbon.ms",
+        VERCEL_URL: process.env.URL_ERP ?? "itar.carbon.ms",
       },
     });
 
@@ -78,7 +78,7 @@ export default $config({
         domain: {
           name: "mes.itar.carbon.ms",
           dns: false,
-          cert: `arn:aws-us-gov:acm:us-gov-east-1:${process.env.AWS_ACCOUNT_ID}:certificate/30136c8d-2553-494b-a081-2d85f9d6429f`,
+          cert: process.env.CERT_ARN_MES,
         },
         rules: [
           { listen: "80/http", redirect: "443/https" },
@@ -116,7 +116,7 @@ export default $config({
         UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
         UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
         VERCEL_ENV: "production",
-        VERCEL_URL: "mes.itar.carbon.ms",
+        VERCEL_URL: process.env.URL_MES ?? "mes.itar.carbon.ms",
       },
     });
 
