@@ -539,6 +539,7 @@ export async function getOrCreateMaterial(
     args.input.process?.name?.toLowerCase().includes("plasma") ||
     args.input.process?.name?.toLowerCase().includes("jet")
   ) {
+    console.log("Found material with laser, plasma, or jet process");
     const materialInfo = {
       description: args.input.description || "",
       materialName: args.input.material?.name || "",
@@ -566,11 +567,6 @@ export async function getOrCreateMaterial(
     if (!materialPropertiesResult) {
       return null;
     }
-
-    console.log({
-      quantity: materialPropertiesResult.quantity,
-      quantities: args.input.quantities,
-    });
 
     // Use quantity from material properties AI determination, fallback to input quantity
     const quantity = materialPropertiesResult.quantity
@@ -637,7 +633,8 @@ export async function getOrCreateMaterial(
         .eq("readableId", materialResult.data.id);
 
       if (item.error || !item.data?.length) {
-        console.error(`Failed to find item:`, item.error);
+        console.error(`Failed to find item:`);
+
         return null;
       }
 
@@ -816,7 +813,7 @@ async function uploadFileToItem(
     createdBy: string;
   }
 ): Promise<boolean> {
-  const { file, companyId, itemId, createdBy } = args;
+  const { file, companyId, itemId } = args;
 
   if (file.name === "flat.step") return false;
 
@@ -844,75 +841,11 @@ async function uploadFileToItem(
       return false;
     }
 
-    if (createdBy === "system") {
-      return true; // Skip document creation if we don't have a user id
-    }
-    const documentType = getDocumentTypeFromFilename(file.name);
-    const documentData = {
-      name: file.name,
-      path: fileUpload.data.path,
-      size: Math.round(file.size / 1024), // Convert to KB
-      sourceDocument: sourceDocumentType as "Sales Order",
-      sourceDocumentId,
-      companyId,
-      type: documentType,
-      readGroups: [createdBy],
-      writeGroups: [createdBy],
-      createdBy,
-      active: true,
-    };
-
-    console.log(`Document data for ${file.name}:`, {
-      ...documentData,
-      type: documentType,
-    });
-
-    const documentInsert = await carbon
-      .from("document")
-      .insert(documentData)
-      .select("id")
-      .single();
-
-    if (documentInsert.error) {
-      console.error(
-        `Failed to create document record for ${file.name}:`,
-        documentInsert.error
-      );
-      return false;
-    }
-
-    console.log(
-      `Successfully uploaded and created document record for ${file.name}`
-    );
     return true;
   } catch (error) {
     console.error(`Error uploading file ${file.name}:`, error);
     return false;
   }
-}
-
-/**
- * Simple document type detection from filename
- */
-function getDocumentTypeFromFilename(
-  filename: string
-): Database["public"]["Enums"]["documentType"] {
-  const extension = filename.toLowerCase().split(".").pop() || "";
-
-  if (["pdf"].includes(extension)) return "PDF";
-  if (["jpg", "jpeg", "png", "gif", "bmp", "svg"].includes(extension))
-    return "Image";
-  if (["doc", "docx"].includes(extension)) return "Document";
-  if (["xls", "xlsx"].includes(extension)) return "Spreadsheet";
-  if (["ppt", "pptx"].includes(extension)) return "Presentation";
-  if (["txt"].includes(extension)) return "Text";
-  if (["zip", "rar", "7z"].includes(extension)) return "Archive";
-  if (["mp4", "avi", "mov"].includes(extension)) return "Video";
-  if (["mp3", "wav"].includes(extension)) return "Audio";
-  if (["step", "stp", "iges", "igs", "dwg", "dxf"].includes(extension))
-    return "Model";
-
-  return "Other";
 }
 
 /**
@@ -1066,7 +999,10 @@ export async function getCustomerIdAndContactId(
           .single();
 
         if (updatedCustomer.error || !updatedCustomer.data) {
-          console.error(updatedCustomer.error);
+          console.error(
+            "Failed to update customer externalId in Carbon",
+            updatedCustomer.error
+          );
           throw new Error("Failed to update customer externalId in Carbon");
         }
 
@@ -1092,7 +1028,10 @@ export async function getCustomerIdAndContactId(
           .single();
 
         if (newCustomer.error || !newCustomer.data) {
-          console.error(newCustomer.error);
+          console.error(
+            "Failed to create customer in Carbon",
+            newCustomer.error
+          );
           throw new Error("Failed to create customer in Carbon");
         }
 
@@ -1126,9 +1065,7 @@ export async function getCustomerIdAndContactId(
     if (existingPaperlessAccount) {
       // Use the existing account ID
       paperlessPartsAccountId = existingPaperlessAccount.id!;
-      console.info(
-        `🔗 Found existing Paperless Parts account: ${customerName}`
-      );
+      console.log(`🔗 Found existing Paperless Parts account: ${customerName}`);
     } else {
       // Create a new account in Paperless Parts
       const newPaperlessPartsAccount = await paperless.accounts.createAccount({
@@ -1140,7 +1077,7 @@ export async function getCustomerIdAndContactId(
       }
 
       paperlessPartsAccountId = newPaperlessPartsAccount.data.id;
-      console.info("🔰 New Paperless Parts account created");
+      console.log("🔰 New Paperless Parts account created");
     }
 
     // Check if customer already exists in Carbon with this paperless account ID
@@ -1176,12 +1113,15 @@ export async function getCustomerIdAndContactId(
           .single();
 
         if (updatedCustomer.error || !updatedCustomer.data) {
-          console.error(updatedCustomer.error);
+          console.error(
+            "Failed to update customer externalId in Carbon",
+            updatedCustomer.error
+          );
           throw new Error("Failed to update customer externalId in Carbon");
         }
 
         customerId = updatedCustomer.data.id;
-        console.info(
+        console.log(
           "🔗 Updated existing Carbon customer with Paperless Parts ID"
         );
       } else {
@@ -1206,11 +1146,14 @@ export async function getCustomerIdAndContactId(
           .single();
 
         if (newCustomer.error || !newCustomer.data) {
-          console.error(newCustomer.error);
+          console.error(
+            "Failed to create customer in Carbon",
+            newCustomer.error
+          );
           throw new Error("Failed to create customer in Carbon");
         }
 
-        console.info("🔰 New Carbon customer created");
+        console.log("🔰 New Carbon customer created");
         customerId = newCustomer.data.id;
       }
     }
@@ -1262,14 +1205,14 @@ export async function getCustomerIdAndContactId(
       .single();
 
     if (newContact.error || !newContact.data) {
-      console.error(newContact);
+      console.error("Failed to create contact in Carbon", newContact);
       return {
         customerContactId: null,
         customerId,
       };
     }
 
-    console.info("🔰 New Carbon contact created");
+    console.log("🔰 New Carbon contact created");
 
     const newCustomerContact = await carbon
       .from("customerContact")
@@ -1281,14 +1224,14 @@ export async function getCustomerIdAndContactId(
       .single();
 
     if (newCustomerContact.error || !newCustomerContact.data) {
-      console.error(newCustomerContact);
+      console.error("Failed to create customerContact", newCustomerContact);
       return {
         customerContactId: null,
         customerId,
       };
     }
 
-    console.info("🔰 Carbon customerContact created");
+    console.log("🔰 Carbon customerContact created");
 
     customerContactId = newCustomerContact.data.id;
   }
@@ -1390,7 +1333,10 @@ export async function getCustomerLocationIds(
             .single();
 
           if (newAddress.error || !newAddress.data) {
-            console.error(newAddress.error);
+            console.error(
+              "Failed to create billing address in Carbon",
+              newAddress.error
+            );
             throw new Error("Failed to create billing address in Carbon");
           }
 
@@ -1501,7 +1447,10 @@ export async function getCustomerLocationIds(
             .single();
 
           if (newAddress.error || !newAddress.data) {
-            console.error(newAddress.error);
+            console.error(
+              "Failed to create shipping address in Carbon",
+              newAddress.error
+            );
             throw new Error("Failed to create shipping address in Carbon");
           }
 
@@ -1557,7 +1506,7 @@ export async function getEmployeeAndSalesPersonId(
     .eq("companyId", company.id);
 
   if (employees.error) {
-    console.error(employees.error);
+    console.error("Failed to fetch employees", employees.error);
     return {
       salesPersonId: null,
       estimatorId: null,
@@ -1761,6 +1710,10 @@ export async function createPartFromComponent(
     component: z.infer<
       typeof OrderSchema
     >["order_items"][number]["components"][number];
+    componentsIndex?: Map<
+      number,
+      z.infer<typeof OrderSchema>["order_items"][number]["components"][number]
+    >;
   }
 ): Promise<{ itemId: string; partId: string }> {
   const { companyId, createdBy, component } = args;
@@ -1786,6 +1739,7 @@ export async function createPartFromComponent(
         itemId: material.itemId,
         itemType: "Material",
         quantity: material.quantity,
+        methodType: "Pick",
         companyId,
         createdBy,
         unitOfMeasureCode: "EA",
@@ -1844,12 +1798,85 @@ export async function createPartFromComponent(
     }
   }
 
-  // Generate a readable ID for the part
-  const partId =
-    component.part_number || component.part_name || `PP-${component.id}`;
-  const revision = component.revision || "0";
-  const name =
-    component.part_name || component.part_number || `Part ${component.id}`;
+  // If the component has child components (nested BOM), add them as method materials (itemType: "Part").
+  // Recurse so children-of-children also get their own make methods and method materials.
+  if (Array.isArray(component.children) && component.children.length > 0) {
+    const index = args.componentsIndex;
+    for await (const childRef of component.children as Array<{
+      child_id?: number;
+      quantity?: number;
+    }>) {
+      if (!childRef?.child_id || !index) continue;
+      const childComponent = index.get(childRef.child_id);
+      if (!childComponent) continue;
+
+      try {
+        const { itemId: childItemId } = await getOrCreatePart(carbon, {
+          companyId,
+          createdBy,
+          component: childComponent as any,
+          componentsIndex: index,
+        });
+
+        const childIsPurchased =
+          (childComponent as any)?.obtain_method === "purchased";
+        const methodType = childIsPurchased ? "Buy" : "Make";
+
+        let materialMakeMethodId: string | undefined;
+        if (methodType === "Make") {
+          const materialMakeMethod = await carbon
+            .from("makeMethod")
+            .select("id")
+            .eq("itemId", childItemId)
+            .single();
+          materialMakeMethodId = materialMakeMethod.data?.id;
+        }
+
+        materials.push({
+          itemId: childItemId,
+          itemType: "Part",
+          methodType: methodType ?? "Pick",
+          materialMakeMethodId,
+          quantity:
+            childRef.quantity ?? (childComponent as any)?.innate_quantity ?? 1,
+          companyId,
+          createdBy,
+          unitOfMeasureCode: "EA",
+        });
+      } catch (err) {
+        console.error(
+          "Failed to add child component as method material:",
+          childRef,
+          err
+        );
+      }
+    }
+  }
+
+  // Determine purchasing vs make
+  const isPurchased =
+    (component as any).obtain_method === "purchased" ||
+    (component as any).process?.name === "Purchased Components" ||
+    (component as any).process?.external_name === "Purchased Components";
+
+  // Generate a stable readable ID and user-friendly name
+  const partId = String(
+    component.part_number || component.part_name || `PP-${component.id}`
+  ).trim();
+  const revision =
+    component.revision && /[a-zA-Z0-9]/.test(component.revision)
+      ? component.revision
+      : "0";
+  const rawName =
+    component.part_number ||
+    (component.part_name
+      ? component.part_name
+          .replace(/:[^/\\]*$/g, "")
+          .replace(/\.(step|stp|sldprt|iges|igs|dxf|dwg)$/i, "")
+      : undefined) ||
+    component.description ||
+    `Part ${component.id}`;
+  const name = stripSpecialCharacters(String(rawName).trim());
 
   // Check if part already exists by partId (readableId)
   const existingItem = await carbon
@@ -1861,6 +1888,38 @@ export async function createPartFromComponent(
     .maybeSingle();
 
   if (existingItem.data) {
+    // Update itemCost for existing purchased components
+    if (isPurchased && (component as any).purchased_component?.piece_price) {
+      const unitCost = parseFloat(
+        String((component as any).purchased_component.piece_price)
+      );
+
+      if (unitCost > 0) {
+        console.log(
+          `Updating itemCost for existing purchased component ${partId} with unitCost: ${unitCost}`
+        );
+
+        const itemCostUpdate = await carbon
+          .from("itemCost")
+          .update({
+            unitCost,
+          })
+          .eq("itemId", existingItem.data.id)
+          .eq("companyId", companyId)
+          .single();
+
+        if (itemCostUpdate.error) {
+          console.error(
+            `Failed to update itemCost for existing ${partId}:`,
+            itemCostUpdate.error
+          );
+          // Don't throw here, just log the error and continue
+        } else {
+          console.log(`Successfully updated itemCost for existing ${partId}`);
+        }
+      }
+    }
+
     return {
       itemId: existingItem.data.id,
       partId: partId,
@@ -1876,8 +1935,8 @@ export async function createPartFromComponent(
       name,
       description: component.description,
       type: "Part",
-      replenishmentSystem: "Make",
-      defaultMethodType: "Make",
+      replenishmentSystem: isPurchased ? "Buy" : "Make",
+      defaultMethodType: isPurchased ? "Buy" : "Make",
       itemTrackingType: "Inventory",
       unitOfMeasureCode: "EA",
       active: true,
@@ -1896,6 +1955,39 @@ export async function createPartFromComponent(
   }
 
   const itemId = itemInsert.data.id;
+
+  // Update itemCost for purchased components
+  if (isPurchased && (component as any).purchased_component?.piece_price) {
+    const unitCost = parseFloat(
+      String((component as any).purchased_component.piece_price)
+    );
+
+    if (unitCost > 0) {
+      console.log(
+        `Updating itemCost for purchased component ${partId} with unitCost: ${unitCost}`
+      );
+
+      const itemCostUpdate = await carbon
+        .from("itemCost")
+        .update({
+          unitCost,
+        })
+        .eq("itemId", itemId)
+        .eq("companyId", companyId)
+        .select("itemId")
+        .single();
+
+      if (itemCostUpdate.error) {
+        console.error(
+          `Failed to update itemCost for ${partId}:`,
+          itemCostUpdate.error
+        );
+        // Don't throw here, just log the error and continue
+      } else {
+        console.log(`Successfully updated itemCost for ${partId}`);
+      }
+    }
+  }
 
   // Download and upload thumbnail if available
   let thumbnailPath: string | null = null;
@@ -1923,18 +2015,25 @@ export async function createPartFromComponent(
     }
   }
 
-  // Create the part record
-  const [partInsert, makeMethod] = await Promise.all([
-    carbon.from("part").upsert({
-      id: partId,
-      companyId,
-      createdBy,
-      externalId: {
-        paperlessPartsId: component.part_uuid,
-      },
-    }),
-    carbon.from("makeMethod").select("id").eq("itemId", itemId).single(),
-  ]);
+  // Create the part record (always), and only fetch makeMethod for non-purchased items
+  const partInsert = await carbon.from("part").upsert({
+    id: partId,
+    companyId,
+    createdBy,
+    externalId: {
+      paperlessPartsId: component.part_uuid,
+    },
+  });
+  let makeMethod: { data?: { id: string } | null; error?: any } = {
+    data: null,
+  };
+  if (!isPurchased) {
+    makeMethod = await carbon
+      .from("makeMethod")
+      .select("id")
+      .eq("itemId", itemId)
+      .single();
+  }
 
   if (partInsert.error) {
     console.error("Failed to create part:", partInsert.error);
@@ -1997,7 +2096,28 @@ export async function getOrCreatePart(
       description?: string | null;
       thumbnail_url?: string;
       part_url?: string;
+      material_operations?: any[];
+      material?: {
+        display_name?: string;
+        family?: string;
+        material_class?: string;
+        name?: string;
+      };
+      process?: {
+        name?: string;
+      };
+      quantities?: {
+        quantity?: number;
+      }[];
+      shop_operations?: any[];
+      children?: any[];
+      obtain_method?: string;
+      export_controlled?: boolean;
     };
+    componentsIndex?: Map<
+      number,
+      z.infer<typeof OrderSchema>["order_items"][number]["components"][number]
+    >;
   }
 ): Promise<{ itemId: string; partId: string }> {
   const { companyId, component } = args;
@@ -2013,6 +2133,46 @@ export async function getOrCreatePart(
   });
 
   if (existingPart) {
+    // Update itemCost for existing purchased components found by external ID
+    const isPurchased =
+      (component as any).obtain_method === "purchased" ||
+      (component as any).process?.name === "Purchased Components" ||
+      (component as any).process?.external_name === "Purchased Components";
+
+    if (isPurchased && (component as any).purchased_component?.piece_price) {
+      const unitCost = parseFloat(
+        String((component as any).purchased_component.piece_price)
+      );
+
+      if (unitCost > 0) {
+        console.log(
+          `Updating itemCost for existing purchased component (external ID) ${existingPart.partId} with unitCost: ${unitCost}`
+        );
+
+        const itemCostUpdate = await carbon
+          .from("itemCost")
+          .update({
+            unitCost,
+          })
+          .eq("itemId", existingPart.itemId)
+          .eq("companyId", companyId)
+          .select("itemId")
+          .single();
+
+        if (itemCostUpdate.error) {
+          console.error(
+            `Failed to update itemCost for existing (external ID) ${existingPart.partId}:`,
+            itemCostUpdate.error
+          );
+          // Don't throw here, just log the error and continue
+        } else {
+          console.log(
+            `Successfully updated itemCost for existing (external ID) ${existingPart.partId}`
+          );
+        }
+      }
+    }
+
     return existingPart;
   }
 
@@ -2112,13 +2272,29 @@ export async function insertOrderLines(
       continue;
     }
 
-    // Process each component in the order item
-    for (const component of orderItem.components) {
+    // Build an index of all components by id for quick child lookup
+    const componentsIndex = new Map<
+      number,
+      (typeof orderItem.components)[number]
+    >();
+    for (const c of orderItem.components) {
+      if (typeof c.id === "number") componentsIndex.set(c.id, c);
+    }
+
+    // Only create a sales line for root components (is_root_component === true)
+    // All child components should be added as methodMaterials to their parents during part creation.
+    const rootComponents = orderItem.components.filter(
+      (c: any) => c.is_root_component === true || !c.parent_ids?.length
+    );
+
+    // Process only root components for sales order lines
+    for (const component of rootComponents) {
       try {
         const { itemId } = await getOrCreatePart(carbon, {
           companyId,
           createdBy,
           component,
+          componentsIndex,
         });
 
         // console.log("component", component);
