@@ -225,7 +225,10 @@ function SalesInvoiceLineItem({
                 </DropdownMenuItem>
                 {/* @ts-expect-error */}
                 {methodItemType.includes(line.invoiceLineType ?? "") && (
-                  <DropdownMenuItem asChild>
+                  <DropdownMenuItem
+                    asChild
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <Link
                       to={getLinkToItemDetails(
                         line.invoiceLineType as MethodItemType,

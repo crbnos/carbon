@@ -336,7 +336,10 @@ function SalesOrderLineItem({
                 </DropdownMenuItem>
                 {/* @ts-expect-error */}
                 {methodItemType.includes(line?.salesOrderLineType ?? "") && (
-                  <DropdownMenuItem asChild>
+                  <DropdownMenuItem
+                    asChild
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <Link
                       to={getLinkToItemDetails(
                         line.salesOrderLineType as MethodItemType,

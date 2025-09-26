@@ -442,7 +442,7 @@ function QuoteLineItem({
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem asChild>
+                <DropdownMenuItem asChild onClick={(e) => e.stopPropagation()}>
                   <Link
                     to={getLinkToItemDetails(
                       line.itemType as MethodItemType,

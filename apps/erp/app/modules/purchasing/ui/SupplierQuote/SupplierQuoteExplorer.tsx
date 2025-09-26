@@ -230,7 +230,7 @@ function SupplierQuoteLineItem({
                   Delete Line
                 </DropdownMenuItem>
 
-                <DropdownMenuItem asChild>
+                <DropdownMenuItem asChild onClick={(e) => e.stopPropagation()}>
                   <Link
                     to={getLinkToItemDetails(
                       line.itemType as MethodItemType,
