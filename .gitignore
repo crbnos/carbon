@@ -15,7 +15,7 @@ public/dist
 vite.config.ts.timestamp*
 
 scripts/migrations/data
-scripts/**
+scripts/paperless-test.ts
 
 # local env files
 .env
