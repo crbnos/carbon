@@ -36,7 +36,7 @@ import {
   LuImage,
   LuInfo,
 } from "react-icons/lu";
-import { CustomerAvatar, Hyperlink } from "~/components";
+import { CustomerAvatar, Hyperlink, MethodIcon } from "~/components";
 import { usePercentFormatter, useRouteData } from "~/hooks";
 import type { Job } from "~/modules/production/types";
 import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
@@ -227,6 +227,7 @@ const SalesOrderSummary = ({
 function LineItems({
   currencyCode,
   locale,
+  formatter,
   lines,
   salesOrder,
 }: {
@@ -308,51 +309,87 @@ function LineItems({
                   className="flex flex-col cursor-pointer w-full"
                   onClick={() => toggleOpen(line.id!)}
                 >
-                  <div className="flex items-center gap-x-4 justify-between flex-grow min-w-0">
-                    <HStack spacing={2} className="min-w-0 flex-shrink">
-                      <Heading className="truncate">
-                        {line.itemReadableId}
-                      </Heading>
-                      <Button
-                        asChild
-                        variant="link"
-                        size="sm"
-                        className="text-muted-foreground flex-shrink-0"
+                  <div className="flex items-center justify-between w-full">
+                    <VStack
+                      spacing={0}
+                      className="flex-shrink-0 min-w-0 w-auto"
+                    >
+                      <HStack
+                        spacing={2}
+                        className="flex min-w-0 flex-shrink-0"
                       >
-                        <Link to={path.to.salesOrderLine(orderId, line.id!)}>
-                          Edit
-                        </Link>
-                      </Button>
-                    </HStack>
-                    <HStack spacing={4} className="flex-shrink-0 ml-4">
-                      <MotionNumber
-                        className="font-bold text-xl whitespace-nowrap"
-                        value={
-                          ((line?.convertedUnitPrice ?? 0) *
-                            (line?.saleQuantity ?? 0) +
-                            (line?.convertedAddOnCost ?? 0) +
-                            (line?.convertedShippingCost ?? 0)) *
-                          (1 + (line?.taxPercent ?? 0))
-                        }
-                        format={{
-                          style: "currency",
-                          currency: currencyCode,
-                        }}
-                        locales={locale}
-                      />
-                      <motion.div
-                        animate={{
-                          rotate: openItems.includes(line.id) ? 90 : 0,
-                        }}
-                        transition={{ duration: 0.3 }}
-                      >
-                        <LuChevronRight size={24} />
-                      </motion.div>
-                    </HStack>
+                        <Heading className="truncate">
+                          {line.itemReadableId}
+                        </Heading>
+                        <Button
+                          asChild
+                          variant="link"
+                          size="sm"
+                          className="text-muted-foreground flex-shrink-0"
+                        >
+                          <Link to={path.to.salesOrderLine(orderId, line.id!)}>
+                            Edit
+                          </Link>
+                        </Button>
+                      </HStack>
+                      <span className="text-muted-foreground text-base truncate">
+                        {line.description}
+                      </span>
+                    </VStack>
+                    <VStack
+                      spacing={2}
+                      className="flex-shrink-0 items-end w-auto"
+                    >
+                      <HStack spacing={4}>
+                        <MotionNumber
+                          className="font-bold text-xl whitespace-nowrap"
+                          value={
+                            ((line?.convertedUnitPrice ?? 0) *
+                              (line?.saleQuantity ?? 0) +
+                              (line?.convertedAddOnCost ?? 0) +
+                              (line?.convertedShippingCost ?? 0)) *
+                            (1 + (line?.taxPercent ?? 0))
+                          }
+                          format={{
+                            style: "currency",
+                            currency: currencyCode,
+                          }}
+                          locales={locale}
+                        />
+                        <motion.div
+                          animate={{
+                            rotate: openItems.includes(line.id) ? 90 : 0,
+                          }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <LuChevronRight size={24} />
+                        </motion.div>
+                      </HStack>
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant="outline"
+                          className="flex items-center gap-2"
+                        >
+                          {line.saleQuantity}
+                          <MethodIcon type={line.methodType ?? "Pick"} />
+                        </Badge>
+                        <Badge variant="green">
+                          {formatter.format(
+                            (line.unitPrice ?? 0) +
+                              (line.addOnCost ?? 0) +
+                              (line.shippingCost ?? 0)
+                          )}{" "}
+                          {line.unitOfMeasureCode}
+                        </Badge>
+                        {(line.taxPercent ?? 0) > 0 ? (
+                          <Badge variant="red">
+                            {percentFormatter.format(line.taxPercent ?? 0)} Tax
+                          </Badge>
+                        ) : null}
+                      </div>
+                    </VStack>
                   </div>
-                  <span className="text-muted-foreground text-base truncate">
-                    {line.description}
-                  </span>
+
                   {isMade && (
                     <div className="mt-2 flex flex-row items-end gap-x-2">
                       <Badge variant={jobVariant}>{jobLabel}</Badge>

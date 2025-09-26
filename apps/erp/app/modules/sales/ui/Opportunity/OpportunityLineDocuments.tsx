@@ -478,7 +478,7 @@ const OpportunityLineDocuments = ({
                       : "--"}
                   </Td>
                   <Td>
-                    <Enumerable value="Opportunity" />
+                    <Enumerable value="Model" />
                   </Td>
                   <Td>
                     <div className="flex justify-end w-full">
