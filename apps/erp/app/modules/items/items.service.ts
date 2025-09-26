@@ -683,21 +683,27 @@ export async function getMaterialUsedIn(
       .from("jobMaterial")
       .select("id, methodType, ...job(documentReadableId:jobId, documentId:id)")
       .eq("itemId", itemId)
-      .eq("companyId", companyId),
+      .eq("companyId", companyId)
+      .limit(100)
+      .order("createdAt", { ascending: false }),
     client
       .from("methodMaterial")
       .select(
         "id, methodType, ...makeMethod!makeMethodId(documentId:id, version, ...item(documentReadableId:readableIdWithRevision, documentParentId:id, itemType:type))"
       )
       .eq("itemId", itemId)
-      .eq("companyId", companyId),
+      .eq("companyId", companyId)
+      .limit(100)
+      .order("createdAt", { ascending: false }),
     client
       .from("purchaseOrderLine")
       .select(
         "id, ...purchaseOrder(documentReadableId:purchaseOrderId, documentId:id)"
       )
       .eq("itemId", itemId)
-      .eq("companyId", companyId),
+      .eq("companyId", companyId)
+      .limit(100)
+      .order("createdAt", { ascending: false }),
     client
       .from("receiptLine")
       .select("id, ...receipt(documentReadableId:receiptId, documentId:id)")
@@ -709,26 +715,34 @@ export async function getMaterialUsedIn(
         "id, methodType, documentParentId:quoteId, documentId:quoteLineId, ...quoteLine(...item(documentReadableId:readableIdWithRevision))"
       )
       .eq("itemId", itemId)
-      .eq("companyId", companyId),
+      .eq("companyId", companyId)
+      .limit(100)
+      .order("createdAt", { ascending: false }),
     client
       .from("salesOrderLine")
       .select(
         "id, methodType, ...salesOrder(documentReadableId:salesOrderId, documentId:id)"
       )
       .eq("itemId", itemId)
-      .eq("companyId", companyId),
+      .eq("companyId", companyId)
+      .limit(100)
+      .order("createdAt", { ascending: false }),
     client
       .from("shipmentLine")
       .select("id, ...shipment(documentReadableId:shipmentId, documentId:id)")
       .eq("itemId", itemId)
-      .eq("companyId", companyId),
+      .eq("companyId", companyId)
+      .limit(100)
+      .order("createdAt", { ascending: false }),
     client
       .from("supplierQuoteLine")
       .select(
         "id, ...supplierQuote(documentReadableId:supplierQuoteId, documentId:id)"
       )
       .eq("itemId", itemId)
-      .eq("companyId", companyId),
+      .eq("companyId", companyId)
+      .limit(100)
+      .order("createdAt", { ascending: false }),
   ]);
 
   return {
@@ -1366,64 +1380,84 @@ export async function getPartUsedIn(
       .from("jobMaterial")
       .select("id, methodType, ...job(documentReadableId:jobId, documentId:id)")
       .eq("itemId", itemId)
-      .eq("companyId", companyId),
+      .eq("companyId", companyId)
+      .limit(100)
+      .order("createdAt", { ascending: false }),
     client
       .from("job")
       .select("id, documentReadableId:jobId")
       .eq("itemId", itemId)
-      .eq("companyId", companyId),
+      .eq("companyId", companyId)
+      .limit(100)
+      .order("createdAt", { ascending: false }),
     client
       .from("methodMaterial")
       .select(
         "id, methodType, ...makeMethod!makeMethodId(documentId:id, version, ...item(documentReadableId:readableIdWithRevision, documentParentId:id, itemType:type))"
       )
       .eq("itemId", itemId)
-      .eq("companyId", companyId),
+      .eq("companyId", companyId)
+      .limit(100)
+      .order("createdAt", { ascending: false }),
     client
       .from("purchaseOrderLine")
       .select(
         "id, ...purchaseOrder(documentReadableId:purchaseOrderId, documentId:id)"
       )
       .eq("itemId", itemId)
-      .eq("companyId", companyId),
+      .eq("companyId", companyId)
+      .limit(100)
+      .order("createdAt", { ascending: false }),
     client
       .from("receiptLine")
       .select("id, ...receipt(documentReadableId:receiptId, documentId:id)")
       .eq("itemId", itemId)
-      .eq("companyId", companyId),
+      .eq("companyId", companyId)
+      .limit(100)
+      .order("createdAt", { ascending: false }),
     client
       .from("quoteLine")
       .select(
         "id, methodType, ...quote(documentReadableId:quoteId, documentId:id)"
       )
       .eq("itemId", itemId)
-      .eq("companyId", companyId),
+      .eq("companyId", companyId)
+      .limit(100)
+      .order("createdAt", { ascending: false }),
     client
       .from("quoteMaterial")
       .select(
         "id, methodType, documentParentId:quoteId, documentId:quoteLineId, ...quoteLine(...item(documentReadableId:readableIdWithRevision))"
       )
       .eq("itemId", itemId)
-      .eq("companyId", companyId),
+      .eq("companyId", companyId)
+      .limit(100)
+      .order("createdAt", { ascending: false }),
     client
       .from("salesOrderLine")
       .select(
         "id, methodType, ...salesOrder(documentReadableId:salesOrderId, documentId:id)"
       )
       .eq("itemId", itemId)
-      .eq("companyId", companyId),
+      .eq("companyId", companyId)
+      .limit(100)
+      .order("createdAt", { ascending: false }),
     client
       .from("shipmentLine")
       .select("id, ...shipment(documentReadableId:shipmentId, documentId:id)")
       .eq("itemId", itemId)
-      .eq("companyId", companyId),
+      .eq("companyId", companyId)
+      .limit(100)
+      .order("createdAt", { ascending: false }),
     client
       .from("supplierQuoteLine")
       .select(
         "id, ...supplierQuote(documentReadableId:supplierQuoteId, documentId:id)"
       )
       .eq("itemId", itemId)
-      .eq("companyId", companyId),
+      .eq("companyId", companyId)
+      .limit(100)
+      .order("createdAt", { ascending: false }),
   ]);
 
   return {
