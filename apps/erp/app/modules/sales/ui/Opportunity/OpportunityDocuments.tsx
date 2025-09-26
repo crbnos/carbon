@@ -197,9 +197,11 @@ const DraggableCell = ({
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: attachment.id,
     data: {
-      ...attachment,
-      size: attachment.metadata?.size,
+      id: attachment.id,
+      name: attachment.name,
+      size: attachment.metadata?.size || 0,
       path: getPath(attachment),
+      type: "opportunityDocument",
     },
   });
 

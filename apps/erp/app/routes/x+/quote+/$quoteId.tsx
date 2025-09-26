@@ -2,8 +2,11 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
-import { Outlet, useLoaderData, useParams } from "@remix-run/react";
+import type { DragEndEvent } from "@dnd-kit/core";
+import { DndContext } from "@dnd-kit/core";
+import { Outlet, useLoaderData, useParams, useSubmit } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
+import type { FileObject } from "@supabase/storage-js";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
@@ -26,6 +29,7 @@ import {
   QuoteHeader,
   QuoteProperties,
 } from "~/modules/sales/ui/Quotes";
+import { useOptimisticDocumentDrag } from "~/modules/sales/ui/Quotes/QuoteExplorer";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -143,27 +147,71 @@ export default function QuoteRoute() {
   const { quoteId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
   const { methods } = useLoaderData<typeof loader>();
+  const submit = useSubmit();
+  const pendingItems = useOptimisticDocumentDrag();
+
+  const handleDrop = (
+    document: FileObject & { path: string },
+    targetId: string
+  ) => {
+    if (
+      pendingItems.find((item: any) => item.itemId === `pending-${document.id}`)
+    )
+      return;
+
+    const formData = new FormData();
+    const payload = {
+      id: document.id,
+      name: document.name,
+      size: document.metadata?.size || 0,
+      path: document.path,
+      lineId: targetId.startsWith("quote-line-")
+        ? targetId.replace("quote-line-", "")
+        : undefined,
+    };
+
+    formData.append("payload", JSON.stringify(payload));
+
+    submit(formData, {
+      method: "post",
+      action: path.to.quoteDrag(quoteId),
+      navigate: false,
+      fetcherKey: `quote-drag:${document.name}`,
+    });
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { over, active } = event;
+    if (over && active.data.current?.type === "opportunityDocument") {
+      handleDrop(
+        active.data.current as unknown as FileObject & { path: string },
+        over.id as string
+      );
+    }
+  };
 
   return (
-    <PanelProvider key={quoteId}>
-      <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full ">
-        <QuoteHeader />
-        <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
-          <div className="flex flex-grow overflow-hidden">
-            <ResizablePanels
-              explorer={<QuoteExplorer methods={methods} />}
-              content={
-                <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
-                  <VStack spacing={2} className="p-2">
-                    <Outlet />
-                  </VStack>
-                </div>
-              }
-              properties={<QuoteProperties />}
-            />
+    <DndContext onDragEnd={handleDragEnd}>
+      <PanelProvider key={quoteId}>
+        <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full ">
+          <QuoteHeader />
+          <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
+            <div className="flex flex-grow overflow-hidden">
+              <ResizablePanels
+                explorer={<QuoteExplorer methods={methods} />}
+                content={
+                  <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                    <VStack spacing={2} className="p-2">
+                      <Outlet />
+                    </VStack>
+                  </div>
+                }
+                properties={<QuoteProperties />}
+              />
+            </div>
           </div>
         </div>
-      </div>
-    </PanelProvider>
+      </PanelProvider>
+    </DndContext>
   );
 }

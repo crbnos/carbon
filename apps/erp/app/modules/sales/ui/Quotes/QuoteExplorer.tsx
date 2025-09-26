@@ -14,6 +14,7 @@ import {
   HStack,
   IconButton,
   Kbd,
+  Spinner,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -23,7 +24,8 @@ import {
   VStack,
 } from "@carbon/react";
 import { prettifyKeyboardShortcut } from "@carbon/utils";
-import { Link, useNavigate, useParams } from "@remix-run/react";
+import { useDroppable } from "@dnd-kit/core";
+import { Link, useFetchers, useNavigate, useParams } from "@remix-run/react";
 import { useMemo, useRef, useState } from "react";
 import {
   LuBraces,
@@ -117,23 +119,60 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
     },
   });
 
+  const { setNodeRef: setExplorerRef, isOver: isOverExplorer } = useDroppable({
+    id: "quote-explorer",
+  });
+
+  const optimisticDrags = useOptimisticDocumentDrag();
+
+  const linesByItemId = new Map<string, QuotationLine | OptimisticQuoteLine>(
+    quoteData?.lines?.map((line) => [line.itemId!, line]) ?? []
+  );
+
+  // Merge pending items with existing items
+  for (let pendingItem of optimisticDrags) {
+    let existingItem = linesByItemId.get(pendingItem.itemId!);
+    let merged = existingItem
+      ? { ...existingItem, ...pendingItem }
+      : { ...pendingItem, quoteId };
+    linesByItemId.set(pendingItem.itemId!, merged);
+  }
+
+  const linesToRender = Array.from(linesByItemId.values()).sort((a, b) =>
+    (a.itemReadableId ?? "").localeCompare(b.itemReadableId ?? "")
+  );
+
   return (
-    <>
+    <div
+      ref={setExplorerRef}
+      data-quote-explorer
+      className={cn(
+        "transition-colors duration-200",
+        isOverExplorer && "bg-primary/10 border-2 border-dashed border-primary"
+      )}
+    >
       <VStack className="w-full h-[calc(100dvh-99px)] justify-between">
         <VStack
           className="flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
           spacing={0}
         >
-          {quoteData?.lines && quoteData?.lines?.length > 0 ? (
-            quoteData?.lines.map((line) => (
-              <QuoteLineItem
-                key={line.id}
-                isDisabled={isDisabled}
-                line={line}
-                onDelete={onDeleteLine}
-                methods={methods}
-              />
-            ))
+          {linesToRender.length > 0 ? (
+            linesToRender.map((line) =>
+              !isQuoteLine(line) ? (
+                <OptimisticQuoteLineItem
+                  key={line.itemId}
+                  line={line as OptimisticQuoteLine}
+                />
+              ) : (
+                <DroppableQuoteLineItem
+                  key={line.id}
+                  isDisabled={isDisabled}
+                  line={line as QuotationLine}
+                  onDelete={onDeleteLine}
+                  methods={methods}
+                />
+              )
+            )
           ) : (
             <Empty>
               {permissions.can("update", "sales") && (
@@ -182,7 +221,115 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
       {deleteLineDisclosure.isOpen && (
         <DeleteQuoteLine line={deleteLine!} onCancel={onDeleteCancel} />
       )}
-    </>
+    </div>
+  );
+}
+
+function isQuoteLine(
+  line: QuotationLine | OptimisticQuoteLine
+): line is QuotationLine {
+  return "id" in line && "status" in line && "methodType" in line;
+}
+
+type OptimisticQuoteLine = {
+  itemId?: string;
+  itemReadableId?: string;
+  customerPartId?: string;
+  customerPartRevision?: string;
+};
+
+function OptimisticQuoteLineItem({ line }: { line: OptimisticQuoteLine }) {
+  return (
+    <VStack spacing={0} className="border-b">
+      <HStack className="w-full p-2 items-center justify-between hover:bg-accent/30 cursor-pointer">
+        <HStack spacing={2} className="flex-grow min-w-0 pr-10">
+          <div className="w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-2 flex items-center justify-center">
+            <Spinner className="w-6 h-6 text-muted-foreground" />
+          </div>
+          <VStack spacing={0} className="min-w-0">
+            <span className="font-semibold line-clamp-1">
+              {line.itemReadableId || line.customerPartId}
+            </span>
+            <span className="font-medium text-muted-foreground text-xs line-clamp-1">
+              Creating part...
+            </span>
+          </VStack>
+        </HStack>
+        <div className="absolute right-2 opacity-50">
+          <HStack spacing={1}>
+            <div className="w-8 h-8 bg-muted/50 rounded animate-pulse" />
+          </HStack>
+        </div>
+      </HStack>
+    </VStack>
+  );
+}
+
+export function useOptimisticDocumentDrag() {
+  type PendingItem = ReturnType<typeof useFetchers>[number] & {
+    formData: FormData;
+  };
+  const { quoteId } = useParams();
+  return useFetchers()
+    .filter((fetcher): fetcher is PendingItem => {
+      return fetcher.formAction === path.to.quoteDrag(quoteId!);
+    })
+    .reduce<OptimisticQuoteLine[]>((acc, fetcher) => {
+      const payload = fetcher?.formData?.get("payload");
+      if (payload) {
+        try {
+          const parsedPayload = JSON.parse(payload as string);
+          const fileName = parsedPayload.name?.replace(/\.[^/.]+$/, "") || "";
+          return [
+            ...acc,
+            {
+              itemReadableId: fileName,
+              customerPartId: fileName,
+              customerPartRevision: "",
+              itemId: `pending-${parsedPayload.id}`,
+            },
+          ];
+        } catch {
+          // nothing
+        }
+      }
+      return acc;
+    }, []);
+}
+
+type DroppableQuoteLineItemProps = {
+  line: QuotationLine;
+  isDisabled: boolean;
+  onDelete: (line: QuotationLine) => void;
+  methods: Tree<QuoteMethod>[];
+};
+
+function DroppableQuoteLineItem({
+  line,
+  isDisabled,
+  onDelete,
+  methods,
+}: DroppableQuoteLineItemProps) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `quote-line-${line.id}`,
+    data: { lineId: line.id },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "transition-colors duration-200 w-full",
+        isOver && "bg-primary/20 border-2 border-dashed border-primary"
+      )}
+    >
+      <QuoteLineItem
+        line={line}
+        isDisabled={isDisabled}
+        onDelete={onDelete}
+        methods={methods}
+      />
+    </div>
   );
 }
 
