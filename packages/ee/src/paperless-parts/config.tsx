@@ -31,12 +31,30 @@ export const PaperlessParts: IntegrationConfig = {
       required: true,
       value: "",
     },
+    {
+      name: "methodType",
+      label: "Material Method Type",
+      type: "options",
+      listOptions: ["Buy", "Pick"],
+      required: false,
+      value: "Pick",
+    },
+    {
+      name: "trackingType",
+      label: "Material Tracking Type",
+      type: "options",
+      listOptions: ["Inventory", "Non-Inventory", "Batch"],
+      required: false,
+      value: "Inventory",
+    },
   ],
   schema: z.object({
     apiKey: z.string().min(1, { message: "API Key is required" }),
     secretKey: z
       .string()
       .min(1, { message: "Webhook Signing Secret is required" }),
+    methodType: z.enum(["Buy", "Pick"]),
+    trackingType: z.enum(["Inventory", "Non-Inventory", "Batch"]),
   }),
 };
 

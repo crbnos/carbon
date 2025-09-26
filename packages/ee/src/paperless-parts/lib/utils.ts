@@ -528,6 +528,8 @@ export async function getOrCreateMaterial(
     input: PaperlessPartsMaterialInput;
     createdBy: string;
     companyId: string;
+    defaultMethodType: "Buy" | "Pick";
+    defaultTrackingType: "Inventory" | "Non-Inventory" | "Batch";
   }
 ): Promise<{
   itemId: string;
@@ -668,8 +670,8 @@ export async function getOrCreateMaterial(
           name: description,
           type: "Material",
           replenishmentSystem: "Buy",
-          defaultMethodType: "Buy",
-          itemTrackingType: "Inventory",
+          defaultMethodType: args.defaultMethodType,
+          itemTrackingType: args.defaultTrackingType,
           unitOfMeasureCode: "EA",
           active: true,
           companyId: args.companyId,
@@ -1714,9 +1716,17 @@ export async function createPartFromComponent(
       number,
       z.infer<typeof OrderSchema>["order_items"][number]["components"][number]
     >;
+    defaultMethodType: "Buy" | "Pick";
+    defaultTrackingType: "Inventory" | "Non-Inventory" | "Batch";
   }
 ): Promise<{ itemId: string; partId: string }> {
-  const { companyId, createdBy, component } = args;
+  const {
+    companyId,
+    createdBy,
+    component,
+    defaultMethodType,
+    defaultTrackingType,
+  } = args;
 
   const operations: Omit<
     Database["public"]["Tables"]["methodOperation"]["Insert"],
@@ -1732,6 +1742,8 @@ export async function createPartFromComponent(
       companyId,
       createdBy,
       input: component,
+      defaultMethodType,
+      defaultTrackingType,
     });
 
     if (material) {
@@ -1739,7 +1751,7 @@ export async function createPartFromComponent(
         itemId: material.itemId,
         itemType: "Material",
         quantity: material.quantity,
-        methodType: "Pick",
+        methodType: defaultMethodType,
         companyId,
         createdBy,
         unitOfMeasureCode: "EA",
@@ -1816,6 +1828,8 @@ export async function createPartFromComponent(
           createdBy,
           component: childComponent as any,
           componentsIndex: index,
+          defaultMethodType,
+          defaultTrackingType,
         });
 
         const childIsPurchased =
@@ -2118,9 +2132,11 @@ export async function getOrCreatePart(
       number,
       z.infer<typeof OrderSchema>["order_items"][number]["components"][number]
     >;
+    defaultMethodType: "Buy" | "Pick";
+    defaultTrackingType: "Inventory" | "Non-Inventory" | "Batch";
   }
 ): Promise<{ itemId: string; partId: string }> {
-  const { companyId, component } = args;
+  const { companyId, component, defaultMethodType, defaultTrackingType } = args;
 
   if (!component.part_uuid) {
     throw new Error("Component part_uuid is required");
@@ -2233,9 +2249,19 @@ export async function insertOrderLines(
     companyId: string;
     createdBy: string;
     orderItems: z.infer<typeof OrderSchema>["order_items"];
+    defaultMethodType: "Buy" | "Pick";
+    defaultTrackingType: "Inventory" | "Non-Inventory" | "Batch";
   }
 ): Promise<void> {
-  const { salesOrderId, locationId, companyId, createdBy, orderItems } = args;
+  const {
+    salesOrderId,
+    locationId,
+    companyId,
+    createdBy,
+    orderItems,
+    defaultMethodType,
+    defaultTrackingType,
+  } = args;
 
   if (!orderItems?.length) {
     return;
@@ -2295,6 +2321,8 @@ export async function insertOrderLines(
           createdBy,
           component,
           componentsIndex,
+          defaultMethodType,
+          defaultTrackingType,
         });
 
         // console.log("component", component);

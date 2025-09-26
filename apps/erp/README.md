@@ -8,10 +8,6 @@ Application for managing a manufacturing business.
 
 Reusable react components that are specific to this project (and remix). Shared components should live in `packages/react` if they don't rely on some application-specific library. For example, the `Table` relies on some remix internals, so it lives in `app/components`, but the `Date` component is framework agnostic, so it lives in `packages/react`.
 
-### `app/trigger`
-
-Where background tasks are defined.
-
 ### `app/modules`
 
 Where services, ui and form validators are defined for each module.

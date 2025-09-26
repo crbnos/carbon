@@ -103,6 +103,11 @@ const paperlessPartsSchema = z.object({
   payload: payloadSchema,
 });
 
+const integrationSchema = z.object({
+  methodType: z.enum(["Buy", "Pick"]).optional(),
+  trackingType: z.enum(["Inventory", "Non-Inventory", "Batch"]).optional(),
+});
+
 export const paperlessPartsTask = task({
   id: "paperless-parts",
   retry: {
@@ -120,14 +125,32 @@ export const paperlessPartsTask = task({
     const carbon = getCarbonServiceRole();
     const paperless = await getPaperlessParts(payload.apiKey);
 
-    const company = await carbon
-      .from("company")
-      .select("*")
-      .eq("id", payload.companyId)
-      .single();
+    const [company, integration] = await Promise.all([
+      carbon.from("company").select("*").eq("id", payload.companyId).single(),
+      carbon
+        .from("companyIntegration")
+        .select("*")
+        .eq("companyId", payload.companyId)
+        .eq("id", "paperless-parts")
+        .single(),
+    ]);
 
     if (company.error || !company.data) {
       throw new Error("Failed to fetch company from Carbon");
+    }
+
+    if (integration.error || !integration.data) {
+      throw new Error("Failed to fetch integration from Carbon");
+    }
+
+    const integrationData = integrationSchema.safeParse(
+      integration.data.metadata
+    );
+    let methodType: "Buy" | "Pick" = "Pick";
+    let trackingType: "Inventory" | "Non-Inventory" | "Batch" = "Inventory";
+    if (integrationData.success) {
+      methodType = integrationData.data.methodType;
+      trackingType = integrationData.data.trackingType;
     }
 
     switch (payload.payload.type) {
@@ -599,12 +622,14 @@ export const paperlessPartsTask = task({
         // Insert order lines after successful sales order creation
         try {
           await insertOrderLines(carbon, {
-            salesOrderId,
+            integration: salesOrderId,
             opportunityId: orderOpportunity.data?.id,
             locationId: orderLocationId!,
             companyId: payload.companyId,
             createdBy: orderCreatedBy,
             orderItems: orderData.order_items || [],
+            defaultMethodType: methodType,
+            defaultTrackingType: trackingType,
           });
           console.log("✅ Order lines successfully created");
         } catch (error) {

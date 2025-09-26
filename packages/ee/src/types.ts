@@ -13,7 +13,8 @@ export type IntegrationConfig = {
   settings: {
     name: string;
     label: string;
-    type: "text" | "switch" | "processes";
+    type: "text" | "switch" | "processes" | "options";
+    listOptions?: string[];
     required: boolean;
     value: unknown;
   }[];

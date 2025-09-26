@@ -13,9 +13,9 @@ import {
   insertOrderLines,
 } from "../packages/ee/src/paperless-parts/lib/index";
 import { OrderSchema } from "../packages/ee/src/paperless-parts/lib/schemas";
-const orderNumber = 695;
-const apiKey = "**************************";
-const companyId = "XnwmVKtf9NGwjkco3NoSTu";
+const orderNumber = 1387;
+const apiKey = "faaa6a989c4daddf74ec88134400404449a7c105";
+const companyId = "GuPcNVRbkDYKqjFHsV1LNa";
 
 dotenv.config();
 
@@ -213,6 +213,8 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
         companyId,
         createdBy,
         orderItems: orderData.order_items || [],
+        defaultMethodType: "Buy",
+        defaultTrackingType: "Batch",
       });
       console.log("✅ Order and order lines successfully created");
     } catch (error) {

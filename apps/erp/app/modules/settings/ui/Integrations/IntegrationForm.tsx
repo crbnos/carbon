@@ -1,5 +1,5 @@
 import { integrations as availableIntegrations } from "@carbon/ee";
-import { Boolean, Input, Submit, ValidatedForm } from "@carbon/form";
+import { Boolean, Input, Select, Submit, ValidatedForm } from "@carbon/form";
 import {
   Badge,
   Button,
@@ -17,6 +17,7 @@ import {
 import { SUPPORT_EMAIL } from "@carbon/utils";
 import { useParams } from "@remix-run/react";
 import { Processes } from "~/components/Form";
+import { MethodIcon, TrackingTypeIcon } from "~/components/Icons";
 import { usePermissions, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 
@@ -126,6 +127,38 @@ export function IntegrationForm({
                     case "processes":
                       return (
                         <Processes name={setting.name} label={setting.label} />
+                      );
+                    case "options":
+                      return (
+                        <Select
+                          key={setting.name}
+                          name={setting.name}
+                          label={setting.label}
+                          options={
+                            setting.listOptions?.map((option) => {
+                              let icon: JSX.Element | null = null;
+                              if (setting.name === "methodType") {
+                                // @ts-ignore
+                                icon = <MethodIcon type={option} />;
+                              } else if (setting.name === "trackingType") {
+                                // @ts-ignore
+                                icon = <TrackingTypeIcon type={option} />;
+                              }
+
+                              return {
+                                label: (
+                                  <Badge
+                                    variant="secondary"
+                                    className="flex items-center gap-2"
+                                  >
+                                    {icon ? icon : null} {option}
+                                  </Badge>
+                                ),
+                                value: option,
+                              };
+                            }) ?? []
+                          }
+                        />
                       );
                     default:
                       return null;
