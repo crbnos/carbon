@@ -30,7 +30,7 @@ const inventoryRoutes: AuthenticatedRouteGroup[] = [
         table: "shipment",
       },
       {
-        name: "Transfers",
+        name: "Warehouse Transfers",
         to: path.to.warehouseTransfers,
         icon: <LuArrowRightLeft />,
         table: "warehouseTransfer",

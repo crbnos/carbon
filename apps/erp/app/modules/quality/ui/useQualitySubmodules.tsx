@@ -1,6 +1,7 @@
 import {
   LuCircleGauge,
   LuDraftingCompass,
+  LuFileText,
   LuListChecks,
   LuOctagonX,
   LuSearch,
@@ -24,6 +25,7 @@ const qualityRoutes: AuthenticatedRouteGroup[] = [
         icon: <LuListChecks />,
         table: "nonConformanceActionTask",
       },
+
       {
         name: "Issues",
         to: path.to.issues,
@@ -60,6 +62,12 @@ const qualityRoutes: AuthenticatedRouteGroup[] = [
         name: "Action Types",
         to: path.to.requiredActions,
         icon: <LuSquareCheck />,
+      },
+      {
+        name: "Documents",
+        to: path.to.qualityDocuments,
+        icon: <LuFileText />,
+        table: "qualityDocument",
       },
       {
         name: "Gauge Types",

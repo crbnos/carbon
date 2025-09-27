@@ -10,13 +10,13 @@ export type Action = {
   onClick: () => void;
 };
 
-export type Authenticated<T> = T & {
+export type Authenticated<T = {}> = T & {
   role?: Role;
   permission?: string;
   internal?: boolean;
 };
 
-export type AuthenticatedRouteGroup<T> = T & {
+export type AuthenticatedRouteGroup<T = {}> = T & {
   name: string;
   icon?: any;
   routes: Authenticated<Route & T>[];

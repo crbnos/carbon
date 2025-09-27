@@ -45,6 +45,8 @@ export const nonConformanceAssociationType = [
   "trackedEntities",
 ] as const;
 
+export const qualityDocumentStatus = ["Draft", "Active", "Archived"] as const;
+
 export const gaugeValidator = z.object({
   id: zfd.text(z.string().optional()),
   gaugeId: zfd.text(z.string().optional()),
@@ -148,12 +150,6 @@ export const investigationTypeValidator = z.object({
   active: zfd.checkbox(),
 });
 
-export const requiredActionValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
-  active: zfd.checkbox(),
-});
-
 export const issueTypeValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }),
@@ -179,4 +175,18 @@ export const issueWorkflowValidator = z.object({
   approvalRequirements: z
     .array(z.enum(nonConformanceApprovalRequirement))
     .optional(),
+});
+
+export const qualityDocumentValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" }),
+  version: zfd.numeric(z.number().min(0)),
+  content: zfd.text(z.string().optional()),
+  copyFromId: zfd.text(z.string().optional()),
+});
+
+export const requiredActionValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" }),
+  active: zfd.checkbox(),
 });
