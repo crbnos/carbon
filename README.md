@@ -33,7 +33,7 @@ We built Carbon after years of building end-to-end manufacturing systems with of
 - Vendor lock-in bordered on extortion
 - There is no "perfect ERP" because each company is unique
 
-We built Carbon to solve these problems ☝️.
+We built Carbon to solve these problems ☝️
 
 ## Architecture
 

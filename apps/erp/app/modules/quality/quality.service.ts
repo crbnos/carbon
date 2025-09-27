@@ -6,6 +6,7 @@ import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
+
 import type { inspectionStatus } from "../shared";
 import type {
   gaugeCalibrationRecordValidator,
@@ -18,6 +19,7 @@ import type {
   issueWorkflowValidator,
   nonConformanceReviewerValidator,
   nonConformanceStatus,
+  qualityDocumentStepValidator,
   qualityDocumentValidator,
 } from "./quality.models";
 
@@ -173,6 +175,18 @@ export async function deleteQualityDocument(
   qualityDocumentId: string
 ) {
   return client.from("qualityDocument").delete().eq("id", qualityDocumentId);
+}
+
+export async function deleteQualityDocumentStep(
+  client: SupabaseClient<Database>,
+  qualityDocumentStepId: string,
+  companyId: string
+) {
+  return client
+    .from("qualityDocumentStep")
+    .delete()
+    .eq("id", qualityDocumentStepId)
+    .eq("companyId", companyId);
 }
 
 export async function getGauge(
@@ -813,7 +827,21 @@ export async function getQualityDocument(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("qualityDocument").select("*").eq("id", id).single();
+  return client
+    .from("qualityDocument")
+    .select("*, qualityDocumentStep(*)")
+    .eq("id", id)
+    .single();
+}
+
+export async function getQualityDocumentSteps(
+  client: SupabaseClient<Database>,
+  qualityDocumentId: string
+) {
+  return client
+    .from("qualityDocumentStep")
+    .select("*")
+    .eq("qualityDocumentId", qualityDocumentId);
 }
 
 export async function getQualityDocumentVersions(
@@ -974,6 +1002,23 @@ export async function updateIssueTaskStatus(
     .eq("id", id)
     .select("nonConformanceId")
     .single();
+}
+
+export async function updateQualityDocumentStepOrder(
+  client: SupabaseClient<Database>,
+  updates: {
+    id: string;
+    sortOrder: number;
+    updatedBy: string;
+  }[]
+) {
+  const updatePromises = updates.map(({ id, sortOrder, updatedBy }) =>
+    client
+      .from("qualityDocumentStep")
+      .update({ sortOrder, updatedBy })
+      .eq("id", id)
+  );
+  return Promise.all(updatePromises);
 }
 
 export async function upsertGauge(
@@ -1278,8 +1323,7 @@ export async function upsertQualityDocument(
   if (copyFromId) {
     const qualityDocument = await client
       .from("qualityDocument")
-      .select("*")
-      // .select("*, qualityDocumentStep(*)")
+      .select("*, qualityDocumentStep(*)")
       .eq("id", copyFromId)
       .single();
 
@@ -1287,36 +1331,63 @@ export async function upsertQualityDocument(
       return qualityDocument;
     }
 
-    // const steps = qualityDocument.data.qualityDocumentStep ?? [];
+    const steps = qualityDocument.data.qualityDocumentStep ?? [];
     const workInstruction = (qualityDocument.data.content ?? {}) as JSONContent;
 
-    const [updateWorkInstructions] = await Promise.all([
+    const [updateWorkInstructions, insertSteps] = await Promise.all([
       client
         .from("qualityDocument")
         .update({
           content: workInstruction,
         })
         .eq("id", insert.data.id),
-      // steps.length > 0
-      //   ? client.from("qualityDocumentStep").insert(
-      //       steps.map((step) => {
-      //         const { id, qualityDocumentId, ...rest } = attribute;
-      //         return {
-      //           ...rest,
-      //           qualityDocumentId: insert.data.id,
-      //           companyId: qualityDocument.data.companyId!,
-      //         };
-      //       })
-      //     )
-      //   : Promise.resolve({ data: null, error: null }),
+      steps.length > 0
+        ? client.from("qualityDocumentStep").insert(
+            steps.map((step) => {
+              const { id, qualityDocumentId, ...rest } = step;
+              return {
+                ...rest,
+                qualityDocumentId: insert.data.id,
+                companyId: qualityDocument.data.companyId!,
+              };
+            })
+          )
+        : Promise.resolve({ data: null, error: null }),
     ]);
 
     if (updateWorkInstructions.error) {
       return updateWorkInstructions;
     }
-    // if (insertSteps.error) {
-    //   return insertAttributes;
-    // }
+    if (insertSteps.error) {
+      return insertSteps;
+    }
   }
   return insert;
+}
+
+export async function upsertQualityDocumentStep(
+  client: SupabaseClient<Database>,
+  qualityDocumentStep:
+    | (Omit<z.infer<typeof qualityDocumentStepValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof qualityDocumentStepValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+      })
+) {
+  if ("id" in qualityDocumentStep) {
+    return client
+      .from("qualityDocumentStep")
+      .update(sanitize(qualityDocumentStep))
+      .eq("id", qualityDocumentStep.id)
+      .select("id")
+      .single();
+  }
+  return client
+    .from("qualityDocumentStep")
+    .insert([qualityDocumentStep])
+    .select("id")
+    .single();
 }

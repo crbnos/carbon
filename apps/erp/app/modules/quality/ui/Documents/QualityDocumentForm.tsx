@@ -82,8 +82,8 @@ const QualityDocumentForm = ({
                   minValue={0}
                   helperText={
                     type === "copy"
-                      ? "The new version number of the qualityDocument"
-                      : "The version of the new qualityDocument"
+                      ? "The new version number of the document"
+                      : "The version of the new document"
                   }
                 />
               </VStack>

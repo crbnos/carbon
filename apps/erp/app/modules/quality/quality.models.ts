@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+import { procedureStepType } from "../shared/shared.models";
 
 export const gaugeStatus = ["Active", "Inactive"] as const;
 export const gaugeCalibrationStatus = [
@@ -184,6 +185,64 @@ export const qualityDocumentValidator = z.object({
   content: zfd.text(z.string().optional()),
   copyFromId: zfd.text(z.string().optional()),
 });
+
+export const qualityDocumentStepValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    qualityDocumentId: z
+      .string()
+      .min(1, { message: "Quality document is required" }),
+    name: z.string().min(1, { message: "Name is required" }),
+    description: zfd.text(z.string().optional()),
+    type: z.enum(procedureStepType, {
+      errorMap: () => ({ message: "Type is required" }),
+    }),
+    unitOfMeasureCode: zfd.text(z.string().optional()),
+    minValue: zfd.numeric(z.number().min(0).optional()),
+    maxValue: zfd.numeric(z.number().min(0).optional()),
+    listValues: z.array(z.string()).optional(),
+    sortOrder: zfd.numeric(z.number().min(0).optional()),
+  })
+  .refine(
+    (data) => {
+      if (data.type === "Measurement") {
+        return !!data.unitOfMeasureCode;
+      }
+      return true;
+    },
+    {
+      message: "Unit of measure is required",
+      path: ["unitOfMeasureCode"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.type === "List") {
+        return (
+          !!data.listValues &&
+          data.listValues.length > 0 &&
+          data.listValues.every((option) => option.trim() !== "")
+        );
+      }
+      return true;
+    },
+    {
+      message: "List options are required",
+      path: ["listOptions"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.minValue != null && data.maxValue != null) {
+        return data.maxValue >= data.minValue;
+      }
+      return true;
+    },
+    {
+      message: "Maximum value must be greater than or equal to minimum value",
+      path: ["maxValue"],
+    }
+  );
 
 export const requiredActionValidator = z.object({
   id: zfd.text(z.string().optional()),

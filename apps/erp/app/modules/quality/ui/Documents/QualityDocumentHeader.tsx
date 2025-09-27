@@ -32,18 +32,18 @@ import { usePanels } from "~/components/Layout";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
-import type { Procedure } from "../../types";
-import ProcedureForm from "./ProcedureForm";
-import ProcedureStatus from "./ProcedureStatus";
+import type { QualityDocument } from "../../types";
+import QualityDocumentForm from "./QualityDocumentForm";
+import QualityDocumentStatus from "./QualityDocumentStatus";
 
-const ProcedureHeader = () => {
+const QualityDocumentHeader = () => {
   const { id } = useParams();
   if (!id) throw new Error("id not found");
 
   const routeData = useRouteData<{
-    procedure: Procedure;
-    versions: PostgrestResponse<Procedure>;
-  }>(path.to.procedure(id));
+    document: QualityDocument;
+    versions: PostgrestResponse<QualityDocument>;
+  }>(path.to.qualityDocument(id));
 
   const permissions = usePermissions();
   const { toggleExplorer, toggleProperties } = usePanels();
@@ -66,11 +66,11 @@ const ProcedureHeader = () => {
             variant="ghost"
           />
           <Heading size="h4" className="flex items-center gap-2">
-            <span>{routeData?.procedure?.name}</span>
-            <Badge variant="outline">V{routeData?.procedure?.version}</Badge>
-            <ProcedureStatus status={routeData?.procedure?.status} />
+            <span>{routeData?.document?.name}</span>
+            <Badge variant="outline">V{routeData?.document?.version}</Badge>
+            <QualityDocumentStatus status={routeData?.document?.status} />
           </Heading>
-          <Copy text={routeData?.procedure?.name ?? ""} />
+          <Copy text={routeData?.document?.name ?? ""} />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <IconButton
@@ -83,14 +83,14 @@ const ProcedureHeader = () => {
             <DropdownMenuContent>
               <DropdownMenuItem
                 disabled={
-                  !permissions.can("delete", "production") ||
+                  !permissions.can("delete", "quality") ||
                   !permissions.is("employee")
                 }
                 destructive
                 onClick={deleteDisclosure.onOpen}
               >
                 <DropdownMenuIcon icon={<LuTrash />} />
-                Delete Procedure
+                Delete Document
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -111,7 +111,7 @@ const ProcedureHeader = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {permissions.can("create", "production") && (
+                  {permissions.can("create", "quality") && (
                     <DropdownMenuItem onClick={newVersionDisclosure.onOpen}>
                       <DropdownMenuIcon icon={<LuCirclePlus />} />
                       New Version
@@ -124,12 +124,12 @@ const ProcedureHeader = () => {
                       {versions.data.map((version) => (
                         <Link
                           key={version.id}
-                          to={path.to.procedure(version.id)}
+                          to={path.to.qualityDocument(version.id)}
                           className="relative flex gap-2 cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
                         >
                           <Badge variant="outline">V{version.version}</Badge>
                           {version.name}
-                          <ProcedureStatus status={version.status} />
+                          <QualityDocumentStatus status={version.status} />
                         </Link>
                       ))}
                     </>
@@ -147,14 +147,13 @@ const ProcedureHeader = () => {
         />
       </div>
       {newVersionDisclosure.isOpen && (
-        <ProcedureForm
+        <QualityDocumentForm
           type="copy"
           initialValues={{
-            name: routeData?.procedure?.name ?? "",
-            version: (routeData?.procedure?.version ?? 0) + 1,
-            processId: routeData?.procedure?.processId ?? "",
-            content: JSON.stringify(routeData?.procedure?.content) ?? "",
-            copyFromId: routeData?.procedure?.id ?? "",
+            name: routeData?.document?.name ?? "",
+            version: (routeData?.document?.version ?? 0) + 1,
+            content: JSON.stringify(routeData?.document?.content) ?? "",
+            copyFromId: routeData?.document?.id ?? "",
           }}
           open={newVersionDisclosure.isOpen}
           onClose={newVersionDisclosure.onClose}
@@ -162,10 +161,10 @@ const ProcedureHeader = () => {
       )}
       {deleteDisclosure.isOpen && (
         <ConfirmDelete
-          action={path.to.deleteProcedure(id)}
+          action={path.to.deleteQualityDocument(id)}
           isOpen={deleteDisclosure.isOpen}
-          name={routeData?.procedure?.name ?? "procedure"}
-          text={`Are you sure you want to delete ${routeData?.procedure?.name}? This cannot be undone.`}
+          name={routeData?.document?.name ?? "document"}
+          text={`Are you sure you want to delete ${routeData?.document?.name}? This cannot be undone.`}
           onCancel={() => {
             deleteDisclosure.onClose();
           }}
@@ -178,4 +177,4 @@ const ProcedureHeader = () => {
   );
 };
 
-export default ProcedureHeader;
+export default QualityDocumentHeader;

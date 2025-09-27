@@ -25,11 +25,11 @@ import { flushSync } from "react-dom";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
-import type { QualityDocument } from "../../types";
+import type { QualityDocuments } from "../../types";
 import QualityDocumentStatus from "./QualityDocumentStatus";
 
 type QualityDocumentsTableProps = {
-  data: QualityDocument[];
+  data: QualityDocuments[];
   count: number;
 };
 
@@ -40,16 +40,16 @@ const QualityDocumentsTable = memo(
 
     const deleteDisclosure = useDisclosure();
     const [selectedQualityDocument, setSelectedQualityDocument] =
-      useState<QualityDocument | null>(null);
+      useState<QualityDocuments | null>(null);
 
-    const columns = useMemo<ColumnDef<QualityDocument>[]>(() => {
-      const defaultColumns: ColumnDef<QualityDocument>[] = [
+    const columns = useMemo<ColumnDef<QualityDocuments>[]>(() => {
+      const defaultColumns: ColumnDef<QualityDocuments>[] = [
         {
           accessorKey: "name",
           header: "Name",
           cell: ({ row }) => (
             <div className="flex flex-col gap-0">
-              <Hyperlink to={path.to.procedure(row.original.id!)}>
+              <Hyperlink to={path.to.qualityDocument(row.original.id!)}>
                 {row.original.name}
               </Hyperlink>
               <span className="text-sm text-muted-foreground">
@@ -111,7 +111,7 @@ const QualityDocumentsTable = memo(
                           className="flex items-center justify-between gap-2"
                         >
                           <Hyperlink
-                            to={path.to.procedure(version.id)}
+                            to={path.to.qualityDocument(version.id)}
                             className="flex items-center justify-start gap-1"
                           >
                             Version {version.version}
@@ -135,13 +135,13 @@ const QualityDocumentsTable = memo(
     }, []);
 
     const renderContextMenu = useCallback(
-      (row: QualityDocument) => {
+      (row: QualityDocuments) => {
         return (
           <>
             <MenuItem
               disabled={!permissions.can("update", "quality")}
               onClick={() => {
-                navigate(`${path.to.procedure(row.id!)}`);
+                navigate(`${path.to.qualityDocument(row.id!)}`);
               }}
             >
               <MenuIcon icon={<LuPencil />} />
@@ -168,7 +168,7 @@ const QualityDocumentsTable = memo(
 
     return (
       <>
-        <Table<QualityDocument>
+        <Table<QualityDocuments>
           data={data}
           columns={columns}
           count={count}

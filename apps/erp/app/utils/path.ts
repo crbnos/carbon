@@ -342,6 +342,7 @@ export const path = {
     bulkUpdatePurchaseOrder: `${x}/purchase-order/update`,
     bulkUpdatePurchaseInvoice: `${x}/purchase-invoice/update`,
     bulkUpdateQuote: `${x}/quote/update`,
+    bulkUpdateQualityDocument: `${x}/quality-document/update`,
     bulkUpdateReceiptLine: `${x}/receipt/lines/update`,
     bulkUpdateSalesInvoice: `${x}/sales-invoice/update`,
     bulkUpdateSalesOrder: `${x}/sales-order/update`,
@@ -588,6 +589,8 @@ export const path = {
       generatePath(`${x}/purchase-order/${orderId}/${lineId}/delete`),
     deleteQualityDocument: (id: string) =>
       generatePath(`${x}/quality-document/delete/${id}`),
+    deleteQualityDocumentStep: (id: string, stepId: string) =>
+      generatePath(`${x}/quality-document/${id}/steps/delete/${stepId}`),
     deleteQuote: (id: string) => generatePath(`${x}/quote/${id}/delete`),
     deleteQuoteLine: (id: string, lineId: string) =>
       generatePath(`${x}/quote/${id}/${lineId}/delete`),
@@ -929,6 +932,8 @@ export const path = {
     newPurchaseOrderLine: (id: string) =>
       generatePath(`${x}/purchase-order/${id}/new`),
     newQualityDocument: `${x}/quality/documents/new`,
+    newQualityDocumentStep: (id: string) =>
+      generatePath(`${x}/quality-document/${id}/steps/new`),
     newQuote: `${x}/quote/new`,
     newQuoteLine: (id: string) => generatePath(`${x}/quote/${id}/new`),
     newQuoteLineCost: (id: string, lineId: string) =>
@@ -1092,6 +1097,11 @@ export const path = {
     qualityDocument: (id: string) =>
       generatePath(`${x}/quality-document/${id}`),
     qualityDocuments: `${x}/quality/documents`,
+    qualityDocumentStep: (id: string, attributeId: string) =>
+      generatePath(`${x}/quality-document/${id}/steps/${attributeId}`),
+    qualityDocumentStepOrder: (id: string) =>
+      generatePath(`${x}/quality-document/${id}/steps/order`),
+
     quote: (id: string) => generatePath(`${x}/quote/${id}`),
     quoteAssembly: (quoteId: string, lineId: string, assemblyId: string) =>
       generatePath(
