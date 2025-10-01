@@ -1,7 +1,8 @@
 import {
+  Badge,
   Checkbox,
   Combobox,
-  Copy,
+  copyToClipboard,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
@@ -11,8 +12,8 @@ import {
   HoverCardContent,
   HoverCardTrigger,
   HStack,
-  IconButton,
   MenuItem,
+  toast,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -20,7 +21,7 @@ import {
 } from "@carbon/react";
 import { Link } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useMemo } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import {
   LuCalendar,
   LuCheck,
@@ -108,53 +109,202 @@ const KanbansTable = memo(({ data, count, locationId }: KanbansTableProps) => {
         id: "links",
         header: "",
         cell: ({ row }) => (
-          <HStack>
-            <Tooltip>
-              <TooltipTrigger>
-                <IconButton
-                  aria-label="Labels"
-                  variant="secondary"
-                  icon={<LuTag />}
-                  onClick={() => {
-                    window.open(
-                      path.to.file.kanbanLabelsPdf([row.original.id!]),
-                      "_blank"
-                    );
-                  }}
-                />
-              </TooltipTrigger>
-              <TooltipContent>Print Label</TooltipContent>
-            </Tooltip>
+          <VStack>
+            <HStack>
+              <Tooltip>
+                <TooltipTrigger>
+                  <a
+                    href={path.to.file.kanbanLabelsPdf([row.original.id!])}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <Badge
+                      variant="outline"
+                      className="flex flex-row items-center gap-1"
+                    >
+                      <LuTag />
+                      Create
+                    </Badge>
+                  </a>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Label to create a{" "}
+                  {row.original.replenishmentSystem === "Make"
+                    ? "Job"
+                    : "Order"}{" "}
+                  for this kanban
+                </TooltipContent>
+              </Tooltip>
 
-            <HoverCard>
-              <HoverCardTrigger>
-                <IconButton
-                  aria-label="QR Code"
-                  variant="secondary"
-                  icon={<LuQrCode />}
-                />
-              </HoverCardTrigger>
-              <HoverCardContent
-                align="center"
-                className="size-[236px] overflow-hidden z-[100] bg-white p-4"
-              >
-                <iframe
-                  seamless
-                  title={"Kanban QR Code"}
-                  width="198"
-                  height="198"
-                  src={path.to.file.kanbanQrCode(row.original.id!)}
-                />
-              </HoverCardContent>
-            </HoverCard>
-            <Copy
-              text={`${
-                typeof window === "undefined" ? "" : window.location.origin
-              }${path.to.api.kanban(row.original.id!)}`}
-              icon={<LuLink />}
-              size="md"
-            />
-          </HStack>
+              <Tooltip>
+                <TooltipTrigger>
+                  <a
+                    href={path.to.file.kanbanLabelsPdf([row.original.id!])}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <Badge
+                      variant="outline"
+                      className="flex flex-row items-center gap-1"
+                    >
+                      <LuTag />
+                      Start
+                    </Badge>
+                  </a>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Label to start the next operation for this kanban
+                </TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger>
+                  <a
+                    href={path.to.file.kanbanLabelsPdf([row.original.id!])}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <Badge
+                      variant="outline"
+                      className="flex flex-row items-center gap-1"
+                    >
+                      <LuTag />
+                      Complete
+                    </Badge>
+                  </a>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Label to complete the current operation for this kanban
+                </TooltipContent>
+              </Tooltip>
+            </HStack>
+            {row.original.replenishmentSystem === "Make" && (
+              <>
+                <HStack>
+                  <HoverCard>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <HoverCardTrigger>
+                          <Badge
+                            variant="outline"
+                            className="flex flex-row items-center gap-1 cursor-pointer"
+                          >
+                            <LuQrCode />
+                            Create
+                          </Badge>
+                        </HoverCardTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        QR Code to create a{" "}
+                        {row.original.replenishmentSystem === "Make"
+                          ? "Job"
+                          : "Order"}{" "}
+                        for this kanban
+                      </TooltipContent>
+                    </Tooltip>
+                    <HoverCardContent
+                      align="center"
+                      className="size-[236px] overflow-hidden z-[100] bg-white p-4"
+                    >
+                      <iframe
+                        seamless
+                        title={"Kanban QR Code"}
+                        width="198"
+                        height="198"
+                        src={path.to.file.kanbanQrCode(row.original.id!)}
+                      />
+                    </HoverCardContent>
+                  </HoverCard>
+
+                  <HoverCard>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <HoverCardTrigger>
+                          <Badge
+                            variant="outline"
+                            className="flex flex-row items-center gap-1 cursor-pointer"
+                          >
+                            <LuQrCode />
+                            Start
+                          </Badge>
+                        </HoverCardTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        QR Code to start the next operation for this kanban
+                      </TooltipContent>
+                    </Tooltip>
+                    <HoverCardContent
+                      align="center"
+                      className="size-[236px] overflow-hidden z-[100] bg-white p-4"
+                    >
+                      <iframe
+                        seamless
+                        title={"Kanban QR Code"}
+                        width="198"
+                        height="198"
+                        src={path.to.file.kanbanQrCode(row.original.id!)}
+                      />
+                    </HoverCardContent>
+                  </HoverCard>
+
+                  <HoverCard>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <HoverCardTrigger>
+                          <Badge
+                            variant="outline"
+                            className="flex flex-row items-center gap-1 cursor-pointer"
+                          >
+                            <LuQrCode />
+                            Complete
+                          </Badge>
+                        </HoverCardTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        QR Code to complete the current operation for this
+                        kanban
+                      </TooltipContent>
+                    </Tooltip>
+                    <HoverCardContent
+                      align="center"
+                      className="size-[236px] overflow-hidden z-[100] bg-white p-4"
+                    >
+                      <iframe
+                        seamless
+                        title={"Kanban QR Code"}
+                        width="198"
+                        height="198"
+                        src={path.to.file.kanbanQrCode(row.original.id!)}
+                      />
+                    </HoverCardContent>
+                  </HoverCard>
+                </HStack>
+                <HStack>
+                  <CopyBadge
+                    text="Create"
+                    url={path.to.api.kanban(row.original.id!)}
+                    tooltip={`Copy link to create a ${
+                      row.original.replenishmentSystem === "Make"
+                        ? "Job"
+                        : "Order"
+                    } for this kanban`}
+                  />
+
+                  <CopyBadge
+                    text="Start"
+                    url={path.to.api.kanban(row.original.id!)}
+                    tooltip={`Copy link to start the next operation for this kanban`}
+                  />
+
+                  <CopyBadge
+                    text="Complete"
+                    url={path.to.api.kanban(row.original.id!)}
+                    tooltip={`Copy link to complete the current operation for this kanban`}
+                  />
+                </HStack>
+              </>
+            )}
+          </VStack>
         ),
       },
       {
@@ -219,7 +369,25 @@ const KanbansTable = memo(({ data, count, locationId }: KanbansTableProps) => {
       },
       {
         accessorKey: "autoRelease",
-        header: "Auto Release",
+        header: "Release",
+        cell: ({ row }) =>
+          row.original.replenishmentSystem === "Make" ? (
+            <Checkbox isChecked={row.original.autoRelease ?? false} />
+          ) : null,
+        meta: {
+          icon: <LuCheck />,
+          filter: {
+            type: "static",
+            options: [
+              { value: "true", label: "Yes" },
+              { value: "false", label: "No" },
+            ],
+          },
+        },
+      },
+      {
+        accessorKey: "autoStartJob",
+        header: "Start",
         cell: ({ row }) =>
           row.original.replenishmentSystem === "Make" ? (
             <Checkbox isChecked={row.original.autoRelease ?? false} />
@@ -387,4 +555,39 @@ export default KanbansTable;
 
 function getLocationPath(locationId: string) {
   return `${path.to.kanbans}?location=${locationId}`;
+}
+
+function CopyBadge({
+  text,
+  url,
+  tooltip,
+}: {
+  text: string;
+  url: string;
+  tooltip: string;
+}) {
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleCopy = () => {
+    copyToClipboard(url);
+    setIsCopied(true);
+    toast.success("Copied link to clipboard");
+    setTimeout(() => setIsCopied(false), 1500);
+  };
+
+  return (
+    <Tooltip>
+      <TooltipTrigger>
+        <Badge
+          variant="outline"
+          className="flex flex-row items-center gap-1 cursor-pointer"
+          onClick={handleCopy}
+        >
+          {isCopied ? <LuCheck className="text-emerald-500" /> : <LuLink />}
+          {text}
+        </Badge>
+      </TooltipTrigger>
+      <TooltipContent>{tooltip}</TooltipContent>
+    </Tooltip>
+  );
 }

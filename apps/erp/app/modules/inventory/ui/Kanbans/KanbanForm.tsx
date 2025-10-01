@@ -21,6 +21,7 @@ import {
   Item,
   Location,
   Number,
+  SequenceOrCustomId,
   Shelf,
   Submit,
   Supplier,
@@ -155,6 +156,14 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
   const [locationId, setLocationId] = useState<string>(
     initialValues.locationId || ""
   );
+
+  const [autoRelease, setAutoRelease] = useState<boolean>(
+    initialValues.autoRelease || false
+  );
+  const [autoStartJob, setAutoStartJob] = useState<boolean>(
+    initialValues.autoStartJob || false
+  );
+
   const onLocationChange = (value: { value: string } | null) => {
     setLocationId(value?.value || "");
     setShelfId(null);
@@ -278,15 +287,38 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
                 />
 
                 {selectedReplenishmentSystem === "Make" && (
-                  <Boolean
-                    name="autoRelease"
-                    label="Auto Release"
-                    description={
-                      selectedReplenishmentSystem === "Make"
-                        ? "Automatically release the job when the kanban is scanned."
-                        : undefined
-                    }
-                  />
+                  <>
+                    <Boolean
+                      name="autoRelease"
+                      label="Auto Release"
+                      value={autoRelease}
+                      onChange={(value) => {
+                        setAutoRelease(value);
+                        if (!value) {
+                          setAutoStartJob(false);
+                        }
+                      }}
+                      description="Automatically release the job when the kanban is scanned"
+                    />
+                    <Boolean
+                      name="autoStartJob"
+                      label="Auto Start Job"
+                      value={autoStartJob}
+                      onChange={setAutoStartJob}
+                      isDisabled={!autoRelease}
+                      description={
+                        autoRelease
+                          ? "Automatically start the job when the kanban is scanned"
+                          : "Auto release must be enabled to start a job automatically"
+                      }
+                    />
+                    <SequenceOrCustomId
+                      name="completedBarcodeOverride"
+                      label="Completion Barcode"
+                      table="kanban"
+                      placeholder="Auto-generated QR Code"
+                    />
+                  </>
                 )}
               </div>
             </VStack>

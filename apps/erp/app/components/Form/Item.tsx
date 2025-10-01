@@ -342,7 +342,6 @@ const Item = ({
             unitOfMeasureCode: "EA",
             defaultMethodType:
               props?.replenishmentSystem === "Buy" ? "Pick" : "Make",
-            active: true,
             unitCost: 0,
             lotSize: 0,
             tags: [],
@@ -365,7 +364,6 @@ const Item = ({
             unitOfMeasureCode: "EA",
             replenishmentSystem: "Buy",
             defaultMethodType: "Buy",
-            active: true,
             unitCost: 0,
             tags: [],
           }}
@@ -389,7 +387,6 @@ const Item = ({
             unitOfMeasureCode: "EA",
             replenishmentSystem: "Buy",
             defaultMethodType: "Buy",
-            active: true,
             unitCost: 0,
             tags: [],
           }}
@@ -414,7 +411,6 @@ const Item = ({
             replenishmentSystem: props?.replenishmentSystem ?? "Buy",
             defaultMethodType:
               props?.replenishmentSystem === "Buy" ? "Pick" : "Make",
-            active: true,
             unitCost: 0,
             tags: [],
           }}

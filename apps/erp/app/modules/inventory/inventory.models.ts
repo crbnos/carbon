@@ -45,6 +45,12 @@ export const itemLedgerDocumentTypes = [
   "Direct Transfer",
 ] as const;
 
+export enum KanbanOutput {
+  Label,
+  QRCode,
+  Link,
+}
+
 export const trackedEntityStatus = [
   "Available",
   "Consumed",
@@ -123,6 +129,8 @@ export const kanbanValidator = z
     itemId: z.string().min(1, { message: "Item is required" }),
     replenishmentSystem: z.enum(replenishmentSystemTypes).default("Buy"),
     autoRelease: zfd.checkbox(),
+    autoStartJob: zfd.checkbox(),
+    completedBarcodeOverride: zfd.text(z.string().optional()),
     quantity: zfd.numeric(
       z.number().int().min(1, { message: "Quantity must be at least 1" })
     ),

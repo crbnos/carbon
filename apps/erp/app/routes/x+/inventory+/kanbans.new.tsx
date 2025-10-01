@@ -33,6 +33,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
+  console.log({ data });
+
   const createKanban = await upsertKanban(client, {
     ...data,
     companyId,
@@ -66,6 +68,8 @@ export default function NewKanbanRoute() {
     locationId,
     conversionFactor: 1,
     autoRelease: false,
+    autoStartJob: false,
+    completedBarcodeOverride: "",
   };
 
   return (

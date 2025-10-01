@@ -79,6 +79,8 @@ export default function EditKanbanRoute() {
     purchaseUnitOfMeasureCode: kanban?.purchaseUnitOfMeasureCode ?? "",
     conversionFactor: kanban?.conversionFactor ?? 1,
     autoRelease: kanban?.autoRelease ?? false,
+    autoStartJob: kanban?.autoStartJob ?? false,
+    completedBarcodeOverride: kanban?.completedBarcodeOverride ?? "",
   };
 
   return (

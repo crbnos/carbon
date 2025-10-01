@@ -229,85 +229,87 @@ function VirtualizedCommand({
         placeholder="Search..."
         className="h-9"
       />
-      <div
-        ref={parentRef}
-        className="overflow-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent pt-1"
-        style={{
-          height: `${Math.min(filteredOptions.length, 6) * itemHeight + 4}px`,
-        }}
-      >
-        <CommandGroup
+      <CommandGroup>
+        <div
+          ref={parentRef}
+          className="overflow-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
           style={{
-            height: `${virtualizer.getTotalSize()}px`,
-            width: "100%",
-            position: "relative",
+            height: `${Math.min(filteredOptions.length, 6) * itemHeight + 4}px`,
           }}
         >
-          {items.map((virtualRow) => {
-            const item = filteredOptions[virtualRow.index];
+          <div
+            style={{
+              height: `${virtualizer.getTotalSize()}px`,
+              width: "100%",
+              position: "relative",
+            }}
+          >
+            {items.map((virtualRow) => {
+              const item = filteredOptions[virtualRow.index];
 
-            const isSelected = !!selected?.includes(item.value);
-            const isCreateOption = item.value === "create";
+              const isSelected = !!selected?.includes(item.value);
+              const isCreateOption = item.value === "create";
 
-            return (
-              <CommandItem
-                key={item.value}
-                value={
-                  typeof item.label === "string"
-                    ? CSS.escape(item.label) + CSS.escape(item.helper ?? "")
-                    : undefined
-                }
-                onSelect={() => {
-                  if (isCreateOption) {
-                    onCreateOption?.(search);
-                  } else if (!isSelected) {
-                    onChange?.(item.value);
-                    setSearch("");
+              return (
+                <CommandItem
+                  key={item.value}
+                  value={
+                    typeof item.label === "string"
+                      ? CSS.escape(item.label) + CSS.escape(item.helper ?? "")
+                      : undefined
                   }
-                  setOpen(false);
-                }}
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: `${itemHeight}px`,
-                  transform: `translateY(${virtualRow.start}px)`,
-                }}
-                className="flex items-center justify-between min-w-0"
-              >
-                {isCreateOption ? (
-                  <div className="flex items-center min-w-0 flex-1">
-                    <span>Create</span>
-                    <span className="ml-1 font-bold truncate">
-                      {search.trim() === "" ? label : search}
-                    </span>
-                  </div>
-                ) : item.helper ? (
-                  <div className="flex flex-col min-w-0 flex-1">
-                    <p className="truncate">{item.label}</p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {item.helper}
-                    </p>
-                  </div>
-                ) : (
-                  <span className="truncate flex-1">{item.label}</span>
-                )}
-                {!isCreateOption && (
-                  <LuCheck
-                    className={cn(
-                      "ml-auto h-4 w-4 flex-shrink-0",
-                      isSelected || item.value === value
-                        ? "opacity-100"
-                        : "opacity-0"
-                    )}
-                  />
-                )}
-              </CommandItem>
-            );
-          })}
-        </CommandGroup>
-      </div>
+                  onSelect={() => {
+                    if (isCreateOption) {
+                      onCreateOption?.(search);
+                    } else if (!isSelected) {
+                      onChange?.(item.value);
+                      setSearch("");
+                    }
+                    setOpen(false);
+                  }}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: `${itemHeight}px`,
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                  className="flex items-center justify-between min-w-0"
+                >
+                  {isCreateOption ? (
+                    <div className="flex items-center min-w-0 flex-1">
+                      <span>Create</span>
+                      <span className="ml-1 font-bold truncate">
+                        {search.trim() === "" ? label : search}
+                      </span>
+                    </div>
+                  ) : item.helper ? (
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <p className="truncate">{item.label}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {item.helper}
+                      </p>
+                    </div>
+                  ) : (
+                    <span className="truncate flex-1">{item.label}</span>
+                  )}
+                  {!isCreateOption && (
+                    <LuCheck
+                      className={cn(
+                        "ml-auto h-4 w-4 flex-shrink-0",
+                        isSelected || item.value === value
+                          ? "opacity-100"
+                          : "opacity-0"
+                      )}
+                    />
+                  )}
+                </CommandItem>
+              );
+            })}
+          </div>
+        </div>
+      </CommandGroup>
     </Command>
   );
 }
