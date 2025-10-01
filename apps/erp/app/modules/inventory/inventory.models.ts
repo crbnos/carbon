@@ -45,12 +45,6 @@ export const itemLedgerDocumentTypes = [
   "Direct Transfer",
 ] as const;
 
-export enum KanbanOutput {
-  Label,
-  QRCode,
-  Link,
-}
-
 export const trackedEntityStatus = [
   "Available",
   "Consumed",

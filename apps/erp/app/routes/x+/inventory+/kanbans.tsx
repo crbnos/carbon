@@ -8,6 +8,7 @@ import { json, redirect } from "@vercel/remix";
 import { getKanbans } from "~/modules/inventory";
 import KanbansTable from "~/modules/inventory/ui/Kanbans/KanbansTable";
 import { getLocationsList } from "~/modules/resources";
+import { getKanbanOutputSetting } from "~/modules/settings";
 import { getUserDefaults } from "~/modules/users/users.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -63,13 +64,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  const kanbans = await getKanbans(client, locationId, companyId, {
-    search,
-    limit,
-    offset,
-    sorts,
-    filters,
-  });
+  const [kanbans, kanbanOutput] = await Promise.all([
+    getKanbans(client, locationId, companyId, {
+      search,
+      limit,
+      offset,
+      sorts,
+      filters,
+    }),
+    getKanbanOutputSetting(client, companyId),
+  ]);
 
   if (kanbans.error) {
     throw redirect(
@@ -81,16 +85,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return json({
     count: kanbans.count ?? 0,
     kanbans: kanbans.data ?? [],
+    kanbanOutput: kanbanOutput.data?.kanbanOutput ?? "qrcode",
     locationId,
   });
 }
 
 export default function KanbansRoute() {
-  const { count, kanbans, locationId } = useLoaderData<typeof loader>();
+  const { count, kanbans, locationId, kanbanOutput } =
+    useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <KanbansTable data={kanbans} count={count} locationId={locationId} />
+      <KanbansTable
+        data={kanbans}
+        count={count}
+        locationId={locationId}
+        kanbanOutput={kanbanOutput}
+      />
       <Outlet />
     </VStack>
   );

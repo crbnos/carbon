@@ -11,6 +11,7 @@ import { sanitize } from "~/utils/supabase";
 import type {
   apiKeyValidator,
   companyValidator,
+  kanbanOutputTypes,
   sequenceValidator,
   webhookValidator,
 } from "./settings.models";
@@ -249,6 +250,17 @@ export async function getIntegrations(
   return client.from("integrations").select("*").eq("companyId", companyId);
 }
 
+export async function getKanbanOutputSetting(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("companySettings")
+    .select("kanbanOutput")
+    .eq("id", companyId)
+    .single();
+}
+
 export async function getPlanById(client: SupabaseClient, planId: string) {
   return client.from("plan").select("*").eq("id", planId).single();
 }
@@ -409,6 +421,17 @@ export async function updateCompany(
   }
 ) {
   return client.from("company").update(sanitize(company)).eq("id", companyId);
+}
+
+export async function updateKanbanOutputSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  kanbanOutput: (typeof kanbanOutputTypes)[number]
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ kanbanOutput }))
+    .eq("id", companyId);
 }
 
 export async function updateMetricSettings(

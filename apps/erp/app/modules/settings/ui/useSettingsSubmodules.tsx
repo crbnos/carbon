@@ -1,5 +1,6 @@
 import {
   LuBarcode,
+  LuBox,
   LuCreditCard,
   LuCrown,
   LuFactory,
@@ -54,6 +55,12 @@ const settingsRoutes: AuthenticatedRouteGroup<{
   {
     name: "Modules",
     routes: [
+      {
+        name: "Inventory",
+        to: path.to.inventorySettings,
+        role: "employee",
+        icon: <LuBox />,
+      },
       {
         name: "Items",
         to: path.to.itemsSettings,
