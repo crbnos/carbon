@@ -2,9 +2,8 @@ import { error, getCarbonServiceRole, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { FunctionRegion } from "@supabase/supabase-js";
-import { redirect, type LoaderFunctionArgs } from "@vercel/remix";
+import { json, redirect, type LoaderFunctionArgs } from "@vercel/remix";
 import {
-  endProductionEventsForJobOperation,
   finishJobOperation,
   getTrackedEntitiesByMakeMethodId,
   insertProductionQuantity,
@@ -31,6 +30,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     serviceRole
       .from("productionQuantity")
       .select("*")
+      .eq("type", "Production")
       .eq("jobOperationId", operationId),
   ]);
 
@@ -57,19 +57,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       )
     );
   }
-
-  const endEvents = await endProductionEventsForJobOperation(serviceRole, {
-    jobOperationId: jobOperation.data.id,
-    employeeId: userId,
-    companyId,
-  });
-
-  if (endEvents.error) {
-    throw redirect(
-      path.to.operations,
-      await flash(request, error(endEvents.error, "Failed to end event"))
-    );
-  }
+  const completeAll = jobOperation.data?.completeAllOnScan ?? false;
 
   const [jobMakeMethod] = await Promise.all([
     serviceRole
@@ -93,8 +81,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     productionQuantities.data?.reduce((acc, curr) => acc + curr.quantity, 0) ??
     0;
 
-  const quantityToComplete =
-    (jobOperation.data.operationQuantity ?? 0) - currentQuantity;
+  const quantityToComplete = completeAll
+    ? Math.max(0, (jobOperation.data.operationQuantity ?? 0) - currentQuantity)
+    : 1;
+
+  const willBeFinished =
+    quantityToComplete + currentQuantity >=
+    (jobOperation.data.operationQuantity ?? 0);
 
   const isTrackedEntity =
     jobMakeMethod.data.requiresSerialTracking ||
@@ -136,6 +129,28 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             `${path.to.operation(
               operationId
             )}?trackedEntityId=${newTrackedEntityId}`
+          );
+        }
+
+        if (willBeFinished) {
+          const finishOperation = await finishJobOperation(serviceRole, {
+            jobOperationId: jobOperation.data.id,
+            userId,
+          });
+
+          if (finishOperation.error) {
+            return json(
+              {},
+              await flash(
+                request,
+                error(finishOperation.error, "Failed to finish operation")
+              )
+            );
+          }
+
+          throw redirect(
+            path.to.operations,
+            await flash(request, success("Operation finished successfully"))
           );
         }
       } else if (jobMakeMethod.data.requiresBatchTracking) {
@@ -205,23 +220,30 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   }
 
-  const finishOperation = await finishJobOperation(serviceRole, {
-    jobOperationId: jobOperation.data.id,
-    userId,
-  });
+  if (willBeFinished) {
+    const finishOperation = await finishJobOperation(serviceRole, {
+      jobOperationId: jobOperation.data.id,
+      userId,
+    });
 
-  if (finishOperation.error) {
+    if (finishOperation.error) {
+      throw redirect(
+        path.to.operation(operationId),
+        await flash(
+          request,
+          error(finishOperation.error, "Failed to finish operation")
+        )
+      );
+    }
+
     throw redirect(
-      path.to.operation(operationId),
-      await flash(
-        request,
-        error(finishOperation.error, "Failed to finish operation")
-      )
+      path.to.operations,
+      await flash(request, success("Operation finished successfully"))
     );
   }
 
   throw redirect(
-    path.to.operations,
-    await flash(request, success("Operation finished successfully"))
+    path.to.operation(operationId),
+    await flash(request, success("Successfully completed part"))
   );
 }

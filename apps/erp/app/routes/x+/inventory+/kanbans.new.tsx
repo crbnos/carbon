@@ -33,8 +33,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  console.log({ data });
-
   const createKanban = await upsertKanban(client, {
     ...data,
     companyId,

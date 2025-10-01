@@ -32,19 +32,6 @@ export async function finishJobOperation(
     userId: string;
   }
 ) {
-  const closeProductionEvents = await client
-    .from("productionEvent")
-    .update({
-      endTime: new Date().toISOString(),
-      updatedBy: args.userId,
-    })
-    .eq("jobOperationId", args.jobOperationId)
-    .is("endTime", null);
-
-  if (closeProductionEvents.error) {
-    return closeProductionEvents;
-  }
-
   return client
     .from("jobOperation")
     .update({

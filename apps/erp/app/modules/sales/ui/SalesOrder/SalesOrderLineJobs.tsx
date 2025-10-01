@@ -270,7 +270,6 @@ export function SalesOrderJobItem({ job }: { job: SalesOrderJob }) {
   const releaseModal = useDisclosure();
   const statusFetcher = useFetcher<{}>();
   const todaysDate = useMemo(() => today(getLocalTimeZone()), []);
-  console.log({ job });
 
   return (
     <VStack>

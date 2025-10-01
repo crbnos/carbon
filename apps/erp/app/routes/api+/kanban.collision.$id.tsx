@@ -14,10 +14,6 @@ import {
 } from "~/modules/production/production.service";
 import { path } from "~/utils/path";
 
-export const config = {
-  runtime: "nodejs",
-};
-
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {});
 

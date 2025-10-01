@@ -8,7 +8,8 @@ import { Await, useLoaderData } from "@remix-run/react";
 import { FunctionRegion, type SupabaseClient } from "@supabase/supabase-js";
 import { tasks } from "@trigger.dev/sdk/v3";
 import { defer, type LoaderFunctionArgs } from "@vercel/remix";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense } from "react";
+import { Redirect } from "~/components/Redirect";
 
 import { getKanban } from "~/modules/inventory";
 import { getItemReplenishment } from "~/modules/items";
@@ -25,10 +26,6 @@ import {
 } from "~/modules/purchasing";
 import { getNextSequence } from "~/modules/settings";
 import { path } from "~/utils/path";
-
-export const config = {
-  runtime: "nodejs",
-};
 
 async function handleKanban({
   client,
@@ -200,11 +197,11 @@ async function handleKanban({
         let laborTime = operation.laborTime;
         let machineTime = operation.machineTime;
         let type: "Setup" | "Labor" | "Machine" = "Labor";
-        if (setupTime) {
-          type = "Setup";
-        }
         if (machineTime && !laborTime) {
           type = "Machine";
+        }
+        if (setupTime) {
+          type = "Setup";
         }
         redirectUrl = path.to.external.mesJobOperationStart(operationId, type);
       } else {
@@ -370,24 +367,10 @@ export default function KanbanRedirectRoute() {
             if (resolvedPromise.error) {
               return <div>{resolvedPromise.error}</div>;
             }
-            return <KanbanRedirect path={resolvedPromise?.data ?? ""} />;
+            return <Redirect path={resolvedPromise?.data ?? ""} />;
           }}
         </Await>
       </Suspense>
     </div>
   );
 }
-
-const KanbanRedirect = ({ path }: { path: string }) => {
-  const [isLoading, setIsLoading] = useState(true);
-  useEffect(() => {
-    window.location.href = path;
-    setIsLoading(false);
-  }, [path]);
-
-  return (
-    <div className="flex h-screen w-screen items-center justify-center">
-      <Loading className="size-8" isLoading={isLoading} />
-    </div>
-  );
-};

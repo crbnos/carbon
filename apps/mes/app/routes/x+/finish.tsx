@@ -30,6 +30,8 @@ export async function action({ request }: ActionFunctionArgs) {
     userId,
   });
 
+  console.log({ finishOperation });
+
   if (finishOperation.error) {
     return json(
       {},

@@ -239,11 +239,6 @@ function NodeText({ node }: { node: FlatTreeItem<QuoteMethod> }) {
       <span className="font-medium text-sm truncate">
         {node.data.description || node.data.itemReadableId}
       </span>
-      {node.data.revision && node.data.revision !== "0" && (
-        <Badge variant="outline" className="text-xs">
-          {node.data.revision}
-        </Badge>
-      )}
     </div>
   );
 }

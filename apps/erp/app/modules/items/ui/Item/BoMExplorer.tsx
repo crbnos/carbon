@@ -386,11 +386,6 @@ function NodeText({ node }: { node: FlatTreeItem<Method> }) {
       <span className="text-sm truncate font-medium">
         {node.data.description || node.data.itemReadableId}
       </span>
-      {node.data.revision && node.data.revision !== "0" && (
-        <Badge variant="outline" className="text-xs opacity-0">
-          {node.data.revision}
-        </Badge>
-      )}
     </div>
   );
 }

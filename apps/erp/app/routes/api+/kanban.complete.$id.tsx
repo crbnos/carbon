@@ -11,7 +11,7 @@ import { getKanban } from "~/modules/inventory";
 import { getActiveJobOperationByJobId } from "~/modules/production";
 import { path } from "~/utils/path";
 
-async function handleKanbanStart({
+async function handleKanbanComplete({
   client,
   companyId,
   id,
@@ -48,19 +48,8 @@ async function handleKanbanStart({
     };
   }
 
-  let setupTime = operation.setupTime;
-  let laborTime = operation.laborTime;
-  let machineTime = operation.machineTime;
-  let type: "Setup" | "Labor" | "Machine" = "Labor";
-  if (machineTime && !laborTime) {
-    type = "Machine";
-  }
-  if (setupTime) {
-    type = "Setup";
-  }
-
   return {
-    data: path.to.external.mesJobOperationStart(operation.id, type),
+    data: path.to.external.mesJobOperationComplete(operation.id),
     error: null,
   };
 }
@@ -71,7 +60,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  return defer(await handleKanbanStart({ client, companyId, id }));
+  return defer(await handleKanbanComplete({ client, companyId, id }));
 }
 
 export default function KanbanRedirectRoute() {

@@ -32,6 +32,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       .select("*")
       .eq("id", operationId)
       .maybeSingle(),
+    serviceRole
+      .from("productionEvent")
+      .update({
+        endTime: null,
+        updatedBy: userId,
+      })
+      .eq("jobOperationId", operationId)
+      .is("endTime", null),
   ]);
 
   if (jobOperation.error || !jobOperation.data) {
