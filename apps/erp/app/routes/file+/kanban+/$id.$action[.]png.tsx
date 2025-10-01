@@ -11,8 +11,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     view: "inventory",
   });
 
-  const { id } = params;
+  const { id, action } = params;
   if (!id) throw new Error("Could not find kanban id");
+  if (!action) throw new Error("Could not find kanban action");
+  if (!["order", "start", "complete"].includes(action)) {
+    throw new Error("Invalid kanban action");
+  }
 
   const kanban = await getKanban(client, id);
 
@@ -21,11 +25,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const url = new URL(request.url);
+  let kanbanUrl = "";
   const baseUrl = `${url.protocol}//${url.host}`;
-  const kanbanUrl = `${baseUrl}${path.to.api.kanban(id)}`;
+  if (action === "order") {
+    kanbanUrl = `${baseUrl}${path.to.api.kanban(id)}`;
+  } else if (action === "start") {
+    kanbanUrl = `${baseUrl}${path.to.api.kanbanStart(id)}`;
+  } else if (action === "complete") {
+    kanbanUrl = `${baseUrl}${path.to.api.kanbanComplete(id)}`;
+  }
 
   const buffer = await generateQRCodeBuffer(kanbanUrl, 36);
 
+  // @ts-ignore
   return new Response(buffer, {
     headers: {
       "Content-Type": "image/png",

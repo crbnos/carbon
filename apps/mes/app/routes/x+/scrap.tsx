@@ -1,7 +1,13 @@
-import { assertIsPost, error, success } from "@carbon/auth";
+import {
+  assertIsPost,
+  error,
+  getCarbonServiceRole,
+  success,
+} from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { FunctionRegion } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json } from "@vercel/remix";
 import { scrapQuantityValidator } from "~/services/models";
@@ -33,6 +39,24 @@ export async function action({ request }: ActionFunctionArgs) {
         request,
         error(insertScrap.error, "Failed to record scrap quantity")
       )
+    );
+  }
+
+  const issue = await getCarbonServiceRole().functions.invoke("issue", {
+    body: {
+      id: validation.data.jobOperationId,
+      type: "jobOperation",
+      quantity: validation.data.quantity,
+      companyId,
+      userId,
+    },
+    region: FunctionRegion.UsEast1,
+  });
+
+  if (issue.error) {
+    throw json(
+      insertScrap.data,
+      await flash(request, error(issue.error, "Failed to issue materials"))
     );
   }
 

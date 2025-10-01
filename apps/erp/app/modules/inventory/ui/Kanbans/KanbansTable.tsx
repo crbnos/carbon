@@ -1,5 +1,6 @@
 import {
   Badge,
+  Button,
   Checkbox,
   Combobox,
   copyToClipboard,
@@ -13,6 +14,7 @@ import {
   HoverCardTrigger,
   HStack,
   MenuItem,
+  PulsingDot,
   toast,
   Tooltip,
   TooltipContent,
@@ -34,6 +36,7 @@ import {
   LuPrinter,
   LuQrCode,
   LuRefreshCw,
+  LuSettings,
   LuTag,
   LuTrash,
   LuUser,
@@ -41,6 +44,7 @@ import {
 import {
   EmployeeAvatar,
   Hyperlink,
+  ItemThumbnail,
   New,
   SupplierAvatar,
   Table,
@@ -87,9 +91,20 @@ const KanbansTable = memo(
           header: "Item",
           cell: ({ row }) => (
             <HStack className="py-1">
+              <div className="relative">
+                <ItemThumbnail
+                  size="sm"
+                  thumbnailPath={row.original.thumbnailPath}
+                />
+                {row.original.jobReadableId && (
+                  <PulsingDot className="absolute top-0 right-0" />
+                )}
+              </div>
               <Hyperlink to={`${path.to.kanban(row.original.id!)}?${params}`}>
                 <VStack spacing={0}>
-                  {row.original.name}
+                  <div className="flex gap-1 items-center">
+                    <span>{row.original.name}</span>
+                  </div>
                   <div className="text-muted-foreground text-xs">
                     {row.original.readableIdWithRevision}
                   </div>
@@ -118,7 +133,10 @@ const KanbansTable = memo(
                   <Tooltip>
                     <TooltipTrigger>
                       <a
-                        href={path.to.file.kanbanLabelsPdf([row.original.id!])}
+                        href={path.to.file.kanbanLabelsPdf(
+                          [row.original.id!],
+                          "order"
+                        )}
                         target="_blank"
                         rel="noreferrer"
                       >
@@ -144,9 +162,10 @@ const KanbansTable = memo(
                       <Tooltip>
                         <TooltipTrigger>
                           <a
-                            href={path.to.file.kanbanLabelsPdf([
-                              row.original.id!,
-                            ])}
+                            href={path.to.file.kanbanLabelsPdf(
+                              [row.original.id!],
+                              "start"
+                            )}
                             target="_blank"
                             rel="noreferrer"
                           >
@@ -167,9 +186,10 @@ const KanbansTable = memo(
                       <Tooltip>
                         <TooltipTrigger>
                           <a
-                            href={path.to.file.kanbanLabelsPdf([
-                              row.original.id!,
-                            ])}
+                            href={path.to.file.kanbanLabelsPdf(
+                              [row.original.id!],
+                              "complete"
+                            )}
                             target="_blank"
                             rel="noreferrer"
                           >
@@ -223,7 +243,10 @@ const KanbansTable = memo(
                         title={"Kanban QR Code"}
                         width="198"
                         height="198"
-                        src={path.to.file.kanbanQrCode(row.original.id!)}
+                        src={path.to.file.kanbanQrCode(
+                          row.original.id!,
+                          "order"
+                        )}
                       />
                     </HoverCardContent>
                   </HoverCard>
@@ -255,7 +278,10 @@ const KanbansTable = memo(
                             title={"Kanban QR Code"}
                             width="198"
                             height="198"
-                            src={path.to.file.kanbanQrCode(row.original.id!)}
+                            src={path.to.file.kanbanQrCode(
+                              row.original.id!,
+                              "start"
+                            )}
                           />
                         </HoverCardContent>
                       </HoverCard>
@@ -287,7 +313,10 @@ const KanbansTable = memo(
                             title={"Kanban QR Code"}
                             width="198"
                             height="198"
-                            src={path.to.file.kanbanQrCode(row.original.id!)}
+                            src={path.to.file.kanbanQrCode(
+                              row.original.id!,
+                              "complete"
+                            )}
                           />
                         </HoverCardContent>
                       </HoverCard>
@@ -310,13 +339,13 @@ const KanbansTable = memo(
                     <>
                       <CopyBadge
                         text="Start"
-                        url={path.to.api.kanban(row.original.id!)}
+                        url={path.to.api.kanbanStart(row.original.id!)}
                         tooltip={`Copy link to start the next operation for this kanban`}
                       />
 
                       <CopyBadge
                         text="Complete"
-                        url={path.to.api.kanban(row.original.id!)}
+                        url={path.to.api.kanbanComplete(row.original.id!)}
                         tooltip={`Copy link to complete the current operation for this kanban`}
                       />
                     </>
@@ -521,7 +550,10 @@ const KanbansTable = memo(
           .map((row) => row.id)
           .filter(Boolean) as string[];
         if (selectedIds.length > 0) {
-          window.open(path.to.file.kanbanLabelsPdf(selectedIds), "_blank");
+          window.open(
+            path.to.file.kanbanLabelsPdf(selectedIds, "order"),
+            "_blank"
+          );
         }
       };
 
@@ -557,6 +589,9 @@ const KanbansTable = memo(
                 window.location.href = getLocationPath(selected);
               }}
             />
+            <Button variant="secondary" asChild leftIcon={<LuSettings />}>
+              <Link to={path.to.inventorySettings}>Settings</Link>
+            </Button>
             {permissions.can("create", "inventory") && (
               <New label="Kanban" to={path.to.newKanban} />
             )}
@@ -593,7 +628,7 @@ function CopyBadge({
   const [isCopied, setIsCopied] = useState(false);
 
   const handleCopy = () => {
-    copyToClipboard(url);
+    copyToClipboard(window.location.origin + url);
     setIsCopied(true);
     toast.success("Copied link to clipboard");
     setTimeout(() => setIsCopied(false), 1500);

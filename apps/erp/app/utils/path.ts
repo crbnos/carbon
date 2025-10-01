@@ -61,6 +61,12 @@ export const path = {
         ),
       jobs: `${api}/production/jobs`,
       kanban: (id: string) => generatePath(`${api}/kanban/${id}`),
+      kanbanCollision: (id: string) =>
+        generatePath(`${api}/kanban/collision/${id}`),
+      kanbanComplete: (id: string) =>
+        generatePath(`${api}/kanban/complete/${id}`),
+      kanbanJobLink: (id: string) => generatePath(`${api}/kanban/link/${id}`),
+      kanbanStart: (id: string) => generatePath(`${api}/kanban/start/${id}`),
       locations: `${api}/resources/locations`,
       materialDimensions: (formId: string) =>
         generatePath(`${api}/items/dimensions/${formId}`),
@@ -154,14 +160,23 @@ export const path = {
     external: {
       mes: mes,
       mesJobOperation: (id: string) => `${mes}/x/operation/${id}`,
+      mesJobOperationStart: (id: string, type: "Setup" | "Labor" | "Machine") =>
+        `${mes}/x/start/${id}?type=${type}`,
+      mesJobOperationComplete: (id: string) => `${mes}/x/end/${id}`,
     },
     file: {
       cadModel: (id: string) => generatePath(`${file}/model/${id}`),
-      kanbanLabelsPdf: (ids: string | string[]) => {
+      kanbanLabelsPdf: (
+        ids: string | string[],
+        action: "order" | "start" | "complete"
+      ) => {
         const idString = Array.isArray(ids) ? ids.join(",") : ids;
-        return generatePath(`${file}/kanban/labels.pdf?ids=${idString}`);
+        return generatePath(
+          `${file}/kanban/labels/${action}.pdf?ids=${idString}`
+        );
       },
-      kanbanQrCode: (id: string) => generatePath(`${file}/kanban/${id}.png`),
+      kanbanQrCode: (id: string, action: "order" | "start" | "complete") =>
+        generatePath(`${file}/kanban/${id}/${action}.png`),
       jobTraveler: (id: string) => generatePath(`${file}/traveler/${id}.pdf`),
       nonConformance: (id: string) => generatePath(`${file}/issue/${id}.pdf`),
       operationLabelsPdf: (

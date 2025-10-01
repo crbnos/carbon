@@ -369,6 +369,44 @@ export async function deleteProductionQuantity(
     .eq("id", productionQuantityId);
 }
 
+export async function getActiveJobOperationByJobId(
+  client: SupabaseClient<Database>,
+  jobId: string,
+  companyId: string
+): Promise<{
+  id: string;
+  setupTime: number;
+  laborTime: number;
+  machineTime: number;
+} | null> {
+  const jobMakeMethod = await client
+    .from("jobMakeMethod")
+    .select("id")
+    .eq("jobId", jobId)
+    .is("parentMaterialId", null)
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  if (jobMakeMethod.error || !jobMakeMethod.data) {
+    return null;
+  }
+
+  const jobOperations = await client
+    .from("jobOperation")
+    .select("id, setupTime, laborTime, machineTime")
+    .eq("jobMakeMethodId", jobMakeMethod.data?.id!)
+    .eq("companyId", companyId)
+    .in("status", ["Todo", "Ready", "In Progress", "Waiting", "Paused"])
+    .order("order", { ascending: true })
+    .limit(1);
+
+  if (jobOperations.error || !jobOperations.data) {
+    return null;
+  }
+
+  return jobOperations.data[0];
+}
+
 export async function getActiveJobOperationsByLocation(
   client: SupabaseClient<Database>,
   locationId: string,
@@ -1398,6 +1436,23 @@ export async function updateJobOperationStepOrder(
       .eq("id", id)
   );
   return Promise.all(updatePromises);
+}
+
+export async function updateKanbanJob(
+  client: SupabaseClient<Database>,
+  params: {
+    id: string;
+    jobId: string | null;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { id, jobId, companyId, userId } = params;
+  return client
+    .from("kanban")
+    .update({ jobId, updatedBy: userId, updatedAt: new Date().toISOString() })
+    .eq("id", id)
+    .eq("companyId", companyId);
 }
 
 export async function updateQuoteOperationStepOrder(

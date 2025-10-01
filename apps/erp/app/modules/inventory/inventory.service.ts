@@ -222,7 +222,7 @@ export async function getKanbans(
   }
 
   query = setGenericQueryFilters(query, args, [
-    { column: "readableIdWithRevision", ascending: false },
+    { column: "readableIdWithRevision", ascending: true },
   ]);
   return query;
 }

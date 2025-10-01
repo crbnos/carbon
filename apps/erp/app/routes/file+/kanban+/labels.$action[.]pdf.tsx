@@ -6,12 +6,17 @@ import { getBase64ImageFromSupabase } from "~/modules/shared";
 
 export const config = { runtime: "nodejs" };
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
     view: "inventory",
   });
 
-  // Get kanban IDs from search params
+  const { action } = params;
+  if (!action) throw new Error("Could not find kanban action");
+  if (!["order", "start", "complete"].includes(action)) {
+    throw new Error("Invalid kanban action");
+  }
+
   const url = new URL(request.url);
   const idsParam = url.searchParams.get("ids");
   const baseUrl = url.origin;
@@ -115,5 +120,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     "Content-Disposition": `inline; filename="Kanban Labels.pdf"`,
   });
 
+  // @ts-ignore
   return new Response(body, { status: 200, headers });
 }

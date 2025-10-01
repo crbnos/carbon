@@ -12,7 +12,13 @@ import { Suspense, useEffect, useState } from "react";
 
 import { getKanban } from "~/modules/inventory";
 import { getItemReplenishment } from "~/modules/items";
-import { runMRP, upsertJob, upsertJobMethod } from "~/modules/production";
+import {
+  getActiveJobOperationByJobId,
+  runMRP,
+  updateKanbanJob,
+  upsertJob,
+  upsertJobMethod,
+} from "~/modules/production";
 import {
   upsertPurchaseOrder,
   upsertPurchaseOrderLine,
@@ -36,6 +42,15 @@ async function handleKanban({
   id: string;
 }): Promise<{ data: string; error: null } | { data: null; error: string }> {
   const kanban = await getKanban(client, id);
+  if (
+    kanban.data?.replenishmentSystem === "Make" &&
+    kanban.data?.jobReadableId
+  ) {
+    return {
+      data: path.to.api.kanbanCollision(id),
+      error: null,
+    };
+  }
 
   if (kanban.error || !kanban.data) {
     return {
@@ -109,20 +124,33 @@ async function handleKanban({
       };
     }
 
-    const upsertMethod = await upsertJobMethod(
-      getCarbonServiceRole(),
-      "itemToJob",
-      {
+    const serviceRole = getCarbonServiceRole();
+
+    const [upsertMethod, associateKanban] = await Promise.all([
+      upsertJobMethod(serviceRole, "itemToJob", {
         sourceId: kanban.data.itemId!,
         targetId: id,
         companyId,
         userId,
         configuration: undefined,
-      }
-    );
+      }),
+      updateKanbanJob(serviceRole, {
+        id: kanban.data.id!,
+        jobId: id,
+        companyId,
+        userId,
+      }),
+    ]);
+
+    if (associateKanban.error) {
+      console.error(associateKanban.error);
+      return {
+        data: null,
+        error: "Failed to associate kanban with job",
+      };
+    }
 
     if (!upsertMethod.error && kanban.data.autoRelease) {
-      const serviceRole = getCarbonServiceRole();
       await Promise.all([
         tasks.trigger<typeof recalculateTask>("recalculate", {
           type: "jobRequirements",
@@ -157,24 +185,40 @@ async function handleKanban({
     }
 
     const jobId = id;
+    let redirectUrl = path.to.job(jobId);
 
-    const jobMakeMethod = await client
-      .from("jobMakeMethod")
-      .select("id")
-      .eq("jobId", jobId)
-      .is("parentMaterialId", null)
-      .eq("companyId", companyId)
-      .maybeSingle();
+    const operation = await getActiveJobOperationByJobId(
+      client,
+      jobId,
+      companyId
+    );
 
-    if (jobMakeMethod.data && kanban.data.autoRelease) {
+    if (operation && kanban.data.autoRelease) {
+      let operationId = operation.id;
+      if (kanban.data.autoStartJob) {
+        let setupTime = operation.setupTime;
+        let laborTime = operation.laborTime;
+        let machineTime = operation.machineTime;
+        let type: "Setup" | "Labor" | "Machine" = "Labor";
+        if (setupTime) {
+          type = "Setup";
+        }
+        if (machineTime && !laborTime) {
+          type = "Machine";
+        }
+        redirectUrl = path.to.external.mesJobOperationStart(operationId, type);
+      } else {
+        redirectUrl = path.to.external.mesJobOperation(operationId);
+      }
+
       return {
-        data: path.to.file.jobTraveler(jobMakeMethod.data.id),
+        data: redirectUrl,
         error: null,
       };
     }
 
     return {
-      data: path.to.job(jobId),
+      data: redirectUrl,
       error: null,
     };
   } else if (kanban.data.replenishmentSystem === "Buy") {

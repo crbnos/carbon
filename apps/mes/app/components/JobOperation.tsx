@@ -428,20 +428,17 @@ export const JobOperation = ({
         <div className="hidden md:flex items-center justify-between px-4 lg:pl-6 py-2 h-[var(--header-height)] bg-background gap-4 max-w-[100vw] overflow-x-hidden scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
           <HStack>
             <Heading size="h4">{operation.jobReadableId}</Heading>
-            <Button
-              variant="secondary"
-              size="sm"
-              leftIcon={<LuQrCode />}
-              asChild
+            <a
+              href={path.to.file.jobTraveler(operation.jobMakeMethodId)}
+              target="_blank"
+              rel="noreferrer"
             >
-              <a
-                href={path.to.file.jobTraveler(operation.jobMakeMethodId)}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Traveler
-              </a>
-            </Button>
+              <IconButton
+                aria-label="Job Traveler"
+                variant="secondary"
+                icon={<LuQrCode />}
+              />
+            </a>
           </HStack>
 
           <HStack className="justify-end items-center gap-2">

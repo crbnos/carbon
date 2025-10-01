@@ -24,3 +24,10 @@ JOIN "location" l ON k."locationId" = l."id"
 LEFT JOIN "shelf" s ON k."shelfId" = s."id"
 LEFT JOIN "supplier" su ON k."supplierId" = su."id"
 LEFT JOIN "job" j ON k."jobId" = j."id";
+
+
+ALTER TABLE "methodOperation" ADD COLUMN "completeAllOnScan" BOOLEAN NOT NULL DEFAULT FALSE;
+
+ALTER TABLE "quoteOperation" ADD COLUMN "completeAllOnScan" BOOLEAN NOT NULL DEFAULT FALSE;
+
+ALTER TABLE "jobOperation" ADD COLUMN "completeAllOnScan" BOOLEAN NOT NULL DEFAULT FALSE;
