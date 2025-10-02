@@ -101,7 +101,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // Generate PDF
   const stream = await renderToStream(
-    <KanbanLabelPDF baseUrl={baseUrl} labels={labels} />
+    <KanbanLabelPDF
+      baseUrl={baseUrl}
+      labels={labels}
+      action={action as "order" | "start" | "complete"}
+    />
   );
 
   const body: Buffer = await new Promise((resolve, reject) => {

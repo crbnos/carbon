@@ -2,7 +2,8 @@ import bwipjs from "@bwip-js/node";
 
 export async function generateQRCode(
   text: string,
-  size: number
+  size: number,
+  color?: string
 ): Promise<string> {
   const buffer = await bwipjs.toBuffer({
     bcid: "qrcode",
@@ -10,13 +11,15 @@ export async function generateQRCode(
     scale: 2,
     height: size,
     width: size,
+    ...(color && { barcolor: color }),
   });
   return `data:image/png;base64,${buffer.toString("base64")}`;
 }
 
 export async function generateQRCodeBuffer(
   text: string,
-  size: number
+  size: number,
+  color?: string
 ): Promise<Buffer> {
   const buffer = await bwipjs.toBuffer({
     bcid: "qrcode",
@@ -24,6 +27,7 @@ export async function generateQRCodeBuffer(
     scale: 2,
     height: size,
     width: size,
+    ...(color && { barcolor: color }),
   });
   return buffer;
 }

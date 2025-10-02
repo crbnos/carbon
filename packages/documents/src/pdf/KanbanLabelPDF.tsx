@@ -19,6 +19,7 @@ interface KanbanLabel {
 interface KanbanLabelPDFProps {
   baseUrl: string;
   labels: KanbanLabel[];
+  action?: "order" | "start" | "complete";
 }
 
 // Initialize tailwind-styled-components
@@ -37,7 +38,11 @@ const tw = createTw({
   },
 });
 
-const KanbanLabelPDF = ({ baseUrl, labels }: KanbanLabelPDFProps) => {
+const KanbanLabelPDF = ({
+  baseUrl,
+  labels,
+  action = "order",
+}: KanbanLabelPDFProps) => {
   // Fixed 2x3 layout (6 labels per page)
   const rows = 3;
   const columns = 2;
@@ -57,6 +62,21 @@ const KanbanLabelPDF = ({ baseUrl, labels }: KanbanLabelPDFProps) => {
 
   // QR code size - make it prominent
   const qrCodeSize = Math.min(labelHeight * 0.35, labelWidth * 0.4);
+
+  // QR code color based on action type
+  const getQRColor = () => {
+    if (action === "start") return "059669"; // emerald-600
+    if (action === "complete") return "2563eb"; // blue-600
+    return "000000"; // black for order
+  };
+
+  // Get appropriate API endpoint based on action
+  const getKanbanUrl = (labelId: string) => {
+    if (action === "start") return `${baseUrl}/api/kanban/start/${labelId}`;
+    if (action === "complete")
+      return `${baseUrl}/api/kanban/complete/${labelId}`;
+    return `${baseUrl}/api/kanban/${labelId}`;
+  };
 
   return (
     <Document>
@@ -107,8 +127,9 @@ const KanbanLabelPDF = ({ baseUrl, labels }: KanbanLabelPDFProps) => {
                         {/* QR Code */}
                         <Image
                           src={generateQRCode(
-                            `${baseUrl}/api/kanban/${label.id}`,
-                            qrCodeSize / 72
+                            getKanbanUrl(label.id),
+                            qrCodeSize / 72,
+                            getQRColor()
                           )}
                           style={{
                             width: qrCodeSize,

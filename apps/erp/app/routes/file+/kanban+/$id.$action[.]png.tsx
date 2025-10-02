@@ -26,16 +26,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const url = new URL(request.url);
   let kanbanUrl = "";
+  let qrColor = "000000";
   const baseUrl = `${url.protocol}//${url.host}`;
   if (action === "order") {
     kanbanUrl = `${baseUrl}${path.to.api.kanban(id)}`;
+    qrColor = "000000"; // black
   } else if (action === "start") {
     kanbanUrl = `${baseUrl}${path.to.api.kanbanStart(id)}`;
+    qrColor = "059669"; // emerald-600
   } else if (action === "complete") {
     kanbanUrl = `${baseUrl}${path.to.api.kanbanComplete(id)}`;
+    qrColor = "2563eb"; // blue-600
   }
 
-  const buffer = await generateQRCodeBuffer(kanbanUrl, 36);
+  console.log({ qrColor });
+
+  const buffer = await generateQRCodeBuffer(kanbanUrl, 36, qrColor);
 
   // @ts-ignore
   return new Response(buffer, {
