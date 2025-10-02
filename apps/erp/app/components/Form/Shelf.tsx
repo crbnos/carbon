@@ -8,8 +8,12 @@ import ShelfForm from "~/modules/inventory/ui/Shelves/ShelfForm";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
-type ShelfSelectProps = Omit<ComboboxProps, "options" | "onChange"> & {
+type ShelfSelectProps = Omit<
+  ComboboxProps,
+  "options" | "onChange" | "inline"
+> & {
   locationId?: string;
+  inline?: boolean;
   onChange?: (shelf: ListItem | null) => void;
 };
 
@@ -18,7 +22,7 @@ const ShelfPreview = (
   options: { value: string; label: string }[]
 ) => {
   const shelf = options.find((o) => o.value === value);
-  if (!shelf) return null;
+  if (!shelf) return "Inventory";
   return shelf.label;
 };
 

@@ -31,6 +31,7 @@ import {
   Customer,
   Item,
   Location,
+  Shelf,
   Tags,
   UnitOfMeasure,
 } from "~/components/Form";
@@ -496,6 +497,25 @@ const JobProperties = () => {
             if (value?.value) {
               onUpdate("locationId", value.value);
             }
+          }}
+        />
+      </ValidatedForm>
+
+      <ValidatedForm
+        defaultValues={{ shelfId: routeData?.job?.shelfId ?? undefined }}
+        validator={z.object({
+          shelfId: zfd.text(z.string().optional()),
+        })}
+        className="w-full"
+      >
+        <Shelf
+          label="Shelf"
+          name="shelfId"
+          inline
+          locationId={routeData?.job?.locationId ?? undefined}
+          isReadOnly={isDisabled}
+          onChange={(value) => {
+            onUpdate("shelfId", value?.id ?? null);
           }}
         />
       </ValidatedForm>

@@ -130,6 +130,7 @@ export async function action({ request }: ActionFunctionArgs) {
     case "dueDate":
     case "jobId":
     case "locationId":
+    case "shelfId":
     case "startDate":
     case "unitOfMeasureCode":
       return json(
