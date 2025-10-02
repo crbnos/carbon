@@ -31,6 +31,7 @@ import {
 import type { z } from "zod";
 import { SupplierAvatar } from "~/components";
 import {
+  Boolean,
   CustomFormFields,
   Hidden,
   Input,
@@ -138,6 +139,11 @@ const ProcessForm = ({
                 {processType !== "Inside" && (
                   <SupplierProcesses processId={initialValues.id} />
                 )}
+                <Boolean
+                  name="completeAllOnScan"
+                  label=""
+                  description="Complete all quantities on barcode scan"
+                />
                 <CustomFormFields table="process" />
               </VStack>
             </ModalDrawerBody>

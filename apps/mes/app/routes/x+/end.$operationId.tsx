@@ -23,7 +23,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const [jobOperation, productionQuantities] = await Promise.all([
     serviceRole
       .from("jobOperation")
-      .select("*")
+      .select("*, ...process(completeAllOnScan)")
       .eq("id", operationId)
       .maybeSingle(),
     serviceRole

@@ -10227,7 +10227,6 @@ export type Database = {
         Row: {
           assignee: string | null
           companyId: string
-          completeAllOnScan: boolean
           createdAt: string
           createdBy: string
           customFields: Json | null
@@ -10270,7 +10269,6 @@ export type Database = {
         Insert: {
           assignee?: string | null
           companyId: string
-          completeAllOnScan?: boolean
           createdAt?: string
           createdBy: string
           customFields?: Json | null
@@ -10313,7 +10311,6 @@ export type Database = {
         Update: {
           assignee?: string | null
           companyId?: string
-          completeAllOnScan?: boolean
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
@@ -13358,7 +13355,6 @@ export type Database = {
       methodOperation: {
         Row: {
           companyId: string
-          completeAllOnScan: boolean
           createdAt: string
           createdBy: string
           customFields: Json | null
@@ -13388,7 +13384,6 @@ export type Database = {
         }
         Insert: {
           companyId: string
-          completeAllOnScan?: boolean
           createdAt?: string
           createdBy: string
           customFields?: Json | null
@@ -13418,7 +13413,6 @@ export type Database = {
         }
         Update: {
           companyId?: string
-          completeAllOnScan?: boolean
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
@@ -19966,6 +19960,7 @@ export type Database = {
       process: {
         Row: {
           companyId: string
+          completeAllOnScan: boolean
           createdAt: string
           createdBy: string
           customFields: Json | null
@@ -19979,6 +19974,7 @@ export type Database = {
         }
         Insert: {
           companyId: string
+          completeAllOnScan?: boolean
           createdAt?: string
           createdBy: string
           customFields?: Json | null
@@ -19992,6 +19988,7 @@ export type Database = {
         }
         Update: {
           companyId?: string
+          completeAllOnScan?: boolean
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
@@ -24765,7 +24762,6 @@ export type Database = {
       quoteOperation: {
         Row: {
           companyId: string
-          completeAllOnScan: boolean
           createdAt: string
           createdBy: string
           customFields: Json | null
@@ -24800,7 +24796,6 @@ export type Database = {
         }
         Insert: {
           companyId: string
-          completeAllOnScan?: boolean
           createdAt?: string
           createdBy: string
           customFields?: Json | null
@@ -24835,7 +24830,6 @@ export type Database = {
         }
         Update: {
           companyId?: string
-          completeAllOnScan?: boolean
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
@@ -41388,6 +41382,7 @@ export type Database = {
       processes: {
         Row: {
           companyId: string | null
+          completeAllOnScan: boolean | null
           createdAt: string | null
           createdBy: string | null
           customFields: Json | null
@@ -45492,14 +45487,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]

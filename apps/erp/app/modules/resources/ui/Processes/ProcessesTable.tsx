@@ -4,6 +4,7 @@ import {
   AvatarGroupList,
   AvatarOverflowIndicator,
   Badge,
+  Checkbox,
   HStack,
   MenuIcon,
   MenuItem,
@@ -16,6 +17,7 @@ import {
   LuCog,
   LuFactory,
   LuPencil,
+  LuQrCode,
   LuRuler,
   LuTrash,
   LuTriangleAlert,
@@ -155,6 +157,25 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
         ),
         meta: {
           icon: <LuUsers />,
+        },
+      },
+      {
+        accessorKey: "completeAllOnScan",
+        header: "Complete All",
+        cell: ({ row }) => (
+          <div className="flex w-full items-center justify-center">
+            <Checkbox isChecked={row.original.completeAllOnScan ?? false} />
+          </div>
+        ),
+        meta: {
+          icon: <LuQrCode />,
+          filter: {
+            type: "static",
+            options: [
+              { value: "true", label: "Yes" },
+              { value: "false", label: "No" },
+            ],
+          },
         },
       },
       {
