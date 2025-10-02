@@ -355,6 +355,14 @@ export async function getJobParametersByOperationId(
     .eq("operationId", operationId);
 }
 
+export async function getKanbanByJobId(
+  client: SupabaseClient<Database>,
+  jobId: string | null
+) {
+  if (!jobId) return { data: null, error: null };
+  return client.from("kanban").select("*").eq("jobId", jobId).maybeSingle();
+}
+
 export async function getLocationsByCompany(
   client: SupabaseClient<Database>,
   companyId: string

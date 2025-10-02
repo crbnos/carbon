@@ -17,16 +17,16 @@ import {
   useMount,
   VStack,
 } from "@carbon/react";
-import { json, redirect, useLoaderData } from "@remix-run/react";
-import type { RealtimeChannel } from "@supabase/supabase-js";
-import type { LoaderFunctionArgs } from "@vercel/remix";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   getLocalTimeZone,
   now,
   parseAbsolute,
   toZoned,
 } from "@internationalized/date";
+import { json, redirect, useLoaderData } from "@remix-run/react";
+import type { RealtimeChannel } from "@supabase/supabase-js";
+import type { LoaderFunctionArgs } from "@vercel/remix";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LuSettings2, LuTriangleAlert } from "react-icons/lu";
 
 import type { ColumnFilter } from "~/components/Filter";

@@ -71,8 +71,8 @@ export const path = {
     endOperation: (id: string) => generatePath(`${x}/end/${id}`),
     feedback: `${x}/feedback`,
     finish: `${x}/finish`,
-
     health: "/health",
+    kanbanComplete: (id: string) => `${ERP_URL}/api/kanban/complete/${id}`,
     inventoryAdjustment: `${x}/adjustment`,
     issue: `${x}/issue`,
     issueTrackedEntity: `${x}/issue-tracked-entity`,

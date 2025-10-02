@@ -4,6 +4,7 @@ import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireAuthSession(request);
+
   throw redirect(path.to.authenticatedRoot);
 }
 

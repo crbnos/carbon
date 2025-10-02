@@ -93,7 +93,7 @@ export async function action({ request }: ActionFunctionArgs) {
         );
       }
 
-      throw redirect(
+      return redirect(
         path.to.operations,
         await flash(request, {
           ...success("Operation finished successfully"),
@@ -103,14 +103,14 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     if (trackedEntityId) {
-      throw redirect(
+      return redirect(
         `${path.to.operation(
           validation.data.jobOperationId
         )}?trackedEntityId=${trackedEntityId}`
       );
     }
 
-    throw redirect(`${path.to.operation(validation.data.jobOperationId)}`);
+    return redirect(`${path.to.operation(validation.data.jobOperationId)}`);
   } else if (validation.data.trackingType === "Batch") {
     const serviceRole = await getCarbonServiceRole();
     const response = await serviceRole.functions.invoke("issue", {
@@ -149,7 +149,7 @@ export async function action({ request }: ActionFunctionArgs) {
         );
       }
 
-      throw redirect(
+      return redirect(
         path.to.operations,
         await flash(request, {
           ...success("Operation finished successfully"),
@@ -158,7 +158,7 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    throw redirect(`${path.to.operation(validation.data.jobOperationId)}`);
+    return redirect(`${path.to.operation(validation.data.jobOperationId)}`);
   } else {
     const { trackedEntityId, trackingType, ...data } = validation.data;
     const insertProduction = await insertProductionQuantity(client, {
@@ -217,7 +217,7 @@ export async function action({ request }: ActionFunctionArgs) {
         );
       }
 
-      throw redirect(
+      return redirect(
         path.to.operations,
         await flash(request, {
           ...success("Operation finished successfully"),
@@ -229,7 +229,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return json(
       insertProduction.data,
       await flash(request, {
-        ...success("Production quantity recorded successfully"),
+        ...success("Successfully completed part"),
         flash: "success",
       })
     );

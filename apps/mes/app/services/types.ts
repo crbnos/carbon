@@ -6,6 +6,7 @@ import type {
   getJobOperationById,
   getJobOperationProcedure,
   getJobOperationsByWorkCenter,
+  getKanbanByJobId,
   getLocationsByCompany,
   getProductionEventsForJobOperation,
   getProductionQuantitiesForJobOperation,
@@ -44,9 +45,7 @@ export type JobMaterial = NonNullable<
   kitParentId?: string;
 };
 
-export type TrackedInput = NonNullable<
-  Awaited<ReturnType<typeof getTrackedInputs>>["data"]
->[number];
+export type Kanban = Awaited<ReturnType<typeof getKanbanByJobId>>["data"];
 
 export type JobMakeMethod = NonNullable<
   Awaited<ReturnType<typeof getJobMakeMethod>>["data"]
@@ -88,6 +87,10 @@ export type StorageItem = FileObject & {
 
 export type TrackedEntity = NonNullable<
   Awaited<ReturnType<typeof getTrackedEntitiesByMakeMethodId>>["data"]
+>[number];
+
+export type TrackedInput = NonNullable<
+  Awaited<ReturnType<typeof getTrackedInputs>>["data"]
 >[number];
 
 export type WorkCenter = NonNullable<

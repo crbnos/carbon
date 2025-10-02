@@ -105,6 +105,7 @@ import type {
   JobMaterial,
   JobOperationAttribute,
   JobOperationParameter,
+  Kanban,
   OperationWithDetails,
   ProductionEvent,
   ProductionQuantity,
@@ -114,6 +115,7 @@ import type {
 } from "~/services/types";
 import { path } from "~/utils/path";
 
+import type { Result } from "@carbon/auth";
 import { useCarbon } from "@carbon/auth";
 import {
   Combobox,
@@ -202,6 +204,7 @@ import ScrapReason from "./ScrapReason";
 type JobOperationProps = {
   events: ProductionEvent[];
   files: Promise<StorageItem[]>;
+  kanban: Kanban | null;
   materials: Promise<{
     materials: JobMaterial[];
     trackedInputs: TrackedInput[];
@@ -222,6 +225,7 @@ export const JobOperation = ({
   events,
   files,
   job,
+  kanban,
   materials,
   method,
   operation: originalOperation,
@@ -370,12 +374,20 @@ export const JobOperation = ({
     }
   };
 
-  const completeFetcher = useFetcher<{}>();
+  const completeFetcher = useFetcher<Result>();
   useKeyboardWedge({
-    test: (input) => input === "x",
+    test: (input) => {
+      if (kanban?.completedBarcodeOverride) {
+        return input === kanban.completedBarcodeOverride;
+      } else if (kanban?.id) {
+        return input === path.to.kanbanComplete(kanban.id);
+      }
+      return false;
+    },
     callback: () => {
       completeFetcher.load(path.to.endOperation(operation.id));
     },
+    active: !!kanban?.id,
   });
 
   return (

@@ -2,7 +2,7 @@ import { error, getCarbonServiceRole, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { FunctionRegion } from "@supabase/supabase-js";
-import { json, redirect, type LoaderFunctionArgs } from "@vercel/remix";
+import { redirect, type LoaderFunctionArgs } from "@vercel/remix";
 import {
   finishJobOperation,
   getTrackedEntitiesByMakeMethodId,
@@ -18,7 +18,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const url = new URL(request.url);
   let trackedEntityId = url.searchParams.get("trackedEntityId");
-
   const serviceRole = await getCarbonServiceRole();
 
   const [jobOperation, productionQuantities] = await Promise.all([
@@ -39,7 +38,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     !jobOperation.data ||
     !jobOperation.data.jobMakeMethodId
   ) {
-    throw redirect(
+    return redirect(
       path.to.operations,
       await flash(request, {
         ...error(jobOperation.error, "Failed to fetch job operation"),
@@ -49,7 +48,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   if (jobOperation.data?.companyId !== companyId) {
-    throw redirect(
+    return redirect(
       path.to.operations,
       await flash(request, {
         ...error(
@@ -71,7 +70,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ]);
 
   if (jobMakeMethod.error || !jobMakeMethod.data) {
-    throw redirect(
+    return redirect(
       path.to.operations,
       await flash(
         request,
@@ -128,7 +127,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         const newTrackedEntityId = response.data?.newTrackedEntityId;
 
         if (newTrackedEntityId) {
-          throw redirect(
+          return redirect(
             `${path.to.operation(
               operationId
             )}?trackedEntityId=${newTrackedEntityId}`
@@ -142,8 +141,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           });
 
           if (finishOperation.error) {
-            return json(
-              {},
+            return redirect(
+              path.to.operation(operationId),
               await flash(
                 request,
                 error(finishOperation.error, "Failed to finish operation")
@@ -151,7 +150,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             );
           }
 
-          throw redirect(
+          return redirect(
             path.to.operations,
             await flash(request, {
               ...success("Operation finished successfully"),
@@ -175,7 +174,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         });
 
         if (response.error) {
-          throw redirect(
+          return redirect(
             path.to.operation(operationId),
             await flash(request, {
               ...error(response.error, "Failed to complete job operation"),
@@ -194,7 +193,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       });
 
       if (insertProduction.error) {
-        throw redirect(
+        return redirect(
           path.to.operation(operationId),
           await flash(request, {
             ...error(
@@ -218,7 +217,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       });
 
       if (issue.error) {
-        throw redirect(
+        return redirect(
           path.to.operation(operationId),
           await flash(request, {
             ...error(issue.error, "Failed to issue materials"),
@@ -236,7 +235,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     });
 
     if (finishOperation.error) {
-      throw redirect(
+      return redirect(
         path.to.operation(operationId),
         await flash(request, {
           ...error(finishOperation.error, "Failed to finish operation"),
@@ -245,7 +244,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       );
     }
 
-    throw redirect(
+    return redirect(
       path.to.operations,
       await flash(request, {
         ...success("Operation finished successfully"),
@@ -254,7 +253,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  throw redirect(
+  return redirect(
     path.to.operation(operationId),
     await flash(request, {
       ...success("Successfully completed part"),

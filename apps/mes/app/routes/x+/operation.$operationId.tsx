@@ -14,6 +14,7 @@ import {
   getJobMaterialsByOperationId,
   getJobOperationById,
   getJobOperationProcedure,
+  getKanbanByJobId,
   getProductionEventsForJobOperation,
   getProductionQuantitiesForJobOperation,
   getThumbnailPathByItemId,
@@ -23,6 +24,7 @@ import {
 import type { OperationWithDetails } from "~/services/types";
 import { makeDurations } from "~/utils/durations";
 import { path } from "~/utils/path";
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { userId, companyId } = await requirePermissions(request, {});
 
@@ -65,14 +67,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const [thumbnailPath, trackedEntities, jobMakeMethod] = await Promise.all([
-    getThumbnailPathByItemId(serviceRole, operation.data?.[0].itemId),
-    getTrackedEntitiesByMakeMethodId(
-      serviceRole,
-      operation.data?.[0].jobMakeMethodId
-    ),
-    getJobMakeMethod(serviceRole, operation.data?.[0].jobMakeMethodId),
-  ]);
+  const [thumbnailPath, trackedEntities, jobMakeMethod, kanban] =
+    await Promise.all([
+      getThumbnailPathByItemId(serviceRole, operation.data?.[0].itemId),
+      getTrackedEntitiesByMakeMethodId(
+        serviceRole,
+        operation.data?.[0].jobMakeMethodId
+      ),
+      getJobMakeMethod(serviceRole, operation.data?.[0].jobMakeMethodId),
+      getKanbanByJobId(serviceRole, job.data.id),
+    ]);
 
   // If no trackedEntityId is provided in the URL but trackedEntities exist,
   // redirect to the same URL with the last trackedEntityId as a search param
@@ -110,6 +114,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ),
     job: job.data,
     jobMakeMethod: jobMakeMethod.data,
+    kanban: kanban.data,
     files: getJobFiles(
       serviceRole,
       companyId,
@@ -139,6 +144,7 @@ export default function OperationRoute() {
     files,
     job,
     jobMakeMethod,
+    kanban,
     materials,
     operation,
     procedure,
@@ -152,6 +158,7 @@ export default function OperationRoute() {
       key={`job-operation-${operationId}`}
       events={events}
       files={files}
+      kanban={kanban}
       materials={materials}
       method={jobMakeMethod}
       trackedEntities={trackedEntities}
