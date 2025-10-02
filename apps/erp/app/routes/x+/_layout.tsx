@@ -12,13 +12,13 @@ import { TooltipProvider, useMount } from "@carbon/react";
 import {
   AcademyBanner,
   ItarPopup,
-  useKeyboardWedgeNavigation,
+  useKeyboardWedge,
   useNProgress,
 } from "@carbon/remix";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import { Edition } from "@carbon/utils";
 import type { ShouldRevalidateFunction } from "@remix-run/react";
-import { Outlet, useLoaderData } from "@remix-run/react";
+import { Outlet, useLoaderData, useNavigate } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 
@@ -137,9 +137,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function AuthenticatedRoute() {
   const { session, user } = useLoaderData<typeof loader>();
+  const navigate = useNavigate();
 
   useNProgress();
-  useKeyboardWedgeNavigation();
+  useKeyboardWedge({
+    test: (input) => input.startsWith("http"),
+    callback: (input) => {
+      try {
+        const url = new URL(input);
+        navigate(url.pathname + url.search);
+      } catch {
+        navigate(input);
+      }
+    },
+  });
 
   useMount(() => {
     if (!user) return;
