@@ -1,7 +1,7 @@
 import { CONTROLLED_ENVIRONMENT, error, getBrowserEnv } from "@carbon/auth";
 import { getSessionFlash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
-import { Button, Heading, toast } from "@carbon/react";
+import { Button, Heading, toast, Toaster } from "@carbon/react";
 import type { Theme } from "@carbon/utils";
 import { modeValidator, themes } from "@carbon/utils";
 import {
@@ -22,6 +22,7 @@ import type {
 } from "@vercel/remix";
 import { json } from "@vercel/remix";
 import React, { useEffect } from "react";
+import { FlashOverlay, flashOverlay } from "~/components/FlashOverlay";
 import { getMode, setMode } from "~/services/mode.server";
 import Background from "~/styles/background.css?url";
 import NProgress from "~/styles/nprogress.css?url";
@@ -161,7 +162,7 @@ function Document({
       </head>
       <body className="h-full bg-background antialiased selection:bg-primary/10 selection:text-primary">
         {children}
-
+        <Toaster position="bottom-right" visibleToasts={5} />
         <ScrollRestoration />
         <Scripts />
         {!CONTROLLED_ENVIRONMENT && <Analytics />}
@@ -185,12 +186,20 @@ export default function App() {
     }
   }, [result]);
 
+  /* Flash Overlay */
+  useEffect(() => {
+    if (result?.flash) {
+      flashOverlay.flash(result.flash);
+    }
+  }, [result?.flash]);
+
   /* Dark/Light Mode */
   const mode = useMode();
 
   return (
     <Document mode={mode} theme={theme}>
       <Outlet />
+      <FlashOverlay />
       <script
         dangerouslySetInnerHTML={{
           __html: `window.env = ${JSON.stringify(env)}`,

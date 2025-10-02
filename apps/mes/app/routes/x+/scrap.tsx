@@ -62,6 +62,9 @@ export async function action({ request }: ActionFunctionArgs) {
 
   return json(
     insertScrap.data,
-    await flash(request, success("Scrap quantity recorded successfully"))
+    await flash(request, {
+      ...success("Scrap quantity recorded successfully"),
+      flash: "error",
+    })
   );
 }

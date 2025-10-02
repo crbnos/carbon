@@ -31,4 +31,5 @@ export type Permission = {
 export type Result = {
   success: boolean;
   message?: string;
+  flash?: "success" | "error";
 };

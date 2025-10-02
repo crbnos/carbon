@@ -213,7 +213,10 @@ export async function action({ request }: ActionFunctionArgs) {
 
     return json(
       insertProduction.data,
-      await flash(request, success("Production quantity recorded successfully"))
+      await flash(request, {
+        ...success("Production quantity recorded successfully"),
+        flash: "success",
+      })
     );
   }
 }

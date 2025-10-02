@@ -30,7 +30,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (itemLedger.error) {
     const flashMessage =
-      itemLedger.error === "Insufficient quantity for negative adjustment"
+      itemLedger.error.message ===
+      "Insufficient quantity for negative adjustment"
         ? "Insufficient quantity for negative adjustment"
         : "Failed to create manual inventory adjustment";
 

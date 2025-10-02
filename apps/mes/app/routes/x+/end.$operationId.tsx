@@ -244,6 +244,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   throw redirect(
     path.to.operation(operationId),
-    await flash(request, success("Successfully completed part"))
+    await flash(request, {
+      ...success("Successfully completed part"),
+      flash: "success",
+    })
   );
 }

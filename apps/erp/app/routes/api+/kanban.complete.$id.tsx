@@ -1,12 +1,8 @@
 import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { Database } from "@carbon/database";
-import { Loading } from "@carbon/react";
-import { Await, useLoaderData } from "@remix-run/react";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { defer, type LoaderFunctionArgs } from "@vercel/remix";
-import { Suspense } from "react";
-import { Redirect } from "~/components/Redirect";
+import { json, redirect, type LoaderFunctionArgs } from "@vercel/remix";
 import { getKanban } from "~/modules/inventory";
 import { getActiveJobOperationByJobId } from "~/modules/production";
 import { path } from "~/utils/path";
@@ -60,24 +56,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  return defer(await handleKanbanComplete({ client, companyId, id }));
-}
+  const result = await handleKanbanComplete({ client, companyId, id });
 
-export default function KanbanRedirectRoute() {
-  const promise = useLoaderData<typeof loader>();
+  if (result.error || !result.data) {
+    return json({ error: result.error }, { status: 400 });
+  }
 
-  return (
-    <div className="flex h-screen w-screen items-center justify-center">
-      <Suspense fallback={<Loading className="size-8" isLoading />}>
-        <Await resolve={promise}>
-          {(resolvedPromise) => {
-            if (resolvedPromise.error) {
-              return <div>{resolvedPromise.error}</div>;
-            }
-            return <Redirect path={resolvedPromise?.data ?? ""} />;
-          }}
-        </Await>
-      </Suspense>
-    </div>
-  );
+  throw redirect(result.data);
 }
