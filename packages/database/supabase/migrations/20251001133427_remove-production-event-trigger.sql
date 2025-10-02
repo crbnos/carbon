@@ -52,7 +52,7 @@ BEGIN
         job_shelf_id TEXT;
         
       BEGIN
-        UPDATE "kanban" SET "jobId" = NULL WHERE "jobId" = NEW."jobId";
+        
 
         SELECT "locationId"
         INTO job_location_id
@@ -155,3 +155,23 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+
+
+-- Trigger to clear kanban jobId when job is completed or canceled
+CREATE OR REPLACE FUNCTION job_complete_or_canceled()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Check if status changed to 'Completed' or 'Canceled'
+  IF (OLD."status" != NEW."status" AND (NEW."status" = 'Completed' OR NEW."status" = 'Cancelled')) THEN
+    UPDATE "kanban" 
+    SET "jobId" = NULL 
+    WHERE "jobId" = NEW."id";
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE TRIGGER "job_completed_or_canceled_trigger"
+AFTER UPDATE ON "job"
+FOR EACH ROW EXECUTE FUNCTION job_complete_or_canceled();

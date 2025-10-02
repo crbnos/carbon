@@ -389,10 +389,10 @@ export const JobOperation = ({
               <Button
                 variant="ghost"
                 leftIcon={<LuChevronLeft />}
-                onClick={() => navigate(path.to.assigned)}
+                onClick={() => navigate(path.to.operations)}
                 className="pl-2"
               >
-                Assignments
+                Schedule
               </Button>
             </div>
             <div className="hidden md:flex flex-shrink-0 items-center justify-end gap-2">
@@ -2502,7 +2502,7 @@ function useOperation({
               }));
             } else if (payload.eventType === "DELETE") {
               toast.error("This operation has been deleted");
-              window.location.href = path.to.assigned;
+              window.location.href = path.to.operations;
             }
           }
         )

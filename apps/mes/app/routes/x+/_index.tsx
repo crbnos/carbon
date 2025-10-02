@@ -3,5 +3,5 @@ import { redirect } from "@vercel/remix";
 import { path } from "~/utils/path";
 
 export const loader: LoaderFunction = async ({ request }) => {
-  return redirect(path.to.assigned);
+  return redirect(path.to.operations);
 };

@@ -91,15 +91,11 @@ const KanbansTable = memo(
           header: "Item",
           cell: ({ row }) => (
             <HStack className="py-1">
-              <div className="relative">
-                <ItemThumbnail
-                  size="sm"
-                  thumbnailPath={row.original.thumbnailPath}
-                />
-                {row.original.jobReadableId && (
-                  <PulsingDot className="absolute top-0 right-0" />
-                )}
-              </div>
+              <ItemThumbnail
+                size="sm"
+                thumbnailPath={row.original.thumbnailPath}
+              />
+
               <Hyperlink to={`${path.to.kanban(row.original.id!)}?${params}`}>
                 <VStack spacing={0}>
                   <div className="flex gap-1 items-center">
@@ -121,6 +117,24 @@ const KanbansTable = memo(
               })),
             },
             icon: <LuPackage />,
+          },
+        },
+        {
+          id: "job",
+          header: "",
+          cell: ({ row }) => {
+            if (!row.original.jobReadableId || !row.original.jobId) return null;
+            return (
+              <Badge variant="outline">
+                <Link
+                  to={path.to.job(row.original.jobId)}
+                  className="flex flex-row items-center gap-1"
+                >
+                  {row.original.jobReadableId}
+                  <PulsingDot />
+                </Link>
+              </Badge>
+            );
           },
         },
         {

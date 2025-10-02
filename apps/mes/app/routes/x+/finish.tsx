@@ -43,7 +43,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    path.to.assigned,
+    path.to.operations,
     await flash(request, success("Operation finished successfully"))
   );
 }
