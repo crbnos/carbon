@@ -1,6 +1,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { z } from "zod";
+import { getDefaultShelfForJob } from "~/modules/inventory";
 import {
   productionOrderValidator,
   recalculateJobRequirements,
@@ -178,6 +179,13 @@ export async function action({ request }: ActionFunctionArgs) {
                 continue;
               }
 
+              const shelfId = await getDefaultShelfForJob(
+                client,
+                item.id,
+                locationId,
+                companyId
+              );
+
               const createJob = await upsertJob(
                 client,
                 {
@@ -191,6 +199,7 @@ export async function action({ request }: ActionFunctionArgs) {
                   dueDate: order.dueDate ?? undefined,
                   deadlineType: order.isASAP ? "ASAP" : "Soft Deadline",
                   locationId,
+                  shelfId: shelfId ?? undefined,
                   companyId,
                   createdBy: userId,
                   unitOfMeasureCode: "EA",

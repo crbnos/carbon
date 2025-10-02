@@ -101,12 +101,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   }
 
-  const quantities = await getItemQuantities(
-    client,
-    itemId,
-    companyId,
-    locationId
-  );
+  const [quantities, itemShelfQuantities] = await Promise.all([
+    getItemQuantities(client, itemId, companyId, locationId),
+    getItemShelfQuantities(client, itemId, companyId, locationId),
+  ]);
   if (quantities.error) {
     throw redirect(
       path.to.items,
@@ -114,12 +112,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const itemShelfQuantities = await getItemShelfQuantities(
-    client,
-    itemId,
-    companyId,
-    locationId
-  );
   if (itemShelfQuantities.error || !itemShelfQuantities.data) {
     throw redirect(
       path.to.items,

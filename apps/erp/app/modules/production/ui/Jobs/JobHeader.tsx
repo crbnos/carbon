@@ -892,7 +892,7 @@ function JobCompleteModal({
               salesOrderId: job.salesOrderId ?? undefined,
               salesOrderLineId: job.salesOrderLineId ?? undefined,
               locationId: job.locationId ?? undefined,
-              shelfId: defaultShelfId ?? undefined,
+              shelfId: job.shelfId ?? defaultShelfId ?? undefined,
             }}
             fetcher={fetcher}
           >

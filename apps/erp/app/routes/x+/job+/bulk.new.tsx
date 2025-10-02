@@ -14,6 +14,7 @@ import {
 } from "@internationalized/date";
 import { tasks } from "@trigger.dev/sdk/v3";
 import { redirect, type ActionFunctionArgs } from "@vercel/remix";
+import { getDefaultShelfForJob } from "~/modules/inventory";
 import { getItemReplenishment } from "~/modules/items";
 import {
   bulkJobValidator,
@@ -106,6 +107,13 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
+  const shelfId = await getDefaultShelfForJob(
+    serviceRole,
+    jobData.itemId,
+    jobData.locationId,
+    companyId
+  );
+
   for await (const [i] of Array.from({ length: jobs }, (_, i) => [i])) {
     const nextSequence = await getNextSequence(serviceRole, "job", companyId);
     if (nextSequence.error) {
@@ -138,6 +146,7 @@ export async function action({ request }: ActionFunctionArgs) {
             .subtract({ days: manufacturing.data?.leadTime ?? 7 })
             .toString()
         : undefined,
+      shelfId: shelfId ?? undefined,
       configuration,
       companyId,
       createdBy: userId,

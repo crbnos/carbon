@@ -1,6 +1,5 @@
 import {
   LuArrowRightLeft,
-  LuFolderKanban,
   LuHandCoins,
   LuNetwork,
   LuQrCode,
@@ -17,6 +16,12 @@ const inventoryRoutes: AuthenticatedRouteGroup[] = [
   {
     name: "Manage",
     routes: [
+      {
+        name: "Kanbans",
+        to: path.to.kanbans,
+        role: "employee",
+        icon: <LuQrCode />,
+      },
       {
         name: "Receipts",
         to: path.to.receipts,
@@ -64,12 +69,6 @@ const inventoryRoutes: AuthenticatedRouteGroup[] = [
   {
     name: "Configure",
     routes: [
-      {
-        name: "Kanbans",
-        to: path.to.kanbans,
-        role: "employee",
-        icon: <LuFolderKanban />,
-      },
       {
         name: "Shelves",
         to: path.to.shelves,

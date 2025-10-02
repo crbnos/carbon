@@ -9251,6 +9251,7 @@ export type Database = {
           salesOrderLineId: string | null
           scrapQuantity: number
           secondsToComplete: number | null
+          shelfId: string | null
           startDate: string | null
           status: Database["public"]["Enums"]["jobStatus"]
           tags: string[] | null
@@ -9289,6 +9290,7 @@ export type Database = {
           salesOrderLineId?: string | null
           scrapQuantity?: number
           secondsToComplete?: number | null
+          shelfId?: string | null
           startDate?: string | null
           status?: Database["public"]["Enums"]["jobStatus"]
           tags?: string[] | null
@@ -9327,6 +9329,7 @@ export type Database = {
           salesOrderLineId?: string | null
           scrapQuantity?: number
           secondsToComplete?: number | null
+          shelfId?: string | null
           startDate?: string | null
           status?: Database["public"]["Enums"]["jobStatus"]
           tags?: string[] | null
@@ -9557,6 +9560,13 @@ export type Database = {
             columns: ["salesOrderLineId"]
             isOneToOne: false
             referencedRelation: "salesOrderLines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_shelfId_fkey"
+            columns: ["shelfId"]
+            isOneToOne: false
+            referencedRelation: "shelf"
             referencedColumns: ["id"]
           },
           {
@@ -39546,6 +39556,7 @@ export type Database = {
           salesOrderReadableId: string | null
           scrapQuantity: number | null
           secondsToComplete: number | null
+          shelfId: string | null
           startDate: string | null
           status: Database["public"]["Enums"]["jobStatus"] | null
           tags: string[] | null
@@ -39777,6 +39788,13 @@ export type Database = {
             columns: ["salesOrderLineId"]
             isOneToOne: false
             referencedRelation: "salesOrderLines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_shelfId_fkey"
+            columns: ["shelfId"]
+            isOneToOne: false
+            referencedRelation: "shelf"
             referencedColumns: ["id"]
           },
           {
@@ -45474,14 +45492,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]

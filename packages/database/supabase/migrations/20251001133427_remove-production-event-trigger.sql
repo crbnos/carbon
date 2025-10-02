@@ -54,17 +54,12 @@ BEGIN
       BEGIN
         
 
-        SELECT "locationId"
-        INTO job_location_id
+        SELECT "locationId", "shelfId"
+        INTO job_location_id, job_shelf_id
         FROM "job" 
         WHERE "id" = NEW."jobId";
 
-        SELECT "defaultShelfId"
-        INTO job_shelf_id
-        FROM "pickMethod"
-        WHERE "itemId" = job_item_id
-          AND "locationId" = job_location_id
-        LIMIT 1;
+        
 
         -- Get sales order info
         SELECT "salesOrderId" INTO sales_order_id FROM "job" WHERE "id" = NEW."jobId";

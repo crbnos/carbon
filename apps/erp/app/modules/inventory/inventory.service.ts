@@ -7,6 +7,7 @@ import type { StorageItem } from "~/types";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
+import { getItemShelfQuantities } from "../items/items.service";
 import type {
   batchPropertyOrderValidator,
   batchPropertyValidator,
@@ -1146,4 +1147,43 @@ export async function upsertWarehouseTransferLine(
       .select()
       .single();
   }
+}
+
+export async function getDefaultShelfForJob(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  locationId: string,
+  companyId: string
+): Promise<string | null> {
+  const pickMethod = await client
+    .from("pickMethod")
+    .select("defaultShelfId")
+    .eq("itemId", itemId)
+    .eq("locationId", locationId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  if (pickMethod.data?.defaultShelfId) {
+    return pickMethod.data.defaultShelfId;
+  }
+
+  const itemShelfQuantities = await getItemShelfQuantities(
+    client,
+    itemId,
+    companyId,
+    locationId
+  );
+
+  if (itemShelfQuantities.data?.length) {
+    // Find the shelf with the highest quantity
+    const shelfWithHighestQuantity = itemShelfQuantities.data.reduce(
+      (max, current) => {
+        return (current.quantity ?? 0) > (max.quantity ?? 0) ? current : max;
+      }
+    );
+
+    return shelfWithHighestQuantity.shelfId;
+  }
+
+  return null;
 }

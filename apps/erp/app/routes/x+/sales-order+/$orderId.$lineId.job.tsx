@@ -7,6 +7,7 @@ import { parseDate } from "@internationalized/date";
 import { tasks } from "@trigger.dev/sdk/v3";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
+import { getDefaultShelfForJob } from "~/modules/inventory";
 import { getItemReplenishment } from "~/modules/items";
 import {
   salesOrderToJobValidator,
@@ -72,9 +73,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!jobId) throw new Error("jobId is not defined");
   const { id: _id, ...data } = validation.data;
 
+  const shelfId = await getDefaultShelfForJob(
+    serviceRole,
+    validation.data.itemId,
+    validation.data.locationId,
+    companyId
+  );
+
   const createJob = await upsertJob(serviceRole, {
     ...data,
     jobId,
+    shelfId: shelfId ?? undefined,
     startDate: data.dueDate
       ? parseDate(data.dueDate).subtract({ days: leadTime }).toString()
       : undefined,

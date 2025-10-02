@@ -11,7 +11,7 @@ import { defer, type LoaderFunctionArgs } from "@vercel/remix";
 import { Suspense } from "react";
 import { Redirect } from "~/components/Redirect";
 
-import { getKanban } from "~/modules/inventory";
+import { getDefaultShelfForJob, getKanban } from "~/modules/inventory";
 import { getItemReplenishment } from "~/modules/items";
 import {
   getActiveJobOperationByJobId,
@@ -71,9 +71,15 @@ async function handleKanban({
       };
     }
 
-    const [nextSequence, manufacturing] = await Promise.all([
+    const [nextSequence, manufacturing, defaultShelf] = await Promise.all([
       getNextSequence(client, "job", companyId),
       getItemReplenishment(client, kanban.data.itemId!, companyId),
+      getDefaultShelfForJob(
+        client,
+        kanban.data.itemId!,
+        kanban.data.locationId!,
+        companyId
+      ),
     ]);
 
     if (nextSequence.error) {
@@ -98,11 +104,15 @@ async function handleKanban({
       };
     }
 
+    // Use shelf from kanban if it exists, otherwise use default shelf
+    const shelfId = kanban.data.shelfId || defaultShelf || undefined;
+
     const createdJob = await upsertJob(client, {
       jobId: jobReadableId,
       itemId: kanban.data.itemId!,
       quantity: kanban.data.quantity!,
       locationId: kanban.data.locationId!,
+      shelfId,
       unitOfMeasureCode: kanban.data.purchaseUnitOfMeasureCode!,
       deadlineType: "Hard Deadline",
       scrapQuantity: 0,

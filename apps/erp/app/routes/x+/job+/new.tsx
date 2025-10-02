@@ -8,6 +8,7 @@ import { tasks } from "@trigger.dev/sdk/v3";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { useUrlParams, useUser } from "~/hooks";
+import { getDefaultShelfForJob } from "~/modules/inventory";
 import { getItemReplenishment } from "~/modules/items";
 import { jobValidator, upsertJob, upsertJobMethod } from "~/modules/production";
 import { JobForm } from "~/modules/production/ui/Jobs";
@@ -80,10 +81,18 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
+  const shelfId = await getDefaultShelfForJob(
+    client,
+    validation.data.itemId,
+    validation.data.locationId,
+    companyId
+  );
+
   const createJob = await upsertJob(client, {
     ...data,
     jobId,
     configuration,
+    shelfId: shelfId ?? undefined,
     startDate: data.dueDate
       ? parseDate(data.dueDate).subtract({ days: leadTime }).toString()
       : undefined,

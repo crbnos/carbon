@@ -13,6 +13,7 @@ import type { StorageItem } from "~/types";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
+import { getDefaultShelfForJob } from "../inventory";
 import type {
   operationParameterValidator,
   operationStepValidator,
@@ -146,6 +147,13 @@ export async function convertSalesOrderLinesToJobs(
           }
         }
 
+        const shelfId = await getDefaultShelfForJob(
+          serviceRole,
+          line.itemId,
+          locationId!,
+          companyId
+        );
+
         const data = {
           customerId: salesOrder.data?.customerId ?? undefined,
           deadlineType: "Hard Deadline" as const,
@@ -164,6 +172,7 @@ export async function convertSalesOrderLinesToJobs(
           salesOrderId: salesOrderId ?? undefined,
           salesOrderLineId: line.id,
           scrapQuantity: 0,
+          shelfId: shelfId ?? undefined,
           unitOfMeasureCode: line.unitOfMeasureCode ?? "EA",
         };
 
@@ -1585,6 +1594,7 @@ export async function upsertJob(
   job:
     | (Omit<z.infer<typeof jobValidator>, "id" | "jobId"> & {
         jobId: string;
+        shelfId?: string;
         startDate?: string;
         companyId: string;
         createdBy: string;
