@@ -41,20 +41,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   ) {
     throw redirect(
       path.to.operations,
-      await flash(
-        request,
-        error(jobOperation.error, "Failed to fetch job operation")
-      )
+      await flash(request, {
+        ...error(jobOperation.error, "Failed to fetch job operation"),
+        flash: "error",
+      })
     );
   }
 
   if (jobOperation.data?.companyId !== companyId) {
     throw redirect(
       path.to.operations,
-      await flash(
-        request,
-        error("You are not authorized to start this operation", "Unauthorized")
-      )
+      await flash(request, {
+        ...error(
+          "You are not authorized to start this operation",
+          "Unauthorized"
+        ),
+        flash: "error",
+      })
     );
   }
   const completeAll = jobOperation.data?.completeAllOnScan ?? false;
@@ -150,7 +153,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
           throw redirect(
             path.to.operations,
-            await flash(request, success("Operation finished successfully"))
+            await flash(request, {
+              ...success("Operation finished successfully"),
+              flash: "success",
+            })
           );
         }
       } else if (jobMakeMethod.data.requiresBatchTracking) {
@@ -171,10 +177,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         if (response.error) {
           throw redirect(
             path.to.operation(operationId),
-            await flash(
-              request,
-              error(response.error, "Failed to complete job operation")
-            )
+            await flash(request, {
+              ...error(response.error, "Failed to complete job operation"),
+              flash: "error",
+            })
           );
         }
       }
@@ -190,13 +196,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       if (insertProduction.error) {
         throw redirect(
           path.to.operation(operationId),
-          await flash(
-            request,
-            error(
+          await flash(request, {
+            ...error(
               insertProduction.error,
               "Failed to record production quantity"
-            )
-          )
+            ),
+            flash: "error",
+          })
         );
       }
 
@@ -214,7 +220,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       if (issue.error) {
         throw redirect(
           path.to.operation(operationId),
-          await flash(request, error(issue.error, "Failed to issue materials"))
+          await flash(request, {
+            ...error(issue.error, "Failed to issue materials"),
+            flash: "error",
+          })
         );
       }
     }
@@ -229,16 +238,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     if (finishOperation.error) {
       throw redirect(
         path.to.operation(operationId),
-        await flash(
-          request,
-          error(finishOperation.error, "Failed to finish operation")
-        )
+        await flash(request, {
+          ...error(finishOperation.error, "Failed to finish operation"),
+          flash: "error",
+        })
       );
     }
 
     throw redirect(
       path.to.operations,
-      await flash(request, success("Operation finished successfully"))
+      await flash(request, {
+        ...success("Operation finished successfully"),
+        flash: "success",
+      })
     );
   }
 

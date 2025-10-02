@@ -127,7 +127,7 @@ import {
   TextArea,
   ValidatedForm,
 } from "@carbon/form";
-import { useMode } from "@carbon/remix";
+import { useKeyboardWedge, useMode } from "@carbon/remix";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import {
   convertDateStringToIsoString,
@@ -370,6 +370,14 @@ export const JobOperation = ({
     }
   };
 
+  const completeFetcher = useFetcher<{}>();
+  useKeyboardWedge({
+    test: (input) => input === "x",
+    callback: () => {
+      completeFetcher.load(path.to.endOperation(operation.id));
+    },
+  });
+
   return (
     <>
       <Tabs
@@ -524,13 +532,17 @@ export const JobOperation = ({
                 </div>
               </HStack>
               <div className="flex flex-col flex-shrink items-end">
-                {parentIsSerial ? (
-                  <Heading size="h2">
-                    {serialIndex + 1} of {operation.operationQuantity}
-                  </Heading>
-                ) : (
-                  <Heading size="h2">{operation.operationQuantity}</Heading>
-                )}
+                <Heading size="h2">
+                  {formatDurationMilliseconds(
+                    ((progress.setup ?? 0) +
+                      (progress.labor ?? 0) +
+                      (progress.machine ?? 0)) /
+                      Math.max(operation.quantityComplete, 1),
+                    {
+                      style: "short",
+                    }
+                  )}
+                </Heading>
                 <p className="text-muted-foreground line-clamp-1">
                   {operation.itemUnitOfMeasure}
                 </p>

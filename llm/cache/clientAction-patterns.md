@@ -1,12 +1,14 @@
 # ClientAction Implementation Patterns
 
 ## Overview
+
 ClientAction is a Remix feature used to handle client-side operations before calling the server action. In this codebase, it's primarily used for cache invalidation with React Query.
 
 ## Common Patterns
 
 ### 1. Cache Invalidation with Predicate (Delete Operations)
-**File**: `/Users/barbinbrad/Code/carbon/apps/erp/app/routes/x+/inventory+/shelves.delete.$shelfId.tsx`
+
+**File**: `carbon/apps/erp/app/routes/x+/inventory+/shelves.delete.$shelfId.tsx`
 
 ```typescript
 export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
@@ -24,7 +26,8 @@ export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
 ```
 
 ### 2. Setting Query Data to Null (Update Operations)
-**File**: `/Users/barbinbrad/Code/carbon/apps/erp/app/routes/x+/resources+/work-centers.$id.tsx`
+
+**File**: `carbon/apps/erp/app/routes/x+/resources+/work-centers.$id.tsx`
 
 ```typescript
 export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
@@ -37,7 +40,8 @@ export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
 ```
 
 ### 3. Setting Query Data to Null (Create Operations)
-**File**: `/Users/barbinbrad/Code/carbon/apps/erp/app/routes/x+/items+/uom.new.tsx`
+
+**File**: `carbon/apps/erp/app/routes/x+/items+/uom.new.tsx`
 
 ```typescript
 export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
@@ -48,7 +52,8 @@ export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
 ```
 
 ### 4. Conditional Cache Updates Based on Form Data
-**File**: `/Users/barbinbrad/Code/carbon/apps/erp/app/routes/x+/supplier+/$supplierId.processes.new.tsx`
+
+**File**: `carbon/apps/erp/app/routes/x+/supplier+/$supplierId.processes.new.tsx`
 
 ```typescript
 export async function clientAction({
@@ -87,6 +92,7 @@ export async function clientAction({
 6. **Company scoping**: Most queries are scoped by company ID using `getCompanyId()`
 
 ## Import Requirements
+
 ```typescript
 import type { ClientActionFunctionArgs } from "@remix-run/react";
 import { getCompanyId } from "~/utils/react-query";

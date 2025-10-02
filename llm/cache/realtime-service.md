@@ -28,6 +28,7 @@ carbon.realtime.setAuth(accessToken);
 ```
 
 **Important**:
+
 - `carbon.realtime.setAuth(accessToken)` must be called before subscribing to channels
 - The access token is obtained from the `useCarbon()` hook
 - The token should be updated whenever it changes (on refresh)
@@ -49,6 +50,7 @@ useRealtime("salesOrder", `status=eq.released`);
 ```
 
 **How it works:**
+
 1. Sets authentication using `carbon.realtime.setAuth(accessToken)`
 2. Creates a channel with unique name: `postgres_changes:${table}`
 3. Listens for all database events (`*`) on the specified table
@@ -63,6 +65,7 @@ Located at: `/apps/erp/app/components/RealtimeDataProvider.tsx` and `/apps/mes/a
 This provider manages realtime subscriptions for core lookup data (items, customers, suppliers, employees) and maintains them in Zustand stores with IndexedDB persistence.
 
 **Features:**
+
 - Hydrates data from IndexedDB first for instant UI
 - Fetches fresh data from server on mount
 - Subscribes to realtime changes for all core tables
@@ -90,31 +93,39 @@ const RealtimeDataProvider = ({ children }) => {
     // Create channel with multiple table subscriptions
     channelRef.current = carbon
       .channel("realtime:core")
-      .on("postgres_changes", {
-        event: "*",
-        schema: "public",
-        table: "item",
-      }, (payload) => {
-        // Handle item changes
-        switch (payload.eventType) {
-          case "INSERT":
-            // Add new item to store
-            break;
-          case "UPDATE":
-            // Update item in store
-            break;
-          case "DELETE":
-            // Remove item from store
-            break;
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "item",
+        },
+        (payload) => {
+          // Handle item changes
+          switch (payload.eventType) {
+            case "INSERT":
+              // Add new item to store
+              break;
+            case "UPDATE":
+              // Update item in store
+              break;
+            case "DELETE":
+              // Remove item from store
+              break;
+          }
         }
-      })
-      .on("postgres_changes", {
-        event: "*",
-        schema: "public",
-        table: "customer",
-      }, (payload) => {
-        // Handle customer changes
-      })
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "customer",
+        },
+        (payload) => {
+          // Handle customer changes
+        }
+      )
       .subscribe();
 
     return () => {
@@ -220,17 +231,20 @@ All realtime subscriptions should filter by companyId to ensure tenant isolation
 ### Common Issues
 
 **Subscriptions not receiving events:**
+
 - Ensure `carbon.realtime.setAuth(accessToken)` is called before subscribing
 - Check that accessToken is defined and valid
 - Verify RLS policies allow the user to SELECT the table
 - Confirm the table has REPLICA IDENTITY FULL (for DELETE events)
 
 **Multiple event firings:**
+
 - Make sure channels are properly cleaned up in useEffect return
 - Use `channelRef` to prevent creating duplicate channels
 - Check dependency arrays in useEffect hooks
 
 **Events from wrong company:**
+
 - Always filter events by companyId in the event handler
 - Don't rely solely on database filters for multi-tenant isolation
 
@@ -246,4 +260,5 @@ All realtime subscriptions should filter by companyId to ensure tenant isolation
 ## Database Patterns Documentation
 
 For more details on database patterns including realtime subscriptions, see:
-- `/Users/barbinbrad/Code/carbon/llm/cache/database-patterns.md` (lines 127-144)
+
+- `carbon/llm/cache/database-patterns.md` (lines 127-144)

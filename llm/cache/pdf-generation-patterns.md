@@ -8,9 +8,9 @@ The Carbon codebase uses React PDF for generating PDFs with asynchronous pattern
 
 ### Core Components
 
-- **PackingSlipPDF** (`/Users/barbinbrad/Code/carbon/packages/documents/src/pdf/PackingSlipPDF.tsx`)
-- **ProductLabelPDF** (`/Users/barbinbrad/Code/carbon/packages/documents/src/pdf/ProductLabelPDF.tsx`)
-- **JobTravelerPDF** (`/Users/barbinbrad/Code/carbon/packages/documents/src/pdf/JobTravelerPDF.tsx`)
+- **PackingSlipPDF** (`carbon/packages/documents/src/pdf/PackingSlipPDF.tsx`)
+- **ProductLabelPDF** (`carbon/packages/documents/src/pdf/ProductLabelPDF.tsx`)
+- **JobTravelerPDF** (`carbon/packages/documents/src/pdf/JobTravelerPDF.tsx`)
 
 ## Async Patterns
 
@@ -18,7 +18,7 @@ The Carbon codebase uses React PDF for generating PDFs with asynchronous pattern
 
 All QR code generation is asynchronous using the `bwip-js/node` library:
 
-#### QR Code Utility (`/Users/barbinbrad/Code/carbon/packages/documents/src/qr/qr-code.ts`)
+#### QR Code Utility (`carbon/packages/documents/src/qr/qr-code.ts`)
 
 ```typescript
 export async function generateQRCode(

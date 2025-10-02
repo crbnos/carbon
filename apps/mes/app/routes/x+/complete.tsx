@@ -49,10 +49,10 @@ export async function action({ request }: ActionFunctionArgs) {
   if (jobOperation.error || !jobOperation.data) {
     return json(
       {},
-      await flash(
-        request,
-        error(jobOperation.error, "Failed to fetch job operation")
-      )
+      await flash(request, {
+        ...error(jobOperation.error, "Failed to fetch job operation"),
+        flash: "error",
+      })
     );
   }
 
@@ -86,16 +86,19 @@ export async function action({ request }: ActionFunctionArgs) {
       if (finishOperation.error) {
         return json(
           {},
-          await flash(
-            request,
-            error(finishOperation.error, "Failed to finish operation")
-          )
+          await flash(request, {
+            ...error(finishOperation.error, "Failed to finish operation"),
+            flash: "error",
+          })
         );
       }
 
       throw redirect(
         path.to.operations,
-        await flash(request, success("Operation finished successfully"))
+        await flash(request, {
+          ...success("Operation finished successfully"),
+          flash: "success",
+        })
       );
     }
 
@@ -123,10 +126,10 @@ export async function action({ request }: ActionFunctionArgs) {
     if (response.error) {
       return json(
         {},
-        await flash(
-          request,
-          error(response.error, "Failed to complete job operation")
-        )
+        await flash(request, {
+          ...error(response.error, "Failed to complete job operation"),
+          flash: "error",
+        })
       );
     }
 
@@ -139,16 +142,19 @@ export async function action({ request }: ActionFunctionArgs) {
       if (finishOperation.error) {
         return json(
           {},
-          await flash(
-            request,
-            error(finishOperation.error, "Failed to finish operation")
-          )
+          await flash(request, {
+            ...error(finishOperation.error, "Failed to finish operation"),
+            flash: "error",
+          })
         );
       }
 
       throw redirect(
         path.to.operations,
-        await flash(request, success("Operation finished successfully"))
+        await flash(request, {
+          ...success("Operation finished successfully"),
+          flash: "success",
+        })
       );
     }
 
@@ -164,10 +170,13 @@ export async function action({ request }: ActionFunctionArgs) {
     if (insertProduction.error) {
       return json(
         {},
-        await flash(
-          request,
-          error(insertProduction.error, "Failed to record production quantity")
-        )
+        await flash(request, {
+          ...error(
+            insertProduction.error,
+            "Failed to record production quantity"
+          ),
+          flash: "error",
+        })
       );
     }
 
@@ -185,7 +194,10 @@ export async function action({ request }: ActionFunctionArgs) {
     if (issue.error) {
       throw json(
         insertProduction.data,
-        await flash(request, error(issue.error, "Failed to issue materials"))
+        await flash(request, {
+          ...error(issue.error, "Failed to issue materials"),
+          flash: "error",
+        })
       );
     }
 
@@ -198,16 +210,19 @@ export async function action({ request }: ActionFunctionArgs) {
       if (finishOperation.error) {
         return json(
           {},
-          await flash(
-            request,
-            error(finishOperation.error, "Failed to finish operation")
-          )
+          await flash(request, {
+            ...error(finishOperation.error, "Failed to finish operation"),
+            flash: "error",
+          })
         );
       }
 
       throw redirect(
         path.to.operations,
-        await flash(request, success("Operation finished successfully"))
+        await flash(request, {
+          ...success("Operation finished successfully"),
+          flash: "success",
+        })
       );
     }
 

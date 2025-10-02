@@ -37,7 +37,7 @@ import {
   getUserDefaults,
   getUserGroups,
 } from "~/modules/users/users.server";
-import { path } from "~/utils/path";
+import { ERP_URL, MES_URL, path } from "~/utils/path";
 
 import { getSavedViews } from "~/modules/shared/shared.service";
 
@@ -141,7 +141,7 @@ export default function AuthenticatedRoute() {
 
   useNProgress();
   useKeyboardWedge({
-    test: (input) => input.startsWith("http"),
+    test: (input) => input.startsWith(MES_URL) || input.startsWith(ERP_URL),
     callback: (input) => {
       try {
         const url = new URL(input);

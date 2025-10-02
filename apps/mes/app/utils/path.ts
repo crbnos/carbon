@@ -1,7 +1,8 @@
-import { getAppUrl, SUPABASE_URL } from "@carbon/auth";
+import { getAppUrl, getMESUrl, SUPABASE_URL } from "@carbon/auth";
 import { generatePath } from "@remix-run/react";
 
 export const ERP_URL = getAppUrl();
+export const MES_URL = getMESUrl();
 
 const x = "/x";
 const api = "/api";
@@ -67,6 +68,7 @@ export const path = {
       generatePath(`${x}/company/switch/${companyId}`),
     complete: `${x}/complete`,
     endShift: `${x}/end-shift`,
+    endOperation: (id: string) => generatePath(`${x}/end/${id}`),
     feedback: `${x}/feedback`,
     finish: `${x}/finish`,
 
@@ -91,6 +93,7 @@ export const path = {
     root: "/",
     scrap: `${x}/scrap`,
     scrapReasons: `${api}/scrap-reasons`,
+    startOperation: (id: string) => generatePath(`${x}/start/${id}`),
     switchCompany: (companyId: string) =>
       generatePath(`${x}/company/switch/${companyId}`),
     unconsume: `${x}/unconsume`,

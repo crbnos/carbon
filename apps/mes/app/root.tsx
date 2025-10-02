@@ -191,7 +191,7 @@ export default function App() {
     if (result?.flash) {
       flashOverlay.flash(result.flash);
     }
-  }, [result?.flash]);
+  }, [result]);
 
   /* Dark/Light Mode */
   const mode = useMode();

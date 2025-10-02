@@ -1,11 +1,12 @@
-import { getMESUrl, SUPABASE_URL } from "@carbon/auth";
+import { getAppUrl, getMESUrl, SUPABASE_URL } from "@carbon/auth";
 import { generatePath } from "@remix-run/react";
 
 const x = "/x"; // from ~/routes/x+ folder
 const api = "/api"; // from ~/routes/api+ folder
 const file = "/file"; // from ~/routes/file+ folder
 const onboarding = "/onboarding"; // from ~/routes/onboarding+ folder
-const mes = getMESUrl();
+export const MES_URL = getMESUrl();
+export const ERP_URL = getAppUrl();
 
 export const path = {
   to: {
@@ -158,11 +159,11 @@ export const path = {
       shippingMethods: `${api}/inventory/shipping-methods`,
     },
     external: {
-      mes: mes,
-      mesJobOperation: (id: string) => `${mes}/x/operation/${id}`,
+      mes: MES_URL,
+      mesJobOperation: (id: string) => `${MES_URL}/x/operation/${id}`,
       mesJobOperationStart: (id: string, type: "Setup" | "Labor" | "Machine") =>
-        `${mes}/x/start/${id}?type=${type}`,
-      mesJobOperationComplete: (id: string) => `${mes}/x/end/${id}`,
+        `${MES_URL}/x/start/${id}?type=${type}`,
+      mesJobOperationComplete: (id: string) => `${MES_URL}/x/end/${id}`,
     },
     file: {
       cadModel: (id: string) => generatePath(`${file}/model/${id}`),

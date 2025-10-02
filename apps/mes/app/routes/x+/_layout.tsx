@@ -31,7 +31,7 @@ import {
   getActiveJobCount,
   getLocationsByCompany,
 } from "~/services/operations.service";
-import { path } from "~/utils/path";
+import { ERP_URL, MES_URL, path } from "~/utils/path";
 
 export const config = {
   runtime: "nodejs",
@@ -135,7 +135,9 @@ export default function AuthenticatedRoute() {
 
   useNProgress();
   useKeyboardWedge({
-    test: (input) => input.startsWith("http"),
+    test: (input) =>
+      (input.startsWith(MES_URL) || input.startsWith(ERP_URL)) &&
+      !input.includes("/kanban/complete/"), // we handle this more gracefully in JobOperation
     callback: (input) => {
       try {
         const url = new URL(input);
