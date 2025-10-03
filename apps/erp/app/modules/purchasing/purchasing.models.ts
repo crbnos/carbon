@@ -305,6 +305,11 @@ export const supplierQuoteValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     supplierQuoteId: zfd.text(z.string().optional()),
+    supplierQuoteType: z.enum(purchaseOrderTypeType, {
+      errorMap: (issue, ctx) => ({
+        message: "Type is required",
+      }),
+    }),
     supplierId: z.string().min(1, { message: "Supplier is required" }),
     supplierLocationId: zfd.text(z.string().optional()),
     supplierContactId: zfd.text(z.string().optional()),

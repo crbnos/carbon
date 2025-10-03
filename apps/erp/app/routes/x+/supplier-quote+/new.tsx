@@ -95,6 +95,7 @@ export default function SupplierQuoteNewRoute() {
     currencyCode: company.baseCurrencyCode,
     exchangeRate: undefined,
     exchangeRateUpdatedAt: "",
+    supplierQuoteType: "Purchase" as const,
   };
 
   return (

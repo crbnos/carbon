@@ -1,5 +1,5 @@
 import { useCarbon } from "@carbon/auth";
-import { ValidatedForm } from "@carbon/form";
+import { Select, ValidatedForm } from "@carbon/form";
 import {
   Card,
   CardContent,
@@ -32,7 +32,10 @@ import {
 import ExchangeRate from "~/components/Form/ExchangeRate";
 import { usePermissions, useUser } from "~/hooks";
 import { path } from "~/utils/path";
-import { supplierQuoteValidator } from "../../purchasing.models";
+import {
+  purchaseOrderTypeType,
+  supplierQuoteValidator,
+} from "../../purchasing.models";
 
 type SupplierQuoteFormValues = z.infer<typeof supplierQuoteValidator>;
 
@@ -141,6 +144,7 @@ const SupplierQuoteForm = ({ initialValues }: SupplierQuoteFormProps) => {
                 onChange={onSupplierChange}
               />
               <Input name="supplierReference" label="Supplier Ref. Number" />
+
               <SupplierLocation
                 name="supplierLocationId"
                 label="Supplier Location"
@@ -202,7 +206,14 @@ const SupplierQuoteForm = ({ initialValues }: SupplierQuoteFormProps) => {
                     }}
                   />
                 )}
-
+              <Select
+                name="supplierQuoteType"
+                label="Type"
+                options={purchaseOrderTypeType.map((type) => ({
+                  label: type,
+                  value: type,
+                }))}
+              />
               <CustomFormFields table="supplierQuote" />
             </div>
           </VStack>

@@ -1,4 +1,5 @@
 import {
+  Badge,
   Button,
   Copy,
   DropdownMenu,
@@ -50,6 +51,9 @@ const SupplierQuoteHeader = () => {
     prices: SupplierQuoteLinePrice[];
   }>(path.to.supplierQuote(id));
 
+  const isOutsideProcessing =
+    routeData?.quote?.supplierQuoteType === "Outside Processing";
+
   const convertToOrderModal = useDisclosure();
   const deleteModal = useDisclosure();
 
@@ -94,6 +98,11 @@ const SupplierQuoteHeader = () => {
               </DropdownMenuContent>
             </DropdownMenu>
             <SupplierQuoteStatus status={routeData?.quote?.status} />
+            {isOutsideProcessing && (
+              <Badge variant="default">
+                {routeData?.quote?.supplierQuoteType}
+              </Badge>
+            )}
           </HStack>
           <HStack>
             <Button

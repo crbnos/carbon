@@ -1384,6 +1384,7 @@ serve(async (req: Request) => {
             .values([
               {
                 purchaseOrderId,
+                purchaseOrderType: quote.data.supplierQuoteType,
                 supplierId: quote.data.supplierId,
                 supplierContactId: quote.data.supplierContactId,
                 supplierLocationId: quote.data.supplierLocationId,
