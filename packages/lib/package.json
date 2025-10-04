@@ -23,7 +23,8 @@
   },
   "exports": {
     "./resend.server": "./src/resend.server.ts",
-    "./slack.server": "./src/slack.server.ts"
+    "./slack.server": "./src/slack.server.ts",
+    "./twenty.server": "./src/twenty.server.ts"
   },
   "private": true,
   "scripts": {

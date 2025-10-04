@@ -3,6 +3,8 @@ import { getCarbonServiceRole, RESEND_DOMAIN } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { GetStartedEmail, WelcomeEmail } from "@carbon/documents/email";
 import { resend } from "@carbon/lib/resend.server";
+import { getSlackClient } from "@carbon/lib/slack.server";
+import { getTwentyClient } from "@carbon/lib/twenty.server";
 import { render } from "@react-email/components";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { task, wait } from "@trigger.dev/sdk/v3";
@@ -19,11 +21,13 @@ export const onboardTask = task({
   }) => {
     const { type, companyId, userId, plan } = payload;
 
-    const client = getCarbonServiceRole();
+    const carbon = getCarbonServiceRole();
+    const twenty = getTwentyClient();
+    const slack = getSlackClient();
 
     const [company, user] = await Promise.all([
-      client.from("company").select("*").eq("id", companyId).single(),
-      client.from("user").select("*").eq("id", userId).single(),
+      carbon.from("company").select("*").eq("id", companyId).single(),
+      carbon.from("user").select("*").eq("id", userId).single(),
     ]);
 
     if (company.error) {
@@ -94,10 +98,7 @@ export const onboardTask = task({
 
         console.log("Attempting to send Slack message to #leads channel");
         try {
-          const { getSlackClient } = await import("@carbon/lib/slack.server");
-          const slackClient = getSlackClient();
-
-          const slackResult = await slackClient.sendMessage({
+          const slackResult = await slack.sendMessage({
             channel: "#leads",
             text: "New lead 🎉",
             blocks: [
@@ -124,156 +125,76 @@ export const onboardTask = task({
 
         if (process.env.TWENTY_API_KEY) {
           try {
-            const twentyPerson = await fetch(
-              "https://api.twenty.com/rest/people",
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${process.env.TWENTY_API_KEY}`,
-                },
-                body: JSON.stringify({
-                  name: {
-                    firstName: user.data.firstName,
-                    lastName: user.data.lastName,
-                  },
-                  emails: {
-                    primaryEmail: user.data.email,
-                  },
-                  customerStatus: ["PROSPECTIVE_CUSTOMER"],
-                  location: `${company.data.city}, ${company.data.stateProvince}`,
-                }),
-              }
-            );
+            const twentyPersonId = await twenty.createPerson({
+              name: {
+                firstName: user.data.firstName,
+                lastName: user.data.lastName,
+              },
+              emails: {
+                primaryEmail: user.data.email,
+              },
+              customerStatus: ["PROSPECTIVE_CUSTOMER"],
+              location: `${company.data.city}, ${company.data.stateProvince}`,
+            });
 
-            if (!twentyPerson.ok) {
-              const errorText = await twentyPerson.text();
-              console.error("Twenty API error response:", errorText);
-              throw new Error(
-                `Twenty CRM API error: ${twentyPerson.status} ${twentyPerson.statusText}`
+            const updateResult = await carbon
+              .from("user")
+              .update({
+                externalId: {
+                  twenty: twentyPersonId,
+                },
+              })
+              .eq("id", userId);
+
+            console.log("User update result:", updateResult);
+            if (updateResult.error) {
+              console.error(
+                "Error updating user external ID:",
+                updateResult.error
               );
+            } else {
+              console.log("Successfully updated user external ID");
             }
 
-            const twentyData = (await twentyPerson.json()) as {
-              data: { createPerson: { id: string } };
-            };
-            const twentyPersonId = twentyData.data?.createPerson?.id;
+            if (type === "Warm") {
+              const twentyCompanyId = await twenty.createCompany({
+                name: company.data.name,
+                domainName: {
+                  primaryLinkLabel: removeProtocolFromWebsite(
+                    company.data.website
+                  ),
+                  primaryLinkUrl: ensureProtocolFromWebsite(
+                    company.data.website
+                  ),
+                  additionalLinks: [],
+                },
+              });
 
-            if (twentyPersonId) {
-              const updateResult = await client
-                .from("user")
+              const twentyOpportunityId = await twenty.createOpportunity({
+                name: `${company.data.name} Opportunity`,
+                stage: ["NEW"],
+                companyId: twentyCompanyId,
+                pointOfContactId: twentyPersonId,
+              });
+
+              const updateResult = await carbon
+                .from("company")
                 .update({
                   externalId: {
-                    twenty: twentyPersonId,
+                    twenty: twentyOpportunityId,
                   },
                 })
-                .eq("id", userId);
+                .eq("id", companyId);
 
-              console.log("User update result:", updateResult);
+              console.log("Company update result:", updateResult);
               if (updateResult.error) {
                 console.error(
-                  "Error updating user external ID:",
+                  "Error updating company external ID:",
                   updateResult.error
                 );
               } else {
-                console.log("Successfully updated user external ID");
+                console.log("Successfully updated company external ID");
               }
-
-              if (type === "Warm") {
-                const twentyCompany = await fetch(
-                  "https://api.twenty.com/rest/companies",
-                  {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                      Authorization: `Bearer ${process.env.TWENTY_API_KEY}`,
-                    },
-                    body: JSON.stringify({
-                      name: company.data.name,
-                      domainName: {
-                        primaryLinkLabel: removeProtocolFromWebsite(
-                          company.data.website
-                        ),
-                        primaryLinkUrl: ensureProtocolFromWebsite(
-                          company.data.website
-                        ),
-                        additionalLinks: [],
-                      },
-                    }),
-                  }
-                );
-
-                if (!twentyCompany.ok) {
-                  const errorText = await twentyCompany.text();
-                  console.error("Twenty API error response:", errorText);
-                  throw new Error(
-                    `Twenty CRM API error: ${twentyCompany.status} ${twentyCompany.statusText}`
-                  );
-                }
-
-                const twentyCompanyData = (await twentyCompany.json()) as {
-                  data: { createCompany: { id: string } };
-                };
-                const twentyCompanyId =
-                  twentyCompanyData.data?.createCompany?.id;
-
-                if (twentyCompanyId) {
-                  const twentyOpportunity = await fetch(
-                    "https://api.twenty.com/rest/opportunities",
-                    {
-                      method: "POST",
-                      headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${process.env.TWENTY_API_KEY}`,
-                      },
-                      body: JSON.stringify({
-                        name: `${company.data.name} Opportunity`,
-                        stage: ["NEW"],
-                        companyId: twentyCompanyId,
-                        pointOfContactId: twentyPersonId,
-                      }),
-                    }
-                  );
-
-                  if (!twentyOpportunity.ok) {
-                    const errorText = await twentyOpportunity.text();
-                    console.error("Twenty API error response:", errorText);
-                    throw new Error(
-                      `Twenty CRM API error: ${twentyOpportunity.status} ${twentyOpportunity.statusText}`
-                    );
-                  }
-
-                  const twentyOpportunityData =
-                    (await twentyOpportunity.json()) as {
-                      data: { createOpportunity: { id: string } };
-                    };
-                  const twentyOpportunityId =
-                    twentyOpportunityData.data?.createOpportunity?.id;
-
-                  if (twentyOpportunityId) {
-                    const updateResult = await client
-                      .from("company")
-                      .update({
-                        externalId: {
-                          twenty: twentyOpportunityId,
-                        },
-                      })
-                      .eq("id", companyId);
-
-                    console.log("Company update result:", updateResult);
-                    if (updateResult.error) {
-                      console.error(
-                        "Error updating company external ID:",
-                        updateResult.error
-                      );
-                    } else {
-                      console.log("Successfully updated company external ID");
-                    }
-                  }
-                }
-              }
-            } else {
-              console.error("No ID returned from Twenty CRM API");
             }
           } catch (error) {
             console.error("Error adding lead to CRM:", error);
@@ -288,10 +209,7 @@ export const onboardTask = task({
         const twentyId = user.data?.externalId?.twenty as string | undefined;
 
         try {
-          const { getSlackClient } = await import("@carbon/lib/slack.server");
-          const slackClient = getSlackClient();
-
-          slackClient.sendMessage({
+          slack.sendMessage({
             channel: "#sales",
             text: "New Customer 🔔",
             blocks: [
@@ -315,15 +233,8 @@ export const onboardTask = task({
 
         if (twentyId) {
           try {
-            await fetch(`https://api.twenty.com/rest/people/${twentyId}`, {
-              method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${process.env.TWENTY_API_KEY}`,
-              },
-              body: JSON.stringify({
-                customerStatus: ["PILOT_FREE_TRIAL"],
-              }),
+            await twenty.updatePerson(twentyId, {
+              customerStatus: ["PILOT_FREE_TRIAL"],
             });
           } catch (error) {
             console.error("Error updating twenty customer status:", error);
@@ -337,7 +248,7 @@ export const onboardTask = task({
         }>`;
 
         const sendOnboardingEmail = await shouldSendOnboardingEmailsToUser(
-          client,
+          carbon,
           userId
         );
 
@@ -372,7 +283,7 @@ export const onboardTask = task({
 
         await wait.for({ days: 30 });
 
-        const planAfter30Days = await client
+        const planAfter30Days = await carbon
           .from("companyPlan")
           .select("*")
           .eq("id", companyId)
@@ -382,19 +293,12 @@ export const onboardTask = task({
           planAfter30Days?.data?.stripeSubscriptionStatus === "Active";
 
         if (isPlanActiveAfter30Days) {
-          await fetch(`https://api.twenty.com/rest/people/${twentyId}`, {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${process.env.TWENTY_API_KEY}`,
-            },
-            body: JSON.stringify({
-              customerStatus: [
-                isPlanActiveAfter30Days
-                  ? "CHURNED_CANCELED"
-                  : "EXISTING_CUSTOMER",
-              ],
-            }),
+          await twenty.updatePerson(twentyId, {
+            customerStatus: [
+              isPlanActiveAfter30Days
+                ? "CHURNED_CANCELED"
+                : "EXISTING_CUSTOMER",
+            ],
           });
         }
 
@@ -404,10 +308,10 @@ export const onboardTask = task({
 });
 
 async function shouldSendOnboardingEmailsToUser(
-  client: SupabaseClient<Database>,
+  carbon: SupabaseClient<Database>,
   userId: string
 ) {
-  const userToCompany = await client
+  const userToCompany = await carbon
     .from("userToCompany")
     .select("*")
     .eq("userId", userId);
