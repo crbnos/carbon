@@ -1,9 +1,12 @@
-import { assertIsPost, getCarbonServiceRole, getUser } from "@carbon/auth";
+import {
+  assertIsPost,
+  CarbonEdition,
+  getCarbonServiceRole,
+} from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { setCompanyId } from "@carbon/auth/company.server";
 import { updateCompanySession } from "@carbon/auth/session.server";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
-import { getSlackClient } from "@carbon/lib/slack.server";
 import {
   Button,
   Card,
@@ -14,8 +17,10 @@ import {
   HStack,
   VStack,
 } from "@carbon/react";
+import { Edition } from "@carbon/utils";
 import { getLocalTimeZone } from "@internationalized/date";
 import { Link, useLoaderData } from "@remix-run/react";
+import { tasks } from "@trigger.dev/sdk/v3";
 import { json, redirect, type ActionFunctionArgs } from "@vercel/remix";
 import { Currency, Hidden, Input, Submit } from "~/components/Form";
 import Country from "~/components/Form/Country";
@@ -65,7 +70,6 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
-  const slackClient = getSlackClient();
 
   const { next, ...data } = validation.data;
 
@@ -115,37 +119,21 @@ export async function action({ request }: ActionFunctionArgs) {
       throw new Error("Fatal: failed to get company ID");
     }
 
-    const user = await getUser(serviceRole, userId);
-
-    const [seed] = await Promise.all([
-      seedCompany(serviceRole, companyId, userId),
-      await slackClient.sendMessage({
-        channel: "#leads",
-        text: "New lead 🎉",
-        blocks: [
-          {
-            type: "section",
-            text: {
-              type: "mrkdwn",
-              text:
-                `*New Signup* 🥁\n\n` +
-                `*Contact Information*\n` +
-                `• Name: ${user.data?.firstName} ${user.data?.lastName}\n` +
-                `• Email: ${user.data?.email}\n` +
-                `• Location: ${data.city}, ${data.stateProvince}\n\n` +
-                `• Company: ${data.name}\n\n`,
-            },
-          },
-        ],
-      }),
-    ]);
-
+    const seed = await seedCompany(serviceRole, companyId, userId);
     if (seed.error) {
       console.error(seed.error);
       throw new Error("Fatal: failed to seed company");
     }
 
-    const { baseCurrencyCode, ...locationData } = data;
+    if (CarbonEdition === Edition.Cloud) {
+      tasks.trigger("onboard", {
+        type: "lead",
+        companyId,
+        userId,
+      });
+    }
+
+    const { baseCurrencyCode, website, ...locationData } = data;
 
     // TODO: move all of this to transaction
     const [locationInsert] = await Promise.all([
@@ -226,6 +214,7 @@ export default function OnboardingCompany() {
             <Input name="stateProvince" label="State / Province" />
             <Input name="postalCode" label="Postal Code" />
             <Country name="countryCode" />
+            <Input name="website" label="Website" />
             <Currency name="baseCurrencyCode" label="Base Currency" />
           </VStack>
         </CardContent>

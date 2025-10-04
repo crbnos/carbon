@@ -7,7 +7,6 @@ import {
 } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { redis } from "@carbon/kv";
-import { getSlackClient } from "@carbon/lib/slack.server";
 import { Edition, Plan } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { tasks } from "@trigger.dev/sdk/v3";
@@ -16,6 +15,7 @@ import { z } from "zod";
 
 export const stripe = STRIPE_SECRET_KEY
   ? new Stripe(STRIPE_SECRET_KEY, {
+      // @ts-ignore
       apiVersion: "2025-06-30.basil",
       typescript: true,
     })
@@ -362,13 +362,10 @@ export async function processStripeEvent({
     try {
       await Promise.all([
         syncStripeDataToKV(customer, companyId),
-        tasks.trigger("onboard", {
-          companyId,
-          userId,
-        }),
         sendNewCustomerNotification(
           customer,
           companyId,
+          userId,
           data.customer_details?.email
         ),
       ]);
@@ -419,13 +416,13 @@ export async function processStripeEvent({
 async function sendNewCustomerNotification(
   customerId: string,
   companyId: string,
+  userId: string,
   email?: string
 ) {
   if (!stripe) {
     throw new Error("Stripe is not initialized");
   }
 
-  const slackClient = getSlackClient();
   const subscriptions = await stripe.subscriptions.list({
     customer: customerId,
     limit: 1,
@@ -434,32 +431,21 @@ async function sendNewCustomerNotification(
   });
 
   const serviceRole = getCarbonServiceRole();
-
   const subscription = subscriptions.data[0];
 
-  const [company, plan] = await Promise.all([
-    serviceRole.from("company").select("*").eq("id", companyId).single(),
-    getPlanByPriceId(serviceRole, subscription.items.data[0].price.id),
-  ]);
+  const plan = await getPlanByPriceId(
+    serviceRole,
+    subscription.items.data[0].price.id
+  );
 
-  slackClient.sendMessage({
-    channel: "#sales",
-    text: "New Customer 🔔",
-    blocks: [
-      {
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text:
-            `*New Signup* 🔔\n\n` +
-            `*Contact Information*\n` +
-            `• Company: ${company.data?.name}\n\n` +
-            `• Email: ${email ?? company.data?.email}\n\n` +
-            `• Plan: $${plan.data?.name}\n\n`,
-        },
-      },
-    ],
-  });
+  if (CarbonEdition === Edition.Cloud) {
+    tasks.trigger("onboard", {
+      type: "customer",
+      companyId,
+      userId,
+      plan: plan.data?.name,
+    });
+  }
 }
 
 export async function syncStripeDataToKV(

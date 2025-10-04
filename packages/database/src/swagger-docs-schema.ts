@@ -11584,6 +11584,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobs.startDate",
           },
           {
+            $ref: "#/parameters/rowFilter.jobs.shelfId",
+          },
+          {
             $ref: "#/parameters/rowFilter.jobs.jobMakeMethodId",
           },
           {
@@ -14545,10 +14548,22 @@ export default {
             $ref: "#/parameters/rowFilter.kanbans.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.kanbans.autoStartJob",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbans.completedBarcodeOverride",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbans.jobId",
+          },
+          {
             $ref: "#/parameters/rowFilter.kanbans.name",
           },
           {
             $ref: "#/parameters/rowFilter.kanbans.readableIdWithRevision",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanbans.jobReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.kanbans.locationName",
@@ -14755,6 +14770,9 @@ export default {
             $ref: "#/parameters/rowFilter.process.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.process.completeAllOnScan",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -14847,6 +14865,9 @@ export default {
             $ref: "#/parameters/rowFilter.process.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.process.completeAllOnScan",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -14891,6 +14912,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.process.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.process.completeAllOnScan",
           },
           {
             $ref: "#/parameters/body.process",
@@ -16522,6 +16546,249 @@ export default {
           },
         },
         tags: ["demandActual"],
+      },
+    },
+    "/qualityDocumentStep": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.qualityDocumentId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.required",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.sortOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.type",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.minValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.maxValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.listValues",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.fileTypes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/qualityDocumentStep",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["qualityDocumentStep"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.qualityDocumentStep",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["qualityDocumentStep"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.qualityDocumentId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.required",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.sortOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.type",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.minValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.maxValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.listValues",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.fileTypes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["qualityDocumentStep"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.qualityDocumentId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.required",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.sortOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.type",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.minValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.maxValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.listValues",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.fileTypes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocumentStep.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.qualityDocumentStep",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["qualityDocumentStep"],
       },
     },
     "/employeeAbility": {
@@ -20467,6 +20734,9 @@ export default {
             $ref: "#/parameters/rowFilter.job.startDate",
           },
           {
+            $ref: "#/parameters/rowFilter.job.shelfId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -20634,6 +20904,9 @@ export default {
             $ref: "#/parameters/rowFilter.job.startDate",
           },
           {
+            $ref: "#/parameters/rowFilter.job.shelfId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -20753,6 +21026,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.job.startDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.shelfId",
           },
           {
             $ref: "#/parameters/body.job",
@@ -21724,6 +22000,204 @@ export default {
           },
         },
         tags: ["nonConformanceWorkflow"],
+      },
+    },
+    "/qualityDocument": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.version",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.status",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.content",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.assignee",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/qualityDocument",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["qualityDocument"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.qualityDocument",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["qualityDocument"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.version",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.status",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.content",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.assignee",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["qualityDocument"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.version",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.status",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.content",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.assignee",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocument.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.qualityDocument",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["qualityDocument"],
       },
     },
     "/postingGroupSales": {
@@ -29191,6 +29665,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierQuotes.supplierInteractionId",
           },
           {
+            $ref: "#/parameters/rowFilter.supplierQuotes.supplierQuoteType",
+          },
+          {
             $ref: "#/parameters/rowFilter.supplierQuotes.thumbnailPath",
           },
           {
@@ -32443,6 +32920,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierQuote.supplierInteractionId",
           },
           {
+            $ref: "#/parameters/rowFilter.supplierQuote.supplierQuoteType",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -32574,6 +33054,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierQuote.supplierInteractionId",
           },
           {
+            $ref: "#/parameters/rowFilter.supplierQuote.supplierQuoteType",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -32657,6 +33140,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuote.supplierInteractionId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierQuote.supplierQuoteType",
           },
           {
             $ref: "#/parameters/body.supplierQuote",
@@ -39780,6 +40266,69 @@ export default {
         tags: ["attributeDataType"],
       },
     },
+    "/qualityDocuments": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.qualityDocuments.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocuments.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocuments.version",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocuments.status",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocuments.assignee",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocuments.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.qualityDocuments.versions",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/qualityDocuments",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["qualityDocuments"],
+      },
+    },
     "/methodOperation": {
       get: {
         parameters: [
@@ -41578,6 +42127,9 @@ export default {
             $ref: "#/parameters/rowFilter.processes.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.processes.completeAllOnScan",
+          },
+          {
             $ref: "#/parameters/rowFilter.processes.workCenters",
           },
           {
@@ -43018,6 +43570,9 @@ export default {
             $ref: "#/parameters/rowFilter.company.ownerId",
           },
           {
+            $ref: "#/parameters/rowFilter.company.externalId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -43140,6 +43695,9 @@ export default {
             $ref: "#/parameters/rowFilter.company.ownerId",
           },
           {
+            $ref: "#/parameters/rowFilter.company.externalId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -43214,6 +43772,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.company.ownerId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.company.externalId",
           },
           {
             $ref: "#/parameters/body.company",
@@ -43432,6 +43993,9 @@ export default {
             $ref: "#/parameters/rowFilter.user.acknowledgedITAR",
           },
           {
+            $ref: "#/parameters/rowFilter.user.externalId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -43533,6 +44097,9 @@ export default {
             $ref: "#/parameters/rowFilter.user.acknowledgedITAR",
           },
           {
+            $ref: "#/parameters/rowFilter.user.externalId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -43586,6 +44153,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.user.acknowledgedITAR",
+          },
+          {
+            $ref: "#/parameters/rowFilter.user.externalId",
           },
           {
             $ref: "#/parameters/body.user",
@@ -45919,6 +46489,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrders.customerEngineeringContactId",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrders.externalId",
+          },
+          {
             $ref: "#/parameters/rowFilter.salesOrders.thumbnailPath",
           },
           {
@@ -47000,6 +47573,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.supplierPartId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLines.jobOperationDescription",
           },
           {
             $ref: "#/parameters/select",
@@ -54220,6 +54796,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.useMetric",
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.kanbanOutput",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -54312,6 +54891,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.useMetric",
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.kanbanOutput",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -54356,6 +54938,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.useMetric",
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.kanbanOutput",
           },
           {
             $ref: "#/parameters/body.companySettings",
@@ -54898,6 +55483,15 @@ export default {
             $ref: "#/parameters/rowFilter.kanban.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.kanban.autoStartJob",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanban.completedBarcodeOverride",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanban.jobId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -55002,6 +55596,15 @@ export default {
             $ref: "#/parameters/rowFilter.kanban.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.kanban.autoStartJob",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanban.completedBarcodeOverride",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanban.jobId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -55058,6 +55661,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.kanban.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanban.autoStartJob",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanban.completedBarcodeOverride",
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanban.jobId",
           },
           {
             $ref: "#/parameters/body.kanban",
@@ -65878,6 +66490,12 @@ export default {
           format: "date",
           type: "string",
         },
+        shelfId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shelf.id`.<fk table='shelf' column='id'/>",
+          format: "text",
+          type: "string",
+        },
         jobMakeMethodId: {
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
@@ -67282,11 +67900,29 @@ export default {
           format: "text",
           type: "string",
         },
+        autoStartJob: {
+          format: "boolean",
+          type: "boolean",
+        },
+        completedBarcodeOverride: {
+          format: "text",
+          type: "string",
+        },
+        jobId: {
+          description:
+            "Note:\nThis is a Foreign Key to `job.id`.<fk table='job' column='id'/>",
+          format: "text",
+          type: "string",
+        },
         name: {
           format: "text",
           type: "string",
         },
         readableIdWithRevision: {
+          format: "text",
+          type: "string",
+        },
+        jobReadableId: {
           format: "text",
           type: "string",
         },
@@ -67433,6 +68069,7 @@ export default {
         "createdBy",
         "createdAt",
         "processType",
+        "completeAllOnScan",
       ],
       properties: {
         id: {
@@ -67504,6 +68141,11 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+        completeAllOnScan: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
         },
       },
       type: "object",
@@ -68221,6 +68863,117 @@ export default {
         },
         updatedAt: {
           default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
+    qualityDocumentStep: {
+      required: [
+        "id",
+        "qualityDocumentId",
+        "name",
+        "sortOrder",
+        "type",
+        "createdAt",
+        "createdBy",
+      ],
+      properties: {
+        id: {
+          default: "public.id('qds'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        qualityDocumentId: {
+          description:
+            "Note:\nThis is a Foreign Key to `qualityDocument.id`.<fk table='qualityDocument' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        description: {
+          format: "text",
+          type: "string",
+        },
+        required: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
+        },
+        sortOrder: {
+          default: 1,
+          format: "double precision",
+          type: "number",
+        },
+        type: {
+          enum: [
+            "Value",
+            "Measurement",
+            "Checkbox",
+            "Timestamp",
+            "Person",
+            "List",
+            "File",
+            "Task",
+          ],
+          format: 'public."procedureStepType"',
+          type: "string",
+        },
+        unitOfMeasureCode: {
+          format: "text",
+          type: "string",
+        },
+        minValue: {
+          format: "numeric",
+          type: "number",
+        },
+        maxValue: {
+          format: "numeric",
+          type: "number",
+        },
+        listValues: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        fileTypes: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
           format: "timestamp with time zone",
           type: "string",
         },
@@ -70113,6 +70866,12 @@ export default {
           format: "date",
           type: "string",
         },
+        shelfId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shelf.id`.<fk table='shelf' column='id'/>",
+          format: "text",
+          type: "string",
+        },
       },
       type: "object",
     },
@@ -70491,6 +71250,73 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+      },
+      type: "object",
+    },
+    qualityDocument: {
+      required: ["id", "name", "version", "status", "createdAt", "createdBy"],
+      properties: {
+        id: {
+          default: "public.id('qdoc'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        description: {
+          format: "text",
+          type: "string",
+        },
+        version: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        status: {
+          default: "Draft",
+          enum: ["Draft", "Active", "Archived"],
+          format: 'public."qualityDocumentStatus"',
+          type: "string",
+        },
+        content: {
+          format: "json",
+        },
+        assignee: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -73950,6 +74776,11 @@ export default {
           format: "text",
           type: "string",
         },
+        supplierQuoteType: {
+          enum: ["Purchase", "Return", "Outside Processing"],
+          format: 'public."purchaseOrderType"',
+          type: "string",
+        },
         thumbnailPath: {
           format: "text",
           type: "string",
@@ -75480,6 +76311,7 @@ export default {
         "createdAt",
         "createdBy",
         "supplierInteractionId",
+        "supplierQuoteType",
       ],
       properties: {
         id: {
@@ -75601,6 +76433,12 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `supplierInteraction.id`.<fk table='supplierInteraction' column='id'/>",
           format: "text",
+          type: "string",
+        },
+        supplierQuoteType: {
+          default: "Purchase",
+          enum: ["Purchase", "Return", "Outside Processing"],
+          format: 'public."purchaseOrderType"',
           type: "string",
         },
       },
@@ -79013,6 +79851,44 @@ export default {
       },
       type: "object",
     },
+    qualityDocuments: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        version: {
+          format: "numeric",
+          type: "number",
+        },
+        status: {
+          enum: ["Draft", "Active", "Archived"],
+          format: 'public."qualityDocumentStatus"',
+          type: "string",
+        },
+        assignee: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        versions: {
+          format: "jsonb",
+        },
+      },
+      type: "object",
+    },
     methodOperation: {
       required: [
         "id",
@@ -79882,6 +80758,10 @@ export default {
           },
           type: "array",
         },
+        completeAllOnScan: {
+          format: "boolean",
+          type: "boolean",
+        },
         workCenters: {
           format: "text[]",
           items: {
@@ -80704,6 +81584,9 @@ export default {
           format: "text",
           type: "string",
         },
+        externalId: {
+          format: "jsonb",
+        },
       },
       type: "object",
     },
@@ -80902,6 +81785,9 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean",
+        },
+        externalId: {
+          format: "jsonb",
         },
       },
       type: "object",
@@ -81948,6 +82834,9 @@ export default {
           format: "text",
           type: "string",
         },
+        externalId: {
+          format: "jsonb",
+        },
         thumbnailPath: {
           format: "text",
           type: "string",
@@ -82594,6 +83483,10 @@ export default {
           type: "number",
         },
         supplierPartId: {
+          format: "text",
+          type: "string",
+        },
+        jobOperationDescription: {
           format: "text",
           type: "string",
         },
@@ -85991,6 +86884,7 @@ export default {
         "salesJobCompletedNotificationGroup",
         "materialGeneratedIds",
         "useMetric",
+        "kanbanOutput",
       ],
       properties: {
         id: {
@@ -86056,6 +86950,12 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean",
+        },
+        kanbanOutput: {
+          default: "qrcode",
+          enum: ["label", "qrcode", "url"],
+          format: 'public."kanbanOutput"',
+          type: "string",
         },
       },
       type: "object",
@@ -86236,6 +87136,7 @@ export default {
         "companyId",
         "createdAt",
         "createdBy",
+        "autoStartJob",
       ],
       properties: {
         id: {
@@ -86316,6 +87217,21 @@ export default {
         updatedBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        autoStartJob: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
+        },
+        completedBarcodeOverride: {
+          format: "text",
+          type: "string",
+        },
+        jobId: {
+          description:
+            "Note:\nThis is a Foreign Key to `job.id`.<fk table='job' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -92603,6 +93519,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.jobs.shelfId": {
+      name: "shelfId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.jobs.jobMakeMethodId": {
       name: "jobMakeMethodId",
       required: false,
@@ -94145,6 +95067,24 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.kanbans.autoStartJob": {
+      name: "autoStartJob",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.kanbans.completedBarcodeOverride": {
+      name: "completedBarcodeOverride",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.kanbans.jobId": {
+      name: "jobId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.kanbans.name": {
       name: "name",
       required: false,
@@ -94153,6 +95093,12 @@ export default {
     },
     "rowFilter.kanbans.readableIdWithRevision": {
       name: "readableIdWithRevision",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.kanbans.jobReadableId": {
+      name: "jobReadableId",
       required: false,
       in: "query",
       type: "string",
@@ -94411,6 +95357,12 @@ export default {
     },
     "rowFilter.process.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.process.completeAllOnScan": {
+      name: "completeAllOnScan",
       required: false,
       in: "query",
       type: "string",
@@ -95193,6 +96145,117 @@ export default {
       type: "string",
     },
     "rowFilter.demandActual.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "body.qualityDocumentStep": {
+      name: "qualityDocumentStep",
+      description: "qualityDocumentStep",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/qualityDocumentStep",
+      },
+    },
+    "rowFilter.qualityDocumentStep.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocumentStep.qualityDocumentId": {
+      name: "qualityDocumentId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocumentStep.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocumentStep.description": {
+      name: "description",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocumentStep.required": {
+      name: "required",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocumentStep.sortOrder": {
+      name: "sortOrder",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocumentStep.type": {
+      name: "type",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocumentStep.unitOfMeasureCode": {
+      name: "unitOfMeasureCode",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocumentStep.minValue": {
+      name: "minValue",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocumentStep.maxValue": {
+      name: "maxValue",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocumentStep.listValues": {
+      name: "listValues",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocumentStep.fileTypes": {
+      name: "fileTypes",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocumentStep.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocumentStep.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocumentStep.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocumentStep.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocumentStep.updatedBy": {
       name: "updatedBy",
       required: false,
       in: "query",
@@ -97337,6 +98400,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.job.shelfId": {
+      name: "shelfId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.contact": {
       name: "contact",
       description: "contact",
@@ -97777,6 +98846,87 @@ export default {
     },
     "rowFilter.nonConformanceWorkflow.requiredActionIds": {
       name: "requiredActionIds",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "body.qualityDocument": {
+      name: "qualityDocument",
+      description: "qualityDocument",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/qualityDocument",
+      },
+    },
+    "rowFilter.qualityDocument.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocument.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocument.description": {
+      name: "description",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocument.version": {
+      name: "version",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocument.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocument.content": {
+      name: "content",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocument.assignee": {
+      name: "assignee",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocument.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocument.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocument.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocument.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocument.updatedBy": {
+      name: "updatedBy",
       required: false,
       in: "query",
       type: "string",
@@ -101654,6 +102804,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.supplierQuotes.supplierQuoteType": {
+      name: "supplierQuoteType",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.supplierQuotes.thumbnailPath": {
       name: "thumbnailPath",
       required: false,
@@ -103558,6 +104714,12 @@ export default {
     },
     "rowFilter.supplierQuote.supplierInteractionId": {
       name: "supplierInteractionId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplierQuote.supplierQuoteType": {
+      name: "supplierQuoteType",
       required: false,
       in: "query",
       type: "string",
@@ -107519,6 +108681,57 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.qualityDocuments": {
+      name: "qualityDocuments",
+      description: "qualityDocuments",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/qualityDocuments",
+      },
+    },
+    "rowFilter.qualityDocuments.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocuments.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocuments.version": {
+      name: "version",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocuments.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocuments.assignee": {
+      name: "assignee",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocuments.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.qualityDocuments.versions": {
+      name: "versions",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.methodOperation": {
       name: "methodOperation",
       description: "methodOperation",
@@ -108400,6 +109613,12 @@ export default {
     },
     "rowFilter.processes.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.processes.completeAllOnScan": {
+      name: "completeAllOnScan",
       required: false,
       in: "query",
       type: "string",
@@ -109364,6 +110583,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.company.externalId": {
+      name: "externalId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.salesOrderLocations": {
       name: "salesOrderLocations",
       description: "salesOrderLocations",
@@ -109615,6 +110840,12 @@ export default {
     },
     "rowFilter.user.acknowledgedITAR": {
       name: "acknowledgedITAR",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.user.externalId": {
+      name: "externalId",
       required: false,
       in: "query",
       type: "string",
@@ -110720,6 +111951,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.salesOrders.externalId": {
+      name: "externalId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.salesOrders.thumbnailPath": {
       name: "thumbnailPath",
       required: false,
@@ -111487,6 +112724,12 @@ export default {
     },
     "rowFilter.purchaseOrderLines.supplierPartId": {
       name: "supplierPartId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseOrderLines.jobOperationDescription": {
+      name: "jobOperationDescription",
       required: false,
       in: "query",
       type: "string",
@@ -115325,6 +116568,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.companySettings.kanbanOutput": {
+      name: "kanbanOutput",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.part": {
       name: "part",
       description: "part",
@@ -115585,6 +116834,24 @@ export default {
     },
     "rowFilter.kanban.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.kanban.autoStartJob": {
+      name: "autoStartJob",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.kanban.completedBarcodeOverride": {
+      name: "completedBarcodeOverride",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.kanban.jobId": {
+      name: "jobId",
       required: false,
       in: "query",
       type: "string",
