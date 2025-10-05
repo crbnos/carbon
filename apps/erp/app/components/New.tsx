@@ -1,3 +1,4 @@
+import type { ButtonProps } from "@carbon/react";
 import {
   Button,
   HStack,
@@ -14,9 +15,10 @@ import { LuCirclePlus } from "react-icons/lu";
 type NewProps = {
   label?: string;
   to: string;
+  variant?: ButtonProps["variant"];
 };
 
-const New = ({ label, to }: NewProps) => {
+const New = ({ label, to, variant = "primary" }: NewProps) => {
   const buttonRef = useRef<HTMLButtonElement>(null);
   useKeyboardShortcuts({
     n: (event: KeyboardEvent) => {
@@ -28,7 +30,12 @@ const New = ({ label, to }: NewProps) => {
   return (
     <Tooltip>
       <TooltipTrigger>
-        <Button asChild leftIcon={<LuCirclePlus />} ref={buttonRef}>
+        <Button
+          asChild
+          leftIcon={<LuCirclePlus />}
+          variant={variant}
+          ref={buttonRef}
+        >
           <Link to={to} prefetch="intent">
             Add {label}
           </Link>

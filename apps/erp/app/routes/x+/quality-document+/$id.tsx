@@ -42,7 +42,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (document.error) {
     throw redirect(
-      path.to.documents,
+      path.to.qualityDocuments,
       await flash(request, error(document.error, "Failed to load document"))
     );
   }

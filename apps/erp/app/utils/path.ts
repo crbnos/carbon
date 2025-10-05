@@ -129,6 +129,7 @@ export const path = {
       salesKpi: (key: string) => generatePath(`${api}/sales/kpi/${key}`),
       salesOrders: `${api}/sales/orders`,
       scrapReasons: `${api}/production/scrap-reasons`,
+      seedQualityDocuments: `${api}/quality/documents/seed`,
       sequences: (table: string) => `${api}/settings/sequences?table=${table}`,
       serialNumbers: (itemId: string, isReadOnly: boolean) =>
         generatePath(
