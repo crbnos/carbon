@@ -1,19 +1,22 @@
 import {
   Badge,
+  Button,
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
   MenuIcon,
   MenuItem,
+  toast,
   useDisclosure,
 } from "@carbon/react";
-import { useNavigate } from "@remix-run/react";
+import { useFetcher, useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import {
   LuBookMarked,
   LuCalendar,
   LuEllipsisVertical,
+  LuFolderUp,
   LuGitPullRequest,
   LuPencil,
   LuTrash,
@@ -37,6 +40,16 @@ const QualityDocumentsTable = memo(
   ({ data, count }: QualityDocumentsTableProps) => {
     const navigate = useNavigate();
     const permissions = usePermissions();
+    const seedFetcher = useFetcher<{ success: boolean; message: string }>();
+
+    useEffect(() => {
+      if (seedFetcher.data?.success === true) {
+        toast.success(seedFetcher.data.message);
+      }
+      if (seedFetcher.data?.success === false) {
+        toast.error(seedFetcher.data.message);
+      }
+    }, [seedFetcher.data]);
 
     const deleteDisclosure = useDisclosure();
     const [selectedQualityDocument, setSelectedQualityDocument] =
@@ -174,7 +187,29 @@ const QualityDocumentsTable = memo(
           count={count}
           primaryAction={
             permissions.can("create", "quality") && (
-              <New label="Document" to={path.to.newQualityDocument} />
+              <div className="flex items-center gap-2">
+                {data.length === 0 && (
+                  <seedFetcher.Form
+                    method="post"
+                    action={path.to.api.seedQualityDocuments}
+                  >
+                    <Button
+                      leftIcon={<LuFolderUp />}
+                      isLoading={seedFetcher.state !== "idle"}
+                      isDisabled={seedFetcher.state !== "idle"}
+                      variant="primary"
+                      type="submit"
+                    >
+                      Load Templates
+                    </Button>
+                  </seedFetcher.Form>
+                )}
+                <New
+                  label="Document"
+                  variant={data.length === 0 ? "secondary" : "primary"}
+                  to={path.to.newQualityDocument}
+                />
+              </div>
             )
           }
           renderContextMenu={renderContextMenu}
