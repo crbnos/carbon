@@ -826,6 +826,16 @@ export const JobOperation = ({
                                 baseMaterials.map((material) => {
                                   const isRelatedToOperation =
                                     material.jobOperationId === operationId;
+
+                                  const someRelatedMaterialIsIssued =
+                                    baseMaterials.some(
+                                      (m) =>
+                                        m.itemReadableIdWithoutRevision ===
+                                          material.itemReadableIdWithoutRevision &&
+                                        ((m.quantityIssued ?? 0) > 0 ||
+                                          (material.quantityIssued ?? 0) > 0)
+                                    );
+
                                   const kittedChildren = material.id
                                     ? kitMaterialsByParentId[material.id]
                                     : [];
@@ -937,10 +947,10 @@ export const JobOperation = ({
                                             <Button
                                               className="flex-shrink-0"
                                               variant={
-                                                (material.quantityIssued ?? 0) <
-                                                (material.quantity ?? 0)
-                                                  ? "primary"
-                                                  : "secondary"
+                                                someRelatedMaterialIsIssued ||
+                                                !isRelatedToOperation
+                                                  ? "secondary"
+                                                  : "primary"
                                               }
                                               leftIcon={<LuQrCode />}
                                               onClick={() => {

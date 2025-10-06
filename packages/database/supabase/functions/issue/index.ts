@@ -920,17 +920,16 @@ serve(async (req: Request) => {
             await trx
               .insertInto("jobMaterial")
               .values({
-                // @ts-ignore // not sure why ts is complaining here
                 companyId,
                 createdBy: userId,
-                description: item?.name,
+                description: item?.name ?? "",
                 estimatedQuantity: 0,
                 itemId: itemId!,
-                itemType: item?.type,
+                itemType: item?.type ?? "Part",
                 jobId: jobOperation?.jobId!,
-                jobMakeMethodId: jobOperation?.jobMakeMethodId,
+                jobMakeMethodId: jobOperation?.jobMakeMethodId!,
                 jobOperationId: id,
-                shelfId,
+                shelfId: shelfId ?? undefined,
                 methodType: "Pick",
                 quantity: 0,
                 quantityIssued: Number(quantity ?? 0),
@@ -1162,11 +1161,63 @@ serve(async (req: Request) => {
             throw new Error("Tracked entities are not available");
           }
 
-          const jobMaterial = await trx
+          let jobMaterial = await trx
             .selectFrom("jobMaterial")
             .where("id", "=", materialId)
             .selectAll()
             .executeTakeFirst();
+
+          // Check if any tracked entity has a different sourceDocumentId than the material's itemId
+          const firstTrackedEntity = trackedEntities[0];
+          let actualMaterialId = materialId;
+
+          if (
+            firstTrackedEntity &&
+            jobMaterial &&
+            firstTrackedEntity.sourceDocumentId !== jobMaterial.itemId
+          ) {
+            // Create a new jobMaterial for the tracked entity's item
+            const totalChildQuantity = children.reduce((sum, child) => {
+              return sum + Number(child.quantity);
+            }, 0);
+
+            const itemCost = await trx
+              .selectFrom("itemCost")
+              .where("itemId", "=", firstTrackedEntity.sourceDocumentId!)
+              .select("unitCost")
+              .executeTakeFirst();
+
+            const newJobMaterial = await trx
+              .insertInto("jobMaterial")
+              .values({
+                companyId,
+                createdBy: userId,
+                description: firstTrackedEntity.sourceDocumentReadableId ?? "",
+                estimatedQuantity: 0,
+                itemId: firstTrackedEntity.sourceDocumentId!,
+                jobId: jobMaterial.jobId!,
+                jobMakeMethodId: jobMaterial.jobMakeMethodId,
+                jobOperationId: jobMaterial.jobOperationId,
+                itemType: jobMaterial.itemType,
+                methodType: jobMaterial.methodType,
+                quantity: 0,
+                quantityIssued: totalChildQuantity,
+                requiresBatchTracking: jobMaterial.requiresBatchTracking,
+                requiresSerialTracking: jobMaterial.requiresSerialTracking,
+                unitCost: itemCost?.unitCost,
+              })
+              .returning("id")
+              .executeTakeFirstOrThrow();
+
+            actualMaterialId = newJobMaterial.id!;
+
+            // Fetch the newly created jobMaterial
+            jobMaterial = await trx
+              .selectFrom("jobMaterial")
+              .where("id", "=", actualMaterialId)
+              .selectAll()
+              .executeTakeFirstOrThrow();
+          }
 
           // Get item details
           const item = await trx
@@ -1480,22 +1531,26 @@ serve(async (req: Request) => {
             return sum + Number(child.quantity);
           }, 0);
 
-          const currentQuantityIssued =
-            Number(jobMaterial?.quantityIssued) || 0;
-          const newQuantityIssued = currentQuantityIssued + totalChildQuantity;
+          // Only update if we didn't create a new jobMaterial (in which case it's already set)
+          if (actualMaterialId === materialId) {
+            const currentQuantityIssued =
+              Number(jobMaterial?.quantityIssued) || 0;
+            const newQuantityIssued =
+              currentQuantityIssued + totalChildQuantity;
 
-          await trx
-            .updateTable("jobMaterial")
-            .set({
-              quantityIssued: newQuantityIssued,
-            })
-            .where("id", "=", materialId)
-            .execute();
+            await trx
+              .updateTable("jobMaterial")
+              .set({
+                quantityIssued: newQuantityIssued,
+              })
+              .where("id", "=", actualMaterialId)
+              .execute();
 
-          console.log("Job material quantity updated:", {
-            materialId,
-            newQuantityIssued,
-          });
+            console.log("Job material quantity updated:", {
+              materialId: actualMaterialId,
+              newQuantityIssued,
+            });
+          }
 
           return splitEntities;
         });
