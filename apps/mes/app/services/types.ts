@@ -51,7 +51,7 @@ export type JobMakeMethod = NonNullable<
   Awaited<ReturnType<typeof getJobMakeMethod>>["data"]
 >;
 
-export type JobOperationAttribute = NonNullable<
+export type JobOperationStep = NonNullable<
   Awaited<ReturnType<typeof getJobOperationProcedure>>["attributes"]
 >[number];
 

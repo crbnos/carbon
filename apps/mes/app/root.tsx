@@ -22,7 +22,6 @@ import type {
 } from "@vercel/remix";
 import { json } from "@vercel/remix";
 import React, { useEffect } from "react";
-import { FlashOverlay, flashOverlay } from "~/components/FlashOverlay";
 import { getMode, setMode } from "~/services/mode.server";
 import Background from "~/styles/background.css?url";
 import NProgress from "~/styles/nprogress.css?url";
@@ -186,12 +185,13 @@ export default function App() {
     }
   }, [result]);
 
-  /* Flash Overlay */
+  /* Flash Overlay 
   useEffect(() => {
     if (result?.flash) {
       flashOverlay.flash(result.flash);
     }
   }, [result]);
+  */
 
   /* Dark/Light Mode */
   const mode = useMode();
@@ -199,7 +199,7 @@ export default function App() {
   return (
     <Document mode={mode} theme={theme}>
       <Outlet />
-      <FlashOverlay />
+      {/* <FlashOverlay /> */}
       <script
         dangerouslySetInnerHTML={{
           __html: `window.env = ${JSON.stringify(env)}`,

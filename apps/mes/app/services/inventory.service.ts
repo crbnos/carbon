@@ -19,13 +19,30 @@ export async function getBatchNumbersForItem(
     isReadOnly?: boolean;
   }
 ) {
+  let itemIds = [args.itemId];
+  const item = await client
+    .from("item")
+    .select("*")
+    .eq("id", args.itemId)
+    .single();
+  if (item.data?.type === "Material" && item.data.revision !== "0") {
+    const items = await client
+      .from("item")
+      .select("id")
+      .eq("readableId", item.data.readableId)
+      .eq("companyId", args.companyId);
+    if (items.data?.length) {
+      itemIds = items.data.map((item) => item.id);
+    }
+  }
+
   return client
     .from("trackedEntity")
     .select("*")
     .eq("sourceDocument", "Item")
-    .eq("sourceDocumentId", args.itemId)
+    .in("sourceDocumentId", itemIds)
     .eq("companyId", args.companyId)
-    .gte("quantity", 1);
+    .gt("quantity", 0);
 }
 
 export async function getCompanySettings(
@@ -46,15 +63,14 @@ export async function getSerialNumbersForItem(
     companyId: string;
   }
 ) {
-  let query = client
+  return client
     .from("trackedEntity")
     .select("*")
     .eq("sourceDocument", "Item")
     .eq("sourceDocumentId", args.itemId)
     .eq("companyId", args.companyId)
-    .eq("quantity", 1);
-
-  return query;
+    .eq("status", "Available")
+    .gt("quantity", 0);
 }
 
 export async function insertManualInventoryAdjustment(

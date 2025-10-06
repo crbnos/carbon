@@ -18,6 +18,7 @@ export const path = {
     },
     file: {
       jobTraveler: (id: string) => `${getAppUrl()}${file}/traveler/${id}.pdf`,
+
       operationLabelsPdf: (
         id: string,
         {
@@ -57,6 +58,34 @@ export const path = {
       previewImage: (bucket: string, path: string) =>
         generatePath(`${file}/preview/image?file=${bucket}/${path}`),
       previewFile: (path: string) => generatePath(`${file}/preview/${path}`),
+      trackedEntityLabelZpl: (
+        id: string,
+        { labelSize }: { labelSize?: string } = {}
+      ) => {
+        let url = `${file}/entity/${id}/labels.zpl`;
+        const params = new URLSearchParams();
+
+        if (labelSize) params.append("labelSize", labelSize);
+
+        const queryString = params.toString();
+        if (queryString) url += `?${queryString}`;
+
+        return generatePath(url);
+      },
+      trackedEntityLabelPdf: (
+        id: string,
+        { labelSize }: { labelSize?: string } = {}
+      ) => {
+        let url = `${file}/entity/${id}/labels.pdf`;
+        const params = new URLSearchParams();
+
+        if (labelSize) params.append("labelSize", labelSize);
+
+        const queryString = params.toString();
+        if (queryString) url += `?${queryString}`;
+
+        return generatePath(url);
+      },
     },
     accountSettings: `${ERP_URL}/x/account`,
     acknowledge: `${x}/acknowledge`,
@@ -67,6 +96,7 @@ export const path = {
     companySwitch: (companyId: string) =>
       generatePath(`${x}/company/switch/${companyId}`),
     complete: `${x}/complete`,
+    convertEntity: (id: string) => generatePath(`${x}/entity/${id}/convert`),
     endShift: `${x}/end-shift`,
     endOperation: (id: string) => generatePath(`${x}/end/${id}`),
     feedback: `${x}/feedback`,
@@ -97,6 +127,10 @@ export const path = {
     switchCompany: (companyId: string) =>
       generatePath(`${x}/company/switch/${companyId}`),
     unconsume: `${x}/unconsume`,
+    scrapEntity: (operationId: string, id: string, parentId?: string) => {
+      const basePath = generatePath(`${x}/entity/${operationId}/${id}/scrap`);
+      return parentId ? `${basePath}?parentId=${parentId}` : basePath;
+    },
     workCenter: (workCenter: string) =>
       generatePath(`${x}/operations/${workCenter}`),
   },

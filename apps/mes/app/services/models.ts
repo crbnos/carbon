@@ -41,6 +41,11 @@ export const jobOperationStatus = [
   "Canceled",
 ] as const;
 
+export const convertEntityValidator = z.object({
+  trackedEntityId: z.string(),
+  newRevision: z.string(),
+});
+
 export const stepRecordValidator = z.object({
   index: zfd.numeric(z.number()),
   jobOperationStepId: z.string(),

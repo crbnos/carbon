@@ -15,6 +15,13 @@ const db = getDatabaseClient<DB>(pool);
 
 const payloadValidator = z.discriminatedUnion("type", [
   z.object({
+    type: z.literal("convertEntity"),
+    trackedEntityId: z.string(),
+    newRevision: z.string(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
     type: z.literal("jobCompleteInventory"),
     jobId: z.string(),
     quantityComplete: z.number(),
@@ -72,6 +79,14 @@ const payloadValidator = z.discriminatedUnion("type", [
       "Negative Adjmt.",
     ]),
     materialId: z.string().optional(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("scrapTrackedEntity"),
+    trackedEntityId: z.string(),
+    materialId: z.string(),
+    parentTrackedEntityId: z.string(),
     companyId: z.string(),
     userId: z.string(),
   }),
@@ -945,6 +960,163 @@ serve(async (req: Request) => {
         });
         break;
       }
+      case "scrapTrackedEntity": {
+        const {
+          trackedEntityId,
+          materialId,
+          parentTrackedEntityId,
+          companyId,
+          userId,
+        } = validatedPayload;
+        const client = await getSupabaseServiceRole(
+          req.headers.get("Authorization"),
+          req.headers.get("carbon-key") ?? "",
+          companyId
+        );
+
+        const [trackedEntity, jobMaterial] = await Promise.all([
+          client
+            .from("trackedEntity")
+            .select("*")
+            .eq("id", trackedEntityId)
+            .single(),
+          client.from("jobMaterial").select("*").eq("id", materialId).single(),
+        ]);
+
+        if (!trackedEntity.data) {
+          throw new Error("Tracked entity not found");
+        }
+
+        if (!jobMaterial.data) {
+          throw new Error("Job material not found");
+        }
+
+        await db.transaction().execute(async (trx) => {
+          const entity = trackedEntity.data!;
+          const material = jobMaterial.data!;
+          const quantity = Number(entity.quantity);
+
+          // Get item ledger to find location and shelf
+          const itemLedger = await trx
+            .selectFrom("itemLedger")
+            .where("trackedEntityId", "=", trackedEntityId)
+            .orderBy("createdAt", "desc")
+            .selectAll()
+            .executeTakeFirst();
+
+          // Get job to find location
+          const job = await trx
+            .selectFrom("job")
+            .select(["id", "locationId"])
+            .where("id", "=", material.jobId!)
+            .executeTakeFirst();
+
+          // Get item details
+          const item = await trx
+            .selectFrom("item")
+            .where("id", "=", material.itemId!)
+            .select(["readableIdWithRevision"])
+            .executeTakeFirst();
+
+          // Create tracked activity for scrap
+          const activityId = nanoid();
+          await trx
+            .insertInto("trackedActivity")
+            .values({
+              id: activityId,
+              type: "Consume",
+              sourceDocument: "Job Material",
+              sourceDocumentId: materialId,
+              sourceDocumentReadableId: item?.readableIdWithRevision ?? "",
+              attributes: {
+                Job: job?.id!,
+                "Job Make Method": material.jobMakeMethodId!,
+                "Job Material": material.id!,
+                Employee: userId,
+                Scrapped: true,
+              },
+              companyId,
+              createdBy: userId,
+            })
+            .execute();
+
+          // Record tracked activity input
+          await trx
+            .insertInto("trackedActivityInput")
+            .values({
+              trackedActivityId: activityId,
+              trackedEntityId,
+              quantity,
+              companyId,
+              createdBy: userId,
+            })
+            .execute();
+
+          // Record parent tracked entity as output if provided
+          if (parentTrackedEntityId) {
+            await trx
+              .insertInto("trackedActivityOutput")
+              .values({
+                trackedActivityId: activityId,
+                trackedEntityId: parentTrackedEntityId,
+                quantity,
+                companyId,
+                createdBy: userId,
+              })
+              .execute();
+          }
+
+          // Update tracked entity status to consumed
+          await trx
+            .updateTable("trackedEntity")
+            .set({
+              status: "Consumed",
+            })
+            .where("id", "=", trackedEntityId)
+            .execute();
+
+          // Create item ledger adjustment (negative for scrap)
+          if (material.methodType !== "Make") {
+            await trx
+              .insertInto("itemLedger")
+              .values({
+                entryType: "Consumption",
+                documentType: "Job Consumption",
+                documentId: job?.id!,
+                companyId,
+                itemId: entity.sourceDocumentId!,
+                quantity: -quantity,
+                locationId: job?.locationId ?? itemLedger?.locationId,
+                shelfId: itemLedger?.shelfId,
+                trackedEntityId,
+                createdBy: userId,
+              })
+              .execute();
+          }
+
+          // Update job material quantity issued
+          const currentQuantityIssued = Number(material.quantityIssued) || 0;
+          const newQuantityIssued = currentQuantityIssued + quantity;
+
+          await trx
+            .updateTable("jobMaterial")
+            .set({
+              quantityIssued: newQuantityIssued,
+            })
+            .where("id", "=", materialId)
+            .execute();
+        });
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
+      }
       case "trackedEntitiesToOperation": {
         const {
           materialId,
@@ -962,7 +1134,7 @@ serve(async (req: Request) => {
           throw new Error("Children are required");
         }
 
-        await db.transaction().execute(async (trx) => {
+        const splitEntities = await db.transaction().execute(async (trx) => {
           const trackedEntities = await trx
             .selectFrom("trackedEntity")
             .where(
@@ -1064,6 +1236,13 @@ serve(async (req: Request) => {
           const trackedActivityInputs: Database["public"]["Tables"]["trackedActivityInput"]["Insert"][] =
             [];
 
+          const splitEntities: Array<{
+            originalId: string;
+            newId: string;
+            readableId: string;
+            quantity: number;
+          }> = [];
+
           // Process each child tracked entity
           for (const child of children) {
             const trackedEntity = trackedEntities.find(
@@ -1084,6 +1263,14 @@ serve(async (req: Request) => {
                 childQuantity: Number(trackedEntity.quantity),
                 availableQuantity: quantity,
                 remainingQuantity,
+              });
+
+              // Track split entity for return
+              splitEntities.push({
+                originalId: trackedEntityId,
+                newId: newTrackedEntityId,
+                readableId: trackedEntity.sourceDocumentReadableId ?? "",
+                quantity: remainingQuantity,
               });
 
               // Create split activity
@@ -1309,9 +1496,20 @@ serve(async (req: Request) => {
             materialId,
             newQuantityIssued,
           });
+
+          return splitEntities;
         });
 
-        break;
+        return new Response(
+          JSON.stringify({
+            success: true,
+            splitEntities,
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
       }
       case "unconsumeTrackedEntities": {
         const {
@@ -1527,6 +1725,253 @@ serve(async (req: Request) => {
         });
 
         break;
+      }
+      case "convertEntity": {
+        const { trackedEntityId, newRevision, companyId, userId } =
+          validatedPayload;
+
+        const convertedEntity = await db.transaction().execute(async (trx) => {
+          const trackedEntity = await trx
+            .selectFrom("trackedEntity")
+            .where("id", "=", trackedEntityId)
+            .selectAll()
+            .executeTakeFirstOrThrow();
+
+          if (!trackedEntity.sourceDocumentId) {
+            throw new Error("Tracked entity has no source document");
+          }
+
+          // Get the old item revision
+          const oldItem = await trx
+            .selectFrom("item")
+            .where("id", "=", trackedEntity.sourceDocumentId)
+            .select(["id", "readableId", "revision"])
+            .executeTakeFirstOrThrow();
+
+          // Check if new revision exists, create if not
+          let newItem = await trx
+            .selectFrom("item")
+            .where("readableId", "=", oldItem.readableId)
+            .where("revision", "=", newRevision)
+            .where("companyId", "=", companyId)
+            .select(["id", "readableId", "revision", "readableIdWithRevision"])
+            .executeTakeFirst();
+
+          if (!newItem) {
+            // Get the part/material/tool/consumable record
+            const baseItem = await trx
+              .selectFrom("item")
+              .where("id", "=", oldItem.id)
+              .selectAll()
+              .executeTakeFirstOrThrow();
+
+            // Create new item revision
+            const insertedItem = await trx
+              .insertInto("item")
+              .values({
+                readableId: oldItem.readableId,
+                revision: newRevision,
+                type: baseItem.type,
+                active: baseItem.active,
+                name: baseItem.name,
+                description: baseItem.description,
+                itemTrackingType: baseItem.itemTrackingType,
+                replenishmentSystem: baseItem.replenishmentSystem,
+                defaultMethodType: baseItem.defaultMethodType,
+                unitOfMeasureCode: baseItem.unitOfMeasureCode,
+                modelUploadId: baseItem.modelUploadId,
+                companyId,
+                createdBy: userId,
+              })
+              .returning([
+                "id",
+                "readableId",
+                "revision",
+                "readableIdWithRevision",
+              ])
+              .executeTakeFirstOrThrow();
+
+            newItem = insertedItem;
+
+            // Create the part/material/tool/consumable record if it doesn't exist
+            if (baseItem.type === "Part") {
+              await trx
+                .insertInto("part")
+                .values({
+                  id: oldItem.readableId,
+                  companyId,
+                  createdBy: userId,
+                })
+                .onConflict((oc) => oc.columns(["id", "companyId"]).doNothing())
+                .execute();
+            }
+          }
+
+          if (oldItem.id) {
+            const oldItemCost = await trx
+              .selectFrom("itemCost")
+              .where("itemId", "=", oldItem.id)
+              .select(["unitCost"])
+              .executeTakeFirst();
+
+            // Calculate normalized cost
+            // Old: (oldQuantity * oldCost) + (1 * oldCost) / (oldQuantity + 1)
+            const oldQuantity = Number(trackedEntity.quantity);
+            const oldUnitCost = Number(oldItemCost?.unitCost ?? 0);
+
+            const totalOldValue = oldQuantity * oldUnitCost;
+            const normalizedCost =
+              (totalOldValue + oldUnitCost) / (oldQuantity + 1);
+
+            // Update new revision's cost
+            if (newItem?.id) {
+              await trx
+                .updateTable("itemCost")
+                .set({
+                  unitCost: normalizedCost,
+                  costIsAdjusted: true,
+                })
+                .where("itemId", "=", newItem.id)
+                .execute();
+            }
+          }
+
+          // Create conversion activity
+          const conversionActivityId = nanoid();
+          await trx
+            .insertInto("trackedActivity")
+            .values({
+              id: conversionActivityId,
+              type: "Convert",
+              sourceDocument: "Revision Conversion",
+              attributes: {
+                "Old Revision": oldItem.revision,
+                "New Revision": newRevision,
+                "Old Item ID": oldItem.id,
+                "New Item ID": newItem.id,
+              },
+              companyId,
+              createdBy: userId,
+            })
+            .execute();
+
+          // Record input (old revision entity)
+          if (trackedEntity.id) {
+            await trx
+              .insertInto("trackedActivityInput")
+              .values({
+                trackedActivityId: conversionActivityId,
+                trackedEntityId: trackedEntity.id,
+                quantity: trackedEntity.quantity,
+                companyId,
+                createdBy: userId,
+              })
+              .execute();
+          }
+
+          // Update tracked entity to new revision
+          await trx
+            .updateTable("trackedEntity")
+            .set({
+              sourceDocumentId: newItem.id,
+              sourceDocumentReadableId: newItem.readableIdWithRevision,
+              quantity: 1,
+            })
+            .where("id", "=", trackedEntityId)
+            .execute();
+
+          // Record output (new revision entity)
+          if (trackedEntity.id) {
+            await trx
+              .insertInto("trackedActivityOutput")
+              .values({
+                trackedActivityId: conversionActivityId,
+                trackedEntityId: trackedEntity.id,
+                quantity: 1,
+                companyId,
+                createdBy: userId,
+              })
+              .execute();
+          }
+
+          // Get the location from existing ledger entries
+          const existingLedger = await trx
+            .selectFrom("itemLedger")
+            .where("trackedEntityId", "=", trackedEntityId)
+            .select(["locationId", "shelfId"])
+            .orderBy("createdAt", "desc")
+            .executeTakeFirst();
+
+          // Create item ledger entries
+          if (oldItem.id && newItem?.id) {
+            const oldQuantity = Number(trackedEntity.quantity);
+            const ledgerEntries: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
+              [
+                // Remove old revision quantity
+                {
+                  entryType: "Negative Adjmt.",
+                  documentType: "Batch Split",
+                  documentId: conversionActivityId,
+                  companyId,
+                  itemId: oldItem.id,
+                  quantity: -oldQuantity,
+                  locationId: existingLedger?.locationId,
+                  shelfId: existingLedger?.shelfId,
+                  trackedEntityId,
+                  createdBy: userId,
+                },
+                // Add new revision quantity (1)
+                {
+                  entryType: "Positive Adjmt.",
+                  documentType: "Batch Split",
+                  documentId: conversionActivityId,
+                  companyId,
+                  itemId: newItem.id,
+                  quantity: 1,
+                  locationId: existingLedger?.locationId,
+                  shelfId: existingLedger?.shelfId,
+                  trackedEntityId,
+                  createdBy: userId,
+                },
+              ];
+
+            await trx.insertInto("itemLedger").values(ledgerEntries).execute();
+          }
+
+          console.log("Entity converted:", {
+            trackedEntityId,
+            oldRevision: oldItem.revision,
+            newRevision,
+            oldItemId: oldItem.id,
+            newItemId: newItem.id,
+          });
+
+          // Get the updated readable ID with revision
+          const updatedItem = await trx
+            .selectFrom("item")
+            .where("id", "=", newItem.id)
+            .select(["readableIdWithRevision"])
+            .executeTakeFirst();
+
+          return {
+            trackedEntityId,
+            readableId:
+              updatedItem?.readableIdWithRevision ?? oldItem.readableId,
+            quantity: 1,
+          };
+        });
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: "Entity converted successfully",
+            convertedEntity,
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
       }
     }
 

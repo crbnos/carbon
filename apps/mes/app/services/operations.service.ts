@@ -443,6 +443,13 @@ export async function getTrackedEntitiesByMakeMethodId(
     .order("createdAt", { ascending: true });
 }
 
+export async function getTrackedEntity(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("trackedEntity").select("*").eq("id", id).single();
+}
+
 export async function getTrackedEntitiesByOperationId(
   client: SupabaseClient<Database>,
   operationId: string

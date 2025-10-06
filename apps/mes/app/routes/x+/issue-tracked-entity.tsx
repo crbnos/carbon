@@ -42,5 +42,11 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  return json({ success: true, message: "Material issued successfully" });
+  const splitEntities = issue.data?.splitEntities || [];
+
+  return json({
+    success: true,
+    message: "Material issued successfully",
+    splitEntities,
+  });
 }
