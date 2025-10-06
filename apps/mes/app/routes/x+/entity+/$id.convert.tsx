@@ -14,10 +14,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const newRevision = formData.get("newRevision");
+  const quantity = formData.get("quantity");
 
   const validation = convertEntityValidator.safeParse({
     trackedEntityId: id,
     newRevision,
+    quantity,
   });
 
   if (!validation.success) {
@@ -27,7 +29,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { trackedEntityId, newRevision: revision } = validation.data;
+  const { trackedEntityId, newRevision: revision, quantity: newQuantity } = validation.data;
 
   const serviceRole = await getCarbonServiceRole();
   const convert = await serviceRole.functions.invoke("issue", {
@@ -35,6 +37,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       type: "convertEntity",
       trackedEntityId,
       newRevision: revision,
+      quantity: newQuantity,
       companyId,
       userId,
     },

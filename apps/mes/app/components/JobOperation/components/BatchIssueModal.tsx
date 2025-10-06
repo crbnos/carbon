@@ -35,7 +35,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { JobMaterial, TrackedInput } from "~/services/types";
 import { path } from "~/utils/path";
 
-import { Input as FormInput, Hidden, ValidatedForm } from "@carbon/form";
+import {
+  Input as FormInput,
+  Number as FormNumberInput,
+  Hidden,
+  ValidatedForm,
+} from "@carbon/form";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import { getItemReadableId } from "@carbon/utils";
 import { useNumberFormatter } from "@react-aria/i18n";
@@ -831,17 +836,28 @@ function ConvertSplitModal({
         <ValidatedForm
           method="post"
           action={path.to.convertEntity(trackedEntity)}
-          defaultValues={{ trackedEntityId: trackedEntity, newRevision: "" }}
+          defaultValues={{
+            trackedEntityId: trackedEntity,
+            newRevision: "",
+            quantity: 1,
+          }}
           validator={convertEntityValidator}
           fetcher={fetcher}
         >
           <Hidden name="trackedEntityId" />
           <ModalBody>
-            <FormInput
-              name="newRevision"
-              label={`New ${itemType === "Material" ? "Size" : "Revision"}`}
-              autoFocus
-            />
+            <div className="flex flex-col gap-4">
+              <FormInput
+                name="newRevision"
+                label={`New ${itemType === "Material" ? "Size" : "Revision"}`}
+                autoFocus
+              />
+              <FormNumberInput
+                name="quantity"
+                label="Quantity"
+                minValue={0.001}
+              />
+            </div>
           </ModalBody>
           <ModalFooter>
             <Button variant="secondary" onClick={onCancel}>

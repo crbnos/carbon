@@ -18,6 +18,7 @@ const payloadValidator = z.discriminatedUnion("type", [
     type: z.literal("convertEntity"),
     trackedEntityId: z.string(),
     newRevision: z.string(),
+    quantity: z.number().positive().default(1),
     companyId: z.string(),
     userId: z.string(),
   }),
@@ -1782,7 +1783,7 @@ serve(async (req: Request) => {
         break;
       }
       case "convertEntity": {
-        const { trackedEntityId, newRevision, companyId, userId } =
+        const { trackedEntityId, newRevision, quantity, companyId, userId } =
           validatedPayload;
 
         const convertedEntity = await db.transaction().execute(async (trx) => {
@@ -1869,21 +1870,21 @@ serve(async (req: Request) => {
               .select(["unitCost"])
               .executeTakeFirst();
 
-            // Calculate normalized cost
-            // Old: (oldQuantity * oldCost) + (1 * oldCost) / (oldQuantity + 1)
+            // Calculate new unit cost based on quantity conversion
+            // Total value = oldQuantity * oldUnitCost
+            // New unit cost = Total value / newQuantity
             const oldQuantity = Number(trackedEntity.quantity);
             const oldUnitCost = Number(oldItemCost?.unitCost ?? 0);
 
-            const totalOldValue = oldQuantity * oldUnitCost;
-            const normalizedCost =
-              (totalOldValue + oldUnitCost) / (oldQuantity + 1);
+            const totalValue = oldQuantity * oldUnitCost;
+            const newUnitCost = totalValue / quantity;
 
             // Update new revision's cost
             if (newItem?.id) {
               await trx
                 .updateTable("itemCost")
                 .set({
-                  unitCost: normalizedCost,
+                  unitCost: newUnitCost,
                   costIsAdjusted: true,
                 })
                 .where("itemId", "=", newItem.id)
@@ -1930,7 +1931,7 @@ serve(async (req: Request) => {
             .set({
               sourceDocumentId: newItem.id,
               sourceDocumentReadableId: newItem.readableIdWithRevision,
-              quantity: 1,
+              quantity: quantity,
             })
             .where("id", "=", trackedEntityId)
             .execute();
@@ -1942,7 +1943,7 @@ serve(async (req: Request) => {
               .values({
                 trackedActivityId: conversionActivityId,
                 trackedEntityId: trackedEntity.id,
-                quantity: 1,
+                quantity: quantity,
                 companyId,
                 createdBy: userId,
               })
@@ -1975,14 +1976,14 @@ serve(async (req: Request) => {
                   trackedEntityId,
                   createdBy: userId,
                 },
-                // Add new revision quantity (1)
+                // Add new revision quantity
                 {
                   entryType: "Positive Adjmt.",
                   documentType: "Batch Split",
                   documentId: conversionActivityId,
                   companyId,
                   itemId: newItem.id,
-                  quantity: 1,
+                  quantity: quantity,
                   locationId: existingLedger?.locationId,
                   shelfId: existingLedger?.shelfId,
                   trackedEntityId,
@@ -2012,7 +2013,7 @@ serve(async (req: Request) => {
             trackedEntityId,
             readableId:
               updatedItem?.readableIdWithRevision ?? oldItem.readableId,
-            quantity: 1,
+            quantity: quantity,
           };
         });
 

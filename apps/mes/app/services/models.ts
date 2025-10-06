@@ -44,6 +44,7 @@ export const jobOperationStatus = [
 export const convertEntityValidator = z.object({
   trackedEntityId: z.string(),
   newRevision: z.string(),
+  quantity: z.coerce.number().positive().default(1),
 });
 
 export const stepRecordValidator = z.object({
