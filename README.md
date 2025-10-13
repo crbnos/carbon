@@ -187,10 +187,10 @@ $ cp ./.env.example ./.env
 - `POSTHOG_API_HOST=[https://[region].posthog.com]`
 - `POSTHOG_PROJECT_PUBLIC_KEY=[Project API Key starting 'phc*']`
 
-5. Add a `STRIPE_SECRET_KEY` from the Stripe admin interface, and then run `npm run -w @carbon/stripe register:stripe` to get a `STRIP_WEBHOOK_SECRET`
+5. Add a `STRIPE_SECRET_KEY` from the Stripe admin interface, and then run `npm run -w @carbon/stripe register:stripe` to get a `STRIPE_WEBHOOK_SECRET`
 
 - `STRIPE_SECRET_KEY="sk_test_*************"`
-- `STRIP_WEBHOOK_SECRET="whsec_************"`
+- `STRIPE_WEBHOOK_SECRET="whsec_************"`
 
 6. Signing in requires you to setup one of two methods:
    - Email requires a Resend API key:
