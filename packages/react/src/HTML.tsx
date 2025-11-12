@@ -1,5 +1,27 @@
 import pkg from "dompurify";
+import TextStyle from "@tiptap/extension-text-style";
+import Underline from "@tiptap/extension-underline";
+import type { JSONContent } from "@tiptap/react";
+import { generateHTML as DefaultGenerateHTML } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import { defaultExtensions } from "./Editor/extensions";
+
 const { sanitize } = pkg;
+
+const generateHTML = (content: JSONContent) => {
+  if (typeof window === "undefined") {
+    return "";
+  }
+  if (!content || !("type" in content)) {
+    return "";
+  }
+  return DefaultGenerateHTML(content, [
+    ...defaultExtensions,
+    TextStyle,
+    StarterKit,
+    Underline,
+  ]);
+};
 
 type HTMLProps = {
   text: string;
@@ -19,4 +41,4 @@ const HTML = ({ text }: HTMLProps) => {
   );
 };
 
-export { HTML };
+export { HTML, generateHTML };

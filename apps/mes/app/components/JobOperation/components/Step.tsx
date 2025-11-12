@@ -17,7 +17,7 @@ import {
   VStack,
   type JSONContent,
 } from "@carbon/react";
-import { generateHTML } from "@carbon/react/Editor.client";
+import { generateHTML } from "@carbon/react/HTML";
 import { useFetcher } from "@remix-run/react";
 import { useEffect, useMemo, useState } from "react";
 import { useUser } from "~/hooks";

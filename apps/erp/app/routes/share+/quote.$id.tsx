@@ -32,7 +32,7 @@ import {
   useDisclosure,
   VStack,
 } from "@carbon/react";
-import { generateHTML } from "@carbon/react/Editor.client";
+import { generateHTML } from "@carbon/react/HTML";
 import { useMode } from "@carbon/remix";
 import { formatCityStatePostalCode, formatDate } from "@carbon/utils";
 import { useLocale } from "@react-aria/i18n";
