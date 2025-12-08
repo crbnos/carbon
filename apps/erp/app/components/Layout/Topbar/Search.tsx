@@ -22,7 +22,7 @@ import {
 import { useNavigate } from "@remix-run/react";
 import idb from "localforage";
 import { nanoid } from "nanoid";
-import { useCallback, useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useState } from "react";
 import {
   LuFileCheck,
   LuHardHat,
@@ -397,4 +397,4 @@ function useGroupedSubmodules() {
   return shortcuts;
 }
 
-export default SearchButton;
+export default memo(SearchButton);

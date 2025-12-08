@@ -1,7 +1,7 @@
 import { VStack, cn, useDisclosure } from "@carbon/react";
 import { Link, useMatches } from "@remix-run/react";
-import { forwardRef, type AnchorHTMLAttributes } from "react";
-import { z } from 'zod/v3';
+import { forwardRef, type AnchorHTMLAttributes, memo } from "react";
+import { z } from "zod/v3";
 import { useModules, useOptimisticLocation } from "~/hooks";
 import type { Authenticated, NavItem } from "~/types";
 
@@ -129,7 +129,7 @@ const NavigationIconLink = forwardRef<
 });
 NavigationIconLink.displayName = "NavigationIconLink";
 
-export default PrimaryNavigation;
+export default memo(PrimaryNavigation);
 
 export function getModule(link: string) {
   return link.split("/")?.[2];
