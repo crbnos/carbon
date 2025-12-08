@@ -70,24 +70,22 @@ export class LinearClient {
 
   async listIssues(companyId: string, input: string) {
     try {
-      const query = `query SearchIssues($filter: IssueFilter!) { issues( filter: $filter first: 5 orderBy: updatedAt ) { nodes { id identifier title description state { name type color } url assignee { email } } } }`;
+      const query = `query SearchIssues($term : String!) { searchIssues(term: $term, first: 5, orderBy: updatedAt) { nodes { id identifier title description state { name type color } url assignee { email } } } }`;
 
       const response = await this.instance.request<{
-        data: { issues: { nodes: LinearIssue[] } };
+        data: { searchIssues: { nodes: LinearIssue[] } };
       }>({
         method: "POST",
         headers: await this.getAuthHeaders(companyId),
         data: {
           query,
           variables: {
-            filter: {
-              title: { containsIgnoreCase: input },
-            },
+            term: input,
           },
         },
       });
 
-      return response.data.data.issues.nodes.map((el) => el);
+      return response.data.data.searchIssues.nodes.map((el) => el);
     } catch (error) {
       console.error("Error listing Linear issues:", error);
       return [];
