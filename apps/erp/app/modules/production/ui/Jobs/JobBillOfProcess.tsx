@@ -109,7 +109,13 @@ import InfiniteScroll from "~/components/InfiniteScroll";
 import { ConfirmDelete } from "~/components/Modals";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
-import { usePermissions, useRouteData, useUrlParams, useUser } from "~/hooks";
+import {
+  usePermissions,
+  useRealtimeChannel,
+  useRouteData,
+  useUrlParams,
+  useUser,
+} from "~/hooks";
 import type {
   OperationParameter,
   OperationStep,
@@ -603,77 +609,46 @@ const JobBillOfProcess = ({
   const [page, setPage] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const channelRef = useRef<RealtimeChannel | null>(null);
   const addOperationButtonRef = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => {
-    if (
-      !channelRef.current &&
-      carbon &&
-      accessToken &&
-      selectedItemId &&
-      !temporaryItems[selectedItemId]
-    ) {
-      carbon.realtime.setAuth(accessToken);
-
-      channelRef.current = carbon
-        .channel(`production-events:${selectedItemId}`)
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "productionEvent",
-            filter: `jobOperationId=eq.${selectedItemId}`,
-          },
-          (payload) => {
-            switch (payload.eventType) {
-              case "INSERT":
-                const { new: inserted } = payload;
-                setProductionEvents((prevEvents) => [
-                  ...prevEvents,
-                  inserted as Database["public"]["Tables"]["productionEvent"]["Row"],
-                ]);
-                break;
-              case "UPDATE":
-                const { new: updated } = payload;
-                setProductionEvents((prevEvents) =>
-                  prevEvents.map((event) =>
-                    event.id === updated.id
-                      ? (updated as Database["public"]["Tables"]["productionEvent"]["Row"])
-                      : event
-                  )
-                );
-                break;
-              case "DELETE":
-                const { old: deleted } = payload;
-                setProductionEvents((prevEvents) =>
-                  prevEvents.filter((event) => event.id !== deleted.id)
-                );
-                break;
-              default:
-                break;
-            }
-          }
-        )
-        .subscribe();
-    }
-
-    return () => {
-      if (channelRef.current) {
-        channelRef.current.unsubscribe();
-        carbon?.removeChannel(channelRef.current);
-        channelRef.current = null;
+  useRealtimeChannel({
+    topic: `production-events:${selectedItemId}`,
+    event: "*",
+    schema: "public",
+    table: "productionEvent",
+    filter: `jobOperationId=eq.${selectedItemId}`,
+    autoRemove: true,
+    enabled: !!selectedItemId && !temporaryItems[selectedItemId],
+    onMessage(payload) {
+      switch (payload.eventType) {
+        case "INSERT":
+          const { new: inserted } = payload;
+          setProductionEvents((prevEvents) => [
+            ...prevEvents,
+            inserted as Database["public"]["Tables"]["productionEvent"]["Row"],
+          ]);
+          break;
+        case "UPDATE":
+          const { new: updated } = payload;
+          setProductionEvents((prevEvents) =>
+            prevEvents.map((event) =>
+              event.id === updated.id
+                ? (updated as Database["public"]["Tables"]["productionEvent"]["Row"])
+                : event
+            )
+          );
+          break;
+        case "DELETE":
+          const { old: deleted } = payload;
+          setProductionEvents((prevEvents) =>
+            prevEvents.filter((event) => event.id !== deleted.id)
+          );
+          break;
+        default:
+          break;
       }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedItemId]);
-
-  useEffect(() => {
-    if (carbon && accessToken && channelRef.current)
-      carbon.realtime.setAuth(accessToken);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken]);
+    },
+  });
 
   const loadMoreProductionEvents = useCallback(async () => {
     if (isLoading || !hasMore || !selectedItemId) return;
@@ -3167,47 +3142,22 @@ function OperationChat({ jobOperationId }: { jobOperationId: string }) {
     fetchChat();
   });
 
-  const channelRef = useRef<RealtimeChannel | null>(null);
-
-  useMount(() => {
-    if (!channelRef.current && carbon && accessToken) {
-      carbon.realtime.setAuth(accessToken);
-      channelRef.current = carbon
-        .channel(`job-operation-notes-${jobOperationId}`)
-        .on(
-          "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "jobOperationNote",
-            filter: `jobOperationId=eq.${jobOperationId}`,
-          },
-          (payload) => {
-            setMessages((prev) => {
-              if (prev.some((m) => m.id === payload.new.id)) {
-                return prev;
-              }
-              return [...prev, payload.new as Message];
-            });
-          }
-        )
-        .subscribe();
-    }
-
-    return () => {
-      if (channelRef.current) {
-        channelRef.current.unsubscribe();
-        carbon?.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
-    };
+  useRealtimeChannel({
+    topic: `job-operation-notes-${jobOperationId}`,
+    event: "INSERT",
+    schema: "public",
+    table: "jobOperationNote",
+    filter: `jobOperationId=eq.${jobOperationId}`,
+    autoRemove: true,
+    onMessage(payload) {
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === payload.new.id)) {
+          return prev;
+        }
+        return [...prev, payload.new as Message];
+      });
+    },
   });
-
-  useEffect(() => {
-    if (carbon && accessToken && channelRef.current)
-      carbon.realtime.setAuth(accessToken);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 

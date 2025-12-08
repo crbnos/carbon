@@ -78,13 +78,13 @@ import { capitalize } from "~/utils/string";
 
 import { useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import type { RealtimeChannel } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { flushSync } from "react-dom";
 import { RiProgress8Line } from "react-icons/ri";
 import { getDeadlineIcon } from "~/modules/production/ui/Jobs";
 import type { WorkCenter } from "~/modules/resources";
 import { getWorkCentersList } from "~/modules/resources";
+import { useRealtimeChannel } from "~/hooks";
 
 const OPEN_JOB_STATUSES = ["Ready", "In Progress", "Paused"] as const;
 
@@ -761,65 +761,38 @@ function WorkCenterCards({
     setEvents(initialEvents);
   }, [initialEvents]);
 
-  const channelRef = useRef<RealtimeChannel | null>(null);
-
-  useMount(() => {
-    if (!channelRef.current && carbon && accessToken) {
-      carbon.realtime.setAuth(accessToken);
-      channelRef.current = carbon
-        .channel(`production-dashboard-work-centers:${companyId}`)
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "productionEvent",
-            filter: `companyId=eq.${companyId}`,
-          },
-          (payload) => {
-            if (payload.eventType === "INSERT") {
-              const { new: inserted } = payload;
-              setEvents((prev) => [...prev, inserted as ActiveProductionEvent]);
-              ensureMetaData({ jobOperationId: inserted.jobOperationId });
-            } else if (payload.eventType === "UPDATE") {
-              const { new: updated } = payload;
-              setEvents((prev) => {
-                if (updated.endTime) {
-                  return prev.filter((event) => event.id !== updated.id);
-                }
-                const exists = prev.some((event) => event.id === updated.id);
-                if (exists) {
-                  return prev.map((event) =>
-                    event.id === updated.id ? { ...event, ...updated } : event
-                  );
-                }
-                return [...prev, updated as ActiveProductionEvent];
-              });
-            } else if (payload.eventType === "DELETE") {
-              const { old: deleted } = payload;
-              setEvents((prev) =>
-                prev.filter((event) => event.id !== deleted.id)
-              );
-            }
+  useRealtimeChannel({
+    topic: `production-dashboard-work-centers:${companyId}`,
+    event: "*",
+    schema: "public",
+    table: "productionEvent",
+    filter: `companyId=eq.${companyId}`,
+    autoRemove: true,
+    onMessage(payload) {
+      if (payload.eventType === "INSERT") {
+        const { new: inserted } = payload;
+        setEvents((prev) => [...prev, inserted as ActiveProductionEvent]);
+        ensureMetaData({ jobOperationId: inserted.jobOperationId });
+      } else if (payload.eventType === "UPDATE") {
+        const { new: updated } = payload;
+        setEvents((prev) => {
+          if (updated.endTime) {
+            return prev.filter((event) => event.id !== updated.id);
           }
-        )
-        .subscribe();
-    }
-
-    return () => {
-      if (channelRef.current) {
-        channelRef.current.unsubscribe();
-        carbon?.removeChannel(channelRef.current);
-        channelRef.current = null;
+          const exists = prev.some((event) => event.id === updated.id);
+          if (exists) {
+            return prev.map((event) =>
+              event.id === updated.id ? { ...event, ...updated } : event
+            );
+          }
+          return [...prev, updated as ActiveProductionEvent];
+        });
+      } else if (payload.eventType === "DELETE") {
+        const { old: deleted } = payload;
+        setEvents((prev) => prev.filter((event) => event.id !== deleted.id));
       }
-    };
+    },
   });
-
-  useEffect(() => {
-    if (carbon && accessToken && channelRef.current) {
-      carbon.realtime.setAuth(accessToken);
-    }
-  }, [accessToken, carbon]);
 
   return (
     <div className="w-full grid grid-cols-6 gap-4">

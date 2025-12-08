@@ -29,9 +29,8 @@ import {
   toZoned,
 } from "@internationalized/date";
 import { Link, useLoaderData } from "@remix-run/react";
-import type { RealtimeChannel } from "@supabase/supabase-js";
 import { json, redirect, type LoaderFunctionArgs } from "@vercel/remix";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { LuCirclePlus, LuSettings2, LuTriangleAlert } from "react-icons/lu";
 import { SearchFilter } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
@@ -39,7 +38,7 @@ import { useLocations } from "~/components/Form/Location";
 import { ActiveFilters, Filter } from "~/components/Table/components/Filter";
 import type { ColumnFilter } from "~/components/Table/components/Filter/types";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
-import { useUrlParams, useUser } from "~/hooks";
+import { useRealtimeChannel, useUrlParams, useUser } from "~/hooks";
 import { getActiveJobOperationsByLocation } from "~/modules/production";
 import type { Column, OperationItem } from "~/modules/production/ui/Schedule";
 
@@ -666,114 +665,87 @@ function useProgressByOperation(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productionEventsByOperation]);
 
-  const channelRef = useRef<RealtimeChannel | null>(null);
-  useMount(() => {
-    if (!channelRef.current && carbon && accessToken) {
-      carbon.realtime.setAuth(accessToken);
-      channelRef.current = carbon
-        .channel(`kanban-schedule:${companyId}`)
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "jobOperation",
-            filter: `id=in.(${items.map((item) => item.id).join(",")})`,
-          },
-          (payload) => {
-            switch (payload.eventType) {
-              case "UPDATE": {
-                const { new: updated } = payload;
-                setItems((prevItems: OperationItem[]) =>
-                  sortItems(
-                    prevItems.map((item: OperationItem) => {
-                      if (item.id === updated.id) {
-                        return {
-                          ...item,
-                          columnId: updated.workCenterId,
-                          priority: updated.priority,
-                        };
-                      }
-                      return item;
-                    })
-                  )
-                );
-                break;
-              }
-              case "DELETE": {
-                const { old: deleted } = payload;
-                setItems((prevItems: OperationItem[]) =>
-                  sortItems(
-                    prevItems.filter(
-                      (item: OperationItem) => item.id !== deleted.id
-                    )
-                  )
-                );
-                break;
-              }
-            }
-          }
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "productionEvent",
-            filter: `companyId=eq.${companyId}`,
-          },
-          (payload) => {
-            if (payload.eventType === "INSERT") {
-              const { new: inserted } = payload;
-              if (inserted.jobOperationId) {
-                setProductionEventsByOperation((prevState) => ({
-                  ...prevState,
-                  [inserted.jobOperationId]: [
-                    ...(prevState[inserted.jobOperationId] ?? []),
-                    inserted,
-                  ],
-                }));
-              }
-            } else if (payload.eventType === "UPDATE") {
-              const { new: updated } = payload;
-              if (updated.jobOperationId) {
-                setProductionEventsByOperation((prevState) => ({
-                  ...prevState,
-                  [updated.jobOperationId]: (
-                    prevState[updated.jobOperationId] ?? []
-                  ).map((event) => (event.id === updated.id ? updated : event)),
-                }));
-              }
-            } else if (payload.eventType === "DELETE") {
-              const { old: deleted } = payload;
-              if (deleted.jobOperationId) {
-                setProductionEventsByOperation((prevState) => ({
-                  ...prevState,
-                  [deleted.jobOperationId]: (
-                    prevState[deleted.jobOperationId] ?? []
-                  ).filter((event) => event.id !== deleted.id),
-                }));
-              }
-            }
-          }
-        )
-        .subscribe();
-    }
-
-    return () => {
-      if (channelRef.current) {
-        channelRef.current.unsubscribe();
-        carbon?.removeChannel(channelRef.current);
-        channelRef.current = null;
+  useRealtimeChannel({
+    topic: `kanban-schedule:${companyId}`,
+    event: "*",
+    schema: "public",
+    table: "jobOperation",
+    filter: `id=in.(${items.map((item) => item.id).join(",")})`,
+    onMessage(payload) {
+      switch (payload.eventType) {
+        case "UPDATE": {
+          const { new: updated } = payload;
+          setItems((prevItems: OperationItem[]) =>
+            sortItems(
+              prevItems.map((item: OperationItem) => {
+                if (item.id === updated.id) {
+                  return {
+                    ...item,
+                    columnId: updated.workCenterId,
+                    priority: updated.priority,
+                  };
+                }
+                return item;
+              })
+            )
+          );
+          break;
+        }
+        case "DELETE": {
+          const { old: deleted } = payload;
+          setItems((prevItems: OperationItem[]) =>
+            sortItems(
+              prevItems.filter((item: OperationItem) => item.id !== deleted.id)
+            )
+          );
+          break;
+        }
       }
-    };
+    },
   });
 
-  useEffect(() => {
-    if (carbon && accessToken && channelRef.current)
-      carbon.realtime.setAuth(accessToken);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken]);
+  useRealtimeChannel({
+    topic: `kanban-schedule:${companyId}`,
+    event: "*",
+    schema: "public",
+    table: "productionEvent",
+    filter: `companyId=eq.${companyId}`,
+    autoRemove: true,
+    onMessage(payload) {
+      if (payload.eventType === "INSERT") {
+        const { new: inserted } = payload;
+        if (inserted.jobOperationId) {
+          setProductionEventsByOperation((prevState) => ({
+            ...prevState,
+            [inserted.jobOperationId]: [
+              ...(prevState[inserted.jobOperationId] ?? []),
+              inserted,
+            ],
+          }));
+        }
+      } else if (payload.eventType === "UPDATE") {
+        const { new: updated } = payload;
+        if (updated.jobOperationId) {
+          setProductionEventsByOperation((prevState) => ({
+            ...prevState,
+            [updated.jobOperationId]: (
+              prevState[updated.jobOperationId] ?? []
+            ).map((event) => (event.id === updated.id ? updated : event)),
+          }));
+        }
+      } else if (payload.eventType === "DELETE") {
+        const { old: deleted } = payload;
+        if (deleted.jobOperationId) {
+          setProductionEventsByOperation((prevState) => ({
+            ...prevState,
+            [deleted.jobOperationId]: (
+              prevState[deleted.jobOperationId] ?? []
+            ).filter((event) => event.id !== deleted.id),
+          }));
+        }
+      }
+    },
+  });
 
   return { progressByOperation };
 }
