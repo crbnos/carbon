@@ -613,40 +613,48 @@ const JobBillOfProcess = ({
 
   useRealtimeChannel({
     topic: `production-events:${selectedItemId}`,
-    event: "*",
-    schema: "public",
-    table: "productionEvent",
-    filter: `jobOperationId=eq.${selectedItemId}`,
     autoRemove: true,
+    dependencies: [selectedItemId],
     enabled: !!selectedItemId && !temporaryItems[selectedItemId],
-    onMessage(payload) {
-      switch (payload.eventType) {
-        case "INSERT":
-          const { new: inserted } = payload;
-          setProductionEvents((prevEvents) => [
-            ...prevEvents,
-            inserted as Database["public"]["Tables"]["productionEvent"]["Row"],
-          ]);
-          break;
-        case "UPDATE":
-          const { new: updated } = payload;
-          setProductionEvents((prevEvents) =>
-            prevEvents.map((event) =>
-              event.id === updated.id
-                ? (updated as Database["public"]["Tables"]["productionEvent"]["Row"])
-                : event
-            )
-          );
-          break;
-        case "DELETE":
-          const { old: deleted } = payload;
-          setProductionEvents((prevEvents) =>
-            prevEvents.filter((event) => event.id !== deleted.id)
-          );
-          break;
-        default:
-          break;
-      }
+    setup(channel) {
+      return channel.on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "productionEvent",
+          filter: `jobOperationId=eq.${selectedItemId}`,
+        },
+        (payload) => {
+          switch (payload.eventType) {
+            case "INSERT":
+              const { new: inserted } = payload;
+              setProductionEvents((prevEvents) => [
+                ...prevEvents,
+                inserted as Database["public"]["Tables"]["productionEvent"]["Row"],
+              ]);
+              break;
+            case "UPDATE":
+              const { new: updated } = payload;
+              setProductionEvents((prevEvents) =>
+                prevEvents.map((event) =>
+                  event.id === updated.id
+                    ? (updated as Database["public"]["Tables"]["productionEvent"]["Row"])
+                    : event
+                )
+              );
+              break;
+            case "DELETE":
+              const { old: deleted } = payload;
+              setProductionEvents((prevEvents) =>
+                prevEvents.filter((event) => event.id !== deleted.id)
+              );
+              break;
+            default:
+              break;
+          }
+        }
+      );
     },
   });
 
@@ -3144,18 +3152,26 @@ function OperationChat({ jobOperationId }: { jobOperationId: string }) {
 
   useRealtimeChannel({
     topic: `job-operation-notes-${jobOperationId}`,
-    event: "INSERT",
-    schema: "public",
-    table: "jobOperationNote",
-    filter: `jobOperationId=eq.${jobOperationId}`,
     autoRemove: true,
-    onMessage(payload) {
-      setMessages((prev) => {
-        if (prev.some((m) => m.id === payload.new.id)) {
-          return prev;
+    dependencies: [jobOperationId],
+    setup(channel) {
+      return channel.on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "jobOperationNote",
+          filter: `jobOperationId=eq.${jobOperationId}`,
+        },
+        (payload) => {
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === payload.new.id)) {
+              return prev;
+            }
+            return [...prev, payload.new as Message];
+          });
         }
-        return [...prev, payload.new as Message];
-      });
+      );
     },
   });
 

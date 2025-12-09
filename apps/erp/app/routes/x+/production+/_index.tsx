@@ -763,34 +763,44 @@ function WorkCenterCards({
 
   useRealtimeChannel({
     topic: `production-dashboard-work-centers:${companyId}`,
-    event: "*",
-    schema: "public",
-    table: "productionEvent",
-    filter: `companyId=eq.${companyId}`,
+    dependencies: [companyId],
     autoRemove: true,
-    onMessage(payload) {
-      if (payload.eventType === "INSERT") {
-        const { new: inserted } = payload;
-        setEvents((prev) => [...prev, inserted as ActiveProductionEvent]);
-        ensureMetaData({ jobOperationId: inserted.jobOperationId });
-      } else if (payload.eventType === "UPDATE") {
-        const { new: updated } = payload;
-        setEvents((prev) => {
-          if (updated.endTime) {
-            return prev.filter((event) => event.id !== updated.id);
-          }
-          const exists = prev.some((event) => event.id === updated.id);
-          if (exists) {
-            return prev.map((event) =>
-              event.id === updated.id ? { ...event, ...updated } : event
+    setup(channel) {
+      return channel.on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "productionEvent",
+          filter: `companyId=eq.${companyId}`,
+        },
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            const { new: inserted } = payload;
+            setEvents((prev) => [...prev, inserted as ActiveProductionEvent]);
+            ensureMetaData({ jobOperationId: inserted.jobOperationId });
+          } else if (payload.eventType === "UPDATE") {
+            const { new: updated } = payload;
+            setEvents((prev) => {
+              if (updated.endTime) {
+                return prev.filter((event) => event.id !== updated.id);
+              }
+              const exists = prev.some((event) => event.id === updated.id);
+              if (exists) {
+                return prev.map((event) =>
+                  event.id === updated.id ? { ...event, ...updated } : event
+                );
+              }
+              return [...prev, updated as ActiveProductionEvent];
+            });
+          } else if (payload.eventType === "DELETE") {
+            const { old: deleted } = payload;
+            setEvents((prev) =>
+              prev.filter((event) => event.id !== deleted.id)
             );
           }
-          return [...prev, updated as ActiveProductionEvent];
-        });
-      } else if (payload.eventType === "DELETE") {
-        const { old: deleted } = payload;
-        setEvents((prev) => prev.filter((event) => event.id !== deleted.id));
-      }
+        }
+      );
     },
   });
 

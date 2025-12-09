@@ -105,7 +105,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       if (scheduler.error) {
         throw redirect(
           requestReferrer(request) ?? path.to.job(id),
-          await flash(request, error(error, "Failed to schedule job"))
+          await flash(request, error(scheduler.error, "Failed to schedule job"))
         );
       }
 
