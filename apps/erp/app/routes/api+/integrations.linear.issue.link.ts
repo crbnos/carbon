@@ -67,7 +67,7 @@ export const action: ActionFunction = async ({ request }) => {
           issueId: issue.id as string,
           url,
           title: `Linked Carbon Issue: ${
-            carbonIssue.data?.nonConformanceId ?? ""
+            carbonIssue.data?.nonConformance?.nonConformanceId ?? ""
           }`,
         });
 
@@ -75,6 +75,19 @@ export const action: ActionFunction = async ({ request }) => {
       }
 
       case "DELETE": {
+        const { data: action } = await getIssueAction(client, actionId);
+
+        if (action?.nonConformanceId) {
+          const [found] = await linear.listAttachments(
+            companyId,
+            action.nonConformanceId
+          );
+
+          if (found) {
+            await linear.removeAttachment(companyId, found.id);
+          }
+        }
+
         const unlinked = await unlinkActionFromLinearIssue(client, companyId, {
           actionId,
         });

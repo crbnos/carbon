@@ -277,4 +277,66 @@ export class LinearClient {
 
     return res.data.data.workflowStates.nodes.at(0) || null;
   }
+
+  async listAttachments(companyId: string, url: string) {
+    try {
+      const query = `query Query($filter: AttachmentFilter) { attachments(filter: $filter, first: 1) { nodes { id url } } }`;
+
+      const res = await this.instance.request<{
+        data: {
+          attachments: {
+            nodes: Array<{
+              id: string;
+              url: string;
+            }>;
+          };
+        };
+      }>({
+        method: "POST",
+        headers: await this.getAuthHeaders(companyId),
+        data: {
+          query,
+          variables: {
+            filter: {
+              url: { contains: url },
+            },
+          },
+        },
+      });
+
+      return res.data.data.attachments.nodes.map((el) => el);
+    } catch (error) {
+      console.error("Error listing Linear attachments:", error);
+      return [];
+    }
+  }
+
+  async removeAttachment(companyId: string, attachmentId: string) {
+    try {
+      const query = `mutation AttachmentDelete($attachmentDeleteId: String!) { attachmentDelete(id: $attachmentDeleteId) { success } }`;
+
+      const response = await this.instance.request<{
+        data: {
+          attachmentDelete: {
+            success: boolean;
+          };
+        };
+      }>({
+        method: "POST",
+        headers: await this.getAuthHeaders(companyId),
+        validateStatus: (status) => status === 200 || status === 404,
+        data: {
+          query,
+          variables: {
+            attachmentDeleteId: attachmentId,
+          },
+        },
+      });
+
+      return response.data.data.attachmentDelete.success;
+    } catch (error) {
+      console.error("Error removing Linear attachment:", error);
+      return false;
+    }
+  }
 }
