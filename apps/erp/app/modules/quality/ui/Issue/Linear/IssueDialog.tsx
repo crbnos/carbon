@@ -53,14 +53,15 @@ export const LinearIssueDialog = ({ task }: Props) => {
       { actionId: task.id },
       { method: "DELETE", action: path.to.api.linearLinkExistingIssue }
     );
-    disclosure.onClose();
+    revalidator.revalidate();
   };
+
+  const isAlreadyLinked = !!linked?.id;
 
   return (
     <Modal
       open={disclosure.isOpen}
       onOpenChange={(open) => {
-        console.log("ON open changed");
         if (!open) {
           disclosure.onClose();
         }
@@ -89,13 +90,17 @@ export const LinearIssueDialog = ({ task }: Props) => {
             <div className="space-y-1">
               <ModalTitle>Link Linear Issue</ModalTitle>
               <ModalDescription>
-                Search for an existing issue or create a new one
+                Search for existing or create a new one
               </ModalDescription>
             </div>
 
             <TabsList className="max-w-max mb-4">
-              <TabsTrigger value="link">Link Existing</TabsTrigger>
-              <TabsTrigger value="create">Create New</TabsTrigger>
+              <TabsTrigger value="link" disabled={isAlreadyLinked}>
+                Link Existing
+              </TabsTrigger>
+              <TabsTrigger value="create" disabled={isAlreadyLinked}>
+                Create New
+              </TabsTrigger>
             </TabsList>
           </ModalHeader>
           <ModalBody>
@@ -108,24 +113,30 @@ export const LinearIssueDialog = ({ task }: Props) => {
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 justify-between">
-                      <span className="flex items-center">
-                        <span className="mr-2 text-foreground">
+                      <Link
+                        to={linked.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center"
+                      >
+                        <span className="mr-2 text-foreground flex items-center">
                           {linked.title}
+                          <LuExternalLink className="size-4 ml-2 text-primary" />
                         </span>
-                        <Link to={linked.url} target="_blank" rel="noreferrer">
-                          <Badge
-                            variant={"outline"}
-                            className="font-normal text-xs text-muted-foreground flex items-center"
-                          >
-                            {linked.identifier}
-                            <LuExternalLink className="size-3 ml-2" />
-                          </Badge>
-                        </Link>
-                      </span>
-                      <LinearIssueStateBadge
-                        state={linked.state}
-                        className="size-3.5"
-                      />
+                      </Link>
+
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant={"outline"}
+                          className="font-normal font-mono text-muted-foreground flex items-center"
+                        >
+                          {linked.identifier}
+                        </Badge>
+                        <LinearIssueStateBadge
+                          state={linked.state}
+                          className="size-3.5"
+                        />
+                      </div>
                     </div>
 
                     <div className="mt-2 text-sm text-muted-foreground flex justify-between items-center">
@@ -150,7 +161,11 @@ export const LinearIssueDialog = ({ task }: Props) => {
               </div>
             )}
 
-            <TabsContent value="link" className="relative mt-0">
+            <TabsContent
+              value="link"
+              hidden={isAlreadyLinked}
+              className="relative mt-0"
+            >
               <LinkIssue
                 task={task}
                 onClose={disclosure.onClose}

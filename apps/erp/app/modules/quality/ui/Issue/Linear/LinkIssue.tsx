@@ -91,30 +91,36 @@ export const LinkIssue = (props: Props) => {
               disabled={issue.id === props.linked?.id}
               variant={"outline"}
               className={cn(
-                "w-full rounded-lg p-3 text-left transition-colors hover:bg-transparent block h-auto data-[state=on]:bg-accent hover:data-[state=on]:bg-accent"
+                "w-full rounded-lg p-3 text-left transition-colors hover:bg-transparent block h-auto data-[state=on]:bg-transparent hover:data-[state=on]:bg-transparent data-[state=on]:border-primary hover:data-[state=on]:border-primary"
               )}
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 justify-between">
-                    <span className="flex items-center">
-                      <span className="mr-2 text-foreground">
+                    <Link
+                      to={issue.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center"
+                    >
+                      <span className="mr-2 text-foreground flex items-center">
                         {issue.title}
+                        <LuExternalLink className="size-4 ml-2 text-primary" />
                       </span>
-                      <Link to={issue.url} target="_blank" rel="noreferrer">
-                        <Badge
-                          variant={"outline"}
-                          className="font-normal text-xs text-muted-foreground flex items-center"
-                        >
-                          {issue.identifier}
-                          <LuExternalLink className="size-3 ml-2" />
-                        </Badge>
-                      </Link>
-                    </span>
-                    <LinearIssueStateBadge
-                      state={issue.state}
-                      className="size-3.5"
-                    />
+                    </Link>
+
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant={"outline"}
+                        className="font-normal font-mono text-muted-foreground flex items-center"
+                      >
+                        {issue.identifier}
+                      </Badge>
+                      <LinearIssueStateBadge
+                        state={issue.state}
+                        className="size-3.5"
+                      />
+                    </div>
                   </div>
 
                   <div className="mt-2 text-sm text-muted-foreground flex justify-between items-center">
