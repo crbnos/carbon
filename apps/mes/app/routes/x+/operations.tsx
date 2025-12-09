@@ -15,6 +15,7 @@ import {
   useInterval,
   useLocalStorage,
   useMount,
+  useRealtimeChannel,
   VStack,
 } from "@carbon/react";
 import {
@@ -24,9 +25,8 @@ import {
   toZoned,
 } from "@internationalized/date";
 import { json, redirect, useLoaderData } from "@remix-run/react";
-import type { RealtimeChannel } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "@vercel/remix";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { LuSettings2, LuTriangleAlert } from "react-icons/lu";
 
 import type { ColumnFilter } from "~/components/Filter";
@@ -607,12 +607,11 @@ function useProgressByOperation(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productionEventsByOperation]);
 
-  const channelRef = useRef<RealtimeChannel | null>(null);
-  useMount(() => {
-    if (!channelRef.current && carbon && accessToken) {
-      carbon.realtime.setAuth(accessToken);
-      channelRef.current = carbon
-        .channel(`kanban-schedule:${companyId}`)
+  useRealtimeChannel({
+    topic: `kanban-schedule:${companyId}`,
+    dependencies: [items.length],
+    setup(channel) {
+      return channel
         .on(
           "postgres_changes",
           {
@@ -685,18 +684,9 @@ function useProgressByOperation(
               }
             }
           }
-        )
-        .subscribe();
-    }
+        );
+    },
   });
-
-  useEffect(() => {
-    return () => {
-      if (channelRef.current) {
-        carbon?.removeChannel(channelRef.current);
-      }
-    };
-  }, [carbon]);
 
   return { progressByOperation };
 }

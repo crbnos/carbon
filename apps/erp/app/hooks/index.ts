@@ -16,7 +16,6 @@ import { useOnboarding } from "./useOnboarding";
 import { usePercentFormatter } from "./usePercentFormatter";
 import { usePermissions } from "./usePermissions";
 import { useRealtime } from "./useRealtime";
-import { useRealtimeChannel } from "./useRealtimeChannel";
 import { useScrollPosition } from "./useScrollPosition";
 import { useUser } from "./useUser";
 
@@ -33,7 +32,6 @@ export {
   usePercentFormatter,
   usePermissions,
   useRealtime,
-  useRealtimeChannel,
   useRouteData,
   useScrollPosition,
   useUrlParams,

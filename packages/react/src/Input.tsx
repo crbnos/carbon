@@ -368,6 +368,7 @@ export interface InputElementProps
   isFirstChild?: boolean;
   isLastChild?: boolean;
   isDisabled?: boolean;
+  isInvalid?: boolean;
 }
 
 const InputLeftElement = forwardRef<HTMLDivElement, InputElementProps>(
@@ -378,6 +379,7 @@ const InputLeftElement = forwardRef<HTMLDivElement, InputElementProps>(
       isFirstChild,
       isLastChild,
       isDisabled = false,
+      isInvalid,
       ...props
     },
     ref

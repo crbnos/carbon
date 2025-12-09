@@ -20,6 +20,7 @@ import {
   useInterval,
   useLocalStorage,
   useMount,
+  useRealtimeChannel,
   VStack,
 } from "@carbon/react";
 import {
@@ -29,9 +30,8 @@ import {
   toZoned,
 } from "@internationalized/date";
 import { Link, useLoaderData } from "@remix-run/react";
-import type { RealtimeChannel } from "@supabase/supabase-js";
 import { json, redirect, type LoaderFunctionArgs } from "@vercel/remix";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { LuCirclePlus, LuSettings2, LuTriangleAlert } from "react-icons/lu";
 import { SearchFilter } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
@@ -39,7 +39,7 @@ import { useLocations } from "~/components/Form/Location";
 import { ActiveFilters, Filter } from "~/components/Table/components/Filter";
 import type { ColumnFilter } from "~/components/Table/components/Filter/types";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
-import { useRealtimeChannel, useUrlParams, useUser } from "~/hooks";
+import { useUrlParams, useUser } from "~/hooks";
 import { getActiveJobOperationsByLocation } from "~/modules/production";
 import type { Column, OperationItem } from "~/modules/production/ui/Schedule";
 
@@ -559,7 +559,7 @@ function useProgressByOperation(
   const {
     company: { id: companyId },
   } = useUser();
-  const { carbon, accessToken, realtimeAuthSet } = useCarbon();
+  const { carbon } = useCarbon();
 
   const [productionEventsByOperation, setProductionEventsByOperation] =
     useState<Record<string, Event[]>>({});
@@ -668,8 +668,6 @@ function useProgressByOperation(
 
   useRealtimeChannel({
     topic: `kanban-schedule:${companyId}`,
-    dependencies: [companyId],
-    autoRemove: false,
     setup(channel) {
       return channel
         .on(

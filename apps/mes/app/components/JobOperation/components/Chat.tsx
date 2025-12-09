@@ -7,6 +7,7 @@ import {
   ScrollArea,
   useDebounce,
   useMount,
+  useRealtimeChannel,
 } from "@carbon/react";
 import { useEffect, useRef, useState } from "react";
 import { useUser } from "~/hooks";
@@ -14,7 +15,6 @@ import type { OperationWithDetails } from "~/services/types";
 import { path } from "~/utils/path";
 
 import { useCarbon } from "@carbon/auth";
-import type { RealtimeChannel } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import { flushSync } from "react-dom";
 import { LuSend } from "react-icons/lu";
@@ -63,47 +63,28 @@ export function OperationChat({
     fetchChats();
   });
 
-  const channelRef = useRef<RealtimeChannel | null>(null);
-
-  useMount(() => {
-    if (!channelRef.current && carbon && accessToken) {
-      carbon.realtime.setAuth(accessToken);
-      channelRef.current = carbon
-        .channel(`job-operation-notes-${operation.id}`)
-        .on(
-          "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "jobOperationNote",
-            filter: `jobOperationId=eq.${operation.id}`,
-          },
-          (payload) => {
-            setMessages((prev) => {
-              if (prev.some((note) => note.id === payload.new.id)) {
-                return prev;
-              }
-              return [...prev, payload.new as Message];
-            });
-          }
-        )
-        .subscribe();
-    }
-
-    return () => {
-      if (channelRef.current) {
-        channelRef.current.unsubscribe();
-        carbon?.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
-    };
+  useRealtimeChannel({
+    topic: `job-operation-notes-${operation.id}`,
+    setup(channel) {
+      return channel.on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "jobOperationNote",
+          filter: `jobOperationId=eq.${operation.id}`,
+        },
+        (payload) => {
+          setMessages((prev) => {
+            if (prev.some((note) => note.id === payload.new.id)) {
+              return prev;
+            }
+            return [...prev, payload.new as Message];
+          });
+        }
+      );
+    },
   });
-
-  useEffect(() => {
-    if (carbon && accessToken && channelRef.current)
-      carbon.realtime.setAuth(accessToken);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 

@@ -1,5 +1,5 @@
+import { useRealtimeChannel } from "@carbon/react";
 import { useRevalidator } from "@remix-run/react";
-import { useRealtimeChannel } from "./useRealtimeChannel";
 import { useUser } from "./useUser";
 
 export function useRealtime(table: string, filter?: string) {
@@ -8,8 +8,7 @@ export function useRealtime(table: string, filter?: string) {
 
   const channel = useRealtimeChannel({
     topic: `postgres_changes:${table}}`,
-    dependencies: [company.id],
-    autoRemove: true,
+    dependencies: [company.id, filter],
     setup(channel) {
       return channel.on(
         "postgres_changes",

@@ -2,8 +2,8 @@
 
 import { useCarbon } from "@carbon/auth";
 import { fetchAllFromTable } from "@carbon/database";
-import type { RealtimeChannel } from "@supabase/supabase-js";
-import { useEffect, useRef } from "react";
+import { useRealtimeChannel } from "@carbon/react";
+import { useEffect } from "react";
 import { useUser } from "~/hooks";
 import { useCustomers, useItems, usePeople, useSuppliers } from "~/stores";
 import type { Item } from "~/stores/items";
@@ -13,7 +13,7 @@ let hydratedFromIdb = false;
 let hydratedFromServer = false;
 
 const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
-  const { carbon, accessToken, realtimeAuthSet } = useCarbon();
+  const { carbon, accessToken } = useCarbon();
   const {
     company: { id: companyId },
   } = useUser();
@@ -121,20 +121,18 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
     idb.setItem("people", people.data);
   };
 
-  
   useEffect(() => {
     if (!companyId) return;
     hydrate();
-    
-    
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companyId]);
-  const channelRef = useRef<RealtimeChannel | null>(null);
-  
-  useEffect(() => {
-    if (!channelRef.current && carbon && accessToken && realtimeAuthSet) {
-      channelRef.current = carbon
-        .channel("realtime:core")
+
+  useRealtimeChannel({
+    topic: `realtime:core`,
+    dependencies: [companyId],
+    setup(channel, carbon) {
+      return channel
         .on(
           "postgres_changes",
           {
@@ -338,20 +336,9 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
               setPeople(data);
             }
           }
-        )
-        .subscribe();
-    }
-
-    return () => {
-      if (channelRef.current) {
-        channelRef.current.unsubscribe();
-        channelRef.current = null;
-      }
-    };
-// eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [carbon, accessToken, companyId, realtimeAuthSet]);
-
-  
+        );
+    },
+  });
 
   return <>{children}</>;
 };

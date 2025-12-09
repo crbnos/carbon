@@ -38,7 +38,7 @@ export const CarbonProvider = ({
 
   useEffect(() => {
     const updateRealtimeAuth = async () => {
-      if (carbon && accessToken && !realtimeAuthSet) {
+      if (carbon && accessToken) {
         await carbon.realtime.setAuth(accessToken);
         setRealtimeAuthSet(true);
       }

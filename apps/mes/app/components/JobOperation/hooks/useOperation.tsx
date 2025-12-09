@@ -1,4 +1,9 @@
-import { toast, useDisclosure, useInterval, useMount } from "@carbon/react";
+import {
+  toast,
+  useDisclosure,
+  useInterval,
+  useRealtimeChannel,
+} from "@carbon/react";
 import { useParams, useRevalidator } from "@remix-run/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useUrlParams, useUser } from "~/hooks";
@@ -89,11 +94,11 @@ export function useOperation({
     setOperationState(operation);
   }, [operation]);
 
-  useMount(() => {
-    if (!channelRef.current && carbon && accessToken) {
-      carbon.realtime.setAuth(accessToken);
-      channelRef.current = carbon
-        .channel(`job-operations:${operation.id}`)
+  useRealtimeChannel({
+    topic: `job-operations:${operation.id}`,
+    dependencies: [operation.jobId],
+    setup(channel) {
+      return channel
         .on(
           "postgres_changes",
           {
@@ -171,24 +176,9 @@ export function useOperation({
               window.location.href = path.to.operations;
             }
           }
-        )
-        .subscribe();
-    }
-
-    return () => {
-      if (channelRef.current) {
-        channelRef.current.unsubscribe();
-        carbon?.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
-    };
+        );
+    },
   });
-
-  useEffect(() => {
-    if (carbon && accessToken && channelRef.current)
-      carbon.realtime.setAuth(accessToken);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken]);
 
   const getProgress = useCallback(() => {
     const timeNow = now(getLocalTimeZone());

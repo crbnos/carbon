@@ -9,6 +9,7 @@ import useKeyboardShortcuts from "./useKeyboardShortcuts";
 import useLocalStorage from "./useLocalStorage";
 import useMount from "./useMount";
 import useOutsideClick from "./useOutsideClick";
+import { useRealtimeChannel } from "./useRealtimeChannel";
 import type { Shortcut, ShortcutDefinition } from "./useShortcutKeys";
 import { useShortcutKeys } from "./useShortcutKeys";
 import useThrottle from "./useThrottle";
@@ -25,6 +26,7 @@ export {
   useLocalStorage,
   useMount,
   useOutsideClick,
+  useRealtimeChannel,
   useShortcutKeys,
   useThrottle,
 };

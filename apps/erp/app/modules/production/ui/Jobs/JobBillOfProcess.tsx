@@ -44,6 +44,7 @@ import {
   useDebounce,
   useDisclosure,
   useMount,
+  useRealtimeChannel,
   VStack,
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
@@ -54,7 +55,6 @@ import {
 } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Link, useFetcher, useFetchers, useParams } from "@remix-run/react";
-import type { RealtimeChannel } from "@supabase/supabase-js";
 import { AnimatePresence, LayoutGroup, motion, Reorder } from "framer-motion";
 import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
@@ -109,13 +109,7 @@ import InfiniteScroll from "~/components/InfiniteScroll";
 import { ConfirmDelete } from "~/components/Modals";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
-import {
-  usePermissions,
-  useRealtimeChannel,
-  useRouteData,
-  useUrlParams,
-  useUser,
-} from "~/hooks";
+import { usePermissions, useRouteData, useUrlParams, useUser } from "~/hooks";
 import type {
   OperationParameter,
   OperationStep,
@@ -613,8 +607,6 @@ const JobBillOfProcess = ({
 
   useRealtimeChannel({
     topic: `production-events:${selectedItemId}`,
-    autoRemove: true,
-    dependencies: [selectedItemId],
     enabled: !!selectedItemId && !temporaryItems[selectedItemId],
     setup(channel) {
       return channel.on(
@@ -3152,8 +3144,6 @@ function OperationChat({ jobOperationId }: { jobOperationId: string }) {
 
   useRealtimeChannel({
     topic: `job-operation-notes-${jobOperationId}`,
-    autoRemove: true,
-    dependencies: [jobOperationId],
     setup(channel) {
       return channel.on(
         "postgres_changes",

@@ -24,7 +24,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  useMount,
+  useRealtimeChannel,
 } from "@carbon/react";
 import {
   ChartContainer,
@@ -48,7 +48,7 @@ import {
   useFetcher,
   useLoaderData,
 } from "@remix-run/react";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { CSVLink } from "react-csv";
 import {
   LuArrowUpRight,
@@ -84,7 +84,6 @@ import { RiProgress8Line } from "react-icons/ri";
 import { getDeadlineIcon } from "~/modules/production/ui/Jobs";
 import type { WorkCenter } from "~/modules/resources";
 import { getWorkCentersList } from "~/modules/resources";
-import { useRealtimeChannel } from "~/hooks";
 
 const OPEN_JOB_STATUSES = ["Ready", "In Progress", "Paused"] as const;
 
@@ -763,8 +762,6 @@ function WorkCenterCards({
 
   useRealtimeChannel({
     topic: `production-dashboard-work-centers:${companyId}`,
-    dependencies: [companyId],
-    autoRemove: true,
     setup(channel) {
       return channel.on(
         "postgres_changes",

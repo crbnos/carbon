@@ -1,20 +1,16 @@
-import { useCarbon } from "@carbon/auth";
+import { useRealtimeChannel } from "@carbon/react";
 import { useRevalidator } from "@remix-run/react";
-import { useEffect } from "react";
 import { useUser } from "./useUser";
 
 export function useRealtime(table: string, filter?: string) {
   const { company } = useUser();
-  const { accessToken, carbon } = useCarbon();
   const revalidator = useRevalidator();
 
-  useEffect(() => {
-    if (!carbon || !accessToken || !table) return;
-    carbon.realtime.setAuth(accessToken);
-
-    const channel = carbon
-      .channel(`postgres_changes:${table}}`)
-      .on(
+  const channel = useRealtimeChannel({
+    topic: `postgres_changes:${table}}`,
+    dependencies: [company.id, filter],
+    setup(channel) {
+      return channel.on(
         "postgres_changes",
         {
           event: "*",
@@ -22,16 +18,12 @@ export function useRealtime(table: string, filter?: string) {
           table: table,
           filter: filter ?? `companyId=eq.${company.id}`,
         },
-        (payload) => {
+        () => {
           revalidator.revalidate();
         }
-      )
-      .subscribe();
+      );
+    },
+  });
 
-    return () => {
-      if (channel) carbon?.removeChannel(channel);
-    };
-    // Don't put the revalidator in the deps array
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [carbon, table, filter, accessToken, company.id]);
+  return channel;
 }
