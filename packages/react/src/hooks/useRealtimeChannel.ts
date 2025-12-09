@@ -1,6 +1,6 @@
 import { useCarbon } from "@carbon/auth";
+import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
 import { REALTIME_SUBSCRIBE_STATES } from "@supabase/supabase-js";
-import type { SupabaseClient, RealtimeChannel } from "@supabase/supabase-js";
 import { useCallback, useEffect, useRef } from "react";
 import useMount from "./useMount";
 
@@ -75,8 +75,7 @@ export const useRealtimeChannel = <TDeps extends any[]>(
           // Treat error/timeout/closed as dead; tear down so effect can recreate
           if (
             status === REALTIME_SUBSCRIBE_STATES.CHANNEL_ERROR ||
-            status === REALTIME_SUBSCRIBE_STATES.TIMED_OUT ||
-            status === REALTIME_SUBSCRIBE_STATES.CLOSED
+            status === REALTIME_SUBSCRIBE_STATES.TIMED_OUT
           ) {
             await teardown();
           }
@@ -94,6 +93,7 @@ export const useRealtimeChannel = <TDeps extends any[]>(
     carbon,
     realtimeAuthSet,
     enabled,
+    accessToken,
     topic,
     memoSetup,
     teardown,
