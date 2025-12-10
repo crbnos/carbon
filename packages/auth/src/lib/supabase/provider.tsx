@@ -2,58 +2,23 @@ import type { Database } from "@carbon/database";
 import { useInterval } from "@carbon/react";
 import { isBrowser } from "@carbon/utils";
 import { useFetcher } from "@remix-run/react";
-import type { Session, SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PropsWithChildren } from "react";
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { create } from "zustand";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
+import type { StoreApi } from "zustand";
+import { createStore, useStore } from "zustand";
 import type { AuthSession } from "../../types";
 import { path } from "../../utils/path";
 import { getCarbon } from "./client";
-import { setAuthSession } from "../../services/session.server";
-import { set } from "zod/v4";
 
-interface ICarbonState {
+interface ICarbonStore {
   carbon: SupabaseClient<Database>;
   accessToken: string;
   isRealtimeAuthSet: boolean;
-}
-
-interface ICarbonStoreActions {
   setAuthToken: (accessToken: string, refreshToken: string) => Promise<void>;
 }
 
-type CarbonStore = ICarbonState & ICarbonStoreActions;
-
-export const useCarbon = create<CarbonStore>((set, get) => ({
-  accessToken: "",
-  isRealtimeAuthSet: false,
-  carbon: getCarbon(),
-  setAuthToken: async (accessToken, refreshToken) => {
-    const { carbon, isRealtimeAuthSet } = get();
-    let client = carbon;
-
-    if (!isRealtimeAuthSet) {
-      client = getCarbon(accessToken);
-      return set({ accessToken, isRealtimeAuthSet: true, carbon: client });
-    }
-
-    await carbon.auth.setSession({
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    });
-
-    await carbon.realtime.setAuth(accessToken);
-
-    set({ accessToken, isRealtimeAuthSet: true });
-  },
-}));
+const CarbonProviderContext = createContext<StoreApi<ICarbonStore>>(null);
 
 export const CarbonProvider = ({
   children,
@@ -61,7 +26,28 @@ export const CarbonProvider = ({
 }: PropsWithChildren<{
   session: Partial<AuthSession>;
 }>) => {
-  const { carbon, setAuthToken } = useCarbon();
+  const [store] = useState(() =>
+    createStore<ICarbonStore>((set, get) => ({
+      accessToken: session.accessToken || "",
+      isRealtimeAuthSet: false,
+      carbon: getCarbon(session.accessToken),
+      setAuthToken: async (accessToken, refreshToken) => {
+        const { carbon } = get();
+
+        await carbon.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+
+        await carbon.realtime.setAuth(accessToken);
+
+        set({ accessToken, isRealtimeAuthSet: true });
+      },
+    }))
+  );
+
+  const { carbon, setAuthToken } = useStore(store);
+
   const initialLoad = useRef(true);
   const refresh = useFetcher<{}>();
 
@@ -112,5 +98,19 @@ export const CarbonProvider = ({
     initialLoad.current = false;
   }, 60000); // Check every minute
 
-  return <>{children}</>;
+  return (
+    <CarbonProviderContext.Provider value={store}>
+      {children}
+    </CarbonProviderContext.Provider>
+  );
+};
+
+export const useCarbon = () => {
+  const store = useContext(CarbonProviderContext);
+
+  if (!store) {
+    throw new Error("useCarbon must be used within a CarbonProvider");
+  }
+
+  return useStore(store);
 };
