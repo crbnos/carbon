@@ -19,9 +19,8 @@ export const useRealtimeChannel = <TDeps extends any[]>(
   options: UseRealtimeChannelOptions<TDeps>
 ) => {
   const { topic, setup, enabled = true, dependencies = [] } = options;
-
   const channelRef = useRef<RealtimeChannel | null>(null);
-  const { carbon, realtimeAuthSet, accessToken } = useCarbon();
+  const { carbon, isRealtimeAuthSet, accessToken } = useCarbon();
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const memoSetup = useCallback(setup, [topic, accessToken, ...dependencies]);
@@ -43,7 +42,7 @@ export const useRealtimeChannel = <TDeps extends any[]>(
   useEffect(() => {
     if (!carbon) return;
 
-    if (!realtimeAuthSet || !enabled) {
+    if (!isRealtimeAuthSet || !enabled) {
       // If disabled/auth lost, tear down any existing channel
       void teardown();
       return;
@@ -91,9 +90,8 @@ export const useRealtimeChannel = <TDeps extends any[]>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     carbon,
-    realtimeAuthSet,
+    isRealtimeAuthSet,
     enabled,
-    accessToken,
     topic,
     memoSetup,
     teardown,

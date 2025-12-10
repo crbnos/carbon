@@ -14,7 +14,7 @@ let hydratedFromIdb = false;
 let hydratedFromServer = false;
 
 const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
-  const { carbon, accessToken, realtimeAuthSet } = useCarbon();
+  const { carbon, accessToken, isRealtimeAuthSet } = useCarbon();
   const {
     company: { id: companyId },
   } = useUser();
