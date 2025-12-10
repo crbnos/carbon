@@ -36,7 +36,13 @@ export const useCarbon = create<CarbonStore>((set, get) => ({
   isRealtimeAuthSet: false,
   carbon: getCarbon(),
   setAuthToken: async (accessToken, refreshToken) => {
-    const { carbon } = get();
+    const { carbon, isRealtimeAuthSet } = get();
+    let client = carbon;
+
+    if (!isRealtimeAuthSet) {
+      client = getCarbon(accessToken);
+      return set({ accessToken, isRealtimeAuthSet: true, carbon: client });
+    }
 
     await carbon.auth.setSession({
       access_token: accessToken,
