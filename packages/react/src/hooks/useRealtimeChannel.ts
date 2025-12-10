@@ -20,10 +20,10 @@ export const useRealtimeChannel = <TDeps extends any[]>(
 ) => {
   const { topic, setup, enabled = true, dependencies = [] } = options;
   const channelRef = useRef<RealtimeChannel | null>(null);
-  const { carbon, isRealtimeAuthSet, accessToken } = useCarbon();
+  const { carbon, isRealtimeAuthSet } = useCarbon();
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const memoSetup = useCallback(setup, [topic, accessToken, ...dependencies]);
+  const memoSetup = useCallback(setup, [topic, ...dependencies]);
 
   const teardown = useCallback(async () => {
     const channel = channelRef.current;
@@ -74,7 +74,8 @@ export const useRealtimeChannel = <TDeps extends any[]>(
           // Treat error/timeout/closed as dead; tear down so effect can recreate
           if (
             status === REALTIME_SUBSCRIBE_STATES.CHANNEL_ERROR ||
-            status === REALTIME_SUBSCRIBE_STATES.TIMED_OUT
+            status === REALTIME_SUBSCRIBE_STATES.TIMED_OUT ||
+            status === REALTIME_SUBSCRIBE_STATES.CLOSED
           ) {
             await teardown();
           }
