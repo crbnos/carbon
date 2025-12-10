@@ -18,7 +18,7 @@ interface ICarbonStore {
   setAuthToken: (accessToken: string, refreshToken: string) => Promise<void>;
 }
 
-const CarbonProviderContext = createContext<StoreApi<ICarbonStore>>(null);
+const CarbonContext = createContext<StoreApi<ICarbonStore>>(null);
 
 export const CarbonProvider = ({
   children,
@@ -99,14 +99,12 @@ export const CarbonProvider = ({
   }, 60000); // Check every minute
 
   return (
-    <CarbonProviderContext.Provider value={store}>
-      {children}
-    </CarbonProviderContext.Provider>
+    <CarbonContext.Provider value={store}>{children}</CarbonContext.Provider>
   );
 };
 
 export const useCarbon = () => {
-  const store = useContext(CarbonProviderContext);
+  const store = useContext(CarbonContext);
 
   if (!store) {
     throw new Error("useCarbon must be used within a CarbonProvider");
