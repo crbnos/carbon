@@ -333,13 +333,7 @@ function ShipmentLineItem({
     (line.shippedQuantity || 0) > (line.fulfillment?.job?.quantity || 0);
 
   return (
-    <div
-      className={cn(
-        "flex flex-col border-b p-6 gap-6 relative",
-
-        className
-      )}
-    >
+    <div className={cn("flex flex-col border-b p-6 gap-6 relative", className)}>
       <div className="absolute top-6 right-6">
         {line.fulfillment?.type === "Job" ? (
           <div className="flex flex-col items-end gap-0">
@@ -390,10 +384,10 @@ function ShipmentLineItem({
             <VStack spacing={0} className="max-w-[380px] w-full">
               <div className="w-full overflow-hidden">
                 <span className="text-sm font-medium truncate block w-full">
-                  {item?.name}
+                  {item?.readableIdWithRevision}
                 </span>
                 <span className="text-xs text-muted-foreground truncate block w-full">
-                  {item?.readableIdWithRevision}
+                  {item?.name}
                 </span>
               </div>
               <div className="mt-2">
