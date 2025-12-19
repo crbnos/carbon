@@ -20,7 +20,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
+import { formatDate, getSalesOrderJobStatus } from "@carbon/utils";
 import {
   getLocalTimeZone,
   isSameDay,
@@ -295,47 +295,12 @@ function LineItems({
       {lines.map((line) => {
         if (!line.id) return null;
 
-        const jobs = (salesOrder?.jobs?.filter(
-          (j) => (j as unknown as SalesOrderJob).salesOrderLineId === line.id
-        ) ?? []) as SalesOrderJob[];
-
         const isMade = line.methodType === "Make";
 
-        const hasEnoughJobsToCoverQuantity =
-          jobs.reduce((acc, job) => acc + job.productionQuantity, 0) >=
-          (line.saleQuantity ?? 0);
-
-        const hasEnoughCompletedToCoverQuantity =
-          jobs.reduce((acc, job) => acc + job.quantityComplete, 0) >=
-          (line.saleQuantity ?? 0);
-
-        const hasAnyQuantityReleased =
-          jobs.reduce((acc, job) => {
-            if (job.status !== "Planned" && job.status !== "Draft") {
-              return acc + job.productionQuantity;
-            }
-            return acc;
-          }, 0) > 0;
-
-        const jobVariant: "red" | "orange" | "green" =
-          hasEnoughJobsToCoverQuantity && hasEnoughCompletedToCoverQuantity
-            ? "green"
-            : hasEnoughJobsToCoverQuantity
-              ? "orange"
-              : "red";
-
-        const jobLabel:
-          | "Requires Jobs"
-          | "In Progress"
-          | "Complete"
-          | "Planned" =
-          hasEnoughJobsToCoverQuantity && hasEnoughCompletedToCoverQuantity
-            ? "Complete"
-            : hasEnoughJobsToCoverQuantity
-              ? hasAnyQuantityReleased
-                ? "In Progress"
-                : "Planned"
-              : "Requires Jobs";
+        const { jobLabel, jobVariant, jobs } = getSalesOrderJobStatus(
+          salesOrder?.jobs as SalesOrderJob[],
+          line as any
+        );
 
         return (
           <motion.div
