@@ -1,37 +1,37 @@
-import type { Kysely } from "https://esm.sh/kysely@0.26.3";
 import type SupabaseClient from "https://esm.sh/v135/@supabase/supabase-js@2.33.1/dist/module/SupabaseClient.d.ts";
+import type { Kysely } from "kysely";
 import type { DB } from "../database.ts";
 import type { Database } from "../types.ts";
 import {
-  AssemblyHandler,
-  buildMakeMethodDependencies,
+    AssemblyHandler,
+    buildMakeMethodDependencies,
 } from "./assembly-handler.ts";
 import { calculateOperationDates } from "./date-calculator.ts";
 import {
-  buildOperationDependencies,
-  dependenciesToRecords,
-  DependencyGraphImpl,
+    buildOperationDependencies,
+    dependenciesToRecords,
+    DependencyGraphImpl,
 } from "./dependency-manager.ts";
 import { MaterialManager } from "./material-manager.ts";
 import {
-  applyPriorities,
-  calculatePrioritiesByWorkCenter,
-  toOperationWithJobInfo,
+    applyPriorities,
+    calculatePrioritiesByWorkCenter,
+    toOperationWithJobInfo,
 } from "./priority-calculator.ts";
 import type {
-  BaseOperation,
-  Job,
-  JobOperationDependency,
-  OperationWithJobInfo,
-  ScheduledOperation,
-  SchedulingDirection,
-  SchedulingMode,
-  SchedulingOptions,
-  SchedulingResult,
+    BaseOperation,
+    Job,
+    JobOperationDependency,
+    OperationWithJobInfo,
+    ScheduledOperation,
+    SchedulingDirection,
+    SchedulingMode,
+    SchedulingOptions,
+    SchedulingResult,
 } from "./types.ts";
 import {
-  applyWorkCenterSelections,
-  WorkCenterSelector,
+    applyWorkCenterSelections,
+    WorkCenterSelector,
 } from "./work-center-selector.ts";
 
 /**

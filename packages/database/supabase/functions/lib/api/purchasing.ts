@@ -1,7 +1,7 @@
 import type {
-  Kysely,
-  Transaction,
-} from "https://esm.sh/v135/kysely@0.26.3/dist/cjs/kysely.d.ts";
+    Kysely,
+    Transaction,
+} from "kysely";
 import { DB } from "../database.ts";
 
 export async function getSupplier(

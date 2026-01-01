@@ -1,4 +1,4 @@
-import { Transaction } from "https://esm.sh/kysely@0.26.3";
+import { Transaction } from "kysely";
 import { DB } from "../lib/database.ts";
 import { interpolateSequenceDate } from "../lib/utils.ts";
 

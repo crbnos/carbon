@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import type { Transaction } from "https://esm.sh/kysely@0.26.3";
+import type { Transaction } from "kysely";
 import { getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsHeaders } from "../lib/headers.ts";
 import type { DB } from "../lib/types.ts";

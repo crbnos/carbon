@@ -3,7 +3,7 @@ import { z } from "npm:zod@^3.24.1";
 
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
-import { Transaction } from "https://esm.sh/v135/kysely@0.26.3/dist/cjs/kysely.d.ts";
+import { Transaction } from "kysely";
 import { corsHeaders } from "../lib/headers.ts";
 import { getJobMethodTree, JobMethodTreeItem } from "../lib/methods.ts";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";

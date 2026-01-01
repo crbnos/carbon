@@ -1,8 +1,8 @@
 import type SupabaseClient from "https://esm.sh/v135/@supabase/supabase-js@2.33.1/dist/module/SupabaseClient.d.ts";
-import type { Kysely } from "https://esm.sh/kysely@0.26.3";
-import type { Database } from "../types.ts";
+import type { Kysely } from "kysely";
 import type { DB } from "../database.ts";
 import { getJobMethodTree, type JobMethodTreeItem } from "../methods.ts";
+import type { Database } from "../types.ts";
 import type { AssemblyNode, BaseOperation } from "./types.ts";
 
 /**

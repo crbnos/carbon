@@ -1,4 +1,4 @@
-import { Transaction } from "https://esm.sh/v135/kysely@0.26.3/dist/cjs/kysely.d.ts";
+import { Transaction } from "kysely";
 import { DB } from "../lib/database.ts";
 
 export async function getShelfId(

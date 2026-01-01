@@ -1,4 +1,4 @@
-import { Kysely } from "https://esm.sh/kysely@0.26.3";
+import { Kysely } from "kysely";
 
 import { DB } from "../database.ts";
 import type { BaseOperation, Job, Operation } from "./types.ts";

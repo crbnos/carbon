@@ -3,36 +3,36 @@ import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import { z } from "npm:zod@^3.24.1";
 
 import type {
-  PostgrestError,
-  SupabaseClient,
+    PostgrestError,
+    SupabaseClient,
 } from "https://esm.sh/@supabase/supabase-js@2.33.1";
 
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";
 import type { Database } from "../lib/types.ts";
 
-import { Transaction } from "https://esm.sh/v135/kysely@0.26.3/dist/cjs/kysely.d.ts";
+import { Transaction } from "kysely";
 import {
-  getLocalTimeZone,
-  now,
-  toCalendarDate,
+    getLocalTimeZone,
+    now,
+    toCalendarDate,
 } from "npm:@internationalized/date";
 import { corsHeaders } from "../lib/headers.ts";
 import {
-  getJobMethodTree,
-  getQuoteMethodTree,
-  getRatesFromSupplierProcesses,
-  getRatesFromWorkCenters,
-  JobMethodTreeItem,
-  QuoteMethodTreeItem,
-  traverseJobMethod,
-  traverseQuoteMethod,
+    getJobMethodTree,
+    getQuoteMethodTree,
+    getRatesFromSupplierProcesses,
+    getRatesFromWorkCenters,
+    JobMethodTreeItem,
+    QuoteMethodTreeItem,
+    traverseJobMethod,
+    traverseQuoteMethod,
 } from "../lib/methods.ts";
 import { importTypeScript } from "../lib/sandbox.ee.ts";
 import { getShelfId } from "../lib/shelves.ts";
 import {
-  getNextRevisionSequence,
-  getNextSequence,
+    getNextRevisionSequence,
+    getNextSequence,
 } from "../shared/get-next-sequence.ts";
 
 const pool = getConnectionPool(1);

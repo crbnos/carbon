@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { sql } from "https://esm.sh/kysely@0.26.3";
-import { Kysely } from "https://esm.sh/v135/kysely@0.26.3/dist/cjs/kysely.d.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { Kysely, sql } from "kysely";
 import z from "npm:zod@^3.24.1";
 import { generateEmbedding } from "../lib/ai/embedding.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";

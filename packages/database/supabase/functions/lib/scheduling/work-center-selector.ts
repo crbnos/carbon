@@ -1,7 +1,7 @@
-import type { Kysely } from "https://esm.sh/kysely@0.26.3";
+import type { Kysely } from "kysely";
 import type { DB } from "../database.ts";
-import type { ScheduledOperation, WorkCenterLoad, WorkCenterSelection } from "./types.ts";
 import { calculateDurationHours } from "./duration-calculator.ts";
+import type { ScheduledOperation, WorkCenterLoad, WorkCenterSelection } from "./types.ts";
 
 /**
  * Work Center Selector

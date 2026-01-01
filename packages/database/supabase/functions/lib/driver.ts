@@ -1,17 +1,17 @@
-import {
-  freeze,
-  isFunction,
-} from "https://esm.sh/kysely@0.26.3/dist/esm/util/object-utils.js";
-import { extendStackTrace } from "https://esm.sh/kysely@0.26.3/dist/esm/util/stack-trace-utils.js";
 import type {
-  DatabaseConnection,
-  Driver,
-  PostgresCursorConstructor,
-  PostgresDialectConfig,
-  QueryResult,
-  TransactionSettings,
+    DatabaseConnection,
+    Driver,
+    PostgresCursorConstructor,
+    PostgresDialectConfig,
+    QueryResult,
+    TransactionSettings,
 } from "kysely";
 import { CompiledQuery } from "kysely";
+import {
+    freeze,
+    isFunction,
+} from "kysely/dist/esm/util/object-utils.js";
+import { extendStackTrace } from "kysely/dist/esm/util/stack-trace-utils.js";
 import type { Pool, PoolClient } from "pg";
 
 const PRIVATE_RELEASE_METHOD = Symbol();
