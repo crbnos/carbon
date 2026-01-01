@@ -1,7 +1,7 @@
 // Aliased it as pg so can be imported as-is in Node environment
 import { Pool } from "pg";
 import { PostgresDriver } from "./driver.ts";
-import { getPostgresClient } from "./postgres/index.ts";
+import { getPostgresClient, getPostgresConnectionPool } from "./postgres/index.ts";
 import type { Database as SupabaseDatabase } from "./types.ts";
 
 type Tables = SupabaseDatabase["public"]["Tables"];
@@ -12,6 +12,8 @@ export type DB = {
 } & {
   [ViewName in keyof Views]: Views[ViewName]["Row"];
 };
+
+export const getConnectionPool = getPostgresConnectionPool
 
 export function getDatabaseClient<_>(pool: Pool) {
   return getPostgresClient(pool, PostgresDriver)

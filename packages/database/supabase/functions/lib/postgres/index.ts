@@ -25,7 +25,7 @@ export function getRuntime() {
   return "node";
 }
 
-export function getConnectionPool(connections: number) {
+export function getPostgresConnectionPool(connections: number) {
   const runtime = getRuntime();
 
   switch (runtime) {
@@ -51,7 +51,7 @@ export function getConnectionPool(connections: number) {
 
     default:
       throw new Error(
-        "getConnectionPool is not supported in non-server environments"
+        "getPostgresConnectionPool is not supported in non-server environments"
       );
   }
 }
@@ -87,7 +87,7 @@ export function getPostgresClient(pool: Pool, driver: PgDriverConstructor) {
 
     default:
       throw new Error(
-        "getDatabaseClient is not supported in non-server environments"
+        "getPostgresClient is not supported in non-server environments"
       );
   }
 }
