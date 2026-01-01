@@ -46,6 +46,7 @@ declare global {
       STRIPE_BYPASS_USER_IDS: string;
       SUPABASE_ANON_KEY: string;
       SUPABASE_URL: string;
+      SUPABASE_DB_URL: string;
       SUPABASE_SERVICE_ROLE_KEY: string;
       UPSTASH_REDIS_REST_URL: string;
       UPSTASH_REDIS_REST_TOKEN: string;
@@ -174,6 +175,10 @@ export const SLACK_STATE_SECRET = getEnv("SLACK_STATE_SECRET", {
 });
 
 export const SUPABASE_SERVICE_ROLE_KEY = getEnv("SUPABASE_SERVICE_ROLE_KEY");
+export const SUPABASE_DB_URL = getEnv("SUPABASE_DB_URL", {
+  isSecret: true,
+  isRequired: true
+});
 export const SESSION_SECRET = getEnv("SESSION_SECRET");
 export const SESSION_KEY = "auth";
 export const SESSION_ERROR_KEY = "error";
