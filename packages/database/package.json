@@ -16,6 +16,7 @@
   },
   "exports": {
     ".": "./src/index.ts",
+    "./client": "./src/client.ts",
     "./swagger-docs-schema": "./src/swagger-docs-schema.ts"
   },
   "private": true,
@@ -37,5 +38,10 @@
     "setup": "tsx src/seed.ts"
   },
   "sideEffects": false,
-  "version": "*"
+  "version": "*",
+  "dependencies": {
+    "kysely": "^0.28.9",
+    "kysely-supabase": "^0.2.1",
+    "pg": "^8.16.3"
+  }
 }

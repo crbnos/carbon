@@ -1,9 +1,9 @@
-import type { Database } from "@carbon/database";
 import type {
   PostgrestError,
   PostgrestFilterBuilder
 } from "@supabase/postgrest-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { Database } from "./types.ts";
 
 const BATCH_SIZE = 1000;
 

@@ -1,8 +1,8 @@
 // import type { User } from "@supabase/supabase-js";
 import { createClient } from "@supabase/supabase-js";
 import * as dotenv from "dotenv";
-import { devPrices } from "./seed/index";
-import type { Database } from "./types";
+import { devPrices } from "./seed/index.ts";
+import type { Database } from "./types.ts";
 
 dotenv.config();
 

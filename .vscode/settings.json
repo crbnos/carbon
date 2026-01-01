@@ -1,6 +1,6 @@
 {
   "deno.cacheOnSave": true,
-  "deno.enablePaths": ["./packages/database/supabase/functions"],
+  "deno.enablePaths": ["./packages/database"],
   "typescript.tsdk": "node_modules/typescript/lib",
   "deno.enable": true
 }

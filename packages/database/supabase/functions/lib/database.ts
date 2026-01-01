@@ -1,15 +1,11 @@
-import { Pool } from "https://deno.land/x/postgres@v0.17.0/mod.ts";
-import {
-  Kysely,
-  PostgresAdapter,
-  PostgresIntrospector,
-  PostgresQueryCompiler,
-} from "https://esm.sh/kysely@0.26.3";
-import { PostgresDriver } from "../lib/driver.ts";
-import { Database } from "../lib/types.ts";
+// Aliased it as pg so can be imported as-is in Node environment
+import { Pool } from "pg";
+import { PostgresDriver } from "./driver.ts";
+import { getPostgresClient } from "./postgres/index.ts";
+import type { Database as SupabaseDatabase } from "./types.ts";
 
-type Tables = Database["public"]["Tables"];
-type Views = Database["public"]["Views"];
+type Tables = SupabaseDatabase["public"]["Tables"];
+type Views = SupabaseDatabase["public"]["Views"];
 
 export type DB = {
   [TableName in keyof Tables]: Tables[TableName]["Insert"];
@@ -17,30 +13,6 @@ export type DB = {
   [ViewName in keyof Views]: Views[ViewName]["Row"];
 };
 
-export function getConnectionPool(connections: number) {
-  const url = Deno.env.get("SUPABASE_DB_URL")!;
-
-  const connectionPoolerUrl = url.includes("supabase.co")
-    ? url.replace("5432", "6543")
-    : url;
-  return new Pool(connectionPoolerUrl, connections);
-}
-
-export function getDatabaseClient<T>(pool: Pool): Kysely<T> {
-  return new Kysely<T>({
-    dialect: {
-      createAdapter() {
-        return new PostgresAdapter();
-      },
-      createDriver() {
-        return new PostgresDriver({ pool });
-      },
-      createIntrospector(db: Kysely<unknown>) {
-        return new PostgresIntrospector(db);
-      },
-      createQueryCompiler() {
-        return new PostgresQueryCompiler();
-      },
-    },
-  });
+export function getDatabaseClient(pool: Pool) {
+  return getPostgresClient(pool, PostgresDriver)
 }

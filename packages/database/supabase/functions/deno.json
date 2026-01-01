@@ -1,0 +1,7 @@
+{
+  "imports": {
+    "kysely": "https://esm.sh/kysely@0.26.3",
+    "kysely-supabase": "npm:kysely-supabase",
+    "pg": "https://deno.land/x/postgres@v0.17.0/mod.ts"
+  }
+}
