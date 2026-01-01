@@ -13,6 +13,6 @@ export type DB = {
   [ViewName in keyof Views]: Views[ViewName]["Row"];
 };
 
-export function getDatabaseClient(pool: Pool) {
+export function getDatabaseClient<_>(pool: Pool) {
   return getPostgresClient(pool, PostgresDriver)
 }
