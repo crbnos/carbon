@@ -4,7 +4,8 @@ import {
   PostgresAdapter,
   PostgresDialectConfig,
   PostgresIntrospector,
-  PostgresQueryCompiler
+  PostgresQueryCompiler,
+  Transaction
 } from "kysely";
 import type { KyselifyDatabase } from "kysely-supabase";
 // Aliased it as pg so can be imported as-is in Node environment
@@ -12,6 +13,7 @@ import { Pool } from "pg";
 import type { Database as SupabaseDatabase } from "../types.ts";
 
 export type KyselyDatabase = KyselifyDatabase<SupabaseDatabase>;
+export type KyselyTx = Transaction<KyselyDatabase>;
 
 export function getRuntime() {
   if (typeof globalThis.Deno !== "undefined") {

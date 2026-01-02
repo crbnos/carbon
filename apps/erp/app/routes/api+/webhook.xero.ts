@@ -96,8 +96,7 @@ async function fetchInvoiceAndDetermineContactType(
       throw new Error("Xero integration not found");
     }
 
-    const { accessToken, refreshToken, tenantId } =
-      integration.data.metadata || {};
+    const { accessToken, tenantId } = integration.data.metadata || {};
 
     if (!accessToken) {
       throw new Error("No access token available for Xero integration");

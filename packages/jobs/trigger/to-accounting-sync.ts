@@ -32,14 +32,12 @@ const UPSERT_MAP: Record<keyof EntityMap, SyncFn> = {
       { id: entity.entityId }
     );
 
-    const data = {
-      ...entity.data,
-      id: customer ? customer.data.externalId[provider.id].id : undefined,
-    };
+    // const data = {
+    //   ...entity.data,
+    //   id: customer ? customer.data.externalId[provider.id].id : undefined,
+    // };
 
     // await provider.contacts.upsert(data);
-
-    console.log("Upserting customer to provider with data:", data);
 
     return {
       id: entity.entityId,
@@ -59,15 +57,13 @@ const DELETE_MAP: Record<keyof EntityMap, SyncFn> = {
       { id: entity.entityId }
     );
 
-    if (customer.error || !customer.data) {
-      throw new Error(`Customer ${entity.entityId} not found`);
-    }
+    // if (customer.error || !customer.data) {
+    //   throw new Error(`Customer ${entity.entityId} not found`);
+    // }
 
-    const externalId = customer.data.externalId[provider.id];
+    // const externalId = customer.data.externalId[provider.id];
 
     // await provider.contacts.delete(externalId.id);
-
-    console.log("Deleting customer from provider with externalId:", externalId);
 
     return {
       id: entity.entityId,

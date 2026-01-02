@@ -1,18 +1,19 @@
-import type {
-    DatabaseConnection,
-    Driver,
-    PostgresCursorConstructor,
-    PostgresDialectConfig,
-    QueryResult,
-    TransactionSettings,
-} from "kysely";
-import { CompiledQuery } from "kysely";
+import { extendStackTrace } from "https://esm.sh/kysely@0.26.3/dist/esm/util/stack-trace-utils.js";
 import {
-    freeze,
-    isFunction,
-} from "kysely/dist/esm/util/object-utils.js";
-import { extendStackTrace } from "kysely/dist/esm/util/stack-trace-utils.js";
-import type { Pool, PoolClient } from "pg";
+  CompiledQuery,
+  DatabaseConnection,
+  Driver,
+  PostgresCursorConstructor,
+  QueryResult,
+  TransactionSettings,
+} from "kysely";
+import { Pool, PoolClient } from "pg";
+
+export interface PostgresDialectConfig {
+  pool: Pool;
+  cursor?: PostgresCursorConstructor;
+  onCreateConnection?: (connection: DatabaseConnection) => Promise<void>;
+}
 
 const PRIVATE_RELEASE_METHOD = Symbol();
 
@@ -22,14 +23,11 @@ export class PostgresDriver implements Driver {
   #pool?: Pool;
 
   constructor(config: PostgresDialectConfig) {
-    this.#config = freeze({ ...config });
+    this.#config = Object.freeze({ ...config });
   }
 
   async init(): Promise<void> {
-    // @ts-expect-error pool can be a function
-    this.#pool = isFunction(this.#config.pool)
-      ? await this.#config.pool()
-      : this.#config.pool;
+    this.#pool = this.#config.pool;
   }
 
   async acquireConnection(): Promise<DatabaseConnection> {

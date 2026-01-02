@@ -10,10 +10,7 @@ import {
   getEntityWithExternalId,
   getProviderIntegration,
   SyncFn,
-  upsertAccountingContact,
-  upsertAccountingCustomer,
 } from "@carbon/ee/accounting";
-import { getLocalTimeZone, today } from "@internationalized/date";
 import { logger, task } from "@trigger.dev/sdk";
 import z from "zod";
 
@@ -42,20 +39,6 @@ const UPSERT_MAP: Record<keyof EntityMap, SyncFn> = {
 
       const remote = await provider.contacts.get(id);
 
-      const c = await upsertAccountingCustomer(client, remote, payload);
-      logger.info(`Updating contact for customer id: ${c.id}`, c);
-      
-      const contact = await upsertAccountingContact(
-        client,
-        remote,
-        c.id,
-        payload
-      );
-
-      logger.info(`Updated customer with contact id: ${remote.id}`, {
-        contacts: contact,
-      });
-
       return {
         id: entity.entityId,
         message: "Updated successfully",
@@ -77,8 +60,6 @@ const UPSERT_MAP: Record<keyof EntityMap, SyncFn> = {
     logger.info(`Inserting customer with contact id: ${remote.id}`, remote);
 
     try {
-      const contact = await upsertAccountingCustomer(client, remote, payload);
-      await upsertAccountingContact(client, remote, contact.id, payload);
     } catch (error) {
       logger.error(
         `Failed to create customer for contact id: ${remote.id} ${error.message}`
@@ -110,13 +91,11 @@ const DELETE_MAP: Record<keyof EntityMap, SyncFn> = {
       { id: entity.entityId }
     );
 
-    if (customer.error || !customer.data) {
-      throw new Error(`Customer ${entity.entityId} not found`);
-    }
+    // if (customer.error || !customer.data) {
+    //   throw new Error(`Customer ${entity.entityId} not found`);
+    // }
 
-    const externalId = customer.data.externalId[provider.id];
-
-    console.log("Deleting customer in carbon with id:", externalId.id);
+    // const externalId = customer.data.externalId[provider.id];
 
     return {
       id: entity.entityId,
