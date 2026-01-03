@@ -13,8 +13,9 @@ import { useFlags } from "~/hooks/useFlags";
 import type { Authenticated, NavItem } from "~/types";
 
 export default function AppIndexRoute() {
-  const { isCommunity, isInternal } = useFlags();
-  const hasChatPrototype = isInternal || isCommunity;
+  const { isCommunity, isControlledEnvironment, isInternal } = useFlags();
+  const hasChatPrototype =
+    (isInternal && !isControlledEnvironment) || isCommunity;
   return hasChatPrototype ? <ChatPage /> : <AppsPage />;
 }
 

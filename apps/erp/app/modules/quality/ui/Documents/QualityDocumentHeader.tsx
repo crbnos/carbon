@@ -6,7 +6,8 @@ import {
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
-  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   Heading,
@@ -26,7 +27,7 @@ import {
   LuPanelRight,
   LuTrash
 } from "react-icons/lu";
-import { Await, Link, useParams } from "react-router";
+import { Await, useNavigate, useParams } from "react-router";
 import { usePanels } from "~/components/Layout";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
@@ -44,6 +45,7 @@ const QualityDocumentHeader = () => {
     versions: PostgrestResponse<QualityDocument>;
   }>(path.to.qualityDocument(id));
 
+  const navigate = useNavigate();
   const permissions = usePermissions();
   const { toggleExplorer, toggleProperties } = usePanels();
   const newVersionDisclosure = useDisclosure();
@@ -111,28 +113,49 @@ const QualityDocumentHeader = () => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   {permissions.can("create", "quality") && (
-                    <DropdownMenuItem onClick={newVersionDisclosure.onOpen}>
-                      <DropdownMenuIcon icon={<LuCirclePlus />} />
-                      New Version
-                    </DropdownMenuItem>
-                  )}
-                  {versions?.data && versions.data.length > 0 && (
                     <>
-                      <DropdownMenuLabel>Version History</DropdownMenuLabel>
+                      <DropdownMenuItem onClick={newVersionDisclosure.onOpen}>
+                        <DropdownMenuIcon icon={<LuCirclePlus />} />
+                        New Version
+                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      {versions.data.map((version) => (
-                        <Link
-                          key={version.id}
-                          to={path.to.qualityDocument(version.id)}
-                          className="relative flex gap-2 cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
-                        >
-                          <Badge variant="outline">V{version.version}</Badge>
-                          {version.name}
-                          <QualityDocumentStatus status={version.status} />
-                        </Link>
-                      ))}
                     </>
                   )}
+                  <DropdownMenuRadioGroup
+                    value={id}
+                    onValueChange={(value) =>
+                      navigate(path.to.qualityDocument(value))
+                    }
+                  >
+                    {routeData?.document && (
+                      <DropdownMenuRadioItem
+                        key={routeData.document.id}
+                        value={routeData.document.id}
+                        className="flex items-center justify-between gap-2"
+                      >
+                        <Badge variant="outline">
+                          V{routeData.document.version}
+                        </Badge>
+                        <span>{routeData.document.name}</span>
+                        <QualityDocumentStatus
+                          status={routeData.document.status}
+                        />
+                      </DropdownMenuRadioItem>
+                    )}
+                    {versions?.data
+                      ?.filter((v) => v.id !== id)
+                      .map((version) => (
+                        <DropdownMenuRadioItem
+                          key={version.id}
+                          value={version.id}
+                          className="flex items-center justify-between gap-2"
+                        >
+                          <Badge variant="outline">V{version.version}</Badge>
+                          <span>{version.name}</span>
+                          <QualityDocumentStatus status={version.status} />
+                        </DropdownMenuRadioItem>
+                      ))}
+                  </DropdownMenuRadioGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
             )}

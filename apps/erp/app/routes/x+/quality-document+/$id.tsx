@@ -30,7 +30,7 @@ import type { Handle } from "~/utils/handle";
 import { getPrivateUrl, path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: "Documents",
+  breadcrumb: "Policy & Procedure",
   to: path.to.qualityDocuments,
   module: "quality"
 };

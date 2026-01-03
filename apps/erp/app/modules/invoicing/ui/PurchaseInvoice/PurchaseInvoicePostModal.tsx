@@ -1,4 +1,7 @@
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Button,
   HStack,
   Modal,
@@ -18,10 +21,11 @@ import {
 } from "@carbon/react";
 
 import { getItemReadableId } from "@carbon/utils";
-import { useEffect } from "react";
-import { useFetcher } from "react-router";
-import type { action } from "~/routes/x+/purchase-invoice+/$invoiceId.post";
+import { useEffect, useMemo } from "react";
+import { LuTriangleAlert } from "react-icons/lu";
+import { useFetcher, useNavigate } from "react-router";
 import { useItems } from "~/stores";
+import { Result } from "~/types";
 import { path } from "~/utils/path";
 
 type PurchaseInvoicePostModalProps = {
@@ -42,13 +46,27 @@ const PurchaseInvoicePostModal = ({
   linesToReceive
 }: PurchaseInvoicePostModalProps) => {
   const [items] = useItems();
+  const navigate = useNavigate();
   const hasLinesToReceive = linesToReceive.length > 0;
 
-  const fetcher = useFetcher<typeof action>();
+  const hasTrackedItems = useMemo(() => {
+    return linesToReceive.some((line) => {
+      const item = items.find((i) => i.id === line.itemId);
+      return (
+        item?.itemTrackingType === "Serial" ||
+        item?.itemTrackingType === "Batch"
+      );
+    });
+  }, [linesToReceive, items]);
+
+  const fetcher = useFetcher<Result & { receiptId?: string }>();
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (fetcher.data?.success) {
+      if (fetcher.data.receiptId) {
+        navigate(path.to.receipt(fetcher.data.receiptId));
+      }
       onClose();
     } else if (fetcher.data?.success === false && fetcher.data?.message) {
       toast.error(fetcher.data.message);
@@ -69,10 +87,28 @@ const PurchaseInvoicePostModal = ({
         <ModalBody>
           {hasLinesToReceive ? (
             <div className="gap-4 w-full flex flex-col">
-              <p>
-                Are you sure you want to post this invoice? A receipt will be
-                automatically created and posted for:
-              </p>
+              {hasTrackedItems ? (
+                <>
+                  <p>
+                    Are you sure you want to post this invoice? A receipt will
+                    be created for:
+                  </p>
+                  <Alert variant="destructive">
+                    <LuTriangleAlert className="h-4 w-4" />
+                    <AlertTitle>Serial or Batch Tracking Required</AlertTitle>
+                    <AlertDescription>
+                      Some items require serial or batch tracking. The receipt
+                      will be created but not posted. You will be redirected to
+                      the receipt to enter tracking information.
+                    </AlertDescription>
+                  </Alert>
+                </>
+              ) : (
+                <p>
+                  Are you sure you want to post this invoice? A receipt will be
+                  automatically created and posted for:
+                </p>
+              )}
               <Table>
                 <Thead>
                   <Tr>
@@ -114,13 +150,18 @@ const PurchaseInvoicePostModal = ({
               method="post"
               action={path.to.purchaseInvoicePost(invoiceId)}
             >
+              {hasTrackedItems && (
+                <input type="hidden" name="skipReceiptPost" value="true" />
+              )}
               <Button
                 isDisabled={fetcher.state !== "idle"}
                 isLoading={fetcher.state !== "idle"}
                 type="submit"
               >
                 {hasLinesToReceive
-                  ? "Post and Receive Invoice"
+                  ? hasTrackedItems
+                    ? "Post and Create Receipt"
+                    : "Post and Receive Invoice"
                   : "Post Invoice"}
               </Button>
             </fetcher.Form>

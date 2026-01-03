@@ -34,8 +34,8 @@ import { ActiveFilters, Filter, useFilters } from "~/components/Filter";
 import type { Column, DisplaySettings, Item } from "~/components/Kanban";
 import { Kanban } from "~/components/Kanban";
 import SearchFilter from "~/components/SearchFilter";
+import { userContext } from "~/context";
 import { useUrlParams, useUser } from "~/hooks";
-import { getLocation } from "~/services/location.server";
 import { getFilters, setFilters } from "~/services/operation.server";
 import {
   getActiveJobOperationsByLocation,
@@ -46,9 +46,9 @@ import {
 import { usePeople } from "~/stores";
 import { makeDurations } from "~/utils/durations";
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  const { companyId, userId } = await requirePermissions(request, {});
-  const serviceRole = await getCarbonServiceRole();
+export async function loader({ context, request }: LoaderFunctionArgs) {
+  const { companyId } = await requirePermissions(request, {});
+  const serviceRole = getCarbonServiceRole();
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -131,17 +131,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
   }
 
-  const { location } = await getLocation(request, serviceRole, {
-    companyId,
-    userId
-  });
+  const locationId = context.get(userContext)?.locationId;
 
   const [workCenters, processes, operations] = await Promise.all([
-    getWorkCentersByLocation(serviceRole, location),
+    getWorkCentersByLocation(serviceRole, locationId),
     getProcessesList(serviceRole, companyId),
     getActiveJobOperationsByLocation(
       serviceRole,
-      location,
+      locationId,
       selectedWorkCenterIds
     )
   ]);
@@ -177,6 +174,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
+  if (selectedProcessIds.length) {
+    filteredOperations = filteredOperations.filter((op) =>
+      selectedProcessIds.includes(op.processId)
+    );
+  }
+
   if (search) {
     filteredOperations = filteredOperations.filter(
       (op) =>
@@ -191,15 +194,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
       if (selectedWorkCenterIds.length && selectedProcessIds.length) {
         return (
           selectedWorkCenterIds.includes(wc.id!) &&
-          wc.processes?.some((p: { id: string }) =>
-            selectedProcessIds.includes(p.id)
-          )
+          wc.processes?.some((p: string) => selectedProcessIds.includes(p))
         );
       } else if (selectedWorkCenterIds.length) {
         return selectedWorkCenterIds.includes(wc.id!);
       } else if (selectedProcessIds.length) {
-        return wc.processes?.some((p: { id: string }) =>
-          selectedProcessIds.includes(p.id)
+        return wc.processes?.some((p: string) =>
+          selectedProcessIds.includes(p)
         );
       }
       return true;
@@ -216,11 +217,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return data(
     {
       columns: filteredWorkCenters
-        .map((wc) => ({
+        .map((wc: any) => ({
           id: wc.id!,
           title: wc.name!,
           type: wc.processes ?? [],
-          active: activeWorkCenters.has(wc.id)
+          active: activeWorkCenters.has(wc.id),
+          isBlocked: wc.isBlocked ?? false,
+          blockingDispatchId: wc.blockingDispatchId ?? undefined,
+          blockingDispatchReadableId: wc.blockingDispatchReadableId ?? undefined
         }))
         .sort((a, b) => a.title.localeCompare(b.title)) satisfies Column[],
       items: (filteredOperations.map((op) => {

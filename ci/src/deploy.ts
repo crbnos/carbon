@@ -21,6 +21,7 @@ export type Workspace = {
   // Database Configuration
   connection_string: string | null;
   database_url: string | null;
+  database_connection_pooler_url: string | null;
   project_id: string | null;
   access_token: string | null;
   anon_key: string | null;
@@ -89,6 +90,7 @@ async function deploy(): Promise<void> {
         cert_arn_erp,
         cert_arn_mes,
         database_url,
+        database_connection_pooler_url,
         database_password,
         slug,
         anon_key,
@@ -160,6 +162,11 @@ async function deploy(): Promise<void> {
 
       if (!database_url) {
         console.log(`🔴🍳 Missing database url for ${workspace.id}`);
+        continue;
+      }
+
+      if (!database_connection_pooler_url) {
+        console.log(`🔴🍳 Missing database connection pooler url for ${workspace.id}`);
         continue;
       }
 
@@ -281,6 +288,7 @@ async function deploy(): Promise<void> {
           SUPABASE_ANON_KEY: anon_key,
           SUPABASE_ANON_PUBLIC: anon_key,
           SUPABASE_API_URL: database_url,
+          SUPABASE_DB_URL: database_connection_pooler_url,
           SUPABASE_SERVICE_ROLE: service_role_key,
           SUPABASE_SERVICE_ROLE_KEY: service_role_key,
           SUPABASE_URL: database_url,

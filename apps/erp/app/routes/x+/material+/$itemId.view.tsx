@@ -47,11 +47,10 @@ export default function MaterialViewRoute() {
                   const {
                     issues,
                     jobMaterials,
-
+                    maintenanceDispatchItems,
                     methodMaterials,
                     purchaseOrderLines,
                     receiptLines,
-
                     quoteMaterials,
                     salesOrderLines,
                     shipmentLines,
@@ -70,6 +69,12 @@ export default function MaterialViewRoute() {
                       name: "Job Materials",
                       module: "production",
                       children: jobMaterials
+                    },
+                    {
+                      key: "maintenanceDispatchItems",
+                      name: "Maintenance",
+                      module: "resources",
+                      children: maintenanceDispatchItems
                     },
                     {
                       key: "methodMaterials",

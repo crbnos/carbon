@@ -3,6 +3,7 @@ import { CreatableCombobox } from "@carbon/form";
 import { useDisclosure, useMount } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
+import { Enumerable } from "~/components/Enumerable";
 import type { getItemPostingGroupsList } from "~/modules/items";
 import ItemPostingGroupForm from "~/modules/items/ui/ItemPostingGroups/ItemPostingGroupForm";
 import { path } from "~/utils/path";

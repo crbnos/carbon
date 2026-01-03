@@ -13,7 +13,7 @@ import type { ImperativePanelHandle } from "react-resizable-panels";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import { OperationsList } from "~/components";
-import { getLocation } from "~/services/location.server";
+import { userContext } from "~/context";
 import {
   getJobOperationsAssignedToEmployee,
   getWorkCentersByLocation
@@ -21,19 +21,15 @@ import {
 import type { Operation } from "~/services/types";
 import { makeDurations } from "~/utils/durations";
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
+export async function loader({ context, request }: LoaderFunctionArgs) {
   const { companyId, userId } = await requirePermissions(request, {});
 
-  const serviceRole = await getCarbonServiceRole();
-
-  const { location } = await getLocation(request, serviceRole, {
-    companyId,
-    userId
-  });
+  const serviceRole = getCarbonServiceRole();
+  const locationId = context.get(userContext)?.locationId;
 
   const [operations, workCenters] = await Promise.all([
     getJobOperationsAssignedToEmployee(serviceRole, userId, companyId),
-    getWorkCentersByLocation(serviceRole, location)
+    getWorkCentersByLocation(serviceRole, locationId)
   ]);
 
   return {

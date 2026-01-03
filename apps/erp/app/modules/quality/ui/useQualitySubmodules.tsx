@@ -62,10 +62,10 @@ const qualityRoutes: AuthenticatedRouteGroup[] = [
     ]
   },
   {
-    name: "Documents",
+    name: "Document Control",
     routes: [
       {
-        name: "Documents",
+        name: "Policies & Procedures",
         to: path.to.qualityDocuments,
         icon: <LuFileText />,
         table: "qualityDocument"

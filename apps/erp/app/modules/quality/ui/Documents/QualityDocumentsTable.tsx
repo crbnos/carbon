@@ -239,7 +239,7 @@ const QualityDocumentsTable = memo(
             )
           }
           renderContextMenu={renderContextMenu}
-          title="Quality Documents"
+          title="Policies & Procedures"
           table="qualityDocument"
           withSavedView
         />

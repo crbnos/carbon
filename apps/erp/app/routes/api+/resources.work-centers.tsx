@@ -1,8 +1,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type {
   ClientLoaderFunctionArgs,
-  LoaderFunctionArgs,
-  SerializeFrom
+  LoaderFunctionArgs
 } from "react-router";
 import { getWorkCentersList } from "~/modules/resources";
 import { getCompanyId, workCentersQuery } from "~/utils/react-query";
@@ -21,8 +20,7 @@ export async function clientLoader({ serverLoader }: ClientLoaderFunctionArgs) {
   }
 
   const queryKey = workCentersQuery(companyId).queryKey;
-  const data =
-    window?.clientCache?.getQueryData<SerializeFrom<typeof loader>>(queryKey);
+  const data = window?.clientCache?.getQueryData<typeof loader>(queryKey);
 
   if (!data) {
     const serverData = await serverLoader<typeof loader>();

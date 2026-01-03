@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { data, json, redirect } from "react-router";
+import { data, redirect } from "react-router";
 import { materialValidator, upsertMaterial } from "~/modules/items";
 import { MaterialForm } from "~/modules/items/ui/Materials";
 import { setCustomFields } from "~/utils/form";
@@ -33,7 +33,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const createMaterial = await upsertMaterial(client, {
     ...validation.data,
-    active: true,
     companyId,
     customFields: setCustomFields(formData),
     createdBy: userId

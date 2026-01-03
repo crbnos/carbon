@@ -91,6 +91,17 @@ export async function getCustomers(
     .eq("companyId", companyId);
 }
 
+export async function getFailureModesList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("maintenanceFailureMode")
+    .select("id, name")
+    .eq("companyId", companyId)
+    .order("name");
+}
+
 export function getFileType(fileName: string): (typeof documentTypes)[number] {
   const extension = fileName.split(".").pop()?.toLowerCase() ?? "";
   if (["zip", "rar", "7z", "tar", "gz"].includes(extension)) {
@@ -180,10 +191,10 @@ export async function getJobByOperationId(
     .single();
 }
 
-const getPartDocuments = async (
+const getItemFiles = async (
   client: SupabaseClient<Database>,
   companyId: string,
-  ...items: Array<{ itemId: string }>
+  items: Array<{ itemId: string }>
 ) => {
   const getFile = async (id: string) => {
     const res = await client.storage
@@ -206,7 +217,7 @@ export async function getJobFiles(
   client: SupabaseClient<Database>,
   companyId: string,
   job: Job,
-  itemId: string
+  items: Array<{ itemId: string }>
 ): Promise<StorageItem[]> {
   if (job.salesOrderLineId || job.quoteLineId) {
     const opportunityLine = job.salesOrderLineId || job.quoteLineId;
@@ -216,7 +227,7 @@ export async function getJobFiles(
         .from("private")
         .list(`${companyId}/opportunity-line/${opportunityLine}`),
       client.storage.from("private").list(`${companyId}/job/${job.id}`),
-      getPartDocuments(client, companyId, { itemId })
+      getItemFiles(client, companyId, items)
     ]);
 
     // Combine and return both sets of files
@@ -231,7 +242,7 @@ export async function getJobFiles(
   } else {
     const [jobFiles, itemFiles] = await Promise.all([
       client.storage.from("private").list(`${companyId}/job/${job.id}`),
-      getPartDocuments(client, companyId, { itemId })
+      getItemFiles(client, companyId, items)
     ]);
 
     return [
@@ -603,19 +614,56 @@ export async function getWorkCenter(
   client: SupabaseClient<Database>,
   workCenterId: string
 ) {
-  return client.from("workCenter").select("*").eq("id", workCenterId).single();
+  return client
+    .from("workCentersWithBlockingStatus")
+    .select(
+      "id, name, isBlocked, blockingDispatchId, blockingDispatchReadableId"
+    )
+    .eq("id", workCenterId)
+    .single();
 }
 
 export async function getWorkCentersByLocation(
   client: SupabaseClient<Database>,
   locationId: string
 ) {
-  return client
-    .from("workCenters")
-    .select("*")
-    .eq("locationId", locationId)
-    .eq("active", true)
-    .order("name", { ascending: true });
+  // Query both views and merge - workCenters has processes, workCentersWithBlockingStatus has blocking info
+  const [workCentersResult, blockingStatusResult] = await Promise.all([
+    client
+      .from("workCenters")
+      .select("*")
+      .eq("locationId", locationId)
+      .eq("active", true)
+      .order("name", { ascending: true }),
+    client
+      .from("workCentersWithBlockingStatus")
+      .select("id, isBlocked, blockingDispatchId, blockingDispatchReadableId")
+      .eq("locationId", locationId)
+      .eq("active", true)
+  ]);
+
+  if (workCentersResult.error) {
+    return workCentersResult;
+  }
+
+  // Create a map of blocking status by work center id
+  const blockingStatusMap = new Map(
+    blockingStatusResult.data?.map((wc) => [wc.id, wc]) ?? []
+  );
+
+  // Merge the data
+  const mergedData = workCentersResult.data?.map((wc) => {
+    const blockingStatus = blockingStatusMap.get(wc.id);
+    return {
+      ...wc,
+      isBlocked: blockingStatus?.isBlocked ?? false,
+      blockingDispatchId: blockingStatus?.blockingDispatchId ?? null,
+      blockingDispatchReadableId:
+        blockingStatus?.blockingDispatchReadableId ?? null
+    };
+  });
+
+  return { data: mergedData, error: null };
 }
 
 export async function getWorkCentersByCompany(
@@ -739,6 +787,20 @@ export async function endProductionEvents(
     })
     .is("endTime", null)
     .eq("employeeId", args.employeeId)
+    .eq("companyId", args.companyId);
+}
+
+export async function endProductionEventsByWorkCenter(
+  client: SupabaseClient<Database>,
+  args: { workCenterId: string; companyId: string; endTime: string }
+) {
+  return client
+    .from("productionEvent")
+    .update({
+      endTime: args.endTime
+    })
+    .is("endTime", null)
+    .eq("workCenterId", args.workCenterId)
     .eq("companyId", args.companyId);
 }
 

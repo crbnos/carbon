@@ -112,7 +112,7 @@ const itemsRoutes: AuthenticatedRouteGroup[] = [
     name: "Configure",
     routes: [
       {
-        name: "Groups",
+        name: "Item Groups",
         to: path.to.itemPostingGroups,
         role: "employee",
         icon: <LuGroup />

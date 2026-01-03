@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { data, json, redirect } from "react-router";
+import { data, redirect } from "react-router";
 import { toolValidator, upsertTool } from "~/modules/items";
 import { ToolForm } from "~/modules/items/ui/Tools";
 import { setCustomFields } from "~/utils/form";

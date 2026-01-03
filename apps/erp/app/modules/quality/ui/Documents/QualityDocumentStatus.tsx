@@ -1,4 +1,4 @@
-import { Status } from "@carbon/react";
+import { Badge, Status } from "@carbon/react";
 import { LuLock } from "react-icons/lu";
 import type { qualityDocumentStatus } from "../../quality.models";
 
@@ -12,17 +12,17 @@ const QualityDocumentStatus = ({ status }: QualityDocumentStatusProps) => {
       return <Status color="gray">{status}</Status>;
     case "Active":
       return (
-        <Status color="green">
+        <Badge variant="green">
           <LuLock className="size-3 mr-1" />
           {status}
-        </Status>
+        </Badge>
       );
     case "Archived":
       return (
-        <Status color="red">
+        <Badge variant="red">
           <LuLock className="size-3 mr-1" />
           {status}
-        </Status>
+        </Badge>
       );
     default:
       return null;

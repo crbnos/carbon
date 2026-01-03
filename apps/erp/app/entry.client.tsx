@@ -1,6 +1,4 @@
-import { POSTHOG_API_HOST, POSTHOG_PROJECT_PUBLIC_KEY } from "@carbon/auth";
-import posthog from "posthog-js";
-import { Fragment, startTransition, useEffect } from "react";
+import { Fragment, startTransition } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { HydratedRouter } from "react-router/dom";
 

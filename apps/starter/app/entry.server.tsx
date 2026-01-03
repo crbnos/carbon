@@ -1,38 +1,21 @@
-import type { OperatingSystemPlatform } from "@carbon/react";
-import { OperatingSystemContextProvider } from "@carbon/react";
-import { I18nProvider } from "@react-aria/i18n";
-import { parseAcceptLanguage } from "intl-parse-accept-language";
-import type { EntryContext } from "react-router";
-import { handleRequest, ServerRouter } from "react-router";
+import { handleRequest as vercelHandleRequest } from "@vercel/react-router/entry.server";
+import type { EntryContext, RouterContextProvider } from "react-router";
 
-export default async function (
+export const streamTimeout = 5_000;
+
+export default function handleRequest(
   request: Request,
   responseStatusCode: number,
   responseHeaders: Headers,
-  reactRouterContext: EntryContext
+  routerContext: EntryContext,
+  _loadContext: RouterContextProvider // RouterContextProvider when v8_middleware is turned on
 ) {
-  const acceptLanguage = request.headers.get("accept-language");
-  const locales = parseAcceptLanguage(acceptLanguage, {
-    validate: Intl.DateTimeFormat.supportedLocalesOf
-  });
-
-  // get whether it's a mac or pc from the headers
-  const platform: OperatingSystemPlatform = request.headers
-    .get("user-agent")
-    ?.includes("Mac")
-    ? "mac"
-    : "windows";
-  let remixServer = (
-    <OperatingSystemContextProvider platform={platform}>
-      <I18nProvider locale={locales?.[0] ?? "en-US"}>
-        <ServerRouter context={reactRouterContext} url={request.url} />
-      </I18nProvider>
-    </OperatingSystemContextProvider>
-  );
-  return handleRequest(
+  return vercelHandleRequest(
     request,
     responseStatusCode,
     responseHeaders,
-    remixServer
+    routerContext,
+    // @ts-expect-error
+    _loadContext // Vercel's handler still expecting AppLoadContext type
   );
 }

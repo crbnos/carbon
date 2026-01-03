@@ -40,7 +40,8 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
   if (!bucket) throw new Error("Bucket not found");
   if (!path) throw new Error("Path not found");
 
-  path = decodeURIComponent(path);
+  // Don't decode the path here - let Supabase handle the URL encoding
+  // path = decodeURIComponent(path);
 
   const fileType = path.split(".").pop()?.toLowerCase();
 
@@ -49,14 +50,18 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
   }
   const contentType = supportedFileTypes[fileType];
 
-  if (!path.includes(companyId)) {
+  // Check if the decoded path includes companyId for security
+  const decodedPath = decodeURIComponent(path);
+  if (!decodedPath.includes(companyId)) {
     return new Response(null, { status: 403 });
   }
 
   const serviceRole = await getCarbonServiceRole();
 
   async function downloadFile() {
-    const result = await serviceRole.storage.from(bucket!).download(`${path}`);
+    if (!path) throw new Error("Path not found");
+    // Use the original encoded path for the storage API call
+    const result = await serviceRole.storage.from(bucket!).download(path);
     if (result.error) {
       console.error(result.error);
       return null;

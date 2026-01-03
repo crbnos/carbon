@@ -5,7 +5,10 @@ export const columnValidator = z.object({
   id: z.string(),
   title: z.string(),
   active: z.boolean().optional(),
-  type: z.array(z.string())
+  type: z.array(z.string()),
+  isBlocked: z.boolean().optional(),
+  blockingDispatchId: z.string().optional(),
+  blockingDispatchReadableId: z.string().optional()
 });
 
 export type Column = z.infer<typeof columnValidator>;

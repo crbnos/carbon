@@ -235,7 +235,16 @@ export default function PurchasingSettingsRoute() {
               </div>
             </CardContent>
             <CardFooter>
-              <Submit>Save</Submit>
+              <Submit
+                isDisabled={fetcher.state !== "idle"}
+                isLoading={
+                  fetcher.state !== "idle" &&
+                  fetcher.formData?.get("intent") ===
+                    "purchasePriceUpdateTiming"
+                }
+              >
+                Save
+              </Submit>
             </CardFooter>
           </ValidatedForm>
         </Card>
@@ -273,7 +282,16 @@ export default function PurchasingSettingsRoute() {
               </div>
             </CardContent>
             <CardFooter>
-              <Submit>Save</Submit>
+              <Submit
+                isDisabled={fetcher.state !== "idle"}
+                isLoading={
+                  fetcher.state !== "idle" &&
+                  fetcher.formData?.get("intent") ===
+                    "supplierQuoteNotification"
+                }
+              >
+                Save
+              </Submit>
             </CardFooter>
           </ValidatedForm>
         </Card>

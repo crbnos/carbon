@@ -3,7 +3,6 @@ import { getItemReadableId } from "@carbon/utils";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
 import {
-  LuAlignLeft,
   LuDice5,
   LuDna,
   LuPencil,
@@ -12,11 +11,13 @@ import {
   LuStar,
   LuTrash,
   LuTriangleAlert,
-  LuUser
+  LuUser,
+  LuWrench
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { useWorkCenters } from "~/components/Form/WorkCenter";
 import { Confirm } from "~/components/Modals";
 import { usePermissions, useUrlParams } from "~/hooks";
 import {
@@ -46,6 +47,7 @@ const defaultColumnVisibility = {
 const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
   const navigate = useNavigate();
   const [params] = useUrlParams();
+  const workCenters = useWorkCenters({});
   const [items] = useItems();
   const [people] = usePeople();
 
@@ -178,6 +180,22 @@ const RiskRegistersTable = memo(({ data, count }: RiskRegistersTableProps) => {
           }
         }
       },
+      {
+        accessorKey: "workCenterId",
+        header: "Work Center",
+        cell: ({ row }) => <Enumerable value={row.original.workCenterName} />,
+        meta: {
+          icon: <LuWrench />,
+          filter: {
+            type: "static",
+            options: workCenters.options.map((wc) => ({
+              value: wc.value,
+              label: <Enumerable value={wc.label} />
+            }))
+          }
+        }
+      },
+
       {
         id: "assignee",
         header: "Assignee",

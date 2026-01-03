@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS idx_tracked_entity_readable_id ON "trackedEntity" ("readableId", "companyId");

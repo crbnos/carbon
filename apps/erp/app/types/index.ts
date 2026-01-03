@@ -2,7 +2,6 @@ import type { ValidationErrorResponseData } from "@carbon/form";
 import type { FileObject } from "@supabase/storage-js";
 import type { ReactElement } from "react";
 import type { IconType } from "react-icons";
-import type { TypedResponse } from "react-router";
 
 export type Action = {
   label: string;
@@ -22,9 +21,7 @@ export type AuthenticatedRouteGroup<T = {}> = T & {
   routes: Authenticated<Route & T>[];
 };
 
-export type FormActionData = Promise<
-  TypedResponse<ValidationErrorResponseData> | TypedResponse<Result>
->;
+export type FormActionData = Promise<ValidationErrorResponseData | Result>;
 
 export type ListItem = {
   id: string;
@@ -37,6 +34,11 @@ export type ModelUpload = {
   modelPath: string | null;
   modelSize: number | null;
   thumbnailPath: string | null;
+};
+
+export type UserContext = {
+  locationId: string;
+  companyId: string;
 };
 
 export type NavItem = Omit<Route, "icon"> & {

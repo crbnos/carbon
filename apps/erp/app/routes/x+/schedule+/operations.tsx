@@ -180,6 +180,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
+  if (selectedProcessIds.length) {
+    filteredOperations = filteredOperations.filter((op) =>
+      selectedProcessIds.includes(op.processId)
+    );
+  }
+
   if (selectedTags.length) {
     filteredOperations = filteredOperations.filter((op) => {
       if (op.tags) {
@@ -210,15 +216,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
       if (selectedWorkCenterIds.length && selectedProcessIds.length) {
         return (
           selectedWorkCenterIds.includes(wc.id!) &&
-          wc.processes?.some((p: { id: string }) =>
-            selectedProcessIds.includes(p.id)
-          )
+          wc.processes?.some((p: string) => selectedProcessIds.includes(p))
         );
       } else if (selectedWorkCenterIds.length) {
         return selectedWorkCenterIds.includes(wc.id!);
       } else if (selectedProcessIds.length) {
-        return wc.processes?.some((p: { id: string }) =>
-          selectedProcessIds.includes(p.id)
+        return wc.processes?.some((p: string) =>
+          selectedProcessIds.includes(p)
         );
       }
       return true;
@@ -230,7 +234,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
         id: wc.id!,
         title: wc.name!,
         type: wc.processes ?? [],
-        active: activeWorkCenters.has(wc.id)
+        active: activeWorkCenters.has(wc.id),
+        isBlocked: wc.isBlocked ?? false,
+        blockingDispatchId: wc.blockingDispatchId ?? undefined,
+        blockingDispatchReadableId: wc.blockingDispatchReadableId ?? undefined
       }))
       .sort((a, b) => a.title.localeCompare(b.title)) satisfies Column[],
     items: (filteredOperations.map((op) => {

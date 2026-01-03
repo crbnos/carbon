@@ -52,7 +52,10 @@ const SplitButton = forwardRef<HTMLButtonElement, SplitButtonProps>(
           size={size}
           isLoading={isLoading}
           isDisabled={isDisabled}
-          className={`rounded-r-none before:rounded-r-none ${className || ""}`}
+          className={cn(
+            `rounded-r-none before:rounded-r-none hover:scale-100 focus-visible:scale-100`,
+            className
+          )}
         >
           {children}
         </Button>
@@ -65,7 +68,7 @@ const SplitButton = forwardRef<HTMLButtonElement, SplitButtonProps>(
               className={cn(
                 "rounded-l-none border-l px-1 before:rounded-l-none border-none shadow-none",
                 variant === "primary" &&
-                  "dark:shadow-[inset_0px_0.5px_0px_rgb(255_255_255_/_0.32)] dark:hover:shadow-button-primary"
+                  "dark:shadow-[inset_0px_0.5px_0px_rgb(255_255_255_/_0.32)] dark:hover:shadow-button-primary hover:scale-100 focus-visible:scale-100"
               )}
             >
               <LuChevronDown />

@@ -76,14 +76,18 @@ import {
   LuTimer,
   LuTriangleAlert
 } from "react-icons/lu";
-import { Await, useFetcher, useNavigate, useParams } from "react-router";
+import { Await, Link, useFetcher, useNavigate, useParams } from "react-router";
 import {
   DeadlineIcon,
   FileIcon,
   FilePreview,
   OperationStatusIcon
 } from "~/components";
-import { MethodIcon, TrackingTypeIcon } from "~/components/Icons";
+import {
+  MethodIcon,
+  MethodItemTypeIcon,
+  TrackingTypeIcon
+} from "~/components/Icons";
 import { useUrlParams, useUser } from "~/hooks";
 import type { productionEventType } from "~/services/models";
 import { getFileType } from "~/services/operations.service";
@@ -103,7 +107,6 @@ import type {
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import ItemThumbnail from "../ItemThumbnail";
-import { BatchIssueModal } from "./components/BatchIssueModal";
 import { OperationChat } from "./components/Chat";
 import {
   Controls,
@@ -112,10 +115,10 @@ import {
   Times,
   WorkTypeToggle
 } from "./components/Controls";
-import { IssueModal } from "./components/IssueModal";
+import { IssueMaterialModal } from "./components/IssueMaterialModal";
+import { MaintenanceDispatch } from "./components/MaintenanceDispatch";
 import { ParametersListItem } from "./components/Parameter";
 import { QuantityModal } from "./components/QuantityModal";
-import { SerialIssueModal } from "./components/SerialIssueModal";
 import { SerialSelectorModal } from "./components/SerialSelectorModal";
 import {
   DeleteStepRecordModal,
@@ -152,7 +155,15 @@ type JobOperationProps = {
   job: Job;
   thumbnailPath: string | null;
   trackedEntities: TrackedEntity[];
-  workCenter: Promise<PostgrestSingleResponse<{ name: string }>>;
+  workCenter: Promise<
+    PostgrestSingleResponse<{
+      name: string;
+      id: string;
+      isBlocked: boolean | null;
+      blockingDispatchId: string | null;
+      blockingDispatchReadableId: string | null;
+    }>
+  >;
 };
 
 export const JobOperation = ({
@@ -404,6 +415,8 @@ export const JobOperation = ({
     active: !!kanban?.id
   });
 
+  const item = items.find((it) => it.id === operation.itemId);
+
   return (
     <>
       <Tabs
@@ -473,6 +486,23 @@ export const JobOperation = ({
                 icon={<LuQrCode />}
               />
             </a>
+            <Button asChild variant={"secondary"}>
+              <Link to={path.to.jobDetail(operation.jobId)}>
+                <LuHardHat className="mr-2 size-4" />
+                Job Details
+              </Link>
+            </Button>
+            {item && (
+              <Button asChild variant={"secondary"}>
+                <Link to={path.to.itemMaster(item.id, item.type)}>
+                  <MethodItemTypeIcon
+                    type={item.type}
+                    className="mr-2 size-4"
+                  />
+                  Item Master
+                </Link>
+              </Button>
+            )}
           </HStack>
 
           <HStack className="justify-end items-center gap-2">
@@ -1048,8 +1078,15 @@ export const JobOperation = ({
                                           {parentIsSerial &&
                                           (material.requiresBatchTracking ||
                                             material.requiresSerialTracking)
-                                            ? `${material.quantity}/${material.estimatedQuantity}`
-                                            : material.estimatedQuantity}
+                                            ? `${
+                                                material.quantity ??
+                                                material.estimatedQuantity
+                                              }/${
+                                                material.estimatedQuantity ??
+                                                material.quantity
+                                              }`
+                                            : (material.estimatedQuantity ??
+                                              material.quantity)}
                                         </Td>
                                         <Td>
                                           {material.methodType === "Make" &&
@@ -1064,7 +1101,10 @@ export const JobOperation = ({
                                           ) : parentIsSerial &&
                                             (material.requiresBatchTracking ||
                                               material.requiresSerialTracking) ? (
-                                            `${material.quantityIssued}/${material.quantity}`
+                                            `${material.quantityIssued}/${
+                                              material.quantity ??
+                                              material.estimatedQuantity
+                                            }`
                                           ) : (
                                             material.quantityIssued
                                           )}
@@ -1186,8 +1226,15 @@ export const JobOperation = ({
                                                 {parentIsSerial &&
                                                 (kittedChild.requiresBatchTracking ||
                                                   kittedChild.requiresSerialTracking)
-                                                  ? `${kittedChild.quantity}/${kittedChild.estimatedQuantity}`
-                                                  : kittedChild.estimatedQuantity}
+                                                  ? `${
+                                                      kittedChild.quantity ??
+                                                      kittedChild.estimatedQuantity
+                                                    }/${
+                                                      kittedChild.estimatedQuantity ??
+                                                      kittedChild.quantity
+                                                    }`
+                                                  : (kittedChild.estimatedQuantity ??
+                                                    kittedChild.quantity)}
                                               </Td>
                                               <Td>
                                                 {kittedChild.methodType ===
@@ -1205,7 +1252,12 @@ export const JobOperation = ({
                                                 ) : parentIsSerial &&
                                                   (kittedChild.requiresBatchTracking ||
                                                     kittedChild.requiresSerialTracking) ? (
-                                                  `${kittedChild.quantityIssued}/${kittedChild.quantity}`
+                                                  `${
+                                                    kittedChild.quantityIssued
+                                                  }/${
+                                                    kittedChild.quantity ??
+                                                    kittedChild.estimatedQuantity
+                                                  }`
                                                 ) : (
                                                   kittedChild.quantityIssued
                                                 )}
@@ -1259,57 +1311,23 @@ export const JobOperation = ({
                               )}
                             </Tbody>
                           </Table>
-                          {issueModal.isOpen &&
-                            selectedMaterial?.requiresBatchTracking !== true &&
-                            selectedMaterial?.requiresSerialTracking !==
-                              true && (
-                              <IssueModal
-                                operationId={operation.id}
-                                material={selectedMaterial ?? undefined}
-                                onClose={() => {
-                                  setSelectedMaterial(null);
-                                  issueModal.onClose();
-                                }}
-                              />
-                            )}
-                          {issueModal.isOpen &&
-                            selectedMaterial?.requiresBatchTracking ===
-                              true && (
-                              <BatchIssueModal
-                                parentId={trackedEntityId ?? ""}
-                                parentIdIsSerialized={
-                                  method?.requiresSerialTracking ?? false
-                                }
-                                operationId={operation.id}
-                                material={selectedMaterial ?? undefined}
-                                trackedInputs={
-                                  resolvedMaterials?.trackedInputs ?? []
-                                }
-                                onClose={() => {
-                                  setSelectedMaterial(null);
-                                  issueModal.onClose();
-                                }}
-                              />
-                            )}
-                          {issueModal.isOpen &&
-                            selectedMaterial?.requiresSerialTracking ===
-                              true && (
-                              <SerialIssueModal
-                                operationId={operation.id}
-                                material={selectedMaterial ?? undefined}
-                                parentId={trackedEntityId ?? ""}
-                                parentIdIsSerialized={
-                                  method?.requiresSerialTracking ?? false
-                                }
-                                trackedInputs={
-                                  resolvedMaterials?.trackedInputs ?? []
-                                }
-                                onClose={() => {
-                                  setSelectedMaterial(null);
-                                  issueModal.onClose();
-                                }}
-                              />
-                            )}
+                          {issueModal.isOpen && (
+                            <IssueMaterialModal
+                              operationId={operation.id}
+                              material={selectedMaterial ?? undefined}
+                              parentId={trackedEntityId ?? ""}
+                              parentIdIsSerialized={
+                                method?.requiresSerialTracking ?? false
+                              }
+                              trackedInputs={
+                                resolvedMaterials?.trackedInputs ?? []
+                              }
+                              onClose={() => {
+                                setSelectedMaterial(null);
+                                issueModal.onClose();
+                              }}
+                            />
+                          )}
                         </>
                       );
                     }}
@@ -1851,9 +1869,16 @@ export const JobOperation = ({
                     <Await resolve={workCenter}>
                       {(resolvedWorkCenter) =>
                         resolvedWorkCenter.data && (
-                          <Heading size="h4" className="line-clamp-1">
-                            {resolvedWorkCenter.data?.name}
-                          </Heading>
+                          <VStack spacing={1}>
+                            <HStack className="justify-between items-start w-full">
+                              <Heading size="h4" className="line-clamp-1">
+                                {resolvedWorkCenter.data?.name}
+                              </Heading>
+                              <MaintenanceDispatch
+                                workCenter={resolvedWorkCenter.data}
+                              />
+                            </HStack>
+                          </VStack>
                         )
                       }
                     </Await>

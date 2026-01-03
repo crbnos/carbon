@@ -1584,6 +1584,19 @@ export const groups = [
   },
 ];
 
+export const failureModes: string[] = [
+  "Bearing Failure",
+  "Lubrication Failure",
+  "Electrical Fault",
+  "Leak",
+  "Excessive Wear",
+  "Misalignment",
+  "Overheating",
+  "Cracking/Fatigue",
+  "Blockage",
+  "Excessive Vibration"
+];
+
 export const nonConformanceTypes: Omit<
   Database["public"]["Tables"]["nonConformanceType"]["Insert"],
   "companyId"
@@ -1819,6 +1832,15 @@ export const sequences = [
     prefix: "G",
     suffix: null,
     next: 0,
+  },
+  {
+    table: "maintenanceDispatch",
+    name: "Maintenance Dispatch",
+    prefix: "MAIN",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1,
   },
   {
     table: "nonConformance",

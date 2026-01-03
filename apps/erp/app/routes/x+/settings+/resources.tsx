@@ -1,7 +1,13 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { Submit, ValidatedForm, validator } from "@carbon/form";
+import {
+  Boolean,
+  Number,
+  Submit,
+  ValidatedForm,
+  validator
+} from "@carbon/form";
 import {
   Card,
   CardContent,
@@ -15,13 +21,17 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useFetcher, useLoaderData } from "react-router";
 import { Users } from "~/components/Form";
 import {
   getCompany,
+  getCompanySettings,
+  maintenanceDispatchNotificationValidator,
+  maintenanceSettingsValidator,
   suggestionNotificationValidator,
+  updateMaintenanceDispatchNotificationSettings,
   updateSuggestionNotificationSetting
 } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
@@ -37,14 +47,27 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "settings"
   });
 
-  const company = await getCompany(client, companyId);
+  const [company, companySettings] = await Promise.all([
+    getCompany(client, companyId),
+    getCompanySettings(client, companyId)
+  ]);
 
   if (!company.data)
     throw redirect(
       path.to.settings,
       await flash(request, error(company.error, "Failed to get company"))
     );
-  return { company: company.data };
+
+  if (!companySettings.data)
+    throw redirect(
+      path.to.settings,
+      await flash(
+        request,
+        error(companySettings.error, "Failed to get company settings")
+      )
+    );
+
+  return { company: company.data, companySettings: companySettings.data };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -53,31 +76,94 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   const formData = await request.formData();
-  const validation = await validator(suggestionNotificationValidator).validate(
-    formData
-  );
+  const intent = formData.get("intent");
 
-  if (validation.error) {
-    return { success: false, message: "Invalid form data" };
+  if (intent === "maintenance") {
+    const validation = await validator(maintenanceSettingsValidator).validate(
+      formData
+    );
+
+    if (validation.error) {
+      return { success: false, message: "Invalid form data" };
+    }
+
+    const update = await client
+      .from("companySettings")
+      .update({
+        maintenanceGenerateInAdvance:
+          validation.data.maintenanceGenerateInAdvance,
+        maintenanceAdvanceDays: validation.data.maintenanceAdvanceDays
+      })
+      .eq("id", companyId);
+
+    if (update.error) return { success: false, message: update.error.message };
+
+    return { success: true, message: "Maintenance settings updated" };
   }
 
-  const update = await updateSuggestionNotificationSetting(
-    client,
-    companyId,
-    validation.data.suggestionNotificationGroup ?? []
-  );
+  if (intent === "suggestions") {
+    const validation = await validator(
+      suggestionNotificationValidator
+    ).validate(formData);
 
-  if (update.error) return { success: false, message: update.error.message };
+    if (validation.error) {
+      return { success: false, message: "Invalid form data" };
+    }
 
-  return {
-    success: true,
-    message: "Suggestion notification settings updated"
-  };
+    const update = await updateSuggestionNotificationSetting(
+      client,
+      companyId,
+      validation.data.suggestionNotificationGroup ?? []
+    );
+
+    if (update.error) return { success: false, message: update.error.message };
+
+    return {
+      success: true,
+      message: "Suggestion notification settings updated"
+    };
+  }
+
+  if (intent === "maintenanceDispatchNotifications") {
+    const validation = await validator(
+      maintenanceDispatchNotificationValidator
+    ).validate(formData);
+
+    if (validation.error) {
+      return { success: false, message: "Invalid form data" };
+    }
+
+    const update = await updateMaintenanceDispatchNotificationSettings(
+      client,
+      companyId,
+      {
+        maintenanceDispatchNotificationGroup:
+          validation.data.maintenanceDispatchNotificationGroup ?? [],
+        qualityDispatchNotificationGroup:
+          validation.data.qualityDispatchNotificationGroup ?? [],
+        operationsDispatchNotificationGroup:
+          validation.data.operationsDispatchNotificationGroup ?? [],
+        otherDispatchNotificationGroup:
+          validation.data.otherDispatchNotificationGroup ?? []
+      }
+    );
+
+    if (update.error) return { success: false, message: update.error.message };
+
+    return {
+      success: true,
+      message: "Maintenance dispatch notification settings updated"
+    };
+  }
+
+  return null;
 }
 
 export default function ResourcesSettingsRoute() {
-  const { company } = useLoaderData<typeof loader>();
+  const { company, companySettings } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
+  const [maintenanceGenerateInAdvance, setMaintenanceGenerateInAdvance] =
+    useState(companySettings.maintenanceGenerateInAdvance ?? false);
 
   useEffect(() => {
     if (fetcher.data?.success === true && fetcher?.data?.message) {
@@ -100,6 +186,143 @@ export default function ResourcesSettingsRoute() {
         <Card>
           <ValidatedForm
             method="post"
+            validator={maintenanceDispatchNotificationValidator}
+            defaultValues={{
+              maintenanceDispatchNotificationGroup:
+                (companySettings as any).maintenanceDispatchNotificationGroup ??
+                [],
+              qualityDispatchNotificationGroup:
+                (companySettings as any).qualityDispatchNotificationGroup ?? [],
+              operationsDispatchNotificationGroup:
+                (companySettings as any).operationsDispatchNotificationGroup ??
+                [],
+              otherDispatchNotificationGroup:
+                (companySettings as any).otherDispatchNotificationGroup ?? []
+            }}
+            fetcher={fetcher}
+          >
+            <input
+              type="hidden"
+              name="intent"
+              value="maintenanceDispatchNotifications"
+            />
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                Maintenance Dispatch Notifications
+              </CardTitle>
+              <CardDescription>
+                Configure notifications for when maintenance dispatches are
+                created from the shop floor. Notifications are routed based on
+                the failure mode type.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-8 max-w-[400px]">
+                <div className="flex flex-col gap-2">
+                  <Label>Maintenance Type</Label>
+                  <Users
+                    name="maintenanceDispatchNotificationGroup"
+                    label="Who should receive notifications for maintenance-related dispatches?"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label>Quality Type</Label>
+                  <Users
+                    name="qualityDispatchNotificationGroup"
+                    label="Who should receive notifications for quality-related dispatches?"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label>Operations Type</Label>
+                  <Users
+                    name="operationsDispatchNotificationGroup"
+                    label="Who should receive notifications for operations-related dispatches?"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label>Other Type</Label>
+                  <Users
+                    name="otherDispatchNotificationGroup"
+                    label="Who should receive notifications for other dispatches?"
+                  />
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit
+                isDisabled={fetcher.state !== "idle"}
+                isLoading={
+                  fetcher.state !== "idle" &&
+                  fetcher.formData?.get("intent") ===
+                    "maintenanceDispatchNotifications"
+                }
+              >
+                Save
+              </Submit>
+            </CardFooter>
+          </ValidatedForm>
+        </Card>
+
+        <Card>
+          <ValidatedForm
+            method="post"
+            validator={maintenanceSettingsValidator}
+            defaultValues={{
+              maintenanceGenerateInAdvance:
+                companySettings.maintenanceGenerateInAdvance ?? false,
+              maintenanceAdvanceDays:
+                companySettings.maintenanceAdvanceDays ?? 7
+            }}
+            fetcher={fetcher}
+          >
+            <input type="hidden" name="intent" value="maintenance" />
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                Maintenance Scheduling
+              </CardTitle>
+              <CardDescription>
+                Configure how preventative maintenance dispatches are
+                automatically generated from maintenance schedules.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-6 max-w-[400px]">
+                <div className="flex flex-col gap-2">
+                  <Boolean
+                    name="maintenanceGenerateInAdvance"
+                    description="Create maintenance dispatches in advance"
+                    value={maintenanceGenerateInAdvance}
+                    onChange={setMaintenanceGenerateInAdvance}
+                  />
+                </div>
+                {maintenanceGenerateInAdvance && (
+                  <div className="flex flex-col gap-2">
+                    <Number
+                      name="maintenanceAdvanceDays"
+                      label="Days in advance to generate dispatches"
+                      minValue={1}
+                      maxValue={365}
+                    />
+                  </div>
+                )}
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit
+                isDisabled={fetcher.state !== "idle"}
+                isLoading={
+                  fetcher.state !== "idle" &&
+                  fetcher.formData?.get("intent") === "maintenance"
+                }
+              >
+                Save
+              </Submit>
+            </CardFooter>
+          </ValidatedForm>
+        </Card>
+        <Card>
+          <ValidatedForm
+            method="post"
             validator={suggestionNotificationValidator}
             defaultValues={{
               suggestionNotificationGroup:
@@ -107,6 +330,7 @@ export default function ResourcesSettingsRoute() {
             }}
             fetcher={fetcher}
           >
+            <input type="hidden" name="intent" value="suggestions" />
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 Suggestion Notifications
@@ -129,7 +353,10 @@ export default function ResourcesSettingsRoute() {
             <CardFooter>
               <Submit
                 isDisabled={fetcher.state !== "idle"}
-                isLoading={fetcher.state !== "idle"}
+                isLoading={
+                  fetcher.state !== "idle" &&
+                  fetcher.formData?.get("intent") === "suggestions"
+                }
               >
                 Save
               </Submit>

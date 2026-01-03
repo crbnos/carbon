@@ -83,6 +83,7 @@ export type ProductionQuantity = NonNullable<
 
 export type StorageItem = FileObject & {
   bucket: string;
+  itemId?: string;
 };
 
 export type TrackedEntity = NonNullable<

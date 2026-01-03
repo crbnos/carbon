@@ -3,8 +3,9 @@ import path from "node:path";
 import { defineConfig, PluginOption } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
-export default defineConfig({
+export default defineConfig(({ isSsrBuild }) => ({
   build: {
+    minify: true,
     sourcemap: false,
     rollupOptions: {
       onwarn(warning, defaultHandler) {
@@ -14,13 +15,11 @@ export default defineConfig({
 
         defaultHandler(warning);
       },
+      ...(isSsrBuild && { input: "./server/app.ts" }),
     },
   },
   define: {
     global: "globalThis",
-  },
-  optimizeDeps: {
-    extensions: [".css", ".scss", ".sass"], // explicitly include CSS extensions if needed
   },
   ssr: {
     noExternal: [
@@ -46,4 +45,4 @@ export default defineConfig({
       ),
     },
   },
-});
+}));

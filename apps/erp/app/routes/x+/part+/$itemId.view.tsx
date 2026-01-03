@@ -48,6 +48,7 @@ export default function PartViewRoute() {
                     issues,
                     jobMaterials,
                     jobs,
+                    maintenanceDispatchItems,
                     methodMaterials,
                     purchaseOrderLines,
                     receiptLines,
@@ -79,6 +80,12 @@ export default function PartViewRoute() {
                       name: "Job Materials",
                       module: "production",
                       children: jobMaterials
+                    },
+                    {
+                      key: "maintenanceDispatchItems",
+                      name: "Maintenance",
+                      module: "resources",
+                      children: maintenanceDispatchItems
                     },
                     {
                       key: "methodMaterials",

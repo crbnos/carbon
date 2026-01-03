@@ -988,8 +988,8 @@ export async function getRisks(
   }
 ) {
   let query = client
-    .from("riskRegister")
-    .select("*, assignee:assignee(id, firstName, lastName, avatarUrl)", {
+    .from("riskRegisters")
+    .select("*", {
       count: "exact"
     })
     .eq("companyId", companyId);
@@ -1669,6 +1669,7 @@ export async function upsertRisk(
       .from("riskRegister")
       .update({
         ...sanitize(data),
+        updatedBy,
         updatedAt: new Date().toISOString()
       })
       .eq("id", risk.id)

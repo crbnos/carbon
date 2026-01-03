@@ -14,8 +14,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     };
   }
 
-  return await getSerialNumbersForItem(client, {
+  const result = await getSerialNumbersForItem(client, {
     itemId,
     companyId
   });
+
+  return result;
 }

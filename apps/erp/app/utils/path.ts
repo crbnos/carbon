@@ -49,6 +49,7 @@ export const path = {
       docs: `${api}/docs`,
       employeeTypes: `${api}/users/employee-types`,
       emptyPermissions: `${api}/users/empty-permissions`,
+      failureModes: `${api}/resources/failure-modes`,
       gauges: `${api}/quality/gauges`,
       generateCsvColumns: (table: string) =>
         generatePath(`${api}/ai/csv/${table}/columns`),
@@ -75,6 +76,8 @@ export const path = {
       kanbanJobLink: (id: string) => generatePath(`${api}/kanban/link/${id}`),
       kanbanStart: (id: string) => generatePath(`${api}/kanban/start/${id}`),
       locations: `${api}/resources/locations`,
+      maintenanceDispatches: `${api}/resources/maintenance`,
+      maintenanceSchedules: `${api}/resources/scheduled-maintenance`,
       materialDimensions: (formId: string) =>
         generatePath(`${api}/items/dimensions/${formId}`),
       materialFinishes: (substanceId: string) =>
@@ -135,6 +138,8 @@ export const path = {
         generatePath(
           `${api}/settings/sequence/rollback?table=${table}&currentSequence=${id}`
         ),
+      resourcesKpi: (key: string) =>
+        generatePath(`${api}/resources/kpi/${key}`),
       salesKpi: (key: string) => generatePath(`${api}/sales/kpi/${key}`),
       salesOrders: `${api}/sales/orders`,
       scrapReasons: `${api}/production/scrap-reasons`,
@@ -195,6 +200,8 @@ export const path = {
       kanbanQrCode: (id: string, action: "order" | "start" | "complete") =>
         generatePath(`${file}/kanban/${id}/${action}.png`),
       jobTraveler: (id: string) => generatePath(`${file}/traveler/${id}.pdf`),
+      jobTravelerByJobId: (jobId: string) =>
+        generatePath(`${file}/job/${jobId}/traveler.pdf`),
       nonConformance: (id: string) => generatePath(`${file}/issue/${id}.pdf`),
       operationLabelsPdf: (
         id: string,
@@ -298,6 +305,34 @@ export const path = {
 
         if (labelSize) params.append("labelSize", labelSize);
         if (lineId) params.append("lineId", lineId);
+
+        const queryString = params.toString();
+        if (queryString) url += `?${queryString}`;
+
+        return generatePath(url);
+      },
+      trackedEntityLabelPdf: (
+        id: string,
+        { labelSize }: { labelSize?: string } = {}
+      ) => {
+        let url = `${file}/entity/${id}/labels.pdf`;
+        const params = new URLSearchParams();
+
+        if (labelSize) params.append("labelSize", labelSize);
+
+        const queryString = params.toString();
+        if (queryString) url += `?${queryString}`;
+
+        return generatePath(url);
+      },
+      trackedEntityLabelZpl: (
+        id: string,
+        { labelSize }: { labelSize?: string } = {}
+      ) => {
+        let url = `${file}/entity/${id}/labels.zpl`;
+        const params = new URLSearchParams();
+
+        if (labelSize) params.append("labelSize", labelSize);
 
         const queryString = params.toString();
         if (queryString) url += `?${queryString}`;
@@ -537,6 +572,8 @@ export const path = {
       generatePath(`${x}/resources/ability/${abilityId}/employee/delete/${id}`),
     deleteEmployeeType: (id: string) =>
       generatePath(`${x}/users/employee-types/delete/${id}`),
+    deleteFailureMode: (id: string) =>
+      generatePath(`${x}/resources/failure-modes/delete/${id}`),
     deleteGauge: (id: string) =>
       generatePath(`${x}/quality/gauges/delete/${id}`),
     deleteGaugeCalibrationRecord: (id: string) =>
@@ -596,6 +633,10 @@ export const path = {
       generatePath(`${x}/quality/issue-types/delete/${id}`),
     deleteKanban: (id: string) =>
       generatePath(`${x}/inventory/kanbans/delete/${id}`),
+    deleteMaintenanceDispatch: (id: string) =>
+      generatePath(`${x}/resources/maintenance/delete/${id}`),
+    deleteMaintenanceSchedule: (id: string) =>
+      generatePath(`${x}/resources/scheduled-maintenance/delete/${id}`),
     deleteNoQuoteReason: (id: string) =>
       generatePath(`${x}/sales/no-quote-reasons/delete/${id}`),
     deleteCustomerPortal: (id: string) =>
@@ -737,7 +778,9 @@ export const path = {
     externalTraining: (assignmentId: string) =>
       generatePath(`/share/training/${assignmentId}`),
     feedback: `${x}/feedback`,
-    resourcesSettings: `${x}/settings/resources`,
+    failureMode: (id: string) =>
+      generatePath(`${x}/resources/failure-modes/${id}`),
+    failureModes: `${x}/resources/failure-modes`,
     fiscalYears: `${x}/accounting/years`,
     gauge: (id: string) => generatePath(`${x}/quality/gauges/${id}`),
     gauges: `${x}/quality/gauges`,
@@ -845,6 +888,34 @@ export const path = {
     login: "/login",
     logout: "/logout",
     logos: `${x}/settings/logos`,
+    maintenanceDispatch: (id: string) => generatePath(`${x}/maintenance/${id}`),
+    maintenanceDispatchComments: (id: string) =>
+      generatePath(`${x}/maintenance/${id}/comments`),
+    maintenanceDispatchEvents: (id: string) =>
+      generatePath(`${x}/maintenance/${id}/events`),
+    maintenanceDispatchItems: (id: string) =>
+      generatePath(`${x}/maintenance/${id}/items`),
+    maintenanceDispatchStatus: (id: string) =>
+      generatePath(`${x}/maintenance/${id}/status`),
+    maintenanceDispatchUpdate: `${x}/maintenance/update`,
+    maintenanceDispatchWorkCenters: (id: string) =>
+      generatePath(`${x}/maintenance/${id}/work-centers`),
+    newMaintenanceDispatchItem: (dispatchId: string) =>
+      generatePath(`${x}/maintenance/${dispatchId}/item/new`),
+    deleteMaintenanceDispatchItem: (dispatchId: string, itemId: string) =>
+      generatePath(`${x}/maintenance/${dispatchId}/item/${itemId}/delete`),
+    newMaintenanceDispatchEvent: (dispatchId: string) =>
+      generatePath(`${x}/maintenance/${dispatchId}/event/new`),
+    editMaintenanceDispatchEvent: (dispatchId: string, eventId: string) =>
+      generatePath(`${x}/maintenance/${dispatchId}/event/${eventId}`),
+    deleteMaintenanceDispatchEvent: (dispatchId: string, eventId: string) =>
+      generatePath(`${x}/maintenance/${dispatchId}/event/${eventId}/delete`),
+    addAndIssueMaintenanceDispatchItem: (dispatchId: string) =>
+      generatePath(`${x}/maintenance/${dispatchId}/add-and-issue`),
+    maintenanceDispatches: `${x}/resources/maintenance`,
+    maintenanceSchedule: (id: string) =>
+      generatePath(`${x}/resources/scheduled-maintenance/${id}`),
+    maintenanceSchedules: `${x}/resources/scheduled-maintenance`,
     makeMethodGet: `${x}/items/methods/get`,
     makeMethodSave: `${x}/items/methods/save`,
     markTrainingComplete: `${x}/resources/assignments/complete`,
@@ -939,6 +1010,7 @@ export const path = {
     newEmployeeAbility: (id: string) =>
       generatePath(`${x}/resources/ability/${id}/employee/new`),
     newEmployeeType: `${x}/users/employee-types/new`,
+    newFailureMode: `${x}/resources/failure-modes/new`,
     newFixture: `${x}/fixture/new`,
     newFixtureSupplier: (id: string) =>
       generatePath(`${x}/fixture/${id}/purchasing/new`),
@@ -966,6 +1038,8 @@ export const path = {
       generatePath(`${x}/job/${jobId}/materials/session/new`),
     newKanban: `${x}/inventory/kanbans/new`,
     newLocation: `${x}/resources/locations/new`,
+    newMaintenanceDispatch: `${x}/maintenance/new`,
+    newMaintenanceSchedule: `${x}/resources/scheduled-maintenance/new`,
     newMakeMethodVersion: `${x}/items/methods/version/new`,
     newMaterial: `${x}/material/new`,
     newMethodMaterial: `${x}/items/methods/material/new`,
@@ -1267,6 +1341,7 @@ export const path = {
     requiredActions: `${x}/quality/required-actions`,
     resendInvite: `${x}/users/resend-invite`,
     resources: `${x}/resources`,
+    resourcesSettings: `${x}/settings/resources`,
     revision: (id: string) => generatePath(`${x}/items/revisions/${id}`),
     revokeInvite: `${x}/users/revoke-invite`,
     risks: `${x}/quality/risks`,

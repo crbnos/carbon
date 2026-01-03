@@ -1,8 +1,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type {
   ClientLoaderFunctionArgs,
-  LoaderFunctionArgs,
-  SerializeFrom
+  LoaderFunctionArgs
 } from "react-router";
 import { getShelvesListForLocation } from "~/modules/inventory";
 import { getItemShelfQuantities } from "~/modules/items/items.service";
@@ -84,7 +83,9 @@ export async function clientLoader({
     itemId ?? null
   ).queryKey;
   const data =
-    window?.clientCache?.getQueryData<SerializeFrom<typeof loader>>(queryKey);
+    window?.clientCache?.getQueryData<Awaited<ReturnType<typeof loader>>>(
+      queryKey
+    );
 
   if (!data) {
     const serverData = await serverLoader<typeof loader>();

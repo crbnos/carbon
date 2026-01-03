@@ -47,10 +47,10 @@ export default function ConsumableViewRoute() {
                   const {
                     issues,
                     jobMaterials,
+                    maintenanceDispatchItems,
                     methodMaterials,
                     purchaseOrderLines,
                     receiptLines,
-
                     quoteMaterials,
                     salesOrderLines,
                     shipmentLines,
@@ -69,6 +69,12 @@ export default function ConsumableViewRoute() {
                       name: "Job Materials",
                       module: "production",
                       children: jobMaterials
+                    },
+                    {
+                      key: "maintenanceDispatchItems",
+                      name: "Maintenance",
+                      module: "resources",
+                      children: maintenanceDispatchItems
                     },
                     {
                       key: "methodMaterials",

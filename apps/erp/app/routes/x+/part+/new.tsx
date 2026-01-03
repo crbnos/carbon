@@ -5,7 +5,7 @@ import { validationError, validator } from "@carbon/form";
 import type { modelThumbnailTask } from "@carbon/jobs/trigger/model-thumbnail";
 import { tasks } from "@trigger.dev/sdk";
 import type { ActionFunctionArgs } from "react-router";
-import { data, json, redirect } from "react-router";
+import { data, redirect } from "react-router";
 import { partValidator, upsertPart } from "~/modules/items";
 import { PartForm } from "~/modules/items/ui/Parts";
 import { setCustomFields } from "~/utils/form";

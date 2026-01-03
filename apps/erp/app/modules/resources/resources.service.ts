@@ -5,7 +5,15 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
+  failureModeValidator,
   locationValidator,
+  maintenanceDispatchCommentValidator,
+  maintenanceDispatchEventValidator,
+  maintenanceDispatchItemValidator,
+  maintenanceDispatchValidator,
+  maintenanceDispatchWorkCenterValidator,
+  maintenanceScheduleItemValidator,
+  maintenanceScheduleValidator,
   partnerValidator,
   processValidator,
   trainingQuestionValidator,
@@ -47,11 +55,70 @@ export async function deleteEmployeeAbility(
     .eq("id", employeeAbilityId);
 }
 
+export async function deleteFailureMode(
+  client: SupabaseClient<Database>,
+  failureModeId: string
+) {
+  return client.from("maintenanceFailureMode").delete().eq("id", failureModeId);
+}
+
 export async function deleteLocation(
   client: SupabaseClient<Database>,
   locationId: string
 ) {
   return client.from("location").delete().eq("id", locationId);
+}
+
+export async function deleteMaintenanceDispatch(
+  client: SupabaseClient<Database>,
+  dispatchId: string
+) {
+  return client.from("maintenanceDispatch").delete().eq("id", dispatchId);
+}
+
+export async function deleteMaintenanceDispatchComment(
+  client: SupabaseClient<Database>,
+  commentId: string
+) {
+  return client.from("maintenanceDispatchComment").delete().eq("id", commentId);
+}
+
+export async function deleteMaintenanceDispatchEvent(
+  client: SupabaseClient<Database>,
+  eventId: string
+) {
+  return client.from("maintenanceDispatchEvent").delete().eq("id", eventId);
+}
+
+export async function deleteMaintenanceDispatchItem(
+  client: SupabaseClient<Database>,
+  itemId: string
+) {
+  return client.from("maintenanceDispatchItem").delete().eq("id", itemId);
+}
+
+export async function deleteMaintenanceDispatchWorkCenter(
+  client: SupabaseClient<Database>,
+  workCenterId: string
+) {
+  return client
+    .from("maintenanceDispatchWorkCenter")
+    .delete()
+    .eq("id", workCenterId);
+}
+
+export async function deleteMaintenanceSchedule(
+  client: SupabaseClient<Database>,
+  scheduleId: string
+) {
+  return client.from("maintenanceSchedule").delete().eq("id", scheduleId);
+}
+
+export async function deleteMaintenanceScheduleItem(
+  client: SupabaseClient<Database>,
+  itemId: string
+) {
+  return client.from("maintenanceScheduleItem").delete().eq("id", itemId);
 }
 
 export async function deletePartner(
@@ -217,6 +284,51 @@ export async function getEmployeeAbilities(
     .eq("active", true);
 }
 
+export async function getFailureMode(
+  client: SupabaseClient<Database>,
+  failureModeId: string
+) {
+  return client
+    .from("maintenanceFailureMode")
+    .select("*")
+    .eq("id", failureModeId)
+    .single();
+}
+
+export async function getFailureModes(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("maintenanceFailureMode")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "name", ascending: true }
+    ]);
+  }
+
+  return query;
+}
+
+export async function getFailureModesList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("maintenanceFailureMode")
+    .select("id, name")
+    .eq("companyId", companyId)
+    .order("name");
+}
+
 export async function getLocation(
   client: SupabaseClient<Database>,
   locationId: string
@@ -256,6 +368,230 @@ export async function getLocationsList(
     .select(`id, name`)
     .eq("companyId", companyId)
     .order("name");
+}
+
+export async function getMaintenanceDispatch(
+  client: SupabaseClient<Database>,
+  dispatchId: string
+) {
+  return client
+    .from("maintenanceDispatch")
+    .select(
+      `*,
+      assignee:user!maintenanceDispatch_assignee_fkey(id, fullName, avatarUrl),
+      suspectedFailureMode:maintenanceFailureMode!maintenanceDispatch_suspectedFailureModeId_fkey(id, name),
+      actualFailureMode:maintenanceFailureMode!maintenanceDispatch_actualFailureModeId_fkey(id, name),
+      schedule:maintenanceSchedule(id, name)`
+    )
+    .eq("id", dispatchId)
+    .single();
+}
+
+export async function getMaintenanceDispatchComments(
+  client: SupabaseClient<Database>,
+  dispatchId: string
+) {
+  return client
+    .from("maintenanceDispatchComment")
+    .select(
+      `id, comment, createdAt,
+       createdBy:user!maintenanceDispatchComment_createdBy_fkey(id, fullName, avatarUrl)`
+    )
+    .eq("maintenanceDispatchId", dispatchId)
+    .order("createdAt", { ascending: false });
+}
+
+export async function getMaintenanceDispatchEvents(
+  client: SupabaseClient<Database>,
+  dispatchId: string
+) {
+  return client
+    .from("maintenanceDispatchEvent")
+    .select(
+      `id, startTime, endTime, duration, notes,
+       employee:user!maintenanceDispatchEvent_employeeId_fkey(id, fullName, avatarUrl),
+       workCenter:workCenter!maintenanceDispatchEvent_workCenterId_fkey(id, name)`
+    )
+    .eq("maintenanceDispatchId", dispatchId)
+    .order("startTime", { ascending: false });
+}
+
+export async function getMaintenanceDispatchItems(
+  client: SupabaseClient<Database>,
+  dispatchId: string
+) {
+  return client
+    .from("maintenanceDispatchItem")
+    .select(
+      `id, itemId, quantity, unitOfMeasureCode, unitCost, totalCost,
+       item:item!maintenanceDispatchItem_itemId_fkey(id, name, itemTrackingType)`
+    )
+    .eq("maintenanceDispatchId", dispatchId);
+}
+
+export async function getMaintenanceDispatchItemTrackedEntities(
+  client: SupabaseClient<Database>,
+  maintenanceDispatchItemId: string
+) {
+  return client
+    .from("maintenanceDispatchItemTrackedEntity")
+    .select(
+      `
+      *,
+      trackedEntity:trackedEntityId (id, quantity, status, readableId:sourceDocumentReadableId)
+    `
+    )
+    .eq("maintenanceDispatchItemId", maintenanceDispatchItemId);
+}
+
+export async function getMaintenanceDispatches(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null; status?: string }
+) {
+  let query = client
+    .from("maintenanceDispatch")
+    .select(`*`, { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("maintenanceDispatchId", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "createdAt", ascending: false }
+    ]);
+  }
+
+  return query;
+}
+
+export async function getMaintenanceDispatchesByLocation(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  locationId: string,
+  args?: GenericQueryFilters & { search: string | null; status?: string }
+) {
+  let query = client.rpc(
+    "get_maintenance_dispatches_by_location",
+    {
+      p_company_id: companyId,
+      p_location_id: locationId
+    },
+    { count: "exact" }
+  );
+
+  if (args?.search) {
+    query = query.ilike("maintenanceDispatchId", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "createdAt", ascending: false }
+    ]);
+  }
+
+  return query;
+}
+
+export async function getMaintenanceDispatchWorkCenters(
+  client: SupabaseClient<Database>,
+  dispatchId: string
+) {
+  return client
+    .from("maintenanceDispatchWorkCenter")
+    .select(
+      `id, workCenterId,
+       workCenter:workCenter!maintenanceDispatchWorkCenter_workCenterId_fkey(id, name)`
+    )
+    .eq("maintenanceDispatchId", dispatchId);
+}
+
+export async function getMaintenanceSchedule(
+  client: SupabaseClient<Database>,
+  scheduleId: string
+) {
+  return client
+    .from("maintenanceSchedule")
+    .select(
+      `*,
+       workCenter:workCenter!maintenanceSchedule_workCenterId_fkey(id, name)`
+    )
+    .eq("id", scheduleId)
+    .single();
+}
+
+export async function getMaintenanceScheduleItems(
+  client: SupabaseClient<Database>,
+  scheduleId: string
+) {
+  return client
+    .from("maintenanceScheduleItem")
+    .select(
+      `id, quantity, unitOfMeasureCode,
+       item:item!maintenanceScheduleItem_itemId_fkey(id, name)`
+    )
+    .eq("maintenanceScheduleId", scheduleId);
+}
+
+export async function getMaintenanceSchedules(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null; active?: boolean }
+) {
+  let query = client
+    .from("maintenanceSchedules")
+    .select(`*`, { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args?.active !== undefined) {
+    query = query.eq("active", args.active);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "name", ascending: true }
+    ]);
+  }
+
+  return query;
+}
+
+export async function getMaintenanceSchedulesByLocation(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  locationId: string,
+  args?: GenericQueryFilters & { search: string | null; active?: boolean }
+) {
+  let query = client.rpc(
+    "get_maintenance_schedules_by_location",
+    {
+      p_company_id: companyId,
+      p_location_id: locationId
+    },
+    { count: "exact" }
+  );
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args?.active !== undefined) {
+    query = query.eq("active", args.active);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "name", ascending: true }
+    ]);
+  }
+
+  return query;
 }
 
 export async function getOutstandingTrainingsForUser(
@@ -620,11 +956,42 @@ export async function getWorkCentersByLocation(
   client: SupabaseClient<Database>,
   locationId: string
 ) {
-  return client
-    .from("workCenters")
-    .select("*")
-    .eq("locationId", locationId)
-    .eq("active", true);
+  // Query both views and merge - workCenters has processes, workCentersWithBlockingStatus has blocking info
+  const [workCentersResult, blockingStatusResult] = await Promise.all([
+    client
+      .from("workCenters")
+      .select("*")
+      .eq("locationId", locationId)
+      .eq("active", true),
+    client
+      .from("workCentersWithBlockingStatus")
+      .select("id, isBlocked, blockingDispatchId, blockingDispatchReadableId")
+      .eq("locationId", locationId)
+      .eq("active", true)
+  ]);
+
+  if (workCentersResult.error) {
+    return workCentersResult;
+  }
+
+  // Create a map of blocking status by work center id
+  const blockingStatusMap = new Map(
+    blockingStatusResult.data?.map((wc) => [wc.id, wc]) ?? []
+  );
+
+  // Merge the data
+  const mergedData = workCentersResult.data?.map((wc) => {
+    const blockingStatus = blockingStatusMap.get(wc.id);
+    return {
+      ...wc,
+      isBlocked: blockingStatus?.isBlocked ?? false,
+      blockingDispatchId: blockingStatus?.blockingDispatchId ?? null,
+      blockingDispatchReadableId:
+        blockingStatus?.blockingDispatchReadableId ?? null
+    };
+  });
+
+  return { data: mergedData, error: null };
 }
 
 export async function getWorkCentersList(
@@ -633,6 +1000,18 @@ export async function getWorkCentersList(
 ) {
   return client
     .from("workCenters")
+    .select("*")
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .order("name");
+}
+
+export async function getWorkCentersListWithBlockingStatus(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("workCentersWithBlockingStatus")
     .select("*")
     .eq("companyId", companyId)
     .eq("active", true)
@@ -842,6 +1221,33 @@ export async function upsertEmployeeAbility(
     .single();
 }
 
+export async function upsertFailureMode(
+  client: SupabaseClient<Database>,
+  failureMode:
+    | (Omit<z.infer<typeof failureModeValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof failureModeValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in failureMode) {
+    return client
+      .from("maintenanceFailureMode")
+      .insert([failureMode])
+      .select("id");
+  } else {
+    return client
+      .from("maintenanceFailureMode")
+      .update(sanitize(failureMode))
+      .eq("id", failureMode.id);
+  }
+}
+
 export async function upsertLocation(
   client: SupabaseClient<Database>,
   location:
@@ -865,6 +1271,192 @@ export async function upsertLocation(
   return client.from("location").insert([location]).select("*").single();
 }
 
+export async function upsertMaintenanceDispatch(
+  client: SupabaseClient<Database>,
+  dispatch:
+    | (Omit<z.infer<typeof maintenanceDispatchValidator>, "id"> & {
+        maintenanceDispatchId: string;
+        companyId: string;
+        createdBy: string;
+        content?: Json;
+      })
+    | (Omit<z.infer<typeof maintenanceDispatchValidator>, "id" | "assignee"> & {
+        id: string;
+        assignee: string | null;
+        updatedBy: string;
+        content?: Json;
+      })
+) {
+  if ("createdBy" in dispatch) {
+    return client
+      .from("maintenanceDispatch")
+      .insert([dispatch])
+      .select("id")
+      .single();
+  } else {
+    return client
+      .from("maintenanceDispatch")
+      .update(sanitize(dispatch))
+      .eq("id", dispatch.id);
+  }
+}
+
+export async function upsertMaintenanceDispatchComment(
+  client: SupabaseClient<Database>,
+  comment:
+    | (Omit<z.infer<typeof maintenanceDispatchCommentValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof maintenanceDispatchCommentValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+      })
+) {
+  if ("createdBy" in comment) {
+    return client
+      .from("maintenanceDispatchComment")
+      .insert([comment])
+      .select("id")
+      .single();
+  } else {
+    return client
+      .from("maintenanceDispatchComment")
+      .update(sanitize(comment))
+      .eq("id", comment.id);
+  }
+}
+
+export async function upsertMaintenanceDispatchEvent(
+  client: SupabaseClient<Database>,
+  event:
+    | (Omit<z.infer<typeof maintenanceDispatchEventValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof maintenanceDispatchEventValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+      })
+) {
+  if ("createdBy" in event) {
+    return client
+      .from("maintenanceDispatchEvent")
+      .insert([event])
+      .select("id")
+      .single();
+  } else {
+    return client
+      .from("maintenanceDispatchEvent")
+      .update(sanitize(event))
+      .eq("id", event.id);
+  }
+}
+
+export async function upsertMaintenanceDispatchItem(
+  client: SupabaseClient<Database>,
+  item:
+    | (Omit<z.infer<typeof maintenanceDispatchItemValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof maintenanceDispatchItemValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+      })
+) {
+  if ("createdBy" in item) {
+    return client
+      .from("maintenanceDispatchItem")
+      .insert([item])
+      .select("id")
+      .single();
+  } else {
+    return client
+      .from("maintenanceDispatchItem")
+      .update(sanitize(item))
+      .eq("id", item.id);
+  }
+}
+
+export async function upsertMaintenanceDispatchWorkCenter(
+  client: SupabaseClient<Database>,
+  workCenter:
+    | (Omit<z.infer<typeof maintenanceDispatchWorkCenterValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof maintenanceDispatchWorkCenterValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+      })
+) {
+  if ("createdBy" in workCenter) {
+    return client
+      .from("maintenanceDispatchWorkCenter")
+      .insert([workCenter])
+      .select("id")
+      .single();
+  } else {
+    return client
+      .from("maintenanceDispatchWorkCenter")
+      .update(sanitize(workCenter))
+      .eq("id", workCenter.id);
+  }
+}
+
+export async function upsertMaintenanceSchedule(
+  client: SupabaseClient<Database>,
+  schedule:
+    | (Omit<z.infer<typeof maintenanceScheduleValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof maintenanceScheduleValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+      })
+) {
+  if ("createdBy" in schedule) {
+    return client
+      .from("maintenanceSchedule")
+      .insert([schedule])
+      .select("id")
+      .single();
+  } else {
+    return client
+      .from("maintenanceSchedule")
+      .update(sanitize(schedule))
+      .eq("id", schedule.id);
+  }
+}
+
+export async function upsertMaintenanceScheduleItem(
+  client: SupabaseClient<Database>,
+  item:
+    | (Omit<z.infer<typeof maintenanceScheduleItemValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof maintenanceScheduleItemValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+      })
+) {
+  if ("createdBy" in item) {
+    return client
+      .from("maintenanceScheduleItem")
+      .insert([item])
+      .select("id")
+      .single();
+  } else {
+    return client
+      .from("maintenanceScheduleItem")
+      .update(sanitize(item))
+      .eq("id", item.id);
+  }
+}
+
 export async function upsertPartner(
   client: SupabaseClient<Database>,
   partner:
@@ -882,8 +1474,7 @@ export async function upsertPartner(
     return client
       .from("partner")
       .update(sanitize(partner))
-      .eq("id", partner.id)
-      .eq("abilityId", partner.abilityId);
+      .eq("id", partner.id);
   } else {
     return await client.from("partner").insert([partner]);
   }

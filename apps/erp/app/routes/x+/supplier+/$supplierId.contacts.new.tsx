@@ -12,7 +12,7 @@ import type {
   ActionFunctionArgs,
   ClientActionFunctionArgs
 } from "react-router";
-import { data, json, redirect, useNavigate, useParams } from "react-router";
+import { data, redirect, useNavigate, useParams } from "react-router";
 import {
   insertSupplierContact,
   supplierContactValidator

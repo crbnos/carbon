@@ -83,12 +83,22 @@ export const digitalQuoteValidator = z.object({
   digitalQuoteIncludesPurchaseOrders: zfd.checkbox()
 });
 
+export const jobCompletedValidator = z.object({
+  inventoryJobCompletedNotificationGroup: z.array(z.string()).optional(),
+  salesJobCompletedNotificationGroup: z.array(z.string()).optional()
+});
+
 export const kanbanOutputValidator = z.object({
   kanbanOutput: z.enum(kanbanOutputTypes)
 });
 
 export const purchasePriceUpdateTimingValidator = z.object({
   purchasePriceUpdateTiming: z.enum(purchasePriceUpdateTimingTypes)
+});
+
+export const maintenanceSettingsValidator = z.object({
+  maintenanceGenerateInAdvance: zfd.checkbox(),
+  maintenanceAdvanceDays: zfd.numeric(z.number().min(1).max(90).default(7))
 });
 
 export const materialIdsValidator = z.object({
@@ -116,6 +126,21 @@ export const rfqReadyValidator = z.object({
 
 export const suggestionNotificationValidator = z.object({
   suggestionNotificationGroup: z
+    .array(z.string().min(1, { message: "Invalid selection" }))
+    .optional()
+});
+
+export const maintenanceDispatchNotificationValidator = z.object({
+  maintenanceDispatchNotificationGroup: z
+    .array(z.string().min(1, { message: "Invalid selection" }))
+    .optional(),
+  qualityDispatchNotificationGroup: z
+    .array(z.string().min(1, { message: "Invalid selection" }))
+    .optional(),
+  operationsDispatchNotificationGroup: z
+    .array(z.string().min(1, { message: "Invalid selection" }))
+    .optional(),
+  otherDispatchNotificationGroup: z
     .array(z.string().min(1, { message: "Invalid selection" }))
     .optional()
 });

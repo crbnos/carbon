@@ -101,9 +101,11 @@ export const inventoryAdjustmentValidator = z.object({
   itemId: z.string().min(1, { message: "Item ID is required" }),
   locationId: z.string().min(1, { message: "Location is required" }),
   shelfId: zfd.text(z.string().optional()),
+  originalShelfId: zfd.text(z.string().optional()),
   adjustmentType: z.enum([...itemLedgerTypes, "Set Quantity"]),
   quantity: zfd.numeric(z.number()),
-  trackedEntityId: zfd.text(z.string().optional())
+  trackedEntityId: zfd.text(z.string().optional()),
+  readableId: zfd.text(z.string().optional())
 });
 
 export const itemLedgerValidator = z.object({

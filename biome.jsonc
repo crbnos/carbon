@@ -59,7 +59,8 @@
         "noUnreachable": "warn",
         "noUnreachableSuper": "warn",
         "noUnusedLabels": "warn",
-        "noUnusedVariables": "warn",
+        "noUnusedVariables": "error",
+        "noUnusedImports": "error",
         "useExhaustiveDependencies": "warn",
         "useHookAtTopLevel": "error",
         "useIsNan": "warn",
@@ -92,9 +93,6 @@
         "noUnsafeNegation": "warn",
         "useGetterReturn": "warn",
         "useIterableCallbackReturn": "warn"
-      },
-      "nursery": {
-        "noShadow": "warn"
       }
     }
   },

@@ -63,7 +63,10 @@ const Breadcrumbs = () => {
       if (!result.success || !result.data.handle.breadcrumb) return null;
 
       return {
-        breadcrumb: result.data.handle.breadcrumb,
+        breadcrumb:
+          typeof result.data.handle.breadcrumb === "function"
+            ? result.data.handle.breadcrumb(m.params)
+            : result.data.handle.breadcrumb,
         to: result.data.handle?.to ?? m.pathname
       };
     })

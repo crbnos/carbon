@@ -687,6 +687,7 @@ export async function getMaterialUsedIn(
   const [
     issues,
     jobMaterials,
+    maintenanceDispatchItems,
     methodMaterials,
     purchaseOrderLines,
     receiptLines,
@@ -707,6 +708,15 @@ export async function getMaterialUsedIn(
     client
       .from("jobMaterial")
       .select("id, methodType, ...job(documentReadableId:jobId, documentId:id)")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId)
+      .limit(100)
+      .order("createdAt", { ascending: false }),
+    client
+      .from("maintenanceDispatchItem")
+      .select(
+        "id, ...maintenanceDispatch!maintenanceDispatchId(documentReadableId:maintenanceDispatchId, documentId:id)"
+      )
       .eq("itemId", itemId)
       .eq("companyId", companyId)
       .limit(100)
@@ -772,6 +782,7 @@ export async function getMaterialUsedIn(
   return {
     issues: issues.data ?? [],
     jobMaterials: jobMaterials.data ?? [],
+    maintenanceDispatchItems: maintenanceDispatchItems.data ?? [],
     methodMaterials: methodMaterials.data ?? [],
     purchaseOrderLines: purchaseOrderLines.data ?? [],
     receiptLines: receiptLines.data ?? [],
@@ -1395,6 +1406,7 @@ export async function getPartUsedIn(
     issues,
     jobMaterials,
     jobs,
+    maintenanceDispatchItems,
     methodMaterials,
     purchaseOrderLines,
     receiptLines,
@@ -1423,6 +1435,15 @@ export async function getPartUsedIn(
     client
       .from("job")
       .select("id, documentReadableId:jobId")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId)
+      .limit(100)
+      .order("createdAt", { ascending: false }),
+    client
+      .from("maintenanceDispatchItem")
+      .select(
+        "id, ...maintenanceDispatch!maintenanceDispatchId(documentReadableId:maintenanceDispatchId, documentId:id)"
+      )
       .eq("itemId", itemId)
       .eq("companyId", companyId)
       .limit(100)
@@ -1500,6 +1521,7 @@ export async function getPartUsedIn(
     issues: issues.data ?? [],
     jobMaterials: jobMaterials.data ?? [],
     jobs: jobs.data ?? [],
+    maintenanceDispatchItems: maintenanceDispatchItems.data ?? [],
     methodMaterials: methodMaterials.data ?? [],
     purchaseOrderLines: purchaseOrderLines.data ?? [],
     receiptLines: receiptLines.data ?? [],

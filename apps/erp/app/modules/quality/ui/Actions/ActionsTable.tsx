@@ -142,7 +142,19 @@ const ActionsTable = memo(
         {
           accessorKey: "dueDate",
           header: "Due Date",
-          cell: ({ row }) => formatDate(row.original.dueDate),
+          cell: ({ row }) => {
+            const isOverdue =
+              // @ts-ignore
+              !["Completed", "Skipped"].includes(row.original.status) &&
+              row.original.nonConformanceStatus !== "Closed" &&
+              row.original.dueDate &&
+              new Date(row.original.dueDate) < new Date();
+            return (
+              <span className={isOverdue ? "text-red-500" : ""}>
+                {formatDate(row.original.dueDate)}
+              </span>
+            );
+          },
           meta: {
             icon: <LuCalendar />
           }

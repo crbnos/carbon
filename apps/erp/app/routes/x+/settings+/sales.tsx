@@ -230,7 +230,15 @@ export default function SalesSettingsRoute() {
               </div>
             </CardContent>
             <CardFooter>
-              <Submit>Save</Submit>
+              <Submit
+                isDisabled={fetcher.state !== "idle"}
+                isLoading={
+                  fetcher.state !== "idle" &&
+                  fetcher.formData?.get("intent") === "digitalQuote"
+                }
+              >
+                Save
+              </Submit>
             </CardFooter>
           </ValidatedForm>
         </Card>
@@ -263,7 +271,15 @@ export default function SalesSettingsRoute() {
               </div>
             </CardContent>
             <CardFooter>
-              <Submit>Save</Submit>
+              <Submit
+                isDisabled={fetcher.state !== "idle"}
+                isLoading={
+                  fetcher.state !== "idle" &&
+                  fetcher.formData?.get("intent") === "rfq"
+                }
+              >
+                Save
+              </Submit>
             </CardFooter>
           </ValidatedForm>
         </Card>

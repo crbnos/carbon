@@ -7,7 +7,20 @@ import type {
   getAbility,
   getContractors,
   getEmployeeAbilities,
+  getFailureMode,
+  getFailureModes,
   getLocations,
+  getMaintenanceDispatch,
+  getMaintenanceDispatchComments,
+  getMaintenanceDispatchEvents,
+  getMaintenanceDispatches,
+  getMaintenanceDispatchesByLocation,
+  getMaintenanceDispatchItems,
+  getMaintenanceDispatchWorkCenters,
+  getMaintenanceSchedule,
+  getMaintenanceScheduleItems,
+  getMaintenanceSchedules,
+  getMaintenanceSchedulesByLocation,
   getPartners,
   getProcesses,
   getSuggestion,
@@ -134,4 +147,56 @@ export type Suggestion = NonNullable<
 
 export type SuggestionListItem = NonNullable<
   Awaited<ReturnType<typeof getSuggestions>>["data"]
+>[number];
+
+export type FailureMode = NonNullable<
+  Awaited<ReturnType<typeof getFailureModes>>["data"]
+>[number];
+
+export type FailureModeDetail = NonNullable<
+  Awaited<ReturnType<typeof getFailureMode>>["data"]
+>;
+
+export type MaintenanceDispatch = NonNullable<
+  Awaited<ReturnType<typeof getMaintenanceDispatches>>["data"]
+>[number];
+
+export type MaintenanceDispatchDetail = NonNullable<
+  Awaited<ReturnType<typeof getMaintenanceDispatch>>["data"]
+>;
+
+export type MaintenanceDispatchComment = NonNullable<
+  Awaited<ReturnType<typeof getMaintenanceDispatchComments>>["data"]
+>[number];
+
+export type MaintenanceDispatchEvent = NonNullable<
+  Awaited<ReturnType<typeof getMaintenanceDispatchEvents>>["data"]
+>[number];
+
+export type MaintenanceDispatchItem = NonNullable<
+  Awaited<ReturnType<typeof getMaintenanceDispatchItems>>["data"]
+>[number];
+
+export type MaintenanceDispatchWorkCenter = NonNullable<
+  Awaited<ReturnType<typeof getMaintenanceDispatchWorkCenters>>["data"]
+>[number];
+
+export type MaintenanceSchedule = NonNullable<
+  Awaited<ReturnType<typeof getMaintenanceSchedules>>["data"]
+>[number];
+
+export type MaintenanceScheduleDetail = NonNullable<
+  Awaited<ReturnType<typeof getMaintenanceSchedule>>["data"]
+>;
+
+export type MaintenanceScheduleItem = NonNullable<
+  Awaited<ReturnType<typeof getMaintenanceScheduleItems>>["data"]
+>[number];
+
+export type MaintenanceDispatchByLocation = NonNullable<
+  Awaited<ReturnType<typeof getMaintenanceDispatchesByLocation>>["data"]
+>[number];
+
+export type MaintenanceScheduleByLocation = NonNullable<
+  Awaited<ReturnType<typeof getMaintenanceSchedulesByLocation>>["data"]
 >[number];

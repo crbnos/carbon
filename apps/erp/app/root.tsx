@@ -30,14 +30,14 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-  useLoaderData,
-  useRouteError
+  useLoaderData
 } from "react-router";
 import { getMode, setMode } from "~/services/mode.server";
 import Background from "~/styles/background.css?url";
 import NProgress from "~/styles/nprogress.css?url";
 import Tailwind from "~/styles/tailwind.css?url";
 import "./polyfill";
+import type { Route } from "./+types/root";
 import { getTheme } from "./services/theme.server";
 
 export const links: LinksFunction = () => {
@@ -233,9 +233,7 @@ export default function App() {
   );
 }
 
-export function ErrorBoundary() {
-  const error = useRouteError();
-
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   const message = isRouteErrorResponse(error)
     ? (error.data.message ?? error.data)
     : error instanceof Error

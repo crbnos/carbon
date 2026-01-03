@@ -13,12 +13,12 @@ export const path = {
     api: {
       batchNumbers: (itemId: string) =>
         generatePath(`${api}/batch-numbers?itemId=${itemId}`),
+      failureModes: `${api}/failure-modes`,
       serialNumbers: (itemId: string) =>
         generatePath(`${api}/serial-numbers?itemId=${itemId}`)
     },
     file: {
       jobTraveler: (id: string) => `${getAppUrl()}${file}/traveler/${id}.pdf`,
-
       operationLabelsPdf: (
         id: string,
         {
@@ -110,7 +110,15 @@ export const path = {
     location: `${x}/location`,
     login: "/login",
     logout: "/logout",
+    maintenance: `${x}/maintenance`,
+    maintenanceDetail: (id: string) => generatePath(`${x}/dispatch/${id}`),
+    maintenanceDispatchItem: (id: string) =>
+      generatePath(`${x}/dispatch/${id}/item`),
+    addAndIssueMaintenanceDispatchItem: (dispatchId: string) =>
+      generatePath(`${x}/dispatch/${dispatchId}/add-and-issue`),
+    maintenanceEvent: `${x}/maintenance-event`,
     messagingNotify: `${x}/proxy/api/messaging/notify`,
+    newMaintenanceDispatch: `${x}/dispatch/new`,
     onboarding: `${ERP_URL}/onboarding`,
     operation: (id: string) => generatePath(`${x}/operation/${id}`),
     operations: `${x}/operations?saved=1`,
@@ -134,7 +142,10 @@ export const path = {
     suggestion: `${x}/suggestion`,
     unconsume: `${x}/unconsume`,
     workCenter: (workCenter: string) =>
-      generatePath(`${x}/operations/${workCenter}`)
+      generatePath(`${x}/operations/${workCenter}`),
+    itemMaster: (itemId: string, type: string) =>
+      `${getAppUrl()}${x}/${type.toLowerCase()}/${itemId}/view/details`,
+    jobDetail: (id: string) => `${getAppUrl()}${x}/job/${id}/details`
   }
 } as const;
 

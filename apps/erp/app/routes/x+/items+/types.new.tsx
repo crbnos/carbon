@@ -7,7 +7,7 @@ import type {
   ClientActionFunctionArgs,
   LoaderFunctionArgs
 } from "react-router";
-import { data, json, redirect, useNavigate } from "react-router";
+import { data, redirect, useNavigate } from "react-router";
 import { materialTypeValidator, upsertMaterialType } from "~/modules/items";
 import MaterialTypeForm from "~/modules/items/ui/MaterialTypes/MaterialTypeForm";
 

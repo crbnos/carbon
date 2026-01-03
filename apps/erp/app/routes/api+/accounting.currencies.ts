@@ -1,8 +1,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type {
   ClientLoaderFunctionArgs,
-  LoaderFunctionArgs,
-  SerializeFrom
+  LoaderFunctionArgs
 } from "react-router";
 import { getCurrenciesList } from "~/modules/accounting";
 import { currenciesQuery } from "~/utils/react-query";
@@ -15,9 +14,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function clientLoader({ serverLoader }: ClientLoaderFunctionArgs) {
   const query = currenciesQuery();
-  const data = window?.clientCache?.getQueryData<SerializeFrom<typeof loader>>(
-    query.queryKey
-  );
+  const data = window?.clientCache?.getQueryData<typeof loader>(query.queryKey);
 
   if (!data) {
     const serverData = await serverLoader<typeof loader>();

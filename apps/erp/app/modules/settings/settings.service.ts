@@ -588,6 +588,22 @@ export async function updateSuggestionNotificationSetting(
     .eq("id", companyId);
 }
 
+export async function updateMaintenanceDispatchNotificationSettings(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  settings: {
+    maintenanceDispatchNotificationGroup?: string[];
+    qualityDispatchNotificationGroup?: string[];
+    operationsDispatchNotificationGroup?: string[];
+    otherDispatchNotificationGroup?: string[];
+  }
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize(settings))
+    .eq("id", companyId);
+}
+
 export async function updateSupplierQuoteNotificationSetting(
   client: SupabaseClient<Database>,
   companyId: string,

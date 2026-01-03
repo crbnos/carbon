@@ -46,7 +46,8 @@ import {
   LuMoon,
   LuShieldCheck,
   LuSun,
-  LuUser
+  LuUser,
+  LuWrench
 } from "react-icons/lu";
 import { Form, Link, useFetcher, useLocation } from "react-router";
 import { useUser } from "~/hooks";
@@ -59,6 +60,7 @@ import Suggestion from "./Suggestion";
 
 export function AppSidebar({
   activeEvents,
+  activeMaintenanceCount,
   company,
   companies,
   location,
@@ -66,6 +68,7 @@ export function AppSidebar({
   ...props
 }: ComponentProps<typeof Sidebar> & {
   activeEvents: number;
+  activeMaintenanceCount: number;
   company: Company;
   companies: Company[];
   location: string;
@@ -78,6 +81,7 @@ export function AppSidebar({
       </SidebarHeader>
       <SidebarContent>
         <OperationsNav activeEvents={activeEvents} />
+        <MaintenanceNav activeMaintenanceCount={activeMaintenanceCount} />
         <ToolsNav />
       </SidebarContent>
       <SidebarFooter>
@@ -193,6 +197,40 @@ export function OperationsNav({ activeEvents }: { activeEvents: number }) {
             </SidebarMenuItem>
           );
         })}
+      </SidebarMenu>
+    </SidebarGroup>
+  );
+}
+
+export function MaintenanceNav({
+  activeMaintenanceCount
+}: {
+  activeMaintenanceCount: number;
+}) {
+  const { pathname } = useLocation();
+  const { isMobile, setOpenMobile } = useSidebar();
+  const isActive = pathname.includes(path.to.maintenance);
+
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel>Maintenance</SidebarGroupLabel>
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton tooltip="Maintenance" isActive={isActive} asChild>
+            <Link
+              to={path.to.maintenance}
+              onClick={() => isMobile && setOpenMobile(false)}
+            >
+              <LuWrench />
+              <span>Dispatches</span>
+              {activeMaintenanceCount > 0 && (
+                <span className="ml-auto text-muted-foreground text-sm">
+                  {activeMaintenanceCount}
+                </span>
+              )}
+            </Link>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
       </SidebarMenu>
     </SidebarGroup>
   );

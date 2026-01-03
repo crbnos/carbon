@@ -1,16 +1,21 @@
-import { handleRequest } from "@vercel/react-router/entry.server";
-import { type EntryContext } from "react-router";
+import { handleRequest as vercelHandleRequest } from "@vercel/react-router/entry.server";
+import type { EntryContext, RouterContextProvider } from "react-router";
 
-export default async function (
+export const streamTimeout = 5_000;
+
+export default function handleRequest(
   request: Request,
   responseStatusCode: number,
   responseHeaders: Headers,
-  reactRouterContext: EntryContext
+  routerContext: EntryContext,
+  _loadContext: RouterContextProvider // RouterContextProvider when v8_middleware is turned on
 ) {
-  return handleRequest(
+  return vercelHandleRequest(
     request,
     responseStatusCode,
     responseHeaders,
-    reactRouterContext
+    routerContext,
+    // @ts-expect-error
+    _loadContext // Vercel's handler still expecting AppLoadContext type
   );
 }

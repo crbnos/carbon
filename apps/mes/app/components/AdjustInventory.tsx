@@ -132,7 +132,8 @@ export function AdjustInventory({ add }: { add: boolean }) {
               <ModalHeader>
                 <ModalTitle>{add ? "Add" : "Remove"} Inventory</ModalTitle>
                 <ModalDescription>
-                  Manually {add ? "add" : "remove"} items to inventory
+                  Manually {add ? "add" : "remove"} items {add ? "to" : "from"}{" "}
+                  inventory
                 </ModalDescription>
               </ModalHeader>
               <ModalBody>

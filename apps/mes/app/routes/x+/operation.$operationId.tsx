@@ -113,12 +113,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     job: job.data,
     jobMakeMethod: jobMakeMethod.data,
     kanban: kanban.data,
-    files: getJobFiles(
-      serviceRole,
-      companyId,
-      job.data,
-      operation.data?.[0].itemId
-    ),
+    files: getJobFiles(serviceRole, companyId, job.data, operation.data),
     materials: getJobMaterialsByOperationId(serviceRole, {
       operation: operation.data?.[0],
       trackedEntityId: trackedEntityId ?? trackedEntities?.data?.[0]?.id,

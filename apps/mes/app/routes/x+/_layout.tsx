@@ -6,6 +6,7 @@ import {
   getCompanies,
   getUser
 } from "@carbon/auth";
+
 import {
   destroyAuthSession,
   requireAuthSession
@@ -22,6 +23,7 @@ import { Edition } from "@carbon/utils";
 import posthog from "posthog-js";
 import type {
   LoaderFunctionArgs,
+  MiddlewareFunction,
   ShouldRevalidateFunction
 } from "react-router";
 import {
@@ -33,7 +35,9 @@ import {
 } from "react-router";
 import { AppSidebar } from "~/components";
 import RealtimeDataProvider from "~/components/RealtimeDataProvider";
-import { getLocation, setLocation } from "~/services/location.server";
+import { userContext } from "~/context";
+import { userMiddleware } from "~/middleware/user";
+import { getActiveMaintenanceEventsCount } from "~/services/maintenance.service";
 import {
   getActiveJobCount,
   getLocationsByCompany
@@ -54,7 +58,9 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
   return defaultShouldRevalidate;
 };
 
-export async function loader({ request }: LoaderFunctionArgs) {
+export const middleware: MiddlewareFunction[] = [userMiddleware];
+
+export async function loader({ request, context }: LoaderFunctionArgs) {
   const { accessToken, companyId, expiresAt, expiresIn, userId } =
     await requireAuthSession(request, { verify: true });
 
@@ -76,19 +82,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw redirect(path.to.accountSettings);
   }
 
-  let [storedLocations, companyPlan, locations, activeEvents] =
-    await Promise.all([
-      getLocation(request, client, {
-        companyId,
-        userId
-      }),
-      getStripeCustomerByCompanyId(companyId, userId),
-      getLocationsByCompany(client, companyId),
-      getActiveJobCount(client, {
-        employeeId: userId,
-        companyId
-      })
-    ]);
+  // Get the location from middleware context
+  const locationId = context.get(userContext)?.locationId;
+
+  let [companyPlan, locations, activeEvents] = await Promise.all([
+    getStripeCustomerByCompanyId(companyId, userId),
+    getLocationsByCompany(client, companyId),
+    getActiveJobCount(client, {
+      employeeId: userId,
+      companyId
+    })
+  ]);
+
+  // Get active maintenance count after we have the location
+  const activeMaintenanceCount = await getActiveMaintenanceEventsCount(
+    client,
+    locationId
+  );
 
   if (!companyPlan && CarbonEdition === Edition.Cloud) {
     throw redirect(path.to.onboarding);
@@ -98,35 +108,28 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw new Error(`No locations found for ${company.name}`);
   }
 
-  return data(
-    {
-      session: {
-        accessToken,
-        expiresIn,
-        expiresAt
-      },
-      activeEvents: activeEvents.data ?? 0,
-      company,
-      companies: companies.data ?? [],
-      location: storedLocations.location,
-      locations: locations.data ?? [],
-      plan: companyPlan?.planId,
-      user: user.data
+  return data({
+    session: {
+      accessToken,
+      expiresIn,
+      expiresAt
     },
-    storedLocations.updated
-      ? {
-          headers: {
-            "Set-Cookie": setLocation(companyId, storedLocations.location)
-          }
-        }
-      : undefined
-  );
+    activeEvents: activeEvents.data ?? 0,
+    activeMaintenanceCount: activeMaintenanceCount.count ?? 0,
+    company,
+    companies: companies.data ?? [],
+    location: locationId,
+    locations: locations.data ?? [],
+    plan: companyPlan?.planId,
+    user: user.data
+  });
 }
 
 export default function AuthenticatedRoute() {
   const {
     session,
     activeEvents,
+    activeMaintenanceCount,
     company,
     companies,
     location,
@@ -176,6 +179,7 @@ export default function AuthenticatedRoute() {
 
                 <AppSidebar
                   activeEvents={activeEvents}
+                  activeMaintenanceCount={activeMaintenanceCount}
                   company={company}
                   companies={companies}
                   location={location}

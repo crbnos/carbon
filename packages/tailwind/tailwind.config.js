@@ -98,6 +98,7 @@ export default {
       fontFamily: {
         sans: ["Geist Variable", ...fontFamily.sans],
         mono: ["Geist Mono Variable", ...fontFamily.mono],
+        headline: ["Geist Variable", ...fontFamily.sans],
       },
       keyframes: {
         "accordion-down": {

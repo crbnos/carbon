@@ -97,6 +97,8 @@ function getNotificationEvent(table: string): NotificationEvent | null {
       return NotificationEvent.JobCompleted;
     case "jobOperation":
       return NotificationEvent.JobOperationAssignment;
+    case "maintenanceDispatch":
+      return NotificationEvent.MaintenanceDispatchAssignment;
     case "nonConformanceInvestigationTask":
     case "nonConformanceActionTask":
     case "nonConformanceApprovalTask":

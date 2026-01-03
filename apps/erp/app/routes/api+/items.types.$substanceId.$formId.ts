@@ -1,8 +1,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type {
   ClientLoaderFunctionArgs,
-  LoaderFunctionArgs,
-  SerializeFrom
+  LoaderFunctionArgs
 } from "react-router";
 import { data } from "react-router";
 import { getMaterialTypeList } from "~/modules/items";
@@ -44,9 +43,9 @@ export async function clientLoader({
     params.formId,
     companyId
   );
-  const data = window?.clientCache?.getQueryData<SerializeFrom<typeof loader>>(
-    query.queryKey
-  );
+  const data = window?.clientCache?.getQueryData<
+    Awaited<ReturnType<typeof loader>>
+  >(query.queryKey);
 
   if (!data) {
     const serverData = await serverLoader<typeof loader>();

@@ -56,6 +56,44 @@ export const jobOperationStatus = [
   "Canceled"
 ] as const;
 
+export const maintenanceDispatchPriority = [
+  "Low",
+  "Medium",
+  "High",
+  "Critical"
+] as const;
+
+export const maintenanceDispatchStatus = [
+  "Open",
+  "Assigned",
+  "In Progress",
+  "Completed",
+  "Cancelled"
+] as const;
+
+export const maintenanceFrequency = [
+  "Daily",
+  "Weekly",
+  "Monthly",
+  "Quarterly",
+  "Annual"
+] as const;
+
+export const maintenanceSeverity = [
+  "Preventive",
+  "Operator Performed",
+  "Support Required",
+  "OEM Required"
+] as const;
+
+export const maintenanceSource = [
+  "Scheduled",
+  "Reactive",
+  "Non-Conformance"
+] as const;
+
+export const oeeImpact = ["Down", "Planned", "Impact", "No Impact"] as const;
+
 export const procedureStatus = ["Draft", "Active", "Archived"] as const;
 
 const baseJobValidator = z.object({
@@ -846,6 +884,95 @@ export const scheduleJobUpdateValidator = z.object({
 export const scrapReasonValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" })
+});
+
+export const failureModeValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" })
+});
+
+export const maintenanceDispatchValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  status: z.enum(maintenanceDispatchStatus),
+  priority: z.enum(maintenanceDispatchPriority),
+  severity: z.enum(maintenanceSeverity).optional(),
+  source: z.enum(maintenanceSource).optional(),
+  oeeImpact: z.enum(oeeImpact).optional(),
+  workCenterId: zfd.text(z.string().optional()),
+  suspectedFailureModeId: zfd.text(z.string().optional()),
+  plannedStartTime: zfd.text(z.string().optional()),
+  plannedEndTime: zfd.text(z.string().optional()),
+  assignee: zfd.text(z.string().optional()),
+  content: zfd.text(z.string().optional())
+});
+
+export const maintenanceDispatchCommentValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  maintenanceDispatchId: z.string().min(1, { message: "Dispatch is required" }),
+  comment: z.string().min(1, { message: "Comment is required" })
+});
+
+export const maintenanceDispatchEventValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    maintenanceDispatchId: z
+      .string()
+      .min(1, { message: "Dispatch is required" }),
+    employeeId: z.string().min(1, { message: "Employee is required" }),
+    workCenterId: z.string().min(1, { message: "Work center is required" }),
+    startTime: z.string().min(1, { message: "Start time is required" }),
+    endTime: zfd.text(z.string().optional()),
+    notes: zfd.text(z.string().optional())
+  })
+  .refine(
+    (data) => {
+      if (data.endTime) {
+        return new Date(data.startTime) < new Date(data.endTime);
+      }
+      return true;
+    },
+    {
+      message: "Start time must be before end time",
+      path: ["endTime"]
+    }
+  );
+
+export const maintenanceDispatchItemValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  maintenanceDispatchId: z.string().min(1, { message: "Dispatch is required" }),
+  itemId: z.string().min(1, { message: "Item is required" }),
+  quantity: zfd.numeric(z.number().min(1)),
+  unitOfMeasureCode: z
+    .string()
+    .min(1, { message: "Unit of measure is required" }),
+  unitCost: zfd.numeric(z.number().min(0).optional())
+});
+
+export const maintenanceDispatchWorkCenterValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  maintenanceDispatchId: z.string().min(1, { message: "Dispatch is required" }),
+  workCenterId: z.string().min(1, { message: "Work center is required" })
+});
+
+export const maintenanceScheduleValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" }),
+  description: zfd.text(z.string().optional()),
+  workCenterId: z.string().min(1, { message: "Work center is required" }),
+  frequency: z.enum(maintenanceFrequency),
+  priority: z.enum(maintenanceDispatchPriority),
+  estimatedDuration: zfd.numeric(z.number().optional()),
+  active: zfd.checkbox()
+});
+
+export const maintenanceScheduleItemValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  maintenanceScheduleId: z.string().min(1, { message: "Schedule is required" }),
+  itemId: z.string().min(1, { message: "Item is required" }),
+  quantity: zfd.numeric(z.number().min(1)),
+  unitOfMeasureCode: z
+    .string()
+    .min(1, { message: "Unit of measure is required" })
 });
 
 export const demandProjectionValidator = z.object({

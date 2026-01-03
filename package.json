@@ -70,7 +70,8 @@
     "tool:new": "tsx scripts/create-tool.ts",
     "agent:new": "tsx scripts/create-agent.ts",
     "types": "turbo run types",
-    "typecheck": "tsgo --noEmit"
+    "typecheck": "tsgo --noEmit",
+    "typegen": "turbo run typegen"
   },
   "workspaces": [
     "apps/*",
@@ -81,7 +82,7 @@
   "packageManager": "npm@10.8.2",
   "dependencies": {
     "@opentelemetry/semantic-conventions": "^1.38.0",
-    "@react-router/remix-routes-option-adapter": "^7.10.1",
+    "@react-router/remix-routes-option-adapter": "^7.3.0",
     "fast-uri": "^3.1.0",
     "fdir": "^6.5.0",
     "remix-flat-routes": "^0.8.5",

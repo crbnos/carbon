@@ -161,7 +161,15 @@ export default function ItemsSettingsRoute() {
               </div>
             </CardContent>
             <CardFooter>
-              <Submit>Save</Submit>
+              <Submit
+                isDisabled={fetcher.state !== "idle"}
+                isLoading={
+                  fetcher.state !== "idle" &&
+                  fetcher.formData?.get("intent") === "materialIds"
+                }
+              >
+                Save
+              </Submit>
             </CardFooter>
           </ValidatedForm>
         </Card>
@@ -192,7 +200,15 @@ export default function ItemsSettingsRoute() {
               </div>
             </CardContent>
             <CardFooter>
-              <Submit>Save</Submit>
+              <Submit
+                isDisabled={fetcher.state !== "idle"}
+                isLoading={
+                  fetcher.state !== "idle" &&
+                  fetcher.formData?.get("intent") === "materialUnits"
+                }
+              >
+                Save
+              </Submit>
             </CardFooter>
           </ValidatedForm>
         </Card>

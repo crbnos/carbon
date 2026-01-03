@@ -1,4 +1,6 @@
 import {
+  LuCalendarClock,
+  LuCircleAlert,
   LuClipboardCheck,
   LuCog,
   LuGraduationCap,
@@ -11,6 +13,28 @@ import type { RouteGroup } from "~/types";
 import { path } from "~/utils/path";
 
 const resourcesRoutes: RouteGroup[] = [
+  {
+    name: "Maintenance",
+    routes: [
+      {
+        name: "Dispatches",
+        to: path.to.maintenanceDispatches,
+        icon: <LuWrench />,
+        table: "maintenanceDispatch"
+      },
+      {
+        name: "Schedules",
+        to: path.to.maintenanceSchedules,
+        icon: <LuCalendarClock />,
+        table: "maintenanceSchedule"
+      },
+      {
+        name: "Failure Modes",
+        to: path.to.failureModes,
+        icon: <LuCircleAlert />
+      }
+    ]
+  },
   {
     name: "Infrastructure",
     routes: [

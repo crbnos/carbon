@@ -1,10 +1,7 @@
-import { data, json } from "react-router";
+import { data } from "react-router";
 import type { FORM_DEFAULTS_FIELD } from "./internal/constants";
 import { formDefaultValuesKey } from "./internal/constants";
-import type {
-  ValidationErrorResponseData,
-  ValidatorError
-} from "./validation/types";
+import type { ValidatorError } from "./validation/types";
 
 /**
  * Takes the errors from a `Validator` and returns a `Response`.

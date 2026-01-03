@@ -59,6 +59,8 @@ export const notifyTask = task({
       switch (type) {
         case NotificationEvent.JobAssignment:
         case NotificationEvent.JobOperationAssignment:
+        case NotificationEvent.MaintenanceDispatchAssignment:
+        case NotificationEvent.MaintenanceDispatchCreated:
         case NotificationEvent.NonConformanceAssignment:
         case NotificationEvent.ProcedureAssignment:
         case NotificationEvent.PurchaseInvoiceAssignment:
@@ -133,6 +135,33 @@ export const notifyTask = task({
           }
 
           return `Sales Order ${salesOrder?.data?.salesOrderId} assigned to you`;
+
+        case NotificationEvent.MaintenanceDispatchCreated:
+          const maintenanceDispatchCreated = await client
+            .from("maintenanceDispatch")
+            .select("*")
+            .eq("id", documentId)
+            .single();
+            
+          if (maintenanceDispatchCreated.error) {
+            console.error("Failed to get maintenanceDispatchCreated", maintenanceDispatchCreated.error);
+            throw maintenanceDispatchCreated.error;
+          }
+
+          return `New maintenance dispatch ${maintenanceDispatchCreated?.data?.maintenanceDispatchId} created`;
+        case NotificationEvent.MaintenanceDispatchAssignment:
+          const maintenanceDispatchAssignment = await client
+            .from("maintenanceDispatch")
+            .select("*")
+            .eq("id", documentId)
+            .single();
+            
+          if (maintenanceDispatchAssignment.error) {
+            console.error("Failed to get maintenanceDispatchAssignment", maintenanceDispatchAssignment.error);
+            throw maintenanceDispatchAssignment.error;
+          }
+
+          return `Maintenance dispatch ${maintenanceDispatchAssignment?.data?.maintenanceDispatchId} assigned to you`;
 
         case NotificationEvent.NonConformanceAssignment:
           const nonConformance = await client
@@ -305,6 +334,33 @@ export const notifyTask = task({
           }
 
           return `Risk "${risk?.data?.title}" assigned to you`;
+
+        case NotificationEvent.MaintenanceDispatchAssignment:
+        case NotificationEvent.MaintenanceDispatchCreated:
+          const maintenanceDispatch = await client
+            .from("maintenanceDispatch")
+            .select("*, workCenter(id, name)")
+            .eq("id", documentId)
+            .single();
+
+          if (maintenanceDispatch.error) {
+            console.error(
+              "Failed to get maintenanceDispatch",
+              maintenanceDispatch.error
+            );
+            throw maintenanceDispatch.error;
+          }
+
+          const workCenterName =
+            maintenanceDispatch.data?.workCenter?.name ?? "Unknown";
+          const dispatchId =
+            maintenanceDispatch.data?.maintenanceDispatchId ?? documentId;
+
+          if (type === NotificationEvent.MaintenanceDispatchAssignment) {
+            return `Maintenance dispatch ${dispatchId} for ${workCenterName} assigned to you`;
+          } else {
+            return `New maintenance dispatch ${dispatchId} created for ${workCenterName}`;
+          }
 
         case NotificationEvent.SupplierQuoteResponse:
           const supplierQuote = await client

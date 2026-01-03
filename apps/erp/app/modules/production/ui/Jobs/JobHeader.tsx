@@ -48,6 +48,8 @@ import {
   LuClipboardList,
   LuClock,
   LuEllipsisVertical,
+  LuEye,
+  LuFile,
   LuHardHat,
   LuList,
   LuLoaderCircle,
@@ -225,6 +227,30 @@ const JobHeader = () => {
                   </DropdownMenuRadioItem>
                 ))}
               </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                leftIcon={<LuEye />}
+                variant="secondary"
+                rightIcon={<LuChevronDown />}
+              >
+                Preview
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem asChild>
+                <a
+                  target="_blank"
+                  href={path.to.file.jobTravelerByJobId(jobId)}
+                  rel="noreferrer"
+                >
+                  <DropdownMenuIcon icon={<LuFile />} />
+                  Job Traveler
+                </a>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 

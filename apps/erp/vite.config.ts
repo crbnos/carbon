@@ -3,7 +3,7 @@ import path from "node:path";
 import { defineConfig, PluginOption } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
-export default defineConfig({
+export default defineConfig(({ isSsrBuild }) => ({
   build: {
     minify: true,
     sourcemap: false,
@@ -15,6 +15,7 @@ export default defineConfig({
 
         defaultHandler(warning);
       },
+      ...(isSsrBuild && { input: "./server/app.ts" }),
     },
   },
   define: {
@@ -46,4 +47,4 @@ export default defineConfig({
       ),
     },
   },
-});
+}));

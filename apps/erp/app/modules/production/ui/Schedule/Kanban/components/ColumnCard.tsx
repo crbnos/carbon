@@ -3,7 +3,10 @@ import {
   IconButton,
   PulsingDot,
   ScrollArea,
-  ScrollBar
+  ScrollBar,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
 } from "@carbon/react";
 import { useUrlParams } from "@carbon/remix";
 import { formatDurationMilliseconds } from "@carbon/utils";
@@ -14,6 +17,8 @@ import { cva } from "class-variance-authority";
 import type { ComponentType } from "react";
 import { useMemo } from "react";
 import { LuGripVertical } from "react-icons/lu";
+import { Link } from "react-router";
+import { path } from "~/utils/path";
 import type { Column, Item, Progress } from "../types";
 import { ItemCard } from "./ItemCard";
 
@@ -99,14 +104,35 @@ export function ColumnCard({
           : `h-[calc(100dvh-var(--header-height)*2)]`
       )}
     >
-      <div className="p-4 w-full font-semibold text-left flex flex-row space-between items-center sticky top-0 bg-card z-1 border-b">
+      <div
+        className={cn(
+          "p-4 w-full font-semibold text-left flex flex-row space-between items-center sticky top-0 z-1 border-b",
+          column.isBlocked && column.blockingDispatchId
+            ? "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400"
+            : "bg-card"
+        )}
+      >
         <div className="flex flex-grow items-start space-x-2">
-          {column.active || !isDateView ? (
+          {!column.isBlocked && (column.active || !isDateView) ? (
             <PulsingDot inactive={!column.active} className="mt-2" />
           ) : null}
           <div className="flex flex-col flex-grow">
             <span className="mr-auto truncate"> {column.title}</span>
-            {!isDateView && totalDuration > 0 ? (
+            {column.isBlocked && column.blockingDispatchId ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link
+                    to={path.to.maintenanceDispatch(column.blockingDispatchId)}
+                    className="inline-flex items-center gap-1 text-xs font-normal"
+                  >
+                    <span>Blocked by {column.blockingDispatchReadableId}</span>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>View maintenance dispatch</p>
+                </TooltipContent>
+              </Tooltip>
+            ) : !isDateView && totalDuration > 0 ? (
               <span className="text-muted-foreground text-xs">
                 {formatDurationMilliseconds(totalDuration)}
               </span>

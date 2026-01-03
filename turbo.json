@@ -69,6 +69,10 @@
     "setup": {
       "cache": false,
       "outputs": []
+    },
+    "typegen": {
+      "cache": false,
+      "outputs": []
     }
   }
 }

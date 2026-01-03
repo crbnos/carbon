@@ -21,6 +21,7 @@ const payloadValidator = z.object({
   invoiceId: z.string(),
   userId: z.string(),
   companyId: z.string(),
+  skipReceiptPost: z.boolean().optional(),
 });
 
 serve(async (req: Request) => {
@@ -32,12 +33,14 @@ serve(async (req: Request) => {
   const today = format(new Date(), "yyyy-MM-dd");
 
   try {
-    const { invoiceId, userId, companyId } = payloadValidator.parse(payload);
+    const { invoiceId, userId, companyId, skipReceiptPost } =
+      payloadValidator.parse(payload);
 
     console.log({
       function: "post-purchase-invoice",
       invoiceId,
       userId,
+      skipReceiptPost,
     });
     const client = await getSupabaseServiceRole(
       req.headers.get("Authorization"),
@@ -311,9 +314,16 @@ serve(async (req: Request) => {
         case "Material":
         case "Tool":
           {
-            const itemTrackingType =
-              items.data.find((item) => item.id === invoiceLine.itemId)
-                ?.itemTrackingType ?? "Inventory";
+            const item = items.data.find((item) => item.id === invoiceLine.itemId);
+            const itemTrackingType = item?.itemTrackingType ?? "Inventory";
+
+            console.log({
+              invoiceLineItemId: invoiceLine.itemId,
+              foundItem: item,
+              itemTrackingType,
+              requiresSerialTracking: itemTrackingType === "Serial",
+              requiresBatchTracking: itemTrackingType === "Batch",
+            });
 
             itemPostingGroupId =
               itemCosts.data.find((item) => item.itemId === invoiceLine.itemId)
@@ -396,11 +406,15 @@ serve(async (req: Request) => {
                 shelfId: invoiceLine.shelfId,
                 unitOfMeasure: invoiceLine.inventoryUnitOfMeasureCode ?? "EA",
                 unitPrice: invoiceLine.unitPrice ?? 0,
+                requiresSerialTracking: itemTrackingType === "Serial",
+                requiresBatchTracking: itemTrackingType === "Batch",
                 createdBy: invoiceLine.createdBy,
                 companyId,
               });
 
-              if (itemTrackingType === "Inventory") {
+              // Only create item ledger entries if the receipt is being posted
+              // (not when skipReceiptPost is true, as entries will be created when the receipt is posted later)
+              if (itemTrackingType === "Inventory" && !skipReceiptPost) {
                 // create the part ledger line
                 itemLedgerInserts.push({
                   postingDate: today,
@@ -437,10 +451,11 @@ serve(async (req: Request) => {
               });
 
               // create the normal GL entries for a part
+              // When skipReceiptPost is true, use overhead accounts since inventory hasn't been received yet
 
               journalLineReference = nanoid();
 
-              if (itemTrackingType === "Inventory") {
+              if (itemTrackingType === "Inventory" && !skipReceiptPost) {
                 // debit the inventory account
                 journalLineInserts.push({
                   accountNumber: postingGroupInventory.inventoryAccount,
@@ -995,6 +1010,8 @@ serve(async (req: Request) => {
       db
     );
 
+    const createdReceiptIds: string[] = [];
+
     await db.transaction().execute(async (trx) => {
       if (receiptLineInserts.length > 0) {
         const receiptLinesGroupedByLocationId = receiptLineInserts.reduce<
@@ -1029,9 +1046,9 @@ serve(async (req: Request) => {
               sourceDocumentReadableId: purchaseInvoice.data.invoiceId,
               externalDocumentId: purchaseInvoice.data.supplierReference,
               supplierId: purchaseInvoice.data.supplierId,
-              status: "Posted",
-              postingDate: today,
-              postedBy: userId,
+              status: skipReceiptPost ? "Draft" : "Posted",
+              postingDate: skipReceiptPost ? null : today,
+              postedBy: skipReceiptPost ? null : userId,
               invoiced: true,
               companyId,
               createdBy: purchaseInvoice.data.createdBy,
@@ -1041,6 +1058,7 @@ serve(async (req: Request) => {
 
           const receiptId = receipt[0].id;
           if (!receiptId) throw new Error("Failed to insert receipt");
+          createdReceiptIds.push(receiptId);
 
           await trx
             .insertInto("receiptLine")
@@ -1171,6 +1189,7 @@ serve(async (req: Request) => {
     return new Response(
       JSON.stringify({
         success: true,
+        receiptIds: createdReceiptIds,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

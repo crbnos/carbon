@@ -145,10 +145,10 @@ const StockTransferLineForm = ({
                   label={itemType}
                   // @ts-ignore
                   type={itemType}
+                  onTypeChange={onTypeChange}
                   onChange={(value) => {
                     onItemChange(value?.value as string);
                   }}
-                  onTypeChange={onTypeChange}
                   value={itemId ?? undefined}
                 />
                 <Number

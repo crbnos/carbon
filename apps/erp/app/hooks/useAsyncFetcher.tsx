@@ -43,7 +43,7 @@ export function useAsyncFetcher<TData>(options?: FetcherOptions) {
     onStateChange(fetcher.state);
     if (fetcher.state === "idle") {
       if (fetcher.data) {
-        instance.current?.resolve(fetcher.data as TData); // I think we don't need to use SerializeFrom here
+        instance.current?.resolve(fetcher.data as TData);
         instance.current = Promise.withResolvers<TData>();
       }
     }

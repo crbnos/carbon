@@ -17,10 +17,14 @@ export function setMode(mode: Mode | "system") {
   if (mode === "system") {
     return cookie.serialize(cookieName, "", { path: "/", maxAge: -1 });
   } else {
-    return cookie.serialize(cookieName, mode, {
+    const cookieOptions: cookie.CookieSerializeOptions = {
       path: "/",
-      maxAge: 31536000,
-      domain: DOMAIN
-    });
+      maxAge: 31536000
+    };
+
+    if (DOMAIN && !DOMAIN.startsWith("localhost")) {
+      cookieOptions.domain = DOMAIN;
+    }
+    return cookie.serialize(cookieName, mode, cookieOptions);
   }
 }

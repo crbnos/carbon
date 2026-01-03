@@ -14,7 +14,8 @@ import {
   LuShoppingCart,
   LuSquareStack,
   LuSquareUser,
-  LuUsers
+  LuUsers,
+  LuWrench
 } from "react-icons/lu";
 import {
   RiProgress2Line,
@@ -53,6 +54,14 @@ function useCreate(): Route[] {
         name: "Job",
         to: path.to.newJob,
         icon: <LuHardHat />
+      });
+    }
+
+    if (permissions.can("create", "production")) {
+      links.push({
+        name: "Maintenance",
+        to: path.to.newMaintenanceDispatch,
+        icon: <LuWrench />
       });
     }
 

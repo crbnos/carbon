@@ -16,10 +16,10 @@ type ProcessSelectProps = Omit<ComboboxProps, "options" | "inline"> & {
 
 const ProcessPreview = (
   value: string,
-  options: { value: string; label: string }[]
+  options: { value: string; label: string | JSX.Element }[]
 ) => {
   const process = options.find((o) => o.value === value);
-  return <Enumerable value={process?.label ?? null} />;
+  return process?.label ?? null;
 };
 
 const Process = (props: ProcessSelectProps) => {
@@ -33,7 +33,10 @@ const Process = (props: ProcessSelectProps) => {
     <>
       <CreatableCombobox
         ref={triggerRef}
-        options={options}
+        options={options.map((o) => ({
+          value: o.value,
+          label: <Enumerable value={o.label} />
+        }))}
         {...props}
         inline={props.inline ? ProcessPreview : undefined}
         label={props?.label ?? "Work Center"}

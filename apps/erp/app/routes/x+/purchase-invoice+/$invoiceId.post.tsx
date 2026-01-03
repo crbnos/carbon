@@ -12,6 +12,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { invoiceId } = params;
   if (!invoiceId) throw new Error("invoiceId not found");
 
+  const formData = await request.formData();
+  const skipReceiptPost = formData.get("skipReceiptPost") === "true";
+
   const setPendingState = await client
     .from("purchaseInvoice")
     .update({
@@ -26,19 +29,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
     };
   }
 
+  let receiptIds: string[] | undefined;
+
   try {
     const serviceRole = await getCarbonServiceRole();
-    const postPurchaseInvoice = await serviceRole.functions.invoke(
-      "post-purchase-invoice",
-      {
-        body: {
-          invoiceId: invoiceId,
-          userId: userId,
-          companyId: companyId
-        },
-        region: FunctionRegion.UsEast1
-      }
-    );
+    const postPurchaseInvoice = await serviceRole.functions.invoke<{
+      receiptIds?: string[];
+    }>("post-purchase-invoice", {
+      body: {
+        invoiceId: invoiceId,
+        userId: userId,
+        companyId: companyId,
+        skipReceiptPost: skipReceiptPost
+      },
+      region: FunctionRegion.UsEast1
+    });
 
     if (postPurchaseInvoice.error) {
       await client
@@ -53,6 +58,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
         message: "Failed to post purchase invoice"
       };
     }
+
+    receiptIds = postPurchaseInvoice.data?.receiptIds;
 
     // Check if we should update prices on invoice post
     const companySettings = await getCompanySettings(serviceRole, companyId);
@@ -101,8 +108,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     };
   }
 
+  const receiptId =
+    skipReceiptPost && receiptIds?.[0] ? receiptIds[0] : undefined;
+
   return {
     success: true,
-    message: "Purchase invoice posted successfully"
+    message: "Purchase invoice posted successfully",
+    receiptId
   };
 }

@@ -126,6 +126,30 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
           ) : null}
         </span>
       );
+    case "Maintenance Consumption":
+      return (
+        <span>
+          issued {-1 * ledgerRecord.quantity} units{" "}
+          {ledgerRecord.shelf?.name ? `from ${ledgerRecord.shelf.name} ` : ""}
+          {ledgerRecord.trackedEntityId ? (
+            <>
+              from {Math.abs(ledgerRecord.quantity) > 1 ? "batch" : "serial"}{" "}
+              {ledgerRecord.trackedEntityId}{" "}
+            </>
+          ) : null}
+          {ledgerRecord.documentId ? (
+            <>
+              to a{" "}
+              <Hyperlink
+                className="inline-flex"
+                to={path.to.maintenanceDispatch(ledgerRecord.documentId!)}
+              >
+                maintenance dispatch
+              </Hyperlink>
+            </>
+          ) : null}
+        </span>
+      );
     case "Job Receipt":
       return (
         <>

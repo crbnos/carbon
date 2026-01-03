@@ -72,7 +72,7 @@ import type { ActiveProductionEvent } from "~/modules/production";
 import { getActiveProductionEvents, KPIs } from "~/modules/production";
 import { getDeadlineIcon } from "~/modules/production/ui/Jobs";
 import type { WorkCenter } from "~/modules/resources";
-import { getWorkCentersList } from "~/modules/resources";
+import { getWorkCentersListWithBlockingStatus } from "~/modules/resources";
 import { chartIntervals } from "~/modules/shared";
 import type { loader as kpiLoader } from "~/routes/api+/production.kpi.$key";
 import { path } from "~/utils/path";
@@ -110,7 +110,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .select("id,status,assignee")
       .eq("companyId", companyId)
       .eq("assignee", userId),
-    getWorkCentersList(client, companyId)
+    getWorkCentersListWithBlockingStatus(client, companyId)
   ]);
 
   return {
@@ -629,12 +629,18 @@ type JobOperationMetaData = {
   salesOrderReadableId?: string | null;
 };
 
+type WorkCenterWithBlocking = WorkCenter & {
+  isBlocked?: boolean | null;
+  blockingDispatchId?: string | null;
+  blockingDispatchReadableId?: string | null;
+};
+
 function WorkCenterCards({
   events: initialEvents,
   workCenters
 }: {
   events: ActiveProductionEvent[];
-  workCenters: WorkCenter[];
+  workCenters: WorkCenterWithBlocking[];
 }) {
   const [events, setEvents] = useState<ActiveProductionEvent[]>(initialEvents);
   const [jobOperationMetaData, setJobOperationMetaData] = useState<
@@ -819,19 +825,49 @@ function WorkCenterCards({
             ? new Date(dueDate) < new Date()
             : false;
 
+        const isBlocked = workCenter.isBlocked && workCenter.blockingDispatchId;
+
         return (
           <Card
             key={workCenter.id}
             className="p-0 h-[300px] col-span-6 lg:col-span-3 xl:col-span-2"
           >
-            <HStack className="justify-between w-full relative">
+            <HStack
+              className={cn(
+                "justify-between w-full relative rounded-t-lg",
+                isBlocked
+                  ? "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400"
+                  : ""
+              )}
+            >
               <CardHeader>
                 <CardTitle className="line-clamp-2 text-base">
                   {workCenter.name}
                 </CardTitle>
+                {isBlocked && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Link
+                        to={path.to.maintenanceDispatch(
+                          workCenter.blockingDispatchId!
+                        )}
+                        className="inline-flex items-center gap-1 text-xs font-normal"
+                      >
+                        <span>
+                          Blocked by {workCenter.blockingDispatchReadableId}
+                        </span>
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>View maintenance dispatch</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
               </CardHeader>
               <CardAction className="pt-2">
-                <PulsingDot inactive={!hasEvents} className="mt-2" />
+                {!isBlocked && (
+                  <PulsingDot inactive={!hasEvents} className="mt-2" />
+                )}
               </CardAction>
             </HStack>
             <CardContent className="flex items-start justify-start p-6 pt-3 border-t">

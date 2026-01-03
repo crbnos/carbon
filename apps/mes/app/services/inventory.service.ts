@@ -25,7 +25,7 @@ export async function getBatchNumbersForItem(
     .select("*")
     .eq("id", args.itemId)
     .single();
-  if (item.data?.type === "Material" && item.data.revision !== "0") {
+  if (item.data?.type === "Material") {
     const items = await client
       .from("item")
       .select("id")
@@ -63,11 +63,28 @@ export async function getSerialNumbersForItem(
     companyId: string;
   }
 ) {
+  let itemIds = [args.itemId];
+  const item = await client
+    .from("item")
+    .select("*")
+    .eq("id", args.itemId)
+    .single();
+  if (item.data?.type === "Material") {
+    const items = await client
+      .from("item")
+      .select("id")
+      .eq("readableId", item.data.readableId)
+      .eq("companyId", args.companyId);
+    if (items.data?.length) {
+      itemIds = items.data.map((item) => item.id);
+    }
+  }
+
   return client
     .from("trackedEntity")
     .select("*")
     .eq("sourceDocument", "Item")
-    .eq("sourceDocumentId", args.itemId)
+    .in("sourceDocumentId", itemIds)
     .eq("companyId", args.companyId)
     .eq("status", "Available")
     .gt("quantity", 0);

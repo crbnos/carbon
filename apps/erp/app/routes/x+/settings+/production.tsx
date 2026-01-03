@@ -18,9 +18,8 @@ import {
 import { useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useFetcher, useLoaderData } from "react-router";
-import { z } from "zod/v3";
 import { Users } from "~/components/Form";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings, jobCompletedValidator } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -28,11 +27,6 @@ export const handle: Handle = {
   breadcrumb: "Production",
   to: path.to.productionSettings
 };
-
-const jobCompletedValidator = z.object({
-  inventoryJobCompletedNotificationGroup: z.array(z.string()).optional(),
-  salesJobCompletedNotificationGroup: z.array(z.string()).optional()
-});
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

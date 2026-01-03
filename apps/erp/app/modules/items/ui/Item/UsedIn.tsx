@@ -57,6 +57,7 @@ export type UsedInKey =
   | "issues"
   | "jobMaterials"
   | "jobs"
+  | "maintenanceDispatchItems"
   | "methodMaterials"
   | "purchaseOrderLines"
   | "receiptLines"
@@ -470,6 +471,9 @@ function getUseInLink(
       return `${path.to.jobMaterials(
         child.documentId
       )}?filter=readableIdWithRevision:eq:${itemReadableIdWithRevision}`;
+    case "maintenanceDispatchItems":
+      if (!child.documentId) return "#";
+      return path.to.maintenanceDispatch(child.documentId);
     case "methodMaterials":
       if (!child.documentId || !child.itemType) return "#";
       return getPathToMakeMethod(

@@ -96,7 +96,9 @@ const payloadValidator = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("trackedEntitiesToOperation"),
-    materialId: z.string(),
+    materialId: z.string().optional(),
+    jobOperationId: z.string().optional(),
+    itemId: z.string().optional(),
     parentTrackedEntityId: z.string(),
     children: z.array(
       z.object({
@@ -117,6 +119,47 @@ const payloadValidator = z.discriminatedUnion("type", [
         quantity: z.number(),
       })
     ),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("maintenanceDispatchInventory"),
+    maintenanceDispatchId: z.string(),
+    itemId: z.string(),
+    unitOfMeasureCode: z.string(),
+    quantity: z.number(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("maintenanceDispatchTrackedEntities"),
+    maintenanceDispatchId: z.string(),
+    itemId: z.string(),
+    unitOfMeasureCode: z.string(),
+    children: z.array(
+      z.object({
+        trackedEntityId: z.string(),
+        quantity: z.number(),
+      })
+    ),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("maintenanceDispatchUnconsume"),
+    maintenanceDispatchItemId: z.string(),
+    children: z.array(
+      z.object({
+        trackedEntityId: z.string(),
+        quantity: z.number(),
+      })
+    ),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("maintenanceDispatchUnissue"),
+    maintenanceDispatchItemId: z.string(),
     companyId: z.string(),
     userId: z.string(),
   }),
@@ -1096,6 +1139,8 @@ serve(async (req: Request) => {
       case "trackedEntitiesToOperation": {
         const {
           materialId,
+          jobOperationId,
+          itemId,
           parentTrackedEntityId,
           children,
           companyId,
@@ -1108,6 +1153,13 @@ serve(async (req: Request) => {
 
         if (children.length === 0) {
           throw new Error("Children are required");
+        }
+
+        // Either materialId or (jobOperationId + itemId) must be provided
+        if (!materialId && (!jobOperationId || !itemId)) {
+          throw new Error(
+            "Either materialId or both jobOperationId and itemId must be provided"
+          );
         }
 
         const splitEntities = await db.transaction().execute(async (trx) => {
@@ -1138,29 +1190,99 @@ serve(async (req: Request) => {
             throw new Error("Tracked entities are not available");
           }
 
-          let jobMaterial = await trx
-            .selectFrom("jobMaterial")
-            .where("id", "=", materialId)
-            .selectAll()
-            .executeTakeFirst();
-
-          // Check if any tracked entity has a different sourceDocumentId than the material's itemId
+          let jobMaterial: Awaited<
+            ReturnType<
+              ReturnType<typeof trx.selectFrom<"jobMaterial">>["selectAll"]
+            >
+          >[0] | undefined;
+          let actualMaterialId: string | undefined = materialId;
           const firstTrackedEntity = trackedEntities[0];
-          let actualMaterialId = materialId;
 
-          if (
-            firstTrackedEntity &&
-            jobMaterial &&
-            firstTrackedEntity.sourceDocumentId !== jobMaterial.itemId
-          ) {
-            // Create a new jobMaterial for the tracked entity's item
+          if (materialId) {
+            // Existing behavior: fetch the jobMaterial
+            jobMaterial = await trx
+              .selectFrom("jobMaterial")
+              .where("id", "=", materialId)
+              .selectAll()
+              .executeTakeFirst();
+
+            // Check if any tracked entity has a different sourceDocumentId than the material's itemId
+            if (
+              firstTrackedEntity &&
+              jobMaterial &&
+              firstTrackedEntity.sourceDocumentId !== jobMaterial.itemId
+            ) {
+              // Create a new jobMaterial for the tracked entity's item
+              const totalChildQuantity = children.reduce((sum, child) => {
+                return sum + Number(child.quantity);
+              }, 0);
+
+              const itemCost = await trx
+                .selectFrom("itemCost")
+                .where("itemId", "=", firstTrackedEntity.sourceDocumentId!)
+                .select("unitCost")
+                .executeTakeFirst();
+
+              const newJobMaterial = await trx
+                .insertInto("jobMaterial")
+                .values({
+                  companyId,
+                  createdBy: userId,
+                  description: firstTrackedEntity.sourceDocumentReadableId ?? "",
+                  estimatedQuantity: 0,
+                  itemId: firstTrackedEntity.sourceDocumentId!,
+                  jobId: jobMaterial.jobId!,
+                  jobMakeMethodId: jobMaterial.jobMakeMethodId,
+                  jobOperationId: jobMaterial.jobOperationId,
+                  itemType: jobMaterial.itemType,
+                  methodType: jobMaterial.methodType,
+                  quantity: 0,
+                  quantityIssued: totalChildQuantity,
+                  requiresBatchTracking: jobMaterial.requiresBatchTracking,
+                  requiresSerialTracking: jobMaterial.requiresSerialTracking,
+                  unitCost: itemCost?.unitCost,
+                })
+                .returning("id")
+                .executeTakeFirstOrThrow();
+
+              actualMaterialId = newJobMaterial.id!;
+
+              // Fetch the newly created jobMaterial
+              jobMaterial = await trx
+                .selectFrom("jobMaterial")
+                .where("id", "=", actualMaterialId)
+                .selectAll()
+                .executeTakeFirstOrThrow();
+            }
+          } else if (jobOperationId && itemId) {
+            // New behavior: create a jobMaterial on the fly
+            const jobOperation = await trx
+              .selectFrom("jobOperation")
+              .where("id", "=", jobOperationId)
+              .select(["jobId", "jobMakeMethodId"])
+              .executeTakeFirst();
+
+            if (!jobOperation) {
+              throw new Error("Job operation not found");
+            }
+
+            const item = await trx
+              .selectFrom("item")
+              .where("id", "=", itemId)
+              .select(["name", "type", "itemTrackingType", "defaultMethodType"])
+              .executeTakeFirst();
+
+            if (!item) {
+              throw new Error("Item not found");
+            }
+
             const totalChildQuantity = children.reduce((sum, child) => {
               return sum + Number(child.quantity);
             }, 0);
 
             const itemCost = await trx
               .selectFrom("itemCost")
-              .where("itemId", "=", firstTrackedEntity.sourceDocumentId!)
+              .where("itemId", "=", itemId)
               .select("unitCost")
               .executeTakeFirst();
 
@@ -1169,18 +1291,18 @@ serve(async (req: Request) => {
               .values({
                 companyId,
                 createdBy: userId,
-                description: firstTrackedEntity.sourceDocumentReadableId ?? "",
+                description: item.name ?? "",
                 estimatedQuantity: 0,
-                itemId: firstTrackedEntity.sourceDocumentId!,
-                jobId: jobMaterial.jobId!,
-                jobMakeMethodId: jobMaterial.jobMakeMethodId,
-                jobOperationId: jobMaterial.jobOperationId,
-                itemType: jobMaterial.itemType,
-                methodType: jobMaterial.methodType,
+                itemId: itemId,
+                jobId: jobOperation.jobId!,
+                jobMakeMethodId: jobOperation.jobMakeMethodId,
+                jobOperationId: jobOperationId,
+                itemType: item.type ?? "Part",
+                methodType: item.defaultMethodType ?? "Pick",
                 quantity: 0,
                 quantityIssued: totalChildQuantity,
-                requiresBatchTracking: jobMaterial.requiresBatchTracking,
-                requiresSerialTracking: jobMaterial.requiresSerialTracking,
+                requiresBatchTracking: item.itemTrackingType === "Batch",
+                requiresSerialTracking: item.itemTrackingType === "Serial",
                 unitCost: itemCost?.unitCost,
               })
               .returning("id")
@@ -1194,6 +1316,10 @@ serve(async (req: Request) => {
               .where("id", "=", actualMaterialId)
               .selectAll()
               .executeTakeFirstOrThrow();
+          }
+
+          if (!jobMaterial) {
+            throw new Error("Job material not found");
           }
 
           // Get item details
@@ -1235,7 +1361,7 @@ serve(async (req: Request) => {
               id: activityId,
               type: "Consume",
               sourceDocument: "Job Material",
-              sourceDocumentId: materialId,
+              sourceDocumentId: actualMaterialId,
               sourceDocumentReadableId: item?.readableIdWithRevision ?? "",
               attributes: {
                 Job: job?.id!,
@@ -1309,7 +1435,7 @@ serve(async (req: Request) => {
                   id: splitActivityId,
                   type: "Split",
                   sourceDocument: "Job Material",
-                  sourceDocumentId: materialId,
+                  sourceDocumentId: actualMaterialId,
                   attributes: {
                     "Original Quantity": Number(trackedEntity.quantity),
                     "Consumed Quantity": quantity,
@@ -1998,6 +2124,866 @@ serve(async (req: Request) => {
             success: true,
             message: "Entity converted successfully",
             convertedEntity,
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
+      }
+      case "maintenanceDispatchInventory": {
+        const {
+          maintenanceDispatchId,
+          itemId,
+          unitOfMeasureCode,
+          quantity,
+          companyId,
+          userId,
+        } = validatedPayload;
+
+        await db.transaction().execute(async (trx) => {
+          // Get the maintenance dispatch to find the location
+          const dispatch = await trx
+            .selectFrom("maintenanceDispatch")
+            .where("id", "=", maintenanceDispatchId)
+            .select(["id", "maintenanceDispatchId", "workCenterId", "locationId"])
+            .executeTakeFirstOrThrow();
+
+          const locationId = dispatch.locationId;
+
+          // Get item details
+          const item = await trx
+            .selectFrom("item")
+            .where("id", "=", itemId)
+            .select(["id", "itemTrackingType"])
+            .executeTakeFirstOrThrow();
+
+          // Create the dispatch item
+          const dispatchItem = await trx
+            .insertInto("maintenanceDispatchItem")
+            .values({
+              maintenanceDispatchId,
+              itemId,
+              unitOfMeasureCode,
+              quantity,
+              companyId,
+              createdBy: userId,
+            })
+            .returning(["id"])
+            .executeTakeFirstOrThrow();
+
+          // Only create item ledger entry for non-tracked items (not Serial or Batch)
+          if (item.itemTrackingType !== "Serial" && item.itemTrackingType !== "Batch") {
+            // Get shelf with highest quantity for this item at this location
+            const shelfId = locationId
+              ? await getShelfWithHighestQuantity(
+                  trx,
+                  itemId,
+                  locationId
+                )
+              : null;
+
+            await trx
+              .insertInto("itemLedger")
+              .values({
+                entryType: "Consumption",
+                documentType: "Maintenance Consumption",
+                documentId: dispatch.id,
+                documentLineId: dispatchItem.id,
+                companyId,
+                itemId,
+                quantity: -quantity,
+                locationId,
+                shelfId,
+                createdBy: userId,
+              })
+              .execute();
+
+            // Update pickMethod defaultShelfId if needed
+            if (locationId) {
+              await updatePickMethodDefaultShelfIfNeeded(
+                trx,
+                itemId,
+                locationId,
+                shelfId,
+                companyId,
+                userId
+              );
+            }
+          }
+        });
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: "Material issued successfully",
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
+      }
+      case "maintenanceDispatchTrackedEntities": {
+        const {
+          maintenanceDispatchId,
+          itemId,
+          unitOfMeasureCode,
+          children,
+          companyId,
+          userId,
+        } = validatedPayload;
+
+        if (children.length === 0) {
+          throw new Error("At least one tracked entity is required");
+        }
+
+        const splitEntities = await db.transaction().execute(async (trx) => {
+          // Get the maintenance dispatch to find the location
+          const dispatch = await trx
+            .selectFrom("maintenanceDispatch")
+            .where("id", "=", maintenanceDispatchId)
+            .select(["id", "maintenanceDispatchId", "workCenterId", "locationId"])
+            .executeTakeFirstOrThrow();
+
+          const locationId = dispatch.locationId;
+
+          // Calculate total quantity from children
+          const totalQuantity = children.reduce(
+            (sum, child) => sum + Number(child.quantity),
+            0
+          );
+
+          // Create the dispatch item
+          const dispatchItem = await trx
+            .insertInto("maintenanceDispatchItem")
+            .values({
+              maintenanceDispatchId,
+              itemId,
+              unitOfMeasureCode,
+              quantity: totalQuantity,
+              companyId,
+              createdBy: userId,
+            })
+            .returning(["id"])
+            .executeTakeFirstOrThrow();
+
+          // Get tracked entities
+          const trackedEntities = await trx
+            .selectFrom("trackedEntity")
+            .where(
+              "id",
+              "in",
+              children.map((child) => child.trackedEntityId)
+            )
+            .selectAll()
+            .execute();
+
+          // Get item ledgers for these tracked entities
+          const itemLedgers = await trx
+            .selectFrom("itemLedger")
+            .where(
+              "trackedEntityId",
+              "in",
+              children.map((child) => child.trackedEntityId)
+            )
+            .orderBy("createdAt", "desc")
+            .selectAll()
+            .execute();
+
+          if (trackedEntities.length !== children.length) {
+            throw new Error("Some tracked entities not found");
+          }
+
+          if (trackedEntities.some((entity) => entity.status !== "Available")) {
+            throw new Error("Some tracked entities are not available");
+          }
+
+          // Get item details
+          const item = await trx
+            .selectFrom("item")
+            .where("id", "=", itemId)
+            .select(["id", "readableIdWithRevision"])
+            .executeTakeFirstOrThrow();
+
+          const maintenanceDispatchItemId = dispatchItem.id;
+
+          // Create tracked activity
+          const activityId = nanoid();
+          await trx
+            .insertInto("trackedActivity")
+            .values({
+              id: activityId,
+              type: "Consume",
+              sourceDocument: "Maintenance Dispatch Item",
+              sourceDocumentId: maintenanceDispatchItemId,
+              sourceDocumentReadableId: item.readableIdWithRevision ?? "",
+              attributes: {
+                "Maintenance Dispatch": dispatch.maintenanceDispatchId,
+                "Maintenance Dispatch Item": dispatchItem.id,
+                Employee: userId,
+              },
+              companyId,
+              createdBy: userId,
+            })
+            .execute();
+
+          const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
+            [];
+          const trackedActivityInputs: Database["public"]["Tables"]["trackedActivityInput"]["Insert"][] =
+            [];
+          const junctionInserts: {
+            maintenanceDispatchItemId: string;
+            trackedEntityId: string;
+            quantity: number;
+            companyId: string;
+            createdBy: string;
+          }[] = [];
+
+          const splitEntities: Array<{
+            originalId: string;
+            newId: string;
+            readableId: string;
+            quantity: number;
+          }> = [];
+
+          // Process each child tracked entity
+          for (const child of children) {
+            const trackedEntity = trackedEntities.find(
+              (entity) => entity.id === child.trackedEntityId
+            );
+            if (!trackedEntity) {
+              throw new Error("Tracked entity not found");
+            }
+            const { trackedEntityId, quantity } = child;
+
+            // If quantities don't match, split the batch
+            if (Number(trackedEntity.quantity) !== quantity) {
+              const remainingQuantity =
+                Number(trackedEntity.quantity) - quantity;
+              const newTrackedEntityId = nanoid();
+
+              // Track split entity for return
+              splitEntities.push({
+                originalId: trackedEntityId,
+                newId: newTrackedEntityId,
+                readableId: trackedEntity.sourceDocumentReadableId ?? "",
+                quantity: remainingQuantity,
+              });
+
+              // Create split activity
+              const splitActivityId = nanoid();
+              await trx
+                .insertInto("trackedActivity")
+                .values({
+                  id: splitActivityId,
+                  type: "Split",
+                  sourceDocument: "Maintenance Dispatch Item",
+                  sourceDocumentId: maintenanceDispatchItemId,
+                  attributes: {
+                    "Original Quantity": Number(trackedEntity.quantity),
+                    "Consumed Quantity": quantity,
+                    "Remaining Quantity": remainingQuantity,
+                    "Split Entity ID": newTrackedEntityId,
+                  },
+                  companyId,
+                  createdBy: userId,
+                })
+                .execute();
+
+              // Record original entity as input
+              await trx
+                .insertInto("trackedActivityInput")
+                .values({
+                  trackedActivityId: splitActivityId,
+                  trackedEntityId: trackedEntity.id!,
+                  quantity: Number(trackedEntity.quantity),
+                  companyId,
+                  createdBy: userId,
+                })
+                .execute();
+
+              // Create new tracked entity for remaining quantity
+              await trx
+                .insertInto("trackedEntity")
+                .values({
+                  id: newTrackedEntityId,
+                  sourceDocumentId: trackedEntity.sourceDocumentId,
+                  sourceDocument: "Item",
+                  sourceDocumentReadableId:
+                    trackedEntity.sourceDocumentReadableId,
+                  quantity: remainingQuantity,
+                  status: trackedEntity.status ?? "Available",
+                  attributes: trackedEntity.attributes,
+                  companyId,
+                  createdBy: userId,
+                })
+                .execute();
+
+              // Update original entity quantity
+              await trx
+                .updateTable("trackedEntity")
+                .set({
+                  quantity: quantity,
+                  attributes: {
+                    ...((trackedEntity.attributes as Record<string, unknown>) ??
+                      {}),
+                    "Split Entity ID": newTrackedEntityId,
+                  },
+                })
+                .where("id", "=", trackedEntityId)
+                .execute();
+
+              // Record outputs from split
+              await trx
+                .insertInto("trackedActivityOutput")
+                .values([
+                  {
+                    trackedActivityId: splitActivityId,
+                    trackedEntityId: newTrackedEntityId,
+                    quantity: remainingQuantity,
+                    companyId,
+                    createdBy: userId,
+                  },
+                  {
+                    trackedActivityId: splitActivityId,
+                    trackedEntityId: trackedEntity.id!,
+                    quantity: quantity,
+                    companyId,
+                    createdBy: userId,
+                  },
+                ])
+                .execute();
+
+              // Create item ledger entries for split
+              const existingLedger = itemLedgers.find(
+                (l) => l.trackedEntityId === trackedEntityId
+              );
+
+              itemLedgerInserts.push(
+                {
+                  entryType: "Negative Adjmt.",
+                  documentType: "Batch Split",
+                  documentId: splitActivityId,
+                  companyId,
+                  itemId: trackedEntity.sourceDocumentId,
+                  quantity: -Number(trackedEntity.quantity),
+                  locationId,
+                  shelfId: existingLedger?.shelfId,
+                  trackedEntityId: trackedEntity.id!,
+                  createdBy: userId,
+                },
+                {
+                  entryType: "Positive Adjmt.",
+                  documentType: "Batch Split",
+                  documentId: splitActivityId,
+                  companyId,
+                  itemId: trackedEntity.sourceDocumentId,
+                  quantity: quantity,
+                  locationId,
+                  shelfId: existingLedger?.shelfId,
+                  trackedEntityId: trackedEntity.id!,
+                  createdBy: userId,
+                },
+                {
+                  entryType: "Positive Adjmt.",
+                  documentType: "Batch Split",
+                  documentId: splitActivityId,
+                  companyId,
+                  itemId: trackedEntity.sourceDocumentId,
+                  quantity: remainingQuantity,
+                  locationId,
+                  shelfId: existingLedger?.shelfId,
+                  trackedEntityId: newTrackedEntityId,
+                  createdBy: userId,
+                }
+              );
+            }
+
+            // Update tracked entity status to consumed
+            await trx
+              .updateTable("trackedEntity")
+              .set({
+                status: "Consumed",
+              })
+              .where("id", "=", trackedEntityId)
+              .execute();
+
+            trackedActivityInputs.push({
+              trackedActivityId: activityId,
+              trackedEntityId,
+              quantity,
+              companyId,
+              createdBy: userId,
+            });
+
+            // Add junction table entry
+            junctionInserts.push({
+              maintenanceDispatchItemId,
+              trackedEntityId,
+              quantity,
+              companyId,
+              createdBy: userId,
+            });
+
+            // Create consumption item ledger entry
+            const existingLedger = itemLedgers.find(
+              (l) => l.trackedEntityId === trackedEntityId
+            );
+
+            itemLedgerInserts.push({
+              entryType: "Consumption",
+              documentType: "Maintenance Consumption",
+              documentId: dispatch.id,
+              documentLineId: maintenanceDispatchItemId,
+              companyId,
+              itemId: trackedEntity.sourceDocumentId,
+              quantity: -quantity,
+              locationId,
+              shelfId: existingLedger?.shelfId,
+              trackedEntityId,
+              createdBy: userId,
+            });
+          }
+
+          if (trackedActivityInputs.length > 0) {
+            await trx
+              .insertInto("trackedActivityInput")
+              .values(trackedActivityInputs)
+              .execute();
+          }
+
+          if (junctionInserts.length > 0) {
+            await trx
+              .insertInto("maintenanceDispatchItemTrackedEntity")
+              .values(junctionInserts)
+              .execute();
+          }
+
+          if (itemLedgerInserts.length > 0) {
+            await trx
+              .insertInto("itemLedger")
+              .values(itemLedgerInserts)
+              .execute();
+
+            // Update pickMethod defaultShelfId if needed
+            for (const ledger of itemLedgerInserts) {
+              await updatePickMethodDefaultShelfIfNeeded(
+                trx,
+                ledger.itemId,
+                ledger.locationId,
+                ledger.shelfId,
+                companyId,
+                userId
+              );
+            }
+          }
+
+          return splitEntities;
+        });
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: "Material issued successfully",
+            splitEntities,
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
+      }
+      case "maintenanceDispatchUnconsume": {
+        const { maintenanceDispatchItemId, children, companyId, userId } =
+          validatedPayload;
+
+        if (children.length === 0) {
+          throw new Error("At least one tracked entity is required");
+        }
+
+        await db.transaction().execute(async (trx) => {
+          // Get the maintenance dispatch item with related data
+          const dispatchItem = await trx
+            .selectFrom("maintenanceDispatchItem")
+            .where("id", "=", maintenanceDispatchItemId)
+            .selectAll()
+            .executeTakeFirstOrThrow();
+
+          // Get the maintenance dispatch to find the location
+          const dispatch = await trx
+            .selectFrom("maintenanceDispatch")
+            .where("id", "=", dispatchItem.maintenanceDispatchId)
+            .select(["id", "maintenanceDispatchId", "workCenterId", "locationId"])
+            .executeTakeFirstOrThrow();
+
+          const locationId = dispatch.locationId;
+
+          // Get tracked entities
+          const trackedEntities = await trx
+            .selectFrom("trackedEntity")
+            .where(
+              "id",
+              "in",
+              children.map((child) => child.trackedEntityId)
+            )
+            .selectAll()
+            .execute();
+
+          // Get item ledgers for these tracked entities
+          const itemLedgers = await trx
+            .selectFrom("itemLedger")
+            .where(
+              "trackedEntityId",
+              "in",
+              children.map((child) => child.trackedEntityId)
+            )
+            .orderBy("createdAt", "desc")
+            .selectAll()
+            .execute();
+
+          if (trackedEntities.length !== children.length) {
+            throw new Error("Some tracked entities not found");
+          }
+
+          if (trackedEntities.some((entity) => entity.status !== "Consumed")) {
+            throw new Error(
+              "Some tracked entities are not in consumed status"
+            );
+          }
+
+          // Get item details
+          const item = await trx
+            .selectFrom("item")
+            .where("id", "=", dispatchItem.itemId)
+            .select(["id", "readableIdWithRevision"])
+            .executeTakeFirstOrThrow();
+
+          // Create tracked activity for unconsume
+          const activityId = nanoid();
+          await trx
+            .insertInto("trackedActivity")
+            .values({
+              id: activityId,
+              type: "Unconsume",
+              sourceDocument: "Maintenance Dispatch Item",
+              sourceDocumentId: maintenanceDispatchItemId,
+              sourceDocumentReadableId: item.readableIdWithRevision ?? "",
+              attributes: {
+                "Maintenance Dispatch": dispatch.maintenanceDispatchId,
+                "Maintenance Dispatch Item": dispatchItem.id,
+                Employee: userId,
+              },
+              companyId,
+              createdBy: userId,
+            })
+            .execute();
+
+          const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
+            [];
+          const trackedActivityOutputs: Database["public"]["Tables"]["trackedActivityOutput"]["Insert"][] =
+            [];
+
+          // Process each child tracked entity
+          for (const child of children) {
+            const trackedEntity = trackedEntities.find(
+              (entity) => entity.id === child.trackedEntityId
+            );
+            if (!trackedEntity) {
+              throw new Error("Tracked entity not found");
+            }
+            const { trackedEntityId, quantity } = child;
+
+            // Update tracked entity status back to Available
+            await trx
+              .updateTable("trackedEntity")
+              .set({
+                status: "Available",
+              })
+              .where("id", "=", trackedEntityId)
+              .execute();
+
+            trackedActivityOutputs.push({
+              trackedActivityId: activityId,
+              trackedEntityId,
+              quantity,
+              companyId,
+              createdBy: userId,
+            });
+
+            // Remove from junction table
+            await trx
+              .deleteFrom("maintenanceDispatchItemTrackedEntity")
+              .where("maintenanceDispatchItemId", "=", maintenanceDispatchItemId)
+              .where("trackedEntityId", "=", trackedEntityId)
+              .execute();
+
+            // Create reverse item ledger entry (positive to return to inventory)
+            const existingLedger = itemLedgers.find(
+              (l) => l.trackedEntityId === trackedEntityId
+            );
+
+            itemLedgerInserts.push({
+              entryType: "Consumption",
+              documentType: "Maintenance Consumption",
+              documentId: dispatch.id,
+              documentLineId: maintenanceDispatchItemId,
+              companyId,
+              itemId: trackedEntity.sourceDocumentId,
+              quantity: quantity, // Positive to return to inventory
+              locationId,
+              shelfId: existingLedger?.shelfId,
+              trackedEntityId,
+              createdBy: userId,
+            });
+          }
+
+          if (trackedActivityOutputs.length > 0) {
+            await trx
+              .insertInto("trackedActivityOutput")
+              .values(trackedActivityOutputs)
+              .execute();
+          }
+
+          if (itemLedgerInserts.length > 0) {
+            await trx
+              .insertInto("itemLedger")
+              .values(itemLedgerInserts)
+              .execute();
+
+            // Update pickMethod defaultShelfId if needed
+            for (const ledger of itemLedgerInserts) {
+              await updatePickMethodDefaultShelfIfNeeded(
+                trx,
+                ledger.itemId,
+                ledger.locationId,
+                ledger.shelfId,
+                companyId,
+                userId
+              );
+            }
+          }
+
+          // Update the dispatch item quantity
+          const totalChildQuantity = children.reduce((sum, child) => {
+            return sum + Number(child.quantity);
+          }, 0);
+
+          const currentQuantity = Number(dispatchItem.quantity) || 0;
+          const newQuantity = Math.max(0, currentQuantity - totalChildQuantity);
+
+          await trx
+            .updateTable("maintenanceDispatchItem")
+            .set({
+              quantity: newQuantity,
+              updatedBy: userId,
+              updatedAt: new Date().toISOString(),
+            })
+            .where("id", "=", maintenanceDispatchItemId)
+            .execute();
+        });
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: "Material unconsumed successfully",
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
+      }
+      case "maintenanceDispatchUnissue": {
+        const { maintenanceDispatchItemId, companyId, userId } =
+          validatedPayload;
+
+        await db.transaction().execute(async (trx) => {
+          // Get the maintenance dispatch item
+          const dispatchItem = await trx
+            .selectFrom("maintenanceDispatchItem")
+            .where("id", "=", maintenanceDispatchItemId)
+            .selectAll()
+            .executeTakeFirstOrThrow();
+
+          // Get the maintenance dispatch to find the location
+          const dispatch = await trx
+            .selectFrom("maintenanceDispatch")
+            .where("id", "=", dispatchItem.maintenanceDispatchId)
+            .select(["id", "maintenanceDispatchId", "workCenterId", "locationId"])
+            .executeTakeFirstOrThrow();
+
+          const locationId = dispatch.locationId;
+
+          // Get item details
+          const item = await trx
+            .selectFrom("item")
+            .where("id", "=", dispatchItem.itemId)
+            .select(["id", "itemTrackingType", "readableIdWithRevision"])
+            .executeTakeFirstOrThrow();
+
+          // Check if this has tracked entities
+          const trackedEntityJunctions = await trx
+            .selectFrom("maintenanceDispatchItemTrackedEntity")
+            .where("maintenanceDispatchItemId", "=", maintenanceDispatchItemId)
+            .selectAll()
+            .execute();
+
+          if (trackedEntityJunctions.length > 0) {
+            // Handle tracked entities - unconsume them
+            const trackedEntityIds = trackedEntityJunctions.map(
+              (j) => j.trackedEntityId
+            );
+
+            // Get tracked entities
+            const trackedEntities = await trx
+              .selectFrom("trackedEntity")
+              .where("id", "in", trackedEntityIds)
+              .selectAll()
+              .execute();
+
+            // Get item ledgers for these tracked entities
+            const itemLedgers = await trx
+              .selectFrom("itemLedger")
+              .where("trackedEntityId", "in", trackedEntityIds)
+              .orderBy("createdAt", "desc")
+              .selectAll()
+              .execute();
+
+            // Create tracked activity for unconsume
+            const activityId = nanoid();
+            await trx
+              .insertInto("trackedActivity")
+              .values({
+                id: activityId,
+                type: "Unconsume",
+                sourceDocument: "Maintenance Dispatch Item",
+                sourceDocumentId: maintenanceDispatchItemId,
+                sourceDocumentReadableId: item.readableIdWithRevision ?? "",
+                attributes: {
+                  "Maintenance Dispatch": dispatch.maintenanceDispatchId,
+                  "Maintenance Dispatch Item": dispatchItem.id,
+                  Employee: userId,
+                },
+                companyId,
+                createdBy: userId,
+              })
+              .execute();
+
+            const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
+              [];
+            const trackedActivityOutputs: Database["public"]["Tables"]["trackedActivityOutput"]["Insert"][] =
+              [];
+
+            // Process each tracked entity
+            for (const junction of trackedEntityJunctions) {
+              const trackedEntity = trackedEntities.find(
+                (e) => e.id === junction.trackedEntityId
+              );
+              if (!trackedEntity) continue;
+
+              const quantity = Number(junction.quantity);
+
+              // Update tracked entity status back to Available
+              await trx
+                .updateTable("trackedEntity")
+                .set({ status: "Available" })
+                .where("id", "=", junction.trackedEntityId)
+                .execute();
+
+              trackedActivityOutputs.push({
+                trackedActivityId: activityId,
+                trackedEntityId: junction.trackedEntityId,
+                quantity,
+                companyId,
+                createdBy: userId,
+              });
+
+              // Create reverse item ledger entry (positive to return to inventory)
+              const existingLedger = itemLedgers.find(
+                (l) => l.trackedEntityId === junction.trackedEntityId
+              );
+
+              itemLedgerInserts.push({
+                entryType: "Consumption",
+                documentType: "Maintenance Consumption",
+                documentId: dispatch.id,
+                documentLineId: maintenanceDispatchItemId,
+                companyId,
+                itemId: trackedEntity.sourceDocumentId,
+                quantity: quantity, // Positive to return to inventory
+                locationId,
+                shelfId: existingLedger?.shelfId,
+                trackedEntityId: junction.trackedEntityId,
+                createdBy: userId,
+              });
+            }
+
+            // Delete junction entries
+            await trx
+              .deleteFrom("maintenanceDispatchItemTrackedEntity")
+              .where("maintenanceDispatchItemId", "=", maintenanceDispatchItemId)
+              .execute();
+
+            if (trackedActivityOutputs.length > 0) {
+              await trx
+                .insertInto("trackedActivityOutput")
+                .values(trackedActivityOutputs)
+                .execute();
+            }
+
+            if (itemLedgerInserts.length > 0) {
+              await trx
+                .insertInto("itemLedger")
+                .values(itemLedgerInserts)
+                .execute();
+            }
+          } else if (
+            item.itemTrackingType !== "Serial" &&
+            item.itemTrackingType !== "Batch"
+          ) {
+            // Handle inventory items - create positive ledger entry to return to inventory
+            const quantity = Number(dispatchItem.quantity);
+
+            if (quantity > 0) {
+              // Find the shelf from the original consumption ledger entry
+              const originalLedger = await trx
+                .selectFrom("itemLedger")
+                .where("documentLineId", "=", maintenanceDispatchItemId)
+                .where("documentType", "=", "Maintenance Consumption")
+                .orderBy("createdAt", "desc")
+                .selectAll()
+                .executeTakeFirst();
+
+              await trx
+                .insertInto("itemLedger")
+                .values({
+                  entryType: "Consumption",
+                  documentType: "Maintenance Consumption",
+                  documentId: dispatch.id,
+                  documentLineId: maintenanceDispatchItemId,
+                  companyId,
+                  itemId: dispatchItem.itemId,
+                  quantity: quantity, // Positive to return to inventory
+                  locationId,
+                  shelfId: originalLedger?.shelfId,
+                  createdBy: userId,
+                })
+                .execute();
+            }
+          }
+
+          // Delete the dispatch item
+          await trx
+            .deleteFrom("maintenanceDispatchItem")
+            .where("id", "=", maintenanceDispatchItemId)
+            .execute();
+        });
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: "Item unissued and removed successfully",
           }),
           {
             headers: { ...corsHeaders, "Content-Type": "application/json" },

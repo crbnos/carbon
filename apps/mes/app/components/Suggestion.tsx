@@ -24,7 +24,7 @@ import Picker from "@emoji-mart/react";
 import { nanoid } from "nanoid";
 import type { ChangeEvent } from "react";
 import { useEffect, useRef, useState } from "react";
-import { LuImage, LuLightbulb } from "react-icons/lu";
+import { LuImage, LuMailbox } from "react-icons/lu";
 import { useFetcher, useLocation } from "react-router";
 import { useUser } from "~/hooks";
 import type { action } from "~/routes/x+/suggestion";
@@ -109,7 +109,7 @@ const Suggestion = () => {
     <Popover>
       <PopoverTrigger ref={popoverTriggerRef} asChild>
         <SidebarMenuButton>
-          <LuLightbulb />
+          <LuMailbox />
           <span>Suggestion</span>
         </SidebarMenuButton>
       </PopoverTrigger>

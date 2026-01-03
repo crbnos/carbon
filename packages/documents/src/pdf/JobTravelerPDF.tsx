@@ -216,6 +216,157 @@ const JobHeader = ({
   );
 };
 
+// Page content component without Document/Template wrapper (for combining multiple make methods)
+export const JobTravelerPageContent = ({
+  company,
+  job,
+  jobOperations,
+  customer,
+  item,
+  batchNumber,
+  notes,
+  thumbnail
+}: Omit<JobTravelerProps, "meta" | "title" | "locale" | "jobMakeMethod">) => {
+  const subtitle = batchNumber
+    ? batchNumber
+    : (item.name ?? item.readableIdWithRevision);
+  const tertiaryTitle = batchNumber
+    ? `${item.name ?? item.readableIdWithRevision}`
+    : undefined;
+
+  return (
+    <View style={tw("flex flex-col")}>
+      {/* Original Header Section with company logo and job title */}
+      <View style={tw("mb-6")}>
+        <Header
+          title={job.jobId}
+          subtitle={subtitle}
+          tertiaryTitle={tertiaryTitle}
+          company={company}
+        />
+      </View>
+
+      {/* Job Header Section with detailed information */}
+      <View style={tw("mb-6")}>
+        <JobHeader
+          company={company}
+          job={job}
+          customer={customer}
+          item={item}
+          batchNumber={batchNumber}
+          thumbnail={thumbnail}
+        />
+      </View>
+
+      {/* Job Information Section */}
+      <View style={tw("mb-6 text-xs")}>
+        <View
+          style={tw(
+            "flex flex-row justify-between items-center py-3 px-[6px] border-t border-b border-gray-300 font-bold uppercase page-break-inside-avoid"
+          )}
+        >
+          <Text style={tw("w-1/12 text-left")}>Seq</Text>
+          <Text style={tw("w-3/12 text-left")}>Operation</Text>
+          <Text style={tw("w-2/3 text-right pr-4")}>Actions</Text>
+        </View>
+
+        {jobOperations
+          .sort((a, b) => a.order - b.order)
+          .map((operation, index) => {
+            const isInside = operation.operationType === "Inside";
+            const setupQrCode =
+              operation.setupTime > 0
+                ? generateQRCode(`${getStartPath(operation.id)}?type=Setup`, 10)
+                : null;
+            let laborQrCode =
+              operation.laborTime > 0
+                ? generateQRCode(`${getStartPath(operation.id)}?type=Labor`, 10)
+                : null;
+            let machiningQrCode =
+              operation.machineTime > 0
+                ? generateQRCode(
+                    `${getStartPath(operation.id)}?type=Machine`,
+                    10
+                  )
+                : null;
+            let completeQrCode = generateQRCode(getEndPath(operation.id), 10);
+
+            if (
+              setupQrCode === null &&
+              laborQrCode === null &&
+              machiningQrCode === null
+            ) {
+              laborQrCode = generateQRCode(
+                `${getStartPath(operation.id)}?type=Labor`,
+                10
+              );
+            }
+
+            return (
+              <View
+                style={tw(
+                  "flex flex-col border-b border-gray-300 py-4 px-[6px] page-break-inside-avoid"
+                )}
+                key={operation.id}
+                wrap={false}
+              >
+                <View style={tw("flex flex-row justify-between items-start")}>
+                  <Text style={tw("w-1/12 text-left")}>
+                    {getParallelizedOrder(index, operation, jobOperations)}
+                  </Text>
+                  <View style={tw("w-3/12 text-left")}>
+                    <Text style={tw("font-bold")}>{operation.description}</Text>
+                  </View>
+                  <View style={tw("w-2/3 flex flex-row justify-end gap-2")}>
+                    {isInside && setupQrCode && (
+                      <View style={tw("flex flex-col items-center w-1/4")}>
+                        <>
+                          <Image src={setupQrCode} style={tw("w-16 h-16")} />
+                          <Text style={tw("text-[8px] mt-1")}>Setup</Text>
+                        </>
+                      </View>
+                    )}
+
+                    {isInside && laborQrCode && (
+                      <View style={tw("flex flex-col items-center w-1/4")}>
+                        <>
+                          <Image src={laborQrCode} style={tw("w-16 h-16")} />
+                          <Text style={tw("text-[8px] mt-1")}>Labor</Text>
+                        </>
+                      </View>
+                    )}
+                    {isInside && machiningQrCode && (
+                      <View style={tw("flex flex-col items-center w-1/4")}>
+                        <>
+                          <Image
+                            src={machiningQrCode}
+                            style={tw("w-16 h-16")}
+                          />
+                          <Text style={tw("text-[8px] mt-1")}>Machine</Text>
+                        </>
+                      </View>
+                    )}
+                    <View style={tw("flex flex-col items-center w-1/4")}>
+                      <Image src={completeQrCode} style={tw("w-16 h-16")} />
+                      <Text style={tw("text-[8px] mt-1")}>Complete</Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            );
+          })}
+      </View>
+
+      {/* Notes Section */}
+      {notes && (
+        <View style={tw("mb-6")}>
+          <Note title="Job Notes" content={notes} />
+        </View>
+      )}
+    </View>
+  );
+};
+
 const JobTravelerPDF = ({
   company,
   job,
@@ -229,13 +380,6 @@ const JobTravelerPDF = ({
   thumbnail,
   title = "Job Traveler"
 }: JobTravelerProps) => {
-  const subtitle = batchNumber
-    ? batchNumber
-    : (item.name ?? item.readableIdWithRevision);
-  const tertiaryTitle = batchNumber
-    ? `${item.name ?? item.readableIdWithRevision}`
-    : undefined;
-
   return (
     <Template
       title={title}
@@ -245,143 +389,16 @@ const JobTravelerPDF = ({
         subject: meta?.subject ?? "Job Traveler"
       }}
     >
-      <View style={tw("flex flex-col")}>
-        {/* Original Header Section with company logo and job title */}
-        <View style={tw("mb-6")}>
-          <Header
-            title={job.jobId}
-            subtitle={subtitle}
-            tertiaryTitle={tertiaryTitle}
-            company={company}
-          />
-        </View>
-
-        {/* Job Header Section with detailed information */}
-        <View style={tw("mb-6")}>
-          <JobHeader
-            company={company}
-            job={job}
-            customer={customer}
-            item={item}
-            batchNumber={batchNumber}
-            thumbnail={thumbnail}
-          />
-        </View>
-
-        {/* Job Information Section */}
-        <View style={tw("mb-6 text-xs")}>
-          <View
-            style={tw(
-              "flex flex-row justify-between items-center py-3 px-[6px] border-t border-b border-gray-300 font-bold uppercase page-break-inside-avoid"
-            )}
-          >
-            <Text style={tw("w-1/12 text-left")}>Seq</Text>
-            <Text style={tw("w-3/12 text-left")}>Operation</Text>
-            <Text style={tw("w-2/3 text-right pr-4")}>Actions</Text>
-          </View>
-
-          {jobOperations
-            .sort((a, b) => a.order - b.order)
-            .map((operation, index) => {
-              const isInside = operation.operationType === "Inside";
-              const setupQrCode =
-                operation.setupTime > 0
-                  ? generateQRCode(
-                      `${getStartPath(operation.id)}?type=Setup`,
-                      10
-                    )
-                  : null;
-              let laborQrCode =
-                operation.laborTime > 0
-                  ? generateQRCode(
-                      `${getStartPath(operation.id)}?type=Labor`,
-                      10
-                    )
-                  : null;
-              let machiningQrCode =
-                operation.machineTime > 0
-                  ? generateQRCode(
-                      `${getStartPath(operation.id)}?type=Machine`,
-                      10
-                    )
-                  : null;
-              let completeQrCode = generateQRCode(getEndPath(operation.id), 10);
-
-              if (
-                setupQrCode === null &&
-                laborQrCode === null &&
-                machiningQrCode === null
-              ) {
-                laborQrCode = generateQRCode(
-                  `${getStartPath(operation.id)}?type=Labor`,
-                  10
-                );
-              }
-
-              return (
-                <View
-                  style={tw(
-                    "flex flex-col border-b border-gray-300 py-4 px-[6px] page-break-inside-avoid"
-                  )}
-                  key={operation.id}
-                  wrap={false}
-                >
-                  <View style={tw("flex flex-row justify-between items-start")}>
-                    <Text style={tw("w-1/12 text-left")}>
-                      {getParallelizedOrder(index, operation, jobOperations)}
-                    </Text>
-                    <View style={tw("w-3/12 text-left")}>
-                      <Text style={tw("font-bold")}>
-                        {operation.description}
-                      </Text>
-                    </View>
-                    <View style={tw("w-2/3 flex flex-row justify-end gap-2")}>
-                      {isInside && setupQrCode && (
-                        <View style={tw("flex flex-col items-center w-1/4")}>
-                          <>
-                            <Image src={setupQrCode} style={tw("w-16 h-16")} />
-                            <Text style={tw("text-[8px] mt-1")}>Setup</Text>
-                          </>
-                        </View>
-                      )}
-
-                      {isInside && laborQrCode && (
-                        <View style={tw("flex flex-col items-center w-1/4")}>
-                          <>
-                            <Image src={laborQrCode} style={tw("w-16 h-16")} />
-                            <Text style={tw("text-[8px] mt-1")}>Labor</Text>
-                          </>
-                        </View>
-                      )}
-                      {isInside && machiningQrCode && (
-                        <View style={tw("flex flex-col items-center w-1/4")}>
-                          <>
-                            <Image
-                              src={machiningQrCode}
-                              style={tw("w-16 h-16")}
-                            />
-                            <Text style={tw("text-[8px] mt-1")}>Machine</Text>
-                          </>
-                        </View>
-                      )}
-                      <View style={tw("flex flex-col items-center w-1/4")}>
-                        <Image src={completeQrCode} style={tw("w-16 h-16")} />
-                        <Text style={tw("text-[8px] mt-1")}>Complete</Text>
-                      </View>
-                    </View>
-                  </View>
-                </View>
-              );
-            })}
-        </View>
-
-        {/* Notes Section */}
-        {notes && (
-          <View style={tw("mb-6")}>
-            <Note title="Job Notes" content={notes} />
-          </View>
-        )}
-      </View>
+      <JobTravelerPageContent
+        company={company}
+        job={job}
+        jobOperations={jobOperations}
+        customer={customer}
+        item={item}
+        batchNumber={batchNumber}
+        notes={notes}
+        thumbnail={thumbnail}
+      />
     </Template>
   );
 };

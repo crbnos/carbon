@@ -32,7 +32,6 @@ import {
   LuGitBranch,
   LuGitFork,
   LuGitMerge,
-  LuListChecks,
   LuQrCode,
   LuSquareStack,
   LuTriangleAlert
@@ -285,17 +284,6 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
                     <Link prefetch="intent" to={itemLink}>
                       Item Master
                     </Link>
-                  </MenubarItem>
-                )}
-                {makeMethod?.id && (
-                  <MenubarItem leftIcon={<LuListChecks />} asChild>
-                    <a
-                      href={path.to.file.jobTraveler(makeMethod.id)}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Job Traveler
-                    </a>
                   </MenubarItem>
                 )}
                 {makeMethod &&

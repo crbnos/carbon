@@ -138,6 +138,11 @@ const SearchModal = () => {
 
   const onInputChange = (value: string) => {
     setInput(value);
+    if (value) {
+      setLoading(true);
+    } else {
+      setLoading(false);
+    }
     debounceSearch(value);
   };
 

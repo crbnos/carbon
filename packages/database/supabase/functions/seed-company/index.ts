@@ -8,6 +8,7 @@ import {
   accounts,
   currencies,
   customerStatuses,
+  failureModes,
   fiscalYearSettings,
   gaugeTypes,
   groupCompanyTemplate,
@@ -112,7 +113,7 @@ serve(async (req: Request) => {
         throw new Error("Failed to insert admin employee type");
 
       // get the modules
-      const modules = await trx.selectFrom("modules").select("name").execute();
+      const modules = await trx.selectFrom("modules").select("name").execute() as { name: string }[];
 
       // create employee type permissions for admin
       const employeeTypePermissions = modules.reduce<
@@ -121,6 +122,7 @@ serve(async (req: Request) => {
         if (module.name) {
           acc.push({
             employeeTypeId: employeeTypeId,
+            // @ts-expect-error - it's legit, chill typescript
             module: module.name,
             create: [companyId],
             update: [companyId],
@@ -202,6 +204,11 @@ serve(async (req: Request) => {
         .values(
           gaugeTypes.map((gt) => ({ name: gt, companyId, createdBy: "system" }))
         )
+        .execute();
+
+      await trx
+        .insertInto("maintenanceFailureMode")
+        .values(failureModes.map((name) => ({ name, companyId, createdBy: "system" })))
         .execute();
 
       await trx

@@ -21,7 +21,7 @@ export function useFiles(job: Job) {
           id = job.salesOrderLineId ?? job.quoteLineId;
           break;
         case "parts":
-          id = job.itemId;
+          id = file.itemId ?? job.itemId;
           break;
       }
 

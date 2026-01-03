@@ -753,7 +753,12 @@ function MaterialForm({
   };
 
   const sourceDisclosure = useDisclosure();
-  const backflushDisclosure = useDisclosure();
+  const isReleased =
+    !["Draft", "Planned"].includes(job?.status ?? "") &&
+    jobOperations?.length > 0;
+  const backflushDisclosure = useDisclosure({
+    defaultIsOpen: isReleased
+  });
   const locationId = routeData?.job?.locationId ?? undefined;
   const shelves = useShelves(locationId);
 

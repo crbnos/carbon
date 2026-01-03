@@ -17,10 +17,10 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "allowJs": true,
-    "baseUrl": ".",
     "paths": {
       "~/*": ["./app/*"]
     },
+    "rootDirs": [".", ".react-router/types"],
     "noEmit": true,
     "isolatedModules": true,
     "skipLibCheck": true,

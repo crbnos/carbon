@@ -63,6 +63,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Check if job is released (not Draft or Planned)
+  const job = await serviceRole
+    .from("job")
+    .select("status")
+    .eq("id", jobId)
+    .single();
+  const isReleased = !["Draft", "Planned"].includes(job.data?.status ?? "");
+
   if (validation.data.methodType === "Make") {
     const materialMakeMethod = await serviceRole
       .from("jobMaterialWithMakeMethodId")
@@ -98,7 +106,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
         )
       );
     }
+  }
 
+  // Recalculate for ALL material types if job is released
+  if (isReleased) {
     const promises = [
       recalculateJobMakeMethodRequirements(serviceRole, {
         id: validation.data.jobMakeMethodId,

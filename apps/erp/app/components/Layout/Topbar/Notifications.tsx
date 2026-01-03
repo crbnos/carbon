@@ -32,7 +32,8 @@ import {
   LuMessageSquare,
   LuShieldAlert,
   LuShieldX,
-  LuShoppingCart
+  LuShoppingCart,
+  LuWrench
 } from "react-icons/lu";
 import {
   RiProgress2Line,
@@ -226,6 +227,15 @@ function GenericNotification({
             )
           }
           to={`${link}?selectedOperation=${operationId}`}
+          {...props}
+        />
+      );
+    case NotificationEvent.MaintenanceDispatchCreated:
+    case NotificationEvent.MaintenanceDispatchAssignment:
+      return (
+        <Notification
+          icon={<LuWrench />}
+          to={path.to.maintenanceDispatch(id)}
           {...props}
         />
       );

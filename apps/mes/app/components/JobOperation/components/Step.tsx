@@ -219,7 +219,7 @@ export function StepsListItem({
       </div>
       {disclosure.isOpen && hasDescription && (
         <div
-          className="mt-4 text-sm prose prose-sm dark:prose-invert"
+          className="my-4 text-sm prose prose-sm dark:prose-invert"
           dangerouslySetInnerHTML={{
             __html: generateHTML(description as JSONContent)
           }}

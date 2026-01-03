@@ -2,8 +2,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import swaggerDocsSchema from "@carbon/database/swagger-docs-schema";
 import type {
   ClientLoaderFunctionArgs,
-  LoaderFunctionArgs,
-  SerializeFrom
+  LoaderFunctionArgs
 } from "react-router";
 import { docsQuery } from "~/utils/react-query";
 
@@ -16,7 +15,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function clientLoader({ serverLoader }: ClientLoaderFunctionArgs) {
   const queryKey = docsQuery().queryKey;
   const data =
-    window?.clientCache?.getQueryData<SerializeFrom<typeof loader>>(queryKey);
+    window?.clientCache?.getQueryData<Awaited<ReturnType<typeof loader>>>(
+      queryKey
+    );
 
   if (!data) {
     const serverData = await serverLoader<typeof loader>();

@@ -19,13 +19,21 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const { materialId, parentTrackedEntityId, children } = validation.data;
+  const {
+    materialId,
+    jobOperationId,
+    itemId,
+    parentTrackedEntityId,
+    children
+  } = validation.data;
 
   const serviceRole = await getCarbonServiceRole();
   const issue = await serviceRole.functions.invoke("issue", {
     body: {
       type: "trackedEntitiesToOperation",
       materialId,
+      jobOperationId,
+      itemId,
       parentTrackedEntityId,
       children,
       companyId,

@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLocalTimeZone, now } from "@internationalized/date";
 import { type LoaderFunctionArgs, redirect } from "react-router";
+import { getWorkCenterWithBlockingStatus } from "~/services/maintenance.service";
 import {
   getTrackedEntitiesByMakeMethodId,
   startProductionEvent
@@ -60,6 +61,27 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         error("You are not authorized to start this operation", "Unauthorized")
       )
     );
+  }
+
+  // Check if work center is blocked for maintenance
+  if (jobOperation.data.workCenterId) {
+    const workCenterStatus = await getWorkCenterWithBlockingStatus(
+      serviceRole,
+      jobOperation.data.workCenterId
+    );
+
+    if (workCenterStatus.data?.isBlocked) {
+      throw redirect(
+        path.to.operation(operationId),
+        await flash(
+          request,
+          error(
+            `Work center is blocked for maintenance (${workCenterStatus.data.blockingDispatchReadableId})`,
+            "Work Center Blocked"
+          )
+        )
+      );
+    }
   }
 
   // Get tracked entities if jobMakeMethodId exists
