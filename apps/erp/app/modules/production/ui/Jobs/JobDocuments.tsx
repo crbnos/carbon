@@ -323,6 +323,7 @@ type JobDocumentsProps = {
   files: FileObject[];
   jobId: string;
   itemId?: string | null;
+  bucket?: "job" | "parts";
   modelUpload?: ModelUpload;
 };
 
@@ -330,7 +331,8 @@ const JobDocuments = ({
   files,
   jobId,
   itemId,
-  modelUpload
+  modelUpload,
+  bucket = "job"
 }: JobDocumentsProps) => {
   const {
     canDelete,
@@ -378,7 +380,7 @@ const JobDocuments = ({
             <CardDescription>Job documents</CardDescription>
           </CardHeader>
           <CardAction>
-            <JobDocumentForm jobId={jobId} itemId={itemId} />
+            <JobDocumentForm jobId={jobId} itemId={itemId} bucket={bucket} />
           </CardAction>
         </HStack>
         <CardContent>
@@ -593,16 +595,18 @@ export default JobDocuments;
 type JobDocumentFormProps = {
   jobId: string;
   itemId?: string | null;
+  bucket?: "job" | "parts";
 };
 
-const JobDocumentForm = ({ jobId, itemId }: JobDocumentFormProps) => {
+const JobDocumentForm = ({
+  jobId,
+  itemId,
+  bucket = "job"
+}: JobDocumentFormProps) => {
   const permissions = usePermissions();
   const { upload } = useJobDocuments({ jobId, itemId });
 
-  const uploadFiles = async (
-    e: ChangeEvent<HTMLInputElement>,
-    bucket: "job" | "parts" = "job"
-  ) => {
+  const uploadFiles = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       upload(Array.from(e.target.files), bucket);
     }
@@ -612,7 +616,7 @@ const JobDocumentForm = ({ jobId, itemId }: JobDocumentFormProps) => {
     <File
       isDisabled={!permissions.can("update", "production")}
       leftIcon={<LuUpload />}
-      onChange={(e) => uploadFiles(e, "job")}
+      onChange={(e) => uploadFiles(e)}
       multiple
     >
       New

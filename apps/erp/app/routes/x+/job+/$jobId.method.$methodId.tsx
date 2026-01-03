@@ -12,6 +12,7 @@ import { usePermissions, useRouteData } from "~/hooks";
 import type { Job } from "~/modules/production";
 import {
   getJob,
+  getJobDocumentsWithItemId,
   getJobMakeMethodById,
   getJobMaterialsByMethodId,
   getJobOperationsByMethodId,
@@ -20,6 +21,7 @@ import {
 import {
   JobBillOfMaterial,
   JobBillOfProcess,
+  JobDocuments,
   JobEstimatesVsActuals
 } from "~/modules/production/ui/Jobs";
 import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
@@ -102,6 +104,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         workInstruction: o.workInstruction as JSONContent
       })) ?? [],
     makeMethod: makeMethod.data,
+    files: getJobDocumentsWithItemId(
+      client,
+      companyId,
+      job.data,
+      makeMethod.data.itemId
+    ),
     productionData: getProductionDataByOperations(
       client,
       operations?.data?.map((o) => o.id)
@@ -119,7 +127,8 @@ export default function JobMakeMethodRoute() {
   const routeData = useRouteData<{ job: Job }>(path.to.job(jobId));
 
   const loaderData = useLoaderData<typeof loader>();
-  const { job, materials, operations, productionData, tags } = loaderData;
+  const { job, materials, operations, productionData, tags, files } =
+    loaderData;
 
   const { setIsExplorerCollapsed, isExplorerCollapsed } = usePanels();
 
@@ -174,7 +183,17 @@ export default function JobMakeMethodRoute() {
             )}
           </Await>
         </Suspense>
-
+        <Await resolve={files}>
+          {(files) => (
+            <JobDocuments
+              files={files}
+              jobId={jobId}
+              bucket="parts"
+              itemId={makeMethod.itemId}
+              modelUpload={{ ...job }}
+            />
+          )}
+        </Await>
         <CadModel
           isReadOnly={!permissions.can("update", "production")}
           metadata={{

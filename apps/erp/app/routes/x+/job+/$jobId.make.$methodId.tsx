@@ -15,11 +15,13 @@ import {
   getJobMakeMethodById,
   getJobMaterialsByMethodId,
   getJobOperationsByMethodId,
+  getPartDocuments,
   getProductionDataByOperations
 } from "~/modules/production";
 import {
   JobBillOfMaterial,
   JobBillOfProcess,
+  JobDocuments,
   JobEstimatesVsActuals
 } from "~/modules/production/ui/Jobs";
 import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
@@ -106,6 +108,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       client,
       operations?.data?.map((o) => o.id)
     ),
+    files: getPartDocuments(client, companyId, makeMethod.data),
     model: getModelByItemId(client, makeMethod.data.itemId!),
     tags: tags.data ?? []
   };
@@ -118,8 +121,15 @@ export default function JobMakeMethodRoute() {
   if (!jobId) throw new Error("Could not find jobId");
   const routeData = useRouteData<{ job: Job }>(path.to.job(jobId));
   const loaderData = useLoaderData<typeof loader>();
-  const { job, makeMethod, materials, operations, productionData, tags } =
-    loaderData;
+  const {
+    job,
+    makeMethod,
+    materials,
+    operations,
+    productionData,
+    tags,
+    files
+  } = loaderData;
 
   const { setIsExplorerCollapsed, isExplorerCollapsed } = usePanels();
 
@@ -172,6 +182,17 @@ export default function JobMakeMethodRoute() {
           )}
         </Await>
       </Suspense>
+      <Await resolve={files}>
+        {(files) => (
+          <JobDocuments
+            files={files}
+            jobId={jobId}
+            bucket="parts"
+            itemId={makeMethod.itemId}
+            modelUpload={{ ...job }}
+          />
+        )}
+      </Await>
       <Suspense fallback={null}>
         <Await resolve={loaderData.model}>
           {(model) => (

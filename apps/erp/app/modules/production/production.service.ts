@@ -700,21 +700,44 @@ export async function getJobDocuments(
   ];
 }
 
+export const getPartDocuments = async (
+  client: SupabaseClient<Database>,
+  companyId: string,
+  ...items: Array<{ itemId: string }>
+) => {
+  const getFile = async (id: string) => {
+    const res = await client.storage
+      .from("private")
+      .list(`${companyId}/parts/${id}`);
+
+    if (res.error || !res.data) return null;
+
+    return res.data.map((f) => ({ ...f, bucket: "parts", itemId: id }));
+  };
+
+  const elems = items.map((el) => getFile(el.itemId));
+
+  const results = await Promise.all(elems);
+
+  return results.filter((f) => f !== null).flat();
+};
+
 export async function getJobDocumentsWithItemId(
   client: SupabaseClient<Database>,
   companyId: string,
   job: Job,
   itemId: string
 ): Promise<StorageItem[]> {
+  const itemFiles = await getPartDocuments(client, companyId, { itemId });
+
   if (job.salesOrderLineId || job.quoteLineId) {
     const opportunityLine = job.salesOrderLineId || job.quoteLineId;
 
-    const [opportunityLineFiles, jobFiles, itemFiles] = await Promise.all([
+    const [opportunityLineFiles, jobFiles] = await Promise.all([
       client.storage
         .from("private")
         .list(`${companyId}/opportunity-line/${opportunityLine}`),
-      client.storage.from("private").list(`${companyId}/job/${job.id}`),
-      client.storage.from("private").list(`${companyId}/parts/${itemId}`)
+      client.storage.from("private").list(`${companyId}/job/${job.id}`)
     ]);
 
     // Combine and return both sets of files
@@ -724,17 +747,16 @@ export async function getJobDocumentsWithItemId(
         bucket: "opportunity-line"
       })) || []),
       ...(jobFiles.data?.map((f) => ({ ...f, bucket: "job" })) || []),
-      ...(itemFiles.data?.map((f) => ({ ...f, bucket: "parts" })) || [])
+      ...itemFiles
     ];
   } else {
-    const [jobFiles, itemFiles] = await Promise.all([
-      client.storage.from("private").list(`${companyId}/job/${job.id}`),
-      client.storage.from("private").list(`${companyId}/parts/${itemId}`)
+    const [jobFiles] = await Promise.all([
+      client.storage.from("private").list(`${companyId}/job/${job.id}`)
     ]);
 
     return [
       ...(jobFiles.data?.map((f) => ({ ...f, bucket: "job" })) || []),
-      ...(itemFiles.data?.map((f) => ({ ...f, bucket: "parts" })) || [])
+      ...itemFiles
     ];
   }
 }
