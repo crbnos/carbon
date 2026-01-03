@@ -76,14 +76,18 @@ import {
   LuTimer,
   LuTriangleAlert
 } from "react-icons/lu";
-import { Await, useFetcher, useNavigate, useParams } from "react-router";
+import { Await, Link, useFetcher, useNavigate, useParams } from "react-router";
 import {
   DeadlineIcon,
   FileIcon,
   FilePreview,
   OperationStatusIcon
 } from "~/components";
-import { MethodIcon, TrackingTypeIcon } from "~/components/Icons";
+import {
+  MethodIcon,
+  MethodItemTypeIcon,
+  TrackingTypeIcon
+} from "~/components/Icons";
 import { useUrlParams, useUser } from "~/hooks";
 import type { productionEventType } from "~/services/models";
 import { getFileType } from "~/services/operations.service";
@@ -411,6 +415,8 @@ export const JobOperation = ({
     active: !!kanban?.id
   });
 
+  const item = items.find((it) => it.id === operation.itemId);
+
   return (
     <>
       <Tabs
@@ -480,6 +486,23 @@ export const JobOperation = ({
                 icon={<LuQrCode />}
               />
             </a>
+            <Button asChild variant={"secondary"}>
+              <Link to={path.to.jobDetail(operation.jobId)}>
+                <LuHardHat className="mr-2 size-4" />
+                Job Details
+              </Link>
+            </Button>
+            {item && (
+              <Button asChild variant={"secondary"}>
+                <Link to={path.to.itemMaster(item.id, item.type)}>
+                  <MethodItemTypeIcon
+                    type={item.type}
+                    className="mr-2 size-4"
+                  />
+                  Item Master
+                </Link>
+              </Button>
+            )}
           </HStack>
 
           <HStack className="justify-end items-center gap-2">
@@ -1055,7 +1078,13 @@ export const JobOperation = ({
                                           {parentIsSerial &&
                                           (material.requiresBatchTracking ||
                                             material.requiresSerialTracking)
-                                            ? `${material.quantity ?? material.estimatedQuantity}/${material.estimatedQuantity ?? material.quantity}`
+                                            ? `${
+                                                material.quantity ??
+                                                material.estimatedQuantity
+                                              }/${
+                                                material.estimatedQuantity ??
+                                                material.quantity
+                                              }`
                                             : (material.estimatedQuantity ??
                                               material.quantity)}
                                         </Td>
@@ -1072,7 +1101,10 @@ export const JobOperation = ({
                                           ) : parentIsSerial &&
                                             (material.requiresBatchTracking ||
                                               material.requiresSerialTracking) ? (
-                                            `${material.quantityIssued}/${material.quantity ?? material.estimatedQuantity}`
+                                            `${material.quantityIssued}/${
+                                              material.quantity ??
+                                              material.estimatedQuantity
+                                            }`
                                           ) : (
                                             material.quantityIssued
                                           )}
@@ -1194,7 +1226,13 @@ export const JobOperation = ({
                                                 {parentIsSerial &&
                                                 (kittedChild.requiresBatchTracking ||
                                                   kittedChild.requiresSerialTracking)
-                                                  ? `${kittedChild.quantity ?? kittedChild.estimatedQuantity}/${kittedChild.estimatedQuantity ?? kittedChild.quantity}`
+                                                  ? `${
+                                                      kittedChild.quantity ??
+                                                      kittedChild.estimatedQuantity
+                                                    }/${
+                                                      kittedChild.estimatedQuantity ??
+                                                      kittedChild.quantity
+                                                    }`
                                                   : (kittedChild.estimatedQuantity ??
                                                     kittedChild.quantity)}
                                               </Td>
@@ -1214,7 +1252,12 @@ export const JobOperation = ({
                                                 ) : parentIsSerial &&
                                                   (kittedChild.requiresBatchTracking ||
                                                     kittedChild.requiresSerialTracking) ? (
-                                                  `${kittedChild.quantityIssued}/${kittedChild.quantity ?? kittedChild.estimatedQuantity}`
+                                                  `${
+                                                    kittedChild.quantityIssued
+                                                  }/${
+                                                    kittedChild.quantity ??
+                                                    kittedChild.estimatedQuantity
+                                                  }`
                                                 ) : (
                                                   kittedChild.quantityIssued
                                                 )}
