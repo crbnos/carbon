@@ -473,36 +473,46 @@ export const JobOperation = ({
         </header>
 
         <div className="hidden md:flex items-center justify-between px-4 lg:pl-6 py-2 h-[var(--header-height)] bg-background gap-4 max-w-[100vw] overflow-x-hidden scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
-          <HStack>
+          <HStack className="min-w-22 justify-between">
             <Heading size="h4">{operation.jobReadableId}</Heading>
-            <a
-              href={path.to.file.jobTraveler(operation.jobMakeMethodId)}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <IconButton
-                aria-label="Job Traveler"
-                variant="secondary"
-                icon={<LuQrCode />}
-              />
-            </a>
-            <Button asChild variant={"secondary"}>
-              <Link to={path.to.jobDetail(operation.jobId)}>
-                <LuHardHat className="mr-2 size-4" />
-                Job Details
-              </Link>
-            </Button>
-            {item && (
-              <Button asChild variant={"secondary"}>
-                <Link to={path.to.itemMaster(item.id, item.type)}>
-                  <MethodItemTypeIcon
-                    type={item.type}
-                    className="mr-2 size-4"
-                  />
-                  Item Master
-                </Link>
-              </Button>
-            )}
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <IconButton
+                  aria-label="More options"
+                  variant="ghost"
+                  icon={<LuEllipsisVertical />}
+                />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem asChild>
+                  <a
+                    href={path.to.file.jobTraveler(operation.jobMakeMethodId)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <DropdownMenuIcon icon={<LuQrCode />} />
+                    Job Traveler
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to={path.to.jobDetail(operation.jobId)}>
+                    <DropdownMenuIcon icon={<LuHardHat />} />
+                    Job Details
+                  </Link>
+                </DropdownMenuItem>
+                {item && (
+                  <DropdownMenuItem asChild>
+                    <Link to={path.to.itemMaster(item?.id, item.type)}>
+                      <DropdownMenuIcon
+                        icon={<MethodItemTypeIcon type={item.type} />}
+                      />
+                      Item Master
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </HStack>
 
           <HStack className="justify-end items-center gap-2">
