@@ -1,4 +1,5 @@
 import {
+  CreatableCombobox,
   DatePicker,
   MultiSelect,
   Select,
@@ -16,6 +17,7 @@ import {
   VStack
 } from "@carbon/react";
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import type { z } from "zod";
 import {
   CustomFormFields,
@@ -27,6 +29,7 @@ import {
 import { usePermissions } from "~/hooks";
 import { useItems } from "~/stores/items";
 import type { ListItem } from "~/types";
+import { path } from "~/utils/path";
 import {
   issueValidator,
   nonConformanceApprovalRequirement,
@@ -51,6 +54,7 @@ const IssueForm = ({
   nonConformanceTypes,
   requiredActions
 }: IssueFormProps) => {
+  const navigate = useNavigate();
   const permissions = usePermissions();
   const isEditing = initialValues.id !== undefined;
 
@@ -130,7 +134,7 @@ const IssueForm = ({
             </div>
             <TextArea name="description" label="Description" />
             <div className="grid w-full gap-4 grid-cols-1 md:grid-cols-2">
-              <Select
+              <CreatableCombobox
                 name="nonConformanceWorkflowId"
                 label="Workflow"
                 options={nonConformanceWorkflows.map((workflow) => ({
@@ -138,6 +142,9 @@ const IssueForm = ({
                   value: workflow.id
                 }))}
                 onChange={onWorkflowChange}
+                onCreateOption={() => {
+                  navigate(path.to.newIssueWorkflow);
+                }}
               />
 
               <MultiSelect
