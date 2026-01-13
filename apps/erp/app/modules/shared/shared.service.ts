@@ -201,7 +201,10 @@ export async function getTagsList(
   companyId: string,
   table?: string | null
 ) {
-  let query = client.from("tag").select("name").eq("companyId", companyId);
+  let query = client
+    .from("tag")
+    .select("name, table")
+    .eq("companyId", companyId);
 
   if (table) {
     query = query.eq("table", table);

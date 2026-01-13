@@ -1,4 +1,5 @@
 import {
+  Badge,
   Button,
   Checkbox,
   Combobox,
@@ -29,7 +30,8 @@ import {
   LuPuzzle,
   LuRuler,
   LuShapes,
-  LuStar
+  LuStar,
+  LuTag
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import {
@@ -64,10 +66,18 @@ type InventoryTableProps = {
   locationId: string;
   forms: ListItem[];
   substances: ListItem[];
+  tags: { name: string; table: string | null }[];
 };
 
 const InventoryTable = memo(
-  ({ data, count, locationId, forms, substances }: InventoryTableProps) => {
+  ({
+    data,
+    count,
+    locationId,
+    forms,
+    substances,
+    tags
+  }: InventoryTableProps) => {
     const [params] = useUrlParams();
 
     const locations = useLocations();
@@ -403,6 +413,48 @@ const InventoryTable = memo(
           }
         },
         {
+          accessorKey: "tags",
+          header: "Tags",
+          cell: ({ row }) => (
+            <HStack spacing={0} className="gap-1">
+              {(row.original.tags || []).map((tag) => (
+                <Badge key={tag} variant="secondary">
+                  {tag}
+                </Badge>
+              ))}
+            </HStack>
+          ),
+          meta: {
+            filter: {
+              type: "static",
+              options: tags?.map((tag) => {
+                const typeLabel = tag.table
+                  ? tag.table.charAt(0).toUpperCase() + tag.table.slice(1)
+                  : "";
+                // Use composite value: "tagName|table" for unique identification
+                const compositeValue = tag.table
+                  ? `${tag.name}|${tag.table}`
+                  : tag.name;
+                return {
+                  value: compositeValue,
+                  label: (
+                    <Badge variant="secondary">
+                      {tag.name}
+                      {typeLabel && (
+                        <span className="text-muted-foreground ml-1">
+                          ({typeLabel})
+                        </span>
+                      )}
+                    </Badge>
+                  )
+                };
+              }),
+              isArray: true
+            },
+            icon: <LuTag />
+          }
+        },
+        {
           accessorKey: "active",
           header: "Active",
           cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
@@ -426,11 +478,13 @@ const InventoryTable = memo(
       numberFormatter,
       params,
       substances,
+      tags,
       unitOfMeasures
     ]);
 
     const defaultColumnVisibility = {
       active: false,
+      tags: false,
       type: false,
       finish: false,
       grade: false,

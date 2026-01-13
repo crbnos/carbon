@@ -12,6 +12,7 @@ import {
   getMaterialSubstancesList
 } from "~/modules/items";
 import { getLocationsList } from "~/modules/resources";
+import { getTagsList } from "~/modules/shared";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -60,7 +61,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  const [inventoryItems, forms, substances] = await Promise.all([
+  const [inventoryItems, forms, substances, tags] = await Promise.all([
     getInventoryItems(client, locationId, companyId, {
       search,
       limit,
@@ -68,9 +69,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
       sorts,
       filters
     }),
-
     getMaterialFormsList(client, companyId),
-    getMaterialSubstancesList(client, companyId)
+    getMaterialSubstancesList(client, companyId),
+    getTagsList(client, companyId)
   ]);
 
   if (inventoryItems.error) {
@@ -88,12 +89,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     inventoryItems: (inventoryItems.data ?? []) as InventoryItem[],
     locationId,
     forms: forms.data ?? [],
-    substances: substances.data ?? []
+    substances: substances.data ?? [],
+    tags: tags.data ?? []
   };
 }
 
 export default function QuantitiesRoute() {
-  const { count, inventoryItems, locationId, forms, substances } =
+  const { count, inventoryItems, locationId, forms, substances, tags } =
     useLoaderData<typeof loader>();
 
   return (
@@ -111,6 +113,7 @@ export default function QuantitiesRoute() {
             locationId={locationId}
             forms={forms}
             substances={substances}
+            tags={tags}
           />
         </ResizablePanel>
         <Outlet />
