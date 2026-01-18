@@ -185,50 +185,7 @@ export async function getInventoryItems(
     );
   }
 
-  // Process tag filters with composite values (e.g., "Press|material")
-  // and expand them into separate tag and type filters
-  const processedArgs = { ...args };
-  if (args.filters) {
-    const typeFiltersToAdd: string[] = [];
-    processedArgs.filters = args.filters.map((filter) => {
-      if (filter.column === "tags" && filter.value) {
-        // Parse composite values: "tagName|table" format
-        const tagValues = filter.value.split(",");
-        const processedTags: string[] = [];
-
-        for (const tagValue of tagValues) {
-          if (tagValue.includes("|")) {
-            const [tagName, table] = tagValue.split("|");
-            processedTags.push(tagName);
-            // Capitalize first letter for type filter (e.g., "material" -> "Material")
-            const itemType = table.charAt(0).toUpperCase() + table.slice(1);
-            if (!typeFiltersToAdd.includes(itemType)) {
-              typeFiltersToAdd.push(itemType);
-            }
-          } else {
-            processedTags.push(tagValue);
-          }
-        }
-
-        return {
-          ...filter,
-          value: processedTags.join(",")
-        };
-      }
-      return filter;
-    });
-
-    // Add type filters if extracted from composite tag values
-    if (typeFiltersToAdd.length > 0) {
-      processedArgs.filters.push({
-        column: "type",
-        operator: "in",
-        value: typeFiltersToAdd.join(",")
-      });
-    }
-  }
-
-  query = setGenericQueryFilters(query, processedArgs, [
+  query = setGenericQueryFilters(query, args, [
     { column: "readableIdWithRevision", ascending: true }
   ]);
 

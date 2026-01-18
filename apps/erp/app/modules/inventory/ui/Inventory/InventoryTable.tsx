@@ -66,7 +66,7 @@ type InventoryTableProps = {
   locationId: string;
   forms: ListItem[];
   substances: ListItem[];
-  tags: { name: string; table: string | null }[];
+  tags: string[];
 };
 
 const InventoryTable = memo(
@@ -427,28 +427,10 @@ const InventoryTable = memo(
           meta: {
             filter: {
               type: "static",
-              options: tags?.map((tag) => {
-                const typeLabel = tag.table
-                  ? tag.table.charAt(0).toUpperCase() + tag.table.slice(1)
-                  : "";
-                // Use composite value: "tagName|table" for unique identification
-                const compositeValue = tag.table
-                  ? `${tag.name}|${tag.table}`
-                  : tag.name;
-                return {
-                  value: compositeValue,
-                  label: (
-                    <Badge variant="secondary">
-                      {tag.name}
-                      {typeLabel && (
-                        <span className="text-muted-foreground ml-1">
-                          ({typeLabel})
-                        </span>
-                      )}
-                    </Badge>
-                  )
-                };
-              }),
+              options: tags?.map((tag) => ({
+                value: tag,
+                label: <Badge variant="secondary">{tag}</Badge>
+              })),
               isArray: true
             },
             icon: <LuTag />

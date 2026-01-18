@@ -84,13 +84,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
+  // Deduplicate tag names using Set
+  const uniqueTags = [...new Set((tags.data ?? []).map((t) => t.name))];
+
   return {
     count: inventoryItems.count ?? 0,
     inventoryItems: (inventoryItems.data ?? []) as InventoryItem[],
     locationId,
     forms: forms.data ?? [],
     substances: substances.data ?? [],
-    tags: tags.data ?? []
+    tags: uniqueTags
   };
 }
 
