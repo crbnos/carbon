@@ -128,11 +128,18 @@ export async function deletePartner(
   return client.from("partner").delete().eq("id", partnerId);
 }
 
+export async function activateProcess(
+  client: SupabaseClient<Database>,
+  processId: string
+) {
+  return client.from("process").update({ active: true }).eq("id", processId);
+}
+
 export async function deleteProcess(
   client: SupabaseClient<Database>,
   processId: string
 ) {
-  return client.from("process").delete().eq("id", processId);
+  return client.from("process").update({ active: false }).eq("id", processId);
 }
 
 export async function deleteShift(
@@ -708,6 +715,7 @@ export async function getProcessesList(
     .from("process")
     .select(`id, name`)
     .eq("companyId", companyId)
+    .eq("active", true)
     .order("name");
 }
 

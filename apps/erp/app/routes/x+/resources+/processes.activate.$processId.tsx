@@ -8,7 +8,7 @@ import type {
 } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
 import { Confirm } from "~/components/Modals";
-import { deleteProcess, getProcess } from "~/modules/resources";
+import { activateProcess, getProcess } from "~/modules/resources";
 import { path } from "~/utils/path";
 import { getCompanyId, processesQuery } from "~/utils/react-query";
 
@@ -47,20 +47,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteProcessError } = await deleteProcess(client, processId);
-  if (deleteProcessError) {
+  const { error: activateProcessError } = await activateProcess(
+    client,
+    processId
+  );
+  if (activateProcessError) {
     throw redirect(
       path.to.processes,
       await flash(
         request,
-        error(deleteProcessError, deleteProcessError.details)
+        error(activateProcessError, "Failed to activate process")
       )
     );
   }
 
   throw redirect(
     path.to.processes,
-    await flash(request, success("Successfully deactivated process"))
+    await flash(request, success("Successfully activated process"))
   );
 }
 
@@ -72,7 +75,7 @@ export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
   return await serverAction();
 }
 
-export default function DeleteProcessRoute() {
+export default function ActivateProcessRoute() {
   const { processId } = useParams();
   const { process } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
@@ -84,10 +87,10 @@ export default function DeleteProcessRoute() {
 
   return (
     <Confirm
-      action={path.to.deleteProcess(processId)}
-      title={`Deactivate ${process.name}`}
-      text={`Are you sure you want to deactivate the process: ${process.name}? It will no longer appear in dropdowns.`}
-      confirmText="Deactivate"
+      action={path.to.activateProcess(processId)}
+      title={`Activate ${process.name}`}
+      text={`Are you sure you want to activate the process: ${process.name}? It will appear in dropdowns again.`}
+      confirmText="Activate"
       isOpen={true}
       onCancel={onCancel}
       onSubmit={onCancel}
