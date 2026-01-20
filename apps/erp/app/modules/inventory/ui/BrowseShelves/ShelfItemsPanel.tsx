@@ -5,7 +5,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  HStack,
   ScrollArea,
   Table,
   Tbody,
@@ -144,19 +143,24 @@ const ShelfItemsPanel = ({
                         <Th className="w-1/4">Name</Th>
                         <Th className="w-1/6">Quantity</Th>
                         <Th className="w-1/6">UoM</Th>
-                        <Th className="w-12" />
                       </Tr>
                     </Thead>
                     <Tbody>
                       {items.map((item) => (
-                        <Tr key={item.itemId}>
+                        <Tr key={item.itemId} className="group">
                           <Td>
-                            <Link
-                              to={getItemPath(item.itemId)}
-                              className="text-primary hover:underline font-medium"
-                            >
-                              {item.readableIdWithRevision}
-                            </Link>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">
+                                {item.readableIdWithRevision}
+                              </span>
+                              <Link
+                                to={getItemPath(item.itemId)}
+                                className="text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                                title="View item inventory"
+                              >
+                                <LuExternalLink className="h-4 w-4" />
+                              </Link>
+                            </div>
                           </Td>
                           <Td>
                             <span
@@ -173,17 +177,6 @@ const ShelfItemsPanel = ({
                           </Td>
                           <Td>
                             <Enumerable value={item.unitOfMeasureCode} />
-                          </Td>
-                          <Td>
-                            <HStack className="justify-end">
-                              <Link
-                                to={getItemPath(item.itemId)}
-                                className="text-muted-foreground hover:text-foreground"
-                                title="View item inventory"
-                              >
-                                <LuExternalLink className="h-4 w-4" />
-                              </Link>
-                            </HStack>
                           </Td>
                         </Tr>
                       ))}

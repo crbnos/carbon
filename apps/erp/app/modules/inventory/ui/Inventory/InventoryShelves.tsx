@@ -39,6 +39,7 @@ import { nanoid } from "nanoid";
 import { useMemo, useState } from "react";
 import {
   LuEllipsisVertical,
+  LuExternalLink,
   LuPencil,
   LuPrinter,
   LuQrCode
@@ -171,20 +172,23 @@ const InventoryShelves = ({
               {itemShelfQuantities
                 .filter((item) => item.quantity !== 0)
                 .map((item, index) => (
-                  <Tr key={index}>
+                  <Tr key={index} className="group">
                     <Td>
-                      {item.shelfId ? (
-                        <Link
-                          to={`${path.to.browseShelf(item.shelfId)}${locationId ? `?location=${locationId}` : ""}`}
-                          className="text-primary hover:underline"
-                        >
+                      <div className="flex items-center gap-2">
+                        <span>
                           {shelves.find((s) => s.value === item.shelfId)
                             ?.label || item.shelfId}
-                        </Link>
-                      ) : (
-                        shelves.find((s) => s.value === item.shelfId)?.label ||
-                        item.shelfId
-                      )}
+                        </span>
+                        {item.shelfId && (
+                          <Link
+                            to={`${path.to.browseShelf(item.shelfId)}${locationId ? `?location=${locationId}` : ""}`}
+                            className="text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                            title="View shelf"
+                          >
+                            <LuExternalLink className="h-4 w-4" />
+                          </Link>
+                        )}
+                      </div>
                     </Td>
 
                     <Td>
