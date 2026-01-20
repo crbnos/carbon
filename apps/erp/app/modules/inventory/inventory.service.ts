@@ -1467,6 +1467,239 @@ export async function upsertWarehouseTransferLine(
   }
 }
 
+export async function getShelvesWithItemCounts(
+  client: SupabaseClient<Database>,
+  locationId: string,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+  }
+) {
+  // First, get ALL active shelves for this location (we'll filter later based on search)
+  const allShelvesQuery = client
+    .from("shelf")
+    .select("id, name, locationId, active, createdAt, updatedAt")
+    .eq("companyId", companyId)
+    .eq("locationId", locationId)
+    .eq("active", true)
+    .order("name", { ascending: true });
+
+  const allShelves = await allShelvesQuery;
+
+  if (allShelves.error) {
+    return { data: [], count: 0, error: allShelves.error };
+  }
+
+  const shelfIds = (allShelves.data ?? []).map((s) => s.id);
+
+  if (shelfIds.length === 0) {
+    return { data: [], count: 0, error: null };
+  }
+
+  // Query itemLedger to get item counts per shelf
+  const itemLedgerQuery = client
+    .from("itemLedger")
+    .select(
+      "shelfId, itemId, quantity, item!inner(name, readableIdWithRevision)"
+    )
+    .in("shelfId", shelfIds)
+    .eq("companyId", companyId)
+    .eq("locationId", locationId);
+
+  const itemLedgers = await itemLedgerQuery;
+
+  // Aggregate quantities per shelf and count unique items
+  // Also track which items are on each shelf for search filtering
+  const shelfStats = new Map<
+    string,
+    {
+      itemCount: number;
+      totalQuantity: number;
+      items: Set<string>;
+      itemDetails: Array<{ name: string; readableId: string }>;
+    }
+  >();
+
+  if (itemLedgers.data) {
+    for (const ledger of itemLedgers.data) {
+      const shelfId = ledger.shelfId;
+      if (!shelfId) continue;
+
+      if (!shelfStats.has(shelfId)) {
+        shelfStats.set(shelfId, {
+          itemCount: 0,
+          totalQuantity: 0,
+          items: new Set(),
+          itemDetails: []
+        });
+      }
+
+      const stats = shelfStats.get(shelfId)!;
+      if (!stats.items.has(ledger.itemId)) {
+        stats.items.add(ledger.itemId);
+        const item = ledger.item as {
+          name: string;
+          readableIdWithRevision: string;
+        };
+        stats.itemDetails.push({
+          name: item.name,
+          readableId: item.readableIdWithRevision
+        });
+      }
+      stats.totalQuantity += Number(ledger.quantity) || 0;
+    }
+
+    // Calculate final item counts
+    for (const stats of shelfStats.values()) {
+      stats.itemCount = stats.items.size;
+    }
+  }
+
+  // Apply search filter - search both shelf name AND item names/IDs
+  let filteredShelves = allShelves.data ?? [];
+  if (args?.search) {
+    const searchLower = args.search.toLowerCase();
+    filteredShelves = filteredShelves.filter((shelf) => {
+      // Match shelf name
+      if (shelf.name.toLowerCase().includes(searchLower)) {
+        return true;
+      }
+      // Match any item on this shelf
+      const stats = shelfStats.get(shelf.id);
+      if (stats) {
+        return stats.itemDetails.some(
+          (item) =>
+            item.name.toLowerCase().includes(searchLower) ||
+            item.readableId?.toLowerCase().includes(searchLower)
+        );
+      }
+      return false;
+    });
+  }
+
+  // Apply pagination
+  const offset = args.offset ?? 0;
+  const limit = args.limit ?? 50;
+  const paginatedShelves = filteredShelves.slice(offset, offset + limit);
+
+  // Merge shelf data with stats
+  const data = paginatedShelves.map((shelf) => ({
+    ...shelf,
+    itemCount: shelfStats.get(shelf.id)?.itemCount ?? 0,
+    totalQuantity: shelfStats.get(shelf.id)?.totalQuantity ?? 0
+  }));
+
+  return {
+    data,
+    count: filteredShelves.length,
+    error: null
+  };
+}
+
+export async function getShelfItems(
+  client: SupabaseClient<Database>,
+  shelfId: string,
+  locationId: string,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+  }
+) {
+  // Get all item ledger entries for this shelf, grouped by item
+  const { data: ledgerData, error: ledgerError } = await client
+    .from("itemLedger")
+    .select(
+      `
+      itemId,
+      quantity,
+      item!inner(
+        id,
+        name,
+        readableIdWithRevision,
+        unitOfMeasureCode,
+        itemTrackingType
+      )
+    `
+    )
+    .eq("shelfId", shelfId)
+    .eq("locationId", locationId)
+    .eq("companyId", companyId);
+
+  if (ledgerError) {
+    return { data: [], count: 0, error: ledgerError };
+  }
+
+  // Aggregate quantities per item
+  const itemQuantities = new Map<
+    string,
+    {
+      itemId: string;
+      name: string;
+      readableIdWithRevision: string;
+      unitOfMeasureCode: string;
+      itemTrackingType: string;
+      quantity: number;
+    }
+  >();
+
+  for (const ledger of ledgerData ?? []) {
+    const item = ledger.item as {
+      id: string;
+      name: string;
+      readableIdWithRevision: string;
+      unitOfMeasureCode: string;
+      itemTrackingType: string;
+    };
+
+    if (!itemQuantities.has(ledger.itemId)) {
+      itemQuantities.set(ledger.itemId, {
+        itemId: ledger.itemId,
+        name: item.name,
+        readableIdWithRevision: item.readableIdWithRevision,
+        unitOfMeasureCode: item.unitOfMeasureCode,
+        itemTrackingType: item.itemTrackingType,
+        quantity: 0
+      });
+    }
+
+    const itemData = itemQuantities.get(ledger.itemId)!;
+    itemData.quantity += Number(ledger.quantity) || 0;
+  }
+
+  // Convert to array and filter items with quantity > 0
+  let items = Array.from(itemQuantities.values()).filter(
+    (item) => item.quantity > 0
+  );
+
+  // Apply search filter
+  if (args?.search) {
+    const searchLower = args.search.toLowerCase();
+    items = items.filter(
+      (item) =>
+        item.name.toLowerCase().includes(searchLower) ||
+        item.readableIdWithRevision?.toLowerCase().includes(searchLower)
+    );
+  }
+
+  // Sort by readable ID
+  items.sort((a, b) =>
+    (a.readableIdWithRevision ?? "").localeCompare(
+      b.readableIdWithRevision ?? ""
+    )
+  );
+
+  // Apply pagination
+  const offset = args.offset ?? 0;
+  const limit = args.limit ?? 50;
+  const paginatedItems = items.slice(offset, offset + limit);
+
+  return {
+    data: paginatedItems,
+    count: items.length,
+    error: null
+  };
+}
+
 export async function getDefaultShelfForJob(
   client: SupabaseClient<Database>,
   itemId: string,

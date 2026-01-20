@@ -1,6 +1,7 @@
 import {
   LuArrowRightLeft,
   LuHandCoins,
+  LuLibrary,
   LuListChecks,
   LuNetwork,
   LuQrCode,
@@ -58,6 +59,13 @@ const inventoryRoutes: AuthenticatedRouteGroup[] = [
         role: "employee",
         icon: <LuTally5 />,
         table: "inventory"
+      },
+      {
+        name: "Shelves",
+        to: path.to.browseShelves,
+        role: "employee",
+        icon: <LuLibrary />,
+        table: "shelf"
       },
       {
         name: "Tracked Entities",

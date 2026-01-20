@@ -43,7 +43,7 @@ import {
   LuPrinter,
   LuQrCode
 } from "react-icons/lu";
-import { Outlet } from "react-router";
+import { Link, Outlet, useSearchParams } from "react-router";
 import type { z } from "zod";
 import { Enumerable } from "~/components/Enumerable";
 import { Input, Location, Select, Shelf } from "~/components/Form";
@@ -74,6 +74,8 @@ const InventoryShelves = ({
 }: InventoryShelvesProps) => {
   const permissions = usePermissions();
   const adjustmentModal = useDisclosure();
+  const [searchParams] = useSearchParams();
+  const locationId = searchParams.get("location");
 
   const unitOfMeasures = useUnitOfMeasure();
 
@@ -171,8 +173,18 @@ const InventoryShelves = ({
                 .map((item, index) => (
                   <Tr key={index}>
                     <Td>
-                      {shelves.find((s) => s.value === item.shelfId)?.label ||
-                        item.shelfId}
+                      {item.shelfId ? (
+                        <Link
+                          to={`${path.to.browseShelf(item.shelfId)}${locationId ? `?location=${locationId}` : ""}`}
+                          className="text-primary hover:underline"
+                        >
+                          {shelves.find((s) => s.value === item.shelfId)
+                            ?.label || item.shelfId}
+                        </Link>
+                      ) : (
+                        shelves.find((s) => s.value === item.shelfId)?.label ||
+                        item.shelfId
+                      )}
                     </Td>
 
                     <Td>

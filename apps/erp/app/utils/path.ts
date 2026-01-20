@@ -404,6 +404,9 @@ export const path = {
     batchPropertyOrder: (itemId: string) =>
       generatePath(`${x}/inventory/batch-property/${itemId}/property/order`),
     billing: `${x}/settings/billing`,
+    browseShelf: (id: string) =>
+      generatePath(`${x}/inventory/browse-shelves/${id}`),
+    browseShelves: `${x}/inventory/browse-shelves`,
     bulkEditPermissions: `${x}/users/bulk-edit-permissions`,
     bulkUpdateItems: `${x}/items/update`,
     bulkUpdateProductionPlanning: `${x}/production/planning/update`,

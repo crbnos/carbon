@@ -1,5 +1,6 @@
 import useInventorySubmodules from "./useInventorySubmodules";
 
+export * from "./BrowseShelves";
 export * from "./Inventory";
 export * from "./Kanbans";
 export * from "./Receipts";
