@@ -5,8 +5,8 @@ import { ResizablePanel, ResizablePanelGroup, VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
 import {
-  BrowseShelvesTable,
-  getShelvesWithItemCounts
+  getShelvesWithItemCounts,
+  ShelfInventoryTable
 } from "~/modules/inventory";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
@@ -16,7 +16,7 @@ import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
   breadcrumb: "Shelves",
-  to: path.to.browseShelves,
+  to: path.to.shelfInventories,
   module: "inventory"
 };
 
@@ -39,7 +39,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const userDefaults = await getUserDefaults(client, userId, companyId);
     if (userDefaults.error) {
       throw redirect(
-        path.to.browseShelves,
+        path.to.shelfInventories,
         await flash(
           request,
           error(userDefaults.error, "Failed to load default location")
@@ -54,7 +54,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const locations = await getLocationsList(client, companyId);
     if (locations.error || !locations.data?.length) {
       throw redirect(
-        path.to.browseShelves,
+        path.to.shelfInventories,
         await flash(
           request,
           error(locations.error, "Failed to load any locations")
@@ -91,7 +91,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-export default function BrowseShelvesRoute() {
+export default function ShelfInventoriesRoute() {
   const { count, shelves, locationId } = useLoaderData<typeof loader>();
 
   return (
@@ -103,7 +103,7 @@ export default function BrowseShelvesRoute() {
           minSize={25}
           className="bg-background"
         >
-          <BrowseShelvesTable
+          <ShelfInventoryTable
             data={shelves}
             count={count}
             locationId={locationId}

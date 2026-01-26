@@ -72,7 +72,7 @@ const ShelfItemsPanel = ({
   };
 
   const handleClose = () => {
-    navigate(`${path.to.browseShelves}?${params.toString()}`);
+    navigate(`${path.to.shelfInventories}?${params.toString()}`);
   };
 
   return (

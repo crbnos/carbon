@@ -62,10 +62,10 @@ const inventoryRoutes: AuthenticatedRouteGroup[] = [
       },
       {
         name: "Shelves",
-        to: path.to.browseShelves,
+        to: path.to.shelfInventories,
         role: "employee",
         icon: <LuLibrary />,
-        table: "shelf"
+        table: "shelfInventory"
       },
       {
         name: "Tracked Entities",

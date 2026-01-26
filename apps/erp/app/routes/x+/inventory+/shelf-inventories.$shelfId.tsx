@@ -32,7 +32,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const userDefaults = await getUserDefaults(client, userId, companyId);
     if (userDefaults.error) {
       throw redirect(
-        path.to.browseShelves,
+        path.to.shelfInventories,
         await flash(
           request,
           error(userDefaults.error, "Failed to load default location")
@@ -47,7 +47,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const locations = await getLocationsList(client, companyId);
     if (locations.error || !locations.data?.length) {
       throw redirect(
-        path.to.browseShelves,
+        path.to.shelfInventories,
         await flash(
           request,
           error(locations.error, "Failed to load any locations")
@@ -70,14 +70,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (shelf.error || !shelf.data) {
     throw redirect(
-      path.to.browseShelves,
+      path.to.shelfInventories,
       await flash(request, error(shelf.error, "Failed to load shelf"))
     );
   }
 
   if (shelfItems.error) {
     throw redirect(
-      path.to.browseShelves,
+      path.to.shelfInventories,
       await flash(
         request,
         error(shelfItems.error, "Failed to load shelf items")
@@ -100,7 +100,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export default function BrowseShelfDetailRoute() {
+export default function ShelfInventoryDetailRoute() {
   const { shelf, items, itemCount, totalQuantity, locationId } =
     useLoaderData<typeof loader>();
 

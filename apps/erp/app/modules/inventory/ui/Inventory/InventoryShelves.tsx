@@ -181,7 +181,7 @@ const InventoryShelves = ({
                         </span>
                         {item.shelfId && (
                           <Link
-                            to={`${path.to.browseShelf(item.shelfId)}${locationId ? `?location=${locationId}` : ""}`}
+                            to={`${path.to.shelfInventory(item.shelfId)}${locationId ? `?location=${locationId}` : ""}`}
                             className="text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                             title="View shelf"
                           >

@@ -1475,33 +1475,87 @@ export async function getShelvesWithItemCounts(
     search: string | null;
   }
 ) {
-  // First, get ALL active shelves for this location (we'll filter later based on search)
-  const allShelvesQuery = client
+  // If searching, we need to find shelves that match by name OR contain matching items
+  let matchingShelfIds: string[] | null = null;
+
+  if (args?.search) {
+    // First, get shelf IDs that match by shelf name
+    const shelfNameMatches = await client
+      .from("shelf")
+      .select("id")
+      .eq("companyId", companyId)
+      .eq("locationId", locationId)
+      .eq("active", true)
+      .ilike("name", `%${args.search}%`);
+
+    const shelfNameMatchIds = new Set(
+      (shelfNameMatches.data ?? []).map((s) => s.id)
+    );
+
+    // Then, get shelf IDs that contain items matching the search
+    const itemMatches = await client
+      .from("itemLedger")
+      .select("shelfId, item!inner(name, readableIdWithRevision)")
+      .eq("companyId", companyId)
+      .eq("locationId", locationId)
+      .not("shelfId", "is", null)
+      .or(
+        `name.ilike.%${args.search}%,readableIdWithRevision.ilike.%${args.search}%`,
+        { referencedTable: "item" }
+      );
+
+    const itemMatchShelfIds = new Set(
+      (itemMatches.data ?? [])
+        .map((l) => l.shelfId)
+        .filter((id): id is string => id !== null)
+    );
+
+    // Combine both sets
+    matchingShelfIds = [
+      ...new Set([...shelfNameMatchIds, ...itemMatchShelfIds])
+    ];
+
+    if (matchingShelfIds.length === 0) {
+      return { data: [], count: 0, error: null };
+    }
+  }
+
+  // Build the base query with pagination
+  let query = client
     .from("shelf")
-    .select("id, name, locationId, active, createdAt, updatedAt")
+    .select("id, name, locationId, active, createdAt, updatedAt", {
+      count: "exact"
+    })
     .eq("companyId", companyId)
     .eq("locationId", locationId)
-    .eq("active", true)
-    .order("name", { ascending: true });
+    .eq("active", true);
 
-  const allShelves = await allShelvesQuery;
-
-  if (allShelves.error) {
-    return { data: [], count: 0, error: allShelves.error };
+  // If we have matching shelf IDs from search, filter by them
+  if (matchingShelfIds) {
+    query = query.in("id", matchingShelfIds);
   }
 
-  const shelfIds = (allShelves.data ?? []).map((s) => s.id);
+  // Apply generic query filters (pagination, sorting)
+  query = setGenericQueryFilters(query, args, [
+    { column: "name", ascending: true }
+  ]);
+
+  const shelves = await query;
+
+  if (shelves.error) {
+    return { data: [], count: 0, error: shelves.error };
+  }
+
+  const shelfIds = (shelves.data ?? []).map((s) => s.id);
 
   if (shelfIds.length === 0) {
-    return { data: [], count: 0, error: null };
+    return { data: [], count: shelves.count ?? 0, error: null };
   }
 
-  // Query itemLedger to get item counts per shelf
+  // Query itemLedger to get item counts per shelf for the paginated results
   const itemLedgerQuery = client
     .from("itemLedger")
-    .select(
-      "shelfId, itemId, quantity, item!inner(name, readableIdWithRevision)"
-    )
+    .select("shelfId, itemId, quantity")
     .in("shelfId", shelfIds)
     .eq("companyId", companyId)
     .eq("locationId", locationId);
@@ -1509,14 +1563,12 @@ export async function getShelvesWithItemCounts(
   const itemLedgers = await itemLedgerQuery;
 
   // Aggregate quantities per shelf and count unique items
-  // Also track which items are on each shelf for search filtering
   const shelfStats = new Map<
     string,
     {
       itemCount: number;
       totalQuantity: number;
       items: Set<string>;
-      itemDetails: Array<{ name: string; readableId: string }>;
     }
   >();
 
@@ -1529,22 +1581,13 @@ export async function getShelvesWithItemCounts(
         shelfStats.set(shelfId, {
           itemCount: 0,
           totalQuantity: 0,
-          items: new Set(),
-          itemDetails: []
+          items: new Set()
         });
       }
 
       const stats = shelfStats.get(shelfId)!;
       if (!stats.items.has(ledger.itemId)) {
         stats.items.add(ledger.itemId);
-        const item = ledger.item as {
-          name: string;
-          readableIdWithRevision: string;
-        };
-        stats.itemDetails.push({
-          name: item.name,
-          readableId: item.readableIdWithRevision
-        });
       }
       stats.totalQuantity += Number(ledger.quantity) || 0;
     }
@@ -1555,35 +1598,8 @@ export async function getShelvesWithItemCounts(
     }
   }
 
-  // Apply search filter - search both shelf name AND item names/IDs
-  let filteredShelves = allShelves.data ?? [];
-  if (args?.search) {
-    const searchLower = args.search.toLowerCase();
-    filteredShelves = filteredShelves.filter((shelf) => {
-      // Match shelf name
-      if (shelf.name.toLowerCase().includes(searchLower)) {
-        return true;
-      }
-      // Match any item on this shelf
-      const stats = shelfStats.get(shelf.id);
-      if (stats) {
-        return stats.itemDetails.some(
-          (item) =>
-            item.name.toLowerCase().includes(searchLower) ||
-            item.readableId?.toLowerCase().includes(searchLower)
-        );
-      }
-      return false;
-    });
-  }
-
-  // Apply pagination
-  const offset = args.offset ?? 0;
-  const limit = args.limit ?? 50;
-  const paginatedShelves = filteredShelves.slice(offset, offset + limit);
-
   // Merge shelf data with stats
-  const data = paginatedShelves.map((shelf) => ({
+  const data = (shelves.data ?? []).map((shelf) => ({
     ...shelf,
     itemCount: shelfStats.get(shelf.id)?.itemCount ?? 0,
     totalQuantity: shelfStats.get(shelf.id)?.totalQuantity ?? 0
@@ -1591,7 +1607,7 @@ export async function getShelvesWithItemCounts(
 
   return {
     data,
-    count: filteredShelves.length,
+    count: shelves.count ?? 0,
     error: null
   };
 }

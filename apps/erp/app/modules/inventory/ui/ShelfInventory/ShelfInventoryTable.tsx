@@ -1,15 +1,14 @@
 import { Combobox, HStack, VStack } from "@carbon/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
-import { LuBookMarked, LuBox, LuMapPin, LuPackage } from "react-icons/lu";
+import { LuBookMarked, LuBox, LuPackage } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, Table } from "~/components";
-import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 
-type BrowseShelf = {
+type ShelfInventory = {
   id: string;
   name: string;
   locationId: string | null;
@@ -20,19 +19,19 @@ type BrowseShelf = {
   totalQuantity: number;
 };
 
-type BrowseShelvesTableProps = {
-  data: BrowseShelf[];
+type ShelfInventoryTableProps = {
+  data: ShelfInventory[];
   count: number;
   locationId: string;
 };
 
-const BrowseShelvesTable = memo(
-  ({ data, count, locationId }: BrowseShelvesTableProps) => {
+const ShelfInventoryTable = memo(
+  ({ data, count, locationId }: ShelfInventoryTableProps) => {
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const locations = useLocations();
 
-    const columns = useMemo<ColumnDef<BrowseShelf>[]>(() => {
+    const columns = useMemo<ColumnDef<ShelfInventory>[]>(() => {
       return [
         {
           accessorKey: "name",
@@ -40,7 +39,7 @@ const BrowseShelvesTable = memo(
           cell: ({ row }) => (
             <HStack className="py-1">
               <Hyperlink
-                to={`${path.to.browseShelf(row.original.id!)}?${params}`}
+                to={`${path.to.shelfInventory(row.original.id!)}?${params}`}
               >
                 <VStack spacing={0}>{row.original.name}</VStack>
               </Hyperlink>
@@ -48,21 +47,6 @@ const BrowseShelvesTable = memo(
           ),
           meta: {
             icon: <LuBookMarked />
-          }
-        },
-        {
-          accessorKey: "locationId",
-          header: "Location",
-          cell: ({ row }) => {
-            const location = locations.find(
-              (l) => l.value === row.original.locationId
-            );
-            return (
-              <Enumerable value={location?.label ?? row.original.locationId} />
-            );
-          },
-          meta: {
-            icon: <LuMapPin />
           }
         },
         {
@@ -88,7 +72,7 @@ const BrowseShelvesTable = memo(
           }
         }
       ];
-    }, [locations, params]);
+    }, [params]);
 
     const defaultColumnVisibility = {};
 
@@ -110,12 +94,12 @@ const BrowseShelvesTable = memo(
       );
     }, [locationId, locations]);
 
-    const handleRowClick = (row: BrowseShelf) => {
-      navigate(`${path.to.browseShelf(row.id)}?${params.toString()}`);
+    const handleRowClick = (row: ShelfInventory) => {
+      navigate(`${path.to.shelfInventory(row.id)}?${params.toString()}`);
     };
 
     return (
-      <Table<BrowseShelf>
+      <Table<ShelfInventory>
         count={count}
         columns={columns}
         data={data}
@@ -124,17 +108,18 @@ const BrowseShelvesTable = memo(
         primaryAction={actions}
         onRowClick={handleRowClick}
         title="Shelves"
-        table="shelf"
+        table="shelfInventory"
         withSavedView
+        searchPlaceholder="Search shelf or item..."
       />
     );
   }
 );
 
-BrowseShelvesTable.displayName = "BrowseShelvesTable";
+ShelfInventoryTable.displayName = "ShelfInventoryTable";
 
-export default BrowseShelvesTable;
+export default ShelfInventoryTable;
 
 function getLocationPath(locationId: string) {
-  return `${path.to.browseShelves}?location=${locationId}`;
+  return `${path.to.shelfInventories}?location=${locationId}`;
 }
