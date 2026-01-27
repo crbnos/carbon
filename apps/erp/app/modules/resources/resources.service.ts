@@ -135,11 +135,18 @@ export async function activateProcess(
   return client.from("process").update({ active: true }).eq("id", processId);
 }
 
-export async function deleteProcess(
+export async function deactivateProcess(
   client: SupabaseClient<Database>,
   processId: string
 ) {
   return client.from("process").update({ active: false }).eq("id", processId);
+}
+
+export async function deleteProcess(
+  client: SupabaseClient<Database>,
+  processId: string
+) {
+  return client.from("process").delete().eq("id", processId);
 }
 
 export async function deleteShift(

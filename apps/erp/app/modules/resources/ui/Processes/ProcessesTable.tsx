@@ -17,6 +17,7 @@ import {
   LuCog,
   LuFactory,
   LuPencil,
+  LuPower,
   LuQrCode,
   LuRuler,
   LuTrash,
@@ -251,15 +252,14 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
           </MenuItem>
           {row.active ? (
             <MenuItem
-              destructive
               disabled={!permissions.can("delete", "resources")}
               onClick={() => {
                 navigate(
-                  `${path.to.deleteProcess(row.id!)}?${params.toString()}`
+                  `${path.to.deactivateProcess(row.id!)}?${params.toString()}`
                 );
               }}
             >
-              <MenuIcon icon={<LuTrash />} />
+              <MenuIcon icon={<LuPower />} />
               Deactivate Process
             </MenuItem>
           ) : (
@@ -275,6 +275,18 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
               Activate Process
             </MenuItem>
           )}
+          <MenuItem
+            destructive
+            disabled={!permissions.can("delete", "resources")}
+            onClick={() => {
+              navigate(
+                `${path.to.deleteProcess(row.id!)}?${params.toString()}`
+              );
+            }}
+          >
+            <MenuIcon icon={<LuTrash />} />
+            Delete Process
+          </MenuItem>
         </>
       );
     },
