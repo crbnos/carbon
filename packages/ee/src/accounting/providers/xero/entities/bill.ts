@@ -51,6 +51,7 @@ type BillLineRow = {
   taxAmount: number | null;
   totalAmount: number | null;
   itemCode: string | null;
+  purchaseOrderLineId: string | null;
 };
 
 // Status mapping between Carbon and Xero
@@ -177,6 +178,7 @@ export class BillSyncer extends BaseEntitySyncer<
         "purchaseInvoiceLine.taxPercent",
         "purchaseInvoiceLine.taxAmount",
         "purchaseInvoiceLine.totalAmount",
+        "purchaseInvoiceLine.purchaseOrderLineId",
         "item.readableId as itemCode"
       ])
       .where("purchaseInvoiceLine.invoiceId", "in", billIds)
@@ -249,7 +251,8 @@ export class BillSyncer extends BaseEntitySyncer<
           accountNumber: line.accountNumber,
           taxPercent: line.taxPercent,
           taxAmount: line.taxAmount,
-          totalAmount: line.totalAmount ?? 0
+          totalAmount: line.totalAmount ?? 0,
+          purchaseOrderLineId: line.purchaseOrderLineId
         })),
         updatedAt: row.updatedAt ?? new Date().toISOString(),
         raw: row
@@ -342,11 +345,18 @@ export class BillSyncer extends BaseEntitySyncer<
           itemCode = item?.readableId ?? null;
         }
 
+        // Embed PO line reference in description for later extraction
+        let description = line.description ?? undefined;
+        if (line.purchaseOrderLineId) {
+          const ref = `[ref:${line.purchaseOrderLineId}]`;
+          description = description ? `${description} ${ref}` : ref;
+        }
+
         return {
-          Description: line.description ?? undefined,
+          Description: description,
           Quantity: line.quantity,
           UnitAmount: line.unitPrice,
-          ItemCode: itemCode ?? undefined,
+          ItemCode: itemCode?.slice(0, 30) ?? undefined,
           AccountCode: line.accountNumber ?? undefined,
           TaxAmount: line.taxAmount ?? undefined,
           LineAmount: line.totalAmount
@@ -404,18 +414,27 @@ export class BillSyncer extends BaseEntitySyncer<
 
     // Map line items
     const lines: Accounting.BillLine[] = (remote.LineItems ?? []).map(
-      (line, index) => ({
-        id: line.LineItemID ?? `temp-${index}`,
-        description: line.Description ?? null,
-        quantity: line.Quantity ?? 1,
-        unitPrice: line.UnitAmount ?? 0,
-        itemId: null, // Will be resolved during upsertLocal if ItemCode matches
-        itemCode: line.ItemCode ?? null,
-        accountNumber: line.AccountCode ?? null,
-        taxPercent: null,
-        taxAmount: line.TaxAmount ?? null,
-        totalAmount: line.LineAmount ?? 0
-      })
+      (line, index) => {
+        // Extract [ref:<id>] from description if present
+        const refMatch = line.Description?.match(/\s*\[ref:([^\]]+)\]$/);
+        const purchaseOrderLineId = refMatch?.[1] ?? null;
+        const description =
+          line.Description?.replace(/\s*\[ref:[^\]]+\]$/, "") ?? null;
+
+        return {
+          id: line.LineItemID ?? `temp-${index}`,
+          description,
+          quantity: line.Quantity ?? 1,
+          unitPrice: line.UnitAmount ?? 0,
+          itemId: null, // Will be resolved during upsertLocal if ItemCode matches
+          itemCode: line.ItemCode ?? null,
+          accountNumber: line.AccountCode ?? null,
+          taxPercent: null,
+          taxAmount: line.TaxAmount ?? null,
+          totalAmount: line.LineAmount ?? 0,
+          purchaseOrderLineId
+        };
+      }
     );
 
     return {

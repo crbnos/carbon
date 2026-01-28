@@ -158,9 +158,9 @@ export class ItemSyncer extends BaseEntitySyncer<
 
     return {
       ItemID: existingRemoteId!,
-      Code: local.code,
-      Name: local.name,
-      Description: local.description ?? undefined,
+      Code: local.code.slice(0, 30),
+      Name: local.name.slice(0, 50),
+      Description: local.description?.slice(0, 4000) ?? undefined,
       IsPurchased: local.isPurchased,
       IsSold: local.isSold,
       IsTrackedAsInventory: local.isTrackedAsInventory,

@@ -125,9 +125,9 @@ export namespace Xero {
 
   export const ItemSchema = z.object({
     ItemID: z.string().uuid(),
-    Code: z.string(),
-    Name: z.string().optional(),
-    Description: z.string().optional(),
+    Code: z.string().max(30),
+    Name: z.string().max(50).optional(),
+    Description: z.string().max(4000).optional(),
     PurchaseDescription: z.string().optional(),
     PurchaseDetails: PurchaseDetailsSchema.optional(),
     SalesDetails: SalesDetailsSchema.optional(),
@@ -244,6 +244,31 @@ export namespace Xero {
     typeof PurchaseOrderLineItemSchema
   >;
   export type PurchaseOrderContact = z.infer<typeof PurchaseOrderContactSchema>;
+
+  // Manual Journal schemas for Xero Accounting API ManualJournals endpoint
+  export const ManualJournalLineSchema = z.object({
+    LineAmount: z.number(),
+    AccountCode: z.string(),
+    Description: z.string().optional(),
+    TaxType: z.string().optional(),
+    TaxAmount: z.number().optional(),
+    IsBlank: z.boolean().optional()
+  });
+
+  export const ManualJournalSchema = z.object({
+    ManualJournalID: z.string().uuid(),
+    Narration: z.string(),
+    Date: z.string().optional(),
+    Status: z.enum(["DRAFT", "POSTED", "DELETED", "VOIDED", "ARCHIVED"]),
+    LineAmountTypes: z.string().optional(),
+    Url: z.string().optional(),
+    ShowOnCashBasisReports: z.boolean().optional(),
+    JournalLines: z.array(ManualJournalLineSchema).optional(),
+    UpdatedDateUTC: z.string()
+  });
+
+  export type ManualJournalLine = z.infer<typeof ManualJournalLineSchema>;
+  export type ManualJournal = z.infer<typeof ManualJournalSchema>;
 }
 
 export const parseDotnetDate = (date: Date | string) => {

@@ -383,7 +383,8 @@ export const BillLineSchema = z.object({
   accountNumber: withNullable(z.string()),
   taxPercent: withNullable(z.number()),
   taxAmount: withNullable(z.number()),
-  totalAmount: z.number()
+  totalAmount: z.number(),
+  purchaseOrderLineId: withNullable(z.string())
 });
 
 export const BillSchema = z.object({
@@ -463,6 +464,26 @@ export const PurchaseOrderSchema = z.object({
   totalAmount: z.number(),
   supplierReference: withNullable(z.string()),
   lines: z.array(PurchaseOrderLineSchema),
+  updatedAt: z.string().datetime(),
+  raw: z.record(z.any()).optional()
+});
+
+// ============================================================================
+// INVENTORY ADJUSTMENT (itemLedger-based, push-only to accounting)
+// ============================================================================
+
+export const InventoryAdjustmentSchema = z.object({
+  id: z.string(),
+  entryNumber: z.number(),
+  postingDate: z.string(),
+  entryType: z.enum(["Positive Adjmt.", "Negative Adjmt."]),
+  itemId: z.string(),
+  locationId: withNullable(z.string()),
+  quantity: z.number(), // positive for positive adj, negative for negative adj
+  companyId: z.string(),
+  unitCost: z.number(), // from itemCost table
+  inventoryAccount: z.string(), // GL account code from postingGroupInventory
+  adjustmentVarianceAccount: z.string(), // GL account code from postingGroupInventory
   updatedAt: z.string().datetime(),
   raw: z.record(z.any()).optional()
 });

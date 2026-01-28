@@ -1,6 +1,10 @@
 import type { KyselyTx } from "@carbon/database/client";
 import { createMappingService } from "../../../core/external-mapping";
-import { type Accounting, BaseEntitySyncer } from "../../../core/types";
+import {
+  type Accounting,
+  BaseEntitySyncer,
+  type ShouldSyncContext
+} from "../../../core/types";
 import { throwXeroApiError } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
 
@@ -321,7 +325,7 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
           Description: line.description ?? undefined,
           Quantity: line.quantity,
           UnitAmount: line.unitPrice,
-          ItemCode: itemCode ?? undefined,
+          ItemCode: itemCode?.slice(0, 30) ?? undefined,
           AccountCode: line.accountNumber ?? undefined,
           TaxAmount: line.taxAmount ?? undefined,
           LineAmount: line.totalAmount
@@ -614,5 +618,25 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
     }
 
     return result;
+  }
+
+  // =================================================================
+  // 9. SHOULD SYNC: Only sync POs that are past Draft/Planned status
+  // =================================================================
+
+  protected shouldSync(
+    context: ShouldSyncContext<Accounting.PurchaseOrder, Xero.PurchaseOrder>
+  ): boolean | string {
+    if (context.direction === "push" && context.localEntity) {
+      const nonSyncableStatuses: Accounting.PurchaseOrder["status"][] = [
+        "Draft",
+        "Planned"
+      ];
+      if (nonSyncableStatuses.includes(context.localEntity.status)) {
+        return `Purchase order must be past Draft/Planned before syncing (current status: ${context.localEntity.status})`;
+      }
+    }
+
+    return true;
   }
 }

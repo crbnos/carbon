@@ -324,7 +324,7 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
         await this.ensureDependencySynced("item", line.itemId);
         // Use the item code from Carbon (readableIdWithRevision)
         if (line.itemCode) {
-          lineItem.ItemCode = line.itemCode;
+          lineItem.ItemCode = line.itemCode.slice(0, 30);
         }
       }
 

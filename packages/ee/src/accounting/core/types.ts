@@ -13,6 +13,7 @@ import type {
   BillSchema,
   ContactSchema,
   EmployeeSchema,
+  InventoryAdjustmentSchema,
   ItemSchema,
   ProviderCredentialsSchema,
   ProviderID,
@@ -966,6 +967,7 @@ export namespace Accounting {
   export type SalesInvoiceLine = z.infer<typeof SalesInvoiceLineSchema>;
   export type PurchaseOrder = z.infer<typeof PurchaseOrderSchema>;
   export type PurchaseOrderLine = z.infer<typeof PurchaseOrderLineSchema>;
+  export type InventoryAdjustment = z.infer<typeof InventoryAdjustmentSchema>;
 }
 
 export interface RequestContext {
