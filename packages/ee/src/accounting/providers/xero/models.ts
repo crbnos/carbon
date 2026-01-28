@@ -269,6 +269,59 @@ export namespace Xero {
 
   export type ManualJournalLine = z.infer<typeof ManualJournalLineSchema>;
   export type ManualJournal = z.infer<typeof ManualJournalSchema>;
+
+  // Quote schemas for Xero Accounting API Quotes endpoint
+  // Xero Quotes are the closest equivalent to Sales Orders
+  export const QuoteLineItemSchema = z.object({
+    LineItemID: z.string().uuid().optional(),
+    Description: z.string().optional(),
+    Quantity: z.number().optional(),
+    UnitAmount: z.number().optional(),
+    ItemCode: z.string().max(30).optional(),
+    AccountCode: z.string().optional(),
+    TaxType: z.string().optional(),
+    TaxAmount: z.number().optional(),
+    LineAmount: z.number().optional(),
+    DiscountRate: z.number().optional(),
+    DiscountAmount: z.number().optional()
+  });
+
+  export const QuoteContactSchema = z.object({
+    ContactID: z.string().uuid()
+  });
+
+  export const QuoteSchema = z.object({
+    QuoteID: z.string().uuid(),
+    QuoteNumber: z.string().max(255).optional(),
+    Reference: z.string().max(4000).optional(),
+    Terms: z.string().max(4000).optional(),
+    Contact: QuoteContactSchema,
+    LineItems: z.array(QuoteLineItemSchema).optional(),
+    Date: z.string().optional(),
+    ExpiryDate: z.string().optional(),
+    Status: z.enum([
+      "DRAFT",
+      "SENT",
+      "DECLINED",
+      "ACCEPTED",
+      "INVOICED",
+      "DELETED"
+    ]),
+    CurrencyCode: z.string().optional(),
+    CurrencyRate: z.number().optional(),
+    SubTotal: z.number().optional(),
+    TotalTax: z.number().optional(),
+    Total: z.number().optional(),
+    TotalDiscount: z.number().optional(),
+    Title: z.string().max(100).optional(),
+    Summary: z.string().max(3000).optional(),
+    LineAmountTypes: z.string().optional(),
+    UpdatedDateUTC: z.string()
+  });
+
+  export type QuoteLineItem = z.infer<typeof QuoteLineItemSchema>;
+  export type QuoteContact = z.infer<typeof QuoteContactSchema>;
+  export type Quote = z.infer<typeof QuoteSchema>;
 }
 
 export const parseDotnetDate = (date: Date | string) => {

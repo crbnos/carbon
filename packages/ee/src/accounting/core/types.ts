@@ -22,6 +22,8 @@ import type {
   PurchaseOrderSchema,
   SalesInvoiceLineSchema,
   SalesInvoiceSchema,
+  SalesOrderLineSchema,
+  SalesOrderSchema,
   SyncDirectionSchema
 } from "./models";
 import { AccountingApiError, withTriggersDisabled } from "./utils";
@@ -968,6 +970,8 @@ export namespace Accounting {
   export type PurchaseOrder = z.infer<typeof PurchaseOrderSchema>;
   export type PurchaseOrderLine = z.infer<typeof PurchaseOrderLineSchema>;
   export type InventoryAdjustment = z.infer<typeof InventoryAdjustmentSchema>;
+  export type SalesOrder = z.infer<typeof SalesOrderSchema>;
+  export type SalesOrderLine = z.infer<typeof SalesOrderLineSchema>;
 }
 
 export interface RequestContext {

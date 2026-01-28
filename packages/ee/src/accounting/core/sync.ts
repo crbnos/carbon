@@ -4,6 +4,7 @@ import { InventoryAdjustmentSyncer } from "../providers/xero/entities/inventory-
 import { SalesInvoiceSyncer } from "../providers/xero/entities/invoice";
 import { ItemSyncer } from "../providers/xero/entities/item";
 import { PurchaseOrderSyncer } from "../providers/xero/entities/purchase-order";
+import { SalesOrderSyncer } from "../providers/xero/entities/sales-order";
 import type { IEntitySyncer, SyncContext } from "./types";
 
 export const SyncFactory = {
@@ -31,13 +32,14 @@ export const SyncFactory = {
       case "inventoryAdjustment":
         return new InventoryAdjustmentSyncer(context);
 
+      case "salesOrder":
+        return new SalesOrderSyncer(context);
+
       // Not yet implemented
       // case "employee":
       //   Xero no longer supports the Employees API
       // case "payment":
       //   return new PaymentSyncer(context);
-      // case "salesOrder":
-      //   return new SalesOrderSyncer(context);
 
       default:
         throw new Error(

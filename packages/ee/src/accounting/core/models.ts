@@ -157,8 +157,8 @@ export const DEFAULT_SYNC_CONFIG: GlobalSyncConfig = {
     bill: { enabled: true, direction: "two-way", owner: "accounting" },
     salesOrder: {
       enabled: false,
-      direction: "two-way",
-      owner: "accounting"
+      direction: "push-to-accounting",
+      owner: "carbon"
     },
     invoice: { enabled: true, direction: "two-way", owner: "accounting" },
     payment: {
@@ -309,21 +309,49 @@ export const EmployeeSchema = z.object({
   raw: z.record(z.any()).optional()
 });
 
-export const ItemSchema = z.object({
+// ============================================================================
+// SALES ORDER (push-only to accounting as Xero Quotes)
+// ============================================================================
+
+export const SalesOrderLineSchema = z.object({
   id: z.string(),
-  code: z.string(), // readableIdWithRevision
-  name: z.string(),
+  salesOrderLineType: z.string(),
+  itemId: withNullable(z.string()),
+  itemCode: withNullable(z.string()), // item.readableIdWithRevision
   description: withNullable(z.string()),
+  quantity: z.number(),
+  unitPrice: z.number(),
+  setupPrice: z.number(),
+  accountNumber: withNullable(z.string()),
+  lineAmount: z.number()
+});
+
+export const SalesOrderSchema = z.object({
+  id: z.string(),
+  salesOrderId: z.string(), // Human-readable SO number
   companyId: z.string(),
-  type: z.enum(["Part", "Material", "Tool", "Consumable", "Fixture"]),
-  unitOfMeasureCode: withNullable(z.string()),
-  unitCost: z.number().default(0),
-  unitSalePrice: z.number().default(0),
-  isPurchased: z.boolean(),
-  isSold: z.boolean(),
-  isTrackedAsInventory: z.boolean(),
+  customerId: z.string(),
+  customerExternalId: withNullable(z.string()), // Xero ContactID for the customer
+  status: z.enum([
+    "Draft",
+    "Needs Approval",
+    "Confirmed",
+    "In Progress",
+    "To Ship and Invoice",
+    "To Ship",
+    "To Invoice",
+    "Completed",
+    "Invoiced",
+    "Cancelled",
+    "Closed"
+  ]),
+  orderDate: withNullable(z.string()),
+  currencyCode: z.string(),
+  exchangeRate: z.number(),
+  customerReference: withNullable(z.string()),
+  lines: z.array(SalesOrderLineSchema),
   updatedAt: z.string().datetime(),
-  raw: z.record(z.any())
+  raw: z.record(z.any()).optional()
 });
 
 // Sales Invoice schemas
