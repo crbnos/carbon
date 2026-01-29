@@ -63,10 +63,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { active, ...d } = validation.data;
 
+  // Fetch existing metadata so we merge form settings without
+  // overwriting credentials and syncConfig
+  const existing = await getIntegration(client, integrationId, companyId);
+  const existingMetadata =
+    (existing.data?.metadata as Record<string, unknown>) ?? {};
+
   const update = await upsertCompanyIntegration(client, {
     id: integrationId,
     active: true,
     metadata: {
+      ...existingMetadata,
       ...d
     },
     companyId,

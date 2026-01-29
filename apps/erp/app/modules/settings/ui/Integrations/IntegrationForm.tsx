@@ -281,6 +281,10 @@ export function IntegrationForm({
     ? availableIntegrations.find((i) => i.id === integrationId)
     : undefined;
 
+  // Extract connected organisation name from metadata (e.g. Xero tenant name)
+  const connectedOrgName = (metadata?.credentials as Record<string, unknown>)
+    ?.tenantName as string | undefined;
+
   // Group settings by their group property
   // Settings without a group appear first (ungrouped)
   const { ungroupedSettings, groupedSettings, groupNames } = useMemo(() => {
@@ -356,12 +360,21 @@ export function IntegrationForm({
                   <Heading size="h3">{integration.name}</Heading>
 
                   {installed && <Badge variant="green">Installed</Badge>}
+
+                  <span className="text-xs text-[#878787] text-right">
+                    <Badge variant="secondary">{integration.category}</Badge> •
+                    Published by Carbon
+                  </span>
                 </div>
 
-                <span className="text-xs text-[#878787] text-right">
-                  <Badge variant="secondary">{integration.category}</Badge> •
-                  Published by Carbon
-                </span>
+                {installed && connectedOrgName && (
+                  <div className="text-sm text-muted-foreground">
+                    Connected to{" "}
+                    <span className="font-medium text-foreground">
+                      {connectedOrgName}
+                    </span>
+                  </div>
+                )}
               </div>
             </VStack>
           </DrawerHeader>

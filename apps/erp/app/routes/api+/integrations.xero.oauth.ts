@@ -82,8 +82,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
       return data({ error: "No Xero connections found" }, { status: 500 });
     }
 
-    // Get the first connection's tenant ID
+    // Get the first connection's tenant ID and name
     const tenantId = connections[0].tenantId;
+    const tenantName = connections[0].tenantName;
 
     if (!tenantId) {
       return data(
@@ -100,7 +101,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
         syncConfig: DEFAULT_SYNC_CONFIG,
         credentials: {
           ...auth,
-          tenantId
+          tenantId,
+          tenantName: tenantName ?? undefined
         }
       },
       updatedBy: userId,

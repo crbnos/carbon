@@ -11,10 +11,16 @@ import type { ComponentProps } from "react";
 import { z } from "zod";
 import { defineIntegration } from "../fns";
 
+const coerceBoolean = z.preprocess(
+  (v) =>
+    v === "true" || v === "on" ? true : v === "false" || v === "" ? false : v,
+  z.boolean()
+);
+
 const XeroSettingsSchema = z.object({
-  backfillCustomers: z.boolean().optional().default(true),
-  backfillVendors: z.boolean().optional().default(true),
-  backfillItems: z.boolean().optional().default(true),
+  backfillCustomers: coerceBoolean.optional().default(true),
+  backfillVendors: coerceBoolean.optional().default(true),
+  backfillItems: coerceBoolean.optional().default(true),
   conflictResolution: z
     .enum(["skip", "overwrite", "merge"])
     .optional()

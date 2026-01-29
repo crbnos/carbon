@@ -27,7 +27,8 @@ export const ProviderCredentialsSchema = z.discriminatedUnion("type", [
     refreshToken: z.string().optional(),
     expiresAt: z.string().datetime().optional(),
     scope: z.array(z.string()).optional(),
-    tenantId: z.string().optional()
+    tenantId: z.string().optional(),
+    tenantName: z.string().optional()
   })
 ]);
 
