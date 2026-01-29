@@ -406,8 +406,19 @@ export class ContactSyncer extends BaseEntitySyncer<
     data: Partial<Accounting.Contact>,
     remoteId: string
   ): Promise<string> {
-    const existingLocalId = await this.getLocalId(remoteId);
+    let existingLocalId = await this.getLocalId(remoteId);
     const isVendor = data.isVendor && !data.isCustomer ? true : false;
+
+    // Smart match: if no mapping exists, try to find by name (Xero enforces
+    // unique contact names, and Carbon enforces unique customer/supplier names
+    // per company). This prevents duplicates during backfill.
+    if (!existingLocalId && data.name) {
+      existingLocalId = await this.findLocalEntityByName(
+        tx,
+        data.name,
+        isVendor
+      );
+    }
 
     // 1. Upsert customer/supplier
     const entityId = await this.upsertEntity(
@@ -421,6 +432,26 @@ export class ContactSyncer extends BaseEntitySyncer<
     await this.upsertContactAndLink(tx, data, remoteId, entityId, isVendor);
 
     return entityId;
+  }
+
+  /**
+   * Try to find an existing customer/supplier by name within the same company.
+   * Used for smart matching during backfill when no ID mapping exists yet.
+   */
+  private async findLocalEntityByName(
+    tx: KyselyTx,
+    name: string,
+    isVendor: boolean
+  ): Promise<string | null> {
+    const table = isVendor ? "supplier" : "customer";
+    const match = await tx
+      .selectFrom(table)
+      .select("id")
+      .where("name", "=", name)
+      .where("companyId", "=", this.companyId)
+      .executeTakeFirst();
+
+    return match?.id ?? null;
   }
 
   private async upsertEntity(
@@ -560,7 +591,14 @@ export class ContactSyncer extends BaseEntitySyncer<
     data: Xero.Contact,
     localId: string
   ): Promise<string> {
-    const existingRemoteId = await this.getRemoteId(localId);
+    let existingRemoteId = await this.getRemoteId(localId);
+
+    // Smart match: if no mapping exists, search Xero by name before creating.
+    // Xero enforces unique contact names across all active contacts.
+    if (!existingRemoteId && data.Name) {
+      existingRemoteId = await this.findRemoteContactByName(data.Name);
+    }
+
     const contacts = existingRemoteId
       ? [{ ...data, ContactID: existingRemoteId }]
       : [data];
@@ -585,6 +623,25 @@ export class ContactSyncer extends BaseEntitySyncer<
     }
 
     return result.data.Contacts[0].ContactID;
+  }
+
+  /**
+   * Search Xero for an existing contact by exact name match.
+   * Used for smart matching during backfill when no ID mapping exists yet.
+   */
+  private async findRemoteContactByName(name: string): Promise<string | null> {
+    // Xero where filter requires double-quoting string values and escaping quotes
+    const escapedName = name.replace(/"/g, '\\"');
+    const result = await this.provider.request<{ Contacts: Xero.Contact[] }>(
+      "GET",
+      `/Contacts?where=Name=="${escapedName}"`
+    );
+
+    if (!result.error && result.data?.Contacts?.[0]?.ContactID) {
+      return result.data.Contacts[0].ContactID;
+    }
+
+    return null;
   }
 
   protected async upsertRemoteBatch(

@@ -181,6 +181,7 @@ export class ItemSyncer extends BaseEntitySyncer<
     remote: Xero.Item
   ): Promise<Partial<Accounting.Item>> {
     return {
+      code: remote.Code,
       name: remote.Name ?? "",
       description: remote.Description ?? null,
       unitCost: remote.PurchaseDetails?.UnitPrice ?? 0,
@@ -200,11 +201,20 @@ export class ItemSyncer extends BaseEntitySyncer<
     data: Partial<Accounting.Item>,
     remoteId: string
   ): Promise<string> {
-    const existingLocalId = await this.getLocalId(remoteId);
+    let existingLocalId = await this.getLocalId(remoteId);
+
+    // Smart match: if no mapping exists, try to find by item code.
+    // Xero Item.Code maps to Carbon item.readableIdWithRevision (or readableId).
+    // This prevents errors during backfill when items exist in both systems.
+    if (!existingLocalId && data.code) {
+      existingLocalId = await this.findLocalItemByCode(tx, data.code);
+    }
 
     if (!existingLocalId) {
       throw new Error(
-        `Cannot create new items from Xero. Item with remote ID ${remoteId} not found locally.`
+        `Cannot create new items from Xero. Item with remote ID ${remoteId} (code: ${
+          data.code ?? "unknown"
+        }) not found locally.`
       );
     }
 
@@ -240,6 +250,48 @@ export class ItemSyncer extends BaseEntitySyncer<
     return existingLocalId;
   }
 
+  /**
+   * Try to find an existing Carbon item by its code (readableIdWithRevision or readableId).
+   * Used for smart matching during backfill when no ID mapping exists yet.
+   */
+  private async findLocalItemByCode(
+    tx: KyselyTx,
+    code: string
+  ): Promise<string | null> {
+    // Try readableIdWithRevision first (exact match for the Code sent to Xero)
+    const match = await tx
+      .selectFrom("item")
+      .select("id")
+      .where("companyId", "=", this.companyId)
+      .where((eb) =>
+        eb.or([
+          eb("readableIdWithRevision" as any, "=", code),
+          eb("readableId", "=", code)
+        ])
+      )
+      .executeTakeFirst();
+
+    return match?.id ?? null;
+  }
+
+  /**
+   * Search Xero for an existing item by exact Code match.
+   * Used for smart matching during push when no ID mapping exists yet.
+   */
+  private async findRemoteItemByCode(code: string): Promise<string | null> {
+    const escapedCode = code.replace(/"/g, '\\"');
+    const result = await this.provider.request<{ Items: Xero.Item[] }>(
+      "GET",
+      `/Items?where=Code=="${escapedCode}"`
+    );
+
+    if (!result.error && result.data?.Items?.[0]?.ItemID) {
+      return result.data.Items[0].ItemID;
+    }
+
+    return null;
+  }
+
   // =================================================================
   // 8. UPSERT REMOTE (Single + Batch) - API calls within syncer
   // =================================================================
@@ -248,7 +300,14 @@ export class ItemSyncer extends BaseEntitySyncer<
     data: Omit<Xero.Item, "UpdatedDateUTC">,
     localId: string
   ): Promise<string> {
-    const existingRemoteId = await this.getRemoteId(localId);
+    let existingRemoteId = await this.getRemoteId(localId);
+
+    // Smart match: if no mapping exists, search Xero by Code before creating.
+    // Xero enforces unique item codes.
+    if (!existingRemoteId && data.Code) {
+      existingRemoteId = await this.findRemoteItemByCode(data.Code);
+    }
+
     const items = existingRemoteId
       ? [{ ...data, ItemID: existingRemoteId }]
       : [data];
