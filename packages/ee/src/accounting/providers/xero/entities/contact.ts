@@ -43,14 +43,14 @@ export class ContactSyncer extends BaseEntitySyncer<
       return customerMapping;
     }
 
-    // Try supplier
-    const supplierMapping = await this.mappingService.getExternalId(
-      "supplier",
+    // Try vendor (supplier)
+    const vendorMapping = await this.mappingService.getExternalId(
+      "vendor",
       localId,
       this.provider.id
     );
 
-    return supplierMapping;
+    return vendorMapping;
   }
 
   async getLocalId(remoteId: string): Promise<string | null> {
@@ -62,13 +62,13 @@ export class ContactSyncer extends BaseEntitySyncer<
     );
     if (customerMapping) return customerMapping;
 
-    // Check supplier
-    const supplierMapping = await this.mappingService.getEntityId(
+    // Check vendor (supplier)
+    const vendorMapping = await this.mappingService.getEntityId(
       this.provider.id,
       remoteId,
-      "supplier"
+      "vendor"
     );
-    return supplierMapping;
+    return vendorMapping;
   }
 
   protected async linkEntities(
@@ -77,20 +77,14 @@ export class ContactSyncer extends BaseEntitySyncer<
     remoteId: string,
     remoteUpdatedAt?: Date
   ): Promise<void> {
-    // Determine if this is a customer or supplier
-    const isCustomer = await tx
-      .selectFrom("customer")
-      .select("id")
-      .where("id", "=", localId)
-      .where("companyId", "=", this.companyId)
-      .executeTakeFirst();
-
-    const entityType = isCustomer ? "customer" : "supplier";
-
-    // Create a mapping service with the transaction
+    // Use the syncer's configured entityType so the mapping is consistent
+    // with what the base class queries for. The syncer is configured with
+    // "customer" or "vendor" — we store that exact value.
+    // The unique index includes entityType, so a Xero contact that is both
+    // customer and supplier naturally gets two distinct mapping rows.
     const txMappingService = createMappingService(tx, this.companyId);
     await txMappingService.link(
-      entityType,
+      this.entityType,
       localId,
       this.provider.id,
       remoteId,
@@ -501,25 +495,26 @@ export class ContactSyncer extends BaseEntitySyncer<
   private async upsertContactAndLink(
     tx: KyselyTx,
     data: Partial<Accounting.Contact>,
-    remoteId: string,
+    _remoteId: string,
     entityId: string,
     isVendor: boolean
   ): Promise<void> {
     const junctionTable = isVendor ? "supplierContact" : "customerContact";
     const fkColumn = isVendor ? "supplierId" : "customerId";
 
-    // Try to find existing contact by mapping table
-    const txMappingService = createMappingService(tx, this.companyId);
-    const existingContactId = await txMappingService.getEntityId(
-      this.provider.id,
-      remoteId,
-      "contact"
-    );
+    // Find existing contact person via the junction table (not the mapping
+    // table). The contact person is a child of the customer/supplier and
+    // doesn't need its own external integration mapping.
+    const existingJunction = await tx
+      .selectFrom(junctionTable)
+      .select("contactId")
+      .where(fkColumn as any, "=", entityId)
+      .executeTakeFirst();
 
     let contactId: string;
 
-    if (existingContactId) {
-      // Update existing contact
+    if (existingJunction) {
+      // Update existing contact person
       await tx
         .updateTable("contact")
         .set({
@@ -531,11 +526,11 @@ export class ContactSyncer extends BaseEntitySyncer<
           homePhone: data.homePhone ?? null,
           fax: data.fax ?? null
         })
-        .where("id", "=", existingContactId)
+        .where("id", "=", existingJunction.contactId)
         .execute();
-      contactId = existingContactId;
+      contactId = existingJunction.contactId;
     } else {
-      // Insert new contact
+      // Insert new contact person
       const result = await tx
         .insertInto("contact")
         .values({
@@ -553,29 +548,7 @@ export class ContactSyncer extends BaseEntitySyncer<
         .executeTakeFirstOrThrow();
       contactId = result.id;
 
-      // Link the contact in the mapping table
-      await txMappingService.link(
-        "contact",
-        contactId,
-        this.provider.id,
-        remoteId
-      );
-    }
-
-    // Link contact to entity (upsert junction)
-    const existingLink = await tx
-      .selectFrom(junctionTable)
-      .select("id")
-      .where(fkColumn as any, "=", entityId)
-      .executeTakeFirst();
-
-    if (existingLink) {
-      await tx
-        .updateTable(junctionTable)
-        .set({ contactId })
-        .where(fkColumn as any, "=", entityId)
-        .execute();
-    } else {
+      // Create the junction link
       await tx
         .insertInto(junctionTable)
         .values({ [fkColumn]: entityId, contactId } as any)

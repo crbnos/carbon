@@ -93,6 +93,17 @@ export const accountingPullPageTask = task({
           summaryOnly: true,
         });
 
+        logger.info(`[PULL] Contacts page ${payload.page} response`, {
+          count: response.contacts.length,
+          hasMore: response.hasMore,
+          contacts: response.contacts.map((c) => ({
+            id: c.ContactID,
+            name: c.Name,
+            isCustomer: c.IsCustomer,
+            isSupplier: c.IsSupplier,
+          })),
+        });
+
         if (response.contacts.length === 0) {
           return { hasMore: false, pulled: { customers: 0, vendors: 0 } };
         }
@@ -115,16 +126,23 @@ export const accountingPullPageTask = task({
             const result = await syncer.pullBatchFromAccounting(ids);
             customersPulled = result.successCount;
             logger.info(
-              `[PULL] Page ${payload.page}: pulled ${customersPulled} customers`
+              `[PULL] Page ${payload.page}: pulled ${customersPulled} customers`,
+              {
+                results: result.results.map((r) => ({
+                  status: r.status,
+                  action: r.action,
+                  localId: r.localId,
+                  remoteId: r.remoteId,
+                  error: r.error,
+                })),
+              }
             );
           }
         }
 
         // Pull vendors
         if (payload.includeVendors) {
-          const vendors = response.contacts.filter(
-            (c) => c.IsSupplier && !c.IsCustomer
-          );
+          const vendors = response.contacts.filter((c) => c.IsSupplier);
           if (vendors.length > 0) {
             const syncer = SyncFactory.getSyncer({
               database: kysely,
@@ -137,7 +155,16 @@ export const accountingPullPageTask = task({
             const result = await syncer.pullBatchFromAccounting(ids);
             vendorsPulled = result.successCount;
             logger.info(
-              `[PULL] Page ${payload.page}: pulled ${vendorsPulled} vendors`
+              `[PULL] Page ${payload.page}: pulled ${vendorsPulled} vendors`,
+              {
+                results: result.results.map((r) => ({
+                  status: r.status,
+                  action: r.action,
+                  localId: r.localId,
+                  remoteId: r.remoteId,
+                  error: r.error,
+                })),
+              }
             );
           }
         }
@@ -150,6 +177,16 @@ export const accountingPullPageTask = task({
         // Items
         logger.info(`[PULL] Fetching items page ${payload.page}`);
         const response = await provider.listItems({ page: payload.page });
+
+        logger.info(`[PULL] Items page ${payload.page} response`, {
+          count: response.items.length,
+          hasMore: response.hasMore,
+          items: response.items.map((i) => ({
+            id: i.ItemID,
+            code: i.Code,
+            name: i.Name,
+          })),
+        });
 
         if (response.items.length === 0) {
           return { hasMore: false, pulled: { items: 0 } };
@@ -166,7 +203,16 @@ export const accountingPullPageTask = task({
         const result = await syncer.pullBatchFromAccounting(ids);
 
         logger.info(
-          `[PULL] Page ${payload.page}: pulled ${result.successCount} items`
+          `[PULL] Page ${payload.page}: pulled ${result.successCount} items`,
+          {
+            results: result.results.map((r) => ({
+              status: r.status,
+              action: r.action,
+              localId: r.localId,
+              remoteId: r.remoteId,
+              error: r.error,
+            })),
+          }
         );
 
         return {
@@ -229,7 +275,17 @@ export const accountingPushBatchTask = task({
       const result = await syncer.pushBatchToAccounting(payload.entityIds);
 
       logger.info(
-        `[PUSH] Pushed ${result.successCount}/${payload.entityIds.length} ${payload.entityType} entities`
+        `[PUSH] Pushed ${result.successCount}/${payload.entityIds.length} ${payload.entityType} entities`,
+        {
+          entityIds: payload.entityIds,
+          results: result.results.map((r) => ({
+            status: r.status,
+            action: r.action,
+            localId: r.localId,
+            remoteId: r.remoteId,
+            error: r.error,
+          })),
+        }
       );
 
       return {

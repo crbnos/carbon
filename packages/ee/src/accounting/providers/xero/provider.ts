@@ -167,6 +167,10 @@ export class XeroProvider implements BaseProvider {
       params.set("includeArchived", "true");
     }
 
+    // Only fetch contacts that are customers or suppliers — skip
+    // contacts that are neither (e.g. plain address book entries)
+    params.set("where", "IsCustomer==true OR IsSupplier==true");
+
     const headers: Record<string, string> = {};
     if (options?.modifiedSince) {
       headers["If-Modified-Since"] = options.modifiedSince.toUTCString();

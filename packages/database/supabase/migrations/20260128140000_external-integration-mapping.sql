@@ -33,14 +33,15 @@ CREATE TABLE "externalIntegrationMapping" (
   CONSTRAINT "externalIntegrationMapping_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "externalIntegrationMapping_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON DELETE SET NULL ON UPDATE CASCADE,
   
+  
   -- One mapping per integration per entity (always enforced)
   CONSTRAINT "externalIntegrationMapping_entityType_entityId_integration_companyId_key" UNIQUE ("entityType", "entityId", "integration", "companyId")
 );
 
 -- Partial unique index: Only enforce external ID uniqueness when allowDuplicateExternalId is false
 -- This allows many-to-one (Carbon to External) mappings when explicitly configured
-CREATE UNIQUE INDEX "externalIntegrationMapping_unique_externalId_idx" 
-ON "externalIntegrationMapping" ("integration", "externalId", "companyId")
+CREATE UNIQUE INDEX "externalIntegrationMapping_unique_externalId_idx"
+ON "externalIntegrationMapping" ("integration", "externalId", "entityType", "companyId")
 WHERE "allowDuplicateExternalId" = false;
 
 -- Indexes for common query patterns
