@@ -157,7 +157,11 @@ export class InventoryAdjustmentSyncer extends BaseEntitySyncer<
       ManualJournals: Xero.ManualJournal[];
     }>("GET", `/ManualJournals?IDs=${ids.join(",")}`);
 
-    if (!response.error && response.data?.ManualJournals) {
+    if (response.error) {
+      throwXeroApiError("fetch manual journals batch", response);
+    }
+
+    if (response.data?.ManualJournals) {
       for (const journal of response.data.ManualJournals) {
         result.set(journal.ManualJournalID, journal);
       }

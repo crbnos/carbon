@@ -138,7 +138,11 @@ export class ItemSyncer extends BaseEntitySyncer<
       `/Items?IDs=${ids.join(",")}`
     );
 
-    if (!response.error && response.data?.Items) {
+    if (response.error) {
+      throwXeroApiError("fetch items batch", response);
+    }
+
+    if (response.data?.Items) {
       for (const item of response.data.Items) {
         result.set(item.ItemID, item);
       }

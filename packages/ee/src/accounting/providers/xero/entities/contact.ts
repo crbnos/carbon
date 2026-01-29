@@ -290,13 +290,15 @@ export class ContactSyncer extends BaseEntitySyncer<
       `/Contacts?IDs=${ids.join(",")}`
     );
 
-    if (!response.error && response.data?.Contacts) {
+    if (response.error) {
+      throwXeroApiError("fetch contacts batch", response);
+    }
+
+    if (response.data?.Contacts) {
       for (const contact of response.data.Contacts) {
         result.set(contact.ContactID, contact);
       }
     }
-
-    console.dir(result, { depth: null });
 
     return result;
   }
@@ -511,6 +513,11 @@ export class ContactSyncer extends BaseEntitySyncer<
       .where(fkColumn as any, "=", entityId)
       .executeTakeFirst();
 
+    // Xero contacts often only have a company Name with no FirstName/LastName.
+    // Fall back to the entity name so the contact person isn't blank.
+    const firstName = data.firstName || data.name || "";
+    const lastName = data.lastName ?? "";
+
     let contactId: string;
 
     if (existingJunction) {
@@ -519,8 +526,8 @@ export class ContactSyncer extends BaseEntitySyncer<
         .updateTable("contact")
         .set({
           email: data.email ?? null,
-          firstName: data.firstName ?? "",
-          lastName: data.lastName ?? "",
+          firstName,
+          lastName,
           workPhone: data.workPhone ?? null,
           mobilePhone: data.mobilePhone ?? null,
           homePhone: data.homePhone ?? null,
@@ -536,8 +543,8 @@ export class ContactSyncer extends BaseEntitySyncer<
         .values({
           companyId: this.companyId,
           email: data.email ?? null,
-          firstName: data.firstName ?? "",
-          lastName: data.lastName ?? "",
+          firstName,
+          lastName,
           workPhone: data.workPhone ?? null,
           mobilePhone: data.mobilePhone ?? null,
           homePhone: data.homePhone ?? null,

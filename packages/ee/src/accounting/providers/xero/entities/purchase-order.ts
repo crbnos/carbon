@@ -273,7 +273,9 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
       PurchaseOrders: Xero.PurchaseOrder[];
     }>("GET", `/PurchaseOrders?IDs=${ids.join(",")}`);
 
-    if (response.error) return result;
+    if (response.error) {
+      throwXeroApiError("fetch purchase orders batch", response);
+    }
 
     const data = response.data as
       | { PurchaseOrders: Xero.PurchaseOrder[] }

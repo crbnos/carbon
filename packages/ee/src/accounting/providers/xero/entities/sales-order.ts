@@ -233,7 +233,11 @@ export class SalesOrderSyncer extends BaseEntitySyncer<
       `/Quotes?IDs=${ids.join(",")}`
     );
 
-    if (!response.error && response.data?.Quotes) {
+    if (response.error) {
+      throwXeroApiError("fetch quotes batch", response);
+    }
+
+    if (response.data?.Quotes) {
       for (const quote of response.data.Quotes) {
         result.set(quote.QuoteID, quote);
       }

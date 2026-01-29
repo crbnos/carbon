@@ -296,7 +296,9 @@ export class BillSyncer extends BaseEntitySyncer<
       `/Invoices?IDs=${ids.join(",")}`
     );
 
-    if (response.error) return result;
+    if (response.error) {
+      throwXeroApiError("fetch bills batch", response);
+    }
 
     const data = response.data as { Invoices: Xero.Invoice[] } | undefined;
     for (const invoice of data?.Invoices ?? []) {

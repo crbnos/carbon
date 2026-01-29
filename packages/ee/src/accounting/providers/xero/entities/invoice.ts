@@ -283,7 +283,11 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
       `/Invoices?IDs=${ids.join(",")}`
     );
 
-    if (!response.error && response.data?.Invoices) {
+    if (response.error) {
+      throwXeroApiError("fetch invoices batch", response);
+    }
+
+    if (response.data?.Invoices) {
       for (const invoice of response.data.Invoices) {
         result.set(invoice.InvoiceID, invoice);
       }

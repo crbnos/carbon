@@ -45,7 +45,7 @@ const WebhookSchema = z.object({
   events: z.array(
     z.object({
       tenantId: z.string(),
-      eventCategory: z.enum(["ITEM", "CONTACT"]),
+      eventCategory: z.enum(["ITEM", "CONTACT", "INVOICE"]),
       eventType: z.enum(["CREATE", "UPDATE", "DELETE"]),
       resourceId: z.string(),
       eventDateUtc: z.string()
@@ -199,6 +199,13 @@ export async function action({ request }: ActionFunctionArgs) {
           case "CONTACT":
             const contactType = await fetchContactType(provider, resourceId);
 
+            if (contactType) {
+              console.log(
+                `Skipping contact ${resourceId} with no customer/supplier role`
+              );
+              continue;
+            }
+
             if (contactType === "customer" || contactType === "both") {
               entities.push({
                 entityType: "customer",
@@ -307,5 +314,5 @@ const fetchContactType = async (
     return "supplier";
   }
 
-  return "customer";
+  return null;
 };
