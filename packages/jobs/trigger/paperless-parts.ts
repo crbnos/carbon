@@ -204,16 +204,18 @@ export const paperlessPartsTask = task({
           );
         }
 
-        // Check if quote already exists
-        const existingQuote = await carbon
-          .from("quote")
-          .select("id")
-          .eq("externalId->>paperlessId", quotePayload.uuid)
+        // Check if quote already exists via the mapping table
+        const existingQuoteMapping = await carbon
+          .from("externalIntegrationMapping")
+          .select("entityId")
+          .eq("entityType", "quote")
+          .eq("integration", "paperlessId")
+          .eq("externalId", quotePayload.uuid)
           .eq("companyId", payload.companyId)
           .maybeSingle();
 
-        if (existingQuote?.data?.id) {
-          console.log("Quote already exists", existingQuote.data.id);
+        if (existingQuoteMapping?.data?.entityId) {
+          console.log("Quote already exists", existingQuoteMapping.data.entityId);
           result = {
             success: true,
             message: "Quote already exists",
@@ -281,9 +283,6 @@ export const paperlessPartsTask = task({
           exchangeRateUpdatedAt: undefined as string | undefined,
           expirationDate: undefined as string | undefined,
           revisionId: ppQuoteRevisionNumber ?? 0,
-          externalId: {
-            paperlessId: quotePayload.uuid,
-          },
         };
 
         const [quoteCustomerPayment, quoteCustomerShipping, quoteOpportunity] =
@@ -344,6 +343,16 @@ export const paperlessPartsTask = task({
 
         const quoteId = insert.data?.[0]?.id;
         if (!quoteId) return insert;
+
+        // Create the mapping for the new quote
+        await carbon.from("externalIntegrationMapping").insert({
+          entityType: "quote",
+          entityId: quoteId,
+          integration: "paperlessId",
+          externalId: quotePayload.uuid,
+          companyId: payload.companyId,
+          allowDuplicateExternalId: false
+        });
 
         const [quoteShipment, quotePayment, quoteExternalLink] =
           await Promise.all([
@@ -444,23 +453,25 @@ export const paperlessPartsTask = task({
 
         const orderData = OrderSchema.parse(order.data);
 
-        // Check if order already exists
-        const existingOrder = await carbon
-          .from("salesOrder")
-          .select("id")
-          .eq("externalId->>paperlessId", orderPayload.uuid)
+        // Check if order already exists via the mapping table
+        const existingOrderMapping = await carbon
+          .from("externalIntegrationMapping")
+          .select("entityId")
+          .eq("entityType", "salesOrder")
+          .eq("integration", "paperlessId")
+          .eq("externalId", orderPayload.uuid)
           .eq("companyId", payload.companyId)
           .maybeSingle();
 
-        if (existingOrder?.data?.id) {
-          console.log("Order already exists", existingOrder.data.id);
+        if (existingOrderMapping?.data?.entityId) {
+          console.log("Order already exists", existingOrderMapping.data.entityId);
 
           const status = getCarbonOrderStatus(orderData.status);
 
           const update = await carbon
             .from("salesOrder")
             .update({ status })
-            .eq("id", existingOrder.data.id);
+            .eq("id", existingOrderMapping.data.entityId);
 
           if (update.error) {
             console.log("Failed to update sales order", update.error);
@@ -601,9 +612,6 @@ export const paperlessPartsTask = task({
                     ],
                   }
                 : null,
-              externalId: {
-                paperlessId: orderData.uuid,
-              },
             },
           ])
           .select("id, salesOrderId");
@@ -625,6 +633,16 @@ export const paperlessPartsTask = task({
           };
           break;
         }
+
+        // Create the mapping for the new sales order
+        await carbon.from("externalIntegrationMapping").insert({
+          entityType: "salesOrder",
+          entityId: salesOrderId,
+          integration: "paperlessId",
+          externalId: orderData.uuid,
+          companyId: payload.companyId,
+          allowDuplicateExternalId: false
+        });
 
         const [orderShipment, orderPayment] = await Promise.all([
           carbon.from("salesOrderShipment").insert([

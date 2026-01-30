@@ -32,19 +32,6 @@ export const ProviderCredentialsSchema = z.discriminatedUnion("type", [
   })
 ]);
 
-export const ExternalIdSchema = z.object({
-  [`${ProviderID.XERO}`]: z.object({
-    id: z.string(),
-    provider: z.literal(ProviderID.XERO),
-    metadata: z.record(z.any()).optional()
-  })
-  // [`${ProviderID.QUICKBOOKS}`]: z.object({
-  //   id: z.string(),
-  //   provider: z.literal(ProviderID.QUICKBOOKS),
-  //   metadata: z.record(z.any()).optional()
-  // })
-});
-
 /**
  * Direction of data flow.
  */

@@ -39,7 +39,6 @@ type InvoiceRow = {
   totalAmount: number;
   balance: number;
   updatedAt: string | null;
-  externalId: Record<string, unknown> | null;
 };
 
 type InvoiceLineRow = {

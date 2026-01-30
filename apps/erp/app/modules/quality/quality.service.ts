@@ -409,7 +409,37 @@ export async function getIssueActionTasks(
   if (supplierId) {
     query = query.eq("supplierId", supplierId);
   }
-  return query;
+
+  const result = await query;
+
+  if (result.error || !result.data) {
+    return result;
+  }
+
+  // Fetch Linear mappings for all action task IDs
+  const taskIds = result.data.map((t) => t.id);
+  let linearMappings: Map<string, unknown> = new Map();
+
+  if (taskIds.length > 0) {
+    const { data: mappings } = await client
+      .from("externalIntegrationMapping")
+      .select("entityId, metadata")
+      .eq("entityType", "nonConformanceActionTask")
+      .eq("integration", "linear")
+      .in("entityId", taskIds);
+
+    linearMappings = new Map(
+      (mappings ?? []).map((m) => [m.entityId, m.metadata])
+    );
+  }
+
+  return {
+    ...result,
+    data: result.data.map((task) => ({
+      ...task,
+      linearIssue: linearMappings.get(task.id) ?? null
+    }))
+  };
 }
 
 export async function getIssueApprovalTasks(

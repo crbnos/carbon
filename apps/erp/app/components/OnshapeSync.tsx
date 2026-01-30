@@ -72,16 +72,18 @@ export const OnshapeSync = ({
       return;
     }
     carbon
-      ?.from("item")
-      .select("externalId")
-      .eq("id", itemId)
-      .single()
+      .from("externalIntegrationMapping")
+      .select("metadata, lastSyncedAt")
+      .eq("entityType", "item")
+      .eq("entityId", itemId)
+      .eq("integration", "onshape")
+      .maybeSingle()
       .then(({ data }) => {
-        const externalId = data?.externalId as Record<string, any>;
-        setDocumentId(externalId.onshape?.documentId);
-        setVersionId(externalId.onshape?.versionId);
-        setElementId(externalId.onshape?.elementId);
-        setLastSyncedAt(externalId.onshape?.lastSyncedAt);
+        const metadata = data?.metadata as Record<string, any> | null;
+        setDocumentId(metadata?.documentId ?? null);
+        setVersionId(metadata?.versionId ?? null);
+        setElementId(metadata?.elementId ?? null);
+        setLastSyncedAt(data?.lastSyncedAt ?? null);
       });
   });
 

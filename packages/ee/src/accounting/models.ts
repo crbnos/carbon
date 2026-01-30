@@ -9,7 +9,6 @@ import { z } from "zod";
 // Base schemas
 export const BaseEntitySchema = z.object({
   id: z.string(),
-  externalId: z.string().optional(), // Provider-specific ID
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   lastSyncedAt: z.string().datetime().optional(),

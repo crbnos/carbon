@@ -182,17 +182,35 @@ serve(async (req: Request) => {
             let itemId = id;
 
             if (itemId) {
-              // Update existing item with Onshape data
+              // Update existing item
               await trx
                 .updateTable("item")
                 .set({
-                  externalId: {
-                    onshapeData: data.data,
-                  },
                   updatedBy: userId,
                   updatedAt: new Date().toISOString(),
                 })
                 .where("id", "=", itemId)
+                .execute();
+
+              // Upsert OnShape mapping
+              await trx
+                .deleteFrom("externalIntegrationMapping")
+                .where("entityType", "=", "item")
+                .where("entityId", "=", itemId)
+                .where("integration", "=", "onshapeData")
+                .execute();
+
+              await trx
+                .insertInto("externalIntegrationMapping")
+                .values({
+                  entityType: "item",
+                  entityId: itemId,
+                  integration: "onshapeData",
+                  externalId: partId,
+                  metadata: data.data,
+                  companyId,
+                  allowDuplicateExternalId: false,
+                })
                 .execute();
             } else {
               // Check if we've already created this part in this transaction
@@ -212,15 +230,28 @@ serve(async (req: Request) => {
                     replenishmentSystem,
                     defaultMethodType,
                     companyId,
-                    externalId: {
-                      onshapeData: data.data,
-                    },
                     createdBy: userId,
                   })
                   .returning(["id"])
                   .executeTakeFirst();
 
                 itemId = item?.id;
+
+                // Create OnShape mapping for the new item
+                if (itemId) {
+                  await trx
+                    .insertInto("externalIntegrationMapping")
+                    .values({
+                      entityType: "item",
+                      entityId: itemId,
+                      integration: "onshapeData",
+                      externalId: partId,
+                      metadata: data.data,
+                      companyId,
+                      allowDuplicateExternalId: false,
+                    })
+                    .execute();
+                }
 
                 await trx
                   .insertInto("part")

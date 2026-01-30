@@ -32,7 +32,6 @@ type PurchaseOrderRow = {
   exchangeRate: number | null;
   supplierReference: string | null;
   updatedAt: string | null;
-  externalId: Record<string, unknown> | null;
 };
 
 // Type for rows returned from purchaseOrderLine queries
@@ -132,8 +131,7 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
         "currencyCode",
         "exchangeRate",
         "supplierReference",
-        "updatedAt",
-        "externalId"
+        "updatedAt"
       ])
       .where("id", "in", ids)
       .where("companyId", "=", this.companyId)
@@ -164,25 +162,18 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
       .where("purchaseOrderLine.purchaseOrderId", "in", orderIds)
       .execute();
 
-    // Fetch supplier external IDs for mapping
+    // Fetch supplier external IDs for mapping via the mapping service
     const supplierIds = orderRows.map((o) => o.supplierId);
     const supplierExternalIds = new Map<string, string | null>();
     if (supplierIds.length > 0) {
-      const suppliers = await this.database
-        .selectFrom("supplier")
-        .select(["id", "externalId"])
-        .where("id", "in", supplierIds)
-        .execute();
-
-      for (const supplier of suppliers) {
-        const externalId = supplier.externalId as Record<
-          string,
-          { id?: string }
-        > | null;
-        supplierExternalIds.set(
-          supplier.id,
-          externalId?.[this.provider.id]?.id ?? null
+      const mappingService = createMappingService(this.database, this.companyId);
+      for (const supplierId of supplierIds) {
+        const externalId = await mappingService.getExternalId(
+          "supplier",
+          supplierId,
+          this.provider.id
         );
+        supplierExternalIds.set(supplierId, externalId);
       }
     }
 
