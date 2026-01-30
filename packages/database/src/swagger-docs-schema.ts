@@ -1354,6 +1354,9 @@ export default {
             $ref: "#/parameters/rowFilter.consumables.itemPostingGroupId",
           },
           {
+            $ref: "#/parameters/rowFilter.consumables.externalId",
+          },
+          {
             $ref: "#/parameters/rowFilter.consumables.createdBy",
           },
           {
@@ -2380,9 +2383,6 @@ export default {
             $ref: "#/parameters/rowFilter.customerLocation.tags",
           },
           {
-            $ref: "#/parameters/rowFilter.customerLocation.externalId",
-          },
-          {
             $ref: "#/parameters/select",
           },
           {
@@ -2460,9 +2460,6 @@ export default {
             $ref: "#/parameters/rowFilter.customerLocation.tags",
           },
           {
-            $ref: "#/parameters/rowFilter.customerLocation.externalId",
-          },
-          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -2492,9 +2489,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customerLocation.tags",
-          },
-          {
-            $ref: "#/parameters/rowFilter.customerLocation.externalId",
           },
           {
             $ref: "#/parameters/body.customerLocation",
@@ -6313,9 +6307,6 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformanceActionTask.supplierId",
           },
           {
-            $ref: "#/parameters/rowFilter.nonConformanceActionTask.externalId",
-          },
-          {
             $ref: "#/parameters/select",
           },
           {
@@ -6423,9 +6414,6 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformanceActionTask.supplierId",
           },
           {
-            $ref: "#/parameters/rowFilter.nonConformanceActionTask.externalId",
-          },
-          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -6485,9 +6473,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.nonConformanceActionTask.supplierId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceActionTask.externalId",
           },
           {
             $ref: "#/parameters/body.nonConformanceActionTask",
@@ -11053,9 +11038,6 @@ export default {
             $ref: "#/parameters/rowFilter.material.updatedAt",
           },
           {
-            $ref: "#/parameters/rowFilter.material.externalId",
-          },
-          {
             $ref: "#/parameters/rowFilter.material.tags",
           },
           {
@@ -11163,9 +11145,6 @@ export default {
             $ref: "#/parameters/rowFilter.material.updatedAt",
           },
           {
-            $ref: "#/parameters/rowFilter.material.externalId",
-          },
-          {
             $ref: "#/parameters/rowFilter.material.tags",
           },
           {
@@ -11225,9 +11204,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.material.updatedAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.material.externalId",
           },
           {
             $ref: "#/parameters/rowFilter.material.tags",
@@ -13258,6 +13234,9 @@ export default {
             $ref: "#/parameters/rowFilter.customers.invoicingContactId",
           },
           {
+            $ref: "#/parameters/rowFilter.customers.externalId",
+          },
+          {
             $ref: "#/parameters/rowFilter.customers.type",
           },
           {
@@ -14110,9 +14089,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoice.updatedBy",
           },
           {
-            $ref: "#/parameters/rowFilter.salesInvoice.externalId",
-          },
-          {
             $ref: "#/parameters/select",
           },
           {
@@ -14274,9 +14250,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoice.updatedBy",
           },
           {
-            $ref: "#/parameters/rowFilter.salesInvoice.externalId",
-          },
-          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -14390,9 +14363,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoice.updatedBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesInvoice.externalId",
           },
           {
             $ref: "#/parameters/body.salesInvoice",
@@ -16567,9 +16537,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrder.customerEngineeringContactId",
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrder.externalId",
-          },
-          {
             $ref: "#/parameters/select",
           },
           {
@@ -16716,9 +16683,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrder.customerEngineeringContactId",
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrder.externalId",
-          },
-          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -16817,9 +16781,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrder.customerEngineeringContactId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesOrder.externalId",
           },
           {
             $ref: "#/parameters/body.salesOrder",
@@ -19894,9 +19855,6 @@ export default {
             $ref: "#/parameters/rowFilter.consumable.updatedAt",
           },
           {
-            $ref: "#/parameters/rowFilter.consumable.externalId",
-          },
-          {
             $ref: "#/parameters/rowFilter.consumable.tags",
           },
           {
@@ -19986,9 +19944,6 @@ export default {
             $ref: "#/parameters/rowFilter.consumable.updatedAt",
           },
           {
-            $ref: "#/parameters/rowFilter.consumable.externalId",
-          },
-          {
             $ref: "#/parameters/rowFilter.consumable.tags",
           },
           {
@@ -20030,9 +19985,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.consumable.updatedAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.consumable.externalId",
           },
           {
             $ref: "#/parameters/rowFilter.consumable.tags",
@@ -20491,6 +20443,126 @@ export default {
           },
         },
         tags: ["materialType"],
+      },
+    },
+    "/services": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.services.active",
+          },
+          {
+            $ref: "#/parameters/rowFilter.services.assignee",
+          },
+          {
+            $ref: "#/parameters/rowFilter.services.defaultMethodType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.services.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.services.itemTrackingType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.services.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.services.replenishmentSystem",
+          },
+          {
+            $ref: "#/parameters/rowFilter.services.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.services.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.services.revision",
+          },
+          {
+            $ref: "#/parameters/rowFilter.services.readableId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.services.readableIdWithRevision",
+          },
+          {
+            $ref: "#/parameters/rowFilter.services.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.services.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.services.thumbnailPath",
+          },
+          {
+            $ref: "#/parameters/rowFilter.services.supplierIds",
+          },
+          {
+            $ref: "#/parameters/rowFilter.services.unitOfMeasure",
+          },
+          {
+            $ref: "#/parameters/rowFilter.services.revisions",
+          },
+          {
+            $ref: "#/parameters/rowFilter.services.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.services.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.services.itemPostingGroupId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.services.externalId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.services.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.services.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.services.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.services.updatedAt",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/services",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["services"],
       },
     },
     "/purchasePayment": {
@@ -22135,9 +22207,6 @@ export default {
             $ref: "#/parameters/rowFilter.contact.companyId",
           },
           {
-            $ref: "#/parameters/rowFilter.contact.externalId",
-          },
-          {
             $ref: "#/parameters/rowFilter.contact.fullName",
           },
           {
@@ -22236,9 +22305,6 @@ export default {
             $ref: "#/parameters/rowFilter.contact.companyId",
           },
           {
-            $ref: "#/parameters/rowFilter.contact.externalId",
-          },
-          {
             $ref: "#/parameters/rowFilter.contact.fullName",
           },
           {
@@ -22289,9 +22355,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.contact.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.contact.externalId",
           },
           {
             $ref: "#/parameters/rowFilter.contact.fullName",
@@ -33916,9 +33979,6 @@ export default {
             $ref: "#/parameters/rowFilter.fixture.updatedAt",
           },
           {
-            $ref: "#/parameters/rowFilter.fixture.externalId",
-          },
-          {
             $ref: "#/parameters/rowFilter.fixture.tags",
           },
           {
@@ -34014,9 +34074,6 @@ export default {
             $ref: "#/parameters/rowFilter.fixture.updatedAt",
           },
           {
-            $ref: "#/parameters/rowFilter.fixture.externalId",
-          },
-          {
             $ref: "#/parameters/rowFilter.fixture.tags",
           },
           {
@@ -34064,9 +34121,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.fixture.updatedAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.fixture.externalId",
           },
           {
             $ref: "#/parameters/rowFilter.fixture.tags",
@@ -37792,9 +37846,6 @@ export default {
             $ref: "#/parameters/rowFilter.customer.website",
           },
           {
-            $ref: "#/parameters/rowFilter.customer.externalId",
-          },
-          {
             $ref: "#/parameters/rowFilter.customer.taxPercent",
           },
           {
@@ -37923,9 +37974,6 @@ export default {
             $ref: "#/parameters/rowFilter.customer.website",
           },
           {
-            $ref: "#/parameters/rowFilter.customer.externalId",
-          },
-          {
             $ref: "#/parameters/rowFilter.customer.taxPercent",
           },
           {
@@ -38006,9 +38054,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customer.website",
-          },
-          {
-            $ref: "#/parameters/rowFilter.customer.externalId",
           },
           {
             $ref: "#/parameters/rowFilter.customer.taxPercent",
@@ -38126,9 +38171,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrder.jobReadableId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseOrder.externalId",
           },
           {
             $ref: "#/parameters/select",
@@ -38274,9 +38316,6 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrder.jobReadableId",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrder.externalId",
-          },
-          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -38372,9 +38411,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrder.jobReadableId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseOrder.externalId",
           },
           {
             $ref: "#/parameters/body.purchaseOrder",
@@ -39805,6 +39841,9 @@ export default {
             $ref: "#/parameters/rowFilter.parts.itemPostingGroupId",
           },
           {
+            $ref: "#/parameters/rowFilter.parts.externalId",
+          },
+          {
             $ref: "#/parameters/rowFilter.parts.createdBy",
           },
           {
@@ -40087,9 +40126,6 @@ export default {
             $ref: "#/parameters/rowFilter.address.companyId",
           },
           {
-            $ref: "#/parameters/rowFilter.address.externalId",
-          },
-          {
             $ref: "#/parameters/select",
           },
           {
@@ -40179,9 +40215,6 @@ export default {
             $ref: "#/parameters/rowFilter.address.companyId",
           },
           {
-            $ref: "#/parameters/rowFilter.address.externalId",
-          },
-          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -40223,9 +40256,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.address.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.address.externalId",
           },
           {
             $ref: "#/parameters/body.address",
@@ -40343,6 +40373,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.materials.itemPostingGroupId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materials.externalId",
           },
           {
             $ref: "#/parameters/rowFilter.materials.createdBy",
@@ -41083,9 +41116,6 @@ export default {
             $ref: "#/parameters/rowFilter.tool.updatedAt",
           },
           {
-            $ref: "#/parameters/rowFilter.tool.externalId",
-          },
-          {
             $ref: "#/parameters/rowFilter.tool.tags",
           },
           {
@@ -41175,9 +41205,6 @@ export default {
             $ref: "#/parameters/rowFilter.tool.updatedAt",
           },
           {
-            $ref: "#/parameters/rowFilter.tool.externalId",
-          },
-          {
             $ref: "#/parameters/rowFilter.tool.tags",
           },
           {
@@ -41219,9 +41246,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.tool.updatedAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.tool.externalId",
           },
           {
             $ref: "#/parameters/rowFilter.tool.tags",
@@ -41729,6 +41753,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.tools.itemPostingGroupId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tools.externalId",
           },
           {
             $ref: "#/parameters/rowFilter.tools.createdBy",
@@ -47392,9 +47419,6 @@ export default {
             $ref: "#/parameters/rowFilter.company.ownerId",
           },
           {
-            $ref: "#/parameters/rowFilter.company.externalId",
-          },
-          {
             $ref: "#/parameters/rowFilter.company.createdAt",
           },
           {
@@ -47523,9 +47547,6 @@ export default {
             $ref: "#/parameters/rowFilter.company.ownerId",
           },
           {
-            $ref: "#/parameters/rowFilter.company.externalId",
-          },
-          {
             $ref: "#/parameters/rowFilter.company.createdAt",
           },
           {
@@ -47606,9 +47627,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.company.ownerId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.company.externalId",
           },
           {
             $ref: "#/parameters/rowFilter.company.createdAt",
@@ -47833,9 +47851,6 @@ export default {
             $ref: "#/parameters/rowFilter.user.acknowledgedITAR",
           },
           {
-            $ref: "#/parameters/rowFilter.user.externalId",
-          },
-          {
             $ref: "#/parameters/select",
           },
           {
@@ -47937,9 +47952,6 @@ export default {
             $ref: "#/parameters/rowFilter.user.acknowledgedITAR",
           },
           {
-            $ref: "#/parameters/rowFilter.user.externalId",
-          },
-          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -47993,9 +48005,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.user.acknowledgedITAR",
-          },
-          {
-            $ref: "#/parameters/rowFilter.user.externalId",
           },
           {
             $ref: "#/parameters/body.user",
@@ -48196,9 +48205,6 @@ export default {
             $ref: "#/parameters/rowFilter.supplierLocation.tags",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierLocation.externalId",
-          },
-          {
             $ref: "#/parameters/select",
           },
           {
@@ -48276,9 +48282,6 @@ export default {
             $ref: "#/parameters/rowFilter.supplierLocation.tags",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierLocation.externalId",
-          },
-          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -48308,9 +48311,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierLocation.tags",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierLocation.externalId",
           },
           {
             $ref: "#/parameters/body.supplierLocation",
@@ -50176,9 +50176,6 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrders.customerEngineeringContactId",
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrders.externalId",
-          },
-          {
             $ref: "#/parameters/rowFilter.salesOrders.thumbnailPath",
           },
           {
@@ -50213,6 +50210,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrders.shippingCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrders.externalId",
           },
           {
             $ref: "#/parameters/select",
@@ -53572,9 +53572,6 @@ export default {
             $ref: "#/parameters/rowFilter.supplier.website",
           },
           {
-            $ref: "#/parameters/rowFilter.supplier.externalId",
-          },
-          {
             $ref: "#/parameters/rowFilter.supplier.tags",
           },
           {
@@ -53703,9 +53700,6 @@ export default {
             $ref: "#/parameters/rowFilter.supplier.website",
           },
           {
-            $ref: "#/parameters/rowFilter.supplier.externalId",
-          },
-          {
             $ref: "#/parameters/rowFilter.supplier.tags",
           },
           {
@@ -53786,9 +53780,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplier.website",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplier.externalId",
           },
           {
             $ref: "#/parameters/rowFilter.supplier.tags",
@@ -54601,9 +54592,6 @@ export default {
             $ref: "#/parameters/rowFilter.item.modelUploadId",
           },
           {
-            $ref: "#/parameters/rowFilter.item.externalId",
-          },
-          {
             $ref: "#/parameters/rowFilter.item.thumbnailPath",
           },
           {
@@ -54732,9 +54720,6 @@ export default {
             $ref: "#/parameters/rowFilter.item.modelUploadId",
           },
           {
-            $ref: "#/parameters/rowFilter.item.externalId",
-          },
-          {
             $ref: "#/parameters/rowFilter.item.thumbnailPath",
           },
           {
@@ -54815,9 +54800,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.item.modelUploadId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.item.externalId",
           },
           {
             $ref: "#/parameters/rowFilter.item.thumbnailPath",
@@ -59215,9 +59197,6 @@ export default {
             $ref: "#/parameters/rowFilter.quote.customerEngineeringContactId",
           },
           {
-            $ref: "#/parameters/rowFilter.quote.externalId",
-          },
-          {
             $ref: "#/parameters/select",
           },
           {
@@ -59379,9 +59358,6 @@ export default {
             $ref: "#/parameters/rowFilter.quote.customerEngineeringContactId",
           },
           {
-            $ref: "#/parameters/rowFilter.quote.externalId",
-          },
-          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -59495,9 +59471,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quote.customerEngineeringContactId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quote.externalId",
           },
           {
             $ref: "#/parameters/body.quote",
@@ -60409,9 +60382,6 @@ export default {
             $ref: "#/parameters/rowFilter.part.customFields",
           },
           {
-            $ref: "#/parameters/rowFilter.part.externalId",
-          },
-          {
             $ref: "#/parameters/rowFilter.part.tags",
           },
           {
@@ -60507,9 +60477,6 @@ export default {
             $ref: "#/parameters/rowFilter.part.customFields",
           },
           {
-            $ref: "#/parameters/rowFilter.part.externalId",
-          },
-          {
             $ref: "#/parameters/rowFilter.part.tags",
           },
           {
@@ -60557,9 +60524,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.part.customFields",
-          },
-          {
-            $ref: "#/parameters/rowFilter.part.externalId",
           },
           {
             $ref: "#/parameters/rowFilter.part.tags",
@@ -66137,6 +66101,9 @@ export default {
           format: "text",
           type: "string",
         },
+        externalId: {
+          format: "jsonb",
+        },
         createdBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
@@ -66588,9 +66555,6 @@ export default {
             type: "string",
           },
           type: "array",
-        },
-        externalId: {
-          format: "jsonb",
         },
       },
       type: "object",
@@ -68304,9 +68268,6 @@ export default {
             "Note:\nThis is a Foreign Key to `supplier.id`.<fk table='supplier' column='id'/>",
           format: "text",
           type: "string",
-        },
-        externalId: {
-          format: "json",
         },
       },
       type: "object",
@@ -70701,9 +70662,6 @@ export default {
           format: "timestamp with time zone",
           type: "string",
         },
-        externalId: {
-          format: "jsonb",
-        },
         tags: {
           format: "text[]",
           items: {
@@ -71839,6 +71797,9 @@ export default {
           format: "text",
           type: "string",
         },
+        externalId: {
+          format: "jsonb",
+        },
         type: {
           format: "text",
           type: "string",
@@ -72317,9 +72278,6 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string",
-        },
-        externalId: {
-          format: "jsonb",
         },
       },
       type: "object",
@@ -73497,9 +73455,6 @@ export default {
           format: "text",
           type: "string",
         },
-        externalId: {
-          format: "jsonb",
-        },
       },
       type: "object",
     },
@@ -74634,7 +74589,6 @@ export default {
         "entityType",
         "entityId",
         "integration",
-        "externalId",
         "allowDuplicateExternalId",
         "createdAt",
         "updatedAt",
@@ -74974,9 +74928,6 @@ export default {
           format: "timestamp with time zone",
           type: "string",
         },
-        externalId: {
-          format: "jsonb",
-        },
         tags: {
           format: "text[]",
           items: {
@@ -75106,6 +75057,128 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
           format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
+    services: {
+      properties: {
+        active: {
+          format: "boolean",
+          type: "boolean",
+        },
+        assignee: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        defaultMethodType: {
+          enum: ["Buy", "Make", "Pick"],
+          format: 'public."methodType"',
+          type: "string",
+        },
+        description: {
+          format: "text",
+          type: "string",
+        },
+        itemTrackingType: {
+          enum: ["Inventory", "Non-Inventory", "Serial", "Batch"],
+          format: 'public."itemTrackingType"',
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        replenishmentSystem: {
+          enum: ["Buy", "Make", "Buy and Make"],
+          format: 'public."itemReplenishmentSystem"',
+          type: "string",
+        },
+        unitOfMeasureCode: {
+          format: "text",
+          type: "string",
+        },
+        notes: {
+          format: "jsonb",
+        },
+        revision: {
+          format: "text",
+          type: "string",
+        },
+        readableId: {
+          format: "text",
+          type: "string",
+        },
+        readableIdWithRevision: {
+          format: "text",
+          type: "string",
+        },
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        thumbnailPath: {
+          format: "text",
+          type: "string",
+        },
+        supplierIds: {
+          format: "text",
+          type: "string",
+        },
+        unitOfMeasure: {
+          format: "text",
+          type: "string",
+        },
+        revisions: {
+          format: "json",
+        },
+        customFields: {
+          format: "jsonb",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        itemPostingGroupId: {
+          description:
+            "Note:\nThis is a Foreign Key to `itemPostingGroup.id`.<fk table='itemPostingGroup' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        externalId: {
+          format: "jsonb",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
           type: "string",
         },
       },
@@ -75848,9 +75921,6 @@ export default {
             "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
           format: "text",
           type: "string",
-        },
-        externalId: {
-          format: "jsonb",
         },
         fullName: {
           format: "text",
@@ -81451,9 +81521,6 @@ export default {
           format: "timestamp with time zone",
           type: "string",
         },
-        externalId: {
-          format: "jsonb",
-        },
         tags: {
           format: "text[]",
           items: {
@@ -82982,9 +83049,6 @@ export default {
           format: "text",
           type: "string",
         },
-        externalId: {
-          format: "jsonb",
-        },
         taxPercent: {
           default: 0,
           format: "numeric",
@@ -83182,9 +83246,6 @@ export default {
         jobReadableId: {
           format: "text",
           type: "string",
-        },
-        externalId: {
-          format: "jsonb",
         },
       },
       type: "object",
@@ -84057,6 +84118,9 @@ export default {
           format: "text",
           type: "string",
         },
+        externalId: {
+          format: "jsonb",
+        },
         createdBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
@@ -84205,9 +84269,6 @@ export default {
             "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
           format: "text",
           type: "string",
-        },
-        externalId: {
-          format: "jsonb",
         },
       },
       type: "object",
@@ -84361,6 +84422,9 @@ export default {
             "Note:\nThis is a Foreign Key to `itemPostingGroup.id`.<fk table='itemPostingGroup' column='id'/>",
           format: "text",
           type: "string",
+        },
+        externalId: {
+          format: "jsonb",
         },
         createdBy: {
           description:
@@ -84727,9 +84791,6 @@ export default {
           format: "timestamp with time zone",
           type: "string",
         },
-        externalId: {
-          format: "jsonb",
-        },
         tags: {
           format: "text[]",
           items: {
@@ -85005,6 +85066,9 @@ export default {
             "Note:\nThis is a Foreign Key to `itemPostingGroup.id`.<fk table='itemPostingGroup' column='id'/>",
           format: "text",
           type: "string",
+        },
+        externalId: {
+          format: "jsonb",
         },
         createdBy: {
           description:
@@ -87860,9 +87924,6 @@ export default {
           format: "text",
           type: "string",
         },
-        externalId: {
-          format: "jsonb",
-        },
         createdAt: {
           default: "now()",
           format: "timestamp with time zone",
@@ -88074,9 +88135,6 @@ export default {
           format: "boolean",
           type: "boolean",
         },
-        externalId: {
-          format: "jsonb",
-        },
       },
       type: "object",
     },
@@ -88167,9 +88225,6 @@ export default {
             type: "string",
           },
           type: "array",
-        },
-        externalId: {
-          format: "jsonb",
         },
       },
       type: "object",
@@ -89071,9 +89126,6 @@ export default {
           format: "text",
           type: "string",
         },
-        externalId: {
-          format: "jsonb",
-        },
         thumbnailPath: {
           format: "text",
           type: "string",
@@ -89135,6 +89187,9 @@ export default {
         shippingCost: {
           format: "numeric",
           type: "number",
+        },
+        externalId: {
+          format: "jsonb",
         },
       },
       type: "object",
@@ -90882,9 +90937,6 @@ export default {
           format: "text",
           type: "string",
         },
-        externalId: {
-          format: "jsonb",
-        },
         tags: {
           format: "text[]",
           items: {
@@ -91470,9 +91522,6 @@ export default {
             "Note:\nThis is a Foreign Key to `modelUpload.id`.<fk table='modelUpload' column='id'/>",
           format: "text",
           type: "string",
-        },
-        externalId: {
-          format: "jsonb",
         },
         thumbnailPath: {
           format: "text",
@@ -93776,9 +93825,6 @@ export default {
           format: "text",
           type: "string",
         },
-        externalId: {
-          format: "jsonb",
-        },
       },
       type: "object",
     },
@@ -94261,9 +94307,6 @@ export default {
           type: "string",
         },
         customFields: {
-          format: "jsonb",
-        },
-        externalId: {
           format: "jsonb",
         },
         tags: {
@@ -95300,6 +95343,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.consumables.externalId": {
+      name: "externalId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.consumables.createdBy": {
       name: "createdBy",
       required: false,
@@ -95815,12 +95864,6 @@ export default {
     },
     "rowFilter.customerLocation.tags": {
       name: "tags",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.customerLocation.externalId": {
-      name: "externalId",
       required: false,
       in: "query",
       type: "string",
@@ -97756,12 +97799,6 @@ export default {
     },
     "rowFilter.nonConformanceActionTask.supplierId": {
       name: "supplierId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.nonConformanceActionTask.externalId": {
-      name: "externalId",
       required: false,
       in: "query",
       type: "string",
@@ -100487,12 +100524,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.material.externalId": {
-      name: "externalId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.material.tags": {
       name: "tags",
       required: false,
@@ -101765,6 +101796,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.customers.externalId": {
+      name: "externalId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.customers.type": {
       name: "type",
       required: false,
@@ -102262,12 +102299,6 @@ export default {
     },
     "rowFilter.salesInvoice.updatedBy": {
       name: "updatedBy",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.salesInvoice.externalId": {
-      name: "externalId",
       required: false,
       in: "query",
       type: "string",
@@ -103594,12 +103625,6 @@ export default {
     },
     "rowFilter.salesOrder.customerEngineeringContactId": {
       name: "customerEngineeringContactId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.salesOrder.externalId": {
-      name: "externalId",
       required: false,
       in: "query",
       type: "string",
@@ -105256,12 +105281,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.consumable.externalId": {
-      name: "externalId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.consumable.tags": {
       name: "tags",
       required: false,
@@ -105405,6 +105424,171 @@ export default {
     },
     "rowFilter.materialType.companyId": {
       name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "body.services": {
+      name: "services",
+      description: "services",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/services",
+      },
+    },
+    "rowFilter.services.active": {
+      name: "active",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.services.assignee": {
+      name: "assignee",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.services.defaultMethodType": {
+      name: "defaultMethodType",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.services.description": {
+      name: "description",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.services.itemTrackingType": {
+      name: "itemTrackingType",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.services.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.services.replenishmentSystem": {
+      name: "replenishmentSystem",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.services.unitOfMeasureCode": {
+      name: "unitOfMeasureCode",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.services.notes": {
+      name: "notes",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.services.revision": {
+      name: "revision",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.services.readableId": {
+      name: "readableId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.services.readableIdWithRevision": {
+      name: "readableIdWithRevision",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.services.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.services.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.services.thumbnailPath": {
+      name: "thumbnailPath",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.services.supplierIds": {
+      name: "supplierIds",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.services.unitOfMeasure": {
+      name: "unitOfMeasure",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.services.revisions": {
+      name: "revisions",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.services.customFields": {
+      name: "customFields",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.services.tags": {
+      name: "tags",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.services.itemPostingGroupId": {
+      name: "itemPostingGroupId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.services.externalId": {
+      name: "externalId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.services.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.services.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.services.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.services.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string",
@@ -106239,12 +106423,6 @@ export default {
     },
     "rowFilter.contact.companyId": {
       name: "companyId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.contact.externalId": {
-      name: "externalId",
       required: false,
       in: "query",
       type: "string",
@@ -112591,12 +112769,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.fixture.externalId": {
-      name: "externalId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.fixture.tags": {
       name: "tags",
       required: false,
@@ -114242,12 +114414,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.customer.externalId": {
-      name: "externalId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.customer.taxPercent": {
       name: "taxPercent",
       required: false,
@@ -114451,12 +114617,6 @@ export default {
     },
     "rowFilter.purchaseOrder.jobReadableId": {
       name: "jobReadableId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.purchaseOrder.externalId": {
-      name: "externalId",
       required: false,
       in: "query",
       type: "string",
@@ -115541,6 +115701,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.parts.externalId": {
+      name: "externalId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.parts.createdBy": {
       name: "createdBy",
       required: false,
@@ -115711,12 +115877,6 @@ export default {
     },
     "rowFilter.address.companyId": {
       name: "companyId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.address.externalId": {
-      name: "externalId",
       required: false,
       in: "query",
       type: "string",
@@ -115924,6 +116084,12 @@ export default {
     },
     "rowFilter.materials.itemPostingGroupId": {
       name: "itemPostingGroupId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materials.externalId": {
+      name: "externalId",
       required: false,
       in: "query",
       type: "string",
@@ -116300,12 +116466,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.tool.externalId": {
-      name: "externalId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.tool.tags": {
       name: "tags",
       required: false,
@@ -116635,6 +116795,12 @@ export default {
     },
     "rowFilter.tools.itemPostingGroupId": {
       name: "itemPostingGroupId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.tools.externalId": {
+      name: "externalId",
       required: false,
       in: "query",
       type: "string",
@@ -119806,12 +119972,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.company.externalId": {
-      name: "externalId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.company.createdAt": {
       name: "createdAt",
       required: false,
@@ -120079,12 +120239,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.user.externalId": {
-      name: "externalId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "body.externalLink": {
       name: "externalLink",
       description: "externalLink",
@@ -120183,12 +120337,6 @@ export default {
     },
     "rowFilter.supplierLocation.tags": {
       name: "tags",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.supplierLocation.externalId": {
-      name: "externalId",
       required: false,
       in: "query",
       type: "string",
@@ -121135,12 +121283,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.salesOrders.externalId": {
-      name: "externalId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.salesOrders.thumbnailPath": {
       name: "thumbnailPath",
       required: false,
@@ -121209,6 +121351,12 @@ export default {
     },
     "rowFilter.salesOrders.shippingCost": {
       name: "shippingCost",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrders.externalId": {
+      name: "externalId",
       required: false,
       in: "query",
       type: "string",
@@ -123238,12 +123386,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.supplier.externalId": {
-      name: "externalId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.supplier.tags": {
       name: "tags",
       required: false,
@@ -123849,12 +123991,6 @@ export default {
     },
     "rowFilter.item.modelUploadId": {
       name: "modelUploadId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.item.externalId": {
-      name: "externalId",
       required: false,
       in: "query",
       type: "string",
@@ -126457,12 +126593,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.quote.externalId": {
-      name: "externalId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "body.salesInvoiceLine": {
       name: "salesInvoiceLine",
       description: "salesInvoiceLine",
@@ -126954,12 +127084,6 @@ export default {
     },
     "rowFilter.part.customFields": {
       name: "customFields",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.part.externalId": {
-      name: "externalId",
       required: false,
       in: "query",
       type: "string",
