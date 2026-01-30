@@ -2,7 +2,7 @@ import { getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { onShapeDataValidator } from "@carbon/ee/onshape";
 import { FunctionRegion } from "@supabase/supabase-js";
-import type { ActionFunctionArgs, } from "react-router";
+import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -74,7 +74,6 @@ export async function action({ request }: ActionFunctionArgs) {
       entityType: "item",
       entityId: itemId,
       integration: "onshape",
-      externalId: itemId,
       metadata: {
         documentId,
         versionId,
