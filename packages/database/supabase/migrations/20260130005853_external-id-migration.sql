@@ -1,3 +1,6 @@
+-- Make externalId nullable in externalIntegrationMapping table
+ALTER TABLE "externalIntegrationMapping" ALTER COLUMN "externalId" DROP NOT NULL;
+
 DROP VIEW IF EXISTS "suppliers";
 DROP VIEW IF EXISTS "customers";
 DROP VIEW IF EXISTS "parts";
@@ -118,7 +121,6 @@ SELECT
   kv.key,
   CASE
     WHEN jsonb_typeof(kv.value) = 'string' THEN kv.value #>> '{}'
-    WHEN kv.key = 'onshapeData' THEN kv.value->>'Part number'
     ELSE kv.value->>'id'
   END,
   CASE WHEN jsonb_typeof(kv.value) = 'object' THEN kv.value ELSE NULL END,
@@ -131,7 +133,6 @@ WHERE t."externalId" IS NOT NULL
   AND (
     CASE
       WHEN jsonb_typeof(kv.value) = 'string' THEN kv.value #>> '{}'
-      WHEN kv.key = 'onshapeData' THEN kv.value->>'Part number'
       ELSE kv.value->>'id'
     END
   ) IS NOT NULL;
@@ -147,7 +148,6 @@ SELECT
   kv.key,
   CASE
     WHEN jsonb_typeof(kv.value) = 'string' THEN kv.value #>> '{}'
-    WHEN kv.key = 'onshapeData' THEN kv.value->>'Part number'
     ELSE kv.value->>'id'
   END,
   CASE WHEN jsonb_typeof(kv.value) = 'object' THEN kv.value ELSE NULL END,
@@ -160,7 +160,6 @@ WHERE t."externalId" IS NOT NULL
   AND (
     CASE
       WHEN jsonb_typeof(kv.value) = 'string' THEN kv.value #>> '{}'
-      WHEN kv.key = 'onshapeData' THEN kv.value->>'Part number'
       ELSE kv.value->>'id'
     END
   ) IS NOT NULL;
@@ -176,7 +175,6 @@ SELECT
   kv.key,
   CASE
     WHEN jsonb_typeof(kv.value) = 'string' THEN kv.value #>> '{}'
-    WHEN kv.key = 'onshapeData' THEN kv.value->>'Part number'
     ELSE kv.value->>'id'
   END,
   CASE WHEN jsonb_typeof(kv.value) = 'object' THEN kv.value ELSE NULL END,
@@ -189,7 +187,6 @@ WHERE t."externalId" IS NOT NULL
   AND (
     CASE
       WHEN jsonb_typeof(kv.value) = 'string' THEN kv.value #>> '{}'
-      WHEN kv.key = 'onshapeData' THEN kv.value->>'Part number'
       ELSE kv.value->>'id'
     END
   ) IS NOT NULL;
@@ -205,7 +202,6 @@ SELECT
   kv.key,
   CASE
     WHEN jsonb_typeof(kv.value) = 'string' THEN kv.value #>> '{}'
-    WHEN kv.key = 'onshapeData' THEN kv.value->>'Part number'
     ELSE kv.value->>'id'
   END,
   CASE WHEN jsonb_typeof(kv.value) = 'object' THEN kv.value ELSE NULL END,
@@ -218,7 +214,6 @@ WHERE t."externalId" IS NOT NULL
   AND (
     CASE
       WHEN jsonb_typeof(kv.value) = 'string' THEN kv.value #>> '{}'
-      WHEN kv.key = 'onshapeData' THEN kv.value->>'Part number'
       ELSE kv.value->>'id'
     END
   ) IS NOT NULL;
@@ -261,7 +256,6 @@ SELECT
   kv.key,
   CASE
     WHEN jsonb_typeof(kv.value) = 'string' THEN kv.value #>> '{}'
-    WHEN kv.key = 'onshapeData' THEN kv.value->>'Part number'
     ELSE kv.value->>'id'
   END,
   CASE WHEN jsonb_typeof(kv.value) = 'object' THEN kv.value ELSE NULL END,
@@ -274,7 +268,6 @@ WHERE t."externalId" IS NOT NULL
   AND (
     CASE
       WHEN jsonb_typeof(kv.value) = 'string' THEN kv.value #>> '{}'
-      WHEN kv.key = 'onshapeData' THEN kv.value->>'Part number'
       ELSE kv.value->>'id'
     END
   ) IS NOT NULL;
@@ -757,6 +750,10 @@ INNER JOIN "itemCost" cost
 WHERE mm.id = uid
 ORDER BY "order"
 $$ LANGUAGE sql STABLE;
+
+
+
+
 
 DROP FUNCTION IF EXISTS get_quote_methods_by_method_id;
 CREATE OR REPLACE FUNCTION get_quote_methods_by_method_id(mid TEXT)

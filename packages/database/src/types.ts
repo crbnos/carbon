@@ -6697,7 +6697,7 @@ export type Database = {
           createdBy: string | null
           entityId: string
           entityType: string
-          externalId: string
+          externalId: string | null
           id: string
           integration: string
           lastSyncedAt: string | null
@@ -6712,7 +6712,7 @@ export type Database = {
           createdBy?: string | null
           entityId: string
           entityType: string
-          externalId: string
+          externalId?: string | null
           id?: string
           integration: string
           lastSyncedAt?: string | null
@@ -6727,7 +6727,7 @@ export type Database = {
           createdBy?: string | null
           entityId?: string
           entityType?: string
-          externalId?: string
+          externalId?: string | null
           id?: string
           integration?: string
           lastSyncedAt?: string | null
