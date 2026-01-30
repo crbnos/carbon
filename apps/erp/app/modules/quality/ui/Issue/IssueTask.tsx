@@ -278,9 +278,7 @@ export function TaskItem({
 
   // Check if this action task has a linked Linear issue
   const hasLinearLink =
-    type === "action" &&
-    !!(task as IssueActionTask & { externalId?: { linear?: unknown } })
-      .externalId?.linear;
+    type === "action" && !!(task as IssueActionTask).linearIssue;
 
   const { content, setContent, onUpdateContent, onUploadImage } = useTaskNotes({
     initialContent: (task.notes ?? {}) as JSONContent,

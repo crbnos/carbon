@@ -42,23 +42,16 @@ export async function action({ request }: ActionFunctionArgs) {
     const parsed = onShapeDataValidator.parse(JSON.parse(rows as string));
     const serviceRole = await getCarbonServiceRole();
 
-    const [sync, item] = await Promise.all([
-      serviceRole.functions.invoke("sync", {
-        body: {
-          type: "onshape",
-          makeMethodId,
-          data: parsed,
-          companyId,
-          userId
-        },
-        region: FunctionRegion.UsEast1
-      }),
-      serviceRole
-        .from("item")
-        .select("externalId")
-        .eq("id", record.data?.itemId as string)
-        .single()
-    ]);
+    const sync = await serviceRole.functions.invoke("sync", {
+      body: {
+        type: "onshape",
+        makeMethodId,
+        data: parsed,
+        companyId,
+        userId
+      },
+      region: FunctionRegion.UsEast1
+    });
 
     if (sync.error) {
       return data(
@@ -67,31 +60,29 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    if (item.error) {
-      return data(
-        { success: false, message: "Failed to get item" },
-        { status: 400 }
-      );
-    }
+    const itemId = record.data?.itemId as string;
 
-    const currentExternalId =
-      (item.data?.externalId as Record<string, any>) ?? {};
-
-    // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-    currentExternalId["onshape"] = {
-      documentId,
-      versionId,
-      elementId,
-      lastSyncedAt: new Date().toISOString()
-    };
-
+    // Upsert the OnShape mapping in externalIntegrationMapping
     await client
-      .from("item")
-      .update({
-        externalId: currentExternalId
-      })
-      .eq("id", record.data?.itemId as string);
-    // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+      .from("externalIntegrationMapping")
+      .delete()
+      .eq("entityType", "item")
+      .eq("entityId", itemId)
+      .eq("integration", "onshape");
+
+    await client.from("externalIntegrationMapping").insert({
+      entityType: "item",
+      entityId: itemId,
+      integration: "onshape",
+      externalId: itemId,
+      metadata: {
+        documentId,
+        versionId,
+        elementId
+      },
+      lastSyncedAt: new Date().toISOString(),
+      companyId
+    });
   } catch (error) {
     console.error("Failed to sync onshape data");
     return data(

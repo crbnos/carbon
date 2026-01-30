@@ -54,12 +54,19 @@ export const syncIssueFromLinear = task({
       throw new Error("Failed to fetch integration from Carbon");
     }
 
-    const action = await carbon
-      .from("nonConformanceActionTask")
-      .select("id")
-      .eq("externalId->linear->>id", payload.event.data.id)
+    // Look up the action task via the mapping table
+    const mapping = await carbon
+      .from("externalIntegrationMapping")
+      .select("entityId")
+      .eq("entityType", "nonConformanceActionTask")
+      .eq("integration", "linear")
+      .eq("externalId", payload.event.data.id)
       .eq("companyId", payload.companyId)
       .maybeSingle();
+
+    const action = mapping.data
+      ? { data: { id: mapping.data.entityId } }
+      : { data: null };
 
     if (!action.data) {
       return {

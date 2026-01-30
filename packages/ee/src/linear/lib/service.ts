@@ -35,7 +35,7 @@ export async function getLinearIntegration(
     .limit(1);
 }
 
-export function linkActionToLinearIssue(
+export async function linkActionToLinearIssue(
   client: SupabaseClient<Database>,
   companyId: string,
   input: {
@@ -60,9 +60,6 @@ export function linkActionToLinearIssue(
   }
 
   const updateData: Record<string, any> = {
-    externalId: {
-      linear: data
-    },
     assignee: input.assignee,
     status: mapLinearStatusToCarbonStatus(data.state.type!),
     dueDate: data.dueDate
@@ -73,12 +70,32 @@ export function linkActionToLinearIssue(
     updateData.notes = notes;
   }
 
-  return client
+  // Update the task fields
+  const result = await client
     .from("nonConformanceActionTask")
     .update(updateData)
     .eq("companyId", companyId)
     .eq("id", input.actionId)
     .select("nonConformanceId");
+
+  // Upsert the Linear mapping in externalIntegrationMapping
+  await client
+    .from("externalIntegrationMapping")
+    .delete()
+    .eq("entityType", "nonConformanceActionTask")
+    .eq("entityId", input.actionId)
+    .eq("integration", "linear");
+
+  await client.from("externalIntegrationMapping").insert({
+    entityType: "nonConformanceActionTask",
+    entityId: input.actionId,
+    integration: "linear",
+    externalId: data.id,
+    metadata: data as any,
+    companyId
+  });
+
+  return result;
 }
 
 export const getCompanyEmployees = async (
@@ -96,7 +113,7 @@ export const getCompanyEmployees = async (
   return users.data ?? [];
 };
 
-export function unlinkActionFromLinearIssue(
+export async function unlinkActionFromLinearIssue(
   client: SupabaseClient<Database>,
   companyId: string,
   input: {
@@ -104,16 +121,20 @@ export function unlinkActionFromLinearIssue(
     assignee?: string | null;
   }
 ) {
+  // Delete the Linear mapping from externalIntegrationMapping
+  await client
+    .from("externalIntegrationMapping")
+    .delete()
+    .eq("entityType", "nonConformanceActionTask")
+    .eq("entityId", input.actionId)
+    .eq("integration", "linear");
+
+  // Return the nonConformanceId for the action task
   return client
     .from("nonConformanceActionTask")
-    .update({
-      externalId: {
-        linear: undefined
-      }
-    })
+    .select("nonConformanceId")
     .eq("companyId", companyId)
-    .eq("id", input.actionId)
-    .select("nonConformanceId");
+    .eq("id", input.actionId);
 }
 
 export const getLinearIssueFromExternalId = async (
@@ -121,18 +142,18 @@ export const getLinearIssueFromExternalId = async (
   companyId: string,
   actionId: string
 ) => {
-  const { data: action } = await client
-    .from("nonConformanceActionTask")
-    .select("externalId")
+  const { data: mapping } = await client
+    .from("externalIntegrationMapping")
+    .select("metadata")
+    .eq("entityType", "nonConformanceActionTask")
+    .eq("entityId", actionId)
+    .eq("integration", "linear")
     .eq("companyId", companyId)
-    .eq("id", actionId)
     .maybeSingle();
 
-  if (!action) return null;
+  if (!mapping) return null;
 
-  const { data } = LinearIssueSchema.safeParse(
-    (action.externalId as any)?.linear
-  );
+  const { data } = LinearIssueSchema.safeParse(mapping.metadata);
 
   if (!data) return null;
 

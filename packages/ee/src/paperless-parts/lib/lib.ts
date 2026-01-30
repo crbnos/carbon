@@ -28,6 +28,49 @@ import type {
 } from "./schemas";
 import { calculatePromisedDate } from "./utils";
 
+async function lookupEntityByPaperlessId(
+  carbon: SupabaseClient<Database>,
+  entityType: string,
+  integration: string,
+  externalId: string,
+  companyId: string
+): Promise<string | null> {
+  const { data } = await carbon
+    .from("externalIntegrationMapping")
+    .select("entityId")
+    .eq("entityType", entityType)
+    .eq("integration", integration)
+    .eq("externalId", externalId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  return data?.entityId ?? null;
+}
+
+async function createPaperlessMapping(
+  carbon: SupabaseClient<Database>,
+  entityType: string,
+  entityId: string,
+  integration: string,
+  externalId: string,
+  companyId: string
+): Promise<void> {
+  await carbon
+    .from("externalIntegrationMapping")
+    .delete()
+    .eq("entityType", entityType)
+    .eq("entityId", entityId)
+    .eq("integration", integration);
+
+  await carbon.from("externalIntegrationMapping").insert({
+    entityType,
+    entityId,
+    integration,
+    externalId: String(externalId),
+    companyId,
+    allowDuplicateExternalId: false
+  });
+}
+
 /**
  * Strip special characters from filename for safe storage
  */
@@ -975,15 +1018,16 @@ export async function getCustomerIdAndContactId(
   if (contact.account) {
     const paperlessPartsCustomerId = contact.account?.id;
 
-    const existingCustomer = await carbon
-      .from("customer")
-      .select("id")
-      .eq("companyId", company.id)
-      .eq("externalId->>paperlessPartsId", String(paperlessPartsCustomerId!))
-      .maybeSingle();
+    const existingCustomerId = await lookupEntityByPaperlessId(
+      carbon,
+      "customer",
+      "paperlessPartsId",
+      String(paperlessPartsCustomerId!),
+      company.id
+    );
 
-    if (existingCustomer.data) {
-      customerId = existingCustomer.data.id;
+    if (existingCustomerId) {
+      customerId = existingCustomerId;
     } else {
       const customerName = contact.account?.name!;
 
@@ -996,27 +1040,17 @@ export async function getCustomerIdAndContactId(
         .maybeSingle();
 
       if (existingCustomerByName.data) {
-        // Update the existing customer with the external ID
-        const updatedCustomer = await carbon
-          .from("customer")
-          .update({
-            externalId: {
-              paperlessPartsId: contact.account.id
-            }
-          })
-          .eq("id", existingCustomerByName.data.id)
-          .select()
-          .single();
+        customerId = existingCustomerByName.data.id;
 
-        if (updatedCustomer.error || !updatedCustomer.data) {
-          console.error(
-            "Failed to update customer externalId in Carbon",
-            updatedCustomer.error
-          );
-          throw new Error("Failed to update customer externalId in Carbon");
-        }
-
-        customerId = updatedCustomer.data.id;
+        // Create the mapping for the existing customer
+        await createPaperlessMapping(
+          carbon,
+          "customer",
+          customerId,
+          "paperlessPartsId",
+          String(contact.account.id),
+          company.id
+        );
       } else {
         const newCustomer = await carbon
           .from("customer")
@@ -1024,9 +1058,6 @@ export async function getCustomerIdAndContactId(
             {
               companyId: company.id,
               name: customerName,
-              externalId: {
-                paperlessPartsId: contact.account.id
-              },
               currencyCode: company.baseCurrencyCode,
               createdBy
             },
@@ -1046,6 +1077,16 @@ export async function getCustomerIdAndContactId(
         }
 
         customerId = newCustomer.data.id;
+
+        // Create the mapping for the new customer
+        await createPaperlessMapping(
+          carbon,
+          "customer",
+          customerId,
+          "paperlessPartsId",
+          String(contact.account.id),
+          company.id
+        );
       }
     }
   } else {
@@ -1181,18 +1222,19 @@ export async function getCustomerIdAndContactId(
     }
 
     // Check if customer already exists in Carbon with this paperless account ID (if we have one)
-    let existingCustomerByPaperlessId = null;
+    let existingCustomerIdByPaperless: string | null = null;
     if (paperlessPartsAccountId > 0) {
-      existingCustomerByPaperlessId = await carbon
-        .from("customer")
-        .select("id")
-        .eq("companyId", company.id)
-        .eq("externalId->>paperlessPartsId", String(paperlessPartsAccountId))
-        .maybeSingle();
+      existingCustomerIdByPaperless = await lookupEntityByPaperlessId(
+        carbon,
+        "customer",
+        "paperlessPartsId",
+        String(paperlessPartsAccountId),
+        company.id
+      );
     }
 
-    if (existingCustomerByPaperlessId?.data) {
-      customerId = existingCustomerByPaperlessId.data.id;
+    if (existingCustomerIdByPaperless) {
+      customerId = existingCustomerIdByPaperless;
     } else {
       // Try to find existing customer by name in Carbon
       const existingCustomerByName = await carbon
@@ -1203,30 +1245,18 @@ export async function getCustomerIdAndContactId(
         .maybeSingle();
 
       if (existingCustomerByName.data) {
-        // Update the existing customer with the external ID (if we have a valid Paperless Parts account ID)
+        customerId = existingCustomerByName.data.id;
+
+        // Create the mapping if we have a valid Paperless Parts account ID
         if (paperlessPartsAccountId > 0) {
-          const updatedCustomer = await carbon
-            .from("customer")
-            .update({
-              externalId: {
-                paperlessPartsId: paperlessPartsAccountId
-              }
-            })
-            .eq("id", existingCustomerByName.data.id)
-            .select()
-            .single();
-
-          if (updatedCustomer.error || !updatedCustomer.data) {
-            console.error(
-              "Failed to update customer externalId in Carbon",
-              updatedCustomer.error
-            );
-            throw new Error("Failed to update customer externalId in Carbon");
-          }
-
-          customerId = updatedCustomer.data.id;
-        } else {
-          customerId = existingCustomerByName.data.id;
+          await createPaperlessMapping(
+            carbon,
+            "customer",
+            customerId,
+            "paperlessPartsId",
+            String(paperlessPartsAccountId),
+            company.id
+          );
         }
       } else {
         // Create a new customer in Carbon
@@ -1236,13 +1266,6 @@ export async function getCustomerIdAndContactId(
           currencyCode: company.baseCurrencyCode,
           createdBy
         };
-
-        // Only add externalId if we have a valid Paperless Parts account ID
-        if (paperlessPartsAccountId > 0) {
-          customerData.externalId = {
-            paperlessPartsId: paperlessPartsAccountId
-          };
-        }
 
         const newCustomer = await carbon
           .from("customer")
@@ -1261,34 +1284,48 @@ export async function getCustomerIdAndContactId(
         }
 
         customerId = newCustomer.data.id;
+
+        // Create the mapping if we have a valid Paperless Parts account ID
+        if (paperlessPartsAccountId > 0) {
+          await createPaperlessMapping(
+            carbon,
+            "customer",
+            customerId,
+            "paperlessPartsId",
+            String(paperlessPartsAccountId),
+            company.id
+          );
+        }
       }
     }
   }
 
   // Get the contact ID from Carbon based on the Paperless Parts ID
   const paperlessPartsContactId = contact.id;
-  const existingCustomerContact = await carbon
-    .from("customerContact")
-    .select(
-      `
-            id,
-            contact!inner (
-              id,
-              companyId,
-              externalId
-            )
-          `
-    )
-    .eq("contact.companyId", company.id)
-    .eq(
-      "contact.externalId->>paperlessPartsId",
-      String(paperlessPartsContactId!)
-    )
-    .maybeSingle();
 
-  if (existingCustomerContact.data) {
-    customerContactId = existingCustomerContact.data.id;
-  } else {
+  // Look up the contact via the mapping table
+  const existingContactId = await lookupEntityByPaperlessId(
+    carbon,
+    "contact",
+    "paperlessPartsId",
+    String(paperlessPartsContactId!),
+    company.id
+  );
+
+  if (existingContactId) {
+    // Find the customerContact for this contact
+    const existingCustomerContact = await carbon
+      .from("customerContact")
+      .select("id")
+      .eq("contactId", existingContactId)
+      .maybeSingle();
+
+    if (existingCustomerContact.data) {
+      customerContactId = existingCustomerContact.data.id;
+    }
+  }
+
+  if (!customerContactId) {
     // If there is no matching contact in Carbon, check if contact exists by email first
     const existingContactByEmail = await carbon
       .from("contact")
@@ -1301,15 +1338,12 @@ export async function getCustomerIdAndContactId(
     let contactId: string;
 
     if (existingContactByEmail.data) {
-      // Update the existing contact with the external ID
+      // Update the existing contact
       const updatedContact = await carbon
         .from("contact")
         .update({
           firstName: contact.first_name!,
-          lastName: contact.last_name!,
-          externalId: {
-            paperlessPartsId: contact.id
-          }
+          lastName: contact.last_name!
         })
         .eq("id", existingContactByEmail.data.id)
         .select()
@@ -1324,6 +1358,16 @@ export async function getCustomerIdAndContactId(
       }
 
       contactId = updatedContact.data.id;
+
+      // Create the mapping for the existing contact
+      await createPaperlessMapping(
+        carbon,
+        "contact",
+        contactId,
+        "paperlessPartsId",
+        String(contact.id),
+        company.id
+      );
     } else {
       // Create a new contact in Carbon
       const newContact = await carbon
@@ -1333,10 +1377,7 @@ export async function getCustomerIdAndContactId(
           firstName: contact.first_name!,
           lastName: contact.last_name!,
           email: contact.email!,
-          isCustomer: true,
-          externalId: {
-            paperlessPartsId: contact.id
-          }
+          isCustomer: true
         })
         .select()
         .single();
@@ -1350,6 +1391,16 @@ export async function getCustomerIdAndContactId(
       }
 
       contactId = newContact.data.id;
+
+      // Create the mapping for the new contact
+      await createPaperlessMapping(
+        carbon,
+        "contact",
+        contactId,
+        "paperlessPartsId",
+        String(contact.id),
+        company.id
+      );
     }
 
     // Check if customerContact already exists for this customer and contact
@@ -1408,15 +1459,16 @@ export async function getCustomerLocationIds(
   if (billingInfo) {
     const paperlessPartsBillingId = billingInfo.id;
 
-    const existingInvoiceLocation = await carbon
-      .from("customerLocation")
-      .select("id")
-      .eq("customerId", customerId)
-      .eq("externalId->>paperlessPartsId", String(paperlessPartsBillingId!))
-      .maybeSingle();
+    const existingInvoiceLocationId = await lookupEntityByPaperlessId(
+      carbon,
+      "customerLocation",
+      "paperlessPartsId",
+      String(paperlessPartsBillingId!),
+      company.id
+    );
 
-    if (existingInvoiceLocation.data) {
-      invoiceLocationId = existingInvoiceLocation.data.id;
+    if (existingInvoiceLocationId) {
+      invoiceLocationId = existingInvoiceLocationId;
     } else {
       // Try to find existing address by addressLine1 and city
       const existingAddress = await carbon
@@ -1500,10 +1552,7 @@ export async function getCustomerLocationIds(
                 ? `${billingInfo.city}, ${billingInfo.state}`
                 : billingInfo.city || billingInfo.state || "",
             customerId,
-            addressId,
-            externalId: {
-              paperlessPartsId: billingInfo.id
-            }
+            addressId
           })
           .select()
           .single();
@@ -1515,6 +1564,16 @@ export async function getCustomerLocationIds(
         }
 
         invoiceLocationId = newCustomerLocation.data.id;
+
+        // Create the mapping for the new billing location
+        await createPaperlessMapping(
+          carbon,
+          "customerLocation",
+          invoiceLocationId,
+          "paperlessPartsId",
+          String(billingInfo.id),
+          company.id
+        );
       }
     }
   }
@@ -1523,15 +1582,16 @@ export async function getCustomerLocationIds(
   if (shippingInfo) {
     const paperlessPartsShippingId = shippingInfo.id;
 
-    const existingShipmentLocation = await carbon
-      .from("customerLocation")
-      .select("id")
-      .eq("customerId", customerId)
-      .eq("externalId->>paperlessPartsId", String(paperlessPartsShippingId!))
-      .maybeSingle();
+    const existingShipmentLocationId = await lookupEntityByPaperlessId(
+      carbon,
+      "customerLocation",
+      "paperlessPartsId",
+      String(paperlessPartsShippingId!),
+      company.id
+    );
 
-    if (existingShipmentLocation.data) {
-      shipmentLocationId = existingShipmentLocation.data.id;
+    if (existingShipmentLocationId) {
+      shipmentLocationId = existingShipmentLocationId;
     } else {
       // Try to find existing address by addressLine1 and city
       const existingAddress = await carbon
@@ -1615,10 +1675,7 @@ export async function getCustomerLocationIds(
           .insert({
             name,
             customerId,
-            addressId,
-            externalId: {
-              paperlessPartsId: shippingInfo.id
-            }
+            addressId
           })
           .select()
           .single();
@@ -1630,6 +1687,16 @@ export async function getCustomerLocationIds(
         }
 
         shipmentLocationId = newCustomerLocation.data.id;
+
+        // Create the mapping for the new shipping location
+        await createPaperlessMapping(
+          carbon,
+          "customerLocation",
+          shipmentLocationId,
+          "paperlessPartsId",
+          String(shippingInfo.id),
+          company.id
+        );
       }
     }
   }
@@ -1755,19 +1822,28 @@ export async function getPaperlessPart(
     paperlessPartName
   } = args;
 
-  const existingPart = await carbon
-    .from("item")
-    .select("id, readableId, revision")
-    .eq("companyId", companyId)
-    .eq("externalId->>paperlessPartsId", String(paperlessPartsId))
-    .maybeSingle();
+  const existingItemId = await lookupEntityByPaperlessId(
+    carbon,
+    "item",
+    "paperlessPartsId",
+    String(paperlessPartsId),
+    companyId
+  );
 
-  if (existingPart.data) {
-    return {
-      itemId: existingPart.data.id,
-      partId: existingPart.data.readableId,
-      revision: existingPart.data.revision
-    };
+  if (existingItemId) {
+    const existingItem = await carbon
+      .from("item")
+      .select("id, readableId, revision")
+      .eq("id", existingItemId)
+      .single();
+
+    if (existingItem.data) {
+      return {
+        itemId: existingItem.data.id,
+        partId: existingItem.data.readableId,
+        revision: existingItem.data.revision
+      };
+    }
   }
 
   if (paperlessPartNumber && paperlessPartRevision && paperlessPartName) {
@@ -2151,10 +2227,7 @@ export async function createPartFromComponent(
       unitOfMeasureCode: "EA",
       active: true,
       companyId,
-      createdBy,
-      externalId: {
-        paperlessPartsId: component.part_uuid
-      }
+      createdBy
     })
     .select("id")
     .single();
@@ -2165,6 +2238,16 @@ export async function createPartFromComponent(
   }
 
   const itemId = itemInsert.data.id;
+
+  // Create the mapping for the new item
+  await createPaperlessMapping(
+    carbon,
+    "item",
+    itemId,
+    "paperlessPartsId",
+    String(component.part_uuid),
+    companyId
+  );
 
   // Update itemCost for purchased components
   if (isPurchased && (component as any).purchased_component?.piece_price) {
@@ -2229,11 +2312,19 @@ export async function createPartFromComponent(
   const partInsert = await carbon.from("part").upsert({
     id: partId,
     companyId,
-    createdBy,
-    externalId: {
-      paperlessPartsId: component.part_uuid
-    }
+    createdBy
   });
+
+  // Create the mapping for the part
+  await createPaperlessMapping(
+    carbon,
+    "part",
+    partId,
+    "paperlessPartsId",
+    String(component.part_uuid),
+    companyId
+  );
+
   let makeMethod: { data?: { id: string } | null; error?: any } = {
     data: null
   };

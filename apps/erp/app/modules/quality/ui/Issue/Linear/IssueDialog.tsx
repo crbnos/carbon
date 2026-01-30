@@ -1,4 +1,3 @@
-import type { LinearIssue, } from "@carbon/ee/linear";
 import { LinearIssueSchema } from "@carbon/ee/linear";
 import {
   Badge,
@@ -30,9 +29,7 @@ import { CreateIssue } from "./CreateIssue";
 import { LinkIssue } from "./LinkIssue";
 
 interface Props {
-  task: IssueActionTask & {
-    externalId: { linear: LinearIssue } | undefined;
-  };
+  task: IssueActionTask;
 }
 
 export const LinearIssueDialog = ({ task }: Props) => {
@@ -45,7 +42,7 @@ export const LinearIssueDialog = ({ task }: Props) => {
     }
   });
 
-  const { data: linked } = LinearIssueSchema.safeParse(task.externalId?.linear);
+  const { data: linked } = LinearIssueSchema.safeParse(task.linearIssue);
   const fetcher = useAsyncFetcher();
 
   const onUnlink = async () => {
