@@ -50,7 +50,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useFetcher, useLoaderData, useParams } from "react-router";
 import { externalSupplierQuoteValidator } from "~/modules/purchasing/purchasing.models";
 import {
-  getSupplierQuoteByExternalId,
+  getSupplierQuoteByExternalLinkId,
   getSupplierQuoteLinePricesByQuoteId,
   getSupplierQuoteLines
 } from "~/modules/purchasing/purchasing.service";
@@ -95,7 +95,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
-  const quote = await getSupplierQuoteByExternalId(serviceRole, id);
+  const quote = await getSupplierQuoteByExternalLinkId(serviceRole, id);
 
   if (quote.error) {
     return {

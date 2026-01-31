@@ -1,14 +1,12 @@
 import type { Database, Json } from "@carbon/database";
-import { fetchAllFromTable, } from "@carbon/database";
+import { fetchAllFromTable } from "@carbon/database";
 import { getPurchaseOrderStatus } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import type {
   PostgrestSingleResponse,
   SupabaseClient
 } from "@supabase/supabase-js";
-import {
-  FunctionRegion,
-} from "@supabase/supabase-js";
+import { FunctionRegion } from "@supabase/supabase-js";
 import type { z } from "zod";
 import { getEmployeeJob } from "~/modules/people";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -581,14 +579,14 @@ export async function getSupplierQuoteByInteractionId(
     .single();
 }
 
-export async function getSupplierQuoteByExternalId(
+export async function getSupplierQuoteByExternalLinkId(
   client: SupabaseClient<Database>,
-  externalId: string
+  externalLinkId: string
 ) {
   return client
     .from("supplierQuote")
     .select("*")
-    .eq("externalLinkId", externalId)
+    .eq("externalLinkId", externalLinkId)
     .single();
 }
 

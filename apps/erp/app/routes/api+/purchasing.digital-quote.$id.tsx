@@ -9,7 +9,7 @@ import {
   externalSupplierQuoteValidator,
   selectedLineSchema
 } from "~/modules/purchasing/purchasing.models";
-import { getSupplierQuoteByExternalId } from "~/modules/purchasing/purchasing.service";
+import { getSupplierQuoteByExternalLinkId } from "~/modules/purchasing/purchasing.service";
 import { getCompanySettings } from "~/modules/settings";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -22,7 +22,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const intent = String(formData.get("intent"));
 
   const serviceRole = getCarbonServiceRole();
-  const quote = await getSupplierQuoteByExternalId(serviceRole, id);
+  const quote = await getSupplierQuoteByExternalLinkId(serviceRole, id);
 
   if (quote.error || !quote.data) {
     console.error("Quote not found", quote.error);

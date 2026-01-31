@@ -62,14 +62,15 @@ LinearIssueSchema = {
 
 **Functions:**
 - `linkActionToLinearIssue()` - Links Carbon action task to Linear issue
-  - Stores Linear issue data in `externalId.linear` JSON field
+  - Creates/updates a row in `externalIntegrationMapping` with `entityType='nonConformanceActionTask'`, `integration='linear'`
+  - Stores Linear issue data in the `metadata` JSONB field and the Linear issue ID in `externalId`
   - Updates assignee if Linear assignee matches Carbon employee
   - Syncs status and due date
   - Returns `nonConformanceId` for creating backlink
 
-- `unlinkActionFromLinearIssue()` - Removes link by clearing `externalId.linear`
+- `unlinkActionFromLinearIssue()` - Removes link by deleting the `externalIntegrationMapping` row for the action task
 
-- `getLinearIssueFromExternalId()` - Retrieves Linear issue data from action task
+- `getLinearIssueFromExternalId()` - Retrieves Linear issue data from `externalIntegrationMapping.metadata`
 
 - `getCompanyEmployees()` - Finds Carbon employees by email addresses
 
@@ -96,9 +97,9 @@ Route: `/api/integrations.linear.issue.link`
 - POST: Links Carbon action task to existing Linear issue
   - Fetches Linear issue by ID
   - Maps Linear assignee to Carbon user (by email)
-  - Stores issue data in `nonConformanceActionTask.externalId.linear`
+  - Creates `externalIntegrationMapping` row linking action task to Linear issue (stores issue data in `metadata`)
   - Creates attachment link back to Carbon issue
-- DELETE: Unlinks by clearing `externalId.linear`
+- DELETE: Unlinks by deleting the `externalIntegrationMapping` row
 - GET: Search Linear issues by title query
 
 **2. Create New Issue**
@@ -116,13 +117,13 @@ Listens for Carbon events and updates Linear:
 
 **Event: `task.status.changed`**
 - Only processes action/investigation tasks
-- Gets linked Linear issue from `externalId`
+- Gets linked Linear issue from `externalIntegrationMapping` (where `entityType='nonConformanceActionTask'` and `integration='linear'`)
 - Maps Carbon status to Linear workflow state
 - Updates Linear issue state via API
 
 **Event: `task.assigned`**
 - Only processes `nonConformanceActionTask` table
-- Gets linked Linear issue
+- Gets linked Linear issue from `externalIntegrationMapping`
 - Finds Linear user by Carbon employee email
 - Updates Linear issue assignee
 
@@ -138,7 +139,7 @@ Listens for Carbon events and updates Linear:
 
 `syncIssueFromLinear` task:
 - Accepts event type: `Issue` with action: `update`
-- Finds linked Carbon action by `externalId->linear->>id`
+- Finds linked Carbon action via `externalIntegrationMapping` (where `integration='linear'` and `externalId` = Linear issue ID)
 - Maps Linear assignee to Carbon employee (by email)
 - Updates Carbon action task with:
   - Latest Linear issue state (title, description, state, url)
@@ -172,7 +173,7 @@ Listens for Carbon events and updates Linear:
 #### Linking Flow (Carbon → Linear)
 1. User selects Linear issue or creates new one in Carbon UI
 2. Carbon fetches issue details from Linear API
-3. Carbon stores issue in `nonConformanceActionTask.externalId.linear`
+3. Carbon creates an `externalIntegrationMapping` row linking the action task to the Linear issue
 4. Carbon syncs assignee (if Linear assignee email matches Carbon employee)
 5. Carbon creates attachment link in Linear pointing back to Carbon issue
 
@@ -188,36 +189,49 @@ Listens for Carbon events and updates Linear:
 1. User changes task status or assignee in Carbon
 2. Carbon notification pipeline detects change
 3. If Linear integration is active, notification service triggers
-4. Service finds linked Linear issue from `externalId`
+4. Service finds linked Linear issue from `externalIntegrationMapping`
 5. Service updates Linear issue via API
 
 ### Database Schema
 
-**Storage of Link:**
+**Storage of Link (externalIntegrationMapping table):**
+
+The old `externalId` JSONB column on `nonConformanceActionTask` has been replaced by a row in the `externalIntegrationMapping` table:
+
 ```sql
--- nonConformanceActionTask table
-externalId JSONB
-  Contains: {
-    linear: {
-      id: string,
-      title: string,
-      description: string,
-      url: string,
-      state: { name, color, type },
-      identifier: string,
-      dueDate: string | null,
-      assignee: { email: string } | null
-    }
-  }
+-- externalIntegrationMapping row for a linked Linear issue
+entityType = 'nonConformanceActionTask'
+entityId = <action task ID>
+integration = 'linear'
+externalId = <Linear issue ID>
+metadata = {
+  "id": "...",
+  "title": "...",
+  "description": "...",
+  "url": "...",
+  "state": { "name": "...", "color": "...", "type": "..." },
+  "identifier": "...",
+  "dueDate": "..." | null,
+  "assignee": { "email": "..." } | null
+}
+companyId = <company ID>
 ```
 
 **Querying Linked Issues:**
-```typescript
-// Find action by Linear issue ID
-.eq("externalId->linear->>id", linearIssueId)
+```sql
+-- Find action task by Linear issue ID
+SELECT "entityId" FROM "externalIntegrationMapping"
+WHERE "integration" = 'linear'
+  AND "externalId" = '<linearIssueId>'
+  AND "entityType" = 'nonConformanceActionTask';
 
-// Check if action has Linear link
-.not("externalId->linear", "is", null)
+-- Check if action task has a Linear link
+SELECT EXISTS(
+  SELECT 1 FROM "externalIntegrationMapping"
+  WHERE "entityType" = 'nonConformanceActionTask'
+    AND "entityId" = '<actionTaskId>'
+    AND "integration" = 'linear'
+);
 ```
 
 ### UI Components
@@ -230,7 +244,7 @@ Located in `/apps/erp/app/modules/quality/ui/Issue/Linear/`:
 Display in `/apps/erp/app/modules/quality/ui/Issue/IssueTask.tsx`:
 - Shows Linear badge with issue identifier
 - Links to Linear issue URL
-- Displays on action tasks with `externalId.linear` data
+- Displays on action tasks that have a Linear mapping in `externalIntegrationMapping`
 
 ### Notification Pipeline
 
@@ -265,7 +279,7 @@ Display in `/apps/erp/app/modules/quality/ui/Issue/IssueTask.tsx`:
 - Only **action tasks** can be linked to Linear issues (not investigation or approval tasks)
 - Assignee sync requires matching email between Linear user and Carbon employee
 - Two-way sync means changes in either system update the other
-- Linear issue data is cached in Carbon's `externalId` field as JSON
+- Linear issue data is stored in `externalIntegrationMapping` table (issue ID in `externalId`, full issue data in `metadata` JSONB)
 - Attachment links in Linear point back to Carbon issue details page
 - Webhook processes updates asynchronously via Trigger.dev
 - Integration must be active (`companyIntegration.active = true`) for notifications to flow
