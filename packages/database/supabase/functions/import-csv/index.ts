@@ -41,32 +41,60 @@ async function getCsvExternalIdMap(
   entityType: string,
   cId: string
 ): Promise<Map<string, string>> {
-  const result = await sql<{ externalId: string; entityId: string }>`
-    SELECT "externalId", "entityId"
-    FROM "externalIntegrationMapping"
-    WHERE "entityType" = ${entityType}
-    AND "integration" = ${EXTERNAL_ID_KEY}
-    AND "companyId" = ${cId}
-  `.execute(db);
+  const result = await db
+    .selectFrom("externalIntegrationMapping")
+    .select(["externalId", "entityId"])
+    .where("entityType", "=", entityType)
+    .where("integration", "=", EXTERNAL_ID_KEY)
+    .where("companyId", "=", cId)
+    .execute();
 
-  return new Map(result.rows.map((r) => [r.externalId, r.entityId]));
+  return new Map(
+    result
+      .filter((r): r is typeof r & { externalId: string } => r.externalId !== null)
+      .map((r) => [r.externalId, r.entityId])
+  );
 }
 
 /**
- * Insert CSV external ID mappings into the externalIntegrationMapping table.
+ * Upsert CSV external ID mappings into the externalIntegrationMapping table.
+ * Uses ON CONFLICT to handle re-imports idempotently.
  */
-async function insertCsvMappings(
+async function upsertCsvMappings(
   trx: typeof db,
   entityType: string,
   mappings: Array<{ entityId: string; externalId: string }>,
-  cId: string
+  cId: string,
+  userId: string
 ): Promise<void> {
-  for (const mapping of mappings) {
-    await sql`
-      INSERT INTO "externalIntegrationMapping" ("entityType", "entityId", "integration", "externalId", "companyId", "allowDuplicateExternalId", "createdAt", "updatedAt")
-      VALUES (${entityType}, ${mapping.entityId}, ${EXTERNAL_ID_KEY}, ${mapping.externalId}, ${cId}, false, now(), now())
-    `.execute(trx);
-  }
+  if (mappings.length === 0) return;
+
+  const now = new Date().toISOString();
+
+  await trx
+    .insertInto("externalIntegrationMapping")
+    .values(
+      mappings.map((m) => ({
+        entityType,
+        entityId: m.entityId,
+        integration: EXTERNAL_ID_KEY,
+        externalId: m.externalId,
+        companyId: cId,
+        allowDuplicateExternalId: false,
+        createdBy: userId,
+        createdAt: now,
+        updatedAt: now,
+      }))
+    )
+    .onConflict((oc) =>
+      oc
+        .columns(["entityType", "entityId", "integration", "companyId"])
+        .doUpdateSet((eb) => ({
+          externalId: eb.ref("excluded.externalId"),
+          updatedAt: eb.ref("excluded.updatedAt"),
+        }))
+    )
+    .execute();
 }
 
 serve(async (req: Request) => {
@@ -211,14 +239,15 @@ serve(async (req: Request) => {
               .values(customerInserts)
               .returning(["id"])
               .execute();
-            await insertCsvMappings(
+            await upsertCsvMappings(
               trx,
               "customer",
               inserted.map((row, i) => ({
                 entityId: row.id!,
                 externalId: csvIdsForInserts[i],
               })),
-              companyId
+              companyId,
+              userId
             );
           }
           if (customerUpdates.length > 0) {
@@ -291,14 +320,15 @@ serve(async (req: Request) => {
               .values(supplierInserts)
               .returning(["id"])
               .execute();
-            await insertCsvMappings(
+            await upsertCsvMappings(
               trx,
               "supplier",
               inserted.map((row, i) => ({
                 entityId: row.id!,
                 externalId: csvIdsForInserts[i],
               })),
-              companyId
+              companyId,
+              userId
             );
           }
           if (supplierUpdates.length > 0) {
@@ -490,14 +520,15 @@ serve(async (req: Request) => {
               .execute();
 
             // Create CSV mappings for newly inserted items
-            await insertCsvMappings(
+            await upsertCsvMappings(
               trx,
               "item",
               insertedItems.map((item, i) => ({
                 entityId: item.id!,
                 externalId: csvIdsForInserts[i],
               })),
-              companyId
+              companyId,
+              userId
             );
 
             if (["part", "fixture", "tool", "consumable"].includes(table)) {
@@ -556,12 +587,44 @@ serve(async (req: Request) => {
           });
 
           if (itemUpdates.length > 0) {
+            // Get current readableIds to detect changes
+            const currentItems = await trx
+              .selectFrom("item")
+              .select(["id", "readableId"])
+              .where(
+                "id",
+                "in",
+                itemUpdates.map((u) => u.id)
+              )
+              .execute();
+            const currentReadableIdMap = new Map(
+              currentItems.map((i) => [i.id, i.readableId])
+            );
+
             for (const update of itemUpdates) {
               await trx
                 .updateTable("item")
                 .set(update.data)
                 .where("id", "=", update.id)
                 .execute();
+            }
+
+            // Update type-specific table id when readableId changes
+            for (const update of itemUpdates) {
+              const oldReadableId = currentReadableIdMap.get(update.id);
+              const newReadableId = update.data.readableId;
+              if (
+                newReadableId &&
+                oldReadableId &&
+                oldReadableId !== newReadableId
+              ) {
+                await trx
+                  .updateTable(table)
+                  .set({ id: newReadableId } as never)
+                  .where("id", "=", oldReadableId)
+                  .where("companyId", "=", companyId)
+                  .execute();
+              }
             }
 
             if (materialUpdates.length > 0) {
@@ -651,14 +714,15 @@ serve(async (req: Request) => {
               .values(contactInserts)
               .returning(["id"])
               .execute();
-            await insertCsvMappings(
+            await upsertCsvMappings(
               trx,
               "contact",
               inserted.map((row, i) => ({
                 entityId: row.id!,
                 externalId: csvIdsForContactInserts[i],
               })),
-              companyId
+              companyId,
+              userId
             );
           }
 
@@ -754,14 +818,15 @@ serve(async (req: Request) => {
               .values(contactInserts)
               .returning(["id"])
               .execute();
-            await insertCsvMappings(
+            await upsertCsvMappings(
               trx,
               "contact",
               inserted.map((row, i) => ({
                 entityId: row.id!,
                 externalId: csvIdsForContactInserts[i],
               })),
-              companyId
+              companyId,
+              userId
             );
           }
 
