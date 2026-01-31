@@ -19,7 +19,6 @@ The main `material` table stores material records with the following columns:
 - `approvedBy`: string | null
 - `customFields`: Json | null
 - `tags`: string[] | null
-- `externalId`: Json | null
 - `createdAt`: string
 - `createdBy`: string
 - `updatedAt`: string | null
