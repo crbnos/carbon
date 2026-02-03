@@ -8,7 +8,7 @@ type PurchaseInvoicingStatusProps = {
 const PurchaseInvoicingStatus = ({ status }: PurchaseInvoicingStatusProps) => {
   switch (status) {
     case "Draft":
-    case "Return":
+      // case "Return":
       return <Status color="gray">{status}</Status>;
     case "Submitted":
       return <Status color="blue">{status}</Status>;

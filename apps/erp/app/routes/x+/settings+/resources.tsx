@@ -223,6 +223,7 @@ export default function ResourcesSettingsRoute() {
                   <Users
                     name="maintenanceDispatchNotificationGroup"
                     label="Who should receive notifications for maintenance-related dispatches?"
+                    type="employee"
                   />
                 </div>
                 <div className="flex flex-col gap-2">
@@ -230,6 +231,7 @@ export default function ResourcesSettingsRoute() {
                   <Users
                     name="qualityDispatchNotificationGroup"
                     label="Who should receive notifications for quality-related dispatches?"
+                    type="employee"
                   />
                 </div>
                 <div className="flex flex-col gap-2">
@@ -237,6 +239,7 @@ export default function ResourcesSettingsRoute() {
                   <Users
                     name="operationsDispatchNotificationGroup"
                     label="Who should receive notifications for operations-related dispatches?"
+                    type="employee"
                   />
                 </div>
                 <div className="flex flex-col gap-2">
@@ -244,6 +247,7 @@ export default function ResourcesSettingsRoute() {
                   <Users
                     name="otherDispatchNotificationGroup"
                     label="Who should receive notifications for other dispatches?"
+                    type="employee"
                   />
                 </div>
               </div>
@@ -346,6 +350,7 @@ export default function ResourcesSettingsRoute() {
                   <Users
                     name="suggestionNotificationGroup"
                     label="Who should receive notifications when a new suggestion is submitted?"
+                    type="employee"
                   />
                 </div>
               </div>

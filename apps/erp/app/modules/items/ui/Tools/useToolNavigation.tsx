@@ -1,7 +1,6 @@
 import {
   LuBox,
   LuChartLine,
-  LuFactory,
   LuFileText,
   LuShoppingCart,
   LuTags
@@ -43,15 +42,6 @@ export function useToolNavigation() {
       permission: "purchasing",
       icon: LuShoppingCart,
       shortcut: "Command+Shift+p"
-    },
-    {
-      name: "Manufacturing",
-      to: path.to.toolManufacturing(itemId),
-      isDisabled: replenishment === "Buy",
-      role: ["employee"],
-      icon: LuFactory,
-      shortcut: "Command+Shift+m",
-      isActive: (pathname: string) => pathname.includes("manufacturing")
     },
     {
       name: "Accounting",

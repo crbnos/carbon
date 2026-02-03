@@ -30,31 +30,37 @@ import { usePermissions, useRealtime, useRouteData } from "~/hooks";
 import type { Job, JobPurchaseOrderLine } from "~/modules/production";
 import {
   getJob,
+  getJobDocumentsWithItemId,
+  getJobMakeMethodById,
+  getJobMaterialsByMethodId,
+  getJobOperationsByMethodId,
   getJobPurchaseOrderLines,
+  getProductionDataByOperations,
+  getRootMakeMethod,
   jobValidator,
   recalculateJobRequirements,
   upsertJob
 } from "~/modules/production";
 import {
+  JobBillOfMaterial,
+  JobBillOfProcess,
   JobDocuments,
+  JobEstimatesVsActuals,
   JobNotes,
   JobRiskRegister
 } from "~/modules/production/ui/Jobs";
+import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
 import PurchasingStatus from "~/modules/purchasing/ui/PurchaseOrder/PurchasingStatus";
+import { getTagsList } from "~/modules/shared";
 import { useItems } from "~/stores";
 import type { StorageItem } from "~/types";
 import { setCustomFields } from "~/utils/form";
-import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
-export const handle: Handle = {
-  breadcrumb: `Detail`,
-  module: "production"
-};
-
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "production"
+  const { client, companyId } = await requirePermissions(request, {
+    view: "production",
+    bypassRls: true
   });
 
   const { jobId } = params;
@@ -68,9 +74,66 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const rootMethod = await getRootMakeMethod(client, jobId, companyId);
+  if (rootMethod.error) {
+    return {
+      notes: (job.data?.notes ?? {}) as JSONContent,
+      purchaseOrderLines: getJobPurchaseOrderLines(client, jobId),
+      materials: [],
+      operations: [],
+      makeMethod: null,
+      files: Promise.resolve([] as StorageItem[]),
+      productionData: Promise.resolve({
+        quantities: [],
+        events: [],
+        notes: []
+      }),
+      tags: []
+    };
+  }
+
+  const methodId = rootMethod.data.id;
+
+  const [materials, operations, tags, makeMethod] = await Promise.all([
+    getJobMaterialsByMethodId(client, methodId),
+    getJobOperationsByMethodId(client, methodId),
+    getTagsList(client, companyId, "operation"),
+    getJobMakeMethodById(client, methodId, companyId)
+  ]);
+
   return {
     notes: (job.data?.notes ?? {}) as JSONContent,
-    purchaseOrderLines: getJobPurchaseOrderLines(client, jobId)
+    purchaseOrderLines: getJobPurchaseOrderLines(client, jobId),
+    materials:
+      materials?.data?.map((m) => ({
+        ...m,
+        itemType: m.itemType as "Part",
+        unitOfMeasureCode: m.unitOfMeasureCode ?? "",
+        jobOperationId: m.jobOperationId ?? undefined
+      })) ?? [],
+    operations:
+      operations.data?.map((o) => ({
+        ...o,
+        description: o.description ?? "",
+        workCenterId: o.workCenterId ?? undefined,
+        laborRate: o.laborRate ?? 0,
+        machineRate: o.machineRate ?? 0,
+        operationSupplierProcessId: o.operationSupplierProcessId ?? undefined,
+        jobMakeMethodId: o.jobMakeMethodId ?? methodId,
+        workInstruction: o.workInstruction as JSONContent
+      })) ?? [],
+    makeMethod: makeMethod.data ?? null,
+    files: getJobDocumentsWithItemId(
+      client,
+      companyId,
+      job.data,
+      rootMethod.data.itemId
+    ),
+    productionData: getProductionDataByOperations(
+      client,
+      operations?.data?.map((o) => o.id) ?? []
+    ),
+    tags: tags.data ?? []
   };
 }
 
@@ -126,15 +189,26 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function JobDetailsRoute() {
-  const { notes, purchaseOrderLines } = useLoaderData<typeof loader>();
+  const {
+    notes,
+    purchaseOrderLines,
+    materials,
+    operations,
+    makeMethod,
+    productionData,
+    tags,
+    files
+  } = useLoaderData<typeof loader>();
   const { jobId } = useParams();
   if (!jobId) throw new Error("Could not find jobId");
   const permissions = usePermissions();
 
-  const { setIsExplorerCollapsed } = usePanels();
+  const { setIsExplorerCollapsed, isExplorerCollapsed } = usePanels();
 
   useMount(() => {
-    setIsExplorerCollapsed(false);
+    if (isExplorerCollapsed) {
+      setIsExplorerCollapsed(false);
+    }
   });
 
   const jobData = useRouteData<{
@@ -146,55 +220,111 @@ export default function JobDetailsRoute() {
 
   useRealtime("modelUpload", `modelPath=eq.(${jobData?.job.modelPath})`);
 
-  return (
-    <VStack spacing={2} className="p-2 h-full">
-      <JobNotes
-        id={jobId}
-        title={jobData?.job.jobId ?? ""}
-        subTitle={jobData?.job.itemReadableIdWithRevision ?? ""}
-        notes={notes}
-      />
+  const methodId = makeMethod?.id;
 
-      <Suspense
-        fallback={
-          <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center min-h-[420px] max-h-[70vh]">
-            <Spinner className="h-10 w-10" />
-          </div>
-        }
-      >
-        <Await resolve={jobData.files}>
-          {(files) => (
-            <JobDocuments
-              files={files}
-              jobId={jobData.job.id ?? ""}
-              itemId={jobData.job.itemId}
-              modelUpload={{ ...jobData.job }}
+  return (
+    <div className="h-[calc(100dvh-49px)] w-full items-start overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+      <VStack spacing={2} className="p-2">
+        <JobMakeMethodTools makeMethod={makeMethod ?? undefined} />
+
+        {methodId && (
+          <>
+            <JobBillOfMaterial
+              key={`bom:${methodId}`}
+              jobMakeMethodId={methodId}
+              // @ts-ignore
+              materials={materials}
+              // @ts-ignore
+              operations={operations}
             />
-          )}
-        </Await>
-      </Suspense>
-      <Suspense>
-        <Await resolve={purchaseOrderLines}>
-          {(purchaseOrderLines) => (
-            <JobPurchaseOrderLines
-              purchaseOrderLines={purchaseOrderLines.data ?? []}
+            <JobBillOfProcess
+              key={`bop:${methodId}`}
+              jobMakeMethodId={methodId}
+              // @ts-ignore
+              materials={materials}
+              // @ts-ignore
+              operations={operations}
+              locationId={jobData?.job?.locationId ?? ""}
+              tags={tags}
+              itemId={makeMethod.itemId}
+              salesOrderLineId={jobData?.job.salesOrderLineId ?? ""}
+              customerId={jobData?.job.customerId ?? ""}
             />
-          )}
-        </Await>
-      </Suspense>
-      <CadModel
-        isReadOnly={!permissions.can("update", "production")}
-        metadata={{
-          jobId: jobData?.job?.id ?? undefined,
-          itemId: jobData?.job?.itemId ?? undefined
-        }}
-        modelPath={jobData?.job?.modelPath ?? null}
-        title="CAD Model"
-        uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
-        viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
-      />
-      <JobRiskRegister jobId={jobId} itemId={jobData?.job?.itemId ?? ""} />
-    </VStack>
+          </>
+        )}
+        <Suspense>
+          <Await resolve={purchaseOrderLines}>
+            {(purchaseOrderLines) => (
+              <JobPurchaseOrderLines
+                purchaseOrderLines={purchaseOrderLines.data ?? []}
+              />
+            )}
+          </Await>
+        </Suspense>
+
+        <Suspense
+          fallback={
+            <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center min-h-[200px]">
+              <Spinner className="h-10 w-10" />
+            </div>
+          }
+        >
+          <Await resolve={productionData}>
+            {(resolvedProductionData) => (
+              <JobEstimatesVsActuals
+                // @ts-ignore
+                materials={materials ?? []}
+                // @ts-ignore
+                operations={operations}
+                productionEvents={resolvedProductionData.events}
+                productionQuantities={resolvedProductionData.quantities}
+                notes={resolvedProductionData.notes}
+              />
+            )}
+          </Await>
+        </Suspense>
+
+        <JobNotes
+          id={jobId}
+          title={jobData?.job.jobId ?? ""}
+          subTitle={jobData?.job.itemReadableIdWithRevision ?? ""}
+          notes={notes}
+        />
+
+        <Suspense
+          fallback={
+            <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center min-h-[420px] max-h-[70vh]">
+              <Spinner className="h-10 w-10" />
+            </div>
+          }
+        >
+          <Await resolve={files}>
+            {(resolvedFiles) => (
+              <JobDocuments
+                files={resolvedFiles}
+                jobId={jobData.job.id ?? ""}
+                bucket="parts"
+                itemId={makeMethod?.itemId ?? jobData.job.itemId}
+                modelUpload={{ ...jobData.job }}
+              />
+            )}
+          </Await>
+        </Suspense>
+
+        <CadModel
+          isReadOnly={!permissions.can("update", "production")}
+          metadata={{
+            jobId: jobData?.job?.id ?? undefined,
+            itemId: jobData?.job?.itemId ?? undefined
+          }}
+          modelPath={jobData?.job?.modelPath ?? null}
+          title="CAD Model"
+          uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
+          viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
+        />
+        <JobRiskRegister jobId={jobId} itemId={jobData?.job?.itemId ?? ""} />
+      </VStack>
+    </div>
   );
 }
 

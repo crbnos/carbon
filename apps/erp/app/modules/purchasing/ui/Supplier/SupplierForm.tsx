@@ -100,25 +100,19 @@ const SupplierForm = ({
                   )}
                 >
                   <Input autoFocus={!isEditing} name="name" label="Name" />
-
                   <SupplierStatus
                     name="supplierStatusId"
                     label="Supplier Status"
                     placeholder="Select Supplier Status"
                   />
-
                   <SupplierType
                     name="supplierTypeId"
                     label="Supplier Type"
                     placeholder="Select Supplier Type"
                   />
-
                   <Employee name="accountManagerId" label="Account Manager" />
-
                   <Currency name="currencyCode" label="Currency" />
-
                   <Input name="website" label="Website" />
-
                   {isEditing && (
                     <>
                       <SupplierContact

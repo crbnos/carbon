@@ -619,6 +619,8 @@ function getDocumentLocation(
     //   return path.to.service(sourceDocumentId);
     case "Purchase Order":
       return path.to.purchaseOrder(sourceDocumentId);
+    case "Purchasing Request for Quote":
+      return path.to.purchasingRfqDetails(sourceDocumentId);
     case "Purchase Invoice":
       return path.to.purchaseInvoice(sourceDocumentId);
     case "Quote":

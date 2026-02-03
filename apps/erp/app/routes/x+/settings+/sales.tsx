@@ -28,13 +28,15 @@ import { useEffect, useState } from "react";
 import { LuCircleCheck } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useFetcher, useLoaderData } from "react-router";
-import { Users } from "~/components/Form";
+import { EmailRecipients, Users } from "~/components/Form";
 import { usePermissions, useUser } from "~/hooks";
 import {
+  defaultCustomerCcValidator,
   digitalQuoteValidator,
   getCompanySettings,
   getTerms,
   rfqReadyValidator,
+  updateDefaultCustomerCc,
   updateDigitalQuoteSetting,
   updateRfqReadySetting
 } from "~/modules/settings";
@@ -110,6 +112,35 @@ export async function action({ request }: ActionFunctionArgs) {
 
       if (rfqSettings.error)
         return { success: false, message: rfqSettings.error.message };
+
+      return { success: true, message: "RFQ setting updated" };
+
+    case "defaultCustomerCc":
+      const defaultCustomerCcValidation = await validator(
+        defaultCustomerCcValidator
+      ).validate(formData);
+
+      if (defaultCustomerCcValidation.error) {
+        return { success: false, message: "Invalid form data" };
+      }
+
+      const defaultCustomerCcResult = await updateDefaultCustomerCc(
+        client,
+        companyId,
+        defaultCustomerCcValidation.data.defaultCustomerCc ?? []
+      );
+
+      if (defaultCustomerCcResult.error) {
+        return {
+          success: false,
+          message: defaultCustomerCcResult.error.message
+        };
+      }
+
+      return {
+        success: true,
+        message: "Default customer CC updated"
+      };
   }
 
   return { success: true, message: "Digital quote setting updated" };
@@ -225,6 +256,7 @@ export default function SalesSettingsRoute() {
                   <Users
                     name="digitalQuoteNotificationGroup"
                     label="Who should receive notifications when a digital quote is accepted or expired?"
+                    type="employee"
                   />
                 </div>
               </div>
@@ -266,6 +298,7 @@ export default function SalesSettingsRoute() {
                   <Users
                     name="rfqReadyNotificationGroup"
                     label="Who should receive notifications when a RFQ is marked ready for quote?"
+                    type="employee"
                   />
                 </div>
               </div>
@@ -276,6 +309,44 @@ export default function SalesSettingsRoute() {
                 isLoading={
                   fetcher.state !== "idle" &&
                   fetcher.formData?.get("intent") === "rfq"
+                }
+              >
+                Save
+              </Submit>
+            </CardFooter>
+          </ValidatedForm>
+        </Card>
+        <Card>
+          <ValidatedForm
+            method="post"
+            validator={defaultCustomerCcValidator}
+            defaultValues={{
+              defaultCustomerCc: companySettings.defaultCustomerCc ?? []
+            }}
+            fetcher={fetcher}
+          >
+            <input type="hidden" name="intent" value="defaultCustomerCc" />
+            <CardHeader>
+              <CardTitle>Default CC for Customer Emails</CardTitle>
+              <CardDescription>
+                These email addresses will be automatically CC'd on all quote
+                emails sent to customers.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-8 max-w-[400px]">
+                <EmailRecipients
+                  name="defaultCustomerCc"
+                  label="Default CC Recipients"
+                />
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit
+                isDisabled={fetcher.state !== "idle"}
+                isLoading={
+                  fetcher.state !== "idle" &&
+                  fetcher.formData?.get("intent") === "defaultCustomerCc"
                 }
               >
                 Save

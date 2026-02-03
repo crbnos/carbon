@@ -122,6 +122,7 @@ export default function ProductionSettingsRoute() {
                   <Users
                     name="inventoryJobCompletedNotificationGroup"
                     label="Who should receive notifications when an inventory job is completed?"
+                    type="employee"
                   />
                 </div>
                 <div className="flex flex-col gap-2">
@@ -129,6 +130,7 @@ export default function ProductionSettingsRoute() {
                   <Users
                     name="salesJobCompletedNotificationGroup"
                     label="Who should receive notifications when a sales job is completed?"
+                    type="employee"
                   />
                 </div>
               </div>

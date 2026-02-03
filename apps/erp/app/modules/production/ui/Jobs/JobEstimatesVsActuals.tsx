@@ -4,7 +4,6 @@ import {
   Card,
   CardAction,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
   cn,
@@ -259,25 +258,26 @@ const JobEstimatesVsActuals = ({
         <HStack className="justify-between items-start">
           <CardHeader>
             <CardTitle>Estimates vs Actual</CardTitle>
-            <CardDescription>
-              <div className="flex items-center gap-2">
-                <Switch
-                  variant="small"
-                  checked={detailsDisclosure.isOpen}
-                  onCheckedChange={detailsDisclosure.onToggle}
-                  id="cost-details"
-                />
-                <label className="text-sm" htmlFor="cost-details">
-                  Show Details
-                </label>
-              </div>
-            </CardDescription>
           </CardHeader>
-          <CardAction>
+          <CardAction className="flex flex-col gap-2">
             <TabsList className="grid grid-cols-2">
               <TabsTrigger value="processes">Processes</TabsTrigger>
               <TabsTrigger value="materials">Material</TabsTrigger>
             </TabsList>
+            <div className="flex items-center justify-start flex-row-reverse gap-2">
+              <Switch
+                variant="small"
+                checked={detailsDisclosure.isOpen}
+                onCheckedChange={detailsDisclosure.onToggle}
+                id="cost-details"
+              />
+              <label
+                className="text-xs text-muted-foreground"
+                htmlFor="cost-details"
+              >
+                Show Details
+              </label>
+            </div>
           </CardAction>
         </HStack>
         <CardContent>

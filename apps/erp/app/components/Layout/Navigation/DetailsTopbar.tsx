@@ -5,9 +5,9 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  useKeyboardShortcuts
+  useKeyboardShortcuts,
+  usePrettifyShortcut
 } from "@carbon/react";
-import { prettifyKeyboardShortcut } from "@carbon/utils";
 import type { IconType } from "react-icons";
 import { Link, useNavigate } from "react-router";
 import { useOptimisticLocation, useUrlParams } from "~/hooks";
@@ -33,6 +33,7 @@ const DetailTopbar = ({
   const navigate = useNavigate();
   const location = useOptimisticLocation();
   const [params] = useUrlParams();
+  const prettifyShortcut = usePrettifyShortcut();
 
   useKeyboardShortcuts(
     links.reduce<Record<string, () => void>>((acc, link) => {
@@ -79,7 +80,7 @@ const DetailTopbar = ({
             </TooltipTrigger>
             {route.shortcut && (
               <TooltipContent side="bottom">
-                <HStack>{prettifyKeyboardShortcut(route.shortcut)}</HStack>
+                <HStack>{prettifyShortcut(route.shortcut)}</HStack>
               </TooltipContent>
             )}
           </Tooltip>

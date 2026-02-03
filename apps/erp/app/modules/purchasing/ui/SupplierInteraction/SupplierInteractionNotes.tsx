@@ -31,7 +31,12 @@ const SupplierInteractionNotes = ({
   externalNotes: initialExternalNotes
 }: {
   id: string | null;
-  table: "supplierQuote" | "purchaseOrder" | "receipt" | "purchaseInvoice";
+  table:
+    | "supplierQuote"
+    | "purchaseOrder"
+    | "receipt"
+    | "purchaseInvoice"
+    | "purchasingRfq";
   title: string;
   internalNotes?: JSONContent;
   externalNotes?: JSONContent;

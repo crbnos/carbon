@@ -11,7 +11,6 @@ import {
 } from "@carbon/react";
 import { useState } from "react";
 import type { z } from "zod";
-
 import {
   CustomFormFields,
   Hidden,
@@ -27,6 +26,7 @@ import {
   itemPlanningValidator,
   itemReorderingPolicies
 } from "../../items.models";
+import { ItemReorderPolicy } from "./ItemReorderPolicy";
 
 type ItemPlanningFormProps = {
   initialValues: z.infer<typeof itemPlanningValidator>;
@@ -83,7 +83,7 @@ const ItemPlanningForm = ({
               name="reorderingPolicy"
               label="Reordering Policy"
               options={itemReorderingPolicies.map((policy) => ({
-                label: policy,
+                label: <ItemReorderPolicy reorderingPolicy={policy} />,
                 value: policy
               }))}
               onChange={(selected) => {

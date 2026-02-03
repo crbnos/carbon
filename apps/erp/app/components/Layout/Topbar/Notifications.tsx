@@ -21,6 +21,7 @@ import {
   LuBell,
   LuCalendarX,
   LuCircleGauge,
+  LuClipboardCheck,
   LuDollarSign,
   LuGraduationCap,
   LuHammer,
@@ -42,6 +43,7 @@ import {
 } from "react-icons/ri";
 import { Link, useFetcher } from "react-router";
 import { useNotifications, useUser } from "~/hooks";
+import type { ApprovalDocumentType } from "~/modules/shared";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 
@@ -174,6 +176,7 @@ function Notification({
 function GenericNotification({
   id,
   event,
+  documentType,
   ...props
 }: {
   id: string;
@@ -181,10 +184,25 @@ function GenericNotification({
   description: string;
   event: NotificationEvent;
   from?: string;
+  documentType?: ApprovalDocumentType;
   markMessageAsRead?: () => void;
   onClose: () => void;
 }) {
   switch (event) {
+    case NotificationEvent.ApprovalApproved:
+    case NotificationEvent.ApprovalRejected:
+    case NotificationEvent.ApprovalRequested:
+      return (
+        <Notification
+          icon={<LuClipboardCheck />}
+          to={
+            documentType === "qualityDocument"
+              ? path.to.qualityDocument(id)
+              : path.to.purchaseOrderDetails(id)
+          }
+          {...props}
+        />
+      );
     case NotificationEvent.DigitalQuoteResponse:
       return (
         <Notification
@@ -474,6 +492,11 @@ const Notifications = () => {
                         description={notification.payload.description as string}
                         event={notification.payload.event as NotificationEvent}
                         from={notification.payload.from as string | undefined}
+                        documentType={
+                          notification.payload.documentType as
+                            | ApprovalDocumentType
+                            | undefined
+                        }
                         markMessageAsRead={() =>
                           markMessageAsRead(notification._id)
                         }
@@ -541,6 +564,11 @@ const Notifications = () => {
                         description={notification.payload.description as string}
                         event={notification.payload.event as NotificationEvent}
                         from={notification.payload.from as string | undefined}
+                        documentType={
+                          notification.payload.documentType as
+                            | ApprovalDocumentType
+                            | undefined
+                        }
                         onClose={() => setOpen(false)}
                       />
                     );

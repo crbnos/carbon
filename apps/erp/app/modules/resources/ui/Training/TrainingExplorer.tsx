@@ -36,9 +36,9 @@ import {
   useDebounce,
   useDisclosure,
   useKeyboardShortcuts,
+  usePrettifyShortcut,
   VStack
 } from "@carbon/react";
-import { prettifyKeyboardShortcut } from "@carbon/utils";
 import { Reorder } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
@@ -67,6 +67,7 @@ import {
 import { path } from "~/utils/path";
 
 export default function TrainingExplorer() {
+  const prettifyShortcut = usePrettifyShortcut();
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
   const trainingData = useRouteData<{
@@ -262,7 +263,7 @@ export default function TrainingExplorer() {
             <TooltipContent>
               <HStack>
                 <span>Add Question</span>
-                <Kbd>{prettifyKeyboardShortcut("Command+Shift+a")}</Kbd>
+                <Kbd>{prettifyShortcut("Command+Shift+a")}</Kbd>
               </HStack>
             </TooltipContent>
           </Tooltip>

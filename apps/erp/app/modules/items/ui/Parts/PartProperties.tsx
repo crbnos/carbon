@@ -453,7 +453,7 @@ const PartProperties = () => {
                         key={method.id}
                         type={isActive ? "Make" : "Make Inactive"}
                         text={`Version ${method.version}`}
-                        to={path.to.partMakeMethod(itemId, method.id)}
+                        to={`${path.to.partDetails(itemId)}?methodId=${method.id}`}
                       />
                     );
                   })

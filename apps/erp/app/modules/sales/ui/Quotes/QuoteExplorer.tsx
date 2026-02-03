@@ -21,9 +21,9 @@ import {
   useDisclosure,
   useKeyboardShortcuts,
   useMount,
+  usePrettifyShortcut,
   VStack
 } from "@carbon/react";
-import { prettifyKeyboardShortcut } from "@carbon/utils";
 import { useDroppable } from "@dnd-kit/core";
 import { useMemo, useRef, useState } from "react";
 import {
@@ -66,6 +66,7 @@ type QuoteExplorerProps = {
 };
 
 export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
+  const prettifyShortcut = usePrettifyShortcut();
   const { defaults } = useUser();
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
@@ -125,20 +126,15 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
 
   const optimisticDrags = useOptimisticDocumentDrag();
 
-  const linesByItemId = new Map<string, QuotationLine | OptimisticQuoteLine>(
-    quoteData?.lines?.map((line) => [line.itemId!, line]) ?? []
+  const linesMap = new Map<string, QuotationLine | OptimisticQuoteLine>(
+    quoteData?.lines?.map((line) => [line.id!, line]) ?? []
   );
 
-  // Merge pending items with existing items
   for (let pendingItem of optimisticDrags) {
-    let existingItem = linesByItemId.get(pendingItem.itemId!);
-    let merged = existingItem
-      ? { ...existingItem, ...pendingItem }
-      : { ...pendingItem, quoteId };
-    linesByItemId.set(pendingItem.itemId!, merged);
+    linesMap.set(pendingItem.itemId!, { ...pendingItem, quoteId });
   }
 
-  const linesToRender = Array.from(linesByItemId.values()).sort((a, b) =>
+  const linesToRender = Array.from(linesMap.values()).sort((a, b) =>
     (a.itemReadableId ?? "").localeCompare(b.itemReadableId ?? "")
   );
 
@@ -205,7 +201,7 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
             <TooltipContent>
               <HStack>
                 <span>New Line Item</span>
-                <Kbd>{prettifyKeyboardShortcut("Command+Shift+l")}</Kbd>
+                <Kbd>{prettifyShortcut("Command+Shift+l")}</Kbd>
               </HStack>
             </TooltipContent>
           </Tooltip>
@@ -385,7 +381,7 @@ function QuoteLineItem({
       <HStack
         className={cn(
           "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
-          isSelected && "bg-accent/60 hover:bg-accent/50 shadow-inner"
+          isSelected && "bg-accent/60 hover:bg-accent/50"
         )}
         onClick={() => onLineClick(line)}
       >

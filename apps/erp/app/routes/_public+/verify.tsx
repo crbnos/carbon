@@ -36,7 +36,7 @@ import {
 } from "react-router";
 import { z } from "zod";
 
-import type { FormActionData, Result } from "~/types";
+import type { Result } from "~/types";
 import { path } from "~/utils/path";
 
 export const meta: MetaFunction = () => {
@@ -64,7 +64,7 @@ const ratelimit = new Ratelimit({
   analytics: true
 });
 
-export async function action({ request }: ActionFunctionArgs): FormActionData {
+export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
 

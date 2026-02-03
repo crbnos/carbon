@@ -33,6 +33,7 @@ import {
   LuEllipsisVertical,
   LuExternalLink,
   LuEye,
+  LuGitCompare,
   LuLoaderCircle,
   LuPanelLeft,
   LuPanelRight,
@@ -56,6 +57,7 @@ import type {
   SupplierQuoteLine,
   SupplierQuoteLinePrice
 } from "../../types";
+import SupplierQuoteCompareDrawer from "./SupplierQuoteCompareDrawer";
 import SupplierQuoteSendModal from "./SupplierQuoteSendModal";
 import SupplierQuoteStatus from "./SupplierQuoteStatus";
 import SupplierQuoteToOrderDrawer from "./SupplierQuoteToOrderDrawer";
@@ -72,12 +74,16 @@ const SupplierQuoteHeader = () => {
     lines: SupplierQuoteLine[];
     interaction: SupplierInteraction;
     prices: SupplierQuoteLinePrice[];
+    siblingQuotes: (SupplierQuote & {
+      supplier: { id: string; name: string };
+    })[];
   }>(path.to.supplierQuote(id));
 
   const isOutsideProcessing =
     routeData?.quote?.supplierQuoteType === "Outside Processing";
 
   const convertToOrderModal = useDisclosure();
+  const compareModal = useDisclosure();
   const deleteModal = useDisclosure();
   const shareModal = useDisclosure();
   const finalizeModal = useDisclosure();
@@ -91,6 +97,12 @@ const SupplierQuoteHeader = () => {
   const quoteStatus: string = routeData?.quote?.status ?? "";
   const editableStatuses = ["Draft", "Declined"];
   const isEditableStatus = editableStatuses.includes(quoteStatus);
+
+  // Get the first linked RFQ ID for comparison
+  const linkedRfqId = routeData?.interaction.purchasingRfq?.id ?? null;
+
+  // Check if sibling quotes exist (for showing Compare option)
+  const hasSiblingQuotes = (routeData?.siblingQuotes ?? []).length > 0;
 
   const canSend =
     isEditableStatus && permissions.can("update", "purchasing") && hasLines;
@@ -204,16 +216,40 @@ const SupplierQuoteHeader = () => {
               </Button>
             )}
 
-            {routeData?.quote?.status === "Active" && (
-              <Button
-                isDisabled={!permissions.can("update", "purchasing")}
-                variant="primary"
-                leftIcon={<LuShoppingCart />}
-                onClick={convertToOrderModal.onOpen}
-              >
-                Order
-              </Button>
-            )}
+            {routeData?.quote?.status === "Active" &&
+              (hasSiblingQuotes ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      isDisabled={!permissions.can("update", "purchasing")}
+                      variant="primary"
+                      leftIcon={<LuShoppingCart />}
+                      rightIcon={<LuChevronDown />}
+                    >
+                      Order
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onClick={convertToOrderModal.onOpen}>
+                      <DropdownMenuIcon icon={<LuShoppingCart />} />
+                      Order
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={compareModal.onOpen}>
+                      <DropdownMenuIcon icon={<LuGitCompare />} />
+                      Compare and Order
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Button
+                  isDisabled={!permissions.can("update", "purchasing")}
+                  variant="primary"
+                  leftIcon={<LuShoppingCart />}
+                  onClick={convertToOrderModal.onOpen}
+                >
+                  Order
+                </Button>
+              ))}
 
             {routeData?.quote?.status === "Draft" && (
               <statusFetcher.Form
@@ -309,6 +345,7 @@ const SupplierQuoteHeader = () => {
           onClose={sendModal.onClose}
           fetcher={sendFetcher}
           externalLinkId={routeData?.quote?.externalLinkId ?? ""}
+          defaultCc={routeData?.defaultCc ?? []}
         />
       )}
       <ShareQuoteModal
@@ -317,6 +354,13 @@ const SupplierQuoteHeader = () => {
         onClose={shareModal.onClose}
         isOpen={shareModal.isOpen}
       />
+      {compareModal.isOpen && linkedRfqId && (
+        <SupplierQuoteCompareDrawer
+          isOpen={compareModal.isOpen}
+          onClose={compareModal.onClose}
+          purchasingRfqId={linkedRfqId}
+        />
+      )}
     </>
   );
 };

@@ -41,7 +41,7 @@ import {
   LuLoaderCircle,
   LuPanelLeft,
   LuPanelRight,
-  LuShare,
+  LuShare2,
   LuTrash,
   LuTrophy
 } from "react-icons/lu";
@@ -164,7 +164,7 @@ const QuoteHeader = () => {
             routeData?.quote.status === "Sent" ? (
               <Button
                 onClick={shareModal.onOpen}
-                leftIcon={<LuShare />}
+                leftIcon={<LuShare2 />}
                 variant="secondary"
               >
                 Share
@@ -353,6 +353,7 @@ const QuoteHeader = () => {
           shipment={routeData?.shipment ?? null}
           onClose={finalizeModal.onClose}
           fetcher={finalizeFetcher}
+          defaultCc={routeData?.defaultCc ?? []}
         />
       )}
       {createRevisionModal.isOpen && (

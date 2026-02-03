@@ -1,6 +1,11 @@
 import type { Database } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
-import type { TrackedActivityAttributes } from "@carbon/utils";
+import {
+  type FlatTree,
+  flattenTree,
+  generateBomIds,
+  type TrackedActivityAttributes
+} from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
@@ -876,4 +881,79 @@ export async function startProductionEvent(
   }
 
   return client.from("productionEvent").insert(data).select("*");
+}
+
+type JobMethod = {
+  id: string;
+  methodMaterialId: string;
+  parentMaterialId: string | null;
+  [key: string]: unknown;
+};
+
+type JobMethodTreeItem = {
+  id: string;
+  data: JobMethod;
+  children: JobMethodTreeItem[];
+};
+
+function arrayToTree(items: JobMethod[]): JobMethodTreeItem[] {
+  const rootItems: JobMethodTreeItem[] = [];
+  const lookup: { [id: string]: JobMethodTreeItem } = {};
+
+  for (const item of items) {
+    const itemId = item.methodMaterialId;
+    const parentId = item.parentMaterialId;
+
+    if (!Object.prototype.hasOwnProperty.call(lookup, itemId)) {
+      // @ts-expect-error - building tree incrementally
+      lookup[itemId] = { id: itemId, children: [] };
+    }
+
+    lookup[itemId].data = item;
+
+    const treeItem = lookup[itemId];
+
+    if (parentId === null || parentId === undefined) {
+      rootItems.push(treeItem);
+    } else {
+      if (!Object.prototype.hasOwnProperty.call(lookup, parentId)) {
+        // @ts-expect-error - building tree incrementally
+        lookup[parentId] = { id: parentId, children: [] };
+      }
+      lookup[parentId].children.push(treeItem);
+    }
+  }
+  return rootItems;
+}
+
+/**
+ * Fetches the job method tree and generates BOM IDs.
+ * Returns a map of methodMaterialId to hierarchical BOM ID (e.g., "1.2.3").
+ */
+export async function getJobMethodBomIdMap(
+  client: SupabaseClient<Database>,
+  jobId: string
+): Promise<Map<string, string>> {
+  const result = await client.rpc("get_job_method", { jid: jobId });
+
+  if (result.error || !result.data?.length) {
+    return new Map();
+  }
+
+  const tree = arrayToTree(result.data as JobMethod[]);
+  if (tree.length === 0) {
+    return new Map();
+  }
+
+  // Flatten tree and generate BOM IDs
+  const flatMethods: FlatTree<JobMethod> = flattenTree(tree[0]);
+  const bomIds = generateBomIds(flatMethods);
+
+  // Create map of methodMaterialId to BOM ID
+  const bomIdMap = new Map<string, string>();
+  flatMethods.forEach((node, index) => {
+    bomIdMap.set(node.data.methodMaterialId, bomIds[index]);
+  });
+
+  return bomIdMap;
 }

@@ -2905,15 +2905,11 @@ export async function deleteMaterialType(
 export async function getMaterialTypes(
   client: SupabaseClient<Database>,
   companyId: string,
-  materialFormId: string,
-  materialSubstanceId: string,
   args?: GenericQueryFilters & { search: string | null }
 ) {
   let query = client
     .from("materialTypes")
     .select("*", { count: "exact" })
-    .eq("materialFormId", materialFormId)
-    .eq("materialSubstanceId", materialSubstanceId)
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
   if (args?.search) {

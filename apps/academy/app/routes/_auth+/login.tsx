@@ -3,7 +3,9 @@ import {
   carbonClient,
   error,
   magicLinkValidator,
-  RATE_LIMIT
+  RATE_LIMIT,
+  SUPABASE_AUTH_EXTERNAL_AZURE_CLIENT_ID,
+  SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID
 } from "@carbon/auth";
 import { sendMagicLink, verifyAuthSession } from "@carbon/auth/auth.server";
 import { flash, getAuthSession } from "@carbon/auth/session.server";
@@ -26,7 +28,13 @@ import type {
   LoaderFunctionArgs,
   MetaFunction
 } from "react-router";
-import { data, redirect, useFetcher, useSearchParams } from "react-router";
+import {
+  data,
+  redirect,
+  useFetcher,
+  useLoaderData,
+  useSearchParams
+} from "react-router";
 
 import { path } from "~/utils/path";
 
@@ -40,7 +48,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw redirect(path.to.root);
   }
 
-  return null;
+  return {
+    hasOutlookAuth: !!SUPABASE_AUTH_EXTERNAL_AZURE_CLIENT_ID,
+    hasGoogleAuth: !!SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID
+  };
 }
 
 const ratelimit = new Ratelimit({
@@ -92,6 +103,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function LoginRoute() {
+  const { hasOutlookAuth, hasGoogleAuth } = useLoaderData<typeof loader>();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") ?? undefined;
 
@@ -174,28 +186,32 @@ export default function LoginRoute() {
                 Sign in with Email
               </Submit>
 
-              <Button
-                type="button"
-                size="lg"
-                className="w-full"
-                onClick={onSignInWithGoogle}
-                isDisabled={fetcher.state !== "idle"}
-                variant="secondary"
-                leftIcon={<GoogleIcon />}
-              >
-                Sign in with Google
-              </Button>
-              <Button
-                type="button"
-                size="lg"
-                className="w-full"
-                onClick={onSignInWithAzure}
-                isDisabled={fetcher.state !== "idle"}
-                variant="secondary"
-                leftIcon={<OutlookIcon className="size-6" />}
-              >
-                Sign in with Outlook
-              </Button>
+              {hasGoogleAuth && (
+                <Button
+                  type="button"
+                  size="lg"
+                  className="w-full"
+                  onClick={onSignInWithGoogle}
+                  isDisabled={fetcher.state !== "idle"}
+                  variant="secondary"
+                  leftIcon={<GoogleIcon />}
+                >
+                  Sign in with Google
+                </Button>
+              )}
+              {hasOutlookAuth && (
+                <Button
+                  type="button"
+                  size="lg"
+                  className="w-full"
+                  onClick={onSignInWithAzure}
+                  isDisabled={fetcher.state !== "idle"}
+                  variant="secondary"
+                  leftIcon={<OutlookIcon className="size-6" />}
+                >
+                  Sign in with Outlook
+                </Button>
+              )}
             </VStack>
           </ValidatedForm>
         )}

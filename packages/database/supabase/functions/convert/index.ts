@@ -1536,6 +1536,22 @@ serve(async (req: Request) => {
           throw new Error("Failed to insert purchase order");
         }
 
+        // Create RFQ→PurchaseOrder links if this quote came from an RFQ
+        const { data: linkedRfqs } = await client
+          .from("purchasingRfqToSupplierQuote")
+          .select("purchasingRfqId")
+          .eq("supplierQuoteId", id);
+
+        if (linkedRfqs && linkedRfqs.length > 0) {
+          await client.from("purchasingRfqToPurchaseOrder").insert(
+            linkedRfqs.map((rfq) => ({
+              purchasingRfqId: rfq.purchasingRfqId,
+              purchaseOrderId: insertedPurchaseOrderId,
+              companyId,
+            }))
+          );
+        }
+
         convertedId = insertedPurchaseOrderId;
 
         break;

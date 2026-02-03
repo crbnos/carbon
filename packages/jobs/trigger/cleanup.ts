@@ -79,6 +79,38 @@ export const cleanup = schedules.task({
         console.log("No expired supplier quotes found");
       }
 
+      // Auto-expire purchasing RFQs past due date
+      console.log("Checking for expired purchasing RFQs...");
+      const expiredRfqs = await serviceRole
+        .from("purchasingRfq")
+        .select("*")
+        .in("status", ["Draft", "Requested"])
+        .not("dueDate", "is", null)
+        .lt("dueDate", new Date().toISOString());
+
+      if (expiredRfqs.error) {
+        console.error(
+          `Error fetching expired RFQs: ${JSON.stringify(expiredRfqs.error)}`
+        );
+      } else if (expiredRfqs.data.length > 0) {
+        console.log(`Found ${expiredRfqs.data.length} expired RFQs`);
+        const closeRfqs = await serviceRole
+          .from("purchasingRfq")
+          .update({ status: "Closed" })
+          .in(
+            "id",
+            expiredRfqs.data.map((rfq) => rfq.id)
+          );
+
+        if (closeRfqs.error) {
+          console.error(
+            `Error closing expired RFQs: ${JSON.stringify(closeRfqs.error)}`
+          );
+        }
+      } else {
+        console.log("No expired RFQs found");
+      }
+
       if (!expiredQuotes?.data?.length) {
         console.log("No expired quotes found requiring notification");
       } else {

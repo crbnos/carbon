@@ -16,6 +16,7 @@ type ConfirmDeleteProps = {
   isOpen?: boolean;
   name: string;
   text: string;
+  deleteText?: string;
   onCancel: () => void;
   onSubmit?: () => void;
 };
@@ -25,6 +26,7 @@ const ConfirmDelete = ({
   isOpen = true,
   name,
   text,
+  deleteText = "Delete",
   onCancel,
   onSubmit
 }: ConfirmDeleteProps) => {
@@ -66,7 +68,7 @@ const ConfirmDelete = ({
               isDisabled={fetcher.state !== "idle"}
               type="submit"
             >
-              Delete
+              {deleteText}
             </Button>
           </fetcher.Form>
         </ModalFooter>

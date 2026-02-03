@@ -118,7 +118,9 @@ const PurchaseOrderProperties = () => {
 
   const isDisabled =
     !permissions.can("update", "purchasing") ||
-    !["Draft", "To Review"].includes(routeData?.purchaseOrder?.status ?? "");
+    !["Draft", "To Review", "Needs Approval"].includes(
+      routeData?.purchaseOrder?.status ?? ""
+    );
 
   return (
     <VStack

@@ -32,7 +32,11 @@ const SupplierInteractionLineNotes = ({
   externalNotes: initialExternalNotes
 }: {
   id: string | null;
-  table: "supplierQuoteLine" | "purchaseOrderLine" | "purchaseInvoiceLine";
+  table:
+    | "purchasingRfqLine"
+    | "supplierQuoteLine"
+    | "purchaseOrderLine"
+    | "purchaseInvoiceLine";
   title: string;
   subTitle: string;
   internalNotes?: JSONContent;
@@ -111,12 +115,16 @@ const SupplierInteractionLineNotes = ({
             <CardHeader>
               <CardTitle>{title}</CardTitle>
               <CardDescription>
-                {subTitle} -{" "}
+                {subTitle ? `${subTitle} - ` : ""}
                 {tab === "internal" ? "Internal Notes" : "External Notes"}
               </CardDescription>
             </CardHeader>
             <CardAction>
-              {["supplierQuoteLine", "purchaseOrderLine"].includes(table) &&
+              {[
+                "purchasingRfqLine",
+                "supplierQuoteLine",
+                "purchaseOrderLine"
+              ].includes(table) &&
                 isEmployee && (
                   <TabsList>
                     <TabsTrigger value="internal">Internal</TabsTrigger>
@@ -145,7 +153,11 @@ const SupplierInteractionLineNotes = ({
                 />
               )}
             </TabsContent>
-            {["supplierQuoteLine", "purchaseOrderLine"].includes(table) && (
+            {[
+              "purchasingRfqLine",
+              "supplierQuoteLine",
+              "purchaseOrderLine"
+            ].includes(table) && (
               <TabsContent value="external">
                 {permissions.can("update", "purchasing") ? (
                   <Editor

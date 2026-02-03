@@ -14,9 +14,10 @@ import {
   TooltipTrigger,
   useDisclosure,
   useKeyboardShortcuts,
+  usePrettifyShortcut,
   VStack
 } from "@carbon/react";
-import { getItemReadableId, prettifyKeyboardShortcut } from "@carbon/utils";
+import { getItemReadableId } from "@carbon/utils";
 import { useRef, useState } from "react";
 import { LuCirclePlus, LuEllipsisVertical, LuTrash } from "react-icons/lu";
 import { Link, useParams } from "react-router";
@@ -38,6 +39,7 @@ import DeletePurchaseInvoiceLine from "./DeletePurchaseInvoiceLine";
 import PurchaseInvoiceLineForm from "./PurchaseInvoiceLineForm";
 
 export default function PurchaseInvoiceExplorer() {
+  const prettifyShortcut = usePrettifyShortcut();
   const { defaults } = useUser();
   const { invoiceId } = useParams();
   if (!invoiceId) throw new Error("Could not find invoiceId");
@@ -135,7 +137,7 @@ export default function PurchaseInvoiceExplorer() {
             <TooltipContent>
               <HStack>
                 <span>New Line Item</span>
-                <Kbd>{prettifyKeyboardShortcut("Command+Shift+l")}</Kbd>
+                <Kbd>{prettifyShortcut("Command+Shift+l")}</Kbd>
               </HStack>
             </TooltipContent>
           </Tooltip>
@@ -189,7 +191,7 @@ function PurchaseInvoiceLineItem({
           className={cn(
             "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
             "border-b border-border",
-            isSelected && "bg-accent/60 hover:bg-accent/50 shadow-inner"
+            isSelected && "bg-accent/60 hover:bg-accent/50"
           )}
         >
           <HStack spacing={2} className="flex-grow min-w-0 pr-10">

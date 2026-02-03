@@ -1,6 +1,8 @@
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import type { JSONContent } from "@carbon/react";
+import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
 import { useShelves } from "~/components/Form/Shelf";
@@ -9,10 +11,17 @@ import {
   getItem,
   getItemQuantities,
   getItemShelfQuantities,
+  getMakeMethodById,
+  getMakeMethods,
+  getMethodMaterialsByMakeMethod,
+  getMethodOperationsByMakeMethodId,
   getPickMethod,
   upsertPickMethod
 } from "~/modules/items";
+import { BillOfMaterial, BillOfProcess } from "~/modules/items/ui/Item";
 import { getLocationsList } from "~/modules/resources";
+import type { MethodItemType, MethodType } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";
@@ -130,17 +139,72 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  // Load manufacturing data for manufactured parts
+  let methodData = null;
+  let tags: { name: string }[] = [];
+
+  if (item.data.replenishmentSystem !== "Buy") {
+    const makeMethods = await getMakeMethods(client, itemId, companyId);
+    const makeMethod =
+      makeMethods.data?.find((m) => m.status === "Active") ??
+      makeMethods.data?.[0];
+
+    if (makeMethod) {
+      const fullMethod = await getMakeMethodById(
+        client,
+        makeMethod.id,
+        companyId
+      );
+      if (!fullMethod.error && fullMethod.data) {
+        const [methodMaterials, methodOperations, operationTags] =
+          await Promise.all([
+            getMethodMaterialsByMakeMethod(client, fullMethod.data.id),
+            getMethodOperationsByMakeMethodId(client, fullMethod.data.id),
+            getTagsList(client, companyId, "operation")
+          ]);
+
+        methodData = {
+          makeMethod: fullMethod.data,
+          methodMaterials:
+            methodMaterials.data?.map((m) => ({
+              ...m,
+              description: m.item?.name ?? "",
+              methodType: m.methodType as MethodType,
+              itemType: m.itemType as MethodItemType
+            })) ?? [],
+          methodOperations:
+            methodOperations.data?.map((operation) => ({
+              ...operation,
+              workCenterId: operation.workCenterId ?? undefined,
+              operationSupplierProcessId:
+                operation.operationSupplierProcessId ?? undefined,
+              workInstruction: operation.workInstruction as JSONContent | null
+            })) ?? []
+        };
+        tags = operationTags.data ?? [];
+      }
+    }
+  }
+
   return {
     pickMethod: pickMethod.data,
     quantities: quantities.data,
     itemShelfQuantities: itemShelfQuantities.data,
-    item: item.data
+    item: item.data,
+    methodData,
+    tags
   };
 }
 
 export default function ItemInventoryRoute() {
-  const { pickMethod, quantities, itemShelfQuantities, item } =
-    useLoaderData<typeof loader>();
+  const {
+    pickMethod,
+    quantities,
+    itemShelfQuantities,
+    item,
+    methodData,
+    tags
+  } = useLoaderData<typeof loader>();
 
   const [items] = useItems();
   const itemTrackingType = items.find(
@@ -150,16 +214,37 @@ export default function ItemInventoryRoute() {
   const shelves = useShelves(pickMethod?.locationId);
 
   return (
-    <InventoryDetails
-      itemShelfQuantities={itemShelfQuantities}
-      itemUnitOfMeasureCode={item.unitOfMeasureCode ?? "EA"}
-      itemTrackingType={itemTrackingType ?? "Inventory"}
-      pickMethod={{
-        ...pickMethod,
-        defaultShelfId: pickMethod.defaultShelfId ?? undefined
-      }}
-      quantities={quantities}
-      shelves={shelves.options}
-    />
+    <VStack spacing={2}>
+      <InventoryDetails
+        itemShelfQuantities={itemShelfQuantities}
+        itemUnitOfMeasureCode={item.unitOfMeasureCode ?? "EA"}
+        itemTrackingType={itemTrackingType ?? "Inventory"}
+        pickMethod={{
+          ...pickMethod,
+          defaultShelfId: pickMethod.defaultShelfId ?? undefined
+        }}
+        quantities={quantities}
+        shelves={shelves.options}
+      />
+      {methodData && (
+        <>
+          <BillOfMaterial
+            makeMethod={methodData.makeMethod}
+            // @ts-ignore
+            materials={methodData.methodMaterials}
+            // @ts-ignore
+            operations={methodData.methodOperations}
+          />
+          <BillOfProcess
+            makeMethod={methodData.makeMethod}
+            // @ts-ignore
+            operations={methodData.methodOperations}
+            // @ts-ignore
+            materials={methodData.methodMaterials}
+            tags={tags}
+          />
+        </>
+      )}
+    </VStack>
   );
 }

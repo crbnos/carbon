@@ -49,7 +49,7 @@ export async function getCustomers(
   let query = client
     .from("customerAccount")
     .select(
-      `active, user!inner(id, fullName, firstName, lastName, email, avatarUrl), 
+      `active, user!inner(id, fullName, firstName, lastName, email, avatarUrl),
       customer!inner(name, customerType!left(name))`,
       { count: "exact" }
     )
@@ -187,6 +187,21 @@ export async function getGroups(
   return query;
 }
 
+export async function getGroupEmails(
+  client: SupabaseClient<Database>,
+  groupIds: string[]
+): Promise<string[]> {
+  if (!groupIds || groupIds.length === 0) return [];
+
+  const userIdsResult = (await client.rpc("users_for_groups", {
+    groups: groupIds
+  })) as { data: string[]; error: unknown };
+
+  if (userIdsResult.error || !Array.isArray(userIdsResult.data)) return [];
+
+  return getUserEmails(client, userIdsResult.data);
+}
+
 export async function getPermissionsByEmployeeType(
   client: SupabaseClient<Database>,
   employeeTypeId: string
@@ -208,7 +223,7 @@ export async function getSuppliers(
   let query = client
     .from("supplierAccount")
     .select(
-      `active, user!inner(id, fullName, firstName, lastName, email, avatarUrl), 
+      `active, user!inner(id, fullName, firstName, lastName, email, avatarUrl),
       supplier!inner(name, supplierType!left(name))`,
       { count: "exact" }
     )
@@ -231,6 +246,25 @@ export async function getUsers(client: SupabaseClient<Database>) {
     "id, firstName, lastName, fullName, email, avatarUrl",
     (query) => query.eq("active", true).order("lastName")
   );
+}
+
+export async function getUserEmails(
+  client: SupabaseClient<Database>,
+  userIds: string[]
+): Promise<string[]> {
+  if (!userIds || userIds.length === 0) return [];
+
+  const result = await client
+    .from("user")
+    .select("email")
+    .in("id", userIds)
+    .eq("active", true);
+
+  if (result.error || !result.data) return [];
+
+  return result.data
+    .map((u) => u.email)
+    .filter((email): email is string => !!email);
 }
 
 export async function insertEmployeeType(

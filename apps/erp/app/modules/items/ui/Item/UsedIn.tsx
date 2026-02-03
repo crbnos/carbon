@@ -97,15 +97,20 @@ export function UsedInTree({
   revisions: revisionsJson,
   itemReadableId,
   itemReadableIdWithRevision,
-  hasSizesInsteadOfRevisions = false
+  hasSizesInsteadOfRevisions = false,
+  filterText: filterTextProp,
+  hideSearch
 }: {
   tree: UsedInNode[];
   revisions?: Json;
   itemReadableId: string;
   itemReadableIdWithRevision: string;
   hasSizesInsteadOfRevisions?: boolean;
+  filterText?: string;
+  hideSearch?: boolean;
 }) {
-  const [filterText, setFilterText] = useState("");
+  const [filterTextInternal, setFilterTextInternal] = useState("");
+  const filterText = filterTextProp ?? filterTextInternal;
 
   const revisions = (
     revisionValidator.safeParse(revisionsJson)?.data ?? []
@@ -119,18 +124,20 @@ export function UsedInTree({
 
   return (
     <VStack className="w-full p-2 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent h-full">
-      <HStack className="w-full py">
-        <InputGroup size="sm" className="flex flex-grow">
-          <InputLeftElement>
-            <LuSearch className="h-4 w-4" />
-          </InputLeftElement>
-          <Input
-            placeholder="Search..."
-            value={filterText}
-            onChange={(e) => setFilterText(e.target.value)}
-          />
-        </InputGroup>
-      </HStack>
+      {!hideSearch && (
+        <HStack className="w-full py">
+          <InputGroup size="sm" className="flex flex-grow">
+            <InputLeftElement>
+              <LuSearch className="h-4 w-4" />
+            </InputLeftElement>
+            <Input
+              placeholder="Search..."
+              value={filterText}
+              onChange={(e) => setFilterTextInternal(e.target.value)}
+            />
+          </InputGroup>
+        </HStack>
+      )}
       <VStack spacing={0}>
         <RevisionsItem
           filterText={filterText}

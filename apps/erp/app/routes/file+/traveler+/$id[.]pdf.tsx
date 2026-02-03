@@ -2,11 +2,13 @@ import { getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { JobTravelerPDF } from "@carbon/documents/pdf";
 import type { JSONContent } from "@carbon/react";
+import { flattenTree, generateBomIds } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
 import {
   getJob,
   getJobMakeMethodById,
+  getJobMethodTree,
   getJobOperationsByMethodId,
   getTrackedEntityByJobId
 } from "~/modules/production/production.service";
@@ -85,6 +87,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // Get job notes if they exist
   const jobNotes = job.data.notes as JSONContent | undefined;
 
+  // Compute BOM ID for this make method
+  let bomId: string | undefined;
+  const methodTree = await getJobMethodTree(serviceRole, job.data.id!);
+  if (!methodTree.error && methodTree.data?.length > 0) {
+    const flatMethods = flattenTree(methodTree.data[0]);
+    const bomIds = generateBomIds(flatMethods);
+    // Find the node matching this make method
+    const nodeIndex = flatMethods.findIndex(
+      (node) => node.data.jobMaterialMakeMethodId === id
+    );
+    if (nodeIndex >= 0) {
+      bomId = bomIds[nodeIndex];
+    }
+  }
+
   // Get thumbnail if it exists
   let thumbnail: string | null = null;
   if (item.data.thumbnailPath || item.data.modelUpload?.thumbnailPath) {
@@ -105,6 +122,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       customer={customer.data}
       item={item.data}
       batchNumber={batchNumber}
+      bomId={bomId}
       locale={locale}
       meta={{
         author: "Carbon",

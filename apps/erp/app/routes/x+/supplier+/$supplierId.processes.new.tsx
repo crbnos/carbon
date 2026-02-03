@@ -6,7 +6,7 @@ import type {
   ActionFunctionArgs,
   ClientActionFunctionArgs
 } from "react-router";
-import { json, redirect, useNavigate, useParams } from "react-router";
+import { redirect, useNavigate, useParams } from "react-router";
 import {
   supplierProcessValidator,
   upsertSupplierProcess

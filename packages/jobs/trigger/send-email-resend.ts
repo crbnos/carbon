@@ -32,7 +32,7 @@ export const sendEmailResendTask = task({
     ]);
 
     const integrationMetadata = ResendConfig.schema.safeParse(
-      integration?.data?.metadata
+      integration?.data?.metadata,
     );
 
     console.info(integrationMetadata.data?.fromEmail ?? "No email found");
@@ -48,6 +48,7 @@ export const sendEmailResendTask = task({
         integrationMetadata.data.fromEmail ?? "onboarding@resend.dev"
       }>`,
       to: payload.to,
+      cc: payload.cc,
       reply_to: payload.from,
       subject: payload.subject,
       html: payload.html,

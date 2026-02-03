@@ -46,7 +46,7 @@ import {
   LuMap,
   LuSend,
   LuSettings2,
-  LuShare,
+  LuShare2,
   LuSparkles,
   LuTrash
 } from "react-icons/lu";
@@ -287,7 +287,7 @@ export function NavProjects({
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   <DropdownMenuIcon
-                    icon={<LuShare className="text-muted-foreground" />}
+                    icon={<LuShare2 className="text-muted-foreground" />}
                   />
                   <span>Share Project</span>
                 </DropdownMenuItem>

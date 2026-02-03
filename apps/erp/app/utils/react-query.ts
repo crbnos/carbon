@@ -44,6 +44,11 @@ export const customerTypesQuery = (companyId: string | null) => ({
   staleTime: RefreshRate.Low
 });
 
+export const configurableItemsQuery = (companyId: string | null) => ({
+  queryKey: ["configurableItems", companyId ?? "null"],
+  staleTime: RefreshRate.Low
+});
+
 export const docsQuery = () => ({
   queryKey: ["docs"],
   staleTime: RefreshRate.Never
@@ -133,6 +138,14 @@ export const webhookTablesQuery = () => ({
 
 export const workCentersQuery = (companyId: string | null) => ({
   queryKey: ["workCenters", companyId ?? "null"],
+  staleTime: RefreshRate.Low
+});
+
+export const groupsByTypeQuery = (
+  companyId: string | null,
+  type: string | null
+) => ({
+  queryKey: ["groupsByType", companyId ?? "null", type ?? "null"],
   staleTime: RefreshRate.Low
 });
 

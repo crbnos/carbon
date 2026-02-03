@@ -24,6 +24,7 @@ interface SplitButtonProps {
     label: React.ReactNode;
     onClick: () => void;
     icon?: React.ReactElement;
+    disabled?: boolean;
   }[];
 }
 
@@ -76,7 +77,11 @@ const SplitButton = forwardRef<HTMLButtonElement, SplitButtonProps>(
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             {dropdownItems.map((item, index) => (
-              <DropdownMenuItem key={index} onClick={item.onClick}>
+              <DropdownMenuItem
+                key={index}
+                onClick={item.onClick}
+                disabled={item.disabled}
+              >
                 {item.icon && <DropdownMenuIcon icon={item.icon} />}
                 {item.label}
               </DropdownMenuItem>

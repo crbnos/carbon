@@ -40,13 +40,11 @@ import {
   Tr,
   toast,
   useMount,
+  usePrettifyShortcut,
   VStack
 } from "@carbon/react";
-import { prettifyKeyboardShortcut } from "@carbon/utils";
 import { useNumberFormatter } from "@react-aria/i18n";
-import type {
-  ColumnDef,
-} from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import {
   flexRender,
   getCoreRowModel,
@@ -1155,6 +1153,7 @@ function PaginationButtons({
   handlePreviousPage: () => void;
   handleNextPage: () => void;
 }) {
+  const prettifyShortcut = usePrettifyShortcut();
   return (
     <>
       <div className="text-foreground text-sm font-medium align-center hidden lg:flex">
@@ -1173,7 +1172,7 @@ function PaginationButtons({
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <HStack>{prettifyKeyboardShortcut("ArrowLeft")}</HStack>
+          <HStack>{prettifyShortcut("ArrowLeft")}</HStack>
         </TooltipContent>
       </Tooltip>
       <Tooltip>
@@ -1188,7 +1187,7 @@ function PaginationButtons({
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <HStack>{prettifyKeyboardShortcut("ArrowRight")}</HStack>
+          <HStack>{prettifyShortcut("ArrowRight")}</HStack>
         </TooltipContent>
       </Tooltip>
     </>

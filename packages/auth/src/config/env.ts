@@ -3,6 +3,7 @@ import { Edition, isBrowser, parseBoolean } from "@carbon/utils";
 declare global {
   interface Window {
     env: {
+      AUTH_PROVIDERS: string;
       CARBON_EDITION: string;
       CLOUDFLARE_TURNSTILE_SITE_KEY: string;
       CONTROLLED_ENVIRONMENT: string;
@@ -47,6 +48,8 @@ declare global {
       SUPABASE_ANON_KEY: string;
       SUPABASE_URL: string;
       SUPABASE_DB_URL: string;
+      SUPABASE_AUTH_EXTERNAL_AZURE_CLIENT_ID: string;
+      SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID: string;
       SUPABASE_SERVICE_ROLE_KEY: string;
       UPSTASH_REDIS_REST_URL: string;
       UPSTASH_REDIS_REST_TOKEN: string;
@@ -83,6 +86,12 @@ export function getEnv(
 /**
  * Server env
  */
+
+export const AUTH_PROVIDERS =
+  getEnv("AUTH_PROVIDERS", {
+    isRequired: false,
+    isSecret: false
+  }) ?? "email,google,azure";
 
 const CARBON_EDITION = getEnv("CARBON_EDITION", {
   isRequired: false,
@@ -182,6 +191,21 @@ export const SUPABASE_DB_URL = getEnv("SUPABASE_DB_URL", {
   isSecret: true,
   isRequired: true
 });
+export const SUPABASE_AUTH_EXTERNAL_AZURE_CLIENT_ID = getEnv(
+  "SUPABASE_AUTH_EXTERNAL_AZURE_CLIENT_ID",
+  {
+    isRequired: false,
+    isSecret: true
+  }
+);
+export const SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID = getEnv(
+  "SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID",
+  {
+    isRequired: false,
+    isSecret: true
+  }
+);
+
 export const SESSION_SECRET = getEnv("SESSION_SECRET");
 export const SESSION_KEY = "auth";
 export const SESSION_ERROR_KEY = "error";

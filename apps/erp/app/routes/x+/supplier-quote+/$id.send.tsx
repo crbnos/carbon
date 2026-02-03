@@ -88,7 +88,8 @@ export async function action(args: ActionFunctionArgs) {
   const {
     notification,
     supplierContact: supplierContactId,
-    sendAttachments
+    sendAttachments,
+    cc: ccSelections
   } = validation.data;
 
   switch (notification) {
@@ -154,11 +155,14 @@ export async function action(args: ActionFunctionArgs) {
 
         const emailSubject = `Supplier Quote ${supplierQuote.data.supplierQuoteId} from ${company.data.name}`;
 
-        const emailBody = `Hey ${supplierContact.data.contact.firstName || "there"},\n\nPlease provide pricing and lead time(s) for the linked quote:`;
+        const emailBody = `Hey ${
+          supplierContact.data.contact.firstName || "there"
+        },\n\nPlease provide pricing and lead time(s) for the linked quote:`;
         const emailSignature = `Thanks,\n${user.data.firstName} ${user.data.lastName}\n${company.data.name}`;
 
         await tasks.trigger<typeof sendEmailResendTask>("send-email-resend", {
           to: [user.data.email, supplierContact.data.contact?.email ?? ""],
+          cc: ccSelections?.length ? ccSelections : undefined,
           from: user.data.email,
           subject: emailSubject,
           html: `${emailBody.replace(

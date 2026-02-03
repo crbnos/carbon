@@ -1,8 +1,12 @@
+import type { Database } from "@carbon/database";
 import { nanoid } from "nanoid";
+
+type ApprovalDocumentType = Database["public"]["Enums"]["approvalDocumentType"];
 
 const API_ENDPOINT = "https://api.novu.co/v1";
 
 export enum NotificationWorkflow {
+  Approval = "approval",
   Assignment = "assignment",
   DigitalQuoteResponse = "digital-quote-response",
   Expiration = "expiration",
@@ -14,6 +18,9 @@ export enum NotificationWorkflow {
 }
 
 export enum NotificationEvent {
+  ApprovalApproved = "approval-approved",
+  ApprovalRejected = "approval-rejected",
+  ApprovalRequested = "approval-requested",
   DigitalQuoteResponse = "digital-quote-response",
   GaugeCalibrationExpired = "gauge-calibration-expired",
   JobAssignment = "job-assignment",
@@ -40,6 +47,7 @@ export enum NotificationEvent {
 }
 
 export enum NotificationType {
+  ApprovalInApp = "approval-in-app",
   AssignmentInApp = "assignment-in-app",
   DigitalQuoteResponseInApp = "digital-quote-response-in-app",
   JobCompletedInApp = "job-completed-in-app",
@@ -58,6 +66,7 @@ export type NotificationPayload = {
   description: string;
   event: NotificationEvent;
   from?: string;
+  documentType?: ApprovalDocumentType;
 };
 
 export type TriggerPayload = {

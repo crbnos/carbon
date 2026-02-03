@@ -80,7 +80,7 @@ const MultiSelect = ({
   return (
     <FormControl isInvalid={!!error}>
       {label && <FormLabel htmlFor={name}>{label}</FormLabel>}
-      {value?.filter(Boolean).map((selection, index) => (
+      {(value ?? []).filter(Boolean).map((selection, index) => (
         <input
           key={`${name}[${index}]`}
           type="hidden"
@@ -91,7 +91,7 @@ const MultiSelect = ({
 
       <MultiSelectBase
         {...props}
-        value={value?.filter(Boolean)}
+        value={(value ?? []).filter(Boolean)}
         inline={props.inline ? MultiSelectPreview : undefined}
         onChange={(newValue) => {
           setValue(newValue ?? []);

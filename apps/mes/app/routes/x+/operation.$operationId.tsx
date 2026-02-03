@@ -9,6 +9,7 @@ import {
   getJobFiles,
   getJobMakeMethod,
   getJobMaterialsByOperationId,
+  getJobMethodBomIdMap,
   getJobOperationById,
   getJobOperationProcedure,
   getKanbanByJobId,
@@ -65,7 +66,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const [thumbnailPath, trackedEntities, jobMakeMethod, kanban] =
+  const [thumbnailPath, trackedEntities, jobMakeMethod, kanban, bomIdMap] =
     await Promise.all([
       getThumbnailPathByItemId(serviceRole, operation.data?.[0].itemId),
       getTrackedEntitiesByMakeMethodId(
@@ -73,7 +74,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         operation.data?.[0].jobMakeMethodId
       ),
       getJobMakeMethod(serviceRole, operation.data?.[0].jobMakeMethodId),
-      getKanbanByJobId(serviceRole, job.data.id)
+      getKanbanByJobId(serviceRole, job.data.id),
+      getJobMethodBomIdMap(serviceRole, job.data.id!)
     ]);
 
   // If no trackedEntityId is provided in the URL but trackedEntities exist,
@@ -96,6 +98,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return {
+    bomIdMap: Object.fromEntries(bomIdMap),
     events: events.data ?? [],
     quantities: (quantities.data ?? []).reduce(
       (acc, curr) => {
@@ -149,8 +152,11 @@ export default function OperationRoute() {
     thumbnailPath,
     trackedEntities,
     workCenter,
-    nonConformanceActions
+    nonConformanceActions,
+    bomIdMap
   } = useLoaderData<typeof loader>();
+
+  console.log({ bomIdMap });
 
   return (
     <JobOperation

@@ -196,9 +196,9 @@ export function getLinkToItemDetails(type: MethodItemType, id: string) {
 export function getLinkToItemManufacturing(type: MethodItemType, id: string) {
   switch (type) {
     case "Part":
-      return path.to.partManufacturing(id);
+      return path.to.partDetails(id);
     case "Tool":
-      return path.to.toolManufacturing(id);
+      return path.to.toolDetails(id);
     default:
       return getLinkToItemDetails(type, id);
   }

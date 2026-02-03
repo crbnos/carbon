@@ -6,9 +6,9 @@ import {
   TooltipContent,
   TooltipTrigger,
   useKeyboardShortcuts,
+  usePrettifyShortcut,
   VStack
 } from "@carbon/react";
-import { prettifyKeyboardShortcut } from "@carbon/utils";
 import type { ReactNode } from "react";
 import { Link, useNavigate } from "react-router";
 import { useOptimisticLocation } from "~/hooks";
@@ -26,6 +26,7 @@ type DetailSidebarProps = {
 const DetailSidebar = ({ links }: DetailSidebarProps) => {
   const navigate = useNavigate();
   const location = useOptimisticLocation();
+  const prettifyShortcut = usePrettifyShortcut();
 
   useKeyboardShortcuts(
     links.reduce<Record<string, () => void>>((acc, link) => {
@@ -67,7 +68,7 @@ const DetailSidebar = ({ links }: DetailSidebarProps) => {
             </TooltipTrigger>
             {route.shortcut && (
               <TooltipContent side="right">
-                <HStack>{prettifyKeyboardShortcut(route.shortcut)}</HStack>
+                <HStack>{prettifyShortcut(route.shortcut)}</HStack>
               </TooltipContent>
             )}
           </Tooltip>

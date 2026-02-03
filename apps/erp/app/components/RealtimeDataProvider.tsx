@@ -73,13 +73,15 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
       fetchAllFromTable<{
         id: string;
         name: string;
-      }>(carbon, "supplier", "id, name", (query) =>
+        website: string;
+      }>(carbon, "supplier", "id, name, website", (query) =>
         query.eq("companyId", companyId).order("name")
       ),
       fetchAllFromTable<{
         id: string;
         name: string;
-      }>(carbon, "customer", "id, name", (query) =>
+        website: string;
+      }>(carbon, "customer", "id, name, website", (query) =>
         query.eq("companyId", companyId).order("name")
       ),
       fetchAllFromTable<{
@@ -113,7 +115,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
     setCustomers(customers.data ?? []);
     setPeople(
       // @ts-ignore
-      people.data?.filter((p) => !p.email?.includes("@carbon.ms")) ?? []
+      people.data ?? []
     );
 
     idb.setItem("items", items.data);
@@ -229,7 +231,8 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
                     ...customers,
                     {
                       id: inserted.id,
-                      name: inserted.name
+                      name: inserted.name,
+                      website: inserted.website
                     }
                   ].sort((a, b) => a.name.localeCompare(b.name))
                 );
@@ -242,7 +245,8 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
                       if (p.id === updated.id) {
                         return {
                           ...p,
-                          name: updated.name
+                          name: updated.name,
+                          website: updated.website
                         };
                       }
                       return p;
@@ -283,7 +287,8 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
                     ...suppliers,
                     {
                       id: inserted.id,
-                      name: inserted.name
+                      name: inserted.name,
+                      website: inserted.website
                     }
                   ].sort((a, b) => a.name.localeCompare(b.name))
                 );
@@ -296,7 +301,8 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
                       if (p.id === updated.id) {
                         return {
                           ...p,
-                          name: updated.name
+                          name: updated.name,
+                          website: updated.website
                         };
                       }
                       return p;

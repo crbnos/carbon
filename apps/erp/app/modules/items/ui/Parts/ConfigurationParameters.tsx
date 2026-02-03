@@ -177,7 +177,7 @@ export default function ConfigurationParametersForm({
 
   return (
     <>
-      <Card isCollapsible defaultCollapsed>
+      <Card isCollapsible>
         <CardHeader>
           <CardTitle>Configuration Parameters</CardTitle>
         </CardHeader>

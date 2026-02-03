@@ -23,22 +23,24 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  useDisclosure
+  useDisclosure,
+  useMount
 } from "@carbon/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LuFilter } from "react-icons/lu";
-
+import { useFetcher } from "react-router";
 import ConsumableForm from "~/modules/items/ui/Consumables/ConsumableForm";
 import MaterialForm from "~/modules/items/ui/Materials/MaterialForm";
 import PartForm from "~/modules/items/ui/Parts/PartForm";
 import ToolForm from "~/modules/items/ui/Tools/ToolForm";
-import type { MethodItemType, } from "~/modules/shared";
+import type { MethodItemType } from "~/modules/shared";
 import { methodItemType } from "~/modules/shared";
 import { useItems } from "~/stores";
+import { path } from "~/utils/path";
 import { MethodItemTypeIcon } from "../Icons";
 
 type ItemSelectProps = Omit<ComboboxProps, "options" | "type" | "inline"> & {
-  disabledItems?: string[];
+  blacklist?: string[];
   includeInactive?: boolean;
   inline?: boolean;
   isConfigured?: boolean;
@@ -46,6 +48,7 @@ type ItemSelectProps = Omit<ComboboxProps, "options" | "type" | "inline"> & {
   type: MethodItemType | "Item";
   typeFieldName?: string;
   validItemTypes?: MethodItemType[];
+  whitelist?: string[];
   onConfigure?: () => void;
   onTypeChange?: (type: MethodItemType | "Item") => void;
 };
@@ -76,7 +79,7 @@ const Item = ({
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const options = useMemo(() => {
-    const results = items
+    let results = items
       .filter((item) => {
         // Filter by type
         // @ts-ignore
@@ -106,18 +109,21 @@ const Item = ({
         helper: item.name
       }));
 
-    if (props.disabledItems) {
-      return results.filter(
-        (item) => !props.disabledItems?.includes(item.value)
-      );
+    if (props.whitelist) {
+      results = results.filter((item) => props.whitelist?.includes(item.value));
+    }
+
+    if (props.blacklist) {
+      return results.filter((item) => !props.blacklist?.includes(item.value));
     }
 
     return results;
   }, [
     items,
     props?.includeInactive,
-    props.disabledItems,
+    props.blacklist,
     props.replenishmentSystem,
+    props.whitelist,
     type
   ]);
 
@@ -424,3 +430,19 @@ const Item = ({
 Item.displayName = "Item";
 
 export default Item;
+
+export const useConfigurableItems = () => {
+  const configurableItemsLoader = useFetcher<{
+    data: { itemId: string }[] | null;
+  }>();
+
+  useMount(() => {
+    configurableItemsLoader.load(path.to.api.itemConfigurable);
+  });
+
+  const configurableItemIds = useMemo(() => {
+    return (configurableItemsLoader.data?.data ?? []).map((c) => c.itemId);
+  }, [configurableItemsLoader.data?.data]);
+
+  return configurableItemIds;
+};

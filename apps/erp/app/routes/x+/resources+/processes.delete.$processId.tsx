@@ -7,7 +7,7 @@ import type {
   LoaderFunctionArgs
 } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
-import { ConfirmDelete } from "~/components/Modals";
+import { Confirm } from "~/components/Modals";
 import { deleteProcess, getProcess } from "~/modules/resources";
 import { path } from "~/utils/path";
 import { getCompanyId, processesQuery } from "~/utils/react-query";
@@ -60,7 +60,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   throw redirect(
     path.to.processes,
-    await flash(request, success("Successfully deleted process"))
+    await flash(request, success("Successfully deactivated process"))
   );
 }
 
@@ -83,11 +83,14 @@ export default function DeleteProcessRoute() {
   const onCancel = () => navigate(path.to.processes);
 
   return (
-    <ConfirmDelete
+    <Confirm
       action={path.to.deleteProcess(processId)}
-      name={process.name!}
-      text={`Are you sure you want to delete the process: ${process.name}? This cannot be undone.`}
+      title={`Deactivate ${process.name}`}
+      text={`Are you sure you want to deactivate the process: ${process.name}? It will no longer appear in dropdowns.`}
+      confirmText="Deactivate"
+      isOpen={true}
       onCancel={onCancel}
+      onSubmit={onCancel}
     />
   );
 }

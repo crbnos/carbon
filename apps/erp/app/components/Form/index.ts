@@ -45,10 +45,11 @@ import CustomerType from "./CustomerType";
 import CustomFormFields from "./CustomFormFields";
 import DefaultMethodType from "./DefaultMethodType";
 import Department from "./Department";
+import EmailRecipients from "./EmailRecipients";
 import EmojiPicker from "./EmojiPicker";
 import Employee from "./Employee";
 import Employees from "./Employees";
-import Item from "./Item";
+import Item, { useConfigurableItems } from "./Item";
 import ItemPostingGroup from "./ItemPostingGroup";
 import Location from "./Location";
 import MaterialType from "./MaterialType";
@@ -106,6 +107,7 @@ export {
   DefaultDisabledSubmit,
   DefaultMethodType,
   Department,
+  EmailRecipients,
   Employee,
   Employees,
   EmojiPicker,
@@ -114,6 +116,7 @@ export {
   InputControlled,
   Item,
   ItemPostingGroup,
+  useConfigurableItems,
   Location,
   MaterialType,
   MultiSelect,

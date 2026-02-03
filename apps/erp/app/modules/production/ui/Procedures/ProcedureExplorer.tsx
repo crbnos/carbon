@@ -41,10 +41,10 @@ import {
   useDebounce,
   useDisclosure,
   useKeyboardShortcuts,
+  usePrettifyShortcut,
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { prettifyKeyboardShortcut } from "@carbon/utils";
 import { Reorder } from "framer-motion";
 import { nanoid } from "nanoid";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -75,6 +75,7 @@ import {
 import type { Procedure, ProcedureParameter, ProcedureStep } from "../../types";
 
 export default function ProcedureExplorer() {
+  const prettifyShortcut = usePrettifyShortcut();
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
   const procedureData = useRouteData<{
@@ -327,7 +328,7 @@ export default function ProcedureExplorer() {
                 <TooltipContent>
                   <HStack>
                     <span>Add Step</span>
-                    <Kbd>{prettifyKeyboardShortcut("Command+Shift+a")}</Kbd>
+                    <Kbd>{prettifyShortcut("Command+Shift+a")}</Kbd>
                   </HStack>
                 </TooltipContent>
               </Tooltip>
@@ -397,7 +398,7 @@ export default function ProcedureExplorer() {
                 <TooltipContent>
                   <HStack>
                     <span>Add Parameter</span>
-                    <Kbd>{prettifyKeyboardShortcut("Command+Shift+p")}</Kbd>
+                    <Kbd>{prettifyShortcut("Command+Shift+p")}</Kbd>
                   </HStack>
                 </TooltipContent>
               </Tooltip>

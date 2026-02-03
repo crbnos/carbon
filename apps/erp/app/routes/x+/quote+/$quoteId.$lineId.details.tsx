@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
-import { Spinner } from "@carbon/react";
+import { Spinner, VStack } from "@carbon/react";
 import { Fragment, Suspense, useMemo } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
@@ -23,11 +23,16 @@ import type {
   QuoteMethod
 } from "~/modules/sales";
 import {
+  getConfigurationParametersByQuoteLineId,
+  getModelByQuoteLineId,
   getOpportunityLineDocuments,
   getQuoteLine,
   getQuoteLinePrices,
+  getQuoteMaterialsByMethodId,
   getQuoteOperationsByLine,
+  getQuoteOperationsByMethodId,
   getRelatedPricesForQuoteLine,
+  getRootQuoteMakeMethod,
   quoteLineValidator,
   upsertQuoteLine
 } from "~/modules/sales";
@@ -36,18 +41,22 @@ import {
   OpportunityLineNotes
 } from "~/modules/sales/ui/Opportunity";
 import {
+  QuoteBillOfMaterial,
+  QuoteBillOfProcess,
   QuoteLineCosting,
   QuoteLineForm,
   QuoteLinePricing,
+  QuoteMakeMethodTools,
   useLineCosts
 } from "~/modules/sales/ui/Quotes";
 import QuoteLinePricingHistory from "~/modules/sales/ui/Quotes/QuoteLinePricingHistory";
 import QuoteLineRiskRegister from "~/modules/sales/ui/Quotes/QuoteLineRiskRegister";
+import { getTagsList } from "~/modules/shared";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { companyId } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "sales"
   });
 
@@ -72,6 +81,50 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
   const itemId = line.data.itemId!;
 
+  const rootMethod = await getRootQuoteMakeMethod(serviceRole, lineId);
+
+  const methodData = rootMethod.data
+    ? await (async () => {
+        const methodId = rootMethod.data.id;
+        const [materials, methodOperations, tags] = await Promise.all([
+          getQuoteMaterialsByMethodId(serviceRole, methodId),
+          getQuoteOperationsByMethodId(serviceRole, methodId),
+          getTagsList(client, companyId, "operation")
+        ]);
+
+        return {
+          methodMaterials:
+            materials?.data?.map((m) => ({
+              ...m,
+              itemType: m.itemType as "Part",
+              unitOfMeasureCode: m.unitOfMeasureCode ?? "",
+              quoteOperationId: m.quoteOperationId ?? undefined
+            })) ?? [],
+          methodOperations:
+            methodOperations.data?.map((o) => ({
+              ...o,
+              description: o.description ?? "",
+              workCenterId: o.workCenterId ?? undefined,
+              laborRate: o.laborRate ?? 0,
+              machineRate: o.machineRate ?? 0,
+              operationSupplierProcessId:
+                o.operationSupplierProcessId ?? undefined,
+              quoteMakeMethodId: o.quoteMakeMethodId ?? methodId,
+              workInstruction: o.workInstruction as JSONContent,
+              tags: o.tags ?? []
+            })) ?? [],
+          configurationParameters: getConfigurationParametersByQuoteLineId(
+            serviceRole,
+            lineId,
+            companyId
+          ),
+          model: getModelByQuoteLineId(serviceRole, lineId),
+          tags: tags.data ?? [],
+          rootMethodId: methodId
+        };
+      })()
+    : null;
+
   return {
     line: line.data,
     operations: operations?.data ?? [],
@@ -82,7 +135,8 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       acc[price.quantity] = price;
       return acc;
     }, {}),
-    relatedPrices: getRelatedPricesForQuoteLine(serviceRole, itemId, quoteId)
+    relatedPrices: getRelatedPricesForQuoteLine(serviceRole, itemId, quoteId),
+    methodData
   };
 };
 
@@ -128,8 +182,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function QuoteLine() {
-  const { line, operations, files, pricesByQuantity, relatedPrices } =
-    useLoaderData<typeof loader>();
+  const {
+    line,
+    operations,
+    files,
+    pricesByQuantity,
+    relatedPrices,
+    methodData
+  } = useLoaderData<typeof loader>();
   const permissions = usePermissions();
   const { quoteId, lineId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
@@ -179,7 +239,28 @@ export default function QuoteLine() {
 
   return (
     <Fragment key={lineId}>
+      <QuoteMakeMethodTools />
       <QuoteLineForm key={lineId} initialValues={initialValues} />
+
+      {methodData && (
+        <VStack spacing={2}>
+          <QuoteBillOfMaterial
+            key={`bom:${methodData.rootMethodId}`}
+            quoteMakeMethodId={methodData.rootMethodId}
+            // @ts-ignore
+            materials={methodData.methodMaterials}
+            // @ts-expect-error
+            operations={methodData.methodOperations}
+          />
+          <QuoteBillOfProcess
+            key={`bop:${methodData.rootMethodId}`}
+            quoteMakeMethodId={methodData.rootMethodId}
+            // @ts-expect-error
+            operations={methodData.methodOperations}
+            tags={methodData.tags ?? []}
+          />
+        </VStack>
+      )}
 
       {line.methodType === "Make" &&
         line.status !== "No Quote" &&
@@ -235,7 +316,6 @@ export default function QuoteLine() {
         internalNotes={line.internalNotes as JSONContent}
         externalNotes={line.externalNotes as JSONContent}
       />
-
       <Suspense
         fallback={
           <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
@@ -257,17 +337,38 @@ export default function QuoteLine() {
         </Await>
       </Suspense>
 
-      <CadModel
-        isReadOnly={!permissions.can("update", "sales")}
-        metadata={{
-          quoteLineId: line.id ?? undefined,
-          itemId: line.itemId ?? undefined
-        }}
-        modelPath={line?.modelPath ?? null}
-        title="CAD Model"
-        uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
-        viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
-      />
+      {methodData ? (
+        <Suspense fallback={null}>
+          <Await resolve={methodData.model}>
+            {(model) => (
+              <CadModel
+                key={`cad:${model?.itemId}`}
+                isReadOnly={!permissions.can("update", "sales")}
+                metadata={{
+                  quoteLineId: lineId ?? undefined,
+                  itemId: model?.itemId ?? undefined
+                }}
+                modelPath={model?.modelPath ?? null}
+                title="CAD Model"
+                uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
+                viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
+              />
+            )}
+          </Await>
+        </Suspense>
+      ) : (
+        <CadModel
+          isReadOnly={!permissions.can("update", "sales")}
+          metadata={{
+            quoteLineId: line.id ?? undefined,
+            itemId: line.itemId ?? undefined
+          }}
+          modelPath={line?.modelPath ?? null}
+          title="CAD Model"
+          uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
+          viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
+        />
+      )}
 
       <QuoteLineRiskRegister quoteLineId={lineId} itemId={line.itemId ?? ""} />
 

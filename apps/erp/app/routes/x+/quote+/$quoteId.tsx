@@ -35,6 +35,7 @@ import {
   QuoteProperties
 } from "~/modules/sales/ui/Quotes";
 import { useOptimisticDocumentDrag } from "~/modules/sales/ui/Quotes/QuoteExplorer";
+import { getCompanySettings } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -74,7 +75,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     prices,
     opportunity,
     methods,
-    opportunityDocuments
+    opportunityDocuments,
+    companySettings
   ] = await Promise.all([
     getCustomer(client, quote.data?.customerId ?? ""),
     getQuoteShipment(client, quoteId),
@@ -83,7 +85,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getQuoteLinePricesByQuoteId(client, quoteId),
     getOpportunity(client, quote.data?.opportunityId),
     getQuoteMethodTrees(client, quoteId),
-    getOpportunityDocuments(client, companyId, quote.data?.opportunityId ?? "")
+    getOpportunityDocuments(client, companyId, quote.data?.opportunityId ?? ""),
+    getCompanySettings(client, companyId)
   ]);
 
   if (!opportunity.data) throw new Error("Failed to get opportunity record");
@@ -132,6 +135,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const defaultCc =
+    customer.data?.defaultCc?.length > 0
+      ? customer.data.defaultCc
+      : (companySettings.data?.defaultCustomerCc ?? []);
+
   return {
     quote: quote.data,
     customer: customer.data,
@@ -143,7 +151,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     payment: payment.data,
     opportunity: opportunity.data,
     exchangeRate,
-    salesOrderLines: salesOrderLines?.data ?? null
+    salesOrderLines: salesOrderLines?.data ?? null,
+    defaultCc
   };
 }
 

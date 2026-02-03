@@ -19,7 +19,7 @@ import {
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 
-import type { action } from "~/routes/x+/part+/$itemId.manufacturing.$methodId.method";
+import type { action } from "~/routes/x+/part+/$itemId.details";
 import { itemManufacturingValidator } from "../../items.models";
 
 type ItemManufacturingFormProps = {
@@ -49,6 +49,7 @@ const ItemManufacturingForm = ({
           <CardTitle>Manufacturing</CardTitle>
         </CardHeader>
         <CardContent>
+          <Hidden name="intent" value="manufacturing" />
           <Hidden name="itemId" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
             <Number name="lotSize" label="Batch Size" />

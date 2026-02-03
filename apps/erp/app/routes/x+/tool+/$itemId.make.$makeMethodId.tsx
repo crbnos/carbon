@@ -19,14 +19,8 @@ import {
   BillOfProcess,
   MakeMethodTools
 } from "~/modules/items/ui/Item";
-import type {
-  MethodItemType,
-  MethodType
-} from "~/modules/shared";
-import {
-  getModelByItemId,
-  getTagsList,
-} from "~/modules/shared";
+import type { MethodItemType, MethodType } from "~/modules/shared";
+import { getModelByItemId, getTagsList } from "~/modules/shared";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -77,7 +71,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     makeMethod: makeMethod.data,
-
     methodMaterials:
       methodMaterials.data?.map((m) => ({
         ...m,
@@ -106,15 +99,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export default function MethodMaterialMakePage() {
+export default function ToolMakeMethodPage() {
   const loaderData = useLoaderData<typeof loader>();
   const permissions = usePermissions();
   const { makeMethod, makeMethods, methodMaterials, methodOperations, tags } =
     loaderData;
 
-  const { itemId, methodId, makeMethodId } = useParams();
+  const { itemId, makeMethodId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
-  if (!methodId) throw new Error("Could not find methodId");
   if (!makeMethodId) throw new Error("Could not find makeMethodId");
 
   return (
@@ -126,29 +118,24 @@ export default function MethodMaterialMakePage() {
               itemId={makeMethod.itemId}
               makeMethods={makeMethods.data ?? []}
               type="Tool"
+              currentMethodId={makeMethod.id}
             />
           )}
         </Await>
       </Suspense>
 
       <BillOfMaterial
-        key={`bom:${itemId}`}
+        key={`bom:${makeMethodId}`}
         makeMethod={makeMethod}
         materials={methodMaterials}
         operations={methodOperations}
-        // configurable={routeData?.toolManufacturing.requiresConfiguration}
-        // configurationRules={routeData?.configurationRules}
-        // parameters={routeData?.configurationParametersAndGroups.parameters}
       />
       <BillOfProcess
-        key={`bop:${itemId}`}
+        key={`bop:${makeMethodId}`}
         makeMethod={makeMethod}
         materials={methodMaterials}
         // @ts-ignore
         operations={methodOperations}
-        // configurable={routeData?.toolManufacturing.requiresConfiguration}
-        // configurationRules={routeData?.configurationRules}
-        // parameters={routeData?.configurationParametersAndGroups.parameters}
         tags={tags}
       />
       <Suspense fallback={null}>
@@ -156,7 +143,7 @@ export default function MethodMaterialMakePage() {
           {(model) => (
             <CadModel
               key={`cad:${model.itemId}`}
-              isReadOnly={!permissions.can("update", "sales")}
+              isReadOnly={!permissions.can("update", "parts")}
               metadata={{
                 itemId: model?.itemId ?? undefined
               }}

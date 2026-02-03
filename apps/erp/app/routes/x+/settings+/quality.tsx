@@ -128,6 +128,7 @@ export default function QualitySettingsRoute() {
                   <Users
                     name="gaugeCalibrationExpiredNotificationGroup"
                     label="Who should receive notifications when a gauge goes out of calibration?"
+                    type="employee"
                   />
                 </div>
               </div>

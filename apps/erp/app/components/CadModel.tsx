@@ -29,6 +29,7 @@ type CadModelProps = {
   metadata?: {
     itemId?: string;
     salesRfqLineId?: string;
+    purchasingRfqLineId?: string;
     quoteLineId?: string;
     salesOrderLineId?: string;
     jobId?: string;

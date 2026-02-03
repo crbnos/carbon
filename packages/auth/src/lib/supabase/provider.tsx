@@ -20,6 +20,9 @@ interface ICarbonStore {
 
 const CarbonContext = createContext<StoreApi<ICarbonStore>>(null);
 
+// Module-level store reference that persists across HMR
+let __hmrStore: StoreApi<ICarbonStore> | null = null;
+
 export const CarbonProvider = ({
   children,
   session
@@ -41,6 +44,8 @@ export const CarbonProvider = ({
         set({ accessToken, isRealtimeAuthSet: true });
       }
     }));
+    // Keep a module-level reference for HMR recovery
+    __hmrStore = store.current;
   }
 
   const { carbon, setAuthToken } = useStore<StoreApi<ICarbonStore>>(
@@ -106,7 +111,12 @@ export const CarbonProvider = ({
 };
 
 export const useCarbon = () => {
-  const store = useContext(CarbonContext);
+  let store = useContext(CarbonContext);
+
+  // During HMR, the context can temporarily be null - use the module-level store
+  if (!store && __hmrStore) {
+    store = __hmrStore;
+  }
 
   if (!store) {
     throw new Error("useCarbon must be used within a CarbonProvider");

@@ -25,7 +25,7 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
-import { Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   LuGitBranch,
   LuGitFork,
@@ -35,16 +35,16 @@ import {
   LuTriangleAlert
 } from "react-icons/lu";
 import { RiProgress4Line } from "react-icons/ri";
-import { Await, Link, useFetcher, useLocation, useParams } from "react-router";
+import { Link, useFetcher, useLocation, useParams } from "react-router";
 import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
-import { Hidden, Item, Submit } from "~/components/Form";
+import { Hidden, Item, Submit, useConfigurableItems } from "~/components/Form";
 import type { Tree } from "~/components/TreeView";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import type {
-  ConfigurationParameter,
-  ConfigurationParameterGroup
+import {
+  type ConfigurationParameter,
+  type ConfigurationParameterGroup,
+  getConfigurationParameters
 } from "~/modules/items";
-import { getConfigurationParameters } from "~/modules/items";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import MakeMethodVersionStatus from "~/modules/items/ui/Item/MakeMethodVersionStatus";
 import type { MethodItemType } from "~/modules/shared/types";
@@ -81,13 +81,6 @@ const QuoteMakeMethodTools = () => {
       ? getLinkToItemDetails(itemType as MethodItemType, itemId)
       : null;
 
-  const lineData = useRouteData<{
-    configurationParameters: Promise<{
-      groups: ConfigurationParameterGroup[];
-      parameters: ConfigurationParameter[];
-    }>;
-  }>(path.to.quoteLineMethod(quoteId, lineId!, methodId!));
-
   const line = routeData?.lines.find((line) => line.id === lineId);
   const { pathname } = useLocation();
 
@@ -97,7 +90,13 @@ const QuoteMakeMethodTools = () => {
   const hasMethods = methodTree?.children && methodTree.children.length > 0;
 
   const isGetMethodLoading =
-    fetcher.state !== "idle" && fetcher.formAction === path.to.quoteMethodGet;
+    fetcher.state !== "idle" &&
+    fetcher.formAction === path.to.quoteMethodGet &&
+    !fetcher.formData?.get("configuration");
+  const isConfigureLoading =
+    fetcher.state !== "idle" &&
+    fetcher.formAction === path.to.quoteMethodGet &&
+    !!fetcher.formData?.get("configuration");
   const isSaveMethodLoading =
     fetcher.state !== "idle" && fetcher.formAction === path.to.quoteMethodSave;
 
@@ -114,7 +113,10 @@ const QuoteMakeMethodTools = () => {
   const getMethodModal = useDisclosure();
   const saveMethodModal = useDisclosure();
 
+  const isQuoteLineDetails =
+    lineId && pathname === path.to.quoteLine(quoteId, lineId);
   const isQuoteLineMethod =
+    isQuoteLineDetails ||
     pathname === path.to.quoteLineMethod(quoteId, lineId!, methodId!);
   const isQuoteMakeMethod =
     methodId &&
@@ -122,35 +124,49 @@ const QuoteMakeMethodTools = () => {
 
   const { carbon } = useCarbon();
 
+  const configureSelectModal = useDisclosure();
   const configuratorModal = useDisclosure();
-  const [isConfigured, setIsConfigured] = useState(false);
-  const getIsConfigured = async () => {
-    if (isQuoteLineMethod && line?.itemId && carbon) {
-      const { data, error } = await carbon
-        .from("itemReplenishment")
-        .select("requiresConfiguration")
-        .eq("itemId", line.itemId)
-        .single();
 
-      if (error) {
-        console.error(error);
-      }
+  // State for configurable items
+  const configurableItemIds = useConfigurableItems();
+  const [selectedConfigureItemId, setSelectedConfigureItemId] = useState<
+    string | null
+  >(null);
+  const [configurationParameters, setConfigurationParameters] = useState<{
+    groups: ConfigurationParameterGroup[];
+    parameters: ConfigurationParameter[];
+  }>({ groups: [], parameters: [] });
 
-      setIsConfigured(data?.requiresConfiguration ?? false);
-    }
+  const handleConfigureItemSelect = async (itemId: string | null) => {
+    if (!itemId || !carbon) return;
+
+    setSelectedConfigureItemId(itemId);
+
+    // Fetch configuration parameters for the selected item
+    const params = await getConfigurationParameters(carbon, itemId, companyId);
+    setConfigurationParameters(params);
+
+    configureSelectModal.onClose();
+    configuratorModal.onOpen();
   };
-
-  useMount(() => {
-    getIsConfigured();
-  });
 
   const saveConfiguration = async (configuration: Record<string, any>) => {
     configuratorModal.onClose();
-    fetcher.submit(JSON.stringify(configuration), {
-      method: "post",
-      action: path.to.quoteLineConfigure(quoteId, lineId!),
-      encType: "application/json"
-    });
+    const sourceId = selectedConfigureItemId;
+    setSelectedConfigureItemId(null);
+    setConfigurationParameters({ groups: [], parameters: [] });
+    fetcher.submit(
+      {
+        type: "item",
+        targetId: `${quoteId}:${lineId}`,
+        sourceId,
+        configuration: JSON.stringify(configuration)
+      },
+      {
+        method: "post",
+        action: path.to.quoteMethodGet
+      }
+    );
   };
 
   const {
@@ -162,16 +178,6 @@ const QuoteMakeMethodTools = () => {
   const [selectedMakeMethod, setSelectedMakeMethod] = useState<string | null>(
     null
   );
-  const [sourceItemRequiresConfiguration, setSourceItemRequiresConfiguration] =
-    useState(false);
-  const [
-    sourceItemConfigurationParameters,
-    setSourceItemConfigurationParameters
-  ] = useState<{
-    groups: ConfigurationParameterGroup[];
-    parameters: ConfigurationParameter[];
-  }>({ groups: [], parameters: [] });
-  const [pendingGetMethodData, setPendingGetMethodData] = useState<any>(null);
 
   const getMakeMethods = async (itemId: string) => {
     setMakeMethods([]);
@@ -237,18 +243,14 @@ const QuoteMakeMethodTools = () => {
                 >
                   Save Method
                 </MenubarItem>
-                {isConfigured && isQuoteLineMethod && (
+                {configurableItemIds.length > 0 && isQuoteLineMethod && (
                   <MenubarItem
                     leftIcon={<LuSettings />}
-                    isDisabled={!permissions.can("update", "sales")}
-                    isLoading={
-                      fetcher.state !== "idle" &&
-                      fetcher.formAction ===
-                        path.to.quoteLineConfigure(quoteId, lineId!)
+                    isDisabled={
+                      !permissions.can("update", "sales") || isConfigureLoading
                     }
-                    onClick={() => {
-                      configuratorModal.onOpen();
-                    }}
+                    isLoading={isConfigureLoading}
+                    onClick={configureSelectModal.onOpen}
                   >
                     Configure
                   </MenubarItem>
@@ -279,65 +281,7 @@ const QuoteMakeMethodTools = () => {
               fetcher={fetcher}
               action={path.to.quoteMethodGet}
               validator={getMethodValidator}
-              onSubmit={async (data, e) => {
-                if (e) {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }
-
-                const sourceId = data.sourceId as string;
-                const type = data.type as string;
-
-                // Only check configuration for "item" and "method" types, not "quoteLine"
-                if (
-                  sourceId &&
-                  carbon &&
-                  (type === "item" || type === "method")
-                ) {
-                  // Store the form data for later use
-                  setPendingGetMethodData(data);
-
-                  // Check if the source item requires configuration
-                  const { data: replenishmentData } = await carbon
-                    .from("itemReplenishment")
-                    .select("requiresConfiguration, companyId")
-                    .eq("itemId", sourceId)
-                    .single();
-
-                  if (replenishmentData?.requiresConfiguration) {
-                    // Get configuration parameters for the source item
-                    const companyId = replenishmentData?.companyId;
-                    if (!companyId) {
-                      toast.error("Unable to get company ID");
-                      return;
-                    }
-                    const configParams = await getConfigurationParameters(
-                      carbon,
-                      sourceId,
-                      companyId
-                    );
-
-                    setSourceItemRequiresConfiguration(true);
-                    setSourceItemConfigurationParameters(configParams);
-                    getMethodModal.onClose();
-                    configuratorModal.onOpen();
-                  } else {
-                    // No configuration needed, proceed with normal submission
-                    fetcher.submit(data, {
-                      method: "post",
-                      action: path.to.quoteMethodGet
-                    });
-                    getMethodModal.onClose();
-                  }
-                } else {
-                  // No sourceId, no carbon, or type is "quoteLine" - proceed with normal submission
-                  fetcher.submit(data, {
-                    method: "post",
-                    action: path.to.quoteMethodGet
-                  });
-                  getMethodModal.onClose();
-                }
-              }}
+              onSubmit={getMethodModal.onClose}
             >
               <ModalHeader>
                 <ModalTitle>Get Method</ModalTitle>
@@ -365,6 +309,7 @@ const QuoteMakeMethodTools = () => {
                           name="sourceId"
                           label="Source Method"
                           type={(line?.itemType ?? "Part") as "Part"}
+                          blacklist={configurableItemIds}
                           includeInactive={includeInactive === true}
                           replenishmentSystem="Make"
                         />
@@ -406,6 +351,7 @@ const QuoteMakeMethodTools = () => {
                         name="sourceId"
                         label="Source Method"
                         type={(line?.itemType ?? "Part") as "Part"}
+                        blacklist={configurableItemIds}
                         includeInactive={includeInactive === true}
                         replenishmentSystem="Make"
                       />
@@ -504,6 +450,7 @@ const QuoteMakeMethodTools = () => {
                     name="itemId"
                     label="Target Method"
                     type={(line?.itemType ?? "Part") as "Part"}
+                    blacklist={configurableItemIds}
                     onChange={(value) => {
                       if (value) {
                         getMakeMethods(value?.value);
@@ -558,69 +505,64 @@ const QuoteMakeMethodTools = () => {
           </ModalContent>
         </Modal>
       )}
-      {configuratorModal.isOpen && (
-        <Suspense fallback={null}>
-          {sourceItemRequiresConfiguration ? (
-            // Configurator for source item when getting method
-            <ConfiguratorModal
-              open
-              destructive
-              initialValues={{} as Record<string, any>}
-              groups={sourceItemConfigurationParameters.groups}
-              parameters={sourceItemConfigurationParameters.parameters}
-              onClose={() => {
-                configuratorModal.onClose();
-                setSourceItemRequiresConfiguration(false);
-                setSourceItemConfigurationParameters({
-                  groups: [],
-                  parameters: []
-                });
-              }}
-              onSubmit={(config: Record<string, any>) => {
-                // Submit the get method with configuration
-                if (pendingGetMethodData) {
-                  const dataWithConfig = {
-                    ...pendingGetMethodData,
-                    configuration: JSON.stringify(config)
-                  };
-
-                  fetcher.submit(dataWithConfig, {
-                    method: "post",
-                    action: path.to.quoteMethodGet
-                  });
-
-                  setPendingGetMethodData(null);
-                }
-
-                configuratorModal.onClose();
-                setSourceItemRequiresConfiguration(false);
-                setSourceItemConfigurationParameters({
-                  groups: [],
-                  parameters: []
-                });
-              }}
-            />
-          ) : (
-            // Regular configurator for line configuration
-            <Await resolve={lineData?.configurationParameters}>
-              {(configurationParameters) => (
-                <ConfiguratorModal
-                  open
-                  destructive
-                  initialValues={
-                    (line?.configuration || {}) as Record<string, any>
-                  }
-                  groups={configurationParameters?.groups ?? []}
-                  parameters={configurationParameters?.parameters ?? []}
-                  onClose={configuratorModal.onClose}
-                  onSubmit={(config: Record<string, any>) => {
-                    saveConfiguration(config);
+      {configureSelectModal.isOpen && (
+        <Modal
+          open
+          onOpenChange={(open) => {
+            if (!open) {
+              configureSelectModal.onClose();
+            }
+          }}
+        >
+          <ModalContent>
+            <ValidatedForm validator={getMethodValidator} onSubmit={() => {}}>
+              <ModalHeader>
+                <ModalTitle>Configure Item</ModalTitle>
+                <ModalDescription>Select an item to configure</ModalDescription>
+              </ModalHeader>
+              <ModalBody>
+                <Item
+                  name="sourceId"
+                  label="Item"
+                  type={(line?.itemType ?? "Part") as "Part"}
+                  includeInactive={includeInactive === true}
+                  whitelist={configurableItemIds}
+                  replenishmentSystem="Make"
+                  onChange={(value) => {
+                    if (value) {
+                      handleConfigureItemSelect(value.value);
+                    }
                   }}
                 />
-              )}
-            </Await>
-          )}
-        </Suspense>
+              </ModalBody>
+              <ModalFooter>
+                <Button
+                  onClick={configureSelectModal.onClose}
+                  variant="secondary"
+                >
+                  Cancel
+                </Button>
+              </ModalFooter>
+            </ValidatedForm>
+          </ModalContent>
+        </Modal>
+      )}
+      {configuratorModal.isOpen && (
+        <ConfiguratorModal
+          open
+          destructive
+          initialValues={{}}
+          groups={configurationParameters.groups}
+          parameters={configurationParameters.parameters}
+          onClose={() => {
+            configuratorModal.onClose();
+            setSelectedConfigureItemId(null);
+            setConfigurationParameters({ groups: [], parameters: [] });
+          }}
+          onSubmit={(config: Record<string, any>) => {
+            saveConfiguration(config);
+          }}
+        />
       )}
     </>
   );

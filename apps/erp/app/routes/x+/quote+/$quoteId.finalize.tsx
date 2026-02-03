@@ -7,7 +7,7 @@ import type { sendEmailResendTask } from "@carbon/jobs/trigger/send-email-resend
 import { getLocalTimeZone, now } from "@internationalized/date";
 import { renderAsync } from "@react-email/components";
 import { tasks } from "@trigger.dev/sdk";
-import type { ActionFunctionArgs, } from "react-router";
+import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { upsertDocument } from "~/modules/documents";
 import {
@@ -143,7 +143,11 @@ export async function action(args: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { notification, customerContact: customerContactId } = validation.data;
+  const {
+    notification,
+    customerContact: customerContactId,
+    cc: ccSelections
+  } = validation.data;
 
   switch (notification) {
     case "Email":
@@ -189,6 +193,7 @@ export async function action(args: ActionFunctionArgs) {
 
         await tasks.trigger<typeof sendEmailResendTask>("send-email-resend", {
           to: [user.data.email, customerContact.data.contact!.email!],
+          cc: ccSelections?.length ? ccSelections : undefined,
           from: user.data.email,
           subject: `Quote ${quote.data.quoteId}`,
           html,

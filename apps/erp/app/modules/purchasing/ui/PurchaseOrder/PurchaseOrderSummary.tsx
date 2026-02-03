@@ -343,7 +343,7 @@ const PurchaseOrderSummary = ({
     supplier: Supplier;
   }>(path.to.purchaseOrder(orderId));
 
-  const isEditable = ["Draft", "To Review"].includes(
+  const isEditable = ["Draft", "To Review", "Needs Approval"].includes(
     routeData?.purchaseOrder?.status ?? ""
   );
 

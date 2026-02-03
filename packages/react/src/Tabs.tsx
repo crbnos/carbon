@@ -36,7 +36,7 @@ const TabsTrigger = forwardRef<
       variant === "primary" &&
         "data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow",
       variant === "secondary" &&
-        "data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow",
+        "data-[state=active]:bg-background  data-[state=active]:text-foreground",
       className
     )}
     {...props}

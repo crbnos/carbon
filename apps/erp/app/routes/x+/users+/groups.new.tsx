@@ -2,7 +2,10 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import type { ActionFunctionArgs } from "react-router";
+import type {
+  ActionFunctionArgs,
+  ClientActionFunctionArgs
+} from "react-router";
 import { data, redirect } from "react-router";
 import {
   deleteGroup,
@@ -12,6 +15,7 @@ import {
   upsertGroupMembers
 } from "~/modules/users";
 import { path } from "~/utils/path";
+import { getCompanyId } from "~/utils/react-query";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -66,6 +70,17 @@ export async function action({ request }: ActionFunctionArgs) {
     path.to.groups,
     await flash(request, success("Group created"))
   );
+}
+
+export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
+  const companyId = getCompanyId();
+  window.clientCache?.invalidateQueries({
+    predicate: (query) => {
+      const queryKey = query.queryKey as string[];
+      return queryKey[0] === "groupsByType" && queryKey[1] === companyId;
+    }
+  });
+  return await serverAction();
 }
 
 export default function NewGroupRoute() {

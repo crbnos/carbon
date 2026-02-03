@@ -1,3 +1,4 @@
+import { getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
   Badge,
@@ -28,9 +29,7 @@ import {
   Thead,
   Tr
 } from "@carbon/react";
-import type {
-  ChartConfig,
-} from "@carbon/react/Chart";
+import type { ChartConfig } from "@carbon/react/Chart";
 import {
   ChartContainer,
   ChartTooltip,
@@ -55,15 +54,8 @@ import {
   LuLayoutList,
   LuPackageSearch
 } from "react-icons/lu";
-import type {
-  LoaderFunctionArgs,
-} from "react-router";
-import {
-  Await,
-  Link,
-  useFetcher,
-  useLoaderData
-} from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { Await, Link, useFetcher, useLoaderData } from "react-router";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { Empty, Hyperlink, SupplierAvatar } from "~/components";
 import { useUser } from "~/hooks";
@@ -75,6 +67,10 @@ import { getPurchasingDocumentsAssignedToMe } from "~/modules/purchasing";
 import { KPIs } from "~/modules/purchasing/purchasing.models";
 import { PurchasingStatus } from "~/modules/purchasing/ui/PurchaseOrder";
 import { SupplierQuoteStatus } from "~/modules/purchasing/ui/SupplierQuote";
+import {
+  type ApprovalRequest,
+  getPendingApprovalsForApprover
+} from "~/modules/shared";
 import { chartIntervals } from "~/modules/shared/shared.models";
 import type { loader as kpiLoader } from "~/routes/api+/purchasing.kpi.$key";
 import { useSuppliers } from "~/stores/suppliers";
@@ -92,6 +88,8 @@ const OPEN_PURCHASE_ORDER_STATUSES = [
   "To Review",
   "To Receive",
   "To Receive and Invoice",
+  "Needs Approval",
+  "Planned",
   "To Invoice"
 ] as const;
 
@@ -102,45 +100,79 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "purchasing"
   });
 
-  const [openPurchaseOrders, openPurchaseInvoices, openSupplierQuotes] =
-    await Promise.all([
-      client
-        .from("purchaseOrder")
-        .select(
-          "id, purchaseOrderId, status, supplierId, assignee, createdAt",
-          {
-            count: "exact"
-          }
-        )
-        .in("status", OPEN_PURCHASE_ORDER_STATUSES)
-        .eq("companyId", companyId)
-        .limit(10),
-      client
-        .from("purchaseInvoice")
-        .select("id, invoiceId, status, supplierId, assignee, createdAt", {
-          count: "exact"
-        })
-        .in("status", OPEN_INVOICE_STATUSES)
-        .eq("companyId", companyId)
-        .limit(10),
-      client
-        .from("supplierQuote")
-        .select(
-          "id, supplierQuoteId, status, supplierId, assignee, createdAt",
-          {
-            count: "exact"
-          }
-        )
-        .in("status", OPEN_SUPPLIER_QUOTE_STATUSES)
-        .eq("companyId", companyId)
-        .limit(10)
-    ]);
+  const serviceRole = getCarbonServiceRole();
+
+  // Get pending approval requests to find which POs the user can approve
+  const pendingApprovals = await getPendingApprovalsForApprover(
+    serviceRole,
+    userId,
+    companyId
+  );
+
+  // Extract purchase order IDs that need approval and user can approve
+  const approvalPoIds =
+    pendingApprovals.data
+      ?.filter(
+        (approval: ApprovalRequest) =>
+          approval.documentType === "purchaseOrder" && approval.documentId
+      )
+      .map((approval: ApprovalRequest) => approval.documentId!)
+      .filter((id): id is string => !!id) ?? [];
+
+  const [
+    openPurchaseOrders,
+    openPurchaseInvoices,
+    openSupplierQuotes,
+    purchaseOrdersNeedingApproval
+  ] = await Promise.all([
+    client
+      .from("purchaseOrder")
+      .select("id, purchaseOrderId, status, supplierId, assignee, createdAt", {
+        count: "exact"
+      })
+      .in("status", OPEN_PURCHASE_ORDER_STATUSES)
+      .eq("companyId", companyId)
+      .limit(10),
+    client
+      .from("purchaseInvoice")
+      .select("id, invoiceId, status, supplierId, assignee, createdAt", {
+        count: "exact"
+      })
+      .in("status", OPEN_INVOICE_STATUSES)
+      .eq("companyId", companyId)
+      .limit(10),
+    client
+      .from("supplierQuote")
+      .select("id, supplierQuoteId, status, supplierId, assignee, createdAt", {
+        count: "exact"
+      })
+      .in("status", OPEN_SUPPLIER_QUOTE_STATUSES)
+      .eq("companyId", companyId)
+      .limit(10),
+    approvalPoIds.length > 0
+      ? client
+          .from("purchaseOrder")
+          .select(
+            "id, purchaseOrderId, status, supplierId, assignee, createdAt"
+          )
+          .eq("status", "Needs Approval")
+          .eq("companyId", companyId)
+          .in("id", approvalPoIds)
+      : { data: [], error: null }
+  ]);
+
+  const assignedToMePromise = getPurchasingDocumentsAssignedToMe(
+    client,
+    userId,
+    companyId
+  );
 
   return {
     openPurchaseOrders: openPurchaseOrders,
     openSupplierQuotes: openSupplierQuotes,
     openPurchaseInvoices: openPurchaseInvoices,
-    assignedToMe: getPurchasingDocumentsAssignedToMe(client, userId, companyId)
+    purchaseOrdersNeedingApproval: purchaseOrdersNeedingApproval,
+    assignedToMe: assignedToMePromise
   };
 }
 
@@ -149,6 +181,7 @@ export default function PurchaseDashboard() {
     openPurchaseOrders,
     openSupplierQuotes,
     openPurchaseInvoices,
+    purchaseOrdersNeedingApproval,
     assignedToMe
   } = useLoaderData<typeof loader>();
 
@@ -165,11 +198,26 @@ export default function PurchaseDashboard() {
       ...(openPurchaseInvoices.data?.map((doc) => ({
         ...doc,
         type: "purchaseInvoice"
+      })) ?? []),
+      ...(purchaseOrdersNeedingApproval.data?.map((doc) => ({
+        ...doc,
+        type: "purchaseOrder"
       })) ?? [])
-    ].sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
+    ]
+      .filter(
+        (doc, index, self) =>
+          index ===
+          self.findIndex((d) => d.id === doc.id && d.type === doc.type)
+      )
+      .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
 
     return merged;
-  }, [openPurchaseOrders, openSupplierQuotes, openPurchaseInvoices]);
+  }, [
+    openPurchaseOrders,
+    openSupplierQuotes,
+    openPurchaseInvoices,
+    purchaseOrdersNeedingApproval
+  ]);
 
   const kpiFetcher = useFetcher<typeof kpiLoader>();
   const isFetching = kpiFetcher.state !== "idle" || !kpiFetcher.data;
@@ -577,7 +625,7 @@ export default function PurchaseDashboard() {
                     <Tr>
                       <Th>Document</Th>
                       <Th>Status</Th>
-                      <Th>Customer</Th>
+                      <Th>Supplier</Th>
                     </Tr>
                   </Thead>
                   <Tbody>
@@ -623,7 +671,7 @@ export default function PurchaseDashboard() {
           <CardHeader className="px-6 pb-0">
             <CardTitle>Assigned to Me</CardTitle>
             <CardDescription className="text-sm">
-              Sales documents currently assigned to me
+              Purchasing documents assigned to me and pending approvals
             </CardDescription>
           </CardHeader>
           <CardContent className="p-6 min-h-[200px]">
@@ -632,52 +680,14 @@ export default function PurchaseDashboard() {
                 resolve={assignedToMe}
                 errorElement={<div>Error loading assigned documents</div>}
               >
-                {(assignedDocs) =>
-                  assignedDocs.length > 0 ? (
-                    <Table>
-                      <Thead>
-                        <Tr>
-                          <Th>Document</Th>
-                          <Th>Status</Th>
-                          <Th>Customer</Th>
-                        </Tr>
-                      </Thead>
-                      <Tbody>
-                        {assignedDocs.map((doc) => {
-                          switch (doc.type) {
-                            case "purchaseOrder":
-                              return (
-                                <PurchaseOrderDocumentRow
-                                  key={doc.id}
-                                  doc={doc as unknown as PurchaseOrder}
-                                />
-                              );
-                            case "supplierQuote":
-                              return (
-                                <SupplierQuoteRow
-                                  key={doc.id}
-                                  doc={doc as unknown as SupplierQuote}
-                                />
-                              );
-                            case "purchaseInvoice":
-                              return (
-                                <PurchaseInvoiceRow
-                                  key={doc.id}
-                                  doc={doc as unknown as PurchaseInvoice}
-                                />
-                              );
-                            default:
-                              return null;
-                          }
-                        })}
-                      </Tbody>
-                    </Table>
-                  ) : (
-                    <div className="flex justify-center items-center h-full">
-                      <Empty />
-                    </div>
-                  )
-                }
+                {(assignedDocs) => (
+                  <AssignedDocumentsTable
+                    assignedDocs={assignedDocs}
+                    purchaseOrdersNeedingApproval={
+                      purchaseOrdersNeedingApproval.data ?? []
+                    }
+                  />
+                )}
               </Await>
             </Suspense>
           </CardContent>
@@ -685,6 +695,82 @@ export default function PurchaseDashboard() {
       </div>
     </div>
   );
+}
+
+type AssignedDocument = {
+  id: string;
+  type: "purchaseOrder" | "supplierQuote" | "purchaseInvoice";
+  [key: string]: unknown;
+};
+
+function AssignedDocumentsTable({
+  assignedDocs,
+  purchaseOrdersNeedingApproval
+}: {
+  assignedDocs: Array<{ id: string; type: string; [key: string]: unknown }>;
+  purchaseOrdersNeedingApproval: Array<{
+    id: string;
+    purchaseOrderId: string;
+    status: string;
+    supplierId: string | null;
+    assignee: string | null;
+    createdAt: string | null;
+  }>;
+}) {
+  // Merge assigned docs with purchase orders needing approval
+  // Deduplicate: if a PO is both assigned and needs approval, prefer the assigned version
+  const assignedPurchaseOrderIds = new Set(
+    assignedDocs
+      .filter((doc) => doc.type === "purchaseOrder")
+      .map((doc) => doc.id)
+  );
+
+  const approvalDocs = purchaseOrdersNeedingApproval
+    .filter((po) => !assignedPurchaseOrderIds.has(po.id))
+    .map((doc) => ({
+      ...doc,
+      type: "purchaseOrder" as const
+    }));
+
+  const allDocs = [...assignedDocs, ...approvalDocs] as AssignedDocument[];
+
+  if (allDocs.length === 0) {
+    return (
+      <div className="flex justify-center items-center h-full">
+        <Empty />
+      </div>
+    );
+  }
+
+  return (
+    <Table>
+      <Thead>
+        <Tr>
+          <Th>Document</Th>
+          <Th>Status</Th>
+          <Th>Supplier</Th>
+        </Tr>
+      </Thead>
+      <Tbody>
+        {allDocs.map((doc) => (
+          <DocumentRow key={doc.id} doc={doc} />
+        ))}
+      </Tbody>
+    </Table>
+  );
+}
+
+function DocumentRow({ doc }: { doc: AssignedDocument }) {
+  switch (doc.type) {
+    case "purchaseOrder":
+      return <PurchaseOrderDocumentRow doc={doc as unknown as PurchaseOrder} />;
+    case "supplierQuote":
+      return <SupplierQuoteRow doc={doc as unknown as SupplierQuote} />;
+    case "purchaseInvoice":
+      return <PurchaseInvoiceRow doc={doc as unknown as PurchaseInvoice} />;
+    default:
+      return null;
+  }
 }
 
 function SupplierQuoteRow({ doc }: { doc: SupplierQuote }) {
@@ -741,6 +827,7 @@ function PurchaseInvoiceRow({ doc }: { doc: PurchaseInvoice }) {
         </Hyperlink>
       </Td>
       <Td>
+        {/* @ts-expect-error - Return type is not defined */}
         <PurchaseInvoicingStatus status={doc.status} />
       </Td>
       <Td>

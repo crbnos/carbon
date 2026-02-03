@@ -15,9 +15,10 @@ import {
   useDisclosure,
   useKeyboardShortcuts,
   useMount,
+  usePrettifyShortcut,
   VStack
 } from "@carbon/react";
-import { getItemReadableId, prettifyKeyboardShortcut } from "@carbon/utils";
+import { getItemReadableId } from "@carbon/utils";
 import { useRef, useState } from "react";
 import { LuCirclePlus, LuEllipsisVertical, LuTrash } from "react-icons/lu";
 import { Link, useParams } from "react-router";
@@ -32,6 +33,7 @@ import DeleteSupplierQuoteLine from "./DeleteSupplierQuoteLine";
 import SupplierQuoteLineForm from "./SupplierQuoteLineForm";
 
 export default function SupplierQuoteExplorer() {
+  const prettifyShortcut = usePrettifyShortcut();
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
   const routeData = useRouteData<{
@@ -125,7 +127,7 @@ export default function SupplierQuoteExplorer() {
             <TooltipContent>
               <HStack>
                 <span>New Line Item</span>
-                <Kbd>{prettifyKeyboardShortcut("Command+Shift+l")}</Kbd>
+                <Kbd>{prettifyShortcut("Command+Shift+l")}</Kbd>
               </HStack>
             </TooltipContent>
           </Tooltip>
@@ -188,7 +190,7 @@ function SupplierQuoteLineItem({
         <HStack
           className={cn(
             "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
-            isSelected && "bg-accent/60 hover:bg-accent/50 shadow-inner"
+            isSelected && "bg-accent/60 hover:bg-accent/50"
           )}
         >
           <HStack spacing={2} className="flex-grow min-w-0 pr-10">

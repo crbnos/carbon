@@ -10,43 +10,30 @@ import { Link, useNavigate } from "react-router";
 import { path } from "~/utils/path";
 import type { SupplierInteraction } from "../../types";
 
-function getSupplierInteractionStarted(
-  interaction: SupplierInteraction,
-  state: string
-) {
-  switch (state) {
-    // case "RFQ":
-    //   return interaction.purchaseRfqs.length > 0;
-    case "Quote":
-      return interaction.supplierQuotes.length > 0;
-    case "Order":
-      return interaction.purchaseOrders.length > 0;
-    // case "Invoice":
-    //   return interaction.purchaseInvoices.length > 0;
-  }
-}
+type LinkedPurchasingRFQ = {
+  id: string;
+  rfqId?: string;
+  status?: string;
+};
 
-function getSupplierInteractionCompleted(
-  interaction: SupplierInteraction,
-  state: string
-) {
-  switch (state) {
-    // case "RFQ":
-    //   return (
-    //     interaction.purchaseRfqs?.[0]?.completedDate &&
-    //     interaction.purchaseRfqs?.[0]?.completedDate !== null
-    //   );
-    case "Quote":
-      return interaction.supplierQuotes.length > 0;
-    case "Order":
-      return interaction.purchaseOrders?.[0]?.status === "Completed";
-    // case "Invoice":
-    //   return (
-    //     interaction.purchaseInvoices?.[0]?.completedDate &&
-    //     interaction.purchaseInvoices?.[0]?.completedDate !== null
-    //   );
-  }
-}
+type LinkedSupplierQuote = {
+  id: string;
+  supplierQuoteId?: string;
+  revisionId?: number;
+  status?: string;
+  supplierId?: string;
+  supplier?: { name: string } | null;
+};
+
+type SupplierInteractionStateProps = {
+  // For use from supplier quote / purchase order (has interaction with optional purchasingRfq)
+  interaction?: SupplierInteraction | null;
+  // For use from purchasing RFQ (has current RFQ)
+  currentRfq?: LinkedPurchasingRFQ | null;
+  linkedQuotes?: LinkedSupplierQuote[];
+  // For use from quote view: sibling quotes (other quotes from same RFQ)
+  siblingQuotes?: LinkedSupplierQuote[];
+};
 
 function getSupplierInteractionIcon(state: string) {
   switch (state) {
@@ -63,126 +50,78 @@ function getSupplierInteractionIcon(state: string) {
   }
 }
 
-function getPath(interaction: SupplierInteraction, state: string) {
-  switch (state) {
-    // case "RFQ":
-    //   return path.to.purchaseRfqDetails(interaction.purchaseRfqs?.[0]?.id!);
-    case "Quote":
-      return path.to.supplierQuoteDetails(interaction.supplierQuotes?.[0]?.id!);
-    case "Order":
-      return path.to.purchaseOrderDetails(interaction.purchaseOrders?.[0]?.id!);
-    case "Invoice":
-      return path.to.purchaseInvoiceDetails(
-        interaction.purchaseInvoices?.[0]?.id!
-      );
-  }
-}
-
-function getIsCurrent(
-  interaction: SupplierInteraction,
-  pathname: string,
-  state: string
-) {
-  switch (state) {
-    // case "RFQ":
-    //   return interaction.purchaseRfqs.some((rfq) =>
-    //     pathname.includes(path.to.purchaseRfqDetails(rfq.id!))
-    //   );
-    case "Quote":
-      return interaction.supplierQuotes.some((quote) =>
-        pathname.includes(path.to.supplierQuoteDetails(quote.id!))
-      );
-    case "Order":
-      return interaction.purchaseOrders.some((order) =>
-        pathname.includes(path.to.purchaseOrderDetails(order.id!))
-      );
-    case "Invoice":
-      return interaction.purchaseInvoices.some((invoice) =>
-        pathname.includes(path.to.purchaseInvoiceDetails(invoice.id!))
-      );
-    default:
-      return false;
-  }
-}
-
-function getItems(interaction: SupplierInteraction, state: string) {
-  switch (state) {
-    // case "RFQ":
-    //   return interaction.purchaseRfqs.map((rfq) => ({
-    //     id: rfq.id!,
-    //     label: rfq.rfqId
-    //       ? `${rfq.rfqId}${
-    //           rfq.revisionId && rfq.revisionId > 0 ? `-${rfq.revisionId}` : ""
-    //         }`
-    //       : `RFQ ${rfq.id}`,
-    //     path: path.to.purchaseRfqDetails(rfq.id!),
-    //   }));
-    case "Quote":
-      return interaction.supplierQuotes.map((quote) => ({
-        id: quote.id!,
-        label: quote.supplierQuoteId
-          ? `${quote.supplierQuoteId}${
-              quote.revisionId && quote.revisionId > 0
-                ? `-${quote.revisionId}`
-                : ""
-            }`
-          : `Quote ${quote.id}`,
-        path: path.to.supplierQuoteDetails(quote.id!)
-      }));
-    case "Order":
-      return interaction.purchaseOrders.map((order) => ({
-        id: order.id!,
-        label: order.purchaseOrderId
-          ? `${order.purchaseOrderId}${
-              order.revisionId && order.revisionId > 0
-                ? `-${order.revisionId}`
-                : ""
-            }`
-          : `Order ${order.id}`,
-        path: path.to.purchaseOrderDetails(order.id!)
-      }));
-    case "Invoice":
-      return interaction.purchaseInvoices.map((invoice) => ({
-        id: invoice.id!,
-        label: invoice.invoiceId
-          ? `${invoice.invoiceId}`
-          : `Invoice ${invoice.id}`,
-        path: path.to.purchaseInvoiceDetails(invoice.id!)
-      }));
-    default:
-      return [];
-  }
-}
-
 const states = ["RFQ", "Quote", "Order", "Invoice"];
 
 const SupplierInteractionState = ({
-  interaction
-}: {
-  interaction: SupplierInteraction;
-}) => {
+  interaction,
+  currentRfq,
+  linkedQuotes = [],
+  siblingQuotes = []
+}: SupplierInteractionStateProps) => {
   const { pathname } = useOptimisticLocation();
   const navigate = useNavigate();
+
+  // Determine if we're in "RFQ mode" (viewing from purchasing RFQ) or "interaction mode" (viewing from quote/order)
+  const isRfqMode = currentRfq !== undefined && currentRfq !== null;
+
+  // Get RFQ: currentRfq for RFQ mode, interaction.purchasingRfq for interaction mode
+  const rfqs = isRfqMode
+    ? [currentRfq]
+    : interaction?.purchasingRfq
+      ? [interaction.purchasingRfq]
+      : [];
+  const hasRfqs = rfqs.length > 0;
+
+  // Combine quote sources:
+  // - RFQ mode: use linkedQuotes (quotes linked to current RFQ)
+  // - Quote mode (siblingQuotes provided): combine current quote with siblings
+  // - Order mode: use interaction.supplierQuotes (shows parent quote)
+  const interactionQuotes =
+    interaction?.supplierQuotes?.map((q) => ({
+      id: q.id!,
+      supplierQuoteId: q.supplierQuoteId ?? undefined,
+      revisionId: q.revisionId ?? undefined,
+      status: q.status ?? undefined,
+      supplierId: q.supplierId ?? undefined
+    })) ?? [];
+
+  const quotes = isRfqMode
+    ? linkedQuotes
+    : siblingQuotes.length > 0
+      ? [...interactionQuotes, ...siblingQuotes]
+      : interactionQuotes;
+  const hasQuotes = quotes.length > 0;
+
+  // Orders and invoices only from interaction
+  const orders = interaction?.purchaseOrders ?? [];
+  const hasOrders = orders.length > 0;
+  //   const invoices = interaction?.purchaseInvoices ?? [];
+
+  // Determine which states to show
+  const statesToShow = hasRfqs ? ["RFQ", "Quote", "Order"] : ["Quote", "Order"];
 
   return (
     <Menubar>
       {states
-        .filter((state) => ["Quote", "Order"].includes(state))
-        .map((state, index) => {
-          const isStarted = getSupplierInteractionStarted(interaction, state);
-          const isCompleted = getSupplierInteractionCompleted(
-            interaction,
-            state
-          );
-          const isCurrent = getIsCurrent(interaction, pathname, state);
+        .filter((state) => statesToShow.includes(state))
+        .map((state) => {
           const Icon = getSupplierInteractionIcon(state);
-          const to = getPath(interaction, state);
-          const items = getItems(interaction, state);
-          const hasMultipleItems = items.length > 1;
 
-          if (isStarted && to) {
-            if (hasMultipleItems) {
-              const Icon = getSupplierInteractionIcon(state);
+          // RFQ State
+          if (state === "RFQ" && hasRfqs) {
+            const rfqItems = rfqs.map((rfq) => ({
+              id: rfq.id!,
+              label: rfq.rfqId ? rfq.rfqId : `RFQ ${rfq.id}`,
+              path: path.to.purchasingRfqDetails(rfq.id!)
+            }));
+
+            const firstPath = rfqItems[0]?.path;
+            const hasMultiple = rfqItems.length > 1;
+            const isCurrent = rfqItems.some((item) =>
+              pathname.includes(path.to.purchasingRfq(item.id))
+            );
+
+            if (hasMultiple) {
               return (
                 <SplitButton
                   key={state}
@@ -195,13 +134,13 @@ const SupplierInteractionState = ({
                     />
                   }
                   variant="ghost"
-                  onClick={() => navigate(to)}
-                  dropdownItems={items.map((item) => ({
+                  onClick={() => navigate(firstPath)}
+                  dropdownItems={rfqItems.map((item) => ({
                     label: item.label,
                     onClick: () => navigate(item.path)
                   }))}
                 >
-                  {state}
+                  RFQ
                 </SplitButton>
               );
             } else {
@@ -219,29 +158,149 @@ const SupplierInteractionState = ({
                   variant="ghost"
                   asChild
                 >
-                  <Link to={to}>{state}</Link>
+                  <Link to={firstPath}>RFQ</Link>
                 </Button>
               );
             }
-          } else {
-            return (
-              <Button
-                key={state}
-                variant="ghost"
-                isDisabled
-                leftIcon={
-                  <Icon
-                    className={cn(
-                      isCompleted && "text-emerald-500",
-                      !isCurrent && "opacity-80 hover:opacity-100"
-                    )}
-                  />
-                }
-              >
-                {state}
-              </Button>
-            );
           }
+
+          // Quote State
+          if (state === "Quote" && hasQuotes) {
+            const quoteItems = quotes.map((quote) => ({
+              id: quote.id!,
+              label: quote.supplierQuoteId
+                ? `${quote.supplierQuoteId}${
+                    quote.revisionId && quote.revisionId > 0
+                      ? `-${quote.revisionId}`
+                      : ""
+                  }`
+                : `Quote ${quote.id}`,
+              path: path.to.supplierQuoteDetails(quote.id!)
+            }));
+
+            const firstPath = quoteItems[0]?.path;
+            const hasMultiple = quoteItems.length > 1;
+            const isCurrent = quoteItems.some((item) =>
+              pathname.includes(item.path)
+            );
+
+            if (hasMultiple) {
+              return (
+                <SplitButton
+                  key={state}
+                  leftIcon={
+                    <Icon
+                      className={cn(
+                        isCurrent && "text-emerald-500",
+                        !isCurrent && "opacity-80 hover:opacity-100"
+                      )}
+                    />
+                  }
+                  variant="ghost"
+                  onClick={() => navigate(firstPath)}
+                  dropdownItems={quoteItems.map((item) => ({
+                    label: item.label,
+                    onClick: () => navigate(item.path)
+                  }))}
+                >
+                  Quote
+                </SplitButton>
+              );
+            } else {
+              return (
+                <Button
+                  key={state}
+                  leftIcon={
+                    <Icon
+                      className={cn(
+                        isCurrent && "text-emerald-500",
+                        !isCurrent && "opacity-80 hover:opacity-100"
+                      )}
+                    />
+                  }
+                  variant="ghost"
+                  asChild
+                >
+                  <Link to={firstPath}>Quote</Link>
+                </Button>
+              );
+            }
+          }
+
+          // Order State
+          if (state === "Order" && hasOrders) {
+            const orderItems = orders.map((order) => ({
+              id: order.id!,
+              label: order.purchaseOrderId
+                ? `${order.purchaseOrderId}${
+                    order.revisionId && order.revisionId > 0
+                      ? `-${order.revisionId}`
+                      : ""
+                  }`
+                : `Order ${order.id}`,
+              path: path.to.purchaseOrderDetails(order.id!)
+            }));
+
+            const firstPath = orderItems[0]?.path;
+            const hasMultiple = orderItems.length > 1;
+            const isCurrent = orderItems.some((item) =>
+              pathname.includes(item.path)
+            );
+
+            if (hasMultiple) {
+              return (
+                <SplitButton
+                  key={state}
+                  leftIcon={
+                    <Icon
+                      className={cn(
+                        isCurrent && "text-emerald-500",
+                        !isCurrent && "opacity-80 hover:opacity-100"
+                      )}
+                    />
+                  }
+                  variant="ghost"
+                  onClick={() => navigate(firstPath)}
+                  dropdownItems={orderItems.map((item) => ({
+                    label: item.label,
+                    onClick: () => navigate(item.path)
+                  }))}
+                >
+                  Order
+                </SplitButton>
+              );
+            } else {
+              return (
+                <Button
+                  key={state}
+                  leftIcon={
+                    <Icon
+                      className={cn(
+                        isCurrent && "text-emerald-500",
+                        !isCurrent && "opacity-80 hover:opacity-100"
+                      )}
+                    />
+                  }
+                  variant="ghost"
+                  asChild
+                >
+                  <Link to={firstPath}>Order</Link>
+                </Button>
+              );
+            }
+          }
+
+          // Disabled states
+          return (
+            <Button
+              key={state}
+              variant="ghost"
+              isDisabled
+              leftIcon={<Icon className="opacity-50" />}
+            >
+              {state}
+            </Button>
+          );
         })}
     </Menubar>
   );

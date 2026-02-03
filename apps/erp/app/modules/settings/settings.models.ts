@@ -151,6 +151,14 @@ export const supplierQuoteNotificationValidator = z.object({
     .optional()
 });
 
+export const defaultSupplierCcValidator = z.object({
+  defaultSupplierCc: z.array(z.string().email()).optional()
+});
+
+export const defaultCustomerCcValidator = z.object({
+  defaultCustomerCc: z.array(z.string().email()).optional()
+});
+
 export const sequenceValidator = z.object({
   table: z.string().min(1, { message: "Table is required" }),
   prefix: zfd.text(z.string().optional()),

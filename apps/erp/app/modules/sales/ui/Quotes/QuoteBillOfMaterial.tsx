@@ -760,7 +760,7 @@ function MaterialForm({
 
       <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
         <Item
-          disabledItems={[params.itemId!]}
+          blacklist={[params.itemId!]}
           isReadOnly={isDisabled}
           name="itemId"
           label={itemType}

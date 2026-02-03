@@ -5,10 +5,9 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  toast,
   VStack
 } from "@carbon/react";
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { LuCopy, LuKeySquare, LuLink } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import { z } from "zod";
@@ -16,12 +15,28 @@ import Assignee, { useOptimisticAssignment } from "~/components/Assignee";
 import { Tags } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
 import { useTags } from "~/hooks/useTags";
-import type { action } from "~/routes/x+/items+/update";
+import type { action } from "~/routes/x+/quality-document+/update";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 import { qualityDocumentStatus } from "../../quality.models";
 import type { QualityDocument } from "../../types";
 import QualityDocumentStatus from "./QualityDocumentStatus";
+
+function getStatusHelperText(
+  hasPending: boolean,
+  isArchived: boolean,
+  canReopen: boolean
+): string | undefined {
+  if (!hasPending) return undefined;
+  if (isArchived) {
+    return canReopen
+      ? "Reactivation is pending approval. Use Approve or Reject above, or set to Draft to withdraw."
+      : "Reactivation is pending approval. Use Approve or Reject above.";
+  }
+  return canReopen
+    ? "Active is unavailable while an approval is pending. Use Approve or Reject above, or set to Archived or Draft to withdraw."
+    : "Active is unavailable while an approval is pending. You can set to Archived to cancel the request.";
+}
 
 const QualityDocumentProperties = () => {
   const { id } = useParams();
@@ -30,31 +45,43 @@ const QualityDocumentProperties = () => {
   const routeData = useRouteData<{
     document: QualityDocument;
     tags: Array<{ name: string }>;
+    approvalRequest: { id: string } | null;
+    canReopen: boolean;
   }>(path.to.qualityDocument(id));
 
-  const fetcher = useFetcher<typeof action>();
-  useEffect(() => {
-    if (fetcher.data?.error) {
-      toast.error(fetcher.data.error.message);
-    }
-  }, [fetcher.data]);
+  const hasPendingApproval = !!routeData?.approvalRequest;
+  const canReopen = routeData?.canReopen ?? true;
+  const currentStatus = routeData?.document?.status ?? null;
+  const isArchived = currentStatus === "Archived";
+  const statusOptions = hasPendingApproval
+    ? qualityDocumentStatus.filter(
+        (s) => s !== "Active" && (s !== "Draft" || canReopen)
+      )
+    : qualityDocumentStatus;
+  const statusValue =
+    currentStatus && statusOptions.includes(currentStatus)
+      ? currentStatus
+      : statusOptions[0];
+  const statusHelperText = getStatusHelperText(
+    hasPendingApproval,
+    isArchived,
+    canReopen
+  );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
+  const fetcher = useFetcher<typeof action>();
+
   const onUpdate = useCallback(
     (field: "name" | "status", value: string | null) => {
       const formData = new FormData();
-
       formData.append("ids", id);
       formData.append("field", field);
       formData.append("value", value?.toString() ?? "");
-
       fetcher.submit(formData, {
         method: "post",
         action: path.to.bulkUpdateQualityDocument
       });
     },
-
-    [id]
+    [id, fetcher]
   );
 
   const optimisticAssignment = useOptimisticAssignment({
@@ -151,8 +178,9 @@ const QualityDocumentProperties = () => {
       />
 
       <ValidatedForm
+        key={`status-form-${id}-${currentStatus ?? "unknown"}`}
         defaultValues={{
-          status: routeData?.document?.status ?? undefined
+          status: statusValue ?? undefined
         }}
         validator={z.object({
           status: z.string().min(1, { message: "Status is required" })
@@ -163,16 +191,17 @@ const QualityDocumentProperties = () => {
           <Select
             label="Status"
             name="status"
+            helperText={statusHelperText}
             inline={(value) => (
               <QualityDocumentStatus
                 status={value as "Draft" | "Active" | "Archived"}
               />
             )}
-            options={qualityDocumentStatus.map((status) => ({
+            options={statusOptions.map((status) => ({
               value: status,
               label: <QualityDocumentStatus status={status} />
             }))}
-            value={routeData?.document?.status ?? ""}
+            value={statusValue ?? ""}
             onChange={(value) => {
               onUpdate("status", value?.value ?? null);
             }}

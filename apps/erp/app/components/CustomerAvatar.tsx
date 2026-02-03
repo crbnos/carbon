@@ -1,5 +1,6 @@
 import type { AvatarProps } from "@carbon/react";
 import { HStack } from "@carbon/react";
+import { getFaviconUrl, isUrl } from "@carbon/utils";
 import { useCustomers } from "~/stores";
 import Avatar from "./Avatar";
 
@@ -20,12 +21,23 @@ const CustomerAvatar = ({
 
   const customer = customers.find((s) => s.id === customerId) ?? {
     name: "",
-    id: ""
+    id: "",
+    website: null
   };
+
+  const imageUrl =
+    customer.website && isUrl(customer.website)
+      ? getFaviconUrl(customer.website)
+      : undefined;
 
   return (
     <HStack className="truncate no-underline hover:no-underline">
-      <Avatar size={size ?? "xs"} {...props} name={customer?.name ?? ""} />
+      <Avatar
+        size={size ?? "xs"}
+        {...props}
+        name={customer?.name ?? ""}
+        imageUrl={imageUrl}
+      />
       <span className={className}>{customer.name}</span>
     </HStack>
   );

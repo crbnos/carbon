@@ -12,9 +12,9 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  useKeyboardShortcuts
+  useKeyboardShortcuts,
+  usePrettifyShortcut
 } from "@carbon/react";
-import { prettifyKeyboardShortcut } from "@carbon/utils";
 import { useCallback, useRef } from "react";
 import { BsChevronLeft, BsChevronRight } from "react-icons/bs";
 
@@ -91,6 +91,7 @@ export const PaginationButtons = ({
 }: PaginationProps & { condensed?: boolean }) => {
   const nextButtonRef = useRef<HTMLButtonElement>(null);
   const previousButtonRef = useRef<HTMLButtonElement>(null);
+  const prettifyShortcut = usePrettifyShortcut();
 
   const scrollToTop = useCallback(() => {
     document
@@ -134,7 +135,7 @@ export const PaginationButtons = ({
               />
             </TooltipTrigger>
             <TooltipContent>
-              <HStack>{prettifyKeyboardShortcut("ArrowLeft")}</HStack>
+              <HStack>{prettifyShortcut("ArrowLeft")}</HStack>
             </TooltipContent>
           </Tooltip>
           <Tooltip>
@@ -148,7 +149,7 @@ export const PaginationButtons = ({
               />
             </TooltipTrigger>
             <TooltipContent>
-              <HStack>{prettifyKeyboardShortcut("ArrowRight")}</HStack>
+              <HStack>{prettifyShortcut("ArrowRight")}</HStack>
             </TooltipContent>
           </Tooltip>
         </>
@@ -171,7 +172,7 @@ export const PaginationButtons = ({
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <HStack>{prettifyKeyboardShortcut("ArrowLeft")}</HStack>
+              <HStack>{prettifyShortcut("ArrowLeft")}</HStack>
             </TooltipContent>
           </Tooltip>
           <Tooltip>
@@ -187,7 +188,7 @@ export const PaginationButtons = ({
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <HStack>{prettifyKeyboardShortcut("ArrowRight")}</HStack>
+              <HStack>{prettifyShortcut("ArrowRight")}</HStack>
             </TooltipContent>
           </Tooltip>
         </>

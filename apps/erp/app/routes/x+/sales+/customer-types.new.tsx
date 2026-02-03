@@ -7,7 +7,7 @@ import type {
   ClientActionFunctionArgs,
   LoaderFunctionArgs
 } from "react-router";
-import { json, redirect, useNavigate } from "react-router";
+import { redirect, useNavigate } from "react-router";
 import { customerTypeValidator, upsertCustomerType } from "~/modules/sales";
 import { CustomerTypeForm } from "~/modules/sales/ui/CustomerTypes";
 import { setCustomFields } from "~/utils/form";

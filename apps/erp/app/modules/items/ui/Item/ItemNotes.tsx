@@ -76,7 +76,7 @@ const ItemNotes = ({
     <>
       <Card>
         <CardHeader>
-          <CardTitle>{title}</CardTitle>
+          <CardTitle>Notes</CardTitle>
           <CardDescription>{subTitle}</CardDescription>
         </CardHeader>
 

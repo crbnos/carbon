@@ -1,3 +1,4 @@
+import { getFaviconUrl } from "@carbon/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import { LuBook } from "react-icons/lu";
 
@@ -8,18 +9,6 @@ interface SourceItem {
 
 interface FaviconStackProps {
   sources: SourceItem[];
-}
-
-/**
- * Get favicon URL for a given website URL
- */
-function getFaviconUrl(url: string): string {
-  try {
-    const domain = new URL(url).hostname;
-    return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
-  } catch {
-    return "";
-  }
 }
 
 export function FaviconStack({ sources }: FaviconStackProps) {

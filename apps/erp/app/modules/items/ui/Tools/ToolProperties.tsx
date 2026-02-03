@@ -417,7 +417,7 @@ const ToolProperties = () => {
                         key={method.id}
                         type={isActive ? "Make" : "Make Inactive"}
                         text={`Version ${method.version}`}
-                        to={path.to.partMakeMethod(itemId, method.id)}
+                        to={`${path.to.toolDetails(itemId)}?methodId=${method.id}`}
                       />
                     );
                   })

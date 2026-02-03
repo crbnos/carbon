@@ -109,7 +109,7 @@ const OpportunityLineNotes = ({
         <Tabs value={tab} onValueChange={setTab}>
           <HStack className="w-full justify-between">
             <CardHeader>
-              <CardTitle>{title}</CardTitle>
+              <CardTitle>Notes</CardTitle>
               <CardDescription>
                 {subTitle} -{" "}
                 {tab === "internal" ? "Internal Notes" : "External Notes"}

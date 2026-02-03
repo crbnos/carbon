@@ -2,7 +2,7 @@ import { SUPABASE_URL } from "@carbon/auth";
 
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { FunctionRegion, } from "@supabase/supabase-js";
+import { FunctionRegion } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -624,6 +624,28 @@ export async function updatePurchasePriceUpdateTimingSetting(
   return client
     .from("companySettings")
     .update(sanitize({ purchasePriceUpdateTiming }))
+    .eq("id", companyId);
+}
+
+export async function updateDefaultSupplierCc(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  defaultSupplierCc: string[]
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ defaultSupplierCc }))
+    .eq("id", companyId);
+}
+
+export async function updateDefaultCustomerCc(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  defaultCustomerCc: string[]
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ defaultCustomerCc }))
     .eq("id", companyId);
 }
 

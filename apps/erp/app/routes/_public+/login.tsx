@@ -1,4 +1,5 @@
 import {
+  AUTH_PROVIDERS,
   assertIsPost,
   CarbonEdition,
   CLOUDFLARE_TURNSTILE_SECRET_KEY,
@@ -35,9 +36,14 @@ import type {
   LoaderFunctionArgs,
   MetaFunction
 } from "react-router";
-import { data, redirect, useFetcher, useSearchParams } from "react-router";
-
-import type { FormActionData, Result } from "~/types";
+import {
+  data,
+  redirect,
+  useFetcher,
+  useLoaderData,
+  useSearchParams
+} from "react-router";
+import type { Result } from "~/types";
 import { path } from "~/utils/path";
 
 export const meta: MetaFunction = () => {
@@ -50,7 +56,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw redirect(path.to.authenticatedRoot);
   }
 
-  return null;
+  const providers = AUTH_PROVIDERS.split(",");
+
+  return {
+    providers
+  };
 }
 
 const ratelimit = new Ratelimit({
@@ -59,7 +69,7 @@ const ratelimit = new Ratelimit({
   analytics: true
 });
 
-export async function action({ request }: ActionFunctionArgs): FormActionData {
+export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
   const { success } = await ratelimit.limit(ip);
@@ -145,6 +155,10 @@ export async function action({ request }: ActionFunctionArgs): FormActionData {
 }
 
 export default function LoginRoute() {
+  const { providers } = useLoaderData<typeof loader>();
+  const hasOutlookAuth = providers.includes("azure");
+  const hasGoogleAuth = providers.includes("google");
+
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") ?? undefined;
   const [mode, setMode] = useState<"login" | "signup" | "verify">("login");
@@ -292,28 +306,32 @@ export default function LoginRoute() {
                 </div>
               )}
 
-              <Button
-                type="button"
-                size="lg"
-                className="w-full"
-                onClick={onSignInWithGoogle}
-                isDisabled={fetcher.state !== "idle"}
-                variant="secondary"
-                leftIcon={<GoogleIcon />}
-              >
-                Sign in with Google
-              </Button>
-              <Button
-                type="button"
-                size="lg"
-                className="w-full"
-                onClick={onSignInWithAzure}
-                isDisabled={fetcher.state !== "idle"}
-                variant="secondary"
-                leftIcon={<OutlookIcon className="size-6" />}
-              >
-                Sign in with Outlook
-              </Button>
+              {hasGoogleAuth && (
+                <Button
+                  type="button"
+                  size="lg"
+                  className="w-full"
+                  onClick={onSignInWithGoogle}
+                  isDisabled={fetcher.state !== "idle"}
+                  variant="secondary"
+                  leftIcon={<GoogleIcon />}
+                >
+                  Sign in with Google
+                </Button>
+              )}
+              {hasOutlookAuth && (
+                <Button
+                  type="button"
+                  size="lg"
+                  className="w-full"
+                  onClick={onSignInWithAzure}
+                  isDisabled={fetcher.state !== "idle"}
+                  variant="secondary"
+                  leftIcon={<OutlookIcon className="size-6" />}
+                >
+                  Sign in with Outlook
+                </Button>
+              )}
             </VStack>
           </ValidatedForm>
         )}

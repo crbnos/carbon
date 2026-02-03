@@ -6,6 +6,7 @@
     "nanoid": "5.0.4"
   },
   "devDependencies": {
+    "@carbon/database": "*",
     "@carbon/tsconfig": "*",
     "typescript": "^5.2.2"
   },

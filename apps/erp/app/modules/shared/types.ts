@@ -1,7 +1,11 @@
+import type { Database } from "@carbon/database";
 import type { ColumnPinningState } from "@tanstack/react-table";
 import type { z } from "zod";
 import type { StorageItem } from "~/types";
 import type {
+  ApprovalDocumentType,
+  approvalRequestValidator,
+  approvalRuleValidator,
   methodItemType,
   methodType,
   operationParameterValidator,
@@ -9,7 +13,51 @@ import type {
   operationToolValidator,
   standardFactorType
 } from "./shared.models";
-import type { getNotes } from "./shared.service";
+import type {
+  getApprovalRequestsByDocument,
+  getApprovalRuleByAmount,
+  getNotes
+} from "./shared.service";
+
+export type ApprovalFilters = {
+  documentType?: ApprovalDocumentType | null;
+  status?: ApprovalStatus | null;
+  dateFrom?: string | null;
+  dateTo?: string | null;
+};
+
+export type ApprovalHistory = NonNullable<
+  Awaited<ReturnType<typeof getApprovalRequestsByDocument>>["data"]
+>;
+
+export type ApprovalRequest =
+  Database["public"]["Views"]["approvalRequests"]["Row"];
+
+export type ApprovalRequestForApproveCheck = {
+  amount: number | null;
+  documentType: ApprovalDocumentType;
+  companyId: string;
+};
+
+export type ApprovalRequestForCancelCheck = {
+  requestedBy: string;
+  status: string;
+};
+
+export type ApprovalRequestForViewCheck = {
+  requestedBy: string;
+  amount: number | null;
+  documentType: ApprovalDocumentType;
+  companyId: string;
+};
+
+export type ApprovalRule = NonNullable<
+  Awaited<ReturnType<typeof getApprovalRuleByAmount>>["data"]
+>;
+
+export type ApprovalDecision = "Approved" | "Rejected";
+
+export type ApprovalStatus = Database["public"]["Enums"]["approvalStatus"];
 
 export type BillOfMaterialNodeType =
   | "parent"
@@ -90,3 +138,22 @@ export type SavedView = {
 };
 
 export type StandardFactor = (typeof standardFactorType)[number];
+
+export type CreateApprovalRequestInput = Omit<
+  z.infer<typeof approvalRequestValidator>,
+  "id"
+> & {
+  companyId: string;
+  requestedBy: string;
+  createdBy: string;
+};
+
+export type UpsertApprovalRuleInput =
+  | (Omit<z.infer<typeof approvalRuleValidator>, "id"> & {
+      companyId: string;
+      createdBy: string;
+    })
+  | (Omit<z.infer<typeof approvalRuleValidator>, "id"> & {
+      id: string;
+      updatedBy: string;
+    });

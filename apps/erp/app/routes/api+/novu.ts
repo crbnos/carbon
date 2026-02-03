@@ -1,5 +1,6 @@
 import { serve } from "@novu/framework/remix";
 import {
+  approvalWorkflow,
   assignmentWorkflow,
   digitalQuoteResponseWorkflow,
   expirationWorkflow,
@@ -12,6 +13,7 @@ import {
 
 const handler = serve({
   workflows: [
+    approvalWorkflow,
     assignmentWorkflow,
     digitalQuoteResponseWorkflow,
     expirationWorkflow,

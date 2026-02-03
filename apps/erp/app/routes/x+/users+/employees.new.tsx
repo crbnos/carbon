@@ -12,7 +12,11 @@ import { validationError, validator } from "@carbon/form";
 import { sendEmail } from "@carbon/lib/resend.server";
 import { render } from "@react-email/components";
 import { nanoid } from "nanoid";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import type {
+  ActionFunctionArgs,
+  ClientActionFunctionArgs,
+  LoaderFunctionArgs
+} from "react-router";
 import { redirect, useLoaderData } from "react-router";
 import {
   CreateEmployeeModal,
@@ -21,6 +25,7 @@ import {
 } from "~/modules/users";
 import { createEmployeeAccount } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
+import { getCompanyId } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -117,6 +122,17 @@ export async function action({ request }: ActionFunctionArgs) {
     path.to.personJob(result.userId),
     await flash(request, success("Successfully invited employee"))
   );
+}
+
+export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
+  const companyId = getCompanyId();
+  window.clientCache?.invalidateQueries({
+    predicate: (query) => {
+      const queryKey = query.queryKey as string[];
+      return queryKey[0] === "groupsByType" && queryKey[1] === companyId;
+    }
+  });
+  return await serverAction();
 }
 
 export default function () {

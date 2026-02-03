@@ -19,7 +19,11 @@ import {
 } from "@carbon/react";
 import { useState } from "react";
 import type { FetcherWithComponents } from "react-router";
-import { SelectControlled, SupplierContact } from "~/components/Form";
+import {
+  EmailRecipients,
+  SelectControlled,
+  SupplierContact
+} from "~/components/Form";
 import { useIntegrations } from "~/hooks/useIntegrations";
 import { path } from "~/utils/path";
 import { supplierQuoteFinalizeValidator } from "../../purchasing.models";
@@ -30,13 +34,15 @@ type SupplierQuoteSendModalProps = {
   quote?: SupplierQuote;
   fetcher: FetcherWithComponents<{}>;
   externalLinkId?: string;
+  defaultCc?: string[];
 };
 
 const SupplierQuoteSendModal = ({
   quote,
   onClose,
   fetcher,
-  externalLinkId
+  externalLinkId,
+  defaultCc = []
 }: SupplierQuoteSendModalProps) => {
   const integrations = useIntegrations();
   const canEmail = integrations.has("resend");
@@ -106,7 +112,8 @@ const SupplierQuoteSendModal = ({
           defaultValues={{
             notification: notificationType as "Email" | "Share",
             supplierContact: quote?.supplierContactId ?? undefined,
-            sendAttachments: sendAttachments
+            sendAttachments: sendAttachments,
+            cc: defaultCc
           }}
           fetcher={fetcher}
         >
@@ -163,6 +170,7 @@ const SupplierQuoteSendModal = ({
                     name="supplierContact"
                     supplier={quote?.supplierId ?? undefined}
                   />
+                  <EmailRecipients name="cc" label="CC" type="employee" />
                   <HStack spacing={2}>
                     <Checkbox
                       id="sendAttachments"

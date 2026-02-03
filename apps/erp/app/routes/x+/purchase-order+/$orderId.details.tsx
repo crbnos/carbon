@@ -121,7 +121,9 @@ export default function PurchaseOrderBasicRoute() {
     purchaseOrderDelivery: PurchaseOrderDelivery;
     lines: PurchaseOrderLine[];
     files: Promise<FileObject[]>;
-    interaction: SupplierInteraction;
+    interaction: SupplierInteraction & {
+      purchasingRfq?: { id: string; rfqId: string; status: string } | null;
+    };
   }>(path.to.purchaseOrder(orderId));
   if (!orderData) throw new Error("Could not find order data");
 

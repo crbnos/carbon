@@ -13,7 +13,7 @@ import {
   Spinner,
   VStack
 } from "@carbon/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   LuChevronDown,
   LuChevronRight,
@@ -34,6 +34,7 @@ import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { useOptimisticLocation } from "~/hooks";
 import { useIntegrations } from "~/hooks/useIntegrations";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
+import { generateBomIds } from "~/utils/bom";
 import { path } from "~/utils/path";
 import type { QuoteMethod } from "../../types";
 
@@ -61,6 +62,13 @@ const QuoteBoMExplorer = ({
     getMethodFetcher?.state === "loading" &&
     getMethodFetcher.formData?.get("quoteLineId") ===
       methods?.[0].data.quoteLineId;
+
+  // Generate hierarchical BOM IDs (1, 1.1, 1.1.1, etc.)
+  const bomIds = useMemo(() => generateBomIds(methods), [methods]);
+  const bomIdMap = useMemo(
+    () => new Map(methods.map((node, index) => [node.id, bomIds[index]])),
+    [methods, bomIds]
+  );
 
   const {
     nodes,
@@ -100,25 +108,46 @@ const QuoteBoMExplorer = ({
   const params = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedMaterialId = searchParams.get("materialId");
+
+  const explorerLineId = methods[0]?.data.quoteLineId;
+  const isDetailsRouteForThisLine =
+    params.quoteId &&
+    params.lineId &&
+    params.lineId === explorerLineId &&
+    location.pathname === path.to.quoteLine(params.quoteId, params.lineId);
+
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (!selectedMaterialId) {
+      if (isDetailsRouteForThisLine) {
+        const rootNode = methods.find((m) => m.data.isRoot);
+        if (rootNode) {
+          selectNode(rootNode.id);
+          return;
+        }
+      }
       deselectAllNodes();
       return;
     }
 
-    if (selectedMaterialId) {
-      const node = methods.find(
-        (m) => m.data.methodMaterialId === selectedMaterialId
-      );
-      if (node?.id) selectNode(node?.id);
+    const node = methods.find(
+      (m) => m.data.methodMaterialId === selectedMaterialId
+    );
+    if (node?.id) {
+      selectNode(node.id);
     } else if (params.methodId) {
-      const node = methods.find(
+      const methodNode = methods.find(
         (m) => m.data.quoteMaterialMakeMethodId === params.methodId
       );
-      if (node?.id) selectNode(node?.id);
+      if (methodNode?.id) {
+        selectNode(methodNode.id);
+      } else {
+        deselectAllNodes();
+      }
+    } else {
+      deselectAllNodes();
     }
-  }, [selectedMaterialId, params.methodId]);
+  }, [selectedMaterialId, params.methodId, location.pathname]);
 
   return (
     <VStack className="flex flex-1 w-full">
@@ -215,21 +244,16 @@ const QuoteBoMExplorer = ({
 
                     <div className="flex w-full items-center justify-between gap-2">
                       <div className="flex items-center gap-2 overflow-x-hidden">
-                        <MethodIcon
-                          type={
-                            // node.data.isRoot ? "Method" :
-                            node.data.methodType
-                          }
-                          isKit={node.data.kit}
-                          className="h-4 min-h-4 w-4 min-w-4 flex-shrink-0"
-                        />
+                        {bomIdMap.get(node.id) && (
+                          <Badge variant="outline">
+                            {bomIdMap.get(node.id)}
+                          </Badge>
+                        )}
                         <NodeText node={node} />
                       </div>
                       <div className="flex items-center gap-1">
                         {node.data.isRoot ? (
-                          <Badge variant="outline" className="text-xs">
-                            V{node.data.version}
-                          </Badge>
+                          <Badge variant="outline">V{node.data.version}</Badge>
                         ) : (
                           <NodeData node={node} />
                         )}
@@ -251,7 +275,13 @@ const QuoteBoMExplorer = ({
 
 export default QuoteBoMExplorer;
 
-function NodeText({ node }: { node: FlatTreeItem<QuoteMethod> }) {
+function NodeText({
+  node,
+  bomId
+}: {
+  node: FlatTreeItem<QuoteMethod>;
+  bomId?: string;
+}) {
   return (
     <div className="flex items-center gap-1">
       <span className="font-medium text-sm truncate">
@@ -272,15 +302,18 @@ function NodeData({ node }: { node: FlatTreeItem<QuoteMethod> }) {
   return (
     <HStack spacing={1}>
       <Badge className="text-xs" variant="outline">
+        <MethodIcon
+          type={
+            // node.data.isRoot ? "Method" :
+            node.data.methodType
+          }
+          isKit={node.data.kit}
+          className="mr-2"
+        />
         {node.data.quantity}
       </Badge>
-      {onShapeState ? (
-        <OnshapeStatus status={onShapeState} />
-      ) : (
-        <Badge variant="secondary">
-          <MethodItemTypeIcon type={node.data.itemType} />
-        </Badge>
-      )}
+
+      {onShapeState && <OnshapeStatus status={onShapeState} />}
     </HStack>
   );
 }
@@ -381,11 +414,7 @@ function NodePreview({ node }: { node: FlatTreeItem<QuoteMethod> }) {
 
 function getNodePath(node: FlatTreeItem<QuoteMethod>) {
   return node.data.isRoot
-    ? path.to.quoteLineMethod(
-        node.data.quoteId,
-        node.data.quoteLineId,
-        node.data.quoteMaterialMakeMethodId
-      )
+    ? path.to.quoteLine(node.data.quoteId, node.data.quoteLineId)
     : node.data.methodType === "Make"
       ? path.to.quoteLineMakeMethod(
           node.data.quoteId,

@@ -48,7 +48,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     customFields: setCustomFields(formData)
   });
 
+  console.log(createQuotationLine);
+
   if (createQuotationLine.error) {
+    console.log(createQuotationLine);
     throw redirect(
       path.to.quote(quoteId),
       await flash(

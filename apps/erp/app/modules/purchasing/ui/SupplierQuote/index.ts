@@ -1,4 +1,5 @@
 import DeleteSupplierQuoteLine from "./DeleteSupplierQuoteLine";
+import SupplierQuoteCompareDrawer from "./SupplierQuoteCompareDrawer";
 import SupplierQuoteForm from "./SupplierQuoteForm";
 import SupplierQuoteHeader from "./SupplierQuoteHeader";
 import SupplierQuoteLineForm from "./SupplierQuoteLineForm";
@@ -9,6 +10,7 @@ import SupplierQuotesTable from "./SupplierQuotesTable";
 
 export {
   DeleteSupplierQuoteLine,
+  SupplierQuoteCompareDrawer,
   SupplierQuoteForm,
   SupplierQuoteHeader,
   SupplierQuoteLineForm,

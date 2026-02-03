@@ -20,7 +20,8 @@ const Copy = ({
 }) => {
   const [isCopied, setIsCopied] = useState(false);
 
-  const handleCopy = () => {
+  const handleCopy = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
     copyToClipboard(text);
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 1500);

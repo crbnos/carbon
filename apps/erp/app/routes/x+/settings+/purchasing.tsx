@@ -27,14 +27,16 @@ import { useEffect, useState } from "react";
 import { LuCircleCheck } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useFetcher, useLoaderData } from "react-router";
-import { Users } from "~/components/Form";
+import { EmailRecipients, Users } from "~/components/Form";
 import { usePermissions, useUser } from "~/hooks";
 import {
+  defaultSupplierCcValidator,
   getCompanySettings,
   getTerms,
   purchasePriceUpdateTimingTypes,
   purchasePriceUpdateTimingValidator,
   supplierQuoteNotificationValidator,
+  updateDefaultSupplierCc,
   updatePurchasePriceUpdateTimingSetting,
   updateSupplierQuoteNotificationSetting
 } from "~/modules/settings";
@@ -134,6 +136,33 @@ export async function action({ request }: ActionFunctionArgs) {
       return {
         success: true,
         message: "Supplier quote notification setting updated"
+      };
+
+    case "defaultSupplierCc":
+      const defaultSupplierCcValidation = await validator(
+        defaultSupplierCcValidator
+      ).validate(formData);
+
+      if (defaultSupplierCcValidation.error) {
+        return { success: false, message: "Invalid form data" };
+      }
+
+      const defaultSupplierCcResult = await updateDefaultSupplierCc(
+        client,
+        companyId,
+        defaultSupplierCcValidation.data.defaultSupplierCc ?? []
+      );
+
+      if (defaultSupplierCcResult.error) {
+        return {
+          success: false,
+          message: defaultSupplierCcResult.error.message
+        };
+      }
+
+      return {
+        success: true,
+        message: "Default supplier CC updated"
       };
   }
 
@@ -277,6 +306,7 @@ export default function PurchasingSettingsRoute() {
                   <Users
                     name="supplierQuoteNotificationGroup"
                     label="Who should receive notifications when a supplier quote is submitted?"
+                    type="employee"
                   />
                 </div>
               </div>
@@ -288,6 +318,44 @@ export default function PurchasingSettingsRoute() {
                   fetcher.state !== "idle" &&
                   fetcher.formData?.get("intent") ===
                     "supplierQuoteNotification"
+                }
+              >
+                Save
+              </Submit>
+            </CardFooter>
+          </ValidatedForm>
+        </Card>
+        <Card>
+          <ValidatedForm
+            method="post"
+            validator={defaultSupplierCcValidator}
+            defaultValues={{
+              defaultSupplierCc: companySettings.defaultSupplierCc ?? []
+            }}
+            fetcher={fetcher}
+          >
+            <input type="hidden" name="intent" value="defaultSupplierCc" />
+            <CardHeader>
+              <CardTitle>Default CC for Supplier Emails</CardTitle>
+              <CardDescription>
+                These email addresses will be automatically CC'd on all emails
+                sent to suppliers (quotes, purchase orders, etc.).
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-8 max-w-[400px]">
+                <EmailRecipients
+                  name="defaultSupplierCc"
+                  label="Default CC Recipients"
+                />
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit
+                isDisabled={fetcher.state !== "idle"}
+                isLoading={
+                  fetcher.state !== "idle" &&
+                  fetcher.formData?.get("intent") === "defaultSupplierCc"
                 }
               >
                 Save

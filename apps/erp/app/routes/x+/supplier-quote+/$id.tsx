@@ -7,6 +7,8 @@ import { Outlet, redirect, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { getCurrencyByCode } from "~/modules/accounting";
 import {
+  getSiblingQuotesForQuote,
+  getSupplier,
   getSupplierInteraction,
   getSupplierInteractionDocuments,
   getSupplierQuote,
@@ -18,6 +20,7 @@ import {
   SupplierQuoteProperties
 } from "~/modules/purchasing/ui/SupplierQuote";
 import SupplierQuoteExplorer from "~/modules/purchasing/ui/SupplierQuote/SupplierQuoteExplorer";
+import { getCompanySettings } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -36,10 +39,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!id) throw new Error("Could not find id");
   const serviceRole = await getCarbonServiceRole();
 
-  const [quote, lines, prices] = await Promise.all([
+  const [quote, lines, prices, siblingQuotes] = await Promise.all([
     getSupplierQuote(serviceRole, id),
     getSupplierQuoteLines(serviceRole, id),
-    getSupplierQuoteLinePricesByQuoteId(serviceRole, id)
+    getSupplierQuoteLinePricesByQuoteId(serviceRole, id),
+    getSiblingQuotesForQuote(serviceRole, id)
   ]);
 
   if (quote.error) {
@@ -49,10 +53,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const [supplierInteraction, presentationCurrency] = await Promise.all([
-    getSupplierInteraction(serviceRole, quote.data.supplierInteractionId!),
-    getCurrencyByCode(serviceRole, companyId, quote.data.currencyCode!)
-  ]);
+  const [supplierInteraction, presentationCurrency, supplier, companySettings] =
+    await Promise.all([
+      getSupplierInteraction(serviceRole, quote.data.supplierInteractionId!),
+      getCurrencyByCode(serviceRole, companyId, quote.data.currencyCode!),
+      getSupplier(serviceRole, quote.data.supplierId!),
+      getCompanySettings(serviceRole, companyId)
+    ]);
 
   if (supplierInteraction.error) {
     throw redirect(
@@ -72,6 +79,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     exchangeRate = presentationCurrency.data.exchangeRate;
   }
 
+  // Extract sibling quotes from the linked data
+  const siblingQuotesData =
+    siblingQuotes.data
+      ?.map((link) => link.supplierQuote)
+      .filter(Boolean)
+      // Deduplicate by quote ID (a quote might be linked to multiple shared RFQs)
+      .filter(
+        (quote, index, self) =>
+          self.findIndex((q) => q?.id === quote?.id) === index
+      ) ?? [];
+  // Compute default CC: use supplier's if set, otherwise company's
+  const defaultCc =
+    supplier.data?.defaultCc?.length > 0
+      ? supplier.data.defaultCc
+      : (companySettings.data?.defaultSupplierCc ?? []);
+
   return {
     quote: quote.data,
     lines: lines.data ?? [],
@@ -82,7 +105,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       quote.data.supplierInteractionId!
     ),
     interaction: supplierInteraction.data,
-    exchangeRate
+    exchangeRate,
+    siblingQuotes: siblingQuotesData,
+    defaultCc
   };
 }
 

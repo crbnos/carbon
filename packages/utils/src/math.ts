@@ -15,3 +15,7 @@ export const lerp = (min: number, max: number, t: number) => {
 export const inverseLerp = (min: number, max: number, value: number) => {
   return (value - min) / (max - min);
 };
+
+export const roundAmount = (value: number) => {
+  return Math.round(value * 100) / 100;
+};

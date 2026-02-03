@@ -47,15 +47,14 @@ export default function useKeyboardShortcuts(keyMap: {
   };
 
   function getKeyPresses(event: KeyboardEvent) {
-    return event.metaKey && event.shiftKey
-      ? `Command+Shift+${event.key}`
-      : event.metaKey
+    const commandKey = event.metaKey || event.ctrlKey;
+    return commandKey && event.shiftKey
+      ? `Command+Shift+${event.key.toLowerCase()}`
+      : commandKey
         ? `Command+${event.key}`
         : event.shiftKey && event.key === "Enter"
           ? `Shift+${event.key}`
-          : event.ctrlKey && event.key
-            ? `Control+${event.key}`
-            : event.key;
+          : event.key;
   }
 
   useEffect(() => {

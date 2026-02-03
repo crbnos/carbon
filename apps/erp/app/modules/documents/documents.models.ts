@@ -9,6 +9,7 @@ export const documentSourceTypes = [
   "Purchase Invoice",
   "Quote",
   "Request for Quote",
+  "Purchasing Request for Quote",
   "Supplier Quote",
   "Sales Order",
   "Sales Invoice",

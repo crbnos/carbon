@@ -2,6 +2,7 @@ import { getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { JobTravelerPageContent } from "@carbon/documents/pdf";
 import type { JSONContent } from "@carbon/react";
+import { flattenTree, generateBomIds } from "@carbon/utils";
 import {
   Document,
   Font,
@@ -12,6 +13,7 @@ import {
 import type { LoaderFunctionArgs } from "react-router";
 import {
   getJob,
+  getJobMethodTree,
   getJobOperationsByMethodId,
   getTrackedEntityByJobId
 } from "~/modules/production/production.service";
@@ -64,6 +66,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // Get job notes if they exist
   const jobNotes = job.data.notes as JSONContent | undefined;
+
+  // Compute BOM IDs for all make methods
+  const bomIdMap = new Map<string, string>();
+  const methodTree = await getJobMethodTree(serviceRole, jobId);
+  if (!methodTree.error && methodTree.data?.length > 0) {
+    const flatMethods = flattenTree(methodTree.data[0]);
+    const bomIds = generateBomIds(flatMethods);
+    flatMethods.forEach((node, index) => {
+      bomIdMap.set(node.data.jobMaterialMakeMethodId, bomIds[index]);
+    });
+  }
 
   // For each make method, get operations and item data
   const makeMethodsWithData = await Promise.all(
@@ -118,7 +131,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         operations: operations.data,
         item: item.data,
         thumbnail,
-        batchNumber
+        batchNumber,
+        bomId: bomIdMap.get(makeMethod.id)
       };
     })
   );
@@ -175,6 +189,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             customer={customer.data}
             item={data.item}
             batchNumber={data.batchNumber}
+            bomId={data.bomId}
             notes={index === 0 ? jobNotes : undefined}
             thumbnail={data.thumbnail}
             methodRevision={data.makeMethod.version?.toString()}

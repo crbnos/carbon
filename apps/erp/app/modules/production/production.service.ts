@@ -919,6 +919,20 @@ export async function getJobMakeMethodById(
     .single();
 }
 
+export async function getRootMakeMethod(
+  client: SupabaseClient<Database>,
+  jobId: string,
+  companyId: string
+) {
+  return client
+    .from("jobMakeMethod")
+    .select("*, ...item(itemType:type, methodRevision:revision)")
+    .eq("jobId", jobId)
+    .is("parentMaterialId", null)
+    .eq("companyId", companyId)
+    .single();
+}
+
 export async function getJobMaterialsWithQuantityOnHand(
   client: SupabaseClient<Database>,
   jobId: string,

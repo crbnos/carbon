@@ -13,9 +13,11 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import {
   LuBuilding2,
+  LuCheck,
   LuCog,
   LuFactory,
   LuPencil,
+  LuPower,
   LuQrCode,
   LuRuler,
   LuTrash,
@@ -179,6 +181,26 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
         }
       },
       {
+        accessorKey: "active",
+        header: "Active",
+        cell: ({ row }) => (
+          <div className="flex w-full items-center justify-center">
+            <Checkbox isChecked={row.original.active ?? true} />
+          </div>
+        ),
+        meta: {
+          icon: <LuCheck />,
+          filter: {
+            type: "static",
+            options: [
+              { value: "true", label: "Active" },
+              { value: "false", label: "Inactive" }
+            ]
+          },
+          pluralHeader: "Active Statuses"
+        }
+      },
+      {
         id: "createdBy",
         header: "Created By",
         cell: ({ row }) => (
@@ -228,6 +250,31 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
             <MenuIcon icon={<LuPencil />} />
             Edit Process
           </MenuItem>
+          {row.active ? (
+            <MenuItem
+              disabled={!permissions.can("delete", "resources")}
+              onClick={() => {
+                navigate(
+                  `${path.to.processDeactivate(row.id!)}?${params.toString()}`
+                );
+              }}
+            >
+              <MenuIcon icon={<LuPower />} />
+              Deactivate Process
+            </MenuItem>
+          ) : (
+            <MenuItem
+              disabled={!permissions.can("delete", "resources")}
+              onClick={() => {
+                navigate(
+                  `${path.to.processActivate(row.id!)}?${params.toString()}`
+                );
+              }}
+            >
+              <MenuIcon icon={<LuCheck />} />
+              Activate Process
+            </MenuItem>
+          )}
           <MenuItem
             destructive
             disabled={!permissions.can("delete", "resources")}

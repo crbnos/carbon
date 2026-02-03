@@ -38,7 +38,11 @@ type SupplierInteractionDocumentsProps = {
   attachments: FileObject[];
   id: string;
   interactionId: string;
-  type: "Supplier Quote" | "Purchase Order" | "Purchase Invoice";
+  type:
+    | "Supplier Quote"
+    | "Purchase Order"
+    | "Purchase Invoice"
+    | "Purchasing Request for Quote";
 };
 
 const SupplierInteractionDocuments = ({
@@ -172,7 +176,11 @@ const SupplierInteractionDocuments = ({
 type SupplierInteractionDocumentFormProps = {
   interactionId: string;
   id: string;
-  type: "Supplier Quote" | "Purchase Order" | "Purchase Invoice";
+  type:
+    | "Supplier Quote"
+    | "Purchase Order"
+    | "Purchase Invoice"
+    | "Purchasing Request for Quote";
 };
 
 export const useSupplierInteractionDocuments = ({

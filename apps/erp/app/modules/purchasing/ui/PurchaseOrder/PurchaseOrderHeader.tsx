@@ -14,6 +14,7 @@ import {
   SplitButton,
   useDisclosure
 } from "@carbon/react";
+import { useState } from "react";
 import {
   LuCheckCheck,
   LuChevronDown,
@@ -28,7 +29,8 @@ import {
   LuPanelLeft,
   LuPanelRight,
   LuTrash,
-  LuTruck
+  LuTruck,
+  LuX
 } from "react-icons/lu";
 import { Link, useFetcher, useParams } from "react-router";
 
@@ -38,8 +40,10 @@ import { usePermissions, useRouteData } from "~/hooks";
 import { ReceiptStatus } from "~/modules/inventory/ui/Receipts";
 import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
 import PurchaseInvoicingStatus from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicingStatus";
+import type { ApprovalDecision } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import type { PurchaseOrder, PurchaseOrderLine } from "../../types";
+import PurchaseOrderApprovalModal from "./PurchaseOrderApprovalModal";
 import PurchaseOrderFinalizeModal from "./PurchaseOrderFinalizeModal";
 import PurchasingStatus from "./PurchasingStatus";
 import {
@@ -56,6 +60,10 @@ const PurchaseOrderHeader = () => {
   const routeData = useRouteData<{
     purchaseOrder: PurchaseOrder;
     lines: PurchaseOrderLine[];
+    approvalRequest: { id: string } | null;
+    canApprove: boolean;
+    canReopen: boolean;
+    canDelete: boolean;
   }>(path.to.purchaseOrder(orderId));
 
   if (!routeData?.purchaseOrder)
@@ -64,7 +72,12 @@ const PurchaseOrderHeader = () => {
   const permissions = usePermissions();
 
   const statusFetcher = useFetcher<{}>();
+  const approvalFetcher = useFetcher<{}>();
   const { receive, invoice, ship } = usePurchaseOrder();
+
+  const isNeedsApproval = routeData?.purchaseOrder?.status === "Needs Approval";
+  const hasApprovalRequest = !!routeData?.approvalRequest;
+  const canApprove = routeData?.canApprove ?? false;
   const { receipts, invoices, shipments } = usePurchaseOrderRelatedDocuments(
     routeData?.purchaseOrder?.supplierInteractionId ?? "",
     routeData?.purchaseOrder?.purchaseOrderType === "Outside Processing"
@@ -72,6 +85,8 @@ const PurchaseOrderHeader = () => {
 
   const finalizeDisclosure = useDisclosure();
   const deleteModal = useDisclosure();
+  const [approvalDecision, setApprovalDecision] =
+    useState<ApprovalDecision | null>(null);
 
   const isOutsideProcessing =
     routeData?.purchaseOrder?.purchaseOrderType === "Outside Processing";
@@ -115,7 +130,8 @@ const PurchaseOrderHeader = () => {
                 <DropdownMenuItem
                   disabled={
                     !permissions.can("delete", "purchasing") ||
-                    !permissions.is("employee")
+                    !permissions.is("employee") ||
+                    (isNeedsApproval && !routeData?.canDelete)
                   }
                   destructive
                   onClick={deleteModal.onOpen}
@@ -160,10 +176,8 @@ const PurchaseOrderHeader = () => {
             <SplitButton
               leftIcon={<LuCheckCheck />}
               isLoading={
-                statusFetcher.state !== "idle" &&
-                ["Planned", "To Receive and Invoice"].includes(
-                  routeData?.purchaseOrder?.status ?? ""
-                )
+                statusFetcher.formAction ===
+                path.to.purchaseOrderFinalize(orderId)
               }
               variant={
                 ["Draft", "Planned"].includes(
@@ -174,14 +188,19 @@ const PurchaseOrderHeader = () => {
               }
               onClick={finalizeDisclosure.onOpen}
               isDisabled={
-                !["Draft"].includes(routeData?.purchaseOrder?.status ?? "") ||
-                routeData?.lines.length === 0
+                !["Draft", "Planned"].includes(
+                  routeData?.purchaseOrder?.status ?? ""
+                ) || routeData?.lines.length === 0
               }
               dropdownItems={[
                 {
                   label: "Mark as Planned",
                   icon: <LuCheckCheck />,
-                  onClick: markAsPlanned
+                  onClick: markAsPlanned,
+                  disabled:
+                    !["Draft"].includes(
+                      routeData?.purchaseOrder?.status ?? ""
+                    ) || routeData?.lines.length === 0
                 }
               ]}
             >
@@ -299,6 +318,33 @@ const PurchaseOrderHeader = () => {
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
+            ) : isNeedsApproval && hasApprovalRequest ? (
+              <>
+                <Button
+                  leftIcon={<LuCheckCheck />}
+                  variant="primary"
+                  isLoading={
+                    approvalFetcher.state !== "idle" &&
+                    approvalFetcher.formData?.get("decision") === "Approved"
+                  }
+                  isDisabled={!canApprove || approvalFetcher.state !== "idle"}
+                  onClick={() => setApprovalDecision("Approved")}
+                >
+                  Approve
+                </Button>
+                <Button
+                  leftIcon={<LuX />}
+                  variant="destructive"
+                  isLoading={
+                    approvalFetcher.state !== "idle" &&
+                    approvalFetcher.formData?.get("decision") === "Rejected"
+                  }
+                  isDisabled={!canApprove || approvalFetcher.state !== "idle"}
+                  onClick={() => setApprovalDecision("Rejected")}
+                >
+                  Reject
+                </Button>
+              </>
             ) : (
               <Button
                 leftIcon={<LuHandCoins />}
@@ -322,12 +368,64 @@ const PurchaseOrderHeader = () => {
               </Button>
             )}
 
-            {invoices?.length > 0 ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+            {!isNeedsApproval && (
+              <>
+                {invoices?.length > 0 ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        leftIcon={<LuCreditCard />}
+                        rightIcon={<LuChevronDown />}
+                        variant={
+                          ["To Invoice", "To Receive and Invoice"].includes(
+                            routeData?.purchaseOrder?.status ?? ""
+                          ) && !requiresShipment
+                            ? "primary"
+                            : "secondary"
+                        }
+                      >
+                        Invoice
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        disabled={
+                          !["To Invoice", "To Receive and Invoice"].includes(
+                            routeData?.purchaseOrder?.status ?? ""
+                          )
+                        }
+                        onClick={() => {
+                          invoice(routeData?.purchaseOrder);
+                        }}
+                      >
+                        <DropdownMenuIcon icon={<LuCirclePlus />} />
+                        New Invoice
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      {invoices.map((invoice) => (
+                        <DropdownMenuItem key={invoice.id} asChild>
+                          <Link to={path.to.purchaseInvoice(invoice.id!)}>
+                            <DropdownMenuIcon icon={<LuCreditCard />} />
+                            <HStack spacing={8}>
+                              <span>{invoice.invoiceId}</span>
+                              <PurchaseInvoicingStatus
+                                // @ts-expect-error - Return type is not defined
+                                status={invoice.status}
+                              />
+                            </HStack>
+                          </Link>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
                   <Button
                     leftIcon={<LuCreditCard />}
-                    rightIcon={<LuChevronDown />}
+                    isDisabled={
+                      !["To Invoice", "To Receive and Invoice"].includes(
+                        routeData?.purchaseOrder?.status ?? ""
+                      )
+                    }
                     variant={
                       ["To Invoice", "To Receive and Invoice"].includes(
                         routeData?.purchaseOrder?.status ?? ""
@@ -335,59 +433,14 @@ const PurchaseOrderHeader = () => {
                         ? "primary"
                         : "secondary"
                     }
-                  >
-                    Invoice
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    disabled={
-                      !["To Invoice", "To Receive and Invoice"].includes(
-                        routeData?.purchaseOrder?.status ?? ""
-                      )
-                    }
                     onClick={() => {
                       invoice(routeData?.purchaseOrder);
                     }}
                   >
-                    <DropdownMenuIcon icon={<LuCirclePlus />} />
-                    New Invoice
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  {invoices.map((invoice) => (
-                    <DropdownMenuItem key={invoice.id} asChild>
-                      <Link to={path.to.purchaseInvoice(invoice.id!)}>
-                        <DropdownMenuIcon icon={<LuCreditCard />} />
-                        <HStack spacing={8}>
-                          <span>{invoice.invoiceId}</span>
-                          <PurchaseInvoicingStatus status={invoice.status} />
-                        </HStack>
-                      </Link>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Button
-                leftIcon={<LuCreditCard />}
-                isDisabled={
-                  !["To Invoice", "To Receive and Invoice"].includes(
-                    routeData?.purchaseOrder?.status ?? ""
-                  )
-                }
-                variant={
-                  ["To Invoice", "To Receive and Invoice"].includes(
-                    routeData?.purchaseOrder?.status ?? ""
-                  ) && !requiresShipment
-                    ? "primary"
-                    : "secondary"
-                }
-                onClick={() => {
-                  invoice(routeData?.purchaseOrder);
-                }}
-              >
-                Invoice
-              </Button>
+                    Invoice
+                  </Button>
+                )}
+              </>
             )}
             <statusFetcher.Form
               method="post"
@@ -425,7 +478,8 @@ const PurchaseOrderHeader = () => {
                 isDisabled={
                   ["Draft"].includes(routeData?.purchaseOrder?.status ?? "") ||
                   statusFetcher.state !== "idle" ||
-                  !permissions.can("update", "purchasing")
+                  !permissions.can("update", "purchasing") ||
+                  (isNeedsApproval && !routeData?.canReopen)
                 }
                 isLoading={
                   statusFetcher.state !== "idle" &&
@@ -465,6 +519,15 @@ const PurchaseOrderHeader = () => {
           onSubmit={() => {
             deleteModal.onClose();
           }}
+        />
+      )}
+      {approvalDecision && routeData?.approvalRequest?.id && (
+        <PurchaseOrderApprovalModal
+          purchaseOrder={routeData?.purchaseOrder}
+          approvalRequestId={routeData.approvalRequest.id}
+          decision={approvalDecision}
+          fetcher={approvalFetcher}
+          onClose={() => setApprovalDecision(null)}
         />
       )}
     </>

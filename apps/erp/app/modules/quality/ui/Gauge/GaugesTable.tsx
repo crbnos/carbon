@@ -434,7 +434,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
       )}
       {deactivateDisclosure.isOpen && selectedGauge && (
         <Confirm
-          action={path.to.deactivateGauge(selectedGauge.id!)}
+          action={path.to.gaugeDeactivate(selectedGauge.id!)}
           isOpen
           onCancel={() => {
             setSelectedGauge(null);

@@ -22,7 +22,7 @@ import {
   VStack
 } from "@carbon/react";
 import { useOptimisticLocation } from "@carbon/remix";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   LuBraces,
   LuChevronDown,
@@ -42,6 +42,7 @@ import type { FlatTreeItem } from "~/components/TreeView";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { useIntegrations } from "~/hooks/useIntegrations";
 import type { MethodItemType } from "~/modules/shared";
+import { generateBomIds } from "~/utils/bom";
 import { path } from "~/utils/path";
 import type { MakeMethod, Method, MethodOperation } from "../../types";
 import { getLinkToItemDetails } from "./ItemForm";
@@ -50,17 +51,24 @@ type BoMExplorerProps = {
   itemType: MethodItemType;
   makeMethod: MakeMethod;
   methods: FlatTreeItem<Method>[];
-  operations: MethodOperation[];
+  methodId?: string;
+  operations?: MethodOperation[];
   selectedId?: string;
+  filterText?: string;
+  hideSearch?: boolean;
 };
 
 const BoMExplorer = ({
   itemType,
   makeMethod,
   methods,
-  selectedId
+  methodId: methodIdProp,
+  selectedId,
+  filterText: filterTextProp,
+  hideSearch
 }: BoMExplorerProps) => {
-  const [filterText, setFilterText] = useState("");
+  const [filterTextInternal, setFilterTextInternal] = useState("");
+  const filterText = filterTextProp ?? filterTextInternal;
   const parentRef = useRef<HTMLDivElement>(null);
   const integrations = useIntegrations();
   const params = useParams();
@@ -103,11 +111,19 @@ const BoMExplorer = ({
     isEager: true
   });
 
+  // Generate hierarchical BOM IDs (1, 1.1, 1.1.1, etc.)
+  const bomIds = useMemo(() => generateBomIds(methods), [methods]);
+  const bomIdMap = useMemo(
+    () => new Map(methods.map((node, index) => [node.id, bomIds[index]])),
+    [methods, bomIds]
+  );
+
   const navigate = useNavigate();
   const location = useOptimisticLocation();
 
-  const { itemId, methodId } = params;
+  const { itemId } = params;
   if (!itemId) throw new Error("itemId not found");
+  const methodId = methodIdProp ?? params.methodId;
   if (!methodId) throw new Error("methodId not found");
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -137,103 +153,111 @@ const BoMExplorer = ({
   return (
     <>
       <VStack className="h-full">
-        <HStack className="w-full justify-between flex-shrink-0">
-          <InputGroup size="sm" className="flex flex-grow">
-            <InputLeftElement>
-              <LuSearch className="h-4 w-4" />
-            </InputLeftElement>
-            <Input
-              placeholder="Search..."
-              value={filterText}
-              onChange={(e) => setFilterText(e.target.value)}
-            />
-          </InputGroup>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger>
-              <IconButton
-                aria-label="Actions"
-                variant="secondary"
-                size="sm"
-                icon={<LuEllipsisVertical />}
+        {!hideSearch && (
+          <HStack className="w-full justify-between flex-shrink-0">
+            <InputGroup size="sm" className="flex flex-grow">
+              <InputLeftElement>
+                <LuSearch className="h-4 w-4" />
+              </InputLeftElement>
+              <Input
+                placeholder="Search..."
+                value={filterText}
+                onChange={(e) => setFilterTextInternal(e.target.value)}
               />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
-                  <DropdownMenuIcon icon={<LuDownload />} />
-                  Export
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent>
-                  <DropdownMenuItem asChild>
-                    <a
-                      href={path.to.api.billOfMaterialsCsv(makeMethodId, false)}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <DropdownMenuIcon icon={<LuTable />} />
-                      <div className="flex flex-grow items-center gap-4 justify-between">
-                        <span>BoM</span>
-                        <Badge variant="green" className="text-xs">
-                          CSV
-                        </Badge>
-                      </div>
-                    </a>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <a
-                      href={path.to.api.billOfMaterialsCsv(makeMethodId, true)}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <DropdownMenuIcon icon={<LuTable />} />
-                      <div className="flex flex-grow items-center gap-4 justify-between">
-                        <span>BoM + BoP</span>
-                        <Badge variant="green" className="text-xs">
-                          CSV
-                        </Badge>
-                      </div>
-                    </a>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <a
-                      href={path.to.api.billOfMaterials(makeMethodId, false)}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <DropdownMenuIcon icon={<LuBraces />} />
-                      <div className="flex flex-grow items-center gap-4 justify-between">
-                        <span>BoM</span>
-                        <Badge variant="outline" className="text-xs">
-                          JSON
-                        </Badge>
-                      </div>
-                    </a>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <a
-                      href={path.to.api.billOfMaterials(makeMethodId, true)}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <DropdownMenuIcon icon={<LuBraces />} />
-                      <div className="flex flex-grow items-center gap-4 justify-between">
-                        <span>BoM + BoP</span>
-                        <Badge variant="outline" className="text-xs">
-                          JSON
-                        </Badge>
-                      </div>
-                    </a>
-                  </DropdownMenuItem>
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
-              {/* <DropdownMenuItem onClick={importBomDisclosure.onOpen}>
+            </InputGroup>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger>
+                <IconButton
+                  aria-label="Actions"
+                  variant="secondary"
+                  size="sm"
+                  icon={<LuEllipsisVertical />}
+                />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger>
+                    <DropdownMenuIcon icon={<LuDownload />} />
+                    Export
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                    <DropdownMenuItem asChild>
+                      <a
+                        href={path.to.api.billOfMaterialsCsv(
+                          makeMethodId,
+                          false
+                        )}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <DropdownMenuIcon icon={<LuTable />} />
+                        <div className="flex flex-grow items-center gap-4 justify-between">
+                          <span>BoM</span>
+                          <Badge variant="green" className="text-xs">
+                            CSV
+                          </Badge>
+                        </div>
+                      </a>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <a
+                        href={path.to.api.billOfMaterialsCsv(
+                          makeMethodId,
+                          true
+                        )}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <DropdownMenuIcon icon={<LuTable />} />
+                        <div className="flex flex-grow items-center gap-4 justify-between">
+                          <span>BoM + BoP</span>
+                          <Badge variant="green" className="text-xs">
+                            CSV
+                          </Badge>
+                        </div>
+                      </a>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <a
+                        href={path.to.api.billOfMaterials(makeMethodId, false)}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <DropdownMenuIcon icon={<LuBraces />} />
+                        <div className="flex flex-grow items-center gap-4 justify-between">
+                          <span>BoM</span>
+                          <Badge variant="outline" className="text-xs">
+                            JSON
+                          </Badge>
+                        </div>
+                      </a>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <a
+                        href={path.to.api.billOfMaterials(makeMethodId, true)}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <DropdownMenuIcon icon={<LuBraces />} />
+                        <div className="flex flex-grow items-center gap-4 justify-between">
+                          <span>BoM + BoP</span>
+                          <Badge variant="outline" className="text-xs">
+                            JSON
+                          </Badge>
+                        </div>
+                      </a>
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+                {/* <DropdownMenuItem onClick={importBomDisclosure.onOpen}>
                 <DropdownMenuIcon icon={<LuUpload />} />
                 Import
               </DropdownMenuItem> */}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </HStack>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </HStack>
+        )}
         {integrations.has("onshape") && (
           <div className="flex flex-shrink-0 w-full">
             <OnshapeSync
@@ -275,17 +299,20 @@ const BoMExplorer = ({
                               methodId,
                               node.data.methodType === "Make"
                                 ? node.data.materialMakeMethodId
-                                : node.data.makeMethodId
+                                : node.data.makeMethodId,
+                              node
                             );
 
-                        if (location.pathname !== nodePath) {
-                          navigate(
-                            `${nodePath}?materialId=${node.data.methodMaterialId}`,
-                            { replace: true }
-                          );
+                        const separator = nodePath.includes("?") ? "&" : "?";
+                        const fullPath = `${nodePath}${separator}materialId=${node.data.methodMaterialId}`;
+                        const nodePathname = nodePath.split("?")[0];
+
+                        if (location.pathname !== nodePathname) {
+                          navigate(fullPath, { replace: true });
                         } else {
-                          setSearchParams({
-                            materialId: node.data.methodMaterialId
+                          setSearchParams((prev) => {
+                            prev.set("materialId", node.data.methodMaterialId);
+                            return prev;
                           });
                         }
                       }}
@@ -326,19 +353,16 @@ const BoMExplorer = ({
 
                       <div className="flex w-full items-center justify-between gap-2">
                         <div className="flex items-center gap-2 overflow-x-hidden">
-                          <MethodIcon
-                            type={
-                              // node.data.isRoot ? "Method" :
-                              node.data.methodType
-                            }
-                            isKit={node.data.kit}
-                            className="h-4 min-h-4 w-4 min-w-4 flex-shrink-0"
-                          />
+                          {bomIdMap.get(node.id) && (
+                            <Badge variant="outline">
+                              {bomIdMap.get(node.id)}
+                            </Badge>
+                          )}
                           <NodeText node={node} />
                         </div>
                         <div className="flex items-center gap-1">
                           {node.data.isRoot ? (
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline">
                               V{makeMethodVersion}
                             </Badge>
                           ) : (
@@ -369,6 +393,91 @@ const BoMExplorer = ({
 
 export default BoMExplorer;
 
+export function BoMActions({ makeMethodId }: { makeMethodId: string }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger>
+        <IconButton
+          aria-label="Actions"
+          variant="secondary"
+          size="sm"
+          icon={<LuEllipsisVertical />}
+        />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <DropdownMenuIcon icon={<LuDownload />} />
+            Export
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            <DropdownMenuItem asChild>
+              <a
+                href={path.to.api.billOfMaterialsCsv(makeMethodId, false)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <DropdownMenuIcon icon={<LuTable />} />
+                <div className="flex flex-grow items-center gap-4 justify-between">
+                  <span>BoM</span>
+                  <Badge variant="green" className="text-xs">
+                    CSV
+                  </Badge>
+                </div>
+              </a>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <a
+                href={path.to.api.billOfMaterialsCsv(makeMethodId, true)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <DropdownMenuIcon icon={<LuTable />} />
+                <div className="flex flex-grow items-center gap-4 justify-between">
+                  <span>BoM + BoP</span>
+                  <Badge variant="green" className="text-xs">
+                    CSV
+                  </Badge>
+                </div>
+              </a>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <a
+                href={path.to.api.billOfMaterials(makeMethodId, false)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <DropdownMenuIcon icon={<LuBraces />} />
+                <div className="flex flex-grow items-center gap-4 justify-between">
+                  <span>BoM</span>
+                  <Badge variant="outline" className="text-xs">
+                    JSON
+                  </Badge>
+                </div>
+              </a>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <a
+                href={path.to.api.billOfMaterials(makeMethodId, true)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <DropdownMenuIcon icon={<LuBraces />} />
+                <div className="flex flex-grow items-center gap-4 justify-between">
+                  <span>BoM + BoP</span>
+                  <Badge variant="outline" className="text-xs">
+                    JSON
+                  </Badge>
+                </div>
+              </a>
+            </DropdownMenuItem>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 function NodeText({ node }: { node: FlatTreeItem<Method> }) {
   return (
     <div className="flex items-start gap-1">
@@ -390,16 +499,17 @@ function NodeData({ node }: { node: FlatTreeItem<Method> }) {
   return (
     <HStack spacing={1}>
       <Badge className="text-xs" variant="outline">
+        <MethodIcon
+          type={
+            // node.data.isRoot ? "Method" :
+            node.data.methodType
+          }
+          isKit={node.data.kit}
+          className="mr-2"
+        />
         {node.data.quantity}
       </Badge>
-
-      {onShapeState ? (
-        <OnshapeStatus status={onShapeState} />
-      ) : (
-        <Badge variant="secondary">
-          <MethodItemTypeIcon type={node.data.itemType} />
-        </Badge>
-      )}
+      {onShapeState && <OnshapeStatus status={onShapeState} />}
     </HStack>
   );
 }
@@ -507,9 +617,9 @@ function getRootLink(
 ) {
   switch (itemType) {
     case "Part":
-      return path.to.partMakeMethod(itemId, methodId);
+      return `${path.to.partDetails(itemId)}?methodId=${methodId}`;
     case "Tool":
-      return path.to.toolMakeMethod(itemId, methodId);
+      return `${path.to.toolDetails(itemId)}?methodId=${methodId}`;
     default:
       throw new Error(`Unimplemented BoMExplorer itemType: ${itemType}`);
   }
@@ -519,13 +629,14 @@ function getMaterialLink(
   itemType: MethodItemType,
   itemId: string,
   methodId: string,
-  makeMethodId: string
+  makeMethodId: string,
+  node: FlatTreeItem<Method>
 ) {
   switch (itemType) {
     case "Part":
-      return path.to.partManufacturingMaterial(itemId, methodId, makeMethodId);
+      return `${path.to.partMake(itemId, makeMethodId)}?methodId=${methodId}`;
     case "Tool":
-      return path.to.toolManufacturingMaterial(itemId, methodId, makeMethodId);
+      return `${path.to.toolMake(itemId, makeMethodId)}?methodId=${methodId}`;
     default:
       throw new Error(`Unimplemented BoMExplorer itemType: ${itemType}`);
   }

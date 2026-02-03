@@ -208,11 +208,16 @@ const BillOfMaterial = ({
     materialsById.set(id, material);
   });
 
+  const rulesByField = new Map(
+    configurationRules?.map((rule) => [rule.field, rule]) ?? []
+  );
+
   const materials = makeItems(
     items,
     Array.from(materialsById.values()),
     orderState,
-    checkedState
+    checkedState,
+    rulesByField
   ).sort((a, b) => a.data.order - b.data.order);
 
   const onToggleItem = (id: string) => {
@@ -478,10 +483,6 @@ const BillOfMaterial = ({
     configuratorDisclosure.onOpen();
   };
 
-  const rulesByField = new Map(
-    configurationRules?.map((rule) => [rule.field, rule]) ?? []
-  );
-
   return (
     <Card>
       <HStack className="justify-between">
@@ -724,7 +725,7 @@ function MaterialForm({
 
       <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
         <Item
-          disabledItems={[params.itemId!]}
+          blacklist={[params.itemId!]}
           name="itemId"
           label={itemType}
           includeInactive
@@ -1035,23 +1036,40 @@ function makeItems(
   items: ItemType[],
   materials: Material[],
   orderState: OrderState,
-  checkedState: CheckedState
+  checkedState: CheckedState,
+  rulesByField?: Map<string, ConfigurationRule>
 ): ItemWithData[] {
   return materials.map((material) => {
     const order = material.id
       ? (orderState[material.id] ?? material.order)
       : material.order;
     const checked = material.id ? (checkedState[material.id] ?? false) : false;
-    return makeItem(items, material, order, checked);
+    return makeItem(items, material, order, checked, rulesByField);
   });
+}
+
+function materialHasRules(
+  materialId: string,
+  rulesByField?: Map<string, ConfigurationRule>
+): boolean {
+  if (!rulesByField) return false;
+  const fields = ["itemId", "quantity", "unitOfMeasureCode", "methodType"];
+  return fields.some((field) =>
+    rulesByField.has(getFieldKey(field, materialId))
+  );
 }
 
 function makeItem(
   items: ItemType[],
   material: Material,
   order: number,
-  checked: boolean
+  checked: boolean,
+  rulesByField?: Map<string, ConfigurationRule>
 ): ItemWithData {
+  const hasRules = material.id
+    ? materialHasRules(material.id, rulesByField)
+    : false;
+
   return {
     id: material.id!,
     title: (
@@ -1060,6 +1078,9 @@ function makeItem(
           <h3 className="font-semibold truncate">
             {getItemReadableId(items, material.itemId) ?? ""}
           </h3>
+          {hasRules && (
+            <LuSquareFunction className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+          )}
           {material.itemId && material.itemType && (
             <Link to={getLinkToItemDetails(material.itemType, material.itemId)}>
               <LuExternalLink className="h-4 w-4 opacity-0 group-hover:opacity-100" />

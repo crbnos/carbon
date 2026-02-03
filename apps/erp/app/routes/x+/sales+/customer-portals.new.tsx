@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { json, redirect, useNavigate } from "react-router";
+import { redirect, useNavigate } from "react-router";
 import { customerPortalValidator } from "~/modules/sales";
 import CustomerPortalForm from "~/modules/sales/ui/CustomerPortals/CustomerPortalForm";
 import { upsertExternalLink } from "~/modules/shared";

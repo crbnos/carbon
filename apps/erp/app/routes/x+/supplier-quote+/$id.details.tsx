@@ -96,7 +96,17 @@ export default function SupplierQuoteDetailsRoute() {
   const routeData = useRouteData<{
     quote: SupplierQuote;
     files: Promise<(FileObject & { quoteLineId: string | null })[]>;
-    interaction: SupplierInteraction;
+    interaction: SupplierInteraction & {
+      purchasingRfq?: { id: string; rfqId: string; status: string } | null;
+    };
+    siblingQuotes: {
+      id: string;
+      supplierQuoteId?: string;
+      revisionId?: number;
+      status?: string;
+      supplierId?: string;
+      supplier?: { name: string } | null;
+    }[];
   }>(path.to.supplierQuote(id));
 
   if (!routeData) throw new Error("Could not find quote data");
@@ -117,7 +127,10 @@ export default function SupplierQuoteDetailsRoute() {
 
   return (
     <>
-      <SupplierInteractionState interaction={routeData.interaction} />
+      <SupplierInteractionState
+        interaction={routeData.interaction}
+        siblingQuotes={routeData.siblingQuotes ?? []}
+      />
       <SupplierQuoteSummary />
       <SupplierInteractionNotes
         key={`notes-${initialValues.id}`}

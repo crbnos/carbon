@@ -8,9 +8,9 @@ export function getPathToMakeMethod(
 ) {
   switch (type) {
     case "Part":
-      return path.to.partMakeMethod(id, methodId);
+      return `${path.to.partDetails(id)}?methodId=${methodId}`;
     case "Tool":
-      return path.to.toolMakeMethod(id, methodId);
+      return `${path.to.toolDetails(id)}?methodId=${methodId}`;
     default:
       return "#";
   }

@@ -13,26 +13,34 @@ import {
   Heading,
   HStack,
   IconButton,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useDisclosure,
   VStack
 } from "@carbon/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import {
+  LuCheckCheck,
   LuChevronDown,
   LuCirclePlus,
+  LuClipboardCheck,
   LuEllipsisVertical,
   LuGitPullRequestArrow,
   LuPanelLeft,
   LuPanelRight,
-  LuTrash
+  LuTrash,
+  LuX
 } from "react-icons/lu";
-import { Await, useNavigate, useParams } from "react-router";
+import { Await, useFetcher, useNavigate, useParams } from "react-router";
 import { usePanels } from "~/components/Layout";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
+import type { ApprovalDecision } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import type { QualityDocument } from "../../types";
+import QualityDocumentApprovalModal from "./QualityDocumentApprovalModal";
 import QualityDocumentForm from "./QualityDocumentForm";
 import QualityDocumentStatus from "./QualityDocumentStatus";
 
@@ -43,6 +51,11 @@ const QualityDocumentHeader = () => {
   const routeData = useRouteData<{
     document: QualityDocument;
     versions: PostgrestResponse<QualityDocument>;
+    approvalRequest: { id: string } | null;
+    canApprove: boolean;
+    canReopen: boolean;
+    canDelete: boolean;
+    isApprovalRequired: boolean;
   }>(path.to.qualityDocument(id));
 
   const navigate = useNavigate();
@@ -50,6 +63,54 @@ const QualityDocumentHeader = () => {
   const { toggleExplorer, toggleProperties } = usePanels();
   const newVersionDisclosure = useDisclosure();
   const deleteDisclosure = useDisclosure();
+  const statusFetcher = useFetcher<{ error?: { message: string } }>();
+  const approvalFetcher = useFetcher<{
+    error?: string;
+    success?: boolean;
+  }>();
+  const [approvalDecision, setApprovalDecision] =
+    useState<ApprovalDecision | null>(null);
+
+  const status = routeData?.document?.status ?? null;
+  const isDraft = status === "Draft";
+  const isArchived = status === "Archived";
+  const canActivate = isDraft || isArchived;
+  const approvalRequestId = routeData?.approvalRequest?.id;
+  const hasApprovalRequest = !!approvalRequestId;
+  const canApprove = routeData?.canApprove ?? false;
+  const canDelete = routeData?.canDelete ?? true;
+  const isApprovalRequired = routeData?.isApprovalRequired ?? false;
+
+  const statusIdle = statusFetcher.state === "idle";
+  const submitLoading =
+    !statusIdle &&
+    statusFetcher.formData?.get("field") === "status" &&
+    statusFetcher.formData?.get("value") === "Active";
+
+  let submitButtonLabel: string;
+  let submitButtonTooltip: string;
+  if (isApprovalRequired) {
+    submitButtonLabel = "Submit for approval";
+    submitButtonTooltip =
+      "Sends this document for approval before it can go active.";
+  } else if (isArchived) {
+    submitButtonLabel = "Reactivate";
+    submitButtonTooltip = "Makes this document active again.";
+  } else {
+    submitButtonLabel = "Publish";
+    submitButtonTooltip = "Makes this document active and visible.";
+  }
+
+  const submitForActivation = () => {
+    const formData = new FormData();
+    formData.append("ids", id);
+    formData.append("field", "status");
+    formData.append("value", "Active");
+    statusFetcher.submit(formData, {
+      method: "post",
+      action: path.to.bulkUpdateQualityDocument
+    });
+  };
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
@@ -85,7 +146,8 @@ const QualityDocumentHeader = () => {
               <DropdownMenuItem
                 disabled={
                   !permissions.can("delete", "quality") ||
-                  !permissions.is("employee")
+                  !permissions.is("employee") ||
+                  (canActivate && hasApprovalRequest && !canDelete)
                 }
                 destructive
                 onClick={deleteDisclosure.onOpen}
@@ -98,6 +160,50 @@ const QualityDocumentHeader = () => {
         </HStack>
       </VStack>
       <div className="flex flex-shrink-0 gap-1 items-center justify-end">
+        {canActivate && !hasApprovalRequest && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="inline-flex">
+                <Button
+                  leftIcon={
+                    isApprovalRequired ? <LuClipboardCheck /> : <LuCheckCheck />
+                  }
+                  variant="primary"
+                  isLoading={submitLoading}
+                  isDisabled={
+                    !permissions.can("update", "quality") ||
+                    !permissions.is("employee") ||
+                    !statusIdle
+                  }
+                  onClick={submitForActivation}
+                >
+                  {submitButtonLabel}
+                </Button>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>{submitButtonTooltip}</TooltipContent>
+          </Tooltip>
+        )}
+        {canActivate && hasApprovalRequest && (
+          <>
+            <Button
+              leftIcon={<LuCheckCheck />}
+              variant="primary"
+              isDisabled={!canApprove}
+              onClick={() => setApprovalDecision("Approved")}
+            >
+              Approve
+            </Button>
+            <Button
+              leftIcon={<LuX />}
+              variant="destructive"
+              isDisabled={!canApprove}
+              onClick={() => setApprovalDecision("Rejected")}
+            >
+              Reject
+            </Button>
+          </>
+        )}
         <Suspense fallback={null}>
           <Await resolve={routeData?.versions}>
             {(versions) => (
@@ -193,6 +299,15 @@ const QualityDocumentHeader = () => {
           onSubmit={() => {
             deleteDisclosure.onClose();
           }}
+        />
+      )}
+      {approvalDecision && approvalRequestId && (
+        <QualityDocumentApprovalModal
+          qualityDocument={routeData?.document}
+          approvalRequestId={approvalRequestId}
+          decision={approvalDecision}
+          fetcher={approvalFetcher}
+          onClose={() => setApprovalDecision(null)}
         />
       )}
     </div>

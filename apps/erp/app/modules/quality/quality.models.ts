@@ -310,6 +310,14 @@ export const requiredActionValidator = z.object({
   active: zfd.checkbox()
 });
 
+export const qualityDocumentApprovalValidator = z.object({
+  approvalRequestId: z
+    .string()
+    .min(1, { message: "Approval request is required" }),
+  decision: z.enum(["Approved", "Rejected"]),
+  notes: zfd.text(z.string().optional())
+});
+
 export const riskRegisterValidator = z.object({
   id: zfd.text(z.string().optional()),
   assignee: zfd.text(z.string().optional()),
