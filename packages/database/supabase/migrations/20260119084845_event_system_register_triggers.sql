@@ -8,3 +8,5 @@ SELECT attach_event_trigger('purchaseOrder');
 SELECT attach_event_trigger('purchaseOrderLine');
 SELECT attach_event_trigger('item');
 SELECT attach_event_trigger('job');
+SELECT attach_event_trigger('salesInvoice');
+SELECT attach_event_trigger('purchaseInvoice');

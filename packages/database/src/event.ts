@@ -130,3 +130,15 @@ export async function deleteEventSystemSubscription(
     .where("id", "=", subscriptionId)
     .execute();
 }
+
+export async function deleteEventSystemSubscriptionsByName(
+  client: Kysely<KyselyDatabase>,
+  companyId: string,
+  name: string
+) {
+  await client
+    .deleteFrom("eventSystemSubscription")
+    .where("companyId", "=", companyId)
+    .where("name", "=", name)
+    .execute();
+}

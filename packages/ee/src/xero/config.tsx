@@ -1,6 +1,9 @@
 import { getCarbonServiceRole, NODE_ENV, XERO_CLIENT_ID } from "@carbon/auth";
 import type { CreateSubscriptionParams } from "@carbon/database/event";
-import { createEventSystemSubscription } from "@carbon/database/event";
+import {
+  createEventSystemSubscription,
+  deleteEventSystemSubscriptionsByName
+} from "@carbon/database/event";
 import {
   getProviderIntegration,
   ProviderID,
@@ -154,6 +157,16 @@ export const Xero = defineIntegration({
         }
       });
     }
+  },
+  async onUninstall(companyId) {
+    const { getPostgresClient, getPostgresConnectionPool } = await import(
+      "@carbon/database/client"
+    );
+
+    const pg = getPostgresClient(getPostgresConnectionPool(1), PostgresDriver);
+
+    // Delete all Xero sync subscriptions for this company
+    await deleteEventSystemSubscriptionsByName(pg, companyId, "xero-sync");
   }
 });
 
