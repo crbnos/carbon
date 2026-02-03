@@ -45,7 +45,7 @@ const WebhookSchema = z.object({
   events: z.array(
     z.object({
       tenantId: z.string(),
-      eventCategory: z.enum(["ITEM", "CONTACT", "INVOICE"]),
+      eventCategory: z.enum(["CONTACT", "INVOICE"]),
       eventType: z.enum(["CREATE", "UPDATE", "DELETE"]),
       resourceId: z.string(),
       eventDateUtc: z.string()

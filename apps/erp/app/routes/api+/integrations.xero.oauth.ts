@@ -111,7 +111,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
     const config = getIntegrationConfigById(Xero.id);
 
-    config?.onInstall && (await config.onInstall(companyId));
+    typeof config?.onInstall === "function" &&
+      (await config.onInstall(companyId));
 
     if (createdXeroIntegration?.data?.metadata) {
       const requestUrl = new URL(request.url);
