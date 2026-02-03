@@ -199,7 +199,7 @@ export async function action({ request }: ActionFunctionArgs) {
           case "CONTACT":
             const contactType = await fetchContactType(provider, resourceId);
 
-            if (contactType) {
+            if (!contactType) {
               console.log(
                 `Skipping contact ${resourceId} with no customer/supplier role`
               );
@@ -221,6 +221,24 @@ export async function action({ request }: ActionFunctionArgs) {
                 operation: operation
               });
             }
+
+            break;
+
+          case "INVOICE":
+            const invoiceType = await fetchInvoiceType(provider, resourceId);
+
+            if (!invoiceType) {
+              console.log(
+                `Skipping invoice ${resourceId} - could not determine type`
+              );
+              continue;
+            }
+
+            entities.push({
+              entityType: invoiceType,
+              entityId: resourceId,
+              operation: operation
+            });
 
             break;
         }
@@ -312,7 +330,33 @@ const fetchContactType = async (
     return "both";
   } else if (contact.IsSupplier) {
     return "supplier";
+  } else if (contact.IsCustomer) {
+    return "customer";
   }
 
   return null;
+};
+
+/**
+ * Fetches invoice from Xero to determine if it's a sales invoice or bill.
+ * - ACCREC (Accounts Receivable) = Sales Invoice -> maps to "invoice"
+ * - ACCPAY (Accounts Payable) = Purchase Invoice/Bill -> maps to "bill"
+ */
+const fetchInvoiceType = async (
+  provider: AccountingProvider,
+  resourceId: string
+): Promise<"invoice" | "bill" | null> => {
+  const res = await provider.request<{
+    Invoices: { Type: "ACCREC" | "ACCPAY" }[];
+  }>("GET", `/Invoices/${resourceId}`);
+
+  if (res.error || !res.data || res.data.Invoices.length === 0) {
+    throw new Error(`Failed to fetch invoice ${resourceId}: ${res.message}`);
+  }
+
+  const invoice = res.data.Invoices[0];
+
+  // ACCREC = Accounts Receivable = Sales Invoice
+  // ACCPAY = Accounts Payable = Bill/Purchase Invoice
+  return invoice.Type === "ACCREC" ? "invoice" : "bill";
 };
