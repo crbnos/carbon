@@ -7,7 +7,7 @@ import { Image, Text, View } from "@react-pdf/renderer";
 import { createTw } from "react-pdf-tailwind";
 import { generateQRCode } from "../qr/qr-code";
 import type { PDF } from "../types";
-import { Header, Note, Summary, Template } from "./components";
+import { Header, Note, Template } from "./components";
 
 interface PackingSlipProps extends PDF {
   customer:
@@ -26,21 +26,38 @@ interface PackingSlipProps extends PDF {
   thumbnails?: Record<string, string | null>;
 }
 
-// Initialize tailwind-styled-components
 const tw = createTw({
   theme: {
     fontFamily: {
-      sans: ["Helvetica", "Arial", "sans-serif"]
+      sans: ["Inter", "Helvetica", "Arial", "sans-serif"]
     },
     extend: {
       colors: {
         gray: {
-          500: "#7d7d7d"
+          50: "#f9fafb",
+          200: "#e5e7eb",
+          400: "#9ca3af",
+          600: "#4b5563",
+          800: "#1f2937"
         }
       }
     }
   }
 });
+
+const formatDate = (dateStr: string | null) => {
+  if (!dateStr) return null;
+  try {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric"
+    });
+  } catch {
+    return dateStr;
+  }
+};
 
 const PackingSlipPDF = ({
   company,
@@ -68,32 +85,9 @@ const PackingSlipPDF = ({
     countryCode
   } = shippingAddress ?? {};
 
-  const details = [
-    {
-      label: "Date",
-      value: shipment?.postingDate
-    },
-    {
-      label: "Shipment",
-      value: shipment?.shipmentId
-    }
-  ];
-
-  if (sourceDocument) {
-    details.push({
-      label: sourceDocument,
-      value: sourceDocumentId
-    });
-  }
-
-  if (customerReference) {
-    details.push({
-      label: "Reference",
-      value: customerReference
-    });
-  }
-
   const hasTrackedEntities = trackedEntities.length > 0;
+
+  let rowIndex = 0;
 
   return (
     <Template
@@ -104,163 +98,204 @@ const PackingSlipPDF = ({
         subject: meta?.subject ?? "Packing Slip"
       }}
     >
-      <View style={tw("flex flex-col")}>
-        {/* Header Section - Always at the top */}
-        <View style={tw("mb-4")}>
-          <Header title={title} company={company} />
-          <Summary company={company} items={details} />
-          {shipment?.trackingNumber && (
-            <View style={tw("flex flex-col gap-2 justify-between mb-5")}>
-              <Text style={tw("text-gray-500 text-xs")}>Tracking Number</Text>
-              <Text style={tw("text-sm")}>{shipment?.trackingNumber}</Text>
-            </View>
-          )}
-        </View>
+      <Header
+        company={company}
+        title="Packing Slip"
+        documentId={shipment?.shipmentId}
+      />
 
-        {/* Shipping Information Section */}
-        <View
-          style={tw(
-            "flex flex-row justify-between mb-6 page-break-inside-avoid"
-          )}
-        >
-          <View style={tw("flex flex-col gap-2 w-1/3")}>
-            <Text style={tw("text-gray-500 text-xs")}>Ship To</Text>
-            <View style={tw("flex flex-col")}>
-              <Text style={tw("text-sm")}>{customer.name}</Text>
-              {shippingAddress && (
-                <>
-                  {addressLine1 && (
-                    <Text style={tw("text-sm")}>{addressLine1}</Text>
-                  )}
-                  {addressLine2 && (
-                    <Text style={tw("text-sm")}>{addressLine2}</Text>
-                  )}
-                  <Text style={tw("text-sm")}>
-                    {formatCityStatePostalCode(city, stateProvince, postalCode)}
-                  </Text>
-                  <Text style={tw("text-sm")}>{countryCode}</Text>
-                </>
+      {/* Ship To */}
+      <View style={tw("border border-gray-200 mb-4")}>
+        <View style={tw("flex flex-row")}>
+          <View style={tw("w-1/2 p-3 border-r border-gray-200")}>
+            <Text
+              style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}
+            >
+              Ship To
+            </Text>
+            <View style={tw("text-[10px] text-gray-800")}>
+              {customer.name && (
+                <Text style={tw("font-bold")}>{customer.name}</Text>
+              )}
+              {addressLine1 && (
+                <Text style={tw("mt-1")}>{addressLine1}</Text>
+              )}
+              {addressLine2 && <Text>{addressLine2}</Text>}
+              {(city || stateProvince || postalCode) && (
+                <Text>
+                  {formatCityStatePostalCode(city, stateProvince, postalCode)}
+                </Text>
+              )}
+              {countryCode && <Text>{countryCode}</Text>}
+            </View>
+          </View>
+          <View style={tw("w-1/2 p-3")}>
+            <Text
+              style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}
+            >
+              Shipment Details
+            </Text>
+            <View style={tw("text-[10px] text-gray-800")}>
+              {shipment?.postingDate && (
+                <Text>Date: {formatDate(shipment.postingDate)}</Text>
+              )}
+              {sourceDocument && sourceDocumentId && (
+                <Text>
+                  {sourceDocument}: {sourceDocumentId}
+                </Text>
+              )}
+              {customerReference && (
+                <Text>Customer PO #: {customerReference}</Text>
+              )}
+              {shipment?.trackingNumber && (
+                <Text>Tracking: {shipment.trackingNumber}</Text>
               )}
             </View>
           </View>
+        </View>
+      </View>
 
-          <View style={tw("flex flex-col gap-2 w-1/3")}>
-            <Text style={tw("text-gray-500 text-xs")}>Shipping Method</Text>
-            <Text style={tw("text-sm")}>{shippingMethod.name}</Text>
+      {/* Shipping & Payment */}
+      <View style={tw("border border-gray-200 mb-4")}>
+        <View style={tw("flex flex-row")}>
+          <View style={tw("w-1/2 p-3 border-r border-gray-200")}>
+            <Text
+              style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}
+            >
+              Shipping
+            </Text>
+            <View style={tw("text-[10px] text-gray-800")}>
+              {shippingMethod?.name && (
+                <Text>Method: {shippingMethod.name}</Text>
+              )}
+            </View>
           </View>
-
-          <View style={tw("flex flex-col gap-2 w-1/3")}>
-            <Text style={tw("text-gray-500 text-xs")}>Payment Term</Text>
-            <Text style={tw("text-sm")}>{paymentTerm.name}</Text>
+          <View style={tw("w-1/2 p-3")}>
+            <Text
+              style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}
+            >
+              Payment
+            </Text>
+            <View style={tw("text-[10px] text-gray-800")}>
+              {paymentTerm?.name && (
+                <Text>Terms: {paymentTerm.name}</Text>
+              )}
+            </View>
           </View>
         </View>
+      </View>
 
-        {/* Line Items Section */}
-        <View style={tw("mb-6 text-xs")}>
-          <View
-            style={tw(
-              "flex flex-row justify-between items-center mt-5 py-3 px-[6px] border-t border-b border-gray-300 font-bold uppercase page-break-inside-avoid"
-            )}
+      {/* Line Items Table */}
+      <View style={tw("mb-4")}>
+        {/* Header */}
+        <View
+          style={tw(
+            "flex flex-row bg-gray-800 py-2 px-3 text-white text-[9px] font-bold"
+          )}
+        >
+          <Text
+            style={tw(`w-${hasTrackedEntities ? "5/12" : "7/12"} text-left`)}
           >
-            <Text
-              style={tw(`w-${hasTrackedEntities ? "7/12" : "9/12"} text-left`)}
-            >
-              Description
-            </Text>
-            <Text
-              style={tw(`w-${hasTrackedEntities ? "1/6" : "3/12"} text-center`)}
-            >
-              Qty
-            </Text>
-            {hasTrackedEntities && (
-              <Text style={tw("w-1/4 text-right")}>Serial/Batch</Text>
-            )}
-          </View>
+            Description
+          </Text>
+          <Text style={tw("w-2/12 text-right")}>Qty</Text>
+          {hasTrackedEntities && (
+            <Text style={tw("w-5/12 text-right")}>Serial/Batch</Text>
+          )}
+        </View>
 
-          {shipmentLines
-            .filter((line) => line.shippedQuantity > 0)
-            .map((line) => {
-              const barcodeDataUrl = generateBarcode(line.itemReadableId);
-              const trackedEntitiesForLine = trackedEntities.filter(
-                (entity) =>
-                  (entity.attributes as TrackedEntityAttributes)?.[
-                    "Shipment Line"
-                  ] === line.id
-              );
-              return (
+        {/* Rows */}
+        {shipmentLines
+          .filter((line) => line.shippedQuantity > 0)
+          .map((line) => {
+            const barcodeDataUrl = generateBarcode(line.itemReadableId);
+            const trackedEntitiesForLine = trackedEntities.filter(
+              (entity) =>
+                (entity.attributes as TrackedEntityAttributes)?.[
+                  "Shipment Line"
+                ] === line.id
+            );
+            const isEven = rowIndex % 2 === 0;
+            rowIndex++;
+
+            return (
+              <View
+                key={line.id}
+                style={tw(
+                  `flex flex-row py-2 px-3 border-b border-gray-200 text-[10px] ${
+                    isEven ? "bg-white" : "bg-gray-50"
+                  }`
+                )}
+                wrap={false}
+              >
                 <View
                   style={tw(
-                    "flex flex-row justify-between py-3 px-[6px] border-b border-gray-300 page-break-inside-avoid"
+                    `w-${hasTrackedEntities ? "5/12" : "7/12"} pr-2`
                   )}
-                  key={line.id}
-                  wrap={false}
                 >
-                  <View style={tw(`w-${hasTrackedEntities ? "7/12" : "9/12"}`)}>
-                    <Text style={tw("font-bold mb-1")}>
-                      {getLineDescription(line)}
-                    </Text>
-                    <Text style={tw("text-[9px] opacity-80 mb-2")}>
-                      {getLineDescriptionDetails(line)}
-                    </Text>
+                  <Text style={tw("text-gray-800")}>
+                    {getLineDescription(line)}
+                  </Text>
+                  <Text style={tw("text-[8px] text-gray-400 mt-0.5")}>
+                    {getLineDescriptionDetails(line)}
+                  </Text>
 
-                    {thumbnails &&
-                      line.id in thumbnails &&
-                      thumbnails[line.id] && (
-                        <View style={tw("mt-2 mb-2")}>
+                  {thumbnails &&
+                    line.id in thumbnails &&
+                    thumbnails[line.id] && (
+                      <View style={tw("mt-1 w-16")}>
+                        <Image
+                          src={thumbnails[line.id]!}
+                          style={tw("w-full h-auto")}
+                        />
+                      </View>
+                    )}
+
+                  <View style={tw("mt-1")}>
+                    <Image
+                      src={barcodeDataUrl}
+                      style={tw("max-w-[50%]")}
+                    />
+                  </View>
+                </View>
+                <Text style={tw("w-2/12 text-right text-gray-600")}>
+                  {getLineQuantity(line)}
+                </Text>
+                {hasTrackedEntities && (
+                  <View style={tw("w-5/12 flex flex-col gap-1 items-end")}>
+                    {trackedEntitiesForLine.map((entity) => {
+                      const qrCodeDataUrl = generateQRCode(entity.id, 8);
+                      return (
+                        <View
+                          key={entity.id}
+                          style={tw("mb-1 flex flex-row items-center gap-1")}
+                        >
+                          <Text style={tw("text-[8px] text-gray-600")}>
+                            {entity.id}
+                          </Text>
                           <Image
-                            src={thumbnails[line.id]!}
-                            style={tw("w-1/4 h-auto max-w-[25%]")}
+                            src={qrCodeDataUrl}
+                            style={{ width: 24, height: 24 }}
                           />
                         </View>
-                      )}
-
-                    <Image src={barcodeDataUrl} style={tw("max-w-[50%]")} />
+                      );
+                    })}
                   </View>
-                  <Text
-                    style={tw(
-                      `w-${hasTrackedEntities ? "1/6" : "3/12"} text-center`
-                    )}
-                  >
-                    {getLineQuantity(line)}
-                  </Text>
-                  {hasTrackedEntities && (
-                    <View style={tw("flex flex-col gap-2 w-1/4 text-right")}>
-                      {trackedEntitiesForLine.length > 0 && (
-                        <View>
-                          {trackedEntitiesForLine.map((entity) => {
-                            const qrCodeDataUrl = generateQRCode(entity.id, 8);
-                            return (
-                              <View
-                                key={entity.id}
-                                style={tw("mb-2 text-right")}
-                              >
-                                <Text style={tw("text-[8px] mb-1")}>
-                                  {entity.id}
-                                </Text>
-                                <Image
-                                  src={qrCodeDataUrl}
-                                  style={tw("max-w-[80%] ml-auto")}
-                                />
-                              </View>
-                            );
-                          })}
-                        </View>
-                      )}
-                    </View>
-                  )}
-                </View>
-              );
-            })}
-        </View>
+                )}
+              </View>
+            );
+          })}
+      </View>
 
-        {/* Notes and Terms Section */}
-        <View style={tw("flex flex-col gap-4 w-full")}>
+      {/* Notes & Terms */}
+      <View style={tw("flex flex-col gap-3 w-full")}>
+        {Object.keys(shipment.externalNotes ?? {}).length > 0 && (
           <Note
             title="Notes"
             content={(shipment.externalNotes ?? {}) as JSONContent}
           />
-          <Note title="Standard Terms & Conditions" content={terms} />
-        </View>
+        )}
+        <Note title="Standard Terms & Conditions" content={terms} />
       </View>
     </Template>
   );

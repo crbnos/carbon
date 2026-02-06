@@ -7,7 +7,7 @@ import { createTw } from "react-pdf-tailwind";
 import type { PDF } from "../types";
 import { getLineDescription, getLineDescriptionDetails } from "../utils/quote";
 import { getCurrencyFormatter } from "../utils/shared";
-import { Note, Template } from "./components";
+import { Header, Note, Template } from "./components";
 
 interface QuotePDFProps extends PDF {
   exchangeRate: number;
@@ -208,43 +208,11 @@ const QuotePDF = ({
         subject: meta?.subject ?? "Quote"
       }}
     >
-      {/* Header */}
-      <View style={tw("flex flex-row justify-between mb-1")}>
-        <View style={tw("flex flex-col")}>
-          {company.logoLightIcon && (
-            <Image
-              src={company.logoLightIcon}
-              style={{ height: 50, width: 50, marginBottom: 4 }}
-            />
-          )}
-          <Text style={tw("text-xl font-bold text-gray-800")}>
-            {company.name}
-          </Text>
-          <View style={tw("text-[10px] text-gray-600 mt-0.5")}>
-            {company.addressLine1 && <Text>{company.addressLine1}</Text>}
-            {(company.city || company.stateProvince || company.postalCode) && (
-              <Text>
-                {formatCityStatePostalCode(
-                  company.city,
-                  company.stateProvince,
-                  company.postalCode
-                )}
-              </Text>
-            )}
-            {company.phone && <Text>{company.phone}</Text>}
-            {company.website && <Text>{company.website}</Text>}
-          </View>
-        </View>
-        <View style={tw("flex flex-col items-end")}>
-          <Text style={tw("text-2xl font-bold text-gray-800")}>QUOTE</Text>
-          <Text style={tw("text-sm font-bold text-gray-600")}>
-            #{quote?.quoteId}
-          </Text>
-        </View>
-      </View>
-
-      {/* Blue Divider */}
-      <View style={tw("h-[2px] bg-gray-200 mb-4")} />
+      <Header
+        company={company}
+        title="Quote"
+        documentId={quote?.quoteId}
+      />
 
       {/* Customer & Quote Details */}
       <View style={tw("border border-gray-200 mb-4")}>
@@ -522,7 +490,7 @@ const QuotePDF = ({
                 {formatter.format(getTotalTaxes())}
               </Text>
             </View>
-            <View style={tw("h-[2px] bg-gray-400")} />
+            <View style={tw("h-[1px] bg-gray-200")} />
             <View style={tw("flex flex-row py-2 px-3 text-[11px]")}>
               <View style={tw("w-4/6")} />
               <Text style={tw("w-1/6 text-right text-gray-800 font-bold")}>

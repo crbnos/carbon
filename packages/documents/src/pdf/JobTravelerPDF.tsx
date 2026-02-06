@@ -265,10 +265,9 @@ export const JobTravelerPageContent = ({
       {/* Original Header Section with company logo and job title */}
       <View style={tw("mb-6")}>
         <Header
-          title={job.jobId}
-          subtitle={subtitle}
-          tertiaryTitle={tertiaryTitle}
           company={company}
+          title="Job Traveler"
+          documentId={job.jobId}
         />
       </View>
 
