@@ -32,9 +32,6 @@ const tw = createTw({
     },
     extend: {
       colors: {
-        blue: {
-          600: "#202278"
-        },
         gray: {
           50: "#f9fafb",
           200: "#e5e7eb",
@@ -117,7 +114,13 @@ const SalesInvoicePDF = ({
       {/* Header */}
       <View style={tw("flex flex-row justify-between mb-1")}>
         <View style={tw("flex flex-col")}>
-          <Text style={tw("text-xl font-bold text-blue-600")}>
+          {company.logoLightIcon && (
+            <Image
+              src={company.logoLightIcon}
+              style={{ height: 50, width: 50, marginBottom: 4 }}
+            />
+          )}
+          <Text style={tw("text-xl font-bold text-gray-800")}>
             {company.name}
           </Text>
           <View style={tw("text-[10px] text-gray-600 mt-0.5")}>
@@ -249,7 +252,7 @@ const SalesInvoicePDF = ({
         {/* Header */}
         <View
           style={tw(
-            "flex flex-row bg-blue-600 py-2 px-3 text-white text-[9px] font-bold uppercase"
+            "flex flex-row bg-gray-800 py-2 px-3 text-white text-[9px] font-bold"
           )}
         >
           <Text style={tw("w-1/2")}>Description</Text>

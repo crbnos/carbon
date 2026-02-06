@@ -30,9 +30,6 @@ const tw = createTw({
     },
     extend: {
       colors: {
-        blue: {
-          600: "#202278"
-        },
         gray: {
           50: "#f9fafb",
           200: "#e5e7eb",
@@ -103,6 +100,14 @@ const QuotePDF = ({
     const price = prices.find((p) => p.quantity === line.quantity[0]);
     return price && price.leadTime > 0;
   });
+
+  // Calculate column count for dynamic widths
+  // Base columns: Qty, Unit Price, Total = 3
+  // Optional: Tax & Fees (when multi-qty), Lead Time (when any has lead time)
+  const columnCount =
+    3 + (!hasSinglePricePerLine ? 1 : 0) + (hasAnyLeadTime ? 1 : 0);
+  const colWidth =
+    columnCount === 3 ? "w-1/3" : columnCount === 4 ? "w-1/4" : "w-1/5";
 
   // const getMaxLeadTime = () => {
   //   let maxLeadTime = 0;
@@ -206,7 +211,13 @@ const QuotePDF = ({
       {/* Header */}
       <View style={tw("flex flex-row justify-between mb-1")}>
         <View style={tw("flex flex-col")}>
-          <Text style={tw("text-xl font-bold text-blue-600")}>
+          {company.logoLightIcon && (
+            <Image
+              src={company.logoLightIcon}
+              style={{ height: 50, width: 50, marginBottom: 4 }}
+            />
+          )}
+          <Text style={tw("text-xl font-bold text-gray-800")}>
             {company.name}
           </Text>
           <View style={tw("text-[10px] text-gray-600 mt-0.5")}>
@@ -293,36 +304,23 @@ const QuotePDF = ({
         {/* Header */}
         <View
           style={tw(
-            "flex flex-row bg-blue-600 py-2 px-3 text-white text-[9px] font-bold uppercase"
+            "flex flex-row bg-gray-800 py-2 px-3 text-white text-[9px] font-bold"
           )}
         >
-          <Text style={tw(hasAnyLeadTime ? "w-5/12" : "w-1/2")}>
-            Description
-          </Text>
-          <Text
-            style={tw(
-              hasAnyLeadTime ? "w-1/12 text-right" : "w-1/6 text-right"
+          <View style={tw("w-1/3")}>
+            <Text>Description</Text>
+          </View>
+          <View style={tw("w-2/3 flex flex-row")}>
+            <Text style={tw(`${colWidth} text-right pr-3`)}>Qty</Text>
+            <Text style={tw(`${colWidth} text-right pr-3`)}>Unit Price</Text>
+            {!hasSinglePricePerLine && (
+              <Text style={tw(`${colWidth} text-right pr-3`)}>Tax & Fees</Text>
             )}
-          >
-            Qty
-          </Text>
-          <Text
-            style={tw(
-              hasAnyLeadTime ? "w-2/12 text-right" : "w-1/6 text-right"
+            {hasAnyLeadTime && (
+              <Text style={tw(`${colWidth} text-right pr-3`)}>Lead Time</Text>
             )}
-          >
-            Unit Price
-          </Text>
-          {hasAnyLeadTime && (
-            <Text style={tw("w-2/12 text-right")}>Lead Time</Text>
-          )}
-          <Text
-            style={tw(
-              hasAnyLeadTime ? "w-2/12 text-right" : "w-1/6 text-right"
-            )}
-          >
-            Total
-          </Text>
+            <Text style={tw(`${colWidth} text-right`)}>Total</Text>
+          </View>
         </View>
 
         {/* Rows */}
@@ -333,10 +331,12 @@ const QuotePDF = ({
             line.unitPricePrecision
           );
 
+          const additionalCharges = line.additionalCharges ?? {};
+
           return (
             <View key={line.id} wrap={false}>
               {line.status !== "No Quote" ? (
-                line.quantity.map((quantity) => {
+                line.quantity.map((quantity, index) => {
                   const prices = pricesByLine[line.id] ?? [];
                   const price = prices.find((p) => p.quantity === quantity);
                   const unitPrice = price?.convertedUnitPrice ?? 0;
@@ -347,6 +347,25 @@ const QuotePDF = ({
 
                   const leadTime = price?.leadTime ?? 0;
 
+                  // Calculate tax & fees for this quantity
+                  const additionalCharge = Object.values(
+                    additionalCharges
+                  ).reduce((acc, charge) => {
+                    let amount = charge.amounts?.[quantity] ?? 0;
+                    if (shouldConvertCurrency) {
+                      amount *= exchangeRate;
+                    }
+                    return acc + amount;
+                  }, 0);
+                  const shippingCost = price?.convertedShippingCost ?? 0;
+                  const taxPercent = line.taxPercent ?? 0;
+                  const totalBeforeTax =
+                    netExtendedPrice + additionalCharge + shippingCost;
+                  const taxAmount = totalBeforeTax * taxPercent;
+                  const totalTaxAndFees =
+                    additionalCharge + shippingCost + taxAmount;
+                  const totalPrice = netExtendedPrice + totalTaxAndFees;
+
                   return (
                     <View
                       key={`${line.id}-${quantity}`}
@@ -356,11 +375,7 @@ const QuotePDF = ({
                         }`
                       )}
                     >
-                      <View
-                        style={tw(
-                          hasAnyLeadTime ? "w-5/12 pr-2" : "w-1/2 pr-2"
-                        )}
-                      >
+                      <View style={tw("w-1/3 pr-2")}>
                         <Text style={tw("text-gray-800")}>
                           {getLineDescription(line)}
                         </Text>
@@ -368,48 +383,65 @@ const QuotePDF = ({
                           {getLineDescriptionDetails(line)}
                         </Text>
                         {thumbnails && line.id in thumbnails && (
-                          <View style={tw("mt-1 w-16")}>
+                          <View style={tw("mt-2")}>
                             <Image
                               src={thumbnails[line.id]!}
-                              style={tw("w-full h-auto")}
+                              style={{ width: 60, height: 60 }}
                             />
                           </View>
                         )}
                       </View>
-                      <Text
-                        style={tw(
-                          hasAnyLeadTime
-                            ? "w-1/12 text-right text-gray-600"
-                            : "w-1/6 text-right text-gray-600"
-                        )}
-                      >
-                        {quantity} EA
-                      </Text>
-                      <Text
-                        style={tw(
-                          hasAnyLeadTime
-                            ? "w-2/12 text-right text-gray-600"
-                            : "w-1/6 text-right text-gray-600"
-                        )}
-                      >
-                        {unitPrice ? unitPriceFormatter.format(unitPrice) : "-"}
-                      </Text>
-                      {hasAnyLeadTime && (
-                        <Text style={tw("w-2/12 text-right text-gray-600")}>
-                          {leadTime > 0 ? `${leadTime} days` : "-"}
+                      <View style={tw("w-2/3 flex flex-row")}>
+                        <Text
+                          style={tw(
+                            `${colWidth} text-right text-gray-600 pr-3`
+                          )}
+                        >
+                          {quantity} EA
                         </Text>
-                      )}
-                      <Text
-                        style={tw(
-                          hasAnyLeadTime
-                            ? "w-2/12 text-right text-gray-800 font-medium"
-                            : "w-1/6 text-right text-gray-800 font-medium"
+                        <Text
+                          style={tw(
+                            `${colWidth} text-right text-gray-600 pr-3`
+                          )}
+                        >
+                          {unitPrice
+                            ? unitPriceFormatter.format(unitPrice)
+                            : "-"}
+                        </Text>
+                        {!hasSinglePricePerLine && (
+                          <Text
+                            style={tw(
+                              `${colWidth} text-right text-gray-600 pr-3`
+                            )}
+                          >
+                            {totalTaxAndFees > 0
+                              ? formatter.format(totalTaxAndFees)
+                              : "-"}
+                          </Text>
                         )}
-                      >
-                        {netExtendedPrice > 0
-                          ? formatter.format(netExtendedPrice)
-                          : "-"}
-                      </Text>
+                        {hasAnyLeadTime && (
+                          <Text
+                            style={tw(
+                              `${colWidth} text-right text-gray-600 pr-3`
+                            )}
+                          >
+                            {leadTime > 0 ? `${leadTime} days` : "-"}
+                          </Text>
+                        )}
+                        <Text
+                          style={tw(
+                            `${colWidth} text-right text-gray-800 font-medium`
+                          )}
+                        >
+                          {hasSinglePricePerLine
+                            ? netExtendedPrice > 0
+                              ? formatter.format(netExtendedPrice)
+                              : "-"
+                            : totalPrice > 0
+                              ? formatter.format(totalPrice)
+                              : "-"}
+                        </Text>
+                      </View>
                     </View>
                   );
                 })
@@ -421,9 +453,7 @@ const QuotePDF = ({
                     }`
                   )}
                 >
-                  <View
-                    style={tw(hasAnyLeadTime ? "w-5/12 pr-2" : "w-1/2 pr-2")}
-                  >
+                  <View style={tw("w-1/3 pr-2")}>
                     <Text style={tw("text-gray-800")}>
                       {getLineDescription(line)}
                     </Text>
@@ -431,31 +461,27 @@ const QuotePDF = ({
                       {getLineDescriptionDetails(line)}
                     </Text>
                   </View>
-                  <Text
-                    style={tw(
-                      hasAnyLeadTime
-                        ? "w-1/12 text-right text-gray-600 font-bold"
-                        : "w-1/6 text-right text-gray-600 font-bold"
-                    )}
-                  >
-                    No Quote
-                  </Text>
-                  <Text
-                    style={tw(
-                      hasAnyLeadTime
-                        ? "w-6/12 text-right text-gray-400 text-[8px]"
-                        : "w-1/3 text-right text-gray-400 text-[8px]"
-                    )}
-                  >
-                    {line.noQuoteReason ?? ""}
-                  </Text>
+                  <View style={tw("w-2/3 flex flex-row")}>
+                    <Text
+                      style={tw(
+                        `${colWidth} text-right text-gray-600 font-bold`
+                      )}
+                    >
+                      No Quote
+                    </Text>
+                    <View style={tw("flex-1 text-right")}>
+                      <Text style={tw("text-gray-400 text-[8px] text-right")}>
+                        {line.noQuoteReason ?? ""}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
               )}
             </View>
           );
         })}
 
-        {/* Summary */}
+        {/* Summary - only show when single price per line */}
         {hasSinglePricePerLine && (
           <View>
             <View
@@ -467,19 +493,15 @@ const QuotePDF = ({
                 {formatter.format(getTotalSubtotal())}
               </Text>
             </View>
-            {getTotalShipping() > 0 && (
-              <View
-                style={tw("flex flex-row py-1.5 px-3 bg-gray-50 text-[10px]")}
-              >
-                <View style={tw("w-4/6")} />
-                <Text style={tw("w-1/6 text-right text-gray-600")}>
-                  Shipping
-                </Text>
-                <Text style={tw("w-1/6 text-right text-gray-800")}>
-                  {formatter.format(getTotalShipping())}
-                </Text>
-              </View>
-            )}
+            <View
+              style={tw("flex flex-row py-1.5 px-3 bg-gray-50 text-[10px]")}
+            >
+              <View style={tw("w-4/6")} />
+              <Text style={tw("w-1/6 text-right text-gray-600")}>Shipping</Text>
+              <Text style={tw("w-1/6 text-right text-gray-800")}>
+                {formatter.format(getTotalShipping())}
+              </Text>
+            </View>
             {getTotalFees() > 0 && (
               <View
                 style={tw("flex flex-row py-1.5 px-3 bg-gray-50 text-[10px]")}
@@ -491,17 +513,15 @@ const QuotePDF = ({
                 </Text>
               </View>
             )}
-            {getTotalTaxes() > 0 && (
-              <View
-                style={tw("flex flex-row py-1.5 px-3 bg-gray-50 text-[10px]")}
-              >
-                <View style={tw("w-4/6")} />
-                <Text style={tw("w-1/6 text-right text-gray-600")}>Taxes</Text>
-                <Text style={tw("w-1/6 text-right text-gray-800")}>
-                  {formatter.format(getTotalTaxes())}
-                </Text>
-              </View>
-            )}
+            <View
+              style={tw("flex flex-row py-1.5 px-3 bg-gray-50 text-[10px]")}
+            >
+              <View style={tw("w-4/6")} />
+              <Text style={tw("w-1/6 text-right text-gray-600")}>Taxes</Text>
+              <Text style={tw("w-1/6 text-right text-gray-800")}>
+                {formatter.format(getTotalTaxes())}
+              </Text>
+            </View>
             <View style={tw("h-[2px] bg-gray-400")} />
             <View style={tw("flex flex-row py-2 px-3 text-[11px]")}>
               <View style={tw("w-4/6")} />
