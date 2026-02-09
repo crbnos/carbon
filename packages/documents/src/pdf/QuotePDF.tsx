@@ -109,18 +109,18 @@ const QuotePDF = ({
   const colWidth =
     columnCount === 3 ? "w-1/3" : columnCount === 4 ? "w-1/4" : "w-1/5";
 
-  // const getMaxLeadTime = () => {
-  //   let maxLeadTime = 0;
-  //   for (const line of quoteLines) {
-  //     if (line.status === "No Quote") continue;
-  //     const prices = pricesByLine[line.id] ?? [];
-  //     const price = prices.find((p) => p.quantity === line.quantity[0]);
-  //     if (price && price.leadTime > maxLeadTime) {
-  //       maxLeadTime = price.leadTime;
-  //     }
-  //   }
-  //   return maxLeadTime;
-  // };
+  const getMaxLeadTime = () => {
+    let maxLeadTime = 0;
+    for (const line of quoteLines) {
+      if (line.status === "No Quote") continue;
+      const prices = pricesByLine[line.id] ?? [];
+      const price = prices.find((p) => p.quantity === line.quantity[0]);
+      if (price && price.leadTime > maxLeadTime) {
+        maxLeadTime = price.leadTime;
+      }
+    }
+    return maxLeadTime;
+  };
 
   const getTotalSubtotal = () => {
     return quoteLines.reduce((total, line) => {
@@ -196,7 +196,7 @@ const QuotePDF = ({
     }
   };
 
-  // const maxLeadTime = getMaxLeadTime();
+  const maxLeadTime = getMaxLeadTime();
   let rowIndex = 0;
 
   return (
@@ -208,11 +208,7 @@ const QuotePDF = ({
         subject: meta?.subject ?? "Quote"
       }}
     >
-      <Header
-        company={company}
-        title="Quote"
-        documentId={quote?.quoteId}
-      />
+      <Header company={company} title="Quote" documentId={quote?.quoteId} />
 
       {/* Customer & Quote Details */}
       <View style={tw("border border-gray-200 mb-4")}>
@@ -505,16 +501,18 @@ const QuotePDF = ({
       </View>
 
       {/* Footer - Lead Time & Payment Terms */}
-      {(shipment?.leadTime || paymentTerm) && (
+      {(maxLeadTime > 0 || paymentTerm) && (
         <View style={tw("flex flex-row gap-8 mb-4 text-[10px]")}>
-          {shipment?.leadTime ? (
+          {maxLeadTime > 0 && (
             <View style={tw("flex flex-row")}>
-              <Text style={tw("font-bold text-gray-800")}>Lead Time: </Text>
+              <Text style={tw("font-bold text-gray-800")}>
+                Overall Lead Time:{" "}
+              </Text>
               <Text style={tw("text-gray-600")}>
-                {shipment.leadTime} {shipment.leadTime === 1 ? "day" : "days"}
+                {maxLeadTime} {maxLeadTime === 1 ? "day" : "days"}
               </Text>
             </View>
-          ) : null}
+          )}
           {paymentTerm && (
             <View style={tw("flex flex-row")}>
               <Text style={tw("font-bold text-gray-800")}>Payment Terms: </Text>
