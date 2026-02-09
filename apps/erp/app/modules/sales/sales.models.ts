@@ -510,8 +510,7 @@ export const quoteShipmentValidator = z.object({
   locationId: zfd.text(z.string().optional()),
   shippingMethodId: zfd.text(z.string().optional()),
   receiptRequestedDate: zfd.text(z.string().optional()),
-  shippingCost: zfd.numeric(z.number().optional()),
-  leadTime: zfd.numeric(z.number().optional())
+  shippingCost: zfd.numeric(z.number().optional())
 });
 
 export const salesOrderLineType = [

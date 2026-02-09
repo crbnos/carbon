@@ -107,16 +107,6 @@ const QuoteShipmentForm = forwardRef<
             <ShippingMethod name="shippingMethodId" label="Shipping Method" />
 
             <DatePicker name="receiptRequestedDate" label="Requested Date" />
-            <Number
-              name="leadTime"
-              label="Lead Time"
-              formatOptions={{
-                style: "unit",
-                unit: "day",
-                unitDisplay: "long"
-              }}
-              minValue={0}
-            />
           </div>
         </CardContent>
         <CardFooter>
