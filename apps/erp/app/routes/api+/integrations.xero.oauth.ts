@@ -93,6 +93,76 @@ export async function loader({ request }: LoaderFunctionArgs) {
       );
     }
 
+    // Fetch Carbon company's base currency
+    const { data: company, error: companyError } = await client
+      .from("company")
+      .select("baseCurrencyCode")
+      .eq("id", companyId)
+      .single();
+
+    if (companyError || !company?.baseCurrencyCode) {
+      return data(
+        { error: "Company base currency not configured" },
+        { status: 400 }
+      );
+    }
+
+    // Fetch Xero organisation to get base currency
+    const xeroOrgResponse = await fetch(
+      "https://api.xero.com/api.xro/2.0/Organisation",
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${auth.accessToken}`,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "xero-tenant-id": tenantId
+        }
+      }
+    );
+
+    if (!xeroOrgResponse.ok) {
+      console.error(
+        "Xero Organisation API error:",
+        xeroOrgResponse.status,
+        await xeroOrgResponse.text()
+      );
+      return data(
+        { error: "Failed to fetch Xero organization details" },
+        { status: 500 }
+      );
+    }
+
+    let xeroOrgData;
+    try {
+      xeroOrgData = await xeroOrgResponse.json();
+    } catch (parseError) {
+      console.error("Failed to parse Xero Organisation response:", parseError);
+      return data(
+        { error: "Invalid response from Xero organization API" },
+        { status: 500 }
+      );
+    }
+
+    const xeroBaseCurrency = xeroOrgData?.Organisations?.[0]?.BaseCurrency;
+
+    if (!xeroBaseCurrency) {
+      return data(
+        { error: "Could not determine Xero organization base currency" },
+        { status: 500 }
+      );
+    }
+
+    // Check if Carbon's base currency matches Xero's base currency
+    if (company.baseCurrencyCode !== xeroBaseCurrency) {
+      return data(
+        {
+          error: `Currency mismatch: Your Carbon company uses ${company.baseCurrencyCode}, but your Xero organization uses ${xeroBaseCurrency}. Please ensure both systems use the same base currency before connecting.`
+        },
+        { status: 400 }
+      );
+    }
+
     const createdXeroIntegration = await upsertCompanyIntegration(client, {
       id: Xero.id,
       active: true,
