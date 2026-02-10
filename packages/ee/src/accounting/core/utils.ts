@@ -37,7 +37,8 @@ export class HTTPClient {
       response = await this.fetch(method, path, opts);
 
       if (response.status === 429) {
-        throw new RatelimitError("Rate limit exceeded", response);
+        const rateLimitInfo = parseRateLimitInfo(response);
+        throw new RatelimitError("Rate limit exceeded", rateLimitInfo);
       }
 
       return this.parseResponse<T>(response);
@@ -134,15 +135,63 @@ export class NotImplementedError extends Error {
   }
 }
 
+export interface RateLimitInfo {
+  /** Seconds to wait before retrying */
+  retryAfterSeconds: number;
+  /** Which limit was hit (e.g., "minute", "day") */
+  limitType?: string;
+  /** Provider-specific details */
+  details?: Record<string, unknown>;
+}
+
 export class RatelimitError extends Error {
-  constructor(
-    message: string,
-    public response: Response
-  ) {
+  public rateLimitInfo: RateLimitInfo;
+
+  constructor(message: string, rateLimitInfo: RateLimitInfo) {
     super(message);
     this.name = "RatelimitError";
-    this.response = response;
+    this.rateLimitInfo = rateLimitInfo;
   }
+
+  get retryAfterSeconds(): number {
+    return this.rateLimitInfo.retryAfterSeconds;
+  }
+}
+
+/**
+ * Parse rate limit info from a 429 response.
+ * Handles Xero-specific headers but can be extended for other providers.
+ */
+export function parseRateLimitInfo(response: Response): RateLimitInfo {
+  // Parse Retry-After header (standard HTTP header, value in seconds)
+  const retryAfter = response.headers.get("Retry-After");
+  let retryAfterSeconds = retryAfter ? parseInt(retryAfter, 10) : 60;
+
+  // Fallback to 60 seconds if parsing fails
+  if (isNaN(retryAfterSeconds) || retryAfterSeconds <= 0) {
+    retryAfterSeconds = 60;
+  }
+
+  // Parse provider-specific headers
+  const limitType = response.headers.get("X-Rate-Limit-Problem") ?? undefined;
+
+  const details: Record<string, unknown> = {};
+
+  // Xero-specific headers
+  const minuteRemaining = response.headers.get("X-MinLimit-Remaining");
+  const dayRemaining = response.headers.get("X-DayLimit-Remaining");
+  const appMinuteRemaining = response.headers.get("X-AppMinLimit-Remaining");
+
+  if (minuteRemaining) details.minuteRemaining = parseInt(minuteRemaining, 10);
+  if (dayRemaining) details.dayRemaining = parseInt(dayRemaining, 10);
+  if (appMinuteRemaining)
+    details.appMinuteRemaining = parseInt(appMinuteRemaining, 10);
+
+  return {
+    retryAfterSeconds,
+    limitType,
+    details: Object.keys(details).length > 0 ? details : undefined
+  };
 }
 
 /** Structured details from an accounting provider API error */
