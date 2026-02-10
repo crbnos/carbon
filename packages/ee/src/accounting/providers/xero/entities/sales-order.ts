@@ -183,12 +183,12 @@ export class SalesOrderSyncer extends BaseEntitySyncer<
         status: row.status,
         orderDate: row.orderDate,
         currencyCode: row.currencyCode,
-        exchangeRate: row.exchangeRate,
+        exchangeRate: Number(row.exchangeRate) || 1,
         customerReference: row.customerReference,
         lines: lines.map((line) => {
-          const unitPrice = line.unitPrice ?? 0;
-          const setupPrice = line.setupPrice ?? 0;
-          const quantity = line.saleQuantity;
+          const unitPrice = Number(line.unitPrice) || 0;
+          const setupPrice = Number(line.setupPrice) || 0;
+          const quantity = Number(line.saleQuantity) || 0;
           return {
             id: line.id,
             salesOrderLineType: line.salesOrderLineType,
