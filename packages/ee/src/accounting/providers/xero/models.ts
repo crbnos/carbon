@@ -322,6 +322,61 @@ export namespace Xero {
   export type QuoteLineItem = z.infer<typeof QuoteLineItemSchema>;
   export type QuoteContact = z.infer<typeof QuoteContactSchema>;
   export type Quote = z.infer<typeof QuoteSchema>;
+
+  // Organisation schema for Xero Accounting API Organisation endpoint
+  export const OrganisationSchema = z.object({
+    OrganisationID: z.string().uuid(),
+    Name: z.string(),
+    LegalName: z.string().optional(),
+    BaseCurrency: z.string(),
+    CountryCode: z.string().optional(),
+    IsDemoCompany: z.boolean().optional(),
+    OrganisationType: z.string().optional(),
+    OrganisationStatus: z.string().optional(),
+    TaxNumber: z.string().optional(),
+    FinancialYearEndDay: z.number().optional(),
+    FinancialYearEndMonth: z.number().optional(),
+    DefaultSalesTax: z.string().optional(),
+    DefaultPurchasesTax: z.string().optional(),
+    ShortCode: z.string().optional(),
+    Edition: z.string().optional(),
+    Class: z.string().optional(),
+    Timezone: z.string().optional(),
+    CreatedDateUTC: z.string().optional(),
+    UpdatedDateUTC: z.string().optional()
+  });
+
+  export type Organisation = z.infer<typeof OrganisationSchema>;
+
+  // Currency schema for Xero Accounting API Currencies endpoint
+  export const CurrencySchema = z.object({
+    Code: z.string(),
+    Description: z.string().optional()
+  });
+
+  export type Currency = z.infer<typeof CurrencySchema>;
+
+  // Account schema for Xero Accounting API Accounts (Chart of Accounts) endpoint
+  export const AccountSchema = z.object({
+    AccountID: z.string().uuid(),
+    Code: z.string().optional(),
+    Name: z.string(),
+    Type: z.string(), // e.g., "REVENUE", "EXPENSE", "DIRECTCOSTS", "BANK", etc.
+    Status: z.enum(["ACTIVE", "ARCHIVED"]).optional(),
+    Description: z.string().optional(),
+    TaxType: z.string().optional(),
+    Class: z.string().optional(), // "REVENUE", "EXPENSE", "ASSET", "LIABILITY", "EQUITY"
+    EnablePaymentsToAccount: z.boolean().optional(),
+    ShowInExpenseClaims: z.boolean().optional(),
+    BankAccountNumber: z.string().optional(),
+    BankAccountType: z.string().optional(),
+    CurrencyCode: z.string().optional(),
+    ReportingCode: z.string().optional(),
+    ReportingCodeName: z.string().optional(),
+    UpdatedDateUTC: z.string().optional()
+  });
+
+  export type Account = z.infer<typeof AccountSchema>;
 }
 
 export const parseDotnetDate = (date: Date | string) => {

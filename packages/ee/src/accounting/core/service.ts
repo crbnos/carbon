@@ -60,25 +60,8 @@ export const getProviderIntegration = (
 ) => {
   const { accessToken, refreshToken, tenantId } = config?.credentials || {};
 
-  // Merge user's sync config with defaults (user settings override defaults)
-  const syncConfig = config?.syncConfig
-    ? {
-        entities: {
-          ...DEFAULT_SYNC_CONFIG.entities,
-          ...Object.fromEntries(
-            Object.entries(config.syncConfig.entities).map(([key, value]) => [
-              key,
-              {
-                ...DEFAULT_SYNC_CONFIG.entities[
-                  key as keyof typeof DEFAULT_SYNC_CONFIG.entities
-                ],
-                ...value
-              }
-            ])
-          )
-        }
-      }
-    : DEFAULT_SYNC_CONFIG;
+  // For now don't use the company level sync config
+  const syncConfig = DEFAULT_SYNC_CONFIG;
 
   // Create a callback function to update the integration metadata when tokens are refreshed
   const onTokenRefresh = async (auth: ProviderCredentials) => {
@@ -119,7 +102,16 @@ export const getProviderIntegration = (
     //     onTokenRefresh
     //   });
     // }
-    case "xero":
+    case "xero": {
+      const settings = {
+        defaultSalesAccountCode: config?.defaultSalesAccountCode,
+        defaultPurchaseAccountCode: config?.defaultPurchaseAccountCode
+      };
+      console.log(
+        "[getProviderIntegration] Creating XeroProvider with settings:",
+        settings
+      );
+      console.log("[getProviderIntegration] Full config received:", config);
       return new XeroProvider({
         companyId,
         tenantId,
@@ -129,8 +121,10 @@ export const getProviderIntegration = (
         clientSecret: process.env.XERO_CLIENT_SECRET!,
         redirectUri: process.env.XERO_REDIRECT_URI,
         syncConfig,
-        onTokenRefresh
+        onTokenRefresh,
+        settings
       });
+    }
     // Add other providers as needed
     // case "sage":
     //   return new SageProvider(config);

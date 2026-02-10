@@ -34,11 +34,17 @@ export interface ListItemsResponse {
   page: number;
 }
 
+export interface XeroSettings {
+  defaultSalesAccountCode?: string;
+  defaultPurchaseAccountCode?: string;
+}
+
 type XeroProviderConfig = ProviderConfig<{
   clientId: string;
   clientSecret: string;
   redirectUri?: string;
   tenantId?: string;
+  settings?: XeroSettings;
 }> & {
   id: ProviderID.XERO;
   accessToken?: string;
@@ -52,9 +58,12 @@ export class XeroProvider implements BaseProvider {
   auth: AuthProvider;
 
   private readonly syncConfig!: GlobalSyncConfig;
+  private readonly _settings: XeroSettings;
 
   constructor(public config: Omit<XeroProviderConfig, "id">) {
     this.syncConfig = config.syncConfig;
+    this._settings = config.settings ?? {};
+    console.log("[XeroProvider] Initialized with settings:", this._settings);
     this.http = new HTTPClient("https://api.xero.com/api.xro/2.0");
     this.auth = createOAuthClient({
       clientId: config.clientId,
@@ -81,6 +90,13 @@ export class XeroProvider implements BaseProvider {
   get id(): ProviderID.XERO {
     // @ts-expect-error
     return this.constructor.id;
+  }
+
+  /**
+   * Get integration settings (e.g., default account codes).
+   */
+  get settings(): XeroSettings {
+    return this._settings;
   }
 
   getSyncConfig(entity: AccountingEntityType) {
@@ -146,6 +162,60 @@ export class XeroProvider implements BaseProvider {
       console.error("Xero validate error:", error);
       return false;
     }
+  }
+
+  /**
+   * Fetch the Xero organisation details including base currency.
+   */
+  async getOrganisation(): Promise<Xero.Organisation | null> {
+    const response = await this.request<{ Organisations: Xero.Organisation[] }>(
+      "GET",
+      "/Organisation"
+    );
+
+    if (response.error || !response.data?.Organisations?.[0]) {
+      return null;
+    }
+
+    return response.data.Organisations[0];
+  }
+
+  /**
+   * Fetch all currencies enabled/subscribed in the Xero organisation.
+   */
+  async listCurrencies(): Promise<Xero.Currency[]> {
+    const response = await this.request<{ Currencies: Xero.Currency[] }>(
+      "GET",
+      "/Currencies"
+    );
+
+    if (response.error) {
+      return [];
+    }
+
+    const data = response.data as { Currencies: Xero.Currency[] } | null;
+    return data?.Currencies ?? [];
+  }
+
+  /**
+   * Fetch chart of accounts from Xero.
+   * Returns all active accounts by default.
+   */
+  async listChartOfAccounts(): Promise<Xero.Account[]> {
+    const response = await this.request<{ Accounts: Xero.Account[] }>(
+      "GET",
+      "/Accounts"
+    );
+
+    if (response.error) {
+      console.error("Failed to fetch Xero accounts:", response);
+      return [];
+    }
+
+    // Filter to only active accounts
+    return (response.data?.Accounts ?? []).filter(
+      (account) => account.Status === "ACTIVE"
+    );
   }
 
   /**

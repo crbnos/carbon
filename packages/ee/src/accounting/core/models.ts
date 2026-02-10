@@ -138,9 +138,9 @@ export const DEFAULT_SYNC_CONFIG: GlobalSyncConfig = {
       owner: "carbon"
     },
     purchaseOrder: {
-      enabled: false,
-      direction: "two-way",
-      owner: "accounting"
+      enabled: true,
+      direction: "push-to-accounting",
+      owner: "carbon"
     },
     bill: { enabled: true, direction: "two-way", owner: "accounting" },
     salesOrder: {
@@ -207,30 +207,38 @@ export function validateSyncConfig(config: GlobalSyncConfig): string[] {
 
 const createEntityConfigSchema = () =>
   z.object({
-    enabled: z.boolean(),
-    direction: SyncDirectionSchema,
-    owner: z.enum(["carbon", "accounting"]),
+    enabled: z.boolean().optional().default(true),
+    direction: SyncDirectionSchema.optional().default("two-way"),
+    owner: z.enum(["carbon", "accounting"]).optional().default("accounting"),
     syncFromDate: z.string().datetime().optional()
   });
 
-export const SyncConfigSchema = z.object({
-  entities: z.object({
-    customer: createEntityConfigSchema(),
-    vendor: createEntityConfigSchema(),
-    item: createEntityConfigSchema(),
-    employee: createEntityConfigSchema(),
-    purchaseOrder: createEntityConfigSchema(),
-    bill: createEntityConfigSchema(),
-    salesOrder: createEntityConfigSchema(),
-    invoice: createEntityConfigSchema(),
-    payment: createEntityConfigSchema(),
-    inventoryAdjustment: createEntityConfigSchema()
+export const SyncConfigSchema = z
+  .object({
+    entities: z
+      .object({
+        customer: createEntityConfigSchema().optional(),
+        vendor: createEntityConfigSchema().optional(),
+        item: createEntityConfigSchema().optional(),
+        employee: createEntityConfigSchema().optional(),
+        purchaseOrder: createEntityConfigSchema().optional(),
+        bill: createEntityConfigSchema().optional(),
+        salesOrder: createEntityConfigSchema().optional(),
+        invoice: createEntityConfigSchema().optional(),
+        payment: createEntityConfigSchema().optional(),
+        inventoryAdjustment: createEntityConfigSchema().optional()
+      })
+      .optional()
   })
-});
+  .optional();
 
 export const ProviderIntegrationMetadataSchema = z.object({
-  syncConfig: SyncConfigSchema,
-  credentials: ProviderCredentialsSchema.optional()
+  syncConfig: SyncConfigSchema.optional(),
+  credentials: ProviderCredentialsSchema.optional(),
+  // Integration-specific settings (e.g., default account codes for Xero)
+  // These are stored at the top level of metadata and passed through to the provider
+  defaultSalesAccountCode: z.string().optional(),
+  defaultPurchaseAccountCode: z.string().optional()
 });
 
 // /********************************************************\
