@@ -2329,9 +2329,6 @@ export default {
             $ref: "#/parameters/rowFilter.quoteShipment.shippingCost",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteShipment.leadTime",
-          },
-          {
             $ref: "#/parameters/select",
           },
           {
@@ -2418,9 +2415,6 @@ export default {
             $ref: "#/parameters/rowFilter.quoteShipment.shippingCost",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteShipment.leadTime",
-          },
-          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -2459,9 +2453,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteShipment.shippingCost",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quoteShipment.leadTime",
           },
           {
             $ref: "#/parameters/body.quoteShipment",
@@ -34418,9 +34409,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quotes.shippingCost",
-          },
-          {
-            $ref: "#/parameters/rowFilter.quotes.leadTime",
           },
           {
             $ref: "#/parameters/select",
@@ -68780,11 +68768,6 @@ export default {
           format: "numeric",
           type: "number",
         },
-        leadTime: {
-          default: 0,
-          format: "numeric",
-          type: "number",
-        },
       },
       type: "object",
     },
@@ -83860,10 +83843,6 @@ export default {
           format: "numeric",
           type: "number",
         },
-        leadTime: {
-          format: "numeric",
-          type: "number",
-        },
       },
       type: "object",
     },
@@ -98935,12 +98914,6 @@ export default {
     },
     "rowFilter.quoteShipment.shippingCost": {
       name: "shippingCost",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.quoteShipment.leadTime": {
-      name: "leadTime",
       required: false,
       in: "query",
       type: "string",
@@ -115998,12 +115971,6 @@ export default {
     },
     "rowFilter.quotes.shippingCost": {
       name: "shippingCost",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.quotes.leadTime": {
-      name: "leadTime",
       required: false,
       in: "query",
       type: "string",
