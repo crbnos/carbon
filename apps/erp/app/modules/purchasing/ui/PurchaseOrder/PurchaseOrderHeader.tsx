@@ -42,6 +42,7 @@ import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
 import PurchaseInvoicingStatus from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicingStatus";
 import type { ApprovalDecision } from "~/modules/shared/types";
 import { path } from "~/utils/path";
+import { isPurchaseOrderLocked } from "../../purchasing.validators";
 import type { PurchaseOrder, PurchaseOrderLine } from "../../types";
 import PurchaseOrderApprovalModal from "./PurchaseOrderApprovalModal";
 import PurchaseOrderFinalizeModal from "./PurchaseOrderFinalizeModal";
@@ -79,6 +80,7 @@ const PurchaseOrderHeader = () => {
   const isNeedsApproval = routeData?.purchaseOrder?.status === "Needs Approval";
   const hasApprovalRequest = !!routeData?.approvalRequest;
   const canApprove = routeData?.canApprove ?? false;
+  const isLocked = isPurchaseOrderLocked(routeData?.purchaseOrder?.status);
   const { receipts, invoices, shipments } = usePurchaseOrderRelatedDocuments(
     routeData?.purchaseOrder?.supplierInteractionId ?? "",
     routeData?.purchaseOrder?.purchaseOrderType === "Outside Processing"
@@ -459,7 +461,7 @@ const PurchaseOrderHeader = () => {
                     routeData?.purchaseOrder?.status ?? ""
                   ) ||
                   statusFetcher.state !== "idle" ||
-                  !permissions.can("update", "production")
+                  !permissions.can("delete", "purchasing")
                 }
                 leftIcon={<LuCircleStop />}
                 variant="secondary"
@@ -479,7 +481,10 @@ const PurchaseOrderHeader = () => {
                 isDisabled={
                   ["Draft"].includes(routeData?.purchaseOrder?.status ?? "") ||
                   statusFetcher.state !== "idle" ||
-                  !permissions.can("update", "purchasing") ||
+                  // Locked POs require delete permission to reopen
+                  (isLocked
+                    ? !permissions.can("delete", "purchasing")
+                    : !permissions.can("update", "purchasing")) ||
                   (isNeedsApproval && !routeData?.canReopen)
                 }
                 isLoading={

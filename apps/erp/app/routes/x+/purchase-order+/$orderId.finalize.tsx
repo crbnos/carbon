@@ -7,8 +7,10 @@ import {
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { PurchaseOrderEmail } from "@carbon/documents/email";
+import { ProviderID } from "@carbon/ee/accounting";
 import { validationError, validator } from "@carbon/form";
 import type { sendEmailResendTask } from "@carbon/jobs/trigger/send-email-resend"; // Assuming you have a sendEmail task defined
+import type { syncExternalAccountingTask } from "@carbon/jobs/trigger/sync-external-accounting";
 import { NotificationEvent } from "@carbon/notifications";
 import { renderAsync } from "@react-email/components";
 import { FunctionRegion } from "@supabase/supabase-js";
@@ -341,6 +343,26 @@ export async function action(args: ActionFunctionArgs) {
       break;
     default:
       throw new Error("Invalid notification type");
+  }
+
+  // Trigger Xero sync for the finalized purchase order
+  // This runs asynchronously - failures won't block the finalization
+  try {
+    await tasks.trigger<typeof syncExternalAccountingTask>(
+      "sync-external-accounting",
+      {
+        companyId,
+        provider: ProviderID.XERO,
+        syncType: "trigger",
+        syncDirection: "push-to-accounting",
+        entities: [
+          { entityType: "purchaseOrder", entityId: orderId, operation: "sync" }
+        ]
+      }
+    );
+  } catch (syncError) {
+    // Log but don't fail - Xero sync is optional and may not be configured
+    console.error("Failed to trigger Xero sync for purchase order:", syncError);
   }
 
   throw redirect(

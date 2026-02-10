@@ -10,6 +10,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { runMRP } from "~/modules/production";
 import {
+  isPurchaseOrderLocked,
   purchaseOrderStatusType,
   updatePurchaseOrderStatus
 } from "~/modules/purchasing";
@@ -18,9 +19,6 @@ import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId, companyId } = await requirePermissions(request, {
-    update: "purchasing"
-  });
 
   const { orderId: id } = params;
   if (!id) throw new Error("Could not find id");
@@ -37,16 +35,34 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const serviceRole = getCarbonServiceRole();
+  // First get current PO status with view permission
+  const { client: viewClient } = await requirePermissions(request, {
+    view: "purchasing"
+  });
 
-  // Get current PO status before updating
-  const currentPo = await client
+  const currentPo = await viewClient
     .from("purchaseOrder")
     .select("status")
     .eq("id", id)
     .single();
 
   const currentStatus = currentPo.data?.status;
+  const isCurrentlyLocked = isPurchaseOrderLocked(currentStatus);
+
+  // Determine required permission:
+  // - Reopening (Draft) from a locked status requires delete permission
+  // - Closing from any status requires delete permission
+  // - Other status changes require update permission
+  const requiresDeletePermission =
+    (status === "Draft" && isCurrentlyLocked) || status === "Closed";
+
+  const { client, userId, companyId } = await requirePermissions(request, {
+    ...(requiresDeletePermission
+      ? { delete: "purchasing" }
+      : { update: "purchasing" })
+  });
+
+  const serviceRole = getCarbonServiceRole();
 
   // Cancel pending approval requests when closing the PO
   // Closed POs are terminal - no approvals should remain pending

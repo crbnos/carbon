@@ -34,6 +34,7 @@ import type { MethodItemType } from "~/modules/shared";
 import { methodItemType } from "~/modules/shared";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
+import { isPurchaseOrderLocked } from "../../purchasing.validators";
 import type { PurchaseOrder, PurchaseOrderLine, Supplier } from "../../types";
 import DeletePurchaseOrderLine from "./DeletePurchaseOrderLine";
 import PurchaseOrderLineForm from "./PurchaseOrderLineForm";
@@ -65,7 +66,16 @@ export default function PurchaseOrderExplorer() {
   const newPurchaseOrderLineDisclosure = useDisclosure();
   const deleteLineDisclosure = useDisclosure();
   const [deleteLine, setDeleteLine] = useState<PurchaseOrderLine | null>(null);
-  const isDisabled = purchaseOrderData?.purchaseOrder?.status !== "Draft";
+
+  // Check if PO is in a locked state (finalized/approved)
+  const isLocked = isPurchaseOrderLocked(
+    purchaseOrderData?.purchaseOrder?.status
+  );
+  // Adding new lines is NOT allowed on locked POs (would increase total)
+  // For unlocked POs, only Draft status allows adding new lines
+  const isDisabled = isLocked
+    ? true // No new lines on locked POs
+    : purchaseOrderData?.purchaseOrder?.status !== "Draft";
 
   const onDeleteLine = (line: PurchaseOrderLine) => {
     setDeleteLine(line);
@@ -222,7 +232,7 @@ function PurchaseOrderLineItem({
               <DropdownMenuContent>
                 <DropdownMenuItem
                   destructive
-                  disabled={isDisabled || !permissions.can("update", "sales")}
+                  disabled={!permissions.can("delete", "purchasing")}
                   onClick={(e) => {
                     e.stopPropagation();
                     onDelete(line);
