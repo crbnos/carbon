@@ -2,6 +2,12 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { integrations as availableIntegrations } from "@carbon/ee";
+import {
+  getAccountingIntegration,
+  getProviderIntegration,
+  ProviderID,
+  type XeroProvider
+} from "@carbon/ee/accounting";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
@@ -80,12 +86,13 @@ function buildIntegrationMetadata(
   };
 
   // Remove owner settings from formData since they're now in syncConfig
+  // biome-ignore lint/correctness/noUnusedVariables: destructuring to exclude from restFormData
   const {
-    customerOwner,
-    vendorOwner,
-    itemOwner,
-    invoiceOwner,
-    billOwner,
+    customerOwner: _customerOwner,
+    vendorOwner: _vendorOwner,
+    itemOwner: _itemOwner,
+    invoiceOwner: _invoiceOwner,
+    billOwner: _billOwner,
     ...restFormData
   } = formData;
 
@@ -116,7 +123,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (integrationData.error || !integrationData.data) {
     return {
       installed: false,
-      metadata: {}
+      metadata: {},
+      dynamicOptions: {}
     };
   }
 
@@ -127,9 +135,51 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   >;
   const flattenedMetadata = flattenSyncConfigToOwnerSettings(metadata);
 
+  // Fetch dynamic options for Xero integration (chart of accounts)
+  let dynamicOptions: Record<
+    string,
+    Array<{ value: string; label: string; description?: string }>
+  > = {};
+
+  if (integrationId === "xero" && integrationData.data.active) {
+    try {
+      const xeroIntegration = await getAccountingIntegration(
+        client,
+        companyId,
+        ProviderID.XERO
+      );
+
+      const provider = getProviderIntegration(
+        client,
+        companyId,
+        xeroIntegration.id,
+        xeroIntegration.metadata
+      ) as XeroProvider;
+
+      const accounts = await provider.listChartOfAccounts();
+
+      const accountOptions = accounts.map((account) => ({
+        value: account.Code ?? account.AccountID,
+        label: account.Code
+          ? `${account.Code} - ${account.Name}`
+          : account.Name,
+        description: account.Type
+      }));
+
+      dynamicOptions = {
+        defaultSalesAccountCode: accountOptions,
+        defaultPurchaseAccountCode: accountOptions
+      };
+    } catch (error) {
+      console.error("Failed to fetch Xero accounts for settings:", error);
+      // Continue without dynamic options - form will show empty selects
+    }
+  }
+
   return {
     installed: integrationData.data.active,
-    metadata: flattenedMetadata
+    metadata: flattenedMetadata,
+    dynamicOptions
   };
 }
 
@@ -213,7 +263,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function IntegrationRoute() {
-  const { installed, metadata } = useLoaderData<typeof loader>();
+  const { installed, metadata, dynamicOptions } =
+    useLoaderData<typeof loader>();
 
   const navigate = useNavigate();
 
@@ -221,6 +272,7 @@ export default function IntegrationRoute() {
     <IntegrationForm
       installed={installed}
       metadata={metadata}
+      dynamicOptions={dynamicOptions}
       onClose={() => navigate(path.to.integrations)}
     />
   );

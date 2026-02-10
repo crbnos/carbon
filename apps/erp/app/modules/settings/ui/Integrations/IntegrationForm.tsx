@@ -268,12 +268,18 @@ interface IntegrationFormProps {
   metadata: Record<string, unknown>;
   installed: boolean;
   onClose: () => void;
+  /** Dynamic options to merge into settings (e.g., fetched from external APIs) */
+  dynamicOptions?: Record<
+    string,
+    Array<{ value: string; label: string; description?: string }>
+  >;
 }
 
 export function IntegrationForm({
   installed,
   metadata,
-  onClose
+  onClose,
+  dynamicOptions = {}
 }: IntegrationFormProps) {
   const permissions = usePermissions();
   const isDisabled = !permissions.can("update", "settings");
@@ -293,6 +299,7 @@ export function IntegrationForm({
 
   // Group settings by their group property
   // Settings without a group appear first (ungrouped)
+  // Also merges dynamic options into settings that have them
   const { ungroupedSettings, groupedSettings, groupNames, groupDescriptions } =
     useMemo(() => {
       if (!integration) {
@@ -307,7 +314,15 @@ export function IntegrationForm({
       const ungrouped: IntegrationSetting[] = [];
       const grouped = new Map<string, IntegrationSetting[]>();
 
-      for (const setting of integration.settings) {
+      for (const baseSetting of integration.settings) {
+        // Merge dynamic options if available for this setting
+        const setting: IntegrationSetting = dynamicOptions[baseSetting.name]
+          ? {
+              ...baseSetting,
+              listOptions: dynamicOptions[baseSetting.name]
+            }
+          : (baseSetting as IntegrationSetting);
+
         if (!setting.group) {
           ungrouped.push(setting);
         } else {
@@ -331,7 +346,7 @@ export function IntegrationForm({
         groupNames: [...grouped.keys()],
         groupDescriptions: descriptions
       };
-    }, [integration]);
+    }, [integration, dynamicOptions]);
 
   const initialValues = useMemo(() => {
     if (!integration) return {};

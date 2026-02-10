@@ -30,13 +30,16 @@ const XeroSettingsSchema = z.object({
   vendorOwner: SystemOfRecordSchema.optional().default("accounting"),
   itemOwner: SystemOfRecordSchema.optional().default("carbon"),
   invoiceOwner: SystemOfRecordSchema.optional().default("accounting"),
-  billOwner: SystemOfRecordSchema.optional().default("accounting")
+  billOwner: SystemOfRecordSchema.optional().default("accounting"),
+  // Default account codes for line items
+  defaultSalesAccountCode: z.string().optional(),
+  defaultPurchaseAccountCode: z.string().optional()
 });
 
 export const Xero = defineIntegration({
   name: "Xero",
   id: "xero",
-  active: false,
+  active: true,
   category: "Accounting",
   logo: Logo,
   description:
@@ -48,6 +51,10 @@ export const Xero = defineIntegration({
     {
       name: "Source of Truth",
       description: "Which system's data takes priority when there are conflicts"
+    },
+    {
+      name: "Account Mapping",
+      description: "Default accounts for syncing transactions to Xero"
     }
   ],
   settings: [
@@ -177,6 +184,26 @@ export const Xero = defineIntegration({
       ],
       required: false,
       value: "accounting"
+    },
+    {
+      name: "defaultSalesAccountCode",
+      label: "Default Sales Account",
+      description: "Account code to use for sales invoice line items",
+      group: "Account Mapping",
+      type: "options" as const,
+      listOptions: [], // Populated dynamically from Xero
+      required: true,
+      value: ""
+    },
+    {
+      name: "defaultPurchaseAccountCode",
+      label: "Default Purchase Account",
+      description: "Account code to use for purchase order and bill line items",
+      group: "Account Mapping",
+      type: "options" as const,
+      listOptions: [], // Populated dynamically from Xero
+      required: true,
+      value: ""
     }
   ],
   schema: XeroSettingsSchema,
@@ -215,7 +242,6 @@ export const Xero = defineIntegration({
 
     const tables: CreateSubscriptionParams["table"][] = [
       "address",
-      "contact",
       "customer",
       "supplier",
       "item",
