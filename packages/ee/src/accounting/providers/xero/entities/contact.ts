@@ -4,7 +4,7 @@ import { type Accounting, BaseEntitySyncer } from "../../../core/types";
 import { throwXeroApiError } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
 
-// Type for rows returned from customer/supplier queries with address joins
+// Type for rows returned from customer/supplier queries with address and contact joins
 type EntityRow = {
   id: string;
   name: string;
@@ -20,6 +20,13 @@ type EntityRow = {
   addressLine2: string | null;
   city: string | null;
   postalCode: string | null;
+  // Contact details (from first linked contact)
+  contactFirstName: string | null;
+  contactLastName: string | null;
+  contactEmail: string | null;
+  contactMobilePhone: string | null;
+  contactHomePhone: string | null;
+  contactWorkPhone: string | null;
 };
 
 export class ContactSyncer extends BaseEntitySyncer<
@@ -130,6 +137,8 @@ export class ContactSyncer extends BaseEntitySyncer<
   ): Promise<Map<string, Accounting.Contact>> {
     if (ids.length === 0) return new Map();
 
+    // First, get the first contact ID for each customer (subquery)
+    // We use a lateral join pattern to get the first contact per customer
     const rows = await this.database
       .selectFrom("customer")
       .leftJoin(
@@ -138,6 +147,8 @@ export class ContactSyncer extends BaseEntitySyncer<
         "customer.id"
       )
       .leftJoin("address", "address.id", "customerLocation.addressId")
+      .leftJoin("customerContact", "customerContact.customerId", "customer.id")
+      .leftJoin("contact", "contact.id", "customerContact.contactId")
       .select([
         "customer.id",
         "customer.name",
@@ -152,13 +163,20 @@ export class ContactSyncer extends BaseEntitySyncer<
         "address.addressLine1",
         "address.addressLine2",
         "address.city",
-        "address.postalCode"
+        "address.postalCode",
+        // Contact details from linked contact
+        "contact.firstName as contactFirstName",
+        "contact.lastName as contactLastName",
+        "contact.email as contactEmail",
+        "contact.mobilePhone as contactMobilePhone",
+        "contact.homePhone as contactHomePhone",
+        "contact.workPhone as contactWorkPhone"
       ])
       .where("customer.id", "in", ids)
       .where("customer.companyId", "=", this.companyId)
       .execute();
 
-    return this.groupAndTransformRows(rows, true);
+    return this.groupAndTransformRows(rows as EntityRow[], true);
   }
 
   private async fetchSuppliersByIds(
@@ -174,6 +192,8 @@ export class ContactSyncer extends BaseEntitySyncer<
         "supplier.id"
       )
       .leftJoin("address", "address.id", "supplierLocation.addressId")
+      .leftJoin("supplierContact", "supplierContact.supplierId", "supplier.id")
+      .leftJoin("contact", "contact.id", "supplierContact.contactId")
       .select([
         "supplier.id",
         "supplier.name",
@@ -188,13 +208,20 @@ export class ContactSyncer extends BaseEntitySyncer<
         "address.addressLine1",
         "address.addressLine2",
         "address.city",
-        "address.postalCode"
+        "address.postalCode",
+        // Contact details from linked contact
+        "contact.firstName as contactFirstName",
+        "contact.lastName as contactLastName",
+        "contact.email as contactEmail",
+        "contact.mobilePhone as contactMobilePhone",
+        "contact.homePhone as contactHomePhone",
+        "contact.workPhone as contactWorkPhone"
       ])
       .where("supplier.id", "in", ids)
       .where("supplier.companyId", "=", this.companyId)
       .execute();
 
-    return this.groupAndTransformRows(rows, false);
+    return this.groupAndTransformRows(rows as EntityRow[], false);
   }
 
   private groupAndTransformRows(
@@ -244,10 +271,11 @@ export class ContactSyncer extends BaseEntitySyncer<
     return {
       id: row.id,
       name: row.name,
-      firstName: "",
-      lastName: "",
+      // Use contact details from linked contact if available
+      firstName: row.contactFirstName ?? "",
+      lastName: row.contactLastName ?? "",
       companyId: row.companyId,
-      email: undefined,
+      email: row.contactEmail ?? undefined,
       website: row.website ?? null,
       taxId: row.taxId ?? null,
       currencyCode: row.currencyCode ?? "USD",
@@ -255,10 +283,11 @@ export class ContactSyncer extends BaseEntitySyncer<
       creditLimit: null,
       paymentTerms: null,
       updatedAt: row.updatedAt ?? new Date().toISOString(),
-      workPhone: row.phone ?? null,
-      mobilePhone: null,
+      // Prefer contact's phone numbers, fall back to customer/supplier phone
+      workPhone: row.contactWorkPhone ?? row.phone ?? null,
+      mobilePhone: row.contactMobilePhone ?? null,
       fax: row.fax ?? null,
-      homePhone: null,
+      homePhone: row.contactHomePhone ?? null,
       isVendor: !isCustomer,
       isCustomer,
       addresses,
