@@ -10,10 +10,11 @@ import {
   getAccountingIntegration,
   getProviderIntegration,
   ProviderID,
+  RatelimitError,
   SyncFactory,
 } from "@carbon/ee/accounting";
 import { groupBy } from "@carbon/utils";
-import { logger, task } from "@trigger.dev/sdk";
+import { logger, task, wait } from "@trigger.dev/sdk";
 import { PostgresDriver } from "kysely";
 import { z } from "zod";
 
@@ -43,6 +44,41 @@ const TABLE_TO_ENTITY_MAP: Partial<Record<string, AccountingEntityType>> = {
 
 function getEntityTypeFromTable(table: string): AccountingEntityType | null {
   return TABLE_TO_ENTITY_MAP[table] ?? null;
+}
+
+function getDeduplicatedIds<T>(
+  records: T[],
+  getId: (r: T) => string
+): string[] {
+  return [...new Set(records.map(getId))];
+}
+
+/**
+ * Execute an async operation with rate limit handling.
+ * If a RatelimitError is thrown, wait for the specified retry period and retry once.
+ */
+async function withRateLimitRetry<T>(
+  operation: () => Promise<T>,
+  operationName: string
+): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    if (error instanceof RatelimitError) {
+      const { retryAfterSeconds, limitType, details } = error.rateLimitInfo;
+      logger.warn(`[RATE LIMIT] ${operationName} hit rate limit`, {
+        limitType,
+        retryAfterSeconds,
+        ...details,
+      });
+      await wait.for({ seconds: retryAfterSeconds });
+      logger.info(
+        `[RATE LIMIT] Retrying ${operationName} after ${retryAfterSeconds}s wait`
+      );
+      return await operation();
+    }
+    throw error;
+  }
 }
 
 export const syncTask = task({
@@ -142,13 +178,19 @@ export const syncTask = task({
             // Process INSERTs and UPDATEs (push to accounting)
             const toSync = [...inserts, ...updates];
             if (toSync.length > 0) {
-              const entityIds = toSync.map((r) => r.event.recordId);
+              const entityIds = getDeduplicatedIds(
+                toSync,
+                (r) => r.event.recordId
+              );
 
               logger.info(
                 `Pushing ${entityIds.length} ${entityType} entities to accounting`
               );
 
-              const result = await syncer.pushBatchToAccounting(entityIds);
+              const result = await withRateLimitRetry(
+                () => syncer.pushBatchToAccounting(entityIds),
+                `pushBatchToAccounting ${entityType}`
+              );
 
               logger.info("Sync result:", { entityType, result });
 
