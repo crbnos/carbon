@@ -9,9 +9,9 @@ const BackfillSettingsSchema = z.object({
   backfillCustomers: z.boolean().optional().default(true),
   backfillVendors: z.boolean().optional().default(true),
   backfillItems: z.boolean().optional().default(true)
-  // Note: syncConfig.entities.{entity}.owner settings are read directly
-  // by the provider from the integration metadata, so we don't need to
-  // pass them explicitly to the backfill task
+  // Note: The backfill task now respects each entity's sync direction config
+  // (pull-from-accounting, push-to-accounting, or two-way) rather than using
+  // a global pullOnly flag. This is configured per-entity in syncConfig.
 });
 
 export const config = {
@@ -71,8 +71,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
   try {
     // Trigger the backfill task with settings
-    // Note: Entity owner settings (syncConfig) are read directly by the
-    // provider from integration metadata, so we only pass entity toggles
+    // The backfill task respects each entity's sync direction config from
+    // the integration metadata (pull-from-accounting, push-to-accounting, two-way)
     const handle = await tasks.trigger(
       "accounting-backfill",
       {
