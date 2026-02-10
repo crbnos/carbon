@@ -1,8 +1,10 @@
 import type { KyselyTx } from "@carbon/database/client";
+import { sql } from "kysely";
 import { createMappingService } from "../../../core/external-mapping";
 import { type Accounting, BaseEntitySyncer } from "../../../core/types";
 import { throwXeroApiError } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
+import type { XeroProvider } from "../provider";
 
 // Note: This syncer uses the default ID mapping from BaseEntitySyncer
 // which uses the externalIntegrationMapping table with entityType "bill"
@@ -230,24 +232,24 @@ export class BillSyncer extends BaseEntitySyncer<
         dateDue: row.dateDue,
         datePaid: row.datePaid,
         currencyCode: row.currencyCode,
-        exchangeRate: row.exchangeRate,
-        subtotal: row.subtotal,
-        totalTax: row.totalTax,
-        totalDiscount: row.totalDiscount,
-        totalAmount: row.totalAmount,
-        balance: row.balance,
+        exchangeRate: Number(row.exchangeRate) || 1,
+        subtotal: Number(row.subtotal) || 0,
+        totalTax: Number(row.totalTax) || 0,
+        totalDiscount: Number(row.totalDiscount) || 0,
+        totalAmount: Number(row.totalAmount) || 0,
+        balance: Number(row.balance) || 0,
         supplierReference: row.supplierReference,
         lines: lines.map((line) => ({
           id: line.id,
           description: line.description,
-          quantity: line.quantity,
-          unitPrice: line.unitPrice ?? 0,
+          quantity: Number(line.quantity) || 0,
+          unitPrice: Number(line.unitPrice) || 0,
           itemId: line.itemId,
           itemCode: line.itemCode,
           accountNumber: line.accountNumber,
-          taxPercent: line.taxPercent,
-          taxAmount: line.taxAmount,
-          totalAmount: line.totalAmount ?? 0,
+          taxPercent: line.taxPercent != null ? Number(line.taxPercent) : null,
+          taxAmount: line.taxAmount != null ? Number(line.taxAmount) : null,
+          totalAmount: Number(line.totalAmount) || 0,
           purchaseOrderLineId: line.purchaseOrderLineId
         })),
         updatedAt: row.updatedAt ?? new Date().toISOString(),
@@ -328,6 +330,11 @@ export class BillSyncer extends BaseEntitySyncer<
       );
     }
 
+    // Get default account code from provider settings
+    const xeroProvider = this.provider as XeroProvider;
+    const defaultAccountCode =
+      xeroProvider.settings?.defaultPurchaseAccountCode;
+
     // Map line items
     const lineItems: Xero.InvoiceLineItem[] = await Promise.all(
       local.lines.map(async (line) => {
@@ -350,17 +357,38 @@ export class BillSyncer extends BaseEntitySyncer<
           description = description ? `${description} ${ref}` : ref;
         }
 
+        // Determine if line has tax
+        const hasTax =
+          (line.taxPercent != null && line.taxPercent > 0) ||
+          (line.taxAmount != null && line.taxAmount > 0);
+
         return {
           Description: description,
           Quantity: line.quantity,
           UnitAmount: line.unitPrice,
           ItemCode: itemCode?.slice(0, 30) ?? undefined,
-          AccountCode: line.accountNumber ?? undefined,
+          // Use line's account number if specified, otherwise use default from settings
+          AccountCode: line.accountNumber ?? defaultAccountCode,
           TaxAmount: line.taxAmount ?? undefined,
-          LineAmount: line.totalAmount
+          LineAmount: line.totalAmount,
+          // TaxType is required by Xero: INPUT for purchase tax, NONE for zero tax
+          TaxType: hasTax ? "INPUT" : "NONE"
         };
       })
     );
+
+    // Calculate due date: use dateDue if provided, otherwise default to Net 30
+    let dueDate = local.dateDue;
+    if (!dueDate && local.dateIssued) {
+      const issued = new Date(local.dateIssued);
+      issued.setDate(issued.getDate() + 30);
+      dueDate = issued.toISOString().split("T")[0]; // YYYY-MM-DD format
+    } else if (!dueDate) {
+      // If no dateIssued either, default to 30 days from now
+      const now = new Date();
+      now.setDate(now.getDate() + 30);
+      dueDate = now.toISOString().split("T")[0];
+    }
 
     return {
       InvoiceID: existingRemoteId!,
@@ -369,7 +397,7 @@ export class BillSyncer extends BaseEntitySyncer<
       Reference: local.supplierReference ?? undefined,
       Contact: { ContactID: contactId },
       Date: local.dateIssued ?? undefined,
-      DueDate: local.dateDue ?? undefined,
+      DueDate: dueDate,
       Status: CARBON_TO_XERO_STATUS[local.status],
       CurrencyCode: local.currencyCode,
       CurrencyRate: local.exchangeRate !== 1 ? local.exchangeRate : undefined,
@@ -509,11 +537,102 @@ export class BillSyncer extends BaseEntitySyncer<
       return existingLocalId;
     }
 
-    // For new bills from Xero, we need to create them
-    // This requires more context (supplierInteractionId, createdBy, etc.)
-    throw new Error(
-      `Cannot create new purchase invoice from Xero. Invoice with ID ${remoteId} must be created in Carbon first and then synced.`
-    );
+    // Create new purchase invoice from Xero
+    // This requires: supplierInteractionId, invoiceId (sequence), createdBy, companyId
+
+    if (!supplierId) {
+      throw new Error(
+        `Cannot create purchase invoice from Xero: Supplier with Xero ContactID ${data.supplierExternalId} not found in Carbon. Sync the vendor first.`
+      );
+    }
+
+    // Get a default user for createdBy (company owner or first admin)
+    const defaultUser = await this.getDefaultUser(tx);
+    if (!defaultUser) {
+      throw new Error(
+        `Cannot create purchase invoice from Xero: No default user found for company ${this.companyId}`
+      );
+    }
+
+    // Create supplier interaction for this invoice
+    const supplierInteraction = await tx
+      .insertInto("supplierInteraction")
+      .values({
+        companyId: this.companyId,
+        supplierId
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+
+    // Get next invoice ID from sequence
+    const sequenceResult = await sql<{ get_next_sequence: string }>`
+      SELECT get_next_sequence('purchaseInvoice', ${this.companyId}) as get_next_sequence
+    `.execute(tx);
+
+    const invoiceId =
+      sequenceResult.rows[0]?.get_next_sequence ??
+      data.invoiceId ??
+      `XERO-${remoteId.slice(0, 8)}`;
+
+    // Insert the new purchase invoice
+    const newInvoice = await tx
+      .insertInto("purchaseInvoice")
+      .values({
+        invoiceId,
+        companyId: this.companyId,
+        createdBy: defaultUser,
+        supplierId,
+        supplierInteractionId: supplierInteraction.id,
+        status: data.status ?? "Draft",
+        dateIssued: data.dateIssued ?? null,
+        dateDue: data.dateDue ?? null,
+        datePaid: data.datePaid ?? null,
+        currencyCode: data.currencyCode ?? "USD",
+        exchangeRate: data.exchangeRate ?? 1,
+        subtotal: data.subtotal ?? 0,
+        totalTax: data.totalTax ?? 0,
+        totalDiscount: data.totalDiscount ?? 0,
+        totalAmount: data.totalAmount ?? 0,
+        balance: data.balance ?? 0,
+        supplierReference: data.supplierReference ?? null
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+
+    // Insert lines for the new invoice
+    await this.upsertLines(tx, newInvoice.id, data.lines ?? []);
+
+    return newInvoice.id;
+  }
+
+  /**
+   * Get a default user for system-generated records.
+   * Tries company owner first, then falls back to first active employee.
+   */
+  private async getDefaultUser(tx: KyselyTx): Promise<string | null> {
+    // Try company owner first
+    const company = await tx
+      .selectFrom("company")
+      .select("ownerId")
+      .where("id", "=", this.companyId)
+      .executeTakeFirst();
+
+    if (company?.ownerId) {
+      return company.ownerId;
+    }
+
+    // Fall back to first active employee for this company (by user creation date)
+    const employee = await tx
+      .selectFrom("employeeJob")
+      .innerJoin("user", "user.id", "employeeJob.id")
+      .select("employeeJob.id")
+      .where("employeeJob.companyId", "=", this.companyId)
+      .where("user.active", "=", true)
+      .orderBy("user.createdAt", "asc")
+      .limit(1)
+      .executeTakeFirst();
+
+    return employee?.id ?? null;
   }
 
   private async upsertLines(

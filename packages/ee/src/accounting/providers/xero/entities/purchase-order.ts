@@ -7,6 +7,7 @@ import {
 } from "../../../core/types";
 import { throwXeroApiError } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
+import type { XeroProvider } from "../provider";
 
 // Note: This syncer uses the default ID mapping from BaseEntitySyncer
 // which uses the externalIntegrationMapping table with entityType "purchaseOrder"
@@ -193,12 +194,12 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
     for (const row of orderRows) {
       const lines = linesByOrder.get(row.id) ?? [];
 
-      // Calculate totals from lines
+      // Calculate totals from lines (parse to numbers since NUMERIC comes as strings)
       let subtotal = 0;
       let totalTax = 0;
       for (const line of lines) {
-        subtotal += line.extendedPrice ?? 0;
-        totalTax += line.taxAmount ?? 0;
+        subtotal += Number(line.extendedPrice) || 0;
+        totalTax += Number(line.taxAmount) || 0;
       }
 
       result.set(row.id, {
@@ -213,7 +214,7 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
         deliveryAddress: null,
         deliveryInstructions: null,
         currencyCode: row.currencyCode,
-        exchangeRate: row.exchangeRate,
+        exchangeRate: Number(row.exchangeRate) || 1,
         subtotal,
         totalTax,
         totalAmount: subtotal + totalTax,
@@ -221,16 +222,20 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
         lines: lines.map((line) => ({
           id: line.id,
           description: line.description,
-          quantity: line.purchaseQuantity ?? 0,
-          unitPrice: line.unitPrice ?? 0,
+          quantity: Number(line.purchaseQuantity) || 0,
+          unitPrice: Number(line.unitPrice) || 0,
           itemId: line.itemId,
           itemCode: line.itemCode,
           accountNumber: line.accountNumber,
-          taxPercent: line.taxPercent,
-          taxAmount: line.taxAmount,
-          totalAmount: line.extendedPrice ?? 0,
-          quantityReceived: line.quantityReceived,
-          quantityInvoiced: line.quantityInvoiced
+          taxPercent: line.taxPercent != null ? Number(line.taxPercent) : null,
+          taxAmount: line.taxAmount != null ? Number(line.taxAmount) : null,
+          totalAmount: Number(line.extendedPrice) || 0,
+          quantityReceived:
+            line.quantityReceived != null
+              ? Number(line.quantityReceived)
+              : null,
+          quantityInvoiced:
+            line.quantityInvoiced != null ? Number(line.quantityInvoiced) : null
         })),
         updatedAt: row.updatedAt ?? new Date().toISOString(),
         raw: row
@@ -302,29 +307,46 @@ export class PurchaseOrderSyncer extends BaseEntitySyncer<
       );
     }
 
+    // Get default account code from provider settings
+    const xeroProvider = this.provider as XeroProvider;
+    const defaultAccountCode =
+      xeroProvider.settings?.defaultPurchaseAccountCode;
+
     // Map line items
     const lineItems: Xero.PurchaseOrderLineItem[] = await Promise.all(
       local.lines.map(async (line) => {
         let itemCode = line.itemCode;
 
-        // If we have an itemId but no itemCode, try to get it from the item table
-        if (!itemCode && line.itemId) {
-          const item = await this.database
-            .selectFrom("item")
-            .select("readableId")
-            .where("id", "=", line.itemId)
-            .executeTakeFirst();
-          itemCode = item?.readableId ?? null;
+        // If line has an item, ensure it's synced to Xero first
+        if (line.itemId) {
+          await this.ensureDependencySynced("item", line.itemId);
+          // If we don't have the itemCode, fetch it from the item table
+          if (!itemCode) {
+            const item = await this.database
+              .selectFrom("item")
+              .select("readableId")
+              .where("id", "=", line.itemId)
+              .executeTakeFirst();
+            itemCode = item?.readableId ?? null;
+          }
         }
+
+        // Determine tax percent from taxAmount if available
+        const hasTax =
+          (line.taxPercent != null && line.taxPercent > 0) ||
+          (line.taxAmount != null && line.taxAmount > 0);
 
         return {
           Description: line.description ?? undefined,
           Quantity: line.quantity,
           UnitAmount: line.unitPrice,
           ItemCode: itemCode?.slice(0, 30) ?? undefined,
-          AccountCode: line.accountNumber ?? undefined,
+          // Use line's account number if specified, otherwise use default from settings
+          AccountCode: line.accountNumber ?? defaultAccountCode,
           TaxAmount: line.taxAmount ?? undefined,
-          LineAmount: line.totalAmount
+          LineAmount: line.totalAmount,
+          // TaxType is required by Xero: INPUT for purchase tax, NONE for zero tax
+          TaxType: hasTax ? "INPUT" : "NONE"
         };
       })
     );

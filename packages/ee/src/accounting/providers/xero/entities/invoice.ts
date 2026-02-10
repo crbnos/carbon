@@ -7,6 +7,7 @@ import {
 } from "../../../core/types";
 import { throwXeroApiError } from "../../../core/utils";
 import { parseDotnetDate, type Xero } from "../models";
+import type { XeroProvider } from "../provider";
 
 // Note: This syncer uses the default ID mapping from BaseEntitySyncer
 // which uses the externalIntegrationMapping table with entityType "invoice"
@@ -230,27 +231,32 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
         customerExternalId: null, // Will be resolved during mapToRemote
         status: row.status,
         currencyCode: row.currencyCode,
-        exchangeRate: row.exchangeRate,
+        exchangeRate: Number(row.exchangeRate) || 1,
         dateIssued: row.dateIssued,
         dateDue: row.dateDue,
         datePaid: row.datePaid,
         customerReference: row.customerReference,
-        subtotal: row.subtotal,
-        totalTax: row.totalTax,
-        totalDiscount: row.totalDiscount,
-        totalAmount: row.totalAmount,
-        balance: row.balance,
-        lines: lines.map((line) => ({
-          id: line.id,
-          invoiceLineType: line.invoiceLineType,
-          itemId: line.itemId,
-          itemCode: line.itemReadableIdWithRevision,
-          description: line.description,
-          quantity: line.quantity,
-          unitPrice: line.unitPrice,
-          taxPercent: line.taxPercent,
-          lineAmount: line.quantity * line.unitPrice
-        })),
+        subtotal: Number(row.subtotal) || 0,
+        totalTax: Number(row.totalTax) || 0,
+        totalDiscount: Number(row.totalDiscount) || 0,
+        totalAmount: Number(row.totalAmount) || 0,
+        balance: Number(row.balance) || 0,
+        lines: lines.map((line) => {
+          const quantity = Number(line.quantity) || 0;
+          const unitPrice = Number(line.unitPrice) || 0;
+          const taxPercent = Number(line.taxPercent) || 0;
+          return {
+            id: line.id,
+            invoiceLineType: line.invoiceLineType,
+            itemId: line.itemId,
+            itemCode: line.itemReadableIdWithRevision,
+            description: line.description,
+            quantity,
+            unitPrice,
+            taxPercent,
+            lineAmount: quantity * unitPrice
+          };
+        }),
         updatedAt: row.updatedAt ?? new Date().toISOString(),
         raw: row
       });
@@ -310,15 +316,35 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
       local.customerId
     );
 
+    // Get default account code from provider settings
+    const xeroProvider = this.provider as XeroProvider;
+    const defaultAccountCode = xeroProvider.settings?.defaultSalesAccountCode;
+
+    console.log(
+      "[SalesInvoiceSyncer] Provider settings:",
+      xeroProvider.settings
+    );
+    console.log(
+      "[SalesInvoiceSyncer] Default sales account code:",
+      defaultAccountCode
+    );
+
     // Build line items, resolving item dependencies
     const lineItems: Xero.InvoiceLineItem[] = [];
     for (const line of local.lines) {
+      const taxAmount =
+        (line.quantity * line.unitPrice * line.taxPercent) / 100;
+
       const lineItem: Xero.InvoiceLineItem = {
         Description: line.description ?? undefined,
         Quantity: line.quantity,
         UnitAmount: line.unitPrice,
-        TaxAmount: (line.quantity * line.unitPrice * line.taxPercent) / 100,
-        LineAmount: line.quantity * line.unitPrice
+        TaxAmount: taxAmount,
+        LineAmount: line.quantity * line.unitPrice,
+        // Use default account code from settings if no account specified
+        AccountCode: defaultAccountCode,
+        // TaxType is required by Xero: OUTPUT for sales tax, NONE for zero tax
+        TaxType: line.taxPercent > 0 ? "OUTPUT" : "NONE"
       };
 
       // If line has an item, ensure it's synced and get the ItemCode
@@ -334,6 +360,19 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
       lineItems.push(lineItem);
     }
 
+    // Calculate due date: use dateDue if provided, otherwise default to Net 30
+    let dueDate = local.dateDue;
+    if (!dueDate && local.dateIssued) {
+      const issued = new Date(local.dateIssued);
+      issued.setDate(issued.getDate() + 30);
+      dueDate = issued.toISOString().split("T")[0]; // YYYY-MM-DD format
+    } else if (!dueDate) {
+      // If no dateIssued either, default to 30 days from now
+      const now = new Date();
+      now.setDate(now.getDate() + 30);
+      dueDate = now.toISOString().split("T")[0];
+    }
+
     return {
       InvoiceID: existingRemoteId!,
       Type: "ACCREC", // Accounts Receivable = Sales Invoice
@@ -343,7 +382,7 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
         ContactID: customerRemoteId
       },
       Date: local.dateIssued ?? undefined,
-      DueDate: local.dateDue ?? undefined,
+      DueDate: dueDate,
       Status: CARBON_TO_XERO_STATUS[local.status],
       LineAmountTypes: "Exclusive", // Tax is calculated separately
       LineItems: lineItems,
