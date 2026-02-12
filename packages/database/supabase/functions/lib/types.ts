@@ -2133,6 +2133,68 @@ export type Database = {
         }
         Relationships: []
       }
+      auditLogArchive: {
+        Row: {
+          archivePath: string
+          companyId: string
+          createdAt: string
+          endDate: string
+          id: string
+          rowCount: number
+          sizeBytes: number | null
+          startDate: string
+        }
+        Insert: {
+          archivePath: string
+          companyId: string
+          createdAt?: string
+          endDate: string
+          id?: string
+          rowCount: number
+          sizeBytes?: number | null
+          startDate: string
+        }
+        Update: {
+          archivePath?: string
+          companyId?: string
+          createdAt?: string
+          endDate?: string
+          id?: string
+          rowCount?: number
+          sizeBytes?: number | null
+          startDate?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auditLogArchive_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditLogArchive_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auditLogArchive_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "auditLogArchive_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+        ]
+      }
       batchProperty: {
         Row: {
           companyId: string
@@ -2383,6 +2445,7 @@ export type Database = {
         Row: {
           addressLine1: string | null
           addressLine2: string | null
+          auditLogEnabled: boolean
           baseCurrencyCode: string
           city: string | null
           countryCode: string | null
@@ -2408,6 +2471,7 @@ export type Database = {
         Insert: {
           addressLine1?: string | null
           addressLine2?: string | null
+          auditLogEnabled?: boolean
           baseCurrencyCode: string
           city?: string | null
           countryCode?: string | null
@@ -2433,6 +2497,7 @@ export type Database = {
         Update: {
           addressLine1?: string | null
           addressLine2?: string | null
+          auditLogEnabled?: boolean
           baseCurrencyCode?: string
           city?: string | null
           countryCode?: string | null
@@ -55469,6 +55534,10 @@ export type Database = {
         Args: { operation_id: string }
         Returns: boolean
       }
+      create_audit_log_table: {
+        Args: { p_company_id: string }
+        Returns: undefined
+      }
       create_company_search_index: {
         Args: { p_company_id: string }
         Returns: undefined
@@ -55551,6 +55620,14 @@ export type Database = {
           p_entity_id: string
           p_entity_type: string
         }
+        Returns: undefined
+      }
+      delete_old_audit_logs: {
+        Args: { p_company_id: string; p_cutoff_date: string }
+        Returns: number
+      }
+      drop_audit_log_table: {
+        Args: { p_company_id: string }
         Returns: undefined
       }
       drop_company_search_index: {
@@ -55689,6 +55766,56 @@ export type Database = {
           workCenterId: string
         }[]
       }
+      get_audit_log: {
+        Args: {
+          p_actor_id?: string
+          p_company_id: string
+          p_end_date?: string
+          p_entity_id?: string
+          p_entity_type?: string
+          p_limit?: number
+          p_offset?: number
+          p_operation?: string
+          p_search?: string
+          p_start_date?: string
+        }
+        Returns: {
+          actorId: string
+          createdAt: string
+          diff: Json
+          entityId: string
+          entityType: string
+          id: string
+          metadata: Json
+          operation: string
+          totalCount: number
+        }[]
+      }
+      get_audit_log_count: {
+        Args: {
+          p_actor_id?: string
+          p_company_id: string
+          p_end_date?: string
+          p_entity_type?: string
+          p_operation?: string
+          p_search?: string
+          p_start_date?: string
+        }
+        Returns: number
+      }
+      get_audit_logs_for_archive: {
+        Args: { p_before_date: string; p_company_id: string }
+        Returns: {
+          actorId: string
+          createdAt: string
+          diff: Json
+          entityId: string
+          entityType: string
+          id: string
+          metadata: Json
+          operation: string
+        }[]
+      }
       get_claims: { Args: { company: string; uid: string }; Returns: Json }
       get_companies_with_any_role: { Args: never; Returns: string[] }
       get_companies_with_employee_permission: {
@@ -55811,6 +55938,25 @@ export type Database = {
           sourceDocumentReadableId: string
           status: Database["public"]["Enums"]["trackedEntityStatus"]
           trackedActivityId: string
+        }[]
+      }
+      get_entity_audit_log: {
+        Args: {
+          p_company_id: string
+          p_entity_id: string
+          p_entity_type: string
+          p_limit?: number
+          p_offset?: number
+        }
+        Returns: {
+          actorId: string
+          createdAt: string
+          diff: Json
+          entityId: string
+          entityType: string
+          id: string
+          metadata: Json
+          operation: string
         }[]
       }
       get_inventory_quantities: {
@@ -56325,6 +56471,10 @@ export type Database = {
       get_period_end_date: { Args: { period: string }; Returns: string }
       get_period_start_date: { Args: { period: string }; Returns: string }
       get_permission_companies: { Args: { claim: string }; Returns: string[] }
+      get_primary_key_column: {
+        Args: { p_table_name: string }
+        Returns: string
+      }
       get_production_planning: {
         Args: { company_id: string; location_id: string; periods: string[] }
         Returns: {
@@ -56902,6 +57052,23 @@ export type Database = {
       increment_webhook_success: {
         Args: { webhook_id: string }
         Returns: undefined
+      }
+      insert_audit_log: {
+        Args: {
+          p_actor_id: string
+          p_actor_name: string
+          p_company_id: string
+          p_diff?: Json
+          p_entity_id: string
+          p_entity_type: string
+          p_metadata?: Json
+          p_operation: string
+        }
+        Returns: string
+      }
+      insert_audit_log_batch: {
+        Args: { p_company_id: string; p_entries: Json[] }
+        Returns: number
       }
       is_claims_admin: { Args: never; Returns: boolean }
       is_last_job_operation: {

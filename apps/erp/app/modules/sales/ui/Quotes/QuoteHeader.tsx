@@ -5,6 +5,7 @@ import {
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
   Heading,
   HStack,
@@ -38,6 +39,7 @@ import {
   LuEye,
   LuFile,
   LuGitBranchPlus,
+  LuHistory,
   LuLoaderCircle,
   LuPanelLeft,
   LuPanelRight,
@@ -46,9 +48,10 @@ import {
   LuTrophy
 } from "react-icons/lu";
 import { Link, useFetcher, useParams } from "react-router";
+import { AuditLogDrawer } from "~/components/AuditLog";
 import { usePanels } from "~/components/Layout";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
-import { usePermissions, useRouteData } from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import type {
   Opportunity,
@@ -66,6 +69,7 @@ const QuoteHeader = () => {
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("quoteId not found");
 
+  const { company } = useUser();
   const { toggleExplorer, toggleProperties } = usePanels();
 
   const routeData = useRouteData<{
@@ -85,6 +89,7 @@ const QuoteHeader = () => {
   const shareModal = useDisclosure();
   const createRevisionModal = useDisclosure();
   const deleteQuoteModal = useDisclosure();
+  const auditDrawer = useDisclosure();
 
   const [asRevision, setAsRevision] = useState(false);
 
@@ -126,6 +131,11 @@ const QuoteHeader = () => {
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
+                <DropdownMenuItem onClick={auditDrawer.onOpen}>
+                  <DropdownMenuIcon icon={<LuHistory />} />
+                  Audit History
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => {
                     setAsRevision(false);
@@ -393,6 +403,13 @@ const QuoteHeader = () => {
           }}
         />
       )}
+      <AuditLogDrawer
+        isOpen={auditDrawer.isOpen}
+        onClose={auditDrawer.onClose}
+        entityType="quote"
+        entityId={quoteId}
+        companyId={company.id}
+      />
     </>
   );
 };

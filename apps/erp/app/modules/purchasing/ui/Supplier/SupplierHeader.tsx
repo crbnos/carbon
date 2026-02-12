@@ -1,5 +1,6 @@
 import { ValidatedForm } from "@carbon/form";
 import {
+  Button,
   Card,
   CardAction,
   CardAttribute,
@@ -10,16 +11,19 @@ import {
   CardHeader,
   CardTitle,
   HStack,
+  useDisclosure,
   VStack
 } from "@carbon/react";
 import { useCallback } from "react";
+import { LuHistory } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { EmployeeAvatar } from "~/components";
+import { AuditLogDrawer } from "~/components/AuditLog";
 import { Enumerable } from "~/components/Enumerable";
 import { Tags } from "~/components/Form";
 import { useSupplierTypes } from "~/components/Form/SupplierType";
-import { useRouteData } from "~/hooks";
+import { useRouteData, useUser } from "~/hooks";
 import type { SupplierDetail, SupplierStatus } from "~/modules/purchasing";
 import type { action } from "~/routes/x+/settings+/tags";
 import { path } from "~/utils/path";
@@ -29,6 +33,8 @@ const SupplierHeader = () => {
 
   if (!supplierId) throw new Error("Could not find supplierId");
   const fetcher = useFetcher<typeof action>();
+  const { company } = useUser();
+  const auditDrawer = useDisclosure();
   const routeData = useRouteData<{
     supplier: SupplierDetail;
     tags: { name: string }[];
@@ -69,68 +75,77 @@ const SupplierHeader = () => {
   );
 
   return (
-    <VStack>
-      <Card>
-        <HStack className="justify-between items-start">
-          <CardHeader>
-            <CardTitle>{routeData?.supplier?.name}</CardTitle>
-          </CardHeader>
-          <CardAction>
-            {/* <Button onClick={() => alert("TODO")} leftIcon={<FaHistory />}>
-              Supplier Details
-            </Button> */}
-          </CardAction>
-        </HStack>
-        <CardContent>
-          <CardAttributes>
-            <CardAttribute>
-              <CardAttributeLabel>Status</CardAttributeLabel>
-              <CardAttributeValue>
-                {supplierStatus ? <Enumerable value={supplierStatus!} /> : "-"}
-              </CardAttributeValue>
-            </CardAttribute>
-            <CardAttribute>
-              <CardAttributeLabel>Type</CardAttributeLabel>
-              <CardAttributeValue>
-                {supplierType ? <Enumerable value={supplierType!} /> : "-"}
-              </CardAttributeValue>
-            </CardAttribute>
-            <CardAttribute>
-              <CardAttributeLabel>Account Manager</CardAttributeLabel>
-              <CardAttributeValue>
-                {routeData?.supplier?.accountManagerId ? (
-                  <EmployeeAvatar
-                    employeeId={routeData?.supplier?.accountManagerId ?? null}
-                  />
-                ) : (
-                  "-"
-                )}
-              </CardAttributeValue>
-            </CardAttribute>
-            <CardAttribute>
-              <CardAttributeValue>
-                <ValidatedForm
-                  defaultValues={{
-                    tags: routeData?.supplier?.tags ?? []
-                  }}
-                  validator={z.object({
-                    tags: z.array(z.string()).optional()
-                  })}
-                  className="w-full"
-                >
-                  <Tags
-                    label="Tags"
-                    name="tags"
-                    availableTags={routeData?.tags ?? []}
-                    table="supplier"
-                    inline
-                    onChange={onUpdateTags}
-                  />
-                </ValidatedForm>
-              </CardAttributeValue>
-            </CardAttribute>
+    <>
+      <VStack>
+        <Card>
+          <HStack className="justify-between items-start">
+            <CardHeader>
+              <CardTitle>{routeData?.supplier?.name}</CardTitle>
+            </CardHeader>
+            <CardAction>
+              <Button
+                variant="secondary"
+                leftIcon={<LuHistory />}
+                onClick={auditDrawer.onOpen}
+              >
+                Audit History
+              </Button>
+            </CardAction>
+          </HStack>
+          <CardContent>
+            <CardAttributes>
+              <CardAttribute>
+                <CardAttributeLabel>Status</CardAttributeLabel>
+                <CardAttributeValue>
+                  {supplierStatus ? (
+                    <Enumerable value={supplierStatus!} />
+                  ) : (
+                    "-"
+                  )}
+                </CardAttributeValue>
+              </CardAttribute>
+              <CardAttribute>
+                <CardAttributeLabel>Type</CardAttributeLabel>
+                <CardAttributeValue>
+                  {supplierType ? <Enumerable value={supplierType!} /> : "-"}
+                </CardAttributeValue>
+              </CardAttribute>
+              <CardAttribute>
+                <CardAttributeLabel>Account Manager</CardAttributeLabel>
+                <CardAttributeValue>
+                  {routeData?.supplier?.accountManagerId ? (
+                    <EmployeeAvatar
+                      employeeId={routeData?.supplier?.accountManagerId ?? null}
+                    />
+                  ) : (
+                    "-"
+                  )}
+                </CardAttributeValue>
+              </CardAttribute>
+              <CardAttribute>
+                <CardAttributeValue>
+                  <ValidatedForm
+                    defaultValues={{
+                      tags: routeData?.supplier?.tags ?? []
+                    }}
+                    validator={z.object({
+                      tags: z.array(z.string()).optional()
+                    })}
+                    className="w-full"
+                  >
+                    <Tags
+                      label="Tags"
+                      name="tags"
+                      availableTags={routeData?.tags ?? []}
+                      table="supplier"
+                      inline
+                      onChange={onUpdateTags}
+                    />
+                  </ValidatedForm>
+                </CardAttributeValue>
+              </CardAttribute>
 
-            {/* {permissions.is("employee") && (
+              {/* {permissions.is("employee") && (
               <CardAttribute>
                 <CardAttributeLabel>Assignee</CardAttributeLabel>
                 <CardAttributeValue>
@@ -143,10 +158,18 @@ const SupplierHeader = () => {
                 </CardAttributeValue>
               </CardAttribute>
             )} */}
-          </CardAttributes>
-        </CardContent>
-      </Card>
-    </VStack>
+            </CardAttributes>
+          </CardContent>
+        </Card>
+      </VStack>
+      <AuditLogDrawer
+        isOpen={auditDrawer.isOpen}
+        onClose={auditDrawer.onClose}
+        entityType="supplier"
+        entityId={supplierId}
+        companyId={company.id}
+      />
+    </>
   );
 };
 

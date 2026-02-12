@@ -25,6 +25,7 @@ import {
   LuEye,
   LuFile,
   LuHandCoins,
+  LuHistory,
   LuLoaderCircle,
   LuPanelLeft,
   LuPanelRight,
@@ -34,9 +35,10 @@ import {
 } from "react-icons/lu";
 import { Link, useFetcher, useParams } from "react-router";
 
+import { AuditLogDrawer } from "~/components/AuditLog";
 import { usePanels } from "~/components/Layout";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
-import { usePermissions, useRouteData } from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { ReceiptStatus } from "~/modules/inventory/ui/Receipts";
 import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
 import PurchaseInvoicingStatus from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicingStatus";
@@ -56,6 +58,7 @@ const PurchaseOrderHeader = () => {
   const { orderId } = useParams();
   if (!orderId) throw new Error("orderId not found");
 
+  const { company } = useUser();
   const { toggleExplorer, toggleProperties } = usePanels();
 
   const routeData = useRouteData<{
@@ -88,6 +91,7 @@ const PurchaseOrderHeader = () => {
 
   const finalizeDisclosure = useDisclosure();
   const deleteModal = useDisclosure();
+  const auditDrawer = useDisclosure();
   const [approvalDecision, setApprovalDecision] =
     useState<ApprovalDecision | null>(null);
 
@@ -130,6 +134,11 @@ const PurchaseOrderHeader = () => {
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
+                <DropdownMenuItem onClick={auditDrawer.onOpen}>
+                  <DropdownMenuIcon icon={<LuHistory />} />
+                  Audit History
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   disabled={
                     !permissions.can("delete", "purchasing") ||
@@ -538,6 +547,13 @@ const PurchaseOrderHeader = () => {
           defaultCc={routeData?.defaultCc ?? []}
         />
       )}
+      <AuditLogDrawer
+        isOpen={auditDrawer.isOpen}
+        onClose={auditDrawer.onClose}
+        entityType="purchaseOrder"
+        entityId={orderId}
+        companyId={company.id}
+      />
     </>
   );
 };

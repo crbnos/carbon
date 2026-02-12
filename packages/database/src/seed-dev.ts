@@ -43,6 +43,19 @@ dotenv.config();
 const DEV_PASSWORD = "password";
 const DEV_COMPANY_NAME = "Carbon Development";
 
+/**
+ * Infers a first name from an email address.
+ * Takes the local part (before @), splits on common delimiters (., +, _),
+ * takes the first segment, and capitalizes it.
+ */
+function inferFirstNameFromEmail(email: string): string {
+  const localPart = email.split("@")[0];
+  // Split on common delimiters and take the first part
+  const firstName = localPart.split(/[.+_-]/)[0];
+  // Capitalize first letter, lowercase the rest
+  return firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
+}
+
 // Parse CLI arguments
 const { values } = parseArgs({
   options: {
@@ -151,19 +164,27 @@ async function seedDev() {
       console.log(`   User created with ID: ${userId}`);
     }
 
-    // Step 2: Begin transaction for all database operations
-    console.log("2. Starting database transaction...");
+    // Step 2: Update user's first name (inferred from email)
+    const firstName = inferFirstNameFromEmail(email);
+    console.log(`2. Updating user first name to "${firstName}"...`);
+    await client.query(`UPDATE "user" SET "firstName" = $1 WHERE id = $2`, [
+      firstName,
+      userId
+    ]);
+
+    // Step 3: Begin transaction for all database operations
+    console.log("3. Starting database transaction...");
     await client.query("BEGIN");
 
     try {
       // Generate company ID using xid() function
-      console.log("3. Generating company ID...");
+      console.log("4. Generating company ID...");
       const xidResult = await client.query("SELECT xid() as id");
       const companyId = xidResult.rows[0].id as string;
       console.log(`   Company ID: ${companyId}`);
 
       // Create the company
-      console.log("4. Creating company...");
+      console.log("5. Creating company...");
       await client.query(
         `INSERT INTO company (id, name, "baseCurrencyCode") VALUES ($1, $2, 'USD')`,
         [companyId, DEV_COMPANY_NAME]
@@ -171,7 +192,7 @@ async function seedDev() {
       console.log(`   Company "${DEV_COMPANY_NAME}" created.`);
 
       // Seed the company with all default data
-      console.log("5. Seeding company with default data...");
+      console.log("6. Seeding company with default data...");
 
       // Create storage bucket
       await client.query(
@@ -541,7 +562,7 @@ async function seedDev() {
       );
 
       // Update user permissions
-      console.log("6. Updating user permissions...");
+      console.log("7. Updating user permissions...");
 
       // Build permissions object
       const newPermissions: Record<string, string[]> = {};

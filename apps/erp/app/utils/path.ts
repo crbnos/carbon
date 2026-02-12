@@ -1597,6 +1597,7 @@ export const path = {
     users: `${x}/users`,
     webhook: (id: string) => generatePath(`${x}/settings/webhooks/${id}`),
     webhooks: `${x}/settings/webhooks`,
+    auditLog: `${x}/settings/audit-log`,
     workCenters: `${x}/resources/work-centers`,
     workCenter: (id: string) =>
       generatePath(`${x}/resources/work-centers/${id}`),

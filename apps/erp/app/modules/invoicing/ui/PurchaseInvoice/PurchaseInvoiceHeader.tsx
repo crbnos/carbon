@@ -8,6 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
   Heading,
   HStack,
@@ -22,15 +23,17 @@ import {
   LuChevronDown,
   LuEllipsisVertical,
   LuHandCoins,
+  LuHistory,
   LuPanelLeft,
   LuPanelRight,
   LuShoppingCart,
   LuTrash
 } from "react-icons/lu";
 import { Link, useFetcher, useParams } from "react-router";
+import { AuditLogDrawer } from "~/components/AuditLog";
 import { usePanels } from "~/components/Layout/Panels";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
-import { usePermissions, useRouteData } from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { PurchaseInvoice, PurchaseInvoiceLine } from "~/modules/invoicing";
 import { PurchaseInvoicingStatus } from "~/modules/invoicing";
 import type { action as statusAction } from "~/routes/x+/purchase-invoice+/$invoiceId.status";
@@ -41,8 +44,10 @@ import PurchaseInvoicePostModal from "./PurchaseInvoicePostModal";
 const PurchaseInvoiceHeader = () => {
   const permissions = usePermissions();
   const { invoiceId } = useParams();
+  const { company } = useUser();
   const postingModal = useDisclosure();
   const deleteModal = useDisclosure();
+  const auditDrawer = useDisclosure();
   const statusFetcher = useFetcher<typeof statusAction>();
 
   const { carbon } = useCarbon();
@@ -171,6 +176,11 @@ const PurchaseInvoiceHeader = () => {
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
+                <DropdownMenuItem onClick={auditDrawer.onOpen}>
+                  <DropdownMenuIcon icon={<LuHistory />} />
+                  Audit History
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   disabled={
                     !permissions.can("delete", "invoicing") ||
@@ -338,6 +348,13 @@ const PurchaseInvoiceHeader = () => {
           }}
         />
       )}
+      <AuditLogDrawer
+        isOpen={auditDrawer.isOpen}
+        onClose={auditDrawer.onClose}
+        entityType="purchaseInvoice"
+        entityId={invoiceId}
+        companyId={company.id}
+      />
     </>
   );
 };

@@ -6,6 +6,7 @@ import {
   LuCreditCard,
   LuCrown,
   LuFactory,
+  LuHistory,
   LuImage,
   LuLayoutDashboard,
   LuSheet,
@@ -134,6 +135,12 @@ const settingsRoutes: AuthenticatedRouteGroup<{
         to: path.to.webhooks,
         role: "employee",
         icon: <LuWebhook />
+      },
+      {
+        name: "Audit Log",
+        to: path.to.auditLog,
+        role: "employee",
+        icon: <LuHistory />
       }
     ]
   }

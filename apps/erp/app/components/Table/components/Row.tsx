@@ -38,6 +38,7 @@ const Row = <T extends object>({
   getPinnedStyles,
   onCellClick,
   onCellUpdate,
+  className,
   ...props
 }: RowProps<T>) => {
   const onUpdate = isEditMode ? onCellUpdate(row.index) : undefined;
@@ -47,7 +48,8 @@ const Row = <T extends object>({
       key={row.id}
       className={cn(
         "border-b border-border transition-colors",
-        isFrozenColumn && "bg-card"
+        isFrozenColumn && "bg-card",
+        className
       )}
       {...props}
     >

@@ -39,11 +39,20 @@ import {
   useReactTable
 } from "@tanstack/react-table";
 import type { CSSProperties, ReactElement, ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from "react";
 import {
   LuArrowDown,
   LuArrowUp,
   LuArrowUpDown,
+  LuChevronDown,
+  LuChevronRight,
   LuHash,
   LuSigma,
   LuTrendingUpDown,
@@ -95,6 +104,7 @@ interface TableProps<T extends object> {
   onSelectedRowsChange?: (selectedRows: T[]) => void;
   renderActions?: (selectedRows: T[]) => ReactNode;
   renderContextMenu?: (row: T) => JSX.Element | null;
+  renderExpandedRow?: (row: T) => ReactNode;
 }
 
 type AggregateFunction = "sum" | "average" | "min" | "max" | "median" | "count";
@@ -228,11 +238,22 @@ const Table = <T extends object>({
   withSimpleSorting = true,
   onSelectedRowsChange,
   renderActions,
-  renderContextMenu
+  renderContextMenu,
+  renderExpandedRow
 }: TableProps<T>) => {
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
   const { currentView, view } = useSavedViews();
+
+  /* Expandable Rows */
+  const [expandedRows, setExpandedRows] = useState<Record<number, boolean>>({});
+
+  const toggleRowExpanded = useCallback((rowIndex: number) => {
+    setExpandedRows((prev) => ({
+      ...prev,
+      [rowIndex]: !prev[rowIndex]
+    }));
+  }, []);
 
   /* Data for Optimistic Updates */
   const [internalData, setInternalData] = useState<T[]>(data);
@@ -267,6 +288,9 @@ const Table = <T extends object>({
   const [columnPinning, setColumnPinning] = useState<ColumnPinningState>(() => {
     const left: string[] = [];
     const right: string[] = [];
+    if (renderExpandedRow) {
+      left.push("Expand");
+    }
     if (withSelectableRows) {
       left.push("Select");
     }
@@ -311,6 +335,9 @@ const Table = <T extends object>({
       setColumnPinning(() => {
         const left: string[] = [];
         const right: string[] = [];
+        if (renderExpandedRow) {
+          left.push("Expand");
+        }
         if (withSelectableRows) {
           left.push("Select");
         }
@@ -366,6 +393,9 @@ const Table = <T extends object>({
 
   const internalColumns = useMemo(() => {
     let result: ColumnDef<T>[] = [];
+    if (renderExpandedRow) {
+      result.push(...getExpandColumn<T>(expandedRows, toggleRowExpanded));
+    }
     if (withSelectableRows) {
       result.push(...getRowSelectionColumn<T>());
     }
@@ -374,7 +404,14 @@ const Table = <T extends object>({
       result.push(...getActionColumn<T>(renderContextMenu));
     }
     return result;
-  }, [columns, renderContextMenu, withSelectableRows]);
+  }, [
+    columns,
+    renderContextMenu,
+    withSelectableRows,
+    renderExpandedRow,
+    expandedRows,
+    toggleRowExpanded
+  ]);
 
   const table = useReactTable({
     data: internalData,
@@ -1002,7 +1039,12 @@ const Table = <T extends object>({
               </Thead>
               <Tbody>
                 {rows.map((row) => {
-                  return renderContextMenu ? (
+                  const isRowExpanded =
+                    renderExpandedRow && expandedRows[row.index];
+                  const handleRowClick = renderExpandedRow
+                    ? () => toggleRowExpanded(row.index)
+                    : undefined;
+                  const rowContent = renderContextMenu ? (
                     <Menu type="context" key={row.index}>
                       <ContextMenu>
                         <ContextMenuTrigger asChild>
@@ -1021,6 +1063,10 @@ const Table = <T extends object>({
                             getPinnedStyles={getPinnedStyles}
                             onCellClick={onCellClick}
                             onCellUpdate={onCellUpdate}
+                            onClick={handleRowClick}
+                            className={
+                              renderExpandedRow ? "cursor-pointer" : undefined
+                            }
                           />
                         </ContextMenuTrigger>
                         <ContextMenuContent className="w-128">
@@ -1044,7 +1090,27 @@ const Table = <T extends object>({
                       getPinnedStyles={getPinnedStyles}
                       onCellClick={onCellClick}
                       onCellUpdate={onCellUpdate}
+                      onClick={handleRowClick}
+                      className={
+                        renderExpandedRow ? "cursor-pointer" : undefined
+                      }
                     />
+                  );
+
+                  return (
+                    <Fragment key={row.id}>
+                      {rowContent}
+                      {isRowExpanded && (
+                        <Tr>
+                          <Td
+                            colSpan={visibleColumns.length}
+                            className="p-0 bg-muted/20 border-b border-border"
+                          >
+                            {renderExpandedRow(row.original)}
+                          </Td>
+                        </Tr>
+                      )}
+                    </Fragment>
                   );
                 })}
                 {table.getFooterGroups().map((footerGroup) => (
@@ -1143,6 +1209,40 @@ function getActionColumn<T>(
         </div>
       ),
       size: 60
+    }
+  ];
+}
+
+function getExpandColumn<T>(
+  expandedRows: Record<number, boolean>,
+  toggleRowExpanded: (rowIndex: number) => void
+): ColumnDef<T>[] {
+  return [
+    {
+      id: "Expand",
+      size: 40,
+      enablePinning: true,
+      header: () => <span className="sr-only">Expand</span>,
+      cell: ({ row }) => {
+        const isExpanded = expandedRows[row.index] ?? false;
+        return (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleRowExpanded(row.index);
+            }}
+            className="p-1 hover:bg-muted rounded transition-colors text-muted-foreground hover:text-foreground"
+            aria-label={isExpanded ? "Collapse row" : "Expand row"}
+          >
+            {isExpanded ? (
+              <LuChevronDown className="size-4" />
+            ) : (
+              <LuChevronRight className="size-4" />
+            )}
+          </button>
+        );
+      }
     }
   ];
 }

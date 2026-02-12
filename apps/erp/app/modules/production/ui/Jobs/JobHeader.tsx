@@ -48,6 +48,7 @@ import {
   LuClipboardList,
   LuClock,
   LuEllipsisVertical,
+  LuHistory,
   LuList,
   LuLoaderCircle,
   LuPackage,
@@ -64,12 +65,18 @@ import {
 import { RiProgress8Line } from "react-icons/ri";
 import type { FetcherWithComponents } from "react-router";
 import { Link, useFetcher, useNavigate, useParams } from "react-router";
+import { AuditLogDrawer } from "~/components/AuditLog";
 import { Location, Shelf } from "~/components/Form";
 import { usePanels } from "~/components/Layout";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import Select from "~/components/Select";
 import SupplierAvatar from "~/components/SupplierAvatar";
-import { useOptimisticLocation, usePermissions, useRouteData } from "~/hooks";
+import {
+  useOptimisticLocation,
+  usePermissions,
+  useRouteData,
+  useUser
+} from "~/hooks";
 import { path } from "~/utils/path";
 import { jobCompleteValidator } from "../../production.models";
 import type { Job } from "../../types";
@@ -81,6 +88,7 @@ const JobHeader = () => {
   const { jobId } = useParams();
   if (!jobId) throw new Error("jobId not found");
 
+  const { company } = useUser();
   const location = useOptimisticLocation();
   const { toggleExplorer, toggleProperties } = usePanels();
 
@@ -88,6 +96,7 @@ const JobHeader = () => {
   const cancelModal = useDisclosure();
   const completeModal = useDisclosure();
   const deleteJobModal = useDisclosure();
+  const auditDrawer = useDisclosure();
 
   const routeData = useRouteData<{ job: Job }>(path.to.job(jobId));
 
@@ -147,6 +156,11 @@ const JobHeader = () => {
               />
             </DropdownMenuTrigger>
             <DropdownMenuContent>
+              <DropdownMenuItem onClick={auditDrawer.onOpen}>
+                <DropdownMenuIcon icon={<LuHistory />} />
+                Audit History
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem
                 disabled={
                   !permissions.can("delete", "production") ||
@@ -410,6 +424,13 @@ const JobHeader = () => {
           }}
         />
       )}
+      <AuditLogDrawer
+        isOpen={auditDrawer.isOpen}
+        onClose={auditDrawer.onClose}
+        entityType="job"
+        entityId={jobId}
+        companyId={company.id}
+      />
     </>
   );
 };

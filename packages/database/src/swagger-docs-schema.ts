@@ -6444,6 +6444,168 @@ export default {
         tags: ["productionQuantity"],
       },
     },
+    "/auditLogArchive": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.auditLogArchive.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.auditLogArchive.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.auditLogArchive.archivePath",
+          },
+          {
+            $ref: "#/parameters/rowFilter.auditLogArchive.startDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.auditLogArchive.endDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.auditLogArchive.rowCount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.auditLogArchive.sizeBytes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.auditLogArchive.createdAt",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/auditLogArchive",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["auditLogArchive"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.auditLogArchive",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["auditLogArchive"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.auditLogArchive.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.auditLogArchive.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.auditLogArchive.archivePath",
+          },
+          {
+            $ref: "#/parameters/rowFilter.auditLogArchive.startDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.auditLogArchive.endDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.auditLogArchive.rowCount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.auditLogArchive.sizeBytes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.auditLogArchive.createdAt",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["auditLogArchive"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.auditLogArchive.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.auditLogArchive.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.auditLogArchive.archivePath",
+          },
+          {
+            $ref: "#/parameters/rowFilter.auditLogArchive.startDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.auditLogArchive.endDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.auditLogArchive.rowCount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.auditLogArchive.sizeBytes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.auditLogArchive.createdAt",
+          },
+          {
+            $ref: "#/parameters/body.auditLogArchive",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["auditLogArchive"],
+      },
+    },
     "/nonConformanceActionTask": {
       get: {
         parameters: [
@@ -48988,6 +49150,9 @@ export default {
             $ref: "#/parameters/rowFilter.company.suggestionNotificationGroup",
           },
           {
+            $ref: "#/parameters/rowFilter.company.auditLogEnabled",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -49116,6 +49281,9 @@ export default {
             $ref: "#/parameters/rowFilter.company.suggestionNotificationGroup",
           },
           {
+            $ref: "#/parameters/rowFilter.company.auditLogEnabled",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -49196,6 +49364,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.company.suggestionNotificationGroup",
+          },
+          {
+            $ref: "#/parameters/rowFilter.company.auditLogEnabled",
           },
           {
             $ref: "#/parameters/body.company",
@@ -63154,6 +63325,41 @@ export default {
         tags: ["(rpc) has_company_permission"],
       },
     },
+    "/rpc/create_audit_log_table": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["p_company_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) create_audit_log_table"],
+      },
+    },
     "/rpc/get_training_assignments_by_user": {
       post: {
         parameters: [
@@ -63770,6 +63976,46 @@ export default {
           },
         },
         tags: ["(rpc) get_direct_descendants_of_tracked_entity_strict"],
+      },
+    },
+    "/rpc/insert_audit_log_batch": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string",
+                },
+                p_entries: {
+                  format: "jsonb[]",
+                  items: {},
+                  type: "array",
+                },
+              },
+              required: ["p_company_id", "p_entries"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) insert_audit_log_batch"],
       },
     },
     "/rpc/create_rfq_from_models_v1": {
@@ -65250,6 +65496,57 @@ export default {
         tags: ["(rpc) prevent_posted_sales_invoice_deletion"],
       },
     },
+    "/rpc/get_entity_audit_log": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string",
+                },
+                p_entity_id: {
+                  format: "text",
+                  type: "string",
+                },
+                p_entity_type: {
+                  format: "text",
+                  type: "string",
+                },
+                p_limit: {
+                  format: "integer",
+                  type: "integer",
+                },
+                p_offset: {
+                  format: "integer",
+                  type: "integer",
+                },
+              },
+              required: ["p_company_id", "p_entity_type", "p_entity_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_entity_audit_log"],
+      },
+    },
     "/rpc/get_active_job_count": {
       post: {
         parameters: [
@@ -65326,6 +65623,63 @@ export default {
           },
         },
         tags: ["(rpc) delete_event_system_subscriptions_by_name"],
+      },
+    },
+    "/rpc/get_primary_key_column": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_table_name",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_primary_key_column"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_table_name: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["p_table_name"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_primary_key_column"],
       },
     },
     "/rpc/groups_for_user": {
@@ -65588,6 +65942,77 @@ export default {
           },
         },
         tags: ["(rpc) uuid_to_base58"],
+      },
+    },
+    "/rpc/get_audit_log": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_actor_id: {
+                  format: "text",
+                  type: "string",
+                },
+                p_company_id: {
+                  format: "text",
+                  type: "string",
+                },
+                p_end_date: {
+                  format: "timestamp with time zone",
+                  type: "string",
+                },
+                p_entity_id: {
+                  format: "text",
+                  type: "string",
+                },
+                p_entity_type: {
+                  format: "text",
+                  type: "string",
+                },
+                p_limit: {
+                  format: "integer",
+                  type: "integer",
+                },
+                p_offset: {
+                  format: "integer",
+                  type: "integer",
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string",
+                },
+                p_search: {
+                  format: "text",
+                  type: "string",
+                },
+                p_start_date: {
+                  format: "timestamp with time zone",
+                  type: "string",
+                },
+              },
+              required: ["p_company_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_audit_log"],
       },
     },
     "/rpc/get_assigned_job_operations": {
@@ -66080,6 +66505,45 @@ export default {
         tags: ["(rpc) increment_webhook_error"],
       },
     },
+    "/rpc/get_audit_logs_for_archive": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_before_date: {
+                  format: "timestamp with time zone",
+                  type: "string",
+                },
+                p_company_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["p_company_id", "p_before_date"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_audit_logs_for_archive"],
+      },
+    },
     "/rpc/journalLinesByAccountNumber": {
       post: {
         parameters: [
@@ -66188,6 +66652,45 @@ export default {
         tags: ["(rpc) get_my_claim"],
       },
     },
+    "/rpc/delete_old_audit_logs": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string",
+                },
+                p_cutoff_date: {
+                  format: "timestamp with time zone",
+                  type: "string",
+                },
+              },
+              required: ["p_company_id", "p_cutoff_date"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) delete_old_audit_logs"],
+      },
+    },
     "/rpc/get_job_quantity_on_hand": {
       post: {
         parameters: [
@@ -66286,6 +66789,41 @@ export default {
           },
         },
         tags: ["(rpc) get_material_naming_details"],
+      },
+    },
+    "/rpc/drop_audit_log_table": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["p_company_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) drop_audit_log_table"],
       },
     },
     "/rpc/get_job_method": {
@@ -66967,6 +67505,65 @@ export default {
         tags: ["(rpc) groups_query"],
       },
     },
+    "/rpc/get_audit_log_count": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_actor_id: {
+                  format: "text",
+                  type: "string",
+                },
+                p_company_id: {
+                  format: "text",
+                  type: "string",
+                },
+                p_end_date: {
+                  format: "timestamp with time zone",
+                  type: "string",
+                },
+                p_entity_type: {
+                  format: "text",
+                  type: "string",
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string",
+                },
+                p_search: {
+                  format: "text",
+                  type: "string",
+                },
+                p_start_date: {
+                  format: "timestamp with time zone",
+                  type: "string",
+                },
+              },
+              required: ["p_company_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_audit_log_count"],
+      },
+    },
     "/rpc/get_next_prefixed_sequence": {
       post: {
         parameters: [
@@ -67353,6 +67950,74 @@ export default {
           },
         },
         tags: ["(rpc) update_receipt_line_batch_tracking"],
+      },
+    },
+    "/rpc/insert_audit_log": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_actor_id: {
+                  format: "text",
+                  type: "string",
+                },
+                p_actor_name: {
+                  format: "text",
+                  type: "string",
+                },
+                p_company_id: {
+                  format: "text",
+                  type: "string",
+                },
+                p_diff: {
+                  format: "jsonb",
+                },
+                p_entity_id: {
+                  format: "text",
+                  type: "string",
+                },
+                p_entity_type: {
+                  format: "text",
+                  type: "string",
+                },
+                p_metadata: {
+                  format: "jsonb",
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: [
+                "p_company_id",
+                "p_entity_type",
+                "p_entity_id",
+                "p_operation",
+                "p_actor_id",
+                "p_actor_name",
+              ],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) insert_audit_log"],
       },
     },
     "/rpc/get_purchasing_planning": {
@@ -70635,6 +71300,57 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `scrapReason.id`.<fk table='scrapReason' column='id'/>",
           format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
+    auditLogArchive: {
+      required: [
+        "id",
+        "companyId",
+        "archivePath",
+        "startDate",
+        "endDate",
+        "rowCount",
+        "createdAt",
+      ],
+      properties: {
+        id: {
+          default: "public.id('arc'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        archivePath: {
+          format: "text",
+          type: "string",
+        },
+        startDate: {
+          format: "date",
+          type: "string",
+        },
+        endDate: {
+          format: "date",
+          type: "string",
+        },
+        rowCount: {
+          format: "integer",
+          type: "integer",
+        },
+        sizeBytes: {
+          format: "bigint",
+          type: "integer",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
           type: "string",
         },
       },
@@ -90850,6 +91566,7 @@ export default {
         "baseCurrencyCode",
         "createdAt",
         "suggestionNotificationGroup",
+        "auditLogEnabled",
       ],
       properties: {
         id: {
@@ -90953,6 +91670,11 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+        auditLogEnabled: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
         },
       },
       type: "object",
@@ -101060,6 +101782,63 @@ export default {
     },
     "rowFilter.productionQuantity.scrapReasonId": {
       name: "scrapReasonId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "body.auditLogArchive": {
+      name: "auditLogArchive",
+      description: "auditLogArchive",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/auditLogArchive",
+      },
+    },
+    "rowFilter.auditLogArchive.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.auditLogArchive.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.auditLogArchive.archivePath": {
+      name: "archivePath",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.auditLogArchive.startDate": {
+      name: "startDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.auditLogArchive.endDate": {
+      name: "endDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.auditLogArchive.rowCount": {
+      name: "rowCount",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.auditLogArchive.sizeBytes": {
+      name: "sizeBytes",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.auditLogArchive.createdAt": {
+      name: "createdAt",
       required: false,
       in: "query",
       type: "string",
@@ -123979,6 +124758,12 @@ export default {
     },
     "rowFilter.company.suggestionNotificationGroup": {
       name: "suggestionNotificationGroup",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.company.auditLogEnabled": {
+      name: "auditLogEnabled",
       required: false,
       in: "query",
       type: "string",
