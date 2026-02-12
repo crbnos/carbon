@@ -4,6 +4,7 @@ import {
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
   Heading,
   HStack,
@@ -11,11 +12,12 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { LuEllipsisVertical, LuTrash } from "react-icons/lu";
+import { LuEllipsisVertical, LuHistory, LuTrash } from "react-icons/lu";
 import { Link, useParams } from "react-router";
+import { AuditLogDrawer } from "~/components/AuditLog";
 import { DetailsTopbar } from "~/components/Layout";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
-import { usePermissions, useRouteData } from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import type { Tool } from "../../types";
 import { useToolNavigation } from "./useToolNavigation";
@@ -25,8 +27,10 @@ const ToolHeader = () => {
   const { itemId } = useParams();
   if (!itemId) throw new Error("itemId not found");
 
+  const { company } = useUser();
   const permissions = usePermissions();
   const deleteModal = useDisclosure();
+  const auditDrawer = useDisclosure();
 
   const routeData = useRouteData<{ toolSummary: Tool }>(path.to.tool(itemId));
 
@@ -51,6 +55,11 @@ const ToolHeader = () => {
               />
             </DropdownMenuTrigger>
             <DropdownMenuContent>
+              <DropdownMenuItem onClick={auditDrawer.onOpen}>
+                <DropdownMenuIcon icon={<LuHistory />} />
+                Audit History
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem
                 disabled={
                   !permissions.can("delete", "parts") ||
@@ -81,6 +90,15 @@ const ToolHeader = () => {
           onSubmit={() => {
             deleteModal.onClose();
           }}
+        />
+      )}
+      {auditDrawer.isOpen && company?.id && (
+        <AuditLogDrawer
+          isOpen={auditDrawer.isOpen}
+          onClose={auditDrawer.onClose}
+          entityType="item"
+          entityId={itemId}
+          companyId={company.id}
         />
       )}
     </div>
