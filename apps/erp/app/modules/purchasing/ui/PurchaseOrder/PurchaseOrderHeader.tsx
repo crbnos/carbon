@@ -14,7 +14,7 @@ import {
   SplitButton,
   useDisclosure
 } from "@carbon/react";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import {
   LuCheckCheck,
   LuChevronDown,
@@ -33,7 +33,7 @@ import {
   LuTruck,
   LuX
 } from "react-icons/lu";
-import { Link, useFetcher, useParams } from "react-router";
+import { Await, Link, useFetcher, useParams } from "react-router";
 
 import { AuditLogDrawer } from "~/components/AuditLog";
 import { usePanels } from "~/components/Layout";
@@ -95,6 +95,10 @@ const PurchaseOrderHeader = () => {
   const [approvalDecision, setApprovalDecision] =
     useState<ApprovalDecision | null>(null);
 
+  const rootRouteData = useRouteData<{
+    auditLogEnabled: Promise<boolean>;
+  }>(path.to.authenticatedRoot);
+
   const isOutsideProcessing =
     routeData?.purchaseOrder?.purchaseOrderType === "Outside Processing";
   const hasShipments = shipments.length > 0;
@@ -134,10 +138,22 @@ const PurchaseOrderHeader = () => {
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem onClick={auditDrawer.onOpen}>
-                  <DropdownMenuIcon icon={<LuHistory />} />
-                  Audit History
-                </DropdownMenuItem>
+                <Suspense fallback={null}>
+                  <Await resolve={rootRouteData?.auditLogEnabled}>
+                    {(auditLogEnabled) => {
+                      return (
+                        <>
+                          {auditLogEnabled && (
+                            <DropdownMenuItem onClick={auditDrawer.onOpen}>
+                              <DropdownMenuIcon icon={<LuHistory />} />
+                              History
+                            </DropdownMenuItem>
+                          )}
+                        </>
+                      );
+                    }}
+                  </Await>
+                </Suspense>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   disabled={

@@ -14,9 +14,9 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { useCallback } from "react";
+import { Suspense, useCallback } from "react";
 import { LuHistory } from "react-icons/lu";
-import { useFetcher, useParams } from "react-router";
+import { Await, useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { EmployeeAvatar } from "~/components";
 import { AuditLogDrawer } from "~/components/AuditLog";
@@ -39,6 +39,10 @@ const CustomerHeader = () => {
     customer: CustomerDetail;
     tags: { name: string }[];
   }>(path.to.customer(customerId));
+
+  const rootRouteData = useRouteData<{
+    auditLogEnabled: Promise<boolean>;
+  }>(path.to.authenticatedRoot);
 
   const customerTypes = useCustomerTypes();
   const customerType = customerTypes?.find(
@@ -81,15 +85,27 @@ const CustomerHeader = () => {
             <CardHeader>
               <CardTitle>{routeData?.customer?.name}</CardTitle>
             </CardHeader>
-            <CardAction>
-              <Button
-                variant="secondary"
-                leftIcon={<LuHistory />}
-                onClick={auditDrawer.onOpen}
-              >
-                Audit History
-              </Button>
-            </CardAction>
+            <Suspense fallback={null}>
+              <Await resolve={rootRouteData?.auditLogEnabled}>
+                {(auditLogEnabled) => {
+                  return (
+                    <>
+                      {auditLogEnabled && (
+                        <CardAction>
+                          <Button
+                            variant="secondary"
+                            leftIcon={<LuHistory />}
+                            onClick={auditDrawer.onOpen}
+                          >
+                            History
+                          </Button>
+                        </CardAction>
+                      )}
+                    </>
+                  );
+                }}
+              </Await>
+            </Suspense>
           </HStack>
           <CardContent>
             <CardAttributes>

@@ -16,7 +16,7 @@ import {
   useDisclosure
 } from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   LuCheckCheck,
@@ -29,7 +29,7 @@ import {
   LuShoppingCart,
   LuTrash
 } from "react-icons/lu";
-import { Link, useFetcher, useParams } from "react-router";
+import { Await, Link, useFetcher, useParams } from "react-router";
 import { AuditLogDrawer } from "~/components/AuditLog";
 import { usePanels } from "~/components/Layout/Panels";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
@@ -72,6 +72,10 @@ const PurchaseInvoiceHeader = () => {
   const { purchaseInvoice } = routeData;
   const { toggleExplorer, toggleProperties } = usePanels();
   const isPosted = purchaseInvoice.postingDate !== null;
+
+  const rootRouteData = useRouteData<{
+    auditLogEnabled: Promise<boolean>;
+  }>(path.to.authenticatedRoot);
 
   const [relatedDocs, setRelatedDocs] = useState<{
     purchaseOrders: { id: string; readableId: string }[];
@@ -176,10 +180,22 @@ const PurchaseInvoiceHeader = () => {
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem onClick={auditDrawer.onOpen}>
-                  <DropdownMenuIcon icon={<LuHistory />} />
-                  Audit History
-                </DropdownMenuItem>
+                <Suspense fallback={null}>
+                  <Await resolve={rootRouteData?.auditLogEnabled}>
+                    {(auditLogEnabled) => {
+                      return (
+                        <>
+                          {auditLogEnabled && (
+                            <DropdownMenuItem onClick={auditDrawer.onOpen}>
+                              <DropdownMenuIcon icon={<LuHistory />} />
+                              History
+                            </DropdownMenuItem>
+                          )}
+                        </>
+                      );
+                    }}
+                  </Await>
+                </Suspense>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   disabled={

@@ -236,6 +236,10 @@ const SalesOrderHeader = () => {
     routeData?.salesOrder?.salesOrderId
   ]);
 
+  const rootRouteData = useRouteData<{
+    auditLogEnabled: Promise<boolean>;
+  }>(path.to.authenticatedRoot);
+
   return (
     <>
       <div className="flex flex-shrink-0 items-center justify-between p-2 bg-card border-b h-[50px] overflow-x-auto scrollbar-hide">
@@ -263,10 +267,22 @@ const SalesOrderHeader = () => {
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem onClick={auditDrawer.onOpen}>
-                  <DropdownMenuIcon icon={<LuHistory />} />
-                  Audit History
-                </DropdownMenuItem>
+                <Suspense fallback={null}>
+                  <Await resolve={rootRouteData?.auditLogEnabled}>
+                    {(auditLogEnabled) => {
+                      return (
+                        <>
+                          {auditLogEnabled && (
+                            <DropdownMenuItem onClick={auditDrawer.onOpen}>
+                              <DropdownMenuIcon icon={<LuHistory />} />
+                              History
+                            </DropdownMenuItem>
+                          )}
+                        </>
+                      );
+                    }}
+                  </Await>
+                </Suspense>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   disabled={

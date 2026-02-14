@@ -10,6 +10,7 @@ import {
   requireAuthSession,
   updateCompanySession
 } from "@carbon/auth/session.server";
+import { isAuditLogEnabled } from "@carbon/database/audit";
 import { TooltipProvider, useMount } from "@carbon/react";
 import { ItarPopup, useKeyboardWedge, useNProgress } from "@carbon/remix";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
@@ -19,7 +20,13 @@ import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { Outlet, redirect, useLoaderData, useNavigate } from "react-router";
+import {
+  data,
+  Outlet,
+  redirect,
+  useLoaderData,
+  useNavigate
+} from "react-router";
 import { RealtimeDataProvider } from "~/components";
 import { PrimaryNavigation, Topbar } from "~/components/Layout";
 import {
@@ -118,12 +125,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw redirect(path.to.onboarding.root);
   }
 
-  return {
+  return data({
     session: {
       accessToken,
       expiresIn,
       expiresAt
     },
+    auditLogEnabled: await isAuditLogEnabled(client, companyId),
     company,
     companies: companies.data ?? [],
     companySettings: companySettings.data,
@@ -136,7 +144,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     role: claims?.role,
     user: user.data,
     savedViews: savedViews.data ?? []
-  };
+  });
 }
 
 export default function AuthenticatedRoute() {

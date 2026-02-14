@@ -15,7 +15,7 @@ import {
   useDisclosure
 } from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   LuCheckCheck,
@@ -31,7 +31,7 @@ import {
   LuTruck
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
-import { Link, useFetcher, useParams } from "react-router";
+import { Await, Link, useFetcher, useParams } from "react-router";
 import { AuditLogDrawer } from "~/components/AuditLog";
 import { usePanels } from "~/components/Layout/Panels";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
@@ -80,6 +80,10 @@ const SalesInvoiceHeader = () => {
   const { toggleExplorer, toggleProperties } = usePanels();
   const isPosted = salesInvoice.postingDate !== null;
   const isVoided = salesInvoice.status === "Voided";
+
+  const rootRouteData = useRouteData<{
+    auditLogEnabled: Promise<boolean>;
+  }>(path.to.authenticatedRoot);
 
   const [relatedDocs, setRelatedDocs] = useState<{
     salesOrders: { id: string; readableId: string }[];
@@ -186,10 +190,22 @@ const SalesInvoiceHeader = () => {
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem onClick={auditDrawer.onOpen}>
-                  <DropdownMenuIcon icon={<LuHistory />} />
-                  Audit History
-                </DropdownMenuItem>
+                <Suspense fallback={null}>
+                  <Await resolve={rootRouteData?.auditLogEnabled}>
+                    {(auditLogEnabled) => {
+                      return (
+                        <>
+                          {auditLogEnabled && (
+                            <DropdownMenuItem onClick={auditDrawer.onOpen}>
+                              <DropdownMenuIcon icon={<LuHistory />} />
+                              History
+                            </DropdownMenuItem>
+                          )}
+                        </>
+                      );
+                    }}
+                  </Await>
+                </Suspense>
               </DropdownMenuContent>
             </DropdownMenu>
             <SalesInvoiceStatus status={salesInvoice.status} />

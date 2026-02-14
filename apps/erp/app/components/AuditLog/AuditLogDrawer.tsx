@@ -99,7 +99,7 @@ const AuditLogDrawer = memo(
           <DrawerHeader>
             <DrawerTitle className="flex items-center gap-2">
               <LuHistory className="size-5" />
-              Audit History
+              History
             </DrawerTitle>
           </DrawerHeader>
           <DrawerBody>
