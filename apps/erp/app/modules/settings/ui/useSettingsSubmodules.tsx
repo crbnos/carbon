@@ -8,6 +8,7 @@ import {
   LuFactory,
   LuHistory,
   LuImage,
+  LuKey,
   LuLayoutDashboard,
   LuSheet,
   LuShoppingCart,
@@ -107,10 +108,22 @@ const settingsRoutes: AuthenticatedRouteGroup<{
     name: "System",
     routes: [
       {
+        name: "API Keys",
+        to: path.to.apiKeys,
+        role: "employee",
+        icon: <LuKey />
+      },
+      {
         name: "Approval Rules",
         to: path.to.approvalRules,
         role: "employee",
         icon: <LuCircleCheck />
+      },
+      {
+        name: "Audit Logs",
+        to: path.to.auditLog,
+        role: "employee",
+        icon: <LuHistory />
       },
       {
         name: "Custom Fields",
@@ -135,12 +148,6 @@ const settingsRoutes: AuthenticatedRouteGroup<{
         to: path.to.webhooks,
         role: "employee",
         icon: <LuWebhook />
-      },
-      {
-        name: "Audit Log",
-        to: path.to.auditLog,
-        role: "employee",
-        icon: <LuHistory />
       }
     ]
   }

@@ -1,20 +1,21 @@
 import type { AuditLogEntry } from "@carbon/database/audit.types";
 import {
   Badge,
+  cn,
   Drawer,
   DrawerBody,
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
   HStack,
-  Spinner,
+  Skeleton,
   VStack
 } from "@carbon/react";
 import { formatDateTime } from "@carbon/utils";
 import { memo, useEffect } from "react";
 import { LuFilePen, LuFilePlus, LuFileX, LuHistory } from "react-icons/lu";
 import { useFetcher } from "react-router";
-import { EmployeeAvatar } from "~/components";
+import { EmployeeAvatar, Empty } from "~/components";
 
 type AuditLogDrawerProps = {
   isOpen: boolean;
@@ -94,7 +95,7 @@ const AuditLogDrawer = memo(
           if (!open) onClose();
         }}
       >
-        <DrawerContent size="md">
+        <DrawerContent size="md" position="left">
           <DrawerHeader>
             <DrawerTitle className="flex items-center gap-2">
               <LuHistory className="size-5" />
@@ -103,19 +104,14 @@ const AuditLogDrawer = memo(
           </DrawerHeader>
           <DrawerBody>
             {isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Spinner />
-              </div>
+              <VStack spacing={2}>
+                <Skeleton className="w-full h-[151px]" />
+                <Skeleton className="w-full h-[151px]" />
+              </VStack>
             ) : entries.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
-                <LuHistory className="size-12 mb-4 opacity-50" />
-                <p>No audit history found</p>
-                <p className="text-sm">
-                  Changes to this record will appear here.
-                </p>
-              </div>
+              <Empty />
             ) : (
-              <VStack className="gap-4">
+              <VStack spacing={2}>
                 {entries.map((entry) => (
                   <AuditLogEntryCard key={entry.id} entry={entry} />
                 ))}
@@ -145,28 +141,24 @@ const AuditLogEntryCard = memo(({ entry }: AuditLogEntryCardProps) => {
   const diffKeys = entry.diff ? Object.keys(entry.diff) : [];
 
   return (
-    <div className="border rounded-lg p-4 w-full">
+    <div className="border bg-muted/40 rounded-lg p-4 w-full">
       <HStack className="justify-between items-start mb-3">
-        <HStack className="gap-2">
+        <VStack spacing={1}>
           {entry.actorId ? (
             <EmployeeAvatar employeeId={entry.actorId} />
           ) : (
-            <VStack className="items-start gap-0">
-              <span className="font-medium">System</span>
-              <span className="text-xs text-muted-foreground">
-                {formatDateTime(entry.createdAt)}
-              </span>
-            </VStack>
+            <span className="font-medium">System</span>
           )}
-          {entry.actorId && (
-            <VStack className="items-start gap-0">
-              <span className="text-xs text-muted-foreground">
-                {formatDateTime(entry.createdAt)}
-              </span>
-            </VStack>
-          )}
-        </HStack>
-        <Badge variant={opInfo.variant}>
+          <span
+            className={cn(
+              "text-xs text-muted-foreground",
+              entry.actorId && "pl-8"
+            )}
+          >
+            {formatDateTime(entry.createdAt)}
+          </span>
+        </VStack>
+        <Badge variant={opInfo.variant} className="flex-shrink-0">
           <HStack className="gap-1">
             {opInfo.icon}
             <span>{opInfo.label}</span>
@@ -174,53 +166,58 @@ const AuditLogEntryCard = memo(({ entry }: AuditLogEntryCardProps) => {
         </Badge>
       </HStack>
 
-      {/* Show diff for UPDATE operations */}
-      {entry.operation === "UPDATE" && diffKeys.length > 0 && (
-        <div className="mt-3 pt-3 border-t">
-          <p className="text-sm font-medium mb-2">Changes</p>
-          <VStack className="gap-2">
+      <div className="mt-3 pt-3 border-t">
+        <p className="text-sm font-medium mb-2">Changes</p>
+        {diffKeys.length > 0 ? (
+          <div className="space-y-1">
             {diffKeys.map((key) => {
               const change = entry.diff![key];
               return (
                 <div
                   key={key}
-                  className="text-sm bg-muted/50 rounded px-2 py-1"
+                  className="flex items-center gap-2 font-mono text-sm py-1"
                 >
-                  <span className="font-medium text-muted-foreground">
-                    {formatFieldName(key)}:
-                  </span>{" "}
-                  <span className="text-red-600 line-through">
-                    {formatValue(change.old)}
-                  </span>{" "}
-                  <span className="text-muted-foreground">→</span>{" "}
-                  <span className="text-green-600">
-                    {formatValue(change.new)}
+                  <span className="text-muted-foreground font-medium min-w-[120px]">
+                    {key}:
                   </span>
+                  {change.old !== undefined && (
+                    <span className="px-2 py-0.5 rounded bg-red-500/10 text-red-500">
+                      {formatValue(change.old)}
+                    </span>
+                  )}
+                  {change.old !== undefined && change.new !== undefined && (
+                    <span className="text-muted-foreground">→</span>
+                  )}
+                  {change.new !== undefined && (
+                    <span className="px-2 py-0.5 rounded bg-green-500/10 text-green-500">
+                      {formatValue(change.new)}
+                    </span>
+                  )}
                 </div>
               );
             })}
-          </VStack>
-        </div>
-      )}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground italic">
+            {entry.operation === "INSERT"
+              ? "New record created"
+              : entry.operation === "DELETE"
+                ? "Record deleted"
+                : "No changes recorded"}
+          </p>
+        )}
+      </div>
     </div>
   );
 });
 
 AuditLogEntryCard.displayName = "AuditLogEntryCard";
 
-function formatFieldName(key: string): string {
-  // Convert camelCase to Title Case with spaces
-  // Also handles nested paths like "customFields.myField"
-  return key
-    .replace(/([A-Z])/g, " $1")
-    .replace(/\./g, " → ")
-    .replace(/^./, (str) => str.toUpperCase())
-    .trim();
-}
-
 function formatValue(value: unknown): string {
-  if (value === null || value === undefined) return "(empty)";
-  if (typeof value === "boolean") return value ? "Yes" : "No";
-  if (typeof value === "object") return JSON.stringify(value);
-  return String(value);
+  if (value === null) return "null";
+  if (value === undefined) return "undefined";
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean")
+    return String(value);
+  return JSON.stringify(value);
 }

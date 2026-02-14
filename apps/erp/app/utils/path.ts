@@ -414,6 +414,8 @@ export const path = {
       generatePath(`${x}/people/attributes/${id}`),
     attributeCategoryList: (id: string) =>
       generatePath(`${x}/people/attributes/list/${id}`),
+    auditLog: `${x}/settings/audit-logs`,
+    auditLogDetails: `${x}/settings/audit-logs/details`,
     batchProperty: (itemId: string) =>
       generatePath(`${x}/inventory/batch-property/${itemId}/property`),
     batchPropertyOrder: (itemId: string) =>
@@ -1597,7 +1599,6 @@ export const path = {
     users: `${x}/users`,
     webhook: (id: string) => generatePath(`${x}/settings/webhooks/${id}`),
     webhooks: `${x}/settings/webhooks`,
-    auditLog: `${x}/settings/audit-log`,
     workCenters: `${x}/resources/work-centers`,
     workCenter: (id: string) =>
       generatePath(`${x}/resources/work-centers/${id}`),
