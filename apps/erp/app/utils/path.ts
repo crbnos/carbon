@@ -116,6 +116,8 @@ export const path = {
       linearCreateIssue: `${api}/integrations/linear/issue/create`,
       linearLinkExistingIssue: `${api}/integrations/linear/issue/link`,
       linearSyncNotes: `${api}/integrations/linear/issue/sync-notes`,
+      jiraCreateIssue: `${api}/integrations/jira/issue/create`,
+      jiraLinkExistingIssue: `${api}/integrations/jira/issue/link`,
       outsideOperations: (jobId: string) =>
         generatePath(`${api}/production/outside-operations/${jobId}`),
       purchasingKpi: (key: string) =>

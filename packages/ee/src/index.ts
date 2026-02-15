@@ -1,4 +1,5 @@
 import { ExchangeRates } from "./exchange-rates/config";
+import { Jira } from "./jira/config";
 import { Linear } from "./linear/config";
 import { Onshape } from "./onshape/config";
 import { PaperlessParts } from "./paperless-parts/config";
@@ -28,6 +29,7 @@ export type {
 
 export const integrations = [
   ExchangeRates,
+  Jira,
   PaperlessParts,
   Onshape,
   Linear,
@@ -40,6 +42,7 @@ export const integrations = [
   Zapier
 ];
 
+export { Jira } from "./jira/config";
 export { Logo as OnshapeLogo, Onshape } from "./onshape/config";
 // TODO: export as @carbon/ee/paperless
 export { PaperlessPartsClient } from "./paperless-parts/lib/client";

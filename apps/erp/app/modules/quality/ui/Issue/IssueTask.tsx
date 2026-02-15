@@ -60,6 +60,7 @@ import type {
 import { nonConformanceTaskStatus } from "~/modules/quality";
 import { useSuppliers } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
+import { JiraIssueDialog } from "./Jira/IssueDialog";
 import { LinearIssueDialog } from "./Linear/IssueDialog";
 
 export function TaskProgress({
@@ -321,6 +322,7 @@ export function TaskItem({
           )}
 
           {integrations.has("linear") && <LinearIssueDialog task={task} />}
+          {integrations.has("jira") && <JiraIssueDialog task={task} />}
 
           <IconButton
             icon={<LuChevronRight />}

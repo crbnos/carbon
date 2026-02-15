@@ -65,6 +65,10 @@ declare global {
       VERCEL_ENV: string;
       XERO_CLIENT_SECRET: string;
       XERO_WEBHOOK_SECRET: string;
+      JIRA_CLIENT_ID: string;
+      JIRA_CLIENT_SECRET: string;
+      JIRA_OAUTH_REDIRECT_URL: string;
+      JIRA_STATE_SECRET: string;
     }
   }
 }
@@ -268,6 +272,21 @@ export const XERO_CLIENT_SECRET = getEnv("XERO_CLIENT_SECRET", {
   isSecret: true
 });
 export const XERO_WEBHOOK_SECRET = getEnv("XERO_WEBHOOK_SECRET", {
+  isRequired: false,
+  isSecret: true
+});
+
+export const JIRA_CLIENT_ID = getEnv("JIRA_CLIENT_ID", {
+  isRequired: false
+});
+export const JIRA_CLIENT_SECRET = getEnv("JIRA_CLIENT_SECRET", {
+  isRequired: false,
+  isSecret: true
+});
+export const JIRA_OAUTH_REDIRECT_URL = getEnv("JIRA_OAUTH_REDIRECT_URL", {
+  isRequired: false
+});
+export const JIRA_STATE_SECRET = getEnv("JIRA_STATE_SECRET", {
   isRequired: false,
   isSecret: true
 });
