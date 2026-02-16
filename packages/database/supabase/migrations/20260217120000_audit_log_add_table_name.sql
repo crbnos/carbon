@@ -147,8 +147,8 @@ BEGIN
       entry->>'entityId',
       entry->>'operation',
       entry->>'actorId',
-      entry->'diff',
-      entry->'metadata';
+      CASE WHEN entry->'diff' = 'null'::jsonb THEN NULL ELSE entry->'diff' END,
+      CASE WHEN entry->'metadata' = 'null'::jsonb THEN NULL ELSE entry->'metadata' END;
     
     inserted_count := inserted_count + 1;
   END LOOP;
