@@ -39,6 +39,8 @@ export function CollapsibleSidebarProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     if (isMobile) {
       setSidebarOpen(false);
+    } else {
+      setSidebarOpen(true);
     }
   }, [isMobile, setSidebarOpen]);
 
