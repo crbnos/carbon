@@ -20,7 +20,7 @@ import { EmployeeAvatar, Empty } from "~/components";
 type AuditLogDrawerProps = {
   isOpen: boolean;
   onClose: () => void;
-  entityType: string;
+  tableName: string;
   entityId: string;
   companyId: string;
 };
@@ -54,7 +54,7 @@ const AuditLogDrawer = memo(
   ({
     isOpen,
     onClose,
-    entityType,
+    tableName,
     entityId,
     companyId
   }: AuditLogDrawerProps) => {
@@ -64,19 +64,19 @@ const AuditLogDrawer = memo(
     useEffect(() => {
       if (
         isOpen &&
-        entityType &&
+        tableName &&
         entityId &&
         fetcher.state === "idle" &&
         !fetcher.data
       ) {
         const params = new URLSearchParams({
-          entityType,
+          tableName,
           entityId,
           companyId
         });
         fetcher.load(`/api/audit-log?${params.toString()}`);
       }
-    }, [isOpen, entityType, entityId, companyId, fetcher]);
+    }, [isOpen, tableName, entityId, companyId, fetcher]);
 
     // Reset when drawer closes
     useEffect(() => {

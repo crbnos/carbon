@@ -114,7 +114,7 @@ const PartHeader = () => {
       <AuditLogDrawer
         isOpen={auditDrawer.isOpen}
         onClose={auditDrawer.onClose}
-        entityType="item"
+        tableName="item"
         entityId={itemId}
         companyId={company.id}
       />

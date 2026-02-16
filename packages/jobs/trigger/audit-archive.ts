@@ -8,7 +8,7 @@ import { gzipSync } from "node:zlib";
 type AuditArchiveRpcClient = {
   rpc(
     fn: "get_audit_logs_for_archive",
-    params: { p_company_id: string; p_cutoff_date: string }
+    params: { p_company_id: string; p_before_date: string }
   ): Promise<{ data: AuditLogEntry[] | null; error: any }>;
   rpc(
     fn: "delete_old_audit_logs",
@@ -91,7 +91,7 @@ async function archiveCompanyLogs(
     "get_audit_logs_for_archive",
     {
       p_company_id: companyId,
-      p_cutoff_date: cutoffDate.toISOString(),
+      p_before_date: cutoffDate.toISOString(),
     }
   );
 

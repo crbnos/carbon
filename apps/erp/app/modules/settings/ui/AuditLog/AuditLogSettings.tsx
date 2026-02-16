@@ -85,7 +85,7 @@ const AuditLogSettings = memo(
           </CardContent>
         </Card>
 
-        {enabled && archives.length > 0 && (
+        {enabled && (
           <Card>
             <CardHeader>
               <HStack className="justify-between items-center">
@@ -102,34 +102,42 @@ const AuditLogSettings = memo(
               </HStack>
             </CardHeader>
             <CardContent>
-              <VStack className="gap-2">
-                {archives.map((archive) => (
-                  <HStack
-                    key={archive.id}
-                    className="justify-between items-center p-3 border rounded-md"
-                  >
-                    <VStack className="items-start gap-0.5">
-                      <span className="font-medium">
-                        {formatDate(archive.startDate)} -{" "}
-                        {formatDate(archive.endDate)}
-                      </span>
-                      <span className="text-sm text-muted-foreground">
-                        {archive.rowCount.toLocaleString()} records
-                        {archive.sizeBytes &&
-                          ` (${formatBytes(archive.sizeBytes)})`}
-                      </span>
-                    </VStack>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      leftIcon={<LuDownload />}
-                      onClick={() => handleDownloadArchive(archive.id)}
+              {archives.length > 0 ? (
+                <VStack className="gap-2">
+                  {archives.map((archive) => (
+                    <HStack
+                      key={archive.id}
+                      className="justify-between items-center p-3 border rounded-md"
                     >
-                      Download
-                    </Button>
-                  </HStack>
-                ))}
-              </VStack>
+                      <VStack className="items-start gap-0.5">
+                        <span className="font-medium">
+                          {formatDate(archive.startDate)} -{" "}
+                          {formatDate(archive.endDate)}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          {archive.rowCount.toLocaleString()} records
+                          {archive.sizeBytes &&
+                            ` (${formatBytes(archive.sizeBytes)})`}
+                        </span>
+                      </VStack>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        leftIcon={<LuDownload />}
+                        onClick={() => handleDownloadArchive(archive.id)}
+                      >
+                        Download
+                      </Button>
+                    </HStack>
+                  ))}
+                </VStack>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No archived logs yet. Logs older than{" "}
+                  {auditConfig.retentionDays} days will be automatically
+                  archived and available for download here.
+                </p>
+              )}
             </CardContent>
           </Card>
         )}

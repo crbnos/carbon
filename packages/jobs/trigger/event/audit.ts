@@ -1,5 +1,9 @@
 import { getCarbonServiceRole } from "@carbon/auth";
-import { auditConfig, isAuditableEntity } from "@carbon/database/audit.config";
+import {
+  auditConfig,
+  getEntityTypeForTable,
+  isAuditableTable,
+} from "@carbon/database/audit.config";
 import type {
   AuditDiff,
   CreateAuditLogEntry,
@@ -155,8 +159,8 @@ export const auditTask = task({
       const entries: CreateAuditLogEntry[] = [];
 
       for (const record of records) {
-        // Skip non-auditable entities
-        if (!isAuditableEntity(record.event.table)) {
+        // Skip non-auditable tables
+        if (!isAuditableTable(record.event.table)) {
           results.skipped++;
           continue;
         }
@@ -196,8 +200,12 @@ export const auditTask = task({
             }
           }
 
+          const tableName = record.event
+            .table as CreateAuditLogEntry["tableName"];
+
           entries.push({
-            entityType: record.event.table as CreateAuditLogEntry["entityType"],
+            tableName,
+            entityType: getEntityTypeForTable(tableName),
             entityId: record.event.recordId,
             operation: record.event
               .operation as CreateAuditLogEntry["operation"],

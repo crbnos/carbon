@@ -1,4 +1,4 @@
-import type { AuditableEntity } from "./audit.config";
+import type { AuditableTable, AuditEntityType } from "./audit.config";
 
 /**
  * Operation types for audit log entries
@@ -35,7 +35,8 @@ export type AuditDiff = Record<string, AuditDiffEntry>;
 export interface AuditLogEntry {
   id: string;
   companyId: string;
-  entityType: AuditableEntity;
+  tableName: AuditableTable;
+  entityType: AuditEntityType;
   entityId: string;
   operation: AuditOperation;
   actorId: string | null;
@@ -49,7 +50,8 @@ export interface AuditLogEntry {
  * Note: companyId is passed separately to the RPC function
  */
 export interface CreateAuditLogEntry {
-  entityType: AuditableEntity;
+  tableName: AuditableTable;
+  entityType: AuditEntityType;
   entityId: string;
   operation: AuditOperation;
   actorId: string | null;
@@ -61,7 +63,7 @@ export interface CreateAuditLogEntry {
  * Filters for querying audit logs
  */
 export interface AuditLogFilters {
-  entityType?: AuditableEntity;
+  entityType?: AuditEntityType;
   actorId?: string;
   operation?: AuditOperation;
   startDate?: string;

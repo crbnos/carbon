@@ -159,7 +159,7 @@ const AuditLogTable = memo(({ entries, count }: AuditLogTableProps) => {
             <div>
               <div className="font-medium">
                 {getEntityLabel(
-                  entry.entityType as (typeof auditConfig.entities)[number]
+                  entry.entityType as (typeof auditConfig.entityTypes)[number]
                 )}
               </div>
               {entityPath ? (
@@ -180,9 +180,9 @@ const AuditLogTable = memo(({ entries, count }: AuditLogTableProps) => {
         meta: {
           filter: {
             type: "static",
-            options: auditConfig.entities.map((entity) => ({
-              label: getEntityLabel(entity),
-              value: entity
+            options: auditConfig.entityTypes.map((entityType) => ({
+              label: getEntityLabel(entityType),
+              value: entityType
             }))
           },
           pluralHeader: "Entities"

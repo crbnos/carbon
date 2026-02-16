@@ -10,7 +10,7 @@ export const auditConfig = {
    * List of database tables that are auditable.
    * These correspond to the tables that have event triggers attached.
    */
-  entities: [
+  tables: [
     "purchaseInvoice",
     "salesInvoice",
     "purchaseOrder",
@@ -25,6 +25,41 @@ export const auditConfig = {
   ] as const,
 
   /**
+   * Semantic entity types used in the UI.
+   * Multiple tables can map to the same entity type.
+   */
+  entityTypes: [
+    "purchaseInvoice",
+    "salesInvoice",
+    "purchaseOrder",
+    "salesOrder",
+    "salesCustomer",
+    "purchaseSupplier",
+    "item",
+    "productionJob",
+    "salesQuote",
+    "employee"
+  ] as const,
+
+  /**
+   * Maps a database table name to its semantic entity type.
+   * Tables that share a domain concept map to the same entity type.
+   */
+  tableToEntityType: {
+    purchaseInvoice: "purchaseInvoice",
+    salesInvoice: "salesInvoice",
+    purchaseOrder: "purchaseOrder",
+    salesOrder: "salesOrder",
+    customer: "salesCustomer",
+    supplier: "purchaseSupplier",
+    item: "item",
+    itemCost: "item",
+    job: "productionJob",
+    quote: "salesQuote",
+    employee: "employee"
+  } as const,
+
+  /**
    * Human-readable labels for entity types (used in UI)
    */
   entityLabels: {
@@ -32,12 +67,11 @@ export const auditConfig = {
     salesInvoice: "Sales Invoice",
     purchaseOrder: "Purchasing Order",
     salesOrder: "Sales Order",
-    customer: "Sales Customer",
-    supplier: "Purchasing Supplier",
-    item: "Inventory Item",
-    itemCost: "Inventory Item",
-    job: "Production Job",
-    quote: "Sales Quote",
+    salesCustomer: "Sales Customer",
+    purchaseSupplier: "Purchasing Supplier",
+    item: "Item",
+    productionJob: "Production Job",
+    salesQuote: "Sales Quote",
     employee: "Employee"
   } as const,
 
@@ -64,18 +98,34 @@ export const auditConfig = {
   archiveBucket: "private"
 } as const;
 
-export type AuditableEntity = (typeof auditConfig.entities)[number];
+export type AuditableTable = (typeof auditConfig.tables)[number];
+export type AuditEntityType = (typeof auditConfig.entityTypes)[number];
+
+/** @deprecated Use AuditableTable or AuditEntityType instead */
+export type AuditableEntity = AuditableTable;
 
 /**
- * Check if a table name is an auditable entity
+ * Check if a table name is an auditable table
  */
-export function isAuditableEntity(table: string): table is AuditableEntity {
-  return auditConfig.entities.includes(table as AuditableEntity);
+export function isAuditableTable(table: string): table is AuditableTable {
+  return auditConfig.tables.includes(table as AuditableTable);
+}
+
+/** @deprecated Use isAuditableTable instead */
+export function isAuditableEntity(table: string): table is AuditableTable {
+  return isAuditableTable(table);
+}
+
+/**
+ * Get the semantic entity type for a table name
+ */
+export function getEntityTypeForTable(table: AuditableTable): AuditEntityType {
+  return auditConfig.tableToEntityType[table];
 }
 
 /**
  * Get the human-readable label for an entity type
  */
-export function getEntityLabel(entityType: AuditableEntity): string {
+export function getEntityLabel(entityType: AuditEntityType): string {
   return auditConfig.entityLabels[entityType] ?? entityType;
 }

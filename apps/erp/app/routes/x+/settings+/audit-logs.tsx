@@ -1,4 +1,4 @@
-import { error, success } from "@carbon/auth";
+import { error, getCarbonServiceRole, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
@@ -34,11 +34,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // Table might not exist yet, that's ok
   }
 
-  // Get archives
+  // Get archives (uses service role to bypass RLS on auditLogArchive table)
   let archives: Awaited<ReturnType<typeof getAuditLogArchives>> = [];
   if (enabled) {
     try {
-      archives = await getAuditLogArchives(client, companyId);
+      const serviceRole = getCarbonServiceRole();
+      archives = await getAuditLogArchives(serviceRole, companyId);
     } catch {
       // Archives table might not exist
     }
@@ -101,7 +102,8 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       try {
-        const downloadUrl = await getArchiveDownloadUrl(client, archiveId);
+        const serviceRole = getCarbonServiceRole();
+        const downloadUrl = await getArchiveDownloadUrl(serviceRole, archiveId);
         // Redirect to the signed URL for download
         return redirect(downloadUrl);
       } catch (err) {

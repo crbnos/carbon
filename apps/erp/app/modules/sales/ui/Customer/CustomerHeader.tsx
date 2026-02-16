@@ -179,7 +179,7 @@ const CustomerHeader = () => {
       <AuditLogDrawer
         isOpen={auditDrawer.isOpen}
         onClose={auditDrawer.onClose}
-        entityType="customer"
+        tableName="customer"
         entityId={customerId}
         companyId={company.id}
       />

@@ -422,7 +422,7 @@ const QuoteHeader = () => {
       <AuditLogDrawer
         isOpen={auditDrawer.isOpen}
         onClose={auditDrawer.onClose}
-        entityType="quote"
+        tableName="quote"
         entityId={quoteId}
         companyId={company.id}
       />

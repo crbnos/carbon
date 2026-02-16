@@ -8,12 +8,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   const url = new URL(request.url);
-  const entityType = url.searchParams.get("entityType");
+  const tableName = url.searchParams.get("tableName");
   const entityId = url.searchParams.get("entityId");
 
-  if (!entityType || !entityId) {
+  if (!tableName || !entityId) {
     return Response.json(
-      { error: "entityType and entityId are required" },
+      { error: "tableName and entityId are required" },
       { status: 400 }
     );
   }
@@ -34,7 +34,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const entries = await getEntityAuditLog(
       client,
       companyId,
-      entityType,
+      tableName,
       entityId,
       { limit: 50, offset: 0 }
     );

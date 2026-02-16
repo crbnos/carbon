@@ -1,16 +1,16 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { auditConfig } from "./audit.config";
+import { auditConfig } from "./audit.config.ts";
 import type {
   AuditLogArchive,
   AuditLogEntry,
   AuditLogFilters,
   AuditLogResponse,
   CreateAuditLogEntry
-} from "./audit.types";
+} from "./audit.types.ts";
 import {
   createEventSystemSubscription,
   deleteEventSystemSubscriptionsByName
-} from "./event";
+} from "./event.ts";
 
 // Type for Supabase client with our custom RPC functions
 type AuditRpcClient = {
@@ -30,7 +30,7 @@ type AuditRpcClient = {
     fn: "get_entity_audit_log",
     params: {
       p_company_id: string;
-      p_entity_type: string;
+      p_table_name: string;
       p_entity_id: string;
       p_limit?: number;
       p_offset?: number;
@@ -64,7 +64,7 @@ type AuditRpcClient = {
   ): Promise<{ data: number | null; error: any }>;
   rpc(
     fn: "get_audit_logs_for_archive",
-    params: { p_company_id: string; p_cutoff_date: string }
+    params: { p_company_id: string; p_before_date: string }
   ): Promise<{ data: AuditLogEntry[] | null; error: any }>;
   rpc(
     fn: "delete_old_audit_logs",
@@ -78,7 +78,7 @@ type AuditRpcClient = {
 export async function getEntityAuditLog(
   client: SupabaseClient,
   companyId: string,
-  entityType: string,
+  tableName: string,
   entityId: string,
   options?: { limit?: number; offset?: number }
 ): Promise<AuditLogEntry[]> {
@@ -89,7 +89,7 @@ export async function getEntityAuditLog(
     "get_entity_audit_log",
     {
       p_company_id: companyId,
-      p_entity_type: entityType,
+      p_table_name: tableName,
       p_entity_id: entityId,
       p_limit: limit,
       p_offset: offset
@@ -211,11 +211,11 @@ export async function enableAuditLog(
     throw new Error(`Failed to enable audit log: ${updateError.message}`);
   }
 
-  // Create AUDIT subscriptions for all auditable entities
-  for (const entity of auditConfig.entities) {
+  // Create AUDIT subscriptions for all auditable tables
+  for (const table of auditConfig.tables) {
     await createEventSystemSubscription(client, {
-      name: `audit-${entity}`,
-      table: entity,
+      name: `audit-${table}`,
+      table,
       companyId,
       operations: ["INSERT", "UPDATE", "DELETE"],
       type: "AUDIT",
@@ -244,12 +244,12 @@ export async function disableAuditLog(
     throw new Error(`Failed to disable audit log: ${updateError.message}`);
   }
 
-  // Delete AUDIT subscriptions for all auditable entities
-  for (const entity of auditConfig.entities) {
+  // Delete AUDIT subscriptions for all auditable tables
+  for (const table of auditConfig.tables) {
     await deleteEventSystemSubscriptionsByName(
       client,
       companyId,
-      `audit-${entity}`
+      `audit-${table}`
     );
   }
 
@@ -340,7 +340,7 @@ export async function getAuditLogsForArchive(
     "get_audit_logs_for_archive",
     {
       p_company_id: companyId,
-      p_cutoff_date: cutoffDate.toISOString()
+      p_before_date: cutoffDate.toISOString()
     }
   );
 

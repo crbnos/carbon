@@ -5,7 +5,9 @@ import {
   toZoned
 } from "@internationalized/date";
 
-const relativeFormatter = new Intl.RelativeTimeFormat(undefined, {
+const LOCALE = "en-US";
+
+const relativeFormatter = new Intl.RelativeTimeFormat(LOCALE, {
   numeric: "auto"
 });
 
@@ -43,14 +45,14 @@ export function formatDate(
     const date = parseAbsolute(_dateString);
 
     return new Intl.DateTimeFormat(
-      undefined,
+      LOCALE,
       options || defaultFormatOptions
     ).format(date.toDate());
   } catch {
     try {
       const date = new Date(dateString);
       return new Intl.DateTimeFormat(
-        undefined, // TODO: use locale
+        LOCALE,
         options || defaultFormatOptions
       ).format(date);
     } catch {
