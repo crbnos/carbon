@@ -1,12 +1,9 @@
 import {
   getCarbonServiceRole,
-  getAppUrl,
   JIRA_CLIENT_ID,
-  JIRA_CLIENT_SECRET,
-  JIRA_OAUTH_REDIRECT_URL,
-  JIRA_STATE_SECRET
+  JIRA_CLIENT_SECRET
 } from "@carbon/auth";
-import { createHmac } from "node:crypto";
+import { getJiraIntegration, updateJiraCredentials } from "./service";
 import type {
   CreateJiraIssueInput,
   JiraAccessibleResource,
@@ -20,86 +17,9 @@ import type {
   JiraUser,
   UpdateJiraIssueInput
 } from "./types";
-import { getJiraIntegration, updateJiraCredentials } from "./service";
 
 const ATLASSIAN_AUTH_URL = "https://auth.atlassian.com";
 const ATLASSIAN_API_URL = "https://api.atlassian.com";
-
-/**
- * Generate OAuth install URL for Jira Cloud.
- * The state parameter contains encoded companyId and userId for verification.
- */
-export function getJiraInstallUrl({
-  companyId,
-  userId
-}: {
-  companyId: string;
-  userId: string;
-}): string {
-  const state = encodeState({ companyId, userId });
-  const redirectUri =
-    JIRA_OAUTH_REDIRECT_URL || `${getAppUrl()}/api/integrations/jira/oauth`;
-
-  const params = new URLSearchParams({
-    audience: "api.atlassian.com",
-    client_id: JIRA_CLIENT_ID!,
-    scope: "read:jira-user read:jira-work write:jira-work offline_access",
-    redirect_uri: redirectUri,
-    state,
-    response_type: "code",
-    prompt: "consent"
-  });
-
-  return `${ATLASSIAN_AUTH_URL}/authorize?${params.toString()}`;
-}
-
-/**
- * Encode state parameter for OAuth flow.
- */
-export function encodeState(data: {
-  companyId: string;
-  userId: string;
-}): string {
-  const payload = JSON.stringify(data);
-  const signature = createHmac("sha256", JIRA_STATE_SECRET || "jira-state")
-    .update(payload)
-    .digest("hex");
-
-  return Buffer.from(JSON.stringify({ payload, signature })).toString("base64");
-}
-
-/**
- * Decode and verify state parameter from OAuth callback.
- */
-export function decodeState(
-  state: string
-): { companyId: string; userId: string } | null {
-  try {
-    const decoded = JSON.parse(
-      Buffer.from(state, "base64").toString("utf-8")
-    ) as {
-      payload: string;
-      signature: string;
-    };
-
-    const expectedSignature = createHmac(
-      "sha256",
-      JIRA_STATE_SECRET || "jira-state"
-    )
-      .update(decoded.payload)
-      .digest("hex");
-
-    if (decoded.signature !== expectedSignature) {
-      console.error("Invalid state signature");
-      return null;
-    }
-
-    return JSON.parse(decoded.payload);
-  } catch (e) {
-    console.error("Failed to decode state:", e);
-    return null;
-  }
-}
 
 /**
  * Exchange authorization code for access and refresh tokens.
@@ -156,9 +76,7 @@ export async function exchangeCodeForTokens(
 /**
  * Refresh access token using refresh token.
  */
-export async function refreshAccessToken(
-  refreshToken: string
-): Promise<{
+export async function refreshAccessToken(refreshToken: string): Promise<{
   accessToken: string;
   refreshToken: string;
   expiresIn: number;

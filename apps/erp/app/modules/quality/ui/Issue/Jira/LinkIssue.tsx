@@ -1,4 +1,4 @@
-import type { JiraIssueMapping } from "@carbon/ee/jira.server";
+import type { JiraIssueMapping } from "@carbon/ee/jira";
 import { Hidden, Submit, ValidatedForm } from "@carbon/form";
 import {
   Badge,
@@ -13,8 +13,6 @@ import {
   VStack
 } from "@carbon/react";
 import { useId, useState } from "react";
-import { LuExternalLink } from "react-icons/lu";
-import { Link } from "react-router";
 import z from "zod";
 import { JiraIssueStatusBadge } from "~/components/Icons";
 import { useAsyncFetcher } from "~/hooks/useAsyncFetcher";

@@ -1,4 +1,4 @@
-import type { JiraIssueType, JiraProject, JiraUser } from "@carbon/ee/jira.server";
+import type { JiraIssueType, JiraProject, JiraUser } from "@carbon/ee/jira";
 import {
   Hidden,
   Input,
@@ -31,10 +31,12 @@ export const CreateIssue = (props: Props) => {
   const id = useId();
   const [projectKey, setProjectKey] = useState<string | undefined>();
 
-  const { projects, issueTypes, members, fetcher } = useJiraProjects(projectKey);
+  const { projects, issueTypes, members, fetcher } =
+    useJiraProjects(projectKey);
 
   const projectOptions = useMemo(
-    () => projects.map((p) => ({ label: `${p.key} - ${p.name}`, value: p.key })),
+    () =>
+      projects.map((p) => ({ label: `${p.key} - ${p.name}`, value: p.key })),
     [projects]
   );
 
@@ -122,6 +124,7 @@ const useJiraProjects = (projectKey?: string) => {
     members: JiraUser[];
   }>();
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: not necessary
   useEffect(() => {
     fetcher.load(
       path.to.api.jiraCreateIssue +

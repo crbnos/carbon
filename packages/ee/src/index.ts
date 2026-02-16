@@ -28,16 +28,16 @@ export type {
 } from "./types";
 
 export const integrations = [
+  // Radan,
   ExchangeRates,
   Jira,
-  PaperlessParts,
-  Onshape,
   Linear,
+  Onshape,
+  PaperlessParts,
   QuickBooks,
   Resend,
-  // Radan,
-  Slack,
   Sage,
+  Slack,
   Xero,
   Zapier
 ];

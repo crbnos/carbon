@@ -5,7 +5,7 @@ import {
   getJiraClient,
   linkActionToJiraIssue,
   tiptapToAdf
-} from "@carbon/ee/jira.server";
+} from "@carbon/ee/jira";
 import type { ActionFunction, LoaderFunction } from "react-router";
 import { data } from "react-router";
 import { getIssueAction } from "~/modules/quality/quality.service";
@@ -29,7 +29,8 @@ export const action: ActionFunction = async ({ request }) => {
       return data(
         {
           success: false,
-          message: "Missing required fields: actionId, projectKey, issueTypeId, title"
+          message:
+            "Missing required fields: actionId, projectKey, issueTypeId, title"
         },
         { status: 400 }
       );

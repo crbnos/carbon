@@ -2,10 +2,10 @@ import { getAppUrl } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
   getJiraClient,
+  getJiraIssueFromExternalId,
   linkActionToJiraIssue,
-  unlinkActionFromJiraIssue,
-  getJiraIssueFromExternalId
-} from "@carbon/ee/jira.server";
+  unlinkActionFromJiraIssue
+} from "@carbon/ee/jira";
 import type { ActionFunction, LoaderFunction } from "react-router";
 import { data } from "react-router";
 import { getIssueAction } from "~/modules/quality/quality.service";

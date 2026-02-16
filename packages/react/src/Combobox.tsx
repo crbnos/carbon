@@ -97,7 +97,7 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
                   "min-w-[160px]",
                   !value && "text-muted-foreground"
                 )}
-                icon={isLoading ? <Spinner /> : undefined}
+                icon={isLoading ? <Spinner className="size-3" /> : undefined}
                 ref={ref}
                 {...props}
                 onClick={() => setOpen(true)}

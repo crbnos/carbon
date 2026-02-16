@@ -1,6 +1,6 @@
+import { JIRA_CLIENT_ID } from "@carbon/auth";
 import { Copy, Input, InputGroup, InputRightElement } from "@carbon/react";
 import { isBrowser } from "@carbon/utils";
-import { JIRA_CLIENT_ID } from "@carbon/auth";
 import type { SVGProps } from "react";
 import { z } from "zod";
 import { defineIntegration } from "../fns";
@@ -9,7 +9,7 @@ import { getJiraClient } from "./lib";
 export const Jira = defineIntegration({
   name: "Jira",
   id: "jira",
-  active: true,
+  active: !!JIRA_CLIENT_ID,
   category: "Project Management",
   logo: Logo,
   description:
@@ -67,34 +67,15 @@ export function Logo(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 65 65"
-      width={200}
-      height={200}
-      fill="currentColor"
       {...props}
+      width="40"
+      height="40"
+      viewBox="0 0 24 24"
+      fill="currentColor"
     >
-      <defs>
-        <linearGradient id="jira-gradient-1" x1="98.03%" y1="0.16%" x2="58.89%" y2="40.53%">
-          <stop offset="0.18" stopColor="currentColor" stopOpacity="0.4" />
-          <stop offset="1" stopColor="currentColor" />
-        </linearGradient>
-        <linearGradient id="jira-gradient-2" x1="100.17%" y1="0.05%" x2="55.99%" y2="44.23%">
-          <stop offset="0.18" stopColor="currentColor" stopOpacity="0.4" />
-          <stop offset="1" stopColor="currentColor" />
-        </linearGradient>
-      </defs>
-      <path
-        d="M62.75 30.02L35.58 2.85 32.5 0 12.77 19.73 1.25 31.25a1.69 1.69 0 0 0 0 2.39L20 52.11l12.5 12.5 19.73-19.73.62-.62 9.9-9.9a1.69 1.69 0 0 0 0-2.34zM32.5 42.15l-9.65-9.65 9.65-9.65 9.65 9.65z"
-        fill="currentColor"
-      />
-      <path
-        d="M32.5 22.85A13.85 13.85 0 0 1 32.4 3L12.65 22.77l9.85 9.85z"
-        fill="url(#jira-gradient-1)"
-      />
-      <path
-        d="M42.17 32.48L32.5 42.15a13.86 13.86 0 0 1 0 19.6l19.77-19.75z"
-        fill="url(#jira-gradient-2)"
-      />
+      <title>atlassian_jira</title>
+      <rect width="24" height="24" fill="none" />
+      <path d="M11.53,2a4.37,4.37,0,0,0,4.35,4.35h1.78v1.7A4.35,4.35,0,0,0,22,12.4V2.84A.85.85,0,0,0,21.16,2H11.53M6.77,6.8a4.36,4.36,0,0,0,4.34,4.34h1.8v1.72a4.36,4.36,0,0,0,4.34,4.34V7.63a.84.84,0,0,0-.83-.83H6.77M2,11.6a4.34,4.34,0,0,0,4.35,4.34H8.13v1.72A4.36,4.36,0,0,0,12.47,22V12.43a.85.85,0,0,0-.84-.84H2Z" />
     </svg>
   );
 }

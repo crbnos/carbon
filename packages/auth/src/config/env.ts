@@ -8,6 +8,7 @@ declare global {
       CLOUDFLARE_TURNSTILE_SITE_KEY: string;
       CONTROLLED_ENVIRONMENT: string;
       ERP_URL: string;
+      JIRA_CLIENT_ID: string;
       MES_URL: string;
       ONSHAPE_CLIENT_ID: string;
       POSTHOG_API_HOST: string;
@@ -30,6 +31,10 @@ declare global {
       CLOUDFLARE_TURNSTILE_SECRET_KEY: string;
       DOMAIN: string;
       ERP_URL: string;
+      JIRA_CLIENT_ID: string;
+      JIRA_CLIENT_SECRET: string;
+      JIRA_OAUTH_REDIRECT_URL: string;
+      JIRA_STATE_SECRET: string;
       MES_URL: string;
       NOVU_SECRET_KEY: string;
       ONSHAPE_CLIENT_ID: string;
@@ -65,10 +70,6 @@ declare global {
       VERCEL_ENV: string;
       XERO_CLIENT_SECRET: string;
       XERO_WEBHOOK_SECRET: string;
-      JIRA_CLIENT_ID: string;
-      JIRA_CLIENT_SECRET: string;
-      JIRA_OAUTH_REDIRECT_URL: string;
-      JIRA_STATE_SECRET: string;
     }
   }
 }
@@ -356,6 +357,7 @@ export function getBrowserEnv() {
     CONTROLLED_ENVIRONMENT,
     CLOUDFLARE_TURNSTILE_SITE_KEY,
     GOOGLE_PLACES_API_KEY,
+    JIRA_CLIENT_ID,
     POSTHOG_API_HOST,
     POSTHOG_PROJECT_PUBLIC_KEY,
     NODE_ENV,

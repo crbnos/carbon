@@ -3,7 +3,7 @@ import {
   getCompanyEmployees,
   getJiraClient,
   linkActionToJiraIssue
-} from "@carbon/ee/jira.server";
+} from "@carbon/ee/jira";
 import { task } from "@trigger.dev/sdk";
 import { z } from "zod";
 

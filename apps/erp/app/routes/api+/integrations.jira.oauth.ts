@@ -1,11 +1,7 @@
 import { VERCEL_URL } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getIntegrationConfigById } from "@carbon/ee";
-import {
-  decodeState,
-  exchangeCodeForTokens,
-  getAccessibleResources
-} from "@carbon/ee/jira.server";
+import { exchangeCodeForTokens, getAccessibleResources } from "@carbon/ee/jira";
 import type { LoaderFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import { upsertCompanyIntegration } from "~/modules/settings/settings.server";
@@ -32,23 +28,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const { data: params } = jiraAuthResponse;
 
-  // Verify state parameter
   if (!params.state) {
-    return data({ error: "Missing state parameter" }, { status: 400 });
-  }
-
-  const decodedState = decodeState(params.state);
-
-  if (!decodedState) {
     return data({ error: "Invalid state parameter" }, { status: 400 });
-  }
-
-  if (decodedState.companyId !== companyId) {
-    return data({ error: "Invalid company" }, { status: 400 });
-  }
-
-  if (decodedState.userId !== userId) {
-    return data({ error: "Invalid user" }, { status: 400 });
   }
 
   try {

@@ -1,4 +1,4 @@
-import { JiraIssueMappingSchema } from "@carbon/ee/jira.server";
+import { JiraIssueMappingSchema } from "@carbon/ee/jira";
 import {
   Badge,
   Button,
