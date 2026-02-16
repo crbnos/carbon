@@ -100,7 +100,7 @@ export const CreateIssue = (props: Props) => {
           isDisabled={!projectKey || members.length === 0}
         />
       </VStack>
-      <ModalFooter>
+      <ModalFooter className="px-0 pb-0">
         <Button
           variant="secondary"
           onClick={() => {

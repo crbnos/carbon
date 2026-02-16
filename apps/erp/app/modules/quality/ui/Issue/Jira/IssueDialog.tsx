@@ -38,6 +38,7 @@ export const JiraIssueDialog = ({ task }: Props) => {
 
   const disclosure = useDisclosure({
     onClose() {
+      setTab("link");
       revalidator.revalidate();
     }
   });
@@ -50,7 +51,7 @@ export const JiraIssueDialog = ({ task }: Props) => {
       { actionId: task.id },
       { method: "DELETE", action: path.to.api.jiraLinkExistingIssue }
     );
-    revalidator.revalidate();
+    disclosure.onClose();
   };
 
   const isAlreadyLinked = !!linked?.id;
@@ -83,7 +84,7 @@ export const JiraIssueDialog = ({ task }: Props) => {
       </ModalTrigger>
       <ModalContent size={"large"}>
         <Tabs value={tab} onValueChange={setTab} defaultValue="link">
-          <ModalHeader className="mb-1 flex-row justify-between py-3">
+          <ModalHeader className="mb-1 flex-row justify-between py-3 pr-10">
             <div className="space-y-1">
               <ModalTitle>Link Jira Issue</ModalTitle>
               <ModalDescription>

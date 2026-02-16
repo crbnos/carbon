@@ -348,7 +348,9 @@ export class JiraClient {
 
       const response = await this.request<{ issues: JiraIssue[] }>(
         companyId,
-        `/search?jql=${encodeURIComponent(jql)}&maxResults=10&fields=summary,description,status,assignee,duedate,issuetype,project,priority`
+        `/search/jql?jql=${encodeURIComponent(
+          jql
+        )}&maxResults=10&fields=summary,description,status,assignee,duedate,issuetype,project,priority`
       );
       return response.issues || [];
     } catch (e) {

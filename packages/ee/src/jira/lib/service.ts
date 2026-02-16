@@ -1,11 +1,8 @@
+import { getCarbonServiceRole } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { adfToTiptap } from "./richtext";
-import type {
-  JiraCredentials,
-  JiraIssue,
-  JiraIssueMapping
-} from "./types";
+import type { JiraCredentials, JiraIssue, JiraIssueMapping } from "./types";
 import { JiraIssueMappingSchema } from "./types";
 import { mapJiraStatusToCarbonStatus } from "./utils";
 
@@ -157,8 +154,9 @@ export async function unlinkActionFromJiraIssue(
     assignee?: string | null;
   }
 ) {
-  // Delete the Jira mapping from externalIntegrationMapping
-  await client
+  // Delete the Jira mapping using service role to bypass RLS
+  const serviceRole = getCarbonServiceRole();
+  await serviceRole
     .from("externalIntegrationMapping")
     .delete()
     .eq("entityType", "nonConformanceActionTask")

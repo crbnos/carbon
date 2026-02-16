@@ -76,34 +76,52 @@ export const action: ActionFunction = async ({ request }) => {
           companyId,
           issue.id,
           url,
-          `Linked Carbon Issue: ${carbonIssue.data?.nonConformance?.nonConformanceId ?? ""}`
+          `Linked Carbon Issue: ${
+            carbonIssue.data?.nonConformance?.nonConformanceId ?? ""
+          }`
         );
 
         return { success: true, message: "Linked successfully" };
       }
 
       case "DELETE": {
-        const { data: action } = await getIssueAction(client, actionId);
-
-        // Get the linked Jira issue
         const mapping = await getJiraIssueFromExternalId(
           client,
           companyId,
           actionId
         );
 
-        if (mapping && action?.nonConformanceId) {
-          // Remove the remote link from Jira
-          const globalId = `carbon-${getAppUrl()}/x/issue/${action.nonConformanceId}/details`;
-          await jira.deleteRemoteLink(companyId, mapping.id, globalId);
-        }
-
+        // Unlink from Carbon's DB first
         const unlinked = await unlinkActionFromJiraIssue(client, companyId, {
           actionId
         });
 
         if (unlinked.error) {
           return { success: false, message: "Failed to unlink issue" };
+        }
+
+        // Best-effort: clean up remote link in Jira
+        if (mapping) {
+          try {
+            const remoteLinks = await jira.getRemoteLinks(
+              companyId,
+              mapping.id
+            );
+            const carbonLink = remoteLinks.find(
+              (link) =>
+                link.application?.name === "Carbon" ||
+                link.globalId.startsWith("carbon-")
+            );
+            if (carbonLink) {
+              await jira.deleteRemoteLink(
+                companyId,
+                mapping.id,
+                carbonLink.globalId
+              );
+            }
+          } catch (e) {
+            console.error("Failed to clean up Jira remote link:", e);
+          }
         }
 
         return { success: true, message: "Unlinked successfully" };

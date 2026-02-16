@@ -154,7 +154,7 @@ export const LinkIssue = (props: Props) => {
           )}
         </ToggleGroup>
       </VStack>
-      <ModalFooter>
+      <ModalFooter className="px-0 pb-0">
         <Button
           variant="secondary"
           onClick={() => {

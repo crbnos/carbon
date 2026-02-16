@@ -44,7 +44,7 @@ ModalOverlay.displayName = DialogPrimitive.Overlay.displayName;
 const ModalContentVariants = cva(
   cn(
     "p-0",
-    "relative z-50 flex flex-col w-full shadow-button-base duration-200",
+    "relative z-50 flex flex-col w-full max-h-[85vh] shadow-button-base duration-200",
     "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
     "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
     "data-[state=closed]:slide-out-to-left-[0%] data-[state=closed]:slide-out-to-top-[0%",
@@ -119,7 +119,7 @@ ModalHeader.displayName = "ModalHeader";
 const ModalBody = ({ className, ...props }: HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "w-full p-6 rounded-2xl border border-border bg-card dark:bg-muted/40",
+      "w-full p-6 rounded-2xl border border-border bg-card dark:bg-muted/40 overflow-y-auto",
       className
     )}
     {...props}
