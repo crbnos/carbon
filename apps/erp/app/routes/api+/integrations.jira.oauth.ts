@@ -1,4 +1,4 @@
-import { getAppUrl, VERCEL_URL } from "@carbon/auth";
+import { VERCEL_URL } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getIntegrationConfigById } from "@carbon/ee";
 import {
@@ -69,7 +69,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
     if (resources.length === 0) {
       return data(
-        { error: "No Jira Cloud sites found. Make sure you have access to at least one Jira site." },
+        {
+          error:
+            "No Jira Cloud sites found. Make sure you have access to at least one Jira site."
+        },
         { status: 400 }
       );
     }
