@@ -304,7 +304,7 @@ async function seedDev() {
       for (const nct of nonConformanceTypes) {
         await client.query(
           `INSERT INTO "nonConformanceType" (name, "companyId", "createdBy") VALUES ($1, $2, 'system')`,
-          [nct, companyId]
+          [nct.name, companyId]
         );
       }
 
@@ -312,7 +312,7 @@ async function seedDev() {
       for (const nca of nonConformanceRequiredActions) {
         await client.query(
           `INSERT INTO "nonConformanceRequiredAction" (name, "companyId", "createdBy") VALUES ($1, $2, 'system')`,
-          [nca, companyId]
+          [nca.name, companyId]
         );
       }
 
