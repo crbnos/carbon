@@ -5,7 +5,9 @@ import { formatDateTime } from "@carbon/utils";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { LuFilePen, LuFilePlus, LuFileX } from "react-icons/lu";
+import { Link } from "react-router";
 import { EmployeeAvatar, Table } from "~/components";
+import { path } from "~/utils/path";
 
 type AuditLogTableProps = {
   entries: AuditLogEntry[];
@@ -40,6 +42,26 @@ function formatValue(value: unknown): string {
   if (typeof value === "number" || typeof value === "boolean")
     return String(value);
   return JSON.stringify(value);
+}
+
+function getEntityPath(entityId: string): string | null {
+  const prefix = entityId.split("_")[0];
+  if (!prefix || prefix === entityId) return null;
+
+  const map: Record<string, (id: string) => string> = {
+    pi: path.to.purchaseInvoice,
+    si: path.to.salesInvoice,
+    po: path.to.purchaseOrder,
+    so: path.to.salesOrder,
+    cust: path.to.customer,
+    sup: path.to.supplier,
+    item: path.to.part,
+    job: path.to.job,
+    quote: path.to.quote,
+    emp: path.to.employeeAccount
+  };
+  const pathFn = map[prefix];
+  return pathFn ? pathFn(entityId) : null;
 }
 
 const InlineDiff = memo(
@@ -132,6 +154,7 @@ const AuditLogTable = memo(({ entries, count }: AuditLogTableProps) => {
         header: "Entity",
         cell: ({ row }) => {
           const entry = row.original;
+          const entityPath = getEntityPath(entry.entityId);
           return (
             <div>
               <div className="font-medium">
@@ -139,9 +162,18 @@ const AuditLogTable = memo(({ entries, count }: AuditLogTableProps) => {
                   entry.entityType as (typeof auditConfig.entities)[number]
                 )}
               </div>
-              <div className="text-xs text-muted-foreground font-mono truncate max-w-[200px]">
-                {entry.entityId}
-              </div>
+              {entityPath ? (
+                <Link
+                  to={entityPath}
+                  className="text-xs text-primary font-mono truncate max-w-[200px] block hover:underline"
+                >
+                  {entry.entityId}
+                </Link>
+              ) : (
+                <div className="text-xs text-muted-foreground font-mono truncate max-w-[200px]">
+                  {entry.entityId}
+                </div>
+              )}
             </div>
           );
         },
@@ -190,7 +222,12 @@ const AuditLogTable = memo(({ entries, count }: AuditLogTableProps) => {
         cell: ({ row }) => {
           const entry = row.original;
           return entry.actorId ? (
-            <EmployeeAvatar employeeId={entry.actorId} />
+            <Link
+              to={path.to.employeeAccount(entry.actorId)}
+              className="hover:underline"
+            >
+              <EmployeeAvatar employeeId={entry.actorId} />
+            </Link>
           ) : (
             <span className="text-muted-foreground text-sm">System</span>
           );

@@ -28,16 +28,16 @@ export const auditConfig = {
    * Human-readable labels for entity types (used in UI)
    */
   entityLabels: {
-    purchaseInvoice: "Purchase Invoice",
+    purchaseInvoice: "Purchasing Invoice",
     salesInvoice: "Sales Invoice",
-    purchaseOrder: "Purchase Order",
+    purchaseOrder: "Purchasing Order",
     salesOrder: "Sales Order",
-    customer: "Customer",
-    supplier: "Supplier",
-    item: "Item",
-    itemCost: "Item Cost",
-    job: "Job",
-    quote: "Quote",
+    customer: "Sales Customer",
+    supplier: "Purchasing Supplier",
+    item: "Inventory Item",
+    itemCost: "Inventory Item",
+    job: "Production Job",
+    quote: "Sales Quote",
     employee: "Employee"
   } as const,
 
