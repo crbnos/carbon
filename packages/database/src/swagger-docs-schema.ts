@@ -65513,10 +65513,6 @@ export default {
                   format: "text",
                   type: "string",
                 },
-                p_entity_type: {
-                  format: "text",
-                  type: "string",
-                },
                 p_limit: {
                   format: "integer",
                   type: "integer",
@@ -65525,8 +65521,12 @@ export default {
                   format: "integer",
                   type: "integer",
                 },
+                p_table_name: {
+                  format: "text",
+                  type: "string",
+                },
               },
-              required: ["p_company_id", "p_entity_type", "p_entity_id"],
+              required: ["p_company_id", "p_table_name", "p_entity_id"],
               type: "object",
             },
           },
@@ -68489,6 +68489,63 @@ export default {
           },
         },
         tags: ["(rpc) get_direct_ancestors_of_tracked_entity_strict"],
+      },
+    },
+    "/rpc/audit_table_to_entity_type": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_table_name",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) audit_table_to_entity_type"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_table_name: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["p_table_name"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) audit_table_to_entity_type"],
       },
     },
   },

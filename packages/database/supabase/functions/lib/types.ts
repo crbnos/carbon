@@ -55530,6 +55530,10 @@ export type Database = {
         Args: { sync_functions?: string[]; table_name_text: string }
         Returns: undefined
       }
+      audit_table_to_entity_type: {
+        Args: { p_table_name: string }
+        Returns: string
+      }
       check_operation_dependencies: {
         Args: { operation_id: string }
         Returns: boolean
@@ -55788,6 +55792,7 @@ export type Database = {
           id: string
           metadata: Json
           operation: string
+          tableName: string
           totalCount: number
         }[]
       }
@@ -55814,6 +55819,7 @@ export type Database = {
           id: string
           metadata: Json
           operation: string
+          tableName: string
         }[]
       }
       get_claims: { Args: { company: string; uid: string }; Returns: Json }
@@ -55944,9 +55950,9 @@ export type Database = {
         Args: {
           p_company_id: string
           p_entity_id: string
-          p_entity_type: string
           p_limit?: number
           p_offset?: number
+          p_table_name: string
         }
         Returns: {
           actorId: string
@@ -55957,6 +55963,7 @@ export type Database = {
           id: string
           metadata: Json
           operation: string
+          tableName: string
         }[]
       }
       get_inventory_quantities: {

@@ -13,7 +13,7 @@ import {
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { memo, useCallback } from "react";
-import { LuArchive, LuDownload } from "react-icons/lu";
+import { LuDownload } from "react-icons/lu";
 import { useFetcher } from "react-router";
 
 type AuditLogSettingsProps = {
@@ -88,18 +88,11 @@ const AuditLogSettings = memo(
         {enabled && (
           <Card>
             <CardHeader>
-              <HStack className="justify-between items-center">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <LuArchive className="size-5" />
-                    Archived Logs
-                  </CardTitle>
-                  <CardDescription>
-                    Logs older than {auditConfig.retentionDays} days are
-                    automatically archived.
-                  </CardDescription>
-                </div>
-              </HStack>
+              <CardTitle>Archived Logs</CardTitle>
+              <CardDescription>
+                Logs older than {auditConfig.retentionDays} days are
+                automatically archived.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {archives.length > 0 ? (
@@ -107,14 +100,14 @@ const AuditLogSettings = memo(
                   {archives.map((archive) => (
                     <HStack
                       key={archive.id}
-                      className="justify-between items-center p-3 border rounded-md"
+                      className="justify-between items-center p-6 border rounded-md w-full"
                     >
-                      <VStack className="items-start gap-0.5">
-                        <span className="font-medium">
+                      <VStack className="items-start">
+                        <span className="font-medium text-sm">
                           {formatDate(archive.startDate)} -{" "}
                           {formatDate(archive.endDate)}
                         </span>
-                        <span className="text-sm text-muted-foreground">
+                        <span className="text-xs text-muted-foreground">
                           {archive.rowCount.toLocaleString()} records
                           {archive.sizeBytes &&
                             ` (${formatBytes(archive.sizeBytes)})`}
@@ -132,7 +125,7 @@ const AuditLogSettings = memo(
                   ))}
                 </VStack>
               ) : (
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground text-center text-balance py-8">
                   No archived logs yet. Logs older than{" "}
                   {auditConfig.retentionDays} days will be automatically
                   archived and available for download here.
