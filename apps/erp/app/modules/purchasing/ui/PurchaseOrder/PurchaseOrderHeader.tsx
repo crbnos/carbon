@@ -566,7 +566,7 @@ const PurchaseOrderHeader = () => {
       <AuditLogDrawer
         isOpen={auditDrawer.isOpen}
         onClose={auditDrawer.onClose}
-        tableName="purchaseOrder"
+        entityType="purchaseOrder"
         entityId={orderId}
         companyId={company.id}
       />

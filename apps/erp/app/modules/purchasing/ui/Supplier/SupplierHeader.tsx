@@ -181,7 +181,7 @@ const SupplierHeader = () => {
       <AuditLogDrawer
         isOpen={auditDrawer.isOpen}
         onClose={auditDrawer.onClose}
-        tableName="supplier"
+        entityType="supplier"
         entityId={supplierId}
         companyId={company.id}
       />

@@ -6,7 +6,8 @@ import {
   enableAuditLog,
   getArchiveDownloadUrl,
   getAuditLogArchives,
-  isAuditLogEnabled
+  isAuditLogEnabled,
+  syncAuditSubscriptions
 } from "@carbon/database/audit";
 import { Button, Heading, ScrollArea, VStack } from "@carbon/react";
 import { LuHistory } from "react-icons/lu";
@@ -32,6 +33,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
     enabled = await isAuditLogEnabled(client, companyId);
   } catch {
     // Table might not exist yet, that's ok
+  }
+
+  // Sync subscriptions to pick up any newly added auditable tables
+  if (enabled) {
+    try {
+      await syncAuditSubscriptions(client, companyId);
+    } catch {
+      // Subscription sync failure is non-critical
+    }
   }
 
   // Get archives (uses service role to bypass RLS on auditLogArchive table)

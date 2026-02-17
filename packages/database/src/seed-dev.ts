@@ -11,7 +11,7 @@
 import { parseArgs } from "node:util";
 import { createClient } from "@supabase/supabase-js";
 import * as dotenv from "dotenv";
-import { getPostgresConnectionPool } from "./client";
+import { getPostgresConnectionPool } from "./client.ts";
 import {
   accountCategories,
   accountDefaults,
@@ -34,8 +34,8 @@ import {
   sequences,
   supplierStatuses,
   unitOfMeasures
-} from "./seed/seed.data";
-import type { Database } from "./types";
+} from "./seed/seed.data.ts";
+import type { Database } from "./types.ts";
 
 // Load environment variables
 dotenv.config();

@@ -1,3 +1,4 @@
+import { getTableLabel } from "@carbon/database/audit.config";
 import type { AuditLogEntry } from "@carbon/database/audit.types";
 import {
   Badge,
@@ -12,7 +13,7 @@ import {
   VStack
 } from "@carbon/react";
 import { formatDateTime } from "@carbon/utils";
-import { memo, useEffect } from "react";
+import { memo, useEffect, useRef } from "react";
 import { LuFilePen, LuFilePlus, LuFileX, LuHistory } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { EmployeeAvatar, Empty } from "~/components";
@@ -20,7 +21,7 @@ import { EmployeeAvatar, Empty } from "~/components";
 type AuditLogDrawerProps = {
   isOpen: boolean;
   onClose: () => void;
-  tableName: string;
+  entityType: string;
   entityId: string;
   companyId: string;
 };
@@ -54,34 +55,37 @@ const AuditLogDrawer = memo(
   ({
     isOpen,
     onClose,
-    tableName,
+    entityType,
     entityId,
     companyId
   }: AuditLogDrawerProps) => {
     const fetcher = useFetcher<AuditLogFetcherData>();
+    const lastLoadedRef = useRef<string | null>(null);
+    const loadKey = `${entityType}:${entityId}:${companyId}`;
 
-    // Load audit log data when drawer opens
+    // Load audit log data when drawer opens or entity changes
     useEffect(() => {
       if (
         isOpen &&
-        tableName &&
+        entityType &&
         entityId &&
         fetcher.state === "idle" &&
-        !fetcher.data
+        lastLoadedRef.current !== loadKey
       ) {
+        lastLoadedRef.current = loadKey;
         const params = new URLSearchParams({
-          tableName,
+          entityType,
           entityId,
           companyId
         });
         fetcher.load(`/api/audit-log?${params.toString()}`);
       }
-    }, [isOpen, tableName, entityId, companyId, fetcher]);
+    }, [isOpen, entityType, entityId, companyId, loadKey, fetcher]);
 
-    // Reset when drawer closes
+    // Reset tracking when drawer closes so it re-fetches on next open
     useEffect(() => {
       if (!isOpen) {
-        // The fetcher will be reset on next open due to the data check above
+        lastLoadedRef.current = null;
       }
     }, [isOpen]);
 
@@ -158,12 +162,17 @@ const AuditLogEntryCard = memo(({ entry }: AuditLogEntryCardProps) => {
             {formatDateTime(entry.createdAt)}
           </span>
         </VStack>
-        <Badge variant={opInfo.variant} className="flex-shrink-0">
-          <HStack className="gap-1">
-            {opInfo.icon}
-            <span>{opInfo.label}</span>
-          </HStack>
-        </Badge>
+        <VStack spacing={1} className="items-end">
+          <Badge variant={opInfo.variant} className="flex-shrink-0">
+            <HStack className="gap-1">
+              {opInfo.icon}
+              <span>{opInfo.label}</span>
+            </HStack>
+          </Badge>
+          <span className="text-xs text-muted-foreground">
+            {getTableLabel(entry.tableName)}
+          </span>
+        </VStack>
       </HStack>
 
       <div className="mt-3 pt-3 border-t">

@@ -113,7 +113,7 @@ const ToolHeader = () => {
         <AuditLogDrawer
           isOpen={auditDrawer.isOpen}
           onClose={auditDrawer.onClose}
-          tableName="item"
+          entityType="item"
           entityId={itemId}
           companyId={company.id}
         />

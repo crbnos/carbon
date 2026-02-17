@@ -79,7 +79,7 @@ const PersonHeader = () => {
       <AuditLogDrawer
         isOpen={auditDrawer.isOpen}
         onClose={auditDrawer.onClose}
-        tableName="employee"
+        entityType="employee"
         entityId={personId}
         companyId={company.id}
       />

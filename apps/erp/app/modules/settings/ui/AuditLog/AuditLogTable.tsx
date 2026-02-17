@@ -1,4 +1,8 @@
-import { auditConfig, getEntityLabel } from "@carbon/database/audit.config";
+import {
+  getEntityLabel,
+  getEntityTypes,
+  getTableLabel
+} from "@carbon/database/audit.config";
 import type { AuditDiff, AuditLogEntry } from "@carbon/database/audit.types";
 import { Badge, HStack } from "@carbon/react";
 import { formatDateTime } from "@carbon/utils";
@@ -58,7 +62,14 @@ function getEntityPath(entityId: string): string | null {
     item: path.to.part,
     job: path.to.job,
     quote: path.to.quote,
-    emp: path.to.employeeAccount
+    emp: path.to.employeeAccount,
+    nc: path.to.issue,
+    sh: path.to.shipment,
+    rec: path.to.receipt,
+    g: path.to.gauge,
+    sq: path.to.supplierQuote,
+    wc: path.to.workCenter,
+    main: path.to.maintenanceDispatch
   };
   const pathFn = map[prefix];
   return pathFn ? pathFn(entityId) : null;
@@ -101,7 +112,13 @@ const ExpandedRowContent = memo(({ entry }: { entry: AuditLogEntry }) => {
 
   return (
     <div className="px-6 py-4">
-      <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
+      <div className="grid grid-cols-4 gap-4 mb-4 text-sm">
+        <div>
+          <span className="text-muted-foreground">Source</span>
+          <div className="text-xs font-medium">
+            {getTableLabel(entry.tableName)}
+          </div>
+        </div>
         <div>
           <span className="text-muted-foreground">Event ID</span>
           <div className="font-mono text-xs">{entry.id}</div>
@@ -159,7 +176,7 @@ const AuditLogTable = memo(({ entries, count }: AuditLogTableProps) => {
             <div>
               <div className="font-medium">
                 {getEntityLabel(
-                  entry.entityType as (typeof auditConfig.entityTypes)[number]
+                  entry.entityType as Parameters<typeof getEntityLabel>[0]
                 )}
               </div>
               {entityPath ? (
@@ -180,7 +197,7 @@ const AuditLogTable = memo(({ entries, count }: AuditLogTableProps) => {
         meta: {
           filter: {
             type: "static",
-            options: auditConfig.entityTypes.map((entityType) => ({
+            options: getEntityTypes().map((entityType) => ({
               label: getEntityLabel(entityType),
               value: entityType
             }))

@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { auditConfig } from "./audit.config.ts";
+import { auditConfig, getAuditableTableNames } from "./audit.config.ts";
 import type {
   AuditLogArchive,
   AuditLogEntry,
@@ -30,7 +30,7 @@ type AuditRpcClient = {
     fn: "get_entity_audit_log",
     params: {
       p_company_id: string;
-      p_table_name: string;
+      p_entity_type: string;
       p_entity_id: string;
       p_limit?: number;
       p_offset?: number;
@@ -73,12 +73,14 @@ type AuditRpcClient = {
 };
 
 /**
- * Get audit log entries for a specific entity
+ * Get audit log entries for a specific entity.
+ * Queries by entityType (semantic grouping) so that child table changes
+ * (e.g., customerPayment, customerShipping) roll up into the parent entity view.
  */
 export async function getEntityAuditLog(
   client: SupabaseClient,
   companyId: string,
-  tableName: string,
+  entityType: string,
   entityId: string,
   options?: { limit?: number; offset?: number }
 ): Promise<AuditLogEntry[]> {
@@ -89,7 +91,7 @@ export async function getEntityAuditLog(
     "get_entity_audit_log",
     {
       p_company_id: companyId,
-      p_table_name: tableName,
+      p_entity_type: entityType,
       p_entity_id: entityId,
       p_limit: limit,
       p_offset: offset
@@ -212,7 +214,7 @@ export async function enableAuditLog(
   }
 
   // Create AUDIT subscriptions for all auditable tables
-  for (const table of auditConfig.tables) {
+  for (const table of getAuditableTableNames()) {
     await createEventSystemSubscription(client, {
       name: `audit-${table}`,
       table,
@@ -245,7 +247,7 @@ export async function disableAuditLog(
   }
 
   // Delete AUDIT subscriptions for all auditable tables
-  for (const table of auditConfig.tables) {
+  for (const table of getAuditableTableNames()) {
     await deleteEventSystemSubscriptionsByName(
       client,
       companyId,
@@ -386,5 +388,51 @@ export async function recordAuditLogArchive(
 
   if (error) {
     throw new Error(`Failed to record audit log archive: ${error.message}`);
+  }
+}
+
+/**
+ * Sync audit subscriptions for a company.
+ * Ensures subscriptions exist for all auditable tables defined in the config.
+ * This handles the case where new tables are added to the config after a
+ * company has already enabled audit logging.
+ */
+export async function syncAuditSubscriptions(
+  client: SupabaseClient,
+  companyId: string
+): Promise<void> {
+  const allTables = getAuditableTableNames();
+
+  // Get existing AUDIT subscriptions for this company
+  const { data: existing, error: fetchError } = await client
+    .from("eventSystemSubscription" as any)
+    .select("name")
+    .eq("companyId", companyId)
+    .eq("handlerType", "AUDIT");
+
+  if (fetchError) {
+    // Table might not exist, silently return
+    return;
+  }
+
+  const existingNames = new Set(
+    ((existing as { name: string }[] | null) ?? []).map((s) => s.name)
+  );
+
+  // Create subscriptions for any tables that don't have one yet
+  for (const table of allTables) {
+    const subName = `audit-${table}`;
+    if (!existingNames.has(subName)) {
+      await createEventSystemSubscription(client, {
+        name: subName,
+        table,
+        companyId,
+        operations: ["INSERT", "UPDATE", "DELETE"],
+        type: "AUDIT",
+        config: {},
+        filter: {},
+        active: true
+      });
+    }
   }
 }

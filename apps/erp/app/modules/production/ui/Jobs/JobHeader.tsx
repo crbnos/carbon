@@ -443,7 +443,7 @@ const JobHeader = () => {
       <AuditLogDrawer
         isOpen={auditDrawer.isOpen}
         onClose={auditDrawer.onClose}
-        tableName="job"
+        entityType="productionJob"
         entityId={jobId}
         companyId={company.id}
       />
