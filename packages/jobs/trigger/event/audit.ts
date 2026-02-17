@@ -1,9 +1,14 @@
 import { getCarbonServiceRole } from "@carbon/auth";
 import {
   auditConfig,
-  getEntityTypeForTable,
+  getEntityConfigsForTable,
   isAuditableTable,
+  isChildTable,
+  isExtensionTable,
+  isIndirectTable,
+  isRootTable,
 } from "@carbon/database/audit.config";
+import type { AuditEntityType } from "@carbon/database/audit.config";
 import type {
   AuditDiff,
   CreateAuditLogEntry,
@@ -22,7 +27,7 @@ const AuditRecordSchema = z.object({
     timestamp: z.string(),
   }),
   companyId: z.string(),
-  actorId: z.string().nullish(), // Captured from auth.uid() at event time (can be null/undefined for service role)
+  actorId: z.string().nullish(),
   handlerConfig: z.record(z.any()),
 });
 
@@ -33,8 +38,8 @@ const AuditPayloadSchema = z.object({
 export type AuditPayload = z.infer<typeof AuditPayloadSchema>;
 
 /**
- * Compute the diff between old and new record values
- * Supports deep diffing for JSONB fields
+ * Compute the diff between old and new record values.
+ * Supports deep diffing for JSONB fields.
  */
 function computeDiff(
   old: Record<string, unknown>,
@@ -46,15 +51,12 @@ function computeDiff(
   const allKeys = new Set([...Object.keys(old), ...Object.keys(newRecord)]);
 
   for (const key of allKeys) {
-    // Skip fields that always change
     if ((skipFields as readonly string[]).includes(key)) continue;
 
     const oldValue = old[key];
     const newValue = newRecord[key];
 
-    // Check if values are different
     if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
-      // Deep diff for objects (like customFields)
       if (
         typeof oldValue === "object" &&
         oldValue !== null &&
@@ -79,7 +81,7 @@ function computeDiff(
 }
 
 /**
- * Compute nested diff for object fields (like customFields)
+ * Compute nested diff for object fields (like customFields).
  */
 function computeNestedDiff(
   old: Record<string, unknown>,
@@ -139,6 +141,7 @@ export const auditTask = task({
       AuditRecord[]
     ][]) {
       if (!companyId || companyId === "undefined") {
+        logger.info(`Skipping ${records.length} records: missing companyId`);
         results.skipped += records.length;
         continue;
       }
@@ -151,6 +154,9 @@ export const auditTask = task({
         .single();
 
       if (!(company as { auditLogEnabled: boolean } | null)?.auditLogEnabled) {
+        logger.info(
+          `Skipping ${records.length} records: audit logging disabled for company ${companyId}`
+        );
         results.skipped += records.length;
         continue;
       }
@@ -159,21 +165,24 @@ export const auditTask = task({
       const entries: CreateAuditLogEntry[] = [];
 
       for (const record of records) {
+        const tableName = record.event.table;
+
         // Skip non-auditable tables
-        if (!isAuditableTable(record.event.table)) {
+        if (!isAuditableTable(tableName)) {
+          logger.info(`Skipping: table "${tableName}" is not auditable`);
           results.skipped++;
           continue;
         }
 
-        // Skip TRUNCATE operations (not meaningful for audit)
+        // Skip TRUNCATE operations
         if (record.event.operation === "TRUNCATE") {
+          logger.info(`Skipping: TRUNCATE on "${tableName}" is not meaningful`);
           results.skipped++;
           continue;
         }
 
         try {
-          // Use actorId from the event payload (captured from auth.uid() at trigger time)
-          // Falls back to updatedBy/createdBy if actorId is not available (e.g., service role operations)
+          // Resolve actorId: event payload first, fallback to record data
           const actorId =
             record.actorId ??
             record.event.new?.updatedBy ??
@@ -193,26 +202,136 @@ export const auditTask = task({
               record.event.new as Record<string, unknown>
             );
 
-            // Skip if no meaningful changes
             if (!diff) {
+              logger.info(
+                `Skipping: no meaningful diff for UPDATE on "${tableName}" record ${record.event.recordId}`
+              );
               results.skipped++;
               continue;
             }
           }
 
-          const tableName = record.event
-            .table as CreateAuditLogEntry["tableName"];
+          const operation = record.event
+            .operation as CreateAuditLogEntry["operation"];
+          const entryActorId = (actorId as string) ?? null;
+          const entryMetadata = record.handlerConfig.metadata ?? null;
 
-          entries.push({
-            tableName,
-            entityType: getEntityTypeForTable(tableName),
-            entityId: record.event.recordId,
-            operation: record.event
-              .operation as CreateAuditLogEntry["operation"],
-            actorId: (actorId as string) ?? null,
-            diff,
-            metadata: record.handlerConfig.metadata ?? null,
-          });
+          // Get all entity configs that track this table
+          const entityConfigs = getEntityConfigsForTable(tableName);
+
+          if (entityConfigs.length === 0) {
+            logger.info(
+              `Skipping: no entity config found for table "${tableName}"`
+            );
+            results.skipped++;
+            continue;
+          }
+
+          let entriesCreatedForRecord = 0;
+
+          for (const entityEntry of entityConfigs) {
+            const { entityType, tableConfig } = entityEntry;
+
+            // Skip INSERT events for non-root tables — these are just
+            // default rows created alongside the parent entity (extensions)
+            // or child rows that will get meaningful UPDATEs later.
+            if (
+              record.event.operation === "INSERT" &&
+              !isRootTable(tableConfig)
+            ) {
+              logger.info(
+                `Skipping: INSERT on non-root table "${tableName}" for entity "${entityType}"`
+              );
+              continue;
+            }
+
+            if (isRootTable(tableConfig)) {
+              // Root table: recordId IS the entity ID
+              entries.push({
+                tableName,
+                entityType,
+                entityId: record.event.recordId,
+                operation,
+                actorId: entryActorId,
+                diff,
+                metadata: entryMetadata,
+              });
+              entriesCreatedForRecord++;
+            } else if (isExtensionTable(tableConfig)) {
+              // Extension table: PK = parent FK, so recordId IS the entity ID
+              // (same resolution as root, but INSERT is already skipped above)
+              entries.push({
+                tableName,
+                entityType,
+                entityId: record.event.recordId,
+                operation,
+                actorId: entryActorId,
+                diff,
+                metadata: entryMetadata,
+              });
+              entriesCreatedForRecord++;
+            } else if (isChildTable(tableConfig)) {
+              // Child table: extract entity ID from the named column
+              const recordData = record.event.new ?? record.event.old;
+              const entityId = recordData?.[tableConfig.entityIdColumn];
+
+              if (!entityId) {
+                logger.info(
+                  `Skipping: could not resolve entity ID from column "${tableConfig.entityIdColumn}" for "${tableName}" record ${record.event.recordId}`
+                );
+                continue;
+              }
+
+              entries.push({
+                tableName,
+                entityType,
+                entityId: String(entityId),
+                operation,
+                actorId: entryActorId,
+                diff,
+                metadata: entryMetadata,
+              });
+              entriesCreatedForRecord++;
+            } else if (isIndirectTable(tableConfig)) {
+              // Indirect table: resolve via junction table query
+              const { junction, fk, entityIdColumn } = tableConfig.resolve;
+
+              const { data: junctionRow } = await client
+                .from(junction as any)
+                .select(entityIdColumn)
+                .eq(fk, record.event.recordId)
+                .limit(1)
+                .maybeSingle();
+
+              const row = junctionRow as unknown as Record<
+                string,
+                unknown
+              > | null;
+              if (row && row[entityIdColumn]) {
+                entries.push({
+                  tableName,
+                  entityType,
+                  entityId: String(row[entityIdColumn]),
+                  operation,
+                  actorId: entryActorId,
+                  diff,
+                  metadata: entryMetadata,
+                });
+                entriesCreatedForRecord++;
+              } else {
+                logger.info(
+                  `Skipping: no parent entity found via junction "${junction}" for "${tableName}" record ${record.event.recordId} (entity: ${entityType})`
+                );
+              }
+            }
+          }
+
+          if (entriesCreatedForRecord === 0) {
+            logger.info(
+              `Skipping: could not resolve any entity for "${tableName}" record ${record.event.recordId}`
+            );
+            results.skipped++;
+          }
         } catch (error) {
           logger.error(`Failed to process audit record:`, {
             error,
