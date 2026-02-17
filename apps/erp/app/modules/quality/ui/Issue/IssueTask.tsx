@@ -76,7 +76,12 @@ export function TaskProgress({
   const progressPercentage = (completedOrSkippedTasks / tasks.length) * 100;
 
   return (
-    <div className={cn("flex flex-col items-end gap-2 pt-2 pr-14", className)}>
+    <div
+      className={cn(
+        "flex flex-col items-end gap-2 py-3 pr-14 w-[120px]",
+        className
+      )}
+    >
       <BarProgress
         gradient
         progress={progressPercentage}
@@ -278,15 +283,18 @@ export function TaskItem({
   const statusAction =
     statusActions[currentStatus as keyof typeof statusActions];
 
-  // Check if this action task has a linked Linear issue
+  // Check if this action task has a linked Linear or Jira issue
   const hasLinearLink =
     type === "action" && !!(task as IssueActionTask).linearIssue;
+  const hasJiraLink =
+    type === "action" && !!(task as IssueActionTask).jiraIssue;
 
   const { content, setContent, onUpdateContent, onUploadImage } = useTaskNotes({
     initialContent: (task.notes ?? {}) as JSONContent,
     taskId: task.id!,
     type,
-    hasLinearLink
+    hasLinearLink,
+    hasJiraLink
   });
 
   const { id } = useParams();
@@ -431,12 +439,14 @@ function useTaskNotes({
   initialContent,
   taskId,
   type,
-  hasLinearLink = false
+  hasLinearLink = false,
+  hasJiraLink = false
 }: {
   initialContent: JSONContent;
   taskId: string;
   type: "investigation" | "action" | "approval" | "review";
   hasLinearLink?: boolean;
+  hasJiraLink?: boolean;
 }) {
   const {
     id: userId,
@@ -492,6 +502,23 @@ function useTaskNotes({
         } catch (e) {
           // Silently fail Linear sync - not critical
           console.error("Failed to sync notes to Linear:", e);
+        }
+      }
+
+      // Sync to Jira if this is an action task with a linked Jira issue
+      if (type === "action" && hasJiraLink) {
+        try {
+          await fetch(path.to.api.jiraSyncNotes, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+              actionId: taskId,
+              notes: JSON.stringify(content)
+            })
+          });
+        } catch (e) {
+          // Silently fail Jira sync - not critical
+          console.error("Failed to sync notes to Jira:", e);
         }
       }
     },

@@ -256,7 +256,7 @@ export const JobOperation = ({
     if (operation.setupDuration > 0) operations++;
     if (operation.laborDuration > 0) operations++;
     if (operation.machineDuration > 0) operations++;
-    return 60 + operations * 40;
+    return 60 + operations * 36;
   }, [
     operation.laborDuration,
     operation.machineDuration,

@@ -15,7 +15,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     success: true
   };
 }
-
 export async function action({ request, params }: ActionFunctionArgs) {
   const { companyId } = params;
 
@@ -24,13 +23,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
+
   const integration = await getIntegration(serviceRole, "jira", companyId);
 
   if (integration.error) {
-    console.error(
-      "Jira webhook: integration query failed",
-      integration.error
-    );
     return data(
       { success: false, error: "Integration query failed" },
       { status: 400 }
@@ -69,7 +65,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     await tasks.trigger("sync-issue-from-jira", parsed.data);
     return { success: true };
   } catch (err) {
-    console.error("Jira webhook: failed to trigger task", err);
+    console.error(err);
     return data({ success: false }, { status: 500 });
   }
 }

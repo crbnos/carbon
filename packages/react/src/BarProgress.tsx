@@ -119,7 +119,7 @@ export function BarProgress({
   return (
     <div className={cn("w-full", className)}>
       {hasHeader && (
-        <div className="mb-1.5 flex items-baseline justify-between">
+        <div className="mb-0.5 flex items-baseline justify-between">
           {label ? (
             <span className="text-sm font-medium text-foreground">{label}</span>
           ) : (

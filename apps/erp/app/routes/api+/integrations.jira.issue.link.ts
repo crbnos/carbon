@@ -4,6 +4,7 @@ import {
   getJiraClient,
   getJiraIssueFromExternalId,
   linkActionToJiraIssue,
+  tiptapToAdf,
   unlinkActionFromJiraIssue
 } from "@carbon/ee/jira";
 import type { ActionFunction, LoaderFunction } from "react-router";
@@ -70,6 +71,19 @@ export const action: ActionFunction = async ({ request }) => {
         const nonConformanceId = linked.data?.[0].nonConformanceId;
 
         const url = getAppUrl() + `/x/issue/${nonConformanceId}/details`;
+
+        // Update the Jira issue description with the task's notes
+        const notes = carbonIssue.data?.notes;
+        if (notes && typeof notes === "object") {
+          try {
+            const adfDescription = tiptapToAdf(notes as any);
+            await jira.updateIssue(companyId, issue.id, {
+              description: adfDescription
+            });
+          } catch (e) {
+            console.error("Failed to update Jira issue description:", e);
+          }
+        }
 
         // Create a remote link in Jira pointing back to Carbon
         await jira.createRemoteLink(

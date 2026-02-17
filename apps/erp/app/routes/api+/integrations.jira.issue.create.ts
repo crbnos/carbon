@@ -36,15 +36,27 @@ export const action: ActionFunction = async ({ request }) => {
       );
     }
 
-    // Convert description to ADF format if provided
+    const [carbonIssue, siteUrl] = await Promise.all([
+      getIssueAction(client, actionId),
+      jira.getSiteUrl(companyId)
+    ]);
+
+    // Use the task's notes as the Jira issue description, falling back to form description
     let adfDescription: any = undefined;
-    if (description) {
-      // If the description is JSON (Tiptap), convert it to ADF
+    const notes = carbonIssue.data?.notes;
+    if (notes && typeof notes === "object") {
+      try {
+        adfDescription = tiptapToAdf(notes as any);
+      } catch (e) {
+        console.error("Failed to convert notes to ADF:", e);
+      }
+    }
+
+    if (!adfDescription && description) {
       try {
         const tiptapDoc = JSON.parse(description);
         adfDescription = tiptapToAdf(tiptapDoc);
       } catch {
-        // If not JSON, create a simple ADF document with the text
         adfDescription = {
           version: 1,
           type: "doc",
@@ -57,11 +69,6 @@ export const action: ActionFunction = async ({ request }) => {
         };
       }
     }
-
-    const [carbonIssue, siteUrl] = await Promise.all([
-      getIssueAction(client, actionId),
-      jira.getSiteUrl(companyId)
-    ]);
 
     const issue = await jira.createIssue(companyId, {
       projectKey,

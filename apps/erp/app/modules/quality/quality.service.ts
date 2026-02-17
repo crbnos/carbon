@@ -387,7 +387,7 @@ export async function getIssueAction(
 ) {
   return client
     .from("nonConformanceActionTask")
-    .select("id,nonConformanceId,nonConformance(id,nonConformanceId)")
+    .select("id,notes,nonConformanceId,nonConformance(id,nonConformanceId)")
     .eq("id", id)
     .single();
 }
