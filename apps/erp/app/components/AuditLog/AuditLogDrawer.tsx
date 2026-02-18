@@ -99,7 +99,7 @@ const AuditLogDrawer = memo(
           if (!open) onClose();
         }}
       >
-        <DrawerContent size="md" position="left">
+        <DrawerContent size="lg" position="left">
           <DrawerHeader>
             <DrawerTitle className="flex items-center gap-2">
               <LuHistory className="size-5" />
@@ -108,14 +108,14 @@ const AuditLogDrawer = memo(
           </DrawerHeader>
           <DrawerBody>
             {isLoading ? (
-              <VStack spacing={2}>
+              <VStack spacing={3}>
                 <Skeleton className="w-full h-[151px]" />
                 <Skeleton className="w-full h-[151px]" />
               </VStack>
             ) : entries.length === 0 ? (
               <Empty />
             ) : (
-              <VStack spacing={2}>
+              <VStack spacing={3}>
                 {entries.map((entry) => (
                   <AuditLogEntryCard key={entry.id} entry={entry} />
                 ))}

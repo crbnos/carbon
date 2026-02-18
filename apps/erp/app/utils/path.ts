@@ -510,7 +510,7 @@ export const path = {
       generatePath(`${x}/customer/${id}/locations`),
     customerPart: (id: string, customerPartToItemId: string) =>
       generatePath(
-        `${x}/part/${id}/view/sales/customer-parts/${customerPartToItemId}`
+        `${x}/part/${id}/sales/customer-parts/${customerPartToItemId}`
       ),
     customerPayment: (id: string) =>
       generatePath(`${x}/customer/${id}/payments`),
@@ -572,7 +572,7 @@ export const path = {
       generatePath(`${x}/customer/${customerId}/locations/delete/${id}`),
     deleteCustomerPart: (id: string, customerPartToItemId: string) =>
       generatePath(
-        `${x}/part/${id}/view/sales/customer-parts/delete/${customerPartToItemId}`
+        `${x}/part/${id}/sales/customer-parts/delete/${customerPartToItemId}`
       ),
     deleteCustomerStatus: (id: string) =>
       generatePath(`${x}/sales/customer-statuses/delete/${id}`),
@@ -1023,7 +1023,7 @@ export const path = {
     newCustomField: (tableId: string) =>
       generatePath(`${x}/settings/custom-fields/${tableId}/new`),
     newCustomerPart: (id: string) =>
-      generatePath(`${x}/part/${id}/view/sales/customer-parts/new`),
+      generatePath(`${x}/part/${id}/sales/customer-parts/new`),
     newDemandProjection: `${x}/production/projections/new`,
     newDepartment: `${x}/people/departments/new`,
     newDocument: `${x}/documents/new`,
@@ -1078,7 +1078,7 @@ export const path = {
     newNote: `${x}/shared/notes/new`,
     newPart: `${x}/part/new`,
     newPartSupplier: (id: string) =>
-      generatePath(`${x}/part/${id}/view/purchasing/new`),
+      generatePath(`${x}/part/${id}/purchasing/new`),
     newStockTransfer: `${x}/stock-transfer/new`,
     newStockTransferLine: (id: string) =>
       generatePath(`${x}/stock-transfer/${id}/line/new`),
@@ -1152,7 +1152,7 @@ export const path = {
     newTag: `${x}/settings/tags/new`,
     newTool: `${x}/tool/new`,
     newToolSupplier: (id: string) =>
-      generatePath(`${x}/tool/${id}/view/purchasing/new`),
+      generatePath(`${x}/tool/${id}/purchasing/new`),
     newTraining: `${x}/resources/training/new`,
     newTrainingAssignment: `${x}/resources/assignments/new`,
     newTrainingQuestion: (id: string) =>
@@ -1574,9 +1574,8 @@ export const path = {
     toolPurchasing: (id: string) => generatePath(`${x}/tool/${id}/purchasing`),
     toolRoot: `${x}/tool`,
     toolSupplier: (itemId: string, id: string) =>
-      generatePath(`${x}/tool/${itemId}/view/suppliers/${id}`),
-    toolSuppliers: (id: string) =>
-      generatePath(`${x}/tool/${id}/view/suppliers`),
+      generatePath(`${x}/tool/${itemId}/suppliers/${id}`),
+    toolSuppliers: (id: string) => generatePath(`${x}/tool/${id}/suppliers`),
     tools: `${x}/items/tools`,
     traceability: `${x}/traceability`,
     traceabilityGraph: `${x}/traceability/graph`,

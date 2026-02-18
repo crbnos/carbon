@@ -51956,14 +51956,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -55530,10 +55530,6 @@ export type Database = {
         Args: { sync_functions?: string[]; table_name_text: string }
         Returns: undefined
       }
-      audit_table_to_entity_type: {
-        Args: { p_table_name: string }
-        Returns: string
-      }
       check_operation_dependencies: {
         Args: { operation_id: string }
         Returns: boolean
@@ -55950,9 +55946,9 @@ export type Database = {
         Args: {
           p_company_id: string
           p_entity_id: string
+          p_entity_type: string
           p_limit?: number
           p_offset?: number
-          p_table_name: string
         }
         Returns: {
           actorId: string
