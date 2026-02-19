@@ -3,7 +3,7 @@ import path from "node:path";
 import { defineConfig, PluginOption } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
-export default defineConfig(({ isSsrBuild, mode }) => ({
+export default defineConfig(({ isSsrBuild }) => ({
   build: {
     minify: true,
     rollupOptions: {
@@ -14,7 +14,7 @@ export default defineConfig(({ isSsrBuild, mode }) => ({
 
         defaultHandler(warning);
       },
-      // ...(isSsrBuild && { input: "./server/app.ts" }),
+      ...(isSsrBuild && { input: "./server/app.ts" }),
     },
   },
   define: {
