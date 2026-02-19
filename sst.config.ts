@@ -83,7 +83,6 @@ export default $config({
         TRIGGER_SECRET_KEY: process.env.TRIGGER_SECRET_KEY,
         UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
         UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
-        VERCEL_ENV: "production",
         VERCEL_URL: process.env.URL_ERP ?? "itar.carbon.ms",
         XERO_CLIENT_ID: process.env.XERO_CLIENT_ID,
         XERO_CLIENT_SECRET: process.env.XERO_CLIENT_SECRET,
@@ -141,6 +140,7 @@ export default $config({
         ERP_URL: "https://itar.carbon.ms",
         EXCHANGE_RATES_API_KEY: process.env.EXCHANGE_RATES_API_KEY,
         MES_URL: "https://mes.itar.carbon.ms",
+        NODE_ENV: "production",
         NOVU_APPLICATION_ID: process.env.NOVU_APPLICATION_ID,
         NOVU_SECRET_KEY: process.env.NOVU_SECRET_KEY,
         OPENAI_API_KEY: process.env.OPENAI_API_KEY,
@@ -160,7 +160,6 @@ export default $config({
         TRIGGER_SECRET_KEY: process.env.TRIGGER_SECRET_KEY,
         UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
         UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
-        VERCEL_ENV: "production",
         VERCEL_URL: process.env.URL_MES ?? "mes.itar.carbon.ms",
       },
       transform: {
