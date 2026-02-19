@@ -51,6 +51,7 @@ export default $config({
         ERP_URL: "https://itar.carbon.ms",
         EXCHANGE_RATES_API_KEY: process.env.EXCHANGE_RATES_API_KEY,
         MES_URL: "https://mes.itar.carbon.ms",
+        NODE_ENV: "production",
         NOVU_APPLICATION_ID: process.env.NOVU_APPLICATION_ID,
         NOVU_SECRET_KEY: process.env.NOVU_SECRET_KEY,
         OPENAI_API_KEY: process.env.OPENAI_API_KEY,
