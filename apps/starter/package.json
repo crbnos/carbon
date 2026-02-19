@@ -59,7 +59,7 @@
     "clean": "rimraf .cache .turbo node_modules dist build",
     "dev": "react-router dev",
     "lint": "biome lint --write ",
-    "start": "NODE_ENV=production node ./build/server/index.js",
+    "start": "react-router-serve ./build/server/index.js",
     "types": "tsgo --noEmit",
     "typegen": "react-router typegen"
   },
