@@ -1,10 +1,13 @@
 import { assertIsPost, error } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { hashApiKey, requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { nanoid } from "nanoid";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useNavigate } from "react-router";
+import { useRouteData } from "~/hooks";
 import { ApiKeyForm, apiKeyValidator, upsertApiKey } from "~/modules/settings";
+import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requirePermissions(request, {
@@ -28,10 +31,21 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, ...d } = validation.data;
+  const { id, scopes: scopesJson, expiresAt, ...d } = validation.data;
+
+  // Parse scopes from JSON string
+  const scopes = scopesJson ? JSON.parse(scopesJson) : {};
+
+  // Generate key + hash in the route action (server-only context)
+  const rawKey = `crbn_${nanoid()}`;
+  const keyHash = hashApiKey(rawKey);
 
   const insertApiKey = await upsertApiKey(client, {
     ...d,
+    scopes,
+    expiresAt: expiresAt || undefined,
+    rawKey,
+    keyHash,
     companyId,
     createdBy: userId
   });
@@ -58,11 +72,19 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function NewApiKeyRoute() {
   const navigate = useNavigate();
+  const routeData = useRouteData<{ companyId: string }>(path.to.apiKeys);
+
   const initialValues = {
-    name: ""
+    name: "",
+    rateLimit: 1000,
+    rateLimitWindow: "1h" as const
   };
 
   return (
-    <ApiKeyForm onClose={() => navigate(-1)} initialValues={initialValues} />
+    <ApiKeyForm
+      onClose={() => navigate(-1)}
+      initialValues={initialValues}
+      companyId={routeData?.companyId}
+    />
   );
 }

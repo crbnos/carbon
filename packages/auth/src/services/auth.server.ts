@@ -3,6 +3,7 @@ import type {
   AuthSession as SupabaseAuthSession,
   SupabaseClient
 } from "@supabase/supabase-js";
+import { createHash } from "crypto";
 import { redirect } from "react-router";
 import { REFRESH_ACCESS_TOKEN_THRESHOLD, VERCEL_URL } from "../config/env";
 import { getCarbon, getCarbonServiceRole } from "../lib/supabase";
@@ -10,6 +11,7 @@ import { getCarbonAPIKeyClient } from "../lib/supabase/client";
 import type { AuthSession } from "../types";
 import { path } from "../utils/path";
 import { error } from "../utils/result";
+import { checkApiKeyRateLimit } from "./ratelimit.server";
 import {
   destroyAuthSession,
   flash,
@@ -60,12 +62,30 @@ export async function getAuthAccountByAccessToken(accessToken: string) {
   return data.user;
 }
 
+/** Hash an API key using SHA-256 for secure storage/lookup */
+export function hashApiKey(rawKey: string): string {
+  return createHash("sha256").update(rawKey).digest("hex");
+}
+
+type ApiKeyRecord = {
+  id: string;
+  companyId: string;
+  createdBy: string;
+  scopes: Record<string, string[]>;
+  rateLimit: number;
+  rateLimitWindow: "1m" | "1h" | "1d";
+  expiresAt: string | null;
+};
+
 function getCompanyIdFromAPIKey(apiKey: string) {
   const serviceRole = getCarbonServiceRole();
+  const keyHash = hashApiKey(apiKey);
   return serviceRole
     .from("apiKey")
-    .select("companyId, createdBy")
-    .eq("key", apiKey)
+    .select(
+      "id, companyId, createdBy, scopes, rateLimit, rateLimitWindow, expiresAt"
+    )
+    .eq("keyHash", keyHash)
     .single();
 }
 
@@ -113,10 +133,56 @@ export async function requirePermissions(
   if (apiKey) {
     const company = await getCompanyIdFromAPIKey(apiKey);
     if (company.data) {
-      const companyId = company.data.companyId;
-      const userId = company.data.createdBy;
-      const client = getCarbonAPIKeyClient(apiKey);
+      const apiKeyData = company.data as unknown as ApiKeyRecord;
+      const companyId = apiKeyData.companyId;
+      const userId = apiKeyData.createdBy;
 
+      // Check expiration
+      if (apiKeyData.expiresAt && new Date(apiKeyData.expiresAt) < new Date()) {
+        throw new Response("API key has expired", { status: 401 });
+      }
+
+      // Check rate limit at the application layer (provides proper 429 + headers)
+      await checkApiKeyRateLimit(
+        apiKeyData.id,
+        apiKeyData.rateLimit,
+        apiKeyData.rateLimitWindow
+      );
+
+      // Check scopes against required permissions
+      // Empty scopes ({}) = full access (backward compatibility)
+      const scopes = apiKeyData.scopes;
+      const hasScopes = scopes && Object.keys(scopes).length > 0;
+
+      if (hasScopes) {
+        const scopeCheckPassed = Object.entries(requiredPermissions).every(
+          ([action, permission]) => {
+            if (action === "bypassRls" || action === "role") return true;
+            if (typeof permission === "string") {
+              const scopeKey = `${permission}_${action}`;
+              return (
+                scopeKey in scopes && scopes[scopeKey]?.includes(companyId)
+              );
+            } else if (Array.isArray(permission)) {
+              return permission.every((p) => {
+                const scopeKey = `${p}_${action}`;
+                return (
+                  scopeKey in scopes && scopes[scopeKey]?.includes(companyId)
+                );
+              });
+            }
+            return false;
+          }
+        );
+
+        if (!scopeCheckPassed) {
+          throw new Response("API key lacks required permissions", {
+            status: 403
+          });
+        }
+      }
+
+      const client = getCarbonAPIKeyClient(apiKey);
       return {
         client,
         companyId,

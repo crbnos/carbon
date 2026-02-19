@@ -39,12 +39,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return {
-    apiKeys:
-      apiKeys.data?.map((apiKey) => ({
-        ...apiKey,
-        key: apiKey.key.substring(0, 12) + "…"
-      })) ?? [],
-    count: apiKeys.count ?? 0
+    apiKeys: apiKeys.data?.map(({ keyHash, ...rest }: any) => rest) ?? [],
+    count: apiKeys.count ?? 0,
+    companyId
   };
 }
 

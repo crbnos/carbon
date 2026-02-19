@@ -1,7 +1,28 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.33.1";
 import type { Database } from "../lib/types.ts";
 
-export const getAuthFromAPIKey = async (apiKey: string) => {
+/** Hash an API key using SHA-256 for secure lookup */
+async function hashApiKey(rawKey: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(rawKey);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+type ApiKeyAuth = {
+  client: ReturnType<typeof createClient<Database>>;
+  companyId: string;
+  userId: string;
+  apiKeyId: string;
+  scopes: Record<string, string[]>;
+  rateLimit: number;
+  rateLimitWindow: "1m" | "1h" | "1d";
+};
+
+export const getAuthFromAPIKey = async (
+  apiKey: string
+): Promise<ApiKeyAuth | null> => {
   const serviceRole = createClient<Database>(
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
@@ -13,13 +34,24 @@ export const getAuthFromAPIKey = async (apiKey: string) => {
     }
   );
 
+  const keyHash = await hashApiKey(apiKey);
+
   const apiKeyRow = await serviceRole
     .from("apiKey")
-    .select("companyId, createdBy")
-    .eq("key", apiKey)
+    .select(
+      "id, companyId, createdBy, scopes, rateLimit, rateLimitWindow, expiresAt"
+    )
+    .eq("keyHash" as any, keyHash)
     .single();
 
   if (apiKeyRow.error) return null;
+
+  const row = apiKeyRow.data as any;
+
+  // Check expiration
+  if (row.expiresAt && new Date(row.expiresAt) < new Date()) {
+    return null;
+  }
 
   return {
     client: createClient<Database>(
@@ -33,8 +65,12 @@ export const getAuthFromAPIKey = async (apiKey: string) => {
         },
       }
     ),
-    companyId: apiKeyRow.data.companyId,
-    userId: apiKeyRow.data.createdBy,
+    companyId: row.companyId,
+    userId: row.createdBy,
+    apiKeyId: row.id,
+    scopes: row.scopes ?? {},
+    rateLimit: row.rateLimit ?? 1000,
+    rateLimitWindow: row.rateLimitWindow ?? "1h",
   };
 };
 
@@ -77,10 +113,11 @@ export const getSupabaseServiceRole = async (
   );
 
   if (apiKeyHeader && companyId) {
+    const keyHash = await hashApiKey(apiKeyHeader);
     const { data, error } = await serviceRole
       .from("apiKey")
-      .select("companyId")
-      .eq("key", apiKeyHeader)
+      .select("companyId, expiresAt")
+      .eq("keyHash" as any, keyHash)
       .eq("companyId", companyId)
       .single();
 
@@ -90,6 +127,12 @@ export const getSupabaseServiceRole = async (
 
     if (!data) {
       throw new Error("API key not found");
+    }
+
+    // Check expiration
+    const expiresAt = (data as any).expiresAt;
+    if (expiresAt && new Date(expiresAt) < new Date()) {
+      throw new Error("API key has expired");
     }
 
     return serviceRole;

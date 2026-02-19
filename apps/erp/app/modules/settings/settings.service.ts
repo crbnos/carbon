@@ -1,9 +1,7 @@
 import { SUPABASE_URL } from "@carbon/auth";
-
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { FunctionRegion } from "@supabase/supabase-js";
-import { nanoid } from "nanoid";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
@@ -49,9 +47,7 @@ export async function getApiKeys(
 ) {
   let query = client
     .from("apiKey")
-    .select("*", {
-      count: "exact"
-    })
+    .select("*", { count: "exact" })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -449,23 +445,57 @@ export async function updateMetricSettings(
 export async function upsertApiKey(
   client: SupabaseClient<Database>,
   apiKey:
-    | (Omit<z.infer<typeof apiKeyValidator>, "id"> & {
+    | (Omit<z.infer<typeof apiKeyValidator>, "id" | "scopes" | "expiresAt"> & {
         createdBy: string;
         companyId: string;
+        scopes: Record<string, string[]>;
+        expiresAt?: string;
+        rawKey: string;
+        keyHash: string;
       })
-    | (Omit<z.infer<typeof apiKeyValidator>, "id"> & {
+    | (Omit<z.infer<typeof apiKeyValidator>, "id" | "scopes" | "expiresAt"> & {
         id: string;
+        scopes: Record<string, string[]>;
+        expiresAt?: string;
       })
 ) {
   if ("createdBy" in apiKey) {
-    const key = `crbn_${nanoid()}`;
-    return client
+    // Create: store the hash, return the raw key (caller generates both)
+    const { scopes, expiresAt, rawKey, keyHash, ...rest } = apiKey;
+
+    const result = await client
       .from("apiKey")
-      .insert({ ...apiKey, key })
-      .select("key")
+      .insert(
+        sanitize({
+          ...rest,
+          keyHash,
+          scopes: scopes as any,
+          expiresAt: expiresAt || null
+        }) as any
+      )
+      .select("id")
       .single();
+
+    if (result.error) {
+      return { data: null, error: result.error };
+    }
+
+    // Return the raw key (shown to user once, never stored)
+    return { data: { key: rawKey, id: result.data.id }, error: null };
   }
-  return client.from("apiKey").update(sanitize(apiKey)).eq("id", apiKey.id);
+
+  // Update: update name, scopes, rate limit, expiration (never the key itself)
+  const { scopes, expiresAt, ...rest } = apiKey;
+  return client
+    .from("apiKey")
+    .update(
+      sanitize({
+        ...rest,
+        scopes: scopes as any,
+        expiresAt: expiresAt || null
+      }) as any
+    )
+    .eq("id", apiKey.id);
 }
 
 export async function updateDigitalQuoteSetting(

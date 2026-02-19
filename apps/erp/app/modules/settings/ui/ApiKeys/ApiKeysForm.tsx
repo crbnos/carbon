@@ -1,4 +1,4 @@
-import { ValidatedForm } from "@carbon/form";
+import { DateTimePicker, ValidatedForm } from "@carbon/form";
 import {
   Alert,
   AlertTitle,
@@ -20,18 +20,35 @@ import { useEffect, useState } from "react";
 import { LuCheck, LuClipboard, LuLock } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
-import { Hidden, Input, Submit } from "~/components/Form";
+import { Hidden, Input, Number, Select, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { apiKeyValidator } from "~/modules/settings";
+import {
+  apiKeyValidator,
+  rateLimitWindowLabels,
+  rateLimitWindows
+} from "~/modules/settings";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
+import PermissionMatrix, {
+  type ApiKeyScopes,
+  getFullAccessScopes,
+  jsonbToScopes,
+  scopesToJsonb
+} from "./PermissionMatrix";
 
 type ApiKeyFormProps = {
   initialValues: z.infer<typeof apiKeyValidator>;
+  companyId?: string;
+  existingScopes?: Record<string, string[]> | null;
   onClose: () => void;
 };
 
-const ApiKeyForm = ({ initialValues, onClose }: ApiKeyFormProps) => {
+const ApiKeyForm = ({
+  initialValues,
+  companyId,
+  existingScopes,
+  onClose
+}: ApiKeyFormProps) => {
   const permissions = usePermissions();
   const fetcher = useFetcher<{ key: string }>();
 
@@ -39,6 +56,9 @@ const ApiKeyForm = ({ initialValues, onClose }: ApiKeyFormProps) => {
   const isDisabled = !permissions.can("update", "users");
 
   const [key, setKey] = useState<string | null>(null);
+  const [scopes, setScopes] = useState<ApiKeyScopes>(() =>
+    isEditing ? jsonbToScopes(existingScopes) : getFullAccessScopes()
+  );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
@@ -46,6 +66,11 @@ const ApiKeyForm = ({ initialValues, onClose }: ApiKeyFormProps) => {
       setKey(fetcher.data.key);
     }
   }, [fetcher.data, fetcher.state, onClose]);
+
+  // Serialize scopes to JSONB format for form submission
+  const scopesJsonb = companyId
+    ? JSON.stringify(scopesToJsonb(scopes, companyId))
+    : "{}";
 
   return (
     <>
@@ -55,7 +80,7 @@ const ApiKeyForm = ({ initialValues, onClose }: ApiKeyFormProps) => {
           if (!open) onClose?.();
         }}
       >
-        <ModalContent>
+        <ModalContent size="xlarge">
           <ValidatedForm
             validator={apiKeyValidator}
             method="post"
@@ -69,10 +94,30 @@ const ApiKeyForm = ({ initialValues, onClose }: ApiKeyFormProps) => {
             <ModalHeader>
               <ModalTitle>{isEditing ? "Edit" : "New"} API Key</ModalTitle>
             </ModalHeader>
-            <ModalBody>
+            <ModalBody className="max-h-[70dvh] overflow-y-auto">
               <Hidden name="id" />
+              <Hidden name="scopes" value={scopesJsonb} />
               <VStack spacing={4}>
                 <Input name="name" label="Name" />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Number name="rateLimit" label="Rate Limit" />
+                  <Select
+                    name="rateLimitWindow"
+                    label="Rate Limit Window"
+                    options={rateLimitWindows.map((w) => ({
+                      value: w,
+                      label: rateLimitWindowLabels[w]
+                    }))}
+                  />
+                </div>
+
+                <DateTimePicker
+                  name="expiresAt"
+                  label="Expires At (optional)"
+                />
+
+                <PermissionMatrix scopes={scopes} onChange={setScopes} />
               </VStack>
             </ModalBody>
             <ModalFooter>

@@ -5,8 +5,9 @@ import { memo, useCallback, useMemo } from "react";
 import {
   LuCalendar,
   LuCode,
-  LuKey,
+  LuGauge,
   LuPencil,
+  LuShield,
   LuTag,
   LuTrash,
   LuUser
@@ -22,6 +23,20 @@ type ApiKeysTableProps = {
   data: ApiKey[];
   count: number;
 };
+
+function getScopeCount(scopes: Record<string, string[]> | null): number {
+  if (!scopes) return 0;
+  return Object.keys(scopes).length;
+}
+
+function formatRateLimit(limit: number, window: string): string {
+  const windowLabels: Record<string, string> = {
+    "1m": "/min",
+    "1h": "/hr",
+    "1d": "/day"
+  };
+  return `${limit}${windowLabels[window] ?? "/hr"}`;
+}
 
 const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
   const navigate = useNavigate();
@@ -42,21 +57,46 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
         }
       },
       {
-        accessorKey: "key",
-        header: "Key",
-        cell: (item) => (
-          <Badge variant="secondary">{item.getValue<string>()}</Badge>
-        ),
+        id: "scopes",
+        header: "Scopes",
+        cell: ({ row }) => {
+          const scopes = (row.original as any).scopes as Record<
+            string,
+            string[]
+          > | null;
+          const scopeCount = getScopeCount(scopes);
+          return (
+            <Badge variant="secondary">
+              {scopeCount === 0 ? "Full Access" : `${scopeCount} permissions`}
+            </Badge>
+          );
+        },
         meta: {
-          icon: <LuKey />
+          icon: <LuShield />
+        }
+      },
+      {
+        id: "rateLimit",
+        header: "Rate Limit",
+        cell: ({ row }) => {
+          const limit = (row.original as any).rateLimit as number;
+          const window = (row.original as any).rateLimitWindow as string;
+          return (
+            <span className="text-sm text-muted-foreground">
+              {formatRateLimit(limit ?? 1000, window ?? "1h")}
+            </span>
+          );
+        },
+        meta: {
+          icon: <LuGauge />
         }
       },
       {
         id: "createdBy",
         header: "Created By",
-        cell: ({ row }) => (
-          <EmployeeAvatar employeeId={row.original.createdBy} />
-        ),
+        cell: ({ row }) => {
+          return <EmployeeAvatar employeeId={row.original.createdBy} />;
+        },
         meta: {
           icon: <LuUser />,
           filter: {
@@ -66,6 +106,24 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
               label: employee.name
             }))
           }
+        }
+      },
+      {
+        id: "expiresAt",
+        header: "Expires",
+        cell: ({ row }) => {
+          const expiresAt = (row.original as any).expiresAt as string | null;
+          if (!expiresAt)
+            return <span className="text-muted-foreground">Never</span>;
+          const isExpired = new Date(expiresAt) < new Date();
+          return (
+            <Badge variant={isExpired ? "destructive" : "secondary"}>
+              {isExpired ? "Expired" : formatDate(expiresAt)}
+            </Badge>
+          );
+        },
+        meta: {
+          icon: <LuCalendar />
         }
       },
       {

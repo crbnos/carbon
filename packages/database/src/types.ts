@@ -1603,25 +1603,40 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string
+          expiresAt: string | null
           id: string
-          key: string
+          keyHash: string
+          lastUsedAt: string | null
           name: string
+          rateLimit: number
+          rateLimitWindow: string
+          scopes: Json
         }
         Insert: {
           companyId: string
           createdAt?: string
           createdBy: string
+          expiresAt?: string | null
           id?: string
-          key: string
+          keyHash: string
+          lastUsedAt?: string | null
           name: string
+          rateLimit?: number
+          rateLimitWindow?: string
+          scopes?: Json
         }
         Update: {
           companyId?: string
           createdAt?: string
           createdBy?: string
+          expiresAt?: string | null
           id?: string
-          key?: string
+          keyHash?: string
+          lastUsedAt?: string | null
           name?: string
+          rateLimit?: number
+          rateLimitWindow?: string
+          scopes?: Json
         }
         Relationships: [
           {
@@ -1686,6 +1701,35 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+        ]
+      }
+      apiKeyRateLimit: {
+        Row: {
+          apiKeyId: string
+          lastRequestId: string | null
+          requestCount: number
+          windowStart: string
+        }
+        Insert: {
+          apiKeyId: string
+          lastRequestId?: string | null
+          requestCount?: number
+          windowStart: string
+        }
+        Update: {
+          apiKeyId?: string
+          lastRequestId?: string | null
+          requestCount?: number
+          windowStart?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apiKeyRateLimit_apiKeyId_fkey"
+            columns: ["apiKeyId"]
+            isOneToOne: false
+            referencedRelation: "apiKey"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -55465,6 +55509,7 @@ export type Database = {
         Args: { sync_functions?: string[]; table_name_text: string }
         Returns: undefined
       }
+      check_api_key_rate_limit: { Args: never; Returns: boolean }
       check_operation_dependencies: {
         Args: { operation_id: string }
         Returns: boolean
@@ -55652,6 +55697,7 @@ export type Database = {
           workCenterId: string
         }[]
       }
+      get_api_key_scopes: { Args: never; Returns: Json }
       get_assigned_job_operations: {
         Args: { company_id: string; user_id: string }
         Returns: {
