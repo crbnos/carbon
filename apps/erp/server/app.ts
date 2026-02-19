@@ -3,7 +3,7 @@ import { createRequestHandler, RouterContextProvider } from "react-router";
 import * as build from "virtual:react-router/server-build";
 
 const handler = createRequestHandler(build);
-const isVercel = !!process.env.VERCEL_ENV;
+const isVercel = !!process.env.VERCEL_DEPLOYMENT_ID;
 
 // @ts-expect-error
 const fn = (req: Request) => handler(req, new RouterContextProvider());
