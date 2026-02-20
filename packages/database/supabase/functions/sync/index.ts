@@ -420,6 +420,13 @@ serve(async (req: Request) => {
                 .execute();
 
               await trx
+                .deleteFrom("externalIntegrationMapping")
+                .where("entityType", "=", "item")
+                .where("entityId", "=", itemId)
+                .where("integration", "=", "onshapeData")
+                .execute();
+
+              await trx
                 .insertInto("externalIntegrationMapping")
                 .values({
                   entityType: "item",
