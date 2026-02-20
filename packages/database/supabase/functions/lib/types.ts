@@ -1704,35 +1704,6 @@ export type Database = {
           },
         ]
       }
-      apiKeyRateLimit: {
-        Row: {
-          apiKeyId: string
-          lastRequestId: string | null
-          requestCount: number
-          windowStart: string
-        }
-        Insert: {
-          apiKeyId: string
-          lastRequestId?: string | null
-          requestCount?: number
-          windowStart: string
-        }
-        Update: {
-          apiKeyId?: string
-          lastRequestId?: string | null
-          requestCount?: number
-          windowStart?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "apiKeyRateLimit_apiKeyId_fkey"
-            columns: ["apiKeyId"]
-            isOneToOne: false
-            referencedRelation: "apiKey"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       approvalRequest: {
         Row: {
           amount: number | null
@@ -55509,7 +55480,6 @@ export type Database = {
         Args: { sync_functions?: string[]; table_name_text: string }
         Returns: undefined
       }
-      check_api_key_rate_limit: { Args: never; Returns: boolean }
       check_operation_dependencies: {
         Args: { operation_id: string }
         Returns: boolean

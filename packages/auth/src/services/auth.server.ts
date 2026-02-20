@@ -11,7 +11,6 @@ import { getCarbonAPIKeyClient } from "../lib/supabase/client";
 import type { AuthSession } from "../types";
 import { path } from "../utils/path";
 import { error } from "../utils/result";
-import { checkApiKeyRateLimit } from "./ratelimit.server";
 import {
   destroyAuthSession,
   flash,
@@ -137,17 +136,8 @@ export async function requirePermissions(
       const companyId = apiKeyData.companyId;
       const userId = apiKeyData.createdBy;
 
-      // Check expiration
-      if (apiKeyData.expiresAt && new Date(apiKeyData.expiresAt) < new Date()) {
-        throw new Response("API key has expired", { status: 401 });
-      }
-
-      // Check rate limit at the application layer (provides proper 429 + headers)
-      await checkApiKeyRateLimit(
-        apiKeyData.id,
-        apiKeyData.rateLimit,
-        apiKeyData.rateLimitWindow
-      );
+      // Note: Expiration and rate limiting are handled by the
+      // apiKeyRateLimitMiddleware in apps/erp/app/middleware/
 
       // Check scopes against required permissions
       // Empty scopes ({}) = full access (backward compatibility)

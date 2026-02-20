@@ -17,11 +17,13 @@ import { Edition } from "@carbon/utils";
 import posthog from "posthog-js";
 import type {
   LoaderFunctionArgs,
+  MiddlewareFunction,
   ShouldRevalidateFunction
 } from "react-router";
 import { Outlet, redirect, useLoaderData, useNavigate } from "react-router";
 import { RealtimeDataProvider } from "~/components";
 import { PrimaryNavigation, Topbar } from "~/components/Layout";
+import { apiKeyRateLimitMiddleware } from "~/middleware/api-key-ratelimit";
 import {
   getCompanies,
   getCompanyIntegrations,
@@ -36,6 +38,8 @@ import {
   getUserGroups
 } from "~/modules/users/users.server";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
+
+export const middleware: MiddlewareFunction[] = [apiKeyRateLimitMiddleware];
 
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   currentUrl,

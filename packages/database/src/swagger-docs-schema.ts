@@ -15480,132 +15480,6 @@ export default {
         tags: ["kanbans"],
       },
     },
-    "/apiKeyRateLimit": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.apiKeyRateLimit.apiKeyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.apiKeyRateLimit.windowStart",
-          },
-          {
-            $ref: "#/parameters/rowFilter.apiKeyRateLimit.requestCount",
-          },
-          {
-            $ref: "#/parameters/rowFilter.apiKeyRateLimit.lastRequestId",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/order",
-          },
-          {
-            $ref: "#/parameters/range",
-          },
-          {
-            $ref: "#/parameters/rangeUnit",
-          },
-          {
-            $ref: "#/parameters/offset",
-          },
-          {
-            $ref: "#/parameters/limit",
-          },
-          {
-            $ref: "#/parameters/preferCount",
-          },
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/apiKeyRateLimit",
-              },
-              type: "array",
-            },
-          },
-          "206": {
-            description: "Partial Content",
-          },
-        },
-        tags: ["apiKeyRateLimit"],
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.apiKeyRateLimit",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/preferPost",
-          },
-        ],
-        responses: {
-          "201": {
-            description: "Created",
-          },
-        },
-        tags: ["apiKeyRateLimit"],
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.apiKeyRateLimit.apiKeyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.apiKeyRateLimit.windowStart",
-          },
-          {
-            $ref: "#/parameters/rowFilter.apiKeyRateLimit.requestCount",
-          },
-          {
-            $ref: "#/parameters/rowFilter.apiKeyRateLimit.lastRequestId",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["apiKeyRateLimit"],
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.apiKeyRateLimit.apiKeyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.apiKeyRateLimit.windowStart",
-          },
-          {
-            $ref: "#/parameters/rowFilter.apiKeyRateLimit.requestCount",
-          },
-          {
-            $ref: "#/parameters/rowFilter.apiKeyRateLimit.lastRequestId",
-          },
-          {
-            $ref: "#/parameters/body.apiKeyRateLimit",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["apiKeyRateLimit"],
-      },
-    },
     "/companies": {
       get: {
         parameters: [
@@ -64990,34 +64864,6 @@ export default {
         tags: ["(rpc) xid_decode"],
       },
     },
-    "/rpc/check_api_key_rate_limit": {
-      post: {
-        parameters: [
-          {
-            in: "body",
-            name: "args",
-            required: true,
-            schema: {
-              type: "object",
-            },
-          },
-          {
-            $ref: "#/parameters/preferParams",
-          },
-        ],
-        produces: [
-          "application/json",
-          "application/vnd.pgrst.object+json;nulls=stripped",
-          "application/vnd.pgrst.object+json",
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-          },
-        },
-        tags: ["(rpc) check_api_key_rate_limit"],
-      },
-    },
     "/rpc/nanoid_optimized": {
       post: {
         parameters: [
@@ -75399,32 +75245,6 @@ export default {
           type: "string",
         },
         thumbnailPath: {
-          format: "text",
-          type: "string",
-        },
-      },
-      type: "object",
-    },
-    apiKeyRateLimit: {
-      required: ["apiKeyId", "windowStart", "requestCount"],
-      properties: {
-        apiKeyId: {
-          description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `apiKey.id`.<fk table='apiKey' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        windowStart: {
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "timestamp with time zone",
-          type: "string",
-        },
-        requestCount: {
-          default: 0,
-          format: "integer",
-          type: "integer",
-        },
-        lastRequestId: {
           format: "text",
           type: "string",
         },
@@ -106438,39 +106258,6 @@ export default {
     },
     "rowFilter.kanbans.thumbnailPath": {
       name: "thumbnailPath",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "body.apiKeyRateLimit": {
-      name: "apiKeyRateLimit",
-      description: "apiKeyRateLimit",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/apiKeyRateLimit",
-      },
-    },
-    "rowFilter.apiKeyRateLimit.apiKeyId": {
-      name: "apiKeyId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.apiKeyRateLimit.windowStart": {
-      name: "windowStart",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.apiKeyRateLimit.requestCount": {
-      name: "requestCount",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.apiKeyRateLimit.lastRequestId": {
-      name: "lastRequestId",
       required: false,
       in: "query",
       type: "string",
