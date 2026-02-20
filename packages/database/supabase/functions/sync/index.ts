@@ -416,7 +416,20 @@ serve(async (req: Request) => {
                 .where("id", "=", itemId)
                 .execute();
 
-              // Upsert OnShape mapping — update if this entity already has a mapping
+              // Delete any existing mapping for this entity or this externalId
+              await trx
+                .deleteFrom("externalIntegrationMapping")
+                .where("integration", "=", "onshapeData")
+                .where("entityType", "=", "item")
+                .where("companyId", "=", companyId)
+                .where((eb) =>
+                  eb.or([
+                    eb("entityId", "=", itemId),
+                    eb("externalId", "=", externalPartId),
+                  ])
+                )
+                .execute();
+
               await trx
                 .insertInto("externalIntegrationMapping")
                 .values({
@@ -428,14 +441,6 @@ serve(async (req: Request) => {
                   companyId,
                   allowDuplicateExternalId: false,
                 })
-                .onConflict((oc) =>
-                  oc
-                    .columns(["entityType", "entityId", "integration", "companyId"])
-                    .doUpdateSet({
-                      externalId: externalPartId,
-                      metadata: data.data,
-                    })
-                )
                 .execute();
             } else {
               // Check if we've already created this part in this transaction
@@ -462,8 +467,17 @@ serve(async (req: Request) => {
 
                 itemId = item?.id;
 
-                // Upsert OnShape mapping for the new item
+                // Create OnShape mapping for the new item
                 if (itemId) {
+                  // Delete any stale mapping with the same externalId
+                  await trx
+                    .deleteFrom("externalIntegrationMapping")
+                    .where("integration", "=", "onshapeData")
+                    .where("externalId", "=", externalPartId)
+                    .where("entityType", "=", "item")
+                    .where("companyId", "=", companyId)
+                    .execute();
+
                   await trx
                     .insertInto("externalIntegrationMapping")
                     .values({
@@ -475,14 +489,6 @@ serve(async (req: Request) => {
                       companyId,
                       allowDuplicateExternalId: false,
                     })
-                    .onConflict((oc) =>
-                      oc
-                        .columns(["integration", "externalId", "entityType", "companyId"])
-                        .doUpdateSet({
-                          entityId: itemId,
-                          metadata: data.data,
-                        })
-                    )
                     .execute();
                 }
 
