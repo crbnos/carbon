@@ -419,20 +419,6 @@ serve(async (req: Request) => {
                 .where("id", "=", itemId)
                 .execute();
 
-              // Delete any existing mapping for this entity or this externalId
-              await trx
-                .deleteFrom("externalIntegrationMapping")
-                .where("integration", "=", "onshapeData")
-                .where("entityType", "=", "item")
-                .where("companyId", "=", companyId)
-                .where((eb) =>
-                  eb.or([
-                    eb("entityId", "=", itemId),
-                    eb("externalId", "=", externalPartId),
-                  ])
-                )
-                .execute();
-
               await trx
                 .insertInto("externalIntegrationMapping")
                 .values({
@@ -487,15 +473,6 @@ serve(async (req: Request) => {
 
                 // Create OnShape mapping for the new item
                 if (itemId) {
-                  // Delete any stale mapping with the same externalId
-                  await trx
-                    .deleteFrom("externalIntegrationMapping")
-                    .where("integration", "=", "onshapeData")
-                    .where("externalId", "=", externalPartId)
-                    .where("entityType", "=", "item")
-                    .where("companyId", "=", companyId)
-                    .execute();
-
                   await trx
                     .insertInto("externalIntegrationMapping")
                     .values({
