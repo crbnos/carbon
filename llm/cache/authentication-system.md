@@ -17,10 +17,19 @@ Located at `/packages/auth/`, the auth package provides:
 ### Key Files:
 
 - `src/lib/supabase/client.ts` - Supabase client configurations
-- `src/services/auth.server.ts` - Server-side authentication logic
+- `src/services/auth.server.ts` - Server-side authentication logic (includes `hashApiKey`, `requirePermissions` with scope checking, `getCompanyIdFromAPIKey`)
 - `src/services/session.server.ts` - Session management and cookies
 - `src/services/users.ts` - User queries and permission handling
 - `src/types.ts` - Authentication type definitions
+
+### Exports (package.json):
+
+- `.` - Client-safe types and utilities
+- `./auth.server` - Server-side auth logic (hashApiKey, requirePermissions, etc.)
+- `./company.server` - Company management
+- `./session.server` - Session management
+- `./users.server` - User management
+- `./verification.server` - Email verification
 
 ## Authentication Flow
 
@@ -112,13 +121,35 @@ Located at `/packages/auth/`, the auth package provides:
 ```typescript
 {
   id: string
-  key: string
+  keyHash: string (SHA-256 hex digest of raw key)
   name: string
   companyId: string (FK)
   createdBy: string (FK to user.id)
+  scopes: JSONB (matches userPermission structure, {} = full access)
+  rateLimit: number (default 1000)
+  rateLimitWindow: "1m" | "1h" | "1d" (default "1h")
+  expiresAt: string | null
+  lastUsedAt: string | null
   createdAt: string
 }
 ```
+
+**apiKeyRateLimit** table (UNLOGGED -- no WAL, fast writes):
+
+```typescript
+{
+  apiKeyId: string (FK to apiKey.id)
+  windowStart: timestamp
+  requestCount: number
+}
+```
+
+Rate limiting uses `check_api_key_rate_limit()` Postgres function with atomic upsert + probabilistic cleanup (~1% of requests). Called from:
+
+- ERP middleware (`apps/erp/app/middleware/api-key-ratelimit.ts`) via Kysely
+- Edge function handlers via `checkApiKeyRateLimit()` in `packages/database/supabase/functions/lib/ratelimit.ts`
+
+API key hashing uses `node:crypto` `createHash("sha256")` across all runtimes (Node.js ERP, Deno edge functions). The `hashApiKey()` function in `@carbon/auth/auth.server` is the canonical Node implementation. Edge functions use the same `createHash` via Deno's Node compat layer.
 
 ## User Registration/Invitation System
 
@@ -148,8 +179,6 @@ Located at `/packages/auth/`, the auth package provides:
    - `public.user` table with email, firstName, lastName from OAuth metadata
    - `public.userPermission` table with the user's ID
 3. **Identity Group**: A separate trigger creates an identity group for the user
-
-
 
 ### Self-Signup Flow
 
@@ -205,14 +234,26 @@ The `requirePermissions` function validates:
 - Used for server-to-server communication
 - Scoped to specific company context
 - No user session required
+- Keys are SHA-256 hashed; raw key shown once at creation, only hash stored
+- Supports JSONB scopes matching `userPermission` structure (empty `{}` = full access)
+- Rate limited via Postgres unlogged table (not Redis) with configurable limit + window
+- Optional expiration date
+- `lastUsedAt` tracked via fire-and-forget update in ERP middleware
+- `requirePermissions()` in `auth.server.ts` enforces scope restrictions
+- RLS functions (`get_company_id_from_api_key`, `check_api_key_scope`) enforce at DB level
 
 ## Security Features
 
 ### Rate Limiting
 
-- Magic link requests: 5 per hour per IP
-- Implemented using Upstash Redis
-- Applied to login endpoints
+- **Login rate limiting**: Magic link requests: 5 per hour per IP, implemented using Upstash Redis (unchanged)
+- **API key rate limiting**: Uses Postgres unlogged table `apiKeyRateLimit` + `check_api_key_rate_limit()` function
+  - Configurable per-key: `rateLimit` (count) + `rateLimitWindow` ("1m", "1h", "1d")
+  - Default: 1000 requests per hour
+  - ERP: middleware at `apps/erp/app/middleware/api-key-ratelimit.ts`
+  - Edge functions: standalone `checkApiKeyRateLimit()` in `packages/database/supabase/functions/lib/ratelimit.ts`
+  - Returns 429 with `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`, `Retry-After` headers
+  - Old Redis-based `ratelimit.server.ts` has been deleted; `@upstash/ratelimit` and `@carbon/kv` peer deps removed from `@carbon/auth`
 
 ### Session Security
 
