@@ -4,6 +4,7 @@ import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
 import z from "npm:zod@^3.24.1";
 import { corsHeaders } from "../lib/headers.ts";
+import { checkApiKeyRateLimit } from "../lib/ratelimit.ts";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";
 import { getReadableIdWithRevision } from "../lib/utils.ts";
 
@@ -168,6 +169,10 @@ serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
+
+  const rlResponse = await checkApiKeyRateLimit(db, req, corsHeaders);
+  if (rlResponse) return rlResponse;
+
   const payload = await req.json();
 
   const { type, companyId, userId } = payloadValidator.parse(payload);
@@ -379,7 +384,10 @@ serve(async (req: Request) => {
 
           // Track newly created items and make methods to avoid duplicate inserts
           const newlyCreatedItemsByPartId = new Map<string, string>();
-          const newlyCreatedMakeMethodsByItemId = new Map<string, MakeMethodInfo>();
+          const newlyCreatedMakeMethodsByItemId = new Map<
+            string,
+            MakeMethodInfo
+          >();
 
           async function traverseTree(
             node: TreeNode,
@@ -615,8 +623,14 @@ serve(async (req: Request) => {
                         version: newVersion,
                         status: "Draft",
                       };
-                      newlyCreatedMakeMethodsByItemId.set(itemId, newMakeMethodInfo);
-                      existingMakeMethodsByItemId.set(itemId, newMakeMethodInfo);
+                      newlyCreatedMakeMethodsByItemId.set(
+                        itemId,
+                        newMakeMethodInfo
+                      );
+                      existingMakeMethodsByItemId.set(
+                        itemId,
+                        newMakeMethodInfo
+                      );
                     }
                   }
                 }

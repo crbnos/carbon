@@ -1,13 +1,10 @@
+import { createHash } from "node:crypto";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.33.1";
 import type { Database } from "../lib/types.ts";
 
 /** Hash an API key using SHA-256 for secure lookup */
-async function hashApiKey(rawKey: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(rawKey);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+function hashApiKey(rawKey: string): string {
+  return createHash("sha256").update(rawKey).digest("hex");
 }
 
 type ApiKeyAuth = {
@@ -34,7 +31,7 @@ export const getAuthFromAPIKey = async (
     }
   );
 
-  const keyHash = await hashApiKey(apiKey);
+  const keyHash = hashApiKey(apiKey);
 
   const apiKeyRow = await serviceRole
     .from("apiKey")
@@ -113,7 +110,7 @@ export const getSupabaseServiceRole = async (
   );
 
   if (apiKeyHeader && companyId) {
-    const keyHash = await hashApiKey(apiKeyHeader);
+    const keyHash = hashApiKey(apiKeyHeader);
     const { data, error } = await serviceRole
       .from("apiKey")
       .select("companyId, expiresAt")

@@ -10,6 +10,7 @@ import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
 import { format } from "https://deno.land/std@0.205.0/datetime/format.ts";
 import { corsHeaders } from "../lib/headers.ts";
+import { checkApiKeyRateLimit } from "../lib/ratelimit.ts";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
@@ -107,6 +108,10 @@ serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
+
+  const rlResponse = await checkApiKeyRateLimit(db, req, corsHeaders);
+  if (rlResponse) return rlResponse;
+
   const payload = await req.json();
   let convertedId = "";
   try {

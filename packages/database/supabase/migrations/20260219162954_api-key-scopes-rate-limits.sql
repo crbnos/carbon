@@ -1,6 +1,6 @@
--- API Key Scopes, Key Hashing, and Expiration
--- Rate limiting is handled at the application layer (middleware + Upstash Redis).
--- The DB layer handles scope enforcement only.
+-- API Key Scopes, Key Hashing, Rate Limiting, and Expiration
+-- Rate limiting uses an unlogged table with a Postgres function (check_api_key_rate_limit).
+-- Scope enforcement is handled via RLS helper functions.
 
 -- ============================================================================
 -- Step 1: Add new columns to apiKey table
@@ -156,9 +156,77 @@ CREATE OR REPLACE FUNCTION get_api_key_scopes() RETURNS JSONB
 $$;
 
 -- ============================================================================
--- Step 7: Update RLS helper functions for scope checking
--- Rate limiting is NOT done here (read-only transaction context).
--- It is handled by application middleware (Upstash Redis).
+-- Step 7: Unlogged table + function for rate limiting
+-- Unlogged tables skip WAL for performance; data is ephemeral (lost on crash,
+-- which is acceptable for rate limit counters).
+-- ============================================================================
+
+CREATE UNLOGGED TABLE "apiKeyRateLimit" (
+  "apiKeyId" TEXT NOT NULL REFERENCES "apiKey"("id") ON DELETE CASCADE,
+  "windowStart" TIMESTAMPTZ NOT NULL,
+  "requestCount" INTEGER NOT NULL DEFAULT 1,
+  PRIMARY KEY ("apiKeyId", "windowStart")
+);
+
+CREATE OR REPLACE FUNCTION check_api_key_rate_limit(
+  p_api_key_id TEXT,
+  p_limit INTEGER,
+  p_window TEXT  -- '1m', '1h', '1d'
+) RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_window_start TIMESTAMPTZ;
+  v_interval INTERVAL;
+  v_count INTEGER;
+BEGIN
+  v_interval := CASE p_window
+    WHEN '1m' THEN INTERVAL '1 minute'
+    WHEN '1h' THEN INTERVAL '1 hour'
+    WHEN '1d' THEN INTERVAL '1 day'
+    ELSE INTERVAL '1 hour'
+  END;
+
+  v_window_start := date_trunc(
+    CASE p_window
+      WHEN '1m' THEN 'minute'
+      WHEN '1h' THEN 'hour'
+      WHEN '1d' THEN 'day'
+      ELSE 'hour'
+    END,
+    NOW()
+  );
+
+  -- Atomic upsert: insert or increment counter in one statement
+  INSERT INTO "apiKeyRateLimit" ("apiKeyId", "windowStart", "requestCount")
+  VALUES (p_api_key_id, v_window_start, 1)
+  ON CONFLICT ("apiKeyId", "windowStart")
+  DO UPDATE SET "requestCount" = "apiKeyRateLimit"."requestCount" + 1
+  RETURNING "requestCount" INTO v_count;
+
+  -- Probabilistic cleanup: ~1% of requests clean up expired windows
+  IF random() < 0.01 THEN
+    DELETE FROM "apiKeyRateLimit"
+    WHERE "apiKeyId" = p_api_key_id
+      AND "windowStart" < v_window_start;
+  END IF;
+
+  RETURN jsonb_build_object(
+    'success', v_count <= p_limit,
+    'count', v_count,
+    'limit', p_limit,
+    'remaining', GREATEST(p_limit - v_count, 0),
+    'resetAt', EXTRACT(EPOCH FROM (v_window_start + v_interval))::BIGINT * 1000
+  );
+END;
+$$;
+
+-- ============================================================================
+-- Step 8: Update RLS helper functions for scope checking
+-- Rate limiting is NOT done in RLS (read-only transaction context).
+-- It is called explicitly from application middleware and edge functions.
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION get_companies_with_any_role() RETURNS text[] LANGUAGE "plpgsql" SECURITY DEFINER

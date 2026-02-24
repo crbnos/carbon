@@ -1704,6 +1704,32 @@ export type Database = {
           },
         ]
       }
+      apiKeyRateLimit: {
+        Row: {
+          apiKeyId: string
+          requestCount: number
+          windowStart: string
+        }
+        Insert: {
+          apiKeyId: string
+          requestCount?: number
+          windowStart: string
+        }
+        Update: {
+          apiKeyId?: string
+          requestCount?: number
+          windowStart?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apiKeyRateLimit_apiKeyId_fkey"
+            columns: ["apiKeyId"]
+            isOneToOne: false
+            referencedRelation: "apiKey"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       approvalRequest: {
         Row: {
           amount: number | null
@@ -55479,6 +55505,10 @@ export type Database = {
       attach_event_trigger: {
         Args: { sync_functions?: string[]; table_name_text: string }
         Returns: undefined
+      }
+      check_api_key_rate_limit: {
+        Args: { p_api_key_id: string; p_limit: number; p_window: string }
+        Returns: Json
       }
       check_operation_dependencies: {
         Args: { operation_id: string }

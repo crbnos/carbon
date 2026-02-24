@@ -1,53 +1,71 @@
-import { Redis } from "https://esm.sh/@upstash/redis@1.34.3";
-import { Ratelimit } from "https://esm.sh/@upstash/ratelimit@2.0.5";
+import { createHash } from "node:crypto";
+import { Kysely, sql } from "kysely";
+import type { KyselyDatabase } from "./postgres/index.ts";
 
-type RateLimitWindow = "1m" | "1h" | "1d";
-
-let redis: Redis | null = null;
-
-function getRedis(): Redis {
-  if (!redis) {
-    const url = Deno.env.get("UPSTASH_REDIS_REST_URL");
-    const token = Deno.env.get("UPSTASH_REDIS_REST_TOKEN");
-    if (!url || !token) {
-      throw new Error(
-        "UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are required for rate limiting"
-      );
-    }
-    redis = new Redis({ url, token });
-  }
-  return redis;
-}
+type RateLimitResult = {
+  success: boolean;
+  count: number;
+  limit: number;
+  remaining: number;
+  resetAt: number;
+};
 
 /**
- * Check rate limit for an API key in Supabase edge functions.
+ * Check rate limit for API key requests in edge functions.
  *
- * Returns rate limit headers and success status.
- * Callers should return a 429 response when success is false.
+ * Returns a 429 Response if rate limited, or null to continue.
+ * No-ops if the request doesn't have a carbon-key header.
+ *
+ * Call this right after the OPTIONS/CORS check in each handler:
+ *
+ *   const rlResponse = await checkApiKeyRateLimit(db, req, corsHeaders);
+ *   if (rlResponse) return rlResponse;
  */
-export async function checkRateLimit(
-  apiKeyId: string,
-  limit: number,
-  window: RateLimitWindow
-): Promise<{
-  success: boolean;
-  headers: Record<string, string>;
-}> {
-  const ratelimit = new Ratelimit({
-    redis: getRedis(),
-    limiter: Ratelimit.fixedWindow(limit, window),
-    prefix: "api-key-rl",
-  });
+export async function checkApiKeyRateLimit(
+  db: Kysely<KyselyDatabase>,
+  req: Request,
+  corsHeaders: Record<string, string>
+): Promise<Response | null> {
+  const apiKey = req.headers.get("carbon-key");
+  if (!apiKey) return null;
 
-  const result = await ratelimit.limit(apiKeyId);
+  const keyHash = createHash("sha256").update(apiKey).digest("hex");
 
-  return {
-    success: result.success,
-    headers: {
-      "X-RateLimit-Limit": result.limit.toString(),
-      "X-RateLimit-Remaining": result.remaining.toString(),
-      "X-RateLimit-Reset": result.reset.toString(),
-      "Retry-After": Math.ceil((result.reset - Date.now()) / 1000).toString(),
-    },
-  };
+  // Look up rate limit config by key hash
+  const keyRow = await sql<{
+    id: string;
+    rateLimit: number;
+    rateLimitWindow: string;
+  }>`
+    SELECT "id", "rateLimit", "rateLimitWindow"
+    FROM "apiKey"
+    WHERE "keyHash" = ${keyHash}
+    LIMIT 1
+  `.execute(db);
+
+  if (!keyRow.rows.length) return null;
+
+  const { id, rateLimit, rateLimitWindow } = keyRow.rows[0];
+
+  // Check rate limit via Postgres function on unlogged table
+  const result = await sql<RateLimitResult>`
+    SELECT * FROM check_api_key_rate_limit(${id}, ${rateLimit}, ${rateLimitWindow})
+  `.execute(db);
+
+  const rl = result.rows[0];
+  if (rl && !rl.success) {
+    return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
+      status: 429,
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json",
+        "X-RateLimit-Limit": rl.limit.toString(),
+        "X-RateLimit-Remaining": rl.remaining.toString(),
+        "X-RateLimit-Reset": rl.resetAt.toString(),
+        "Retry-After": Math.ceil((rl.resetAt - Date.now()) / 1000).toString(),
+      },
+    });
+  }
+
+  return null;
 }

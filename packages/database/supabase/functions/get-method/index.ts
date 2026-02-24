@@ -3,36 +3,37 @@ import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import { z } from "npm:zod@^3.24.1";
 
 import type {
-    PostgrestError,
-    SupabaseClient,
+  PostgrestError,
+  SupabaseClient,
 } from "https://esm.sh/@supabase/supabase-js@2.33.1";
 
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import { checkApiKeyRateLimit } from "../lib/ratelimit.ts";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";
 import type { Database } from "../lib/types.ts";
 
 import { Transaction } from "kysely";
 import {
-    getLocalTimeZone,
-    now,
-    toCalendarDate,
+  getLocalTimeZone,
+  now,
+  toCalendarDate,
 } from "npm:@internationalized/date";
 import { corsHeaders } from "../lib/headers.ts";
 import {
-    getJobMethodTree,
-    getQuoteMethodTree,
-    getRatesFromSupplierProcesses,
-    getRatesFromWorkCenters,
-    JobMethodTreeItem,
-    QuoteMethodTreeItem,
-    traverseJobMethod,
-    traverseQuoteMethod,
+  getJobMethodTree,
+  getQuoteMethodTree,
+  getRatesFromSupplierProcesses,
+  getRatesFromWorkCenters,
+  JobMethodTreeItem,
+  QuoteMethodTreeItem,
+  traverseJobMethod,
+  traverseQuoteMethod,
 } from "../lib/methods.ts";
 import { importTypeScript } from "../lib/sandbox.ee.ts";
 import { getShelfId } from "../lib/shelves.ts";
 import {
-    getNextRevisionSequence,
-    getNextSequence,
+  getNextRevisionSequence,
+  getNextSequence,
 } from "../shared/get-next-sequence.ts";
 import { KyselyDatabase } from "../lib/postgres/index.ts";
 
@@ -67,6 +68,10 @@ serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
+
+  const rlResponse = await checkApiKeyRateLimit(db, req, corsHeaders);
+  if (rlResponse) return rlResponse;
+
   const payload = await req.json();
 
   try {
@@ -446,7 +451,9 @@ serve(async (req: Request) => {
             // - scrapQuantity = targetQuantity * scrapRate (the extra needed for scrap)
             // - totalForChildren = target + scrap (passed to children for cascade)
             const nodeScrapQuantity = targetQuantity * nodeScrapPercentage;
-            const totalWithScrap = Math.ceil(targetQuantity + nodeScrapQuantity);
+            const totalWithScrap = Math.ceil(
+              targetQuantity + nodeScrapQuantity
+            );
 
             // For Make: estimatedQuantity is the good quantity (without scrap)
             // For Buy/Pick: estimatedQuantity includes scrap since that's what we procure
@@ -807,14 +814,17 @@ serve(async (req: Request) => {
               // targetQuantity for this child = parent's total (including scrap) * quantity per parent
               const childTargetQuantity = totalQuantityForChildren * quantity;
               // scrapQuantity = portion attributable to scrap
-              const childScrapQuantity = childTargetQuantity * itemScrapPercentage;
+              const childScrapQuantity =
+                childTargetQuantity * itemScrapPercentage;
               const childTotalWithScrap = Math.ceil(
                 childTargetQuantity + childScrapQuantity
               );
               // For Make: estimatedQuantity is the good quantity (without scrap)
               // For Buy/Pick: estimatedQuantity includes scrap since that's what we procure
               const childEstimatedQuantity =
-                methodType === "Make" ? childTargetQuantity : childTotalWithScrap;
+                methodType === "Make"
+                  ? childTargetQuantity
+                  : childTotalWithScrap;
 
               return {
                 jobId,
@@ -1018,8 +1028,7 @@ serve(async (req: Request) => {
             .select("estimatedQuantity")
             .eq("id", jobMakeMethod.data.parentMaterialId)
             .single();
-          parentEstimatedQuantity =
-            parentMaterial.data?.estimatedQuantity ?? 1;
+          parentEstimatedQuantity = parentMaterial.data?.estimatedQuantity ?? 1;
         } else {
           // This is the root - get job's quantity
           const rootJob = await client
@@ -1115,7 +1124,9 @@ serve(async (req: Request) => {
             // - For Make parts: estimatedQuantity = targetQuantity (good quantity, NOT including scrap)
             // - For Buy/Pick parts: estimatedQuantity = target + scrap (what we need to procure)
             const nodeScrapQuantity = targetQuantity * nodeScrapPercentage;
-            const totalWithScrap = Math.ceil(targetQuantity + nodeScrapQuantity);
+            const totalWithScrap = Math.ceil(
+              targetQuantity + nodeScrapQuantity
+            );
             const estimatedQuantity =
               node.data.methodType === "Make" ? targetQuantity : totalWithScrap;
             const operationQuantity = totalWithScrap;
@@ -1496,524 +1507,529 @@ serve(async (req: Request) => {
           supplierProcesses?.data
         );
 
-        await db.transaction().execute(async (trx: Transaction<KyselyDatabase>) => {
-          // Delete existing quoteMakeMethod, quoteMakeMethodOperation, quoteMakeMethodMaterial
-          await Promise.all([
-            trx
-              .deleteFrom("quoteMakeMethod")
-              .where((eb) =>
-                eb.and([
-                  eb("quoteLineId", "=", quoteLineId),
-                  eb("parentMaterialId", "is not", null),
-                ])
-              )
-              .execute(),
-            trx
-              .deleteFrom("quoteMaterial")
-              .where("quoteLineId", "=", quoteLineId)
-              .execute(),
-            trx
-              .deleteFrom("quoteOperation")
-              .where("quoteLineId", "=", quoteLineId)
-              .execute(),
-            trx
-              .updateTable("quoteMakeMethod")
-              .set({ version: makeMethod.data.version ?? 1 })
-              .where("id", "=", quoteMakeMethod.data.id!)
-              .execute(),
-          ]);
+        await db
+          .transaction()
+          .execute(async (trx: Transaction<KyselyDatabase>) => {
+            // Delete existing quoteMakeMethod, quoteMakeMethodOperation, quoteMakeMethodMaterial
+            await Promise.all([
+              trx
+                .deleteFrom("quoteMakeMethod")
+                .where((eb) =>
+                  eb.and([
+                    eb("quoteLineId", "=", quoteLineId),
+                    eb("parentMaterialId", "is not", null),
+                  ])
+                )
+                .execute(),
+              trx
+                .deleteFrom("quoteMaterial")
+                .where("quoteLineId", "=", quoteLineId)
+                .execute(),
+              trx
+                .deleteFrom("quoteOperation")
+                .where("quoteLineId", "=", quoteLineId)
+                .execute(),
+              trx
+                .updateTable("quoteMakeMethod")
+                .set({ version: makeMethod.data.version ?? 1 })
+                .where("id", "=", quoteMakeMethod.data.id!)
+                .execute(),
+            ]);
 
-          async function getConfiguredValue<
-            T extends number | string | boolean | null
-          >({
-            id,
-            field,
-            defaultValue,
-          }: {
-            id: string;
-            field: string;
-            defaultValue: T;
-          }): Promise<T> {
-            if (!configurationCodeByField) return defaultValue;
+            async function getConfiguredValue<
+              T extends number | string | boolean | null
+            >({
+              id,
+              field,
+              defaultValue,
+            }: {
+              id: string;
+              field: string;
+              defaultValue: T;
+            }): Promise<T> {
+              if (!configurationCodeByField) return defaultValue;
 
-            const fieldKey = getFieldKey(field, id);
+              const fieldKey = getFieldKey(field, id);
 
-            if (configurationCodeByField[fieldKey]) {
-              try {
-                const code = configurationCodeByField[fieldKey];
-                const mod = await importTypeScript(code);
-                const result = await mod.configure(hydratedConfiguration);
+              if (configurationCodeByField[fieldKey]) {
+                try {
+                  const code = configurationCodeByField[fieldKey];
+                  const mod = await importTypeScript(code);
+                  const result = await mod.configure(hydratedConfiguration);
 
-                return (result ?? defaultValue) as T;
-              } catch (err) {
-                console.error(err);
-                return defaultValue;
+                  return (result ?? defaultValue) as T;
+                } catch (err) {
+                  console.error(err);
+                  return defaultValue;
+                }
               }
+
+              return defaultValue;
             }
 
-            return defaultValue;
-          }
+            // traverse method tree and create:
+            // - quoteMakeMethod
+            // - quoteMakeMethodOperation
+            // - quoteMakeMethodMaterial
+            async function traverseMethod(
+              node: MethodTreeItem,
+              parentQuoteMakeMethodId: string | null
+            ) {
+              const relatedOperations = await client
+                .from("methodOperation")
+                .select(
+                  "*, methodOperationTool(*), methodOperationParameter(*), methodOperationStep(*)"
+                )
+                .eq("makeMethodId", node.data.materialMakeMethodId);
 
-          // traverse method tree and create:
-          // - quoteMakeMethod
-          // - quoteMakeMethodOperation
-          // - quoteMakeMethodMaterial
-          async function traverseMethod(
-            node: MethodTreeItem,
-            parentQuoteMakeMethodId: string | null
-          ) {
-            const relatedOperations = await client
-              .from("methodOperation")
-              .select(
-                "*, methodOperationTool(*), methodOperationParameter(*), methodOperationStep(*)"
-              )
-              .eq("makeMethodId", node.data.materialMakeMethodId);
-
-            let quoteOperationsInserts: Database["public"]["Tables"]["quoteOperation"]["Insert"][] =
-              [];
-            for await (const op of relatedOperations?.data ?? []) {
-              const [
-                processId,
-                procedureId,
-                workCenterId,
-                description,
-                setupTime,
-                setupUnit,
-                laborTime,
-                laborUnit,
-                machineTime,
-                machineUnit,
-                operationOrder,
-                operationType,
-              ] = await Promise.all([
-                getConfiguredValue({
-                  id: op.id,
-                  field: "processId",
-                  defaultValue: op.processId,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "procedureId",
-                  defaultValue: op.procedureId,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "workCenterId",
-                  defaultValue: op.workCenterId,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "description",
-                  defaultValue: op.description,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "setupTime",
-                  defaultValue: op.setupTime,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "setupUnit",
-                  defaultValue: op.setupUnit,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "laborTime",
-                  defaultValue: op.laborTime,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "laborUnit",
-                  defaultValue: op.laborUnit,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "machineTime",
-                  defaultValue: op.machineTime,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "machineUnit",
-                  defaultValue: op.machineUnit,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "operationOrder",
-                  defaultValue: op.operationOrder,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "operationType",
-                  defaultValue: op.operationType,
-                }),
-              ]);
-
-              const operationRates = getLaborAndOverheadRates(
-                processId,
-                op.workCenterId
-              );
-              console.log({
-                processId,
-                ...operationRates,
-              });
-
-              quoteOperationsInserts.push({
-                quoteId,
-                quoteLineId,
-                quoteMakeMethodId: parentQuoteMakeMethodId!,
-                processId,
-                procedureId,
-                workCenterId,
-                description,
-                setupTime,
-                setupUnit,
-                laborTime,
-                laborUnit,
-                machineTime,
-                machineUnit,
-                ...getLaborAndOverheadRates(processId, op.workCenterId),
-                order: op.order,
-                operationOrder,
-                operationType,
-                operationSupplierProcessId: op.operationSupplierProcessId,
-                operationUnitCost: op.operationUnitCost ?? 0,
-                ...getOutsideOperationRates(
+              let quoteOperationsInserts: Database["public"]["Tables"]["quoteOperation"]["Insert"][] =
+                [];
+              for await (const op of relatedOperations?.data ?? []) {
+                const [
                   processId,
-                  op.operationSupplierProcessId
-                ),
-                tags: op.tags ?? [],
-                workInstruction: op.workInstruction,
-                companyId,
-                createdBy: userId,
-                customFields: {},
-              });
-            }
+                  procedureId,
+                  workCenterId,
+                  description,
+                  setupTime,
+                  setupUnit,
+                  laborTime,
+                  laborUnit,
+                  machineTime,
+                  machineUnit,
+                  operationOrder,
+                  operationType,
+                ] = await Promise.all([
+                  getConfiguredValue({
+                    id: op.id,
+                    field: "processId",
+                    defaultValue: op.processId,
+                  }),
+                  getConfiguredValue({
+                    id: op.id,
+                    field: "procedureId",
+                    defaultValue: op.procedureId,
+                  }),
+                  getConfiguredValue({
+                    id: op.id,
+                    field: "workCenterId",
+                    defaultValue: op.workCenterId,
+                  }),
+                  getConfiguredValue({
+                    id: op.id,
+                    field: "description",
+                    defaultValue: op.description,
+                  }),
+                  getConfiguredValue({
+                    id: op.id,
+                    field: "setupTime",
+                    defaultValue: op.setupTime,
+                  }),
+                  getConfiguredValue({
+                    id: op.id,
+                    field: "setupUnit",
+                    defaultValue: op.setupUnit,
+                  }),
+                  getConfiguredValue({
+                    id: op.id,
+                    field: "laborTime",
+                    defaultValue: op.laborTime,
+                  }),
+                  getConfiguredValue({
+                    id: op.id,
+                    field: "laborUnit",
+                    defaultValue: op.laborUnit,
+                  }),
+                  getConfiguredValue({
+                    id: op.id,
+                    field: "machineTime",
+                    defaultValue: op.machineTime,
+                  }),
+                  getConfiguredValue({
+                    id: op.id,
+                    field: "machineUnit",
+                    defaultValue: op.machineUnit,
+                  }),
+                  getConfiguredValue({
+                    id: op.id,
+                    field: "operationOrder",
+                    defaultValue: op.operationOrder,
+                  }),
+                  getConfiguredValue({
+                    id: op.id,
+                    field: "operationType",
+                    defaultValue: op.operationType,
+                  }),
+                ]);
 
-            const nodeLevelConfigurationKey = `${
-              node.data.materialMakeMethodId
-            }:${node.data.isRoot ? "undefined" : node.data.methodMaterialId}`;
+                const operationRates = getLaborAndOverheadRates(
+                  processId,
+                  op.workCenterId
+                );
+                console.log({
+                  processId,
+                  ...operationRates,
+                });
 
-            const bopConfigurationKey = `billOfProcess:${nodeLevelConfigurationKey}`;
-            let bopConfiguration: string[] | null = null;
+                quoteOperationsInserts.push({
+                  quoteId,
+                  quoteLineId,
+                  quoteMakeMethodId: parentQuoteMakeMethodId!,
+                  processId,
+                  procedureId,
+                  workCenterId,
+                  description,
+                  setupTime,
+                  setupUnit,
+                  laborTime,
+                  laborUnit,
+                  machineTime,
+                  machineUnit,
+                  ...getLaborAndOverheadRates(processId, op.workCenterId),
+                  order: op.order,
+                  operationOrder,
+                  operationType,
+                  operationSupplierProcessId: op.operationSupplierProcessId,
+                  operationUnitCost: op.operationUnitCost ?? 0,
+                  ...getOutsideOperationRates(
+                    processId,
+                    op.operationSupplierProcessId
+                  ),
+                  tags: op.tags ?? [],
+                  workInstruction: op.workInstruction,
+                  companyId,
+                  createdBy: userId,
+                  customFields: {},
+                });
+              }
 
-            if (configurationCodeByField?.[bopConfigurationKey]) {
-              const mod = await importTypeScript(
-                configurationCodeByField[bopConfigurationKey]
-              );
-              bopConfiguration = await mod.configure(hydratedConfiguration);
-            }
+              const nodeLevelConfigurationKey = `${
+                node.data.materialMakeMethodId
+              }:${node.data.isRoot ? "undefined" : node.data.methodMaterialId}`;
 
-            if (bopConfiguration) {
-              // @ts-expect-error - we can't assign undefined to materialsWithConfiguredFields but we filter them in the next step
-              quoteOperationsInserts = bopConfiguration
-                .map((description, index) => {
-                  const operation = quoteOperationsInserts.find(
-                    (operation) => operation.description === description
-                  );
-                  if (operation) {
-                    return {
-                      ...operation,
-                      order: index + 1,
-                    };
-                  }
-                })
-                .filter(Boolean);
-            }
+              const bopConfigurationKey = `billOfProcess:${nodeLevelConfigurationKey}`;
+              let bopConfiguration: string[] | null = null;
 
-            let methodOperationsToQuoteOperations: Record<string, string> = {};
-            if (quoteOperationsInserts?.length > 0) {
-              const operationIds = await trx
-                .insertInto("quoteOperation")
-                .values(quoteOperationsInserts)
-                .returning(["id"])
-                .execute();
+              if (configurationCodeByField?.[bopConfigurationKey]) {
+                const mod = await importTypeScript(
+                  configurationCodeByField[bopConfigurationKey]
+                );
+                bopConfiguration = await mod.configure(hydratedConfiguration);
+              }
 
-              for (const [index, operation] of (
-                relatedOperations.data ?? []
-              ).entries()) {
-                const operationId = operationIds[index].id;
+              if (bopConfiguration) {
+                // @ts-expect-error - we can't assign undefined to materialsWithConfiguredFields but we filter them in the next step
+                quoteOperationsInserts = bopConfiguration
+                  .map((description, index) => {
+                    const operation = quoteOperationsInserts.find(
+                      (operation) => operation.description === description
+                    );
+                    if (operation) {
+                      return {
+                        ...operation,
+                        order: index + 1,
+                      };
+                    }
+                  })
+                  .filter(Boolean);
+              }
 
-                if (operationId) {
-                  const {
-                    methodOperationTool,
-                    methodOperationParameter,
-                    methodOperationStep,
-                    procedureId,
-                  } = operation;
+              let methodOperationsToQuoteOperations: Record<string, string> =
+                {};
+              if (quoteOperationsInserts?.length > 0) {
+                const operationIds = await trx
+                  .insertInto("quoteOperation")
+                  .values(quoteOperationsInserts)
+                  .returning(["id"])
+                  .execute();
 
-                  if (
-                    Array.isArray(methodOperationTool) &&
-                    methodOperationTool.length > 0
-                  ) {
-                    await trx
-                      .insertInto("quoteOperationTool")
-                      .values(
-                        methodOperationTool.map((tool) => ({
-                          toolId: tool.toolId,
-                          quantity: tool.quantity,
-                          operationId,
-                          companyId,
-                          createdBy: userId,
-                        }))
-                      )
-                      .execute();
-                  }
+                for (const [index, operation] of (
+                  relatedOperations.data ?? []
+                ).entries()) {
+                  const operationId = operationIds[index].id;
 
-                  if (!procedureId) {
+                  if (operationId) {
+                    const {
+                      methodOperationTool,
+                      methodOperationParameter,
+                      methodOperationStep,
+                      procedureId,
+                    } = operation;
+
                     if (
-                      Array.isArray(methodOperationParameter) &&
-                      methodOperationParameter.length > 0
+                      Array.isArray(methodOperationTool) &&
+                      methodOperationTool.length > 0
                     ) {
-                      const parameters = await Promise.all(
-                        methodOperationParameter.map(async (param) => ({
-                          operationId,
-                          key: param.key,
-                          value: await getConfiguredValue({
-                            id: operation.id,
-                            field: `parameter:${param.id}:value`,
-                            defaultValue: param.value,
-                          }),
-                          companyId,
-                          createdBy: userId,
-                        }))
-                      );
-
                       await trx
-                        .insertInto("quoteOperationParameter")
-                        .values(parameters)
+                        .insertInto("quoteOperationTool")
+                        .values(
+                          methodOperationTool.map((tool) => ({
+                            toolId: tool.toolId,
+                            quantity: tool.quantity,
+                            operationId,
+                            companyId,
+                            createdBy: userId,
+                          }))
+                        )
                         .execute();
                     }
 
-                    if (
-                      Array.isArray(methodOperationStep) &&
-                      methodOperationStep.length > 0
-                    ) {
-                      const attributes = await Promise.all(
-                        methodOperationStep.map(
-                          async ({ id, ...attribute }) => ({
-                            ...attribute,
+                    if (!procedureId) {
+                      if (
+                        Array.isArray(methodOperationParameter) &&
+                        methodOperationParameter.length > 0
+                      ) {
+                        const parameters = await Promise.all(
+                          methodOperationParameter.map(async (param) => ({
                             operationId,
-                            minValue: await getConfiguredValue({
+                            key: param.key,
+                            value: await getConfiguredValue({
                               id: operation.id,
-                              field: `attribute:${id}:minValue`,
-                              defaultValue: attribute.minValue,
-                            }),
-                            maxValue: await getConfiguredValue({
-                              id: operation.id,
-                              field: `attribute:${id}:maxValue`,
-                              defaultValue: attribute.maxValue,
+                              field: `parameter:${param.id}:value`,
+                              defaultValue: param.value,
                             }),
                             companyId,
                             createdBy: userId,
-                          })
-                        )
-                      );
+                          }))
+                        );
 
-                      await trx
-                        .insertInto("quoteOperationStep")
-                        .values(attributes)
-                        .execute();
+                        await trx
+                          .insertInto("quoteOperationParameter")
+                          .values(parameters)
+                          .execute();
+                      }
+
+                      if (
+                        Array.isArray(methodOperationStep) &&
+                        methodOperationStep.length > 0
+                      ) {
+                        const attributes = await Promise.all(
+                          methodOperationStep.map(
+                            async ({ id, ...attribute }) => ({
+                              ...attribute,
+                              operationId,
+                              minValue: await getConfiguredValue({
+                                id: operation.id,
+                                field: `attribute:${id}:minValue`,
+                                defaultValue: attribute.minValue,
+                              }),
+                              maxValue: await getConfiguredValue({
+                                id: operation.id,
+                                field: `attribute:${id}:maxValue`,
+                                defaultValue: attribute.maxValue,
+                              }),
+                              companyId,
+                              createdBy: userId,
+                            })
+                          )
+                        );
+
+                        await trx
+                          .insertInto("quoteOperationStep")
+                          .values(attributes)
+                          .execute();
+                      }
                     }
                   }
                 }
+
+                methodOperationsToQuoteOperations =
+                  relatedOperations.data?.reduce<Record<string, string>>(
+                    (acc, op, index) => {
+                      if (operationIds[index].id) {
+                        acc[op.id!] = operationIds[index].id!;
+                      }
+                      return acc;
+                    },
+                    {}
+                  ) ?? {};
               }
 
-              methodOperationsToQuoteOperations =
-                relatedOperations.data?.reduce<Record<string, string>>(
-                  (acc, op, index) => {
-                    if (operationIds[index].id) {
-                      acc[op.id!] = operationIds[index].id!;
+              const mapMethodMaterialToQuoteMaterial = async (
+                child: MethodTreeItem
+              ) => {
+                let [
+                  itemId,
+                  description,
+                  quantity,
+                  methodType,
+                  unitOfMeasureCode,
+                ] = await Promise.all([
+                  getConfiguredValue({
+                    id: child.data.methodMaterialId,
+                    field: "itemId",
+                    defaultValue: child.data.itemId,
+                  }),
+                  getConfiguredValue({
+                    id: child.data.methodMaterialId,
+                    field: "description",
+                    defaultValue: child.data.description,
+                  }),
+                  getConfiguredValue({
+                    id: child.data.methodMaterialId,
+                    field: "quantity",
+                    defaultValue: child.data.quantity,
+                  }),
+                  getConfiguredValue({
+                    id: child.data.methodMaterialId,
+                    field: "methodType",
+                    defaultValue: child.data.methodType,
+                  }),
+                  getConfiguredValue({
+                    id: child.data.methodMaterialId,
+                    field: "unitOfMeasureCode",
+                    defaultValue: child.data.unitOfMeasureCode,
+                  }),
+                ]);
+
+                let itemType = child.data.itemType;
+                let unitCost = child.data.unitCost;
+
+                // TODO: if the methodType is Make and the default value is not Make, we need to do itemToQuoteMakeMethod for that material
+
+                if (itemId !== child.data.itemId) {
+                  const item = await client
+                    .from("item")
+                    .select(
+                      "readableIdWithRevision, readableId, type, name, itemCost(unitCost)"
+                    )
+                    .eq("id", itemId)
+                    .eq("companyId", companyId)
+                    .single();
+                  if (item.data) {
+                    itemType = item.data.type;
+                    unitCost =
+                      item.data.itemCost[0]?.unitCost ?? child.data.unitCost;
+                    if (description === child.data.description) {
+                      description = item.data.name;
                     }
-                    return acc;
-                  },
-                  {}
-                ) ?? {};
-            }
-
-            const mapMethodMaterialToQuoteMaterial = async (
-              child: MethodTreeItem
-            ) => {
-              let [
-                itemId,
-                description,
-                quantity,
-                methodType,
-                unitOfMeasureCode,
-              ] = await Promise.all([
-                getConfiguredValue({
-                  id: child.data.methodMaterialId,
-                  field: "itemId",
-                  defaultValue: child.data.itemId,
-                }),
-                getConfiguredValue({
-                  id: child.data.methodMaterialId,
-                  field: "description",
-                  defaultValue: child.data.description,
-                }),
-                getConfiguredValue({
-                  id: child.data.methodMaterialId,
-                  field: "quantity",
-                  defaultValue: child.data.quantity,
-                }),
-                getConfiguredValue({
-                  id: child.data.methodMaterialId,
-                  field: "methodType",
-                  defaultValue: child.data.methodType,
-                }),
-                getConfiguredValue({
-                  id: child.data.methodMaterialId,
-                  field: "unitOfMeasureCode",
-                  defaultValue: child.data.unitOfMeasureCode,
-                }),
-              ]);
-
-              let itemType = child.data.itemType;
-              let unitCost = child.data.unitCost;
-
-              // TODO: if the methodType is Make and the default value is not Make, we need to do itemToQuoteMakeMethod for that material
-
-              if (itemId !== child.data.itemId) {
-                const item = await client
-                  .from("item")
-                  .select(
-                    "readableIdWithRevision, readableId, type, name, itemCost(unitCost)"
-                  )
-                  .eq("id", itemId)
-                  .eq("companyId", companyId)
-                  .single();
-                if (item.data) {
-                  itemType = item.data.type;
-                  unitCost =
-                    item.data.itemCost[0]?.unitCost ?? child.data.unitCost;
-                  if (description === child.data.description) {
-                    description = item.data.name;
+                  } else {
+                    itemId = child.data.itemId;
                   }
-                } else {
-                  itemId = child.data.itemId;
                 }
-              }
 
-              return {
-                quoteId,
-                quoteLineId,
-                quoteMakeMethodId: parentQuoteMakeMethodId!,
-                quoteOperationId:
-                  methodOperationsToQuoteOperations[child.data.operationId],
-                order: child.data.order,
-                itemId,
-                itemType,
-                kit: child.data.kit,
-                methodType,
-                description,
-                quantity,
-                shelfId: quoteLocationId
-                  ? // @ts-ignore: shelfIds is a dynamic object with location keys
-                    (child.data.shelfIds?.[quoteLocationId] as string) || null
-                  : null,
-                unitOfMeasureCode,
-                unitCost,
-                companyId,
-                createdBy: userId,
-                customFields: {},
+                return {
+                  quoteId,
+                  quoteLineId,
+                  quoteMakeMethodId: parentQuoteMakeMethodId!,
+                  quoteOperationId:
+                    methodOperationsToQuoteOperations[child.data.operationId],
+                  order: child.data.order,
+                  itemId,
+                  itemType,
+                  kit: child.data.kit,
+                  methodType,
+                  description,
+                  quantity,
+                  shelfId: quoteLocationId
+                    ? // @ts-ignore: shelfIds is a dynamic object with location keys
+                      (child.data.shelfIds?.[quoteLocationId] as string) || null
+                    : null,
+                  unitOfMeasureCode,
+                  unitCost,
+                  companyId,
+                  createdBy: userId,
+                  customFields: {},
+                };
               };
-            };
 
-            let materialsWithConfiguredFields = await Promise.all(
-              node.children.map(mapMethodMaterialToQuoteMaterial)
-            );
-
-            const bomConfigurationKey = `billOfMaterial:${nodeLevelConfigurationKey}`;
-            let bomConfiguration: string[] | null = null;
-
-            if (configurationCodeByField?.[bomConfigurationKey]) {
-              const mod = await importTypeScript(
-                configurationCodeByField[bomConfigurationKey]
-              );
-              bomConfiguration = await mod.configure(hydratedConfiguration);
-            }
-
-            if (bomConfiguration) {
-              // @ts-expect-error - we can't assign undefined to materialsWithConfiguredFields but we filter them in the next step
-              materialsWithConfiguredFields = bomConfiguration
-                .map((readableIdWithRevision, index) => {
-                  const material = materialsWithConfiguredFields.find(
-                    (material) => material.itemId === itemId
-                  );
-                  if (material) {
-                    return {
-                      ...material,
-                      order: index + 1,
-                    };
-                  }
-                })
-                .filter(Boolean);
-            }
-
-            const madeMaterials = materialsWithConfiguredFields.filter(
-              (material) => material.methodType === "Make"
-            );
-
-            const pickedOrBoughtMaterials =
-              materialsWithConfiguredFields.filter(
-                (material) => material.methodType !== "Make"
+              let materialsWithConfiguredFields = await Promise.all(
+                node.children.map(mapMethodMaterialToQuoteMaterial)
               );
 
-            const madeChildren = madeMaterials.map((material, index) => {
-              const childIndex = materialsWithConfiguredFields.findIndex(
-                (m) => m.itemId === material.itemId
+              const bomConfigurationKey = `billOfMaterial:${nodeLevelConfigurationKey}`;
+              let bomConfiguration: string[] | null = null;
+
+              if (configurationCodeByField?.[bomConfigurationKey]) {
+                const mod = await importTypeScript(
+                  configurationCodeByField[bomConfigurationKey]
+                );
+                bomConfiguration = await mod.configure(hydratedConfiguration);
+              }
+
+              if (bomConfiguration) {
+                // @ts-expect-error - we can't assign undefined to materialsWithConfiguredFields but we filter them in the next step
+                materialsWithConfiguredFields = bomConfiguration
+                  .map((readableIdWithRevision, index) => {
+                    const material = materialsWithConfiguredFields.find(
+                      (material) => material.itemId === itemId
+                    );
+                    if (material) {
+                      return {
+                        ...material,
+                        order: index + 1,
+                      };
+                    }
+                  })
+                  .filter(Boolean);
+              }
+
+              const madeMaterials = materialsWithConfiguredFields.filter(
+                (material) => material.methodType === "Make"
               );
-              return node.children[childIndex];
-            });
 
-            if (madeMaterials.length > 0) {
-              const madeMaterialIds = await trx
-                .insertInto("quoteMaterial")
-                .values(madeMaterials)
-                .returning(["id"])
-                .execute();
+              const pickedOrBoughtMaterials =
+                materialsWithConfiguredFields.filter(
+                  (material) => material.methodType !== "Make"
+                );
 
-              const quoteMakeMethods = await trx
-                .selectFrom("quoteMakeMethod")
-                .select(["id", "parentMaterialId"])
-                .where(
-                  "parentMaterialId",
-                  "in",
-                  madeMaterialIds.map((m) => m.id)
-                )
-                .execute();
-
-              // Create proper mapping from parentMaterialId to quoteMakeMethodId
-              const materialIdToQuoteMakeMethodId: Record<string, string> = {};
-              quoteMakeMethods.forEach((qmm) => {
-                if (qmm.parentMaterialId && qmm.id) {
-                  materialIdToQuoteMakeMethodId[qmm.parentMaterialId] = qmm.id;
-                }
+              const madeChildren = madeMaterials.map((material, index) => {
+                const childIndex = materialsWithConfiguredFields.findIndex(
+                  (m) => m.itemId === material.itemId
+                );
+                return node.children[childIndex];
               });
 
-              // Use proper correlation instead of index-based assumption
-              for (const [index, child] of madeChildren.entries()) {
-                const materialId = madeMaterialIds[index]?.id;
-                const quoteMakeMethodId = materialId
-                  ? materialIdToQuoteMakeMethodId[materialId]
-                  : null;
+              if (madeMaterials.length > 0) {
+                const madeMaterialIds = await trx
+                  .insertInto("quoteMaterial")
+                  .values(madeMaterials)
+                  .returning(["id"])
+                  .execute();
 
-                // prevent an infinite loop
-                if (child.data.itemId !== itemId && quoteMakeMethodId) {
-                  await traverseMethod(child, quoteMakeMethodId);
+                const quoteMakeMethods = await trx
+                  .selectFrom("quoteMakeMethod")
+                  .select(["id", "parentMaterialId"])
+                  .where(
+                    "parentMaterialId",
+                    "in",
+                    madeMaterialIds.map((m) => m.id)
+                  )
+                  .execute();
+
+                // Create proper mapping from parentMaterialId to quoteMakeMethodId
+                const materialIdToQuoteMakeMethodId: Record<string, string> =
+                  {};
+                quoteMakeMethods.forEach((qmm) => {
+                  if (qmm.parentMaterialId && qmm.id) {
+                    materialIdToQuoteMakeMethodId[qmm.parentMaterialId] =
+                      qmm.id;
+                  }
+                });
+
+                // Use proper correlation instead of index-based assumption
+                for (const [index, child] of madeChildren.entries()) {
+                  const materialId = madeMaterialIds[index]?.id;
+                  const quoteMakeMethodId = materialId
+                    ? materialIdToQuoteMakeMethodId[materialId]
+                    : null;
+
+                  // prevent an infinite loop
+                  if (child.data.itemId !== itemId && quoteMakeMethodId) {
+                    await traverseMethod(child, quoteMakeMethodId);
+                  }
                 }
+              }
+
+              if (pickedOrBoughtMaterials.length > 0) {
+                await trx
+                  .insertInto("quoteMaterial")
+                  .values(pickedOrBoughtMaterials)
+                  .execute();
               }
             }
 
-            if (pickedOrBoughtMaterials.length > 0) {
-              await trx
-                .insertInto("quoteMaterial")
-                .values(pickedOrBoughtMaterials)
-                .execute();
-            }
-          }
-
-          await traverseMethod(methodTree, quoteMakeMethod.data.id);
-        });
+            await traverseMethod(methodTree, quoteMakeMethod.data.id);
+          });
 
         break;
       }
@@ -4001,7 +4017,8 @@ serve(async (req: Request) => {
                 };
               } else {
                 // Non-root: get from stored quantities using parent's quoteMakeMethodId
-                const parentQuoteMakeMethodId = node.data.quoteMaterialMakeMethodId;
+                const parentQuoteMakeMethodId =
+                  node.data.quoteMaterialMakeMethodId;
                 const parentQuantities =
                   quoteMakeMethodIdToQuantities[parentQuoteMakeMethodId ?? ""];
                 // Children receive parent's total (estimated + scrap) for cascade

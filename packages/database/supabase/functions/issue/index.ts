@@ -5,6 +5,7 @@ import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/nanoid.ts";
 import { corsHeaders } from "../lib/headers.ts";
+import { checkApiKeyRateLimit } from "../lib/ratelimit.ts";
 import {
   getShelfWithHighestQuantity,
   updatePickMethodDefaultShelfIfNeeded,
@@ -169,6 +170,10 @@ serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
+
+  const rlResponse = await checkApiKeyRateLimit(db, req, corsHeaders);
+  if (rlResponse) return rlResponse;
+
   const payload = await req.json();
   console.log({ payload });
 
@@ -1190,11 +1195,13 @@ serve(async (req: Request) => {
             throw new Error("Tracked entities are not available");
           }
 
-          let jobMaterial: Awaited<
-            ReturnType<
-              ReturnType<typeof trx.selectFrom<"jobMaterial">>["selectAll"]
-            >
-          >[0] | undefined;
+          let jobMaterial:
+            | Awaited<
+                ReturnType<
+                  ReturnType<typeof trx.selectFrom<"jobMaterial">>["selectAll"]
+                >
+              >[0]
+            | undefined;
           let actualMaterialId: string | undefined = materialId;
           const firstTrackedEntity = trackedEntities[0];
 
@@ -1228,7 +1235,8 @@ serve(async (req: Request) => {
                 .values({
                   companyId,
                   createdBy: userId,
-                  description: firstTrackedEntity.sourceDocumentReadableId ?? "",
+                  description:
+                    firstTrackedEntity.sourceDocumentReadableId ?? "",
                   estimatedQuantity: 0,
                   itemId: firstTrackedEntity.sourceDocumentId!,
                   jobId: jobMaterial.jobId!,
@@ -2146,7 +2154,12 @@ serve(async (req: Request) => {
           const dispatch = await trx
             .selectFrom("maintenanceDispatch")
             .where("id", "=", maintenanceDispatchId)
-            .select(["id", "maintenanceDispatchId", "workCenterId", "locationId"])
+            .select([
+              "id",
+              "maintenanceDispatchId",
+              "workCenterId",
+              "locationId",
+            ])
             .executeTakeFirstOrThrow();
 
           const locationId = dispatch.locationId;
@@ -2173,14 +2186,13 @@ serve(async (req: Request) => {
             .executeTakeFirstOrThrow();
 
           // Only create item ledger entry for non-tracked items (not Serial or Batch)
-          if (item.itemTrackingType !== "Serial" && item.itemTrackingType !== "Batch") {
+          if (
+            item.itemTrackingType !== "Serial" &&
+            item.itemTrackingType !== "Batch"
+          ) {
             // Get shelf with highest quantity for this item at this location
             const shelfId = locationId
-              ? await getShelfWithHighestQuantity(
-                  trx,
-                  itemId,
-                  locationId
-                )
+              ? await getShelfWithHighestQuantity(trx, itemId, locationId)
               : null;
 
             await trx
@@ -2243,7 +2255,12 @@ serve(async (req: Request) => {
           const dispatch = await trx
             .selectFrom("maintenanceDispatch")
             .where("id", "=", maintenanceDispatchId)
-            .select(["id", "maintenanceDispatchId", "workCenterId", "locationId"])
+            .select([
+              "id",
+              "maintenanceDispatchId",
+              "workCenterId",
+              "locationId",
+            ])
             .executeTakeFirstOrThrow();
 
           const locationId = dispatch.locationId;
@@ -2614,7 +2631,12 @@ serve(async (req: Request) => {
           const dispatch = await trx
             .selectFrom("maintenanceDispatch")
             .where("id", "=", dispatchItem.maintenanceDispatchId)
-            .select(["id", "maintenanceDispatchId", "workCenterId", "locationId"])
+            .select([
+              "id",
+              "maintenanceDispatchId",
+              "workCenterId",
+              "locationId",
+            ])
             .executeTakeFirstOrThrow();
 
           const locationId = dispatch.locationId;
@@ -2647,9 +2669,7 @@ serve(async (req: Request) => {
           }
 
           if (trackedEntities.some((entity) => entity.status !== "Consumed")) {
-            throw new Error(
-              "Some tracked entities are not in consumed status"
-            );
+            throw new Error("Some tracked entities are not in consumed status");
           }
 
           // Get item details
@@ -2714,7 +2734,11 @@ serve(async (req: Request) => {
             // Remove from junction table
             await trx
               .deleteFrom("maintenanceDispatchItemTrackedEntity")
-              .where("maintenanceDispatchItemId", "=", maintenanceDispatchItemId)
+              .where(
+                "maintenanceDispatchItemId",
+                "=",
+                maintenanceDispatchItemId
+              )
               .where("trackedEntityId", "=", trackedEntityId)
               .execute();
 
@@ -2810,7 +2834,12 @@ serve(async (req: Request) => {
           const dispatch = await trx
             .selectFrom("maintenanceDispatch")
             .where("id", "=", dispatchItem.maintenanceDispatchId)
-            .select(["id", "maintenanceDispatchId", "workCenterId", "locationId"])
+            .select([
+              "id",
+              "maintenanceDispatchId",
+              "workCenterId",
+              "locationId",
+            ])
             .executeTakeFirstOrThrow();
 
           const locationId = dispatch.locationId;
@@ -2922,7 +2951,11 @@ serve(async (req: Request) => {
             // Delete junction entries
             await trx
               .deleteFrom("maintenanceDispatchItemTrackedEntity")
-              .where("maintenanceDispatchItemId", "=", maintenanceDispatchItemId)
+              .where(
+                "maintenanceDispatchItemId",
+                "=",
+                maintenanceDispatchItemId
+              )
               .execute();
 
             if (trackedActivityOutputs.length > 0) {
