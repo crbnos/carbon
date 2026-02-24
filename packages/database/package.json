@@ -18,6 +18,7 @@
     ".": "./src/index.ts",
     "./client": "./src/client.ts",
     "./event": "./src/event.ts",
+    "./ratelimit": "./src/ratelimit.ts",
     "./swagger-docs-schema": "./src/swagger-docs-schema.ts"
   },
   "private": true,

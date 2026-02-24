@@ -4,7 +4,6 @@ import { format } from "https://deno.land/std@0.160.0/datetime/mod.ts";
 import z from "npm:zod@^3.24.1";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsHeaders } from "../lib/headers.ts";
-import { checkApiKeyRateLimit } from "../lib/ratelimit.ts";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 
@@ -37,9 +36,6 @@ serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
-
-  const rlResponse = await checkApiKeyRateLimit(db, req, corsHeaders);
-  if (rlResponse) return rlResponse;
 
   const payload = await req.json();
   const { source, companyId } = payloadValidator.parse(payload);
@@ -96,8 +92,7 @@ serve(async (req: Request) => {
             itemId: line.itemId,
             jobOperationId: null,
             unitPrice: line.unitPrice ?? 0,
-            quantity:
-              (line.purchaseQuantity ?? 0) * (line.conversionFactor ?? 1),
+            quantity: (line.purchaseQuantity ?? 0) * (line.conversionFactor ?? 1),
             conversionFactor: line.conversionFactor,
             purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
           }))

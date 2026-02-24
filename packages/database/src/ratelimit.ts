@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.33.1";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type RateLimitResult = {
   success: boolean;
@@ -16,7 +16,7 @@ export type RateLimitResult = {
  * throwing/returning an appropriate 429 response when !success.
  */
 export async function checkApiKeyRateLimit(
-  client: ReturnType<typeof createClient>,
+  client: SupabaseClient,
   apiKeyId: string,
   limit: number,
   window: string
@@ -24,7 +24,7 @@ export async function checkApiKeyRateLimit(
   const { data, error } = await client.rpc("check_api_key_rate_limit", {
     p_api_key_id: apiKeyId,
     p_limit: limit,
-    p_window: window,
+    p_window: window
   });
 
   if (error) throw error;

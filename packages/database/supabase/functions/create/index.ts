@@ -3,7 +3,6 @@ import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
 import z from "npm:zod@^3.24.1";
 import { corsHeaders } from "../lib/headers.ts";
-import { checkApiKeyRateLimit } from "../lib/ratelimit.ts";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
@@ -112,10 +111,6 @@ serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
-
-  const rlResponse = await checkApiKeyRateLimit(db, req, corsHeaders);
-  if (rlResponse) return rlResponse;
-
   const payload = await req.json();
 
   const { type, companyId, userId } = payloadValidator.parse(payload);
@@ -136,22 +131,26 @@ serve(async (req: Request) => {
           companyId
         );
 
-        const [nonConformance, actionTasks, approvalTasks, existingReviewers] =
-          await Promise.all([
-            client.from("nonConformance").select("*").eq("id", id).single(),
-            client
-              .from("nonConformanceActionTask")
-              .select("*")
-              .eq("nonConformanceId", id),
-            client
-              .from("nonConformanceApprovalTask")
-              .select("*")
-              .eq("nonConformanceId", id),
-            client
-              .from("nonConformanceReviewer")
-              .select("*")
-              .eq("nonConformanceId", id),
-          ]);
+        const [
+          nonConformance,
+          actionTasks,
+          approvalTasks,
+          existingReviewers,
+        ] = await Promise.all([
+          client.from("nonConformance").select("*").eq("id", id).single(),
+          client
+            .from("nonConformanceActionTask")
+            .select("*")
+            .eq("nonConformanceId", id),
+          client
+            .from("nonConformanceApprovalTask")
+            .select("*")
+            .eq("nonConformanceId", id),
+          client
+            .from("nonConformanceReviewer")
+            .select("*")
+            .eq("nonConformanceId", id),
+        ]);
 
         if (nonConformance.error) throw new Error(nonConformance.error.message);
 

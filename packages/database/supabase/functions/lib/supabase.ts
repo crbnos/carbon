@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.33.1";
 import type { Database } from "../lib/types.ts";
+import { checkApiKeyRateLimit } from "./ratelimit.ts";
 
 /** Hash an API key using SHA-256 for secure lookup */
 function hashApiKey(rawKey: string): string {
@@ -113,7 +114,7 @@ export const getSupabaseServiceRole = async (
     const keyHash = hashApiKey(apiKeyHeader);
     const { data, error } = await serviceRole
       .from("apiKey")
-      .select("companyId, expiresAt")
+      .select("id, companyId, rateLimit, rateLimitWindow, expiresAt")
       .eq("keyHash" as any, keyHash)
       .eq("companyId", companyId)
       .single();
@@ -126,10 +127,22 @@ export const getSupabaseServiceRole = async (
       throw new Error("API key not found");
     }
 
+    const row = data as any;
+
     // Check expiration
-    const expiresAt = (data as any).expiresAt;
-    if (expiresAt && new Date(expiresAt) < new Date()) {
+    if (row.expiresAt && new Date(row.expiresAt) < new Date()) {
       throw new Error("API key has expired");
+    }
+
+    // Check rate limit
+    const rl = await checkApiKeyRateLimit(
+      serviceRole,
+      row.id,
+      row.rateLimit ?? 1000,
+      row.rateLimitWindow ?? "1h"
+    );
+    if (!rl.success) {
+      throw new Error("Rate limit exceeded");
     }
 
     return serviceRole;

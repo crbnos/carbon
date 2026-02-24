@@ -24,7 +24,6 @@ import {
   supplierStauses,
   unitOfMeasures,
 } from "../lib/seed.ts";
-import { checkApiKeyRateLimit } from "../lib/ratelimit.ts";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 
@@ -35,10 +34,6 @@ serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
-
-  const rlResponse = await checkApiKeyRateLimit(db, req, corsHeaders);
-  if (rlResponse) return rlResponse;
-
   const { companyId: id, userId } = await req.json();
 
   console.log({
@@ -117,10 +112,7 @@ serve(async (req: Request) => {
         throw new Error("Failed to insert admin employee type");
 
       // get the modules
-      const modules = (await trx
-        .selectFrom("modules")
-        .select("name")
-        .execute()) as { name: string }[];
+      const modules = await trx.selectFrom("modules").select("name").execute() as { name: string }[];
 
       // create employee type permissions for admin
       const employeeTypePermissions = modules.reduce<
@@ -215,9 +207,7 @@ serve(async (req: Request) => {
 
       await trx
         .insertInto("maintenanceFailureMode")
-        .values(
-          failureModes.map((name) => ({ name, companyId, createdBy: "system" }))
-        )
+        .values(failureModes.map((name) => ({ name, companyId, createdBy: "system" })))
         .execute();
 
       await trx

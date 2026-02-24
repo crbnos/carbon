@@ -1,17 +1,16 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import {
-  getLocalTimeZone,
-  today as getToday,
-  parseDate,
-  startOfWeek,
-  type CalendarDate,
+    getLocalTimeZone,
+    today as getToday,
+    parseDate,
+    startOfWeek,
+    type CalendarDate,
 } from "npm:@internationalized/date";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
 import { Kysely } from "kysely";
 import z from "npm:zod@^3.24.1";
 import { corsHeaders } from "../lib/headers.ts";
-import { checkApiKeyRateLimit } from "../lib/ratelimit.ts";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 
@@ -69,10 +68,6 @@ serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
-
-  const rlResponse = await checkApiKeyRateLimit(db, req, corsHeaders);
-  if (rlResponse) return rlResponse;
-
   const payload = await req.json();
 
   const parsedPayload = payloadValidator.parse(payload);
@@ -548,10 +543,7 @@ serve(async (req: Request) => {
         const periodSupply = locationSupply.get(projection.periodId);
         if (periodSupply) {
           const plannedProduction = periodSupply.get(projection.itemId) ?? 0;
-          netDemand = Math.max(
-            0,
-            projection.forecastQuantity - plannedProduction
-          );
+          netDemand = Math.max(0, projection.forecastQuantity - plannedProduction);
         }
       }
 

@@ -5,7 +5,6 @@ import { sql } from "npm:kysely@0.27.6";
 import z from "npm:zod@^3.24.1";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsHeaders } from "../lib/headers.ts";
-import { checkApiKeyRateLimit } from "../lib/ratelimit.ts";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 import { getReadableIdWithRevision } from "../lib/utils.ts";
@@ -52,9 +51,7 @@ async function getCsvExternalIdMap(
 
   return new Map(
     result
-      .filter(
-        (r): r is typeof r & { externalId: string } => r.externalId !== null
-      )
+      .filter((r): r is typeof r & { externalId: string } => r.externalId !== null)
       .map((r) => [r.externalId, r.entityId])
   );
 }
@@ -104,10 +101,6 @@ serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
-
-  const rlResponse = await checkApiKeyRateLimit(db, req, corsHeaders);
-  if (rlResponse) return rlResponse;
-
   const payload = await req.json();
 
   try {
@@ -649,14 +642,8 @@ serve(async (req: Request) => {
         break;
       }
       case "customerContact": {
-        const externalContactIdMap = await getCsvExternalIdMap(
-          "contact",
-          companyId
-        );
-        const externalCustomerIdMap = await getCsvExternalIdMap(
-          "customer",
-          companyId
-        );
+        const externalContactIdMap = await getCsvExternalIdMap("contact", companyId);
+        const externalCustomerIdMap = await getCsvExternalIdMap("customer", companyId);
 
         await db.transaction().execute(async (trx) => {
           const contactInserts: Database["public"]["Tables"]["contact"]["Insert"][] =
@@ -760,14 +747,8 @@ serve(async (req: Request) => {
         break;
       }
       case "supplierContact": {
-        const externalContactIdMap = await getCsvExternalIdMap(
-          "contact",
-          companyId
-        );
-        const externalSupplierIdMap = await getCsvExternalIdMap(
-          "supplier",
-          companyId
-        );
+        const externalContactIdMap = await getCsvExternalIdMap("contact", companyId);
+        const externalSupplierIdMap = await getCsvExternalIdMap("supplier", companyId);
 
         await db.transaction().execute(async (trx) => {
           const contactInserts: Database["public"]["Tables"]["contact"]["Insert"][] =

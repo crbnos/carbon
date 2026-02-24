@@ -6,7 +6,6 @@ import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { Transaction } from "kysely";
 import { corsHeaders } from "../lib/headers.ts";
 import { getJobMethodTree, JobMethodTreeItem } from "../lib/methods.ts";
-import { checkApiKeyRateLimit } from "../lib/ratelimit.ts";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";
 
 const pool = getConnectionPool(1);
@@ -23,10 +22,6 @@ serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
-
-  const rlResponse = await checkApiKeyRateLimit(db, req, corsHeaders);
-  if (rlResponse) return rlResponse;
-
   const payload = await req.json();
 
   try {

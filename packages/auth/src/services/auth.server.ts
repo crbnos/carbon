@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import { checkApiKeyRateLimit } from "@carbon/database/ratelimit";
 import type {
   AuthSession as SupabaseAuthSession,
   SupabaseClient
@@ -136,8 +137,40 @@ export async function requirePermissions(
       const companyId = apiKeyData.companyId;
       const userId = apiKeyData.createdBy;
 
-      // Note: Expiration and rate limiting are handled by the
-      // apiKeyRateLimitMiddleware in apps/erp/app/middleware/
+      // Check expiration
+      if (apiKeyData.expiresAt && new Date(apiKeyData.expiresAt) < new Date()) {
+        throw new Response("API key has expired", { status: 401 });
+      }
+
+      // Check rate limit via Postgres function
+      const serviceRole = getCarbonServiceRole();
+      const rl = await checkApiKeyRateLimit(
+        serviceRole,
+        apiKeyData.id,
+        apiKeyData.rateLimit ?? 1000,
+        apiKeyData.rateLimitWindow ?? "1h"
+      );
+      if (!rl.success) {
+        throw new Response("Rate limit exceeded", {
+          status: 429,
+          headers: {
+            "Content-Type": "application/json",
+            "X-RateLimit-Limit": rl.limit.toString(),
+            "X-RateLimit-Remaining": rl.remaining.toString(),
+            "X-RateLimit-Reset": rl.resetAt.toString(),
+            "Retry-After": Math.ceil(
+              (rl.resetAt - Date.now()) / 1000
+            ).toString()
+          }
+        });
+      }
+
+      // Update lastUsedAt (fire-and-forget)
+      // @ts-expect-error -- Supabase deep type instantiation on chained calls
+      void serviceRole
+        .from("apiKey")
+        .update({ lastUsedAt: new Date().toISOString() } as any)
+        .eq("id" as any, apiKeyData.id);
 
       // Check scopes against required permissions
       // Empty scopes ({}) = full access (backward compatibility)
