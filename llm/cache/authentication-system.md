@@ -144,10 +144,17 @@ Located at `/packages/auth/`, the auth package provides:
 }
 ```
 
-Rate limiting uses `check_api_key_rate_limit()` Postgres function with atomic upsert + probabilistic cleanup (~1% of requests). Called from:
+Rate limiting uses `check_api_key_rate_limit()` Postgres function with atomic upsert + probabilistic cleanup (~1% of requests).
 
-- ERP middleware (`apps/erp/app/middleware/api-key-ratelimit.ts`) via Kysely
-- Edge function handlers via `checkApiKeyRateLimit()` in `packages/database/supabase/functions/lib/ratelimit.ts`
+**Single `checkApiKeyRateLimit()` function** using Supabase `.rpc()`:
+
+- **Canonical**: `packages/database/src/ratelimit.ts` (exported as `@carbon/database/ratelimit`)
+- **Edge copy**: `packages/database/supabase/functions/lib/ratelimit.ts` (same implementation, Deno can't import npm workspace packages)
+
+Called from auth layer (NOT per-handler):
+
+- ERP: `requirePermissions()` in `@carbon/auth/auth.server` (also handles expiration + lastUsedAt)
+- Edge functions: `getSupabaseServiceRole()` in `packages/database/supabase/functions/lib/supabase.ts`
 
 API key hashing uses `node:crypto` `createHash("sha256")` across all runtimes (Node.js ERP, Deno edge functions). The `hashApiKey()` function in `@carbon/auth/auth.server` is the canonical Node implementation. Edge functions use the same `createHash` via Deno's Node compat layer.
 
@@ -250,10 +257,11 @@ The `requirePermissions` function validates:
 - **API key rate limiting**: Uses Postgres unlogged table `apiKeyRateLimit` + `check_api_key_rate_limit()` function
   - Configurable per-key: `rateLimit` (count) + `rateLimitWindow` ("1m", "1h", "1d")
   - Default: 1000 requests per hour
-  - ERP: middleware at `apps/erp/app/middleware/api-key-ratelimit.ts`
-  - Edge functions: standalone `checkApiKeyRateLimit()` in `packages/database/supabase/functions/lib/ratelimit.ts`
+  - ERP: inside `requirePermissions()` in `@carbon/auth/auth.server` via `@carbon/database/ratelimit`
+  - Edge functions: inside `getSupabaseServiceRole()` in `lib/supabase.ts` via `lib/ratelimit.ts`
   - Returns 429 with `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`, `Retry-After` headers
   - Old Redis-based `ratelimit.server.ts` has been deleted; `@upstash/ratelimit` and `@carbon/kv` peer deps removed from `@carbon/auth`
+  - Old ERP middleware `apps/erp/app/middleware/api-key-ratelimit.ts` has been deleted; rate limiting consolidated into `requirePermissions()`
 
 ### Session Security
 
