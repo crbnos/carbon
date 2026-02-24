@@ -147,8 +147,8 @@ export async function requirePermissions(
       const rl = await checkApiKeyRateLimit(
         serviceRole,
         apiKeyData.id,
-        apiKeyData.rateLimit ?? 1000,
-        apiKeyData.rateLimitWindow ?? "1h"
+        apiKeyData.rateLimit,
+        apiKeyData.rateLimitWindow
       );
       if (!rl.success) {
         throw new Response("Rate limit exceeded", {
