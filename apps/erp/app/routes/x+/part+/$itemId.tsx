@@ -6,7 +6,11 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
-  Spinner
+  Spinner,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
 } from "@carbon/react";
 import { useRouteData } from "@carbon/remix";
 import { Suspense, useState } from "react";
@@ -145,192 +149,353 @@ export default function PartRoute() {
           <ResizablePanels
             explorer={
               <div className="flex flex-col h-full">
-                <HStack className="w-full justify-between flex-shrink-0 p-2 pb-0">
-                  <InputGroup size="sm" className="flex flex-grow">
-                    <InputLeftElement>
-                      <LuSearch className="h-4 w-4" />
-                    </InputLeftElement>
-                    <Input
-                      placeholder="Search..."
-                      value={filterText}
-                      onChange={(e) => setFilterText(e.target.value)}
-                    />
-                  </InputGroup>
-                  {isManufactured && (
-                    <Suspense fallback={null}>
-                      <Await resolve={methodTree}>
-                        {(resolved) =>
-                          resolved ? (
-                            <BoMActions makeMethodId={resolved.makeMethod.id} />
-                          ) : null
-                        }
-                      </Await>
-                    </Suspense>
-                  )}
-                </HStack>
-                <div className="flex-1 overflow-y-auto">
-                  {isManufactured && (
-                    <>
-                      <h4 className="text-xxs text-foreground/70 uppercase font-light tracking-wide px-4 pt-2">
-                        Manufacturing
-                      </h4>
-                      <Suspense
-                        fallback={
-                          <div className="flex w-full items-center justify-center p-4">
-                            <Spinner className="h-6 w-6" />
-                          </div>
-                        }
-                      >
+                {isManufactured ? (
+                  <Tabs
+                    defaultValue="manufacturing"
+                    className="flex flex-col h-full"
+                  >
+                    <div className="px-2 pt-2 flex-shrink-0">
+                      <TabsList className="grid grid-cols-2 w-full rounded-md">
+                        <TabsTrigger
+                          value="manufacturing"
+                          className="rounded-md"
+                        >
+                          Manufacturing
+                        </TabsTrigger>
+                        <TabsTrigger value="used-in" className="rounded-md">
+                          Used In
+                        </TabsTrigger>
+                      </TabsList>
+                    </div>
+                    <HStack className="w-full justify-between flex-shrink-0 p-2 pb-0">
+                      <InputGroup size="sm" className="flex flex-grow">
+                        <InputLeftElement>
+                          <LuSearch className="h-4 w-4" />
+                        </InputLeftElement>
+                        <Input
+                          placeholder="Search..."
+                          value={filterText}
+                          onChange={(e) => setFilterText(e.target.value)}
+                        />
+                      </InputGroup>
+                      <Suspense fallback={null}>
                         <Await resolve={methodTree}>
                           {(resolved) =>
                             resolved ? (
-                              <div className="w-full p-2">
-                                <BoMExplorer
-                                  itemType="Part"
-                                  makeMethod={resolved.makeMethod}
-                                  // @ts-ignore
-                                  methods={resolved.methods}
-                                  methodId={resolved.makeMethod.id}
-                                  filterText={filterText}
-                                  hideSearch
-                                />
-                              </div>
+                              <BoMActions
+                                makeMethodId={resolved.makeMethod.id}
+                              />
                             ) : null
                           }
                         </Await>
                       </Suspense>
-                    </>
-                  )}
-                  <h4 className="text-xxs text-foreground/70 uppercase font-light tracking-wide px-4 pt-2">
-                    Used In
-                  </h4>
-                  <Suspense fallback={<UsedInSkeleton />}>
-                    <Await resolve={usedIn}>
-                      {(resolvedUsedIn) => {
-                        const {
-                          issues,
-                          jobMaterials,
-                          jobs,
-                          maintenanceDispatchItems,
-                          methodMaterials,
-                          purchaseOrderLines,
-                          receiptLines,
-                          quoteLines,
-                          quoteMaterials,
-                          salesOrderLines,
-                          shipmentLines,
-                          supplierQuotes
-                        } = resolvedUsedIn;
-
-                        const tree: UsedInNode[] = [
-                          {
-                            key: "issues",
-                            name: "Issues",
-                            module: "quality",
-                            children: issues
-                          },
-                          {
-                            key: "jobs",
-                            name: "Jobs",
-                            module: "production",
-                            children: jobs.map((job) => ({
-                              ...job,
-                              methodType: "Make"
-                            }))
-                          },
-                          {
-                            key: "jobMaterials",
-                            name: "Job Materials",
-                            module: "production",
-                            children: jobMaterials
-                          },
-                          {
-                            key: "maintenanceDispatchItems",
-                            name: "Maintenance",
-                            module: "resources",
-                            children: maintenanceDispatchItems
-                          },
-                          {
-                            key: "methodMaterials",
-                            name: "Method Materials",
-                            module: "parts",
-                            // @ts-expect-error
-                            children: methodMaterials
-                          },
-                          {
-                            key: "purchaseOrderLines",
-                            name: "Purchase Orders",
-                            module: "purchasing",
-                            children: purchaseOrderLines.map((po) => ({
-                              ...po,
-                              methodType: "Buy"
-                            }))
-                          },
-                          {
-                            key: "receiptLines",
-                            name: "Receipts",
-                            module: "inventory",
-                            children: receiptLines.map((receipt) => ({
-                              ...receipt,
-                              methodType: "Pick"
-                            }))
-                          },
-                          {
-                            key: "quoteLines",
-                            name: "Quotes",
-                            module: "sales",
-                            children: quoteLines
-                          },
-                          {
-                            key: "quoteMaterials",
-                            name: "Quote Materials",
-                            module: "sales",
-                            children: quoteMaterials?.map((qm) => ({
-                              ...qm,
-                              documentReadableId: qm.documentReadableId ?? ""
-                            }))
-                          },
-                          {
-                            key: "salesOrderLines",
-                            name: "Sales Orders",
-                            module: "sales",
-                            children: salesOrderLines
-                          },
-                          {
-                            key: "shipmentLines",
-                            name: "Shipments",
-                            module: "inventory",
-                            children: shipmentLines.map((shipment) => ({
-                              ...shipment,
-                              methodType: "Shipment"
-                            }))
-                          },
-                          {
-                            key: "supplierQuotes",
-                            name: "Supplier Quotes",
-                            module: "purchasing",
-                            children: supplierQuotes
+                    </HStack>
+                    <div className="flex-1 overflow-y-auto">
+                      <TabsContent value="manufacturing">
+                        <Suspense
+                          fallback={
+                            <div className="flex w-full items-center justify-center p-4">
+                              <Spinner className="h-6 w-6" />
+                            </div>
                           }
-                        ];
+                        >
+                          <Await resolve={methodTree}>
+                            {(resolved) =>
+                              resolved ? (
+                                <div className="w-full p-2">
+                                  <BoMExplorer
+                                    itemType="Part"
+                                    makeMethod={resolved.makeMethod}
+                                    // @ts-ignore
+                                    methods={resolved.methods}
+                                    methodId={resolved.makeMethod.id}
+                                    filterText={filterText}
+                                    hideSearch
+                                  />
+                                </div>
+                              ) : null
+                            }
+                          </Await>
+                        </Suspense>
+                      </TabsContent>
+                      <TabsContent value="used-in">
+                        <Suspense fallback={<UsedInSkeleton />}>
+                          <Await resolve={usedIn}>
+                            {(resolvedUsedIn) => {
+                              const {
+                                issues,
+                                jobMaterials,
+                                jobs,
+                                maintenanceDispatchItems,
+                                methodMaterials,
+                                purchaseOrderLines,
+                                receiptLines,
+                                quoteLines,
+                                quoteMaterials,
+                                salesOrderLines,
+                                shipmentLines,
+                                supplierQuotes
+                              } = resolvedUsedIn;
 
-                        return (
-                          <UsedInTree
-                            tree={tree}
-                            revisions={partData.partSummary?.revisions}
-                            itemReadableId={
-                              partData.partSummary?.readableId ?? ""
-                            }
-                            itemReadableIdWithRevision={
-                              partData.partSummary?.readableIdWithRevision ?? ""
-                            }
-                            filterText={filterText}
-                            hideSearch
-                          />
-                        );
-                      }}
-                    </Await>
-                  </Suspense>
-                </div>
+                              const tree: UsedInNode[] = [
+                                {
+                                  key: "issues",
+                                  name: "Issues",
+                                  module: "quality",
+                                  children: issues
+                                },
+                                {
+                                  key: "jobs",
+                                  name: "Jobs",
+                                  module: "production",
+                                  children: jobs.map((job) => ({
+                                    ...job,
+                                    methodType: "Make"
+                                  }))
+                                },
+                                {
+                                  key: "jobMaterials",
+                                  name: "Job Materials",
+                                  module: "production",
+                                  children: jobMaterials
+                                },
+                                {
+                                  key: "maintenanceDispatchItems",
+                                  name: "Maintenance",
+                                  module: "resources",
+                                  children: maintenanceDispatchItems
+                                },
+                                {
+                                  key: "methodMaterials",
+                                  name: "Method Materials",
+                                  module: "parts",
+                                  // @ts-expect-error
+                                  children: methodMaterials
+                                },
+                                {
+                                  key: "purchaseOrderLines",
+                                  name: "Purchase Orders",
+                                  module: "purchasing",
+                                  children: purchaseOrderLines.map((po) => ({
+                                    ...po,
+                                    methodType: "Buy"
+                                  }))
+                                },
+                                {
+                                  key: "receiptLines",
+                                  name: "Receipts",
+                                  module: "inventory",
+                                  children: receiptLines.map((receipt) => ({
+                                    ...receipt,
+                                    methodType: "Pick"
+                                  }))
+                                },
+                                {
+                                  key: "quoteLines",
+                                  name: "Quotes",
+                                  module: "sales",
+                                  children: quoteLines
+                                },
+                                {
+                                  key: "quoteMaterials",
+                                  name: "Quote Materials",
+                                  module: "sales",
+                                  children: quoteMaterials?.map((qm) => ({
+                                    ...qm,
+                                    documentReadableId:
+                                      qm.documentReadableId ?? ""
+                                  }))
+                                },
+                                {
+                                  key: "salesOrderLines",
+                                  name: "Sales Orders",
+                                  module: "sales",
+                                  children: salesOrderLines
+                                },
+                                {
+                                  key: "shipmentLines",
+                                  name: "Shipments",
+                                  module: "inventory",
+                                  children: shipmentLines.map((shipment) => ({
+                                    ...shipment,
+                                    methodType: "Shipment"
+                                  }))
+                                },
+                                {
+                                  key: "supplierQuotes",
+                                  name: "Supplier Quotes",
+                                  module: "purchasing",
+                                  children: supplierQuotes
+                                }
+                              ];
+
+                              return (
+                                <UsedInTree
+                                  tree={tree}
+                                  revisions={partData.partSummary?.revisions}
+                                  itemReadableId={
+                                    partData.partSummary?.readableId ?? ""
+                                  }
+                                  itemReadableIdWithRevision={
+                                    partData.partSummary
+                                      ?.readableIdWithRevision ?? ""
+                                  }
+                                  filterText={filterText}
+                                  hideSearch
+                                />
+                              );
+                            }}
+                          </Await>
+                        </Suspense>
+                      </TabsContent>
+                    </div>
+                  </Tabs>
+                ) : (
+                  <>
+                    <HStack className="w-full justify-between flex-shrink-0 p-2 pb-0">
+                      <InputGroup size="sm" className="flex flex-grow">
+                        <InputLeftElement>
+                          <LuSearch className="h-4 w-4" />
+                        </InputLeftElement>
+                        <Input
+                          placeholder="Search..."
+                          value={filterText}
+                          onChange={(e) => setFilterText(e.target.value)}
+                        />
+                      </InputGroup>
+                    </HStack>
+                    <div className="flex-1 overflow-y-auto">
+                      <Suspense fallback={<UsedInSkeleton />}>
+                        <Await resolve={usedIn}>
+                          {(resolvedUsedIn) => {
+                            const {
+                              issues,
+                              jobMaterials,
+                              jobs,
+                              maintenanceDispatchItems,
+                              methodMaterials,
+                              purchaseOrderLines,
+                              receiptLines,
+                              quoteLines,
+                              quoteMaterials,
+                              salesOrderLines,
+                              shipmentLines,
+                              supplierQuotes
+                            } = resolvedUsedIn;
+
+                            const tree: UsedInNode[] = [
+                              {
+                                key: "issues",
+                                name: "Issues",
+                                module: "quality",
+                                children: issues
+                              },
+                              {
+                                key: "jobs",
+                                name: "Jobs",
+                                module: "production",
+                                children: jobs.map((job) => ({
+                                  ...job,
+                                  methodType: "Make"
+                                }))
+                              },
+                              {
+                                key: "jobMaterials",
+                                name: "Job Materials",
+                                module: "production",
+                                children: jobMaterials
+                              },
+                              {
+                                key: "maintenanceDispatchItems",
+                                name: "Maintenance",
+                                module: "resources",
+                                children: maintenanceDispatchItems
+                              },
+                              {
+                                key: "methodMaterials",
+                                name: "Method Materials",
+                                module: "parts",
+                                // @ts-expect-error
+                                children: methodMaterials
+                              },
+                              {
+                                key: "purchaseOrderLines",
+                                name: "Purchase Orders",
+                                module: "purchasing",
+                                children: purchaseOrderLines.map((po) => ({
+                                  ...po,
+                                  methodType: "Buy"
+                                }))
+                              },
+                              {
+                                key: "receiptLines",
+                                name: "Receipts",
+                                module: "inventory",
+                                children: receiptLines.map((receipt) => ({
+                                  ...receipt,
+                                  methodType: "Pick"
+                                }))
+                              },
+                              {
+                                key: "quoteLines",
+                                name: "Quotes",
+                                module: "sales",
+                                children: quoteLines
+                              },
+                              {
+                                key: "quoteMaterials",
+                                name: "Quote Materials",
+                                module: "sales",
+                                children: quoteMaterials?.map((qm) => ({
+                                  ...qm,
+                                  documentReadableId:
+                                    qm.documentReadableId ?? ""
+                                }))
+                              },
+                              {
+                                key: "salesOrderLines",
+                                name: "Sales Orders",
+                                module: "sales",
+                                children: salesOrderLines
+                              },
+                              {
+                                key: "shipmentLines",
+                                name: "Shipments",
+                                module: "inventory",
+                                children: shipmentLines.map((shipment) => ({
+                                  ...shipment,
+                                  methodType: "Shipment"
+                                }))
+                              },
+                              {
+                                key: "supplierQuotes",
+                                name: "Supplier Quotes",
+                                module: "purchasing",
+                                children: supplierQuotes
+                              }
+                            ];
+
+                            return (
+                              <UsedInTree
+                                tree={tree}
+                                revisions={partData.partSummary?.revisions}
+                                itemReadableId={
+                                  partData.partSummary?.readableId ?? ""
+                                }
+                                itemReadableIdWithRevision={
+                                  partData.partSummary
+                                    ?.readableIdWithRevision ?? ""
+                                }
+                                filterText={filterText}
+                                hideSearch
+                              />
+                            );
+                          }}
+                        </Await>
+                      </Suspense>
+                    </div>
+                  </>
+                )}
               </div>
             }
             content={

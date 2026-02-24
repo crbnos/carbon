@@ -82,8 +82,10 @@ export function AppSidebar({
         <TeamSwitcher company={company} />
       </SidebarHeader>
       <SidebarContent>
-        <OperationsNav activeEvents={activeEvents} />
-        <MaintenanceNav activeMaintenanceCount={activeMaintenanceCount} />
+        <OperationsNav
+          activeEvents={activeEvents}
+          activeMaintenanceCount={activeMaintenanceCount}
+        />
         <ToolsNav />
       </SidebarContent>
       <SidebarFooter>
@@ -134,7 +136,13 @@ export function TeamSwitcher({ company }: { company: Company }) {
   );
 }
 
-export function OperationsNav({ activeEvents }: { activeEvents: number }) {
+export function OperationsNav({
+  activeEvents,
+  activeMaintenanceCount
+}: {
+  activeEvents: number;
+  activeMaintenanceCount: number;
+}) {
   const links = [
     {
       title: "Schedule",
@@ -156,6 +164,12 @@ export function OperationsNav({ activeEvents }: { activeEvents: number }) {
       title: "Recent",
       icon: LuClock,
       to: path.to.recent
+    },
+    {
+      title: "Maintenance",
+      icon: LuWrench,
+      label: (activeMaintenanceCount ?? 0).toString(),
+      to: path.to.maintenance
     }
   ];
 
@@ -199,40 +213,6 @@ export function OperationsNav({ activeEvents }: { activeEvents: number }) {
             </SidebarMenuItem>
           );
         })}
-      </SidebarMenu>
-    </SidebarGroup>
-  );
-}
-
-export function MaintenanceNav({
-  activeMaintenanceCount
-}: {
-  activeMaintenanceCount: number;
-}) {
-  const { pathname } = useLocation();
-  const { isMobile, setOpenMobile } = useSidebar();
-  const isActive = pathname.includes(path.to.maintenance);
-
-  return (
-    <SidebarGroup>
-      <SidebarGroupLabel>Maintenance</SidebarGroupLabel>
-      <SidebarMenu>
-        <SidebarMenuItem>
-          <SidebarMenuButton tooltip="Maintenance" isActive={isActive} asChild>
-            <Link
-              to={path.to.maintenance}
-              onClick={() => isMobile && setOpenMobile(false)}
-            >
-              <LuWrench />
-              <span>Dispatches</span>
-              {activeMaintenanceCount > 0 && (
-                <span className="ml-auto text-muted-foreground text-sm">
-                  {activeMaintenanceCount}
-                </span>
-              )}
-            </Link>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
       </SidebarMenu>
     </SidebarGroup>
   );

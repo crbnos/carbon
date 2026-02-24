@@ -260,6 +260,12 @@ export default function PartDetailsRoute() {
               groups={methodData.configurationParametersAndGroups.groups}
             />
           )}
+          <ItemNotes
+            id={partData.partSummary?.id ?? null}
+            title={partData.partSummary?.name ?? ""}
+            subTitle={partData.partSummary?.readableIdWithRevision ?? ""}
+            notes={partData.partSummary?.notes as JSONContent}
+          />
           <BillOfMaterial
             key={`bom:${itemId}`}
             makeMethod={methodData.makeMethod}
@@ -287,12 +293,6 @@ export default function PartDetailsRoute() {
       )}
       {permissions.is("employee") && (
         <>
-          <ItemNotes
-            id={partData.partSummary?.id ?? null}
-            title={partData.partSummary?.name ?? ""}
-            subTitle={partData.partSummary?.readableIdWithRevision ?? ""}
-            notes={partData.partSummary?.notes as JSONContent}
-          />
           <Suspense
             fallback={
               <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">

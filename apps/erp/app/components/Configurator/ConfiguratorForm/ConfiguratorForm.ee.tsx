@@ -1,6 +1,7 @@
 import {
   Alert,
   AlertTitle,
+  BarProgress,
   Button,
   Combobox,
   Input,
@@ -16,7 +17,6 @@ import {
   NumberInput,
   NumberInputGroup,
   NumberInputStepper,
-  Progress,
   Select,
   SelectContent,
   SelectItem,
@@ -537,7 +537,7 @@ function ConfiguratorProgress() {
 
   return (
     <div className="w-full space-y-2">
-      <Progress value={progress} className="h-2" />
+      <BarProgress progress={progress} />
     </div>
   );
 }

@@ -55,6 +55,7 @@ import Location from "./Location";
 import MaterialType from "./MaterialType";
 import Part from "./Part";
 import PaymentTerm from "./PaymentTerm";
+import Procedure from "./Procedure";
 import Process from "./Process";
 import Processes from "./Processes";
 import Sequence from "./Sequence";
@@ -126,6 +127,7 @@ export {
   Password,
   PaymentTerm,
   PhoneInput,
+  Procedure,
   Process,
   Processes,
   Radios,

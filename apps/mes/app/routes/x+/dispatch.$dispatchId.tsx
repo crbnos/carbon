@@ -3,9 +3,15 @@ import type { Database } from "@carbon/database";
 import { Hidden, ValidatedForm } from "@carbon/form";
 import {
   Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  generateHTML,
   Heading,
   HStack,
   IconButton,
+  type JSONContent,
   SidebarTrigger,
   Status,
   useDisclosure,
@@ -242,99 +248,138 @@ export default function MaintenanceDetailRoute() {
       <main className="h-[calc(100dvh-var(--header-height))] w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent p-4">
         <VStack spacing={4} className="max-w-2xl mx-auto">
           {/* Work Center & OEE Impact */}
-          <div className="w-full p-4 bg-card rounded-lg border">
-            <VStack spacing={2} className="items-start">
-              <span className="text-sm text-muted-foreground">Work Center</span>
-              <span className="text-lg font-semibold">
-                {dispatch.workCenter?.name ?? "Unknown"}
-              </span>
-              <HStack className="mt-2">
-                <MaintenanceOeeImpact oeeImpact={dispatch.oeeImpact} />
-                <MaintenanceSeverity
-                  severity={
-                    dispatch.severity as (typeof maintenanceSeverity)[number]
-                  }
-                />
-              </HStack>
-            </VStack>
-          </div>
+          <Card className="w-full">
+            <CardHeader>
+              <CardTitle className="text-sm text-muted-foreground font-normal">
+                Work Center
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <VStack spacing={2} className="items-start">
+                <span className="text-lg font-semibold">
+                  {dispatch.workCenter?.name ?? "Unknown"}
+                </span>
+                <HStack>
+                  <MaintenanceOeeImpact oeeImpact={dispatch.oeeImpact} />
+                  <MaintenanceSeverity
+                    severity={
+                      dispatch.severity as (typeof maintenanceSeverity)[number]
+                    }
+                  />
+                </HStack>
+              </VStack>
+            </CardContent>
+          </Card>
+
+          {/* Description */}
+          {dispatch.content &&
+            Object.keys(dispatch.content as object).length > 0 && (
+              <Card className="w-full">
+                <CardHeader>
+                  <CardTitle className="text-sm text-muted-foreground font-normal">
+                    Description
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div
+                    className="prose dark:prose-invert prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{
+                      __html: generateHTML(
+                        (dispatch.content ?? {}) as JSONContent
+                      )
+                    }}
+                  />
+                </CardContent>
+              </Card>
+            )}
 
           {/* Time Tracking Controls */}
           {!isCompleted && (
-            <div className="w-full p-6 bg-card rounded-lg border">
-              <VStack spacing={4}>
-                <span className="text-sm text-muted-foreground">
-                  Time Worked: {formatDuration(totalDuration)}
-                </span>
-                <HStack spacing={4} className="justify-center w-full">
-                  <ValidatedForm
-                    method="post"
-                    action={path.to.maintenanceEvent}
-                    validator={eventValidator}
-                    fetcher={fetcher}
-                    defaultValues={{
-                      action: isWorking ? "End" : "Start",
-                      dispatchId: dispatch.id,
-                      workCenterId: dispatch.workCenterId ?? undefined,
-                      eventId: myActiveEvent?.id
-                    }}
-                  >
-                    <Hidden name="dispatchId" value={dispatch.id} />
-                    <Hidden
-                      name="workCenterId"
-                      value={dispatch.workCenterId ?? ""}
-                    />
-                    <Hidden name="eventId" value={myActiveEvent?.id ?? ""} />
-                    <Hidden name="action" value={isWorking ? "End" : "Start"} />
-                    <button
-                      type="submit"
-                      disabled={fetcher.state !== "idle"}
-                      className={`group size-24 flex flex-row items-center gap-2 justify-center rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:scale-105 transition-all text-white text-3xl border-b-4 active:border-b-0 active:translate-y-1 disabled:bg-gray-500 disabled:hover:bg-gray-600 disabled:border-gray-700 ${
-                        isWorking
-                          ? "bg-red-500 hover:bg-red-600 border-red-700"
-                          : "bg-emerald-500 hover:bg-emerald-600 border-emerald-700"
-                      }`}
+            <Card className="w-full">
+              <CardHeader>
+                <CardTitle>
+                  <span className="text-sm text-muted-foreground">
+                    Time Worked: {formatDuration(totalDuration)}
+                  </span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <VStack spacing={4}>
+                  <HStack spacing={4} className="justify-center w-full">
+                    <ValidatedForm
+                      method="post"
+                      action={path.to.maintenanceEvent}
+                      validator={eventValidator}
+                      fetcher={fetcher}
+                      defaultValues={{
+                        action: isWorking ? "End" : "Start",
+                        dispatchId: dispatch.id,
+                        workCenterId: dispatch.workCenterId ?? undefined,
+                        eventId: myActiveEvent?.id
+                      }}
                     >
-                      {isWorking ? (
-                        <FaPause className="group-hover:scale-110" />
-                      ) : (
-                        <FaPlay className="group-hover:scale-110" />
-                      )}
-                    </button>
-                  </ValidatedForm>
+                      <Hidden name="dispatchId" value={dispatch.id} />
+                      <Hidden
+                        name="workCenterId"
+                        value={dispatch.workCenterId ?? ""}
+                      />
+                      <Hidden name="eventId" value={myActiveEvent?.id ?? ""} />
+                      <Hidden
+                        name="action"
+                        value={isWorking ? "End" : "Start"}
+                      />
+                      <button
+                        type="submit"
+                        disabled={fetcher.state !== "idle"}
+                        className={`group size-24 flex flex-row items-center gap-2 justify-center rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:scale-105 transition-all text-white text-3xl border-b-4 active:border-b-0 active:translate-y-1 disabled:bg-gray-500 disabled:hover:bg-gray-600 disabled:border-gray-700 ${
+                          isWorking
+                            ? "bg-red-500 hover:bg-red-600 border-red-700"
+                            : "bg-emerald-500 hover:bg-emerald-600 border-emerald-700"
+                        }`}
+                      >
+                        {isWorking ? (
+                          <FaPause className="group-hover:scale-110" />
+                        ) : (
+                          <FaPlay className="group-hover:scale-110" />
+                        )}
+                      </button>
+                    </ValidatedForm>
 
-                  <ValidatedForm
-                    method="post"
-                    action={path.to.maintenanceEvent}
-                    validator={eventValidator}
-                    fetcher={fetcher}
-                    defaultValues={{
-                      action: "Complete",
-                      dispatchId: dispatch.id,
-                      eventId: myActiveEvent?.id
-                    }}
-                  >
-                    <Hidden name="dispatchId" value={dispatch.id} />
-                    <Hidden name="eventId" value={myActiveEvent?.id ?? ""} />
-                    <Hidden name="action" value="Complete" />
-                    <button
-                      type="submit"
-                      disabled={fetcher.state !== "idle"}
-                      className="group size-24 flex flex-row items-center gap-2 justify-center bg-accent rounded-full shadow-lg hover:cursor-pointer hover:shadow-xl hover:scale-105 transition-all text-accent-foreground text-3xl disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-30"
+                    <ValidatedForm
+                      method="post"
+                      action={path.to.maintenanceEvent}
+                      validator={eventValidator}
+                      fetcher={fetcher}
+                      defaultValues={{
+                        action: "Complete",
+                        dispatchId: dispatch.id,
+                        eventId: myActiveEvent?.id
+                      }}
                     >
-                      <FaCheck className="group-hover:scale-110" />
-                    </button>
-                  </ValidatedForm>
-                </HStack>
-              </VStack>
-            </div>
+                      <Hidden name="dispatchId" value={dispatch.id} />
+                      <Hidden name="eventId" value={myActiveEvent?.id ?? ""} />
+                      <Hidden name="action" value="Complete" />
+                      <button
+                        type="submit"
+                        disabled={fetcher.state !== "idle"}
+                        className="group size-24 flex flex-row items-center gap-2 justify-center bg-accent rounded-full shadow-lg hover:cursor-pointer hover:shadow-xl hover:scale-105 transition-all text-accent-foreground text-3xl disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-30"
+                      >
+                        <FaCheck className="group-hover:scale-110" />
+                      </button>
+                    </ValidatedForm>
+                  </HStack>
+                </VStack>
+              </CardContent>
+            </Card>
           )}
 
           {/* Time Entries */}
           {events.length > 0 && (
-            <div className="w-full p-4 bg-card rounded-lg border">
-              <VStack spacing={2} className="items-start">
-                <span className="text-sm font-medium">Time Entries</span>
+            <Card className="w-full">
+              <CardHeader>
+                <CardTitle>Time Entries</CardTitle>
+              </CardHeader>
+              <CardContent>
                 <div className="w-full divide-y">
                   {events.map((event) => (
                     <div
@@ -346,7 +391,6 @@ export default function MaintenanceDetailRoute() {
                           employeeId={event.employeeId}
                           size="xs"
                         />
-
                         <span className="text-xs text-muted-foreground">
                           {new Date(event.startTime).toLocaleString()}
                           {event.endTime &&
@@ -361,16 +405,18 @@ export default function MaintenanceDetailRoute() {
                     </div>
                   ))}
                 </div>
-              </VStack>
-            </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* Spare Parts */}
           {!isCompleted && (
-            <div className="w-full p-4 bg-card rounded-lg border">
-              <VStack spacing={2} className="items-start w-full">
+            <Card className="w-full">
+              <CardHeader>
                 <HStack className="justify-between w-full">
-                  <span className="text-sm font-medium">Spare Parts</span>
+                  <CardTitle className="text-sm font-medium">
+                    Spare Parts
+                  </CardTitle>
                   <Button
                     variant="secondary"
                     leftIcon={<LuCirclePlus />}
@@ -379,8 +425,8 @@ export default function MaintenanceDetailRoute() {
                     Add
                   </Button>
                 </HStack>
-
-                {/* Existing Parts */}
+              </CardHeader>
+              <CardContent>
                 {items.length > 0 && (
                   <div className="w-full divide-y">
                     {items.map((item) => {
@@ -418,21 +464,24 @@ export default function MaintenanceDetailRoute() {
                     })}
                   </div>
                 )}
-
                 {items.length === 0 && (
                   <span className="text-xs text-muted-foreground">
                     No spare parts added yet
                   </span>
                 )}
-              </VStack>
-            </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* Materials (when completed) */}
           {isCompleted && items.length > 0 && (
-            <div className="w-full p-4 bg-card rounded-lg border">
-              <VStack spacing={2} className="items-start">
-                <span className="text-sm font-medium">Spare Parts Used</span>
+            <Card className="w-full">
+              <CardHeader>
+                <CardTitle className="text-sm font-medium">
+                  Spare Parts Used
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
                 <div className="w-full divide-y">
                   {items.map((item) => (
                     <div
@@ -446,23 +495,53 @@ export default function MaintenanceDetailRoute() {
                     </div>
                   ))}
                 </div>
-              </VStack>
-            </div>
+              </CardContent>
+            </Card>
           )}
+
+          {/* Procedure */}
+          {dispatch.procedure &&
+            (dispatch.procedure as any).content &&
+            Object.keys((dispatch.procedure as any).content as object).length >
+              0 && (
+              <Card className="w-full">
+                <CardHeader>
+                  <CardTitle className="text-sm text-muted-foreground font-normal">
+                    Procedure
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <span className="text-sm font-medium mb-2 block">
+                    {(dispatch.procedure as any)?.name}
+                  </span>
+                  <div
+                    className="prose dark:prose-invert prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{
+                      __html: generateHTML(
+                        ((dispatch.procedure as any).content ??
+                          {}) as JSONContent
+                      )
+                    }}
+                  />
+                </CardContent>
+              </Card>
+            )}
 
           {/* Completed State */}
           {isCompleted && (
-            <div className="w-full p-4 bg-emerald-50 dark:bg-emerald-950 rounded-lg border border-emerald-200 dark:border-emerald-800">
-              <VStack spacing={2}>
-                <LuCheck className="h-8 w-8 text-emerald-600" />
-                <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
-                  Maintenance Completed
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  Total time: {formatDuration(totalDuration)}
-                </span>
-              </VStack>
-            </div>
+            <Card className="w-full bg-emerald-50 dark:bg-emerald-950 border-emerald-200 dark:border-emerald-800">
+              <CardContent className="pt-6">
+                <VStack spacing={2}>
+                  <LuCheck className="h-8 w-8 text-emerald-600" />
+                  <span className="text-sm font-medium text-emerald-700 dark:text-emerald-400">
+                    Maintenance Completed
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    Total time: {formatDuration(totalDuration)}
+                  </span>
+                </VStack>
+              </CardContent>
+            </Card>
           )}
         </VStack>
       </main>

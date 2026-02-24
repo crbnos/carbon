@@ -1,6 +1,6 @@
 import {
   Card,
-  CardDescription,
+  CardContent,
   CardHeader,
   CardTitle,
   VStack
@@ -44,86 +44,83 @@ const InventoryDetails = ({
     <VStack>
       <div className="w-full grid gap-2 grid-cols-1 md:grid-cols-2 lg:grid-cols-2">
         <Card>
-          <CardHeader className="pb-8">
-            <CardDescription>
-              <VStack>Quantity on Hand</VStack>
-            </CardDescription>
-            <CardTitle className="text-4xl">
-              {`${formatter.format(quantities?.quantityOnHand ?? 0)}`}
-            </CardTitle>
+          <CardHeader>
+            <CardTitle>Quantity on Hand</CardTitle>
           </CardHeader>
+          <CardContent>
+            <h3 className="text-4xl font-medium tracking-tighter">
+              {formatter.format(quantities?.quantityOnHand ?? 0)}
+            </h3>
+          </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-8">
-            <CardDescription>
-              <VStack>Days Remaining</VStack>
-            </CardDescription>
-            <CardTitle className="text-4xl">
-              {`${formatter.format(quantities?.daysRemaining ?? 0)}`}
-            </CardTitle>
+          <CardHeader>
+            <CardTitle>Days Remaining</CardTitle>
           </CardHeader>
+          <CardContent>
+            <h3 className="text-4xl font-medium tracking-tighter">
+              {formatter.format(quantities?.daysRemaining ?? 0)}
+            </h3>
+          </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-8">
-            <CardDescription>
-              <VStack>Daily Usage</VStack>
-            </CardDescription>
-            <CardTitle className="text-4xl ">
+          <CardHeader>
+            <CardTitle>Daily Usage</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <h3 className="text-4xl font-medium tracking-tighter">
+              {formatter.format(quantities?.usageLast30Days ?? 0)}
+            </h3>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Quantity on Purchase Order</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex justify-start items-center gap-1">
+              <h3 className="text-4xl font-medium tracking-tighter">
+                {formatter.format(quantities?.quantityOnPurchaseOrder ?? 0)}
+              </h3>
+              <LuMoveUp className="text-emerald-500 text-lg" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Quantity on Sales Order</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex justify-start items-center gap-1">
+              <h3 className="text-4xl font-medium tracking-tighter">
+                {formatter.format(quantities?.quantityOnSalesOrder ?? 0)}
+              </h3>
+              <LuMoveDown className="text-red-500 text-lg" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Quantity on Jobs</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-start justify-start gap-2">
               <div className="flex justify-start items-center gap-1">
-                {`${formatter.format(quantities?.usageLast30Days ?? 0)}`}
-              </div>
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-8">
-            <CardDescription>
-              <VStack>Quantity on Purchase Order</VStack>
-            </CardDescription>
-            <CardTitle className="text-4xl ">
-              <div className="flex justify-start items-center gap-1">
-                {`${formatter.format(
-                  quantities?.quantityOnPurchaseOrder ?? 0
-                )}`}
+                <h3 className="text-4xl font-medium tracking-tighter">
+                  {formatter.format(quantities?.quantityOnProductionOrder ?? 0)}
+                </h3>
                 <LuMoveUp className="text-emerald-500 text-lg" />
               </div>
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-8">
-            <CardDescription>
-              <VStack>Quantity on Sales Order</VStack>
-            </CardDescription>
-            <CardTitle className="text-4xl">
               <div className="flex justify-start items-center gap-1">
-                {`${formatter.format(quantities?.quantityOnSalesOrder ?? 0)}`}
+                <h3 className="text-4xl font-medium tracking-tighter">
+                  {formatter.format(
+                    quantities?.quantityOnProductionDemand ?? 0
+                  )}
+                </h3>
                 <LuMoveDown className="text-red-500 text-lg" />
               </div>
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="pb-8 ">
-            <CardDescription>
-              <VStack>Quantity on Jobs</VStack>
-            </CardDescription>
-            <CardTitle className="text-4xl flex items-start justify-start gap-2">
-              <div className="flex justify-start items-center gap-1">
-                <span>{`${formatter.format(
-                  quantities?.quantityOnProductionOrder ?? 0
-                )}`}</span>
-                <LuMoveUp className="text-emerald-500 text-lg" />
-              </div>
-
-              <div className="flex justify-start items-center gap-1">
-                <span>{`${formatter.format(
-                  quantities?.quantityOnProductionDemand ?? 0
-                )}`}</span>
-                <LuMoveDown className="text-red-500 text-lg" />
-              </div>
-            </CardTitle>
-          </CardHeader>
+            </div>
+          </CardContent>
         </Card>
       </div>
       <InventoryShelves

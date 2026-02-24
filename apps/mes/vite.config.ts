@@ -6,7 +6,6 @@ import tsconfigPaths from "vite-tsconfig-paths";
 export default defineConfig(({ mode, isSsrBuild }) => ({
   build: {
     minify: true,
-    sourcemap: mode === "development" ? "inline" : false,
     rollupOptions: {
       onwarn(warning, defaultHandler) {
         if (warning.code === "SOURCEMAP_ERROR") {

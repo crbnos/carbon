@@ -16,7 +16,7 @@ export default $config({
       forceUpgrade: "v2",
     });
     const erp = cluster.addService("CarbonERPService", {
-      image: `${process.env.AWS_ACCOUNT_ID}.dkr.ecr.us-gov-east-1.amazonaws.com/carbon/erp:latest`,
+      image: `${process.env.AWS_ACCOUNT_ID}.dkr.ecr.us-gov-east-1.amazonaws.com/carbon/erp:${process.env.IMAGE_TAG}`,
       loadBalancer: {
         domain: {
           name: "itar.carbon.ms",
@@ -51,9 +51,13 @@ export default $config({
         ERP_URL: "https://itar.carbon.ms",
         EXCHANGE_RATES_API_KEY: process.env.EXCHANGE_RATES_API_KEY,
         MES_URL: "https://mes.itar.carbon.ms",
+        NODE_ENV: "production",
         NOVU_APPLICATION_ID: process.env.NOVU_APPLICATION_ID,
         NOVU_SECRET_KEY: process.env.NOVU_SECRET_KEY,
         OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+        ONSHAPE_CLIENT_ID: process.env.ONSHAPE_CLIENT_ID,
+        ONSHAPE_CLIENT_SECRET: process.env.ONSHAPE_CLIENT_SECRET,
+        ONSHAPE_OAUTH_REDIRECT_URL: process.env.ONSHAPE_OAUTH_REDIRECT_URL,
         POSTHOG_API_HOST: process.env.POSTHOG_API_HOST,
         POSTHOG_PROJECT_PUBLIC_KEY: process.env.POSTHOG_PROJECT_PUBLIC_KEY,
         QUICKBOOKS_CLIENT_ID: process.env.QUICKBOOKS_CLIENT_ID,
@@ -72,7 +76,7 @@ export default $config({
         STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
         SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
         SUPABASE_DB_URL: process.env.SUPABASE_DB_URL,
-        SUPABASE_SERVICE_ROLE: process.env.SUPABASE_SERVICE_ROLE,
+        SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
         SUPABASE_URL: process.env.SUPABASE_URL,
         TRIGGER_API_URL: process.env.TRIGGER_API_URL,
         TRIGGER_PROJECT_ID: process.env.TRIGGER_PROJECT_ID,
@@ -101,7 +105,7 @@ export default $config({
     });
 
     const mes = cluster.addService("CarbonMESService", {
-      image: `${process.env.AWS_ACCOUNT_ID}.dkr.ecr.us-gov-east-1.amazonaws.com/carbon/mes:latest`,
+      image: `${process.env.AWS_ACCOUNT_ID}.dkr.ecr.us-gov-east-1.amazonaws.com/carbon/mes:${process.env.IMAGE_TAG}`,
       loadBalancer: {
         domain: {
           name: "mes.itar.carbon.ms",
@@ -137,9 +141,13 @@ export default $config({
         ERP_URL: "https://itar.carbon.ms",
         EXCHANGE_RATES_API_KEY: process.env.EXCHANGE_RATES_API_KEY,
         MES_URL: "https://mes.itar.carbon.ms",
+        NODE_ENV: "production",
         NOVU_APPLICATION_ID: process.env.NOVU_APPLICATION_ID,
         NOVU_SECRET_KEY: process.env.NOVU_SECRET_KEY,
         OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+        ONSHAPE_CLIENT_ID: process.env.ONSHAPE_CLIENT_ID,
+        ONSHAPE_CLIENT_SECRET: process.env.ONSHAPE_CLIENT_SECRET,
+        ONSHAPE_OAUTH_REDIRECT_URL: process.env.ONSHAPE_OAUTH_REDIRECT_URL,
         POSTHOG_API_HOST: process.env.POSTHOG_API_HOST,
         POSTHOG_PROJECT_PUBLIC_KEY: process.env.POSTHOG_PROJECT_PUBLIC_KEY,
         RESEND_API_KEY: process.env.RESEND_API_KEY,

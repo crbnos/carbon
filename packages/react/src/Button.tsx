@@ -16,7 +16,7 @@ export const buttonVariants = cva(
     // Active state: subtle scale down for tactile press feedback
     "active:scale-[0.97] active:duration-75 active:ease-out",
     // Accessibility: respect reduced motion preferences
-    "motion-reduce:transform-none motion-reduce:transition-[background-color,color,box-shadow]"
+    "motion-reduce:transform-none motion-reduce:transition-[background-color,color,box-shadow] corner-squircle"
   ],
   {
     variants: {
@@ -26,7 +26,7 @@ export const buttonVariants = cva(
         active:
           "bg-active text-active-foreground hover:bg-active/90 hover:text-active-foreground shadow-button-base before:hidden",
         secondary:
-          "bg-background text-foreground hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 shadow-button-base",
+          "bg-background hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 shadow-button-base",
         solid:
           "bg-accent text-accent-foreground hover:bg-accent/90 shadow-button-base",
         destructive:

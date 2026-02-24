@@ -3,10 +3,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   Badge,
+  BarProgress,
   HStack,
   MenuIcon,
   MenuItem,
-  Progress,
   VStack
 } from "@carbon/react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -193,15 +193,10 @@ const TrainingAssignmentsTable = memo(
           accessorKey: "completionPercent",
           header: "Progress",
           cell: ({ row }) => (
-            <HStack spacing={2} className="w-32">
-              <Progress
-                value={row.original.completionPercent}
-                className="h-2"
-              />
-              <span className="text-xs text-muted-foreground">
-                {row.original.completionPercent}%
-              </span>
-            </HStack>
+            <BarProgress
+              progress={row.original.completionPercent}
+              value={`${row.original.completionPercent}%`}
+            />
           ),
           meta: {
             icon: <LuChartColumnIncreasing />

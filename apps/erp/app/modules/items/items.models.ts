@@ -156,7 +156,13 @@ export const customerPartValidator = z.object({
 
 export const getMethodValidator = z.object({
   targetId: z.string().min(1, { message: "Please select a target method" }),
-  sourceId: z.string().min(1, { message: "Please select a source method" })
+  sourceId: z.string().min(1, { message: "Please select a source method" }),
+  billOfMaterial: zfd.checkbox(),
+  billOfProcess: zfd.checkbox(),
+  parameters: zfd.checkbox(),
+  tools: zfd.checkbox(),
+  steps: zfd.checkbox(),
+  workInstructions: zfd.checkbox()
 });
 
 export const makeMethodVersionValidator = z.object({

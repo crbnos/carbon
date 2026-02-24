@@ -40,9 +40,9 @@ import {
   LuChevronDown,
   LuChevronUp,
   LuCircleCheck,
+  LuCirclePlay,
   LuCirclePlus,
   LuExternalLink,
-  LuHardHat,
   LuPackage,
   LuPlus,
   LuStar,
@@ -590,7 +590,7 @@ export const PurchasingPlanningOrderDrawer = memo(
                       <Tr>
                         <Th>
                           <div className="flex items-center gap-2">
-                            <LuHardHat />
+                            <LuCirclePlay />
                             <span>PO</span>
                           </div>
                         </Th>

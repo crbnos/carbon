@@ -32,6 +32,7 @@ interface MaintenanceSchedule {
   friday: boolean;
   saturday: boolean;
   sunday: boolean;
+  procedureId: string | null;
 }
 
 // Check if a date is enabled for the schedule based on day-of-week settings
@@ -205,6 +206,7 @@ export const generateMaintenanceDispatches = schedules.task({
                   oeeImpact: "Planned",
                   workCenterId: schedule.workCenterId,
                   maintenanceScheduleId: schedule.id,
+                  procedureId: schedule.procedureId,
                   plannedStartTime: targetDate.toISOString(),
                   companyId: settings.id,
                   createdBy: "system"

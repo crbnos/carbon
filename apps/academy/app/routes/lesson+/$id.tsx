@@ -209,8 +209,8 @@ export default function LessonRoute() {
               id="loom-embed"
               title={lesson.name}
               src={`https://www.loom.com/embed/${
-                lesson.loomUrl.split("share/")[1]
-              }&hideEmbedTopBar=true`}
+                lesson.loomUrl.split(/(?:share|embed)\//)[1]?.split("?")[0]
+              }?hideEmbedTopBar=true`}
               allowFullScreen
               style={{
                 position: "absolute",

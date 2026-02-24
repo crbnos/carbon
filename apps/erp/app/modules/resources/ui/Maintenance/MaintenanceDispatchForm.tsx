@@ -79,10 +79,6 @@ const MaintenanceDispatchForm = ({
     initialValues?.oeeImpact ?? "No Impact"
   );
 
-  const [hasWorkCenter, setHasWorkCenter] = useState<boolean>(
-    !!initialValues?.workCenterId
-  );
-
   const showFailureModes =
     oeeImpactValue === "Down" || oeeImpactValue === "Impact";
 
@@ -169,20 +165,8 @@ const MaintenanceDispatchForm = ({
                   label: <MaintenanceSeverity severity={severity} />
                 }))}
               />
-              <WorkCenter
-                name="workCenterId"
-                label="Work Center"
-                onChange={(option) => {
-                  setHasWorkCenter(!!option?.value);
-                }}
-              />
-              <Location
-                name="locationId"
-                label="Location"
-                // @ts-ignore
-                value={hasWorkCenter ? null : undefined}
-                isReadOnly={hasWorkCenter}
-              />
+              <WorkCenter name="workCenterId" label="Work Center" />
+              <Location name="locationId" label="Location" />
               <Select
                 name="oeeImpact"
                 label="OEE Impact"

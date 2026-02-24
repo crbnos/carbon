@@ -36,7 +36,7 @@ import {
   parseDate,
   today
 } from "@internationalized/date";
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   LuCheckCheck,
@@ -48,7 +48,7 @@ import {
   LuClipboardList,
   LuClock,
   LuEllipsisVertical,
-  LuHardHat,
+  LuHistory,
   LuList,
   LuLoaderCircle,
   LuPackage,
@@ -64,13 +64,19 @@ import {
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
 import type { FetcherWithComponents } from "react-router";
-import { Link, useFetcher, useNavigate, useParams } from "react-router";
+import { Await, Link, useFetcher, useNavigate, useParams } from "react-router";
+import { AuditLogDrawer } from "~/components/AuditLog";
 import { Location, Shelf } from "~/components/Form";
 import { usePanels } from "~/components/Layout";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import Select from "~/components/Select";
 import SupplierAvatar from "~/components/SupplierAvatar";
-import { useOptimisticLocation, usePermissions, useRouteData } from "~/hooks";
+import {
+  useOptimisticLocation,
+  usePermissions,
+  useRouteData,
+  useUser
+} from "~/hooks";
 import { path } from "~/utils/path";
 import { jobCompleteValidator } from "../../production.models";
 import type { Job } from "../../types";
@@ -82,6 +88,7 @@ const JobHeader = () => {
   const { jobId } = useParams();
   if (!jobId) throw new Error("jobId not found");
 
+  const { company } = useUser();
   const location = useOptimisticLocation();
   const { toggleExplorer, toggleProperties } = usePanels();
 
@@ -89,8 +96,13 @@ const JobHeader = () => {
   const cancelModal = useDisclosure();
   const completeModal = useDisclosure();
   const deleteJobModal = useDisclosure();
+  const auditDrawer = useDisclosure();
 
   const routeData = useRouteData<{ job: Job }>(path.to.job(jobId));
+
+  const rootRouteData = useRouteData<{
+    auditLogEnabled: Promise<boolean>;
+  }>(path.to.authenticatedRoot);
 
   const statusFetcher = useFetcher<{}>();
   const status = routeData?.job?.status;
@@ -148,6 +160,23 @@ const JobHeader = () => {
               />
             </DropdownMenuTrigger>
             <DropdownMenuContent>
+              <Suspense fallback={null}>
+                <Await resolve={rootRouteData?.auditLogEnabled}>
+                  {(auditLogEnabled) => {
+                    return (
+                      <>
+                        {auditLogEnabled && (
+                          <DropdownMenuItem onClick={auditDrawer.onOpen}>
+                            <DropdownMenuIcon icon={<LuHistory />} />
+                            History
+                          </DropdownMenuItem>
+                        )}
+                      </>
+                    );
+                  }}
+                </Await>
+              </Suspense>
+              <DropdownMenuSeparator />
               <DropdownMenuItem
                 disabled={
                   !permissions.can("delete", "production") ||
@@ -411,6 +440,13 @@ const JobHeader = () => {
           }}
         />
       )}
+      <AuditLogDrawer
+        isOpen={auditDrawer.isOpen}
+        onClose={auditDrawer.onClose}
+        entityType="productionJob"
+        entityId={jobId}
+        companyId={company.id}
+      />
     </>
   );
 };
@@ -447,7 +483,7 @@ function getExplorerMenuIcon(type: string) {
     case "quantities":
       return <LuSquareSigma />;
     default:
-      return <LuHardHat />;
+      return <LuCirclePlay />;
   }
 }
 

@@ -739,7 +739,13 @@ export const jobMaterialValidatorForReleasedJob = baseMaterialValidator
 
 export const getJobMethodValidator = z.object({
   sourceId: z.string().min(1, { message: "Source ID is required" }),
-  targetId: z.string().min(1, { message: "Please select a source method" })
+  targetId: z.string().min(1, { message: "Please select a source method" }),
+  billOfMaterial: zfd.checkbox(),
+  billOfProcess: zfd.checkbox(),
+  parameters: zfd.checkbox(),
+  tools: zfd.checkbox(),
+  steps: zfd.checkbox(),
+  workInstructions: zfd.checkbox()
 });
 
 // export const getJobMaterialMethodValidator = z.object({

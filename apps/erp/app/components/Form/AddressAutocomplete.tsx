@@ -148,7 +148,7 @@ const AddressAutocomplete = ({
     <FormControl isInvalid={!!error}>
       <FormLabel htmlFor={address1Field}>Address Line 1</FormLabel>
       <div className="relative w-full" ref={containerRef}>
-        <Command shouldFilter={false}>
+        <Command shouldFilter={false} className="bg-transparent">
           <CommandInputTextField
             id={address1Field}
             name={address1Field}
@@ -157,6 +157,7 @@ const AddressAutocomplete = ({
             onFocus={handleInputFocus}
             onKeyDown={handleKeyDown}
             autoComplete="off"
+            className="bg-transparent"
           />
           {open && suggestions.length > 0 && (
             <CommandList className="absolute w-full top-10 z-[9999] rounded-md border bg-popover text-popover-foreground shadow-md p-0">

@@ -1,5 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
+  Badge,
   Card,
   CardContent,
   CardDescription,
@@ -21,6 +22,7 @@ import {
   updateLogoLight,
   updateLogoLightIcon
 } from "~/modules/settings";
+import { maxSizeMB } from "~/modules/settings/ui/Company/CompanyLogoForm";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -74,7 +76,11 @@ export default function LogosRoute() {
   return (
     <ScrollArea className="w-full h-[calc(100dvh-49px)]">
       <VStack spacing={4} className="py-12 px-4 max-w-[60rem] h-full mx-auto">
-        <Heading size="h3">Logos</Heading>
+        <div className="flex w-full justify-between items-center gap-1">
+          <Heading size="h3">Logos</Heading>
+          <Badge variant="outline">{maxSizeMB}MB limit</Badge>
+        </div>
+
         <div className="grid grid-cols-2 gap-4 w-full">
           <Card>
             <CardHeader>

@@ -1,5 +1,6 @@
 import {
   Badge,
+  BarProgress,
   Card,
   CardContent,
   CardFooter,
@@ -7,7 +8,6 @@ import {
   cn,
   Heading,
   HStack,
-  Progress as ProgressComponent,
   Tooltip,
   TooltipContent,
   TooltipTrigger
@@ -23,9 +23,9 @@ import { cva } from "class-variance-authority";
 import {
   LuCalendarDays,
   LuCircleCheck,
+  LuCirclePlay,
   LuCircleX,
   LuClipboardCheck,
-  LuHardHat,
   LuSquareUser,
   LuTimer,
   LuTrash
@@ -139,23 +139,17 @@ export function ItemCard({
             Number(progress) >= 0 &&
             Number(item?.duration) > 0 && (
               <HStack className="mt-2">
-                <ProgressComponent
-                  indicatorClassName={
+                <BarProgress
+                  gradient
+                  invertGradient
+                  activeClassName={
                     progress > (item.duration ?? 0)
                       ? "bg-red-500"
                       : status === "Paused"
                         ? "bg-yellow-500"
-                        : ""
+                        : "bg-emerald-500"
                   }
-                  numerator={
-                    progress ? formatDurationMilliseconds(progress) : ""
-                  }
-                  denominator={
-                    item.duration
-                      ? formatDurationMilliseconds(item.duration)
-                      : ""
-                  }
-                  value={Math.min(
+                  progress={Math.min(
                     progress && item.duration
                       ? (progress / item.duration) * 100
                       : 0,
@@ -169,14 +163,8 @@ export function ItemCard({
             Number.isFinite(item.quantity) &&
             Number(item.quantity) > 0 && (
               <HStack className="mt-2">
-                <ProgressComponent
-                  numerator={(item.quantityCompleted ?? 0).toString()}
-                  denominator={(
-                    item.targetQuantity ??
-                    item.quantity ??
-                    0
-                  ).toString()}
-                  value={
+                <BarProgress
+                  progress={
                     item.quantityCompleted && item.targetQuantity
                       ? (item.quantityCompleted / item.targetQuantity) * 100
                       : 0
@@ -198,7 +186,7 @@ export function ItemCard({
             </div>
           )}
           <HStack className="justify-start space-x-2">
-            <LuHardHat className="text-muted-foreground" />
+            <LuCirclePlay className="text-muted-foreground" />
             <span className="text-sm line-clamp-1">{item.title}</span>
           </HStack>
 

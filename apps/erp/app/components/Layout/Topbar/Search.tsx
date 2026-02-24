@@ -20,10 +20,10 @@ import { nanoid } from "nanoid";
 import { memo, useEffect, useState } from "react";
 import {
   LuChevronRight,
+  LuCirclePlay,
   LuClock,
   LuDraftingCompass,
   LuFileCheck,
-  LuHardHat,
   LuPackageSearch,
   LuSearch,
   LuShieldX,
@@ -410,7 +410,7 @@ function ResultIcon({ entityType }: { entityType: string }) {
     case "gauge":
       return <LuDraftingCompass className={iconClass} />;
     case "job":
-      return <LuHardHat className={iconClass} />;
+      return <LuCirclePlay className={iconClass} />;
     case "issue":
       return <LuShieldX className={iconClass} />;
     case "item":
@@ -454,7 +454,11 @@ const SearchButton = () => {
       >
         <HStack className="w-full">
           <div className="flex flex-grow">Search</div>
-          <ShortcutKey variant="small" shortcut={shortcut} className="hidden sm:grid" />
+          <ShortcutKey
+            variant="small"
+            shortcut={shortcut}
+            className="hidden sm:grid"
+          />
         </HStack>
       </Button>
       <SearchModal />

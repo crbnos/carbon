@@ -208,6 +208,7 @@ export default function ToolDetailsRoute() {
               )}
             </Await>
           </Suspense>
+
           {manufacturingInitialValues && (
             <ItemManufacturingForm
               key={itemId}
@@ -216,6 +217,12 @@ export default function ToolDetailsRoute() {
               withConfiguration={false}
             />
           )}
+          <ItemNotes
+            id={toolData.toolSummary?.id ?? null}
+            title={toolData.toolSummary?.name ?? ""}
+            subTitle={toolData.toolSummary?.readableIdWithRevision ?? ""}
+            notes={toolData.toolSummary?.notes as JSONContent}
+          />
           <BillOfMaterial
             key={`bom:${itemId}`}
             makeMethod={methodData.makeMethod}
@@ -235,12 +242,6 @@ export default function ToolDetailsRoute() {
       )}
       {permissions.is("employee") && (
         <>
-          <ItemNotes
-            id={toolData.toolSummary?.id ?? null}
-            title={toolData.toolSummary?.name ?? ""}
-            subTitle={toolData.toolSummary?.readableIdWithRevision ?? ""}
-            notes={toolData.toolSummary?.notes as JSONContent}
-          />
           <Suspense
             fallback={
               <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">

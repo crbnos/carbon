@@ -6,6 +6,10 @@ import {
   Badge,
   Button,
   Checkbox,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+  cn,
   HStack,
   Menubar,
   MenubarItem,
@@ -27,6 +31,7 @@ import {
 } from "@carbon/react";
 import { useEffect, useState } from "react";
 import {
+  LuChevronRight,
   LuGitBranch,
   LuGitFork,
   LuGitMerge,
@@ -112,6 +117,7 @@ const QuoteMakeMethodTools = () => {
 
   const getMethodModal = useDisclosure();
   const saveMethodModal = useDisclosure();
+  const [hasMethodParts, setHasMethodParts] = useState(true);
 
   const isQuoteLineDetails =
     lineId && pathname === path.to.quoteLine(quoteId, lineId);
@@ -292,7 +298,7 @@ const QuoteMakeMethodTools = () => {
               <ModalBody>
                 {isQuoteLineMethod ? (
                   <Tabs defaultValue="item" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 my-4">
+                    <TabsList className="grid w-full grid-cols-2 mb-4">
                       <TabsTrigger value="item">
                         <LuSquareStack className="mr-2" /> Item
                       </TabsTrigger>
@@ -305,6 +311,14 @@ const QuoteMakeMethodTools = () => {
                       <Hidden name="type" value="item" />
                       <Hidden name="targetId" value={`${quoteId}:${lineId}`} />
                       <VStack spacing={4}>
+                        {hasMethods && (
+                          <Alert variant="destructive">
+                            <LuTriangleAlert className="h-4 w-4" />
+                            <AlertTitle>
+                              This will overwrite the existing quote method
+                            </AlertTitle>
+                          </Alert>
+                        )}
                         <Item
                           name="sourceId"
                           label="Source Method"
@@ -326,14 +340,8 @@ const QuoteMakeMethodTools = () => {
                             Include Inactive
                           </label>
                         </div>
-                        {hasMethods && (
-                          <Alert variant="destructive">
-                            <LuTriangleAlert className="h-4 w-4" />
-                            <AlertTitle>
-                              This will overwrite the existing quote method
-                            </AlertTitle>
-                          </Alert>
-                        )}
+
+                        <AdvancedSection onChange={setHasMethodParts} />
                       </VStack>
                     </TabsContent>
                     <TabsContent value="quote">
@@ -347,6 +355,14 @@ const QuoteMakeMethodTools = () => {
                     <Hidden name="type" value="method" />
                     <Hidden name="targetId" value={methodId!} />
                     <VStack spacing={4}>
+                      {hasMethods && (
+                        <Alert variant="destructive">
+                          <LuTriangleAlert className="h-4 w-4" />
+                          <AlertTitle>
+                            This will overwrite the existing quote method
+                          </AlertTitle>
+                        </Alert>
+                      )}
                       <Item
                         name="sourceId"
                         label="Source Method"
@@ -368,14 +384,8 @@ const QuoteMakeMethodTools = () => {
                           Include Inactive
                         </label>
                       </div>
-                      {hasMethods && (
-                        <Alert variant="destructive">
-                          <LuTriangleAlert className="h-4 w-4" />
-                          <AlertTitle>
-                            This will overwrite the existing quote method
-                          </AlertTitle>
-                        </Alert>
-                      )}
+
+                      <AdvancedSection onChange={setHasMethodParts} />
                     </VStack>
                   </>
                 )}
@@ -384,7 +394,10 @@ const QuoteMakeMethodTools = () => {
                 <Button onClick={getMethodModal.onClose} variant="secondary">
                   Cancel
                 </Button>
-                <Submit variant={hasMethods ? "destructive" : "primary"}>
+                <Submit
+                  isDisabled={!hasMethodParts}
+                  variant={hasMethods ? "destructive" : "primary"}
+                >
                   Confirm
                 </Submit>
               </ModalFooter>
@@ -488,6 +501,7 @@ const QuoteMakeMethodTools = () => {
                       Include Inactive
                     </label>
                   </div>
+                  <AdvancedSection onChange={setHasMethodParts} />
                 </VStack>
               </ModalBody>
               <ModalFooter>
@@ -495,7 +509,7 @@ const QuoteMakeMethodTools = () => {
                   Cancel
                 </Button>
                 <Submit
-                  isDisabled={!selectedMakeMethod}
+                  isDisabled={!selectedMakeMethod || !hasMethodParts}
                   variant={hasMethods ? "destructive" : "primary"}
                 >
                   Confirm
@@ -567,5 +581,111 @@ const QuoteMakeMethodTools = () => {
     </>
   );
 };
+
+function AdvancedSection({
+  onChange
+}: {
+  onChange?: (hasSelection: boolean) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [billOfMaterial, setBillOfMaterial] = useState(true);
+  const [billOfProcess, setBillOfProcess] = useState(true);
+  const [parameters, setParameters] = useState(true);
+  const [tools, setTools] = useState(true);
+  const [steps, setSteps] = useState(true);
+  const [workInstructions, setWorkInstructions] = useState(true);
+
+  const hasSelection =
+    billOfMaterial ||
+    (billOfProcess && (parameters || tools || steps || workInstructions));
+
+  useEffect(() => {
+    onChange?.(hasSelection);
+  }, [hasSelection, onChange]);
+
+  const processChildren = [
+    {
+      name: "parameters",
+      label: "Parameters",
+      checked: parameters,
+      onChange: setParameters
+    },
+    { name: "tools", label: "Tools", checked: tools, onChange: setTools },
+    { name: "steps", label: "Steps", checked: steps, onChange: setSteps },
+    {
+      name: "workInstructions",
+      label: "Work Instructions",
+      checked: workInstructions,
+      onChange: setWorkInstructions
+    }
+  ];
+
+  return (
+    <Collapsible className="w-full" open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger asChild>
+        <Button variant="ghost" className="w-full justify-start gap-2 px-0">
+          <LuChevronRight
+            className={cn("h-4 w-4 transition-transform", open && "rotate-90")}
+          />
+          Advanced
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent forceMount className={cn(!open && "hidden")}>
+        <VStack spacing={2} className="pt-2">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="billOfMaterial"
+              name="billOfMaterial"
+              checked={billOfMaterial}
+              onCheckedChange={(checked) => setBillOfMaterial(!!checked)}
+            />
+            <label
+              htmlFor="billOfMaterial"
+              className="text-sm font-medium leading-none"
+            >
+              Bill of Material
+            </label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="billOfProcess"
+              name="billOfProcess"
+              checked={billOfProcess}
+              onCheckedChange={(checked) => setBillOfProcess(!!checked)}
+            />
+            <label
+              htmlFor="billOfProcess"
+              className="text-sm font-medium leading-none"
+            >
+              Bill of Process
+            </label>
+          </div>
+          <VStack spacing={2} className="pl-6">
+            {processChildren.map(({ name, label, checked, onChange }) => (
+              <div key={name} className="flex items-center space-x-2">
+                <Checkbox
+                  id={name}
+                  name={name}
+                  disabled={!billOfProcess}
+                  checked={billOfProcess ? checked : false}
+                  onCheckedChange={(val) => onChange(!!val)}
+                />
+                <label
+                  htmlFor={name}
+                  className={cn(
+                    "text-sm font-medium leading-none",
+                    !billOfProcess && "text-muted-foreground"
+                  )}
+                >
+                  {label}
+                </label>
+              </div>
+            ))}
+          </VStack>
+        </VStack>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
 
 export default QuoteMakeMethodTools;

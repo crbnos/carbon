@@ -1,8 +1,8 @@
 import {
+  BarProgress,
   HStack,
   MenuIcon,
   MenuItem,
-  Progress,
   useDisclosure
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
@@ -116,10 +116,9 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
           const lines = row.original.lines ?? 0;
           const completedLines = row.original.completedLines ?? 0;
           return status === "Draft" ? (
-            <Progress
-              numerator={completedLines.toString()}
-              denominator={lines.toString()}
-              value={lines === 0 ? 0 : (completedLines / lines) * 100}
+            <BarProgress
+              gradient
+              progress={lines === 0 ? 0 : (completedLines / lines) * 100}
             />
           ) : (
             <QuoteStatus status={status} />

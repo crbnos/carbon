@@ -11,6 +11,7 @@ import {
   ModalContent,
   ModalDescription,
   ModalFooter,
+  ModalHeader,
   ModalTitle,
   NumberDecrementStepper,
   NumberField,
@@ -294,10 +295,12 @@ export function MaintenanceAddPartModal({
   return (
     <Modal open onOpenChange={onClose}>
       <ModalContent>
-        <ModalTitle>Add Spare Part</ModalTitle>
-        <ModalDescription>
-          Select an item and specify the quantity to issue
-        </ModalDescription>
+        <ModalHeader>
+          <ModalTitle>Add Spare Part</ModalTitle>
+          <ModalDescription>
+            Select an item and specify the quantity to issue
+          </ModalDescription>
+        </ModalHeader>
         <ModalBody>
           <div className="flex flex-col gap-4">
             {/* Item Selection */}

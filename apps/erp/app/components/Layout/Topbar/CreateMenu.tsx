@@ -8,8 +8,8 @@ import {
 import { useMemo } from "react";
 
 import {
+  LuCirclePlay,
   LuContainer,
-  LuHardHat,
   LuShieldX,
   LuShoppingCart,
   LuSquareStack,
@@ -53,7 +53,7 @@ function useCreate(): Route[] {
       links.push({
         name: "Job",
         to: path.to.newJob,
-        icon: <LuHardHat />
+        icon: <LuCirclePlay />
       });
     }
 

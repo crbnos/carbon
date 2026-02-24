@@ -179,7 +179,7 @@ export const SelectBase = forwardRef<HTMLButtonElement, SelectBaseProps>(
                 <SelectValue placeholder={placeholder} />
                 {isLoading && (
                   <div className="absolute top-3 right-2">
-                    <Spinner />
+                    <Spinner className="size-3" />
                   </div>
                 )}
               </div>

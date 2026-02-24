@@ -105,6 +105,9 @@ export default {
         mono: ["Geist Mono Variable", ...fontFamily.mono],
         headline: ["Geist Variable", ...fontFamily.sans],
       },
+      letterSpacing: {
+        normal: "-0.02em",
+      },
       keyframes: {
         "accordion-down": {
           from: { height: "0" },

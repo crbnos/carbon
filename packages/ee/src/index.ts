@@ -1,4 +1,5 @@
 import { ExchangeRates } from "./exchange-rates/config";
+import { Jira } from "./jira/config";
 import { Linear } from "./linear/config";
 import { Onshape } from "./onshape/config";
 import { PaperlessParts } from "./paperless-parts/config";
@@ -27,19 +28,21 @@ export type {
 } from "./types";
 
 export const integrations = [
+  // Radan,
   ExchangeRates,
-  PaperlessParts,
-  Onshape,
+  Jira,
   Linear,
+  Onshape,
+  PaperlessParts,
   QuickBooks,
   Resend,
-  // Radan,
-  Slack,
   Sage,
+  Slack,
   Xero,
   Zapier
 ];
 
+export { Jira } from "./jira/config";
 export { Logo as OnshapeLogo, Onshape } from "./onshape/config";
 // TODO: export as @carbon/ee/paperless
 export { PaperlessPartsClient } from "./paperless-parts/lib/client";

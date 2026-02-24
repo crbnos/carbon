@@ -19,6 +19,7 @@ import {
 } from "./Avatar";
 import type { BadgeProps } from "./Badge";
 import { Badge, BadgeCloseButton } from "./Badge";
+import { BarProgress } from "./BarProgress";
 import type { ButtonProps } from "./Button";
 import { Button, buttonVariants } from "./Button";
 import {
@@ -312,6 +313,7 @@ export {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
+  BarProgress,
   ActionBar,
   ActionBarButton,
   ActionMenu,

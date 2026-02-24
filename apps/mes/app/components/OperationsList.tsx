@@ -20,8 +20,8 @@ import {
 import { cva } from "class-variance-authority";
 import {
   LuCalendarDays,
+  LuCirclePlay,
   LuClipboardCheck,
-  LuHardHat,
   LuTimer
 } from "react-icons/lu";
 import { Link } from "react-router";
@@ -137,7 +137,7 @@ function OperationCard({
             </div>
           )}
           <HStack className="justify-start space-x-2">
-            <LuHardHat className="text-muted-foreground" />
+            <LuCirclePlay className="text-muted-foreground" />
             <span className="text-sm line-clamp-1">
               {operation.jobReadableId}
             </span>

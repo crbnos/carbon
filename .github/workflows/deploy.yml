@@ -58,6 +58,7 @@ jobs:
     needs: build
 
     env:
+      IMAGE_TAG: ${{ github.sha }}
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

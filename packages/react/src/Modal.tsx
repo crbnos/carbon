@@ -43,14 +43,14 @@ ModalOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const ModalContentVariants = cva(
   cn(
-    "p-0",
-    "relative z-50 flex flex-col w-full shadow-button-base duration-200",
+    "px-0 pt-6",
+    "relative z-50 grid w-full border dark:border-none gap-4 shadow-md dark:shadow-sm duration-200",
     "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
     "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
     "data-[state=closed]:slide-out-to-left-[0%] data-[state=closed]:slide-out-to-top-[0%",
     "data-[state=open]:slide-in-from-left-[0%] data-[state=open]:slide-in-from-top-[0%]",
-    "rounded-2xl md:w-full",
-    "bg-accent dark:bg-card focus-visible:outline-none focus-visible:ring-0",
+    "sm:rounded-xl md:w-full",
+    "bg-background focus-visible:outline-none focus-visible:ring-0",
     "dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)]"
   ),
   {
@@ -89,7 +89,7 @@ const ModalContent = forwardRef<
           >
             {children}
             {withCloseButton && (
-              <DialogPrimitive.Close className="absolute right-2 top-2 rounded-full opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-foreground-muted p-2 hover:bg-accent/80">
+              <DialogPrimitive.Close className="absolute right-4 top-4 rounded-full opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-foreground-muted p-2 hover:bg-accent/80">
                 <LuX className="h-4 w-4" />
                 <span className="sr-only">Close</span>
               </DialogPrimitive.Close>
@@ -108,7 +108,7 @@ const ModalHeader = ({
 }: HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "flex flex-col gap-1 text-center sm:text-left px-6 py-4 text-muted-foreground",
+      "flex flex-col space-y-1.5 text-center sm:text-left mb-6 px-6",
       className
     )}
     {...props}
@@ -117,13 +117,7 @@ const ModalHeader = ({
 ModalHeader.displayName = "ModalHeader";
 
 const ModalBody = ({ className, ...props }: HTMLAttributes<HTMLDivElement>) => (
-  <div
-    className={cn(
-      "w-full p-6 rounded-2xl border border-border bg-card dark:bg-muted/40",
-      className
-    )}
-    {...props}
-  />
+  <div className={cn(" w-full py-0 px-6 mb-6", className)} {...props} />
 );
 ModalBody.displayName = "ModalBody";
 
@@ -133,7 +127,7 @@ const ModalFooter = ({
 }: HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "flex flex-col-reverse sm:flex-row sm:justify-end gap-2 py-3 px-6",
+      "flex flex-col-reverse sm:flex-row sm:justify-end gap-2 px-6 py-3 border-t border-border bg-muted/40 sm:rounded-b-xl",
       className
     )}
     {...props}
@@ -148,7 +142,7 @@ const ModalTitle = forwardRef<
   <DialogPrimitive.Title
     ref={ref}
     className={cn(
-      "text-base font-medium font-headline leading-none tracking-tight text-foreground/90",
+      "text-base font-medium font-headline leading-none tracking-tight text-foreground",
       className
     )}
     {...props}

@@ -1,10 +1,18 @@
 import { SUPABASE_URL, useCarbon } from "@carbon/auth";
-import { Button, File as FileUpload, toast, VStack } from "@carbon/react";
+import {
+  Badge,
+  Button,
+  File as FileUpload,
+  toast,
+  VStack
+} from "@carbon/react";
 import type { ChangeEvent } from "react";
 import { useSubmit } from "react-router";
 import { Avatar } from "~/components";
 import { path } from "~/utils/path";
 import type { Account } from "../../types";
+
+const maxSizeMB = 10;
 
 type ProfilePhotoFormProps = {
   user: Account;
@@ -34,7 +42,22 @@ const ProfilePhotoForm = ({ user }: ProfilePhotoFormProps) => {
         );
 
         if (!response.ok) {
-          throw new Error("Failed to resize image");
+          let errorMessage = "Failed to resize image";
+          const contentType = response.headers.get("Content-Type");
+
+          // Try to parse error response if it's JSON
+          if (contentType?.includes("application/json")) {
+            try {
+              const errorData = await response.json();
+              if (errorData.error) {
+                errorMessage = errorData.error;
+              }
+            } catch {
+              // If JSON parsing fails, use generic message
+            }
+          }
+
+          throw new Error(errorMessage);
         }
 
         // Get content type from response to determine if it's JPG or PNG
@@ -50,7 +73,9 @@ const ProfilePhotoForm = ({ user }: ProfilePhotoFormProps) => {
         avatarFile = resizedFile;
       } catch (error) {
         console.error(error);
-        toast.error("Failed to resize image");
+        const errorMessage =
+          error instanceof Error ? error.message : "Failed to resize image";
+        toast.error(errorMessage);
         return;
       }
 
@@ -63,11 +88,17 @@ const ProfilePhotoForm = ({ user }: ProfilePhotoFormProps) => {
 
       if (imageUpload.error) {
         console.error(imageUpload.error);
-        toast.error("Failed to upload image");
+        const errorMessage =
+          imageUpload.error.message || "Failed to upload image to storage";
+        toast.error(errorMessage);
+        return;
       }
 
       if (imageUpload.data?.path) {
+        toast.success("Photo uploaded successfully");
         submitAvatarUrl(imageUpload.data.path);
+      } else {
+        toast.error("Upload completed but no file path returned");
       }
     }
   };
@@ -79,9 +110,13 @@ const ProfilePhotoForm = ({ user }: ProfilePhotoFormProps) => {
         .remove([user.avatarUrl]);
 
       if (imageDelete.error) {
-        toast.error("Failed to remove image");
+        const errorMessage =
+          imageDelete.error.message || "Failed to remove image";
+        toast.error(errorMessage);
+        return;
       }
 
+      toast.success("Photo removed successfully");
       submitAvatarUrl(null);
     }
   };
@@ -113,6 +148,7 @@ const ProfilePhotoForm = ({ user }: ProfilePhotoFormProps) => {
           Remove
         </Button>
       )}
+      <Badge variant="outline">{maxSizeMB}MB limit</Badge>
     </VStack>
   );
 };

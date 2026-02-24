@@ -115,7 +115,15 @@ export async function copyQuoteLine(
   return client.functions.invoke<{ copiedId: string }>("get-method", {
     body: {
       ...payload,
-      type: "quoteLineToQuoteLine"
+      type: "quoteLineToQuoteLine",
+      parts: {
+        billOfMaterial: payload.billOfMaterial,
+        billOfProcess: payload.billOfProcess,
+        parameters: payload.parameters,
+        tools: payload.tools,
+        steps: payload.steps,
+        workInstructions: payload.workInstructions
+      }
     },
     region: FunctionRegion.UsEast1
   });
@@ -1963,6 +1971,14 @@ export async function upsertMakeMethodFromQuoteLine(
     quoteLineId: string;
     companyId: string;
     userId: string;
+    parts?: {
+      billOfMaterial: boolean;
+      billOfProcess: boolean;
+      parameters: boolean;
+      tools: boolean;
+      steps: boolean;
+      workInstructions: boolean;
+    };
   }
 ) {
   return client.functions.invoke("get-method", {
@@ -1971,7 +1987,8 @@ export async function upsertMakeMethodFromQuoteLine(
       sourceId: `${lineMethod.quoteId}:${lineMethod.quoteLineId}`,
       targetId: lineMethod.itemId,
       companyId: lineMethod.companyId,
-      userId: lineMethod.userId
+      userId: lineMethod.userId,
+      parts: lineMethod.parts
     },
     region: FunctionRegion.UsEast1
   });
@@ -1984,6 +2001,14 @@ export async function upsertMakeMethodFromQuoteMethod(
     targetId: string;
     companyId: string;
     userId: string;
+    parts?: {
+      billOfMaterial: boolean;
+      billOfProcess: boolean;
+      parameters: boolean;
+      tools: boolean;
+      steps: boolean;
+      workInstructions: boolean;
+    };
   }
 ) {
   const { error } = await client.functions.invoke("get-method", {
@@ -1992,7 +2017,8 @@ export async function upsertMakeMethodFromQuoteMethod(
       sourceId: quoteMethod.sourceId,
       targetId: quoteMethod.targetId,
       companyId: quoteMethod.companyId,
-      userId: quoteMethod.userId
+      userId: quoteMethod.userId,
+      parts: quoteMethod.parts
     },
     region: FunctionRegion.UsEast1
   });
@@ -2306,6 +2332,14 @@ export async function upsertQuoteLineMethod(
     companyId: string;
     userId: string;
     configuration?: Record<string, unknown>;
+    parts?: {
+      billOfMaterial: boolean;
+      billOfProcess: boolean;
+      parameters: boolean;
+      tools: boolean;
+      steps: boolean;
+      workInstructions: boolean;
+    };
   }
 ) {
   const body: {
@@ -2315,6 +2349,14 @@ export async function upsertQuoteLineMethod(
     companyId: string;
     userId: string;
     configuration?: Record<string, unknown>;
+    parts?: {
+      billOfMaterial: boolean;
+      billOfProcess: boolean;
+      parameters: boolean;
+      tools: boolean;
+      steps: boolean;
+      workInstructions: boolean;
+    };
   } = {
     type: "itemToQuoteLine",
     sourceId: lineMethod.itemId,
@@ -2326,6 +2368,11 @@ export async function upsertQuoteLineMethod(
   // Only add configuration if it exists
   if (lineMethod.configuration !== undefined) {
     body.configuration = lineMethod.configuration;
+  }
+
+  // Only add parts if it exists
+  if (lineMethod.parts !== undefined) {
+    body.parts = lineMethod.parts;
   }
 
   return client.functions.invoke("get-method", {
@@ -2376,6 +2423,14 @@ export async function upsertQuoteMaterialMakeMethod(
     companyId: string;
     userId: string;
     configuration?: Record<string, unknown>;
+    parts?: {
+      billOfMaterial: boolean;
+      billOfProcess: boolean;
+      parameters: boolean;
+      tools: boolean;
+      steps: boolean;
+      workInstructions: boolean;
+    };
   }
 ) {
   const body: {
@@ -2385,6 +2440,14 @@ export async function upsertQuoteMaterialMakeMethod(
     companyId: string;
     userId: string;
     configuration?: Record<string, unknown>;
+    parts?: {
+      billOfMaterial: boolean;
+      billOfProcess: boolean;
+      parameters: boolean;
+      tools: boolean;
+      steps: boolean;
+      workInstructions: boolean;
+    };
   } = {
     type: "itemToQuoteMakeMethod",
     sourceId: quoteMethod.sourceId,
@@ -2396,6 +2459,11 @@ export async function upsertQuoteMaterialMakeMethod(
   // Only add configuration if it exists
   if (quoteMethod.configuration !== undefined) {
     body.configuration = quoteMethod.configuration;
+  }
+
+  // Only add parts if it exists
+  if (quoteMethod.parts !== undefined) {
+    body.parts = quoteMethod.parts;
   }
 
   const { error } = await client.functions.invoke("get-method", {

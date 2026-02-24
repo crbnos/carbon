@@ -3,20 +3,25 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useNavigate } from "react-router";
+import { redirect, useLoaderData, useNavigate } from "react-router";
 import {
   maintenanceScheduleValidator,
   upsertMaintenanceSchedule
 } from "~/modules/resources";
 import MaintenanceScheduleForm from "~/modules/resources/ui/MaintenanceSchedule/MaintenanceScheduleForm";
+import { getUserDefaults } from "~/modules/users/users.server";
 import { getParams, path, requestReferrer } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     create: "resources"
   });
 
-  return null;
+  const defaults = await getUserDefaults(client, userId, companyId);
+
+  return {
+    defaultLocationId: defaults.data?.locationId ?? undefined
+  };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -67,10 +72,12 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewMaintenanceScheduleRoute() {
+  const { defaultLocationId } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const initialValues = {
     name: "",
     workCenterId: "",
+    locationId: defaultLocationId ?? "",
     frequency: "Weekly" as const,
     priority: "Medium" as const,
     estimatedDuration: undefined,
@@ -83,7 +90,8 @@ export default function NewMaintenanceScheduleRoute() {
     friday: true,
     saturday: true,
     sunday: true,
-    skipHolidays: true
+    skipHolidays: true,
+    procedureId: undefined
   };
 
   return (

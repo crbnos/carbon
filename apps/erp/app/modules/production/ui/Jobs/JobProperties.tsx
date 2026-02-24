@@ -545,7 +545,7 @@ const JobProperties = () => {
         <span className="text-xs font-medium text-muted-foreground">
           Created By
         </span>
-        <EmployeeAvatar employeeId={routeData?.job?.createdBy} />
+        <EmployeeAvatar employeeId={routeData?.job?.createdBy ?? null} />
       </VStack>
 
       <CustomFormInlineFields

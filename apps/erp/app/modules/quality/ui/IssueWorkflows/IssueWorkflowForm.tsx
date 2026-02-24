@@ -232,37 +232,45 @@ const IssueWorkflowForm = ({
             }))}
           />
         </div>
-        <VStack spacing={2}>
-          <label
-            htmlFor="requiredActions"
-            className="text-xs text-muted-foreground font-medium"
-          >
-            Required Actions (in order)
-          </label>
-
-          {orderedActions.length > 0 && (
-            <Reorder.Group
-              axis="y"
-              values={selectedActionIds}
-              onReorder={handleReorder}
-              className="w-full space-y-2"
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+          <VStack spacing={2}>
+            <label
+              htmlFor="requiredActions"
+              className="text-xs text-muted-foreground font-medium"
             >
-              {orderedActions.map((action) => (
-                <ReorderableActionItem
-                  key={action.id}
-                  action={action}
-                  onRemove={() => handleRemoveAction(action.id)}
-                />
-              ))}
-            </Reorder.Group>
-          )}
+              Required Actions (in order)
+            </label>
 
-          {availableActions.length > 0 && (
-            <VStack spacing={2} className="mt-2">
-              <p className="text-xs text-muted-foreground">
-                Available Actions (click to add):
+            {orderedActions.length > 0 && (
+              <Reorder.Group
+                axis="y"
+                values={selectedActionIds}
+                onReorder={handleReorder}
+                className="w-full space-y-2"
+              >
+                {orderedActions.map((action) => (
+                  <ReorderableActionItem
+                    key={action.id}
+                    action={action}
+                    onRemove={() => handleRemoveAction(action.id)}
+                  />
+                ))}
+              </Reorder.Group>
+            )}
+
+            {orderedActions.length === 0 && (
+              <p className="text-sm text-muted-foreground italic">
+                No actions selected
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            )}
+          </VStack>
+
+          <VStack spacing={2}>
+            <p className="text-xs text-muted-foreground font-medium">
+              Available Actions (click to add)
+            </p>
+            {availableActions.length > 0 ? (
+              <div className="flex flex-col gap-2">
                 {availableActions.map((action) => (
                   <button
                     key={action.id}
@@ -273,21 +281,19 @@ const IssueWorkflowForm = ({
                     <Checkbox
                       onClick={(e) => e.preventDefault()}
                       isChecked={false}
-                      readOnly
+                      disabled
                     />
                     <span>{action.name}</span>
                   </button>
                 ))}
               </div>
-            </VStack>
-          )}
-
-          {orderedActions.length === 0 && availableActions.length === 0 && (
-            <p className="text-sm text-muted-foreground italic">
-              No required actions available
-            </p>
-          )}
-        </VStack>
+            ) : (
+              <p className="text-sm text-muted-foreground italic">
+                All actions selected
+              </p>
+            )}
+          </VStack>
+        </div>
 
         <MultiSelect
           name="approvalRequirements"

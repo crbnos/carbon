@@ -69,6 +69,14 @@ export type Workspace = {
 async function deploy(): Promise<void> {
   console.log("✅ 🌱 Starting deployment");
 
+  const imageTag = process.env.IMAGE_TAG;
+  if (!imageTag) {
+    console.error("🔴 🍳 Missing IMAGE_TAG environment variable");
+    process.exit(1);
+  }
+
+  console.log(`✅ 🏷️ Using image tag: ${imageTag}`);
+
   const { data: workspaces, error } = await client
     .from("workspaces")
     .select("*");
@@ -133,7 +141,7 @@ async function deploy(): Promise<void> {
         xero_webhook_secret,
       } = workspace;
 
-      if (slug === "app") {
+      if (["app", "staging"].includes(slug)) {
         continue;
       }
 
@@ -260,6 +268,7 @@ async function deploy(): Promise<void> {
         env: {
           AWS_ACCOUNT_ID: aws_account_id,
           AWS_REGION: aws_region,
+          IMAGE_TAG: imageTag,
           CARBON_EDITION: carbon_edition ?? "enterprise",
           CERT_ARN_ERP: cert_arn_erp,
           CERT_ARN_MES: cert_arn_mes,
@@ -307,12 +316,12 @@ async function deploy(): Promise<void> {
         },
         // Run SST from the repository root where sst.config.ts is located
         cwd: "..",
-        stdio: "pipe",
+        stdio: "inherit",
       });
 
       console.log(`🚀 🐓 Deploying apps for ${workspace.id} with SST`);
 
-      await $$`npx --yes sst deploy --stage prod`;
+      await $$`npx --yes sst@3.17.24 deploy --stage prod`;
 
       console.log(`✅ 🍗 Successfully deployed ${workspace.id}`);
     } catch (error) {

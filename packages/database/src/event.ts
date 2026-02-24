@@ -8,7 +8,13 @@ export const OperationSchema = z.enum([
   "TRUNCATE"
 ]);
 
-const HandlerTypeSchema = z.enum(["WEBHOOK", "WORKFLOW", "SYNC", "SEARCH"]);
+const HandlerTypeSchema = z.enum([
+  "WEBHOOK",
+  "WORKFLOW",
+  "SYNC",
+  "SEARCH",
+  "AUDIT"
+]);
 
 export const EventSchema = z.discriminatedUnion("operation", [
   z.object({
@@ -43,6 +49,7 @@ export const QueueMessageSchema = z.object({
   handlerType: HandlerTypeSchema,
   handlerConfig: z.record(z.any()),
   companyId: z.string(),
+  actorId: z.string().nullish(), // Captured from auth.uid() at trigger time
   event: EventSchema
 });
 

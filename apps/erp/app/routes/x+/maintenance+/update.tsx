@@ -32,6 +32,7 @@ export async function action({ request }: ActionFunctionArgs) {
     case "oeeImpact":
     case "suspectedFailureModeId":
     case "actualFailureModeId":
+    case "procedureId":
     case "workCenterId":
       updateData[field] = value || null;
       break;

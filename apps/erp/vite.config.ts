@@ -3,10 +3,9 @@ import path from "node:path";
 import { defineConfig, PluginOption } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
-export default defineConfig(({ isSsrBuild, mode }) => ({
+export default defineConfig(({ isSsrBuild }) => ({
   build: {
     minify: true,
-    sourcemap: mode === "development" ? "inline" : false,
     rollupOptions: {
       onwarn(warning, defaultHandler) {
         if (warning.code === "SOURCEMAP_ERROR") {
@@ -32,7 +31,7 @@ export default defineConfig(({ isSsrBuild, mode }) => ({
   },
   server: {
     port: 3000,
-    allowedHosts: [".ngrok-free.app", ".w.modal.host", ".w.modal.dev"],
+    allowedHosts: [".ngrok-free.app", ".ngrok-free.dev"],
   },
   plugins: [reactRouter(), tsconfigPaths()] as PluginOption[],
   resolve: {

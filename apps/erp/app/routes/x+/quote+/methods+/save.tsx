@@ -34,7 +34,15 @@ export async function action({ request }: ActionFunctionArgs) {
       quoteLineId,
       itemId,
       companyId,
-      userId
+      userId,
+      parts: {
+        billOfMaterial: validation.data.billOfMaterial,
+        billOfProcess: validation.data.billOfProcess,
+        parameters: validation.data.parameters,
+        tools: validation.data.tools,
+        steps: validation.data.steps,
+        workInstructions: validation.data.workInstructions
+      }
     });
 
     return {
@@ -53,7 +61,15 @@ export async function action({ request }: ActionFunctionArgs) {
     const makeMethod = await upsertMakeMethodFromQuoteMethod(serviceRole, {
       ...validation.data,
       companyId,
-      userId
+      userId,
+      parts: {
+        billOfMaterial: validation.data.billOfMaterial,
+        billOfProcess: validation.data.billOfProcess,
+        parameters: validation.data.parameters,
+        tools: validation.data.tools,
+        steps: validation.data.steps,
+        workInstructions: validation.data.workInstructions
+      }
     });
 
     if (makeMethod.error) {

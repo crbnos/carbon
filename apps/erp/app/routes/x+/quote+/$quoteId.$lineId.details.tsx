@@ -241,6 +241,14 @@ export default function QuoteLine() {
     <Fragment key={lineId}>
       <QuoteMakeMethodTools />
       <QuoteLineForm key={lineId} initialValues={initialValues} />
+      <OpportunityLineNotes
+        id={line.id}
+        table="quoteLine"
+        title="Notes"
+        subTitle={line.itemReadableId ?? ""}
+        internalNotes={line.internalNotes as JSONContent}
+        externalNotes={line.externalNotes as JSONContent}
+      />
 
       {methodData && (
         <VStack spacing={2}>
@@ -308,14 +316,7 @@ export default function QuoteLine() {
           />
         </>
       )}
-      <OpportunityLineNotes
-        id={line.id}
-        table="quoteLine"
-        title="Notes"
-        subTitle={line.itemReadableId ?? ""}
-        internalNotes={line.internalNotes as JSONContent}
-        externalNotes={line.externalNotes as JSONContent}
-      />
+
       <Suspense
         fallback={
           <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">

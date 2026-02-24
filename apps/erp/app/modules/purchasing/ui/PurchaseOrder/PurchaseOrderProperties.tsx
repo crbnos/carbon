@@ -14,9 +14,9 @@ import {
 import { useLocale } from "@react-aria/i18n";
 import { useCallback, useEffect, useMemo } from "react";
 import {
+  LuCirclePlay,
   LuCopy,
   LuExternalLink,
-  LuHardHat,
   LuInfo,
   LuLink,
   LuRefreshCcw
@@ -192,7 +192,7 @@ const PurchaseOrderProperties = () => {
 
           <Hyperlink to={path.to.jobDetails(routeData?.purchaseOrder?.jobId)}>
             <Badge variant="secondary">
-              <LuHardHat className="w-3 h-3 mr-1" />
+              <LuCirclePlay className="w-3 h-3 mr-1" />
               {routeData?.purchaseOrder?.jobReadableId ?? "Job"}
             </Badge>
           </Hyperlink>
@@ -480,7 +480,9 @@ const PurchaseOrderProperties = () => {
         <span className="text-xs font-medium text-muted-foreground">
           Created By
         </span>
-        <EmployeeAvatar employeeId={routeData?.purchaseOrder?.createdBy} />
+        <EmployeeAvatar
+          employeeId={routeData?.purchaseOrder?.createdBy ?? null}
+        />
       </VStack>
 
       <CustomFormInlineFields

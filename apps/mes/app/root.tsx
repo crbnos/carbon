@@ -57,6 +57,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const {
     CARBON_EDITION,
     CONTROLLED_ENVIRONMENT,
+    ERP_URL,
+    MES_URL,
     POSTHOG_API_HOST,
     POSTHOG_PROJECT_PUBLIC_KEY,
     SUPABASE_URL,
@@ -72,6 +74,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       env: {
         CARBON_EDITION,
         CONTROLLED_ENVIRONMENT,
+        ERP_URL,
+        MES_URL,
         POSTHOG_API_HOST,
         POSTHOG_PROJECT_PUBLIC_KEY,
         SUPABASE_URL,

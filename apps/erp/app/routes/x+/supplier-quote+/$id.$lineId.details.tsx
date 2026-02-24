@@ -148,11 +148,6 @@ export default function SupplierQuoteLine() {
   return (
     <Fragment key={lineId}>
       <SupplierQuoteLineForm key={lineId} initialValues={initialValues} />
-      <SupplierQuoteLinePricing
-        line={line}
-        pricesByQuantity={pricesByQuantity}
-        exchangeRate={exchangeRate}
-      />
       <SupplierInteractionLineNotes
         id={line.id}
         table="supplierQuoteLine"
@@ -160,6 +155,11 @@ export default function SupplierQuoteLine() {
         subTitle={line.itemReadableId ?? ""}
         internalNotes={line.internalNotes as JSONContent}
         externalNotes={line.externalNotes as JSONContent}
+      />
+      <SupplierQuoteLinePricing
+        line={line}
+        pricesByQuantity={pricesByQuantity}
+        exchangeRate={exchangeRate}
       />
 
       <Suspense

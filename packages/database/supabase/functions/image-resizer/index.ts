@@ -57,7 +57,10 @@ serve(async (req: Request) => {
     // For extremely large files, reject immediately
     if (bytes.length > 10 * 1024 * 1024) {
       // 10MB limit
-      throw new Error("File too large, maximum size is 10MB");
+      const fileSizeMB = (bytes.length / (1024 * 1024)).toFixed(2);
+      throw new Error(
+        `File is ${fileSizeMB}MB, but maximum allowed size is 10MB`
+      );
     }
 
     // Enhanced JPG detection - check both file extension and MIME type
@@ -90,7 +93,7 @@ serve(async (req: Request) => {
         dimensions.height > MAX_ALLOWED_DIMENSION
       ) {
         throw new Error(
-          `Image dimensions too large (${dimensions.width}x${dimensions.height}). Maximum allowed is ${MAX_ALLOWED_DIMENSION}x${MAX_ALLOWED_DIMENSION}`
+          `Image dimensions are ${dimensions.width}x${dimensions.height}, but maximum allowed is ${MAX_ALLOWED_DIMENSION}x${MAX_ALLOWED_DIMENSION}`
         );
       }
 

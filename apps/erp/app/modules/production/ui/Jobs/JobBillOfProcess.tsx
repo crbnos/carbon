@@ -2919,7 +2919,7 @@ function ToolsListItem({
   const date = updatedAt ?? createdAt;
 
   return (
-    <div className={cn("border-b p-6", className)}>
+    <div className={cn("border-b p-6 bg-card", className)}>
       {disclosure.isOpen ? (
         <ValidatedForm
           action={path.to.jobOperationTool(id)}

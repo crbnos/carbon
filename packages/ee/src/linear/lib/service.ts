@@ -1,3 +1,4 @@
+import { getCarbonServiceRole } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
@@ -79,7 +80,9 @@ export async function linkActionToLinearIssue(
     .select("nonConformanceId");
 
   // Upsert the Linear mapping in externalIntegrationMapping
-  await client
+  // Use service role to bypass RLS (no DELETE policy for authenticated users)
+  const serviceRoleForLink = getCarbonServiceRole();
+  await serviceRoleForLink
     .from("externalIntegrationMapping")
     .delete()
     .eq("entityType", "nonConformanceActionTask")
@@ -121,8 +124,9 @@ export async function unlinkActionFromLinearIssue(
     assignee?: string | null;
   }
 ) {
-  // Delete the Linear mapping from externalIntegrationMapping
-  await client
+  // Delete the Linear mapping using service role to bypass RLS
+  const serviceRole = getCarbonServiceRole();
+  await serviceRole
     .from("externalIntegrationMapping")
     .delete()
     .eq("entityType", "nonConformanceActionTask")

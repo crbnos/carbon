@@ -1,6 +1,7 @@
 import { useCarbon } from "@carbon/auth";
 import type { JSONContent } from "@carbon/react";
 import {
+  BarProgress,
   Button,
   Command,
   CommandEmpty,
@@ -21,7 +22,6 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-  Progress,
   toast,
   useDebounce,
   useDisclosure
@@ -54,20 +54,20 @@ import { useRealtime } from "~/hooks/useRealtime";
 import type {
   Issue,
   IssueActionTask,
-  IssueInvestigationTask,
   IssueItem,
   IssueReviewer
 } from "~/modules/quality";
 import { nonConformanceTaskStatus } from "~/modules/quality";
 import { useSuppliers } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
+import { JiraIssueDialog } from "./Jira/IssueDialog";
 import { LinearIssueDialog } from "./Linear/IssueDialog";
 
 export function TaskProgress({
   tasks,
   className
 }: {
-  tasks: { status: IssueInvestigationTask["status"] }[];
+  tasks: { status: IssueActionTask["status"] }[];
   className?: string;
 }) {
   const completedOrSkippedTasks = tasks.filter(
@@ -76,11 +76,17 @@ export function TaskProgress({
   const progressPercentage = (completedOrSkippedTasks / tasks.length) * 100;
 
   return (
-    <div className={cn("flex flex-col items-end gap-2 pt-2 pr-14", className)}>
-      <Progress value={progressPercentage} className="h-2 w-24" />
-      <span className="text-xs text-muted-foreground">
-        {completedOrSkippedTasks} of {tasks.length} complete
-      </span>
+    <div
+      className={cn(
+        "flex flex-col items-end gap-2 py-3 pr-14 w-[120px]",
+        className
+      )}
+    >
+      <BarProgress
+        gradient
+        progress={progressPercentage}
+        value={`${completedOrSkippedTasks}/${tasks.length}`}
+      />
     </div>
   );
 }
@@ -93,10 +99,11 @@ export function ItemProgress({ items }: { items: IssueItem[] }) {
 
   return (
     <div className="flex flex-col items-end gap-2 pt-2 pr-14">
-      <Progress value={progressPercentage} className="h-2 w-24" />
-      <span className="text-xs text-muted-foreground">
-        {completedOrSkippedItems} of {items.length} complete
-      </span>
+      <BarProgress
+        gradient
+        progress={progressPercentage}
+        value={`${completedOrSkippedItems}/${items.length}`}
+      />
     </div>
   );
 }
@@ -130,7 +137,7 @@ function SupplierAssignment({
   supplierIds,
   isDisabled = false
 }: {
-  task: IssueInvestigationTask | IssueActionTask;
+  task: IssueActionTask;
   type: "investigation" | "action";
   supplierIds: string[];
   isDisabled?: boolean;
@@ -253,7 +260,7 @@ export function TaskItem({
   showDragHandle = false,
   dragControls
 }: {
-  task: IssueInvestigationTask | IssueActionTask | IssueReviewer;
+  task: IssueActionTask | IssueReviewer;
   type: "investigation" | "action" | "review";
   suppliers: { supplierId: string; externalLinkId: string | null }[];
   isDisabled?: boolean;
@@ -276,15 +283,18 @@ export function TaskItem({
   const statusAction =
     statusActions[currentStatus as keyof typeof statusActions];
 
-  // Check if this action task has a linked Linear issue
+  // Check if this action task has a linked Linear or Jira issue
   const hasLinearLink =
     type === "action" && !!(task as IssueActionTask).linearIssue;
+  const hasJiraLink =
+    type === "action" && !!(task as IssueActionTask).jiraIssue;
 
   const { content, setContent, onUpdateContent, onUploadImage } = useTaskNotes({
     initialContent: (task.notes ?? {}) as JSONContent,
     taskId: task.id!,
     type,
-    hasLinearLink
+    hasLinearLink,
+    hasJiraLink
   });
 
   const { id } = useParams();
@@ -297,7 +307,7 @@ export function TaskItem({
       ? (task as IssueActionTask).name
       : (task as IssueReviewer).title;
 
-  if (task.supplierId) {
+  if (type === "action" && (task as IssueActionTask).supplierId) {
     taskTitle = `Supplier ${taskTitle}`;
   }
 
@@ -320,6 +330,7 @@ export function TaskItem({
           )}
 
           {integrations.has("linear") && <LinearIssueDialog task={task} />}
+          {integrations.has("jira") && <JiraIssueDialog task={task} />}
 
           <IconButton
             icon={<LuChevronRight />}
@@ -399,7 +410,7 @@ export function TaskItem({
           )}
           {(type === "investigation" || type === "action") && (
             <SupplierAssignment
-              task={task as IssueInvestigationTask | IssueActionTask}
+              task={task as IssueActionTask}
               type={type}
               supplierIds={suppliers.map((s) => s.supplierId)}
               isDisabled={isDisabled}
@@ -428,12 +439,14 @@ function useTaskNotes({
   initialContent,
   taskId,
   type,
-  hasLinearLink = false
+  hasLinearLink = false,
+  hasJiraLink = false
 }: {
   initialContent: JSONContent;
   taskId: string;
   type: "investigation" | "action" | "approval" | "review";
   hasLinearLink?: boolean;
+  hasJiraLink?: boolean;
 }) {
   const {
     id: userId,
@@ -491,6 +504,23 @@ function useTaskNotes({
           console.error("Failed to sync notes to Linear:", e);
         }
       }
+
+      // Sync to Jira if this is an action task with a linked Jira issue
+      if (type === "action" && hasJiraLink) {
+        try {
+          await fetch(path.to.api.jiraSyncNotes, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+              actionId: taskId,
+              notes: JSON.stringify(content)
+            })
+          });
+        } catch (e) {
+          // Silently fail Jira sync - not critical
+          console.error("Failed to sync notes to Jira:", e);
+        }
+      }
     },
     2500,
     true
@@ -512,7 +542,7 @@ function useOptimisticTaskStatus(taskId: string) {
       f.key === `nonConformanceTask:${taskId}`
   );
   return pendingUpdate?.formData?.get("status") as
-    | IssueInvestigationTask["status"]
+    | IssueActionTask["status"]
     | undefined;
 }
 
@@ -525,11 +555,11 @@ function useTaskStatus({
   disabled?: boolean;
   task: {
     id?: string;
-    status: IssueInvestigationTask["status"];
+    status: IssueActionTask["status"];
     assignee: string | null;
   };
   type: "investigation" | "action" | "approval" | "review";
-  onChange?: (status: IssueInvestigationTask["status"]) => void;
+  onChange?: (status: IssueActionTask["status"]) => void;
 }) {
   const submit = useSubmit();
   const permissions = usePermissions();
@@ -538,7 +568,7 @@ function useTaskStatus({
   const isDisabled = !permissions.can("update", "production") || disabled;
 
   const onOperationStatusChange = useCallback(
-    (id: string, status: IssueInvestigationTask["status"]) => {
+    (id: string, status: IssueActionTask["status"]) => {
       onChange?.(status);
       submit(
         {
@@ -576,12 +606,12 @@ export function IssueTaskStatus({
 }: {
   task: {
     id?: string;
-    status: IssueInvestigationTask["status"];
+    status: IssueActionTask["status"];
     assignee: string | null;
   };
   type: "investigation" | "action" | "approval" | "review";
   className?: string;
-  onChange?: (status: IssueInvestigationTask["status"]) => void;
+  onChange?: (status: IssueActionTask["status"]) => void;
   isDisabled?: boolean;
 }) {
   const { currentStatus, onOperationStatusChange } = useTaskStatus({
@@ -610,7 +640,7 @@ export function IssueTaskStatus({
             onValueChange={(status) =>
               onOperationStatusChange(
                 task.id!,
-                status as IssueInvestigationTask["status"]
+                status as IssueActionTask["status"]
               )
             }
           >

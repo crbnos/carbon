@@ -50,7 +50,7 @@ const DetailTopbar = ({
   );
 
   return (
-    <div className="inline-flex h-8 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground">
+    <div className="inline-flex h-9 items-center justify-center rounded-full bg-muted p-1 text-muted-foreground shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)]  border-b border-border">
       {links.map((route) => {
         const isActive = route.isActive
           ? route.isActive(location.pathname)
@@ -67,8 +67,8 @@ const DetailTopbar = ({
                 to={linkTo}
                 prefetch="intent"
                 className={cn(
-                  "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-xs font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                  isActive && "bg-background text-foreground shadow"
+                  "inline-flex items-center justify-center whitespace-nowrap rounded-full px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                  isActive && "bg-background text-foreground shadow-button-base"
                 )}
               >
                 {route.icon && <route.icon className="mr-2" />}

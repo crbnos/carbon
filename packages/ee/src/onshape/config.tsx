@@ -10,7 +10,7 @@ export const Onshape = defineIntegration({
   category: "CAD",
   logo: Logo,
   description:
-    "Onshape is a CAD software that allows you to create 2D and 3D designs. This integration will sync data from Onshape to Carbon.",
+    "Onshape is a browser-based CAD/PLM software for modern engineering teams. This integration will sync data from Onshape to Carbon.",
   shortDescription: "Sync data from Onshape to Carbon.",
   images: [],
   settings: [],

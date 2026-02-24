@@ -379,7 +379,10 @@ serve(async (req: Request) => {
 
           // Track newly created items and make methods to avoid duplicate inserts
           const newlyCreatedItemsByPartId = new Map<string, string>();
-          const newlyCreatedMakeMethodsByItemId = new Map<string, MakeMethodInfo>();
+          const newlyCreatedMakeMethodsByItemId = new Map<
+            string,
+            MakeMethodInfo
+          >();
 
           async function traverseTree(
             node: TreeNode,
@@ -400,6 +403,8 @@ serve(async (req: Request) => {
             const partId = readableId || name;
             if (!partId) return;
 
+            const externalPartId = getReadableIdWithRevision(partId, revision);
+
             const isMade = children.length > 0;
             let itemId = id;
 
@@ -414,7 +419,6 @@ serve(async (req: Request) => {
                 .where("id", "=", itemId)
                 .execute();
 
-              // Upsert OnShape mapping
               await trx
                 .deleteFrom("externalIntegrationMapping")
                 .where("entityType", "=", "item")
@@ -428,11 +432,26 @@ serve(async (req: Request) => {
                   entityType: "item",
                   entityId: itemId,
                   integration: "onshapeData",
-                  externalId: partId,
+                  externalId: externalPartId,
                   metadata: data.data,
                   companyId,
                   allowDuplicateExternalId: false,
                 })
+                .onConflict((oc) =>
+                  oc
+                    .columns([
+                      "integration",
+                      "externalId",
+                      "entityType",
+                      "companyId",
+                    ])
+                    .where("allowDuplicateExternalId", "=", false)
+                    .doUpdateSet({
+                      entityId: itemId,
+                      metadata: data.data,
+                      updatedAt: new Date().toISOString(),
+                    })
+                )
                 .execute();
             } else {
               // Check if we've already created this part in this transaction
@@ -467,11 +486,26 @@ serve(async (req: Request) => {
                       entityType: "item",
                       entityId: itemId,
                       integration: "onshapeData",
-                      externalId: partId,
+                      externalId: externalPartId,
                       metadata: data.data,
                       companyId,
                       allowDuplicateExternalId: false,
                     })
+                    .onConflict((oc) =>
+                      oc
+                        .columns([
+                          "integration",
+                          "externalId",
+                          "entityType",
+                          "companyId",
+                        ])
+                        .where("allowDuplicateExternalId", "=", false)
+                        .doUpdateSet({
+                          entityId: itemId,
+                          metadata: data.data,
+                          updatedAt: new Date().toISOString(),
+                        })
+                    )
                     .execute();
                 }
 
@@ -615,8 +649,14 @@ serve(async (req: Request) => {
                         version: newVersion,
                         status: "Draft",
                       };
-                      newlyCreatedMakeMethodsByItemId.set(itemId, newMakeMethodInfo);
-                      existingMakeMethodsByItemId.set(itemId, newMakeMethodInfo);
+                      newlyCreatedMakeMethodsByItemId.set(
+                        itemId,
+                        newMakeMethodInfo
+                      );
+                      existingMakeMethodsByItemId.set(
+                        itemId,
+                        newMakeMethodInfo
+                      );
                     }
                   }
                 }

@@ -37,7 +37,7 @@ import {
   useRef,
   useState
 } from "react";
-import { LuPaperclip, LuPlus, LuSend, LuSquare, LuX } from "react-icons/lu";
+import { LuArrowUp, LuPaperclip, LuPlus, LuSquare, LuX } from "react-icons/lu";
 
 type AttachmentsContextType = {
   files: (FileUIPart & { id: string })[];
@@ -606,7 +606,7 @@ export const PromptInputSubmit = ({
   children,
   ...props
 }: PromptInputSubmitProps) => {
-  let Icon = <LuSend />;
+  let Icon = <LuArrowUp />;
 
   if (status === "streaming") {
     Icon = <LuSquare />;

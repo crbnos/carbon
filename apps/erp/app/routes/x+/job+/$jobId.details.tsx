@@ -227,6 +227,13 @@ export default function JobDetailsRoute() {
       <VStack spacing={2} className="p-2">
         <JobMakeMethodTools makeMethod={makeMethod ?? undefined} />
 
+        <JobNotes
+          id={jobId}
+          title={jobData?.job.jobId ?? ""}
+          subTitle={jobData?.job.itemReadableIdWithRevision ?? ""}
+          notes={notes}
+        />
+
         {methodId && (
           <>
             <JobBillOfMaterial
@@ -283,13 +290,6 @@ export default function JobDetailsRoute() {
             )}
           </Await>
         </Suspense>
-
-        <JobNotes
-          id={jobId}
-          title={jobData?.job.jobId ?? ""}
-          subTitle={jobData?.job.itemReadableIdWithRevision ?? ""}
-          notes={notes}
-        />
 
         <Suspense
           fallback={

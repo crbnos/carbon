@@ -34,8 +34,8 @@ import {
   LuCalendar,
   LuChevronDown,
   LuChevronUp,
+  LuCirclePlay,
   LuExternalLink,
-  LuHardHat,
   LuPackage,
   LuPlus,
   LuStar,
@@ -355,7 +355,7 @@ export const ProductionPlanningOrderDrawer = memo(
                 <Thead>
                   <Th>
                     <div className="flex items-center gap-2">
-                      <LuHardHat />
+                      <LuCirclePlay />
                       <span>Job</span>
                     </div>
                   </Th>

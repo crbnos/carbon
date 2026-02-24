@@ -387,7 +387,7 @@ export async function getIssueAction(
 ) {
   return client
     .from("nonConformanceActionTask")
-    .select("id,nonConformanceId,nonConformance(id,nonConformanceId)")
+    .select("id,notes,nonConformanceId,nonConformance(id,nonConformanceId)")
     .eq("id", id)
     .single();
 }
@@ -416,20 +416,32 @@ export async function getIssueActionTasks(
     return result;
   }
 
-  // Fetch Linear mappings for all action task IDs
+  // Fetch Linear and Jira mappings for all action task IDs
   const taskIds = result.data.map((t) => t.id);
   let linearMappings: Map<string, unknown> = new Map();
+  let jiraMappings: Map<string, unknown> = new Map();
 
   if (taskIds.length > 0) {
-    const { data: mappings } = await client
-      .from("externalIntegrationMapping")
-      .select("entityId, metadata")
-      .eq("entityType", "nonConformanceActionTask")
-      .eq("integration", "linear")
-      .in("entityId", taskIds);
+    const [{ data: linearData }, { data: jiraData }] = await Promise.all([
+      client
+        .from("externalIntegrationMapping")
+        .select("entityId, metadata")
+        .eq("entityType", "nonConformanceActionTask")
+        .eq("integration", "linear")
+        .in("entityId", taskIds),
+      client
+        .from("externalIntegrationMapping")
+        .select("entityId, metadata")
+        .eq("entityType", "nonConformanceActionTask")
+        .eq("integration", "jira")
+        .in("entityId", taskIds)
+    ]);
 
     linearMappings = new Map(
-      (mappings ?? []).map((m) => [m.entityId, m.metadata])
+      (linearData ?? []).map((m) => [m.entityId, m.metadata])
+    );
+    jiraMappings = new Map(
+      (jiraData ?? []).map((m) => [m.entityId, m.metadata])
     );
   }
 
@@ -437,7 +449,8 @@ export async function getIssueActionTasks(
     ...result,
     data: result.data.map((task) => ({
       ...task,
-      linearIssue: linearMappings.get(task.id) ?? null
+      linearIssue: linearMappings.get(task.id) ?? null,
+      jiraIssue: jiraMappings.get(task.id) ?? null
     }))
   };
 }

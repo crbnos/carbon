@@ -124,8 +124,14 @@ export const externalQuoteValidator = z.discriminatedUnion("type", [
 
 export const getMethodValidator = z.object({
   type: z.enum(["item", "quoteLine", "method", "quoteToQuote"]),
-  sourceId: z.string(),
-  targetId: z.string()
+  sourceId: z.string().min(1, { message: "Please select a source method" }),
+  targetId: z.string().min(1, { message: "Please select a target method" }),
+  billOfMaterial: zfd.checkbox(),
+  billOfProcess: zfd.checkbox(),
+  parameters: zfd.checkbox(),
+  tools: zfd.checkbox(),
+  steps: zfd.checkbox(),
+  workInstructions: zfd.checkbox()
 });
 
 export const noQuoteReasonValidator = z.object({

@@ -37,6 +37,7 @@
     "@react-aria/i18n": "^3.11.0",
     "@react-email/components": "0.3.3",
     "@react-router/dev": "7.12.0",
+    "@react-router/serve": "7.12.0",
     "@supabase/functions-js": "2.1.5",
     "@supabase/supabase-js": "2.80.0",
     "@tailwindcss/container-queries": "^0.1.1",
@@ -128,7 +129,7 @@
     "dev:novu": "npx novu@latest dev --port 3000",
     "sync:novu": "npx novu@latest sync ",
     "lint": "biome lint --write ",
-    "start": "react-router serve ./build/server/index.js",
+    "start": "NODE_ENV=production react-router-serve ./build/server/index.js",
     "types": "tsgo --noEmit",
     "typegen": "react-router typegen"
   },

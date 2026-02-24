@@ -1,4 +1,5 @@
 import {
+  getCarbonServiceRole,
   ONSHAPE_CLIENT_ID,
   ONSHAPE_CLIENT_SECRET,
   ONSHAPE_OAUTH_REDIRECT_URL,
@@ -17,7 +18,7 @@ export const config = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, userId, companyId } = await requirePermissions(request, {
+  const { userId, companyId } = await requirePermissions(request, {
     update: "settings"
   });
 
@@ -80,7 +81,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       );
     }
 
-    const createdIntegration = await upsertCompanyIntegration(client, {
+    const serviceRole = getCarbonServiceRole();
+    const createdIntegration = await upsertCompanyIntegration(serviceRole, {
       id: Onshape.id,
       active: true,
       metadata: {
@@ -107,6 +109,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
       return redirect(redirectUrl);
     } else {
+      console.error({ createdIntegration });
       return data(
         { error: "Failed to save Onshape integration" },
         { status: 500 }

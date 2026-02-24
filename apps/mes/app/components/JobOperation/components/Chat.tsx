@@ -13,7 +13,7 @@ import {
 import { nanoid } from "nanoid";
 import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
-import { LuSend } from "react-icons/lu";
+import { LuArrowUp } from "react-icons/lu";
 import { useUser } from "~/hooks";
 import type { OperationWithDetails } from "~/services/types";
 import { usePeople } from "~/stores";
@@ -214,7 +214,7 @@ export function OperationChat({
             className="h-10"
             aria-label="Send"
             type="submit"
-            leftIcon={<LuSend />}
+            leftIcon={<LuArrowUp />}
           >
             Send
           </Button>

@@ -37,3 +37,13 @@ packages/database/supabase/seed.sql
 .env*.local
 
 .react-router
+
+# Rust
+**/target/
+**/*.rs.bk
+**/pkg/
+**/pkg/
+
+# C++ (cad-engine)
+**/build/
+!**/build/.gitkeep

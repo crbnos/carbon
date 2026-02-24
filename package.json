@@ -10,6 +10,7 @@
     "patch-package": "^8.0.1",
     "postcss-nesting": "12.1.5",
     "prettier": "^2.8.0",
+
     "rimraf": "^5.0.5",
     "supabase": "2.54.11",
     "ts-morph": "^22.0.0",

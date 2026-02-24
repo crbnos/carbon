@@ -1,10 +1,8 @@
 import { VStack } from "@carbon/react";
-import { LuKey } from "react-icons/lu";
 import type { MetaFunction } from "react-router";
 import { Outlet } from "react-router";
 import { GroupedContentSidebar } from "~/components/Layout";
 import { CollapsibleSidebarProvider } from "~/components/Layout/Navigation";
-import { usePermissions } from "~/hooks";
 import { useSettingsSubmodules } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -20,17 +18,7 @@ export const handle: Handle = {
 };
 
 export default function SettingsRoute() {
-  const permissions = usePermissions();
   const { groups } = useSettingsSubmodules();
-
-  if (permissions.can("update", "users") && permissions.is("employee")) {
-    groups?.[2]?.routes.unshift({
-      name: "API Keys",
-      to: path.to.apiKeys,
-      role: "employee",
-      icon: <LuKey />
-    });
-  }
 
   return (
     <CollapsibleSidebarProvider>

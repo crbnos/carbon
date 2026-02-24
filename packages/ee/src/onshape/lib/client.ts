@@ -55,7 +55,11 @@ export class OnshapeClient {
     } catch (error) {
       if (axios.isAxiosError(error)) {
         throw new Error(
-          `Onshape API error (${error.response?.status}): ${error.response?.data}`
+          `Onshape API error (${error.response?.status}): ${
+            typeof error.response?.data === "string"
+              ? error.response.data
+              : JSON.stringify(error.response?.data)
+          }`
         );
       }
       throw error;

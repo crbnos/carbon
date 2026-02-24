@@ -11,6 +11,7 @@ import {
 } from "~/modules/resources";
 import MaintenanceDispatchForm from "~/modules/resources/ui/Maintenance/MaintenanceDispatchForm";
 import { getNextSequence } from "~/modules/settings";
+import { getUserDefaults } from "~/modules/users/users.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -21,14 +22,18 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     create: "resources"
   });
 
-  const failureModes = await getFailureModesList(client, companyId);
+  const [failureModes, defaults] = await Promise.all([
+    getFailureModesList(client, companyId),
+    getUserDefaults(client, userId, companyId)
+  ]);
 
   return {
-    failureModes: failureModes.data ?? []
+    failureModes: failureModes.data ?? [],
+    defaultLocationId: defaults.data?.locationId ?? undefined
   };
 }
 
@@ -66,19 +71,6 @@ export async function action({ request }: ActionFunctionArgs) {
     ? JSON.parse(validation.data.content)
     : {};
 
-  // Determine locationId - use provided value or get from work center
-  let locationId = validation.data.locationId || undefined;
-  if (!locationId && validation.data.workCenterId) {
-    const workCenter = await client
-      .from("workCenter")
-      .select("locationId")
-      .eq("id", validation.data.workCenterId)
-      .single();
-    if (!workCenter.error && workCenter.data?.locationId) {
-      locationId = workCenter.data.locationId;
-    }
-  }
-
   const insertDispatch = await upsertMaintenanceDispatch(client, {
     maintenanceDispatchId: nextSequence.data,
     status: validation.data.status,
@@ -87,7 +79,7 @@ export async function action({ request }: ActionFunctionArgs) {
     source: validation.data.source || "Reactive",
     oeeImpact: validation.data.oeeImpact || "No Impact",
     workCenterId: validation.data.workCenterId || undefined,
-    locationId,
+    locationId: validation.data.locationId,
     assignee: validation.data.assignee || undefined,
     suspectedFailureModeId: validation.data.suspectedFailureModeId || undefined,
     plannedStartTime: validation.data.plannedStartTime || undefined,
@@ -122,14 +114,15 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewMaintenanceDispatchRoute() {
-  const { failureModes } = useLoaderData<typeof loader>();
+  const { failureModes, defaultLocationId } = useLoaderData<typeof loader>();
 
   const initialValues = {
     status: "Open" as const,
     priority: "Medium" as const,
     source: "Reactive" as const,
     severity: "Support Required" as const,
-    oeeImpact: "No Impact" as const
+    oeeImpact: "No Impact" as const,
+    locationId: defaultLocationId ?? ""
   };
 
   return (

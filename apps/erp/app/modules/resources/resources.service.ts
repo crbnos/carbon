@@ -395,7 +395,8 @@ export async function getMaintenanceDispatch(
       assignee:user!maintenanceDispatch_assignee_fkey(id, fullName, avatarUrl),
       suspectedFailureMode:maintenanceFailureMode!maintenanceDispatch_suspectedFailureModeId_fkey(id, name),
       actualFailureMode:maintenanceFailureMode!maintenanceDispatch_actualFailureModeId_fkey(id, name),
-      schedule:maintenanceSchedule(id, name)`
+      schedule:maintenanceSchedule(id, name),
+      procedure:procedureId(id, name)`
     )
     .eq("id", dispatchId)
     .single();

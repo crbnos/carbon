@@ -76,25 +76,31 @@ export const action: ActionFunction = async ({ request }) => {
       }
 
       case "DELETE": {
-        const { data: action } = await getIssueAction(client, actionId);
-
-        if (action?.nonConformanceId) {
-          const [found] = await linear.listAttachments(
-            companyId,
-            action.nonConformanceId
-          );
-
-          if (found) {
-            await linear.removeAttachment(companyId, found.id);
-          }
-        }
-
+        // Unlink from Carbon's DB first
         const unlinked = await unlinkActionFromLinearIssue(client, companyId, {
           actionId
         });
 
         if (unlinked.error) {
           return { success: false, message: "Failed to unlink issue" };
+        }
+
+        // Best-effort: clean up attachment in Linear
+        try {
+          const { data: action } = await getIssueAction(client, actionId);
+
+          if (action?.nonConformanceId) {
+            const [found] = await linear.listAttachments(
+              companyId,
+              action.nonConformanceId
+            );
+
+            if (found) {
+              await linear.removeAttachment(companyId, found.id);
+            }
+          }
+        } catch (e) {
+          console.error("Failed to clean up Linear attachment:", e);
         }
 
         return { success: true, message: "Unlinked successfully" };

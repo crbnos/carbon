@@ -19,6 +19,8 @@ interface CompanyLogoFormProps {
   icon?: boolean;
 }
 
+export const maxSizeMB = 10;
+
 const CompanyLogoForm = ({
   company,
   mode,
@@ -54,6 +56,32 @@ const CompanyLogoForm = ({
     if (e.target.files && carbon) {
       let logo = e.target.files[0];
 
+      // Validate file type
+      const supportedTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/gif"
+      ];
+      if (!supportedTypes.includes(logo.type)) {
+        toast.error(
+          `File type not supported. Please use JPG, PNG, WebP, or GIF.`
+        );
+        return;
+      }
+
+      // Validate file size (10 MB limit)
+
+      const maxSizeBytes = maxSizeMB * 1024 * 1024;
+      if (logo.size > maxSizeBytes) {
+        toast.error(
+          `File size exceeds ${maxSizeMB}MB limit. Current size: ${(
+            logo.size / 1024 / 1024
+          ).toFixed(2)}MB`
+        );
+        return;
+      }
+
       const formData = new FormData();
       formData.append("file", logo);
       formData.append("height", "128");
@@ -69,7 +97,14 @@ const CompanyLogoForm = ({
         );
 
         if (!response.ok) {
-          throw new Error("Failed to resize image");
+          const errorText = await response
+            .text()
+            .catch(() => response.statusText);
+          throw new Error(
+            `Image resize failed: ${response.status} ${
+              errorText || "Unknown error"
+            }`
+          );
         }
 
         const blob = await response.blob();
@@ -79,8 +114,10 @@ const CompanyLogoForm = ({
 
         logo = resizedFile;
       } catch (error) {
-        console.error(error);
-        toast.error("Failed to resize image");
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
+        console.error("Image resize error:", error);
+        toast.error(`Failed to resize image: ${errorMessage}`);
         return;
       }
 
@@ -94,10 +131,14 @@ const CompanyLogoForm = ({
         });
 
       if (imageUpload.error) {
-        toast.error("Failed to upload logo");
+        const errorMessage = imageUpload.error.message || "Unknown error";
+        console.error("Upload error:", imageUpload.error);
+        toast.error(`Failed to upload logo: ${errorMessage}`);
+        return;
       }
 
       if (imageUpload.data?.path) {
+        toast.success("Logo uploaded successfully");
         submitLogoUrl(imageUpload.data.path);
       }
     }
@@ -110,9 +151,13 @@ const CompanyLogoForm = ({
         .remove([currentLogoPath]);
 
       if (imageDelete.error) {
-        toast.error("Failed to remove image");
+        const errorMessage = imageDelete.error.message || "Unknown error";
+        console.error("Delete error:", imageDelete.error);
+        toast.error(`Failed to remove image: ${errorMessage}`);
+        return;
       }
 
+      toast.success("Logo removed successfully");
       submitLogoUrl(null);
     }
   };

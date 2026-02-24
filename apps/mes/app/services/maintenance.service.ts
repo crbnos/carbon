@@ -62,7 +62,8 @@ export async function getMaintenanceDispatch(
       assigneeUser:assignee (id, fullName, avatarUrl),
       suspectedFailureMode:suspectedFailureModeId (id, name),
       actualFailureMode:actualFailureModeId (id, name),
-      maintenanceSchedule:maintenanceScheduleId (id, name)
+      maintenanceSchedule:maintenanceScheduleId (id, name),
+      procedure:procedureId (id, name, content)
     `
     )
     .eq("id", dispatchId)

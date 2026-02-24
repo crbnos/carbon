@@ -50,10 +50,10 @@ import { flushSync } from "react-dom";
 import {
   LuArrowUpRight,
   LuChevronDown,
+  LuCirclePlay,
   LuClipboardCheck,
   LuEllipsisVertical,
   LuFile,
-  LuHardHat,
   LuSquareUser
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
@@ -888,7 +888,7 @@ function WorkCenterCards({
                 <div className="flex flex-col gap-2 items-start justify-start text-sm">
                   {jobId && jobReadableId && (
                     <HStack className="justify-start space-x-2">
-                      <LuHardHat className="text-muted-foreground flex-shrink-0" />
+                      <LuCirclePlay className="text-muted-foreground flex-shrink-0" />
                       <Hyperlink to={path.to.job(jobId)} className="truncate">
                         {jobReadableId}
                       </Hyperlink>

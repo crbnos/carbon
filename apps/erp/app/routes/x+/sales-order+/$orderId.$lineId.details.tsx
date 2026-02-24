@@ -186,6 +186,15 @@ export default function EditSalesOrderLineRoute() {
         initialValues={initialValues}
       />
 
+      <OpportunityLineNotes
+        id={line.id}
+        table="salesOrderLine"
+        title="Notes"
+        subTitle={line.itemReadableId ?? ""}
+        internalNotes={line.internalNotes as JSONContent}
+        externalNotes={line.externalNotes as JSONContent}
+      />
+
       {line.methodType === "Make" && (
         <Suspense
           fallback={
@@ -223,15 +232,6 @@ export default function EditSalesOrderLineRoute() {
         line={line}
         opportunity={orderData.opportunity}
         shipments={shipments}
-      />
-
-      <OpportunityLineNotes
-        id={line.id}
-        table="salesOrderLine"
-        title="Notes"
-        subTitle={line.itemReadableId ?? ""}
-        internalNotes={line.internalNotes as JSONContent}
-        externalNotes={line.externalNotes as JSONContent}
       />
 
       <Suspense

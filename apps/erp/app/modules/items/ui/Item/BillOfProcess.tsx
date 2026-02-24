@@ -2700,7 +2700,7 @@ function ToolsForm({
   return (
     <div className="flex flex-col gap-6">
       {!isDisabled && (
-        <div className="p-6 border rounded-lg">
+        <div className="p-6 border rounded-lg bg-card">
           <ValidatedForm
             action={path.to.newMethodOperationTool}
             method="post"
@@ -2794,7 +2794,7 @@ function ToolsListItem({
   const date = updatedAt ?? createdAt;
 
   return (
-    <div className={cn("border-b p-6", className)}>
+    <div className={cn("border-b p-6 bg-card", className)}>
       {disclosure.isOpen ? (
         <ValidatedForm
           action={path.to.methodOperationTool(id)}

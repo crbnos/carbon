@@ -34,12 +34,12 @@ import { flushSync } from "react-dom";
 import { AiOutlinePartition } from "react-icons/ai";
 import {
   LuChevronRight,
+  LuCirclePlay,
   LuCirclePlus,
   LuContainer,
   LuEllipsisVertical,
   LuFileText,
   LuHandCoins,
-  LuHardHat,
   LuQrCode,
   LuSearch,
   LuShoppingCart,
@@ -302,7 +302,7 @@ function getAssociationIcon(key: IssueAssociationKey) {
     case "suppliers":
       return <LuContainer />;
     case "jobOperations":
-      return <LuHardHat className="text-amber-600" />;
+      return <LuCirclePlay className="text-amber-600" />;
     case "purchaseOrderLines":
       return <LuShoppingCart className="text-blue-600" />;
     case "salesOrderLines":

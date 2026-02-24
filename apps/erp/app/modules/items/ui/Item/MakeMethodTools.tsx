@@ -6,6 +6,9 @@ import {
   Badge,
   Button,
   Checkbox,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
   cn,
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +39,7 @@ import { flushSync } from "react-dom";
 import {
   LuCheck,
   LuChevronDown,
+  LuChevronRight,
   LuCirclePlus,
   LuCopy,
   LuGitBranch,
@@ -94,6 +98,7 @@ const MakeMethodTools = ({
 
   const getMethodModal = useDisclosure();
   const saveMethodModal = useDisclosure();
+  const [hasMethodParts, setHasMethodParts] = useState(true);
   const newVersionModal = useDisclosure();
   const activeMethodModal = useDisclosure();
   const itemLink = type && itemId ? getLinkToItemDetails(type, itemId) : null;
@@ -264,6 +269,12 @@ const MakeMethodTools = ({
               <ModalBody>
                 <Hidden name="targetId" value={itemId} />
                 <VStack spacing={4}>
+                  <Alert variant="destructive" className="mt-4">
+                    <LuTriangleAlert className="h-4 w-4" />
+                    <AlertTitle>
+                      This will overwrite the existing manufacturing method
+                    </AlertTitle>
+                  </Alert>
                   <Item
                     name="sourceId"
                     label="Source Method"
@@ -288,19 +299,16 @@ const MakeMethodTools = ({
                     </label>
                   </div>
 
-                  <Alert variant="destructive" className="mt-4">
-                    <LuTriangleAlert className="h-4 w-4" />
-                    <AlertTitle>
-                      This will overwrite the existing manufacturing method
-                    </AlertTitle>
-                  </Alert>
+                  <AdvancedSection onChange={setHasMethodParts} />
                 </VStack>
               </ModalBody>
               <ModalFooter>
                 <Button onClick={getMethodModal.onClose} variant="secondary">
                   Cancel
                 </Button>
-                <Submit variant="destructive">Confirm</Submit>
+                <Submit isDisabled={!hasMethodParts} variant="destructive">
+                  Confirm
+                </Submit>
               </ModalFooter>
             </ValidatedForm>
           </ModalContent>
@@ -356,13 +364,14 @@ const MakeMethodTools = ({
                       Include Inactive
                     </label>
                   </div>
+                  <AdvancedSection onChange={setHasMethodParts} />
                 </VStack>
               </ModalBody>
               <ModalFooter>
                 <Button onClick={saveMethodModal.onClose} variant="secondary">
                   Cancel
                 </Button>
-                <Submit>Confirm</Submit>
+                <Submit isDisabled={!hasMethodParts}>Confirm</Submit>
               </ModalFooter>
             </ValidatedForm>
           </ModalContent>
@@ -452,5 +461,111 @@ const MakeMethodTools = ({
     </>
   );
 };
+
+function AdvancedSection({
+  onChange
+}: {
+  onChange?: (hasSelection: boolean) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [billOfMaterial, setBillOfMaterial] = useState(true);
+  const [billOfProcess, setBillOfProcess] = useState(true);
+  const [parameters, setParameters] = useState(true);
+  const [tools, setTools] = useState(true);
+  const [steps, setSteps] = useState(true);
+  const [workInstructions, setWorkInstructions] = useState(true);
+
+  const hasSelection =
+    billOfMaterial ||
+    (billOfProcess && (parameters || tools || steps || workInstructions));
+
+  useEffect(() => {
+    onChange?.(hasSelection);
+  }, [hasSelection, onChange]);
+
+  const processChildren = [
+    {
+      name: "parameters",
+      label: "Parameters",
+      checked: parameters,
+      onChange: setParameters
+    },
+    { name: "tools", label: "Tools", checked: tools, onChange: setTools },
+    { name: "steps", label: "Steps", checked: steps, onChange: setSteps },
+    {
+      name: "workInstructions",
+      label: "Work Instructions",
+      checked: workInstructions,
+      onChange: setWorkInstructions
+    }
+  ];
+
+  return (
+    <Collapsible className="w-full" open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger asChild>
+        <Button variant="ghost" className="w-full justify-start gap-2 px-0">
+          <LuChevronRight
+            className={cn("h-4 w-4 transition-transform", open && "rotate-90")}
+          />
+          Advanced
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent forceMount className={cn(!open && "hidden")}>
+        <VStack spacing={2} className="pt-2">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="billOfMaterial"
+              name="billOfMaterial"
+              checked={billOfMaterial}
+              onCheckedChange={(checked) => setBillOfMaterial(!!checked)}
+            />
+            <label
+              htmlFor="billOfMaterial"
+              className="text-sm font-medium leading-none"
+            >
+              Bill of Material
+            </label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="billOfProcess"
+              name="billOfProcess"
+              checked={billOfProcess}
+              onCheckedChange={(checked) => setBillOfProcess(!!checked)}
+            />
+            <label
+              htmlFor="billOfProcess"
+              className="text-sm font-medium leading-none"
+            >
+              Bill of Process
+            </label>
+          </div>
+          <VStack spacing={2} className="pl-6">
+            {processChildren.map(({ name, label, checked, onChange }) => (
+              <div key={name} className="flex items-center space-x-2">
+                <Checkbox
+                  id={name}
+                  name={name}
+                  disabled={!billOfProcess}
+                  checked={billOfProcess ? checked : false}
+                  onCheckedChange={(val) => onChange(!!val)}
+                />
+                <label
+                  htmlFor={name}
+                  className={cn(
+                    "text-sm font-medium leading-none",
+                    !billOfProcess && "text-muted-foreground"
+                  )}
+                >
+                  {label}
+                </label>
+              </div>
+            ))}
+          </VStack>
+        </VStack>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
 
 export default MakeMethodTools;

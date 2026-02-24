@@ -157,7 +157,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             row["Revision"]
           ),
           // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-          name: row["Name"],
+          name: row["Name"] || row["Description"] || row["Part number"] || "",
           id: item?.itemId ?? undefined,
           replenishmentSystem,
           defaultMethodType,
@@ -184,7 +184,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     console.error(error);
     return {
       data: [],
-      error: error
+      error: error instanceof Error ? error.message : String(error)
     };
   }
 }

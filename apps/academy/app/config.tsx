@@ -1098,38 +1098,38 @@ export const modules: Config = [
               {
                 id: "purchasing-overview",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/embed/6b452f942ac546aebc0b9ca96300c522",
                 name: "Purchasing Overview",
                 description:
                   "Learn about the complete purchasing process from supplier selection to payment.",
-                duration: 0
+                duration: 240
               },
               {
                 id: "supplier-quotes",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/embed/93b1b102e27242d3a74dcec91b91f74c",
                 name: "Supplier Quotes",
                 description:
                   "Learn how to manage supplier quotes and compare pricing effectively.",
-                duration: 0
+                duration: 348
               },
               {
                 id: "purchase-orders",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/embed/77cabb75b1cc428992ba65756df2ccbf",
                 name: "Purchase Orders",
                 description:
                   "Learn how to create and manage purchase orders effectively.",
-                duration: 0
+                duration: 199
               },
               {
                 id: "receiving-purchase-order",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/embed/efc8217dc35a46589c64ca4b0b7bbb05",
                 name: "Receiving a Purchase Order",
                 description:
                   "Learn how to receive and inspect purchased goods properly.",
-                duration: 0
+                duration: 134
               }
             ]
           }

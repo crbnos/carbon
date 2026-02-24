@@ -86,6 +86,7 @@ export default function EditMaintenanceScheduleRoute() {
     id: schedule.id ?? undefined,
     name: schedule.name ?? "",
     workCenterId: schedule.workCenterId ?? "",
+    locationId: (schedule as any).locationId ?? "",
     frequency: schedule.frequency ?? ("Weekly" as const),
     priority: schedule.priority ?? ("Medium" as const),
     estimatedDuration: schedule.estimatedDuration ?? undefined,
@@ -98,7 +99,8 @@ export default function EditMaintenanceScheduleRoute() {
     friday: schedule.friday ?? true,
     saturday: schedule.saturday ?? true,
     sunday: schedule.sunday ?? true,
-    skipHolidays: schedule.skipHolidays ?? true
+    skipHolidays: schedule.skipHolidays ?? true,
+    procedureId: (schedule as any).procedureId ?? undefined
   };
 
   return (

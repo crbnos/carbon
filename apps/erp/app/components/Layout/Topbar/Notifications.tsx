@@ -21,11 +21,11 @@ import {
   LuBell,
   LuCalendarX,
   LuCircleGauge,
+  LuCirclePlay,
   LuClipboardCheck,
   LuDollarSign,
   LuGraduationCap,
   LuHammer,
-  LuHardHat,
   LuInbox,
   LuLightbulb,
   LuListChecks,
@@ -241,7 +241,7 @@ function GenericNotification({
             event === NotificationEvent.JobOperationMessage ? (
               <LuMessageSquare />
             ) : (
-              <LuHardHat />
+              <LuCirclePlay />
             )
           }
           to={`${link}?selectedOperation=${operationId}`}
