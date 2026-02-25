@@ -1,4 +1,9 @@
-import { error, getCarbonServiceRole, success } from "@carbon/auth";
+import {
+  CarbonEdition,
+  error,
+  getCarbonServiceRole,
+  success
+} from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
@@ -11,7 +16,7 @@ import {
 } from "@carbon/database/audit";
 import { Button, Heading, ScrollArea, VStack } from "@carbon/react";
 import { usePlan } from "@carbon/remix";
-import { Plan } from "@carbon/utils";
+import { Edition, Plan } from "@carbon/utils";
 import { LuHistory } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Link, Outlet, redirect, useLoaderData } from "react-router";
@@ -74,6 +79,25 @@ export async function action({ request }: ActionFunctionArgs) {
 
   switch (actionType) {
     case "enable": {
+      // Server-side plan gate: only Business+ can enable audit logs on Cloud
+      if (CarbonEdition === Edition.Cloud) {
+        const companyPlan = await client
+          .from("companyPlan")
+          .select("planId")
+          .eq("id", companyId)
+          .single();
+
+        if (companyPlan.data?.planId === Plan.Starter) {
+          throw redirect(
+            path.to.auditLog,
+            await flash(
+              request,
+              error(null, "Upgrade to Business to enable audit logging")
+            )
+          );
+        }
+      }
+
       try {
         await enableAuditLog(client, companyId);
         throw redirect(
