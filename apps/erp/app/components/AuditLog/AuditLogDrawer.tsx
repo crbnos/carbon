@@ -125,7 +125,7 @@ const AuditLogDrawer = memo(
     const drawerBody = planRestricted ? (
       <AuditLogUpgradeOverlay />
     ) : !auditLogEnabled ? (
-      <div className="flex flex-col items-center justify-center flex-1 min-h-[50vh] text-center gap-4 px-4">
+      <div className="flex flex-col items-center justify-center flex-1 min-h-[50vh] text-center gap-4 px-4 w-full">
         <div className="rounded-full bg-muted p-3">
           <LuHistory className="size-6 text-muted-foreground" />
         </div>
