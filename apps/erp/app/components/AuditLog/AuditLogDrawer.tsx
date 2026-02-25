@@ -2,7 +2,6 @@ import { getTableLabel } from "@carbon/database/audit.config";
 import type { AuditLogEntry } from "@carbon/database/audit.types";
 import {
   Badge,
-  Button,
   cn,
   Drawer,
   DrawerBody,
@@ -16,9 +15,9 @@ import {
 import { formatDateTime } from "@carbon/utils";
 import { memo, useEffect, useRef } from "react";
 import { LuFilePen, LuFilePlus, LuFileX, LuHistory } from "react-icons/lu";
-import { Link, useFetcher } from "react-router";
+import { useFetcher } from "react-router";
 import { EmployeeAvatar, Empty } from "~/components";
-import { path } from "~/utils/path";
+import AuditLogUpgradeOverlay from "~/modules/settings/ui/AuditLog/AuditLogUpgradeOverlay";
 
 type AuditLogDrawerProps = {
   isOpen: boolean;
@@ -123,23 +122,7 @@ const AuditLogDrawer = memo(
           </DrawerHeader>
           <DrawerBody>
             {planRestricted ? (
-              <div className="flex flex-col items-center justify-center h-full text-center gap-4 px-4">
-                <div className="rounded-full bg-muted p-3">
-                  <LuHistory className="size-6 text-muted-foreground" />
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-lg font-semibold">
-                    Upgrade to unlock audit history
-                  </h3>
-                  <p className="text-sm text-muted-foreground text-balance">
-                    See who changed what, when, and why with full field-level
-                    change tracking for every record.
-                  </p>
-                </div>
-                <Button asChild>
-                  <Link to={path.to.billing}>Upgrade to Business</Link>
-                </Button>
-              </div>
+              <AuditLogUpgradeOverlay />
             ) : isLoading ? (
               <VStack spacing={3}>
                 <Skeleton className="w-full h-[151px]" />
