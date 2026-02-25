@@ -79,38 +79,48 @@ type AuditLogTriggerProps = {
   isStarterTeaser: boolean;
 };
 
+function HistoryTrigger({
+  variant,
+  onOpen
+}: {
+  variant: "dropdown" | "card-action";
+  onOpen: () => void;
+}) {
+  if (variant === "dropdown") {
+    return (
+      <DropdownMenuItem onClick={onOpen}>
+        <DropdownMenuIcon icon={<LuHistory />} />
+        History
+      </DropdownMenuItem>
+    );
+  }
+
+  return (
+    <CardAction>
+      <Button variant="secondary" leftIcon={<LuHistory />} onClick={onOpen}>
+        History
+      </Button>
+    </CardAction>
+  );
+}
+
 function AuditLogTrigger({
   variant,
   onOpen,
   auditLogEnabledPromise,
   isStarterTeaser
 }: AuditLogTriggerProps) {
+  // Starter teaser: always show the button (no need to resolve auditLogEnabled)
+  if (isStarterTeaser) {
+    return <HistoryTrigger variant={variant} onOpen={onOpen} />;
+  }
+
   return (
     <Suspense fallback={null}>
       <Await resolve={auditLogEnabledPromise}>
         {(auditLogEnabled) => {
-          if (!auditLogEnabled && !isStarterTeaser) return null;
-
-          if (variant === "dropdown") {
-            return (
-              <DropdownMenuItem onClick={onOpen}>
-                <DropdownMenuIcon icon={<LuHistory />} />
-                History
-              </DropdownMenuItem>
-            );
-          }
-
-          return (
-            <CardAction>
-              <Button
-                variant="secondary"
-                leftIcon={<LuHistory />}
-                onClick={onOpen}
-              >
-                History
-              </Button>
-            </CardAction>
-          );
+          if (!auditLogEnabled) return null;
+          return <HistoryTrigger variant={variant} onOpen={onOpen} />;
         }}
       </Await>
     </Suspense>
