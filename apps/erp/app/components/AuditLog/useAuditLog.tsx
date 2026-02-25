@@ -7,12 +7,8 @@ import {
 } from "@carbon/react";
 import { usePlan } from "@carbon/remix";
 import { Plan } from "@carbon/utils";
-import { Suspense } from "react";
 import { LuHistory } from "react-icons/lu";
-import { Await } from "react-router";
-import { useRouteData } from "~/hooks";
 import { useFlags } from "~/hooks/useFlags";
-import { path } from "~/utils/path";
 import AuditLogDrawer from "./AuditLogDrawer";
 
 type UseAuditLogOptions = {
@@ -41,20 +37,25 @@ export function useAuditLog({
   const plan = usePlan();
   const { isCloud } = useFlags();
 
-  const rootRouteData = useRouteData<{
-    auditLogEnabled: Promise<boolean>;
-  }>(path.to.authenticatedRoot);
-
   const isStarterTeaser = isCloud && plan === Plan.Starter;
 
-  const trigger = (
-    <AuditLogTrigger
-      variant={variant}
-      onOpen={disclosure.onOpen}
-      auditLogEnabledPromise={rootRouteData?.auditLogEnabled}
-      isStarterTeaser={isStarterTeaser}
-    />
-  );
+  const trigger =
+    variant === "dropdown" ? (
+      <DropdownMenuItem onClick={disclosure.onOpen}>
+        <DropdownMenuIcon icon={<LuHistory />} />
+        History
+      </DropdownMenuItem>
+    ) : (
+      <CardAction>
+        <Button
+          variant="secondary"
+          leftIcon={<LuHistory />}
+          onClick={disclosure.onOpen}
+        >
+          History
+        </Button>
+      </CardAction>
+    );
 
   const drawer = (
     <AuditLogDrawer
@@ -68,61 +69,4 @@ export function useAuditLog({
   );
 
   return { trigger, drawer };
-}
-
-// -- Internal components --
-
-type AuditLogTriggerProps = {
-  variant: "dropdown" | "card-action";
-  onOpen: () => void;
-  auditLogEnabledPromise: Promise<boolean> | undefined;
-  isStarterTeaser: boolean;
-};
-
-function HistoryTrigger({
-  variant,
-  onOpen
-}: {
-  variant: "dropdown" | "card-action";
-  onOpen: () => void;
-}) {
-  if (variant === "dropdown") {
-    return (
-      <DropdownMenuItem onClick={onOpen}>
-        <DropdownMenuIcon icon={<LuHistory />} />
-        History
-      </DropdownMenuItem>
-    );
-  }
-
-  return (
-    <CardAction>
-      <Button variant="secondary" leftIcon={<LuHistory />} onClick={onOpen}>
-        History
-      </Button>
-    </CardAction>
-  );
-}
-
-function AuditLogTrigger({
-  variant,
-  onOpen,
-  auditLogEnabledPromise,
-  isStarterTeaser
-}: AuditLogTriggerProps) {
-  // Starter teaser: always show the button (no need to resolve auditLogEnabled)
-  if (isStarterTeaser) {
-    return <HistoryTrigger variant={variant} onOpen={onOpen} />;
-  }
-
-  return (
-    <Suspense fallback={null}>
-      <Await resolve={auditLogEnabledPromise}>
-        {(auditLogEnabled) => {
-          if (!auditLogEnabled) return null;
-          return <HistoryTrigger variant={variant} onOpen={onOpen} />;
-        }}
-      </Await>
-    </Suspense>
-  );
 }
