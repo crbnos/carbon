@@ -25552,6 +25552,9 @@ export default {
             $ref: "#/parameters/rowFilter.maintenanceDispatch.locationId",
           },
           {
+            $ref: "#/parameters/rowFilter.maintenanceDispatch.procedureId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -25689,6 +25692,9 @@ export default {
             $ref: "#/parameters/rowFilter.maintenanceDispatch.locationId",
           },
           {
+            $ref: "#/parameters/rowFilter.maintenanceDispatch.procedureId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -25778,6 +25784,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.maintenanceDispatch.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.maintenanceDispatch.procedureId",
           },
           {
             $ref: "#/parameters/body.maintenanceDispatch",
@@ -44449,6 +44458,12 @@ export default {
             $ref: "#/parameters/rowFilter.maintenanceSchedule.skipHolidays",
           },
           {
+            $ref: "#/parameters/rowFilter.maintenanceSchedule.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.maintenanceSchedule.procedureId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -44577,6 +44592,12 @@ export default {
             $ref: "#/parameters/rowFilter.maintenanceSchedule.skipHolidays",
           },
           {
+            $ref: "#/parameters/rowFilter.maintenanceSchedule.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.maintenanceSchedule.procedureId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -44657,6 +44678,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.maintenanceSchedule.skipHolidays",
+          },
+          {
+            $ref: "#/parameters/rowFilter.maintenanceSchedule.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.maintenanceSchedule.procedureId",
           },
           {
             $ref: "#/parameters/body.maintenanceSchedule",
@@ -80345,6 +80372,12 @@ export default {
           format: "text",
           type: "string",
         },
+        procedureId: {
+          description:
+            "Note:\nThis is a Foreign Key to `procedure.id`.<fk table='procedure' column='id'/>",
+          format: "text",
+          type: "string",
+        },
       },
       type: "object",
     },
@@ -89245,6 +89278,18 @@ export default {
           default: true,
           format: "boolean",
           type: "boolean",
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        procedureId: {
+          description:
+            "Note:\nThis is a Foreign Key to `procedure.id`.<fk table='procedure' column='id'/>",
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -111992,6 +112037,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.maintenanceDispatch.procedureId": {
+      name: "procedureId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.openProductionOrders": {
       name: "openProductionOrders",
       description: "openProductionOrders",
@@ -122053,6 +122104,18 @@ export default {
     },
     "rowFilter.maintenanceSchedule.skipHolidays": {
       name: "skipHolidays",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.maintenanceSchedule.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.maintenanceSchedule.procedureId": {
+      name: "procedureId",
       required: false,
       in: "query",
       type: "string",
