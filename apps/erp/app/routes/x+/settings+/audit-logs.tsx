@@ -140,7 +140,7 @@ export default function AuditLogRoute() {
   const plan = usePlan();
   const { isCloud } = useFlags();
 
-  const isStarterTeaser = true || (isCloud && plan === Plan.Starter);
+  const isStarterTeaser = isCloud && plan === Plan.Starter;
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-49px)]">
