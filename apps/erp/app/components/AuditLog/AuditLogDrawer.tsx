@@ -25,7 +25,6 @@ import {
 import { Link, useFetcher } from "react-router";
 import { EmployeeAvatar, Empty } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
-import AuditLogUpgradeOverlay from "~/modules/settings/ui/AuditLog/AuditLogUpgradeOverlay";
 import { path } from "~/utils/path";
 
 type AuditLogDrawerProps = {
@@ -124,7 +123,23 @@ const AuditLogDrawer = memo(
     const isLoading = fetcher.state === "loading";
 
     const drawerBody = planRestricted ? (
-      <AuditLogUpgradeOverlay />
+      <div className="flex flex-col items-center justify-center flex-1 min-h-[50vh] text-center gap-4 px-4">
+        <div className="rounded-full bg-muted p-3">
+          <LuHistory className="size-6 text-muted-foreground" />
+        </div>
+        <div className="space-y-2">
+          <h3 className="text-lg font-semibold">
+            Upgrade to unlock audit history
+          </h3>
+          <p className="text-sm text-muted-foreground text-balance">
+            Track every change to your orders, invoices, customers, and more.
+            See who changed what, when, and why.
+          </p>
+        </div>
+        <Button asChild>
+          <Link to={path.to.billing}>Upgrade to Business</Link>
+        </Button>
+      </div>
     ) : !auditLogEnabled ? (
       <div className="flex flex-col items-center justify-start flex-1 w-full pt-[15dvh] text-center gap-4 px-4 h-full">
         <div className="rounded-full bg-muted p-3">
