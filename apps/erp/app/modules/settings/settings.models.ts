@@ -36,10 +36,10 @@ export const rateLimitWindowLabels: Record<RateLimitWindow, string> = {
 
 /** All permission modules with their available CRUD actions */
 export const apiKeyPermissionModules = {
-  accounting: ["view", "create", "update", "delete"],
+  accounting: ["view", "create", "update"],
   inventory: ["view", "create", "update", "delete"],
   invoicing: ["view", "create", "update", "delete"],
-  maintenance: ["update", "delete"],
+  maintenance: ["view", "create", "update", "delete"],
   parts: ["view", "create", "update", "delete"],
   people: ["view", "create", "update", "delete"],
   production: ["view", "create", "update", "delete"],
@@ -48,7 +48,7 @@ export const apiKeyPermissionModules = {
   resources: ["view", "create", "update", "delete"],
   sales: ["view", "create", "update", "delete"],
   settings: ["view", "create", "update", "delete"],
-  users: ["create", "update", "delete"]
+  users: ["view", "create", "update", "delete"]
 } as const;
 
 export type ApiKeyPermissionModule = keyof typeof apiKeyPermissionModules;
