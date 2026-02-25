@@ -26,7 +26,7 @@ import {
   toast,
   useDisclosure
 } from "@carbon/react";
-import { Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   LuCheck,
   LuCheckCheck,
@@ -39,7 +39,6 @@ import {
   LuEye,
   LuFile,
   LuGitBranchPlus,
-  LuHistory,
   LuLoaderCircle,
   LuPanelLeft,
   LuPanelRight,
@@ -47,8 +46,8 @@ import {
   LuTrash,
   LuTrophy
 } from "react-icons/lu";
-import { Await, Link, useFetcher, useParams } from "react-router";
-import { AuditLogDrawer } from "~/components/AuditLog";
+import { Link, useFetcher, useParams } from "react-router";
+import { useAuditLog } from "~/components/AuditLog";
 import { usePanels } from "~/components/Layout";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
@@ -89,16 +88,17 @@ const QuoteHeader = () => {
   const shareModal = useDisclosure();
   const createRevisionModal = useDisclosure();
   const deleteQuoteModal = useDisclosure();
-  const auditDrawer = useDisclosure();
-
   const [asRevision, setAsRevision] = useState(false);
 
   const finalizeFetcher = useFetcher<{}>();
   const statusFetcher = useFetcher<{}>();
 
-  const rootRouteData = useRouteData<{
-    auditLogEnabled: Promise<boolean>;
-  }>(path.to.authenticatedRoot);
+  const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
+    entityType: "salesQuote",
+    entityId: quoteId,
+    companyId: company.id,
+    variant: "dropdown"
+  });
 
   return (
     <>
@@ -135,22 +135,7 @@ const QuoteHeader = () => {
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <Suspense fallback={null}>
-                  <Await resolve={rootRouteData?.auditLogEnabled}>
-                    {(auditLogEnabled) => {
-                      return (
-                        <>
-                          {auditLogEnabled && (
-                            <DropdownMenuItem onClick={auditDrawer.onOpen}>
-                              <DropdownMenuIcon icon={<LuHistory />} />
-                              History
-                            </DropdownMenuItem>
-                          )}
-                        </>
-                      );
-                    }}
-                  </Await>
-                </Suspense>
+                {auditLogTrigger}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={() => {
@@ -419,13 +404,7 @@ const QuoteHeader = () => {
           }}
         />
       )}
-      <AuditLogDrawer
-        isOpen={auditDrawer.isOpen}
-        onClose={auditDrawer.onClose}
-        entityType="salesQuote"
-        entityId={quoteId}
-        companyId={company.id}
-      />
+      {auditLogDrawer}
     </>
   );
 };

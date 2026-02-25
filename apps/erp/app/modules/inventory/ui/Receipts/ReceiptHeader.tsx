@@ -14,20 +14,18 @@ import {
   useDisclosure
 } from "@carbon/react";
 import { labelSizes } from "@carbon/utils";
-import { Suspense } from "react";
 import {
   LuCheckCheck,
   LuCreditCard,
   LuEllipsisVertical,
-  LuHistory,
   LuQrCode,
   LuShoppingCart,
   LuTrash,
   LuTruck
 } from "react-icons/lu";
-import { Await, Link, useParams } from "react-router";
+import { Link, useParams } from "react-router";
 
-import { AuditLogDrawer } from "~/components/AuditLog";
+import { useAuditLog } from "~/components/AuditLog";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { ItemTracking, Receipt, ReceiptLine } from "~/modules/inventory";
@@ -50,11 +48,12 @@ const ReceiptHeader = () => {
   const permissions = usePermissions();
   const postModal = useDisclosure();
   const deleteModal = useDisclosure();
-  const auditDrawer = useDisclosure();
-
-  const rootRouteData = useRouteData<{
-    auditLogEnabled: Promise<boolean>;
-  }>(path.to.authenticatedRoot);
+  const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
+    entityType: "receipt",
+    entityId: receiptId,
+    companyId: company.id,
+    variant: "dropdown"
+  });
 
   const canPost =
     routeData.receiptLines.length > 0 &&
@@ -100,22 +99,7 @@ const ReceiptHeader = () => {
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <Suspense fallback={null}>
-                  <Await resolve={rootRouteData?.auditLogEnabled}>
-                    {(auditLogEnabled) => {
-                      return (
-                        <>
-                          {auditLogEnabled && (
-                            <DropdownMenuItem onClick={auditDrawer.onOpen}>
-                              <DropdownMenuIcon icon={<LuHistory />} />
-                              History
-                            </DropdownMenuItem>
-                          )}
-                        </>
-                      );
-                    }}
-                  </Await>
-                </Suspense>
+                {auditLogTrigger}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   disabled={
@@ -181,13 +165,7 @@ const ReceiptHeader = () => {
           }}
         />
       )}
-      <AuditLogDrawer
-        isOpen={auditDrawer.isOpen}
-        onClose={auditDrawer.onClose}
-        entityType="receipt"
-        entityId={receiptId}
-        companyId={company.id}
-      />
+      {auditLogDrawer}
     </>
   );
 };

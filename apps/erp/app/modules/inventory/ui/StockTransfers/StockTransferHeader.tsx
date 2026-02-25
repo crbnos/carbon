@@ -13,19 +13,17 @@ import {
   IconButton,
   useDisclosure
 } from "@carbon/react";
-import { Suspense } from "react";
 import {
   LuBarcode,
   LuCircleCheck,
   LuCirclePlay,
   LuEllipsisVertical,
-  LuHistory,
   LuLoaderCircle,
   LuTrash
 } from "react-icons/lu";
-import { Await, useFetcher, useParams } from "react-router";
+import { useFetcher, useParams } from "react-router";
 import Assignee, { useOptimisticAssignment } from "~/components/Assignee";
-import { AuditLogDrawer } from "~/components/AuditLog";
+import { useAuditLog } from "~/components/AuditLog";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { StockTransfer, StockTransferLine } from "~/modules/inventory";
@@ -50,12 +48,13 @@ const StockTransferHeader = () => {
   const permissions = usePermissions();
   const postModal = useDisclosure();
   const deleteModal = useDisclosure();
-  const auditDrawer = useDisclosure();
   const statusFetcher = useFetcher<Result>();
-
-  const rootRouteData = useRouteData<{
-    auditLogEnabled: Promise<boolean>;
-  }>(path.to.authenticatedRoot);
+  const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
+    entityType: "stockTransfer",
+    entityId: id,
+    companyId: company.id,
+    variant: "dropdown"
+  });
 
   const canComplete =
     routeData.stockTransferLines.length > 0 &&
@@ -99,22 +98,7 @@ const StockTransferHeader = () => {
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <Suspense fallback={null}>
-                  <Await resolve={rootRouteData?.auditLogEnabled}>
-                    {(auditLogEnabled) => {
-                      return (
-                        <>
-                          {auditLogEnabled && (
-                            <DropdownMenuItem onClick={auditDrawer.onOpen}>
-                              <DropdownMenuIcon icon={<LuHistory />} />
-                              History
-                            </DropdownMenuItem>
-                          )}
-                        </>
-                      );
-                    }}
-                  </Await>
-                </Suspense>
+                {auditLogTrigger}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   disabled={
@@ -240,13 +224,7 @@ const StockTransferHeader = () => {
           }}
         />
       )}
-      <AuditLogDrawer
-        isOpen={auditDrawer.isOpen}
-        onClose={auditDrawer.onClose}
-        entityType="stockTransfer"
-        entityId={id}
-        companyId={company.id}
-      />
+      {auditLogDrawer}
     </>
   );
 };

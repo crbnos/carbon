@@ -36,7 +36,7 @@ import {
   parseDate,
   today
 } from "@internationalized/date";
-import { Suspense, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   LuCheckCheck,
@@ -48,7 +48,6 @@ import {
   LuClipboardList,
   LuClock,
   LuEllipsisVertical,
-  LuHistory,
   LuList,
   LuLoaderCircle,
   LuPackage,
@@ -64,8 +63,8 @@ import {
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
 import type { FetcherWithComponents } from "react-router";
-import { Await, Link, useFetcher, useNavigate, useParams } from "react-router";
-import { AuditLogDrawer } from "~/components/AuditLog";
+import { Link, useFetcher, useNavigate, useParams } from "react-router";
+import { useAuditLog } from "~/components/AuditLog";
 import { Location, Shelf } from "~/components/Form";
 import { usePanels } from "~/components/Layout";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
@@ -91,18 +90,18 @@ const JobHeader = () => {
   const { company } = useUser();
   const location = useOptimisticLocation();
   const { toggleExplorer, toggleProperties } = usePanels();
+  const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
+    entityType: "productionJob",
+    entityId: jobId,
+    companyId: company.id,
+    variant: "dropdown"
+  });
 
   const releaseModal = useDisclosure();
   const cancelModal = useDisclosure();
   const completeModal = useDisclosure();
   const deleteJobModal = useDisclosure();
-  const auditDrawer = useDisclosure();
-
   const routeData = useRouteData<{ job: Job }>(path.to.job(jobId));
-
-  const rootRouteData = useRouteData<{
-    auditLogEnabled: Promise<boolean>;
-  }>(path.to.authenticatedRoot);
 
   const statusFetcher = useFetcher<{}>();
   const status = routeData?.job?.status;
@@ -160,22 +159,7 @@ const JobHeader = () => {
               />
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <Suspense fallback={null}>
-                <Await resolve={rootRouteData?.auditLogEnabled}>
-                  {(auditLogEnabled) => {
-                    return (
-                      <>
-                        {auditLogEnabled && (
-                          <DropdownMenuItem onClick={auditDrawer.onOpen}>
-                            <DropdownMenuIcon icon={<LuHistory />} />
-                            History
-                          </DropdownMenuItem>
-                        )}
-                      </>
-                    );
-                  }}
-                </Await>
-              </Suspense>
+              {auditLogTrigger}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 disabled={
@@ -440,13 +424,7 @@ const JobHeader = () => {
           }}
         />
       )}
-      <AuditLogDrawer
-        isOpen={auditDrawer.isOpen}
-        onClose={auditDrawer.onClose}
-        entityType="productionJob"
-        entityId={jobId}
-        companyId={company.id}
-      />
+      {auditLogDrawer}
     </>
   );
 };

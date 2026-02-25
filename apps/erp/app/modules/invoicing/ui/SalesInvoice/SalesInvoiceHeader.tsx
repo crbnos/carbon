@@ -15,7 +15,7 @@ import {
   useDisclosure
 } from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
-import { Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   LuCheckCheck,
@@ -24,15 +24,14 @@ import {
   LuEllipsisVertical,
   LuEye,
   LuFile,
-  LuHistory,
   LuPanelLeft,
   LuPanelRight,
   LuTicketX,
   LuTruck
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
-import { Await, Link, useFetcher, useParams } from "react-router";
-import { AuditLogDrawer } from "~/components/AuditLog";
+import { Link, useFetcher, useParams } from "react-router";
+import { useAuditLog } from "~/components/AuditLog";
 import { usePanels } from "~/components/Layout/Panels";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
@@ -52,7 +51,13 @@ const SalesInvoiceHeader = () => {
   const { company } = useUser();
   const postingModal = useDisclosure();
   const voidModal = useDisclosure();
-  const auditDrawer = useDisclosure();
+  const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
+    entityType: "salesInvoice",
+    entityId: invoiceId,
+    companyId: company.id,
+    variant: "dropdown"
+  });
+
   const postFetcher = useFetcher<typeof action>();
   const statusFetcher = useFetcher<typeof statusAction>();
 
@@ -80,10 +85,6 @@ const SalesInvoiceHeader = () => {
   const { toggleExplorer, toggleProperties } = usePanels();
   const isPosted = salesInvoice.postingDate !== null;
   const isVoided = salesInvoice.status === "Voided";
-
-  const rootRouteData = useRouteData<{
-    auditLogEnabled: Promise<boolean>;
-  }>(path.to.authenticatedRoot);
 
   const [relatedDocs, setRelatedDocs] = useState<{
     salesOrders: { id: string; readableId: string }[];
@@ -189,24 +190,7 @@ const SalesInvoiceHeader = () => {
                   size="sm"
                 />
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <Suspense fallback={null}>
-                  <Await resolve={rootRouteData?.auditLogEnabled}>
-                    {(auditLogEnabled) => {
-                      return (
-                        <>
-                          {auditLogEnabled && (
-                            <DropdownMenuItem onClick={auditDrawer.onOpen}>
-                              <DropdownMenuIcon icon={<LuHistory />} />
-                              History
-                            </DropdownMenuItem>
-                          )}
-                        </>
-                      );
-                    }}
-                  </Await>
-                </Suspense>
-              </DropdownMenuContent>
+              <DropdownMenuContent>{auditLogTrigger}</DropdownMenuContent>
             </DropdownMenu>
             <SalesInvoiceStatus status={salesInvoice.status} />
           </HStack>
@@ -387,13 +371,7 @@ const SalesInvoiceHeader = () => {
       {voidModal.isOpen && (
         <SalesInvoiceVoidModal onClose={voidModal.onClose} />
       )}
-      <AuditLogDrawer
-        isOpen={auditDrawer.isOpen}
-        onClose={auditDrawer.onClose}
-        entityType="salesInvoice"
-        entityId={invoiceId}
-        companyId={company.id}
-      />
+      {auditLogDrawer}
     </>
   );
 };

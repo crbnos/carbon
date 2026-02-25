@@ -1,8 +1,6 @@
 import { ValidatedForm } from "@carbon/form";
 import {
-  Button,
   Card,
-  CardAction,
   CardAttribute,
   CardAttributeLabel,
   CardAttributes,
@@ -11,15 +9,13 @@ import {
   CardHeader,
   CardTitle,
   HStack,
-  useDisclosure,
   VStack
 } from "@carbon/react";
-import { Suspense, useCallback } from "react";
-import { LuHistory } from "react-icons/lu";
-import { Await, useFetcher, useParams } from "react-router";
+import { useCallback } from "react";
+import { useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { EmployeeAvatar } from "~/components";
-import { AuditLogDrawer } from "~/components/AuditLog";
+import { useAuditLog } from "~/components/AuditLog";
 import { Enumerable } from "~/components/Enumerable";
 import { Tags } from "~/components/Form";
 import { useSupplierTypes } from "~/components/Form/SupplierType";
@@ -34,15 +30,17 @@ const SupplierHeader = () => {
   if (!supplierId) throw new Error("Could not find supplierId");
   const fetcher = useFetcher<typeof action>();
   const { company } = useUser();
-  const auditDrawer = useDisclosure();
   const routeData = useRouteData<{
     supplier: SupplierDetail;
     tags: { name: string }[];
   }>(path.to.supplier(supplierId));
 
-  const rootRouteData = useRouteData<{
-    auditLogEnabled: Promise<boolean>;
-  }>(path.to.authenticatedRoot);
+  const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
+    entityType: "supplier",
+    entityId: supplierId,
+    companyId: company.id,
+    variant: "card-action"
+  });
 
   const supplierTypes = useSupplierTypes();
   const supplierType = supplierTypes?.find(
@@ -86,27 +84,7 @@ const SupplierHeader = () => {
             <CardHeader>
               <CardTitle>{routeData?.supplier?.name}</CardTitle>
             </CardHeader>
-            <Suspense fallback={null}>
-              <Await resolve={rootRouteData?.auditLogEnabled}>
-                {(auditLogEnabled) => {
-                  return (
-                    <>
-                      {auditLogEnabled && (
-                        <CardAction>
-                          <Button
-                            variant="secondary"
-                            leftIcon={<LuHistory />}
-                            onClick={auditDrawer.onOpen}
-                          >
-                            History
-                          </Button>
-                        </CardAction>
-                      )}
-                    </>
-                  );
-                }}
-              </Await>
-            </Suspense>
+            {auditLogTrigger}
           </HStack>
           <CardContent>
             <CardAttributes>
@@ -178,13 +156,7 @@ const SupplierHeader = () => {
           </CardContent>
         </Card>
       </VStack>
-      <AuditLogDrawer
-        isOpen={auditDrawer.isOpen}
-        onClose={auditDrawer.onClose}
-        entityType="supplier"
-        entityId={supplierId}
-        companyId={company.id}
-      />
+      {auditLogDrawer}
     </>
   );
 };

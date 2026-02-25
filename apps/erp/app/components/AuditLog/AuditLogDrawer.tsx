@@ -2,6 +2,7 @@ import { getTableLabel } from "@carbon/database/audit.config";
 import type { AuditLogEntry } from "@carbon/database/audit.types";
 import {
   Badge,
+  Button,
   cn,
   Drawer,
   DrawerBody,
@@ -15,8 +16,9 @@ import {
 import { formatDateTime } from "@carbon/utils";
 import { memo, useEffect, useRef } from "react";
 import { LuFilePen, LuFilePlus, LuFileX, LuHistory } from "react-icons/lu";
-import { useFetcher } from "react-router";
+import { Link, useFetcher } from "react-router";
 import { EmployeeAvatar, Empty } from "~/components";
+import { path } from "~/utils/path";
 
 type AuditLogDrawerProps = {
   isOpen: boolean;
@@ -24,6 +26,8 @@ type AuditLogDrawerProps = {
   entityType: string;
   entityId: string;
   companyId: string;
+  /** When true, shows an upgrade prompt instead of fetching audit data */
+  planRestricted?: boolean;
 };
 
 type AuditLogFetcherData = {
@@ -57,7 +61,8 @@ const AuditLogDrawer = memo(
     onClose,
     entityType,
     entityId,
-    companyId
+    companyId,
+    planRestricted = false
   }: AuditLogDrawerProps) => {
     const fetcher = useFetcher<AuditLogFetcherData>();
     const lastLoadedRef = useRef<string | null>(null);
@@ -66,21 +71,31 @@ const AuditLogDrawer = memo(
     // Load audit log data when drawer opens or entity changes
     useEffect(() => {
       if (
-        isOpen &&
-        entityType &&
-        entityId &&
-        fetcher.state === "idle" &&
-        lastLoadedRef.current !== loadKey
+        planRestricted ||
+        !isOpen ||
+        !entityType ||
+        !entityId ||
+        fetcher.state !== "idle" ||
+        lastLoadedRef.current === loadKey
       ) {
-        lastLoadedRef.current = loadKey;
-        const params = new URLSearchParams({
-          entityType,
-          entityId,
-          companyId
-        });
-        fetcher.load(`/api/audit-log?${params.toString()}`);
+        return;
       }
-    }, [isOpen, entityType, entityId, companyId, loadKey, fetcher]);
+      lastLoadedRef.current = loadKey;
+      const params = new URLSearchParams({
+        entityType,
+        entityId,
+        companyId
+      });
+      fetcher.load(`/api/audit-log?${params.toString()}`);
+    }, [
+      isOpen,
+      entityType,
+      entityId,
+      companyId,
+      loadKey,
+      fetcher,
+      planRestricted
+    ]);
 
     // Reset tracking when drawer closes so it re-fetches on next open
     useEffect(() => {
@@ -107,7 +122,25 @@ const AuditLogDrawer = memo(
             </DrawerTitle>
           </DrawerHeader>
           <DrawerBody>
-            {isLoading ? (
+            {planRestricted ? (
+              <div className="flex flex-col items-center justify-center h-full text-center gap-4 px-4">
+                <div className="rounded-full bg-muted p-3">
+                  <LuHistory className="size-6 text-muted-foreground" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-lg font-semibold">
+                    Upgrade to unlock audit history
+                  </h3>
+                  <p className="text-sm text-muted-foreground text-balance">
+                    See who changed what, when, and why with full field-level
+                    change tracking for every record.
+                  </p>
+                </div>
+                <Button asChild>
+                  <Link to={path.to.billing}>Upgrade to Business</Link>
+                </Button>
+              </div>
+            ) : isLoading ? (
               <VStack spacing={3}>
                 <Skeleton className="w-full h-[151px]" />
                 <Skeleton className="w-full h-[151px]" />

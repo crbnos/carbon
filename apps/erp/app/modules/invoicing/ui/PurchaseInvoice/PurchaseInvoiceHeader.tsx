@@ -16,21 +16,20 @@ import {
   useDisclosure
 } from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
-import { Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   LuCheckCheck,
   LuChevronDown,
   LuEllipsisVertical,
   LuHandCoins,
-  LuHistory,
   LuPanelLeft,
   LuPanelRight,
   LuShoppingCart,
   LuTrash
 } from "react-icons/lu";
-import { Await, Link, useFetcher, useParams } from "react-router";
-import { AuditLogDrawer } from "~/components/AuditLog";
+import { Link, useFetcher, useParams } from "react-router";
+import { useAuditLog } from "~/components/AuditLog";
 import { usePanels } from "~/components/Layout/Panels";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
@@ -47,7 +46,13 @@ const PurchaseInvoiceHeader = () => {
   const { company } = useUser();
   const postingModal = useDisclosure();
   const deleteModal = useDisclosure();
-  const auditDrawer = useDisclosure();
+  const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
+    entityType: "purchaseInvoice",
+    entityId: invoiceId,
+    companyId: company.id,
+    variant: "dropdown"
+  });
+
   const statusFetcher = useFetcher<typeof statusAction>();
 
   const { carbon } = useCarbon();
@@ -72,10 +77,6 @@ const PurchaseInvoiceHeader = () => {
   const { purchaseInvoice } = routeData;
   const { toggleExplorer, toggleProperties } = usePanels();
   const isPosted = purchaseInvoice.postingDate !== null;
-
-  const rootRouteData = useRouteData<{
-    auditLogEnabled: Promise<boolean>;
-  }>(path.to.authenticatedRoot);
 
   const [relatedDocs, setRelatedDocs] = useState<{
     purchaseOrders: { id: string; readableId: string }[];
@@ -180,22 +181,7 @@ const PurchaseInvoiceHeader = () => {
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <Suspense fallback={null}>
-                  <Await resolve={rootRouteData?.auditLogEnabled}>
-                    {(auditLogEnabled) => {
-                      return (
-                        <>
-                          {auditLogEnabled && (
-                            <DropdownMenuItem onClick={auditDrawer.onOpen}>
-                              <DropdownMenuIcon icon={<LuHistory />} />
-                              History
-                            </DropdownMenuItem>
-                          )}
-                        </>
-                      );
-                    }}
-                  </Await>
-                </Suspense>
+                {auditLogTrigger}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   disabled={
@@ -364,13 +350,7 @@ const PurchaseInvoiceHeader = () => {
           }}
         />
       )}
-      <AuditLogDrawer
-        isOpen={auditDrawer.isOpen}
-        onClose={auditDrawer.onClose}
-        entityType="purchaseInvoice"
-        entityId={invoiceId}
-        companyId={company.id}
-      />
+      {auditLogDrawer}
     </>
   );
 };

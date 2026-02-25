@@ -14,7 +14,7 @@ import {
   toast,
   useDisclosure
 } from "@carbon/react";
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   LuCheckCheck,
   LuChevronDown,
@@ -22,15 +22,14 @@ import {
   LuCircleStop,
   LuEllipsisVertical,
   LuHandCoins,
-  LuHistory,
   LuLoaderCircle,
   LuTrash,
   LuTruck
 } from "react-icons/lu";
-import { Await, Link, useFetcher } from "react-router";
-import { AuditLogDrawer } from "~/components/AuditLog";
+import { Link, useFetcher } from "react-router";
+import { useAuditLog } from "~/components/AuditLog";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
-import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import type { action as statusAction } from "~/routes/x+/warehouse-transfer+/$transferId.status";
 import { path } from "~/utils/path";
 import type { Receipt, Shipment, WarehouseTransfer } from "../../types";
@@ -49,11 +48,12 @@ const WarehouseTransferHeader = ({
   const permissions = usePermissions();
   const statusFetcher = useFetcher<typeof statusAction>();
   const deleteModal = useDisclosure();
-  const auditDrawer = useDisclosure();
-
-  const rootRouteData = useRouteData<{
-    auditLogEnabled: Promise<boolean>;
-  }>(path.to.authenticatedRoot);
+  const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
+    entityType: "warehouseTransfer",
+    entityId: warehouseTransfer.id,
+    companyId: company.id,
+    variant: "dropdown"
+  });
 
   const { receipts, shipments, ship, receive, hasShippedItems } =
     useWarehouseTransferRelatedDocuments(warehouseTransfer.id);
@@ -79,22 +79,7 @@ const WarehouseTransferHeader = ({
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <Suspense fallback={null}>
-                  <Await resolve={rootRouteData?.auditLogEnabled}>
-                    {(auditLogEnabled) => {
-                      return (
-                        <>
-                          {auditLogEnabled && (
-                            <DropdownMenuItem onClick={auditDrawer.onOpen}>
-                              <DropdownMenuIcon icon={<LuHistory />} />
-                              History
-                            </DropdownMenuItem>
-                          )}
-                        </>
-                      );
-                    }}
-                  </Await>
-                </Suspense>
+                {auditLogTrigger}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   disabled={
@@ -330,13 +315,7 @@ const WarehouseTransferHeader = ({
           }}
         />
       )}
-      <AuditLogDrawer
-        isOpen={auditDrawer.isOpen}
-        onClose={auditDrawer.onClose}
-        entityType="warehouseTransfer"
-        entityId={warehouseTransfer.id}
-        companyId={company.id}
-      />
+      {auditLogDrawer}
     </>
   );
 };

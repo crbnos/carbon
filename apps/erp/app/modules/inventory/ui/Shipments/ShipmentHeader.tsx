@@ -23,7 +23,6 @@ import {
   LuCirclePlus,
   LuCreditCard,
   LuEllipsisVertical,
-  LuHistory,
   LuQrCode,
   LuShoppingCart,
   LuTicketX,
@@ -32,7 +31,7 @@ import {
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
 import { Await, Link, useNavigate, useParams } from "react-router";
-import { AuditLogDrawer } from "~/components/AuditLog";
+import { useAuditLog } from "~/components/AuditLog";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { ItemTracking, Shipment, ShipmentLine } from "~/modules/inventory";
@@ -63,12 +62,13 @@ const ShipmentHeader = () => {
   const postModal = useDisclosure();
   const voidModal = useDisclosure();
   const deleteModal = useDisclosure();
-  const auditDrawer = useDisclosure();
   const navigate = useNavigate();
-
-  const rootRouteData = useRouteData<{
-    auditLogEnabled: Promise<boolean>;
-  }>(path.to.authenticatedRoot);
+  const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
+    entityType: "shipment",
+    entityId: shipmentId,
+    companyId: company.id,
+    variant: "dropdown"
+  });
 
   const canPost =
     routeData.shipmentLines.length > 0 &&
@@ -129,22 +129,7 @@ const ShipmentHeader = () => {
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <Suspense fallback={null}>
-                  <Await resolve={rootRouteData?.auditLogEnabled}>
-                    {(auditLogEnabled) => {
-                      return (
-                        <>
-                          {auditLogEnabled && (
-                            <DropdownMenuItem onClick={auditDrawer.onOpen}>
-                              <DropdownMenuIcon icon={<LuHistory />} />
-                              History
-                            </DropdownMenuItem>
-                          )}
-                        </>
-                      );
-                    }}
-                  </Await>
-                </Suspense>
+                {auditLogTrigger}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   disabled={
@@ -414,13 +399,7 @@ const ShipmentHeader = () => {
           }}
         />
       )}
-      <AuditLogDrawer
-        isOpen={auditDrawer.isOpen}
-        onClose={auditDrawer.onClose}
-        entityType="shipment"
-        entityId={shipmentId}
-        companyId={company.id}
-      />
+      {auditLogDrawer}
     </>
   );
 };
