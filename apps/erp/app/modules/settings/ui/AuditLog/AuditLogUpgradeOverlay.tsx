@@ -87,8 +87,7 @@ export default function AuditLogUpgradeOverlay() {
               <h3 className="text-lg font-semibold">Audit Logs</h3>
               <p className="text-sm text-muted-foreground text-balance">
                 Track every change to your orders, invoices, customers,
-                suppliers, and more. See who changed what, when, and why with
-                full field-level diffs and archival.
+                suppliers, and more.
               </p>
             </div>
             <Button asChild>
