@@ -16,6 +16,7 @@ import {
 } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { getCurrencyByCode } from "~/modules/accounting";
+import { getSupplierPriceBreaksForItems } from "~/modules/items";
 import type { SalesOrderLine } from "~/modules/sales";
 import {
   getCustomer,
@@ -140,11 +141,33 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       ? customer.data.defaultCc
       : (companySettings.data?.defaultCustomerCc ?? []);
 
+  // Collect all Buy item IDs from method trees + top-level Buy lines
+  const methodTrees = methods.data ?? [];
+  const buyItemIds = new Set<string>();
+  function collectBuyItems(tree: (typeof methodTrees)[number]) {
+    if (tree.data.methodType === "Buy" && tree.data.itemId) {
+      buyItemIds.add(tree.data.itemId);
+    }
+    tree.children?.forEach(collectBuyItems);
+  }
+  methodTrees.forEach(collectBuyItems);
+  // Also include top-level Buy lines (non-Make lines)
+  for (const line of lines.data ?? []) {
+    if (line.methodType === "Buy" && line.itemId) {
+      buyItemIds.add(line.itemId);
+    }
+  }
+
+  const supplierPriceMap = await getSupplierPriceBreaksForItems(
+    client,
+    Array.from(buyItemIds)
+  );
+
   return {
     quote: quote.data,
     customer: customer.data,
     lines: lines.data ?? [],
-    methods: methods.data ?? [],
+    methods: methodTrees,
     files: opportunityDocuments,
     prices: prices.data ?? [],
     shipment: shipment.data,
@@ -152,7 +175,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     opportunity: opportunity.data,
     exchangeRate,
     salesOrderLines: salesOrderLines?.data ?? null,
-    defaultCc
+    defaultCc,
+    supplierPriceMap
   };
 }
 

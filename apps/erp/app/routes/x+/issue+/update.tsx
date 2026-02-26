@@ -21,7 +21,6 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   switch (field) {
-    case "investigationTypeIds":
     case "requiredActionIds":
     case "approvalRequirements":
       const arrayValue = value ? value.split(",") : [];

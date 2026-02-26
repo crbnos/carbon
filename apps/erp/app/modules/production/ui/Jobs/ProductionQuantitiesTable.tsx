@@ -3,10 +3,10 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
 import { LuPencil, LuTrash } from "react-icons/lu";
 import { useNavigate, useParams } from "react-router";
-import { EmployeeAvatar, Hyperlink, Table } from "~/components";
+import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useUrlParams } from "~/hooks";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import type { ProductionQuantity, ScrapReason } from "../../types";
@@ -164,6 +164,7 @@ const ProductionQuantitiesTable = memo(
     };
 
     const navigate = useNavigate();
+    const [params] = useUrlParams();
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const renderContextMenu = useCallback<
@@ -199,6 +200,14 @@ const ProductionQuantitiesTable = memo(
           count={count}
           columns={columns}
           data={data}
+          primaryAction={
+            permissions.can("create", "production") && (
+              <New
+                label="Production Quantity"
+                to={`new?${params.toString()}`}
+              />
+            )
+          }
           renderContextMenu={renderContextMenu}
           title="Production Quantities"
         />

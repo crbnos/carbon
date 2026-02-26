@@ -33,28 +33,59 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw notFound("Table not found in the list of supported tables");
   }
 
+  const dbFields = Object.keys(getZodSchemaFieldsShallow(schema));
+  const fileColumnsLower = fileColumns.map((c) => c.toLowerCase().trim());
+
+  // Deterministic exact match pass
+  const matched: Record<string, string> = {};
+  const unmatchedFields: string[] = [];
+
+  for (const field of dbFields) {
+    const idx = fileColumnsLower.indexOf(field.toLowerCase());
+    if (idx !== -1) {
+      matched[field] = fileColumns[idx];
+    } else {
+      unmatchedFields.push(field);
+    }
+  }
+
+  // If all fields matched, skip AI entirely
+  if (unmatchedFields.length === 0) {
+    return matched;
+  }
+
+  // Use AI only for unmatched fields
+  const unmatchedSchema = schema.pick(
+    Object.fromEntries(unmatchedFields.map((f) => [f, true])) as Record<
+      string,
+      true
+    >
+  );
+
+  const unmatchedFileColumns = fileColumns.filter(
+    (c) => !Object.values(matched).includes(c)
+  );
+
   try {
     const { object } = await generateObject({
       model: openai("gpt-4o"),
-      schema,
+      schema: unmatchedSchema,
       prompt: `
-      The following columns are the headings from a CSV import file for importing a ${table}. 
-      Map these column names to the correct fields in our database (${[
-        ...Object.keys(getZodSchemaFieldsShallow(schema))
-      ].join(", ")}) by providing the matching column name for each field.
-      
-      If you are not sure or there is no matching column, please return "N/A". 
-      
+      The following columns are the headings from a CSV import file for importing a ${table}.
+      Map these column names to the correct fields in our database (${unmatchedFields.join(", ")}) by providing the matching column name for each field.
+
+      If you are not sure or there is no matching column, please return "N/A".
+
       Columns:
-      ${fileColumns.join(",")}
+      ${unmatchedFileColumns.join(",")}
       `,
       temperature: 0.2
     });
 
-    return object;
+    return { ...matched, ...object };
   } catch (error) {
     console.error(error);
-    return {} as Record<string, string>;
+    return matched;
   }
 }
 

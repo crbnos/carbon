@@ -47,6 +47,30 @@ export async function action({ request, params }: ActionFunctionArgs) {
     };
   }
 
+  const newSupplierPartId = createToolSupplier.data?.id;
+  const priceBreaksRaw = formData.get("priceBreaks");
+  if (newSupplierPartId && priceBreaksRaw) {
+    const priceBreaks = JSON.parse(priceBreaksRaw as string) as {
+      quantity: number;
+      unitPrice: number;
+      leadTime: number;
+    }[];
+    if (priceBreaks.length > 0) {
+      await client.from("supplierPartPrice").insert(
+        priceBreaks.map((pb) => ({
+          supplierPartId: newSupplierPartId,
+          quantity: pb.quantity,
+          unitPrice: pb.unitPrice,
+          leadTime: pb.leadTime ?? 0,
+          sourceType: "Manual Entry" as const,
+          companyId,
+          createdBy: userId,
+          updatedBy: userId
+        }))
+      );
+    }
+  }
+
   throw redirect(
     path.to.toolPurchasing(itemId),
     await flash(request, success("Tool supplier created"))

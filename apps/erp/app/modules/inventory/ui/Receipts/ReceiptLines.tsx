@@ -218,11 +218,9 @@ const ReceiptLines = () => {
   return (
     <>
       <Card>
-        <HStack className="justify-between items-start">
-          <CardHeader>
-            <CardTitle>Receipt Lines</CardTitle>
-          </CardHeader>
-        </HStack>
+        <CardHeader>
+          <CardTitle>Receipt Lines</CardTitle>
+        </CardHeader>
 
         <CardContent>
           <div className="border rounded-lg">

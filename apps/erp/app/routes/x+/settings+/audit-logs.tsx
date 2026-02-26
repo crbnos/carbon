@@ -1,4 +1,9 @@
-import { error, getCarbonServiceRole, success } from "@carbon/auth";
+import {
+  CarbonEdition,
+  error,
+  getCarbonServiceRole,
+  success
+} from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
@@ -10,10 +15,13 @@ import {
   syncAuditSubscriptions
 } from "@carbon/database/audit";
 import { Button, Heading, ScrollArea, VStack } from "@carbon/react";
+import { usePlan } from "@carbon/remix";
+import { Edition, Plan } from "@carbon/utils";
 import { LuHistory } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Link, Outlet, redirect, useLoaderData } from "react-router";
-import { AuditLogSettings } from "~/modules/settings";
+import { useFlags } from "~/hooks/useFlags";
+import { AuditLogSettings, AuditLogUpgradeOverlay } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -71,6 +79,25 @@ export async function action({ request }: ActionFunctionArgs) {
 
   switch (actionType) {
     case "enable": {
+      // Server-side plan gate: only Business+ can enable audit logs on Cloud
+      if (CarbonEdition === Edition.Cloud) {
+        const companyPlan = await client
+          .from("companyPlan")
+          .select("planId")
+          .eq("id", companyId)
+          .single();
+
+        if (companyPlan.data?.planId === Plan.Starter) {
+          throw redirect(
+            path.to.auditLog,
+            await flash(
+              request,
+              error(null, "Upgrade to Business to enable audit logging")
+            )
+          );
+        }
+      }
+
       try {
         await enableAuditLog(client, companyId);
         throw redirect(
@@ -134,6 +161,10 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function AuditLogRoute() {
   const { enabled, archives } = useLoaderData<typeof loader>();
+  const plan = usePlan();
+  const { isCloud } = useFlags();
+
+  const isStarterTeaser = isCloud && plan === Plan.Starter;
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-49px)]">
@@ -143,14 +174,20 @@ export default function AuditLogRoute() {
       >
         <div className="flex items-center justify-between w-full">
           <Heading size="h3">Audit Logs</Heading>
-          {enabled && (
+          {enabled && !isStarterTeaser && (
             <Button leftIcon={<LuHistory />} asChild>
               <Link to={path.to.auditLogDetails}>View All</Link>
             </Button>
           )}
         </div>
-        <AuditLogSettings enabled={enabled} archives={archives} />
-        {enabled && <Outlet />}
+        {isStarterTeaser ? (
+          <AuditLogUpgradeOverlay />
+        ) : (
+          <>
+            <AuditLogSettings enabled={enabled} archives={archives} />
+            {enabled && <Outlet />}
+          </>
+        )}
       </VStack>
     </ScrollArea>
   );

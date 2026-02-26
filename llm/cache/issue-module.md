@@ -20,23 +20,16 @@ Issues have the following status progression:
 
 ## Task Types
 
-Issues can have three types of tasks that are created automatically based on the issue configuration:
+Issues can have two types of tasks that are created automatically based on the issue configuration:
 
-### 1. Investigation Tasks
+### 1. Action Tasks
 
-- Created based on `investigationTypeIds` array in the issue
-- Each investigation type creates one task
-- Stored in `nonConformanceInvestigationTask` table
-- Examples: Root Cause Analysis, Material Analysis, Process Review
-
-### 2. Action Tasks
-
-- Created based on `requiredActionIds` array in the issue
+- Created based on `requiredActionIds` array in the issue (includes former investigation types, merged in migration 20251120214020)
 - Each action type creates one task
 - Stored in `nonConformanceActionTask` table
-- Examples: Corrective Action, Preventive Action, Containment
+- Examples: Root Cause Analysis, Corrective Action, Preventive Action, Containment
 
-### 3. Approval Tasks
+### 2. Approval Tasks
 
 - Created based on `approvalRequirements` array in the issue
 - Each approval type creates one task

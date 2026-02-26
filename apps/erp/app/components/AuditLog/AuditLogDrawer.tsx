@@ -2,6 +2,7 @@ import { getTableLabel } from "@carbon/database/audit.config";
 import type { AuditLogEntry } from "@carbon/database/audit.types";
 import {
   Badge,
+  Button,
   cn,
   Drawer,
   DrawerBody,
@@ -14,9 +15,17 @@ import {
 } from "@carbon/react";
 import { formatDateTime } from "@carbon/utils";
 import { memo, useEffect, useRef } from "react";
-import { LuFilePen, LuFilePlus, LuFileX, LuHistory } from "react-icons/lu";
-import { useFetcher } from "react-router";
+import {
+  LuFilePen,
+  LuFilePlus,
+  LuFileX,
+  LuHistory,
+  LuSettings
+} from "react-icons/lu";
+import { Link, useFetcher } from "react-router";
 import { EmployeeAvatar, Empty } from "~/components";
+import { usePermissions, useRouteData } from "~/hooks";
+import { path } from "~/utils/path";
 
 type AuditLogDrawerProps = {
   isOpen: boolean;
@@ -24,6 +33,8 @@ type AuditLogDrawerProps = {
   entityType: string;
   entityId: string;
   companyId: string;
+  /** When true, shows an upgrade prompt instead of fetching audit data */
+  planRestricted?: boolean;
 };
 
 type AuditLogFetcherData = {
@@ -57,30 +68,49 @@ const AuditLogDrawer = memo(
     onClose,
     entityType,
     entityId,
-    companyId
+    companyId,
+    planRestricted = false
   }: AuditLogDrawerProps) => {
     const fetcher = useFetcher<AuditLogFetcherData>();
     const lastLoadedRef = useRef<string | null>(null);
     const loadKey = `${entityType}:${entityId}:${companyId}`;
 
+    const rootRouteData = useRouteData<{ auditLogEnabled: boolean }>(
+      path.to.authenticatedRoot
+    );
+    const auditLogEnabled = rootRouteData?.auditLogEnabled ?? false;
+    const { can } = usePermissions();
+
     // Load audit log data when drawer opens or entity changes
     useEffect(() => {
       if (
-        isOpen &&
-        entityType &&
-        entityId &&
-        fetcher.state === "idle" &&
-        lastLoadedRef.current !== loadKey
+        planRestricted ||
+        !auditLogEnabled ||
+        !isOpen ||
+        !entityType ||
+        !entityId ||
+        fetcher.state !== "idle" ||
+        lastLoadedRef.current === loadKey
       ) {
-        lastLoadedRef.current = loadKey;
-        const params = new URLSearchParams({
-          entityType,
-          entityId,
-          companyId
-        });
-        fetcher.load(`/api/audit-log?${params.toString()}`);
+        return;
       }
-    }, [isOpen, entityType, entityId, companyId, loadKey, fetcher]);
+      lastLoadedRef.current = loadKey;
+      const params = new URLSearchParams({
+        entityType,
+        entityId,
+        companyId
+      });
+      fetcher.load(`/api/audit-log?${params.toString()}`);
+    }, [
+      isOpen,
+      entityType,
+      entityId,
+      companyId,
+      loadKey,
+      fetcher,
+      planRestricted,
+      auditLogEnabled
+    ]);
 
     // Reset tracking when drawer closes so it re-fetches on next open
     useEffect(() => {
@@ -91,6 +121,62 @@ const AuditLogDrawer = memo(
 
     const entries = fetcher.data?.entries ?? [];
     const isLoading = fetcher.state === "loading";
+
+    const drawerBody = planRestricted ? (
+      <div className="flex flex-col items-center justify-start flex-1 w-full pt-[15dvh] text-center gap-4 px-4 h-full">
+        <div className="rounded-full bg-muted p-3">
+          <LuHistory className="size-6 text-muted-foreground" />
+        </div>
+        <div className="space-y-2">
+          <h3 className="text-lg font-semibold">
+            Upgrade to unlock audit history
+          </h3>
+          <p className="text-sm text-muted-foreground text-balance">
+            Track every change to your orders, invoices, customers, and more.
+          </p>
+        </div>
+        <Button asChild>
+          <Link to={path.to.billing}>Upgrade to Business</Link>
+        </Button>
+      </div>
+    ) : !auditLogEnabled ? (
+      <div className="flex flex-col items-center justify-start flex-1 w-full pt-[15dvh] text-center gap-4 px-4 h-full">
+        <div className="rounded-full bg-muted p-3">
+          <LuHistory className="size-6 text-muted-foreground" />
+        </div>
+        <div className="space-y-2">
+          <h3 className="text-lg font-semibold">
+            Audit logging is not enabled
+          </h3>
+          <p className="text-sm text-muted-foreground text-balance">
+            Enable audit logging in settings to start tracking changes to your
+            data.
+          </p>
+        </div>
+        {can("update", "settings") ? (
+          <Button variant="secondary" leftIcon={<LuSettings />} asChild>
+            <Link to={path.to.auditLog}>Enable in Settings</Link>
+          </Button>
+        ) : (
+          <span className="text-sm text-muted-foreground">
+            Please contact your administrator to enable audit logging.
+          </span>
+        )}
+      </div>
+    ) : isLoading ? (
+      <VStack spacing={3}>
+        <Skeleton className="w-full h-[151px]" />
+        <Skeleton className="w-full h-[151px]" />
+      </VStack>
+    ) : entries.length === 0 ? (
+      <Empty />
+    ) : (
+      <VStack spacing={3}>
+        {entries.map((entry) => (
+          <AuditLogEntryCard key={entry.id} entry={entry} />
+        ))}
+      </VStack>
+    );
 
     return (
       <Drawer
@@ -106,22 +192,7 @@ const AuditLogDrawer = memo(
               History
             </DrawerTitle>
           </DrawerHeader>
-          <DrawerBody>
-            {isLoading ? (
-              <VStack spacing={3}>
-                <Skeleton className="w-full h-[151px]" />
-                <Skeleton className="w-full h-[151px]" />
-              </VStack>
-            ) : entries.length === 0 ? (
-              <Empty />
-            ) : (
-              <VStack spacing={3}>
-                {entries.map((entry) => (
-                  <AuditLogEntryCard key={entry.id} entry={entry} />
-                ))}
-              </VStack>
-            )}
-          </DrawerBody>
+          <DrawerBody>{drawerBody}</DrawerBody>
         </DrawerContent>
       </Drawer>
     );

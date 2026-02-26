@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { useParams } from "react-router";
 import type { Tree } from "~/components/TreeView";
+import { lookupBuyPriceFromMap, type SupplierPriceMap } from "~/modules/shared";
 import type {
   CostEffects,
   Costs,
@@ -29,11 +30,13 @@ type EnhancedTree = Tree<QuoteMethod & { operations?: QuotationOperation[] }>;
 export function useLineCosts({
   methodTree: originalMethodTree,
   operations,
-  line
+  line,
+  supplierPriceMap = {}
 }: {
   methodTree?: Tree<QuoteMethod>;
   operations: QuotationOperation[];
   line: QuotationLine;
+  supplierPriceMap?: SupplierPriceMap;
 }): (quantity: number) => Costs {
   const { quoteId, lineId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
@@ -71,35 +74,74 @@ export function useLineCosts({
   const costEffects = useMemo<CostEffects>(() => {
     const effects = structuredClone(defaultEffects);
 
+    function pushBuyCostEffect(
+      itemId: string,
+      itemType: string,
+      quantity: number,
+      unitCost: number,
+      supplierPriceMap: SupplierPriceMap
+    ) {
+      const costFn = (outerQty: number) => {
+        const requestedQty = quantity * outerQty;
+        const resolved = lookupBuyPriceFromMap(
+          itemId,
+          requestedQty,
+          supplierPriceMap,
+          unitCost
+        );
+        return resolved * requestedQty;
+      };
+      switch (itemType) {
+        case "Material":
+          effects.materialCost.push(costFn);
+          break;
+        case "Part":
+          effects.partCost.push(costFn);
+          break;
+        case "Tool":
+          effects.toolCost.push(costFn);
+          break;
+        case "Consumable":
+          effects.consumableCost.push(costFn);
+          break;
+        case "Service":
+          effects.serviceCost.push(costFn);
+          break;
+        default:
+          break;
+      }
+    }
+
     function walkTree(tree: EnhancedTree) {
       const { data } = tree;
 
-      if (["Buy", "Pick"].includes(data.methodType)) {
+      if (data.methodType === "Buy") {
+        pushBuyCostEffect(
+          data.itemId,
+          data.itemType,
+          data.quantity,
+          data.unitCost,
+          supplierPriceMap
+        );
+      } else if (data.methodType === "Pick") {
+        // Pick items use static average cost
+        const costFn = (quantity: number) =>
+          data.unitCost * data.quantity * quantity;
         switch (data.itemType) {
           case "Material":
-            effects.materialCost.push(
-              (quantity) => data.unitCost * data.quantity * quantity
-            );
+            effects.materialCost.push(costFn);
             break;
           case "Part":
-            effects.partCost.push(
-              (quantity) => data.unitCost * data.quantity * quantity
-            );
+            effects.partCost.push(costFn);
             break;
           case "Tool":
-            effects.toolCost.push(
-              (quantity) => data.unitCost * data.quantity * quantity
-            );
+            effects.toolCost.push(costFn);
             break;
           case "Consumable":
-            effects.consumableCost.push(
-              (quantity) => data.unitCost * data.quantity * quantity
-            );
+            effects.consumableCost.push(costFn);
             break;
           case "Service":
-            effects.serviceCost.push(
-              (quantity) => data.unitCost * data.quantity * quantity
-            );
+            effects.serviceCost.push(costFn);
             break;
           default:
             break;
@@ -333,12 +375,26 @@ export function useLineCosts({
 
     if (methodTree && line.methodType === "Make") {
       walkTree(methodTree);
+    } else if (line.methodType === "Buy") {
+      pushBuyCostEffect(
+        line.itemId ?? "",
+        "Material",
+        1,
+        line.unitCost ?? 0,
+        supplierPriceMap
+      );
     } else {
       effects.materialCost.push((quantity) => (line.unitCost ?? 0) * quantity);
     }
 
     return effects;
-  }, [methodTree, line.methodType, line.unitCost]);
+  }, [
+    methodTree,
+    line.methodType,
+    line.unitCost,
+    line.itemId,
+    supplierPriceMap
+  ]);
 
   const getCosts = useCallback(
     (quantity: number) => {

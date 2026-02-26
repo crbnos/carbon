@@ -6,6 +6,7 @@ import {
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
   Heading,
   HStack,
@@ -22,8 +23,9 @@ import {
 } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import Assignee, { useOptimisticAssignment } from "~/components/Assignee";
+import { useAuditLog } from "~/components/AuditLog";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
-import { usePermissions, useRouteData } from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { StockTransfer, StockTransferLine } from "~/modules/inventory";
 import { path } from "~/utils/path";
 import StockTransferCompleteModal from "./StockTransferCompleteModal";
@@ -42,10 +44,17 @@ const StockTransferHeader = () => {
     throw new Error("Failed to load stockTransfer");
   const status = routeData.stockTransfer.status;
 
+  const { company } = useUser();
   const permissions = usePermissions();
   const postModal = useDisclosure();
   const deleteModal = useDisclosure();
   const statusFetcher = useFetcher<Result>();
+  const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
+    entityType: "stockTransfer",
+    entityId: id,
+    companyId: company.id,
+    variant: "dropdown"
+  });
 
   const canComplete =
     routeData.stockTransferLines.length > 0 &&
@@ -89,6 +98,8 @@ const StockTransferHeader = () => {
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
+                {auditLogTrigger}
+                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   disabled={
                     !permissions.can("delete", "inventory") ||
@@ -213,6 +224,7 @@ const StockTransferHeader = () => {
           }}
         />
       )}
+      {auditLogDrawer}
     </>
   );
 };

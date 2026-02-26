@@ -72,6 +72,14 @@ export const paymentTerms = [
     createdBy: "system"
   },
   {
+    name: "Prepaid/ Pro forma",
+    daysDue: 0,
+    calculationMethod: "Net",
+    daysDiscount: 0,
+    discountPercentage: 0,
+    createdBy: "system"
+  },
+  {
     name: "Net EOM 10th",
     daysDue: 10,
     calculationMethod: "End of Month",

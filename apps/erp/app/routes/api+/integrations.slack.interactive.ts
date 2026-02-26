@@ -420,7 +420,6 @@ async function handleViewSubmission(
       companyId,
       createdBy: employee.data?.id,
       description,
-      investigationTypeIds: [],
       locationId: employee.data?.locationId || "",
       name: title,
       nonConformanceTypeId: typeId,

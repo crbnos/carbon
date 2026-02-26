@@ -1,4 +1,3 @@
-import { extendStackTrace } from "https://esm.sh/kysely@0.26.3/dist/esm/util/stack-trace-utils.js";
 import {
   CompiledQuery,
   DatabaseConnection,
@@ -8,6 +7,19 @@ import {
   TransactionSettings,
 } from "kysely";
 import { Pool, PoolClient } from "pg";
+
+function extendStackTrace(err: unknown, stackError: Error): unknown {
+  if (
+    err instanceof Error &&
+    typeof err.stack === "string" &&
+    stackError.stack
+  ) {
+    const stackExtension = stackError.stack.split("\n").slice(1).join("\n");
+    err.stack += `\n${stackExtension}`;
+    return err;
+  }
+  return err;
+}
 
 export interface PostgresDialectConfig {
   pool: Pool;

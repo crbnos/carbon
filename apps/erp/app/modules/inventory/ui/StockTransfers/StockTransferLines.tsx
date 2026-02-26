@@ -313,7 +313,7 @@ export default function StockTransferLines() {
   return (
     <>
       <Card>
-        <HStack className="justify-between items-start">
+        <HStack className="justify-between items-center">
           <CardHeader>
             <CardTitle>Stock Transfer Lines</CardTitle>
             <CardDescription>

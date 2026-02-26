@@ -4,11 +4,14 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
+import { getSupplierPriceBreaksForItems } from "~/modules/items";
 import {
   quoteLineValidator,
   upsertQuoteLine,
-  upsertQuoteLineMethod
+  upsertQuoteLineMethod,
+  upsertQuoteLinePrices
 } from "~/modules/sales";
+import { lookupBuyPriceFromMap } from "~/modules/shared";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -62,6 +65,27 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const quoteLineId = createQuotationLine.data.id;
+
+  if (d.methodType === "Buy") {
+    const quantities = d.quantity ?? [1];
+    const priceMap = await getSupplierPriceBreaksForItems(serviceRole, [
+      d.itemId
+    ]);
+    await upsertQuoteLinePrices(
+      serviceRole,
+      quoteId,
+      quoteLineId,
+      quantities.map((qty) => ({
+        quoteLineId,
+        quantity: qty,
+        unitPrice: lookupBuyPriceFromMap(d.itemId, qty, priceMap, 0),
+        leadTime: 0,
+        discountPercent: 0,
+        createdBy: userId
+      }))
+    );
+  }
+
   if (d.methodType === "Make") {
     const upsertMethod = await upsertQuoteLineMethod(serviceRole, {
       quoteId,
@@ -80,6 +104,36 @@ export async function action({ request, params }: ActionFunctionArgs) {
           error(upsertMethod.error, "Failed to create quote line method.")
         )
       );
+    }
+
+    // Fix BOM material costs: replace average cost with price break values
+    const buyMaterials = await serviceRole
+      .from("quoteMaterial")
+      .select("id, itemId, unitCost")
+      .eq("quoteLineId", quoteLineId)
+      .eq("methodType", "Buy");
+
+    const buyItemIds = [
+      ...new Set((buyMaterials.data ?? []).map((m) => m.itemId))
+    ];
+    const bomPriceMap = await getSupplierPriceBreaksForItems(
+      serviceRole,
+      buyItemIds
+    );
+
+    for (const mat of buyMaterials.data ?? []) {
+      const price = lookupBuyPriceFromMap(
+        mat.itemId,
+        1,
+        bomPriceMap,
+        mat.unitCost
+      );
+      if (price !== mat.unitCost) {
+        await serviceRole
+          .from("quoteMaterial")
+          .update({ unitCost: price })
+          .eq("id", mat.id);
+      }
     }
   }
 

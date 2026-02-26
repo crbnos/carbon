@@ -41,12 +41,13 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
+import { getSupplierPartPriceBreaks } from "~/modules/items";
 import type { PurchaseOrder, PurchaseOrderLine } from "~/modules/purchasing";
 import {
   isPurchaseOrderLocked,
   purchaseOrderLineValidator
 } from "~/modules/purchasing";
-import type { MethodItemType } from "~/modules/shared";
+import { type MethodItemType, resolveSupplierPrice } from "~/modules/shared";
 import type { action } from "~/routes/x+/purchase-order+/$orderId.$lineId.details";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -98,6 +99,8 @@ const PurchaseOrderLineForm = ({
     minimumOrderQuantity?: number;
     supplierTaxAmount: number;
     taxPercent: number;
+    priceBreaks: Array<{ quantity: number; unitPrice: number }>;
+    fallbackUnitPrice: number;
   }>({
     itemId: initialValues.itemId ?? "",
     description: initialValues.description ?? "",
@@ -119,7 +122,9 @@ const PurchaseOrderLineForm = ({
           ((initialValues.supplierUnitPrice ?? 0) *
             (initialValues.purchaseQuantity ?? 1) +
             (initialValues.supplierShippingCost ?? 0))
-        : 0
+        : 0,
+    priceBreaks: [],
+    fallbackUnitPrice: initialValues.supplierUnitPrice ?? 0
   });
 
   // update tax amount when quantity or unit price changes
@@ -141,6 +146,32 @@ const PurchaseOrderLineForm = ({
   ]);
 
   const isEditing = initialValues.id !== undefined;
+
+  // Load price breaks on mount when editing so quantity changes resolve correctly
+  useMount(() => {
+    if (!isEditing || !initialValues.itemId) return;
+    const supplierId = routeData?.purchaseOrder?.supplierId;
+    if (!supplierId) return;
+
+    (async () => {
+      const supplierPart = await carbon
+        .from("supplierPart")
+        .select("id")
+        .eq("itemId", initialValues.itemId!)
+        .eq("companyId", company.id)
+        .eq("supplierId", supplierId)
+        .maybeSingle();
+
+      if (supplierPart?.data?.id) {
+        const breaks = await getSupplierPartPriceBreaks(
+          carbon,
+          supplierPart.data.id
+        );
+        setItemData((d) => ({ ...d, priceBreaks: breaks }));
+      }
+    })();
+  });
+
   const isDisabled = isClosed
     ? true
     : isEditing
@@ -168,7 +199,9 @@ const PurchaseOrderLineForm = ({
       shelfId: "",
       minimumOrderQuantity: undefined,
       supplierTaxAmount: 0,
-      taxPercent: 0
+      taxPercent: 0,
+      priceBreaks: [],
+      fallbackUnitPrice: 0
     });
   };
 
@@ -208,14 +241,27 @@ const PurchaseOrderLineForm = ({
 
         const itemCost = item?.data?.itemCost?.[0];
         const itemReplenishment = item?.data?.itemReplenishment;
+        const exchangeRate = routeData?.purchaseOrder?.exchangeRate ?? 1;
+        const initialQty = supplierPart?.data?.minimumOrderQuantity ?? 1;
+        const baseFallback =
+          (supplierPart?.data?.unitPrice ?? itemCost?.unitCost ?? 0) /
+          exchangeRate;
+
+        const breaks = supplierPart?.data?.id
+          ? await getSupplierPartPriceBreaks(carbon, supplierPart.data.id)
+          : [];
+        const resolvedPrice = resolveSupplierPrice(
+          breaks,
+          initialQty,
+          baseFallback,
+          exchangeRate
+        );
 
         setItemData({
           itemId: itemId,
           description: item.data?.name ?? "",
-          purchaseQuantity: supplierPart?.data?.minimumOrderQuantity ?? 1,
-          supplierUnitPrice:
-            (supplierPart?.data?.unitPrice ?? itemCost?.unitCost ?? 0) /
-            (routeData?.purchaseOrder?.exchangeRate ?? 1),
+          purchaseQuantity: initialQty,
+          supplierUnitPrice: resolvedPrice,
           supplierShippingCost: 0,
           purchaseUom:
             supplierPart?.data?.supplierUnitOfMeasureCode ??
@@ -229,7 +275,9 @@ const PurchaseOrderLineForm = ({
             1,
           shelfId: inventory.data?.defaultShelfId ?? null,
           supplierTaxAmount: 0,
-          taxPercent: 0
+          taxPercent: 0,
+          priceBreaks: breaks,
+          fallbackUnitPrice: baseFallback
         });
 
         if (item.data?.type) {
@@ -382,9 +430,17 @@ const PurchaseOrderLineForm = ({
                       label="Quantity"
                       value={itemData.purchaseQuantity}
                       onChange={(value) => {
+                        const exchangeRate =
+                          routeData?.purchaseOrder?.exchangeRate ?? 1;
                         setItemData((d) => ({
                           ...d,
-                          purchaseQuantity: value
+                          purchaseQuantity: value,
+                          supplierUnitPrice: resolveSupplierPrice(
+                            d.priceBreaks,
+                            value,
+                            d.fallbackUnitPrice,
+                            exchangeRate
+                          )
                         }));
                       }}
                     />

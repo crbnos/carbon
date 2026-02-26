@@ -6,7 +6,6 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData } from "react-router";
 import {
   getJobOperations,
-  getProductionQuantity,
   productionQuantityValidator,
   upsertProductionQuantity
 } from "~/modules/production";
@@ -15,17 +14,13 @@ import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
-    view: "production"
+    create: "production"
   });
 
-  const { id, jobId } = params;
-  if (!id) throw notFound("id not found");
+  const { jobId } = params;
   if (!jobId) throw notFound("jobId not found");
 
-  const [productionQuantity, jobOperations] = await Promise.all([
-    getProductionQuantity(client, id),
-    getJobOperations(client, jobId)
-  ]);
+  const [jobOperations] = await Promise.all([getJobOperations(client, jobId)]);
 
   const operationOptions =
     jobOperations.data?.map((operation) => ({
@@ -33,22 +28,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       value: operation.id
     })) ?? [];
 
-  return {
-    productionQuantity: productionQuantity?.data ?? null,
-    operationOptions
-  };
+  return { operationOptions };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
-    update: "accounting"
+  const { client, companyId } = await requirePermissions(request, {
+    create: "production"
   });
 
   const { jobId } = params;
-  if (!jobId) throw notFound("jobId or id not found");
+  if (!jobId) {
+    throw notFound("jobId not found");
+  }
 
   const formData = await request.formData();
+  const modal = formData.get("type") === "modal";
+
   const validation = await validator(productionQuantityValidator).validate(
     formData
   );
@@ -57,54 +53,49 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
+  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
-  if (!id) throw new Error("id not found");
 
-  // If the type is not Scrap, set the scrapReasonId and notes to null
+  // If the type is not Scrap, clear the scrapReasonId
   if (d.type !== "Scrap") {
     d.scrapReasonId = undefined;
   }
 
-  const update = await upsertProductionQuantity(client, {
-    id,
+  const insert = await upsertProductionQuantity(client, {
     ...d,
-    companyId,
-    updatedBy: userId
+    companyId
   });
-
-  if (update.error) {
+  if (insert.error) {
     return data(
       {},
       await flash(
         request,
-        error(update.error, "Failed to update production quantity")
+        error(insert.error, "Failed to insert production quantity")
       )
     );
   }
 
-  throw redirect(
-    `${path.to.jobProductionQuantities(jobId)}?${getParams(request)}`,
-    await flash(request, success("Updated production quantity"))
-  );
+  return modal
+    ? data(insert, { status: 201 })
+    : redirect(
+        `${path.to.jobProductionQuantities(jobId)}?${getParams(request)}`,
+        await flash(request, success("Production quantity created"))
+      );
 }
 
-export default function EditProductionQuantityRoute() {
-  const { productionQuantity, operationOptions } =
-    useLoaderData<typeof loader>();
-
+export default function NewProductionQuantityRoute() {
+  const { operationOptions } = useLoaderData<typeof loader>();
   const initialValues = {
-    id: productionQuantity?.id!,
-    type: productionQuantity?.type ?? ("Scrap" as "Scrap"),
-    jobOperationId: productionQuantity?.jobOperationId ?? "",
-    quantity: productionQuantity?.quantity ?? 0,
-    scrapReasonId: productionQuantity?.scrapReasonId ?? "",
-    notes: productionQuantity?.notes ?? "",
-    createdBy: productionQuantity?.createdBy ?? ""
+    type: "Production" as const,
+    jobOperationId: "",
+    quantity: 0,
+    scrapReasonId: "",
+    notes: "",
+    createdBy: ""
   };
 
   return (
     <ProductionQuantityForm
-      key={initialValues.id}
       initialValues={initialValues}
       operationOptions={operationOptions ?? []}
     />

@@ -1,5 +1,3 @@
-import { usePlan } from "@carbon/remix";
-import { Plan } from "@carbon/utils";
 import {
   LuBarcode,
   LuBox,
@@ -27,7 +25,6 @@ import { path } from "~/utils/path";
 const settingsRoutes: AuthenticatedRouteGroup<{
   requiresOwnership?: boolean;
   requiresCloudEnvironment?: boolean;
-  requiresEnterpriseOrBusiness?: boolean;
 }>[] = [
   {
     name: "Company",
@@ -126,8 +123,7 @@ const settingsRoutes: AuthenticatedRouteGroup<{
         name: "Audit Logs",
         to: path.to.auditLog,
         role: "employee",
-        icon: <LuHistory />,
-        requiresEnterpriseOrBusiness: true
+        icon: <LuHistory />
       },
       {
         name: "Custom Fields",
@@ -159,8 +155,7 @@ const settingsRoutes: AuthenticatedRouteGroup<{
 
 export default function useSettingsSubmodules() {
   const permissions = usePermissions();
-  const { isCloud, isEnterprise, isCommunity } = useFlags();
-  const plan = usePlan();
+  const { isCloud } = useFlags();
 
   return {
     groups: settingsRoutes
@@ -190,15 +185,6 @@ export default function useSettingsSubmodules() {
           }
 
           if (route.requiresCloudEnvironment && !isCloud) {
-            return false;
-          }
-
-          if (
-            route.requiresEnterpriseOrBusiness &&
-            !isEnterprise &&
-            !isCommunity &&
-            plan !== Plan.Business
-          ) {
             return false;
           }
 

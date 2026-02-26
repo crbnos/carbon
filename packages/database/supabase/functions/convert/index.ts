@@ -1502,6 +1502,12 @@ serve(async (req: Request) => {
             )
             .forEach((line) => {
               const key = `${line.itemId}-${quote.data.supplierId}`;
+              const selectedLine = selectedLines![line.id!];
+              const exchangeRate = quote.data.exchangeRate ?? 1;
+              const unitPriceInInventoryUnit =
+                (selectedLine.supplierUnitPrice /
+                  (exchangeRate === 0 ? 1 : exchangeRate)) /
+                (line.conversionFactor ?? 1);
               supplierPartMap.set(key, {
                 companyId,
                 supplierId: quote.data?.supplierId!,
@@ -1510,6 +1516,7 @@ serve(async (req: Request) => {
                 conversionFactor: line.conversionFactor,
                 itemId: line.itemId!,
                 createdBy: userId,
+                unitPrice: unitPriceInInventoryUnit,
               });
             });
 
@@ -1526,9 +1533,93 @@ serve(async (req: Request) => {
                   .columns(["itemId", "supplierId", "companyId"])
                   .doUpdateSet((eb) => ({
                     supplierPartId: eb.ref("excluded.supplierPartId"),
+                    unitPrice: eb.ref("excluded.unitPrice"),
                   }))
               )
               .execute();
+
+            const supplierParts = await trx
+              .selectFrom("supplierPart")
+              .select(["id", "itemId"])
+              .where("supplierId", "=", quote.data.supplierId)
+              .where("companyId", "=", companyId)
+              .where(
+                "itemId",
+                "in",
+                supplierPartToItemInserts.map((i: { itemId: string }) => i.itemId)
+              )
+              .execute();
+
+            const supplierPartIdByItemId = new Map(
+              supplierParts.map((sp) => [sp.itemId, sp.id])
+            );
+
+            for (const line of quoteLines.data.filter(
+              (l) =>
+                !!l.itemId &&
+                l.id &&
+                selectedLines &&
+                l.id in selectedLines
+            )) {
+              const spId = supplierPartIdByItemId.get(line.itemId);
+              if (!spId) continue;
+
+              const selectedLine = selectedLines![line.id!];
+              const exchangeRate = quote.data.exchangeRate ?? 1;
+              const conversionFactor = line.conversionFactor ?? 1;
+              const unitPriceInInventoryUnit =
+                (selectedLine.supplierUnitPrice /
+                  (exchangeRate === 0 ? 1 : exchangeRate)) /
+                conversionFactor;
+
+              await trx
+                .insertInto("supplierPartPrice")
+                .values({
+                  supplierPartId: spId,
+                  quantity: selectedLine.quantity,
+                  unitPrice: unitPriceInInventoryUnit,
+                  leadTime: selectedLine.leadTime ?? 0,
+                  sourceType: "Purchase Order",
+                  sourceDocumentId: insertedPurchaseOrderId,
+                  companyId,
+                  createdBy: userId,
+                  updatedBy: userId,
+                  updatedAt: new Date().toISOString(),
+                })
+                .onConflict((oc) =>
+                  oc
+                    .columns(["supplierPartId", "quantity"])
+                    .doUpdateSet((eb) => ({
+                      unitPrice: eb.ref("excluded.unitPrice"),
+                      leadTime: eb.ref("excluded.leadTime"),
+                      sourceType: eb.ref("excluded.sourceType"),
+                      sourceDocumentId: eb.ref("excluded.sourceDocumentId"),
+                      updatedBy: eb.ref("excluded.updatedBy"),
+                      updatedAt: eb.ref("excluded.updatedAt"),
+                    }))
+                )
+                .execute();
+            }
+
+            for (const [, spId] of supplierPartIdByItemId) {
+              const bestTier = await trx
+                .selectFrom("supplierPartPrice")
+                .select(["unitPrice", "quantity"])
+                .where("supplierPartId", "=", spId)
+                .orderBy("unitPrice", "asc")
+                .executeTakeFirst();
+
+              if (bestTier) {
+                await trx
+                  .updateTable("supplierPart")
+                  .set({
+                    unitPrice: Number(bestTier.unitPrice),
+                    minimumOrderQuantity: Number(bestTier.quantity),
+                  })
+                  .where("id", "=", spId)
+                  .execute();
+              }
+            }
           }
         });
 

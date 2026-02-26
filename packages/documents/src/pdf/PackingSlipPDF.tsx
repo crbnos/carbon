@@ -117,9 +117,7 @@ const PackingSlipPDF = ({
               {customer.name && (
                 <Text style={tw("font-bold")}>{customer.name}</Text>
               )}
-              {addressLine1 && (
-                <Text style={tw("mt-1")}>{addressLine1}</Text>
-              )}
+              {addressLine1 && <Text style={tw("mt-1")}>{addressLine1}</Text>}
               {addressLine2 && <Text>{addressLine2}</Text>}
               {(city || stateProvince || postalCode) && (
                 <Text>
@@ -177,9 +175,7 @@ const PackingSlipPDF = ({
               Payment
             </Text>
             <View style={tw("text-[10px] text-gray-800")}>
-              {paymentTerm?.name && (
-                <Text>Terms: {paymentTerm.name}</Text>
-              )}
+              {paymentTerm?.name && <Text>Terms: {paymentTerm.name}</Text>}
             </View>
           </View>
         </View>
@@ -206,9 +202,9 @@ const PackingSlipPDF = ({
 
         {/* Rows */}
         {shipmentLines
-          .filter((line) => line.shippedQuantity > 0)
+          .filter((line) => line?.shippedQuantity ?? 0 > 0)
           .map((line) => {
-            const barcodeDataUrl = generateBarcode(line.itemReadableId);
+            const barcodeDataUrl = generateBarcode(line?.itemReadableId || "");
             const trackedEntitiesForLine = trackedEntities.filter(
               (entity) =>
                 (entity.attributes as TrackedEntityAttributes)?.[
@@ -229,9 +225,7 @@ const PackingSlipPDF = ({
                 wrap={false}
               >
                 <View
-                  style={tw(
-                    `w-${hasTrackedEntities ? "5/12" : "7/12"} pr-2`
-                  )}
+                  style={tw(`w-${hasTrackedEntities ? "5/12" : "7/12"} pr-2`)}
                 >
                   <Text style={tw("text-gray-800")}>
                     {getLineDescription(line)}
@@ -252,10 +246,7 @@ const PackingSlipPDF = ({
                     )}
 
                   <View style={tw("mt-1")}>
-                    <Image
-                      src={barcodeDataUrl}
-                      style={tw("max-w-[50%]")}
-                    />
+                    <Image src={barcodeDataUrl} style={tw("max-w-[50%]")} />
                   </View>
                 </View>
                 <Text style={tw("w-2/12 text-right text-gray-600")}>

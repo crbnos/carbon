@@ -3,17 +3,11 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 import { Outlet, useNavigate } from "react-router";
 import { SupplierAvatar } from "~/components";
-import {
-  EditableList,
-  EditableNumber,
-  EditableText
-} from "~/components/Editable";
-import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import Grid from "~/components/Grid";
-import { useCurrencyFormatter } from "~/hooks";
+import Hyperlink from "~/components/Hyperlink";
+import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { SupplierPart } from "../../../types";
-import useSupplierParts from "./useSupplierParts";
 
 type Part = Pick<
   SupplierPart,
@@ -37,10 +31,9 @@ const SupplierParts = ({
   compact = false
 }: SupplierPartsProps) => {
   const navigate = useNavigate();
-  const { canEdit, onCellEdit } = useSupplierParts();
-
+  const permissions = usePermissions();
+  const canEdit = permissions.can("update", "parts");
   const formatter = useCurrencyFormatter();
-  const unitOfMeasureOptions = useUnitOfMeasure();
   const customColumns = useCustomColumns<Part>("supplierPart");
 
   const columns = useMemo<ColumnDef<Part>[]>(() => {
@@ -49,7 +42,9 @@ const SupplierParts = ({
         accessorKey: "supplierId",
         header: "Supplier",
         cell: ({ row }) => (
-          <SupplierAvatar supplierId={row.original.supplierId} />
+          <Hyperlink to={row.original.id!}>
+            <SupplierAvatar supplierId={row.original.supplierId} />
+          </Hyperlink>
         )
       },
       {
@@ -85,17 +80,6 @@ const SupplierParts = ({
     return [...defaultColumns, ...customColumns];
   }, [customColumns, formatter]);
 
-  const editableComponents = useMemo(
-    () => ({
-      supplierPartId: EditableText(onCellEdit),
-      supplierUnitOfMeasureCode: EditableList(onCellEdit, unitOfMeasureOptions),
-      minimumOrderQuantity: EditableNumber(onCellEdit),
-      conversionFactor: EditableNumber(onCellEdit),
-      unitPrice: EditableNumber(onCellEdit)
-    }),
-    [onCellEdit, unitOfMeasureOptions]
-  );
-
   return (
     <>
       <Card className={cn(compact && "border-none p-0 dark:shadow-none")}>
@@ -104,11 +88,9 @@ const SupplierParts = ({
         </CardHeader>
         <CardContent className={cn(compact && "px-0")}>
           <Grid<Part>
-            contained={false}
             data={supplierParts}
             columns={columns}
-            canEdit={canEdit}
-            editableComponents={editableComponents}
+            canEdit={false}
             onNewRow={canEdit ? () => navigate("new") : undefined}
           />
         </CardContent>

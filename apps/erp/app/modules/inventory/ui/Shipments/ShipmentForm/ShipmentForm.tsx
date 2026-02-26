@@ -32,7 +32,6 @@ import {
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import type {
-  ShipmentLine,
   ShipmentSourceDocument,
   shipmentStatusType
 } from "~/modules/inventory";
@@ -46,7 +45,6 @@ import useShipmentForm from "./useShipmentForm";
 type ShipmentFormProps = {
   initialValues: z.infer<typeof shipmentValidator>;
   status: (typeof shipmentStatusType)[number];
-  shipmentLines?: ShipmentLine[];
 };
 
 const formId = "shipment-form";

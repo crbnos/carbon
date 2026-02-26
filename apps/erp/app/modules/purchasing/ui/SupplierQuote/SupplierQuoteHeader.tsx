@@ -43,7 +43,7 @@ import {
   LuTriangleAlert
 } from "react-icons/lu";
 import type { FetcherWithComponents } from "react-router";
-import { Link, useFetcher, useParams } from "react-router";
+import { Link, useFetcher, useParams, useRevalidator } from "react-router";
 import { usePanels } from "~/components/Layout";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 
@@ -68,6 +68,7 @@ const SupplierQuoteHeader = () => {
 
   const { toggleExplorer, toggleProperties } = usePanels();
   const permissions = usePermissions();
+  const revalidator = useRevalidator();
 
   const routeData = useRouteData<{
     quote: SupplierQuote;
@@ -202,7 +203,10 @@ const SupplierQuoteHeader = () => {
 
             {canFinalize && (
               <Button
-                onClick={finalizeModal.onOpen}
+                onClick={() => {
+                  revalidator.revalidate();
+                  finalizeModal.onOpen();
+                }}
                 isLoading={finalizeFetcher.state !== "idle"}
                 isDisabled={
                   finalizeFetcher.state !== "idle" ||

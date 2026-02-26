@@ -14,7 +14,7 @@ import {
   SplitButton,
   useDisclosure
 } from "@carbon/react";
-import { Suspense, useState } from "react";
+import { useState } from "react";
 import {
   LuCheckCheck,
   LuChevronDown,
@@ -25,7 +25,6 @@ import {
   LuEye,
   LuFile,
   LuHandCoins,
-  LuHistory,
   LuLoaderCircle,
   LuPanelLeft,
   LuPanelRight,
@@ -33,9 +32,9 @@ import {
   LuTruck,
   LuX
 } from "react-icons/lu";
-import { Await, Link, useFetcher, useParams } from "react-router";
+import { Link, useFetcher, useParams } from "react-router";
 
-import { AuditLogDrawer } from "~/components/AuditLog";
+import { useAuditLog } from "~/components/AuditLog";
 import { usePanels } from "~/components/Layout";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
@@ -89,15 +88,17 @@ const PurchaseOrderHeader = () => {
     routeData?.purchaseOrder?.purchaseOrderType === "Outside Processing"
   );
 
+  const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
+    entityType: "purchaseOrder",
+    entityId: orderId,
+    companyId: company.id,
+    variant: "dropdown"
+  });
+
   const finalizeDisclosure = useDisclosure();
   const deleteModal = useDisclosure();
-  const auditDrawer = useDisclosure();
   const [approvalDecision, setApprovalDecision] =
     useState<ApprovalDecision | null>(null);
-
-  const rootRouteData = useRouteData<{
-    auditLogEnabled: Promise<boolean>;
-  }>(path.to.authenticatedRoot);
 
   const isOutsideProcessing =
     routeData?.purchaseOrder?.purchaseOrderType === "Outside Processing";
@@ -138,22 +139,7 @@ const PurchaseOrderHeader = () => {
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <Suspense fallback={null}>
-                  <Await resolve={rootRouteData?.auditLogEnabled}>
-                    {(auditLogEnabled) => {
-                      return (
-                        <>
-                          {auditLogEnabled && (
-                            <DropdownMenuItem onClick={auditDrawer.onOpen}>
-                              <DropdownMenuIcon icon={<LuHistory />} />
-                              History
-                            </DropdownMenuItem>
-                          )}
-                        </>
-                      );
-                    }}
-                  </Await>
-                </Suspense>
+                {auditLogTrigger}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   disabled={
@@ -563,13 +549,7 @@ const PurchaseOrderHeader = () => {
           defaultCc={routeData?.defaultCc ?? []}
         />
       )}
-      <AuditLogDrawer
-        isOpen={auditDrawer.isOpen}
-        onClose={auditDrawer.onClose}
-        entityType="purchaseOrder"
-        entityId={orderId}
-        companyId={company.id}
-      />
+      {auditLogDrawer}
     </>
   );
 };

@@ -5,6 +5,7 @@ import {
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
   Heading,
   HStack,
@@ -24,8 +25,9 @@ import {
 } from "react-icons/lu";
 import { Link, useParams } from "react-router";
 
+import { useAuditLog } from "~/components/AuditLog";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
-import { usePermissions, useRouteData } from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { ItemTracking, Receipt, ReceiptLine } from "~/modules/inventory";
 import { ReceiptPostModal, ReceiptStatus } from "~/modules/inventory";
 import { path } from "~/utils/path";
@@ -42,9 +44,16 @@ const ReceiptHeader = () => {
 
   if (!routeData?.receipt) throw new Error("Failed to load receipt");
 
+  const { company } = useUser();
   const permissions = usePermissions();
   const postModal = useDisclosure();
   const deleteModal = useDisclosure();
+  const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
+    entityType: "receipt",
+    entityId: receiptId,
+    companyId: company.id,
+    variant: "dropdown"
+  });
 
   const canPost =
     routeData.receiptLines.length > 0 &&
@@ -90,6 +99,8 @@ const ReceiptHeader = () => {
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
+                {auditLogTrigger}
+                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   disabled={
                     !permissions.can("delete", "inventory") ||
@@ -154,6 +165,7 @@ const ReceiptHeader = () => {
           }}
         />
       )}
+      {auditLogDrawer}
     </>
   );
 };

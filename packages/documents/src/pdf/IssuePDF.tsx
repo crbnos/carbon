@@ -185,9 +185,7 @@ const IssuePDF = ({
                     "flex flex-row gap-2 text-[10px] py-1 border-b border-gray-200"
                   )}
                 >
-                  <Text style={tw("w-1/4 font-bold text-gray-600")}>
-                    Item:
-                  </Text>
+                  <Text style={tw("w-1/4 font-bold text-gray-600")}>Item:</Text>
                   <Text style={tw("text-gray-800")}>
                     {item.documentReadableId}
                   </Text>
@@ -426,9 +424,7 @@ const IssuePDF = ({
                       Inspections
                     </Text>
                     {jobOperationStepRecords
-                      .filter(
-                        (step) => step.nonConformanceActionId === task.id
-                      )
+                      .filter((step) => step.nonConformanceActionId === task.id)
                       .map((step) =>
                         step.jobOperationStepRecord
                           ?.filter((record) => record.booleanValue !== null)
@@ -467,18 +463,14 @@ const IssuePDF = ({
                                   {step.name}
                                 </Text>
                                 <Text
-                                  style={tw(
-                                    "text-[8px] text-gray-400 mt-0.5"
-                                  )}
+                                  style={tw("text-[8px] text-gray-400 mt-0.5")}
                                 >
                                   {operationToJobId[step.operationId] && (
                                     <>
-                                      Job{" "}
-                                      {operationToJobId[step.operationId]} •{" "}
+                                      Job {operationToJobId[step.operationId]} •{" "}
                                     </>
                                   )}
-                                  {assignees[record.createdBy] || "Unknown"}{" "}
-                                  •{" "}
+                                  {assignees[record.createdBy] || "Unknown"} •{" "}
                                   {
                                     new Date(record.createdAt)
                                       .toISOString()

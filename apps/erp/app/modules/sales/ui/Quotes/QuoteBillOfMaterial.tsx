@@ -52,8 +52,6 @@ import {
   Hidden,
   InputControlled,
   Item,
-  // biome-ignore lint/suspicious/noShadowRestrictedNames: suppressed due to migration
-  Number,
   NumberControlled,
   Select,
   Shelf,
@@ -67,6 +65,7 @@ import type {
 } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useRouteData, useUrlParams, useUser } from "~/hooks";
+import { lookupBuyPrice as lookupBuyPriceAsync } from "~/modules/items";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { MethodItemType, MethodType } from "~/modules/shared";
 import type { Item as ItemType } from "~/stores";
@@ -689,6 +688,14 @@ function MaterialForm({
     });
   };
 
+  const lookupBuyPriceFn = useCallback(
+    async (itemId: string, qty: number, fallbackCost: number) => {
+      if (!carbon) return fallbackCost;
+      return lookupBuyPriceAsync(carbon, itemId, qty, fallbackCost);
+    },
+    [carbon]
+  );
+
   const onItemChange = async (itemId: string) => {
     if (!carbon) return;
     if (itemId === params.itemId) {
@@ -713,11 +720,22 @@ function MaterialForm({
       return;
     }
 
+    let unitCost = itemCost.data?.unitCost ?? 0;
+    const isBuyPart = item.data?.defaultMethodType === "Buy";
+
+    if (isBuyPart) {
+      unitCost = await lookupBuyPriceFn(
+        itemId,
+        itemData.quantity ?? 1,
+        unitCost
+      );
+    }
+
     setItemData((d) => ({
       ...d,
       itemId,
       description: item.data?.name ?? "",
-      unitCost: itemCost.data?.unitCost ?? 0,
+      unitCost,
       unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
       methodType: item.data?.defaultMethodType ?? "Buy",
       requiresBatchTracking: item.data?.itemTrackingType === "Batch",
@@ -728,6 +746,31 @@ function MaterialForm({
       setItemType(item.data.type as MethodItemType);
     }
   };
+
+  const onQuantityChange = useCallback(
+    async (newQty: number) => {
+      setItemData((d) => ({ ...d, quantity: newQty }));
+
+      if (itemData.methodType !== "Buy" || !itemData.itemId) return;
+      if (!carbon) return;
+
+      const itemCost = await carbon
+        .from("itemCost")
+        .select("unitCost")
+        .eq("itemId", itemData.itemId)
+        .single();
+
+      const fallbackCost = itemCost.data?.unitCost ?? 0;
+      const unitCost = await lookupBuyPriceFn(
+        itemData.itemId,
+        newQty,
+        fallbackCost
+      );
+
+      setItemData((d) => ({ ...d, unitCost }));
+    },
+    [carbon, itemData.methodType, itemData.itemId, lookupBuyPriceFn]
+  );
 
   const sourceDisclosure = useDisclosure();
   const backflushDisclosure = useDisclosure();
@@ -757,7 +800,6 @@ function MaterialForm({
           <Hidden name="unitCost" value={itemData.unitCost} />
         )}
       </div>
-
       <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
         <Item
           blacklist={[params.itemId!]}
@@ -773,7 +815,12 @@ function MaterialForm({
           onTypeChange={onTypeChange}
         />
 
-        <Number name="quantity" label="Quantity" />
+        <NumberControlled
+          name="quantity"
+          label="Quantity"
+          value={itemData.quantity}
+          onChange={onQuantityChange}
+        />
         <UnitOfMeasure
           name="unitOfMeasureCode"
           value={itemData.unitOfMeasureCode}
@@ -806,7 +853,6 @@ function MaterialForm({
           />
         )}
       </div>
-
       <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4 w-full">
         <HStack
           className="w-full justify-between cursor-pointer"
@@ -881,7 +927,6 @@ function MaterialForm({
           />
         </div>
       </div>
-
       <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4 w-full">
         <HStack
           className="w-full justify-between cursor-pointer"
@@ -943,7 +988,6 @@ function MaterialForm({
           />
         </div>
       </div>
-
       <motion.div
         className="flex flex-1 items-center justify-end w-full pt-2"
         initial={{ opacity: 0, filter: "blur(4px)" }}

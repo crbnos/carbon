@@ -14,6 +14,7 @@ import {
   ModalCardHeader,
   ModalCardProvider,
   ModalCardTitle,
+  useMount,
   VStack
 } from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
@@ -40,7 +41,8 @@ import {
 } from "~/hooks";
 import type { PurchaseInvoice } from "~/modules/invoicing";
 import { purchaseInvoiceLineValidator } from "~/modules/invoicing";
-import type { MethodItemType } from "~/modules/shared";
+import { getSupplierPartPriceBreaks } from "~/modules/items";
+import { type MethodItemType, resolveSupplierPrice } from "~/modules/shared";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 
@@ -91,6 +93,8 @@ const PurchaseInvoiceLineForm = ({
     minimumOrderQuantity?: number;
     taxAmount: number;
     taxPercent: number;
+    priceBreaks: Array<{ quantity: number; unitPrice: number }>;
+    fallbackUnitPrice: number;
   }>({
     itemId: initialValues.itemId ?? "",
     description: initialValues.description ?? "",
@@ -103,7 +107,9 @@ const PurchaseInvoiceLineForm = ({
     shelfId: initialValues.shelfId ?? "",
     minimumOrderQuantity: undefined,
     taxAmount: initialValues.supplierTaxAmount ?? 0,
-    taxPercent: initialValues.taxPercent ?? 0
+    taxPercent: initialValues.taxPercent ?? 0,
+    priceBreaks: [],
+    fallbackUnitPrice: initialValues.supplierUnitPrice ?? 0
   });
 
   // update tax amount when quantity or unit price changes
@@ -125,6 +131,32 @@ const PurchaseInvoiceLineForm = ({
   ]);
 
   const isEditing = initialValues.id !== undefined;
+
+  // Load price breaks
+  useMount(() => {
+    if (!isEditing || !initialValues.itemId) return;
+    const supplierId = routeData?.purchaseInvoice?.supplierId;
+    if (!supplierId) return;
+
+    (async () => {
+      const supplierPart = await carbon
+        .from("supplierPart")
+        .select("id")
+        .eq("itemId", initialValues.itemId!)
+        .eq("companyId", company.id)
+        .eq("supplierId", supplierId)
+        .maybeSingle();
+
+      if (supplierPart?.data?.id) {
+        const breaks = await getSupplierPartPriceBreaks(
+          carbon,
+          supplierPart.data.id
+        );
+        setItemData((d) => ({ ...d, priceBreaks: breaks }));
+      }
+    })();
+  });
+
   const isDisabled = !isEditable
     ? true
     : isEditing
@@ -149,7 +181,9 @@ const PurchaseInvoiceLineForm = ({
       shelfId: "",
       minimumOrderQuantity: undefined,
       taxAmount: 0,
-      taxPercent: 0
+      taxPercent: 0,
+      priceBreaks: [],
+      fallbackUnitPrice: 0
     });
   };
 
@@ -189,14 +223,27 @@ const PurchaseInvoiceLineForm = ({
 
         const itemCost = item?.data?.itemCost?.[0];
         const itemReplenishment = item?.data?.itemReplenishment;
+        const exchangeRate = routeData?.purchaseInvoice?.exchangeRate ?? 1;
+        const initialQty = supplierPart?.data?.minimumOrderQuantity ?? 1;
+        const baseFallback =
+          (supplierPart?.data?.unitPrice ?? itemCost?.unitCost ?? 0) /
+          exchangeRate;
+
+        const breaks = supplierPart?.data?.id
+          ? await getSupplierPartPriceBreaks(carbon, supplierPart.data.id)
+          : [];
+        const resolvedPrice = resolveSupplierPrice(
+          breaks,
+          initialQty,
+          baseFallback,
+          exchangeRate
+        );
 
         setItemData({
           itemId: itemId,
           description: item.data?.name ?? "",
-          quantity: supplierPart?.data?.minimumOrderQuantity ?? 1,
-          supplierUnitPrice:
-            (supplierPart?.data?.unitPrice ?? itemCost?.unitCost ?? 0) /
-            (routeData?.purchaseInvoice?.exchangeRate ?? 1),
+          quantity: initialQty,
+          supplierUnitPrice: resolvedPrice,
           supplierShippingCost: 0,
           purchaseUom:
             supplierPart?.data?.supplierUnitOfMeasureCode ??
@@ -210,7 +257,9 @@ const PurchaseInvoiceLineForm = ({
             1,
           shelfId: inventory.data?.defaultShelfId ?? null,
           taxAmount: 0,
-          taxPercent: 0
+          taxPercent: 0,
+          priceBreaks: breaks,
+          fallbackUnitPrice: baseFallback
         });
 
         if (item.data?.type) {
@@ -357,9 +406,17 @@ const PurchaseInvoiceLineForm = ({
                         label="Quantity"
                         value={itemData.quantity}
                         onChange={(value) => {
+                          const exchangeRate =
+                            routeData?.purchaseInvoice?.exchangeRate ?? 1;
                           setItemData((d) => ({
                             ...d,
-                            quantity: value
+                            quantity: value,
+                            supplierUnitPrice: resolveSupplierPrice(
+                              d.priceBreaks,
+                              value,
+                              d.fallbackUnitPrice,
+                              exchangeRate
+                            )
                           }));
                         }}
                       />

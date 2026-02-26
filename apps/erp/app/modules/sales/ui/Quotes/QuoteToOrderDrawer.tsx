@@ -595,7 +595,9 @@ const LinePricingOptions = ({
                           convertedAdditionalChargesByQuantity[option.quantity]
                         )}
                       </Td>
-                      <Td>{option.leadTime} {pluralize(option.leadTime, "day")}</Td>
+                      <Td>
+                        {option.leadTime} {pluralize(option.leadTime, "day")}
+                      </Td>
                       <Td>
                         {formatter.format(
                           (option.convertedNetExtendedPrice ?? 0) +

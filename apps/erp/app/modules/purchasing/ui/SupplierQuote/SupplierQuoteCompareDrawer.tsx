@@ -199,7 +199,10 @@ const SupplierQuoteCompareDrawer = ({
                 <DrawerTitle>
                   {step === "compare"
                     ? "Compare Supplier Quotes"
-                    : `Create Order from ${selectedQuote?.supplier?.name ?? selectedQuote?.supplierQuoteId}`}
+                    : `Create Order from ${
+                        selectedQuote?.supplier?.name ??
+                        selectedQuote?.supplierQuoteId
+                      }`}
                 </DrawerTitle>
                 {step === "compare" && totalQuotes > 0 && (
                   <span className="text-sm text-muted-foreground">
@@ -621,7 +624,8 @@ const ComparisonView = ({
                                   </span>
                                 </HStack>
                                 <span className="text-xs text-muted-foreground">
-                                  {linePrice.leadTime ?? 0} {pluralize(linePrice.leadTime ?? 0, "day")}
+                                  {linePrice.leadTime ?? 0}{" "}
+                                  {pluralize(linePrice.leadTime ?? 0, "day")}
                                 </span>
                               </VStack>
                             </Td>
@@ -792,7 +796,10 @@ const LinePricingOptions = ({
                   <Td>{option.quantity}</Td>
                   <Td>{formatter.format(option.supplierUnitPrice ?? 0)}</Td>
                   <Td>{formatter.format(option.supplierShippingCost ?? 0)}</Td>
-                  <Td>{option.leadTime ?? 0} {pluralize(option.leadTime ?? 0, "day")}</Td>
+                  <Td>
+                    {option.leadTime ?? 0}{" "}
+                    {pluralize(option.leadTime ?? 0, "day")}
+                  </Td>
                   <Td>{formatter.format(option.supplierTaxAmount ?? 0)}</Td>
                   <Td>
                     {formatter.format(

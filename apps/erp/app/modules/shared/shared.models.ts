@@ -290,3 +290,16 @@ export const standardFactorType = [
   "Total Hours",
   "Total Minutes"
 ] as const;
+
+export type PriceBreak = {
+  quantity: number;
+  unitPrice: number;
+};
+
+export type SupplierPriceMap = Record<
+  string,
+  {
+    priceBreaks: PriceBreak[];
+    fallbackUnitPrice: number | null;
+  }
+>;

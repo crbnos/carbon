@@ -1,8 +1,6 @@
 import { ValidatedForm } from "@carbon/form";
 import {
-  Button,
   Card,
-  CardAction,
   CardAttribute,
   CardAttributeLabel,
   CardAttributes,
@@ -11,15 +9,13 @@ import {
   CardHeader,
   CardTitle,
   HStack,
-  useDisclosure,
   VStack
 } from "@carbon/react";
-import { Suspense, useCallback } from "react";
-import { LuHistory } from "react-icons/lu";
-import { Await, useFetcher, useParams } from "react-router";
+import { useCallback } from "react";
+import { useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { EmployeeAvatar } from "~/components";
-import { AuditLogDrawer } from "~/components/AuditLog";
+import { useAuditLog } from "~/components/AuditLog";
 import { Enumerable } from "~/components/Enumerable";
 import { Tags } from "~/components/Form";
 import { useCustomerTypes } from "~/components/Form/CustomerType";
@@ -34,20 +30,22 @@ const CustomerHeader = () => {
   if (!customerId) throw new Error("Could not find customerId");
   const fetcher = useFetcher<typeof action>();
   const { company } = useUser();
-  const auditDrawer = useDisclosure();
   const routeData = useRouteData<{
     customer: CustomerDetail;
     tags: { name: string }[];
   }>(path.to.customer(customerId));
 
-  const rootRouteData = useRouteData<{
-    auditLogEnabled: Promise<boolean>;
-  }>(path.to.authenticatedRoot);
-
   const customerTypes = useCustomerTypes();
   const customerType = customerTypes?.find(
     (type) => type.value === routeData?.customer?.customerTypeId
   )?.label;
+
+  const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
+    entityType: "customer",
+    entityId: customerId,
+    companyId: company.id,
+    variant: "card-action"
+  });
 
   const sharedCustomerData = useRouteData<{
     customerStatuses: CustomerStatus[];
@@ -85,27 +83,7 @@ const CustomerHeader = () => {
             <CardHeader>
               <CardTitle>{routeData?.customer?.name}</CardTitle>
             </CardHeader>
-            <Suspense fallback={null}>
-              <Await resolve={rootRouteData?.auditLogEnabled}>
-                {(auditLogEnabled) => {
-                  return (
-                    <>
-                      {auditLogEnabled && (
-                        <CardAction>
-                          <Button
-                            variant="secondary"
-                            leftIcon={<LuHistory />}
-                            onClick={auditDrawer.onOpen}
-                          >
-                            History
-                          </Button>
-                        </CardAction>
-                      )}
-                    </>
-                  );
-                }}
-              </Await>
-            </Suspense>
+            {auditLogTrigger}
           </HStack>
           <CardContent>
             <CardAttributes>
@@ -176,13 +154,7 @@ const CustomerHeader = () => {
           </CardContent>
         </Card>
       </VStack>
-      <AuditLogDrawer
-        isOpen={auditDrawer.isOpen}
-        onClose={auditDrawer.onClose}
-        entityType="customer"
-        entityId={customerId}
-        companyId={company.id}
-      />
+      {auditLogDrawer}
     </>
   );
 };

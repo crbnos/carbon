@@ -2105,6 +2105,41 @@ export async function updateProductionQuantity(
     .single();
 }
 
+export async function upsertProductionQuantity(
+  client: SupabaseClient<Database>,
+  productionQuantity:
+    | (Omit<z.infer<typeof productionQuantityValidator>, "id"> & {
+        companyId: string;
+      })
+    | (Omit<z.infer<typeof productionQuantityValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        companyId: string;
+      })
+) {
+  if ("updatedBy" in productionQuantity) {
+    const { id, updatedBy, companyId, ...updateData } = productionQuantity;
+
+    return client
+      .from("productionQuantity")
+      .update({
+        ...sanitize(updateData),
+        updatedBy,
+        updatedAt: new Date().toISOString()
+      })
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .select()
+      .single();
+  } else {
+    return client
+      .from("productionQuantity")
+      .insert([productionQuantity])
+      .select("id")
+      .single();
+  }
+}
+
 export async function upsertJob(
   client: SupabaseClient<Database>,
   job:

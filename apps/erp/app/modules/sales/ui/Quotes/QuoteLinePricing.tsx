@@ -67,7 +67,7 @@ const QuoteLinePricing = ({
 }) => {
   const permissions = usePermissions();
 
-  const isMade = line.methodType === "Make";
+  const hasCalculatedCost = line.methodType !== "Pick";
   const quantities = line.quantity ?? [1];
 
   const { quoteId, lineId } = useParams();
@@ -513,7 +513,7 @@ const QuoteLinePricing = ({
               })}
             </Tr>
             {isEmployee && (
-              <Tr className={cn(isMade && "[&>td]:bg-muted/60")}>
+              <Tr className={cn(hasCalculatedCost && "[&>td]:bg-muted/60")}>
                 <Td className="border-r border-border group-hover:bg-muted/50">
                   <HStack className="w-full justify-between ">
                     <span>Unit Cost</span>
@@ -521,7 +521,7 @@ const QuoteLinePricing = ({
                 </Td>
 
                 {unitCostsByQuantity.map((cost, index) => {
-                  return isMade ? (
+                  return hasCalculatedCost ? (
                     <Td key={index} className="group-hover:bg-muted/50">
                       <VStack spacing={0}>
                         <span>

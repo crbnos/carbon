@@ -51,7 +51,7 @@ import {
 } from "~/modules/sales/ui/Quotes";
 import QuoteLinePricingHistory from "~/modules/sales/ui/Quotes/QuoteLinePricingHistory";
 import QuoteLineRiskRegister from "~/modules/sales/ui/Quotes/QuoteLineRiskRegister";
-import { getTagsList } from "~/modules/shared";
+import { getTagsList, type SupplierPriceMap } from "~/modules/shared";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -205,6 +205,7 @@ export default function QuoteLine() {
   const quoteData = useRouteData<{
     methods: Tree<QuoteMethod>[];
     quote: Quotation;
+    supplierPriceMap: SupplierPriceMap;
   }>(path.to.quote(quoteId));
 
   const methodTree = useMemo(
@@ -215,7 +216,8 @@ export default function QuoteLine() {
   const getLineCosts = useLineCosts({
     methodTree,
     operations: operations as QuotationOperation[],
-    line
+    line,
+    supplierPriceMap: quoteData?.supplierPriceMap ?? {}
   });
 
   const initialValues = {

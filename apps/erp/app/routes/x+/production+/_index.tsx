@@ -54,7 +54,7 @@ import {
   LuClipboardCheck,
   LuEllipsisVertical,
   LuFile,
-  LuSquareUser
+  LuInbox
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
 import type { LoaderFunctionArgs } from "react-router";
@@ -292,7 +292,8 @@ export default function ProductionDashboard() {
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground">
       <div className="grid w-full gap-y-4 lg:gap-x-4 grid-cols-1 lg:grid-cols-6">
         <Card className="col-span-3">
-          <CardHeader>
+          <CardHeader className="flex-row gap-2">
+            <LuCirclePlay className="text-muted-foreground" />
             <CardTitle>Active Jobs</CardTitle>
           </CardHeader>
           <CardContent>
@@ -318,7 +319,8 @@ export default function ProductionDashboard() {
         </Card>
 
         <Card className="col-span-3">
-          <CardHeader>
+          <CardHeader className="flex-row gap-2">
+            <LuInbox className="text-muted-foreground" />
             <CardTitle>Jobs Assigned to Me</CardTitle>
           </CardHeader>
 
@@ -935,7 +937,7 @@ function WorkCenterCards({
 
                   {customerId && (
                     <HStack className="justify-start space-x-2">
-                      <LuSquareUser className="text-muted-foreground flex-shrink-0" />
+                      <LuInbox className="text-muted-foreground flex-shrink-0" />
                       <CustomerAvatar customerId={customerId} />
                     </HStack>
                   )}

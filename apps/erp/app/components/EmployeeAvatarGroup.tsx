@@ -2,7 +2,10 @@ import type { AvatarProps } from "@carbon/react";
 import {
   AvatarGroup,
   AvatarGroupList,
-  AvatarOverflowIndicator
+  AvatarOverflowIndicator,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger
 } from "@carbon/react";
 import { usePeople } from "~/stores";
 import Avatar from "./Avatar";
@@ -30,13 +33,16 @@ const EmployeeAvatarGroup = ({
     <AvatarGroup size={size ?? "xs"} limit={limit}>
       <AvatarGroupList>
         {employees.map((employee, index: number) => (
-          <Avatar
-            key={index}
-            size={size ?? "xs"}
-            name={employee.name ?? undefined}
-            title={employee.name ?? undefined}
-            path={employee.avatarUrl}
-          />
+          <Tooltip key={index}>
+            <TooltipTrigger>
+              <Avatar
+                size={size ?? "xs"}
+                name={employee.name ?? undefined}
+                path={employee.avatarUrl}
+              />
+            </TooltipTrigger>
+            <TooltipContent>{employee.name}</TooltipContent>
+          </Tooltip>
         ))}
       </AvatarGroupList>
       <AvatarOverflowIndicator />

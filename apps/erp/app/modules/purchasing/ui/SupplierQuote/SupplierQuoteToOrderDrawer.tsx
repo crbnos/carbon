@@ -343,7 +343,9 @@ const LinePricingOptions = ({
                           option.supplierShippingCost ?? 0
                         )}
                       </Td>
-                      <Td>{option.leadTime} {pluralize(option.leadTime, "day")}</Td>
+                      <Td>
+                        {option.leadTime} {pluralize(option.leadTime, "day")}
+                      </Td>
                       <Td>
                         {presentationCurrencyFormatter.format(
                           option.supplierTaxAmount ?? 0

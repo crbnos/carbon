@@ -28,10 +28,16 @@ import { productionQuantityValidator } from "../../production.models";
 
 type ProductionQuantityFormProps = {
   initialValues: z.infer<typeof productionQuantityValidator>;
+  operationOptions?: {
+    label: string;
+    value: string;
+    helperText?: string;
+  }[];
 };
 
 const ProductionQuantityForm = ({
-  initialValues
+  initialValues,
+  operationOptions
 }: ProductionQuantityFormProps) => {
   const permissions = usePermissions();
   const navigate = useNavigate();
@@ -41,7 +47,10 @@ const ProductionQuantityForm = ({
     initialValues.type
   );
 
-  const isDisabled = !permissions.can("update", "production");
+  const isEditing = initialValues.id !== undefined;
+  const isDisabled = isEditing
+    ? !permissions.can("update", "production")
+    : !permissions.can("create", "production");
   return (
     <Drawer
       open
@@ -57,12 +66,24 @@ const ProductionQuantityForm = ({
           className="flex flex-col h-full"
         >
           <DrawerHeader>
-            <DrawerTitle>Edit Production Quantity</DrawerTitle>
+            <DrawerTitle>
+              {isEditing
+                ? "Edit Production Quantity"
+                : "Create Production Quantity"}
+            </DrawerTitle>
           </DrawerHeader>
           <DrawerBody>
             <Hidden name="id" />
-            <Hidden name="jobOperationId" />
             <VStack spacing={4}>
+              {isEditing ? (
+                <Hidden name="jobOperationId" />
+              ) : (
+                <Select
+                  name="jobOperationId"
+                  label="Operation"
+                  options={operationOptions ?? []}
+                />
+              )}
               <Employee name="createdBy" label="Employee" />
               <Number name="quantity" label="Quantity" />
               <Select

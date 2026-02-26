@@ -1,23 +1,14 @@
 import { DefaultDisabledSubmit, ValidatedForm } from "@carbon/form";
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuIcon,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  HStack,
-  IconButton,
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { LuEllipsisVertical, LuTrash } from "react-icons/lu";
 import type { z } from "zod";
 import {
   Combobox,
@@ -30,7 +21,6 @@ import {
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import type {
-  ReceiptLine,
   ReceiptSourceDocument,
   receiptStatusType
 } from "~/modules/inventory";
@@ -44,7 +34,6 @@ import useReceiptForm from "./useReceiptForm";
 type ReceiptFormProps = {
   initialValues: z.infer<typeof receiptValidator>;
   status: (typeof receiptStatusType)[number];
-  receiptLines?: ReceiptLine[];
 };
 
 const formId = "receipt-form";
@@ -75,41 +64,15 @@ const ReceiptForm = ({ initialValues, status }: ReceiptFormProps) => {
           defaultValues={initialValues}
           style={{ width: "100%" }}
         >
-          <HStack className="justify-between w-full">
-            <CardHeader>
-              <CardTitle>{isEditing ? "Receipt" : "New Receipt"}</CardTitle>
-              {!isEditing && (
-                <CardDescription>
-                  A receipt is a record of a part received from a supplier or
-                  transferred from another location.
-                </CardDescription>
-              )}
-            </CardHeader>
-            <CardAction>
-              {isEditing &&
-                permissions.can("delete", "inventory") &&
-                !isPosted && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <IconButton
-                        aria-label="Open menu"
-                        variant="secondary"
-                        icon={<LuEllipsisVertical />}
-                      />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={deleteDisclosure.onOpen}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <DropdownMenuIcon icon={<LuTrash />} />
-                        Delete Receipt
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-            </CardAction>
-          </HStack>
+          <CardHeader>
+            <CardTitle>{isEditing ? "Receipt" : "New Receipt"}</CardTitle>
+            {!isEditing && (
+              <CardDescription>
+                A receipt is a record of a part received from a supplier or
+                transferred from another location.
+              </CardDescription>
+            )}
+          </CardHeader>
           <CardContent>
             <Hidden name="id" />
             <Hidden name="supplierId" value={supplierId ?? ""} />

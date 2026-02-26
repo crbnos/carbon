@@ -22,9 +22,9 @@ export {
   sequences,
   unitOfMeasures,
   supplierStatuses as supplierStauses,
-} from "../../../src/seed/seed.data.ts";
+} from "./seed.data.ts";
 
-import { groups as _groups } from "../../../src/seed/seed.data.ts";
+import { groups as _groups } from "./seed.data.ts";
 
 export const groupCompanyTemplate = "XXXX-XXXX-XXXXXXXXXXXX";
 

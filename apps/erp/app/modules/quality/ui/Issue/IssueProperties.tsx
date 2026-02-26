@@ -79,7 +79,6 @@ const IssueProperties = () => {
       field:
         | "source"
         | "priority"
-        | "investigationTypeIds"
         | "requiredActionIds"
         | "approvalRequirements"
         | "name"

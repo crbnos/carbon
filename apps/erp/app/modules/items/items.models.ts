@@ -58,6 +58,12 @@ export const partManufacturingPolicies = [
 
 export const serviceType = ["Internal", "External"] as const;
 
+export const supplierPartPriceSourceTypes = [
+  "Quote",
+  "Purchase Order",
+  "Manual Entry"
+] as const;
+
 export const itemValidator = z.object({
   id: z.string().min(1, { message: "Item ID is required" }).max(255),
   readableId: zfd.text(z.string().optional()),
@@ -526,7 +532,7 @@ export const supplierPartValidator = z.object({
   supplierUnitOfMeasureCode: zfd.text(z.string().optional()),
   minimumOrderQuantity: zfd.numeric(z.number().min(0)),
   conversionFactor: zfd.numeric(z.number().min(0)),
-  unitPrice: zfd.numeric(z.number().min(0))
+  unitPrice: zfd.numeric(z.number().min(0).optional())
 });
 
 export const toolValidator = itemValidator.merge(

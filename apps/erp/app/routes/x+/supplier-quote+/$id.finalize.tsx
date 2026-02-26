@@ -127,6 +127,103 @@ export async function action(args: ActionFunctionArgs) {
         )
       );
     }
+
+    const supplierId = quote.data.supplierId;
+    if (!supplierId) throw new Error("Supplier quote has no supplier");
+
+    for (const line of lines) {
+      if (!line.id || !line.itemId) continue;
+
+      const linePrices = prices.filter(
+        (p) => p.supplierQuoteLineId === line.id
+      );
+      if (linePrices.length === 0) continue;
+
+      const existingPart = await client
+        .from("supplierPart")
+        .select("id")
+        .eq("itemId", line.itemId)
+        .eq("supplierId", supplierId)
+        .eq("companyId", companyId)
+        .single();
+
+      let supplierPartId: string | undefined;
+
+      if (existingPart.data?.id) {
+        supplierPartId = existingPart.data.id;
+      } else {
+        const newPart = await client
+          .from("supplierPart")
+          .insert({
+            itemId: line.itemId,
+            supplierId,
+            supplierPartId: line.supplierPartId ?? undefined,
+            supplierUnitOfMeasureCode:
+              line.purchaseUnitOfMeasureCode ?? undefined,
+            conversionFactor: line.conversionFactor ?? 1,
+            companyId,
+            createdBy: userId
+          })
+          .select("id")
+          .single();
+
+        if (newPart.error || !newPart.data?.id) {
+          console.error("Error creating supplier part:", newPart.error);
+          continue;
+        }
+        supplierPartId = newPart.data.id;
+      }
+
+      if (!supplierPartId) continue;
+
+      const conversionFactor = line.conversionFactor ?? 1;
+
+      for (const price of linePrices) {
+        if (!price.supplierUnitPrice || price.supplierUnitPrice === 0) continue;
+
+        const unitPriceInInventoryUnit =
+          (price.unitPrice ?? 0) / conversionFactor;
+
+        const upsertResult = await client.from("supplierPartPrice").upsert(
+          {
+            supplierPartId,
+            quantity: price.quantity ?? 1,
+            unitPrice: unitPriceInInventoryUnit,
+            leadTime: price.leadTime ?? 0,
+            sourceType: "Quote",
+            sourceDocumentId: id,
+            companyId,
+            createdBy: userId,
+            updatedBy: userId,
+            updatedAt: new Date().toISOString()
+          },
+          { onConflict: "supplierPartId,quantity" }
+        );
+
+        if (upsertResult.error) {
+          console.error(
+            "Error upserting supplier part price:",
+            upsertResult.error
+          );
+        }
+      }
+
+      const bestPrice = linePrices
+        .filter((p) => p.unitPrice != null && p.unitPrice !== 0)
+        .sort(
+          (a, b) => (a.unitPrice ?? Infinity) - (b.unitPrice ?? Infinity)
+        )[0];
+
+      if (bestPrice) {
+        await client
+          .from("supplierPart")
+          .update({
+            unitPrice: (bestPrice.unitPrice ?? 0) / conversionFactor,
+            minimumOrderQuantity: bestPrice.quantity ?? 1
+          })
+          .eq("id", supplierPartId);
+      }
+    }
   } catch (err) {
     throw redirect(
       path.to.supplierQuote(id),

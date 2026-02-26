@@ -151,16 +151,11 @@ export default function ToolRoute() {
                     className="flex flex-col h-full"
                   >
                     <div className="px-2 pt-2 flex-shrink-0">
-                      <TabsList className="grid grid-cols-2 w-full rounded-md">
-                        <TabsTrigger
-                          value="manufacturing"
-                          className="rounded-md"
-                        >
+                      <TabsList className="grid grid-cols-2 w-full">
+                        <TabsTrigger value="manufacturing">
                           Manufacturing
                         </TabsTrigger>
-                        <TabsTrigger value="used-in" className="rounded-md">
-                          Used In
-                        </TabsTrigger>
+                        <TabsTrigger value="used-in">Used In</TabsTrigger>
                       </TabsList>
                     </div>
                     <HStack className="w-full justify-between flex-shrink-0 p-2 pb-0">

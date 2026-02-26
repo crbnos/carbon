@@ -42,9 +42,13 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { CSVLink } from "react-csv";
 import {
   LuArrowUpRight,
+  LuCalendarClock,
   LuChevronDown,
+  LuClock,
   LuEllipsisVertical,
   LuFile,
+  LuInbox,
+  LuTriangleAlert,
   LuWrench
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
@@ -341,7 +345,8 @@ export default function MaintenanceDashboard() {
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground">
       <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-3">
         <Card>
-          <CardHeader>
+          <CardHeader className="flex-row gap-2">
+            <LuWrench className="text-muted-foreground" />
             <CardTitle>Open Dispatches</CardTitle>
           </CardHeader>
           <CardContent>
@@ -367,7 +372,8 @@ export default function MaintenanceDashboard() {
         </Card>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="flex-row gap-2">
+            <LuCalendarClock className="text-muted-foreground" />
             <CardTitle>Open Scheduled</CardTitle>
           </CardHeader>
           <CardContent>
@@ -393,7 +399,8 @@ export default function MaintenanceDashboard() {
         </Card>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="flex-row gap-2">
+            <LuTriangleAlert className="text-muted-foreground" />
             <CardTitle>Open Reactive</CardTitle>
           </CardHeader>
           <CardContent>
@@ -654,7 +661,8 @@ export default function MaintenanceDashboard() {
       </Card>
       <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-2">
         <Card>
-          <CardHeader>
+          <CardHeader className="flex-row gap-2">
+            <LuClock className="text-muted-foreground" />
             <CardTitle>Recently Created</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
@@ -671,7 +679,8 @@ export default function MaintenanceDashboard() {
         </Card>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="flex-row gap-2">
+            <LuInbox className="text-muted-foreground" />
             <CardTitle>Assigned to Me</CardTitle>
           </CardHeader>
           <CardContent className="min-h-[200px]">

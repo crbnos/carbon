@@ -48,9 +48,11 @@ import { CSVLink } from "react-csv";
 import {
   LuArrowUpRight,
   LuChevronDown,
+  LuClock,
   LuCreditCard,
   LuEllipsisVertical,
   LuFile,
+  LuInbox,
   LuLayoutList,
   LuPackageSearch
 } from "react-icons/lu";
@@ -359,7 +361,8 @@ export default function PurchaseDashboard() {
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground">
       <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-3">
         <Card>
-          <CardHeader>
+          <CardHeader className="flex-row gap-2">
+            <LuPackageSearch className="text-muted-foreground" />
             <CardTitle>Active Supplier Quotes</CardTitle>
           </CardHeader>
           <CardContent>
@@ -385,7 +388,8 @@ export default function PurchaseDashboard() {
         </Card>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="flex-row gap-2">
+            <LuLayoutList className="text-muted-foreground" />
             <CardTitle>Open Purchase Orders</CardTitle>
           </CardHeader>
           <CardContent>
@@ -411,7 +415,8 @@ export default function PurchaseDashboard() {
         </Card>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="flex-row gap-2">
+            <LuCreditCard className="text-muted-foreground" />
             <CardTitle>Open Purchase Invoices</CardTitle>
           </CardHeader>
           <CardContent>
@@ -625,7 +630,8 @@ export default function PurchaseDashboard() {
       </Card>
       <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-2">
         <Card>
-          <CardHeader>
+          <CardHeader className="flex-row gap-2">
+            <LuClock className="text-muted-foreground" />
             <CardTitle>Recently Created</CardTitle>
           </CardHeader>
           <CardContent className="p-6">
@@ -679,7 +685,8 @@ export default function PurchaseDashboard() {
         </Card>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="flex-row gap-2">
+            <LuInbox className="text-muted-foreground" />
             <CardTitle>Assigned to Me</CardTitle>
           </CardHeader>
           <CardContent className="min-h-[200px]">
