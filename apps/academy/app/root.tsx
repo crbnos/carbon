@@ -74,6 +74,7 @@ export const meta: MetaFunction = () => {
 export async function loader({ request }: LoaderFunctionArgs) {
   const {
     CARBON_EDITION,
+    CARBON_API_URL,
     POSTHOG_API_HOST,
     POSTHOG_PROJECT_PUBLIC_KEY,
     SUPABASE_URL,
@@ -123,6 +124,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       challengeAttempts,
       env: {
         CARBON_EDITION,
+        CARBON_API_URL,
         POSTHOG_API_HOST,
         POSTHOG_PROJECT_PUBLIC_KEY,
         SUPABASE_URL,

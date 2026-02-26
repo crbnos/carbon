@@ -1,19 +1,35 @@
-/**
- * Copyright (c) 2017-present, Facebook, Inc.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
-import type { Language } from "prism-react-renderer";
-import { Highlight, themes } from "prism-react-renderer";
+import type { ShikiTransformer } from "@shikijs/types";
 import type { PropsWithChildren } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import ShikiHighlighter, {
+  createHighlighterCore,
+  createJavaScriptRegexEngine
+} from "react-shiki/core";
 import { Button } from "./Button";
 
-const prism = {
-  defaultLanguage: "js",
-  plugins: ["line-numbers", "show-language"]
+// ─── Highlighter Setup ───────────────────────────────────────────────────────
+
+const highlighter = await createHighlighterCore({
+  themes: [import("@shikijs/themes/night-owl")],
+  langs: [
+    import("@shikijs/langs/bash"),
+    import("@shikijs/langs/javascript"),
+    import("@shikijs/langs/tsx")
+  ],
+  engine: createJavaScriptRegexEngine()
+});
+
+const removeItalics: ShikiTransformer = {
+  name: "remove-italics",
+  span(node) {
+    const style = node.properties?.style;
+    if (typeof style === "string" && style.includes("font-style")) {
+      node.properties.style = style.replace(/font-style:\s*italic;?/g, "");
+    }
+  }
 };
+
+// ─── Component ───────────────────────────────────────────────────────────────
 
 interface CodeBlockProps {
   parentClassName?: string;
@@ -28,8 +44,6 @@ const CodeBlock = ({
   showCopy = true
 }: PropsWithChildren<CodeBlockProps>) => {
   const [showCopied, setShowCopied] = useState(false);
-  const target = useRef(null);
-  let highlightLines: any = [];
 
   useEffect(() => {
     if (!showCopied) return;
@@ -37,62 +51,36 @@ const CodeBlock = ({
     return () => clearTimeout(timer);
   }, [showCopied]);
 
-  let language =
-    languageClassName && languageClassName.replace(/language-/, "");
+  const language = languageClassName?.replace(/language-/, "") || "typescript";
+  const code = (children as string)?.trim() ?? "";
 
-  if (!language && prism.defaultLanguage) {
-    language = prism.defaultLanguage;
-  }
-
-  const handleCopyCode = (code: any) => {
+  const handleCopyCode = () => {
     window.navigator.clipboard.writeText(code);
     setShowCopied(true);
   };
 
-  // html tag has dark className
-  const isDarkMode =
-    document?.documentElement.classList.contains("dark") ?? true;
-
   return (
-    <Highlight
-      theme={isDarkMode ? themes.nightOwl : themes.nightOwlLight}
-      code={(children as string)?.trim() ?? ""}
-      language={language as Language}
-    >
-      {({ className, tokens, getLineProps, getTokenProps }) => {
-        return (
-          <div className="Code codeBlockWrapper group">
-            <pre
-              ref={target}
-              className={`codeBlock ${className} ${parentClassName}`}
-            >
-              {tokens.map((line, i) => {
-                const lineProps = getLineProps({ line, key: i });
+    <div className={`Code codeBlockWrapper group ${parentClassName ?? ""}`}>
+      <ShikiHighlighter
+        highlighter={highlighter}
+        language={language}
+        theme={"night-owl"}
+        showLanguage={false}
+        addDefaultStyles={true}
+        className="codeBlock"
+        transformers={[removeItalics]}
+      >
+        {code}
+      </ShikiHighlighter>
 
-                if (highlightLines.includes(i + 1)) {
-                  lineProps.className = `${lineProps.className} docusaurus-highlight-code-line`;
-                }
-
-                return (
-                  <div key={i} {...lineProps}>
-                    {line.map((token, key) => (
-                      <span key={key} {...getTokenProps({ token, key })} />
-                    ))}
-                  </div>
-                );
-              })}
-            </pre>
-            {showCopy && (
-              <div className="invisible absolute right-0 top-0 opacity-0 transition-opacity group-hover:visible group-hover:opacity-100">
-                <Button size="sm" onClick={() => handleCopyCode(children)}>
-                  {showCopied ? "Copied" : "Copy"}
-                </Button>
-              </div>
-            )}
-          </div>
-        );
-      }}
-    </Highlight>
+      {showCopy && (
+        <div className="invisible absolute right-0 top-0 opacity-0 transition-opacity group-hover:visible group-hover:opacity-100">
+          <Button size="sm" onClick={handleCopyCode}>
+            {showCopied ? "Copied" : "Copy"}
+          </Button>
+        </div>
+      )}
+    </div>
   );
 };
 

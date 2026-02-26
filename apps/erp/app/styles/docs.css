@@ -2,70 +2,12 @@
   width: 100%;
 }
 
-.Code .prism-code {
+.Code pre {
   margin: 0;
-  padding: 0.25rem;
-  background-color: none;
-  white-space: normal;
-  word-break: break-word;
-}
-
-.Code .token-line {
+  padding: 0.5rem 0rem !important;
+  background-color: transparent!important;
   font-size: 0.875rem;
   line-height: 1.25rem;
-}
-
-.Code .token.function,
-.Code .token.imports,
-.Code .token.keyword.module,
-.Code .token.property-access {
-  --tw-text-opacity: 1 !important;
-}
-
-.Code .token.function,
-.Code .token.keyword.module {
-  font-style: normal !important;
-}
-
-.Code .token.console.class-name,
-.Code .token.doc-comment.optional-parameter,
-.Code .token.doc-comment.optional-parameter.punctuation,
-.Code .token.doc-comment.parameter,
-.Code .token.doc-comment.parameter.punctuation,
-.Code .token.operator,
-.Code .token.parameter,
-.Code .token.plain,
-.Code .token.punctuation {
-  font-style: normal !important;
-  --tw-text-opacity: 1 !important;
-}
-
-.Code .token.doc-comment.keyword,
-.Code .token.keyword {
-  font-style: normal !important;
-}
-
-.Code .token.string {
-  font-style: normal !important;
-  --tw-text-opacity: 1 !important;
-}
-
-.Code .token.constant {
-  font-style: normal !important;
-}
-
-.Code .token.comment {
-  font-style: normal !important;
-  --tw-text-opacity: 1 !important;
-}
-
-.Code .token.number {
-  --tw-text-opacity: 1 !important;
-}
-
-.Code .token.boolean,
-.Code .token.doc-comment.class-name {
-  --tw-text-opacity: 1;
 }
 
 .Code .codeBlock {

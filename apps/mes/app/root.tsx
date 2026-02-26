@@ -56,6 +56,7 @@ export const meta: MetaFunction = () => {
 export async function loader({ request }: LoaderFunctionArgs) {
   const {
     CARBON_EDITION,
+    CARBON_API_URL,
     CONTROLLED_ENVIRONMENT,
     ERP_URL,
     MES_URL,
@@ -73,6 +74,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     {
       env: {
         CARBON_EDITION,
+        CARBON_API_URL,
         CONTROLLED_ENVIRONMENT,
         ERP_URL,
         MES_URL,

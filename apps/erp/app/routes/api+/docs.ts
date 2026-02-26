@@ -1,11 +1,11 @@
 import swaggerDocsSchema from "@carbon/database/swagger-docs-schema";
 import { redis } from "@carbon/kv";
 import { Ratelimit } from "@upstash/ratelimit";
-import type {
-  ClientLoaderFunctionArgs,
-  LoaderFunctionArgs
+import {
+  type ClientLoaderFunctionArgs,
+  data,
+  type LoaderFunctionArgs
 } from "react-router";
-import { data } from "react-router";
 import { docsQuery } from "~/utils/react-query";
 
 const ratelimit = new Ratelimit({

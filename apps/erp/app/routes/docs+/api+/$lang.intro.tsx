@@ -2,13 +2,22 @@ import { getBrowserEnv } from "@carbon/auth";
 import { Alert, AlertDescription, AlertTitle } from "@carbon/react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { Link } from "react-router";
-import { CodeSnippet, Snippets, useSelectedLang } from "~/modules/api";
+import {
+  CodeSnippet,
+  Snippets,
+  useApiDocsConfig,
+  useSelectedLang
+} from "~/modules/api";
 import { path } from "~/utils/path";
 
 const { CARBON_API_URL } = getBrowserEnv();
 
 export default function Route() {
   const selectedLang = useSelectedLang();
+  const config = useApiDocsConfig();
+
+  const apiUrl = config.apiUrl || CARBON_API_URL!;
+  const apiKey = config.apiKey || "<your-api-key>";
 
   return (
     <>
@@ -23,10 +32,7 @@ export default function Route() {
           <article>
             <CodeSnippet
               selectedLang={selectedLang}
-              snippet={Snippets.env({
-                apiUrl: CARBON_API_URL!,
-                apiKey: "<your-api-key>"
-              })}
+              snippet={Snippets.env({ apiUrl, apiKey })}
             />
           </article>
           <p>
@@ -68,7 +74,7 @@ export default function Route() {
                 <article className="code">
                   <CodeSnippet
                     selectedLang={selectedLang}
-                    snippet={Snippets.init(CARBON_API_URL!)}
+                    snippet={Snippets.init(apiUrl)}
                   />
                 </article>
               </div>

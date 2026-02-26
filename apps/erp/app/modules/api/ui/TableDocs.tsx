@@ -9,10 +9,16 @@ type TableDocsProps = {
   endpoint: string;
   selectedLang: ValidLang;
   resourceId: string;
+  apiKey?: string;
 };
 
 const functionPath = "rpc/";
-const TableDocs = ({ endpoint, selectedLang, resourceId }: TableDocsProps) => {
+const TableDocs = ({
+  endpoint,
+  selectedLang,
+  resourceId,
+  apiKey
+}: TableDocsProps) => {
   const swaggerDocsSchema = useSwaggerDocs();
   const { resources } = Object.entries(swaggerDocsSchema?.paths || {}).reduce<{
     resources: Record<
@@ -61,7 +67,12 @@ const TableDocs = ({ endpoint, selectedLang, resourceId }: TableDocsProps) => {
     })
   );
 
-  if (!swaggerDocsSchema?.paths || !swaggerDocsSchema?.definitions) return null;
+  if (
+    !swaggerDocsSchema?.paths ||
+    !swaggerDocsSchema?.definitions ||
+    !swaggerDocsSchema
+  )
+    return null;
 
   return (
     <>
@@ -99,7 +110,8 @@ const TableDocs = ({ endpoint, selectedLang, resourceId }: TableDocsProps) => {
                     title: `Select ${x.id}`,
                     resourceId,
                     endpoint,
-                    columnName: x.id
+                    columnName: x.id,
+                    apiKey
                   })}
                 />
               </div>
@@ -129,22 +141,27 @@ const TableDocs = ({ endpoint, selectedLang, resourceId }: TableDocsProps) => {
             <article className="code">
               <CodeSnippet
                 selectedLang={selectedLang}
-                snippet={Snippets.readAll(resourceId, endpoint)}
+                snippet={Snippets.readAll(resourceId, endpoint, apiKey)}
               />
               <CodeSnippet
                 selectedLang={selectedLang}
                 snippet={Snippets.readColumns({
                   resourceId,
-                  endpoint
+                  endpoint,
+                  apiKey
                 })}
               />
               <CodeSnippet
                 selectedLang={selectedLang}
-                snippet={Snippets.readForeignTables(resourceId, endpoint)}
+                snippet={Snippets.readForeignTables(
+                  resourceId,
+                  endpoint,
+                  apiKey
+                )}
               />
               <CodeSnippet
                 selectedLang={selectedLang}
-                snippet={Snippets.readRange(resourceId, endpoint)}
+                snippet={Snippets.readRange(resourceId, endpoint, apiKey)}
               />
             </article>
           </div>
@@ -165,7 +182,7 @@ const TableDocs = ({ endpoint, selectedLang, resourceId }: TableDocsProps) => {
             <article className="code">
               <CodeSnippet
                 selectedLang={selectedLang}
-                snippet={Snippets.readFilters(resourceId, endpoint)}
+                snippet={Snippets.readFilters(resourceId, endpoint, apiKey)}
               />
             </article>
           </div>
@@ -197,15 +214,15 @@ const TableDocs = ({ endpoint, selectedLang, resourceId }: TableDocsProps) => {
             <article className="code">
               <CodeSnippet
                 selectedLang={selectedLang}
-                snippet={Snippets.insertSingle(resourceId, endpoint)}
+                snippet={Snippets.insertSingle(resourceId, endpoint, apiKey)}
               />
               <CodeSnippet
                 selectedLang={selectedLang}
-                snippet={Snippets.insertMany(resourceId, endpoint)}
+                snippet={Snippets.insertMany(resourceId, endpoint, apiKey)}
               />
               <CodeSnippet
                 selectedLang={selectedLang}
-                snippet={Snippets.upsert(resourceId, endpoint)}
+                snippet={Snippets.upsert(resourceId, endpoint, apiKey)}
               />
             </article>
           </div>
@@ -239,7 +256,7 @@ const TableDocs = ({ endpoint, selectedLang, resourceId }: TableDocsProps) => {
             <article className="code">
               <CodeSnippet
                 selectedLang={selectedLang}
-                snippet={Snippets.update(resourceId, endpoint)}
+                snippet={Snippets.update(resourceId, endpoint, apiKey)}
               />
             </article>
           </div>
@@ -268,7 +285,7 @@ const TableDocs = ({ endpoint, selectedLang, resourceId }: TableDocsProps) => {
             <article className="code">
               <CodeSnippet
                 selectedLang={selectedLang}
-                snippet={Snippets.delete(resourceId, endpoint)}
+                snippet={Snippets.delete(resourceId, endpoint, apiKey)}
               />
             </article>
           </div>

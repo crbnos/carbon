@@ -14,10 +14,13 @@ type HttpMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 
 // ─── Curl Builder ────────────────────────────────────────────────────────────
 
-const STANDARD_HEADERS = {
-  auth: `"Authorization: Bearer CARBON_API_KEY"`,
-  contentType: `"Content-Type: application/json"`
-} as const;
+const CONTENT_TYPE_HEADER = `"Content-Type: application/json"`;
+
+function authHeader(apiKey?: string): string {
+  return apiKey
+    ? `"Authorization: Bearer ${apiKey}"`
+    : `"Authorization: Bearer $CARBON_API_KEY"`;
+}
 
 function buildCurl(config: {
   method?: HttpMethod;
@@ -28,6 +31,7 @@ function buildCurl(config: {
   includeAuth?: boolean;
   includeContentType?: boolean;
   prefer?: string;
+  apiKey?: string;
 }): string {
   const {
     method,
@@ -37,7 +41,8 @@ function buildCurl(config: {
     range,
     includeAuth = true,
     includeContentType = false,
-    prefer
+    prefer,
+    apiKey
   } = config;
 
   const parts: string[] = [];
@@ -49,11 +54,11 @@ function buildCurl(config: {
   }
 
   if (includeAuth) {
-    parts.push(`-H ${STANDARD_HEADERS.auth}`);
+    parts.push(`-H ${authHeader(apiKey)}`);
   }
 
   if (includeContentType) {
-    parts.push(`-H ${STANDARD_HEADERS.contentType}`);
+    parts.push(`-H ${CONTENT_TYPE_HEADER}`);
   }
 
   if (prefer) {
@@ -214,7 +219,7 @@ let { data, error } = await carbon.auth.signInWithOtp({
     method: "POST",
     path: "/auth/v1/verify",
     title: "Verify Pin",
-    bashHeaders: [STANDARD_HEADERS.auth],
+    bashHeaders: [authHeader()],
     bashBody: () =>
       `{\n  "type": "sms",\n  "phone": "+13334445555",\n  "token": "123456"\n}`,
     jsCode: () => `
@@ -275,10 +280,7 @@ const { data, error } = await carbon.auth.updateUser({
     method: "POST",
     path: "/auth/v1/logout",
     title: "User logout",
-    bashHeaders: [
-      STANDARD_HEADERS.contentType,
-      `"Authorization: Bearer USER_TOKEN"`
-    ],
+    bashHeaders: [CONTENT_TYPE_HEADER, `"Authorization: Bearer USER_TOKEN"`],
     jsCode: () => `
 let { error } = await carbon.auth.signOut()`
   }
@@ -335,9 +337,18 @@ function createReadSnippet(config: {
   range?: string;
   filter?: string;
   jsChain: string;
+  apiKey?: string;
 }): Snippet {
-  const { title, resourceId, endpoint, select, range, filter, jsChain } =
-    config;
+  const {
+    title,
+    resourceId,
+    endpoint,
+    select,
+    range,
+    filter,
+    jsChain,
+    apiKey
+  } = config;
 
   const queryParts = [];
   if (filter) queryParts.push(filter);
@@ -348,7 +359,8 @@ function createReadSnippet(config: {
     bash: createBashSnippet(
       buildCurl({
         url: createRestUrl(endpoint, resourceId, query),
-        range
+        range,
+        apiKey
       })
     ),
     js: createJsSnippet(jsChain)
@@ -364,9 +376,19 @@ function createWriteSnippet(config: {
   prefer?: string;
   query?: string;
   jsChain: string;
+  apiKey?: string;
 }): Snippet {
-  const { title, method, resourceId, endpoint, body, prefer, query, jsChain } =
-    config;
+  const {
+    title,
+    method,
+    resourceId,
+    endpoint,
+    body,
+    prefer,
+    query,
+    jsChain,
+    apiKey
+  } = config;
 
   return defineSnippet(title, {
     bash: createBashSnippet(
@@ -375,7 +397,8 @@ function createWriteSnippet(config: {
         url: createRestUrl(endpoint, resourceId, query),
         includeContentType: true,
         body,
-        prefer
+        prefer,
+        apiKey
       })
     ),
     js: createJsSnippet(jsChain)
@@ -517,12 +540,13 @@ else console.log(data)
 
   // ── Read (CRUD) ──────────────────────────────────────────────────────────
 
-  readAll: (resourceId: string, endpoint: string) =>
+  readAll: (resourceId: string, endpoint: string, apiKey?: string) =>
     createReadSnippet({
       title: "Read all rows",
       resourceId,
       endpoint,
       select: "*",
+      apiKey,
       jsChain: `
 let { data: ${resourceId}, error } = await carbon
   .from('${resourceId}')
@@ -534,18 +558,21 @@ let { data: ${resourceId}, error } = await carbon
     title = "Read specific columns",
     resourceId,
     endpoint,
-    columnName = "some_column,other_column"
+    columnName = "some_column,other_column",
+    apiKey
   }: {
     title?: string;
     resourceId: string;
     endpoint: string;
     columnName?: string;
+    apiKey?: string;
   }) =>
     createReadSnippet({
       title,
       resourceId,
       endpoint,
       select: columnName,
+      apiKey,
       jsChain: `
 let { data: ${resourceId}, error } = await carbon
   .from('${resourceId}')
@@ -553,12 +580,13 @@ let { data: ${resourceId}, error } = await carbon
 `
     }),
 
-  readForeignTables: (resourceId: string, endpoint: string) =>
+  readForeignTables: (resourceId: string, endpoint: string, apiKey?: string) =>
     createReadSnippet({
       title: "Read referenced tables",
       resourceId,
       endpoint,
       select: "some_column,other_table(foreign_key)",
+      apiKey,
       jsChain: `
 let { data: ${resourceId}, error } = await carbon
   .from('${resourceId}')
@@ -571,13 +599,14 @@ let { data: ${resourceId}, error } = await carbon
 `
     }),
 
-  readRange: (resourceId: string, endpoint: string) =>
+  readRange: (resourceId: string, endpoint: string, apiKey?: string) =>
     createReadSnippet({
       title: "With pagination",
       resourceId,
       endpoint,
       select: "*",
       range: "0-9",
+      apiKey,
       jsChain: `
 let { data: ${resourceId}, error } = await carbon
   .from('${resourceId}')
@@ -586,7 +615,7 @@ let { data: ${resourceId}, error } = await carbon
 `
     }),
 
-  readFilters: (resourceId: string, endpoint: string) =>
+  readFilters: (resourceId: string, endpoint: string, apiKey?: string) =>
     createReadSnippet({
       title: "With filtering",
       resourceId,
@@ -594,6 +623,7 @@ let { data: ${resourceId}, error } = await carbon
       select: "*",
       filter: "id=eq.1",
       range: "0-9",
+      apiKey,
       jsChain: `
 let { data: ${resourceId}, error } = await carbon
   .from('${resourceId}')
@@ -617,7 +647,7 @@ let { data: ${resourceId}, error } = await carbon
 
   // ── Write (CRUD) ─────────────────────────────────────────────────────────
 
-  insertSingle: (resourceId: string, endpoint: string) =>
+  insertSingle: (resourceId: string, endpoint: string, apiKey?: string) =>
     createWriteSnippet({
       title: "Insert a row",
       method: "POST",
@@ -625,6 +655,7 @@ let { data: ${resourceId}, error } = await carbon
       endpoint,
       prefer: "return=minimal",
       body: `{ "some_column": "someValue", "other_column": "otherValue" }`,
+      apiKey,
       jsChain: `
 const { data, error } = await carbon
   .from('${resourceId}')
@@ -635,13 +666,14 @@ const { data, error } = await carbon
 `
     }),
 
-  insertMany: (resourceId: string, endpoint: string) =>
+  insertMany: (resourceId: string, endpoint: string, apiKey?: string) =>
     createWriteSnippet({
       title: "Insert many rows",
       method: "POST",
       resourceId,
       endpoint,
       body: `[{ "some_column": "someValue" }, { "other_column": "otherValue" }]`,
+      apiKey,
       jsChain: `
 const { data, error } = await carbon
   .from('${resourceId}')
@@ -653,7 +685,7 @@ const { data, error } = await carbon
 `
     }),
 
-  upsert: (resourceId: string, endpoint: string) =>
+  upsert: (resourceId: string, endpoint: string, apiKey?: string) =>
     createWriteSnippet({
       title: "Upsert matching rows",
       method: "POST",
@@ -661,6 +693,7 @@ const { data, error } = await carbon
       endpoint,
       prefer: "resolution=merge-duplicates",
       body: `{ "some_column": "someValue", "other_column": "otherValue" }`,
+      apiKey,
       jsChain: `
 const { data, error } = await carbon
   .from('${resourceId}')
@@ -669,7 +702,7 @@ const { data, error } = await carbon
 `
     }),
 
-  update: (resourceId: string, endpoint: string) =>
+  update: (resourceId: string, endpoint: string, apiKey?: string) =>
     createWriteSnippet({
       title: "Update matching rows",
       method: "PATCH",
@@ -678,6 +711,7 @@ const { data, error } = await carbon
       prefer: "return=minimal",
       query: "some_column=eq.someValue",
       body: `{ "other_column": "otherValue" }`,
+      apiKey,
       jsChain: `
 const { data, error } = await carbon
   .from('${resourceId}')
@@ -687,12 +721,13 @@ const { data, error } = await carbon
 `
     }),
 
-  delete: (resourceId: string, endpoint: string) =>
+  delete: (resourceId: string, endpoint: string, apiKey?: string) =>
     defineSnippet("Delete matching rows", {
       bash: createBashSnippet(
         buildCurl({
           method: "DELETE",
-          url: createRestUrl(endpoint, resourceId, "some_column=eq.someValue")
+          url: createRestUrl(endpoint, resourceId, "some_column=eq.someValue"),
+          apiKey
         })
       ),
       js: createJsSnippet(`

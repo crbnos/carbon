@@ -37,8 +37,8 @@ import { getMode, setMode } from "~/services/mode.server";
 import Background from "~/styles/background.css?url";
 import NProgress from "~/styles/nprogress.css?url";
 import Tailwind from "~/styles/tailwind.css?url";
-import "./polyfill";
 import type { Route } from "./+types/root";
+import "./polyfill";
 import { getTheme } from "./services/theme.server";
 
 export const links: LinksFunction = () => {
@@ -60,6 +60,7 @@ export const meta: MetaFunction = () => {
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const {
     CARBON_EDITION,
+    CARBON_API_URL,
     CLOUDFLARE_TURNSTILE_SITE_KEY,
     CONTROLLED_ENVIRONMENT,
     ERP_URL,
@@ -84,6 +85,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     {
       env: {
         CARBON_EDITION,
+        CARBON_API_URL,
         CLOUDFLARE_TURNSTILE_SITE_KEY,
         CONTROLLED_ENVIRONMENT,
         ERP_URL,
