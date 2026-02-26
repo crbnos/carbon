@@ -5,6 +5,7 @@ declare global {
     env: {
       AUTH_PROVIDERS: string;
       CARBON_EDITION: string;
+      CARBON_API_URL: string;
       CLOUDFLARE_TURNSTILE_SITE_KEY: string;
       CONTROLLED_ENVIRONMENT: string;
       ERP_URL: string;
@@ -27,6 +28,7 @@ declare global {
   namespace NodeJS {
     interface ProcessEnv {
       CARBON_EDITION: string;
+      CARBON_API_URL: string;
       CLOUDFLARE_TURNSTILE_SITE_KEY: string;
       CLOUDFLARE_TURNSTILE_SECRET_KEY: string;
       DOMAIN: string;
@@ -125,6 +127,12 @@ const getEdition = () => {
 };
 
 export const CarbonEdition = getEdition();
+
+export const CARBON_API_URL =
+  getEnv("CARBON_API_URL", {
+    isRequired: false,
+    isSecret: false
+  }) ?? getEnv("SUPABASE_URL", { isSecret: false });
 
 export const CLOUDFLARE_TURNSTILE_SITE_KEY = getEnv(
   "CLOUDFLARE_TURNSTILE_SITE_KEY",
@@ -354,6 +362,7 @@ export function getMESUrl() {
 export function getBrowserEnv() {
   return {
     CARBON_EDITION,
+    CARBON_API_URL,
     CLOUDFLARE_TURNSTILE_SITE_KEY,
     CONTROLLED_ENVIRONMENT,
     ERP_URL,
