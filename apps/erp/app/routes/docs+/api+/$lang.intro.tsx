@@ -1,33 +1,13 @@
-import { getBrowserEnv, SUPABASE_ANON_KEY } from "@carbon/auth";
-import { getAuthSession } from "@carbon/auth/session.server";
+import { getBrowserEnv } from "@carbon/auth";
 import { Alert, AlertDescription, AlertTitle } from "@carbon/react";
 import { LuTriangleAlert } from "react-icons/lu";
-import type { LoaderFunctionArgs } from "react-router";
-import { Link, useLoaderData } from "react-router";
+import { Link } from "react-router";
 import { CodeSnippet, Snippets, useSelectedLang } from "~/modules/api";
 import { path } from "~/utils/path";
 
-const { SUPABASE_URL } = getBrowserEnv();
-
-export async function loader({ request }: LoaderFunctionArgs) {
-  const session = await getAuthSession(request);
-  if (session) {
-    return {
-      isLoggedIn: true,
-      companyId: session.companyId,
-      publicKey: SUPABASE_ANON_KEY
-    };
-  }
-
-  return {
-    isLoggedIn: false,
-    companyId: "<your-company-id>",
-    publicKey: "<public-key>"
-  };
-}
+const { CARBON_API_URL } = getBrowserEnv();
 
 export default function Route() {
-  const { companyId, publicKey } = useLoaderData<typeof loader>();
   const selectedLang = useSelectedLang();
 
   return (
@@ -44,17 +24,14 @@ export default function Route() {
             <CodeSnippet
               selectedLang={selectedLang}
               snippet={Snippets.env({
-                appUrl: window.location.origin,
-                apiKey: "<your-api-key>",
-                publicKey: publicKey,
-                apiUrl: SUPABASE_URL,
-                companyId: companyId
+                apiUrl: CARBON_API_URL!,
+                apiKey: "<your-api-key>"
               })}
             />
           </article>
           <p>
-            The API Key is provided via the <code>carbon-key</code> header when
-            making requests to the API.
+            The API Key is provided via the <code>Authorization</code> header
+            when making requests to the API.
           </p>
         </article>
       </div>
@@ -74,8 +51,7 @@ export default function Route() {
               <Alert variant="destructive">
                 <LuTriangleAlert className="h-4 w-4 my-1" />
                 <AlertTitle className="!my-0 font-bold text-base">
-                  You should never expose the <code>carbon-key</code> in the
-                  client
+                  You should never expose the API key in the client
                 </AlertTitle>
                 <AlertDescription>
                   Your API key gives full access to your database. Never expose
@@ -92,7 +68,7 @@ export default function Route() {
                 <article className="code">
                   <CodeSnippet
                     selectedLang={selectedLang}
-                    snippet={Snippets.init(SUPABASE_URL)}
+                    snippet={Snippets.init(CARBON_API_URL!)}
                   />
                 </article>
               </div>

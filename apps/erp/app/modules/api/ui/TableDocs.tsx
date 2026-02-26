@@ -1,12 +1,9 @@
-import { getBrowserEnv } from "@carbon/auth";
 import { cn } from "@carbon/react";
 import { LuTable2 } from "react-icons/lu";
 import { useSwaggerDocs } from "~/hooks/useSwaggerDocs";
 import type { ValidLang } from "~/modules/api";
 import { CodeSnippet, Snippets } from "~/modules/api";
 import { snakeToCamel } from "~/utils/string";
-
-const { SUPABASE_ANON_KEY } = getBrowserEnv();
 
 type TableDocsProps = {
   endpoint: string;
@@ -101,8 +98,7 @@ const TableDocs = ({ endpoint, selectedLang, resourceId }: TableDocsProps) => {
                   snippet={Snippets.readColumns({
                     title: `Select ${x.id}`,
                     resourceId,
-                    endpoint: endpoint,
-                    apiKey: SUPABASE_ANON_KEY,
+                    endpoint,
                     columnName: x.id
                   })}
                 />
@@ -133,35 +129,22 @@ const TableDocs = ({ endpoint, selectedLang, resourceId }: TableDocsProps) => {
             <article className="code">
               <CodeSnippet
                 selectedLang={selectedLang}
-                snippet={Snippets.readAll(
-                  resourceId,
-                  endpoint,
-                  SUPABASE_ANON_KEY
-                )}
+                snippet={Snippets.readAll(resourceId, endpoint)}
               />
               <CodeSnippet
                 selectedLang={selectedLang}
                 snippet={Snippets.readColumns({
                   resourceId,
-                  endpoint: endpoint,
-                  apiKey: SUPABASE_ANON_KEY
+                  endpoint
                 })}
               />
               <CodeSnippet
                 selectedLang={selectedLang}
-                snippet={Snippets.readForeignTables(
-                  resourceId,
-                  endpoint,
-                  SUPABASE_ANON_KEY
-                )}
+                snippet={Snippets.readForeignTables(resourceId, endpoint)}
               />
               <CodeSnippet
                 selectedLang={selectedLang}
-                snippet={Snippets.readRange(
-                  resourceId,
-                  endpoint,
-                  SUPABASE_ANON_KEY
-                )}
+                snippet={Snippets.readRange(resourceId, endpoint)}
               />
             </article>
           </div>
@@ -182,11 +165,7 @@ const TableDocs = ({ endpoint, selectedLang, resourceId }: TableDocsProps) => {
             <article className="code">
               <CodeSnippet
                 selectedLang={selectedLang}
-                snippet={Snippets.readFilters(
-                  resourceId,
-                  endpoint,
-                  SUPABASE_ANON_KEY
-                )}
+                snippet={Snippets.readFilters(resourceId, endpoint)}
               />
             </article>
           </div>
@@ -218,27 +197,15 @@ const TableDocs = ({ endpoint, selectedLang, resourceId }: TableDocsProps) => {
             <article className="code">
               <CodeSnippet
                 selectedLang={selectedLang}
-                snippet={Snippets.insertSingle(
-                  resourceId,
-                  endpoint,
-                  SUPABASE_ANON_KEY
-                )}
+                snippet={Snippets.insertSingle(resourceId, endpoint)}
               />
               <CodeSnippet
                 selectedLang={selectedLang}
-                snippet={Snippets.insertMany(
-                  resourceId,
-                  endpoint,
-                  SUPABASE_ANON_KEY
-                )}
+                snippet={Snippets.insertMany(resourceId, endpoint)}
               />
               <CodeSnippet
                 selectedLang={selectedLang}
-                snippet={Snippets.upsert(
-                  resourceId,
-                  endpoint,
-                  SUPABASE_ANON_KEY
-                )}
+                snippet={Snippets.upsert(resourceId, endpoint)}
               />
             </article>
           </div>
@@ -272,11 +239,7 @@ const TableDocs = ({ endpoint, selectedLang, resourceId }: TableDocsProps) => {
             <article className="code">
               <CodeSnippet
                 selectedLang={selectedLang}
-                snippet={Snippets.update(
-                  resourceId,
-                  endpoint,
-                  SUPABASE_ANON_KEY
-                )}
+                snippet={Snippets.update(resourceId, endpoint)}
               />
             </article>
           </div>
@@ -305,11 +268,7 @@ const TableDocs = ({ endpoint, selectedLang, resourceId }: TableDocsProps) => {
             <article className="code">
               <CodeSnippet
                 selectedLang={selectedLang}
-                snippet={Snippets.delete(
-                  resourceId,
-                  endpoint,
-                  SUPABASE_ANON_KEY
-                )}
+                snippet={Snippets.delete(resourceId, endpoint)}
               />
             </article>
           </div>

@@ -4,7 +4,7 @@ interface CodeSnippetProps {
   selectedLang: "bash" | "js";
   snippet: {
     title?: string;
-    bash: { language?: string; code: string };
+    bash: { language?: string; code: string } | null;
     js?: { language?: string; code: string };
   };
 }

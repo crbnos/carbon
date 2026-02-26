@@ -1,147 +1,485 @@
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+type SnippetLanguage = { language: string; code: string };
+
+type Snippet = {
+  title?: string;
+  bash: SnippetLanguage | null;
+  js?: SnippetLanguage;
+  python?: SnippetLanguage;
+  dart?: SnippetLanguage;
+};
+
+type HttpMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
+
+// ─── Curl Builder ────────────────────────────────────────────────────────────
+
+const STANDARD_HEADERS = {
+  auth: `"Authorization: Bearer CARBON_API_KEY"`,
+  contentType: `"Content-Type: application/json"`
+} as const;
+
+function buildCurl(config: {
+  method?: HttpMethod;
+  url: string;
+  body?: string;
+  headers?: string[];
+  range?: string;
+  includeAuth?: boolean;
+  includeContentType?: boolean;
+  prefer?: string;
+}): string {
+  const {
+    method,
+    url,
+    body,
+    headers: extraHeaders = [],
+    range,
+    includeAuth = true,
+    includeContentType = false,
+    prefer
+  } = config;
+
+  const parts: string[] = [];
+
+  if (method && method !== "GET") {
+    parts.push(`curl -X ${method} '${url}'`);
+  } else {
+    parts.push(`curl '${url}'`);
+  }
+
+  if (includeAuth) {
+    parts.push(`-H ${STANDARD_HEADERS.auth}`);
+  }
+
+  if (includeContentType) {
+    parts.push(`-H ${STANDARD_HEADERS.contentType}`);
+  }
+
+  if (prefer) {
+    parts.push(`-H "Prefer: ${prefer}"`);
+  }
+
+  for (const header of extraHeaders) {
+    parts.push(`-H ${header}`);
+  }
+
+  if (range) {
+    parts.push(`-H "Range: ${range}"`);
+  }
+
+  if (body) {
+    parts.push(`-d '${body}'`);
+  }
+
+  return "\n" + parts.join(" \\\n");
+}
+
+// ─── Snippet Helpers ─────────────────────────────────────────────────────────
+
+function defineSnippet(
+  title: string | undefined,
+  languages: Omit<Snippet, "title">
+): Snippet {
+  return { title, ...languages };
+}
+
+function createBashSnippet(code: string): SnippetLanguage {
+  return { language: "bash", code };
+}
+
+function createJsSnippet(code: string): SnippetLanguage {
+  return { language: "js", code };
+}
+
+// ─── Subscription Config + Builder ───────────────────────────────────────────
+
+const SUBSCRIPTION_CONFIGS = {
+  subscribeAll: {
+    event: "*",
+    channel: "custom-all-channel",
+    title: "Subscribe to all events"
+  },
+  subscribeInserts: {
+    event: "INSERT",
+    channel: "custom-insert-channel",
+    title: "Subscribe to inserts"
+  },
+  subscribeUpdates: {
+    event: "UPDATE",
+    channel: "custom-update-channel",
+    title: "Subscribe to updates"
+  },
+  subscribeDeletes: {
+    event: "DELETE",
+    channel: "custom-delete-channel",
+    title: "Subscribe to deletes"
+  }
+} as const;
+
+const REALTIME_BASH_MESSAGE = `# Realtime streams are only supported by our client libraries`;
+
+function createSubscriptionSnippet(
+  config: { event: string; channel: string; title: string },
+  listenerName: string,
+  resourceId: string,
+  filter?: string
+): Snippet {
+  const filterLine = filter ? `, filter: '${filter}'` : "";
+
+  return defineSnippet(config.title, {
+    bash: createBashSnippet(REALTIME_BASH_MESSAGE),
+    js: createJsSnippet(`
+const ${listenerName} = carbon.channel('${config.channel}')
+  .on(
+    'postgres_changes',
+    { event: '${config.event}', schema: 'public', table: '${resourceId}'${filterLine} },
+    (payload) => {
+      console.log('Change received!', payload)
+    }
+  )
+  .subscribe()`)
+  });
+}
+
+// ─── Auth Config + Builder ───────────────────────────────────────────────────
+
+type AuthConfig = {
+  method: HttpMethod;
+  path: string;
+  title: string;
+  bashBody?: (...args: string[]) => string;
+  jsCode: (...args: string[]) => string;
+  bashHeaders?: string[];
+};
+
+const AUTH_CONFIGS: Record<string, AuthConfig> = {
+  authSignup: {
+    method: "POST",
+    path: "/auth/v1/signup",
+    title: "User signup",
+    bashBody: (_ep, _ak, pw) =>
+      `{\n  "email": "someone@email.com",\n  "password": "${pw}"\n}`,
+    jsCode: (_ep, _ak, pw) => `
+let { data, error } = await carbon.auth.signUp({
+  email: 'someone@email.com',
+  password: '${pw}'
+})`
+  },
+  authLogin: {
+    method: "POST",
+    path: "/auth/v1/token?grant_type=password",
+    title: "User login",
+    bashBody: (_ep, _ak, pw) =>
+      `{\n  "email": "someone@email.com",\n  "password": "${pw}"\n}`,
+    jsCode: (_ep, _ak, pw) => `
+let { data, error } = await carbon.auth.signInWithPassword({
+  email: 'someone@email.com',
+  password: '${pw}'
+})`
+  },
+  authMagicLink: {
+    method: "POST",
+    path: "/auth/v1/magiclink",
+    title: "User login",
+    bashBody: () => `{\n  "email": "someone@email.com"\n}`,
+    jsCode: () => `
+let { data, error } = await carbon.auth.signInWithOtp({
+  email: 'someone@email.com'
+})`
+  },
+  authPhoneSignUp: {
+    method: "POST",
+    path: "/auth/v1/signup",
+    title: "Phone Signup",
+    bashBody: () =>
+      `{\n  "phone": "+13334445555",\n  "password": "some-password"\n}`,
+    jsCode: () => `
+let { data, error } = await carbon.auth.signUp({
+  phone: '+13334445555',
+  password: 'some-password'
+})`
+  },
+  authMobileOTPLogin: {
+    method: "POST",
+    path: "/auth/v1/otp",
+    title: "Phone Login",
+    bashBody: () => `{\n  "phone": "+13334445555"\n}`,
+    jsCode: () => `
+let { data, error } = await carbon.auth.signInWithOtp({
+  phone: '+13334445555'
+})`
+  },
+  authMobileOTPVerify: {
+    method: "POST",
+    path: "/auth/v1/verify",
+    title: "Verify Pin",
+    bashHeaders: [STANDARD_HEADERS.auth],
+    bashBody: () =>
+      `{\n  "type": "sms",\n  "phone": "+13334445555",\n  "token": "123456"\n}`,
+    jsCode: () => `
+let { data, error } = await carbon.auth.verifyOtp({
+  phone: '+13334445555',
+  token: '123456',
+  type: 'sms'
+})`
+  },
+  authInvite: {
+    method: "POST",
+    path: "/auth/v1/invite",
+    title: "Invite User",
+    bashHeaders: [`"Authorization: Bearer USER_TOKEN"`],
+    bashBody: () => `{\n  "email": "someone@email.com"\n}`,
+    jsCode: () => `
+let { data, error } = await carbon.auth.admin.inviteUserByEmail('someone@email.com')`
+  },
+  authThirdPartyLogin: {
+    method: "GET",
+    path: "/auth/v1/authorize?provider=github",
+    title: "Third Party Login",
+    bashHeaders: [`"Authorization: Bearer USER_TOKEN"`],
+    jsCode: () => `
+let { data, error } = await carbon.auth.signInWithOAuth({
+  provider: 'github'
+})`
+  },
+  authUser: {
+    method: "GET",
+    path: "/auth/v1/user",
+    title: "Get User",
+    jsCode: () => `
+const { data: { user } } = await carbon.auth.getUser()`
+  },
+  authRecover: {
+    method: "POST",
+    path: "/auth/v1/recover",
+    title: "Password Recovery",
+    bashBody: () => `{\n  "email": "someone@email.com"\n}`,
+    jsCode: () => `
+let { data, error } = await carbon.auth.resetPasswordForEmail(email)`
+  },
+  authUpdate: {
+    method: "PUT",
+    path: "/auth/v1/user",
+    title: "Update User",
+    bashBody: () =>
+      `{\n  "email": "someone@email.com",\n  "password": "new-password",\n  "data": {\n    "key": "value"\n  }\n}`,
+    jsCode: () => `
+const { data, error } = await carbon.auth.updateUser({
+  email: "new@email.com",
+  password: "new-password",
+  data: { hello: 'world' }
+})`
+  },
+  authLogout: {
+    method: "POST",
+    path: "/auth/v1/logout",
+    title: "User logout",
+    bashHeaders: [
+      STANDARD_HEADERS.contentType,
+      `"Authorization: Bearer USER_TOKEN"`
+    ],
+    jsCode: () => `
+let { error } = await carbon.auth.signOut()`
+  }
+};
+
+function createAuthSnippet(
+  configKey: keyof typeof AUTH_CONFIGS,
+  endpoint: string,
+  ...args: string[]
+): Snippet {
+  const config = AUTH_CONFIGS[configKey];
+
+  const useCustomHeaders = !!config.bashHeaders;
+  const body = config.bashBody?.(...args);
+
+  const bashCode = useCustomHeaders
+    ? buildCurl({
+        method: config.method,
+        url: `${endpoint}${config.path}`,
+        includeAuth: false,
+        includeContentType: !!body,
+        headers: config.bashHeaders,
+        body
+      })
+    : buildCurl({
+        method: config.method,
+        url: `${endpoint}${config.path}`,
+        includeContentType: !!body,
+        body
+      });
+
+  return defineSnippet(config.title, {
+    bash: createBashSnippet(bashCode),
+    js: createJsSnippet(config.jsCode(...args))
+  });
+}
+
+// ─── CRUD Config + Builders ──────────────────────────────────────────────────
+
+function createRestUrl(
+  endpoint: string,
+  resourceId: string,
+  query?: string
+): string {
+  const base = `${endpoint}/rest/v1/${resourceId}`;
+  return query ? `${base}?${query}` : base;
+}
+
+function createReadSnippet(config: {
+  title: string;
+  resourceId: string;
+  endpoint: string;
+  select: string;
+  range?: string;
+  filter?: string;
+  jsChain: string;
+}): Snippet {
+  const { title, resourceId, endpoint, select, range, filter, jsChain } =
+    config;
+
+  const queryParts = [];
+  if (filter) queryParts.push(filter);
+  queryParts.push(`select=${select}`);
+  const query = queryParts.join("&");
+
+  return defineSnippet(title, {
+    bash: createBashSnippet(
+      buildCurl({
+        url: createRestUrl(endpoint, resourceId, query),
+        range
+      })
+    ),
+    js: createJsSnippet(jsChain)
+  });
+}
+
+function createWriteSnippet(config: {
+  title: string;
+  method: HttpMethod;
+  resourceId: string;
+  endpoint: string;
+  body: string;
+  prefer?: string;
+  query?: string;
+  jsChain: string;
+}): Snippet {
+  const { title, method, resourceId, endpoint, body, prefer, query, jsChain } =
+    config;
+
+  return defineSnippet(title, {
+    bash: createBashSnippet(
+      buildCurl({
+        method,
+        url: createRestUrl(endpoint, resourceId, query),
+        includeContentType: true,
+        body,
+        prefer
+      })
+    ),
+    js: createJsSnippet(jsChain)
+  });
+}
+
+// ─── Public API ──────────────────────────────────────────────────────────────
+
 const snippets = {
+  // ── Setup ────────────────────────────────────────────────────────────────
+
   endpoint: (endpoint: string) => ({
     title: "API URL",
-    bash: {
-      language: "bash",
-      code: `${endpoint}`
-    },
-    js: {
-      language: "bash",
-      code: `${endpoint}`
-    }
+    bash: createBashSnippet(endpoint),
+    js: { language: "bash", code: endpoint }
   }),
+
   install: () => ({
     title: "Install",
     bash: null,
-    js: {
-      language: "bash",
-      code: `npm install --save @supabase/supabase-js`
-    }
+    js: createBashSnippet(`npm install --save @supabase/supabase-js`)
   }),
-  env: ({
-    appUrl,
-    apiKey,
-    publicKey,
-    apiUrl,
-    companyId
-  }: {
-    appUrl: string;
-    apiKey: string;
-    publicKey: string;
-    apiUrl: string;
-    companyId: string;
-  }) => ({
-    bash: {
-      language: "bash",
-      code: `
-export CARBON_API_KEY="${apiKey}"
 
-export CARBON_APP_URL="${appUrl}"
-export CARBON_PUBLIC_KEY="${publicKey}"
+  env: ({ apiUrl, apiKey }: { apiUrl: string; apiKey: string }) =>
+    defineSnippet(undefined, {
+      bash: createBashSnippet(`
 export CARBON_API_URL="${apiUrl}"
-export CARBON_COMPANY_ID="${companyId}"      
-      `
-    },
-    js: {
-      language: "js",
-      code: `
+export CARBON_API_KEY="${apiKey}"
+      `),
+      js: createJsSnippet(`
 // .env
-CARBON_API_KEY = "${apiKey}"
-
-CARBON_APP_URL = "${appUrl}"
-CARBON_PUBLIC_KEY = "${publicKey}"
 CARBON_API_URL = "${apiUrl}"
-CARBON_COMPANY_ID = "${companyId}"
-      `
-    }
-  }),
-  init: (endpoint: string) => ({
-    bash: {
-      language: "bash",
-      code: `# No client library required for Bash.`
-    },
-    js: {
-      language: "js",
-      code: `
+CARBON_API_KEY = "${apiKey}"
+      `)
+    }),
+
+  init: (endpoint: string) =>
+    defineSnippet(undefined, {
+      bash: createBashSnippet(`# No client library required for Bash.`),
+      js: createJsSnippet(`
 import { createClient } from '@supabase/supabase-js'
 
-const apiKey = process.env.CARBON_API_KEY
 const apiUrl = process.env.CARBON_API_URL
-const publicKey = process.env.CARBON_PUBLIC_KEY
+const apiKey = process.env.CARBON_API_KEY
 
-const carbon = createClient(apiUrl, publicKey, {
-  global: {
-    headers: {
-      "carbon-key": apiKey,
-    },
-  },
-});`
-    },
-    python: {
-      language: "python",
-      code: `
+const carbon = createClient(apiUrl, apiKey);`),
+      python: {
+        language: "python",
+        code: `
 import os
 from supabase import create_client, Client
 url: str = os.environ.get("CARBON_API_URL")
 key: str = os.environ.get("CARBON_API_KEY")
 supabase: Client = create_client(url, key)
 `
-    },
-    dart: {
-      language: "dart",
-      code: `
+      },
+      dart: {
+        language: "dart",
+        code: `
 const supabaseUrl = '${endpoint}';
-const supabaseKey = String.fromEnvironment('SUPABASE_KEY');
+const supabaseKey = String.fromEnvironment('CARBON_API_KEY');
 Future<void> main() async {
   await Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey);
   runApp(MyApp());
 }`
-    }
-  }),
-  authKey: (title: string, varName: string, apikey: string) => ({
-    bash: {
-      language: "bash",
-      code: `${apikey}`
-    },
-    js: {
-      language: "js",
-      code: `const ${varName} = '${apikey}'`
-    }
-  }),
+      }
+    }),
+
+  // ── Auth Keys ────────────────────────────────────────────────────────────
+
+  authKey: (title: string, varName: string, apikey: string) =>
+    defineSnippet(undefined, {
+      bash: createBashSnippet(apikey),
+      js: createJsSnippet(`const ${varName} = '${apikey}'`)
+    }),
+
   authKeyExample: (
     defaultApiKey: string,
     endpoint: string,
-    { keyName, showBearer = true }: { keyName?: string; showBearer?: boolean }
-  ) => ({
-    title: "Example usage",
-    bash: {
-      language: "bash",
-      code: `
-curl '${endpoint}/rest/v1/' \\
--H "apikey: ${defaultApiKey}" ${
+    { showBearer = true }: { showBearer?: boolean } = {}
+  ) =>
+    defineSnippet("Example usage", {
+      bash: createBashSnippet(`
+curl '${endpoint}/rest/v1/' ${
         showBearer
           ? `\\
 -H "Authorization: Bearer ${defaultApiKey}"`
           : ""
       }
-`
-    },
-    js: {
-      language: "js",
-      code: `
-const SUPABASE_URL = "${endpoint}"
-const carbon = createClient(SUPABASE_URL, process.env.${
-        keyName || "SUPABASE_KEY"
-      });
-`
-    }
-  }),
+`),
+      js: createJsSnippet(`
+const CARBON_API_URL = "${endpoint}"
+const carbon = createClient(CARBON_API_URL, process.env.CARBON_API_KEY);
+`)
+    }),
+
+  // ── RPC ──────────────────────────────────────────────────────────────────
+
   rpcSingle: ({
     rpcName,
     rpcParams,
     endpoint,
-    apiKey,
-    showBearer = true
+    apiKey: _apiKey,
+    showBearer: _showBearer = true
   }: {
     rpcName: string;
     rpcParams: any[];
@@ -149,213 +487,79 @@ const carbon = createClient(SUPABASE_URL, process.env.${
     apiKey: string;
     showBearer: boolean;
   }) => {
-    let rpcList = rpcParams.map((x) => `"${x.name}": "value"`).join(", ");
-    let noParams = !rpcParams.length;
-    let bashParams = noParams ? "" : `\n-d '{ ${rpcList} }' \\`;
-    let jsParams = noParams
+    const rpcList = rpcParams.map((x) => `"${x.name}": "value"`).join(", ");
+    const noParams = !rpcParams.length;
+    const bashBody = noParams ? undefined : `{ ${rpcList} }`;
+    const jsParams = noParams
       ? ""
-      : `, {${
-          rpcParams.length
-            ? rpcParams
-                .map((x) => `\n    ${x.name}`)
-                .join(`, `)
-                .concat("\n  ")
-            : ""
-        }}`;
-    return {
-      title: "Invoke function ",
-      bash: {
-        language: "bash",
-        code: `
-curl -X POST '${endpoint}/rest/v1/rpc/${rpcName}' \\${bashParams}
--H "Content-Type: application/json" \\
--H "carbon-key: <your_api_key_here>" \\
--H "apiKey: CARBON_PUBLIC_KEY" \\
--H "Authorization: Bearer CARBON_PUBLIC_KEY"`
-      },
-      js: {
-        language: "js",
-        code: `
+      : `, {${rpcParams
+          .map((x) => `\n    ${x.name}`)
+          .join(`, `)
+          .concat("\n  ")}}`;
+
+    return defineSnippet("Invoke function ", {
+      bash: createBashSnippet(
+        buildCurl({
+          method: "POST",
+          url: `${endpoint}/rest/v1/rpc/${rpcName}`,
+          includeContentType: true,
+          body: bashBody
+        })
+      ),
+      js: createJsSnippet(`
 let { data, error } = await carbon
   .rpc('${rpcName}'${jsParams})
 if (error) console.error(error)
 else console.log(data)
-`
-      }
-    };
+`)
+    });
   },
-  subscribeAll: (listenerName: string, resourceId: string) => ({
-    title: "Subscribe to all events",
-    bash: {
-      language: "bash",
-      code: `# Realtime streams are only supported by our client libraries`
-    },
-    js: {
-      language: "js",
-      code: `
-const ${listenerName} = carbon.channel('custom-all-channel')
-  .on(
-    'postgres_changes',
-    { event: '*', schema: 'public', table: '${resourceId}' },
-    (payload) => {
-      console.log('Change received!', payload)
-    }
-  )
-  .subscribe()`
-    }
-  }),
-  subscribeInserts: (listenerName: string, resourceId: string) => ({
-    title: "Subscribe to inserts",
-    bash: {
-      language: "bash",
-      code: `# Realtime streams are only supported by our client libraries`
-    },
-    js: {
-      language: "js",
-      code: `
-const ${listenerName} = carbon.channel('custom-insert-channel')
-  .on(
-    'postgres_changes',
-    { event: 'INSERT', schema: 'public', table: '${resourceId}' },
-    (payload) => {
-      console.log('Change received!', payload)
-    }
-  )
-  .subscribe()`
-    }
-  }),
-  subscribeUpdates: (listenerName: string, resourceId: string) => ({
-    title: "Subscribe to updates",
-    bash: {
-      language: "bash",
-      code: `# Realtime streams are only supported by our client libraries`
-    },
-    js: {
-      language: "js",
-      code: `
-const ${listenerName} = carbon.channel('custom-update-channel')
-  .on(
-    'postgres_changes',
-    { event: 'UPDATE', schema: 'public', table: '${resourceId}' },
-    (payload) => {
-      console.log('Change received!', payload)
-    }
-  )
-  .subscribe()`
-    }
-  }),
-  subscribeDeletes: (listenerName: string, resourceId: string) => ({
-    title: "Subscribe to deletes",
-    bash: {
-      language: "bash",
-      code: `# Realtime streams are only supported by our client libraries`
-    },
-    js: {
-      language: "js",
-      code: `
-const ${listenerName} = carbon.channel('custom-delete-channel')
-  .on(
-    'postgres_changes',
-    { event: 'DELETE', schema: 'public', table: '${resourceId}' },
-    (payload) => {
-      console.log('Change received!', payload)
-    }
-  )
-  .subscribe()`
-    }
-  }),
-  subscribeEq: (
-    listenerName: string,
-    resourceId: string,
-    columnName: string,
-    value: string
-  ) => ({
-    title: "Subscribe to specific rows",
-    bash: {
-      language: "bash",
-      code: `# Realtime streams are only supported by our client libraries`
-    },
-    js: {
-      language: "js",
-      code: `
-const ${listenerName} = carbon.channel('custom-filter-channel')
-  .on(
-    'postgres_changes',
-    { event: '*', schema: 'public', table: '${resourceId}', filter: '${columnName}=eq.${value}' },
-    (payload) => {
-      console.log('Change received!', payload)
-    }
-  )
-  .subscribe()`
-    }
-  }),
-  readAll: (resourceId: string, endpoint: string, apiKey: string) => ({
-    title: "Read all rows",
-    bash: {
-      language: "bash",
-      code: `
-curl '${endpoint}/rest/v1/${resourceId}?select=*' \\
--H "carbon-key: <your_api_key_here>" \\
--H "apiKey: CARBON_PUBLIC_KEY" \\
--H "Authorization: Bearer CARBON_PUBLIC_KEY"`
-    },
-    js: {
-      language: "js",
-      code: `
+
+  // ── Read (CRUD) ──────────────────────────────────────────────────────────
+
+  readAll: (resourceId: string, endpoint: string) =>
+    createReadSnippet({
+      title: "Read all rows",
+      resourceId,
+      endpoint,
+      select: "*",
+      jsChain: `
 let { data: ${resourceId}, error } = await carbon
   .from('${resourceId}')
   .select('*')
 `
-    }
-  }),
+    }),
+
   readColumns: ({
     title = "Read specific columns",
     resourceId,
     endpoint,
-    apiKey,
     columnName = "some_column,other_column"
   }: {
     title?: string;
     resourceId: string;
     endpoint: string;
-    apiKey: string;
     columnName?: string;
-  }) => ({
-    title,
-    bash: {
-      language: "bash",
-      code: `
-curl '${endpoint}/rest/v1/${resourceId}?select=${columnName}' \\
--H "carbon-key: <your_api_key_here>" \\
--H "apiKey: CARBON_PUBLIC_KEY" \\
--H "Authorization: Bearer CARBON_PUBLIC_KEY"`
-    },
-    js: {
-      language: "js",
-      code: `
+  }) =>
+    createReadSnippet({
+      title,
+      resourceId,
+      endpoint,
+      select: columnName,
+      jsChain: `
 let { data: ${resourceId}, error } = await carbon
   .from('${resourceId}')
   .select('${columnName}')
 `
-    }
-  }),
-  readForeignTables: (
-    resourceId: string,
-    endpoint: string,
-    apiKey: string
-  ) => ({
-    title: "Read referenced tables",
-    bash: {
-      language: "bash",
-      code: `
-curl '${endpoint}/rest/v1/${resourceId}?select=some_column,other_table(foreign_key)' \\
--H "carbon-key: <your_api_key_here>" \\
--H "apiKey: CARBON_PUBLIC_KEY" \\
--H "Authorization: Bearer CARBON_PUBLIC_KEY"`
-    },
-    js: {
-      language: "js",
-      code: `
+    }),
+
+  readForeignTables: (resourceId: string, endpoint: string) =>
+    createReadSnippet({
+      title: "Read referenced tables",
+      resourceId,
+      endpoint,
+      select: "some_column,other_table(foreign_key)",
+      jsChain: `
 let { data: ${resourceId}, error } = await carbon
   .from('${resourceId}')
   .select(\`
@@ -365,45 +569,32 @@ let { data: ${resourceId}, error } = await carbon
     )
   \`)
 `
-    }
-  }),
-  readRange: (resourceId: string, endpoint: string, apiKey: string) => ({
-    title: "With pagination",
-    bash: {
-      language: "bash",
-      code: `
-curl '${endpoint}/rest/v1/${resourceId}?select=*' \\
--H "carbon-key: <your_api_key_here>" \\
--H "apiKey: CARBON_PUBLIC_KEY" \\
--H "Authorization: Bearer CARBON_PUBLIC_KEY" \\
--H "Range: 0-9"
-`
-    },
-    js: {
-      language: "js",
-      code: `
+    }),
+
+  readRange: (resourceId: string, endpoint: string) =>
+    createReadSnippet({
+      title: "With pagination",
+      resourceId,
+      endpoint,
+      select: "*",
+      range: "0-9",
+      jsChain: `
 let { data: ${resourceId}, error } = await carbon
   .from('${resourceId}')
   .select('*')
   .range(0, 9)
 `
-    }
-  }),
-  readFilters: (resourceId: string, endpoint: string, apiKey: string) => ({
-    title: "With filtering",
-    bash: {
-      language: "bash",
-      code: `
-curl '${endpoint}/rest/v1/${resourceId}?id=eq.1&select=*' \\
--H "carbon-key: <your_api_key_here>" \\
--H "apiKey: CARBON_PUBLIC_KEY" \\
--H "Authorization: Bearer CARBON_PUBLIC_KEY" \\
--H "Range: 0-9"
-`
-    },
-    js: {
-      language: "js",
-      code: `
+    }),
+
+  readFilters: (resourceId: string, endpoint: string) =>
+    createReadSnippet({
+      title: "With filtering",
+      resourceId,
+      endpoint,
+      select: "*",
+      filter: "id=eq.1",
+      range: "0-9",
+      jsChain: `
 let { data: ${resourceId}, error } = await carbon
   .from('${resourceId}')
   .select("*")
@@ -422,25 +613,19 @@ let { data: ${resourceId}, error } = await carbon
   .contains('array_column', ['array', 'contains'])
   .containedBy('array_column', ['contained', 'by'])
 `
-    }
-  }),
-  insertSingle: (resourceId: string, endpoint: string, apiKey: string) => ({
-    title: "Insert a row",
-    bash: {
-      language: "bash",
-      code: `
-curl -X POST '${endpoint}/rest/v1/${resourceId}' \\
--H "carbon-key: <your_api_key_here>" \\
--H "apiKey: CARBON_PUBLIC_KEY" \\
--H "Authorization: Bearer CARBON_PUBLIC_KEY" \\
--H "Content-Type: application/json" \\
--H "Prefer: return=minimal" \\
--d '{ "some_column": "someValue", "other_column": "otherValue" }'
-`
-    },
-    js: {
-      language: "js",
-      code: `
+    }),
+
+  // ── Write (CRUD) ─────────────────────────────────────────────────────────
+
+  insertSingle: (resourceId: string, endpoint: string) =>
+    createWriteSnippet({
+      title: "Insert a row",
+      method: "POST",
+      resourceId,
+      endpoint,
+      prefer: "return=minimal",
+      body: `{ "some_column": "someValue", "other_column": "otherValue" }`,
+      jsChain: `
 const { data, error } = await carbon
   .from('${resourceId}')
   .insert([
@@ -448,24 +633,16 @@ const { data, error } = await carbon
   ])
   .select()
 `
-    }
-  }),
-  insertMany: (resourceId: string, endpoint: string, apiKey: string) => ({
-    title: "Insert many rows",
-    bash: {
-      language: "bash",
-      code: `
-curl -X POST '${endpoint}/rest/v1/${resourceId}' \\
--H "carbon-key: <your_api_key_here>" \\
--H "apiKey: CARBON_PUBLIC_KEY" \\
--H "Authorization: Bearer CARBON_PUBLIC_KEY" \\
--H "Content-Type: application/json" \\
--d '[{ "some_column": "someValue" }, { "other_column": "otherValue" }]'
-`
-    },
-    js: {
-      language: "js",
-      code: `
+    }),
+
+  insertMany: (resourceId: string, endpoint: string) =>
+    createWriteSnippet({
+      title: "Insert many rows",
+      method: "POST",
+      resourceId,
+      endpoint,
+      body: `[{ "some_column": "someValue" }, { "other_column": "otherValue" }]`,
+      jsChain: `
 const { data, error } = await carbon
   .from('${resourceId}')
   .insert([
@@ -474,360 +651,137 @@ const { data, error } = await carbon
   ])
   .select()
 `
-    }
-  }),
-  upsert: (resourceId: string, endpoint: string, apiKey: string) => ({
-    title: "Upsert matching rows",
-    bash: {
-      language: "bash",
-      code: `
-curl -X POST '${endpoint}/rest/v1/${resourceId}' \\
--H "carbon-key: <your_api_key_here>" \\
--H "apiKey: CARBON_PUBLIC_KEY" \\
--H "Authorization: Bearer CARBON_PUBLIC_KEY" \\
--H "Content-Type: application/json" \\
--H "Prefer: resolution=merge-duplicates" \\
--d '{ "some_column": "someValue", "other_column": "otherValue" }'
-`
-    },
-    js: {
-      language: "js",
-      code: `
+    }),
+
+  upsert: (resourceId: string, endpoint: string) =>
+    createWriteSnippet({
+      title: "Upsert matching rows",
+      method: "POST",
+      resourceId,
+      endpoint,
+      prefer: "resolution=merge-duplicates",
+      body: `{ "some_column": "someValue", "other_column": "otherValue" }`,
+      jsChain: `
 const { data, error } = await carbon
   .from('${resourceId}')
   .upsert({ some_column: 'someValue' })
   .select()
 `
-    }
-  }),
-  update: (resourceId: string, endpoint: string, apiKey: string) => ({
-    title: "Update matching rows",
-    bash: {
-      language: "bash",
-      code: `
-curl -X PATCH '${endpoint}/rest/v1/${resourceId}?some_column=eq.someValue' \\
--H "carbon-key: <your_api_key_here>" \\
--H "apiKey: CARBON_PUBLIC_KEY" \\
--H "Authorization: Bearer CARBON_PUBLIC_KEY" \\
--H "Content-Type: application/json" \\
--H "Prefer: return=minimal" \\
--d '{ "other_column": "otherValue" }'
-`
-    },
-    js: {
-      language: "js",
-      code: `
+    }),
+
+  update: (resourceId: string, endpoint: string) =>
+    createWriteSnippet({
+      title: "Update matching rows",
+      method: "PATCH",
+      resourceId,
+      endpoint,
+      prefer: "return=minimal",
+      query: "some_column=eq.someValue",
+      body: `{ "other_column": "otherValue" }`,
+      jsChain: `
 const { data, error } = await carbon
   .from('${resourceId}')
   .update({ other_column: 'otherValue' })
   .eq('some_column', 'someValue')
   .select()
 `
-    }
-  }),
-  delete: (resourceId: string, endpoint: string, apiKey: string) => ({
-    title: "Delete matching rows",
-    bash: {
-      language: "bash",
-      code: `
-curl -X DELETE '${endpoint}/rest/v1/${resourceId}?some_column=eq.someValue' \\
--H "carbon-key: <your_api_key_here>" \\
--H "apiKey: CARBON_PUBLIC_KEY" \\
--H "Authorization: Bearer CARBON_PUBLIC_KEY"`
-    },
-    js: {
-      language: "js",
-      code: `
+    }),
+
+  delete: (resourceId: string, endpoint: string) =>
+    defineSnippet("Delete matching rows", {
+      bash: createBashSnippet(
+        buildCurl({
+          method: "DELETE",
+          url: createRestUrl(endpoint, resourceId, "some_column=eq.someValue")
+        })
+      ),
+      js: createJsSnippet(`
 const { error } = await carbon
   .from('${resourceId}')
   .delete()
   .eq('some_column', 'someValue')
-`
-    }
-  }),
-  authSignup: (endpoint: string, apiKey: string, randomPassword: string) => ({
-    title: "User signup",
-    bash: {
-      language: "bash",
-      code: `
-curl -X POST '${endpoint}/auth/v1/signup' \\
--H "carbon-key: <your_api_key_here>" \\
--H "apiKey: CARBON_PUBLIC_KEY" \\
--H "Authorization: Bearer CARBON_PUBLIC_KEY" \\
--H "Content-Type: application/json" \\
--d '{
-  "email": "someone@email.com",
-  "password": "${randomPassword}"
-}'
-`
-    },
-    js: {
-      language: "js",
-      code: `
-let { data, error } = await carbon.auth.signUp({
-  email: 'someone@email.com',
-  password: '${randomPassword}'
-})
-`
-    }
-  }),
-  authLogin: (endpoint: string, apiKey: string, randomPassword: string) => ({
-    title: "User login",
-    bash: {
-      language: "bash",
-      code: `
-curl -X POST '${endpoint}/auth/v1/token?grant_type=password' \\
--H "carbon-key: <your_api_key_here>" \\
--H "apiKey: CARBON_PUBLIC_KEY" \\
--H "Authorization: Bearer CARBON_PUBLIC_KEY" \\
--H "Content-Type: application/json" \\
--d '{
-  "email": "someone@email.com",
-  "password": "${randomPassword}"
-}'
-`
-    },
-    js: {
-      language: "js",
-      code: `
-let { data, error } = await carbon.auth.signInWithPassword({
-  email: 'someone@email.com',
-  password: '${randomPassword}'
-})
-`
-    }
-  }),
-  authMagicLink: (endpoint: string, apiKey: string) => ({
-    title: "User login",
-    bash: {
-      language: "bash",
-      code: `
-curl -X POST '${endpoint}/auth/v1/magiclink' \\
--H "carbon-key: <your_api_key_here>" \\
--H "apiKey: CARBON_PUBLIC_KEY" \\
--H "Authorization: Bearer CARBON_PUBLIC_KEY" \\
--H "Content-Type: application/json" \\
--d '{
-  "email": "someone@email.com"
-}'
-`
-    },
-    js: {
-      language: "js",
-      code: `
-let { data, error } = await carbon.auth.signInWithOtp({
-  email: 'someone@email.com'
-})
-`
-    }
-  }),
-  authPhoneSignUp: (endpoint: string, apiKey: string) => ({
-    title: "Phone Signup",
-    bash: {
-      language: "bash",
-      code: `
-curl -X POST '${endpoint}/auth/v1/signup' \\
--H "carbon-key: <your_api_key_here>" \\
--H "apiKey: CARBON_PUBLIC_KEY" \\
--H "Authorization: Bearer CARBON_PUBLIC_KEY" \\
--H "Content-Type: application/json" \\
--d '{
-  "phone": "+13334445555",
-  "password": "some-password"
-}'
-`
-    },
-    js: {
-      language: "js",
-      code: `
-let { data, error } = await carbon.auth.signUp({
-  phone: '+13334445555',
-  password: 'some-password'
-})
-`
-    }
-  }),
-  authMobileOTPLogin: (endpoint: string, apiKey: string) => ({
-    title: "Phone Login",
-    bash: {
-      language: "bash",
-      code: `
-curl -X POST '${endpoint}/auth/v1/otp' \\
--H "carbon-key: <your_api_key_here>" \\
--H "apiKey: CARBON_PUBLIC_KEY" \\
--H "Authorization: Bearer CARBON_PUBLIC_KEY" \\
--H "Content-Type: application/json" \\
--d '{
-  "phone": "+13334445555"
-}'
-`
-    },
-    js: {
-      language: "js",
-      code: `
-let { data, error } = await carbon.auth.signInWithOtp({
-  phone: '+13334445555'
-})
-`
-    }
-  }),
-  authMobileOTPVerify: (endpoint: string, apiKey: string) => ({
-    title: "Verify Pin",
-    bash: {
-      language: "bash",
-      code: `
-curl -X POST '${endpoint}/auth/v1/verify' \\
--H "carbon-key: <your_api_key_here>" \\
--H "Content-Type: application/json" \\
--d '{
-  "type": "sms",
-  "phone": "+13334445555",
-  "token": "123456"
-}'
-`
-    },
-    js: {
-      language: "js",
-      code: `
-let { data, error } = await carbon.auth.verifyOtp({
-  phone: '+13334445555',
-  token: '123456',
-  type: 'sms'
-})
-`
-    }
-  }),
-  authInvite: (endpoint: string, apiKey: string) => ({
-    title: "Invite User",
-    bash: {
-      language: "bash",
-      code: `
-curl -X POST '${endpoint}/auth/v1/invite' \\
--H "carbon-key: <your_api_key_here>" \\
--H "Authorization: Bearer USER_TOKEN" \\
--H "Content-Type: application/json" \\
--d '{
-  "email": "someone@email.com"
-}'
-`
-    },
-    js: {
-      language: "js",
-      code: `
-let { data, error } = await carbon.auth.admin.inviteUserByEmail('someone@email.com')
-`
-    }
-  }),
-  authThirdPartyLogin: (endpoint: string, apiKey: string) => ({
-    title: "Third Party Login",
-    bash: {
-      language: "bash",
-      code: `
-curl -X GET '${endpoint}/auth/v1/authorize?provider=github' \\
--H "carbon-key: <your_api_key_here>" \\
--H "Authorization: Bearer USER_TOKEN" \\
--H "Content-Type: application/json"
-`
-    },
-    js: {
-      language: "js",
-      code: `
-let { data, error } = await carbon.auth.signInWithOAuth({
-  provider: 'github'
-})
-`
-    }
-  }),
-  authUser: (endpoint: string, apiKey: string) => ({
-    title: "Get User",
-    bash: {
-      language: "bash",
-      code: `
-curl -X GET '${endpoint}/auth/v1/user' \\
--H "carbon-key: <your_api_key_here>" \\
--H "apiKey: CARBON_PUBLIC_KEY" \\
--H "Authorization: Bearer CARBON_PUBLIC_KEY"
-`
-    },
-    js: {
-      language: "js",
-      code: `
-const { data: { user } } = await carbon.auth.getUser()
-`
-    }
-  }),
-  authRecover: (endpoint: string, apiKey: string) => ({
-    title: "Password Recovery",
-    bash: {
-      language: "bash",
-      code: `
-      curl -X POST '${endpoint}/auth/v1/recover' \\
--H "carbon-key: <your_api_key_here>" \\
--H "apiKey: CARBON_PUBLIC_KEY" \\
--H "Authorization: Bearer CARBON_PUBLIC_KEY" \\
--H "Content-Type: application/json" \\
--d '{
-  "email": "someone@email.com"
-}'
-`
-    },
-    js: {
-      language: "js",
-      code: `
-let { data, error } = await carbon.auth.resetPasswordForEmail(email)
-`
-    }
-  }),
-  authUpdate: (endpoint: string, apiKey: string) => ({
-    title: "Update User",
-    bash: {
-      language: "bash",
-      code: `
-      curl -X PUT '${endpoint}/auth/v1/user' \\
--H "carbon-key: <your_api_key_here>" \\
--H "apiKey: CARBON_PUBLIC_KEY" \\
--H "Authorization: Bearer CARBON_PUBLIC_KEY" \\
--H "Content-Type: application/json" \\
--d '{
-  "email": "someone@email.com",
-  "password": "new-password",
-  "data": {
-    "key": "value"
-  }
-}'
-`
-    },
-    js: {
-      language: "js",
-      code: `
-const { data, error } = await carbon.auth.updateUser({
-  email: "new@email.com",
-  password: "new-password",
-  data: { hello: 'world' }
-})
-`
-    }
-  }),
-  authLogout: (endpoint: string, apiKey: string) => ({
-    title: "User logout",
-    bash: {
-      language: "bash",
-      code: `
-curl -X POST '${endpoint}/auth/v1/logout' \\
--H "carbon-key: <your_api_key_here>" \\
--H "apiKey: CARBON_PUBLIC_KEY" \\
--H "Authorization: Bearer CARBON_PUBLIC_KEY" \\
--H "Content-Type: application/json" \\
--H "Authorization: Bearer USER_TOKEN"
-`
-    },
-    js: {
-      language: "js",
-      code: `
-let { error } = await carbon.auth.signOut()
-`
-    }
-  })
+`)
+    }),
+
+  // ── Subscriptions ────────────────────────────────────────────────────────
+
+  subscribeAll: (listenerName: string, resourceId: string) =>
+    createSubscriptionSnippet(
+      SUBSCRIPTION_CONFIGS.subscribeAll,
+      listenerName,
+      resourceId
+    ),
+
+  subscribeInserts: (listenerName: string, resourceId: string) =>
+    createSubscriptionSnippet(
+      SUBSCRIPTION_CONFIGS.subscribeInserts,
+      listenerName,
+      resourceId
+    ),
+
+  subscribeUpdates: (listenerName: string, resourceId: string) =>
+    createSubscriptionSnippet(
+      SUBSCRIPTION_CONFIGS.subscribeUpdates,
+      listenerName,
+      resourceId
+    ),
+
+  subscribeDeletes: (listenerName: string, resourceId: string) =>
+    createSubscriptionSnippet(
+      SUBSCRIPTION_CONFIGS.subscribeDeletes,
+      listenerName,
+      resourceId
+    ),
+
+  subscribeEq: (
+    listenerName: string,
+    resourceId: string,
+    columnName: string,
+    value: string
+  ) =>
+    createSubscriptionSnippet(
+      {
+        event: "*",
+        channel: "custom-filter-channel",
+        title: "Subscribe to specific rows"
+      },
+      listenerName,
+      resourceId,
+      `${columnName}=eq.${value}`
+    ),
+
+  // ── Auth ─────────────────────────────────────────────────────────────────
+
+  authSignup: (endpoint: string, apiKey: string, randomPassword: string) =>
+    createAuthSnippet("authSignup", endpoint, apiKey, randomPassword),
+
+  authLogin: (endpoint: string, apiKey: string, randomPassword: string) =>
+    createAuthSnippet("authLogin", endpoint, apiKey, randomPassword),
+
+  authMagicLink: (endpoint: string) =>
+    createAuthSnippet("authMagicLink", endpoint),
+
+  authPhoneSignUp: (endpoint: string) =>
+    createAuthSnippet("authPhoneSignUp", endpoint),
+
+  authMobileOTPLogin: (endpoint: string) =>
+    createAuthSnippet("authMobileOTPLogin", endpoint),
+
+  authMobileOTPVerify: (endpoint: string) =>
+    createAuthSnippet("authMobileOTPVerify", endpoint),
+
+  authInvite: (endpoint: string) => createAuthSnippet("authInvite", endpoint),
+
+  authThirdPartyLogin: (endpoint: string) =>
+    createAuthSnippet("authThirdPartyLogin", endpoint),
+
+  authUser: (endpoint: string) => createAuthSnippet("authUser", endpoint),
+
+  authRecover: (endpoint: string) => createAuthSnippet("authRecover", endpoint),
+
+  authUpdate: (endpoint: string) => createAuthSnippet("authUpdate", endpoint),
+
+  authLogout: (endpoint: string) => createAuthSnippet("authLogout", endpoint)
 };
 
 export default snippets;
