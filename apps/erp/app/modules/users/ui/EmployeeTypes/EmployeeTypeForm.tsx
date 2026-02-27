@@ -10,14 +10,19 @@ import {
   HStack,
   VStack
 } from "@carbon/react";
-import { useState } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router";
 import type { z } from "zod";
 import { Hidden, Input, Submit } from "~/components/Form";
+import PermissionMatrix from "~/components/PermissionMatrix";
 import { usePermissions } from "~/hooks";
+import {
+  fromEmployeeTypePermissions,
+  toEmployeeTypePermissions,
+  usePermissionMatrix
+} from "~/hooks/usePermissionMatrix";
 import type { CompanyPermission } from "~/modules/users";
 import { employeeTypeValidator } from "~/modules/users";
-import PermissionCheckboxes from "~/modules/users/ui/components/Permission";
 import { path } from "~/utils/path";
 
 type EmployeeTypeFormProps = {
@@ -37,21 +42,26 @@ const EmployeeTypeForm = ({ initialValues }: EmployeeTypeFormProps) => {
   const navigate = useNavigate();
   const onClose = () => navigate(-1);
 
-  const [permissions, setPermissions] = useState(initialValues.permissions);
-  const updatePermissions = (module: string, permission: CompanyPermission) => {
-    setPermissions((prevPermissions) => ({
-      ...prevPermissions,
-      [module]: {
-        name: prevPermissions[module].name,
-        permission
-      }
-    }));
-  };
+  const { state: initialState, modules } = useMemo(
+    () => fromEmployeeTypePermissions(initialValues.permissions),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
+  const matrix = usePermissionMatrix({
+    modules,
+    initialState
+  });
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
     ? !userPermissions.can("update", "users")
     : !userPermissions.can("create", "users");
+
+  // Serialize permissions to the format expected by the action
+  const permissionsData = JSON.stringify(
+    Object.values(toEmployeeTypePermissions(matrix.permissions))
+  );
 
   return (
     <Drawer
@@ -81,28 +91,11 @@ const EmployeeTypeForm = ({ initialValues }: EmployeeTypeFormProps) => {
             <Hidden name="id" />
             <VStack spacing={4}>
               <Input name="name" label="Employee Type" />
-              <Hidden
-                name="data"
-                value={JSON.stringify(Object.values(permissions))}
-              />
+              <Hidden name="data" value={permissionsData} />
             </VStack>
-            <VStack>
-              <label className="block text-sm font-medium leading-none">
-                Default Permissions
-              </label>
-              <VStack spacing={8}>
-                {Object.entries(permissions)
-                  .sort((a, b) => a[0].localeCompare(b[0]))
-                  .map(([module, data], index) => (
-                    <PermissionCheckboxes
-                      key={index}
-                      module={module}
-                      permissions={data.permission}
-                      updatePermissions={updatePermissions}
-                    />
-                  ))}
-              </VStack>
-            </VStack>
+            <div className="mt-4">
+              <PermissionMatrix matrix={matrix} label="Default Permissions" />
+            </div>
           </DrawerBody>
           <DrawerFooter>
             <HStack>

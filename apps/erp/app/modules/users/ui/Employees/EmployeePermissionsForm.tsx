@@ -10,13 +10,18 @@ import {
   HStack,
   VStack
 } from "@carbon/react";
-import { useState } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router";
 import type { z } from "zod";
 import { Hidden, Select, Submit } from "~/components/Form";
+import PermissionMatrix from "~/components/PermissionMatrix";
+import {
+  fromCompanyPermissions,
+  toCompanyPermissions,
+  usePermissionMatrix
+} from "~/hooks/usePermissionMatrix";
 import type { CompanyPermission } from "~/modules/users";
 import { employeeValidator } from "~/modules/users";
-import PermissionCheckboxes from "~/modules/users/ui/components/Permission";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
@@ -42,13 +47,21 @@ const EmployeePermissionsForm = ({
       label: et.name
     })) ?? [];
 
-  const [permissions, setPermissions] = useState(initialValues.permissions);
-  const updatePermissions = (module: string, permission: CompanyPermission) => {
-    setPermissions((prevPermissions) => ({
-      ...prevPermissions,
-      [module]: permission
-    }));
-  };
+  const { state: initialState, modules } = useMemo(
+    () => fromCompanyPermissions(initialValues.permissions),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
+  const matrix = usePermissionMatrix({
+    modules,
+    initialState
+  });
+
+  // Serialize permissions to the format expected by the action
+  const permissionsData = JSON.stringify(
+    toCompanyPermissions(matrix.permissions)
+  );
 
   return (
     <Drawer
@@ -76,23 +89,9 @@ const EmployeePermissionsForm = ({
                 options={employeeTypeOptions}
                 placeholder="Select Employee Type"
               />
-              <label className="block text-sm font-medium leading-none">
-                Permissions
-              </label>
-              <VStack spacing={8}>
-                {Object.entries(permissions)
-                  .sort((a, b) => a[0].localeCompare(b[0]))
-                  .map(([module, data], index) => (
-                    <PermissionCheckboxes
-                      key={index}
-                      module={module}
-                      permissions={data}
-                      updatePermissions={updatePermissions}
-                    />
-                  ))}
-              </VStack>
+              <PermissionMatrix matrix={matrix} />
               <Hidden name="id" />
-              <Hidden name="data" value={JSON.stringify(permissions)} />
+              <Hidden name="data" value={permissionsData} />
             </VStack>
           </DrawerBody>
           <DrawerFooter>

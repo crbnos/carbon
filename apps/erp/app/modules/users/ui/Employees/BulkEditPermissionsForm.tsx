@@ -11,13 +11,18 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useFetcher } from "react-router";
 import { Employees, Hidden, Radios, Submit } from "~/components/Form";
+import PermissionMatrix from "~/components/PermissionMatrix";
+import {
+  fromEmployeeTypePermissions,
+  toCompanyPermissions,
+  usePermissionMatrix
+} from "~/hooks/usePermissionMatrix";
 import type { CompanyPermission } from "~/modules/users";
 import { bulkPermissionsValidator } from "~/modules/users";
 import { path } from "~/utils/path";
-import PermissionCheckboxes from "../components/Permission";
 
 type BulkEditPermissionsProps = {
   userIds: string[];
@@ -30,17 +35,6 @@ const BulkEditPermissions = ({
   isOpen,
   onClose
 }: BulkEditPermissionsProps) => {
-  const [permissions, setPermissions] = useState<
-    Record<string, CompanyPermission>
-  >({});
-
-  const updatePermissions = (module: string, permission: CompanyPermission) => {
-    setPermissions((prevPermissions) => ({
-      ...prevPermissions,
-      [module]: permission
-    }));
-  };
-
   const emptyPermissionsFetcher = useFetcher<{
     permissions: Record<
       string,
@@ -55,17 +49,37 @@ const BulkEditPermissions = ({
     emptyPermissionsFetcher.load(path.to.api.emptyPermissions);
   });
 
+  const { state: initialState, modules } = useMemo(() => {
+    if (emptyPermissionsFetcher.data) {
+      return fromEmployeeTypePermissions(
+        emptyPermissionsFetcher.data.permissions
+      );
+    }
+    return { state: {}, modules: {} };
+  }, [emptyPermissionsFetcher.data]);
+
+  const matrix = usePermissionMatrix({
+    modules,
+    initialState
+  });
+
+  // When new empty permissions arrive, reset the matrix state
   useEffect(() => {
     if (emptyPermissionsFetcher.data) {
-      let emptyPermissions: Record<string, CompanyPermission> = {};
-      Object.entries(emptyPermissionsFetcher.data.permissions).forEach(
-        ([module, data]) => {
-          emptyPermissions[module] = data.permission;
-        }
+      const { state } = fromEmployeeTypePermissions(
+        emptyPermissionsFetcher.data.permissions
       );
-      setPermissions(emptyPermissions);
+      matrix.setPermissions(state);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [emptyPermissionsFetcher.data]);
+
+  // Serialize permissions to the format expected by the action
+  const permissionsData = JSON.stringify(
+    toCompanyPermissions(matrix.permissions)
+  );
+
+  const hasModules = Object.keys(modules).length > 0;
 
   return (
     <Drawer
@@ -111,22 +125,8 @@ const BulkEditPermissions = ({
                 label="Users to Update"
               />
 
-              <label className="block text-sm font-medium leading-none">
-                Permissions
-              </label>
-              <VStack spacing={8}>
-                {Object.entries(permissions)
-                  .sort((a, b) => a[0].localeCompare(b[0]))
-                  .map(([module, data], index) => (
-                    <PermissionCheckboxes
-                      key={index}
-                      module={module}
-                      permissions={data}
-                      updatePermissions={updatePermissions}
-                    />
-                  ))}
-              </VStack>
-              <Hidden name="data" value={JSON.stringify(permissions)} />
+              {hasModules && <PermissionMatrix matrix={matrix} />}
+              <Hidden name="data" value={permissionsData} />
             </VStack>
           </DrawerBody>
           <DrawerFooter>

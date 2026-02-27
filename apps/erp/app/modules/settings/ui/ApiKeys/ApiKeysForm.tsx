@@ -16,21 +16,21 @@ import {
   ModalTitle,
   VStack
 } from "@carbon/react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { LuCheck, LuClipboard, LuLock } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
 import { Hidden, Input, Submit } from "~/components/Form";
+import PermissionMatrix from "~/components/PermissionMatrix";
 import { usePermissions } from "~/hooks";
-import { apiKeyValidator } from "~/modules/settings";
+import {
+  fromApiKeyScopes,
+  toApiKeyScopes,
+  usePermissionMatrix
+} from "~/hooks/usePermissionMatrix";
+import { apiKeyPermissionModules, apiKeyValidator } from "~/modules/settings";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
-import PermissionMatrix, {
-  type ApiKeyScopes,
-  getFullAccessScopes,
-  jsonbToScopes,
-  scopesToJsonb
-} from "./PermissionMatrix";
 
 type ApiKeyFormProps = {
   initialValues: z.infer<typeof apiKeyValidator>;
@@ -52,9 +52,20 @@ const ApiKeyForm = ({
   const isDisabled = !permissions.can("update", "users");
 
   const [key, setKey] = useState<string | null>(null);
-  const [scopes, setScopes] = useState<ApiKeyScopes>(() =>
-    isEditing ? jsonbToScopes(existingScopes) : getFullAccessScopes()
+
+  const initialScopeState = useMemo(
+    () =>
+      isEditing
+        ? fromApiKeyScopes(existingScopes, apiKeyPermissionModules)
+        : fromApiKeyScopes(null, apiKeyPermissionModules),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
   );
+
+  const matrix = usePermissionMatrix({
+    modules: apiKeyPermissionModules,
+    initialState: initialScopeState
+  });
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
@@ -65,7 +76,7 @@ const ApiKeyForm = ({
 
   // Serialize scopes to JSONB format for form submission
   const scopesJsonb = companyId
-    ? JSON.stringify(scopesToJsonb(scopes, companyId))
+    ? JSON.stringify(toApiKeyScopes(matrix.permissions, companyId))
     : "{}";
 
   return (
@@ -101,7 +112,7 @@ const ApiKeyForm = ({
                   label="Expires At (optional)"
                 />
 
-                <PermissionMatrix scopes={scopes} onChange={setScopes} />
+                <PermissionMatrix matrix={matrix} />
               </VStack>
             </ModalBody>
             <ModalFooter>
