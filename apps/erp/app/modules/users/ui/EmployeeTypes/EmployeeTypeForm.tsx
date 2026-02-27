@@ -1,13 +1,13 @@
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
-  Drawer,
-  DrawerBody,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
   HStack,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
   VStack
 } from "@carbon/react";
 import { useMemo } from "react";
@@ -64,13 +64,13 @@ const EmployeeTypeForm = ({ initialValues }: EmployeeTypeFormProps) => {
   );
 
   return (
-    <Drawer
+    <Modal
       open
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
     >
-      <DrawerContent>
+      <ModalContent size="xlarge">
         <ValidatedForm
           validator={employeeTypeValidator}
           method="post"
@@ -82,12 +82,10 @@ const EmployeeTypeForm = ({ initialValues }: EmployeeTypeFormProps) => {
           defaultValues={initialValues}
           className="flex flex-col h-full"
         >
-          <DrawerHeader>
-            <DrawerTitle>
-              {isEditing ? "Edit" : "New"} Employee Type
-            </DrawerTitle>
-          </DrawerHeader>
-          <DrawerBody>
+          <ModalHeader>
+            <ModalTitle>{isEditing ? "Edit" : "New"} Employee Type</ModalTitle>
+          </ModalHeader>
+          <ModalBody className="max-h-[70dvh] overflow-y-auto">
             <Hidden name="id" />
             <VStack spacing={4}>
               <Input name="name" label="Employee Type" />
@@ -96,18 +94,18 @@ const EmployeeTypeForm = ({ initialValues }: EmployeeTypeFormProps) => {
             <div className="mt-4">
               <PermissionMatrix matrix={matrix} label="Default Permissions" />
             </div>
-          </DrawerBody>
-          <DrawerFooter>
+          </ModalBody>
+          <ModalFooter>
             <HStack>
               <Submit isDisabled={isDisabled}>Save</Submit>
               <Button size="md" variant="solid" onClick={onClose}>
                 Cancel
               </Button>
             </HStack>
-          </DrawerFooter>
+          </ModalFooter>
         </ValidatedForm>
-      </DrawerContent>
-    </Drawer>
+      </ModalContent>
+    </Modal>
   );
 };
 

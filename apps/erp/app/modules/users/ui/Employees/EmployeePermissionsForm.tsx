@@ -1,13 +1,13 @@
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
-  Drawer,
-  DrawerBody,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
   HStack,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
   VStack
 } from "@carbon/react";
 import { useMemo } from "react";
@@ -64,13 +64,13 @@ const EmployeePermissionsForm = ({
   );
 
   return (
-    <Drawer
+    <Modal
       open
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
     >
-      <DrawerContent>
+      <ModalContent size="xlarge">
         <ValidatedForm
           validator={employeeValidator}
           method="post"
@@ -78,10 +78,10 @@ const EmployeePermissionsForm = ({
           defaultValues={initialValues}
           className="flex flex-col h-full"
         >
-          <DrawerHeader>
-            <DrawerTitle>{name}</DrawerTitle>
-          </DrawerHeader>
-          <DrawerBody>
+          <ModalHeader>
+            <ModalTitle>{name}</ModalTitle>
+          </ModalHeader>
+          <ModalBody className="max-h-[70dvh] overflow-y-auto">
             <VStack spacing={4}>
               <Select
                 name="employeeType"
@@ -93,18 +93,18 @@ const EmployeePermissionsForm = ({
               <Hidden name="id" />
               <Hidden name="data" value={permissionsData} />
             </VStack>
-          </DrawerBody>
-          <DrawerFooter>
+          </ModalBody>
+          <ModalFooter>
             <HStack>
               <Submit>Save</Submit>
               <Button size="md" variant="solid" onClick={onClose}>
                 Cancel
               </Button>
             </HStack>
-          </DrawerFooter>
+          </ModalFooter>
         </ValidatedForm>
-      </DrawerContent>
-    </Drawer>
+      </ModalContent>
+    </Modal>
   );
 };
 
