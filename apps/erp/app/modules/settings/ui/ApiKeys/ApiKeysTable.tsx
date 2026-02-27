@@ -83,7 +83,7 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
           const window = (row.original as any).rateLimitWindow as string;
           return (
             <span className="text-sm text-muted-foreground">
-              {formatRateLimit(limit ?? 1000, window ?? "1h")}
+              {formatRateLimit(limit ?? 60, window ?? "1m")}
             </span>
           );
         },

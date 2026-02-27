@@ -461,7 +461,16 @@ export async function upsertApiKey(
 ) {
   if ("createdBy" in apiKey) {
     // Create: store the hash, return the raw key (caller generates both)
-    const { scopes, expiresAt, rawKey, keyHash, ...rest } = apiKey;
+    // Strip rateLimit/rateLimitWindow — these are platform-controlled, not user-configurable
+    const {
+      scopes,
+      expiresAt,
+      rawKey,
+      keyHash,
+      rateLimit: _rl,
+      rateLimitWindow: _rlw,
+      ...rest
+    } = apiKey as any;
 
     const result = await client
       .from("apiKey")
@@ -484,8 +493,15 @@ export async function upsertApiKey(
     return { data: { key: rawKey, id: result.data.id }, error: null };
   }
 
-  // Update: update name, scopes, rate limit, expiration (never the key itself)
-  const { scopes, expiresAt, ...rest } = apiKey;
+  // Update: update name, scopes, expiration (never the key itself)
+  // Strip rateLimit/rateLimitWindow — these are platform-controlled, not user-configurable
+  const {
+    scopes,
+    expiresAt,
+    rateLimit: _rl,
+    rateLimitWindow: _rlw,
+    ...rest
+  } = apiKey as any;
   return client
     .from("apiKey")
     .update(

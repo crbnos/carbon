@@ -20,13 +20,9 @@ import { useEffect, useState } from "react";
 import { LuCheck, LuClipboard, LuLock } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
-import { Hidden, Input, Number, Select, Submit } from "~/components/Form";
+import { Hidden, Input, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import {
-  apiKeyValidator,
-  rateLimitWindowLabels,
-  rateLimitWindows
-} from "~/modules/settings";
+import { apiKeyValidator } from "~/modules/settings";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 import PermissionMatrix, {
@@ -99,18 +95,6 @@ const ApiKeyForm = ({
               <Hidden name="scopes" value={scopesJsonb} />
               <VStack spacing={4}>
                 <Input name="name" label="Name" />
-
-                <div className="grid grid-cols-2 gap-4">
-                  <Number name="rateLimit" label="Rate Limit" />
-                  <Select
-                    name="rateLimitWindow"
-                    label="Rate Limit Window"
-                    options={rateLimitWindows.map((w) => ({
-                      value: w,
-                      label: rateLimitWindowLabels[w]
-                    }))}
-                  />
-                </div>
 
                 <DateTimePicker
                   name="expiresAt"

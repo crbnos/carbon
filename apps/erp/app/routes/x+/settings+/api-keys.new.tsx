@@ -75,9 +75,7 @@ export default function NewApiKeyRoute() {
   const routeData = useRouteData<{ companyId: string }>(path.to.apiKeys);
 
   const initialValues = {
-    name: "",
-    rateLimit: 1000,
-    rateLimitWindow: "1h" as const
+    name: ""
   };
 
   return (

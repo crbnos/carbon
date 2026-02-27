@@ -67,11 +67,6 @@ export default function EditApiKeyRoute() {
   const initialValues = {
     id: apiKey?.id ?? undefined,
     name: apiKey?.name ?? "",
-    rateLimit: (apiKey as any)?.rateLimit ?? 1000,
-    rateLimitWindow: ((apiKey as any)?.rateLimitWindow ?? "1h") as
-      | "1m"
-      | "1h"
-      | "1d",
     expiresAt: (apiKey as any)?.expiresAt ?? undefined
   };
 

@@ -67,8 +67,8 @@ export const getAuthFromAPIKey = async (
     userId: row.createdBy,
     apiKeyId: row.id,
     scopes: row.scopes ?? {},
-    rateLimit: row.rateLimit ?? 1000,
-    rateLimitWindow: row.rateLimitWindow ?? "1h",
+    rateLimit: row.rateLimit ?? 60,
+    rateLimitWindow: row.rateLimitWindow ?? "1m",
   };
 };
 
@@ -138,8 +138,8 @@ export const getSupabaseServiceRole = async (
     const rl = await checkApiKeyRateLimit(
       serviceRole,
       row.id,
-      row.rateLimit ?? 1000,
-      row.rateLimitWindow ?? "1h"
+      row.rateLimit ?? 60,
+      row.rateLimitWindow ?? "1m"
     );
     if (!rl.success) {
       throw new Error("Rate limit exceeded");

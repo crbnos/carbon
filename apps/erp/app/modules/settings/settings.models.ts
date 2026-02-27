@@ -25,15 +25,6 @@ export const purchasePriceUpdateTimingTypes = [
   "Purchase Order Finalize"
 ] as const;
 
-export const rateLimitWindows = ["1m", "1h", "1d"] as const;
-export type RateLimitWindow = (typeof rateLimitWindows)[number];
-
-export const rateLimitWindowLabels: Record<RateLimitWindow, string> = {
-  "1m": "Per Minute",
-  "1h": "Per Hour",
-  "1d": "Per Day"
-};
-
 /** All permission modules with their available CRUD actions */
 export const apiKeyPermissionModules = {
   accounting: ["view", "create", "update"],
@@ -57,8 +48,6 @@ export const apiKeyValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }),
   scopes: zfd.text(z.string().optional()),
-  rateLimit: zfd.numeric(z.number().min(1).default(1000)),
-  rateLimitWindow: z.enum(rateLimitWindows).default("1h"),
   expiresAt: zfd.text(z.string().optional())
 });
 
