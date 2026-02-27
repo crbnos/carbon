@@ -1,5 +1,11 @@
 // ─── Types ───────────────────────────────────────────────────────────────────
 
+import { getBrowserEnv } from "@carbon/auth";
+import { Edition } from "@carbon/utils";
+
+const isProxied = getBrowserEnv().CARBON_EDITION === Edition.Cloud;
+const PUBLIC_KEY = getBrowserEnv().SUPABASE_ANON_KEY;
+
 type SnippetLanguage = { language: string; code: string };
 
 type Snippet = {
@@ -54,7 +60,10 @@ function buildCurl(config: {
   }
 
   if (includeAuth) {
-    parts.push(`-H ${authHeader(apiKey)}`);
+    parts.push(`-H ${authHeader(isProxied ? apiKey : "$CARBON_PUBLIC_KEY")}`);
+    if (!isProxied) {
+      parts.push(`-H "carbon-key: ${apiKey ?? "$CARBON_API_KEY"}"`);
+    }
   }
 
   if (includeContentType) {
@@ -405,8 +414,6 @@ function createWriteSnippet(config: {
   });
 }
 
-// ─── Public API ──────────────────────────────────────────────────────────────
-
 const snippets = {
   // ── Setup ────────────────────────────────────────────────────────────────
 
@@ -424,15 +431,21 @@ const snippets = {
 
   env: ({ apiUrl, apiKey }: { apiUrl: string; apiKey: string }) =>
     defineSnippet(undefined, {
-      bash: createBashSnippet(`
-export CARBON_API_URL="${apiUrl}"
-export CARBON_API_KEY="${apiKey}"
-      `),
-      js: createJsSnippet(`
-// .env
-CARBON_API_URL = "${apiUrl}"
-CARBON_API_KEY = "${apiKey}"
-      `)
+      bash: createBashSnippet(
+        [
+          `export CARBON_API_URL="${apiUrl}"`,
+          `export CARBON_API_KEY="${apiKey}"`,
+          !isProxied && `export CARBON_PUBLIC_KEY="${PUBLIC_KEY}`
+        ].join("\n")
+      ),
+      js: createJsSnippet(
+        [
+          `// .env`,
+          `CARBON_API_URL = "${apiUrl}"`,
+          `CARBON_API_KEY = "${apiKey}"`,
+          !isProxied && `CARBON_PUBLIC_KEY = "${PUBLIC_KEY}"`
+        ].join("\n")
+      )
     }),
 
   init: (endpoint: string) =>
@@ -443,101 +456,20 @@ import { createClient } from '@supabase/supabase-js'
 
 const apiUrl = process.env.CARBON_API_URL
 const apiKey = process.env.CARBON_API_KEY
+${!isProxied ? `const publicKey = process.env.CARBON_PUBLIC_KEY` : ""}
 
-const carbon = createClient(apiUrl, apiKey);`),
-      python: {
-        language: "python",
-        code: `
-import os
-from supabase import create_client, Client
-url: str = os.environ.get("CARBON_API_URL")
-key: str = os.environ.get("CARBON_API_KEY")
-supabase: Client = create_client(url, key)
-`
-      },
-      dart: {
-        language: "dart",
-        code: `
-const supabaseUrl = '${endpoint}';
-const supabaseKey = String.fromEnvironment('CARBON_API_KEY');
-Future<void> main() async {
-  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseKey);
-  runApp(MyApp());
-}`
-      }
-    }),
-
-  // ── Auth Keys ────────────────────────────────────────────────────────────
-
-  authKey: (title: string, varName: string, apikey: string) =>
-    defineSnippet(undefined, {
-      bash: createBashSnippet(apikey),
-      js: createJsSnippet(`const ${varName} = '${apikey}'`)
-    }),
-
-  authKeyExample: (
-    defaultApiKey: string,
-    endpoint: string,
-    { showBearer = true }: { showBearer?: boolean } = {}
-  ) =>
-    defineSnippet("Example usage", {
-      bash: createBashSnippet(`
-curl '${endpoint}/rest/v1/' ${
-        showBearer
-          ? `\\
--H "Authorization: Bearer ${defaultApiKey}"`
-          : ""
-      }
-`),
-      js: createJsSnippet(`
-const CARBON_API_URL = "${endpoint}"
-const carbon = createClient(CARBON_API_URL, process.env.CARBON_API_KEY);
-`)
-    }),
-
-  // ── RPC ──────────────────────────────────────────────────────────────────
-
-  rpcSingle: ({
-    rpcName,
-    rpcParams,
-    endpoint,
-    apiKey: _apiKey,
-    showBearer: _showBearer = true
-  }: {
-    rpcName: string;
-    rpcParams: any[];
-    endpoint: string;
-    apiKey: string;
-    showBearer: boolean;
-  }) => {
-    const rpcList = rpcParams.map((x) => `"${x.name}": "value"`).join(", ");
-    const noParams = !rpcParams.length;
-    const bashBody = noParams ? undefined : `{ ${rpcList} }`;
-    const jsParams = noParams
-      ? ""
-      : `, {${rpcParams
-          .map((x) => `\n    ${x.name}`)
-          .join(`, `)
-          .concat("\n  ")}}`;
-
-    return defineSnippet("Invoke function ", {
-      bash: createBashSnippet(
-        buildCurl({
-          method: "POST",
-          url: `${endpoint}/rest/v1/rpc/${rpcName}`,
-          includeContentType: true,
-          body: bashBody
-        })
-      ),
-      js: createJsSnippet(`
-let { data, error } = await carbon
-  .rpc('${rpcName}'${jsParams})
-if (error) console.error(error)
-else console.log(data)
-`)
-    });
+const carbon = createClient(apiUrl, ${
+        !isProxied
+          ? `publicKey, {
+  global: {
+    headers: {
+      "carbon-key": apiKey,
+    },
   },
-
+}`
+          : `apiKey`
+      });`)
+    }),
   // ── Read (CRUD) ──────────────────────────────────────────────────────────
 
   readAll: (resourceId: string, endpoint: string, apiKey?: string) =>
