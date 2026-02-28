@@ -173,36 +173,29 @@ export async function requirePermissions(
         .eq("id" as any, apiKeyData.id);
 
       // Check scopes against required permissions
-      // Empty scopes ({}) = full access (backward compatibility)
-      const scopes = apiKeyData.scopes;
-      const hasScopes = scopes && Object.keys(scopes).length > 0;
-
-      if (hasScopes) {
-        const scopeCheckPassed = Object.entries(requiredPermissions).every(
-          ([action, permission]) => {
-            if (action === "bypassRls" || action === "role") return true;
-            if (typeof permission === "string") {
-              const scopeKey = `${permission}_${action}`;
+      const scopes = apiKeyData.scopes ?? {};
+      const scopeCheckPassed = Object.entries(requiredPermissions).every(
+        ([action, permission]) => {
+          if (action === "bypassRls" || action === "role") return true;
+          if (typeof permission === "string") {
+            const scopeKey = `${permission}_${action}`;
+            return scopeKey in scopes && scopes[scopeKey]?.includes(companyId);
+          } else if (Array.isArray(permission)) {
+            return permission.every((p) => {
+              const scopeKey = `${p}_${action}`;
               return (
                 scopeKey in scopes && scopes[scopeKey]?.includes(companyId)
               );
-            } else if (Array.isArray(permission)) {
-              return permission.every((p) => {
-                const scopeKey = `${p}_${action}`;
-                return (
-                  scopeKey in scopes && scopes[scopeKey]?.includes(companyId)
-                );
-              });
-            }
-            return false;
+            });
           }
-        );
-
-        if (!scopeCheckPassed) {
-          throw new Response("API key lacks required permissions", {
-            status: 403
-          });
+          return false;
         }
+      );
+
+      if (!scopeCheckPassed) {
+        throw new Response("API key lacks required permissions", {
+          status: 403
+        });
       }
 
       const client = getCarbonAPIKeyClient(apiKey);

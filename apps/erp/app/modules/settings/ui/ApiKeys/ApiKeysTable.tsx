@@ -67,7 +67,7 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
           const scopeCount = getScopeCount(scopes);
           return (
             <Badge variant="secondary">
-              {scopeCount === 0 ? "Full Access" : `${scopeCount} permissions`}
+              {scopeCount === 0 ? "No Access" : `${scopeCount} permissions`}
             </Badge>
           );
         },

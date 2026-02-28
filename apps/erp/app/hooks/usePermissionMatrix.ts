@@ -198,19 +198,6 @@ function buildDefaultState(modules: ModuleDefinition): Record<string, boolean> {
   return state;
 }
 
-/** Build an all-true (full access) state from module definitions */
-function buildFullAccessState(
-  modules: ModuleDefinition
-): Record<string, boolean> {
-  const state: Record<string, boolean> = {};
-  for (const [mod, actions] of Object.entries(modules)) {
-    for (const action of actions) {
-      state[`${mod}_${action}`] = true;
-    }
-  }
-  return state;
-}
-
 // ---------------------------------------------------------------------------
 // Adapter: API Key scopes
 // ---------------------------------------------------------------------------
@@ -229,14 +216,14 @@ export function toApiKeyScopes(
   return result;
 }
 
-/** Convert JSONB scopes format → flat boolean map (empty scopes = full access) */
+/** Convert JSONB scopes format → flat boolean map (empty scopes = no access) */
 export function fromApiKeyScopes(
   scopes: Record<string, string[]> | null | undefined,
   modules: ModuleDefinition
 ): Record<string, boolean> {
   const state = buildDefaultState(modules);
   if (!scopes || Object.keys(scopes).length === 0) {
-    return buildFullAccessState(modules);
+    return state;
   }
   for (const key of Object.keys(scopes)) {
     if (key in state) {
