@@ -99,14 +99,14 @@ const CreateSupplierModal = () => {
                 </>
               )}
             </VStack>
-            <ModalFooter>
-              <HStack>
-                <Submit isLoading={formFetcher.state !== "idle"}>
-                  Create User
-                </Submit>
-              </HStack>
-            </ModalFooter>
           </ModalBody>
+          <ModalFooter>
+            <HStack>
+              <Submit isLoading={formFetcher.state !== "idle"}>
+                Create User
+              </Submit>
+            </HStack>
+          </ModalFooter>
         </ValidatedForm>
       </ModalContent>
     </Modal>

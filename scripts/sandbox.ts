@@ -9,14 +9,14 @@ const carbon = createClient(
   {
     global: {
       headers: {
-        "carbon-key": "crbn_**************",
+        "carbon-key": "crbn_yPkz1hszqh6mVLDf4jiDv",
       },
     },
   }
 );
 
 (async () => {
-  const employees = await carbon.from("employees").select("*").limit(1000);
+  const employees = await carbon.from("salesOrder").select("*").limit(1000);
 
   console.log(employees);
 })();

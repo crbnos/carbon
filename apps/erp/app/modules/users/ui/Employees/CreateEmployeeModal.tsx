@@ -78,12 +78,12 @@ const CreateEmployeeModal = ({ invitable }: CreateEmployeeModalProps) => {
               />
               <Location name="locationId" label="Location" />
             </VStack>
-            <ModalFooter>
-              <HStack>
-                <Submit isLoading={formFetcher.state !== "idle"}>Invite</Submit>
-              </HStack>
-            </ModalFooter>
           </ModalBody>
+          <ModalFooter>
+            <HStack>
+              <Submit isLoading={formFetcher.state !== "idle"}>Invite</Submit>
+            </HStack>
+          </ModalFooter>
         </ValidatedForm>
       </ModalContent>
     </Modal>
