@@ -435,7 +435,7 @@ const snippets = {
         [
           `export CARBON_API_URL="${apiUrl}"`,
           `export CARBON_API_KEY="${apiKey}"`,
-          !isProxied && `export CARBON_PUBLIC_KEY="${PUBLIC_KEY}`
+          !isProxied ? `export CARBON_PUBLIC_KEY="${PUBLIC_KEY}"` : ""
         ].join("\n")
       ),
       js: createJsSnippet(
@@ -443,7 +443,7 @@ const snippets = {
           `// .env`,
           `CARBON_API_URL = "${apiUrl}"`,
           `CARBON_API_KEY = "${apiKey}"`,
-          !isProxied && `CARBON_PUBLIC_KEY = "${PUBLIC_KEY}"`
+          !isProxied ? `CARBON_PUBLIC_KEY = "${PUBLIC_KEY}"` : ""
         ].join("\n")
       )
     }),
