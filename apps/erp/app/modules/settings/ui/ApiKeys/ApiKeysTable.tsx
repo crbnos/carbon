@@ -6,6 +6,7 @@ import {
   LuCalendar,
   LuCode,
   LuGauge,
+  LuKey,
   LuPencil,
   LuShield,
   LuTag,
@@ -54,6 +55,21 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
         ),
         meta: {
           icon: <LuTag />
+        }
+      },
+      {
+        id: "keyPreview",
+        header: "Key",
+        cell: ({ row }) => {
+          const preview = (row.original as any).keyPreview as string | null;
+          return (
+            <span className="font-mono text-sm text-muted-foreground">
+              {preview ? `crbn_•••${preview}` : "crbn_•••••"}
+            </span>
+          );
+        },
+        meta: {
+          icon: <LuKey />
         }
       },
       {

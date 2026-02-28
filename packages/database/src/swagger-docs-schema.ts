@@ -54292,6 +54292,9 @@ export default {
             $ref: "#/parameters/rowFilter.apiKey.keyHash",
           },
           {
+            $ref: "#/parameters/rowFilter.apiKey.keyPreview",
+          },
+          {
             $ref: "#/parameters/rowFilter.apiKey.scopes",
           },
           {
@@ -54384,6 +54387,9 @@ export default {
             $ref: "#/parameters/rowFilter.apiKey.keyHash",
           },
           {
+            $ref: "#/parameters/rowFilter.apiKey.keyPreview",
+          },
+          {
             $ref: "#/parameters/rowFilter.apiKey.scopes",
           },
           {
@@ -54428,6 +54434,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.apiKey.keyHash",
+          },
+          {
+            $ref: "#/parameters/rowFilter.apiKey.keyPreview",
           },
           {
             $ref: "#/parameters/rowFilter.apiKey.scopes",
@@ -94444,6 +94453,10 @@ export default {
           format: "text",
           type: "string",
         },
+        keyPreview: {
+          format: "text",
+          type: "string",
+        },
         scopes: {
           format: "jsonb",
         },
@@ -127948,6 +127961,12 @@ export default {
     },
     "rowFilter.apiKey.keyHash": {
       name: "keyHash",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.apiKey.keyPreview": {
+      name: "keyPreview",
       required: false,
       in: "query",
       type: "string",

@@ -39,6 +39,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // Generate key + hash in the route action (server-only context)
   const rawKey = `crbn_${nanoid()}`;
   const keyHash = hashApiKey(rawKey);
+  const keyPreview = rawKey.slice(-5);
 
   const insertApiKey = await upsertApiKey(client, {
     ...d,
@@ -46,6 +47,7 @@ export async function action({ request }: ActionFunctionArgs) {
     expiresAt: expiresAt || undefined,
     rawKey,
     keyHash,
+    keyPreview,
     companyId,
     createdBy: userId
   });

@@ -8,6 +8,7 @@
 
 ALTER TABLE "apiKey"
   ADD COLUMN "keyHash" TEXT,
+  ADD COLUMN "keyPreview" TEXT,
   ADD COLUMN "scopes" JSONB NOT NULL DEFAULT '{}',
   ADD COLUMN "rateLimit" INTEGER NOT NULL DEFAULT 1000,
   ADD COLUMN "rateLimitWindow" TEXT NOT NULL DEFAULT '1h',
@@ -94,14 +95,20 @@ FOR SELECT USING (
 );
 
 -- ============================================================================
--- Step 4: Now safe to drop the plaintext key column
+-- Step 4: Backfill keyPreview from plaintext key (last 5 chars)
+-- ============================================================================
+
+UPDATE "apiKey" SET "keyPreview" = RIGHT("key", 5);
+
+-- ============================================================================
+-- Step 5: Now safe to drop the plaintext key column
 -- ============================================================================
 
 ALTER TABLE "apiKey" DROP CONSTRAINT "apiKey_key_key";
 ALTER TABLE "apiKey" DROP COLUMN "key";
 
 -- ============================================================================
--- Step 5: Backfill existing API keys with full access scopes
+-- Step 6: Backfill existing API keys with full access scopes
 -- ============================================================================
 
 UPDATE "apiKey"
@@ -120,8 +127,8 @@ SET "scopes" = (
       'invoicing_view', 'invoicing_create', 'invoicing_update', 'invoicing_delete',
       'quality_view', 'quality_create', 'quality_update', 'quality_delete',
       'settings_view', 'settings_create', 'settings_update', 'settings_delete',
-      'users_create', 'users_update', 'users_delete',
-      'maintenance_update', 'maintenance_delete'
+      'documents_view', 'documents_create', 'documents_update', 'documents_delete',
+      'users_create', 'users_update', 'users_delete'
     ]) as perm
   ) perms
 )
@@ -129,7 +136,7 @@ FROM "apiKey" ak
 WHERE "apiKey"."id" = ak."id";
 
 -- ============================================================================
--- Step 6: New function for scope checking
+-- Step 7: New function for scope checking
 -- ============================================================================
 
 -- Get API key scopes from the current request
@@ -155,7 +162,7 @@ CREATE OR REPLACE FUNCTION get_api_key_scopes() RETURNS JSONB
   END;
 $$;
 -- ============================================================================
--- Step 7: Unlogged table + function for rate limiting
+-- Step 8: Unlogged table + function for rate limiting
 -- Unlogged tables skip WAL for performance; data is ephemeral (lost on crash,
 -- which is acceptable for rate limit counters).
 -- ============================================================================
@@ -223,7 +230,7 @@ END;
 $$;
 
 -- ============================================================================
--- Step 8: Update RLS helper functions for scope checking
+-- Step 9: Update RLS helper functions for scope checking
 -- Rate limiting is NOT done in RLS (read-only transaction context).
 -- It is called explicitly from application middleware and edge functions.
 -- ============================================================================

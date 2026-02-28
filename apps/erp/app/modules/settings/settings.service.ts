@@ -452,6 +452,7 @@ export async function upsertApiKey(
         expiresAt?: string;
         rawKey: string;
         keyHash: string;
+        keyPreview: string;
       })
     | (Omit<z.infer<typeof apiKeyValidator>, "id" | "scopes" | "expiresAt"> & {
         id: string;

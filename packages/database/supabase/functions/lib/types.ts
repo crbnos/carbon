@@ -1606,6 +1606,7 @@ export type Database = {
           expiresAt: string | null
           id: string
           keyHash: string
+          keyPreview: string | null
           lastUsedAt: string | null
           name: string
           rateLimit: number
@@ -1619,6 +1620,7 @@ export type Database = {
           expiresAt?: string | null
           id?: string
           keyHash: string
+          keyPreview?: string | null
           lastUsedAt?: string | null
           name: string
           rateLimit?: number
@@ -1632,6 +1634,7 @@ export type Database = {
           expiresAt?: string | null
           id?: string
           keyHash?: string
+          keyPreview?: string | null
           lastUsedAt?: string | null
           name?: string
           rateLimit?: number
@@ -52189,14 +52192,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
