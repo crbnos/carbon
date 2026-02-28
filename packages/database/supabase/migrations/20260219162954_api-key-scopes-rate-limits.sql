@@ -151,10 +151,9 @@ CREATE OR REPLACE FUNCTION get_api_key_scopes() RETURNS JSONB
     WHERE "keyHash" = encode(digest(raw_key::bytea, 'sha256'::text), 'hex')
       AND ("expiresAt" IS NULL OR "expiresAt" > NOW());
 
-    RETURN COALESCE(scopes, '{}'::jsonb);
+    RETURN scopes;
   END;
 $$;
-
 -- ============================================================================
 -- Step 7: Unlogged table + function for rate limiting
 -- Unlogged tables skip WAL for performance; data is ephemeral (lost on crash,
@@ -285,9 +284,9 @@ BEGIN
     -- Get scopes for this API key
     api_key_scopes := get_api_key_scopes();
 
-    -- Empty scopes = full access (backward compatibility)
-    IF api_key_scopes = '{}'::jsonb OR api_key_scopes IS NULL THEN
-      RETURN ARRAY[api_key_company];
+    -- NULL or empty scopes = no access
+    IF api_key_scopes IS NULL OR api_key_scopes = '{}'::jsonb THEN
+      RETURN '{}';
     END IF;
 
     -- Check if the requested permission exists in scopes
