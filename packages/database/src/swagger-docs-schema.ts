@@ -94448,12 +94448,12 @@ export default {
           format: "jsonb",
         },
         rateLimit: {
-          default: 1000,
+          default: 60,
           format: "integer",
           type: "integer",
         },
         rateLimitWindow: {
-          default: "1h",
+          default: "1m",
           format: "text",
           type: "string",
         },
