@@ -84,7 +84,7 @@ const RevisionForm = ({
               {!isEditing && (
                 <ModalDrawerDescription>
                   A new {hasSizesInsteadOfRevisions ? "size" : "revision"} will
-                  be created using a copy of the current
+                  be created using a copy of the current {" "}
                   {hasSizesInsteadOfRevisions ? "size" : "revision"}
                 </ModalDrawerDescription>
               )}
