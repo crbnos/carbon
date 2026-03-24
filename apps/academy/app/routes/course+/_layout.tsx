@@ -66,7 +66,7 @@ export default function CourseLayout() {
                       to={path.to.course(module.id, course.id)}
                       className={({ isActive }) =>
                         [
-                          "block py-1.5 px-2 text-sm rounded-md border-l-2 transition-all",
+                          "block py-1.5 px-2 text-sm rounded-md border-l-2 transition-all hover:underline",
                           isActive
                             ? "font-semibold text-foreground"
                             : "text-foreground/80 border-l-transparent hover:bg-accent/60 hover:text-foreground"
