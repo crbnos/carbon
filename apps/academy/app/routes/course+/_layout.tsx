@@ -1,6 +1,6 @@
 import { Button, Heading } from "@carbon/react";
 import { LuBookOpen, LuCirclePlay } from "react-icons/lu";
-import { Link, Outlet } from "react-router";
+import { Link, NavLink, Outlet } from "react-router";
 import { Hero } from "~/components/Hero";
 import { modules } from "~/config";
 import { useOptionalUser } from "~/hooks/useUser";
@@ -61,13 +61,29 @@ export default function CourseLayout() {
                 </h3>
                 <div className="space-y-0">
                   {module.courses.map((course) => (
-                    <Link
+                    <NavLink
                       key={course.id}
                       to={path.to.course(module.id, course.id)}
-                      className="block py-1 text-sm hover:underline"
+                      className={({ isActive }) =>
+                        [
+                          "block text-sm rounded-md border-l-2 transition-all",
+                          isActive
+                            ? "font-semibold text-foreground"
+                            : "text-foreground/80 border-l-transparent hover:bg-accent/60 hover:text-foreground"
+                        ].join(" ")
+                      }
+                      style={({ isActive }) =>
+                        isActive
+                          ? {
+                              backgroundColor: `${module.background}2E`,
+                              borderLeftColor: module.background,
+                              boxShadow: `inset 0 0 0 1px ${module.background}4D`
+                            }
+                          : undefined
+                      }
                     >
                       {course.name}
-                    </Link>
+                    </NavLink>
                   ))}
                 </div>
               </div>
