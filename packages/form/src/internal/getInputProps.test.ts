@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, jest } from "@jest/globals";
 import type { CreateGetInputPropsOptions } from "./getInputProps";
 import { createGetInputProps } from "./getInputProps";
 
@@ -12,22 +12,23 @@ describe("getInputProps", () => {
         defaultValue: "test default value",
         touched: false,
         hasBeenSubmitted: false,
-        setTouched: vi.fn(),
-        clearError: vi.fn(),
-        validate: vi.fn()
+        setTouched: jest.fn(),
+        clearError: jest.fn(),
+        validate: jest.fn()
       };
       const getInputProps = createGetInputProps(options);
 
       const provided = {
-        onBlur: vi.fn(),
-        onChange: vi.fn()
+        onBlur: jest.fn(),
+        onChange: jest.fn()
       };
       const { onChange, onBlur } = getInputProps(provided);
 
       onChange!(fakeEvent);
       expect(provided.onChange).toBeCalledTimes(1);
       expect(provided.onChange).toBeCalledWith(fakeEvent);
-      expect(options.setTouched).not.toBeCalled();
+      expect(options.setTouched).toBeCalledTimes(1);
+      expect(options.setTouched).toBeCalledWith(true);
       expect(options.validate).not.toBeCalled();
 
       onBlur!(fakeEvent);
@@ -44,9 +45,9 @@ describe("getInputProps", () => {
         defaultValue: "test default value",
         touched: false,
         hasBeenSubmitted: false,
-        setTouched: vi.fn(),
-        clearError: vi.fn(),
-        validate: vi.fn(),
+        setTouched: jest.fn(),
+        clearError: jest.fn(),
+        validate: jest.fn(),
         validationBehavior: {
           initial: "onChange"
         }
@@ -54,15 +55,16 @@ describe("getInputProps", () => {
       const getInputProps = createGetInputProps(options);
 
       const provided = {
-        onBlur: vi.fn(),
-        onChange: vi.fn()
+        onBlur: jest.fn(),
+        onChange: jest.fn()
       };
       const { onChange, onBlur } = getInputProps(provided);
 
       onChange!(fakeEvent);
       expect(provided.onChange).toBeCalledTimes(1);
       expect(provided.onChange).toBeCalledWith(fakeEvent);
-      expect(options.setTouched).not.toBeCalled();
+      expect(options.setTouched).toBeCalledTimes(1);
+      expect(options.setTouched).toBeCalledWith(true);
       expect(options.validate).toBeCalledTimes(1);
 
       onBlur!(fakeEvent);
@@ -79,9 +81,9 @@ describe("getInputProps", () => {
         defaultValue: "test default value",
         touched: false,
         hasBeenSubmitted: false,
-        setTouched: vi.fn(),
-        clearError: vi.fn(),
-        validate: vi.fn(),
+        setTouched: jest.fn(),
+        clearError: jest.fn(),
+        validate: jest.fn(),
         validationBehavior: {
           initial: "onSubmit"
         }
@@ -89,15 +91,16 @@ describe("getInputProps", () => {
       const getInputProps = createGetInputProps(options);
 
       const provided = {
-        onBlur: vi.fn(),
-        onChange: vi.fn()
+        onBlur: jest.fn(),
+        onChange: jest.fn()
       };
       const { onChange, onBlur } = getInputProps(provided);
 
       onChange!(fakeEvent);
       expect(provided.onChange).toBeCalledTimes(1);
       expect(provided.onChange).toBeCalledWith(fakeEvent);
-      expect(options.setTouched).not.toBeCalled();
+      expect(options.setTouched).toBeCalledTimes(1);
+      expect(options.setTouched).toBeCalledWith(true);
       expect(options.validate).not.toBeCalled();
 
       onBlur!(fakeEvent);
@@ -116,22 +119,23 @@ describe("getInputProps", () => {
         defaultValue: "test default value",
         touched: true,
         hasBeenSubmitted: false,
-        setTouched: vi.fn(),
-        clearError: vi.fn(),
-        validate: vi.fn()
+        setTouched: jest.fn(),
+        clearError: jest.fn(),
+        validate: jest.fn()
       };
       const getInputProps = createGetInputProps(options);
 
       const provided = {
-        onBlur: vi.fn(),
-        onChange: vi.fn()
+        onBlur: jest.fn(),
+        onChange: jest.fn()
       };
       const { onChange, onBlur } = getInputProps(provided);
 
       onChange!(fakeEvent);
       expect(provided.onChange).toBeCalledTimes(1);
       expect(provided.onChange).toBeCalledWith(fakeEvent);
-      expect(options.setTouched).not.toBeCalled();
+      expect(options.setTouched).toBeCalledTimes(1);
+      expect(options.setTouched).toBeCalledWith(true);
       expect(options.validate).toBeCalledTimes(1);
 
       onBlur!(fakeEvent);
@@ -148,9 +152,9 @@ describe("getInputProps", () => {
         defaultValue: "test default value",
         touched: true,
         hasBeenSubmitted: false,
-        setTouched: vi.fn(),
-        clearError: vi.fn(),
-        validate: vi.fn(),
+        setTouched: jest.fn(),
+        clearError: jest.fn(),
+        validate: jest.fn(),
         validationBehavior: {
           whenTouched: "onBlur"
         }
@@ -158,15 +162,16 @@ describe("getInputProps", () => {
       const getInputProps = createGetInputProps(options);
 
       const provided = {
-        onBlur: vi.fn(),
-        onChange: vi.fn()
+        onBlur: jest.fn(),
+        onChange: jest.fn()
       };
       const { onChange, onBlur } = getInputProps(provided);
 
       onChange!(fakeEvent);
       expect(provided.onChange).toBeCalledTimes(1);
       expect(provided.onChange).toBeCalledWith(fakeEvent);
-      expect(options.setTouched).not.toBeCalled();
+      expect(options.setTouched).toBeCalledTimes(1);
+      expect(options.setTouched).toBeCalledWith(true);
       expect(options.validate).not.toBeCalled();
 
       onBlur!(fakeEvent);
@@ -185,22 +190,23 @@ describe("getInputProps", () => {
         defaultValue: "test default value",
         touched: true,
         hasBeenSubmitted: true,
-        setTouched: vi.fn(),
-        clearError: vi.fn(),
-        validate: vi.fn()
+        setTouched: jest.fn(),
+        clearError: jest.fn(),
+        validate: jest.fn()
       };
       const getInputProps = createGetInputProps(options);
 
       const provided = {
-        onBlur: vi.fn(),
-        onChange: vi.fn()
+        onBlur: jest.fn(),
+        onChange: jest.fn()
       };
       const { onChange, onBlur } = getInputProps(provided);
 
       onChange!(fakeEvent);
       expect(provided.onChange).toBeCalledTimes(1);
       expect(provided.onChange).toBeCalledWith(fakeEvent);
-      expect(options.setTouched).not.toBeCalled();
+      expect(options.setTouched).toBeCalledTimes(1);
+      expect(options.setTouched).toBeCalledWith(true);
       expect(options.validate).toBeCalledTimes(1);
 
       onBlur!(fakeEvent);
@@ -217,9 +223,9 @@ describe("getInputProps", () => {
         defaultValue: "test default value",
         touched: true,
         hasBeenSubmitted: true,
-        setTouched: vi.fn(),
-        clearError: vi.fn(),
-        validate: vi.fn(),
+        setTouched: jest.fn(),
+        clearError: jest.fn(),
+        validate: jest.fn(),
         validationBehavior: {
           whenSubmitted: "onBlur"
         }
@@ -227,15 +233,16 @@ describe("getInputProps", () => {
       const getInputProps = createGetInputProps(options);
 
       const provided = {
-        onBlur: vi.fn(),
-        onChange: vi.fn()
+        onBlur: jest.fn(),
+        onChange: jest.fn()
       };
       const { onChange, onBlur } = getInputProps(provided);
 
       onChange!(fakeEvent);
       expect(provided.onChange).toBeCalledTimes(1);
       expect(provided.onChange).toBeCalledWith(fakeEvent);
-      expect(options.setTouched).not.toBeCalled();
+      expect(options.setTouched).toBeCalledTimes(1);
+      expect(options.setTouched).toBeCalledWith(true);
       expect(options.validate).not.toBeCalled();
 
       onBlur!(fakeEvent);
