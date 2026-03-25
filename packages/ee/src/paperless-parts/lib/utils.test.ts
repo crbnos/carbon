@@ -1,6 +1,13 @@
 import type { Database } from "@carbon/database";
 import { calculatePromisedDate } from "./utils";
-
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+} from "@jest/globals";
 // biome-ignore lint/correctness/noUndeclaredVariables: suppressed due to migration
 describe("calculatePromisedDate", () => {
   // biome-ignore lint/correctness/noUndeclaredVariables: suppressed due to migration
@@ -95,22 +102,21 @@ describe("calculatePromisedDate", () => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         createdBy: "system",
-        updatedBy: "system"
-      }
+        updatedBy: "system",
+      },
     ];
     const leadTime = 3;
 
     const result = calculatePromisedDate(leadTime, holidays);
     const resultDate = new Date(result);
 
-    // Expected: September 3, 2024 (Tuesday)
+    // Expected: September 4, 2024 (Wednesday)
     // Start: Aug 29 (Thu) before cutoff
     // Add 3 business days: Aug 30 (Fri) +1, Sep 2 (Mon holiday skip), Sep 3 (Tue) +2, Sep 3... wait
     // Let me trace: from Aug 29, add days until we count 3 business days
-    // Aug 30 (Fri) +1, Aug 31-Sep 1 (weekend skip), Sep 2 (Mon holiday skip), Sep 3 (Tue) +2, but we get Sep 3 not Sep 4
-    // Actually the result is Sep 3
+    // Aug 30 (Fri) +1, Aug 31-Sep 1 (weekend skip), Sep 2 (Mon holiday skip), Sep 3 (Tue) +2, Sep 4 (Wed) +3
     // biome-ignore lint/correctness/noUndeclaredVariables: suppressed due to migration
-    expect(resultDate.getDate()).toBe(3);
+    expect(resultDate.getDate()).toBe(4);
     // biome-ignore lint/correctness/noUndeclaredVariables: suppressed due to migration
     expect(resultDate.getMonth()).toBe(8); // September is month 8
     // biome-ignore lint/correctness/noUndeclaredVariables: suppressed due to migration
@@ -169,7 +175,7 @@ describe("calculatePromisedDate", () => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         createdBy: "system",
-        updatedBy: "system"
+        updatedBy: "system",
       },
       {
         id: "2",
@@ -182,21 +188,19 @@ describe("calculatePromisedDate", () => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         createdBy: "system",
-        updatedBy: "system"
-      }
+        updatedBy: "system",
+      },
     ];
     const leadTime = 3;
 
     const result = calculatePromisedDate(leadTime, holidays);
     const resultDate = new Date(result);
 
-    // Expected: September 4, 2024 (Wednesday)
-    // From Aug 29 (Thu): Add 3 business days
-    // Aug 30 (Fri) +1, Sep 2 (Mon holiday), Sep 3 (Tue holiday), Sep 4 (Wed) +2, then one more would be Sep 5 +3
-    // Wait, let me recalculate: Aug 30 +1, Sep 4 +2, Sep 5 +3? No...
-    // Result shows Sep 4 so that's correct
+    // Expected: September 5, 2024 (Thursday)
+    // From Aug 29 (Thu): add 3 business days
+    // Aug 30 (Fri) +1, Sep 2 (Mon holiday skip), Sep 3 (Tue holiday skip), Sep 4 (Wed) +2, Sep 5 (Thu) +3
     // biome-ignore lint/correctness/noUndeclaredVariables: suppressed due to migration
-    expect(resultDate.getDate()).toBe(4);
+    expect(resultDate.getDate()).toBe(5);
     // biome-ignore lint/correctness/noUndeclaredVariables: suppressed due to migration
     expect(resultDate.getMonth()).toBe(8); // September
     // biome-ignore lint/correctness/noUndeclaredVariables: suppressed due to migration
