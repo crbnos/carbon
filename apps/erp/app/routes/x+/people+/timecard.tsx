@@ -205,7 +205,7 @@ export default function Route() {
                 <Th>Overtime</Th>
                 <Th>Break Time</Th>
                 <Th>Avg Break</Th>
-                <Th>Avg First Punch</Th>
+                <Th>Avg Start Time</Th>
                 <Th>Anomalies</Th>
               </Tr>
             </Thead>

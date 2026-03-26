@@ -82,6 +82,12 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function PeopleSettingsRoute() {
   const { companySettings } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
+  const timecardsEnabled =
+    (fetcher.formData?.get("timeCardEnabled") as string | null) === "on"
+      ? true
+      : fetcher.formData
+        ? false
+        : (companySettings.timeCardEnabled ?? false);
 
   useEffect(() => {
     if (fetcher.data?.success === true && fetcher?.data?.message) {
@@ -131,12 +137,14 @@ export default function PeopleSettingsRoute() {
                   <Badge variant="yellow">Beta</Badge>
                 </div>
               </div>
-              <div className="mt-4">
-                <Boolean
-                  name="showEmployeeOvertime"
-                  description="Show overtime totals to employees in Shop Floor"
-                />
-              </div>
+              {timecardsEnabled && (
+                <div className="mt-4">
+                  <Boolean
+                    name="showEmployeeOvertime"
+                    description="Show overtime totals to employees in Shop Floor"
+                  />
+                </div>
+              )}
             </CardContent>
             <CardFooter>
               <Submit

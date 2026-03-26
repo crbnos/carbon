@@ -462,7 +462,7 @@ export default function MESTimecardPage() {
                 <Card className="border-border/60">
                   <CardHeader className="px-3 py-2">
                     <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Avg First Punch
+                      Avg Start Time
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="px-3 pb-3 pt-0 text-sm font-semibold">

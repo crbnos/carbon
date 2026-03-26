@@ -689,7 +689,7 @@ export default function PersonTimecardRoute() {
             </Card>
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Avg First Punch</CardTitle>
+                <CardTitle className="text-sm">Avg Start Time</CardTitle>
               </CardHeader>
               <CardContent>
                 {formatAverageClock(summary?.averageFirstPunchMinutes ?? null)}
