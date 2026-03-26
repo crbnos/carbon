@@ -70,6 +70,10 @@
       "cache": false,
       "outputs": []
     },
+    "types": {
+      "dependsOn": ["^types"],
+      "outputs": []
+    },
     "typegen": {
       "cache": false,
       "outputs": []
