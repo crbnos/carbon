@@ -21,6 +21,7 @@ import { useEffect, useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useFetcher, useLocation } from "react-router";
+import { endOpenBreakOnLogin, ensureDailyAutoClockIn } from "~/modules/people";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -34,9 +35,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
 
-  const validation = await validator(callbackValidator).validate(
-    await request.formData()
-  );
+  const formData = await request.formData();
+  const validation = await validator(callbackValidator).validate(formData);
 
   if (validation.error) {
     return data(error(validation.error, "Invalid callback form"), {
@@ -45,6 +45,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const { refreshToken, userId } = validation.data;
+  const timeZone = (formData.get("timezone") as string | null) ?? "UTC";
   const serviceRole = getCarbonServiceRole();
 
   const companies = await serviceRole
@@ -67,6 +68,31 @@ export async function action({ request }: ActionFunctionArgs) {
   const user = await getUserByEmail(authSession.email);
 
   if (user?.data) {
+    const companySettings = await serviceRole
+      .from("companySettings")
+      .select("timeCardEnabled")
+      .eq("id", authSession.companyId)
+      .maybeSingle();
+
+    if (companySettings.data?.timeCardEnabled) {
+      const loginAt = new Date().toISOString();
+      const endedBreak = await endOpenBreakOnLogin(serviceRole as any, {
+        employeeId: userId,
+        companyId: authSession.companyId,
+        endedBy: userId,
+        endTime: loginAt
+      });
+
+      await ensureDailyAutoClockIn(serviceRole as any, {
+        employeeId: userId,
+        companyId: authSession.companyId,
+        createdBy: userId,
+        loginAt,
+        timeZone,
+        forceNewSession: !!endedBreak.data
+      });
+    }
+
     const sessionCookie = await setAuthSession(request, {
       authSession
     });
@@ -118,6 +144,10 @@ export default function AuthCallback() {
         const formData = new FormData();
         formData.append("refreshToken", refreshToken);
         formData.append("userId", userId);
+        formData.append(
+          "timezone",
+          Intl.DateTimeFormat().resolvedOptions().timeZone
+        );
 
         fetcher.submit(formData, { method: "post" });
       }

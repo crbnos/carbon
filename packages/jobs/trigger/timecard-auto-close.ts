@@ -2,43 +2,70 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { schedules } from "@trigger.dev/sdk";
 
 const serviceRole = getCarbonServiceRole();
+const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
+const EIGHT_HOURS_MS = 8 * 60 * 60 * 1000;
+
+function timeCardBreakTable() {
+  return (serviceRole as any).from("timeCardBreak");
+}
+
+function calculateScheduledClockOut(
+  clockIn: string,
+  shift: { startTime: string; endTime: string } | null
+) {
+  if (!shift) {
+    return new Date(new Date(clockIn).getTime() + EIGHT_HOURS_MS);
+  }
+
+  const [startHour, startMinute] = shift.startTime.split(":").map(Number);
+  const [endHour, endMinute] = shift.endTime.split(":").map(Number);
+
+  let durationMinutes =
+    endHour * 60 + endMinute - (startHour * 60 + startMinute);
+
+  if (durationMinutes <= 0) {
+    durationMinutes += 24 * 60;
+  }
+
+  return new Date(new Date(clockIn).getTime() + durationMinutes * 60000);
+}
 
 export const timeCardAutoClose = schedules.task({
   id: "timecard-auto-close",
-  // Run every Sunday at 11pm UTC (after weekly task at 9pm)
-  cron: "0 23 * * 0",
+  cron: "*/15 * * * *",
   run: async () => {
     console.log(
-      `🕐 Starting timecard auto-close: ${new Date().toISOString()}`
+      `Starting timecard auto-close: ${new Date().toISOString()}`
     );
 
     try {
-      // 1. Get all companies with time clock enabled
       const { data: companies, error: companiesError } = await serviceRole
         .from("companySettings")
         .select("id")
         .eq("timeCardEnabled", true);
 
       if (companiesError) {
-        console.error(
-          `Failed to fetch companies: ${companiesError.message}`
-        );
+        console.error(`Failed to fetch companies: ${companiesError.message}`);
         return;
       }
 
-      console.log(
-        `Found ${companies?.length || 0} companies with time clock enabled`
-      );
-
-      let totalClosed = 0;
+      let totalClosedEntries = 0;
+      let totalClosedBreaks = 0;
+      const now = Date.now();
 
       for (const company of companies ?? []) {
-        // 2. Get all open time clock entries for this company
-        const { data: openEntries, error: entriesError } = await serviceRole
-          .from("timeCardEntry")
-          .select("id, employeeId, clockIn")
-          .eq("companyId", company.id)
-          .is("clockOut", null);
+        const [{ data: openEntries, error: entriesError }, { data: openBreaks, error: breaksError }] =
+          await Promise.all([
+            serviceRole
+              .from("timeCardEntry")
+              .select("id, employeeId, clockIn")
+              .eq("companyId", company.id)
+              .is("clockOut", null),
+            timeCardBreakTable()
+              .select("id, employeeId, startTime")
+              .eq("companyId", company.id)
+              .is("endTime", null)
+          ]);
 
         if (entriesError) {
           console.error(
@@ -47,67 +74,58 @@ export const timeCardAutoClose = schedules.task({
           continue;
         }
 
-        if (!openEntries || openEntries.length === 0) continue;
+        if (breaksError) {
+          console.error(
+            `Failed to fetch open breaks for company ${company.id}: ${breaksError.message}`
+          );
+        }
 
-        console.log(
-          `Company ${company.id}: ${openEntries.length} open entries`
-        );
-
-        for (const entry of openEntries) {
-          // 3. Get the employee's assigned shift
+        for (const entry of openEntries ?? []) {
           const { data: employeeJob } = await serviceRole
             .from("employeeJob")
             .select("shiftId")
             .eq("id", entry.employeeId)
             .eq("companyId", company.id)
-            .single();
+            .maybeSingle();
 
-          let clockOut: Date;
           let shiftId: string | null = null;
+          let shift: { startTime: string; endTime: string } | null = null;
 
           if (employeeJob?.shiftId) {
-            const { data: shift } = await serviceRole
+            shiftId = employeeJob.shiftId;
+            const shiftResult = await serviceRole
               .from("shift")
               .select("startTime, endTime")
               .eq("id", employeeJob.shiftId)
-              .single();
+              .maybeSingle();
 
-            if (shift) {
-              // Calculate shift duration
-              const startParts = shift.startTime.split(":").map(Number);
-              const endParts = shift.endTime.split(":").map(Number);
-              let durationMinutes =
-                endParts[0] * 60 +
-                endParts[1] -
-                (startParts[0] * 60 + startParts[1]);
-              // Handle overnight shifts
-              if (durationMinutes <= 0) durationMinutes += 24 * 60;
-
-              clockOut = new Date(
-                new Date(entry.clockIn).getTime() + durationMinutes * 60000
-              );
-              shiftId = employeeJob.shiftId;
-            } else {
-              // Shift not found, fall back to 8 hours
-              clockOut = new Date(
-                new Date(entry.clockIn).getTime() + 8 * 3600000
-              );
+            if (shiftResult.data) {
+              shift = shiftResult.data;
             }
-          } else {
-            // No shift assigned, fall back to 8 hours
-            clockOut = new Date(
-              new Date(entry.clockIn).getTime() + 8 * 3600000
-            );
           }
 
-          // 4. Update the entry
+          const scheduledClockOut = calculateScheduledClockOut(
+            entry.clockIn,
+            shift
+          );
+          const closeAt = scheduledClockOut.getTime() + FIFTEEN_MINUTES_MS;
+
+          if (closeAt > now) {
+            continue;
+          }
+
+          const closeTime = scheduledClockOut.toISOString();
+          const reason = shiftId
+            ? "Auto-closed by system at scheduled shift end"
+            : "Auto-closed by system after 8 hours";
+
           const { error: updateError } = await serviceRole
             .from("timeCardEntry")
             .update({
-              clockOut: clockOut.toISOString(),
+              clockOut: closeTime,
               autoCloseShiftId: shiftId,
               updatedAt: new Date().toISOString(),
-              note: "Auto-closed by system (Sunday weekly close)"
+              note: reason
             })
             .eq("id", entry.id);
 
@@ -115,17 +133,41 @@ export const timeCardAutoClose = schedules.task({
             console.error(
               `Failed to auto-close entry ${entry.id}: ${updateError.message}`
             );
-          } else {
-            totalClosed++;
-            console.log(
-              `Auto-closed entry ${entry.id} for employee ${entry.employeeId}`
-            );
+            continue;
           }
+
+          totalClosedEntries++;
+        }
+
+        for (const timecardBreak of openBreaks ?? []) {
+          const breakStart = new Date(timecardBreak.startTime).getTime();
+          const shouldClose = breakStart + 12 * 60 * 60 * 1000 <= now;
+
+          if (!shouldClose) {
+            continue;
+          }
+
+          const { error: updateError } = await timeCardBreakTable()
+            .update({
+              endTime: timecardBreak.startTime,
+              updatedAt: new Date().toISOString(),
+              note: "Auto-closed by system at shift end"
+            })
+            .eq("id", timecardBreak.id);
+
+          if (updateError) {
+            console.error(
+              `Failed to auto-close break ${timecardBreak.id}: ${updateError.message}`
+            );
+            continue;
+          }
+
+          totalClosedBreaks++;
         }
       }
 
       console.log(
-        `🕐 Timecard auto-close completed: ${totalClosed} entries closed`
+        `Timecard auto-close completed: ${totalClosedEntries} entries, ${totalClosedBreaks} breaks`
       );
     } catch (err) {
       console.error(

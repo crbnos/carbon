@@ -77,6 +77,13 @@ export const clockOutValidator = z.object({
   note: zfd.text(z.string().optional())
 });
 
+export const startBreakValidator = z.object({
+  intent: z.literal("startBreak"),
+  employeeId: zfd.text(z.string().optional()),
+  breakType: z.enum(["Break", "Lunch"]).default("Break"),
+  note: zfd.text(z.string().optional())
+});
+
 export const timecardValidator = z.object({
   id: zfd.text(z.string().optional()),
   employeeId: z.string().min(1, { message: "Employee is required" }),
@@ -91,6 +98,29 @@ export const updateTimeCardEntryValidator = z.object({
   clockIn: z.string().min(1),
   clockOut: zfd.text(z.string().optional()),
   note: zfd.text(z.string().optional())
+});
+
+export const timecardBreakValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  employeeId: z.string().min(1, { message: "Employee is required" }),
+  breakType: z.enum(["Break", "Lunch"]),
+  startTime: z.string().min(1, { message: "Break start is required" }),
+  endTime: zfd.text(z.string().optional()),
+  note: zfd.text(z.string().optional())
+});
+
+export const updateTimeCardBreakValidator = z.object({
+  intent: z.literal("updateBreak"),
+  breakId: z.string().min(1),
+  breakType: z.enum(["Break", "Lunch"]),
+  startTime: z.string().min(1),
+  endTime: zfd.text(z.string().optional()),
+  note: zfd.text(z.string().optional())
+});
+
+export const deleteTimeCardBreakValidator = z.object({
+  intent: z.literal("deleteBreak"),
+  breakId: z.string().min(1)
 });
 
 export const deleteTimeCardEntryValidator = z.object({

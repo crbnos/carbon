@@ -8868,6 +8868,204 @@ export default {
         tags: ["partners"],
       },
     },
+    "/timeCardBreak": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.timeCardEntryId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.employeeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.breakType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.startTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.endTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.note",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.startedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.endedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.updatedAt",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/timeCardBreak",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["timeCardBreak"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.timeCardBreak",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["timeCardBreak"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.timeCardEntryId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.employeeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.breakType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.startTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.endTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.note",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.startedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.endedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.updatedAt",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["timeCardBreak"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.timeCardEntryId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.employeeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.breakType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.startTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.endTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.note",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.startedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.endedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreak.updatedAt",
+          },
+          {
+            $ref: "#/parameters/body.timeCardBreak",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["timeCardBreak"],
+      },
+    },
     "/warehouseTransferLine": {
       get: {
         parameters: [
@@ -28183,6 +28381,93 @@ export default {
           },
         },
         tags: ["documentFavorite"],
+      },
+    },
+    "/timeCardBreaks": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreaks.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreaks.timeCardEntryId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreaks.employeeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreaks.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreaks.breakType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreaks.startTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreaks.endTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreaks.note",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreaks.startedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreaks.endedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreaks.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreaks.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreaks.firstName",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreaks.lastName",
+          },
+          {
+            $ref: "#/parameters/rowFilter.timeCardBreaks.avatarUrl",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/timeCardBreaks",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["timeCardBreaks"],
       },
     },
     "/currencies": {
@@ -55491,6 +55776,195 @@ export default {
         tags: ["note"],
       },
     },
+    "/searchIndex_5jGf3nHKt3YyrLhWAdpAnG": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.entityType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.entityId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.title",
+          },
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.link",
+          },
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.metadata",
+          },
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.searchVector",
+          },
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.updatedAt",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/searchIndex_5jGf3nHKt3YyrLhWAdpAnG",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["searchIndex_5jGf3nHKt3YyrLhWAdpAnG"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.searchIndex_5jGf3nHKt3YyrLhWAdpAnG",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["searchIndex_5jGf3nHKt3YyrLhWAdpAnG"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.entityType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.entityId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.title",
+          },
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.link",
+          },
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.metadata",
+          },
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.searchVector",
+          },
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.updatedAt",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["searchIndex_5jGf3nHKt3YyrLhWAdpAnG"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.entityType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.entityId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.title",
+          },
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.link",
+          },
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.metadata",
+          },
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.searchVector",
+          },
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.updatedAt",
+          },
+          {
+            $ref: "#/parameters/body.searchIndex_5jGf3nHKt3YyrLhWAdpAnG",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["searchIndex_5jGf3nHKt3YyrLhWAdpAnG"],
+      },
+    },
     "/materialSubstance": {
       get: {
         parameters: [
@@ -63010,6 +63484,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.timeCardEnabled",
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.showEmployeeOvertime",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -63171,6 +63648,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.timeCardEnabled",
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.showEmployeeOvertime",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -63284,6 +63764,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.timeCardEnabled",
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.showEmployeeOvertime",
           },
           {
             $ref: "#/parameters/body.companySettings",
@@ -73931,6 +74414,83 @@ export default {
       },
       type: "object",
     },
+    timeCardBreak: {
+      required: [
+        "id",
+        "employeeId",
+        "companyId",
+        "breakType",
+        "startTime",
+        "startedBy",
+        "createdAt",
+      ],
+      properties: {
+        id: {
+          default: "public.id('tcb'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        timeCardEntryId: {
+          description:
+            "Note:\nThis is a Foreign Key to `timeCardEntry.id`.<fk table='timeCardEntry' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        employeeId: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        breakType: {
+          default: "Break",
+          format: "text",
+          type: "string",
+        },
+        startTime: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        endTime: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        note: {
+          format: "text",
+          type: "string",
+        },
+        startedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        endedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     warehouseTransferLine: {
       required: [
         "id",
@@ -83083,6 +83643,82 @@ export default {
         userId: {
           description:
             "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
+    timeCardBreaks: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        timeCardEntryId: {
+          description:
+            "Note:\nThis is a Foreign Key to `timeCardEntry.id`.<fk table='timeCardEntry' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        employeeId: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        breakType: {
+          format: "text",
+          type: "string",
+        },
+        startTime: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        endTime: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        note: {
+          format: "text",
+          type: "string",
+        },
+        startedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        endedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        firstName: {
+          format: "text",
+          type: "string",
+        },
+        lastName: {
+          format: "text",
+          type: "string",
+        },
+        avatarUrl: {
           format: "text",
           type: "string",
         },
@@ -96094,6 +96730,61 @@ export default {
       },
       type: "object",
     },
+    searchIndex_5jGf3nHKt3YyrLhWAdpAnG: {
+      required: ["id", "entityType", "entityId", "title", "link", "createdAt"],
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "bigint",
+          type: "integer",
+        },
+        entityType: {
+          format: "text",
+          type: "string",
+        },
+        entityId: {
+          format: "text",
+          type: "string",
+        },
+        title: {
+          format: "text",
+          type: "string",
+        },
+        description: {
+          default: "",
+          format: "text",
+          type: "string",
+        },
+        link: {
+          format: "text",
+          type: "string",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        metadata: {
+          format: "jsonb",
+        },
+        searchVector: {
+          format: "tsvector",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     materialSubstance: {
       required: ["id", "name", "createdBy", "createdAt", "code"],
       properties: {
@@ -99908,6 +100599,7 @@ export default {
         "supplierApproval",
         "qualityIssueTarget",
         "timeCardEnabled",
+        "showEmployeeOvertime",
       ],
       properties: {
         id: {
@@ -100099,6 +100791,11 @@ export default {
           type: "integer",
         },
         timeCardEnabled: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
+        },
+        showEmployeeOvertime: {
           default: false,
           format: "boolean",
           type: "boolean",
@@ -105101,6 +105798,87 @@ export default {
     },
     "rowFilter.partners.state": {
       name: "state",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "body.timeCardBreak": {
+      name: "timeCardBreak",
+      description: "timeCardBreak",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/timeCardBreak",
+      },
+    },
+    "rowFilter.timeCardBreak.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.timeCardBreak.timeCardEntryId": {
+      name: "timeCardEntryId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.timeCardBreak.employeeId": {
+      name: "employeeId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.timeCardBreak.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.timeCardBreak.breakType": {
+      name: "breakType",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.timeCardBreak.startTime": {
+      name: "startTime",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.timeCardBreak.endTime": {
+      name: "endTime",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.timeCardBreak.note": {
+      name: "note",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.timeCardBreak.startedBy": {
+      name: "startedBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.timeCardBreak.endedBy": {
+      name: "endedBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.timeCardBreak.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.timeCardBreak.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string",
@@ -115568,6 +116346,105 @@ export default {
     },
     "rowFilter.documentFavorite.userId": {
       name: "userId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "body.timeCardBreaks": {
+      name: "timeCardBreaks",
+      description: "timeCardBreaks",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/timeCardBreaks",
+      },
+    },
+    "rowFilter.timeCardBreaks.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.timeCardBreaks.timeCardEntryId": {
+      name: "timeCardEntryId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.timeCardBreaks.employeeId": {
+      name: "employeeId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.timeCardBreaks.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.timeCardBreaks.breakType": {
+      name: "breakType",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.timeCardBreaks.startTime": {
+      name: "startTime",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.timeCardBreaks.endTime": {
+      name: "endTime",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.timeCardBreaks.note": {
+      name: "note",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.timeCardBreaks.startedBy": {
+      name: "startedBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.timeCardBreaks.endedBy": {
+      name: "endedBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.timeCardBreaks.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.timeCardBreaks.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.timeCardBreaks.firstName": {
+      name: "firstName",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.timeCardBreaks.lastName": {
+      name: "lastName",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.timeCardBreaks.avatarUrl": {
+      name: "avatarUrl",
       required: false,
       in: "query",
       type: "string",
@@ -130229,6 +131106,81 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.searchIndex_5jGf3nHKt3YyrLhWAdpAnG": {
+      name: "searchIndex_5jGf3nHKt3YyrLhWAdpAnG",
+      description: "searchIndex_5jGf3nHKt3YyrLhWAdpAnG",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/searchIndex_5jGf3nHKt3YyrLhWAdpAnG",
+      },
+    },
+    "rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.entityType": {
+      name: "entityType",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.entityId": {
+      name: "entityId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.title": {
+      name: "title",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.description": {
+      name: "description",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.link": {
+      name: "link",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.tags": {
+      name: "tags",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.metadata": {
+      name: "metadata",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.searchVector": {
+      name: "searchVector",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.searchIndex_5jGf3nHKt3YyrLhWAdpAnG.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.materialSubstance": {
       name: "materialSubstance",
       description: "materialSubstance",
@@ -134650,6 +135602,12 @@ export default {
     },
     "rowFilter.companySettings.timeCardEnabled": {
       name: "timeCardEnabled",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.companySettings.showEmployeeOvertime": {
+      name: "showEmployeeOvertime",
       required: false,
       in: "query",
       type: "string",

@@ -136,6 +136,7 @@ export const path = {
       const basePath = generatePath(`${x}/entity/${operationId}/${id}/scrap`);
       return parentId ? `${basePath}?parentId=${parentId}` : basePath;
     },
+    startBreak: `${x}/start-break`,
     startOperation: (id: string) => generatePath(`${x}/start/${id}`),
     switchCompany: (companyId: string) =>
       generatePath(`${x}/company/switch/${companyId}`),

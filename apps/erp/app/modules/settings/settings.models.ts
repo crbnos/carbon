@@ -284,5 +284,6 @@ export const accountsReceivableBillingAddressValidator =
   z.object(billingAddress);
 
 export const timeCardSettingsValidator = z.object({
-  timeCardEnabled: zfd.checkbox()
+  timeCardEnabled: zfd.checkbox(),
+  showEmployeeOvertime: zfd.checkbox()
 });

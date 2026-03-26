@@ -66,11 +66,10 @@ export async function action({ request }: ActionFunctionArgs) {
       return { success: false, message: "Invalid form data" };
     }
 
-    const update = await updateTimeCardSetting(
-      client,
-      companyId,
-      validation.data.timeCardEnabled
-    );
+    const update = await updateTimeCardSetting(client, companyId, {
+      timeCardEnabled: validation.data.timeCardEnabled,
+      showEmployeeOvertime: validation.data.showEmployeeOvertime
+    });
 
     if (update.error) return { success: false, message: update.error.message };
 
@@ -107,7 +106,9 @@ export default function PeopleSettingsRoute() {
             method="post"
             validator={timeCardSettingsValidator}
             defaultValues={{
-              timeCardEnabled: companySettings.timeCardEnabled ?? false
+              timeCardEnabled: companySettings.timeCardEnabled ?? false,
+              showEmployeeOvertime:
+                (companySettings as any).showEmployeeOvertime ?? false
             }}
             fetcher={fetcher}
           >
@@ -129,6 +130,12 @@ export default function PeopleSettingsRoute() {
                 <div>
                   <Badge variant="yellow">Beta</Badge>
                 </div>
+              </div>
+              <div className="mt-4">
+                <Boolean
+                  name="showEmployeeOvertime"
+                  description="Show overtime totals to employees in Shop Floor"
+                />
               </div>
             </CardContent>
             <CardFooter>
