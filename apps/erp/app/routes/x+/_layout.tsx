@@ -32,7 +32,12 @@ import { PrimaryNavigation, Topbar } from "~/components/Layout";
 import { TimeCardWarning } from "~/components/TimeCardWarning";
 import TrainingPanel from "~/components/TrainingPanel";
 import { useTrainingPanel } from "~/hooks/useTrainingPanel";
-import { getOpenClockEntry } from "~/modules/people";
+import {
+  endOpenBreakOnLogin,
+  ensureDailyAutoClockIn,
+  getOpenClockEntry,
+  getOpenTimeCardBreak
+} from "~/modules/people";
 import {
   getCompanies,
   getCompanyIntegrations,
@@ -81,7 +86,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const client = getCarbon(accessToken);
 
   // parallelize the requests
-  const [
+  let [
     companies,
     stripeCustomer,
     customFields,
@@ -92,7 +97,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     claims,
     groups,
     defaults,
-    openClockEntry
+    openClockEntry,
+    openBreak
   ] = await Promise.all([
     getCompanies(client, userId),
     getStripeCustomerByCompanyId(companyId, userId),
@@ -104,8 +110,31 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getUserClaims(userId, companyId),
     getUserGroups(client, userId),
     getUserDefaults(client, userId, companyId),
-    getOpenClockEntry(client, userId, companyId)
+    getOpenClockEntry(client, userId, companyId),
+    getOpenTimeCardBreak(client, userId, companyId)
   ]);
+
+  if (companySettings.data?.timeCardEnabled && openBreak.data) {
+    const resumedAt = new Date().toISOString();
+
+    await endOpenBreakOnLogin(client as any, {
+      employeeId: userId,
+      companyId,
+      endedBy: userId,
+      endTime: resumedAt
+    });
+
+    await ensureDailyAutoClockIn(client as any, {
+      employeeId: userId,
+      companyId,
+      createdBy: userId,
+      loginAt: resumedAt,
+      timeZone: "UTC",
+      forceNewSession: true
+    });
+
+    openClockEntry = await getOpenClockEntry(client, userId, companyId);
+  }
 
   if (!claims || user.error || !user.data || !groups.data) {
     await destroyAuthSession(request);

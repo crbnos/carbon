@@ -330,6 +330,7 @@ export type WeeklyTimecardSummary = {
   missedPunchCount: number;
   openEntryCount: number;
   openBreakCount: number;
+  currentStatus: "On Shift" | "On Break" | "On Lunch" | "Gone Home";
 };
 
 export async function getWeeklyTimecardSummary(
@@ -366,11 +367,24 @@ export async function getWeeklyTimecardSummary(
     breaksQuery = breaksQuery.eq("employeeId", args.employeeId);
   }
 
-  const [entries, breaks] = await Promise.all([entriesQuery, breaksQuery]);
+  const [entries, breaks, openEntries, openBreaks] = await Promise.all([
+    entriesQuery,
+    breaksQuery,
+    client
+      .from("timeCardEntry")
+      .select("employeeId")
+      .eq("companyId", args.companyId)
+      .is("clockOut", null),
+    timeCardBreakTable(client)
+      .select("employeeId, breakType")
+      .eq("companyId", args.companyId)
+      .is("endTime", null)
+  ]);
   if (entries.error || breaks.error) return [];
+  if (openEntries.error || openBreaks.error) return [];
 
   const byEmployee = new Map<string, WeeklyTimecardSummary>();
-  const firstPunchesByDay = new Map<string, number[]>();
+  const firstPunchesByDay = new Map<string, number>();
   const breakStartsByEmployee = new Map<string, number[]>();
 
   for (const entry of entries.data ?? []) {
@@ -391,7 +405,8 @@ export async function getWeeklyTimecardSummary(
       longestBreakMinutes: 0,
       missedPunchCount: 0,
       openEntryCount: 0,
-      openBreakCount: 0
+      openBreakCount: 0,
+      currentStatus: "Gone Home"
     };
 
     existing.totalWorkedMinutes += formatDurationMinutes(
@@ -406,10 +421,13 @@ export async function getWeeklyTimecardSummary(
 
     const dayKey = `${entry.employeeId}:${formatDateKey(entry.clockIn, timeZone)}`;
     const minutes = getMinutesSinceMidnight(entry.clockIn, timeZone);
-    firstPunchesByDay.set(dayKey, [
-      ...(firstPunchesByDay.get(dayKey) ?? []),
-      minutes
-    ]);
+    const existingFirstPunch = firstPunchesByDay.get(dayKey);
+    firstPunchesByDay.set(
+      dayKey,
+      existingFirstPunch === undefined
+        ? minutes
+        : Math.min(existingFirstPunch, minutes)
+    );
 
     byEmployee.set(entry.employeeId, existing);
   }
@@ -440,7 +458,8 @@ export async function getWeeklyTimecardSummary(
       longestBreakMinutes: 0,
       missedPunchCount: 0,
       openEntryCount: 0,
-      openBreakCount: 0
+      openBreakCount: 0,
+      currentStatus: "Gone Home"
     };
 
     const duration = formatDurationMinutes(
@@ -482,7 +501,7 @@ export async function getWeeklyTimecardSummary(
 
     const firstPunchValues = Array.from(firstPunchesByDay.entries())
       .filter(([key]) => key.startsWith(`${employeeId}:`))
-      .map(([, values]) => Math.min(...values));
+      .map(([, value]) => value);
 
     row.averageFirstPunchMinutes =
       firstPunchValues.length > 0
@@ -491,6 +510,27 @@ export async function getWeeklyTimecardSummary(
               firstPunchValues.length
           )
         : null;
+  }
+
+  const openEntryEmployees = new Set(
+    (openEntries.data ?? []).map((entry) => entry.employeeId)
+  );
+  const openBreakByEmployee = new Map<string, "Break" | "Lunch">();
+  for (const row of openBreaks.data ?? []) {
+    openBreakByEmployee.set(row.employeeId, row.breakType as "Break" | "Lunch");
+  }
+
+  for (const row of byEmployee.values()) {
+    const openBreakType = openBreakByEmployee.get(row.employeeId);
+    if (openBreakType === "Lunch") {
+      row.currentStatus = "On Lunch";
+    } else if (openBreakType === "Break") {
+      row.currentStatus = "On Break";
+    } else if (openEntryEmployees.has(row.employeeId)) {
+      row.currentStatus = "On Shift";
+    } else {
+      row.currentStatus = "Gone Home";
+    }
   }
 
   return Array.from(byEmployee.values()).sort((a, b) => {

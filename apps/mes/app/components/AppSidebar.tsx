@@ -70,6 +70,7 @@ export function AppSidebar({
   locations,
   timeCardEnabled,
   openClockEntry,
+  openBreak,
   ...props
 }: ComponentProps<typeof Sidebar> & {
   activeEvents: number;
@@ -80,6 +81,11 @@ export function AppSidebar({
   locations: Location[];
   timeCardEnabled?: boolean;
   openClockEntry?: { id: string; clockIn: string } | null;
+  openBreak?: {
+    id: string;
+    startTime: string;
+    breakType?: string | null;
+  } | null;
 }) {
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -96,7 +102,11 @@ export function AppSidebar({
       <SidebarFooter>
         {timeCardEnabled && (
           <SidebarMenu>
-            <TimeCardButton openClockEntry={openClockEntry ?? null} />
+            <TimeCardButton
+              openClockEntry={openClockEntry ?? null}
+              openBreak={openBreak ?? null}
+            />
+            <EndShift />
           </SidebarMenu>
         )}
         <UserNav
@@ -245,10 +255,6 @@ export function ToolsNav() {
       <SidebarGroup>
         <SidebarGroupLabel>Tools</SidebarGroupLabel>
         <SidebarMenu>
-          <SidebarMenuItem>
-            <EndShift />
-          </SidebarMenuItem>
-
           <SidebarMenuItem>
             <Suggestion />
           </SidebarMenuItem>

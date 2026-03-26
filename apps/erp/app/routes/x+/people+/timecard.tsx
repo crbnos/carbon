@@ -200,6 +200,7 @@ export default function Route() {
             <Thead>
               <Tr>
                 <Th>Employee</Th>
+                <Th>Status</Th>
                 <Th>Worked</Th>
                 <Th>Overtime</Th>
                 <Th>Break Time</Th>
@@ -212,7 +213,7 @@ export default function Route() {
               {summary.length === 0 ? (
                 <Tr>
                   <Td
-                    colSpan={7}
+                    colSpan={8}
                     className="text-center text-muted-foreground py-8"
                   >
                     No weekly summary available
@@ -233,6 +234,7 @@ export default function Route() {
                         </span>
                       </HStack>
                     </Td>
+                    <Td>{row.currentStatus}</Td>
                     <Td>{formatMinutes(row.totalWorkedMinutes)}</Td>
                     <Td>{formatMinutes(row.overtimeMinutes)}</Td>
                     <Td>{formatMinutes(row.breakMinutes)}</Td>

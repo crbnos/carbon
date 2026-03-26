@@ -2,17 +2,23 @@ import {
   Badge,
   SidebarMenuButton,
   SidebarMenuItem,
+  toast,
   useSidebar
 } from "@carbon/react";
 import { useEffect, useState } from "react";
 import { LuClock, LuPause, LuPlay } from "react-icons/lu";
-import { Link, useLocation, useSubmit } from "react-router";
+import { Link, useFetcher, useLocation, useRevalidator } from "react-router";
 import { path } from "~/utils/path";
 
 type TimeCardButtonProps = {
   openClockEntry: {
     id: string;
     clockIn: string;
+  } | null;
+  openBreak: {
+    id: string;
+    startTime: string;
+    breakType?: string | null;
   } | null;
 };
 
@@ -23,13 +29,18 @@ function formatElapsed(since: string) {
   return `${hours}h ${minutes}m`;
 }
 
-export function TimeCardButton({ openClockEntry }: TimeCardButtonProps) {
+export function TimeCardButton({
+  openClockEntry,
+  openBreak
+}: TimeCardButtonProps) {
   const { isMobile, setOpenMobile } = useSidebar();
   const { pathname } = useLocation();
-  const submit = useSubmit();
+  const fetcher = useFetcher<{ success?: boolean; error?: string }>();
+  const revalidator = useRevalidator();
   const [, setTick] = useState(0);
 
   const isClockedIn = openClockEntry !== null;
+  const isOnBreak = openBreak !== null;
 
   useEffect(() => {
     if (!openClockEntry) return;
@@ -37,13 +48,28 @@ export function TimeCardButton({ openClockEntry }: TimeCardButtonProps) {
     return () => clearInterval(interval);
   }, [openClockEntry]);
 
+  useEffect(() => {
+    if (fetcher.state !== "idle" || !fetcher.data) return;
+
+    if (fetcher.data.success) {
+      revalidator.revalidate();
+      return;
+    }
+
+    if (fetcher.data.error) {
+      toast.error(fetcher.data.error);
+    }
+  }, [fetcher.data, fetcher.state, revalidator]);
+
   const isOnTimeCardPage = pathname.includes("/timecard");
 
-  function submitTimecard(intent: "clockIn" | "startBreak") {
+  function submitTimecard(
+    intent: "clockIn" | "startBreak" | "resumeFromBreak"
+  ) {
     const formData = new FormData();
     formData.append("intent", intent);
     const action =
-      intent === "startBreak" ? path.to.startBreak : path.to.timecard;
+      intent === "startBreak" ? path.to.startBreak : path.to.timeCardPage;
 
     if (intent === "startBreak") {
       formData.append("breakType", "Break");
@@ -51,7 +77,7 @@ export function TimeCardButton({ openClockEntry }: TimeCardButtonProps) {
 
     if (isMobile) setOpenMobile(false);
 
-    submit(formData, {
+    fetcher.submit(formData, {
       method: "post",
       action
     });
@@ -72,6 +98,23 @@ export function TimeCardButton({ openClockEntry }: TimeCardButtonProps) {
             {openClockEntry && (
               <Badge variant="red" className="ml-auto">
                 {formatElapsed(openClockEntry.clockIn)}
+              </Badge>
+            )}
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      ) : isOnBreak ? (
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            tooltip="Resume Paid Work"
+            type="button"
+            onClick={() => submitTimecard("resumeFromBreak")}
+            className="font-medium"
+          >
+            <LuPlay className="size-4" />
+            <span>Resume Paid Work</span>
+            {openBreak && (
+              <Badge variant="yellow" className="ml-auto">
+                {openBreak.breakType ?? "Break"}
               </Badge>
             )}
           </SidebarMenuButton>

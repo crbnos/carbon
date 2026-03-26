@@ -18,6 +18,7 @@ import {
   Tr
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
+import { getLocalTimeZone } from "@internationalized/date";
 import { useEffect, useState } from "react";
 import {
   LuChevronLeft,
@@ -29,7 +30,6 @@ import {
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Form, Link, useLoaderData } from "react-router";
 import {
-  clockIn,
   endOpenBreakOnLogin,
   ensureDailyAutoClockIn,
   getOpenClockEntry,
@@ -129,16 +129,44 @@ function getBreakWarningMessage({
   return "Your break is still active. You are not being paid again until you end the break and resume work.";
 }
 
+function getAverageFirstPunchMinutes(
+  entries: { clockIn: string; clockOut: string | null }[]
+) {
+  const firstPunchByDay = new Map<string, number>();
+
+  for (const entry of entries) {
+    const date = new Date(entry.clockIn);
+    const dayKey = date.toLocaleDateString("en-CA");
+    const minutes = date.getHours() * 60 + date.getMinutes();
+    const existing = firstPunchByDay.get(dayKey);
+
+    firstPunchByDay.set(
+      dayKey,
+      existing === undefined ? minutes : Math.min(existing, minutes)
+    );
+  }
+
+  const firstPunches = Array.from(firstPunchByDay.values());
+  if (firstPunches.length === 0) return null;
+
+  return Math.round(
+    firstPunches.reduce((sum, value) => sum + value, 0) / firstPunches.length
+  );
+}
+
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {});
   const formData = await request.formData();
   const intent = formData.get("intent");
 
   if (intent === "clockIn") {
-    const result = await clockIn(client, {
+    const result = await ensureDailyAutoClockIn(client, {
       employeeId: userId,
       companyId,
-      createdBy: userId
+      createdBy: userId,
+      loginAt: new Date().toISOString(),
+      timeZone: (formData.get("timezone") as string | null) ?? "UTC",
+      forceNewSession: true
     });
 
     return { success: !result.error, error: result.error?.message };
@@ -239,6 +267,7 @@ export default function MESTimecardPage() {
   const monday = new Date(from);
   const sunday = new Date(to);
   const isCurrentWeek = weekOffset === 0;
+  const localAverageFirstPunchMinutes = getAverageFirstPunchMinutes(entries);
 
   useEffect(() => {
     const interval = setInterval(() => setTick((t) => t + 1), 60000);
@@ -305,6 +334,11 @@ export default function MESTimecardPage() {
                       name="intent"
                       value="resumeFromBreak"
                     />
+                    <input
+                      type="hidden"
+                      name="timezone"
+                      value={getLocalTimeZone()}
+                    />
                     <Button leftIcon={<LuPlay />} type="submit">
                       Resume Paid Work
                     </Button>
@@ -312,6 +346,11 @@ export default function MESTimecardPage() {
                 ) : (
                   <Form method="post">
                     <input type="hidden" name="intent" value="clockIn" />
+                    <input
+                      type="hidden"
+                      name="timezone"
+                      value={getLocalTimeZone()}
+                    />
                     <Button leftIcon={<LuPlay />} type="submit">
                       Clock In
                     </Button>
@@ -357,95 +396,80 @@ export default function MESTimecardPage() {
               </Button>
             </HStack>
 
-            <div
-              className={`mb-4 grid gap-2 ${
-                showEmployeeOvertime ? "grid-cols-6" : "grid-cols-5"
-              }`}
-            >
-              <Card className="border-border/60">
-                <CardHeader className="px-3 py-2">
-                  <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    Worked
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-3 pb-3 pt-0 text-sm font-semibold">
-                  {formatMinutes(summary?.totalWorkedMinutes ?? 0)}
-                </CardContent>
-              </Card>
-
-              {showEmployeeOvertime ? (
+            <div className="mb-4 overflow-x-auto">
+              <div className="grid min-w-[700px] grid-cols-5 gap-2">
                 <Card className="border-border/60">
                   <CardHeader className="px-3 py-2">
                     <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Overtime
+                      Worked
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="px-3 pb-3 pt-0 text-sm font-semibold">
-                    {formatMinutes(summary?.overtimeMinutes ?? 0)}
+                    {formatMinutes(summary?.totalWorkedMinutes ?? 0)}
                   </CardContent>
                 </Card>
-              ) : (
+
+                {showEmployeeOvertime ? (
+                  <Card className="border-border/60">
+                    <CardHeader className="px-3 py-2">
+                      <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Overtime
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="px-3 pb-3 pt-0 text-sm font-semibold">
+                      {formatMinutes(summary?.overtimeMinutes ?? 0)}
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card className="border-border/60">
+                    <CardHeader className="px-3 py-2">
+                      <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Status
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="px-3 pb-3 pt-0 text-sm font-semibold">
+                      {openBreak
+                        ? "On Break"
+                        : openEntry
+                          ? "Working"
+                          : "Off Shift"}
+                    </CardContent>
+                  </Card>
+                )}
+
                 <Card className="border-border/60">
                   <CardHeader className="px-3 py-2">
                     <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Status
+                      Break Time
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="px-3 pb-3 pt-0 text-sm font-semibold">
-                    {openBreak
-                      ? "On Break"
-                      : openEntry
-                        ? "Working"
-                        : "Off Shift"}
+                    {formatMinutes(summary?.breakMinutes ?? 0)}
                   </CardContent>
                 </Card>
-              )}
 
-              <Card className="border-border/60">
-                <CardHeader className="px-3 py-2">
-                  <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    Break Time
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-3 pb-3 pt-0 text-sm font-semibold">
-                  {formatMinutes(summary?.breakMinutes ?? 0)}
-                </CardContent>
-              </Card>
+                <Card className="border-border/60">
+                  <CardHeader className="px-3 py-2">
+                    <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Avg Break
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-3 pb-3 pt-0 text-sm font-semibold">
+                    {formatMinutes(summary?.averageBreakMinutes ?? 0)}
+                  </CardContent>
+                </Card>
 
-              <Card className="border-border/60">
-                <CardHeader className="px-3 py-2">
-                  <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    Avg Break
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-3 pb-3 pt-0 text-sm font-semibold">
-                  {formatMinutes(summary?.averageBreakMinutes ?? 0)}
-                </CardContent>
-              </Card>
-
-              <Card className="border-border/60">
-                <CardHeader className="px-3 py-2">
-                  <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    Avg First Punch
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-3 pb-3 pt-0 text-sm font-semibold">
-                  {formatAverageClock(
-                    summary?.averageFirstPunchMinutes ?? null
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card className="border-border/60">
-                <CardHeader className="px-3 py-2">
-                  <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    Anomalies
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="px-3 pb-3 pt-0 text-sm font-semibold">
-                  {summary?.missedPunchCount ?? 0}
-                </CardContent>
-              </Card>
+                <Card className="border-border/60">
+                  <CardHeader className="px-3 py-2">
+                    <CardTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Avg First Punch
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-3 pb-3 pt-0 text-sm font-semibold">
+                    {formatAverageClock(localAverageFirstPunchMinutes)}
+                  </CardContent>
+                </Card>
+              </div>
             </div>
 
             <TableBase className="table-fixed w-full">
