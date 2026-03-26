@@ -88,8 +88,8 @@ export const cleanup = schedules.task({
         .from("purchasingRfq")
         .select("*")
         .in("status", ["Draft", "Requested"])
-        .not("dueDate", "is", null)
-        .lt("dueDate", new Date().toISOString());
+        .not("expirationDate", "is", null)
+        .lt("expirationDate", new Date().toISOString());
 
       if (expiredRfqs.error) {
         console.error(

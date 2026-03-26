@@ -56260,6 +56260,10 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: undefined
       }
+      create_embedding_subscriptions_for_company: {
+        Args: { p_company_id: string }
+        Returns: undefined
+      }
       create_event_system_subscription: {
         Args: {
           p_active?: boolean

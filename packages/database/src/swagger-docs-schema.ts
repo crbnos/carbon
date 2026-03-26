@@ -67144,6 +67144,41 @@ export default {
         tags: ["(rpc) groups_for_user"],
       },
     },
+    "/rpc/create_embedding_subscriptions_for_company": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["p_company_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) create_embedding_subscriptions_for_company"],
+      },
+    },
     "/rpc/get_period_start_date": {
       get: {
         parameters: [

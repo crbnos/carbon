@@ -8,6 +8,7 @@ import { all } from "@carbon/utils";
 import { schedules } from "@trigger.dev/sdk";
 import { Kysely, PostgresDriver, sql } from "kysely";
 import { auditTask } from "./audit.ts";
+import { embeddingTask } from "./embedding.ts";
 import { searchTask } from "./search.ts";
 import { syncTask } from "./sync.ts";
 import { webhookTask } from "./webhook.ts";
@@ -58,6 +59,7 @@ export const eventQueueTask = schedules.task({
       SYNC: [],
       SEARCH: [],
       AUDIT: [],
+      EMBEDDING: [],
     };
 
     // 2. Sort into Buckets
@@ -65,7 +67,7 @@ export const eventQueueTask = schedules.task({
       grouped[job.message.handlerType].push(job);
     }
 
-    const { webhooks, syncs, workflows, searches, audits } = await all({
+    const { webhooks, syncs, workflows, searches, audits, embeddings } = await all({
       async webhooks() {
         let queue: number[] = [];
 
@@ -182,9 +184,29 @@ export const eventQueueTask = schedules.task({
 
         return queue;
       },
+      async embeddings() {
+        let queue: number[] = [];
+
+        if (grouped.EMBEDDING.length === 0) return queue;
+
+        const records = grouped.EMBEDDING.map((job) => {
+          queue.push(job.msg_id);
+
+          return {
+            event: job.message.event,
+            companyId: job.message.companyId,
+          };
+        });
+
+        await embeddingTask.trigger({
+          records,
+        });
+
+        return queue;
+      },
     });
 
-    total = total.concat(webhooks, workflows, syncs, searches, audits);
+    total = total.concat(webhooks, workflows, syncs, searches, audits, embeddings);
 
     // 5. Delete from PGMQ
     // We delete immediately because we have successfully offloaded
