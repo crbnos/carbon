@@ -38,11 +38,11 @@ export function EndShift() {
   useEffect(() => {
     if (fetcher.data?.success === true) {
       confirmModal.onClose();
-      toast.success(fetcher.data?.message ?? "Operations ended");
+      toast.success(fetcher.data?.message ?? "Shift ended");
     }
 
     if (fetcher.data?.success === false) {
-      toast.error(fetcher.data?.message ?? "Failed to end operations");
+      toast.error(fetcher.data?.message ?? "Failed to end shift");
     }
   }, [fetcher.data?.success]);
 
@@ -66,9 +66,9 @@ export function EndShift() {
 
   return (
     <>
-      <SidebarMenuButton tooltip="End Operations" onClick={openModal}>
+      <SidebarMenuButton tooltip="End Shift" onClick={openModal}>
         <LuCircleStop />
-        <span>End Operations</span>
+        <span>End Shift</span>
       </SidebarMenuButton>
       {confirmModal.isOpen && (
         <Modal
@@ -77,10 +77,10 @@ export function EndShift() {
         >
           <ModalContent>
             <ModalHeader>
-              <ModalTitle>End Operations</ModalTitle>
+              <ModalTitle>End Shift</ModalTitle>
               <ModalDescription>
-                Are you sure you want to end all production events? This will
-                end all active operations without completing or finishing them.
+                This will end your active production work and clock you out of
+                your shift for the day.
               </ModalDescription>
             </ModalHeader>
             <ModalBody>
@@ -141,7 +141,7 @@ export function EndShift() {
                   isLoading={fetcher.state !== "idle"}
                   variant="destructive"
                 >
-                  End Operations
+                  End Shift
                 </Button>
               </ModalFooter>
             </fetcher.Form>

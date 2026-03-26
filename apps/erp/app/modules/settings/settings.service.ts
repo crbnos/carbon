@@ -698,11 +698,18 @@ export async function updateJobTravelerWorkInstructions(
 export async function updateTimeCardSetting(
   client: SupabaseClient<Database>,
   companyId: string,
-  timeCardEnabled: boolean
+  args: {
+    timeCardEnabled: boolean;
+    showEmployeeOvertime: boolean;
+  }
 ) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ timeCardEnabled }))
+  return (client.from("companySettings") as any)
+    .update(
+      sanitize({
+        timeCardEnabled: args.timeCardEnabled,
+        showEmployeeOvertime: args.showEmployeeOvertime
+      })
+    )
     .eq("id", companyId);
 }
 

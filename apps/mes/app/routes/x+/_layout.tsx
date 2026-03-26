@@ -38,7 +38,12 @@ import {
   getActiveJobCount,
   getLocationsByCompany
 } from "~/services/operations.service";
-import { getOpenClockEntry } from "~/services/people.service";
+import {
+  endOpenBreakOnLogin,
+  ensureDailyAutoClockIn,
+  getOpenClockEntry,
+  getOpenTimeCardBreak
+} from "~/services/people.service";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
 
 export const shouldRevalidate: ShouldRevalidateFunction = ({
@@ -82,21 +87,50 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   // Get the location from middleware context
   const locationId = context.get(userContext)?.locationId;
 
-  let [companyPlan, locations, activeEvents, companySettings, openClockEntry] =
-    await Promise.all([
-      getStripeCustomerByCompanyId(companyId, userId),
-      getLocationsByCompany(client, companyId),
-      getActiveJobCount(client, {
-        employeeId: userId,
-        companyId
-      }),
-      client
-        .from("companySettings")
-        .select("timeCardEnabled")
-        .eq("id", companyId)
-        .single(),
-      getOpenClockEntry(client, userId, companyId)
-    ]);
+  let [
+    companyPlan,
+    locations,
+    activeEvents,
+    companySettings,
+    openClockEntry,
+    openBreak
+  ] = await Promise.all([
+    getStripeCustomerByCompanyId(companyId, userId),
+    getLocationsByCompany(client, companyId),
+    getActiveJobCount(client, {
+      employeeId: userId,
+      companyId
+    }),
+    client
+      .from("companySettings")
+      .select("timeCardEnabled")
+      .eq("id", companyId)
+      .single(),
+    getOpenClockEntry(client, userId, companyId),
+    getOpenTimeCardBreak(client, userId, companyId)
+  ]);
+
+  if (companySettings.data?.timeCardEnabled && openBreak.data) {
+    const resumedAt = new Date().toISOString();
+
+    await endOpenBreakOnLogin(client as any, {
+      employeeId: userId,
+      companyId,
+      endedBy: userId,
+      endTime: resumedAt
+    });
+
+    await ensureDailyAutoClockIn(client as any, {
+      employeeId: userId,
+      companyId,
+      createdBy: userId,
+      loginAt: resumedAt,
+      timeZone: "UTC",
+      forceNewSession: true
+    });
+
+    openClockEntry = await getOpenClockEntry(client, userId, companyId);
+  }
 
   // Get active maintenance count after we have the location
   const activeMaintenanceCount = await getActiveMaintenanceEventsCount(
@@ -129,6 +163,13 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     timeCardEnabled: companySettings.data?.timeCardEnabled ?? false,
     openClockEntry: openClockEntry.data
       ? { id: openClockEntry.data.id, clockIn: openClockEntry.data.clockIn }
+      : null,
+    openBreak: openBreak.data
+      ? {
+          id: openBreak.data.id,
+          startTime: openBreak.data.startTime,
+          breakType: openBreak.data.breakType
+        }
       : null
   });
 }
@@ -144,7 +185,8 @@ export default function AuthenticatedRoute() {
     locations,
     user,
     timeCardEnabled,
-    openClockEntry
+    openClockEntry,
+    openBreak
   } = useLoaderData<typeof loader>();
 
   const navigate = useNavigate();
@@ -192,6 +234,7 @@ export default function AuthenticatedRoute() {
                   locations={locations}
                   timeCardEnabled={timeCardEnabled}
                   openClockEntry={openClockEntry}
+                  openBreak={openBreak}
                 />
                 <Outlet />
                 {timeCardEnabled && (
