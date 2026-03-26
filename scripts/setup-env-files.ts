@@ -1,4 +1,10 @@
-import { existsSync, symlinkSync, unlinkSync } from "fs";
+import {
+  copyFileSync,
+  existsSync,
+  lstatSync,
+  rmSync,
+  symlinkSync
+} from "fs";
 import { join } from "path";
 
 const ROOT_ENV_PATH = join(process.cwd(), ".env");
@@ -15,16 +21,27 @@ const PACKAGE_FOLDERS = ["database", "jobs", "kv"];
 
 function createSymlink(targetPath: string, sourcePath: string) {
   try {
-    // Remove existing symlink if it exists
+    // Clear any existing file or link before recreating it.
     if (existsSync(targetPath)) {
-      unlinkSync(targetPath);
+      const stat = lstatSync(targetPath);
+      rmSync(targetPath, {
+        force: true,
+        recursive: stat.isDirectory() && !stat.isSymbolicLink()
+      });
     }
 
-    // Create new symlink
+    // Prefer symlinks so local changes to the root env file are reflected
+    // immediately across apps and packages.
     symlinkSync(sourcePath, targetPath);
     console.log(`Created symlink at ${targetPath}`);
   } catch (error) {
-    console.error(`Failed to create symlink at ${targetPath}:`, error);
+    console.warn(`Failed to create symlink at ${targetPath}, copying .env instead.`);
+    try {
+      copyFileSync(sourcePath, targetPath);
+      console.log(`Copied .env to ${targetPath}`);
+    } catch (copyError) {
+      console.error(`Failed to copy .env to ${targetPath}:`, copyError);
+    }
   }
 }
 
