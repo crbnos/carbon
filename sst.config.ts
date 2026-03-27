@@ -52,6 +52,7 @@ export default $config({
         DOMAIN: process.env.DOMAIN ?? "carbon.ms",
         ERP_URL: process.env.URL_ERP ? `https://${process.env.URL_ERP}` : "https://itar.carbon.ms",
         EXCHANGE_RATES_API_KEY: process.env.EXCHANGE_RATES_API_KEY,
+        GOOGLE_PLACES_API_KEY: process.env.GOOGLE_PLACES_API_KEY,
         MES_URL: process.env.URL_MES ? `https://${process.env.URL_MES}` : "https://mes.itar.carbon.ms",
         NODE_ENV: "production",
         NOVU_APPLICATION_ID: process.env.NOVU_APPLICATION_ID,

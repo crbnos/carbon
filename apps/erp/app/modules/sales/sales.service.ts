@@ -1331,6 +1331,26 @@ export async function getSalesOrderLines(
     .order("itemReadableId", { ascending: true });
 }
 
+export async function getSalesOrderInvoiceLines(
+  client: SupabaseClient<Database>,
+  salesOrderId: string
+) {
+  return client
+    .from("salesInvoiceLine")
+    .select("invoiceId")
+    .eq("salesOrderId", salesOrderId);
+}
+
+export async function getSalesOrderInvoicesByIds(
+  client: SupabaseClient<Database>,
+  invoiceIds: string[]
+) {
+  return client
+    .from("salesInvoices")
+    .select("id, invoiceTotal, status, currencyCode")
+    .in("id", invoiceIds);
+}
+
 export async function getSalesOrderLinesByItemId(
   client: SupabaseClient<Database>,
   itemId: string

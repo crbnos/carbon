@@ -17530,6 +17530,9 @@ export default {
             $ref: "#/parameters/rowFilter.timeCardEntries.locationName",
           },
           {
+            $ref: "#/parameters/rowFilter.timeCardEntries.status",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -34390,6 +34393,12 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceLines.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.nonTaxableAddOnCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.convertedNonTaxableAddOnCost",
+          },
+          {
             $ref: "#/parameters/rowFilter.salesInvoiceLines.itemReadableId",
           },
           {
@@ -40754,6 +40763,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLines.sentDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.nonTaxableAddOnCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.convertedNonTaxableAddOnCost",
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLines.itemReadableId",
@@ -65266,6 +65281,188 @@ export default {
         tags: ["(rpc) get_jobs_by_date_range"],
       },
     },
+    "/rpc/calculate_quantity_to_order": {
+      get: {
+        parameters: [
+          {
+            format: '"itemReorderingPolicy"',
+            in: "query",
+            name: "p_reordering_policy",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "integer",
+            in: "query",
+            name: "p_reorder_point",
+            required: true,
+            type: "integer",
+          },
+          {
+            format: "integer",
+            in: "query",
+            name: "p_reorder_quantity",
+            required: true,
+            type: "integer",
+          },
+          {
+            format: "integer",
+            in: "query",
+            name: "p_minimum_order_quantity",
+            required: true,
+            type: "integer",
+          },
+          {
+            format: "integer",
+            in: "query",
+            name: "p_maximum_order_quantity",
+            required: true,
+            type: "integer",
+          },
+          {
+            format: "integer",
+            in: "query",
+            name: "p_order_multiple",
+            required: true,
+            type: "integer",
+          },
+          {
+            format: "integer",
+            in: "query",
+            name: "p_lot_size",
+            required: true,
+            type: "integer",
+          },
+          {
+            format: "numeric",
+            in: "query",
+            name: "p_maximum_inventory_quantity",
+            required: true,
+            type: "number",
+          },
+          {
+            format: "integer",
+            in: "query",
+            name: "p_demand_accumulation_period",
+            required: true,
+            type: "integer",
+          },
+          {
+            format: "numeric",
+            in: "query",
+            name: "p_demand_accumulation_safety_stock",
+            required: true,
+            type: "number",
+          },
+          {
+            format: "numeric[]",
+            in: "query",
+            name: "p_projections",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) calculate_quantity_to_order"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_demand_accumulation_period: {
+                  format: "integer",
+                  type: "integer",
+                },
+                p_demand_accumulation_safety_stock: {
+                  format: "numeric",
+                  type: "number",
+                },
+                p_lot_size: {
+                  format: "integer",
+                  type: "integer",
+                },
+                p_maximum_inventory_quantity: {
+                  format: "numeric",
+                  type: "number",
+                },
+                p_maximum_order_quantity: {
+                  format: "integer",
+                  type: "integer",
+                },
+                p_minimum_order_quantity: {
+                  format: "integer",
+                  type: "integer",
+                },
+                p_order_multiple: {
+                  format: "integer",
+                  type: "integer",
+                },
+                p_projections: {
+                  format: "numeric[]",
+                  items: {
+                    type: "number",
+                  },
+                  type: "array",
+                },
+                p_reorder_point: {
+                  format: "integer",
+                  type: "integer",
+                },
+                p_reorder_quantity: {
+                  format: "integer",
+                  type: "integer",
+                },
+                p_reordering_policy: {
+                  format: '"itemReorderingPolicy"',
+                  type: "string",
+                },
+              },
+              required: [
+                "p_reordering_policy",
+                "p_reorder_point",
+                "p_reorder_quantity",
+                "p_minimum_order_quantity",
+                "p_maximum_order_quantity",
+                "p_order_multiple",
+                "p_lot_size",
+                "p_maximum_inventory_quantity",
+                "p_demand_accumulation_period",
+                "p_demand_accumulation_safety_stock",
+                "p_projections",
+              ],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) calculate_quantity_to_order"],
+      },
+    },
     "/rpc/get_period_end_date": {
       get: {
         parameters: [
@@ -65854,6 +66051,41 @@ export default {
           },
         },
         tags: ["(rpc) get_item_quantities_by_tracking_id"],
+      },
+    },
+    "/rpc/get_inventory_value_by_location": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["company_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_inventory_value_by_location"],
       },
     },
     "/rpc/get_quote_methods_by_method_id": {
@@ -66910,6 +67142,41 @@ export default {
           },
         },
         tags: ["(rpc) groups_for_user"],
+      },
+    },
+    "/rpc/create_embedding_subscriptions_for_company": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["p_company_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) create_embedding_subscriptions_for_company"],
       },
     },
     "/rpc/get_period_start_date": {
@@ -73587,7 +73854,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -73636,7 +73903,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -78088,6 +78355,10 @@ export default {
           type: "string",
         },
         locationName: {
+          format: "text",
+          type: "string",
+        },
+        status: {
           format: "text",
           type: "string",
         },
@@ -85799,6 +86070,14 @@ export default {
           format: "text",
           type: "string",
         },
+        nonTaxableAddOnCost: {
+          format: "numeric",
+          type: "number",
+        },
+        convertedNonTaxableAddOnCost: {
+          format: "numeric",
+          type: "number",
+        },
         itemReadableId: {
           format: "text",
           type: "string",
@@ -88655,6 +88934,14 @@ export default {
         sentDate: {
           format: "date",
           type: "string",
+        },
+        nonTaxableAddOnCost: {
+          format: "numeric",
+          type: "number",
+        },
+        convertedNonTaxableAddOnCost: {
+          format: "numeric",
+          type: "number",
         },
         itemReadableId: {
           format: "text",
@@ -96396,7 +96683,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.id('tce'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -109879,6 +110166,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.timeCardEntries.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.materialDimensions": {
       name: "materialDimensions",
       description: "materialDimensions",
@@ -118569,6 +118862,18 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.salesInvoiceLines.nonTaxableAddOnCost": {
+      name: "nonTaxableAddOnCost",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.convertedNonTaxableAddOnCost": {
+      name: "convertedNonTaxableAddOnCost",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.salesInvoiceLines.itemReadableId": {
       name: "itemReadableId",
       required: false,
@@ -121782,6 +122087,18 @@ export default {
     },
     "rowFilter.salesOrderLines.sentDate": {
       name: "sentDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLines.nonTaxableAddOnCost": {
+      name: "nonTaxableAddOnCost",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLines.convertedNonTaxableAddOnCost": {
+      name: "convertedNonTaxableAddOnCost",
       required: false,
       in: "query",
       type: "string",

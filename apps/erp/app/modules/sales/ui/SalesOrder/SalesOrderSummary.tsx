@@ -67,6 +67,11 @@ const SalesOrderSummary = ({
     lines: SalesOrderLine[];
     customer: Customer;
     quote: Quotation;
+    invoiceSummary: {
+      invoicedAmount: number;
+      paidAmount: number;
+      currencyMismatchCount: number;
+    };
   }>(path.to.salesOrder(orderId));
 
   const salesOrderToJobsModal = useDisclosure();
@@ -263,6 +268,39 @@ const SalesOrderSummary = ({
                 locales={locale}
               />
             </HStack>
+            <div className="h-px bg-border my-2 w-full" />
+            <HStack className="justify-between text-base text-muted-foreground w-full">
+              <span>Invoiced Amount:</span>
+              <MotionNumber
+                value={routeData?.invoiceSummary?.invoicedAmount ?? 0}
+                format={{
+                  style: "currency",
+                  currency: routeData?.salesOrder?.currencyCode ?? "USD"
+                }}
+                locales={locale}
+              />
+            </HStack>
+            <HStack className="justify-between text-base text-muted-foreground w-full">
+              <span>Paid Amount:</span>
+              <MotionNumber
+                value={routeData?.invoiceSummary?.paidAmount ?? 0}
+                format={{
+                  style: "currency",
+                  currency: routeData?.salesOrder?.currencyCode ?? "USD"
+                }}
+                locales={locale}
+              />
+            </HStack>
+            {(routeData?.invoiceSummary?.currencyMismatchCount ?? 0) > 0 && (
+              <span className="text-xs text-muted-foreground">
+                Excludes {routeData?.invoiceSummary?.currencyMismatchCount}{" "}
+                invoice
+                {(routeData?.invoiceSummary?.currencyMismatchCount ?? 0) > 1
+                  ? "s"
+                  : ""}{" "}
+                in a different currency.
+              </span>
+            )}
           </VStack>
         </CardContent>
       </Card>
