@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   typecheck:
-    name: Turbo Types (non-blocking for now)
+    name: Turbo Types
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -31,4 +31,3 @@ jobs:
 
       - name: Run turbo types
         run: npm run types
-        continue-on-error: true
