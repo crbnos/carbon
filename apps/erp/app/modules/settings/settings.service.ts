@@ -889,6 +889,16 @@ export async function updatePurchasePriceUpdateTimingSetting(
     .eq("id", companyId);
 }
 
+export async function updateLeadTimesOnReceiptSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  updateLeadTimesOnReceipt: boolean
+) {
+  return (client.from("companySettings") as any)
+    .update(sanitize({ updateLeadTimesOnReceipt }))
+    .eq("id", companyId);
+}
+
 export async function updateSupplierApprovalSetting(
   client: SupabaseClient<Database>,
   companyId: string,
