@@ -73,7 +73,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
           body: {
             invoiceId: invoiceId,
             companyId: companyId,
-            source: "purchaseInvoice"
+            source: "purchaseInvoice",
+            updatePrices: true,
+            updateLeadTimes: false
           },
           region: FunctionRegion.UsEast1
         }
