@@ -723,13 +723,18 @@ export async function updateConsoleSetting(
       .from("employeeType")
       .select("id")
       .eq("companyId", companyId)
-      .eq("name", "Console Operator")
+      .eq("systemType", "Console Operator")
       .maybeSingle();
 
     if (!existing.data) {
       const newType = await client
         .from("employeeType")
-        .insert({ name: "Console Operator", companyId, protected: false })
+        .insert({
+          name: "Console Operator",
+          companyId,
+          protected: true,
+          systemType: "Console Operator"
+        })
         .select("id")
         .single();
 

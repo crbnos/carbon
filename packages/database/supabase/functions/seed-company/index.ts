@@ -101,6 +101,7 @@ serve(async (req: Request) => {
             name: "Admin",
             companyId,
             protected: true,
+            systemType: "Admin" as const,
           },
         ])
         .returning(["id"])

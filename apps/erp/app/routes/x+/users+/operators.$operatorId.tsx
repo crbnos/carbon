@@ -101,7 +101,7 @@ export default function ConvertOperatorRoute() {
 
   const employeeTypeOptions =
     employeeTypeFetcher.data?.data
-      ?.filter((et) => et.name !== "Console Operator")
+      ?.filter((et) => et.systemType !== "Console Operator")
       .map((et) => ({
         value: et.id,
         label: et.name

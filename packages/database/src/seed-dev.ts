@@ -223,7 +223,7 @@ async function seedDev() {
 
       // Create Admin employee type
       const employeeTypeResult = await client.query(
-        `INSERT INTO "employeeType" (name, "companyId", protected) VALUES ('Admin', $1, true) RETURNING id`,
+        `INSERT INTO "employeeType" (name, "companyId", protected, "systemType") VALUES ('Admin', $1, true, 'Admin') RETURNING id`,
         [companyId]
       );
       const employeeTypeId = employeeTypeResult.rows[0].id;

@@ -11,7 +11,11 @@ export async function deleteEmployeeType(
   client: SupabaseClient<Database>,
   employeeTypeId: string
 ) {
-  return client.from("employeeType").delete().eq("id", employeeTypeId);
+  return client
+    .from("employeeType")
+    .delete()
+    .eq("id", employeeTypeId)
+    .eq("protected", false);
 }
 
 export async function deleteGroup(

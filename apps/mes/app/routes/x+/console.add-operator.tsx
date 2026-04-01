@@ -46,12 +46,12 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const operatorId = crypto.randomUUID();
   const syntheticEmail = `${operatorId}@console.internal`;
 
-  // Get the "Console Operator" employee type (created by migration)
+  // Get the Console Operator employee type
   const operatorType = await serviceRole
     .from("employeeType")
     .select("id")
     .eq("companyId", companyId)
-    .eq("name", "Console Operator")
+    .eq("systemType", "Console Operator")
     .single();
 
   if (operatorType.error || !operatorType.data) {

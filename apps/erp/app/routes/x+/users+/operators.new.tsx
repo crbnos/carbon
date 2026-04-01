@@ -54,13 +54,13 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { firstName, lastName, locationId, pin } = validation.data;
 
-  // Auto-assign "Console Operator" employee type
+  // Auto-assign Console Operator employee type
   const serviceRole = getCarbonServiceRole();
   const operatorType = await serviceRole
     .from("employeeType")
     .select("id")
     .eq("companyId", companyId)
-    .eq("name", "Console Operator")
+    .eq("systemType", "Console Operator")
     .single();
 
   if (operatorType.error || !operatorType.data) {
