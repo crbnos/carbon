@@ -118,6 +118,10 @@ export const purchasePriceUpdateTimingValidator = z.object({
   purchasePriceUpdateTiming: z.enum(purchasePriceUpdateTimingTypes)
 });
 
+export const updateLeadTimesOnReceiptValidator = z.object({
+  updateLeadTimesOnReceipt: zfd.checkbox()
+});
+
 export const maintenanceSettingsValidator = z.object({
   maintenanceGenerateInAdvance: zfd.checkbox(),
   maintenanceAdvanceDays: zfd.numeric(z.number().min(1).max(90).default(7))
