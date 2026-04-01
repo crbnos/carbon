@@ -34,6 +34,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   try {
     const serviceRole = await getCarbonServiceRole();
+
+    const receiptMetadata = await serviceRole
+      .from("receipt")
+      .select("sourceDocument,sourceDocumentId")
+      .eq("id", receiptId)
+      .single();
+
+    const companySettings = await (serviceRole.from("companySettings") as any)
+      .select("updateLeadTimesOnReceipt")
+      .eq("id", companyId)
+      .single();
+
     const postReceipt = await serviceRole.functions.invoke("post-receipt", {
       body: {
         receiptId: receiptId,
@@ -55,6 +67,38 @@ export async function action({ request, params }: ActionFunctionArgs) {
         path.to.receipt(receiptId),
         await flash(request, error(postReceipt.error, "Failed to post receipt"))
       );
+    }
+
+    const shouldUpdateLeadTimesOnReceipt = Boolean(
+      (companySettings.data as { updateLeadTimesOnReceipt?: boolean } | null)
+        ?.updateLeadTimesOnReceipt
+    );
+
+    if (
+      shouldUpdateLeadTimesOnReceipt &&
+      receiptMetadata.data?.sourceDocument === "Purchase Order" &&
+      receiptMetadata.data?.sourceDocumentId
+    ) {
+      const leadTimeUpdate = await serviceRole.functions.invoke(
+        "update-purchased-prices",
+        {
+          body: {
+            source: "purchaseOrder",
+            purchaseOrderId: receiptMetadata.data.sourceDocumentId,
+            companyId,
+            updatePrices: false,
+            updateLeadTimes: true
+          },
+          region: FunctionRegion.UsEast1
+        }
+      );
+
+      if (leadTimeUpdate.error) {
+        console.error(
+          "Failed to update lead time on receipt posting:",
+          leadTimeUpdate.error
+        );
+      }
     }
     // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   } catch (error) {
