@@ -13,6 +13,23 @@ import {
 
 import { path } from "~/utils/path";
 
+function getFriendlyDeletePurchaseOrderMessage(errorMessage?: string) {
+  const message = errorMessage?.toLowerCase() ?? "";
+
+  if (
+    message.includes("violates foreign key constraint") &&
+    message.includes("purchaseinvoiceline")
+  ) {
+    return "This purchase order can't be deleted because it has linked purchase invoices. Delete or void related invoices first.";
+  }
+
+  if (message.includes("violates foreign key constraint")) {
+    return "This purchase order can't be deleted because it is linked to other records.";
+  }
+
+  return "Failed to delete purchase order.";
+}
+
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await requirePermissions(request, {
@@ -123,9 +140,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const remove = await deletePurchaseOrder(client, orderId);
 
   if (remove.error) {
+    console.error("Failed to delete purchase order:", remove.error);
+
     throw redirect(
       path.to.purchaseOrders,
-      await flash(request, error(remove.error, remove.error.message))
+      await flash(
+        request,
+        error(
+          remove.error,
+          getFriendlyDeletePurchaseOrderMessage(remove.error.message)
+        )
+      )
     );
   }
 
