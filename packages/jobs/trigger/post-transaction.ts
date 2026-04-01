@@ -82,6 +82,8 @@ export const postTransactionTask = task({
                   invoiceId: payload.documentId,
                   companyId: payload.companyId,
                   source: "purchaseInvoice",
+                  updatePrices: true,
+                  updateLeadTimes: false,
                 },
               }
             );
