@@ -43,6 +43,7 @@ import {
   updateAccountsPayableAddressSetting,
   updateAccountsPayableBillingAddress,
   updateDefaultSupplierCc,
+  updateLeadTimesOnReceiptSetting,
   updatePurchasePriceUpdateTimingSetting,
   updatePurchasingPdfThumbnails,
   updateSupplierApprovalSetting,
@@ -158,6 +159,23 @@ export async function action({ request }: ActionFunctionArgs) {
       return {
         success: true,
         message: "Purchase price update timing updated"
+      };
+
+    case "updateLeadTimesOnReceipt":
+      const updateLeadTimesOnReceipt = formData.get("enabled") === "true";
+      const updateLeadTimesResult = await updateLeadTimesOnReceiptSetting(
+        client,
+        companyId,
+        updateLeadTimesOnReceipt
+      );
+
+      if (updateLeadTimesResult.error) {
+        return { success: false, message: updateLeadTimesResult.error.message };
+      }
+
+      return {
+        success: true,
+        message: `Lead time updates on receipt ${updateLeadTimesOnReceipt ? "enabled" : "disabled"}`
       };
 
     case "supplierQuoteNotification":
@@ -296,11 +314,30 @@ export default function PurchasingSettingsRoute() {
     companySettings.accountsPayableAddress ?? false
   );
 
+  const [leadTimesOnReceiptEnabled, setLeadTimesOnReceiptEnabled] = useState(
+    (companySettings as { updateLeadTimesOnReceipt?: boolean })
+      .updateLeadTimesOnReceipt ?? false
+  );
+
   const handleApAddressToggle = useCallback(
     (checked: boolean) => {
       setApAddressEnabled(checked);
       toggleFetcher.submit(
         { intent: "accountsPayableAddressToggle", enabled: checked.toString() },
+        { method: "POST" }
+      );
+    },
+    [toggleFetcher]
+  );
+
+  const handleLeadTimesOnReceiptToggle = useCallback(
+    (checked: boolean) => {
+      setLeadTimesOnReceiptEnabled(checked);
+      toggleFetcher.submit(
+        {
+          intent: "updateLeadTimesOnReceipt",
+          enabled: checked.toString()
+        },
         { method: "POST" }
       );
     },
@@ -512,6 +549,24 @@ export default function PurchasingSettingsRoute() {
               </Submit>
             </CardFooter>
           </ValidatedForm>
+        </Card>
+        <Card>
+          <CardHeader>
+            <HStack className="justify-between items-center">
+              <div>
+                <CardTitle>Lead Time Updates</CardTitle>
+                <CardDescription>
+                  Update part lead times from posted purchase receipts instead
+                  of purchase order finalization.
+                </CardDescription>
+              </div>
+              <Switch
+                checked={leadTimesOnReceiptEnabled}
+                onCheckedChange={handleLeadTimesOnReceiptToggle}
+                disabled={toggleFetcher.state !== "idle"}
+              />
+            </HStack>
+          </CardHeader>
         </Card>
         <Card>
           <CardHeader>
