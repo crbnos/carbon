@@ -292,7 +292,9 @@ export async function action(args: ActionFunctionArgs) {
             body: {
               purchaseOrderId: orderId,
               companyId,
-              source: "purchaseOrder"
+              source: "purchaseOrder",
+              updatePrices: true,
+              updateLeadTimes: false
             },
             region: FunctionRegion.UsEast1
           }
