@@ -15,11 +15,15 @@ const payloadValidator = z.discriminatedUnion("source", [
     source: z.literal("purchaseOrder"),
     purchaseOrderId: z.string(),
     companyId: z.string(),
+    updatePrices: z.boolean().optional(),
+    updateLeadTimes: z.boolean().optional(),
   }),
   z.object({
     source: z.literal("purchaseInvoice"),
     invoiceId: z.string(),
     companyId: z.string(),
+    updatePrices: z.boolean().optional(),
+    updateLeadTimes: z.boolean().optional(),
   }),
 ]);
 
@@ -52,12 +56,17 @@ serve(async (req: Request) => {
   }
 
   const payload = await req.json();
-  const { source, companyId } = payloadValidator.parse(payload);
+  const parsedPayload = payloadValidator.parse(payload);
+  const { source, companyId } = parsedPayload;
+  const shouldUpdatePrices = parsedPayload.updatePrices ?? true;
+  const shouldUpdateLeadTimes = parsedPayload.updateLeadTimes ?? false;
 
   console.log({
     function: "update-purchased-prices",
     source,
     companyId,
+    shouldUpdatePrices,
+    shouldUpdateLeadTimes,
   });
 
   try {
@@ -72,7 +81,7 @@ serve(async (req: Request) => {
 
     switch (source) {
       case "purchaseOrder": {
-        const { purchaseOrderId } = payload;
+        const { purchaseOrderId } = parsedPayload;
 
         console.log({
           function: "update-purchased-prices",
@@ -110,41 +119,43 @@ serve(async (req: Request) => {
             conversionFactor: line.conversionFactor,
             purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
           }))
-          .filter((line) => line.unitPrice !== 0 && line.quantity > 0);
+          .filter((line) => line.quantity > 0);
 
-        // Delete any existing cost ledger entries for this PO (handles re-finalization)
-        await db
-          .deleteFrom("costLedger")
-          .where("documentType", "=", "Purchase Order")
-          .where("documentId", "=", purchaseOrderId)
-          .where("companyId", "=", companyId)
-          .execute();
+        if (shouldUpdatePrices) {
+          // Delete any existing cost ledger entries for this PO (handles re-finalization)
+          await db
+            .deleteFrom("costLedger")
+            .where("documentType", "=", "Purchase Order")
+            .where("documentId", "=", purchaseOrderId)
+            .where("companyId", "=", companyId)
+            .execute();
 
-        // Create new cost ledger entries for each line item
-        const costLedgerInserts = lines
-          .filter((line) => line.itemId)
-          .map((line) => ({
-            itemLedgerType: "Purchase" as const,
-            costLedgerType: "Direct Cost" as const,
-            adjustment: false,
-            documentType: "Purchase Order" as const,
-            documentId: purchaseOrderId,
-            itemId: line.itemId!,
-            quantity: line.quantity,
-            cost: line.quantity * line.unitPrice,
-            supplierId,
-            companyId,
-          }));
+          // Create new cost ledger entries for each line item
+          const costLedgerInserts = lines
+            .filter((line) => line.itemId && line.unitPrice !== 0)
+            .map((line) => ({
+              itemLedgerType: "Purchase" as const,
+              costLedgerType: "Direct Cost" as const,
+              adjustment: false,
+              documentType: "Purchase Order" as const,
+              documentId: purchaseOrderId,
+              itemId: line.itemId!,
+              quantity: line.quantity,
+              cost: line.quantity * line.unitPrice,
+              supplierId,
+              companyId,
+            }));
 
-        if (costLedgerInserts.length > 0) {
-          await db.insertInto("costLedger").values(costLedgerInserts).execute();
+          if (costLedgerInserts.length > 0) {
+            await db.insertInto("costLedger").values(costLedgerInserts).execute();
+          }
         }
 
         break;
       }
 
       case "purchaseInvoice": {
-        const { invoiceId } = payload;
+        const { invoiceId } = parsedPayload;
 
         console.log({
           function: "update-purchased-prices",
@@ -182,87 +193,23 @@ serve(async (req: Request) => {
             conversionFactor: line.conversionFactor,
             purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
           }))
-          .filter((line) => line.unitPrice !== 0);
+          .filter((line) => line.quantity > 0);
         break;
       }
     }
 
-    const itemIds = lines
-      .filter((line) => Boolean(line.itemId))
-      .map((line) => line.itemId) as string[];
+    const itemIds = Array.from(
+      new Set(
+        lines
+          .filter((line) => Boolean(line.itemId))
+          .map((line) => line.itemId as string)
+      )
+    );
 
     const dateOneYearAgo = format(
       new Date(new Date().setFullYear(new Date().getFullYear() - 1)),
       "yyyy-MM-dd"
     );
-
-    const [costLedgers, supplierParts, purchaseOrderLinesHistory] =
-      await Promise.all([
-      client
-        .from("costLedger")
-        .select("*")
-        .in("itemId", itemIds)
-        .eq("companyId", companyId)
-        .gte("postingDate", dateOneYearAgo),
-      client
-        .from("supplierPart")
-        .select("*")
-        .eq("supplierId", supplierId)
-        .in("itemId", itemIds)
-        .eq("companyId", companyId),
-      client
-        .from("purchaseOrderLine")
-        .select("itemId,purchaseOrderId,purchaseQuantity,conversionFactor")
-        .in("itemId", itemIds)
-        .eq("companyId", companyId),
-    ]);
-
-    if (purchaseOrderLinesHistory.error) {
-      throw new Error("Failed to fetch historical purchase order lines");
-    }
-
-    const purchaseOrderIds = Array.from(
-      new Set(
-        purchaseOrderLinesHistory.data
-          .map((line) => line.purchaseOrderId)
-          .filter(Boolean)
-      )
-    );
-
-    let purchaseOrderRows: {
-      id: string;
-      orderDate: string | null;
-    }[] = [];
-    let purchaseOrderDeliveryRows: {
-      id: string;
-      deliveryDate: string | null;
-    }[] = [];
-
-    if (purchaseOrderIds.length > 0) {
-      const [purchaseOrders, purchaseOrderDeliveries] = await Promise.all([
-        client
-          .from("purchaseOrder")
-          .select("id,orderDate")
-          .in("id", purchaseOrderIds)
-          .eq("companyId", companyId),
-        client
-          .from("purchaseOrderDelivery")
-          .select("id,deliveryDate")
-          .in("id", purchaseOrderIds)
-          .eq("companyId", companyId)
-          .gte("deliveryDate", dateOneYearAgo),
-      ]);
-
-      if (purchaseOrders.error) {
-        throw new Error("Failed to fetch historical purchase orders");
-      }
-      if (purchaseOrderDeliveries.error) {
-        throw new Error("Failed to fetch historical purchase order deliveries");
-      }
-
-      purchaseOrderRows = purchaseOrders.data;
-      purchaseOrderDeliveryRows = purchaseOrderDeliveries.data;
-    }
 
     const itemCostUpdates: Database["public"]["Tables"]["itemCost"]["Update"][] =
       [];
@@ -285,116 +232,215 @@ serve(async (req: Request) => {
       { quantity: number; weightedLeadTime: number }
     > = {};
 
-    costLedgers.data?.forEach((ledger) => {
-      if (ledger.itemId) {
-        if (!historicalPartCosts[ledger.itemId]) {
-          historicalPartCosts[ledger.itemId] = {
-            quantity: 0,
-            cost: 0,
-          };
+    let supplierPartRows: Database["public"]["Tables"]["supplierPart"]["Row"][] =
+      [];
+
+    if (shouldUpdatePrices && itemIds.length > 0) {
+      const [costLedgers, supplierParts] = await Promise.all([
+        client
+          .from("costLedger")
+          .select("*")
+          .in("itemId", itemIds)
+          .eq("companyId", companyId)
+          .gte("postingDate", dateOneYearAgo),
+        client
+          .from("supplierPart")
+          .select("*")
+          .eq("supplierId", supplierId)
+          .in("itemId", itemIds)
+          .eq("companyId", companyId),
+      ]);
+
+      if (costLedgers.error) {
+        throw new Error("Failed to fetch historical cost ledger entries");
+      }
+      if (supplierParts.error) {
+        throw new Error("Failed to fetch supplier parts");
+      }
+
+      supplierPartRows = supplierParts.data ?? [];
+
+      costLedgers.data?.forEach((ledger) => {
+        if (ledger.itemId) {
+          if (!historicalPartCosts[ledger.itemId]) {
+            historicalPartCosts[ledger.itemId] = {
+              quantity: 0,
+              cost: 0,
+            };
+          }
+
+          historicalPartCosts[ledger.itemId].quantity += ledger.quantity;
+          historicalPartCosts[ledger.itemId].cost += ledger.cost;
+        }
+      });
+    }
+
+    if (shouldUpdateLeadTimes && itemIds.length > 0) {
+      const receipts = await client
+        .from("receipt")
+        .select("id,postingDate,sourceDocumentId")
+        .eq("companyId", companyId)
+        .eq("sourceDocument", "Purchase Order")
+        .not("postingDate", "is", null)
+        .gte("postingDate", dateOneYearAgo);
+
+      if (receipts.error) {
+        throw new Error("Failed to fetch historical receipts");
+      }
+
+      const receiptIds = receipts.data?.map((receipt) => receipt.id) ?? [];
+      const purchaseOrderIds = Array.from(
+        new Set(
+          (receipts.data ?? [])
+            .map((receipt) => receipt.sourceDocumentId)
+            .filter((id): id is string => Boolean(id))
+        )
+      );
+
+      if (receiptIds.length > 0 && purchaseOrderIds.length > 0) {
+        const [receiptLines, purchaseOrders] = await Promise.all([
+          client
+            .from("receiptLine")
+            .select("receiptId,itemId,receivedQuantity,conversionFactor")
+            .in("receiptId", receiptIds)
+            .in("itemId", itemIds)
+            .eq("companyId", companyId),
+          client
+            .from("purchaseOrder")
+            .select("id,orderDate")
+            .in("id", purchaseOrderIds)
+            .eq("companyId", companyId),
+        ]);
+
+        if (receiptLines.error) {
+          throw new Error("Failed to fetch historical receipt lines");
+        }
+        if (purchaseOrders.error) {
+          throw new Error("Failed to fetch historical purchase orders");
         }
 
-        historicalPartCosts[ledger.itemId].quantity += ledger.quantity;
-        historicalPartCosts[ledger.itemId].cost += ledger.cost;
+        const receiptsById = (receipts.data ?? []).reduce<
+          Record<string, { postingDate: string; sourceDocumentId: string | null }>
+        >((acc, receipt) => {
+          if (receipt.postingDate) {
+            acc[receipt.id] = {
+              postingDate: receipt.postingDate,
+              sourceDocumentId: receipt.sourceDocumentId,
+            };
+          }
+          return acc;
+        }, {});
+
+        const purchaseOrdersById = purchaseOrders.data.reduce<
+          Record<string, { orderDate: string | null }>
+        >((acc, row) => {
+          acc[row.id] = { orderDate: row.orderDate };
+          return acc;
+        }, {});
+
+        receiptLines.data.forEach((line) => {
+          if (!line.itemId) return;
+
+          const receipt = receiptsById[line.receiptId];
+          if (!receipt?.sourceDocumentId) return;
+
+          const orderDate =
+            purchaseOrdersById[receipt.sourceDocumentId]?.orderDate;
+          if (!orderDate || !receipt.postingDate) return;
+
+          const safeConversionFactor =
+            line.conversionFactor && line.conversionFactor > 0
+              ? line.conversionFactor
+              : 1;
+          const quantity = Math.abs(
+            (line.receivedQuantity ?? 0) / safeConversionFactor
+          );
+          if (quantity <= 0) return;
+
+          const leadTimeInDays = calculateLeadTimeInDays(
+            orderDate,
+            receipt.postingDate
+          );
+
+          if (!historicalPartLeadTimes[line.itemId]) {
+            historicalPartLeadTimes[line.itemId] = {
+              quantity: 0,
+              weightedLeadTime: 0,
+            };
+          }
+
+          historicalPartLeadTimes[line.itemId].quantity += quantity;
+          historicalPartLeadTimes[line.itemId].weightedLeadTime +=
+            leadTimeInDays * quantity;
+        });
       }
-    });
-
-    const purchaseOrdersById = purchaseOrderRows.reduce<
-      Record<string, { orderDate: string | null }>
-    >((acc, row) => {
-      acc[row.id] = { orderDate: row.orderDate };
-      return acc;
-    }, {});
-
-    const purchaseOrderDeliveriesById = purchaseOrderDeliveryRows.reduce<
-      Record<string, { deliveryDate: string | null }>
-    >((acc, row) => {
-      acc[row.id] = { deliveryDate: row.deliveryDate };
-      return acc;
-    }, {});
-
-    purchaseOrderLinesHistory.data.forEach((line) => {
-      if (!line.itemId) return;
-
-      const orderDate = purchaseOrdersById[line.purchaseOrderId]?.orderDate;
-      const deliveryDate =
-        purchaseOrderDeliveriesById[line.purchaseOrderId]?.deliveryDate;
-
-      if (!orderDate || !deliveryDate) return;
-
-      const quantity =
-        (line.purchaseQuantity ?? 0) * (line.conversionFactor ?? 1);
-      if (quantity <= 0) return;
-
-      const leadTimeInDays = calculateLeadTimeInDays(orderDate, deliveryDate);
-
-      if (!historicalPartLeadTimes[line.itemId]) {
-        historicalPartLeadTimes[line.itemId] = {
-          quantity: 0,
-          weightedLeadTime: 0,
-        };
-      }
-
-      historicalPartLeadTimes[line.itemId].quantity += quantity;
-      historicalPartLeadTimes[line.itemId].weightedLeadTime +=
-        leadTimeInDays * quantity;
-    });
+    }
 
     lines.forEach((line) => {
-      if (
-        line.itemId &&
-        !line.jobOperationId &&
-        historicalPartCosts[line.itemId]
-      ) {
-        itemCostUpdates.push({
-          itemId: line.itemId,
-          unitCost:
-            historicalPartCosts[line.itemId].cost /
-            historicalPartCosts[line.itemId].quantity,
-          updatedBy: "system",
-        });
+      if (line.itemId && !line.jobOperationId) {
+        const costHistory = historicalPartCosts[line.itemId];
+        const hasLeadTimeHistory =
+          (historicalPartLeadTimes[line.itemId]?.quantity ?? 0) > 0;
 
-        const supplierPart = supplierParts.data?.find(
-          (sp) => sp.itemId === line.itemId && sp.supplierId === supplierId
-        );
-
-        if (supplierPart && supplierPart.id) {
-          supplierPartUpdates.push({
-            id: supplierPart.id,
-            unitPrice: line.unitPrice,
-            conversionFactor: line.conversionFactor ?? 1,
-            supplierUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
+        if (shouldUpdatePrices && line.unitPrice !== 0 && costHistory) {
+          itemCostUpdates.push({
+            itemId: line.itemId,
+            unitCost: costHistory.cost / costHistory.quantity,
             updatedBy: "system",
           });
-        } else {
-          supplierPartInserts.push({
-            itemId: line.itemId,
-            supplierId: supplierId,
-            unitPrice: line.unitPrice,
-            conversionFactor: line.conversionFactor ?? 1,
-            supplierUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
-            createdBy: "system",
-            companyId,
-          });
+
+          const supplierPart = supplierPartRows.find(
+            (sp) => sp.itemId === line.itemId && sp.supplierId === supplierId
+          );
+
+          if (supplierPart && supplierPart.id) {
+            supplierPartUpdates.push({
+              id: supplierPart.id,
+              unitPrice: line.unitPrice,
+              conversionFactor: line.conversionFactor ?? 1,
+              supplierUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
+              updatedBy: "system",
+            });
+          } else {
+            supplierPartInserts.push({
+              itemId: line.itemId,
+              supplierId: supplierId,
+              unitPrice: line.unitPrice,
+              conversionFactor: line.conversionFactor ?? 1,
+              supplierUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
+              createdBy: "system",
+              companyId,
+            });
+          }
         }
 
-        itemReplenishmentUpdates.push({
-          itemId: line.itemId,
-          preferredSupplierId: supplierId,
-          purchasingUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
-          conversionFactor: line.conversionFactor ?? 1,
-          leadTime:
-            historicalPartLeadTimes[line.itemId]?.quantity > 0
-              ? Math.round(
-                  historicalPartLeadTimes[line.itemId].weightedLeadTime /
-                    historicalPartLeadTimes[line.itemId].quantity
-                )
-              : undefined,
-          updatedBy: "system",
-        });
+        if (shouldUpdatePrices || (shouldUpdateLeadTimes && hasLeadTimeHistory)) {
+          const itemReplenishmentUpdate: Database["public"]["Tables"]["itemReplenishment"]["Update"] =
+            {
+              itemId: line.itemId,
+              updatedBy: "system",
+            };
+
+          if (shouldUpdatePrices) {
+            itemReplenishmentUpdate.preferredSupplierId = supplierId;
+            itemReplenishmentUpdate.purchasingUnitOfMeasureCode =
+              line.purchaseUnitOfMeasureCode;
+            itemReplenishmentUpdate.conversionFactor =
+              line.conversionFactor ?? 1;
+          }
+
+          if (shouldUpdateLeadTimes && hasLeadTimeHistory) {
+            itemReplenishmentUpdate.leadTime = Math.round(
+              historicalPartLeadTimes[line.itemId].weightedLeadTime /
+                historicalPartLeadTimes[line.itemId].quantity
+            );
+          }
+
+          itemReplenishmentUpdates.push(itemReplenishmentUpdate);
+        }
       }
 
-      if (line.jobOperationId) {
+      if (shouldUpdatePrices && line.jobOperationId && line.unitPrice !== 0) {
         jobOperationUpdates.push({
           id: line.jobOperationId,
           operationMinimumCost: 0,
