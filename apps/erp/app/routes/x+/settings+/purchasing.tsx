@@ -57,6 +57,20 @@ export const handle: Handle = {
   to: path.to.purchasingSettings
 };
 
+function getFriendlyPurchasingSettingsErrorMessage(rawMessage?: string) {
+  const message = rawMessage?.toLowerCase() ?? "";
+
+  if (
+    message.includes("schema cache") ||
+    (message.includes("could not find the") &&
+      message.includes("companysettings"))
+  ) {
+    return "Purchasing settings schema is out of date. Run latest database migrations and restart local Supabase, then try again.";
+  }
+
+  return "Failed to update purchasing settings. Please try again.";
+}
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "settings"
@@ -111,9 +125,15 @@ export async function action({ request }: ActionFunctionArgs) {
       );
 
       if (supplierApprovalResult.error) {
+        console.error(
+          "Failed to update supplier approval setting:",
+          supplierApprovalResult.error
+        );
         return {
           success: false,
-          message: supplierApprovalResult.error.message
+          message: getFriendlyPurchasingSettingsErrorMessage(
+            supplierApprovalResult.error.message
+          )
         };
       }
 
@@ -130,7 +150,16 @@ export async function action({ request }: ActionFunctionArgs) {
         apToggleEnabled
       );
       if (apToggleResult.error) {
-        return { success: false, message: apToggleResult.error.message };
+        console.error(
+          "Failed to update accounts payable address toggle:",
+          apToggleResult.error
+        );
+        return {
+          success: false,
+          message: getFriendlyPurchasingSettingsErrorMessage(
+            apToggleResult.error.message
+          )
+        };
       }
       return {
         success: true,
@@ -153,7 +182,16 @@ export async function action({ request }: ActionFunctionArgs) {
       );
 
       if (result.error) {
-        return { success: false, message: result.error.message };
+        console.error(
+          "Failed to update purchase price timing setting:",
+          result.error
+        );
+        return {
+          success: false,
+          message: getFriendlyPurchasingSettingsErrorMessage(
+            result.error.message
+          )
+        };
       }
 
       return {
@@ -170,7 +208,16 @@ export async function action({ request }: ActionFunctionArgs) {
       );
 
       if (updateLeadTimesResult.error) {
-        return { success: false, message: updateLeadTimesResult.error.message };
+        console.error(
+          "Failed to update lead-time-on-receipt setting:",
+          updateLeadTimesResult.error
+        );
+        return {
+          success: false,
+          message: getFriendlyPurchasingSettingsErrorMessage(
+            updateLeadTimesResult.error.message
+          )
+        };
       }
 
       return {
@@ -194,7 +241,16 @@ export async function action({ request }: ActionFunctionArgs) {
       );
 
       if (supplierQuoteResult.error) {
-        return { success: false, message: supplierQuoteResult.error.message };
+        console.error(
+          "Failed to update supplier quote notification setting:",
+          supplierQuoteResult.error
+        );
+        return {
+          success: false,
+          message: getFriendlyPurchasingSettingsErrorMessage(
+            supplierQuoteResult.error.message
+          )
+        };
       }
 
       return {
@@ -211,7 +267,12 @@ export async function action({ request }: ActionFunctionArgs) {
       );
 
       if (thumbnailsResult.error)
-        return { success: false, message: thumbnailsResult.error.message };
+        return {
+          success: false,
+          message: getFriendlyPurchasingSettingsErrorMessage(
+            thumbnailsResult.error.message
+          )
+        };
 
       return { success: true, message: "PDF settings updated" };
     }
@@ -233,7 +294,16 @@ export async function action({ request }: ActionFunctionArgs) {
       );
 
       if (apBillingResult.error) {
-        return { success: false, message: apBillingResult.error.message };
+        console.error(
+          "Failed to update accounts payable billing address:",
+          apBillingResult.error
+        );
+        return {
+          success: false,
+          message: getFriendlyPurchasingSettingsErrorMessage(
+            apBillingResult.error.message
+          )
+        };
       }
 
       return {
@@ -257,9 +327,15 @@ export async function action({ request }: ActionFunctionArgs) {
       );
 
       if (defaultSupplierCcResult.error) {
+        console.error(
+          "Failed to update default supplier CC:",
+          defaultSupplierCcResult.error
+        );
         return {
           success: false,
-          message: defaultSupplierCcResult.error.message
+          message: getFriendlyPurchasingSettingsErrorMessage(
+            defaultSupplierCcResult.error.message
+          )
         };
       }
 
