@@ -32,6 +32,20 @@ interface PurchaseLineData {
   purchaseUnitOfMeasureCode: string | null;
 }
 
+const millisecondsInADay = 1000 * 60 * 60 * 24;
+
+const calculateLeadTimeInDays = (
+  orderDate: string,
+  deliveryDate: string
+): number => {
+  const orderDateTime = new Date(`${orderDate}T00:00:00Z`).getTime();
+  const deliveryDateTime = new Date(`${deliveryDate}T00:00:00Z`).getTime();
+
+  if (isNaN(orderDateTime) || isNaN(deliveryDateTime)) return 0;
+
+  return Math.max(0, (deliveryDateTime - orderDateTime) / millisecondsInADay);
+};
+
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -182,7 +196,8 @@ serve(async (req: Request) => {
       "yyyy-MM-dd"
     );
 
-    const [costLedgers, supplierParts] = await Promise.all([
+    const [costLedgers, supplierParts, purchaseOrderLinesHistory] =
+      await Promise.all([
       client
         .from("costLedger")
         .select("*")
@@ -195,7 +210,59 @@ serve(async (req: Request) => {
         .eq("supplierId", supplierId)
         .in("itemId", itemIds)
         .eq("companyId", companyId),
+      client
+        .from("purchaseOrderLine")
+        .select("itemId,purchaseOrderId,purchaseQuantity,conversionFactor")
+        .in("itemId", itemIds)
+        .eq("companyId", companyId),
     ]);
+
+    if (purchaseOrderLinesHistory.error) {
+      throw new Error("Failed to fetch historical purchase order lines");
+    }
+
+    const purchaseOrderIds = Array.from(
+      new Set(
+        purchaseOrderLinesHistory.data
+          .map((line) => line.purchaseOrderId)
+          .filter(Boolean)
+      )
+    );
+
+    let purchaseOrderRows: {
+      id: string;
+      orderDate: string | null;
+    }[] = [];
+    let purchaseOrderDeliveryRows: {
+      id: string;
+      deliveryDate: string | null;
+    }[] = [];
+
+    if (purchaseOrderIds.length > 0) {
+      const [purchaseOrders, purchaseOrderDeliveries] = await Promise.all([
+        client
+          .from("purchaseOrder")
+          .select("id,orderDate")
+          .in("id", purchaseOrderIds)
+          .eq("companyId", companyId),
+        client
+          .from("purchaseOrderDelivery")
+          .select("id,deliveryDate")
+          .in("id", purchaseOrderIds)
+          .eq("companyId", companyId)
+          .gte("deliveryDate", dateOneYearAgo),
+      ]);
+
+      if (purchaseOrders.error) {
+        throw new Error("Failed to fetch historical purchase orders");
+      }
+      if (purchaseOrderDeliveries.error) {
+        throw new Error("Failed to fetch historical purchase order deliveries");
+      }
+
+      purchaseOrderRows = purchaseOrders.data;
+      purchaseOrderDeliveryRows = purchaseOrderDeliveries.data;
+    }
 
     const itemCostUpdates: Database["public"]["Tables"]["itemCost"]["Update"][] =
       [];
@@ -213,6 +280,10 @@ serve(async (req: Request) => {
       string,
       { quantity: number; cost: number }
     > = {};
+    const historicalPartLeadTimes: Record<
+      string,
+      { quantity: number; weightedLeadTime: number }
+    > = {};
 
     costLedgers.data?.forEach((ledger) => {
       if (ledger.itemId) {
@@ -226,6 +297,47 @@ serve(async (req: Request) => {
         historicalPartCosts[ledger.itemId].quantity += ledger.quantity;
         historicalPartCosts[ledger.itemId].cost += ledger.cost;
       }
+    });
+
+    const purchaseOrdersById = purchaseOrderRows.reduce<
+      Record<string, { orderDate: string | null }>
+    >((acc, row) => {
+      acc[row.id] = { orderDate: row.orderDate };
+      return acc;
+    }, {});
+
+    const purchaseOrderDeliveriesById = purchaseOrderDeliveryRows.reduce<
+      Record<string, { deliveryDate: string | null }>
+    >((acc, row) => {
+      acc[row.id] = { deliveryDate: row.deliveryDate };
+      return acc;
+    }, {});
+
+    purchaseOrderLinesHistory.data.forEach((line) => {
+      if (!line.itemId) return;
+
+      const orderDate = purchaseOrdersById[line.purchaseOrderId]?.orderDate;
+      const deliveryDate =
+        purchaseOrderDeliveriesById[line.purchaseOrderId]?.deliveryDate;
+
+      if (!orderDate || !deliveryDate) return;
+
+      const quantity =
+        (line.purchaseQuantity ?? 0) * (line.conversionFactor ?? 1);
+      if (quantity <= 0) return;
+
+      const leadTimeInDays = calculateLeadTimeInDays(orderDate, deliveryDate);
+
+      if (!historicalPartLeadTimes[line.itemId]) {
+        historicalPartLeadTimes[line.itemId] = {
+          quantity: 0,
+          weightedLeadTime: 0,
+        };
+      }
+
+      historicalPartLeadTimes[line.itemId].quantity += quantity;
+      historicalPartLeadTimes[line.itemId].weightedLeadTime +=
+        leadTimeInDays * quantity;
     });
 
     lines.forEach((line) => {
@@ -271,6 +383,13 @@ serve(async (req: Request) => {
           preferredSupplierId: supplierId,
           purchasingUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
           conversionFactor: line.conversionFactor ?? 1,
+          leadTime:
+            historicalPartLeadTimes[line.itemId]?.quantity > 0
+              ? Math.round(
+                  historicalPartLeadTimes[line.itemId].weightedLeadTime /
+                    historicalPartLeadTimes[line.itemId].quantity
+                )
+              : undefined,
           updatedBy: "system",
         });
       }
