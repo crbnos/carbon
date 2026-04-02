@@ -2,7 +2,7 @@
   "name": "@carbon/logger",
   "devDependencies": {
     "@carbon/config": "*",
-    "tsup": "^6.5.0",
+    "tsup": "^8.5.1",
     "typescript": "^5.2.2",
     "vitest": "^4.1.0"
   },
@@ -17,5 +17,10 @@
     "test": "vitest run",
     "typecheck": "tsgo --noEmit"
   },
-  "version": "*"
+  "version": "*",
+  "dependencies": {
+    "cookie": "1.1.1",
+    "dompurify": "3.3.3",
+    "nanoid": "5.1.7"
+  }
 }

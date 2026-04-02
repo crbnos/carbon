@@ -17,7 +17,7 @@ export function setMode(mode: Mode | "system") {
   if (mode === "system") {
     return cookie.serialize(cookieName, "", { path: "/", maxAge: -1 });
   } else {
-    const cookieOptions: cookie.CookieSerializeOptions = {
+    const cookieOptions: cookie.SerializeOptions = {
       path: "/",
       maxAge: 31536000
     };

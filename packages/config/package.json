@@ -17,6 +17,9 @@
     "dev": "tsup --watch"
   },
   "dependencies": {
+    "cookie": "1.1.1",
+    "dompurify": "3.3.3",
+    "nanoid": "5.1.7",
     "vitest": "^4.1.0"
   },
   "peerDependencies": {
@@ -34,6 +37,6 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
-    "tsup": "^6.5.0"
+    "tsup": "^8.5.1"
   }
 }

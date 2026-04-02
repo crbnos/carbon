@@ -232,33 +232,39 @@ export default function PartDetailsRoute() {
     <VStack spacing={2} className="p-2">
       {permissions.is("employee") && methodData && (
         <>
-          <Suspense fallback={<Menubar />}>
-            <Await resolve={partData?.makeMethods}>
-              {(makeMethods) => (
-                <MakeMethodTools
-                  itemId={methodData.makeMethod.itemId}
-                  makeMethods={makeMethods?.data ?? []}
-                  type="Part"
-                  currentMethodId={methodData.makeMethod.id}
+          {["Make", "Buy and Make"].includes(
+            partData.partSummary?.replenishmentSystem ?? ""
+          ) && (
+            <>
+              <Suspense fallback={<Menubar />}>
+                <Await resolve={partData?.makeMethods}>
+                  {(makeMethods) => (
+                    <MakeMethodTools
+                      itemId={methodData.makeMethod.itemId}
+                      makeMethods={makeMethods?.data ?? []}
+                      type="Part"
+                      currentMethodId={methodData.makeMethod.id}
+                    />
+                  )}
+                </Await>
+              </Suspense>
+              {manufacturingInitialValues && (
+                <ItemManufacturingForm
+                  key={itemId}
+                  // @ts-ignore
+                  initialValues={manufacturingInitialValues}
                 />
               )}
-            </Await>
-          </Suspense>
-          {manufacturingInitialValues && (
-            <ItemManufacturingForm
-              key={itemId}
-              // @ts-ignore
-              initialValues={manufacturingInitialValues}
-            />
-          )}
-          {methodData.partManufacturing?.requiresConfiguration && (
-            <ConfigurationParametersForm
-              key={`options:${itemId}`}
-              parameters={
-                methodData.configurationParametersAndGroups.parameters
-              }
-              groups={methodData.configurationParametersAndGroups.groups}
-            />
+              {methodData.partManufacturing?.requiresConfiguration && (
+                <ConfigurationParametersForm
+                  key={`options:${itemId}`}
+                  parameters={
+                    methodData.configurationParametersAndGroups.parameters
+                  }
+                  groups={methodData.configurationParametersAndGroups.groups}
+                />
+              )}
+            </>
           )}
           <ItemNotes
             id={partData.partSummary?.id ?? null}

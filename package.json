@@ -11,7 +11,7 @@
     "postcss-nesting": "12.1.5",
     "prettier": "^2.8.0",
     "rimraf": "^5.0.5",
-    "supabase": "2.54.11",
+    "supabase": "^2.84.5",
     "ts-morph": "^22.0.0",
     "tsx": "^4.13.2",
     "turbo": "^2.6.3",
@@ -85,10 +85,15 @@
   "dependencies": {
     "@opentelemetry/semantic-conventions": "^1.38.0",
     "@react-router/remix-routes-option-adapter": "^7.12.0",
+    "cookie": "1.1.1",
+    "dompurify": "3.3.3",
     "fast-uri": "^3.1.0",
     "fdir": "^6.5.0",
+    "nanoid": "5.1.7",
+    "react-pdf": "10.4.1",
     "remix-flat-routes": "^0.8.5",
-    "sst": "3.17.14"
+    "sst": "^4.6.9",
+    "tsup": "8.5.1"
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "^4.0.0"

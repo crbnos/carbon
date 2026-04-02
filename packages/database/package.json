@@ -8,8 +8,8 @@
     "dotenv": "16.3.1",
     "npm-run-all": "^4.1.5",
     "rimraf": "^5.0.5",
-    "supabase": "2.54.11",
-    "tsup": "^6.5.0",
+    "supabase": "^2.84.5",
+    "tsup": "^8.5.1",
     "tsx": "^4.13.2",
     "typescript": "^5.2.2",
     "uuid": "9.0.0"
@@ -47,8 +47,13 @@
   "sideEffects": false,
   "version": "*",
   "dependencies": {
+    "cookie": "1.1.1",
+    "dompurify": "3.3.3",
     "kysely": "^0.28.9",
     "kysely-supabase": "^0.2.1",
-    "pg": "^8.16.3"
+    "nanoid": "5.1.7",
+    "pg": "^8.16.3",
+    "react-pdf": "10.4.1",
+    "sst": "4.6.9"
   }
 }

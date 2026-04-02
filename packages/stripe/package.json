@@ -8,16 +8,22 @@
     "@carbon/lib": "*",
     "@supabase/supabase-js": "2.80.0",
     "@trigger.dev/sdk": "4.0.6",
-    "stripe": "^18.3.0"
+    "cookie": "1.1.1",
+    "dompurify": "3.3.3",
+    "nanoid": "5.1.7",
+    "react-pdf": "10.4.1",
+    "sst": "4.6.9",
+    "stripe": "^18.3.0",
+    "supabase": "2.84.5"
   },
   "type": "module",
   "devDependencies": {
-    "@carbon/logger": "*",
     "@carbon/config": "*",
+    "@carbon/logger": "*",
     "@types/node": "^20.12.5",
     "dotenv": "16.3.1",
     "rimraf": "^5.0.5",
-    "tsup": "^6.5.0",
+    "tsup": "^8.5.1",
     "tsx": "^4.13.2",
     "typescript": "^5.2.2",
     "zod": "^3.25.76"

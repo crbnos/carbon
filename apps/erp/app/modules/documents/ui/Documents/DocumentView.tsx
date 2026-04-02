@@ -5,16 +5,15 @@ import {
   Skeleton
 } from "@carbon/react";
 import { convertKbToString } from "@carbon/utils";
-import { useState } from "react";
+import { lazy, Suspense } from "react";
 import { LuDownload, LuX } from "react-icons/lu";
-import { Document, Page, pdfjs } from "react-pdf";
 import { useNavigate } from "react-router";
 import DocumentIcon from "~/components/DocumentIcon";
 import { path } from "~/utils/path";
 import type { Document as DocumentType } from "../../types";
 import { useDocument } from "./useDocument";
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+const PdfViewer = lazy(() => import("./PdfViewer"));
 
 function SkeletonDocument() {
   return (
@@ -34,12 +33,6 @@ type DocumentPreviewProps = {
 };
 
 const DocumentPreview = ({ bucket, document }: DocumentPreviewProps) => {
-  const [numPages, setNumPages] = useState<number>();
-
-  function onDocumentLoadSuccess({ numPages }: { numPages: number }): void {
-    setNumPages(numPages);
-  }
-
   const { download } = useDocument();
 
   switch (document.type) {
@@ -54,23 +47,11 @@ const DocumentPreview = ({ bucket, document }: DocumentPreviewProps) => {
       );
     case "PDF":
       return (
-        <Document
-          file={path.to.file.previewFile(`${bucket}/${document.path}`)}
-          onLoadSuccess={onDocumentLoadSuccess}
-          loading={<SkeletonDocument />}
-        >
-          <div className="overflow-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent max-h-[calc(100dvh-91px)]">
-            {Array.from(new Array(numPages), (_, index) => (
-              <Page
-                key={`page_${index + 1}`}
-                pageNumber={index + 1}
-                renderTextLayer={false}
-                width={680}
-                height={780}
-              />
-            ))}
-          </div>
-        </Document>
+        <Suspense fallback={<SkeletonDocument />}>
+          <PdfViewer
+            file={path.to.file.previewFile(`${bucket}/${document.path}`)}
+          />
+        </Suspense>
       );
     default:
       return (

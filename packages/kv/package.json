@@ -1,7 +1,10 @@
 {
   "name": "@carbon/kv",
   "dependencies": {
-    "ioredis": "^5.10.1"
+    "cookie": "1.1.1",
+    "dompurify": "3.3.3",
+    "ioredis": "^5.10.1",
+    "nanoid": "5.1.7"
   },
   "devDependencies": {
     "@carbon/config": "*",
@@ -10,7 +13,7 @@
     "dotenv": "16.3.1",
     "ioredis-mock": "^8.13.1",
     "rimraf": "^5.0.5",
-    "tsup": "^6.5.0",
+    "tsup": "^8.5.1",
     "tsx": "^4.13.2",
     "typescript": "^5.2.2",
     "vitest": "^4.1.0"

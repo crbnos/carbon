@@ -4,7 +4,7 @@
     "@carbon/config": "*",
     "@carbon/utils": "*",
     "@types/react": "^18.2.74",
-    "tsup": "^6.5.0",
+    "tsup": "^8.5.1",
     "typescript": "^5.2.2",
     "vitest": "^4.1.0"
   },
@@ -24,12 +24,12 @@
     "@carbon/react": "*",
     "@carbon/utils": "*",
     "@react-router/dev": "7.12.0",
-    "react-router": "7.12.0",
     "@supabase/functions-js": "2.1.5",
     "@supabase/supabase-js": "2.80.0",
     "@vercel/analytics": "^1.2.2",
     "@vercel/react-router": "^1.2.4",
     "react": "^18.3.1",
+    "react-router": "7.12.0",
     "zod": "^3.25.76",
     "zod-form-data": "2.0.8"
   },
@@ -41,5 +41,10 @@
     "typecheck": "tsgo --noEmit"
   },
   "sideEffects": false,
-  "version": "*"
+  "version": "*",
+  "dependencies": {
+    "cookie": "1.1.1",
+    "dompurify": "3.3.3",
+    "nanoid": "5.1.7"
+  }
 }

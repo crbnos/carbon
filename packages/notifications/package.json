@@ -3,11 +3,12 @@
   "type": "module",
   "dependencies": {
     "@novu/node": "^2.0.1",
-    "nanoid": "5.0.4"
+    "cookie": "1.1.1",
+    "nanoid": "^5.1.7"
   },
   "devDependencies": {
-    "@carbon/database": "*",
     "@carbon/config": "*",
+    "@carbon/database": "*",
     "typescript": "^5.2.2"
   },
   "exports": {
