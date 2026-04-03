@@ -141,33 +141,42 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
                   name="purchaseOrderId"
                   label="Purchase Order ID"
                   table="purchaseOrder"
+                  isOptional
                 />
               )}
               <Supplier
                 autoFocus={!isEditing}
                 name="supplierId"
                 label="Supplier"
+                isRequired
                 onChange={onSupplierChange}
                 onlyApproved={settings?.supplierApproval ?? false}
               />
-              <Input name="supplierReference" label="Supplier Order Number" />
+              <Input
+                name="supplierReference"
+                label="Supplier Order Number"
+                isOptional
+              />
               <SupplierLocation
                 name="supplierLocationId"
                 label="Supplier Location"
                 supplier={supplier.id}
+                isOptional
               />
               <SupplierContact
                 name="supplierContactId"
                 label="Supplier Contact"
                 supplier={supplier.id}
                 value={supplier.supplierContactId}
+                isOptional
               />
 
-              <Location name="locationId" label="Location" />
+              <Location name="locationId" label="Location" isOptional />
               <Currency
                 name="currencyCode"
                 label="Currency"
                 value={supplier.currencyCode}
+                isOptional
                 onChange={(newValue) => {
                   if (newValue?.value) {
                     setSupplier((prevSupplier) => ({
@@ -180,6 +189,7 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
               <Select
                 name="purchaseOrderType"
                 label="Type"
+                isRequired
                 options={purchaseOrderTypeType.map((type) => ({
                   label: type,
                   value: type
