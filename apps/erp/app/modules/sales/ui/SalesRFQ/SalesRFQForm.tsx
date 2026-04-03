@@ -146,6 +146,7 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
                 autoFocus={!isEditing}
                 name="customerId"
                 label="Customer"
+                isRequired
                 onChange={onCustomerChange}
               />
               <Input name="customerReference" label="Customer RFQ" />
@@ -169,6 +170,7 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
               <DatePicker
                 name="rfqDate"
                 label="RFQ Date"
+                isRequired
                 isDisabled={isCustomer}
               />
               <DatePicker
