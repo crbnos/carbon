@@ -57,20 +57,6 @@ export const handle: Handle = {
   to: path.to.purchasingSettings
 };
 
-function getFriendlyPurchasingSettingsErrorMessage(rawMessage?: string) {
-  const message = rawMessage?.toLowerCase() ?? "";
-
-  if (
-    message.includes("schema cache") ||
-    (message.includes("could not find the") &&
-      message.includes("companysettings"))
-  ) {
-    return "Purchasing settings schema is out of date. Run latest database migrations and restart local Supabase, then try again.";
-  }
-
-  return "Failed to update purchasing settings. Please try again.";
-}
-
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "settings"
@@ -131,9 +117,7 @@ export async function action({ request }: ActionFunctionArgs) {
         );
         return {
           success: false,
-          message: getFriendlyPurchasingSettingsErrorMessage(
-            supplierApprovalResult.error.message
-          )
+          message: supplierApprovalResult.error.message
         };
       }
 
@@ -156,9 +140,7 @@ export async function action({ request }: ActionFunctionArgs) {
         );
         return {
           success: false,
-          message: getFriendlyPurchasingSettingsErrorMessage(
-            apToggleResult.error.message
-          )
+          message: apToggleResult.error.message
         };
       }
       return {
@@ -188,9 +170,7 @@ export async function action({ request }: ActionFunctionArgs) {
         );
         return {
           success: false,
-          message: getFriendlyPurchasingSettingsErrorMessage(
-            result.error.message
-          )
+          message: result.error.message
         };
       }
 
@@ -214,9 +194,7 @@ export async function action({ request }: ActionFunctionArgs) {
         );
         return {
           success: false,
-          message: getFriendlyPurchasingSettingsErrorMessage(
-            updateLeadTimesResult.error.message
-          )
+          message: updateLeadTimesResult.error.message
         };
       }
 
@@ -247,9 +225,7 @@ export async function action({ request }: ActionFunctionArgs) {
         );
         return {
           success: false,
-          message: getFriendlyPurchasingSettingsErrorMessage(
-            supplierQuoteResult.error.message
-          )
+          message: supplierQuoteResult.error.message
         };
       }
 
@@ -269,9 +245,7 @@ export async function action({ request }: ActionFunctionArgs) {
       if (thumbnailsResult.error)
         return {
           success: false,
-          message: getFriendlyPurchasingSettingsErrorMessage(
-            thumbnailsResult.error.message
-          )
+          message: thumbnailsResult.error.message
         };
 
       return { success: true, message: "PDF settings updated" };
@@ -300,9 +274,7 @@ export async function action({ request }: ActionFunctionArgs) {
         );
         return {
           success: false,
-          message: getFriendlyPurchasingSettingsErrorMessage(
-            apBillingResult.error.message
-          )
+          message: apBillingResult.error.message
         };
       }
 
@@ -333,9 +305,7 @@ export async function action({ request }: ActionFunctionArgs) {
         );
         return {
           success: false,
-          message: getFriendlyPurchasingSettingsErrorMessage(
-            defaultSupplierCcResult.error.message
-          )
+          message: defaultSupplierCcResult.error.message
         };
       }
 
