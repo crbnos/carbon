@@ -159,6 +159,7 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
                 autoFocus={!isEditing}
                 name="customerId"
                 label="Customer"
+                isRequired
                 onChange={onCustomerChange}
               />
               <Input name="customerReference" label="Customer PO Number" />
@@ -212,13 +213,14 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
                 isDisabled={isCustomer}
               />
 
-              <Location name="locationId" label="Sales Location" />
+              <Location name="locationId" label="Sales Location" isRequired />
 
               <Employee name="salesPersonId" label="Sales Person" />
 
               <Currency
                 name="currencyCode"
                 label="Currency"
+                isRequired
                 value={customer.currencyCode}
                 onChange={(newValue) => {
                   if (newValue?.value) {
