@@ -632,8 +632,7 @@ export default function PurchasingSettingsRoute() {
               <div>
                 <CardTitle>Lead Time Updates</CardTitle>
                 <CardDescription>
-                  Update part lead times from posted purchase receipts instead
-                  of purchase order finalization.
+                  Update part lead times from posted purchase receipts.
                 </CardDescription>
               </div>
               <Switch
