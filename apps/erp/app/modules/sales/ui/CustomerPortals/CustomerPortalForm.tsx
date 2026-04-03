@@ -85,7 +85,7 @@ const CustomerPortalForm = ({
               <Hidden name="id" />
               <Hidden name="type" value={type} />
               <VStack spacing={4}>
-                <Customer name="customerId" label="Customer" />
+                <Customer name="customerId" label="Customer" isRequired />
                 <CustomFormFields table="externalLink" />
               </VStack>
             </ModalDrawerBody>

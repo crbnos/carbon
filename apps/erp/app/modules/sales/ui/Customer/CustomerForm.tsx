@@ -100,7 +100,12 @@ const CustomerForm = ({
                         : "grid-cols-1 md:grid-cols-2"
                   )}
                 >
-                  <Input name="name" label="Name" autoFocus={!isEditing} />
+                  <Input
+                    name="name"
+                    label="Name"
+                    isRequired
+                    autoFocus={!isEditing}
+                  />
 
                   <CustomerStatus
                     name="customerStatusId"
@@ -127,6 +132,7 @@ const CustomerForm = ({
                   <Number
                     name="taxPercent"
                     label="Tax Percent"
+                    isRequired
                     minValue={0}
                     maxValue={1}
                     step={0.0001}
