@@ -85,7 +85,7 @@ const NoQuoteReasonForm = ({
               <Hidden name="id" />
               <Hidden name="type" value={type} />
               <VStack spacing={4}>
-                <Input name="name" label="No Quote Reason" />
+                <Input name="name" label="No Quote Reason" isRequired />
                 <CustomFormFields table="noQuoteReason" />
               </VStack>
             </ModalDrawerBody>

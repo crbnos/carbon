@@ -85,7 +85,7 @@ const CustomerStatusForm = ({
               <Hidden name="id" />
               <Hidden name="type" value={type} />
               <VStack spacing={4}>
-                <Input name="name" label="Customer Status" />
+                <Input name="name" label="Customer Status" isRequired />
                 <CustomFormFields table="customerStatus" />
               </VStack>
             </ModalDrawerBody>

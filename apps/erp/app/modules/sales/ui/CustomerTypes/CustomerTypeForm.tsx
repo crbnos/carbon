@@ -85,7 +85,7 @@ const CustomerTypeForm = ({
               <Hidden name="id" />
               <Hidden name="type" value={type} />
               <VStack spacing={4}>
-                <Input name="name" label="Customer Type" />
+                <Input name="name" label="Customer Type" isRequired />
                 <CustomFormFields table="customerType" />
               </VStack>
             </ModalDrawerBody>
