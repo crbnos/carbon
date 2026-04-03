@@ -16,6 +16,7 @@ export type UsersProps = {
   name: string;
   label?: string;
   helperText?: string;
+  isRequired?: boolean;
   verbose?: boolean; // prepends "user_" or "group_" to the value
 } & UserSelectProps;
 
@@ -24,6 +25,7 @@ const Users = ({
   label,
   type,
   helperText,
+  isRequired = false,
   verbose = false,
   ...props
 }: UsersProps) => {
@@ -42,7 +44,7 @@ const Users = ({
   };
 
   return (
-    <FormControl isInvalid={!!error}>
+    <FormControl isInvalid={!!error} isRequired={isRequired}>
       {label && <FormLabel htmlFor={name}>{label}</FormLabel>}
       {selections.map((selection, index) => (
         <input
