@@ -19,6 +19,7 @@ export type MultiSelectProps = Omit<
   name: string;
   label?: string;
   helperText?: string;
+  isRequired?: boolean;
   value?: string[];
   onChange?: (newValue: { value: string; label: string }[]) => void;
   inline?: boolean;
@@ -63,6 +64,7 @@ const MultiSelect = ({
   name,
   label,
   helperText,
+  isRequired = false,
   maxPreview,
   ...props
 }: MultiSelectProps) => {
@@ -82,7 +84,7 @@ const MultiSelect = ({
   };
 
   return (
-    <FormControl isInvalid={!!error}>
+    <FormControl isInvalid={!!error} isRequired={isRequired}>
       {label && <FormLabel htmlFor={name}>{label}</FormLabel>}
       {(value ?? []).filter(Boolean).map((selection, index) => (
         <input
