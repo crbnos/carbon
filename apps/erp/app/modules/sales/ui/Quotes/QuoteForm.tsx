@@ -156,6 +156,7 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
                 autoFocus={!isEditing}
                 name="customerId"
                 label="Customer"
+                isRequired
                 onChange={(newValue) => {
                   if (newValue?.value) {
                     onCustomerChange(newValue);
@@ -185,7 +186,7 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
               />
               <Employee name="salesPersonId" label="Sales Person" isOptional />
               <Employee name="estimatorId" label="Estimator" isOptional />
-              <Location name="locationId" label="Quote Location" />
+              <Location name="locationId" label="Quote Location" isRequired />
               <DatePicker
                 name="dueDate"
                 label="Due Date"
