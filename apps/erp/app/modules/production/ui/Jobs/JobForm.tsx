@@ -278,6 +278,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                         name="itemId"
                         label={type}
                         type={type}
+                        isRequired
                         value={itemData.itemId}
                         validItemTypes={["Part", "Tool"]}
                         onChange={(value) => {
@@ -298,6 +299,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                       <NumberControlled
                         name="quantity"
                         label="Quantity"
+                        isRequired
                         value={itemData.quantity}
                         onChange={(value) =>
                           setItemData((prev) => ({
@@ -313,6 +315,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                       <NumberControlled
                         name="scrapQuantity"
                         label="Estimated Scrap Quantity"
+                        isRequired
                         value={itemData.scrapQuantity}
                         onChange={(value) =>
                           setItemData((prev) => ({
@@ -327,6 +330,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
 
                       <UnitOfMeasure
                         name="unitOfMeasureCode"
+                        isRequired
                         value={itemData.uom}
                         onChange={(value) => {
                           if (value?.value) {
@@ -337,7 +341,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                           }
                         }}
                       />
-                      <Location name="locationId" label="Location" />
+                      <Location name="locationId" label="Location" isRequired />
 
                       <DatePicker
                         name="dueDate"
@@ -347,6 +351,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                       <Select
                         name="deadlineType"
                         label="Deadline Type"
+                        isRequired
                         options={deadlineTypes.map((d) => ({
                           value: d,
                           label: (
@@ -436,6 +441,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                           name="itemId"
                           label={type}
                           type={type}
+                          isRequired
                           value={itemData.itemId}
                           validItemTypes={["Part", "Tool"]}
                           onChange={(value) => {
@@ -447,6 +453,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                         <NumberControlled
                           name="totalQuantity"
                           label="Total Quantity"
+                          isRequired
                           value={itemData.quantity}
                           onChange={(value) =>
                             setItemData((prev) => ({
@@ -460,6 +467,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                         <NumberControlled
                           name="quantityPerJob"
                           label="Quantity Per Job"
+                          isRequired
                           value={itemData.quantityPerJob}
                           onChange={(value) =>
                             setItemData((prev) => ({
@@ -473,6 +481,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                         <NumberControlled
                           name="scrapQuantityPerJob"
                           label="Scrap Quantity Per Job"
+                          isRequired
                           value={itemData.scrapQuantity}
                           onChange={(value) =>
                             setItemData((prev) => ({
@@ -485,6 +494,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
 
                         <UnitOfMeasure
                           name="unitOfMeasureCode"
+                          isRequired
                           value={itemData.uom}
                           onChange={(value) => {
                             if (value?.value) {
@@ -495,7 +505,11 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                             }
                           }}
                         />
-                        <Location name="locationId" label="Location" />
+                        <Location
+                          name="locationId"
+                          label="Location"
+                          isRequired
+                        />
 
                         <DatePicker
                           name="dueDateOfFirstJob"
@@ -512,6 +526,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                         <Select
                           name="deadlineType"
                           label="Deadline Type"
+                          isRequired
                           options={deadlineTypes.map((d) => ({
                             value: d,
                             label: (
