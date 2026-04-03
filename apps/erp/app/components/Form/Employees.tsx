@@ -16,9 +16,16 @@ export type EmployeesProps = {
   name: string;
   label?: string;
   helperText?: string;
+  isRequired?: boolean;
 } & UserSelectProps;
 
-const Employees = ({ name, label, helperText, ...props }: EmployeesProps) => {
+const Employees = ({
+  name,
+  label,
+  helperText,
+  isRequired = false,
+  ...props
+}: EmployeesProps) => {
   const { error, defaultValue, validate } = useField(name);
   const [selections, setSelections] = useState<string[]>(defaultValue);
 
@@ -28,7 +35,7 @@ const Employees = ({ name, label, helperText, ...props }: EmployeesProps) => {
   };
 
   return (
-    <FormControl isInvalid={!!error}>
+    <FormControl isInvalid={!!error} isRequired={isRequired}>
       {label && <FormLabel htmlFor={name}>{label}</FormLabel>}
       {selections.map((selection, index) => (
         <input
