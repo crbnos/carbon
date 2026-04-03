@@ -17,6 +17,7 @@ export type SelectProps = Omit<SelectBaseProps, "onChange"> & {
   helperText?: string;
   isConfigured?: boolean;
   isOptional?: boolean;
+  isRequired?: boolean;
   options: { value: string | number; label: string | JSX.Element }[];
   onChange?: (
     newValue: { value: string; label: string | JSX.Element } | null
@@ -31,6 +32,7 @@ const SelectControlled = ({
   options,
   isConfigured,
   isOptional,
+  isRequired,
   onConfigure,
   ...props
 }: SelectProps) => {
@@ -56,7 +58,7 @@ const SelectControlled = ({
   };
 
   return (
-    <FormControl isInvalid={!!error}>
+    <FormControl isInvalid={!!error} isRequired={isRequired}>
       {label && (
         <FormLabel
           htmlFor={name}
