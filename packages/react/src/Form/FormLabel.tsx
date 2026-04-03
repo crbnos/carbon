@@ -23,6 +23,7 @@ export const FormLabel = forwardRef<
 
   const field = useFormControlContext();
   const labelProps = field?.getLabelProps(rest, ref) ?? { ref, ...rest };
+  const showRequiredIndicator = field.isRequired && !isOptional;
 
   return (
     <label
@@ -35,25 +36,25 @@ export const FormLabel = forwardRef<
         className={cn("text-xs font-medium text-muted-foreground", className)}
       >
         {children}
+        {showRequiredIndicator && (
+          <span className="ml-0.5 text-destructive" aria-hidden>
+            *
+          </span>
+        )}
       </span>
-      {(isOptional || onConfigure) && (
+      {onConfigure && (
         <div className="flex items-center gap-1">
-          {isOptional && (
-            <span className="text-muted-foreground text-xxs">Optional</span>
-          )}
-          {onConfigure && (
-            <LuSquareFunction
-              aria-label="Configure"
-              role="button"
-              onClick={onConfigure}
-              className={cn(
-                "size-4",
-                isConfigured
-                  ? "text-emerald-500"
-                  : "opacity-50 hover:opacity-100"
-              )}
-            />
-          )}
+          <LuSquareFunction
+            aria-label="Configure"
+            role="button"
+            onClick={onConfigure}
+            className={cn(
+              "size-4",
+              isConfigured
+                ? "text-emerald-500"
+                : "opacity-50 hover:opacity-100"
+            )}
+          />
         </div>
       )}
     </label>
