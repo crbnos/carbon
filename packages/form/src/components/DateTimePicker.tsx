@@ -22,6 +22,7 @@ type DateTimePickerProps = {
   name: string;
   label?: string;
   isDisabled?: boolean;
+  isRequired?: boolean;
   minValue?: CalendarDateTime;
   maxValue?: CalendarDateTime;
   inline?: boolean;
@@ -33,6 +34,7 @@ const DateTimePicker = ({
   name,
   label,
   isDisabled: isDisabledProp = false,
+  isRequired = false,
   minValue,
   maxValue,
   inline = false,
@@ -79,7 +81,7 @@ const DateTimePicker = ({
   );
 
   return (
-    <FormControl isInvalid={!!error}>
+    <FormControl isInvalid={!!error} isRequired={isRequired}>
       {label && <FormLabel htmlFor={name}>{label}</FormLabel>}
       <input type="hidden" name={name} value={utcValue} />
       <DateTimePickerBase
