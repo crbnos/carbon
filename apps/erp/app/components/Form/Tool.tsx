@@ -73,7 +73,11 @@ const Tool = ({ name, label, helperText, ...props }: ToolSelectProps) => {
 
   return (
     <>
-      <FormControl isInvalid={!!error} className="w-full">
+      <FormControl
+        isInvalid={!!error}
+        isRequired={props.isRequired}
+        className="w-full"
+      >
         {label && <FormLabel>{label}</FormLabel>}
         <input
           {...getInputProps({
