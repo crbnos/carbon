@@ -12,6 +12,7 @@ import { useFormStateContext } from "../internal/formStateContext";
 type RadiosProps = {
   name: string;
   label?: string;
+  isRequired?: boolean;
   options: { label: string; value: string }[];
   orientation?: "horizontal" | "vertical";
 };
@@ -19,6 +20,7 @@ type RadiosProps = {
 const Radios = ({
   name,
   label,
+  isRequired = false,
   options,
   orientation = "vertical"
 }: RadiosProps) => {
@@ -28,7 +30,7 @@ const Radios = ({
   const id = useId();
 
   return (
-    <FormControl isInvalid={!!error}>
+    <FormControl isInvalid={!!error} isRequired={isRequired}>
       {label && <FormLabel htmlFor={name}>{label}</FormLabel>}
       <RadioGroup
         {...getInputProps({
