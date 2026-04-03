@@ -106,11 +106,13 @@ const DemandProjectionsForm = ({
                 label="Item"
                 type="Part"
                 replenishmentSystem="Make"
+                isRequired
                 isReadOnly={isEditing}
               />
               <Location
                 name="locationId"
                 label="Location"
+                isRequired
                 isReadOnly={isEditing}
               />
 

@@ -76,11 +76,14 @@ const ProcedureForm = ({
                 </>
               )}
               <VStack spacing={4}>
-                {type === "new" && <Input name="name" label="Name" />}
+                {type === "new" && (
+                  <Input name="name" label="Name" isRequired />
+                )}
                 <Number
                   name="version"
                   label={type === "copy" ? "New Version" : "Version"}
                   minValue={0}
+                  isRequired
                   helperText={
                     type === "copy"
                       ? "The new version number of the procedure"
