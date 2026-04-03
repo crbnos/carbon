@@ -85,7 +85,7 @@ const ScrapReasonForm = ({
               <Hidden name="id" />
               <Hidden name="type" value={type} />
               <VStack spacing={4}>
-                <Input name="name" label="Scrap Reason" />
+                <Input name="name" label="Scrap Reason" isRequired />
                 <CustomFormFields table="scrapReason" />
               </VStack>
             </ModalDrawerBody>
