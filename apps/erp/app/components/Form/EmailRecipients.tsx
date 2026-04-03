@@ -35,6 +35,7 @@ type EmailRecipientsProps = {
   label?: string;
   helperText?: string;
   type?: "employee" | "supplier" | "customer";
+  isRequired?: boolean;
 };
 
 type UserOption = {
@@ -123,7 +124,8 @@ export default function EmailRecipients({
   name,
   label,
   helperText,
-  type = "employee"
+  type = "employee",
+  isRequired = false
 }: EmailRecipientsProps) {
   const { error, defaultValue, validate } = useField(name);
   const [emails, setEmails] = useState<string[]>(defaultValue ?? []);
@@ -218,7 +220,7 @@ export default function EmailRecipients({
   };
 
   return (
-    <FormControl isInvalid={!!error}>
+    <FormControl isInvalid={!!error} isRequired={isRequired}>
       {label && <FormLabel htmlFor={name}>{label}</FormLabel>}
       {emails.map((email, index) => (
         <input
