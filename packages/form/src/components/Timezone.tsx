@@ -40,7 +40,7 @@ const Timezone = ({
   const [value, setValue] = useControlField<string | undefined>(name);
 
   return (
-    <FormControl isInvalid={!!error}>
+    <FormControl isInvalid={!!error} isRequired={props.isRequired}>
       {label && <FormLabel htmlFor={name}>{label}</FormLabel>}
       <input
         {...getInputProps({
