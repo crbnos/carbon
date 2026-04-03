@@ -188,6 +188,7 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
               <Customer
                 name="customerId"
                 label="Customer"
+                isRequired
                 onChange={onCustomerChange}
               />
               <Input name="customerReference" label="Customer Invoice Number" />
@@ -256,7 +257,7 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
                   }
                 }}
               />
-              <Location name="locationId" label="Location" />
+              <Location name="locationId" label="Location" isRequired />
               <CustomFormFields table="salesInvoice" />
             </div>
           </VStack>
