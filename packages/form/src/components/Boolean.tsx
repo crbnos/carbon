@@ -50,11 +50,7 @@ const Boolean = forwardRef<HTMLInputElement, FormBooleanProps>(
     }, [controlledValue, setValue]);
 
     return (
-      <FormControl
-        isInvalid={!!error}
-        isRequired={isRequired}
-        className="pt-2"
-      >
+      <FormControl isInvalid={!!error} isRequired={isRequired} className="pt-2">
         {label && <FormLabel htmlFor={name}>{label}</FormLabel>}
         <HStack>
           <Switch

@@ -50,9 +50,7 @@ export const FormLabel = forwardRef<
             onClick={onConfigure}
             className={cn(
               "size-4",
-              isConfigured
-                ? "text-emerald-500"
-                : "opacity-50 hover:opacity-100"
+              isConfigured ? "text-emerald-500" : "opacity-50 hover:opacity-100"
             )}
           />
         </div>
