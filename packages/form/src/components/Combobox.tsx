@@ -16,6 +16,7 @@ export type ComboboxProps = Omit<ComboboxBaseProps, "onChange"> & {
   label?: string;
   isLoading?: boolean;
   isOptional?: boolean;
+  isRequired?: boolean;
   helperText?: string;
   onChange?: (
     newValue: { value: string; label: string | React.ReactNode } | null
@@ -35,6 +36,7 @@ const Combobox = ({
   label,
   isLoading = false,
   isOptional = false,
+  isRequired = false,
   helperText,
   ...props
 }: ComboboxProps) => {
@@ -58,7 +60,7 @@ const Combobox = ({
   };
 
   return (
-    <FormControl isInvalid={!!error}>
+    <FormControl isInvalid={!!error} isRequired={isRequired}>
       {label && (
         <FormLabel htmlFor={name} isOptional={isOptional}>
           {label}
