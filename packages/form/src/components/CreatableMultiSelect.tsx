@@ -19,6 +19,7 @@ export type CreatableMultiSelectProps = Omit<
   label?: string;
   helperText?: string;
   isOptional?: boolean;
+  isRequired?: boolean;
   value?: string[];
   onChange?: (newValue: string[]) => void;
 };
@@ -28,7 +29,15 @@ const CreatableMultiSelect = forwardRef<
   CreatableMultiSelectProps
 >(
   (
-    { name, label, helperText, isOptional = false, options = [], ...props },
+    {
+      name,
+      label,
+      helperText,
+      isOptional = false,
+      isRequired = false,
+      options = [],
+      ...props
+    },
     ref
   ) => {
     const { error } = useField(name);
@@ -66,7 +75,7 @@ const CreatableMultiSelect = forwardRef<
     }, [options, value]);
 
     return (
-      <FormControl isInvalid={!!error}>
+      <FormControl isInvalid={!!error} isRequired={isRequired}>
         {label && (
           <FormLabel htmlFor={name} isOptional={isOptional}>
             {label}
