@@ -23,6 +23,7 @@ export type CreatableComboboxProps = Omit<
   helperText?: string;
   isConfigured?: boolean;
   isOptional?: boolean;
+  isRequired?: boolean;
   inline?: (
     value: string,
     options: { value: string; label: string | JSX.Element; helper?: string }[]
@@ -43,6 +44,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
       helperText,
       isConfigured = false,
       isOptional = false,
+      isRequired = false,
       onConfigure,
       ...props
     },
@@ -78,7 +80,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
     };
 
     return (
-      <FormControl isInvalid={!!error}>
+      <FormControl isInvalid={!!error} isRequired={isRequired}>
         {label && (
           <FormLabel
             htmlFor={name}
