@@ -68,6 +68,7 @@ const Item = ({
   helperText,
   isConfigured = false,
   isOptional = false,
+  isRequired = false,
   type = "Part",
   typeFieldName = "itemType",
   validItemTypes,
@@ -157,7 +158,11 @@ const Item = ({
 
   return (
     <>
-      <FormControl isInvalid={!!error} className="w-full">
+      <FormControl
+        isInvalid={!!error}
+        isRequired={isRequired}
+        className="w-full"
+      >
         {type && (
           <FormLabel
             htmlFor={name}
