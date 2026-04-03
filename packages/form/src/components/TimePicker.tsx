@@ -17,13 +17,19 @@ import { useFormStateContext } from "../internal/formStateContext";
 type TimePickerProps = {
   name: string;
   label?: string;
+  isRequired?: boolean;
   minValue?: TimeValue;
   maxValue?: TimeValue;
   onChange?: (time: TimeValue) => void;
 };
 type TimeValue = Time | CalendarDateTime | ZonedDateTime;
 
-const TimePicker = ({ name, label, onChange }: TimePickerProps) => {
+const TimePicker = ({
+  name,
+  label,
+  isRequired = false,
+  onChange
+}: TimePickerProps) => {
   const formState = useFormStateContext();
   const isDisabled = formState.isDisabled || formState.isReadOnly;
   const { error, defaultValue, validate } = useField(name);
@@ -38,7 +44,7 @@ const TimePicker = ({ name, label, onChange }: TimePickerProps) => {
   };
 
   return (
-    <FormControl isInvalid={!!error}>
+    <FormControl isInvalid={!!error} isRequired={isRequired}>
       {label && <FormLabel htmlFor={name}>{label}</FormLabel>}
       <input type="hidden" name={name} value={time?.toString()} />
       <TimePickerBase
