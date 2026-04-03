@@ -16,9 +16,17 @@ export type UserProps = {
   name: string;
   label?: string;
   helperText?: string;
+  isRequired?: boolean;
 } & UserSelectProps;
 
-const User = ({ name, label, type, helperText, ...props }: UserProps) => {
+const User = ({
+  name,
+  label,
+  type,
+  helperText,
+  isRequired = false,
+  ...props
+}: UserProps) => {
   const { error, defaultValue, validate } = useField(name);
   const [selection, setSelection] = useState<string>(defaultValue);
 
@@ -33,7 +41,7 @@ const User = ({ name, label, type, helperText, ...props }: UserProps) => {
   };
 
   return (
-    <FormControl isInvalid={!!error}>
+    <FormControl isInvalid={!!error} isRequired={isRequired}>
       {label && <FormLabel htmlFor={name}>{label}</FormLabel>}
       <input type="hidden" name={name} value={selection} />
       <UserSelect
