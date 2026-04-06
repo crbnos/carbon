@@ -1,5 +1,10 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getOnshapeClient } from "@carbon/ee/onshape";
+import {
+  getOnshapeClient,
+  OnshapeDocument,
+  OnshapeElementType,
+  OnshapeWVMType
+} from "@carbon/ee/onshape";
 import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
@@ -38,30 +43,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const onshapeClient = result.client;
+  const document: OnshapeDocument = {
+    documentId: did,
+    wvm: OnshapeWVMType.VERSION,
+    wvmId: vid
+  };
 
   try {
-    let limit = 20;
-    let offset = 0;
-    let allDocuments: Array<{ id: string; name: string }> = [];
-
-    while (true && offset < 100) {
-      const response = await onshapeClient.getElements(did, vid, limit, offset);
-
-      if (!response || response.length === 0) {
-        break;
-      }
-
-      allDocuments.push(...response);
-
-      if (response.length < limit) {
-        break;
-      }
-
-      offset += limit;
-    }
+    const documentAssemblies = await onshapeClient.getElements(document, OnshapeElementType.ASSEMBLY);
 
     return {
-      data: allDocuments,
+      data: documentAssemblies,
       error: null
     };
   } catch (error) {
@@ -71,7 +63,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       error:
         error instanceof Error
           ? error.message
-          : "Failed to get versions from Onshape"
+          : "Failed to get assemblies from Onshape"
     };
   }
 }

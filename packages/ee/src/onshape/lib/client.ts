@@ -2,6 +2,8 @@ import { ONSHAPE_CLIENT_ID, ONSHAPE_CLIENT_SECRET } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import axios from "axios";
+import { OnshapeDocument } from "./document.type";
+import { OnshapeElementType } from "./element.type";
 
 interface OnshapeClientConfig {
   baseUrl: string;
@@ -85,14 +87,12 @@ export class OnshapeClient {
   }
 
   async getElements(
-    documentId: string,
-    versionId: string,
-    limit: number = 20,
-    offset: number = 0
+    document: OnshapeDocument,
+    elementType?: OnshapeElementType
   ): Promise<any> {
     return this.request(
       "GET",
-      `/api/v10/documents/d/${documentId}/v/${versionId}/elements`
+      `/api/v10/documents/d/${document.documentId}/${document.wvm}/${document.wvmId}/elements${elementType ? '?elementType=' + elementType : '' }`
     );
   }
 

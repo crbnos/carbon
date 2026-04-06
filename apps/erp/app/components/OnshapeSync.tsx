@@ -290,7 +290,7 @@ export const OnshapeSync = ({
             </div>
 
             <div className="flex w-full items-center justify-between gap-2">
-              <span className="text-xs text-muted-foreground">Element:</span>
+              <span className="text-xs text-muted-foreground">Assembly:</span>
               <div className="w-[180px]">
                 <Combobox
                   isLoading={elementsFetcher.state === "loading"}
