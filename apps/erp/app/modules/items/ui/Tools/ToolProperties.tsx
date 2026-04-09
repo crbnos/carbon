@@ -17,7 +17,6 @@ import { Await, useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/components";
-// biome-ignore lint/suspicious/noShadowRestrictedNames: Boolean is a component name
 import { Boolean, ItemPostingGroup, Tags } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { ReplenishmentSystemIcon } from "~/components/Icons";

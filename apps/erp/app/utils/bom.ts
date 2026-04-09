@@ -3,6 +3,63 @@ import type { Method } from "~/modules/items";
 import type { JobMethod } from "~/modules/production/types";
 import type { QuoteMethod } from "~/modules/sales/types";
 
+export interface WorkCenterRate {
+  id: string;
+  active: boolean;
+  laborRate: number | null;
+  machineRate: number | null;
+  overheadRate: number | null;
+  processes: string[] | null;
+}
+
+export function resolveOperationRates(
+  workCenterId: string | null,
+  processId: string,
+  laborRate: number | null,
+  machineRate: number | null,
+  overheadRate: number | null,
+  workCenters: WorkCenterRate[]
+): { laborRate: number; machineRate: number; overheadRate: number } {
+  // If a work center is explicitly set and has rates, use them
+  if (workCenterId) {
+    const wc = workCenters.find((w) => w.id === workCenterId && w.active);
+    if (wc) {
+      return {
+        laborRate: wc.laborRate ?? 0,
+        machineRate: wc.machineRate ?? 0,
+        overheadRate: wc.overheadRate ?? 0
+      };
+    }
+    // Fall back to the joined rates from the operation
+    return {
+      laborRate: laborRate ?? 0,
+      machineRate: machineRate ?? 0,
+      overheadRate: overheadRate ?? 0
+    };
+  }
+
+  // No work center selected — average rates from active work centers for this process
+  const related = workCenters.filter(
+    (wc) => wc.active && (wc.processes ?? []).some((p) => p === processId)
+  );
+
+  if (related.length > 0) {
+    return {
+      laborRate:
+        related.reduce((sum, wc) => sum + (wc.laborRate ?? 0), 0) /
+        related.length,
+      machineRate:
+        related.reduce((sum, wc) => sum + (wc.machineRate ?? 0), 0) /
+        related.length,
+      overheadRate:
+        related.reduce((sum, wc) => sum + (wc.overheadRate ?? 0), 0) /
+        related.length
+    };
+  }
+
+  return { laborRate: 0, machineRate: 0, overheadRate: 0 };
+}
+
 export interface BomOperation {
   operationType: string;
   setupTime: number | null;
@@ -62,11 +119,15 @@ export function normalizeTime(
   return { fixedHours, hoursPerUnit };
 }
 
-function calculateOperationUnitCost(op: BomOperation): number {
+function calculateOperationUnitCost(
+  op: BomOperation,
+  batchSize: number
+): number {
   if (op.operationType === "Outside") {
     return Math.max(op.operationMinimumCost, op.operationUnitCost);
   }
 
+  const batch = batchSize > 1 ? batchSize : 1;
   let cost = 0;
 
   if (op.setupTime) {
@@ -74,21 +135,21 @@ function calculateOperationUnitCost(op: BomOperation): number {
       op.setupTime,
       op.setupUnit
     );
-    const totalHours = fixedHours + hoursPerUnit;
-    cost += totalHours * (op.laborRate ?? 0);
-    cost += totalHours * (op.overheadRate ?? 0);
+    const hoursPerPart = fixedHours / batch + hoursPerUnit;
+    cost += hoursPerPart * (op.laborRate ?? 0);
+    cost += hoursPerPart * (op.overheadRate ?? 0);
   }
 
-  let laborTotalHours = 0;
-  let machineTotalHours = 0;
+  let laborHoursPerPart = 0;
+  let machineHoursPerPart = 0;
 
   if (op.laborTime) {
     const { fixedHours, hoursPerUnit } = normalizeTime(
       op.laborTime,
       op.laborUnit
     );
-    laborTotalHours = fixedHours + hoursPerUnit;
-    cost += laborTotalHours * (op.laborRate ?? 0);
+    laborHoursPerPart = fixedHours / batch + hoursPerUnit;
+    cost += laborHoursPerPart * (op.laborRate ?? 0);
   }
 
   if (op.machineTime) {
@@ -96,21 +157,28 @@ function calculateOperationUnitCost(op: BomOperation): number {
       op.machineTime,
       op.machineUnit
     );
-    machineTotalHours = fixedHours + hoursPerUnit;
-    cost += machineTotalHours * (op.machineRate ?? 0);
+    machineHoursPerPart = fixedHours / batch + hoursPerUnit;
+    cost += machineHoursPerPart * (op.machineRate ?? 0);
   }
 
-  cost += Math.max(laborTotalHours, machineTotalHours) * (op.overheadRate ?? 0);
+  cost +=
+    Math.max(laborHoursPerPart, machineHoursPerPart) * (op.overheadRate ?? 0);
 
   return cost;
 }
 
 export function calculateMadePartCosts<
-  TData extends { methodType: string; unitCost: number; quantity: number }
+  TData extends {
+    methodType: string;
+    unitCost: number;
+    quantity: number;
+    itemId: string;
+  }
 >(
   nodes: FlatTreeItem<TData>[],
   operationsByKey: Record<string, BomOperation[]>,
-  getOperationKey: (node: FlatTreeItem<TData>) => string
+  getOperationKey: (node: FlatTreeItem<TData>) => string,
+  lotSizesByItemId?: Map<string, number>
 ): Map<string, number> {
   const costMap = new Map<string, number>();
   const nodeMap = new Map(nodes.map((n) => [n.id, n]));
@@ -133,12 +201,13 @@ export function calculateMadePartCosts<
       materialCost += childUnitCost * (child.data.quantity ?? 0);
     }
 
-    // Sum operation costs
+    // Sum operation costs, amortizing fixed costs over the batch size
+    const batchSize = lotSizesByItemId?.get(node.data.itemId) ?? 1;
     let operationCost = 0;
     const key = getOperationKey(node);
     const ops = operationsByKey[key] ?? [];
     for (const op of ops) {
-      operationCost += calculateOperationUnitCost(op);
+      operationCost += calculateOperationUnitCost(op, batchSize);
     }
 
     costMap.set(node.id, materialCost + operationCost);

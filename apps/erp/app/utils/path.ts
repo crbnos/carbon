@@ -57,6 +57,8 @@ export const path = {
       groupsByType: (type?: string) =>
         generatePath(`${api}/users/groups?type=${type}`),
       item: (type: string) => generatePath(`${api}/item/${type}`),
+      itemCostRecalculate: (itemId: string) =>
+        generatePath(`${api}/items/${itemId}/recalculate-cost`),
       itemConfigurable: `${api}/items/configurable`,
       itemForecast: (itemId: string, locationId: string) =>
         generatePath(`${api}/items/${itemId}/${locationId}/forecast`),

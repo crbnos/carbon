@@ -2953,6 +2953,7 @@ export type Database = {
           supplierApproval: boolean
           supplierQuoteNotificationGroup: string[]
           timeCardEnabled: boolean
+          updateLeadTimesOnReceipt: boolean
           useMetric: boolean
         }
         Insert: {
@@ -2990,6 +2991,7 @@ export type Database = {
           supplierApproval?: boolean
           supplierQuoteNotificationGroup?: string[]
           timeCardEnabled?: boolean
+          updateLeadTimesOnReceipt?: boolean
           useMetric?: boolean
         }
         Update: {
@@ -3027,6 +3029,7 @@ export type Database = {
           supplierApproval?: boolean
           supplierQuoteNotificationGroup?: string[]
           timeCardEnabled?: boolean
+          updateLeadTimesOnReceipt?: boolean
           useMetric?: boolean
         }
         Relationships: [
@@ -30343,6 +30346,7 @@ export type Database = {
           title: string
           type: Database["public"]["Enums"]["riskRegisterType"]
           updatedAt: string | null
+          updatedBy: string | null
         }
         Insert: {
           assignee?: string | null
@@ -30361,6 +30365,7 @@ export type Database = {
           title: string
           type?: Database["public"]["Enums"]["riskRegisterType"]
           updatedAt?: string | null
+          updatedBy?: string | null
         }
         Update: {
           assignee?: string | null
@@ -30379,6 +30384,7 @@ export type Database = {
           title?: string
           type?: Database["public"]["Enums"]["riskRegisterType"]
           updatedAt?: string | null
+          updatedBy?: string | null
         }
         Relationships: [
           {
@@ -30520,6 +30526,41 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "tools"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "riskRegister_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "riskRegister_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "riskRegister_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "riskRegister_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "riskRegister_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
           },
         ]
       }
@@ -33358,6 +33399,48 @@ export type Database = {
             referencedColumns: ["userId"]
           },
         ]
+      }
+      searchIndex_MG9Ks1bZ4Udn5xBu8k7Rv7: {
+        Row: {
+          createdAt: string
+          description: string | null
+          entityId: string
+          entityType: string
+          id: number
+          link: string
+          metadata: Json | null
+          searchVector: unknown
+          tags: string[] | null
+          title: string
+          updatedAt: string | null
+        }
+        Insert: {
+          createdAt?: string
+          description?: string | null
+          entityId: string
+          entityType: string
+          id?: number
+          link: string
+          metadata?: Json | null
+          searchVector?: unknown
+          tags?: string[] | null
+          title: string
+          updatedAt?: string | null
+        }
+        Update: {
+          createdAt?: string
+          description?: string | null
+          entityId?: string
+          entityType?: string
+          id?: number
+          link?: string
+          metadata?: Json | null
+          searchVector?: unknown
+          tags?: string[] | null
+          title?: string
+          updatedAt?: string | null
+        }
+        Relationships: []
       }
       searchIndexRegistry: {
         Row: {
@@ -57159,6 +57242,7 @@ export type Database = {
           order: number
           parentMaterialId: string
           quantity: number
+          replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
           revision: string
           shelfIds: Json
           unitCost: number

@@ -64,7 +64,6 @@ const BulkEditPermissions = ({
   });
 
   // When new empty permissions arrive, reset the matrix state
-  // biome-ignore lint/correctness/useExhaustiveDependencies: deps are intentionally limited
   useEffect(() => {
     if (emptyPermissionsFetcher.data) {
       const { state } = fromEmployeeTypePermissions(

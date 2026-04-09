@@ -2,9 +2,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
-  // biome-ignore lint/suspicious/noShadowRestrictedNames: Boolean is a component name
   Boolean,
-  // biome-ignore lint/suspicious/noShadowRestrictedNames: Number is a component name
   Number,
   Submit,
   ValidatedForm,

@@ -1,4 +1,4 @@
-import { DOMAIN, getCookieDomain } from "@carbon/auth";
+import { DOMAIN } from "@carbon/auth";
 import * as cookie from "cookie";
 
 const cookieName = "theme";
@@ -22,11 +22,13 @@ export function getTheme(request: Request): Theme {
 }
 
 export function setTheme(theme: string) {
-  const cookieDomain = getCookieDomain(DOMAIN);
-
-  return cookie.serialize(cookieName, theme, {
+  const cookieOptions: cookie.SerializeOptions = {
     path: "/",
-    maxAge: 31536000,
-    domain: cookieDomain
-  });
+    maxAge: 31536000
+  };
+
+  if (DOMAIN && !DOMAIN.startsWith("localhost")) {
+    cookieOptions.domain = DOMAIN;
+  }
+  return cookie.serialize(cookieName, theme, cookieOptions);
 }

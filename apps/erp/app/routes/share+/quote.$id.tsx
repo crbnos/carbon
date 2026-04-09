@@ -109,6 +109,7 @@ const translations = {
     "Extended Price": "Extended Price",
     "Lead Time": "Lead Time",
     "No pricing options found": "No pricing options found",
+    Notes: "Notes",
     "Oops! The link you're trying to access has expired or is no longer valid.":
       "Oops! The link you're trying to access has expired or is no longer valid.",
     "Oops! The link you're trying to access is not valid.":
@@ -151,6 +152,7 @@ const translations = {
     "Extended Price": "Precio Extendido",
     "Lead Time": "Tiempo de Entrega",
     "No pricing options found": "No se encontraron opciones de precio",
+    Notes: "Notas",
     "Oops! The link you're trying to access has expired or is no longer valid.":
       "¡Ups! El enlace al que intenta acceder ha expirado o ya no es válido.",
     "Oops! The link you're trying to access is not valid.":
@@ -193,6 +195,7 @@ const translations = {
     "Extended Price": "Erweiterter Preis",
     "Lead Time": "Lieferzeit",
     "No pricing options found": "Keine Preisoptionen gefunden",
+    Notes: "Anmerkungen",
     "Oops! The link you're trying to access has expired or is no longer valid.":
       "Ups! Der Link, den Sie aufrufen möchten, ist abgelaufen oder nicht mehr gültig.",
     "Oops! The link you're trying to access is not valid.":
@@ -1303,6 +1306,20 @@ const Quote = ({
             setSelectedLines={setSelectedLines}
             strings={strings}
           />
+
+          {Object.keys(quote?.externalNotes ?? {}).length > 0 && (
+            <div className="mt-6 mb-2">
+              <Heading size="h4" className="mb-2">
+                {strings.Notes}
+              </Heading>
+              <div
+                className="prose dark:prose-invert text-muted-foreground"
+                dangerouslySetInnerHTML={{
+                  __html: generateHTML(quote.externalNotes as JSONContent)
+                }}
+              />
+            </div>
+          )}
 
           <VStack spacing={2} className="mt-8">
             {shippingMethod && (

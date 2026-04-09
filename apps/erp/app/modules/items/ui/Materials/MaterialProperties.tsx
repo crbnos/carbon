@@ -26,7 +26,6 @@ import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/components";
 import {
-  // biome-ignore lint/suspicious/noShadowRestrictedNames: Boolean is a component name
   Boolean,
   ItemPostingGroup,
   Tags,

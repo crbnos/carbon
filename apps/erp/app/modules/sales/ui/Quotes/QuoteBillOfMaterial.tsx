@@ -79,6 +79,7 @@ type Material = z.infer<typeof quoteMaterialValidator> & {
   item: {
     name: string;
     itemTrackingType: Database["public"]["Enums"]["itemTrackingType"];
+    replenishmentSystem: string | null;
   };
 };
 
@@ -286,7 +287,8 @@ const QuoteBillOfMaterial = ({
         description: "",
         item: {
           name: "",
-          itemTrackingType: "Inventory"
+          itemTrackingType: "Inventory",
+          replenishmentSystem: null
         }
       });
     } else {
@@ -665,6 +667,7 @@ function MaterialForm({
     kit: boolean;
     shelfId?: string;
     quoteOperationId?: string;
+    itemReplenishmentSystem: string;
   }>({
     itemId: item.data.itemId ?? "",
     methodType: item.data.methodType ?? "Pull from Inventory",
@@ -674,7 +677,8 @@ function MaterialForm({
     quantity: item.data.quantity ?? 1,
     kit: item.data.kit ?? false,
     shelfId: item.data.shelfId,
-    quoteOperationId: item.data.quoteOperationId
+    quoteOperationId: item.data.quoteOperationId,
+    itemReplenishmentSystem: item.data.item?.replenishmentSystem ?? "Buy"
   });
 
   const onTypeChange = (value: MethodItemType | "Item") => {
@@ -687,7 +691,8 @@ function MaterialForm({
       unitCost: 0,
       description: "",
       unitOfMeasureCode: "EA",
-      kit: false
+      kit: false,
+      itemReplenishmentSystem: "Buy"
     });
   };
 
@@ -710,7 +715,7 @@ function MaterialForm({
       carbon
         .from("item")
         .select(
-          "name, readableIdWithRevision, type, unitOfMeasureCode, defaultMethodType, itemTrackingType"
+          "name, readableIdWithRevision, type, unitOfMeasureCode, defaultMethodType, itemTrackingType, replenishmentSystem"
         )
         .eq("id", itemId)
         .eq("companyId", company.id)
@@ -742,7 +747,8 @@ function MaterialForm({
       unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
       methodType: item.data?.defaultMethodType ?? "Pull from Inventory",
       requiresBatchTracking: item.data?.itemTrackingType === "Batch",
-      requiresSerialTracking: item.data?.itemTrackingType === "Serial"
+      requiresSerialTracking: item.data?.itemTrackingType === "Serial",
+      itemReplenishmentSystem: item.data?.replenishmentSystem ?? "Buy"
     }));
 
     if (item.data?.type) {
@@ -927,7 +933,7 @@ function MaterialForm({
                 methodType: value?.value as MethodType
               }));
             }}
-            replenishmentSystem="Buy and Make"
+            replenishmentSystem={itemData.itemReplenishmentSystem}
           />
           <Shelf
             name="shelfId"

@@ -95,10 +95,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }));
   }
 
+  // Use the first quote quantity as the batch size for the root item
+  const batchSizesByItemId = new Map<string, number>();
+  const rootQuoteNode = flattenedMethods[0];
+  const firstQuantity = quote.data?.quantity?.[0];
+  if (rootQuoteNode && firstQuantity && firstQuantity > 1) {
+    batchSizesByItemId.set(rootQuoteNode.data.itemId, firstQuantity);
+  }
+
   const computedCosts = calculateMadePartCosts(
     flattenedMethods,
     bomOperationsByKey,
-    (node) => node.data.quoteMaterialMakeMethodId
+    (node) => node.data.quoteMaterialMakeMethodId,
+    batchSizesByItemId
   );
 
   const bomIds = generateBomIds(flattenedMethods);

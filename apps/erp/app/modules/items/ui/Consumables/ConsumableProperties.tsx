@@ -17,7 +17,6 @@ import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-// biome-ignore lint/suspicious/noShadowRestrictedNames: Boolean is a component name
 import { Boolean, ItemPostingGroup, Tags } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";

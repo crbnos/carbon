@@ -35284,6 +35284,9 @@ export default {
             $ref: "#/parameters/rowFilter.riskRegister.type",
           },
           {
+            $ref: "#/parameters/rowFilter.riskRegister.updatedBy",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -35391,6 +35394,9 @@ export default {
             $ref: "#/parameters/rowFilter.riskRegister.type",
           },
           {
+            $ref: "#/parameters/rowFilter.riskRegister.updatedBy",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -35450,6 +35456,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.riskRegister.type",
+          },
+          {
+            $ref: "#/parameters/rowFilter.riskRegister.updatedBy",
           },
           {
             $ref: "#/parameters/body.riskRegister",
@@ -63052,6 +63061,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.timeCardEnabled",
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.updateLeadTimesOnReceipt",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -63216,6 +63228,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.timeCardEnabled",
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.updateLeadTimesOnReceipt",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -63332,6 +63347,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.timeCardEnabled",
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.updateLeadTimesOnReceipt",
           },
           {
             $ref: "#/parameters/body.companySettings",
@@ -86709,6 +86727,12 @@ export default {
           format: 'public."riskRegisterType"',
           type: "string",
         },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
       },
       type: "object",
     },
@@ -99983,6 +100007,7 @@ export default {
         "qualityIssueTarget",
         "consoleEnabled",
         "timeCardEnabled",
+        "updateLeadTimesOnReceipt",
       ],
       properties: {
         id: {
@@ -100179,6 +100204,11 @@ export default {
           type: "boolean",
         },
         timeCardEnabled: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
+        },
+        updateLeadTimesOnReceipt: {
           default: false,
           format: "boolean",
           type: "boolean",
@@ -119659,6 +119689,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.riskRegister.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.shipment": {
       name: "shipment",
       description: "shipment",
@@ -134766,6 +134802,12 @@ export default {
     },
     "rowFilter.companySettings.timeCardEnabled": {
       name: "timeCardEnabled",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.companySettings.updateLeadTimesOnReceipt": {
+      name: "updateLeadTimesOnReceipt",
       required: false,
       in: "query",
       type: "string",

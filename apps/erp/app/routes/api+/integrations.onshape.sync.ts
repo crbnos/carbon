@@ -72,14 +72,13 @@ export async function action({ request }: ActionFunctionArgs) {
       .eq("integration", "onshape");
 
     await client.from("externalIntegrationMapping").insert({
-      // @ts-expect-error TS2769 - TODO: fix type
       entityType: "item",
       entityId: itemId,
       integration: "onshape",
       metadata: {
-        documentId,
-        versionId,
-        elementId
+        documentId: documentId as string,
+        versionId: versionId as string,
+        elementId: elementId as string
       },
       lastSyncedAt: new Date().toISOString(),
       companyId

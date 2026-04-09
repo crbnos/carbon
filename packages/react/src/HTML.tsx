@@ -16,7 +16,7 @@ const generateHTML = (content: JSONContent) => {
   if (!content || !("type" in content)) {
     return "";
   }
-  return DefaultGenerateHTML(content, [
+  const raw = DefaultGenerateHTML(content, [
     ...defaultExtensions,
     TextStyle,
     StarterKit,
@@ -27,6 +27,7 @@ const generateHTML = (content: JSONContent) => {
       }
     })
   ]);
+  return sanitize(raw);
 };
 
 type HTMLProps = {

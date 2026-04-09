@@ -310,14 +310,18 @@ export const JIRA_STATE_SECRET = getEnv("JIRA_STATE_SECRET", {
 /**
  * Shared envs
  */
-export const VERCEL_ENV = getEnv("VERCEL_ENV", {
-  isSecret: false,
-  isRequired: false
-});
+
 export const NODE_ENV = getEnv("NODE_ENV", {
   isSecret: false,
   isRequired: false
 });
+
+export const VERCEL_ENV =
+  getEnv("VERCEL_ENV", {
+    isSecret: false,
+    isRequired: false
+  }) ?? NODE_ENV;
+
 export const POSTHOG_API_HOST = getEnv("POSTHOG_API_HOST", {
   isSecret: false
 });

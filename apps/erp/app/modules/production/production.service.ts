@@ -1034,7 +1034,7 @@ export async function getJobMaterialsByMethodId(
 ) {
   return client
     .from("jobMaterial")
-    .select("*")
+    .select("*, item(replenishmentSystem)")
     .eq("jobMakeMethodId", jobMakeMethodId)
     .order("order", { ascending: true });
 }

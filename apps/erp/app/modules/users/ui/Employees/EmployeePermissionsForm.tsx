@@ -47,7 +47,6 @@ const EmployeePermissionsForm = ({
       label: et.name
     })) ?? [];
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: deps are intentionally limited
   const { state: initialState, modules } = useMemo(
     () => fromCompanyPermissions(initialValues.permissions),
     // eslint-disable-next-line react-hooks/exhaustive-deps

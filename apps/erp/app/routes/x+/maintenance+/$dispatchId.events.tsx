@@ -68,10 +68,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const insertEvent = await client
       .from("maintenanceDispatchEvent")
       .insert({
-        // @ts-expect-error TS2769 - TODO: fix type
         maintenanceDispatchId: dispatchId!,
         employeeId: userId,
-        workCenterId,
+        workCenterId: workCenterId!,
         startTime: new Date().toISOString(),
         companyId,
         createdBy: userId

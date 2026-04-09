@@ -422,8 +422,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         "Content-Type": "application/pdf",
         "Content-Disposition": `inline; filename="${company.data.name} - ${shipment.data.shipmentId}.pdf"`
       });
-      // @ts-expect-error TS2345 - TODO: fix type
-      return new Response(poBody, { status: 200, headers: poHeaders });
+      return new Response(new Uint8Array(poBody), {
+        status: 200,
+        headers: poHeaders
+      });
     }
     default:
       throw new Error("Invalid source document");

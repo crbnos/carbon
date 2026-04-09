@@ -51,7 +51,9 @@ const ConfirmDelete = ({
           <ModalTitle>Delete {name}</ModalTitle>
         </ModalHeader>
 
-        <ModalBody>{text}</ModalBody>
+        <ModalBody>
+          <p className="text-sm text-muted-foreground">{text}</p>
+        </ModalBody>
 
         <ModalFooter>
           <Button variant="secondary" onClick={onCancel}>

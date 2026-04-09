@@ -5,11 +5,12 @@ import type { FlatTreeItem } from "~/components/TreeView";
 import { flattenTree } from "~/components/TreeView";
 import type { Method } from "~/modules/items";
 import { getMethodTree } from "~/modules/items";
-import type { BomOperation } from "~/utils/bom";
+import type { BomOperation, WorkCenterRate } from "~/utils/bom";
 import {
   calculateMadePartCosts,
   calculateTotalQuantity,
-  generateBomIds
+  generateBomIds,
+  resolveOperationRates
 } from "~/utils/bom";
 import { makeDurations } from "~/utils/duration";
 
@@ -86,13 +87,41 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ...new Set(methods.map((method) => method.data.makeMethodId))
   ];
 
-  const methodOperations = await client
-    .from("methodOperation")
-    .select(
-      "*, ...process(processName:name), ...workCenter(workCenterName:name, laborRate, machineRate, overheadRate)"
-    )
-    .in("makeMethodId", makeMethodIds)
-    .eq("companyId", companyId);
+  const itemIds = [...new Set(methods.map((m) => m.data.itemId))];
+
+  const [methodOperations, workCentersResult, lotSizesResult] =
+    await Promise.all([
+      client
+        .from("methodOperation")
+        .select(
+          "*, ...process(processName:name), ...workCenter(workCenterName:name, laborRate, machineRate, overheadRate)"
+        )
+        .in("makeMethodId", makeMethodIds)
+        .eq("companyId", companyId),
+      client
+        .from("workCenters")
+        .select("id, active, laborRate, machineRate, overheadRate, processes")
+        .eq("companyId", companyId),
+      client
+        .from("itemReplenishment")
+        .select("itemId, lotSize")
+        .in("itemId", itemIds)
+    ]);
+
+  const lotSizesByItemId = new Map(
+    (lotSizesResult.data ?? []).map((r) => [r.itemId, r.lotSize ?? 1])
+  );
+
+  const workCenters: WorkCenterRate[] = (workCentersResult.data ?? []).map(
+    (wc) => ({
+      id: wc.id!,
+      active: wc.active ?? false,
+      laborRate: wc.laborRate,
+      machineRate: wc.machineRate,
+      overheadRate: wc.overheadRate,
+      processes: wc.processes
+    })
+  );
 
   let operationsByMakeMethodId: Record<
     string,
@@ -124,26 +153,35 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const bomOperationsByKey: Record<string, BomOperation[]> = {};
   for (const [key, ops] of Object.entries(operationsByMakeMethodId)) {
     // @ts-expect-error TS2322 - TODO: fix type
-    bomOperationsByKey[key] = ops.map((op) => ({
-      operationType: op.operationType,
-      setupTime: op.setupTime,
-      setupUnit: op.setupUnit,
-      laborTime: op.laborTime,
-      laborUnit: op.laborUnit,
-      machineTime: op.machineTime,
-      machineUnit: op.machineUnit,
-      operationUnitCost: op.operationUnitCost,
-      operationMinimumCost: op.operationMinimumCost,
-      laborRate: op.laborRate ?? 0,
-      machineRate: op.machineRate ?? 0,
-      overheadRate: op.overheadRate ?? 0
-    }));
+    bomOperationsByKey[key] = ops.map((op) => {
+      const rates = resolveOperationRates(
+        op.workCenterId,
+        op.processId,
+        op.laborRate,
+        op.machineRate,
+        op.overheadRate,
+        workCenters
+      );
+      return {
+        operationType: op.operationType,
+        setupTime: op.setupTime,
+        setupUnit: op.setupUnit,
+        laborTime: op.laborTime,
+        laborUnit: op.laborUnit,
+        machineTime: op.machineTime,
+        machineUnit: op.machineUnit,
+        operationUnitCost: op.operationUnitCost,
+        operationMinimumCost: op.operationMinimumCost,
+        ...rates
+      };
+    });
   }
 
   const computedCosts = calculateMadePartCosts(
     methods,
     bomOperationsByKey,
-    (node) => node.data.materialMakeMethodId
+    (node) => node.data.materialMakeMethodId,
+    lotSizesByItemId
   );
 
   const bomIds = generateBomIds(methods);

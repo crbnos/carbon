@@ -1,40 +1,53 @@
+import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { Database } from "@carbon/database";
-import type { LoaderFunctionArgs } from "react-router";
-import type { FlatTreeItem } from "~/components/TreeView";
+import type { ActionFunctionArgs } from "react-router";
 import { flattenTree } from "~/components/TreeView";
-import type { Method } from "~/modules/items";
 import { getMethodTree } from "~/modules/items";
 import type { BomOperation, WorkCenterRate } from "~/utils/bom";
-import {
-  calculateMadePartCosts,
-  calculateTotalQuantity,
-  generateBomIds,
-  resolveOperationRates
-} from "~/utils/bom";
-import { makeDurations } from "~/utils/duration";
+import { calculateMadePartCosts, resolveOperationRates } from "~/utils/bom";
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "parts"
+export async function action({ request, params }: ActionFunctionArgs) {
+  assertIsPost(request);
+  const { client, companyId, userId } = await requirePermissions(request, {
+    update: "parts"
   });
 
-  const { id } = params;
-  const withOperations = request.url.includes("withOperations=true");
-
-  if (!id) {
-    return { data: [], error: null };
+  const { itemId } = params;
+  if (!itemId) {
+    return { success: false, message: "Item ID is required" };
   }
 
-  const methodTree = await getMethodTree(client, id);
+  // Get the active (or draft fallback) make method for this item
+  const makeMethodResult = await client
+    .from("activeMakeMethods")
+    .select("id")
+    .eq("itemId", itemId)
+    .maybeSingle();
+
+  if (makeMethodResult.error || !makeMethodResult.data) {
+    return { success: false, message: "No make method found for this item" };
+  }
+
+  const makeMethodId = makeMethodResult.data.id;
+  if (!makeMethodId) {
+    return { success: false, message: "No make method found for this item" };
+  }
+
+  // Get the method tree
+  const methodTree = await getMethodTree(client, makeMethodId);
   if (methodTree.error) {
-    return { data: [], error: methodTree.error };
+    return { success: false, message: "Failed to load method tree" };
   }
 
-  const methods = (
-    methodTree.data.length > 0 ? flattenTree(methodTree.data[0]) : []
-  ) satisfies FlatTreeItem<Method>[];
+  const methods =
+    methodTree.data.length > 0 ? flattenTree(methodTree.data[0]) : [];
 
+  if (methods.length === 0) {
+    return { success: false, message: "No methods found in the method tree" };
+  }
+
+  // Get all method operations for cost calculation
   const makeMethodIds = [
     ...new Set(methods.map((method) => method.data.makeMethodId))
   ];
@@ -129,6 +142,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     });
   }
 
+  // Calculate costs using the same logic as the CSV export
   const computedCosts = calculateMadePartCosts(
     methods,
     bomOperationsByKey,
@@ -136,68 +150,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     lotSizesByItemId
   );
 
-  const bomIds = generateBomIds(methods);
+  // The top-level cost is the root node's computed cost
+  const rootNode = methods[0];
+  const unitCost = computedCosts.get(rootNode.id) ?? 0;
 
-  const result = methods.map((node, index) => {
-    const total = calculateTotalQuantity(node, methods);
-    const unitCost = computedCosts.get(node.id) ?? node.data.unitCost ?? 0;
-    const totalCost = total * unitCost;
+  // Update the item cost
+  const updateResult = await client
+    .from("itemCost")
+    .update({ unitCost, updatedBy: userId })
+    .eq("itemId", itemId);
 
-    const bomItem = {
-      id: bomIds[index],
-      itemId: node.data.itemReadableId,
-      description: node.data.description,
-      quantity: node.data.quantity,
-      total,
-      unitCost,
-      totalCost,
-      uom: node.data.unitOfMeasureCode,
-      methodType: node.data.methodType,
-      itemType: node.data.itemType,
-      level: node.level,
-      version: node.data.version || null
-    };
-
-    if (!withOperations) {
-      return bomItem;
-    }
-
-    const operations = operationsByMakeMethodId[node.data.materialMakeMethodId];
-    if (!operations) {
-      return { ...bomItem, operations: [] };
-    }
-
+  if (updateResult.error) {
     return {
-      ...bomItem,
-      operations: operations.map((operation) => {
-        const op1 = makeDurations({ ...operation, operationQuantity: total });
-        const op100 = makeDurations({
-          ...operation,
-          operationQuantity: total * 100
-        });
-        const op1000 = makeDurations({
-          ...operation,
-          operationQuantity: total * 1000
-        });
-
-        return {
-          description: operation.description,
-          process: operation.processName,
-          workCenter: operation.workCenterName,
-          operationType: operation.operationType,
-          setupTime: operation.setupTime,
-          setupUnit: operation.setupUnit,
-          laborTime: operation.laborTime,
-          laborUnit: operation.laborUnit,
-          machineTime: operation.machineTime,
-          machineUnit: operation.machineUnit,
-          totalDurationX1: op1.duration,
-          totalDurationX100: op100.duration,
-          totalDurationX1000: op1000.duration
-        };
-      })
+      success: false,
+      message: "Failed to update item cost"
     };
-  });
+  }
 
-  return { data: result, error: null };
+  return {
+    success: true,
+    message: `Unit cost updated to ${unitCost.toFixed(2)}`
+  };
 }

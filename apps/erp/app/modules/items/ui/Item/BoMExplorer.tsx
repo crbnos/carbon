@@ -292,13 +292,14 @@ const BoMExplorer = ({
                       )}
                       onClick={() => {
                         selectNode(node.id, false);
+
                         const nodePath = node.data.isRoot
                           ? getRootLink(itemType, itemId, methodId)
                           : getMaterialLink(
                               itemType,
                               itemId,
                               methodId,
-                              node.data.methodType === "Make to Order"
+                              node.data.replenishmentSystem !== "Buy"
                                 ? node.data.materialMakeMethodId
                                 : node.data.makeMethodId,
                               node

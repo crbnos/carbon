@@ -1172,7 +1172,7 @@ export async function getMethodMaterialsByMakeMethod(
 ) {
   return client
     .from("methodMaterial")
-    .select("*, item(name, itemTrackingType)")
+    .select("*, item(name, itemTrackingType, replenishmentSystem)")
     .eq("makeMethodId", makeMethodId)
     .order("order", { ascending: true });
 }

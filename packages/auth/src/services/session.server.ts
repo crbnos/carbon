@@ -33,7 +33,7 @@ async function assertAuthSession(
   return authSession;
 }
 
-const isTestEdition = CarbonEdition === Edition.Test;
+export const isTestEdition = CarbonEdition === Edition.Test;
 
 const sessionStorage = createCookieSessionStorage({
   cookie: {

@@ -83,13 +83,27 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ...new Set(methods.map((method) => method.data.jobMakeMethodId))
   ];
 
-  const methodOperations = await client
-    .from("jobOperation")
-    .select(
-      "*, ...process(processName:name), ...workCenter(workCenterName:name), ...jobMakeMethod(parentMaterialId, item(readableIdWithRevision))"
-    )
-    .in("jobMakeMethodId", makeMethodIds)
-    .eq("companyId", companyId);
+  // Get the job quantity for batch size calculation
+  const rootNode = methods[0];
+  const jobId = rootNode?.data.jobId;
+
+  const [methodOperations, jobResult] = await Promise.all([
+    client
+      .from("jobOperation")
+      .select(
+        "*, ...process(processName:name), ...workCenter(workCenterName:name), ...jobMakeMethod(parentMaterialId, item(readableIdWithRevision))"
+      )
+      .in("jobMakeMethodId", makeMethodIds)
+      .eq("companyId", companyId),
+    jobId
+      ? client.from("job").select("quantity").eq("id", jobId).single()
+      : null
+  ]);
+
+  const batchSizesByItemId = new Map<string, number>();
+  if (rootNode && jobResult?.data?.quantity) {
+    batchSizesByItemId.set(rootNode.data.itemId, jobResult.data.quantity);
+  }
 
   let operationsByMakeMethodId: Record<
     string,
@@ -146,7 +160,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const computedCosts = calculateMadePartCosts(
     methods,
     bomOperationsByKey,
-    (node) => node.data.jobMaterialMakeMethodId
+    (node) => node.data.jobMaterialMakeMethodId,
+    batchSizesByItemId
   );
 
   const bomIds = generateBomIds(methods);

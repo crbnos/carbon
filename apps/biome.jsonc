@@ -2,5 +2,12 @@
   "root": false,
   "$schema": "https://biomejs.dev/schemas/2.3.8/schema.json",
   "extends": "//",
-  "files": { "includes": ["./**/app/**/*.ts*", "./**/app/**/*.tsx*"] }
+  "files": {
+    "includes": [
+      "./**/app/**/*.ts*",
+      "./**/app/**/*.tsx*",
+      "!**/mcp*/lib/tools/**",
+      "!**/mcp*/lib/server.ts"
+    ]
+  }
 }

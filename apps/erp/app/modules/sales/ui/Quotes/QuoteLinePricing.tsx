@@ -412,7 +412,6 @@ const QuoteLinePricing = ({
     [carbon, line.itemId]
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: deps are intentionally limited
   const onUpdateCategoryMarkup = useCallback(
     async (category: CostCategoryKey, quantity: number, value: number) => {
       const existingMarkups = categoryMarkupsByQuantity[quantity] ?? {};
