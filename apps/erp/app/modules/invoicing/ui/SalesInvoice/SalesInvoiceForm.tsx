@@ -11,7 +11,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { flushSync } from "react-dom";
 import type { z } from "zod";
@@ -42,7 +42,6 @@ type SalesInvoiceFormProps = {
 
 const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
   const { t } = useLingui();
-  const { t: tShared } = useLingui();
   const permissions = usePermissions();
   const { carbon } = useCarbon();
   const isEditing = initialValues.id !== undefined;
@@ -90,12 +89,7 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
     } | null
   ) => {
     if (!carbon) {
-      toast.error(
-        t({
-          id: "Carbon client not found",
-          message: "Carbon client not found"
-        })
-      );
+      toast.error(t`Carbon client not found`);
       return;
     }
 
@@ -127,12 +121,7 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
       ]);
 
       if (customerData.error || paymentTermData.error) {
-        toast.error(
-          t({
-            id: "Error fetching customer data",
-            message: "Error fetching customer data"
-          })
-        );
+        toast.error(t`Error fetching customer data`);
       } else {
         setInvoiceCustomer((prev) => ({
           ...prev,
@@ -170,17 +159,18 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
       <Card>
         <CardHeader>
           <CardTitle>
-            {isEditing
-              ? t({ id: "Sales Invoice", message: "Sales Invoice" })
-              : t({ id: "New Sales Invoice", message: "New Sales Invoice" })}
+            {isEditing ? (
+              <Trans>Sales Invoice</Trans>
+            ) : (
+              <Trans>New Sales Invoice</Trans>
+            )}
           </CardTitle>
           {!isEditing && (
             <CardDescription>
-              {t({
-                id: "A sales invoice is a document that specifies the products or services sold to a customer and the corresponding cost.",
-                message:
-                  "A sales invoice is a document that specifies the products or services sold to a customer and the corresponding cost."
-              })}
+              <Trans>
+                A sales invoice is a document that specifies the products or
+                services sold to a customer and the corresponding cost.
+              </Trans>
             </CardDescription>
           )}
         </CardHeader>
@@ -199,38 +189,29 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
               {!isEditing && (
                 <SequenceOrCustomId
                   name="invoiceId"
-                  label={t({ id: "Invoice ID", message: "Invoice ID" })}
+                  label={t`Invoice ID`}
                   table="salesInvoice"
                 />
               )}
               <Customer
                 name="customerId"
-                label={t({ id: "Customer", message: "Customer" })}
+                label={t`Customer`}
                 onChange={onCustomerChange}
               />
               <Input
                 name="customerReference"
-                label={t({
-                  id: "Customer Invoice Number",
-                  message: "Customer Invoice Number"
-                })}
+                label={t`Customer Invoice Number`}
               />
 
               <Customer
                 name="invoiceCustomerId"
-                label={t({
-                  id: "Invoice Customer",
-                  message: "Invoice Customer"
-                })}
+                label={t`Invoice Customer`}
                 value={invoiceCustomer.id}
                 onChange={onInvoiceCustomerChange}
               />
               <CustomerLocation
                 name="invoiceCustomerLocationId"
-                label={t({
-                  id: "Invoice Customer Location",
-                  message: "Invoice Customer Location"
-                })}
+                label={t`Invoice Customer Location`}
                 customer={customer.id}
                 value={invoiceCustomer.invoiceCustomerLocationId}
                 onChange={(newValue) => {
@@ -244,10 +225,7 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
               />
               <CustomerContact
                 name="invoiceCustomerContactId"
-                label={t({
-                  id: "Invoice Customer Contact",
-                  message: "Invoice Customer Contact"
-                })}
+                label={t`Invoice Customer Contact`}
                 customer={customer.id}
                 value={invoiceCustomer.invoiceCustomerContactId}
                 onChange={(newValue) => {
@@ -260,18 +238,12 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
                 }}
               />
 
-              <DatePicker
-                name="dateDue"
-                label={t({ id: "Due Date", message: "Due Date" })}
-              />
-              <DatePicker
-                name="dateIssued"
-                label={t({ id: "Date Issued", message: "Date Issued" })}
-              />
+              <DatePicker name="dateDue" label={t`Due Date`} />
+              <DatePicker name="dateIssued" label={t`Date Issued`} />
 
               <PaymentTerm
                 name="paymentTermId"
-                label={t({ id: "Payment Terms", message: "Payment Terms" })}
+                label={t`Payment Terms`}
                 value={invoiceCustomer?.paymentTermId}
                 onChange={(newValue) => {
                   if (newValue?.value) {
@@ -284,7 +256,7 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
               />
               <Currency
                 name="currencyCode"
-                label={t({ id: "Currency", message: "Currency" })}
+                label={t`Currency`}
                 value={invoiceCustomer?.currencyCode}
                 onChange={(newValue) => {
                   if (newValue?.value) {
@@ -295,10 +267,7 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
                   }
                 }}
               />
-              <Location
-                name="locationId"
-                label={t({ id: "Location", message: "Location" })}
-              />
+              <Location name="locationId" label={t`Location`} />
               <CustomFormFields table="salesInvoice" />
             </div>
           </VStack>
@@ -311,7 +280,7 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
                 : !permissions.can("create", "invoicing")
             }
           >
-            {tShared({ id: "Save", message: "Save" })}
+            <Trans>Save</Trans>
           </Submit>
         </CardFooter>
       </Card>

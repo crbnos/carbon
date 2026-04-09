@@ -19,7 +19,7 @@ import {
   VStack
 } from "@carbon/react";
 import data from "@emoji-mart/data";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import type { ChangeEvent } from "react";
 import React, { Suspense, useEffect, useRef, useState } from "react";
@@ -114,7 +114,7 @@ const Suggestion = () => {
     <Popover>
       <PopoverTrigger ref={popoverTriggerRef} asChild>
         <Button variant="secondary" className="hover:scale-100">
-          {t`Suggestion`}
+          <Trans>Suggestion</Trans>
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-[380px] ">
@@ -155,7 +155,9 @@ const Suggestion = () => {
                   isChecked={anonymous}
                   onCheckedChange={(checked) => setAnonymous(checked === true)}
                 />
-                <span className="text-sm">{t`Submit anonymously`}</span>
+                <span className="text-sm">
+                  <Trans>Submit anonymously</Trans>
+                </span>
               </HStack>
               <Popover open={emojiPickerOpen} onOpenChange={setEmojiPickerOpen}>
                 <PopoverTrigger asChild>
@@ -195,7 +197,7 @@ const Suggestion = () => {
                   popoverTriggerRef.current?.click();
                 }}
               >
-                {t`Cancel`}
+                <Trans>Cancel</Trans>
               </Button>
               <HStack spacing={1}>
                 <Button
@@ -203,7 +205,7 @@ const Suggestion = () => {
                   variant="secondary"
                   onClick={() => setSuggestion("")}
                 >
-                  {t`Clear`}
+                  <Trans>Clear</Trans>
                 </Button>
                 <File
                   accept="image/*"
@@ -215,7 +217,9 @@ const Suggestion = () => {
                 >
                   <LuImage />
                 </File>
-                <Submit isDisabled={suggestion.length < 3}>{t`Send`}</Submit>
+                <Submit isDisabled={suggestion.length < 3}>
+                  <Trans>Send</Trans>
+                </Submit>
               </HStack>
             </HStack>
           </VStack>

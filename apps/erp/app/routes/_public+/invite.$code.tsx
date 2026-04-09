@@ -15,6 +15,7 @@ import { redis } from "@carbon/kv";
 import { Button as _Button, Heading as _Heading, VStack } from "@carbon/react";
 import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
 import { Edition } from "@carbon/utils";
+import { msg } from "@lingui/core/macro";
 import { AnimatePresence, motion } from "framer-motion";
 import type {
   ActionFunctionArgs,
@@ -23,6 +24,7 @@ import type {
 } from "react-router";
 import { Form, Link, redirect, useLoaderData } from "react-router";
 import { acceptInvite } from "~/modules/users/users.server";
+import { getRequestI18n } from "~/services/request-i18n.server";
 import { path } from "~/utils/path";
 
 export const meta: MetaFunction = () => {
@@ -51,6 +53,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { code } = params;
   if (!code) throw new Error("No code provided");
   const authSession = await getAuthSession(request);
+  const i18n = await getRequestI18n(request);
 
   const serviceRole = getCarbonServiceRole();
 
@@ -60,7 +63,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
       path.to.root,
       await flash(
         request,
-        error(accept.error, accept.error.message ?? "Failed to accept invite")
+        error(
+          accept.error,
+          accept.error.message ?? i18n._(msg`Failed to accept invite`)
+        )
       )
     );
   }

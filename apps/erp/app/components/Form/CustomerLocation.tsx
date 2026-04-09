@@ -81,13 +81,8 @@ const CustomerLocation = (props: CustomerLocationSelectProps) => {
         options={options}
         {...props}
         inline={props?.inline ? CustomerLocationPreview : undefined}
-        label={
-          props?.label ??
-          t({ id: "Customer Location", message: "Customer Location" })
-        }
-        placeholder={
-          props?.placeholder ?? t({ id: "Select", message: "Select" })
-        }
+        label={props?.label ?? t`Customer Location`}
+        placeholder={props?.placeholder ?? t`Select`}
         onChange={onChange}
         onCreateOption={(option) => {
           newLocationModal.onOpen();

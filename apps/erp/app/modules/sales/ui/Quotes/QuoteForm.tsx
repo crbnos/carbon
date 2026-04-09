@@ -11,7 +11,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { flushSync } from "react-dom";
@@ -45,7 +45,6 @@ type QuoteFormProps = {
 
 const QuoteForm = ({ initialValues }: QuoteFormProps) => {
   const { t } = useLingui();
-  const { t: tShared } = useLingui();
   const permissions = usePermissions();
   const { carbon } = useCarbon();
   const { company } = useUser();
@@ -78,12 +77,7 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
     } | null
   ) => {
     if (!carbon) {
-      toast.error(
-        t({
-          id: "Carbon client not found",
-          message: "Carbon client not found"
-        })
-      );
+      toast.error(t`Carbon client not found`);
       return;
     }
 
@@ -106,12 +100,7 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
         .eq("id", newValue.value)
         .single();
       if (error) {
-        toast.error(
-          t({
-            id: "Error fetching customer data",
-            message: "Error fetching customer data"
-          })
-        );
+        toast.error(t`Error fetching customer data`);
       } else {
         setCustomer((prev) => ({
           ...prev,
@@ -141,17 +130,13 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
       >
         <CardHeader>
           <CardTitle>
-            {isEditing
-              ? t({ id: "Quote", message: "Quote" })
-              : t({ id: "New Quote", message: "New Quote" })}
+            {isEditing ? <Trans>Quote</Trans> : <Trans>New Quote</Trans>}
           </CardTitle>
           {!isEditing && (
             <CardDescription>
-              {t({
-                id: "A quote is a set of prices for specific parts and quantities.",
-                message:
-                  "A quote is a set of prices for specific parts and quantities."
-              })}
+              <Trans>
+                A quote is a set of prices for specific parts and quantities.
+              </Trans>
             </CardDescription>
           )}
         </CardHeader>
@@ -169,80 +154,61 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
               {!isEditing && (
                 <SequenceOrCustomId
                   name="quoteId"
-                  label={t({ id: "Quote ID", message: "Quote ID" })}
+                  label={t`Quote ID`}
                   table="quote"
                 />
               )}
               <Customer
                 autoFocus={!isEditing}
                 name="customerId"
-                label={t({ id: "Customer", message: "Customer" })}
+                label={t`Customer`}
                 onChange={(newValue) => {
                   if (newValue?.value) {
                     onCustomerChange(newValue);
                   }
                 }}
               />
-              <Input
-                name="customerReference"
-                label={t({ id: "Customer RFQ", message: "Customer RFQ" })}
-              />
+              <Input name="customerReference" label={t`Customer RFQ`} />
               <CustomerContact
                 name="customerContactId"
-                label={t({
-                  id: "Purchasing Contact",
-                  message: "Purchasing Contact"
-                })}
+                label={t`Purchasing Contact`}
                 isOptional
                 customer={customer.id}
                 value={customer.customerContactId}
               />
               <CustomerContact
                 name="customerEngineeringContactId"
-                label={t({
-                  id: "Engineering Contact",
-                  message: "Engineering Contact"
-                })}
+                label={t`Engineering Contact`}
                 isOptional
                 customer={customer.id}
               />
               <CustomerLocation
                 name="customerLocationId"
-                label={t({
-                  id: "Customer Location",
-                  message: "Customer Location"
-                })}
+                label={t`Customer Location`}
                 isOptional
                 customer={customer.id}
                 value={customer.customerLocationId}
               />
               <Employee
                 name="salesPersonId"
-                label={t({ id: "Sales Person", message: "Sales Person" })}
+                label={t`Sales Person`}
                 isOptional
               />
-              <Employee
-                name="estimatorId"
-                label={t({ id: "Estimator", message: "Estimator" })}
-                isOptional
-              />
-              <Location
-                name="locationId"
-                label={t({ id: "Quote Location", message: "Quote Location" })}
-              />
+              <Employee name="estimatorId" label={t`Estimator`} isOptional />
+              <Location name="locationId" label={t`Quote Location`} />
               <DatePicker
                 name="dueDate"
-                label={t({ id: "Due Date", message: "Due Date" })}
+                label={t`Due Date`}
                 isDisabled={isCustomer}
               />
               <DatePicker
                 name="expirationDate"
-                label={t({ id: "Expiration Date", message: "Expiration Date" })}
+                label={t`Expiration Date`}
                 isDisabled={isCustomer}
               />
               <Currency
                 name="currencyCode"
-                label={t({ id: "Currency", message: "Currency" })}
+                label={t`Currency`}
                 value={customer.currencyCode}
                 onChange={(
                   newValue: {
@@ -294,7 +260,7 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
                 : !permissions.can("create", "sales"))
             }
           >
-            {tShared({ id: "Save", message: "Save" })}
+            <Trans>Save</Trans>
           </Submit>
         </CardFooter>
       </ValidatedForm>

@@ -1,6 +1,6 @@
 import type { Database } from "@carbon/database";
 import { Copy, MenuIcon, MenuItem } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import {
@@ -33,7 +33,7 @@ const CustomerPortalsTable = memo(
       const defaultColumns: ColumnDef<CustomerPortal>[] = [
         {
           accessorKey: "customer.name",
-          header: t({ id: "Customer", message: "Customer" }),
+          header: t`Customer`,
           cell: ({ row }) => (
             <Hyperlink
               to={path.to.customer(
@@ -53,7 +53,7 @@ const CustomerPortalsTable = memo(
         },
         {
           accessorKey: "portalLink",
-          header: t({ id: "Portal Link", message: "Portal Link" }),
+          header: t`Portal Link`,
           cell: ({ row }) => {
             const portalUrl = `${appUrl}/share/customer/${row.original.id}`;
             return (
@@ -90,7 +90,7 @@ const CustomerPortalsTable = memo(
               }}
             >
               <MenuIcon icon={<LuPencil />} />
-              {t({ id: "Edit Portal", message: "Edit Portal" })}
+              <Trans>Edit Portal</Trans>
             </MenuItem>
             <MenuItem
               destructive
@@ -102,12 +102,12 @@ const CustomerPortalsTable = memo(
               }}
             >
               <MenuIcon icon={<LuTrash />} />
-              {t({ id: "Delete Portal", message: "Delete Portal" })}
+              <Trans>Delete Portal</Trans>
             </MenuItem>
           </>
         );
       },
-      [navigate, params, permissions, t]
+      [navigate, params, permissions]
     );
 
     return (
@@ -118,13 +118,13 @@ const CustomerPortalsTable = memo(
         primaryAction={
           permissions.can("create", "sales") && (
             <New
-              label={t({ id: "Customer Portal", message: "Customer Portal" })}
+              label={t`Customer Portal`}
               to={`${path.to.newCustomerPortal}?${params.toString()}`}
             />
           )
         }
         renderContextMenu={renderContextMenu}
-        title={t({ id: "Customer Portals", message: "Customer Portals" })}
+        title={t`Customer Portals`}
       />
     );
   }

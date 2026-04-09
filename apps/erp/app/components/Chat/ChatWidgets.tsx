@@ -1,5 +1,5 @@
 import { Button } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
+import { Trans } from "@lingui/react/macro";
 import type { RefObject } from "react";
 import {
   LuAudioLines,
@@ -16,7 +16,6 @@ interface ChatWidgetsProps {
 }
 
 export function ChatWidgets({ recordButtonRef }: ChatWidgetsProps) {
-  const { t } = useLingui();
   const { openSearchModal } = useUIStore();
 
   const handleVoiceClick = () => {
@@ -31,7 +30,7 @@ export function ChatWidgets({ recordButtonRef }: ChatWidgetsProps) {
         leftIcon={<LuSearch />}
         onClick={openSearchModal}
       >
-        {t({ id: "Search", message: "Search" })}
+        <Trans>Search</Trans>
       </Button>
 
       <CreateMenu
@@ -42,7 +41,7 @@ export function ChatWidgets({ recordButtonRef }: ChatWidgetsProps) {
             leftIcon={<LuSquarePen />}
             rightIcon={<LuChevronDown />}
           >
-            {t({ id: "Create", message: "Create" })}
+            <Trans>Create</Trans>
           </Button>
         }
       />
@@ -53,7 +52,7 @@ export function ChatWidgets({ recordButtonRef }: ChatWidgetsProps) {
         leftIcon={<LuAudioLines />}
         onClick={handleVoiceClick}
       >
-        {t({ id: "Voice", message: "Voice" })}
+        <Trans>Voice</Trans>
       </Button>
     </div>
   );

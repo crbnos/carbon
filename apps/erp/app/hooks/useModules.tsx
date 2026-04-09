@@ -24,50 +24,50 @@ export function useModules() {
 
   const modules: Authenticated<NavItem>[] = [
     {
-      name: t({ id: "Shop Floor", message: "Shop Floor" }),
+      name: t`Shop Floor`,
       to: path.to.external.mes,
       icon: LuTvMinimalPlay,
       role: "employee"
     },
     {
       permission: "sales",
-      name: t({ id: "Sales", message: "Sales" }),
+      name: t`Sales`,
       to: path.to.sales,
       icon: LuCrown
     },
     {
       permission: "production",
-      name: t({ id: "Production", message: "Production" }),
+      name: t`Production`,
       to: path.to.production,
       icon: LuFactory
     },
     {
       permission: "parts",
-      name: t({ id: "Items", message: "Items" }),
+      name: t`Items`,
       to: path.to.parts,
       icon: LuSquareStack
     },
     {
       permission: "inventory",
-      name: t({ id: "Inventory", message: "Inventory" }),
+      name: t`Inventory`,
       to: path.to.inventory,
       icon: LuBox
     },
     {
       permission: "purchasing",
-      name: t({ id: "Purchasing", message: "Purchasing" }),
+      name: t`Purchasing`,
       to: path.to.purchasing,
       icon: LuShoppingCart
     },
     {
       permission: "quality",
-      name: t({ id: "Quality", message: "Quality" }),
+      name: t`Quality`,
       to: path.to.quality,
       icon: LuFolderCheck
     },
     {
       permission: "accounting",
-      name: t({ id: "Finance", message: "Finance" }),
+      name: t`Finance`,
       to: path.to.currencies,
       icon: LuLandmark
     },
@@ -79,31 +79,31 @@ export function useModules() {
     // },
     {
       permission: "people",
-      name: t({ id: "People", message: "People" }),
+      name: t`People`,
       to: path.to.people,
       icon: LuUsers
     },
     {
       permission: "resources",
-      name: t({ id: "Resources", message: "Resources" }),
+      name: t`Resources`,
       to: path.to.resources,
       icon: LuWrench
     },
     {
       permission: "documents",
-      name: t({ id: "Documents", message: "Documents" }),
+      name: t`Documents`,
       to: path.to.documents,
       icon: LuFiles
     },
     {
       permission: "users",
-      name: t({ id: "Users", message: "Users" }),
+      name: t`Users`,
       to: path.to.employeeAccounts,
       icon: LuShield
     },
     {
       permission: "settings",
-      name: t({ id: "Settings", message: "Settings" }),
+      name: t`Settings`,
       to: path.to.company,
       icon: LuSettings
     }

@@ -81,7 +81,7 @@ const CustomerLocationForm = ({
                 {isEditing
                   ? tShared({ id: "Edit", message: "Edit" })
                   : tShared({ id: "New", message: "New" })}{" "}
-                {t({ id: "Location", message: "Location" })}
+                {t`Location`}
               </ModalDrawerTitle>
             </ModalDrawerHeader>
             <ModalDrawerBody>
@@ -89,7 +89,7 @@ const CustomerLocationForm = ({
               <Hidden name="type" value={type} />
               <Hidden name="addressId" />
               <VStack spacing={4}>
-                <Input name="name" label={t({ id: "Name", message: "Name" })} />
+                <Input name="name" label={t`Name`} />
                 <AddressAutocomplete />
                 <CustomFormFields table="customerLocation" />
               </VStack>

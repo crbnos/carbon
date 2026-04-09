@@ -23,41 +23,41 @@ export default function useSalesSubmodules() {
   const { addSavedViewsToRoutes } = useSavedViews();
   const salesRoutes: AuthenticatedRouteGroup[] = [
     {
-      name: t({ id: "Manage", message: "Manage" }),
+      name: t`Manage`,
       routes: [
         {
-          name: t({ id: "Customers", message: "Customers" }),
+          name: t`Customers`,
           to: path.to.customers,
           icon: <LuSquareUser />,
           table: "customer"
         },
         {
-          name: t({ id: "RFQs", message: "RFQs" }),
+          name: t`RFQs`,
           to: path.to.salesRfqs,
           icon: <RiProgress2Line />,
           table: "salesRfq"
         },
         {
-          name: t({ id: "Quotes", message: "Quotes" }),
+          name: t`Quotes`,
           to: path.to.quotes,
           icon: <RiProgress4Line />,
           table: "quote"
         },
         {
-          name: t({ id: "Orders", message: "Orders" }),
+          name: t`Orders`,
           to: path.to.salesOrders,
           icon: <RiProgress8Line />,
           table: "salesOrder"
         },
         {
-          name: t({ id: "Invoices", message: "Invoices" }),
+          name: t`Invoices`,
           to: path.to.salesInvoices,
           icon: <LuCreditCard />,
           permission: "invoicing",
           table: "salesInvoice"
         },
         {
-          name: t({ id: "Portals", message: "Portals" }),
+          name: t`Portals`,
           to: path.to.customerPortals,
           role: "employee",
           icon: <LuGlobe />
@@ -65,23 +65,23 @@ export default function useSalesSubmodules() {
       ]
     },
     {
-      name: t({ id: "Configure", message: "Configure" }),
+      name: t`Configure`,
       routes: [
         {
-          name: t({ id: "No Quotes", message: "No Quotes" }),
+          name: t`No Quotes`,
           to: path.to.noQuoteReasons,
           role: "employee",
           icon: <LuBan />
         },
 
         {
-          name: t({ id: "Statuses", message: "Statuses" }),
+          name: t`Statuses`,
           to: path.to.customerStatuses,
           role: "employee",
           icon: <LuStar />
         },
         {
-          name: t({ id: "Types", message: "Types" }),
+          name: t`Types`,
           to: path.to.customerTypes,
           role: "employee",
           icon: <LuShapes />

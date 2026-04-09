@@ -36,7 +36,6 @@ const NoQuoteReasonForm = ({
   onClose
 }: NoQuoteReasonFormProps) => {
   const { t } = useLingui();
-  const { t: tShared } = useLingui();
   const permissions = usePermissions();
   const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
 
@@ -45,18 +44,10 @@ const NoQuoteReasonForm = ({
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
-      toast.success(
-        t({
-          id: "Created no quote reason",
-          message: "Created no quote reason"
-        })
-      );
+      toast.success(t`Created no quote reason`);
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
       toast.error(
-        t({
-          id: "Failed to create no quote reason: {{message}}",
-          message: `Failed to create no quote reason: ${fetcher.data.error.message}`
-        })
+        t`Failed to create no quote reason: ${fetcher.data.error.message}`
       );
     }
   }, [fetcher.data, fetcher.state, onClose, t, type]);
@@ -89,33 +80,22 @@ const NoQuoteReasonForm = ({
           >
             <ModalDrawerHeader>
               <ModalDrawerTitle>
-                {isEditing
-                  ? tShared({ id: "Edit", message: "Edit" })
-                  : tShared({ id: "New", message: "New" })}{" "}
-                {t({ id: "No Quote Reason", message: "No Quote Reason" })}
+                {isEditing ? t`Edit` : t`New`} {t`No Quote Reason`}
               </ModalDrawerTitle>
             </ModalDrawerHeader>
             <ModalDrawerBody>
               <Hidden name="id" />
               <Hidden name="type" value={type} />
               <VStack spacing={4}>
-                <Input
-                  name="name"
-                  label={t({
-                    id: "No Quote Reason",
-                    message: "No Quote Reason"
-                  })}
-                />
+                <Input name="name" label={t`No Quote Reason`} />
                 <CustomFormFields table="noQuoteReason" />
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>
               <HStack>
-                <Submit isDisabled={isDisabled}>
-                  {tShared({ id: "Save", message: "Save" })}
-                </Submit>
+                <Submit isDisabled={isDisabled}>{t`Save`}</Submit>
                 <Button size="md" variant="solid" onClick={() => onClose()}>
-                  {tShared({ id: "Cancel", message: "Cancel" })}
+                  {t`Cancel`}
                 </Button>
               </HStack>
             </ModalDrawerFooter>

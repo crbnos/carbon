@@ -36,7 +36,6 @@ const CustomerStatusForm = ({
   onClose
 }: CustomerStatusFormProps) => {
   const { t } = useLingui();
-  const { t: tShared } = useLingui();
   const permissions = usePermissions();
   const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
 
@@ -45,18 +44,10 @@ const CustomerStatusForm = ({
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
-      toast.success(
-        t({
-          id: "Created customer status",
-          message: "Created customer status"
-        })
-      );
+      toast.success(t`Created customer status`);
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
       toast.error(
-        t({
-          id: "Failed to create customer status: {{message}}",
-          message: `Failed to create customer status: ${fetcher.data.error.message}`
-        })
+        t`Failed to create customer status: ${fetcher.data.error.message}`
       );
     }
   }, [fetcher.data, fetcher.state, onClose, t, type]);
@@ -89,33 +80,22 @@ const CustomerStatusForm = ({
           >
             <ModalDrawerHeader>
               <ModalDrawerTitle>
-                {isEditing
-                  ? tShared({ id: "Edit", message: "Edit" })
-                  : tShared({ id: "New", message: "New" })}{" "}
-                {t({ id: "Customer Status", message: "Customer Status" })}
+                {isEditing ? t`Edit` : t`New`} {t`Customer Status`}
               </ModalDrawerTitle>
             </ModalDrawerHeader>
             <ModalDrawerBody>
               <Hidden name="id" />
               <Hidden name="type" value={type} />
               <VStack spacing={4}>
-                <Input
-                  name="name"
-                  label={t({
-                    id: "Customer Status",
-                    message: "Customer Status"
-                  })}
-                />
+                <Input name="name" label={t`Customer Status`} />
                 <CustomFormFields table="customerStatus" />
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>
               <HStack>
-                <Submit isDisabled={isDisabled}>
-                  {tShared({ id: "Save", message: "Save" })}
-                </Submit>
+                <Submit isDisabled={isDisabled}>{t`Save`}</Submit>
                 <Button size="md" variant="solid" onClick={() => onClose()}>
-                  {tShared({ id: "Cancel", message: "Cancel" })}
+                  {t`Cancel`}
                 </Button>
               </HStack>
             </ModalDrawerFooter>

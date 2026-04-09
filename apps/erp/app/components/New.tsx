@@ -40,9 +40,7 @@ const New = ({ label, to, variant = "primary" }: NewProps) => {
           ref={buttonRef}
         >
           <Link to={to} prefetch="intent">
-            {translatedLabel
-              ? `${t({ id: "Add", message: "Add" })} ${translatedLabel}`
-              : t({ id: "Add", message: "Add" })}
+            {translatedLabel ? `${t`Add`} ${translatedLabel}` : t`Add`}
           </Link>
         </Button>
       </TooltipTrigger>

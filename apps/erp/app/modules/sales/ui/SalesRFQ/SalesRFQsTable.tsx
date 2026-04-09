@@ -1,6 +1,6 @@
 import { HStack, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
 import {
@@ -55,7 +55,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
     const defaultColumns: ColumnDef<SalesRFQ>[] = [
       {
         accessorKey: "rfqId",
-        header: t({ id: "RFQ Number", message: "RFQ Number" }),
+        header: t`RFQ Number`,
         cell: ({ row }) => (
           <HStack>
             <Hyperlink to={path.to.salesRfqDetails(row.original.id!)}>
@@ -70,7 +70,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
 
       {
         id: "customerId",
-        header: t({ id: "Customer", message: "Customer" }),
+        header: t`Customer`,
         cell: ({ row }) => (
           <CustomerAvatar customerId={row.original.customerId} />
         ),
@@ -87,7 +87,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
       },
       {
         accessorKey: "status",
-        header: t({ id: "Status", message: "Status" }),
+        header: t`Status`,
         cell: (item) => {
           const status = item.getValue<(typeof salesRFQStatusType)[number]>();
           return <SalesRFQStatus status={status} />;
@@ -100,13 +100,13 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
               label: <SalesRFQStatus status={status} />
             }))
           },
-          pluralHeader: t({ id: "Statuses", message: "Statuses" }),
+          pluralHeader: t`Statuses`,
           icon: <LuStar />
         }
       },
       {
         accessorKey: "customerReference",
-        header: t({ id: "Customer RFQ", message: "Customer RFQ" }),
+        header: t`Customer RFQ`,
         cell: (item) => item.getValue(),
         meta: {
           icon: <LuQrCode />
@@ -114,7 +114,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
       },
       {
         accessorKey: "rfqDate",
-        header: t({ id: "RFQ Date", message: "RFQ Date" }),
+        header: t`RFQ Date`,
         cell: (item) => formatDate(item.getValue<string>()),
         meta: {
           icon: <LuCalendar />
@@ -122,7 +122,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
       },
       {
         accessorKey: "expirationDate",
-        header: t({ id: "Due Date", message: "Due Date" }),
+        header: t`Due Date`,
         cell: (item) => formatDate(item.getValue<string>()),
         meta: {
           icon: <LuCalendar />
@@ -131,7 +131,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
 
       {
         id: "assignee",
-        header: t({ id: "Assignee", message: "Assignee" }),
+        header: t`Assignee`,
         cell: ({ row }) => (
           <EmployeeAvatar employeeId={row.original.assignee} />
         ),
@@ -148,7 +148,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
       },
       {
         id: "createdBy",
-        header: t({ id: "Created By", message: "Created By" }),
+        header: t`Created By`,
         cell: ({ row }) => (
           <EmployeeAvatar employeeId={row.original.createdBy} />
         ),
@@ -165,7 +165,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
       },
       {
         accessorKey: "locationName",
-        header: t({ id: "Location", message: "Location" }),
+        header: t`Location`,
         cell: (item) => <Enumerable value={item.getValue<string>()} />,
         meta: {
           filter: {
@@ -182,7 +182,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
       },
       {
         accessorKey: "createdAt",
-        header: t({ id: "Created At", message: "Created At" }),
+        header: t`Created At`,
         cell: (item) => formatDate(item.getValue<string>()),
         meta: {
           icon: <LuCalendar />
@@ -190,7 +190,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
       },
       {
         id: "updatedBy",
-        header: t({ id: "Updated By", message: "Updated By" }),
+        header: t`Updated By`,
         cell: ({ row }) => (
           <EmployeeAvatar employeeId={row.original.updatedBy} />
         ),
@@ -207,7 +207,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
       },
       {
         accessorKey: "updatedAt",
-        header: t({ id: "Updated At", message: "Updated At" }),
+        header: t`Updated At`,
         cell: (item) => formatDate(item.getValue<string>()),
         meta: {
           icon: <LuCalendar />
@@ -223,7 +223,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
       <>
         <MenuItem onClick={() => navigate(path.to.salesRfqDetails(row.id!))}>
           <MenuIcon icon={<LuPencil />} />
-          {t({ id: "Edit", message: "Edit" })}
+          <Trans>Edit</Trans>
         </MenuItem>
         <MenuItem
           destructive
@@ -234,7 +234,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
           }}
         >
           <MenuIcon icon={<LuTrash />} />
-          {t({ id: "Delete", message: "Delete" })}
+          <Trans>Delete</Trans>
         </MenuItem>
       </>
     );
@@ -256,14 +256,11 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
         }}
         primaryAction={
           permissions.can("create", "sales") && (
-            <New
-              label={t({ id: "RFQ", message: "RFQ" })}
-              to={path.to.newSalesRFQ}
-            />
+            <New label={t`RFQ`} to={path.to.newSalesRFQ} />
           )
         }
         renderContextMenu={renderContextMenu}
-        title={t({ id: "RFQs", message: "RFQs" })}
+        title={t`RFQs`}
         table="salesRfq"
         withSavedView
       />
@@ -272,10 +269,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
           action={path.to.deleteSalesRfq(selectedSalesRFQ.id)}
           isOpen={deleteSalesRFQModal.isOpen}
           name={selectedSalesRFQ.rfqId!}
-          text={t({
-            id: "Are you sure you want to delete {{rfqId}}? This cannot be undone.",
-            message: `Are you sure you want to delete ${selectedSalesRFQ.rfqId!}? This cannot be undone.`
-          })}
+          text={t`Are you sure you want to delete ${selectedSalesRFQ.rfqId!}? This cannot be undone.`}
           onCancel={() => {
             deleteSalesRFQModal.onClose();
             setSelectedSalesRFQ(null);

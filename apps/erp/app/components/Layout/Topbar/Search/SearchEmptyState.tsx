@@ -1,5 +1,5 @@
 import { Skeleton } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { motion } from "framer-motion";
 import { LuSearch } from "react-icons/lu";
 import type { SearchEmptyStateProps } from "./types";
@@ -40,13 +40,10 @@ export function SearchEmptyState({ type, query }: SearchEmptyStateProps) {
           <LuSearch className="w-6 h-6 text-muted-foreground" />
         </div>
         <p className="text-sm font-medium text-foreground mb-1">
-          {t({ id: "No results found", message: "No results found" })}
+          <Trans>No results found</Trans>
         </p>
         <p className="text-sm text-muted-foreground">
-          {t({
-            id: 'No matches for "{{query}}". Try a different search term.',
-            message: `No matches for "${query}". Try a different search term.`
-          })}
+          {t`No matches for "${query}". Try a different search term.`}
         </p>
       </motion.div>
     );
@@ -60,10 +57,7 @@ export function SearchEmptyState({ type, query }: SearchEmptyStateProps) {
       className="flex flex-col items-center justify-center py-12 px-4 text-center"
     >
       <p className="text-sm text-muted-foreground">
-        {t({
-          id: "Type to search across your workspace",
-          message: "Type to search across your workspace"
-        })}
+        <Trans>Type to search across your workspace</Trans>
       </p>
     </motion.div>
   );

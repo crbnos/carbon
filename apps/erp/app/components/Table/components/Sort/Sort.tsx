@@ -18,7 +18,7 @@ import {
   TooltipContent,
   TooltipTrigger
 } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { Reorder } from "framer-motion";
 import { BsChevronDown, BsSortUp } from "react-icons/bs";
 import { IoMdClose } from "react-icons/io";
@@ -46,15 +46,17 @@ const Sort = ({ columnAccessors }: SortProps) => {
         <Tooltip>
           <TooltipTrigger asChild>
             <IconButton
-              aria-label={t({ id: "Sort", message: "Sort" })}
-              title={t({ id: "Sort", message: "Sort" })}
+              aria-label={t`Sort`}
+              title={t`Sort`}
               variant={hasNoSorts ? "ghost" : "active"}
               icon={<LuArrowUpDown />}
               className={cn(hasNoSorts && "!border-dashed border-border")}
             />
           </TooltipTrigger>
           <TooltipContent>
-            <p>{t({ id: "Sort by", message: "Sort by" })}</p>
+            <p>
+              <Trans>Sort by</Trans>
+            </p>
           </TooltipContent>
         </Tooltip>
       </PopoverTrigger>
@@ -62,16 +64,10 @@ const Sort = ({ columnAccessors }: SortProps) => {
         {hasNoSorts && (
           <PopoverHeader>
             <p className="text-sm">
-              {t({
-                id: "No sorts applied to this view",
-                message: "No sorts applied to this view"
-              })}
+              <Trans>No sorts applied to this view</Trans>
             </p>
             <p className="text-xs text-muted-foreground">
-              {t({
-                id: "Add a column below to sort the view",
-                message: "Add a column below to sort the view"
-              })}
+              <Trans>Add a column below to sort the view</Trans>
             </p>
           </PopoverHeader>
         )}
@@ -101,13 +97,10 @@ const Sort = ({ columnAccessors }: SortProps) => {
                       onCheckedChange={() => toggleSortByDirection(column)}
                     />
                     <span className="text-sm text-muted-foreground">
-                      {t({ id: "Ascending", message: "Ascending" })}
+                      <Trans>Ascending</Trans>
                     </span>
                     <IconButton
-                      aria-label={t({
-                        id: "Remove sort by column",
-                        message: "Remove sort by column"
-                      })}
+                      aria-label={t`Remove sort by column`}
                       icon={<IoMdClose />}
                       onClick={() => removeSortBy(sort)}
                       variant="ghost"
@@ -123,10 +116,7 @@ const Sort = ({ columnAccessors }: SortProps) => {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button rightIcon={<BsChevronDown />} variant="secondary">
-                {t({
-                  id: "Pick a column to sort by",
-                  message: "Pick a column to sort by"
-                })}
+                <Trans>Pick a column to sort by</Trans>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-48">

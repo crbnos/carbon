@@ -13,410 +13,348 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:179
+#: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceForm.tsx:171
+msgid "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
+msgstr "Faktura zakupu to dokument okreslajacy produkty lub uslugi zakupione przez klienta oraz odpowiadajacy im koszt."
+
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:170
 msgid "A sales invoice is a document that specifies the products or services sold to a customer and the corresponding cost."
-msgstr "Faktura sprzedazy to dokument okreslajacy produkty lub uslugi sprzedane klientowi oraz odpowiadajacy im koszt."
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:341
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:332
 msgid "A sales invoice line contains invoice details for a particular item"
-msgstr "Pozycja faktury sprzedazy zawiera szczegoly faktury dla konkretnego produktu"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:536
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:519
 msgid "Add-On"
-msgstr "Doplata"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:641
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:612
 msgid "Add-On Cost"
-msgstr "Koszt doplaty"
+msgstr ""
 
-#. js-lingui-explicit-id
 #. placeholder {0}: routeData?.purchaseInvoice?.invoiceId
-#: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceHeader.tsx:392
-msgid "Are you sure you want to delete {{invoiceId}}? This cannot be undone."
-msgstr "Czy na pewno chcesz usunac {invoiceId}? Tej operacji nie mozna cofnac."
+#: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceHeader.tsx:374
+msgid "Are you sure you want to delete {0}? This cannot be undone."
+msgstr "Czy na pewno chcesz usunac {0}? Tej operacji nie mozna cofnac."
 
-#. js-lingui-explicit-id
 #. placeholder {0}: selectedPurchaseInvoice.invoiceId!
 #. placeholder {0}: selectedSalesInvoice.invoiceId!
-#: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicesTable.tsx:342
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoicesTable.tsx:330
-msgid "Are you sure you want to permanently delete {{invoiceId}}?"
-msgstr "Czy na pewno chcesz trwale usunac {invoiceId}?"
+#: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicesTable.tsx:336
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoicesTable.tsx:327
+msgid "Are you sure you want to permanently delete {0}?"
+msgstr "Czy na pewno chcesz trwale usunac {0}?"
 
-#. js-lingui-explicit-id
 #: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicesTable.tsx:160
 #: app/modules/invoicing/ui/SalesInvoice/SalesInvoicesTable.tsx:154
 msgid "Assignee"
-msgstr "Przypisany"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:203
 msgid "Batch items require a sales order"
-msgstr "Produkty partiowane wymagaja zamowienia sprzedazy"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:94
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:92
 msgid "Carbon client not found"
-msgstr "Nie znaleziono klienta Carbon"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:545
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:528
 msgid "Collapse Costs"
-msgstr "Zwin koszty"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicesTable.tsx:234
 #: app/modules/invoicing/ui/SalesInvoice/SalesInvoicesTable.tsx:228
 msgid "Created At"
-msgstr "Utworzono"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicesTable.tsx:217
 #: app/modules/invoicing/ui/SalesInvoice/SalesInvoicesTable.tsx:211
 msgid "Created By"
-msgstr "Utworzone przez"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:287
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:259
 msgid "Currency"
-msgstr "Waluta"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:208
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:198
 #: app/modules/invoicing/ui/SalesInvoice/SalesInvoicesTable.tsx:82
 msgid "Customer"
-msgstr "Klient"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:213
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:203
 msgid "Customer Invoice Number"
-msgstr "Numer faktury klienta"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/modules/invoicing/ui/SalesInvoice/SalesInvoicesTable.tsx:116
 msgid "Customer PO"
-msgstr "PO klienta"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:269
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:242
 msgid "Date Issued"
-msgstr "Data wystawienia"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicesTable.tsx:291
 #: app/modules/invoicing/ui/SalesInvoice/SalesInvoicesTable.tsx:285
 msgid "Delete"
-msgstr "Usun"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceHeader.tsx:224
+#: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceHeader.tsx:218
 msgid "Delete Purchase Invoice"
-msgstr "Usun fakture zakupu"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:390
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:376
 msgid "Description"
-msgstr "Opis"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicesTable.tsx:185
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:265
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:241
 #: app/modules/invoicing/ui/SalesInvoice/SalesInvoicesTable.tsx:179
 msgid "Due Date"
-msgstr "Termin"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicesTable.tsx:278
 #: app/modules/invoicing/ui/SalesInvoice/SalesInvoicesTable.tsx:272
 msgid "Edit"
-msgstr "Edytuj"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:131
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:124
 msgid "Error fetching customer data"
-msgstr "Blad pobierania danych klienta"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:549
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:529
 msgid "Expand Costs"
-msgstr "Rozwin koszty"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:221
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:208
 #: app/modules/invoicing/ui/SalesInvoice/SalesInvoicesTable.tsx:99
 msgid "Invoice Customer"
-msgstr "Klient faktury"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:247
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:228
 msgid "Invoice Customer Contact"
-msgstr "Kontakt klienta faktury"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:230
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:214
 msgid "Invoice Customer Location"
-msgstr "Lokalizacja klienta faktury"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:202
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:192
 msgid "Invoice ID"
-msgstr "ID faktury"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicesTable.tsx:68
 #: app/modules/invoicing/ui/SalesInvoice/SalesInvoicesTable.tsx:62
 msgid "Invoice Number"
-msgstr "Numer faktury"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicesTable.tsx:105
 msgid "Invoice Supplier"
-msgstr "Dostawca faktury"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/modules/invoicing/ui/SalesInvoice/SalesInvoicesTable.tsx:144
 msgid "Invoice Total"
-msgstr "Wartosc faktury"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicesTable.tsx:177
 #: app/modules/invoicing/ui/SalesInvoice/SalesInvoicesTable.tsx:171
 msgid "Issued Date"
-msgstr "Data wystawienia"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:300
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:464
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:270
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:450
 msgid "Location"
-msgstr "Lokalizacja"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:368
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:355
 msgid "Make items cannot be invoiced directly. Change method to Pick to continue."
-msgstr "Pozycji typu Make nie mozna fakturowac bezposrednio. Zmien metode na Pick, aby kontynuowac."
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:410
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:396
 msgid "Method"
-msgstr "Metoda"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceHeader.tsx:200
+#: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceHeader.tsx:197
 msgid "More options"
-msgstr "Wiecej opcji"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:175
+#: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceForm.tsx:166
+msgid "New Purchase Invoice"
+msgstr "Nowa faktura zakupu"
+
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:165
 msgid "New Sales Invoice"
 msgstr "Nowa faktura sprzedazy"
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:309
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:303
 msgid "New Sales Invoice Line"
-msgstr "Nowa pozycja faktury sprzedazy"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:654
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:622
 msgid "Non-Taxable Add-On Cost"
-msgstr "Koszt doplaty niepodlegajacy opodatkowaniu"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicesTable.tsx:150
 msgid "Order Total"
-msgstr "Wartosc zamowienia"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicesTable.tsx:193
 #: app/modules/invoicing/ui/SalesInvoice/SalesInvoicesTable.tsx:187
 msgid "Paid Date"
-msgstr "Data platnosci"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceHeader.tsx:335
+#: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceHeader.tsx:320
 msgid "Payment"
-msgstr "Platnosc"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicesTable.tsx:209
 #: app/modules/invoicing/ui/SalesInvoice/SalesInvoicesTable.tsx:203
 msgid "Payment Method"
-msgstr "Metoda platnosci"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:274
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:246
 msgid "Payment Terms"
-msgstr "Warunki platnosci"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceHeader.tsx:320
+#: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceHeader.tsx:305
 msgid "Post"
-msgstr "Zaksieguj"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicesTable.tsx:201
 #: app/modules/invoicing/ui/SalesInvoice/SalesInvoicesTable.tsx:195
 msgid "Posting Date"
-msgstr "Data ksiegowania"
+msgstr ""
 
-#. js-lingui-explicit-id
+#: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceForm.tsx:164
 #: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicesTable.tsx:320
 msgid "Purchase Invoice"
 msgstr "Faktura zakupu"
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicesTable.tsx:329
+#: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicesTable.tsx:326
 msgid "Purchase Invoices"
-msgstr "Faktury zakupu"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceHeader.tsx:252
+#: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceHeader.tsx:240
 msgid "Purchase Order"
-msgstr "Zamowienie zakupu"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceHeader.tsx:269
+#: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceHeader.tsx:257
 msgid "Purchase Orders"
-msgstr "Zamowienia zakupu"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:435
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:421
 msgid "Quantity"
-msgstr "Ilosc"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceHeader.tsx:260
+#: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceHeader.tsx:248
 msgid "Receipt"
-msgstr "Przyjecie"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceHeader.tsx:291
+#: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceHeader.tsx:276
 msgid "Receipts"
-msgstr "Przyjecia"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:174
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoicesTable.tsx:314
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:163
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoicesTable.tsx:313
 msgid "Sales Invoice"
 msgstr "Faktura sprzedazy"
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoicesTable.tsx:320
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoicesTable.tsx:317
 msgid "Sales Invoices"
-msgstr "Faktury sprzedazy"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:314
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:673
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceShipmentForm.tsx:127
+#: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceForm.tsx:283
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:283
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceShipmentForm.tsx:125
 msgid "Save"
 msgstr "Zapisz"
 
 #. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:207
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:638
+msgid "Save"
+msgstr "Zapisz"
+
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:204
 msgid "Serial items require a sales order"
-msgstr "Produkty seryjne wymagaja zamowienia sprzedazy"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:470
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:456
 msgid "Shelf"
-msgstr "Polka"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceShipmentForm.tsx:109
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceShipmentForm.tsx:110
 msgid "Shipment Location"
-msgstr "Lokalizacja wysylki"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceShipmentForm.tsx:92
 msgid "Shipping"
 msgstr "Wysylka"
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:620
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceShipmentForm.tsx:99
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:594
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceShipmentForm.tsx:100
 msgid "Shipping Cost"
-msgstr "Koszt wysylki"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceShipmentForm.tsx:118
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceShipmentForm.tsx:116
 msgid "Shipping Method"
-msgstr "Metoda wysylki"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicesTable.tsx:130
 #: app/modules/invoicing/ui/SalesInvoice/SalesInvoicesTable.tsx:124
 msgid "Status"
-msgstr "Stan"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicesTable.tsx:144
 #: app/modules/invoicing/ui/SalesInvoice/SalesInvoicesTable.tsx:138
 msgid "Statuses"
-msgstr "Statusy"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicesTable.tsx:88
 msgid "Supplier"
-msgstr "Dostawca"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicesTable.tsx:122
 msgid "Supplier Ref."
-msgstr "Ref. dostawcy"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:335
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:508
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:326
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:491
 msgid "Tax"
-msgstr "Podatek"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:497
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:483
 msgid "Tax & Additional Costs"
-msgstr "Podatek i koszty dodatkowe"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:599
-msgid "Tax Amount"
-msgstr "Kwota podatku"
-
-#. js-lingui-explicit-id
 #: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:573
-msgid "Tax Percent"
-msgstr "Stawka podatku"
+msgid "Tax Amount"
+msgstr ""
 
-#. js-lingui-explicit-id
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:550
+msgid "Tax Percent"
+msgstr ""
+
 #: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceHeader.tsx:183
 msgid "Toggle Explorer"
-msgstr "Przelacz eksplorator"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceHeader.tsx:367
+#: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceHeader.tsx:352
 msgid "Toggle Properties"
-msgstr "Przelacz wlasciwosci"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceHeader.tsx:237
+#: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceHeader.tsx:228
 msgid "Unapproved Supplier"
-msgstr "Niezatwierdzony dostawca"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:447
+#: app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:433
 msgid "Unit Price"
-msgstr "Cena jednostkowa"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicesTable.tsx:259
 #: app/modules/invoicing/ui/SalesInvoice/SalesInvoicesTable.tsx:253
 msgid "Updated At"
-msgstr "Zaktualizowano"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicesTable.tsx:242
 #: app/modules/invoicing/ui/SalesInvoice/SalesInvoicesTable.tsx:236
 msgid "Updated By"
-msgstr "Zaktualizowane przez"
+msgstr ""

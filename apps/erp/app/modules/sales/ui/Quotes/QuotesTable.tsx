@@ -6,7 +6,7 @@ import {
   useDisclosure
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
 import {
@@ -67,7 +67,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
     const defaultColumns: ColumnDef<Quotation>[] = [
       {
         accessorKey: "quoteId",
-        header: t({ id: "Quote Number", message: "Quote Number" }),
+        header: t`Quote Number`,
         cell: ({ row }) => (
           <HStack>
             <ItemThumbnail
@@ -94,7 +94,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
       },
       {
         id: "customerId",
-        header: t({ id: "Customer", message: "Customer" }),
+        header: t`Customer`,
         cell: ({ row }) => (
           <CustomerAvatar customerId={row.original.customerId} />
         ),
@@ -112,7 +112,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
 
       {
         accessorKey: "status",
-        header: t({ id: "Status", message: "Status" }),
+        header: t`Status`,
         cell: ({ row }) => {
           const status = row.original.status;
           const lines = row.original.lines ?? 0;
@@ -134,13 +134,13 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
               label: <QuoteStatus status={status} />
             }))
           },
-          pluralHeader: t({ id: "Statuses", message: "Statuses" }),
+          pluralHeader: t`Statuses`,
           icon: <LuStar />
         }
       },
       {
         accessorKey: "customerReference",
-        header: t({ id: "Customer RFQ", message: "Customer RFQ" }),
+        header: t`Customer RFQ`,
         cell: (item) => item.getValue(),
         meta: {
           icon: <LuQrCode />
@@ -148,7 +148,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
       },
       {
         accessorKey: "salesPersonId",
-        header: t({ id: "Sales Person", message: "Sales Person" }),
+        header: t`Sales Person`,
         cell: ({ row }) => (
           <EmployeeAvatar employeeId={row.original.salesPersonId} />
         ),
@@ -162,7 +162,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
       },
       {
         accessorKey: "estimatorId",
-        header: t({ id: "Estimator", message: "Estimator" }),
+        header: t`Estimator`,
         cell: ({ row }) => (
           <EmployeeAvatar employeeId={row.original.estimatorId} />
         ),
@@ -176,7 +176,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
       },
       {
         id: "assignee",
-        header: t({ id: "Assignee", message: "Assignee" }),
+        header: t`Assignee`,
         cell: ({ row }) => (
           <EmployeeAvatar employeeId={row.original.assignee} />
         ),
@@ -190,7 +190,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
       },
       {
         accessorKey: "dueDate",
-        header: t({ id: "Due Date", message: "Due Date" }),
+        header: t`Due Date`,
         cell: (item) => formatDate(item.getValue<string>()),
         meta: {
           icon: <LuCalendar />
@@ -198,7 +198,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
       },
       {
         accessorKey: "expirationDate",
-        header: t({ id: "Expiration Date", message: "Expiration Date" }),
+        header: t`Expiration Date`,
         cell: (item) => formatDate(item.getValue<string>()),
         meta: {
           icon: <LuCalendar />
@@ -206,7 +206,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
       },
       {
         accessorKey: "locationName",
-        header: t({ id: "Location", message: "Location" }),
+        header: t`Location`,
         cell: (item) => <Enumerable value={item.getValue<string>()} />,
         meta: {
           filter: {
@@ -223,7 +223,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
       },
       {
         id: "createdBy",
-        header: t({ id: "Created By", message: "Created By" }),
+        header: t`Created By`,
         cell: ({ row }) => (
           <EmployeeAvatar employeeId={row.original.createdBy} />
         ),
@@ -240,7 +240,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
       },
       {
         accessorKey: "createdAt",
-        header: t({ id: "Created At", message: "Created At" }),
+        header: t`Created At`,
         cell: (item) => formatDate(item.getValue<string>()),
         meta: {
           icon: <LuCalendar />
@@ -248,7 +248,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
       },
       {
         id: "updatedBy",
-        header: t({ id: "Updated By", message: "Updated By" }),
+        header: t`Updated By`,
         cell: ({ row }) => (
           <EmployeeAvatar employeeId={row.original.updatedBy} />
         ),
@@ -265,7 +265,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
       },
       {
         accessorKey: "updatedAt",
-        header: t({ id: "Updated At", message: "Updated At" }),
+        header: t`Updated At`,
         cell: (item) => formatDate(item.getValue<string>()),
         meta: {
           icon: <LuCalendar />
@@ -281,7 +281,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
       <>
         <MenuItem onClick={() => navigate(path.to.quoteDetails(row.id!))}>
           <MenuIcon icon={<LuPencil />} />
-          {t({ id: "Edit", message: "Edit" })}
+          <Trans>Edit</Trans>
         </MenuItem>
         <MenuItem
           disabled={!permissions.can("delete", "sales")}
@@ -292,7 +292,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
           }}
         >
           <MenuIcon icon={<LuTrash />} />
-          {t({ id: "Delete", message: "Delete" })}
+          <Trans>Delete</Trans>
         </MenuItem>
       </>
     );
@@ -315,15 +315,12 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
         }}
         primaryAction={
           permissions.can("create", "sales") && (
-            <New
-              label={t({ id: "Quote", message: "Quote" })}
-              to={path.to.newQuote}
-            />
+            <New label={t`Quote`} to={path.to.newQuote} />
           )
         }
         renderContextMenu={renderContextMenu}
         table="quote"
-        title={t({ id: "Quotes", message: "Quotes" })}
+        title={t`Quotes`}
         withSavedView
       />
       {selectedQuotation && selectedQuotation.id && (
@@ -331,10 +328,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
           action={path.to.deleteQuote(selectedQuotation.id)}
           isOpen={deleteQuotationModal.isOpen}
           name={selectedQuotation.quoteId!}
-          text={t({
-            id: "Are you sure you want to delete {{quoteId}}? This cannot be undone.",
-            message: `Are you sure you want to delete ${selectedQuotation.quoteId!}? This cannot be undone.`
-          })}
+          text={t`Are you sure you want to delete ${selectedQuotation.quoteId!}? This cannot be undone.`}
           onCancel={() => {
             deleteQuotationModal.onClose();
             setSelectedQuotation(null);

@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle
 } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import { useFetcher, useParams } from "react-router";
 import type { z } from "zod";
@@ -37,7 +37,6 @@ const QuoteShipmentForm = forwardRef<
   QuoteShipmentFormProps
 >(({ initialValues, defaultCollapsed = false }, ref) => {
   const { t } = useLingui();
-  const { t: tShared } = useLingui();
   const permissions = usePermissions();
   const fetcher = useFetcher<{}>();
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
@@ -85,14 +84,16 @@ const QuoteShipmentForm = forwardRef<
         isDisabled={isLocked}
       >
         <CardHeader>
-          <CardTitle>{t({ id: "Shipping", message: "Shipping" })}</CardTitle>
+          <CardTitle>
+            <Trans>Shipping</Trans>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Hidden name="id" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
             <Number
               name="shippingCost"
-              label={t({ id: "Shipping Cost", message: "Shipping Cost" })}
+              label={t`Shipping Cost`}
               formatOptions={{
                 style: "currency",
                 currency: company?.baseCurrencyCode
@@ -102,29 +103,23 @@ const QuoteShipmentForm = forwardRef<
             />
             <Location
               name="locationId"
-              label={t({
-                id: "Shipment Location",
-                message: "Shipment Location"
-              })}
+              label={t`Shipment Location`}
               isReadOnly={isCustomer}
               isClearable
             />
             <ShippingMethod
               name="shippingMethodId"
-              label={t({ id: "Shipping Method", message: "Shipping Method" })}
+              label={t`Shipping Method`}
             />
 
-            <DatePicker
-              name="receiptRequestedDate"
-              label={t({ id: "Requested Date", message: "Requested Date" })}
-            />
+            <DatePicker name="receiptRequestedDate" label={t`Requested Date`} />
           </div>
         </CardContent>
         <CardFooter>
           <Submit
             isDisabled={!permissions.can("update", "sales") || !isEditable}
           >
-            {tShared({ id: "Save", message: "Save" })}
+            <Trans>Save</Trans>
           </Submit>
         </CardFooter>
       </ValidatedForm>

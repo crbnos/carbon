@@ -11,6 +11,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { Trans } from "@lingui/react/macro";
 import { useState } from "react";
 import { flushSync } from "react-dom";
 import { useParams } from "react-router";
@@ -159,12 +160,18 @@ const PurchaseInvoiceForm = ({ initialValues }: PurchaseInvoiceFormProps) => {
       <Card>
         <CardHeader>
           <CardTitle>
-            {isEditing ? "Purchase Invoice" : "New Purchase Invoice"}
+            {isEditing ? (
+              <Trans>Purchase Invoice</Trans>
+            ) : (
+              <Trans>New Purchase Invoice</Trans>
+            )}
           </CardTitle>
           {!isEditing && (
             <CardDescription>
-              A purchase invoice is a document that specifies the products or
-              services purchased by a customer and the corresponding cost.
+              <Trans>
+                A purchase invoice is a document that specifies the products or
+                services purchased by a customer and the corresponding cost.
+              </Trans>
             </CardDescription>
           )}
         </CardHeader>
@@ -273,7 +280,7 @@ const PurchaseInvoiceForm = ({ initialValues }: PurchaseInvoiceFormProps) => {
                 : !permissions.can("create", "invoicing")
             }
           >
-            Save
+            <Trans>Save</Trans>
           </Submit>
         </CardFooter>
       </Card>

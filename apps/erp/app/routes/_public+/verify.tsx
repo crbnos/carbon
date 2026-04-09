@@ -20,6 +20,7 @@ import {
   Heading,
   VStack
 } from "@carbon/react";
+import { msg } from "@lingui/core/macro";
 import { LuCircleAlert } from "react-icons/lu";
 import type {
   ActionFunctionArgs,
@@ -34,7 +35,7 @@ import {
   useSearchParams
 } from "react-router";
 import { z } from "zod";
-
+import { getRequestI18n } from "~/services/request-i18n.server";
 import type { Result } from "~/types";
 import { path } from "~/utils/path";
 
@@ -65,14 +66,15 @@ const ratelimit = new Ratelimit({
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
+  const i18n = await getRequestI18n(request);
   const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
 
   const { success } = await ratelimit.limit(ip);
 
   if (!success) {
     return data(
-      error(null, "Rate limit exceeded"),
-      await flash(request, error(null, "Rate limit exceeded"))
+      error(null, i18n._(msg`Rate limit exceeded`)),
+      await flash(request, error(null, i18n._(msg`Rate limit exceeded`)))
     );
   }
 
@@ -81,7 +83,7 @@ export async function action({ request }: ActionFunctionArgs) {
   );
 
   if (validation.error) {
-    return error(validation.error, "Invalid verification code");
+    return error(validation.error, i18n._(msg`Invalid verification code`));
   }
 
   const { email, code, redirectTo } = validation.data;
@@ -91,8 +93,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (!isCodeValid) {
     return data(
-      error(null, "Invalid or expired verification code"),
-      await flash(request, error(null, "Invalid or expired verification code"))
+      error(null, i18n._(msg`Invalid or expired verification code`)),
+      await flash(
+        request,
+        error(null, i18n._(msg`Invalid or expired verification code`))
+      )
     );
   }
 
@@ -103,8 +108,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (!user) {
     return data(
-      error(null, "Failed to create user account"),
-      await flash(request, error(null, "Failed to create user account"))
+      error(null, i18n._(msg`Failed to create user account`)),
+      await flash(
+        request,
+        error(null, i18n._(msg`Failed to create user account`))
+      )
     );
   }
 
@@ -113,8 +121,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (!authSession) {
     return data(
-      error(null, "Failed to sign in user"),
-      await flash(request, error(null, "Failed to sign in user"))
+      error(null, i18n._(msg`Failed to sign in user`)),
+      await flash(request, error(null, i18n._(msg`Failed to sign in user`)))
     );
   }
 

@@ -1,5 +1,5 @@
 import { Heading, VStack } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
+import { Trans } from "@lingui/react/macro";
 import type { MetaFunction } from "react-router";
 import { Outlet } from "react-router";
 import type { Handle } from "~/utils/handle";
@@ -16,7 +16,6 @@ export const handle: Handle = {
 };
 
 export default function AccountRoute() {
-  const { t } = useLingui();
   // const { links } = useAccountSubmodules();
 
   return (
@@ -27,7 +26,7 @@ export default function AccountRoute() {
       <div className="flex bg-card border-b border-border py-8 px-2 w-full justify-center">
         <div className="w-full max-w-[60rem]">
           <Heading size="h3">
-            {t({ id: "Account Settings", message: "Account Settings" })}
+            <Trans>Account Settings</Trans>
           </Heading>
         </div>
       </div>

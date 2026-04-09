@@ -41,7 +41,7 @@ const Employee = ({ type, inline, ...props }: EmployeeSelectProps) => {
       return [
         {
           value: "",
-          label: t({ id: "Unassigned", message: "Unassigned" })
+          label: t`Unassigned`
         },
         ...base
       ];
@@ -56,11 +56,8 @@ const Employee = ({ type, inline, ...props }: EmployeeSelectProps) => {
         options={options}
         {...props}
         inline={inline ? EmployeePreview : undefined}
-        label={props?.label ?? t({ id: "Employee", message: "Employee" })}
-        placeholder={
-          props?.placeholder ??
-          t({ id: "Select Employee", message: "Select Employee" })
-        }
+        label={props?.label ?? t`Employee`}
+        placeholder={props?.placeholder ?? t`Select Employee`}
       />
     </>
   );

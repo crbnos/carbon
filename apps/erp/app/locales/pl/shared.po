@@ -13,75 +13,62 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#. js-lingui-explicit-id
 #: app/components/Table/components/TableHeader.tsx:151
 msgid "A name is required to save a view"
-msgstr "Nazwa widoku jest wymagana"
+msgstr ""
 
-#: app/components/AvatarMenu.tsx:208
+#: app/components/AvatarMenu.tsx:211
 msgid "About"
 msgstr "O mnie"
 
-#: app/components/AvatarMenu.tsx:170
+#: app/components/AvatarMenu.tsx:171
+#: app/routes/x+/account+/_layout.tsx:29
 msgid "Account Settings"
 msgstr "Ustawienia konta"
 
-#. js-lingui-explicit-id
-#: app/routes/x+/account+/_layout.tsx:30
-msgid "Account Settings"
-msgstr "Ustawienia konta"
-
-#. js-lingui-explicit-id
-#: app/components/New.tsx:44
-#: app/components/New.tsx:45
+#: app/components/New.tsx:43
+#: app/components/New.tsx:43
 msgid "Add"
-msgstr "Dodaj"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Table/components/Sort/Sort.tsx:71
+#: app/components/Table/components/Sort/Sort.tsx:70
 msgid "Add a column below to sort the view"
-msgstr "Dodaj kolumne ponizej, aby sortowac widok"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: app/components/Layout/Topbar/Breadcrumbs.tsx:198
 msgid "Add Company"
 msgstr "Dodaj firme"
 
-#. js-lingui-explicit-id
 #: app/routes/x+/sales+/_index.tsx:220
 msgid "All Customers"
-msgstr "Wszyscy klienci"
+msgstr ""
 
-#: app/components/AvatarMenu.tsx:98
+#: app/components/AvatarMenu.tsx:99
 msgid "API Documentation"
 msgstr "Dokumentacja API"
 
-#. js-lingui-explicit-id
-#: app/components/Layout/Topbar/Notifications.tsx:465
+#: app/components/Layout/Topbar/Notifications.tsx:467
 msgid "Archive"
-msgstr "Archiwum"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Layout/Topbar/Notifications.tsx:528
+#: app/components/Layout/Topbar/Notifications.tsx:525
 msgid "Archive all"
-msgstr "Archiwizuj wszystko"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Table/components/Sort/Sort.tsx:104
+#: app/components/Table/components/Sort/Sort.tsx:100
 msgid "Ascending"
-msgstr "Rosnaco"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Chat/ChatInput.tsx:189
+#: app/components/Chat/ChatInput.tsx:184
 msgid "Ask anything"
-msgstr "Zapytaj o cokolwiek"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/routes/x+/sales+/_index.tsx:681
+#: app/routes/x+/sales+/_index.tsx:687
 msgid "Assigned to Me"
-msgstr "Przypisane do mnie"
+msgstr ""
 
-#: app/components/Layout/Topbar/Suggestion.tsx:210
+#: app/components/Layout/Topbar/Suggestion.tsx:212
 msgid "Attach File"
 msgstr "Dolacz plik"
 
@@ -90,48 +77,44 @@ msgstr "Dolacz plik"
 msgid "Base Currency"
 msgstr "Waluta bazowa"
 
-#. js-lingui-explicit-id
-#: app/components/Table/components/TableHeader.tsx:263
+#: app/routes/_public+/login.tsx:119
+#: app/routes/_public+/login.tsx:122
+msgid "Bot verification failed. Please try again."
+msgstr ""
+
+#: app/components/Table/components/TableHeader.tsx:247
 msgid "Bulk Import"
-msgstr "Import zbiorczy"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Layout/Topbar/Notifications.tsx:157
-msgid "by {{name}}"
-msgstr "przez {name}"
+#: app/components/Layout/Topbar/Notifications.tsx:158
+msgid "by {byUser}"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Table/components/TableHeader.tsx:218
+#: app/components/Layout/Topbar/Suggestion.tsx:200
+#: app/components/Table/components/TableHeader.tsx:209
 msgid "Cancel"
 msgstr "Anuluj"
 
-#: app/components/Layout/Topbar/Suggestion.tsx:198
-msgid "Cancel"
-msgstr "Anuluj"
-
-#: app/components/Layout/Topbar/Suggestion.tsx:206
+#: app/components/Layout/Topbar/Suggestion.tsx:208
 msgid "Clear"
 msgstr "Wyczysc"
 
-#. js-lingui-explicit-id
 #: app/components/Table/components/Filter/Filter.tsx:126
 msgid "Clear Filters"
-msgstr "Wyczysc filtry"
+msgstr ""
 
 #: app/components/Layout/Topbar/Search.tsx:395
 msgid "Close"
 msgstr "Zamknij"
 
-#. js-lingui-explicit-id
 #: app/components/Table/components/Columns.tsx:58
 msgid "Column visibility and order"
-msgstr "Widocznosc i kolejnosc kolumn"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/components/Table/components/Columns.tsx:50
 #: app/components/Table/components/Columns.tsx:51
 msgid "Columns"
-msgstr "Kolumny"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: app/components/Layout/Topbar/Breadcrumbs.tsx:156
@@ -143,89 +126,116 @@ msgstr "Firmy"
 msgid "Company Name"
 msgstr "Nazwa firmy"
 
-#. js-lingui-explicit-id
-#: app/components/Chat/ChatWidgets.tsx:45
+#: app/components/Chat/ChatWidgets.tsx:44
 msgid "Create"
-msgstr "Utworz"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/components/Form/Customer.tsx:49
 #: app/components/Layout/Topbar/CreateMenu.tsx:86
-#: app/routes/x+/sales+/_index.tsx:635
-#: app/routes/x+/sales+/_index.tsx:704
+#: app/routes/x+/sales+/_index.tsx:640
+#: app/routes/x+/sales+/_index.tsx:712
 msgid "Customer"
-msgstr "Klient"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Form/CustomerContact.tsx:74
+#: app/components/Form/CustomerContact.tsx:69
 msgid "Customer Contact"
-msgstr "Kontakt klienta"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Form/CustomerLocation.tsx:86
+#: app/components/Form/CustomerLocation.tsx:84
 msgid "Customer Location"
-msgstr "Lokalizacja klienta"
+msgstr ""
 
-#: app/components/AvatarMenu.tsx:108
+#: app/components/AvatarMenu.tsx:109
 msgid "Dark Mode"
 msgstr "Tryb ciemny"
 
-#: app/components/AvatarMenu.tsx:90
+#: app/components/AvatarMenu.tsx:91
 msgid "Dashboard"
 msgstr "Panel glowny"
 
-#. js-lingui-explicit-id
-#: app/components/Table/components/TableHeader.tsx:208
+#: app/components/Table/components/TableHeader.tsx:202
 msgid "Description (optional)"
-msgstr "Opis (opcjonalnie)"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/routes/x+/sales+/_index.tsx:633
-#: app/routes/x+/sales+/_index.tsx:702
+#: app/routes/x+/sales+/_index.tsx:634
+#: app/routes/x+/sales+/_index.tsx:706
 msgid "Document"
-msgstr "Dokument"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/hooks/useModules.tsx:94
 msgid "Documents"
-msgstr "Dokumenty"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Table/components/Columns.tsx:129
+#: app/components/Table/components/Columns.tsx:120
 msgid "Drag handle"
-msgstr "Uchwyt przeciagnij"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Table/components/TableHeader.tsx:380
+#: app/components/Table/components/TableHeader.tsx:349
 msgid "Edit"
-msgstr "Edytuj"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Table/components/Columns.tsx:69
+#: app/components/Table/components/Columns.tsx:66
 msgid "Edit column visibility"
-msgstr "Edytuj widocznosc kolumn"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Table/components/TableHeader.tsx:338
-#: app/components/Table/components/TableHeader.tsx:351
+#: app/components/Table/components/TableHeader.tsx:313
+#: app/components/Table/components/TableHeader.tsx:322
 msgid "Edit View"
-msgstr "Edytuj widok"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/components/Form/Employee.tsx:59
 #: app/components/Layout/Topbar/CreateMenu.tsx:109
 msgid "Employee"
-msgstr "Pracownik"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/routes/x+/sales+/_index.tsx:690
+#: app/routes/x+/sales+/_index.tsx:696
 msgid "Error loading assigned documents"
-msgstr "Blad ladowania przypisanych dokumentow"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/routes/x+/sales+/_index.tsx:520
 msgid "Export CSV"
-msgstr "Eksportuj CSV"
+msgstr ""
+
+#: app/routes/_public+/invite.$code.tsx:68
+msgid "Failed to accept invite"
+msgstr ""
+
+#: app/routes/_public+/verify.tsx:111
+#: app/routes/_public+/verify.tsx:114
+msgid "Failed to create user account"
+msgstr ""
+
+#: app/routes/x+/account+/profile.tsx:49
+msgid "Failed to get user"
+msgstr ""
+
+#: app/routes/_public+/login.tsx:135
+#: app/routes/_public+/login.tsx:138
+msgid "Failed to send magic link"
+msgstr ""
+
+#: app/routes/_public+/login.tsx:154
+#: app/routes/_public+/login.tsx:157
+msgid "Failed to send verification code"
+msgstr ""
+
+#: app/routes/_public+/login.tsx:145
+#: app/routes/_public+/login.tsx:146
+msgid "Failed to sign in"
+msgstr ""
+
+#: app/routes/_public+/verify.tsx:124
+#: app/routes/_public+/verify.tsx:125
+msgid "Failed to sign in user"
+msgstr ""
+
+#: app/routes/x+/account+/profile.tsx:129
+msgid "Failed to update avatar"
+msgstr ""
+
+#: app/routes/x+/account+/profile.tsx:84
+msgid "Failed to update profile"
+msgstr ""
 
 #: app/components/Layout/Topbar/Suggestion.tsx:96
 msgid "Failed to upload image"
@@ -235,348 +245,324 @@ msgstr "Nie udalo sie przeslac obrazu"
 msgid "File size exceeds 10MB limit"
 msgstr "Rozmiar pliku przekracza limit 10MB"
 
-#. js-lingui-explicit-id
 #: app/components/Table/components/Filter/Filter.tsx:156
 msgid "Filter"
-msgstr "Filtr"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/hooks/useModules.tsx:70
 msgid "Finance"
-msgstr "Finanse"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/components/Greeting.tsx:24
 msgid "Good afternoon"
-msgstr "Dobre popoludnie"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/components/Greeting.tsx:26
 msgid "Good evening"
-msgstr "Dobry wieczor"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/components/Greeting.tsx:22
 msgid "Good morning"
-msgstr "Dzien dobry"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Table/components/Columns.tsx:75
+#: app/components/Table/components/Columns.tsx:69
 msgid "Hide, pin and reorder columns"
-msgstr "Ukryj, przypnij i zmien kolejnosc kolumn"
+msgstr ""
 
 #: app/components/Layout/Topbar/Suggestion.tsx:138
 msgid "Ideas, suggestions or problems?"
 msgstr "Pomysly, sugestie lub problemy?"
 
-#. js-lingui-explicit-id
-#: app/components/Table/components/TableHeader.tsx:274
-msgid "Import {{label}} CSV"
+#: app/components/Table/components/TableHeader.tsx:258
+msgid "Import {label} CSV"
 msgstr "Importuj CSV {label}"
 
-#. js-lingui-explicit-id
-#: app/components/Layout/Topbar/Notifications.tsx:459
+#: app/components/Layout/Topbar/Notifications.tsx:461
 msgid "Inbox"
-msgstr "Skrzynka odbiorcza"
+msgstr ""
 
-#. js-lingui-explicit-id
+#: app/routes/x+/account+/profile.tsx:148
+msgid "Invalid avatar path"
+msgstr ""
+
+#: app/routes/_public+/callback.tsx:45
+msgid "Invalid callback form"
+msgstr ""
+
+#: app/routes/_public+/login.tsx:92
+msgid "Invalid email address"
+msgstr ""
+
+#: app/root.tsx:141
+msgid "Invalid mode"
+msgstr ""
+
+#: app/routes/_public+/verify.tsx:96
+#: app/routes/_public+/verify.tsx:99
+msgid "Invalid or expired verification code"
+msgstr ""
+
+#: app/routes/_public+/callback.tsx:68
+msgid "Invalid refresh token"
+msgstr ""
+
+#: app/routes/_public+/verify.tsx:86
+msgid "Invalid verification code"
+msgstr ""
+
 #: app/hooks/useModules.tsx:52
 msgid "Inventory"
-msgstr "Magazyn"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/components/Table/components/Filter/ActiveFilters.tsx:141
 msgid "is"
-msgstr "jest"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/components/Table/components/Filter/ActiveFilters.tsx:143
 msgid "is any of"
-msgstr "jest dowolnym z"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/components/Layout/Topbar/CreateMenu.tsx:46
 msgid "Issue"
-msgstr "Niezgodnosc"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/hooks/useModules.tsx:46
 msgid "Items"
-msgstr "Pozycje"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/components/Layout/Topbar/CreateMenu.tsx:54
 msgid "Job"
-msgstr "Zlecenie"
+msgstr ""
 
 #. js-lingui-explicit-id
 #: app/components/Layout/Topbar/Breadcrumbs.tsx:224
 msgid "Let's set up your new company"
 msgstr "Skonfigurujmy twoja nowa firme"
 
-#. js-lingui-explicit-id
-#: app/components/Table/components/Filter/ActiveFilters.tsx:173
-#: app/components/Table/components/Filter/Filter.tsx:173
+#: app/components/Table/components/Filter/ActiveFilters.tsx:172
+#: app/components/Table/components/Filter/Filter.tsx:172
 msgid "Loading..."
-msgstr "Ladowanie..."
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Table/components/TableHeader.tsx:372
+#: app/components/Table/components/TableHeader.tsx:341
 msgid "Lock"
-msgstr "Zablokuj"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/components/Layout/Topbar/CreateMenu.tsx:62
 msgid "Maintenance"
-msgstr "Utrzymanie"
+msgstr ""
 
-#: app/components/AvatarMenu.tsx:178
+#: app/components/AvatarMenu.tsx:180
 msgid "Manage Subscription"
 msgstr "Zarzadzaj subskrypcja"
 
-#. js-lingui-explicit-id
-#: app/components/Layout/Topbar/Notifications.tsx:168
+#: app/components/Layout/Topbar/Notifications.tsx:170
 msgid "Mark as read"
-msgstr "Oznacz jako przeczytane"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/components/Table/components/Filter/ActiveFilters.tsx:144
 msgid "matches"
-msgstr "pasuje do"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/routes/x+/sales+/_index.tsx:509
 msgid "More"
-msgstr "Wiecej"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Table/components/TableHeader.tsx:197
+#: app/components/Table/components/TableHeader.tsx:194
 msgid "My Saved View"
-msgstr "Moj zapisany widok"
+msgstr ""
 
 #: app/components/Layout/Topbar/Search.tsx:383
 msgid "Navigate"
 msgstr "Nawiguj"
 
-#. js-lingui-explicit-id
 #: app/components/Table/components/Pagination/Pagination.tsx:151
 #: app/components/Table/components/Pagination/Pagination.tsx:194
 msgid "Next"
-msgstr "Nastepna"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Table/components/Filter/Filter.tsx:174
+#: app/components/Table/components/Filter/Filter.tsx:172
 msgid "No available filters"
-msgstr "Brak dostepnych filtrow"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/components/Table/Table.tsx:937
 msgid "No data exists"
-msgstr "Brak danych"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/components/Layout/Topbar/Search/SearchEmptyState.tsx:46
-msgid "No matches for \"{{query}}\". Try a different search term."
+msgid "No matches for \"{query}\". Try a different search term."
 msgstr "Brak dopasowan dla \"{query}\". Sprobuj innej frazy."
 
-#. js-lingui-explicit-id
-#: app/components/Layout/Topbar/Notifications.tsx:486
+#: app/components/Layout/Topbar/Notifications.tsx:487
 msgid "No new notifications"
-msgstr "Brak nowych powiadomien"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Table/components/Filter/ActiveFilters.tsx:174
+#: app/components/Table/components/Filter/ActiveFilters.tsx:172
 msgid "No options found."
-msgstr "Nie znaleziono opcji."
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Layout/Topbar/Notifications.tsx:543
+#: app/components/Layout/Topbar/Notifications.tsx:539
 msgid "No outstanding trainings"
-msgstr "Brak zaleglych szkolen"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/components/Layout/Topbar/Search/SearchEmptyState.tsx:43
 #: app/components/Table/Table.tsx:925
 msgid "No results found"
-msgstr "Nie znaleziono wynikow"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Table/components/Sort/Sort.tsx:65
+#: app/components/Table/components/Sort/Sort.tsx:67
 msgid "No sorts applied to this view"
-msgstr "Brak sortowania w tym widoku"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Layout/Topbar/Notifications.tsx:568
+#: app/components/Layout/Topbar/Notifications.tsx:559
 msgid "Nothing in the archive"
-msgstr "Brak elementow w archiwum"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/components/Table/components/Pagination/Pagination.tsx:167
 msgid "of"
-msgstr "z"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/routes/x+/sales+/_index.tsx:404
 msgid "Open Quotes"
-msgstr "Otwarte oferty"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/routes/x+/sales+/_index.tsx:375
 msgid "Open RFQs"
-msgstr "Otwarte RFQ"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/routes/x+/sales+/_index.tsx:433
 msgid "Open Sales Orders"
-msgstr "Otwarte zamowienia sprzedazy"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/components/Layout/Topbar/CreateMenu.tsx:38
 msgid "Part"
-msgstr "Czesc"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/hooks/useModules.tsx:82
 msgid "People"
-msgstr "Kadry"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Table/components/Sort/Sort.tsx:126
+#: app/components/Table/components/Sort/Sort.tsx:119
 msgid "Pick a column to sort by"
-msgstr "Wybierz kolumne do sortowania"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/components/Table/components/Pagination/Pagination.tsx:137
 #: app/components/Table/components/Pagination/Pagination.tsx:178
 msgid "Previous"
-msgstr "Poprzednia"
+msgstr ""
 
-#: app/components/AvatarMenu.tsx:198
+#: app/components/AvatarMenu.tsx:201
 msgid "Privacy Policy"
 msgstr "Polityka prywatnosci"
 
-#. js-lingui-explicit-id
 #: app/hooks/useModules.tsx:40
 msgid "Production"
-msgstr "Produkcja"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/routes/x+/account+/profile.tsx:150
+#: app/routes/x+/account+/profile.tsx:164
 msgid "Profile"
-msgstr "Profil"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/components/Layout/Topbar/CreateMenu.tsx:70
 msgid "Purchase Order"
-msgstr "Zamowienie zakupu"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/hooks/useModules.tsx:58
 msgid "Purchasing"
-msgstr "Zakupy"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/hooks/useModules.tsx:64
 msgid "Quality"
-msgstr "Jakosc"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/components/Layout/Topbar/CreateMenu.tsx:96
 msgid "Quote"
-msgstr "Oferta"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/routes/x+/sales+/_index.tsx:160
 msgid "Quotes"
-msgstr "Oferty"
+msgstr ""
+
+#: app/routes/_public+/login.tsx:82
+#: app/routes/_public+/login.tsx:83
+#: app/routes/_public+/verify.tsx:76
+#: app/routes/_public+/verify.tsx:77
+msgid "Rate limit exceeded"
+msgstr ""
 
 #: app/components/Layout/Topbar/Search.tsx:223
 msgid "Recent"
 msgstr "Ostatnie"
 
-#. js-lingui-explicit-id
 #: app/routes/x+/sales+/_index.tsx:624
 msgid "Recently Created"
-msgstr "Ostatnio utworzone"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Table/components/Filter/ActiveFilters.tsx:211
+#: app/components/Table/components/Filter/ActiveFilters.tsx:206
 #: app/components/Table/components/Filter/Filter.tsx:134
 msgid "Remove filter"
-msgstr "Usun filtr"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/components/Table/Table.tsx:928
 msgid "Remove Filters"
-msgstr "Usun filtry"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Table/components/Sort/Sort.tsx:107
+#: app/components/Table/components/Sort/Sort.tsx:103
 msgid "Remove sort by column"
-msgstr "Usun sortowanie kolumny"
+msgstr ""
 
-#. js-lingui-explicit-id
+#: app/routes/x+/account+/profile.tsx:140
+msgid "Removed avatar"
+msgstr ""
+
 #: app/hooks/useModules.tsx:88
 msgid "Resources"
-msgstr "Zasoby"
+msgstr ""
 
 #: app/components/Layout/Topbar/Search.tsx:285
 msgid "Results"
 msgstr "Wyniki"
 
-#. js-lingui-explicit-id
 #: app/components/Table/components/Pagination/Pagination.tsx:62
 msgid "Results per page"
-msgstr "Wynikow na strone"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/components/Layout/Topbar/CreateMenu.tsx:91
 msgid "RFQ"
-msgstr "RFQ"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/routes/x+/sales+/_index.tsx:154
 msgid "RFQs"
-msgstr "RFQ"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/components/Table/components/Pagination/Pagination.tsx:57
 msgid "rows"
-msgstr "wierszy"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/hooks/useModules.tsx:34
 msgid "Sales"
-msgstr "Sprzedaz"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/components/Layout/Topbar/CreateMenu.tsx:101
 msgid "Sales Order"
-msgstr "Zamowienie sprzedazy"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/routes/x+/sales+/_index.tsx:166
 msgid "Sales Orders"
-msgstr "Zamowienia sprzedazy"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Table/components/TableHeader.tsx:223
+#: app/components/Table/components/TableHeader.tsx:211
 msgid "Save"
-msgstr "Zapisz"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Table/components/TableHeader.tsx:339
-#: app/components/Table/components/TableHeader.tsx:352
+#: app/components/Table/components/TableHeader.tsx:313
+#: app/components/Table/components/TableHeader.tsx:322
 msgid "Save View"
-msgstr "Zapisz widok"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Chat/ChatWidgets.tsx:34
-#: app/components/Table/components/TableHeader.tsx:317
-msgid "Search"
-msgstr "Szukaj"
-
+#: app/components/Chat/ChatWidgets.tsx:33
 #: app/components/Layout/Topbar/Search.tsx:459
+#: app/components/Table/components/TableHeader.tsx:295
 msgid "Search"
 msgstr "Szukaj"
 
@@ -584,52 +570,42 @@ msgstr "Szukaj"
 msgid "Search across your workspace..."
 msgstr "Szukaj w calym obszarze roboczym..."
 
-#. js-lingui-explicit-id
-#: app/components/Chat/ChatInput.tsx:185
+#: app/components/Chat/ChatInput.tsx:184
 msgid "Search the web"
-msgstr "Przeszukaj internet"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/components/Table/components/Filter/ActiveFilters.tsx:168
 #: app/components/Table/components/Filter/Filter.tsx:168
 msgid "Search..."
-msgstr "Szukaj..."
+msgstr ""
 
+#: app/components/Form/Customer.tsx:50
+#: app/components/Form/CustomerLocation.tsx:85
 #: app/components/Layout/Topbar/Search.tsx:389
 msgid "Select"
 msgstr "Wybierz"
 
-#. js-lingui-explicit-id
-#: app/components/Form/Customer.tsx:51
-#: app/components/Form/CustomerLocation.tsx:89
-msgid "Select"
-msgstr "Wybierz"
-
-#. js-lingui-explicit-id
-#: app/components/Form/CustomerContact.tsx:69
+#: app/components/Form/CustomerContact.tsx:67
 msgid "Select Contact"
-msgstr "Wybierz kontakt"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Form/Employee.tsx:62
+#: app/components/Form/Employee.tsx:60
 msgid "Select Employee"
-msgstr "Wybierz pracownika"
+msgstr ""
 
-#: app/components/Layout/Topbar/Suggestion.tsx:218
+#: app/components/Layout/Topbar/Suggestion.tsx:221
 msgid "Send"
 msgstr "Wyslij"
 
-#. js-lingui-explicit-id
 #: app/hooks/useModules.tsx:106
 msgid "Settings"
-msgstr "Ustawienia"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/hooks/useModules.tsx:27
 msgid "Shop Floor"
-msgstr "Hala produkcyjna"
+msgstr ""
 
-#: app/components/AvatarMenu.tsx:215
+#: app/components/AvatarMenu.tsx:219
 msgid "Sign Out"
 msgstr "Wyloguj sie"
 
@@ -637,34 +613,29 @@ msgstr "Wyloguj sie"
 msgid "Signed in as {name}"
 msgstr "Zalogowano jako {name}"
 
-#. js-lingui-explicit-id
 #: app/components/Table/components/Sort/Sort.tsx:49
 #: app/components/Table/components/Sort/Sort.tsx:50
 msgid "Sort"
-msgstr "Sortuj"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/components/Table/Table.tsx:1021
 msgid "Sort Ascending"
-msgstr "Sortuj rosnaco"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Table/components/Sort/Sort.tsx:57
+#: app/components/Table/components/Sort/Sort.tsx:58
 msgid "Sort by"
-msgstr "Sortuj wedlug"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Table/Table.tsx:1035
+#: app/components/Table/Table.tsx:1032
 msgid "Sort Descending"
-msgstr "Sortuj malejaco"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/routes/x+/sales+/_index.tsx:634
-#: app/routes/x+/sales+/_index.tsx:703
+#: app/routes/x+/sales+/_index.tsx:637
+#: app/routes/x+/sales+/_index.tsx:709
 msgid "Status"
-msgstr "Stan"
+msgstr ""
 
-#: app/components/Layout/Topbar/Suggestion.tsx:158
+#: app/components/Layout/Topbar/Suggestion.tsx:159
 msgid "Submit anonymously"
 msgstr "Wyslij anonimowo"
 
@@ -672,89 +643,91 @@ msgstr "Wyslij anonimowo"
 msgid "Suggestion"
 msgstr "Sugestia"
 
-#. js-lingui-explicit-id
 #: app/components/Layout/Topbar/CreateMenu.tsx:78
 msgid "Supplier"
-msgstr "Dostawca"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Table/components/TableHeader.tsx:253
+#: app/components/Table/components/TableHeader.tsx:240
 msgid "Table actions"
-msgstr "Akcje tabeli"
+msgstr ""
 
-#: app/components/AvatarMenu.tsx:186
+#: app/components/AvatarMenu.tsx:189
 msgid "Terms and Privacy"
 msgstr "Regulamin i prywatnosc"
 
-#: app/components/AvatarMenu.tsx:192
+#: app/components/AvatarMenu.tsx:195
 msgid "Terms of Service"
 msgstr "Warunki korzystania"
 
-#: app/components/AvatarMenu.tsx:136
+#: app/components/AvatarMenu.tsx:137
 msgid "Theme Color"
 msgstr "Kolor motywu"
 
-#. js-lingui-explicit-id
-#: app/routes/x+/account+/profile.tsx:152
+#: app/routes/x+/account+/profile.tsx:167
 msgid "This information will be visible to all users, so be careful what you share."
-msgstr "Te informacje beda widoczne dla wszystkich uzytkownikow, wiec uwazaj, co udostepniasz."
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Table/components/Columns.tsx:141
-#: app/components/Table/components/Columns.tsx:188
+#: app/components/Table/components/Columns.tsx:129
+#: app/components/Table/components/Columns.tsx:173
 msgid "Toggle column"
-msgstr "Przelacz kolumne"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Layout/Topbar/Notifications.tsx:462
+#: app/components/Layout/Topbar/Notifications.tsx:464
 msgid "Trainings"
-msgstr "Szkolenia"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Layout/Topbar/Search/SearchEmptyState.tsx:63
+#: app/components/Layout/Topbar/Search/SearchEmptyState.tsx:60
 msgid "Type to search across your workspace"
-msgstr "Wpisz, aby szukac w calym obszarze roboczym"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/components/Form/Employee.tsx:44
 msgid "Unassigned"
-msgstr "Nieprzypisany"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Table/components/TableHeader.tsx:222
+#: app/components/Table/components/TableHeader.tsx:211
 msgid "Update"
-msgstr "Aktualizuj"
+msgstr ""
+
+#: app/routes/x+/account+/profile.tsx:141
+msgid "Updated avatar"
+msgstr ""
+
+#: app/routes/x+/account+/profile.tsx:106
+msgid "Updated language"
+msgstr ""
+
+#: app/routes/x+/account+/profile.tsx:90
+msgid "Updated profile"
+msgstr ""
 
 #: app/components/Layout/Topbar/Suggestion.tsx:78
 msgid "Uploading {fileName}"
 msgstr "Przesylanie {fileName}"
 
-#. js-lingui-explicit-id
+#: app/routes/_public+/callback.tsx:89
+msgid "User not found"
+msgstr ""
+
 #: app/hooks/useModules.tsx:100
 msgid "Users"
-msgstr "Uzytkownicy"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/routes/x+/sales+/_index.tsx:451
 msgid "View Open Orders"
-msgstr "Zobacz otwarte zamowienia"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/routes/x+/sales+/_index.tsx:422
 msgid "View Open Quotes"
-msgstr "Zobacz otwarte oferty"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/routes/x+/sales+/_index.tsx:393
 msgid "View Open RFQs"
-msgstr "Zobacz otwarte RFQ"
+msgstr ""
 
-#. js-lingui-explicit-id
-#: app/components/Chat/ChatWidgets.tsx:56
+#: app/components/Chat/ChatWidgets.tsx:55
 msgid "Voice"
-msgstr "Glos"
+msgstr ""
 
-#. js-lingui-explicit-id
 #: app/components/Layout/Topbar/Notifications.tsx:136
 msgid "yourself"
-msgstr "siebie"
+msgstr ""

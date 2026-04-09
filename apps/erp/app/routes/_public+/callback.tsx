@@ -17,10 +17,12 @@ import {
 import { getUserByEmail } from "@carbon/auth/users.server";
 import { validator } from "@carbon/form";
 import { Alert, AlertDescription, AlertTitle, cn, VStack } from "@carbon/react";
+import { msg } from "@lingui/core/macro";
 import { useEffect, useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useFetcher, useLocation } from "react-router";
+import { getRequestI18n } from "~/services/request-i18n.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -33,13 +35,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
+  const i18n = await getRequestI18n(request);
 
   const validation = await validator(callbackValidator).validate(
     await request.formData()
   );
 
   if (validation.error) {
-    return data(error(validation.error, "Invalid callback form"), {
+    return data(error(validation.error, i18n._(msg`Invalid callback form`)), {
       status: 400
     });
   }
@@ -60,7 +63,10 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!authSession) {
     return redirect(
       path.to.root,
-      await flash(request, error(authSession, "Invalid refresh token"))
+      await flash(
+        request,
+        error(authSession, i18n._(msg`Invalid refresh token`))
+      )
     );
   }
 
@@ -80,7 +86,7 @@ export async function action({ request }: ActionFunctionArgs) {
   } else {
     return redirect(
       path.to.root,
-      await flash(request, error(user.error, "User not found"))
+      await flash(request, error(user.error, i18n._(msg`User not found`)))
     );
   }
 }

@@ -181,15 +181,7 @@ export const ChatInput = forwardRef<RecordButtonRef, ChatInputProps>(
                   }}
                   value={input}
                   placeholder={
-                    isWebSearch
-                      ? t({
-                          id: "Search the web",
-                          message: "Search the web"
-                        })
-                      : t({
-                          id: "Ask anything",
-                          message: "Ask anything"
-                        })
+                    isWebSearch ? t`Search the web` : t`Ask anything`
                   }
                 />
               </PromptInputBody>

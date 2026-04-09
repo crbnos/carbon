@@ -22,7 +22,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { CSVLink } from "react-csv";
 import {
@@ -118,33 +118,28 @@ const SalesOrderConfirmModal = ({
           fetcher={fetcher}
         >
           <ModalHeader>
-            <ModalTitle>
-              {t({
-                id: "Confirm {{salesOrderId}}",
-                message: `Confirm ${salesOrder?.salesOrderId}`
-              })}
-            </ModalTitle>
+            <ModalTitle>{t`Confirm ${salesOrder?.salesOrderId}`}</ModalTitle>
             <ModalDescription>
-              {t({
-                id: "Are you sure you want to confirm this sales order? Confirming the order will affect on order quantities used to calculate supply and demand.",
-                message:
-                  "Are you sure you want to confirm this sales order? Confirming the order will affect on order quantities used to calculate supply and demand."
-              })}
+              <Trans>
+                Are you sure you want to confirm this sales order? Confirming
+                the order will affect on order quantities used to calculate
+                supply and demand.
+              </Trans>
             </ModalDescription>
           </ModalHeader>
           <ModalBody>
             <VStack spacing={4}>
               {canEmail && (
                 <SelectControlled
-                  label={t({ id: "Send Via", message: "Send Via" })}
+                  label={t`Send Via`}
                   name="notification"
                   options={[
                     {
-                      label: t({ id: "None", message: "None" }),
+                      label: t`None`,
                       value: "None"
                     },
                     {
-                      label: t({ id: "Email", message: "Email" }),
+                      label: t`Email`,
                       value: "Email"
                     }
                   ]}
@@ -160,21 +155,17 @@ const SalesOrderConfirmModal = ({
                     name="customerContact"
                     customer={salesOrder?.customerId ?? undefined}
                   />
-                  <EmailRecipients
-                    name="cc"
-                    label={t({ id: "CC", message: "CC" })}
-                    type="employee"
-                  />
+                  <EmailRecipients name="cc" label={t`CC`} type="employee" />
                 </>
               )}
             </VStack>
           </ModalBody>
           <ModalFooter>
             <Button variant="secondary" onClick={onClose}>
-              {t({ id: "Cancel", message: "Cancel" })}
+              <Trans>Cancel</Trans>
             </Button>
             <Button type="submit" isLoading={fetcher.state !== "idle"}>
-              {t({ id: "Confirm", message: "Confirm" })}
+              <Trans>Confirm</Trans>
             </Button>
           </ModalFooter>
         </ValidatedForm>
@@ -267,10 +258,7 @@ const SalesOrderHeader = () => {
         <HStack className="w-full justify-between">
           <HStack>
             <IconButton
-              aria-label={t({
-                id: "Toggle Explorer",
-                message: "Toggle Explorer"
-              })}
+              aria-label={t`Toggle Explorer`}
               icon={<LuPanelLeft />}
               onClick={toggleExplorer}
               variant="ghost"
@@ -284,10 +272,7 @@ const SalesOrderHeader = () => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <IconButton
-                  aria-label={t({
-                    id: "More options",
-                    message: "More options"
-                  })}
+                  aria-label={t`More options`}
                   icon={<LuEllipsisVertical />}
                   variant="secondary"
                   size="sm"
@@ -309,10 +294,7 @@ const SalesOrderHeader = () => {
                   onClick={salesOrderToJobsModal.onOpen}
                 >
                   <DropdownMenuIcon icon={<LuGitCompare />} />
-                  {t({
-                    id: "Convert Lines to Jobs",
-                    message: "Convert Lines to Jobs"
-                  })}
+                  <Trans>Convert Lines to Jobs</Trans>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <CSVLink
@@ -320,10 +302,7 @@ const SalesOrderHeader = () => {
                     filename={`${routeData?.salesOrder?.salesOrderId}.csv`}
                   >
                     <DropdownMenuIcon icon={<LuFile />} />
-                    {t({
-                      id: "Export Lines to CSV",
-                      message: "Export Lines to CSV"
-                    })}
+                    <Trans>Export Lines to CSV</Trans>
                   </CSVLink>
                 </DropdownMenuItem>
                 <DropdownMenuItem
@@ -336,10 +315,7 @@ const SalesOrderHeader = () => {
                   onClick={deleteSalesOrderModal.onOpen}
                 >
                   <DropdownMenuIcon icon={<LuTrash />} />
-                  {t({
-                    id: "Delete Sales Order",
-                    message: "Delete Sales Order"
-                  })}
+                  <Trans>Delete Sales Order</Trans>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -373,7 +349,7 @@ const SalesOrderHeader = () => {
                   variant="secondary"
                   rightIcon={<LuChevronDown />}
                 >
-                  {t({ id: "Preview", message: "Preview" })}
+                  <Trans>Preview</Trans>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
@@ -384,7 +360,7 @@ const SalesOrderHeader = () => {
                     rel="noreferrer"
                   >
                     <DropdownMenuIcon icon={<LuFile />} />
-                    {t({ id: "PDF", message: "PDF" })}
+                    <Trans>PDF</Trans>
                   </a>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -408,7 +384,7 @@ const SalesOrderHeader = () => {
                 !permissions.can("update", "sales")
               }
             >
-              {t({ id: "Confirm", message: "Confirm" })}
+              <Trans>Confirm</Trans>
             </Button>
 
             <statusFetcher.Form
@@ -432,7 +408,7 @@ const SalesOrderHeader = () => {
                   statusFetcher.formData?.get("status") === "Cancelled"
                 }
               >
-                {t({ id: "Cancel", message: "Cancel" })}
+                <Trans>Cancel</Trans>
               </Button>
             </statusFetcher.Form>
 
@@ -440,14 +416,14 @@ const SalesOrderHeader = () => {
               fallback={
                 <>
                   <Button leftIcon={<LuTruck />} variant="secondary" isLoading>
-                    {t({ id: "Loading...", message: "Loading..." })}
+                    <Trans>Loading...</Trans>
                   </Button>
                   <Button
                     leftIcon={<LuCreditCard />}
                     variant="secondary"
                     isLoading
                   >
-                    {t({ id: "Loading...", message: "Loading..." })}
+                    <Trans>Loading...</Trans>
                   </Button>
                 </>
               }
@@ -472,7 +448,7 @@ const SalesOrderHeader = () => {
                               }
                               rightIcon={<LuChevronDown />}
                             >
-                              {t({ id: "Shipments", message: "Shipments" })}
+                              <Trans>Shipments</Trans>
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent>
@@ -489,10 +465,7 @@ const SalesOrderHeader = () => {
                               }}
                             >
                               <DropdownMenuIcon icon={<LuCirclePlus />} />
-                              {t({
-                                id: "New Shipment",
-                                message: "New Shipment"
-                              })}
+                              <Trans>New Shipment</Trans>
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             {shipments.map((shipment) => (
@@ -530,7 +503,7 @@ const SalesOrderHeader = () => {
                             ship(routeData?.salesOrder);
                           }}
                         >
-                          {t({ id: "Ship", message: "Ship" })}
+                          <Trans>Ship</Trans>
                         </Button>
                       )}
                       {invoices?.length > 0 ? (
@@ -547,7 +520,7 @@ const SalesOrderHeader = () => {
                                   : "secondary"
                               }
                             >
-                              {t({ id: "Invoices", message: "Invoices" })}
+                              <Trans>Invoices</Trans>
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
@@ -562,10 +535,7 @@ const SalesOrderHeader = () => {
                               }}
                             >
                               <DropdownMenuIcon icon={<LuCirclePlus />} />
-                              {t({
-                                id: "New Invoice",
-                                message: "New Invoice"
-                              })}
+                              <Trans>New Invoice</Trans>
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             {invoices.map((invoice) => (
@@ -602,7 +572,7 @@ const SalesOrderHeader = () => {
                             invoice(routeData?.salesOrder);
                           }}
                         >
-                          {t({ id: "Invoice", message: "Invoice" })}
+                          <Trans>Invoice</Trans>
                         </Button>
                       )}
                     </>
@@ -630,15 +600,12 @@ const SalesOrderHeader = () => {
                   statusFetcher.formData?.get("status") === "Draft"
                 }
               >
-                {t({ id: "Reopen", message: "Reopen" })}
+                <Trans>Reopen</Trans>
               </Button>
             </statusFetcher.Form>
 
             <IconButton
-              aria-label={t({
-                id: "Toggle Properties",
-                message: "Toggle Properties"
-              })}
+              aria-label={t`Toggle Properties`}
               icon={<LuPanelRight />}
               onClick={toggleProperties}
               variant="ghost"
@@ -648,16 +615,9 @@ const SalesOrderHeader = () => {
       </div>
       {salesOrderToJobsModal.isOpen && (
         <Confirm
-          title={t({
-            id: "Convert Lines to Jobs",
-            message: "Convert Lines to Jobs"
-          })}
-          text={t({
-            id: "Are you sure you want to create jobs for this sales order? This will create jobs for all lines that don't already have jobs.",
-            message:
-              "Are you sure you want to create jobs for this sales order? This will create jobs for all lines that don't already have jobs."
-          })}
-          confirmText={t({ id: "Create Jobs", message: "Create Jobs" })}
+          title={t`Convert Lines to Jobs`}
+          text={t`Are you sure you want to create jobs for this sales order? This will create jobs for all lines that don't already have jobs.`}
+          confirmText={t`Create Jobs`}
           onCancel={salesOrderToJobsModal.onClose}
           onSubmit={salesOrderToJobsModal.onClose}
           action={path.to.salesOrderLinesToJobs(orderId)}
@@ -676,11 +636,7 @@ const SalesOrderHeader = () => {
           action={path.to.deleteSalesOrder(orderId)}
           isOpen={deleteSalesOrderModal.isOpen}
           name={routeData?.salesOrder?.salesOrderId!}
-          text={t({
-            id: "Are you sure you want to delete {{salesOrderId}}? This cannot be undone.",
-            message: `Are you sure you want to delete ${routeData?.salesOrder
-              ?.salesOrderId!}? This cannot be undone.`
-          })}
+          text={t`Are you sure you want to delete ${routeData?.salesOrder?.salesOrderId!}? This cannot be undone.`}
           onCancel={() => {
             deleteSalesOrderModal.onClose();
           }}

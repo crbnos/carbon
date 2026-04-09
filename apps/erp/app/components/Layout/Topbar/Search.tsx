@@ -15,7 +15,7 @@ import {
   useShortcutKeys,
   VStack
 } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import idb from "localforage";
 import { nanoid } from "nanoid";
 import { memo, useEffect, useState } from "react";
@@ -220,7 +220,7 @@ const SearchModal = () => {
                       heading={
                         <span className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                           <LuClock className="w-3 h-3" />
-                          {t`Recent`}
+                          <Trans>Recent</Trans>
                         </span>
                       }
                       key="recent"
@@ -282,7 +282,7 @@ const SearchModal = () => {
                   <CommandGroup
                     heading={
                       <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                        {t`Results`}
+                        <Trans>Results</Trans>
                       </span>
                     }
                     key="search"
@@ -380,19 +380,19 @@ const SearchModal = () => {
                 <kbd className="px-1.5 py-0.5 rounded bg-muted font-mono text-[10px]">
                   Up/Down
                 </kbd>
-                {t`Navigate`}
+                <Trans>Navigate</Trans>
               </span>
               <span className="flex items-center gap-1">
                 <kbd className="px-1.5 py-0.5 rounded bg-muted font-mono text-[10px]">
                   Enter
                 </kbd>
-                {t`Select`}
+                <Trans>Select</Trans>
               </span>
               <span className="flex items-center gap-1">
                 <kbd className="px-1.5 py-0.5 rounded bg-muted font-mono text-[10px]">
                   Esc
                 </kbd>
-                {t`Close`}
+                <Trans>Close</Trans>
               </span>
             </div>
           </div>
@@ -439,7 +439,6 @@ function ResultIcon({ entityType }: { entityType: string }) {
 }
 
 const SearchButton = () => {
-  const { t } = useLingui();
   const { openSearchModal } = useUIStore();
 
   useShortcutKeys({
@@ -456,7 +455,9 @@ const SearchButton = () => {
         onClick={openSearchModal}
       >
         <HStack className="w-full">
-          <div className="flex flex-grow">{t`Search`}</div>
+          <div className="flex flex-grow">
+            <Trans>Search</Trans>
+          </div>
           <ShortcutKey
             variant="small"
             shortcut={shortcut}

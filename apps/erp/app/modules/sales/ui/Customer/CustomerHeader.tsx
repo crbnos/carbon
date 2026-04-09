@@ -19,7 +19,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
 import { LuEllipsisVertical, LuTrash } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
@@ -99,10 +99,7 @@ const CustomerHeader = () => {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <IconButton
-                      aria-label={t({
-                        id: "More options",
-                        message: "More options"
-                      })}
+                      aria-label={t`More options`}
                       icon={<LuEllipsisVertical />}
                       variant="secondary"
                       size="sm"
@@ -117,10 +114,7 @@ const CustomerHeader = () => {
                       onClick={deleteModal.onOpen}
                     >
                       <DropdownMenuIcon icon={<LuTrash />} />
-                      {t({
-                        id: "Delete Customer",
-                        message: "Delete Customer"
-                      })}
+                      <Trans>Delete Customer</Trans>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -131,7 +125,7 @@ const CustomerHeader = () => {
             <CardAttributes>
               <CardAttribute>
                 <CardAttributeLabel>
-                  {t({ id: "Status", message: "Status" })}
+                  <Trans>Status</Trans>
                 </CardAttributeLabel>
                 <CardAttributeValue>
                   {customerStatus ? (
@@ -143,7 +137,7 @@ const CustomerHeader = () => {
               </CardAttribute>
               <CardAttribute>
                 <CardAttributeLabel>
-                  {t({ id: "Type", message: "Type" })}
+                  <Trans>Type</Trans>
                 </CardAttributeLabel>
                 <CardAttributeValue>
                   {customerType ? <Enumerable value={customerType!} /> : "-"}
@@ -151,10 +145,7 @@ const CustomerHeader = () => {
               </CardAttribute>
               <CardAttribute>
                 <CardAttributeLabel>
-                  {t({
-                    id: "Account Manager",
-                    message: "Account Manager"
-                  })}
+                  <Trans>Account Manager</Trans>
                 </CardAttributeLabel>
                 <CardAttributeValue>
                   {routeData?.customer?.accountManagerId ? (
@@ -178,7 +169,7 @@ const CustomerHeader = () => {
                     className="w-full"
                   >
                     <Tags
-                      label={t({ id: "Tags", message: "Tags" })}
+                      label={t`Tags`}
                       name="tags"
                       availableTags={routeData?.tags ?? []}
                       table="customer"
@@ -210,10 +201,7 @@ const CustomerHeader = () => {
           action={path.to.deleteCustomer(customerId)}
           isOpen={deleteModal.isOpen}
           name={routeData?.customer?.name!}
-          text={t({
-            id: "Are you sure you want to delete {{name}}? This cannot be undone.",
-            message: `Are you sure you want to delete ${routeData?.customer?.name!}? This cannot be undone.`
-          })}
+          text={t`Are you sure you want to delete ${routeData?.customer?.name!}? This cannot be undone.`}
           onCancel={deleteModal.onClose}
           onSubmit={deleteModal.onClose}
         />

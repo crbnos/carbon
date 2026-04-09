@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle
 } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import { useFetcher, useParams } from "react-router";
 import type { z } from "zod";
@@ -46,7 +46,6 @@ const SalesOrderShipmentForm = forwardRef<
   SalesOrderShipmentFormProps
 >(({ initialValues, defaultCollapsed = false }, ref) => {
   const { t } = useLingui();
-  const { t: tShared } = useLingui();
   const permissions = usePermissions();
   const fetcher = useFetcher<typeof action>();
   const [dropShip, setDropShip] = useState<boolean>(
@@ -98,14 +97,16 @@ const SalesOrderShipmentForm = forwardRef<
         isDisabled={isLocked}
       >
         <CardHeader>
-          <CardTitle>{t({ id: "Shipping", message: "Shipping" })}</CardTitle>
+          <CardTitle>
+            <Trans>Shipping</Trans>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Hidden name="id" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
             <Number
               name="shippingCost"
-              label={t({ id: "Shipping Cost", message: "Shipping Cost" })}
+              label={t`Shipping Cost`}
               minValue={0}
               formatOptions={{
                 style: "currency",
@@ -117,50 +118,35 @@ const SalesOrderShipmentForm = forwardRef<
             />
             <Location
               name="locationId"
-              label={t({
-                id: "Shipment Location",
-                message: "Shipment Location"
-              })}
+              label={t`Shipment Location`}
               isReadOnly={isCustomer}
               isClearable
             />
             <ShippingMethod
               name="shippingMethodId"
-              label={t({ id: "Shipping Method", message: "Shipping Method" })}
+              label={t`Shipping Method`}
             />
 
-            <DatePicker
-              name="receiptRequestedDate"
-              label={t({ id: "Requested Date", message: "Requested Date" })}
-            />
-            <DatePicker
-              name="receiptPromisedDate"
-              label={t({ id: "Promised Date", message: "Promised Date" })}
-            />
-            <DatePicker
-              name="shipmentDate"
-              label={t({ id: "Shipment Date", message: "Shipment Date" })}
-            />
+            <DatePicker name="receiptRequestedDate" label={t`Requested Date`} />
+            <DatePicker name="receiptPromisedDate" label={t`Promised Date`} />
+            <DatePicker name="shipmentDate" label={t`Shipment Date`} />
 
-            <Input
-              name="trackingNumber"
-              label={t({ id: "Tracking Number", message: "Tracking Number" })}
-            />
+            <Input name="trackingNumber" label={t`Tracking Number`} />
             <Boolean
               name="dropShipment"
-              label={t({ id: "Drop Shipment", message: "Drop Shipment" })}
+              label={t`Drop Shipment`}
               onChange={setDropShip}
             />
             {dropShip && (
               <>
                 <Customer
                   name="customerId"
-                  label={t({ id: "Customer", message: "Customer" })}
+                  label={t`Customer`}
                   onChange={(value) => setCustomer(value?.value as string)}
                 />
                 <CustomerLocation
                   name="customerLocationId"
-                  label={t({ id: "Location", message: "Location" })}
+                  label={t`Location`}
                   customer={customer}
                 />
               </>
@@ -170,7 +156,7 @@ const SalesOrderShipmentForm = forwardRef<
         </CardContent>
         <CardFooter>
           <Submit isDisabled={!permissions.can("update", "sales")}>
-            {tShared({ id: "Save", message: "Save" })}
+            <Trans>Save</Trans>
           </Submit>
         </CardFooter>
       </ValidatedForm>

@@ -35,7 +35,7 @@ function useCreate(): Route[] {
     let links: Route[] = [];
     if (permissions.can("create", "parts")) {
       links.push({
-        name: t({ id: "Part", message: "Part" }),
+        name: t`Part`,
         to: path.to.newPart,
         icon: <LuSquareStack />
       });
@@ -43,7 +43,7 @@ function useCreate(): Route[] {
 
     if (permissions.can("create", "quality")) {
       links.push({
-        name: t({ id: "Issue", message: "Issue" }),
+        name: t`Issue`,
         to: path.to.newIssue,
         icon: <LuShieldX />
       });
@@ -51,7 +51,7 @@ function useCreate(): Route[] {
 
     if (permissions.can("create", "production")) {
       links.push({
-        name: t({ id: "Job", message: "Job" }),
+        name: t`Job`,
         to: path.to.newJob,
         icon: <LuCirclePlay />
       });
@@ -59,7 +59,7 @@ function useCreate(): Route[] {
 
     if (permissions.can("create", "production")) {
       links.push({
-        name: t({ id: "Maintenance", message: "Maintenance" }),
+        name: t`Maintenance`,
         to: path.to.newMaintenanceDispatch,
         icon: <LuWrench />
       });
@@ -67,7 +67,7 @@ function useCreate(): Route[] {
 
     if (permissions.can("create", "purchasing")) {
       links.push({
-        name: t({ id: "Purchase Order", message: "Purchase Order" }),
+        name: t`Purchase Order`,
         to: path.to.newPurchaseOrder,
         icon: <LuShoppingCart />
       });
@@ -75,7 +75,7 @@ function useCreate(): Route[] {
 
     if (permissions.can("create", "purchasing")) {
       links.push({
-        name: t({ id: "Supplier", message: "Supplier" }),
+        name: t`Supplier`,
         to: path.to.newSupplier,
         icon: <LuContainer />
       });
@@ -83,22 +83,22 @@ function useCreate(): Route[] {
 
     if (permissions.can("create", "sales")) {
       links.push({
-        name: t({ id: "Customer", message: "Customer" }),
+        name: t`Customer`,
         to: path.to.newCustomer,
         icon: <LuSquareUser />
       });
       links.push({
-        name: t({ id: "RFQ", message: "RFQ" }),
+        name: t`RFQ`,
         to: path.to.newSalesRFQ,
         icon: <RiProgress2Line />
       });
       links.push({
-        name: t({ id: "Quote", message: "Quote" }),
+        name: t`Quote`,
         to: path.to.newQuote,
         icon: <RiProgress4Line />
       });
       links.push({
-        name: t({ id: "Sales Order", message: "Sales Order" }),
+        name: t`Sales Order`,
         to: path.to.newSalesOrder,
         icon: <RiProgress8Line />
       });
@@ -106,7 +106,7 @@ function useCreate(): Route[] {
 
     if (permissions.can("create", "users")) {
       links.push({
-        name: t({ id: "Employee", message: "Employee" }),
+        name: t`Employee`,
         to: path.to.newEmployee,
         icon: <LuUsers />
       });

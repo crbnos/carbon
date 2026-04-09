@@ -28,6 +28,7 @@ import {
 } from "@carbon/react";
 import { ItarLoginDisclaimer, useMode } from "@carbon/remix";
 import { Edition } from "@carbon/utils";
+import { msg } from "@lingui/core/macro";
 import { Turnstile } from "@marsidev/react-turnstile";
 import { useEffect, useState } from "react";
 import { LuCircleAlert } from "react-icons/lu";
@@ -43,6 +44,7 @@ import {
   useLoaderData,
   useSearchParams
 } from "react-router";
+import { getRequestI18n } from "~/services/request-i18n.server";
 import type { Result } from "~/types";
 import { path } from "~/utils/path";
 
@@ -71,13 +73,14 @@ const ratelimit = new Ratelimit({
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
+  const i18n = await getRequestI18n(request);
   const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
   const { success } = await ratelimit.limit(ip);
 
   if (!success) {
     return data(
-      error(null, "Rate limit exceeded"),
-      await flash(request, error(null, "Rate limit exceeded"))
+      error(null, i18n._(msg`Rate limit exceeded`)),
+      await flash(request, error(null, i18n._(msg`Rate limit exceeded`)))
     );
   }
 
@@ -86,7 +89,7 @@ export async function action({ request }: ActionFunctionArgs) {
   );
 
   if (validation.error) {
-    return error(validation.error, "Invalid email address");
+    return error(validation.error, i18n._(msg`Invalid email address`));
   }
 
   const { email, turnstileToken } = validation.data;
@@ -113,10 +116,10 @@ export async function action({ request }: ActionFunctionArgs) {
     const verifyData = await verifyResponse.json();
     if (!verifyData.success) {
       return data(
-        error(null, "Bot verification failed. Please try again."),
+        error(null, i18n._(msg`Bot verification failed. Please try again.`)),
         await flash(
           request,
-          error(null, "Bot verification failed. Please try again.")
+          error(null, i18n._(msg`Bot verification failed. Please try again.`))
         )
       );
     }
@@ -129,15 +132,18 @@ export async function action({ request }: ActionFunctionArgs) {
 
     if (magicLink.error) {
       return data(
-        error(magicLink, "Failed to send magic link"),
-        await flash(request, error(magicLink, "Failed to send magic link"))
+        error(magicLink, i18n._(msg`Failed to send magic link`)),
+        await flash(
+          request,
+          error(magicLink, i18n._(msg`Failed to send magic link`))
+        )
       );
     }
     return { success: true, mode: "login" };
   } else if (CarbonEdition === Edition.Enterprise) {
     return data(
-      { success: false, message: "User record not found" },
-      await flash(request, error(null, "Failed to sign in"))
+      { success: false, message: i18n._(msg`Failed to sign in`) },
+      await flash(request, error(null, i18n._(msg`Failed to sign in`)))
     );
   } else {
     // User doesn't exist, send verification code for signup
@@ -145,8 +151,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
     if (!verificationSent) {
       return data(
-        error(null, "Failed to send verification code"),
-        await flash(request, error(null, "Failed to send verification code"))
+        error(null, i18n._(msg`Failed to send verification code`)),
+        await flash(
+          request,
+          error(null, i18n._(msg`Failed to send verification code`))
+        )
       );
     }
 

@@ -1,6 +1,6 @@
 import { HStack, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
 import {
@@ -59,7 +59,7 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
     const defaultColumns: ColumnDef<SalesInvoice>[] = [
       {
         accessorKey: "invoiceId",
-        header: t({ id: "Invoice Number", message: "Invoice Number" }),
+        header: t`Invoice Number`,
         cell: ({ row }) => (
           <HStack>
             <ItemThumbnail
@@ -79,7 +79,7 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
       },
       {
         id: "customerId",
-        header: t({ id: "Customer", message: "Customer" }),
+        header: t`Customer`,
         cell: ({ row }) => (
           <CustomerAvatar customerId={row.original.customerId} />
         ),
@@ -96,7 +96,7 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
       },
       {
         id: "invoiceCustomerId",
-        header: t({ id: "Invoice Customer", message: "Invoice Customer" }),
+        header: t`Invoice Customer`,
         cell: ({ row }) => (
           <CustomerAvatar customerId={row.original.invoiceCustomerId} />
         ),
@@ -113,7 +113,7 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
       },
       {
         accessorKey: "customerReference",
-        header: t({ id: "Customer PO", message: "Customer PO" }),
+        header: t`Customer PO`,
         cell: (item) => item.getValue(),
         meta: {
           icon: <LuQrCode />
@@ -121,7 +121,7 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
       },
       {
         accessorKey: "status",
-        header: t({ id: "Status", message: "Status" }),
+        header: t`Status`,
         cell: (item) => {
           const status =
             item.getValue<(typeof salesInvoiceStatusType)[number]>();
@@ -135,13 +135,13 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
               label: <SalesInvoiceStatus status={status} />
             }))
           },
-          pluralHeader: t({ id: "Statuses", message: "Statuses" }),
+          pluralHeader: t`Statuses`,
           icon: <LuStar />
         }
       },
       {
         accessorKey: "invoiceTotal",
-        header: t({ id: "Invoice Total", message: "Invoice Total" }),
+        header: t`Invoice Total`,
         cell: (item) => currencyFormatter.format(item.getValue<number>()),
         meta: {
           icon: <LuDollarSign />,
@@ -151,7 +151,7 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
       },
       {
         id: "assignee",
-        header: t({ id: "Assignee", message: "Assignee" }),
+        header: t`Assignee`,
         cell: ({ row }) => (
           <EmployeeAvatar employeeId={row.original.assignee} />
         ),
@@ -168,7 +168,7 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
       },
       {
         accessorKey: "dateIssued",
-        header: t({ id: "Issued Date", message: "Issued Date" }),
+        header: t`Issued Date`,
         cell: (item) => formatDate(item.getValue<string>()),
         meta: {
           icon: <LuCalendar />
@@ -176,7 +176,7 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
       },
       {
         accessorKey: "dateDue",
-        header: t({ id: "Due Date", message: "Due Date" }),
+        header: t`Due Date`,
         cell: (item) => formatDate(item.getValue<string>()),
         meta: {
           icon: <LuCalendar />
@@ -184,7 +184,7 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
       },
       {
         accessorKey: "datePaid",
-        header: t({ id: "Paid Date", message: "Paid Date" }),
+        header: t`Paid Date`,
         cell: (item) => formatDate(item.getValue<string>()),
         meta: {
           icon: <LuCalendar />
@@ -192,7 +192,7 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
       },
       {
         accessorKey: "postingDate",
-        header: t({ id: "Posting Date", message: "Posting Date" }),
+        header: t`Posting Date`,
         cell: (item) => formatDate(item.getValue<string>()),
         meta: {
           icon: <LuCalendar />
@@ -200,7 +200,7 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
       },
       {
         accessorKey: "paymentTermName",
-        header: t({ id: "Payment Method", message: "Payment Method" }),
+        header: t`Payment Method`,
         cell: (item) => <Enumerable value={item.getValue<string>()} />,
         meta: {
           icon: <LuCreditCard />
@@ -208,7 +208,7 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
       },
       {
         id: "createdBy",
-        header: t({ id: "Created By", message: "Created By" }),
+        header: t`Created By`,
         cell: ({ row }) => (
           <EmployeeAvatar employeeId={row.original.createdBy} />
         ),
@@ -225,7 +225,7 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
       },
       {
         accessorKey: "createdAt",
-        header: t({ id: "Created At", message: "Created At" }),
+        header: t`Created At`,
         cell: (item) => formatDate(item.getValue<string>()),
         meta: {
           icon: <LuCalendar />
@@ -233,7 +233,7 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
       },
       {
         id: "updatedBy",
-        header: t({ id: "Updated By", message: "Updated By" }),
+        header: t`Updated By`,
         cell: ({ row }) => (
           <EmployeeAvatar employeeId={row.original.updatedBy} />
         ),
@@ -250,7 +250,7 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
       },
       {
         accessorKey: "updatedAt",
-        header: t({ id: "Updated At", message: "Updated At" }),
+        header: t`Updated At`,
         cell: (item) => formatDate(item.getValue<string>()),
         meta: {
           icon: <LuCalendar />
@@ -269,7 +269,7 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
           onClick={() => navigate(path.to.salesInvoice(row.id!))}
         >
           <MenuIcon icon={<LuPencil />} />
-          {t({ id: "Edit", message: "Edit" })}
+          <Trans>Edit</Trans>
         </MenuItem>
         <MenuItem
           disabled={
@@ -282,7 +282,7 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
           }}
         >
           <MenuIcon icon={<LuTrash />} />
-          {t({ id: "Delete", message: "Delete" })}
+          <Trans>Delete</Trans>
         </MenuItem>
       </>
     );
@@ -310,14 +310,11 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
         }}
         primaryAction={
           permissions.can("create", "invoicing") && (
-            <New
-              label={t({ id: "Sales Invoice", message: "Sales Invoice" })}
-              to={path.to.newSalesInvoice}
-            />
+            <New label={t`Sales Invoice`} to={path.to.newSalesInvoice} />
           )
         }
         renderContextMenu={renderContextMenu}
-        title={t({ id: "Sales Invoices", message: "Sales Invoices" })}
+        title={t`Sales Invoices`}
         table="salesInvoice"
         withSavedView
       />
@@ -327,10 +324,7 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
           action={path.to.deleteSalesInvoice(selectedSalesInvoice.id)}
           isOpen={closeSalesInvoiceModal.isOpen}
           name={selectedSalesInvoice.invoiceId!}
-          text={t({
-            id: "Are you sure you want to permanently delete {{invoiceId}}?",
-            message: `Are you sure you want to permanently delete ${selectedSalesInvoice.invoiceId!}?`
-          })}
+          text={t`Are you sure you want to permanently delete ${selectedSalesInvoice.invoiceId!}?`}
           onCancel={() => {
             closeSalesInvoiceModal.onClose();
             setSelectedSalesInvoice(null);

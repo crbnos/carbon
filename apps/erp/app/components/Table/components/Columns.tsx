@@ -12,7 +12,7 @@ import {
   TooltipContent,
   TooltipTrigger
 } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { Column, ColumnOrderState } from "@tanstack/react-table";
 import { Reorder } from "framer-motion";
 import {
@@ -47,18 +47,15 @@ const Columns = <T extends object>({
         <Tooltip>
           <TooltipTrigger asChild>
             <IconButton
-              aria-label={t({ id: "Columns", message: "Columns" })}
-              title={t({ id: "Columns", message: "Columns" })}
+              aria-label={t`Columns`}
+              title={t`Columns`}
               variant="ghost"
               icon={<LuColumns2 />}
             />
           </TooltipTrigger>
           <TooltipContent>
             <p>
-              {t({
-                id: "Column visibility and order",
-                message: "Column visibility and order"
-              })}
+              <Trans>Column visibility and order</Trans>
             </p>
           </TooltipContent>
         </Tooltip>
@@ -66,16 +63,10 @@ const Columns = <T extends object>({
       <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>
-            {t({
-              id: "Edit column visibility",
-              message: "Edit column visibility"
-            })}
+            <Trans>Edit column visibility</Trans>
           </DrawerTitle>
           <DrawerDescription>
-            {t({
-              id: "Hide, pin and reorder columns",
-              message: "Hide, pin and reorder columns"
-            })}
+            <Trans>Hide, pin and reorder columns</Trans>
           </DrawerDescription>
         </DrawerHeader>
         <DrawerBody>
@@ -126,10 +117,7 @@ const Columns = <T extends object>({
                   >
                     <HStack className="w-full">
                       <IconButton
-                        aria-label={t({
-                          id: "Drag handle",
-                          message: "Drag handle"
-                        })}
+                        aria-label={t`Drag handle`}
                         icon={<LuGripVertical />}
                         variant="ghost"
                       />
@@ -138,10 +126,7 @@ const Columns = <T extends object>({
                         <>{translate(column.columnDef.header as string)}</>
                       </span>
                       <IconButton
-                        aria-label={t({
-                          id: "Toggle column",
-                          message: "Toggle column"
-                        })}
+                        aria-label={t`Toggle column`}
                         icon={column.getIsPinned() ? <LuPin /> : <LuPinOff />}
                         onClick={() => {
                           if (column.getIsPinned()) {
@@ -185,10 +170,7 @@ const Columns = <T extends object>({
                         disabled={!column.getIsPinned() && !canPin}
                       />
                       <IconButton
-                        aria-label={t({
-                          id: "Toggle column",
-                          message: "Toggle column"
-                        })}
+                        aria-label={t`Toggle column`}
                         icon={column.getIsVisible() ? <LuEye /> : <LuEyeOff />}
                         onClick={() => {
                           // When hiding a column, unpin it and move after pinned columns

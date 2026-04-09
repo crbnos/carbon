@@ -11,7 +11,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { flushSync } from "react-dom";
 import type { z } from "zod";
@@ -70,12 +70,7 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
     } | null
   ) => {
     if (!carbon) {
-      toast.error(
-        t({
-          id: "Carbon client not found",
-          message: "Carbon client not found"
-        })
-      );
+      toast.error(t`Carbon client not found`);
       return;
     }
 
@@ -96,12 +91,7 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
         .eq("id", newValue.value)
         .single();
       if (error) {
-        toast.error(
-          t({
-            id: "Error fetching customer data",
-            message: "Error fetching customer data"
-          })
-        );
+        toast.error(t`Error fetching customer data`);
       } else {
         setCustomer((prev) => ({
           ...prev,
@@ -129,17 +119,15 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
       >
         <CardHeader>
           <CardTitle>
-            {isEditing
-              ? t({ id: "RFQ", message: "RFQ" })
-              : t({ id: "New RFQ", message: "New RFQ" })}
+            {isEditing ? <Trans>RFQ</Trans> : <Trans>New RFQ</Trans>}
           </CardTitle>
           {!isEditing && (
             <CardDescription>
-              {t({
-                id: "A sales request for quote (RFQ) is a customer inquiry for pricing on a set of parts and quantities. It may result in a quote.",
-                message:
-                  "A sales request for quote (RFQ) is a customer inquiry for pricing on a set of parts and quantities. It may result in a quote."
-              })}
+              <Trans>
+                A sales request for quote (RFQ) is a customer inquiry for
+                pricing on a set of parts and quantities. It may result in a
+                quote.
+              </Trans>
             </CardDescription>
           )}
         </CardHeader>
@@ -157,68 +145,47 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
               {!isEditing && (
                 <SequenceOrCustomId
                   name="rfqId"
-                  label={t({ id: "RFQ ID", message: "RFQ ID" })}
-                  placeholder={t({
-                    id: "Next Sequence",
-                    message: "Next Sequence"
-                  })}
+                  label={t`RFQ ID`}
+                  placeholder={t`Next Sequence`}
                   table="salesRfq"
                 />
               )}
               <Customer
                 autoFocus={!isEditing}
                 name="customerId"
-                label={t({ id: "Customer", message: "Customer" })}
+                label={t`Customer`}
                 onChange={onCustomerChange}
               />
-              <Input
-                name="customerReference"
-                label={t({ id: "Customer RFQ", message: "Customer RFQ" })}
-              />
+              <Input name="customerReference" label={t`Customer RFQ`} />
               <CustomerContact
                 name="customerContactId"
-                label={t({
-                  id: "Purchasing Contact",
-                  message: "Purchasing Contact"
-                })}
+                label={t`Purchasing Contact`}
                 customer={customer.id}
                 value={customer.customerContactId}
               />
               <CustomerContact
                 name="customerEngineeringContactId"
-                label={t({
-                  id: "Engineering Contact",
-                  message: "Engineering Contact"
-                })}
+                label={t`Engineering Contact`}
                 customer={customer.id}
               />
               <CustomerLocation
                 name="customerLocationId"
-                label={t({
-                  id: "Customer Location",
-                  message: "Customer Location"
-                })}
+                label={t`Customer Location`}
                 customer={customer.id}
                 value={customer.customerLocationId}
               />
               <DatePicker
                 name="rfqDate"
-                label={t({ id: "RFQ Date", message: "RFQ Date" })}
+                label={t`RFQ Date`}
                 isDisabled={isCustomer}
               />
               <DatePicker
                 name="expirationDate"
-                label={t({ id: "Due Date", message: "Due Date" })}
+                label={t`Due Date`}
                 isDisabled={isCustomer}
               />
-              <Location
-                name="locationId"
-                label={t({ id: "RFQ Location", message: "RFQ Location" })}
-              />
-              <Employee
-                name="salesPersonId"
-                label={t({ id: "Sales Person", message: "Sales Person" })}
-              />
+              <Location name="locationId" label={t`RFQ Location`} />
+              <Employee name="salesPersonId" label={t`Sales Person`} />
               <CustomFormFields table="salesRfq" />
             </div>
           </VStack>
@@ -232,7 +199,7 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
                 : !permissions.can("create", "sales"))
             }
           >
-            {t({ id: "Save", message: "Save" })}
+            <Trans>Save</Trans>
           </Submit>
         </CardFooter>
       </ValidatedForm>

@@ -17,7 +17,7 @@ import {
   useDisclosure
 } from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import {
@@ -180,10 +180,7 @@ const PurchaseInvoiceHeader = () => {
         <HStack className="w-full justify-between">
           <HStack>
             <IconButton
-              aria-label={t({
-                id: "Toggle Explorer",
-                message: "Toggle Explorer"
-              })}
+              aria-label={t`Toggle Explorer`}
               icon={<LuPanelLeft />}
               onClick={toggleExplorer}
               variant="ghost"
@@ -197,10 +194,7 @@ const PurchaseInvoiceHeader = () => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <IconButton
-                  aria-label={t({
-                    id: "More options",
-                    message: "More options"
-                  })}
+                  aria-label={t`More options`}
                   icon={<LuEllipsisVertical />}
                   variant="secondary"
                   size="sm"
@@ -221,10 +215,7 @@ const PurchaseInvoiceHeader = () => {
                   onClick={deleteModal.onOpen}
                 >
                   <DropdownMenuIcon icon={<LuTrash />} />
-                  {t({
-                    id: "Delete Purchase Invoice",
-                    message: "Delete Purchase Invoice"
-                  })}
+                  <Trans>Delete Purchase Invoice</Trans>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -234,10 +225,7 @@ const PurchaseInvoiceHeader = () => {
             />
             {settings?.supplierApproval && !isSupplierApproved && (
               <Status color="red">
-                {t({
-                  id: "Unapproved Supplier",
-                  message: "Unapproved Supplier"
-                })}
+                <Trans>Unapproved Supplier</Trans>
               </Status>
             )}
           </HStack>
@@ -249,7 +237,7 @@ const PurchaseInvoiceHeader = () => {
                     relatedDocs.purchaseOrders[0].id
                   )}
                 >
-                  {t({ id: "Purchase Order", message: "Purchase Order" })}
+                  <Trans>Purchase Order</Trans>
                 </Link>
               </Button>
             )}
@@ -257,7 +245,7 @@ const PurchaseInvoiceHeader = () => {
             {relatedDocs.receipts.length === 1 && (
               <Button variant="secondary" leftIcon={<LuHandCoins />} asChild>
                 <Link to={path.to.receipt(relatedDocs.receipts[0].id)}>
-                  {t({ id: "Receipt", message: "Receipt" })}
+                  <Trans>Receipt</Trans>
                 </Link>
               </Button>
             )}
@@ -266,10 +254,7 @@ const PurchaseInvoiceHeader = () => {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="secondary" leftIcon={<LuShoppingCart />}>
-                    {t({
-                      id: "Purchase Orders",
-                      message: "Purchase Orders"
-                    })}
+                    <Trans>Purchase Orders</Trans>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
@@ -288,7 +273,7 @@ const PurchaseInvoiceHeader = () => {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="secondary" leftIcon={<LuHandCoins />}>
-                    {t({ id: "Receipts", message: "Receipts" })}
+                    <Trans>Receipts</Trans>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
@@ -317,7 +302,7 @@ const PurchaseInvoiceHeader = () => {
                 !isSupplierApproved
               }
             >
-              {t({ id: "Post", message: "Post" })}
+              <Trans>Post</Trans>
             </Button>
 
             <DropdownMenu>
@@ -332,7 +317,7 @@ const PurchaseInvoiceHeader = () => {
                   leftIcon={<LuHandCoins />}
                   rightIcon={<LuChevronDown />}
                 >
-                  {t({ id: "Payment", message: "Payment" })}
+                  <Trans>Payment</Trans>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
@@ -364,10 +349,7 @@ const PurchaseInvoiceHeader = () => {
             </DropdownMenu>
 
             <IconButton
-              aria-label={t({
-                id: "Toggle Properties",
-                message: "Toggle Properties"
-              })}
+              aria-label={t`Toggle Properties`}
               icon={<LuPanelRight />}
               onClick={toggleProperties}
               variant="ghost"
@@ -389,10 +371,7 @@ const PurchaseInvoiceHeader = () => {
           action={path.to.deletePurchaseInvoice(invoiceId)}
           isOpen={deleteModal.isOpen}
           name={routeData?.purchaseInvoice?.invoiceId ?? "purchase invoice"}
-          text={t({
-            id: "Are you sure you want to delete {{invoiceId}}? This cannot be undone.",
-            message: `Are you sure you want to delete ${routeData?.purchaseInvoice?.invoiceId}? This cannot be undone.`
-          })}
+          text={t`Are you sure you want to delete ${routeData?.purchaseInvoice?.invoiceId}? This cannot be undone.`}
           onCancel={() => {
             deleteModal.onClose();
           }}

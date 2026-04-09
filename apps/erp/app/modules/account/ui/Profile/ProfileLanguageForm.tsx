@@ -1,7 +1,7 @@
 import { ValidatedForm } from "@carbon/form";
 import { resolveLanguage } from "@carbon/locale";
 import { VStack } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { Hidden, Select, Submit } from "~/components/Form";
 import { path } from "~/utils/path";
 import { accountLanguageValidator } from "../../account.models";
@@ -22,23 +22,22 @@ const ProfileLanguageForm = ({ locale }: { locale: string }) => {
       <VStack spacing={4}>
         <Select
           name="locale"
-          label={t({ id: "Language", message: "Language" })}
+          label={t`Language`}
           options={[
             {
-              label: t({ id: "English", message: "English" }),
+              label: t`English`,
               value: "en"
             },
-            { label: t({ id: "Polish", message: "Polish" }), value: "pl" }
+            { label: t`Polish`, value: "pl" }
           ]}
         />
         <p className="text-sm text-muted-foreground">
-          {t({
-            id: "Choose your preferred language for the interface.",
-            message: "Choose your preferred language for the interface."
-          })}
+          <Trans>Choose your preferred language for the interface.</Trans>
         </p>
         <Hidden name="intent" value="locale" />
-        <Submit>{t({ id: "Save", message: "Save" })}</Submit>
+        <Submit>
+          <Trans>Save</Trans>
+        </Submit>
       </VStack>
     </ValidatedForm>
   );

@@ -11,7 +11,8 @@ import {
   VStack
 } from "@carbon/react";
 import { getPreferenceHeaders } from "@carbon/remix";
-import { useLingui } from "@lingui/react/macro";
+import { msg } from "@lingui/core/macro";
+import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData } from "react-router";
 import {
@@ -27,6 +28,7 @@ import {
   ProfilePhotoForm
 } from "~/modules/account/ui/Profile";
 import { setLocale } from "~/services/locale.server";
+import { getRequestI18n } from "~/services/request-i18n.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -36,6 +38,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
+  const i18n = await getRequestI18n(request);
   const { client, userId } = await requirePermissions(request, {});
 
   const [user] = await Promise.all([getAccount(client, userId)]);
@@ -43,7 +46,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (user.error || !user.data) {
     throw redirect(
       path.to.authenticatedRoot,
-      await flash(request, error(user.error, "Failed to get user"))
+      await flash(request, error(user.error, i18n._(msg`Failed to get user`)))
     );
   }
 
@@ -52,6 +55,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
+  const i18n = await getRequestI18n(request);
   const { client, userId } = await requirePermissions(request, {});
   const formData = await request.formData();
 
@@ -77,11 +81,14 @@ export async function action({ request }: ActionFunctionArgs) {
         {},
         await flash(
           request,
-          error(updateAccount.error, "Failed to update profile")
+          error(updateAccount.error, i18n._(msg`Failed to update profile`))
         )
       );
 
-    return data({}, await flash(request, success("Updated profile")));
+    return data(
+      {},
+      await flash(request, success(i18n._(msg`Updated profile`)))
+    );
   }
 
   if (formData.get("intent") === "locale") {
@@ -94,7 +101,10 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     const localeCookie = setLocale(validation.data.locale);
-    const flashHeaders = await flash(request, success("Updated language"));
+    const flashHeaders = await flash(
+      request,
+      success(i18n._(msg`Updated language`))
+    );
 
     return data(
       {},
@@ -116,7 +126,7 @@ export async function action({ request }: ActionFunctionArgs) {
           path.to.profile,
           await flash(
             request,
-            error(avatarUpdate.error, "Failed to update avatar")
+            error(avatarUpdate.error, i18n._(msg`Failed to update avatar`))
           )
         );
       }
@@ -125,13 +135,17 @@ export async function action({ request }: ActionFunctionArgs) {
         path.to.profile,
         await flash(
           request,
-          success(photoPath === null ? "Removed avatar" : "Updated avatar")
+          success(
+            photoPath === null
+              ? i18n._(msg`Removed avatar`)
+              : i18n._(msg`Updated avatar`)
+          )
         )
       );
     } else {
       throw redirect(
         path.to.profile,
-        await flash(request, error(null, "Invalid avatar path"))
+        await flash(request, error(null, i18n._(msg`Invalid avatar path`)))
       );
     }
   }
@@ -141,19 +155,19 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function AccountProfile() {
   const { user, locale } = useLoaderData<typeof loader>();
-  const { t } = useLingui();
 
   return (
     <VStack spacing={2}>
       <Card>
         <CardHeader>
-          <CardTitle>{t({ id: "Profile", message: "Profile" })}</CardTitle>
+          <CardTitle>
+            <Trans>Profile</Trans>
+          </CardTitle>
           <CardDescription>
-            {t({
-              id: "This information will be visible to all users, so be careful what you share.",
-              message:
-                "This information will be visible to all users, so be careful what you share."
-            })}
+            <Trans>
+              This information will be visible to all users, so be careful what
+              you share.
+            </Trans>
           </CardDescription>
         </CardHeader>
         <CardContent>

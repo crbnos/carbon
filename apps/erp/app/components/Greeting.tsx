@@ -19,11 +19,11 @@ export function Greeting(props: ComponentProps<typeof Heading>) {
 
   const greeting = useMemo(() => {
     if (currentTime.hour >= 3 && currentTime.hour < 12) {
-      return t({ id: "Good morning", message: "Good morning" });
+      return t`Good morning`;
     } else if (currentTime.hour >= 12 && currentTime.hour < 18) {
-      return t({ id: "Good afternoon", message: "Good afternoon" });
+      return t`Good afternoon`;
     } else {
-      return t({ id: "Good evening", message: "Good evening" });
+      return t`Good evening`;
     }
   }, [currentTime.hour, t]);
 

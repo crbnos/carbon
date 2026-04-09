@@ -17,6 +17,7 @@ import {
 import { getPreferenceHeaders, useMode } from "@carbon/remix";
 import type { Theme } from "@carbon/utils";
 import { modeValidator, themes } from "@carbon/utils";
+import { msg } from "@lingui/core/macro";
 import { I18nProvider } from "@react-aria/i18n";
 import { QueryClient } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/react";
@@ -40,6 +41,7 @@ import {
 import SonnerStyle from "sonner/dist/styles.css?url";
 import { loadLinguiCatalogForRequest } from "~/services/lingui.server";
 import { getMode, setMode } from "~/services/mode.server";
+import { getRequestI18n } from "~/services/request-i18n.server";
 import Background from "~/styles/background.css?url";
 import NProgress from "~/styles/nprogress.css?url";
 import Tailwind from "~/styles/tailwind.css?url";
@@ -130,12 +132,13 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
+  const i18n = await getRequestI18n(request);
   const validation = await validator(modeValidator).validate(
     await request.formData()
   );
 
   if (validation.error) {
-    return data(error(validation.error, "Invalid mode"), {
+    return data(error(validation.error, i18n._(msg`Invalid mode`)), {
       status: 400
     });
   }

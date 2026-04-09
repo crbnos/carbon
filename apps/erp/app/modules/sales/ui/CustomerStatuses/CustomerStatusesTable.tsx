@@ -1,5 +1,5 @@
 import { MenuIcon, MenuItem } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { BsPeopleFill } from "react-icons/bs";
@@ -34,7 +34,7 @@ const CustomerStatusesTable = memo(
       const defaultColumns: ColumnDef<CustomerStatus>[] = [
         {
           accessorKey: "name",
-          header: t({ id: "Customer Status", message: "Customer Status" }),
+          header: t`Customer Status`,
           cell: ({ row }) => (
             <Hyperlink to={row.original.id}>
               <Enumerable value={translateStatus(row.original.name ?? "")} />
@@ -58,7 +58,7 @@ const CustomerStatusesTable = memo(
               }}
             >
               <MenuIcon icon={<BsPeopleFill />} />
-              {t({ id: "View Customers", message: "View Customers" })}
+              <Trans>View Customers</Trans>
             </MenuItem>
             <MenuItem
               onClick={() => {
@@ -68,10 +68,7 @@ const CustomerStatusesTable = memo(
               }}
             >
               <MenuIcon icon={<LuPencil />} />
-              {t({
-                id: "Edit Customer Status",
-                message: "Edit Customer Status"
-              })}
+              <Trans>Edit Customer Status</Trans>
             </MenuItem>
             <MenuItem
               destructive
@@ -83,15 +80,12 @@ const CustomerStatusesTable = memo(
               }}
             >
               <MenuIcon icon={<LuTrash />} />
-              {t({
-                id: "Delete Customer Status",
-                message: "Delete Customer Status"
-              })}
+              <Trans>Delete Customer Status</Trans>
             </MenuItem>
           </>
         );
       },
-      [navigate, params, permissions, t]
+      [navigate, params, permissions]
     );
 
     return (
@@ -102,13 +96,13 @@ const CustomerStatusesTable = memo(
         primaryAction={
           permissions.can("create", "sales") && (
             <New
-              label={t({ id: "Customer Status", message: "Customer Status" })}
+              label={t`Customer Status`}
               to={`${path.to.newCustomerStatus}?${params.toString()}`}
             />
           )
         }
         renderContextMenu={renderContextMenu}
-        title={t({ id: "Customer Statuses", message: "Customer Statuses" })}
+        title={t`Customer Statuses`}
       />
     );
   }

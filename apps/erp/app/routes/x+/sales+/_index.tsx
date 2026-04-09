@@ -35,7 +35,7 @@ import {
 } from "@carbon/react/Chart";
 import { FunnelChart } from "@carbon/react/FunnelChart";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useDateFormatter, useNumberFormatter } from "@react-aria/i18n";
 import type { DateRange } from "@react-types/datepicker";
 import { Suspense, useEffect, useMemo, useState } from "react";
@@ -151,19 +151,19 @@ export default function SalesDashboard() {
     const defaultSteps = [
       {
         id: "rfqs",
-        label: t({ id: "RFQs", message: "RFQs" }),
+        label: t`RFQs`,
         value: 0,
         colorClassName: "text-violet-600"
       },
       {
         id: "quotes",
-        label: t({ id: "Quotes", message: "Quotes" }),
+        label: t`Quotes`,
         value: 0,
         colorClassName: "text-blue-600"
       },
       {
         id: "salesOrders",
-        label: t({ id: "Sales Orders", message: "Sales Orders" }),
+        label: t`Sales Orders`,
         value: 0,
         additionalValue: 0,
         colorClassName: "text-teal-500"
@@ -217,7 +217,7 @@ export default function SalesDashboard() {
   const customerOptions = useMemo(() => {
     return [
       {
-        label: t({ id: "All Customers", message: "All Customers" }),
+        label: t`All Customers`,
         value: "all"
       },
       ...customers.map((customer) => ({
@@ -372,7 +372,7 @@ export default function SalesDashboard() {
           <CardHeader className="flex-row gap-2">
             <RiProgress2Line className="text-muted-foreground" />
             <CardTitle>
-              {t({ id: "Open RFQs", message: "Open RFQs" })}
+              <Trans>Open RFQs</Trans>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -390,7 +390,7 @@ export default function SalesDashboard() {
                     path.to.salesRfqs
                   }?filter=status:in:${OPEN_RFQ_STATUSES.join(",")}`}
                 >
-                  {t({ id: "View Open RFQs", message: "View Open RFQs" })}
+                  <Trans>View Open RFQs</Trans>
                 </Link>
               </Button>
             </HStack>
@@ -401,7 +401,7 @@ export default function SalesDashboard() {
           <CardHeader className="flex-row gap-2">
             <RiProgress4Line className="text-muted-foreground" />
             <CardTitle>
-              {t({ id: "Open Quotes", message: "Open Quotes" })}
+              <Trans>Open Quotes</Trans>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -419,7 +419,7 @@ export default function SalesDashboard() {
                     path.to.quotes
                   }?filter=status:in:${OPEN_QUOTE_STATUSES.join(",")}`}
                 >
-                  {t({ id: "View Open Quotes", message: "View Open Quotes" })}
+                  <Trans>View Open Quotes</Trans>
                 </Link>
               </Button>
             </HStack>
@@ -430,7 +430,7 @@ export default function SalesDashboard() {
           <CardHeader className="flex-row gap-2">
             <RiProgress8Line className="text-muted-foreground" />
             <CardTitle>
-              {t({ id: "Open Sales Orders", message: "Open Sales Orders" })}
+              <Trans>Open Sales Orders</Trans>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -448,7 +448,7 @@ export default function SalesDashboard() {
                     path.to.salesOrders
                   }?filter=status:in:${OPEN_SALES_ORDER_STATUSES.join(",")}`}
                 >
-                  {t({ id: "View Open Orders", message: "View Open Orders" })}
+                  <Trans>View Open Orders</Trans>
                 </Link>
               </Button>
             </HStack>
@@ -506,7 +506,7 @@ export default function SalesDashboard() {
                 <IconButton
                   variant="secondary"
                   icon={<LuEllipsisVertical />}
-                  aria-label={t({ id: "More", message: "More" })}
+                  aria-label={t`More`}
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -517,7 +517,7 @@ export default function SalesDashboard() {
                     className="flex flex-row items-center gap-2"
                   >
                     <DropdownMenuIcon icon={<LuFile />} />
-                    {t({ id: "Export CSV", message: "Export CSV" })}
+                    <Trans>Export CSV</Trans>
                   </CSVLink>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -621,7 +621,7 @@ export default function SalesDashboard() {
           <CardHeader className="flex-row gap-2">
             <LuClock className="text-muted-foreground" />
             <CardTitle>
-              {t({ id: "Recently Created", message: "Recently Created" })}
+              <Trans>Recently Created</Trans>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
@@ -630,9 +630,15 @@ export default function SalesDashboard() {
                 <Table>
                   <Thead>
                     <Tr>
-                      <Th>{t({ id: "Document", message: "Document" })}</Th>
-                      <Th>{t({ id: "Status", message: "Status" })}</Th>
-                      <Th>{t({ id: "Customer", message: "Customer" })}</Th>
+                      <Th>
+                        <Trans>Document</Trans>
+                      </Th>
+                      <Th>
+                        <Trans>Status</Trans>
+                      </Th>
+                      <Th>
+                        <Trans>Customer</Trans>
+                      </Th>
                     </Tr>
                   </Thead>
                   <Tbody>
@@ -678,7 +684,7 @@ export default function SalesDashboard() {
           <CardHeader className="flex-row gap-2">
             <LuInbox className="text-muted-foreground" />
             <CardTitle>
-              {t({ id: "Assigned to Me", message: "Assigned to Me" })}
+              <Trans>Assigned to Me</Trans>
             </CardTitle>
           </CardHeader>
           <CardContent className="min-h-[200px]">
@@ -687,10 +693,7 @@ export default function SalesDashboard() {
                 resolve={assignedToMe}
                 errorElement={
                   <div>
-                    {t({
-                      id: "Error loading assigned documents",
-                      message: "Error loading assigned documents"
-                    })}
+                    <Trans>Error loading assigned documents</Trans>
                   </div>
                 }
               >
@@ -699,9 +702,15 @@ export default function SalesDashboard() {
                     <Table>
                       <Thead>
                         <Tr>
-                          <Th>{t({ id: "Document", message: "Document" })}</Th>
-                          <Th>{t({ id: "Status", message: "Status" })}</Th>
-                          <Th>{t({ id: "Customer", message: "Customer" })}</Th>
+                          <Th>
+                            <Trans>Document</Trans>
+                          </Th>
+                          <Th>
+                            <Trans>Status</Trans>
+                          </Th>
+                          <Th>
+                            <Trans>Customer</Trans>
+                          </Th>
                         </Tr>
                       </Thead>
                       <Tbody>

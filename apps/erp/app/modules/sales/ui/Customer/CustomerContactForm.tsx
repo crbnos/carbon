@@ -11,7 +11,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { z } from "zod";
 import {
   CustomerLocation,
@@ -86,10 +86,8 @@ const CustomerContactForm = ({
         >
           <DrawerHeader>
             <DrawerTitle>
-              {isEditing
-                ? tShared({ id: "Edit", message: "Edit" })
-                : tShared({ id: "New", message: "New" })}{" "}
-              {t({ id: "Contact", message: "Contact" })}
+              {isEditing ? <Trans>Edit</Trans> : <Trans>New</Trans>}{" "}
+              <Trans>Contact</Trans>
             </DrawerTitle>
           </DrawerHeader>
           <DrawerBody>
@@ -109,42 +107,27 @@ const CustomerContactForm = ({
                 name="lastName"
                 label={tShared({ id: "Last Name", message: "Last Name" })}
               />
-              <Input
-                name="title"
-                label={t({ id: "Title", message: "Title" })}
-              />
-              <PhoneInput
-                name="mobilePhone"
-                label={t({ id: "Mobile Phone", message: "Mobile Phone" })}
-              />
-              <PhoneInput
-                name="homePhone"
-                label={t({ id: "Home Phone", message: "Home Phone" })}
-              />
-              <PhoneInput
-                name="workPhone"
-                label={t({ id: "Work Phone", message: "Work Phone" })}
-              />
-              <PhoneInput name="fax" label={t({ id: "Fax", message: "Fax" })} />
+              <Input name="title" label={t`Title`} />
+              <PhoneInput name="mobilePhone" label={t`Mobile Phone`} />
+              <PhoneInput name="homePhone" label={t`Home Phone`} />
+              <PhoneInput name="workPhone" label={t`Work Phone`} />
+              <PhoneInput name="fax" label={t`Fax`} />
               <CustomerLocation
                 name="customerLocationId"
-                label={t({ id: "Location", message: "Location" })}
+                label={t`Location`}
                 customer={customerId}
               />
-              <TextArea
-                name="notes"
-                label={t({ id: "Notes", message: "Notes" })}
-              />
+              <TextArea name="notes" label={t`Notes`} />
               <CustomFormFields table="customerContact" />
             </VStack>
           </DrawerBody>
           <DrawerFooter>
             <HStack>
               <Submit isDisabled={isDisabled}>
-                {tShared({ id: "Save", message: "Save" })}
+                <Trans>Save</Trans>
               </Submit>
               <Button size="md" variant="solid" onClick={onClose}>
-                {tShared({ id: "Cancel", message: "Cancel" })}
+                <Trans>Cancel</Trans>
               </Button>
             </HStack>
           </DrawerFooter>

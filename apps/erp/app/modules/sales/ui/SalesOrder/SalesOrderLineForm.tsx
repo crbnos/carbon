@@ -25,7 +25,7 @@ import {
   VStack
 } from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { LuChevronRight, LuPlus, LuTrash, LuTruck } from "react-icons/lu";
@@ -231,10 +231,7 @@ const SalesOrderLineForm = ({
                   >
                     {isEditing
                       ? getItemReadableId(items, itemData?.itemId) || "..."
-                      : t({
-                          id: "New Sales Order Line",
-                          message: "New Sales Order Line"
-                        })}
+                      : t`New Sales Order Line`}
                   </ModalCardTitle>
                   <ModalCardDescription>
                     {isEditing ? (
@@ -259,17 +256,13 @@ const SalesOrderLineForm = ({
                               {percentFormatter.format(
                                 initialValues?.taxPercent
                               )}{" "}
-                              {t({ id: "Tax", message: "Tax" })}
+                              {t`Tax`}
                             </Badge>
                           ) : null}
                         </div>
                       </div>
                     ) : (
-                      t({
-                        id: "A sales order line contains order details for a particular item",
-                        message:
-                          "A sales order line contains order details for a particular item"
-                      })
+                      t`A sales order line contains order details for a particular item`
                     )}
                   </ModalCardDescription>
                 </ModalCardHeader>
@@ -281,7 +274,7 @@ const SalesOrderLineForm = ({
                         <DropdownMenuTrigger asChild>
                           <IconButton
                             icon={<BsThreeDotsVertical />}
-                            aria-label={t({ id: "More", message: "More" })}
+                            aria-label={t`More`}
                             variant="ghost"
                           />
                         </DropdownMenuTrigger>
@@ -291,7 +284,7 @@ const SalesOrderLineForm = ({
                             onClick={deleteDisclosure.onOpen}
                           >
                             <DropdownMenuIcon icon={<LuTrash />} />
-                            {t({ id: "Delete Line", message: "Delete Line" })}
+                            <Trans>Delete Line</Trans>
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -329,10 +322,7 @@ const SalesOrderLineForm = ({
                     {isEditing && (
                       <InputControlled
                         name="description"
-                        label={t({
-                          id: "Short Description",
-                          message: "Short Description"
-                        })}
+                        label={t`Short Description`}
                         onChange={(value) => {
                           setItemData((d) => ({
                             ...d,
@@ -347,7 +337,7 @@ const SalesOrderLineForm = ({
                       <>
                         <SelectControlled
                           name="methodType"
-                          label={t({ id: "Method", message: "Method" })}
+                          label={t`Method`}
                           options={
                             methodType.map((m) => ({
                               label: (
@@ -368,21 +358,15 @@ const SalesOrderLineForm = ({
                               }));
                           }}
                         />
-                        <Number
-                          name="saleQuantity"
-                          label={t({ id: "Quantity", message: "Quantity" })}
-                        />
+                        <Number name="saleQuantity" label={t`Quantity`} />
                         <UnitOfMeasure
                           name="unitOfMeasureCode"
-                          label={t({
-                            id: "Unit of Measure",
-                            message: "Unit of Measure"
-                          })}
+                          label={t`Unit of Measure`}
                           value={itemData.uom}
                         />
                         <NumberControlled
                           name="unitPrice"
-                          label={t({ id: "Unit Price", message: "Unit Price" })}
+                          label={t`Unit Price`}
                           value={itemData.unitPrice}
                           formatOptions={{
                             style: "currency",
@@ -397,10 +381,7 @@ const SalesOrderLineForm = ({
                         />
                         <DatePicker
                           name="promisedDate"
-                          label={t({
-                            id: "Promised Date",
-                            message: "Promised Date"
-                          })}
+                          label={t`Promised Date`}
                         />
                         {[
                           "Part",
@@ -411,7 +392,7 @@ const SalesOrderLineForm = ({
                         ].includes(lineType) && (
                           <Location
                             name="locationId"
-                            label={t({ id: "Location", message: "Location" })}
+                            label={t`Location`}
                             onChange={onLocationChange}
                           />
                         )}
@@ -424,7 +405,7 @@ const SalesOrderLineForm = ({
                         ].includes(lineType) && (
                           <Shelf
                             name="shelfId"
-                            label={t({ id: "Shelf", message: "Shelf" })}
+                            label={t`Shelf`}
                             locationId={locationId}
                             itemId={itemData.itemId}
                             value={itemData.shelfId ?? undefined}
@@ -451,10 +432,7 @@ const SalesOrderLineForm = ({
                           onClick={costsDisclosure.onToggle}
                         >
                           <Label>
-                            {t({
-                              id: "Tax & Additional Costs",
-                              message: "Tax & Additional Costs"
-                            })}
+                            <Trans>Tax & Additional Costs</Trans>
                           </Label>
                           <HStack>
                             {(initialValues?.taxPercent ?? 0) > 0 && (
@@ -462,7 +440,7 @@ const SalesOrderLineForm = ({
                                 {percentFormatter.format(
                                   initialValues?.taxPercent ?? 0
                                 )}{" "}
-                                {t({ id: "Tax", message: "Tax" })}
+                                {t`Tax`}
                               </Badge>
                             )}
                             {(initialValues?.shippingCost ?? 0) > 0 && (
@@ -492,7 +470,7 @@ const SalesOrderLineForm = ({
                                         (initialValues?.nonTaxableAddOnCost ??
                                           0)
                                     )}{" "}
-                                    {t({ id: "Add-On", message: "Add-On" })}
+                                    {t`Add-On`}
                                   </span>
                                 </Badge>
                               ))}
@@ -501,14 +479,8 @@ const SalesOrderLineForm = ({
                               icon={<LuChevronRight />}
                               aria-label={
                                 costsDisclosure.isOpen
-                                  ? t({
-                                      id: "Collapse Costs",
-                                      message: "Collapse Costs"
-                                    })
-                                  : t({
-                                      id: "Expand Costs",
-                                      message: "Expand Costs"
-                                    })
+                                  ? t`Collapse Costs`
+                                  : t`Expand Costs`
                               }
                               variant="ghost"
                               size="md"
@@ -529,10 +501,7 @@ const SalesOrderLineForm = ({
                         >
                           <Number
                             name="taxPercent"
-                            label={t({
-                              id: "Tax Percent",
-                              message: "Tax Percent"
-                            })}
+                            label={t`Tax Percent`}
                             minValue={0}
                             maxValue={1}
                             step={0.0001}
@@ -544,10 +513,7 @@ const SalesOrderLineForm = ({
                           />
                           <Number
                             name="shippingCost"
-                            label={t({
-                              id: "Shipping Cost",
-                              message: "Shipping Cost"
-                            })}
+                            label={t`Shipping Cost`}
                             minValue={0}
                             formatOptions={{
                               style: "currency",
@@ -556,10 +522,7 @@ const SalesOrderLineForm = ({
                           />
                           <Number
                             name="addOnCost"
-                            label={t({
-                              id: "Add-On Cost",
-                              message: "Add-On Cost"
-                            })}
+                            label={t`Add-On Cost`}
                             formatOptions={{
                               style: "currency",
                               currency: baseCurrency
@@ -567,10 +530,7 @@ const SalesOrderLineForm = ({
                           />
                           <Number
                             name="nonTaxableAddOnCost"
-                            label={t({
-                              id: "Non-Taxable Add-On Cost",
-                              message: "Non-Taxable Add-On Cost"
-                            })}
+                            label={t`Non-Taxable Add-On Cost`}
                             formatOptions={{
                               style: "currency",
                               currency: baseCurrency

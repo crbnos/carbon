@@ -138,10 +138,10 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
       </Button>
       <Button className="rounded-none border-l-0" size="sm" variant="secondary">
         {operator === "eq"
-          ? t({ id: "is", message: "is" })
+          ? t`is`
           : operator === "in"
-            ? t({ id: "is any of", message: "is any of" })
-            : t({ id: "matches", message: "matches" })}
+            ? t`is any of`
+            : t`matches`}
       </Button>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
@@ -165,16 +165,11 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
             <CommandInput
               value={input}
               onValueChange={setInput}
-              placeholder={t({ id: "Search...", message: "Search..." })}
+              placeholder={t`Search...`}
               className="h-9"
             />
             <CommandEmpty>
-              {loading
-                ? t({ id: "Loading...", message: "Loading..." })
-                : t({
-                    id: "No options found.",
-                    message: "No options found."
-                  })}
+              {loading ? t`Loading...` : t`No options found.`}
             </CommandEmpty>
             <CommandGroup>
               {options.map((option) => {
@@ -208,7 +203,7 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
         </PopoverContent>
       </Popover>
       <Button
-        aria-label={t({ id: "Remove filter", message: "Remove filter" })}
+        aria-label={t`Remove filter`}
         className="rounded-l-none border-l-0 px-1 w-6"
         size="sm"
         variant="secondary"

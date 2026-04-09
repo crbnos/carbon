@@ -46,10 +46,8 @@ const Customer = (props: CustomerSelectProps) => {
         ref={triggerRef}
         options={options}
         {...props}
-        label={props?.label ?? t({ id: "Customer", message: "Customer" })}
-        placeholder={
-          props?.placeholder ?? t({ id: "Select", message: "Select" })
-        }
+        label={props?.label ?? t`Customer`}
+        placeholder={props?.placeholder ?? t`Select`}
         inline={props?.inline ? CustomerPreview : undefined}
         onCreateOption={(option) => {
           newCustomersModal.onOpen();

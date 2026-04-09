@@ -23,7 +23,7 @@ import {
   VStack
 } from "@carbon/react";
 import { clamp } from "@carbon/utils";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import type {
   Column,
@@ -242,7 +242,7 @@ const Table = <T extends object>({
   renderContextMenu,
   renderExpandedRow
 }: TableProps<T>) => {
-  const { t, i18n } = useLingui();
+  const { i18n } = useLingui();
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
   const translateLabel = useCallback((value: string) => i18n._(value), [i18n]);
@@ -922,10 +922,10 @@ const Table = <T extends object>({
                   <LuTriangleAlert className="h-6 w-6 flex-shrink-0" />
                 </div>
                 <span className="text-xs font-mono font-light text-foreground uppercase">
-                  {t({ id: "No results found", message: "No results found" })}
+                  <Trans>No results found</Trans>
                 </span>
                 <Button variant="secondary" onClick={clearFilters}>
-                  {t({ id: "Remove Filters", message: "Remove Filters" })}
+                  <Trans>Remove Filters</Trans>
                 </Button>
               </div>
             ) : (
@@ -934,7 +934,7 @@ const Table = <T extends object>({
                   <LuTriangleAlert className="h-6 w-6 flex-shrink-0" />
                 </div>
                 <span className="text-xs font-mono font-light text-foreground uppercase">
-                  {t({ id: "No data exists", message: "No data exists" })}
+                  <Trans>No data exists</Trans>
                 </span>
                 {primaryAction}
               </div>
@@ -1018,10 +1018,7 @@ const Table = <T extends object>({
                                       value="1"
                                     >
                                       <DropdownMenuIcon icon={<LuArrowUp />} />
-                                      {t({
-                                        id: "Sort Ascending",
-                                        message: "Sort Ascending"
-                                      })}
+                                      <Trans>Sort Ascending</Trans>
                                     </DropdownMenuRadioItem>
                                     <DropdownMenuRadioItem
                                       onClick={() =>
@@ -1032,10 +1029,7 @@ const Table = <T extends object>({
                                       <DropdownMenuIcon
                                         icon={<LuArrowDown />}
                                       />
-                                      {t({
-                                        id: "Sort Descending",
-                                        message: "Sort Descending"
-                                      })}
+                                      <Trans>Sort Descending</Trans>
                                     </DropdownMenuRadioItem>
                                   </DropdownMenuRadioGroup>
                                 </DropdownMenuContent>

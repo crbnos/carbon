@@ -1,5 +1,5 @@
 import { MenuIcon, MenuItem } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { LuBookMarked, LuPencil, LuTrash } from "react-icons/lu";
@@ -28,7 +28,7 @@ const NoQuoteReasonsTable = memo(
       const defaultColumns: ColumnDef<NoQuoteReason>[] = [
         {
           accessorKey: "name",
-          header: t({ id: "Reason", message: "Reason" }),
+          header: t`Reason`,
           cell: ({ row }) => (
             <Hyperlink to={row.original.id}>
               <Enumerable value={row.original.name} />
@@ -54,7 +54,7 @@ const NoQuoteReasonsTable = memo(
               }}
             >
               <MenuIcon icon={<LuPencil />} />
-              {t({ id: "Edit Reason", message: "Edit Reason" })}
+              <Trans>Edit Reason</Trans>
             </MenuItem>
             <MenuItem
               destructive
@@ -66,12 +66,12 @@ const NoQuoteReasonsTable = memo(
               }}
             >
               <MenuIcon icon={<LuTrash />} />
-              {t({ id: "Delete Reason", message: "Delete Reason" })}
+              <Trans>Delete Reason</Trans>
             </MenuItem>
           </>
         );
       },
-      [navigate, params, permissions, t]
+      [navigate, params, permissions]
     );
 
     return (
@@ -82,13 +82,13 @@ const NoQuoteReasonsTable = memo(
         primaryAction={
           permissions.can("create", "sales") && (
             <New
-              label={t({ id: "Reason", message: "Reason" })}
+              label={t`Reason`}
               to={`${path.to.newNoQuoteReason}?${params.toString()}`}
             />
           )
         }
         renderContextMenu={renderContextMenu}
-        title={t({ id: "Reasons", message: "Reasons" })}
+        title={t`Reasons`}
       />
     );
   }
