@@ -329,7 +329,7 @@ export const auditConfig = {
   } as Record<string, string>,
 
   /** Fields to skip in diff computation */
-  skipFields: ["updatedAt", "updatedBy"],
+  skipFields: ["updatedAt", "updatedBy", "embedding"],
 
   /** Retention period before archival (days) */
   retentionDays: 30,

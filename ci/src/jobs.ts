@@ -31,7 +31,7 @@ async function jobs(): Promise<void> {
 
     try {
       console.log(`✅ 🔄 Syncing jobs for workspace ${id} (${url_erp})`);
-      await $`curl -X PUT ${url_erp}/api/inngest`;
+      await $`curl -X PUT https://${url_erp}/api/inngest`;
       console.log(`✅ 🐓 Successfully synced jobs for workspace ${id}`);
     } catch (err) {
       console.error(`🔴 🍳 Failed to sync jobs for workspace ${id}`, err);
