@@ -1,0 +1,5 @@
+{
+  "framework": null,
+  "installCommand": "cd ../.. && npm install",
+  "buildCommand": "cd ../.. && npx turbo run build --filter=./apps/erp"
+}
