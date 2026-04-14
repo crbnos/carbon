@@ -3,5 +3,10 @@
   "deno.enablePaths": ["./packages/database"],
   "typescript.tsdk": "node_modules/typescript/lib",
   "deno.enable": true,
-  "js/ts.tsdk.path": "node_modules/typescript/lib"
+  "js/ts.tsdk.path": "node_modules/typescript/lib",
+  "editor.codeActionsOnSave": {
+    "source.organizeImports.biome": "explicit",
+    "source.fixAll.biome": "explicit"
+  },
+  "editor.defaultFormatter": "biomejs.biome"
 }

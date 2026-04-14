@@ -108,19 +108,19 @@ The monorepo follows the Turborepo convention of grouping packages into one of t
 
 ### `/packages`
 
-| Package Name        | Description                                                             |
-| ------------------- | ----------------------------------------------------------------------- |
-| `@carbon/database`  | Database schema, migrations and types                                   |
-| `@carbon/documents` | Transactional PDFs and email templates                                  |
-| `@carbon/ee`        | Integration definitions and configurations                              |
+| Package Name        | Description                                                                |
+| ------------------- | -------------------------------------------------------------------------- |
+| `@carbon/database`  | Database schema, migrations and types                                      |
+| `@carbon/documents` | Transactional PDFs and email templates                                     |
+| `@carbon/ee`        | Integration definitions and configurations                                 |
 | `@carbon/config`    | Shared configuration (vitest, tsconfig, tailwind) across apps and packages |
-| `@carbon/jobs`      | Background jobs and workers                                             |
-| `@carbon/logger`    | Shared logger used across apps                                          |
-| `@carbon/react`     | Shared web-based UI components                                          |
-| `@carbon/kv`        | Redis cache client                                                      |
-| `@carbon/lib`       | Third-party client libraries (slack, resend)                            |
-| `@carbon/stripe`    | Stripe integration                                                      |
-| `@carbon/utils`     | Shared utility functions used across apps and packages                  |
+| `@carbon/jobs`      | Background jobs and workers                                                |
+| `@carbon/logger`    | Shared logger used across apps                                             |
+| `@carbon/react`     | Shared web-based UI components                                             |
+| `@carbon/kv`        | Redis cache client                                                         |
+| `@carbon/lib`       | Third-party client libraries (slack, resend)                               |
+| `@carbon/stripe`    | Stripe integration                                                         |
+| `@carbon/utils`     | Shared utility functions used across apps and packages                     |
 
 ## Development
 
@@ -145,6 +145,9 @@ In addition you must configure the following external services:
 | Service | Purpose                    | URL                                                            |
 | ------- | -------------------------- | -------------------------------------------------------------- |
 | Posthog | Product analytics platform | [https://us.posthog.com/signup](https://us.posthog.com/signup) |
+| Stripe | Payments service | [https://dashboard.stripe.com/login](https://dashboard.stripe.com/login) |
+| Resend | Email service | [https://resend.com](https://resend.com) |
+| Novu | Notifications service | [https://dashboard.novu.co/auth/sign-in](https://dashboard.novu.co/auth/sign-in) |
 
 Posthog has a free tier which should be plenty to support local development. If you're self hosting and you don't want to use Posthog, it's pretty easy to remove the analytics.
 
@@ -164,22 +167,35 @@ Create an `.env` file and copy the contents of `.env.example` file into it
 $ cp ./.env.example ./.env
 ```
 
-1. Use the output of `npm run db:start` to set the supabase entries:
+1. **Social Sign In**: Signing in requires you to setup one of two methods:
+
+- Email requires a Resend API key (you'll set this up later on)
+- Sign-in with Google requires a Google auth client with these variables. [See the Supabase docs for instructions on how to set this up](https://supabase.com/docs/guides/auth/social-login/auth-google):
+  - Set `Authorized JavaScript origins` to only `http://127.0.0.1:54321`
+  - Set `Authorized redirect URIs` to `http://127.0.0.1:54321/auth/v1/callback`
+- You should set environment variables like the following.
+  - `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID="******.apps.googleusercontent.com"`
+  - `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET="GOCSPX-****************"`
+
+2. **Supabase**: Start up the backend services using `npm run db:start`. Find the following values in its output to set the supabase entries:
 
 - `SUPABASE_SERVICE_ROLE_KEY=[service_role key]`
 - `SUPABASE_ANON_KEY=[anon key]`
 
-2. In Posthog go to [https://[region].posthog.com/project/[project-id]/settings/project-details](https://[region].posthog.com/project/[project-id]/settings/project-details) to find your Project ID and Project API key:
+3. **Redis** (Caching): Set up a Redis instance (local or cloud) and add the connection URL. You can set one up in the cloud easily using [Upstash](https://console.upstash.com/auth/sign-in):
+
+- `REDIS_URL=[redis://user:password@host:port]`
+
+4. **Posthog** (Analytics): In Posthog go to [https://[region].posthog.com/project/[project-id]/settings/project-details](https://[region].posthog.com/project/[project-id]/settings/project-details) to find your Project ID and Project API key:
 
 - `POSTHOG_API_HOST=[https://[region].posthog.com]`
 - `POSTHOG_PROJECT_PUBLIC_KEY=[Project API Key starting 'phc*']`
 
-3. Add a `STRIPE_SECRET_KEY` from the Stripe admin interface, and then run `npm run -w @carbon/stripe register:stripe` to get a `STRIPE_WEBHOOK_SECRET`
+5. **Stripe** (Payment service) - [Create a stripe account](https://dashboard.stripe.com/login), add a `STRIPE_SECRET_KEY` from the Stripe `Settings > Developers` interface
 
 - `STRIPE_SECRET_KEY="sk_test_*************"`
-- `STRIPE_WEBHOOK_SECRET="whsec_************"`
 
-4. **Resend** (Email service) - [Create a Resend account](https://resend.com) and configure:
+6. **Resend** (Email service) - [Create a Resend account](https://resend.com) and configure:
 
 - `RESEND_API_KEY="re_**********"`
 - `RESEND_DOMAIN="carbon.ms"` (or your domain, no trailing slashes or protocols)
@@ -187,32 +203,18 @@ $ cp ./.env.example ./.env
 
 Resend is used for transactional emails (user invitations, email verification, onboarding). All three variables are stored in `packages/auth/src/config/env.ts`.
 
-5. **Novu** (In-app notifications) - [Create a Novu account](https://novu.co) and configure:
+7. **Novu** (In-app notifications) - [Create a Novu account](https://dashboard.novu.co/auth/sign-in) and configure:
 
 - `NOVU_APPLICATION_ID="********************"` (Client-side, public)
 - `NOVU_SECRET_KEY="********************"` (Server-side secret, backend only)
 
-Novu is used for in-app notifications and notification workflows. After setup, sync your Novu workflows:
+Novu is used for in-app notifications and notification workflows. After standing up the application and tunnelling port 3000, sync your Novu workflows:
 
 ```bash
 npm run novu:sync
 ```
 
 This command syncs your Novu workflows with the Carbon application using the bridge URL.
-
-6. Signing in requires you to setup one of two methods:
-   - Email requires a Resend API key (configured in step 6 above)
-   - Sign-in with Google requires a [Google auth client](https://supabase.com/docs/guides/auth/social-login/auth-google) with these variables:
-     - `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID="******.apps.googleusercontent.com"`
-     - `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET="GOCSPX-****************"`
-     - `SUPABASE_AUTH_EXTERNAL_GOOGLE_REDIRECT_URI="http://127.0.0.1:54321/auth/v1/callback"`
-
-Then you can run the following:
-
-```bash
-$ npm run db:build     # run db migrations and seed script
-$ npm run build        # build the packages
-```
 
 Finally, start the apps and packages:
 
