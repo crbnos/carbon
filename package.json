@@ -55,7 +55,7 @@
     "db:types": "npm run db:types -w @carbon/database",
     "deploy": "turbo run deploy",
     "dev": "run-p dev:docker dev:jobs dev:jobs-wait",
-    "dev:docker": "docker-compose up -d redis",
+    "dev:docker": "if docker compose version >/dev/null 2>&1; then docker compose up -d redis; else docker-compose up -d redis; fi",
     "dev:jobs-wait": "npx wait-on tcp:8288 && run-p dev:erp dev:stripe",
     "dev:academy": "turbo run dev --filter=./apps/academy --filter=./packages/",
     "dev:erp": "turbo run dev --filter=./apps/erp --filter=./packages/ ",
