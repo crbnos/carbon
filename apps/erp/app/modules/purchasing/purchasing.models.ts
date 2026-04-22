@@ -15,7 +15,7 @@ export const KPIs = [
   },
   {
     key: "purchaseInvoiceCount",
-    label: "Purchase Invoices"
+    label: "Bills"
   },
   {
     key: "purchaseOrderAmount",
@@ -23,7 +23,7 @@ export const KPIs = [
   },
   {
     key: "purchaseInvoiceAmount",
-    label: "Purchase Invoice Amount"
+    label: "Bill Amount"
   }
   // {
   //   key: "turnaroundTime",

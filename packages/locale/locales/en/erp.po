@@ -143,7 +143,7 @@ msgstr "A part contains the information about a specific item that can be purcha
 
 #: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceForm.tsx:168
 msgid "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
-msgstr "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
+msgstr "A bill is a document that specifies the products or services purchased by a customer and the corresponding cost."
 
 #: apps/erp/app/modules/sales/ui/Quotes/QuoteForm.tsx:137
 msgid "A quote is a set of prices for specific parts and quantities."
@@ -3785,7 +3785,7 @@ msgstr "Delete Process"
 
 #: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceHeader.tsx:226
 msgid "Delete Purchase Invoice"
-msgstr "Delete Purchase Invoice"
+msgstr "Delete Bill"
 
 #: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderHeader.tsx:173
 msgid "Delete Purchase Order"
@@ -8704,7 +8704,7 @@ msgstr "Open menu"
 
 #: apps/erp/app/routes/x+/purchasing+/_index.tsx:457
 msgid "Open Purchase Invoices"
-msgstr "Open Purchase Invoices"
+msgstr "Open Bills"
 
 #: apps/erp/app/routes/x+/purchasing+/_index.tsx:428
 msgid "Open Purchase Orders"
@@ -9685,20 +9685,20 @@ msgstr "Purchase History"
 #: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicesTable.tsx:320
 #: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceSummary.tsx:417
 msgid "Purchase Invoice"
-msgstr "Purchase Invoice"
+msgstr "Bill"
 
 #: apps/erp/app/routes/x+/purchasing+/_index.tsx:302
 msgid "Purchase Invoice Amount"
-msgstr "Purchase Invoice Amount"
+msgstr "Bill Amount"
 
 #: apps/erp/app/routes/x+/purchase-invoice+/$invoiceId.$lineId.delete.tsx:99
 msgid "Purchase Invoice Line"
-msgstr "Purchase Invoice Line"
+msgstr "Bill Line"
 
 #: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicesTable.tsx:326
 #: apps/erp/app/routes/x+/purchasing+/_index.tsx:300
 msgid "Purchase Invoices"
-msgstr "Purchase Invoices"
+msgstr "Bills"
 
 #: apps/erp/app/components/Layout/Topbar/CreateMenu.tsx:70
 #: apps/erp/app/modules/inventory/ui/Receipts/ReceiptHeader.tsx:216
@@ -13883,7 +13883,7 @@ msgstr "View Production Events"
 
 #: apps/erp/app/modules/items/ui/Item/ItemCostHistoryChart.tsx:329
 msgid "View Purchase Invoice"
-msgstr "View Purchase Invoice"
+msgstr "View Bill"
 
 #: apps/erp/app/routes/x+/resources+/_index.tsx:438
 msgid "View Reactive"
@@ -13958,7 +13958,7 @@ msgstr "Void Invoice"
 
 #: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceVoidModal.tsx:48
 msgid "Void Purchase Invoice"
-msgstr "Void Purchase Invoice"
+msgstr "Void Bill"
 
 #: apps/erp/app/modules/inventory/ui/Receipts/ReceiptVoidModal.tsx:48
 #: apps/erp/app/modules/inventory/ui/Receipts/ReceiptVoidModal.tsx:102
@@ -13980,7 +13980,7 @@ msgstr "Voided"
 
 #: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceVoidModal.tsx:64
 msgid "Voiding this purchase invoice will:"
-msgstr "Voiding this purchase invoice will:"
+msgstr "Voiding this bill will:"
 
 #: apps/erp/app/modules/inventory/ui/Receipts/ReceiptVoidModal.tsx:64
 msgid "Voiding this receipt will:"

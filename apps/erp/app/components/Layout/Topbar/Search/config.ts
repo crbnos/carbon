@@ -115,7 +115,7 @@ export function getEntityTypeLabel(entityType: string): string {
     employee: "Person",
     purchaseOrder: "Purchase Order",
     salesInvoice: "Sales Invoice",
-    purchaseInvoice: "Purchase Invoice",
+    purchaseInvoice: "Bill",
     quote: "Quote",
     salesRfq: "RFQ",
     salesOrder: "Sales Order",
