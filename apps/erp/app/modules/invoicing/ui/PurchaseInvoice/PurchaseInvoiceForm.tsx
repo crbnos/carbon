@@ -160,9 +160,7 @@ const PurchaseInvoiceForm = ({ initialValues }: PurchaseInvoiceFormProps) => {
     >
       <Card>
         <CardHeader>
-          <CardTitle>
-            {isEditing ? "Purchase Invoice" : "New Purchase Invoice"}
-          </CardTitle>
+          <CardTitle>{isEditing ? "Bill" : "New Bill"}</CardTitle>
           {!isEditing && (
             <CardDescription>
               <Trans>

@@ -396,7 +396,7 @@ const PurchaseInvoiceHeader = () => {
         <ConfirmDelete
           action={path.to.deletePurchaseInvoice(invoiceId)}
           isOpen={deleteModal.isOpen}
-          name={routeData?.purchaseInvoice?.invoiceId ?? "purchase invoice"}
+          name={routeData?.purchaseInvoice?.invoiceId ?? "bill"}
           text={t`Are you sure you want to delete ${routeData?.purchaseInvoice?.invoiceId}? This cannot be undone.`}
           onCancel={() => {
             deleteModal.onClose();

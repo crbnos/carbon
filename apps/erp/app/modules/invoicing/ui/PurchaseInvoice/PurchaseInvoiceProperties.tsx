@@ -145,7 +145,7 @@ const PurchaseInvoiceProperties = () => {
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <span>Copy link to Purchase Invoice</span>
+                <span>Copy link to Bill</span>
               </TooltipContent>
             </Tooltip>
             <Tooltip>
@@ -163,7 +163,7 @@ const PurchaseInvoiceProperties = () => {
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <span>Copy Purchase Invoice number</span>
+                <span>Copy Bill number</span>
               </TooltipContent>
             </Tooltip>
           </HStack>

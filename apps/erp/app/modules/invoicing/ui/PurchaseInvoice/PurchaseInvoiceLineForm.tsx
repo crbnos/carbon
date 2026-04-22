@@ -326,7 +326,7 @@ const PurchaseInvoiceLineForm = ({
               >
                 {isEditing
                   ? (getItemReadableId(items, itemData?.itemId) ?? "...")
-                  : "New Purchase Invoice Line"}
+                  : "New Bill Line"}
               </ModalCardTitle>
               <ModalCardDescription>
                 {isEditing ? (
@@ -352,7 +352,7 @@ const PurchaseInvoiceLineForm = ({
                     </div>
                   </div>
                 ) : (
-                  "A purchase invoice line contains invoice details for a particular item"
+                  "A bill line contains invoice details for a particular item"
                 )}
               </ModalCardDescription>
             </ModalCardHeader>
