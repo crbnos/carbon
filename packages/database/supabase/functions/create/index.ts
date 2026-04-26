@@ -841,13 +841,12 @@ serve(async (req: Request) => {
           if (
             !d.itemId ||
             !d.purchaseQuantity ||
-            d.unitPrice === null ||
-            d.purchaseOrderLineType === "Service" ||
-            isNaN(d.unitPrice)
+            d.purchaseOrderLineType === "Service"
           ) {
             return acc;
           }
 
+          const unitPrice = d.unitPrice ?? 0;
           const outstandingQuantity =
             d.purchaseQuantity -
             (previouslyReceivedQuantitiesByLine[d.id!] ?? 0);
@@ -870,7 +869,7 @@ serve(async (req: Request) => {
             requiresBatchTracking:
               batchItems.has(d.itemId) && !isOutsideOperation,
             unitPrice:
-              d.unitPrice / (d.conversionFactor ?? 1) + shippingAndTaxUnitCost,
+              unitPrice / (d.conversionFactor ?? 1) + shippingAndTaxUnitCost,
             unitOfMeasure: d.inventoryUnitOfMeasureCode ?? "EA",
             locationId: d.locationId,
             storageUnitId: d.storageUnitId,
@@ -1796,9 +1795,7 @@ serve(async (req: Request) => {
             if (
               !purchaseOrderLine.itemId ||
               !purchaseOrderLine.purchaseQuantity ||
-              purchaseOrderLine.unitPrice === null ||
-              purchaseOrderLine.purchaseOrderLineType === "Service" ||
-              isNaN(purchaseOrderLine.unitPrice)
+              purchaseOrderLine.purchaseOrderLineType === "Service"
             ) {
               continue;
             }
@@ -2023,9 +2020,7 @@ serve(async (req: Request) => {
             if (
               !salesOrderLine.itemId ||
               !salesOrderLine.saleQuantity ||
-              salesOrderLine.unitPrice === null ||
-              salesOrderLine.salesOrderLineType === "Service" ||
-              isNaN(salesOrderLine.unitPrice)
+              salesOrderLine.salesOrderLineType === "Service"
             ) {
               continue;
             }
