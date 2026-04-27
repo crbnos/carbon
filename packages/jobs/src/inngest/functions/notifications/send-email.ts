@@ -14,6 +14,30 @@ export const sendEmailFunction = inngest.createFunction(
     const payload = event.data;
     const serviceRole = getCarbonServiceRole();
 
+    // Resend rejects the request if `to` or `cc` contain null/undefined
+    // entries, so strip falsy values regardless of what callers pass.
+    const sanitizeRecipients = (
+      value: string | string[] | undefined
+    ): string | string[] | undefined => {
+      if (Array.isArray(value)) {
+        const filtered = value.filter(
+          (entry): entry is string =>
+            typeof entry === "string" && entry.length > 0
+        );
+        return filtered.length ? filtered : undefined;
+      }
+      return value && typeof value === "string" ? value : undefined;
+    };
+
+    const toRecipients = sanitizeRecipients(payload.to);
+    const ccRecipients = sanitizeRecipients(payload.cc);
+
+    if (!toRecipients) {
+      throw new NonRetriableError(
+        "send-email called without any valid `to` recipients"
+      );
+    }
+
     const { companyName, integrationMetadata, integrationActive } =
       await step.run("fetch-company-integration", async () => {
         const [companyResult, integrationResult] = await Promise.all([
@@ -82,8 +106,8 @@ export const sendEmailFunction = inngest.createFunction(
         console.info(`SMTP Email Job`);
         return transporter.sendMail({
           from: fromAddress,
-          to: payload.to,
-          cc: payload.cc,
+          to: toRecipients,
+          cc: ccRecipients,
           replyTo: payload.from,
           subject: payload.subject,
           html: payload.html,
@@ -106,8 +130,8 @@ export const sendEmailFunction = inngest.createFunction(
 
       const email = {
         from: fromAddress,
-        to: payload.to,
-        cc: payload.cc,
+        to: toRecipients,
+        cc: ccRecipients,
         reply_to: payload.from,
         subject: payload.subject,
         html: payload.html,
