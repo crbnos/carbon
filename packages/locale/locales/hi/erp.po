@@ -1492,7 +1492,7 @@ msgstr "वापस"
 msgid "Back to home"
 msgstr "घर वापस जाएं"
 
-#: apps/erp/app/routes/x+/traceability+/graph.tsx:153
+#: apps/erp/app/routes/x+/traceability+/graph.tsx:160
 msgid "Back to traceability"
 msgstr "ट्रेसेबिलिटी पर वापस जाएं"
 
@@ -2692,7 +2692,7 @@ msgstr "दस्तावेज़ का नाम कॉपी करें"
 msgid "Copy document unique identifier"
 msgstr "दस्तावेज़ की अद्वितीय पहचान की प्रतिलिपि बनाएँ"
 
-#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:158
+#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:213
 msgid "Copy ID"
 msgstr ""
 
@@ -2708,7 +2708,7 @@ msgstr "समस्या की अद्वितीय पहचान क�
 msgid "Copy Job number"
 msgstr "जॉब नंबर कॉपी करें"
 
-#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:144
+#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:199
 msgid "Copy link"
 msgstr ""
 
@@ -13732,7 +13732,7 @@ msgstr "कुल"
 
 #: apps/erp/app/modules/inventory/ui/useInventorySubmodules.tsx:76
 #: apps/erp/app/routes/x+/traceability+/_index.tsx:13
-#: apps/erp/app/routes/x+/traceability+/graph.tsx:18
+#: apps/erp/app/routes/x+/traceability+/graph.tsx:19
 msgid "Traceability"
 msgstr "ट्रेसेबिलिटी"
 

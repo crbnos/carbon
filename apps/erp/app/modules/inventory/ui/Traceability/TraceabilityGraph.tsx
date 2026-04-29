@@ -26,22 +26,20 @@ import type {
 } from "~/modules/inventory";
 import { QuantityEdge } from "./edges/QuantityEdge";
 import { GraphLegend } from "./GraphLegend";
-import { GraphToolbar, type ViewMode } from "./GraphToolbar";
-import {
-  computeDagreLayout,
-  type LayoutDirection
-} from "./hooks/useDagreLayout";
+import { GraphToolbar } from "./GraphToolbar";
+import { computeDagreLayout } from "./hooks/useDagreLayout";
 import { useExpandNode } from "./hooks/useExpandNode";
 import { NodeSearchDialog } from "./NodeSearchDialog";
 import { ActivityNode } from "./nodes/ActivityNode";
 import { EntityNode } from "./nodes/EntityNode";
+import { useTraceabilityStore } from "./store";
 import { TraceabilityTable } from "./TraceabilityTable";
 import {
   annotateEdgeWeights,
   type LineageEdge,
   type LineagePayload,
-  lineagePathEdges,
-  lineageReachable,
+  lineagePathEdgesMulti,
+  lineageReachableMulti,
   mergePayloads,
   payloadToFlow
 } from "./utils";
@@ -57,9 +55,6 @@ const edgeTypes: EdgeTypes = {
 
 const proOptions = { hideAttribution: true };
 
-const DIR_KEY = "traceability:dir:v1";
-const VIEW_KEY = "traceability:view:v1";
-
 type Props = {
   entities: TrackedEntity[];
   activities: Activity[];
@@ -69,8 +64,6 @@ type Props = {
   rootType: "entity" | "activity";
   width: number;
   height: number;
-  selectedId?: string | null;
-  onSelect?: (id: string | null) => void;
 };
 
 export function TraceabilityGraph(props: Props) {
@@ -88,9 +81,7 @@ function TraceabilityGraphInner({
   outputs,
   rootId,
   width,
-  height,
-  selectedId: selectedIdProp,
-  onSelect
+  height
 }: Props) {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -103,21 +94,21 @@ function TraceabilityGraphInner({
     [entities, activities, inputs, outputs]
   );
 
-  const [expansions, setExpansions] = useState<Map<string, LineagePayload>>(
-    () => new Map()
-  );
-  const [, setExhausted] = useState<Set<string>>(() => new Set());
-  const [expandable, setExpandable] = useState<Set<string>>(() => new Set());
+  const expansions = useTraceabilityStore((s) => s.expansions);
+  const expandable = useTraceabilityStore((s) => s.expandable);
+  const addExpansion = useTraceabilityStore((s) => s.addExpansion);
+  const removeExpansion = useTraceabilityStore((s) => s.removeExpansion);
+  const markExpandable = useTraceabilityStore((s) => s.markExpandable);
+  const markExhausted = useTraceabilityStore((s) => s.markExhausted);
+  const resetStore = useTraceabilityStore((s) => s.reset);
   const probeCacheRef = useRef<Map<string, LineagePayload>>(new Map());
   const probedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    setExpansions(new Map());
-    setExhausted(new Set());
-    setExpandable(new Set());
+    resetStore(rootId);
     probeCacheRef.current = new Map();
     probedRef.current = new Set();
-  }, [initialPayload]);
+  }, [initialPayload, resetStore, rootId]);
 
   const payload = useMemo<LineagePayload>(() => {
     let merged = initialPayload;
@@ -127,30 +118,16 @@ function TraceabilityGraphInner({
     return merged;
   }, [initialPayload, expansions]);
 
-  const [direction, setDirection] = useState<LayoutDirection>(() => {
-    if (typeof window === "undefined") return "TB";
-    return (localStorage.getItem(DIR_KEY) as LayoutDirection) ?? "TB";
-  });
-
-  const [view, setView] = useState<ViewMode>(() => {
-    if (typeof window === "undefined") return "graph";
-    return (localStorage.getItem(VIEW_KEY) as ViewMode) ?? "graph";
-  });
-
-  const [isolate, setIsolate] = useState(false);
+  const direction = useTraceabilityStore((s) => s.direction);
+  const setDirection = useTraceabilityStore((s) => s.setDirection);
+  const view = useTraceabilityStore((s) => s.view);
+  const setView = useTraceabilityStore((s) => s.setView);
+  const spacing = useTraceabilityStore((s) => s.spacing);
+  const setSpacing = useTraceabilityStore((s) => s.setSpacing);
+  const isolate = useTraceabilityStore((s) => s.isolate);
+  const setIsolate = useTraceabilityStore((s) => s.setIsolate);
   const [searchOpen, setSearchOpen] = useState(false);
   const [layoutVersion, setLayoutVersion] = useState(0);
-  const [spacing, setSpacing] = useState<number>(() => {
-    if (typeof window === "undefined") return 2;
-    const stored = Number(localStorage.getItem("traceability:spacing:v1"));
-    return Number.isFinite(stored) && stored >= 1 && stored <= 5 ? stored : 2;
-  });
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("traceability:spacing:v1", String(spacing));
-    }
-  }, [spacing]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -180,11 +157,6 @@ function TraceabilityGraphInner({
   const [fitted, setFitted] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== "undefined") localStorage.setItem(DIR_KEY, direction);
-  }, [direction]);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") localStorage.setItem(VIEW_KEY, view);
     if (view === "graph") {
       lastFitSignatureRef.current = "";
       setFitted(false);
@@ -235,14 +207,11 @@ function TraceabilityGraphInner({
     return () => clearTimeout(t);
   }, [laidNodes, laidEdges, setNodes, setEdges]);
 
-  const selectedId = selectedIdProp ?? null;
-
-  const setSelected = useCallback(
-    (id: string | null) => {
-      onSelect?.(id);
-    },
-    [onSelect]
-  );
+  const selectedIds = useTraceabilityStore((s) => s.selectedIds);
+  const setSelectedSingle = useTraceabilityStore((s) => s.setSelectedSingle);
+  const toggleSelected = useTraceabilityStore((s) => s.toggleSelected);
+  const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const selectedId = selectedIds[0] ?? null;
 
   const onExpandResult = useCallback(
     (incoming: LineagePayload, originId: string) => {
@@ -256,65 +225,69 @@ function TraceabilityGraphInner({
       );
 
       if (!hasNewEntity && !hasNewActivity) {
-        setExhausted((prev) => {
-          if (prev.has(originId)) return prev;
-          const next = new Set(prev);
-          next.add(originId);
-          return next;
-        });
+        markExhausted(originId);
         return;
       }
 
-      setExpansions((prev) => {
-        const next = new Map(prev);
-        next.set(originId, incoming);
-        return next;
-      });
+      addExpansion(originId, incoming);
     },
-    [payload]
+    [payload, markExhausted, addExpansion]
   );
 
   const { expand, isLoading: isExpanding } = useExpandNode(onExpandResult);
 
   const onNodeClick = useCallback<NodeMouseHandler>(
-    (_, node) => {
-      setSelected(node.id);
-      if ((node.data as any)?.kind !== "entity") return;
-      if (expansions.has(node.id)) {
-        setExpansions((prev) => {
-          const next = new Map(prev);
-          next.delete(node.id);
-          return next;
-        });
+    (event, node) => {
+      const shift = event.shiftKey;
+      if (shift) {
+        toggleSelected(node.id);
         return;
       }
-      const cached = probeCacheRef.current.get(node.id);
-      if (cached) {
-        setExpansions((prev) => {
-          const next = new Map(prev);
-          next.set(node.id, cached);
-          return next;
-        });
-        return;
-      }
-      expand(node.id, "both", 1);
+      setSelectedSingle(node.id);
     },
-    [setSelected, expand, expansions]
+    [setSelectedSingle, toggleSelected]
+  );
+
+  const onExpandNode = useCallback(
+    (id: string, direction: "up" | "down" | "both") => {
+      const cached = probeCacheRef.current.get(id);
+      if (cached) {
+        addExpansion(id, cached);
+        return;
+      }
+      expand(id, direction, 1);
+    },
+    [expand, addExpansion]
+  );
+
+  const onCollapseNode = useCallback(
+    (id: string) => {
+      removeExpansion(id);
+    },
+    [removeExpansion]
   );
 
   const onPaneClick = useCallback(() => {
-    setSelected(null);
-  }, [setSelected]);
+    setSelectedSingle(null);
+  }, [setSelectedSingle]);
+
+  void selectedId;
 
   const selectionPath = useMemo(() => {
-    if (!selectedId) return null;
-    return lineagePathEdges(selectedId, edges as unknown as LineageEdge[]);
-  }, [selectedId, edges]);
+    if (selectedIds.length === 0) return null;
+    return lineagePathEdgesMulti(
+      selectedIds,
+      edges as unknown as LineageEdge[]
+    );
+  }, [selectedIds, edges]);
 
   const isolated = useMemo(() => {
-    if (!isolate || !selectedId) return null;
-    return lineageReachable(selectedId, edges as unknown as LineageEdge[]);
-  }, [isolate, selectedId, edges]);
+    if (!isolate || selectedIds.length === 0) return null;
+    return lineageReachableMulti(
+      selectedIds,
+      edges as unknown as LineageEdge[]
+    );
+  }, [isolate, selectedIds, edges]);
 
   const boundaryByNode = useMemo(() => {
     const incoming = new Set<string>();
@@ -355,19 +328,9 @@ function TraceabilityGraphInner({
             res.activities.some((a) => !knownActivityIds.has(a.id));
           if (hasNew) {
             probeCacheRef.current.set(ent.id, res);
-            setExpandable((prev) => {
-              if (prev.has(ent.id)) return prev;
-              const next = new Set(prev);
-              next.add(ent.id);
-              return next;
-            });
+            markExpandable(ent.id);
           } else {
-            setExhausted((prev) => {
-              if (prev.has(ent.id)) return prev;
-              const next = new Set(prev);
-              next.add(ent.id);
-              return next;
-            });
+            markExhausted(ent.id);
           }
         })
         .catch(() => {
@@ -378,12 +341,13 @@ function TraceabilityGraphInner({
     return () => {
       cancelled = true;
     };
-  }, [payload, boundaryByNode]);
+  }, [payload, boundaryByNode, markExpandable, markExhausted]);
 
   const enrichedNodes = useMemo<Node[]>(() => {
     return nodes.map((n) => {
       const isRoot = n.id === rootId;
-      const selected = n.id === selectedId;
+      const selected = selectedIdSet.has(n.id);
+      const inPath = selectionPath?.nodeIds.has(n.id) ?? false;
       const dimmed = isolated ? !isolated.has(n.id) : false;
       const isExpanded = expansions.has(n.id);
       const isEntity = (n.data as any)?.kind === "entity";
@@ -398,10 +362,13 @@ function TraceabilityGraphInner({
           ...(n.data as any),
           isRoot,
           selected,
+          inPath,
           dimmed,
           isExpanded,
           canExpandUp,
-          canExpandDown
+          canExpandDown,
+          onExpand: onExpandNode,
+          onCollapse: onCollapseNode
         },
         selected
       };
@@ -410,10 +377,14 @@ function TraceabilityGraphInner({
     nodes,
     rootId,
     selectedId,
+    selectedIdSet,
     isolated,
     expansions,
     boundaryByNode,
-    expandable
+    expandable,
+    selectionPath,
+    onExpandNode,
+    onCollapseNode
   ]);
 
   const enrichedEdges = useMemo<Edge[]>(() => {
@@ -480,7 +451,7 @@ function TraceabilityGraphInner({
             payload={payload}
             rootId={rootId}
             selectedId={selectedId}
-            onSelect={setSelected}
+            onSelect={(id) => setSelectedSingle(id)}
           />
         </div>
         <GraphToolbar
@@ -495,10 +466,16 @@ function TraceabilityGraphInner({
           onViewChange={setView}
           isolate={isolate}
           onIsolateChange={setIsolate}
-          hasSelection={!!selectedId}
+          hasSelection={selectedIds.length > 0}
           onOpenSearch={() => setSearchOpen(true)}
           spacing={spacing}
           onSpacingChange={setSpacing}
+        />
+        <NodeSearchDialog
+          open={searchOpen}
+          onOpenChange={setSearchOpen}
+          payload={payload}
+          onSelect={(id) => setSelectedSingle(id)}
         />
       </div>
     );
@@ -586,7 +563,7 @@ function TraceabilityGraphInner({
         onViewChange={setView}
         isolate={isolate}
         onIsolateChange={setIsolate}
-        hasSelection={!!selectedId}
+        hasSelection={selectedIds.length > 0}
         onRelayout={handleRelayout}
         onOpenSearch={() => setSearchOpen(true)}
         spacing={spacing}
@@ -599,7 +576,7 @@ function TraceabilityGraphInner({
         open={searchOpen}
         onOpenChange={setSearchOpen}
         payload={payload}
-        onSelect={(id) => setSelected(id)}
+        onSelect={(id) => setSelectedSingle(id)}
       />
 
       {isExpanding && (

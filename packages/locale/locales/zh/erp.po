@@ -1492,7 +1492,7 @@ msgstr "返回"
 msgid "Back to home"
 msgstr "返回主页"
 
-#: apps/erp/app/routes/x+/traceability+/graph.tsx:153
+#: apps/erp/app/routes/x+/traceability+/graph.tsx:160
 msgid "Back to traceability"
 msgstr "返回可追溯性"
 
@@ -2692,7 +2692,7 @@ msgstr "复制文档名称"
 msgid "Copy document unique identifier"
 msgstr "复制文档唯一标识符"
 
-#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:158
+#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:213
 msgid "Copy ID"
 msgstr ""
 
@@ -2708,7 +2708,7 @@ msgstr "复制问题唯一标识符"
 msgid "Copy Job number"
 msgstr "复制工作单号"
 
-#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:144
+#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:199
 msgid "Copy link"
 msgstr ""
 
@@ -13732,7 +13732,7 @@ msgstr "合计"
 
 #: apps/erp/app/modules/inventory/ui/useInventorySubmodules.tsx:76
 #: apps/erp/app/routes/x+/traceability+/_index.tsx:13
-#: apps/erp/app/routes/x+/traceability+/graph.tsx:18
+#: apps/erp/app/routes/x+/traceability+/graph.tsx:19
 msgid "Traceability"
 msgstr "可追溯性"
 

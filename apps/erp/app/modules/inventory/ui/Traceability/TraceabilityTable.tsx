@@ -1,5 +1,5 @@
 import { Badge, cn, HStack } from "@carbon/react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   LuChevronDown,
   LuChevronRight,
@@ -36,6 +36,7 @@ export function TraceabilityTable({
   onSelect
 }: Props) {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const rowRefs = useRef<Map<string, HTMLElement>>(new Map());
 
   const { entityById, activityById, downstream } = useMemo(() => {
     const entityById = new Map<string, TrackedEntity>();
@@ -143,6 +144,48 @@ export function TraceabilityTable({
       return next;
     });
 
+  // When a selection arrives (e.g. from search), expand all ancestors and
+  // scroll the row into view.
+  useEffect(() => {
+    if (!selectedId || selectedId === rootId) return;
+    const path: string[] = [];
+    const visited = new Set<string>();
+    function find(id: string): boolean {
+      if (visited.has(id)) return false;
+      visited.add(id);
+      if (id === selectedId) return true;
+      const children = downstream.get(id) ?? [];
+      for (const c of children) {
+        if (find(c.targetId)) {
+          path.push(id);
+          return true;
+        }
+      }
+      return false;
+    }
+    find(rootId);
+
+    if (path.length > 0) {
+      setCollapsed((prev) => {
+        let changed = false;
+        const next = new Set(prev);
+        for (const ancestor of path) {
+          if (next.has(ancestor)) {
+            next.delete(ancestor);
+            changed = true;
+          }
+        }
+        return changed ? next : prev;
+      });
+    }
+
+    // Scroll row into view after expansion settles
+    requestAnimationFrame(() => {
+      const el = rowRefs.current.get(selectedId);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  }, [selectedId, rootId, downstream]);
+
   return (
     <div className="w-full h-full overflow-auto p-2">
       <div className="rounded-md border border-border bg-card">
@@ -159,6 +202,10 @@ export function TraceabilityTable({
             }
             onToggle={() => toggle(row.id)}
             onSelect={() => onSelect?.(row.id)}
+            registerRef={(el) => {
+              if (el) rowRefs.current.set(row.id, el);
+              else rowRefs.current.delete(row.id);
+            }}
           />
         ))}
       </div>
@@ -174,7 +221,8 @@ function TreeRow({
   isCollapsed,
   hasChildren,
   onToggle,
-  onSelect
+  onSelect,
+  registerRef
 }: {
   row: Row;
   entity: TrackedEntity | undefined;
@@ -184,6 +232,7 @@ function TreeRow({
   hasChildren: boolean;
   onToggle: () => void;
   onSelect: () => void;
+  registerRef?: (el: HTMLButtonElement | null) => void;
 }) {
   if (row.kind === "entity") {
     if (!entity) return null;
@@ -194,6 +243,7 @@ function TreeRow({
     const href = sourceLinkHref(entity.sourceDocument, entity.sourceDocumentId);
     return (
       <button
+        ref={registerRef}
         type="button"
         onClick={onSelect}
         className={cn(
@@ -259,6 +309,7 @@ function TreeRow({
 
   return (
     <button
+      ref={registerRef}
       type="button"
       onClick={onSelect}
       className={cn(

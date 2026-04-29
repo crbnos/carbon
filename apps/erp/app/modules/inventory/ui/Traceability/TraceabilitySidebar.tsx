@@ -16,7 +16,14 @@ import type {
 } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
-import { LuChevronRight, LuCopy, LuExternalLink, LuLink } from "react-icons/lu";
+import {
+  LuChevronLeft,
+  LuChevronRight,
+  LuChevronRight as LuChevronRightIcon,
+  LuCopy,
+  LuExternalLink,
+  LuLink
+} from "react-icons/lu";
 import { Link } from "react-router";
 import {
   CustomerAvatar,
@@ -29,6 +36,7 @@ import type { Activity, TrackedEntity } from "~/modules/inventory";
 import { path } from "~/utils/path";
 import { capitalize, copyToClipboard } from "~/utils/string";
 import { ACTIVITY_KIND_META, activityKindFor } from "./activityIcons";
+import { useTraceabilityStore } from "./store";
 import TrackedEntityStatus from "./TrackedEntityStatus";
 import { type LineagePayload, sourceLinkHref } from "./utils";
 
@@ -45,6 +53,9 @@ export function TraceabilitySidebar({
   payload,
   onSelect
 }: SidebarProps) {
+  const selectedIds = useTraceabilityStore((s) => s.selectedIds);
+  const focusedIndex = useTraceabilityStore((s) => s.focusedIndex);
+  const onFocusedIndexChange = useTraceabilityStore((s) => s.setFocusedIndex);
   const { t } = useLingui();
   const selectedNode = entity ?? activity;
   const selectedNodeType = entity ? "entity" : "activity";
@@ -115,6 +126,50 @@ export function TraceabilitySidebar({
       className="w-96 flex-shrink-0 bg-sidebar h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-5 py-5 text-sm"
     >
       <VStack spacing={3}>
+        {selectedIds && selectedIds.length > 1 && (
+          <HStack className="w-full justify-between items-center bg-muted/40 rounded-md px-2 py-1">
+            <HStack spacing={2} className="items-center">
+              <Badge
+                variant="secondary"
+                className="uppercase tracking-wide text-[10px]"
+              >
+                {selectedIds.length} selected
+              </Badge>
+              <span className="text-[11px] text-muted-foreground tabular-nums">
+                {(focusedIndex ?? 0) + 1} / {selectedIds.length}
+              </span>
+            </HStack>
+            <HStack spacing={1}>
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-label="Previous selected"
+                className="p-1 h-6 w-6"
+                onClick={() => {
+                  const i = focusedIndex ?? 0;
+                  const next =
+                    (i - 1 + selectedIds.length) % selectedIds.length;
+                  onFocusedIndexChange?.(next);
+                }}
+              >
+                <LuChevronLeft className="w-3.5 h-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-label="Next selected"
+                className="p-1 h-6 w-6"
+                onClick={() => {
+                  const i = focusedIndex ?? 0;
+                  const next = (i + 1) % selectedIds.length;
+                  onFocusedIndexChange?.(next);
+                }}
+              >
+                <LuChevronRightIcon className="w-3.5 h-3.5" />
+              </Button>
+            </HStack>
+          </HStack>
+        )}
         <HStack className="w-full justify-between items-start">
           <HStack spacing={2} className="items-center flex-wrap">
             {entity ? (

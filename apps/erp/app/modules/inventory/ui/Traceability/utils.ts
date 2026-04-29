@@ -176,6 +176,45 @@ export function lineagePathEdges(
   return { edgeIds, nodeIds };
 }
 
+export function lineagePathEdgesMulti(
+  rootIds: string[],
+  edges: LineageEdge[],
+  excludedIds: Set<string> = new Set()
+): { edgeIds: Set<string>; nodeIds: Set<string> } {
+  const filteredEdges = excludedIds.size
+    ? edges.filter(
+        (e) => !excludedIds.has(e.source) && !excludedIds.has(e.target)
+      )
+    : edges;
+  const edgeIds = new Set<string>();
+  const nodeIds = new Set<string>();
+  const rootSet = new Set(rootIds.filter((id) => !excludedIds.has(id)));
+  for (const id of rootSet) {
+    const r = lineagePathEdges(id, filteredEdges);
+    for (const e of r.edgeIds) edgeIds.add(e);
+    for (const n of r.nodeIds) nodeIds.add(n);
+  }
+  for (const e of filteredEdges) {
+    if (rootSet.has(e.source) && rootSet.has(e.target)) {
+      edgeIds.add(e.id);
+      nodeIds.add(e.source);
+      nodeIds.add(e.target);
+    }
+  }
+  return { edgeIds, nodeIds };
+}
+
+export function lineageReachableMulti(
+  rootIds: string[],
+  edges: LineageEdge[]
+): Set<string> {
+  const result = new Set<string>();
+  for (const id of rootIds) {
+    for (const r of lineageReachable(id, edges)) result.add(r);
+  }
+  return result;
+}
+
 export function lineageReachable(
   rootId: string,
   edges: LineageEdge[]

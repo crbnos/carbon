@@ -3,12 +3,13 @@ import { Button, Loading, useHydrated, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { ParentSize } from "@visx/responsive";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Link, redirect, useLoaderData, useNavigation } from "react-router";
 import { Empty } from "~/components";
 import type { Activity, TrackedEntity } from "~/modules/inventory";
 import { fetchLineageSubgraph } from "~/modules/inventory/lineage.server";
+import { useTraceabilityStore } from "~/modules/inventory/ui/Traceability/store";
 import { TraceabilityGraph } from "~/modules/inventory/ui/Traceability/TraceabilityGraph";
 import { TraceabilitySidebar } from "~/modules/inventory/ui/Traceability/TraceabilitySidebar";
 import type { Handle } from "~/utils/handle";
@@ -131,8 +132,14 @@ export default function TraceabilityRoute() {
 
   const isHydrated = useHydrated();
   const navigation = useNavigation();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const sidebarId = selectedId ?? rootId;
+
+  const selectedIds = useTraceabilityStore((s) => s.selectedIds);
+  const focusedIndex = useTraceabilityStore((s) => s.focusedIndex);
+  const setSelectedSingle = useTraceabilityStore((s) => s.setSelectedSingle);
+  const safeIndex =
+    selectedIds.length > 0 ? Math.min(focusedIndex, selectedIds.length - 1) : 0;
+  const focusedSelectedId = selectedIds[safeIndex] ?? null;
+  const sidebarId = focusedSelectedId ?? rootId;
 
   const selectedEntity =
     (entities.find((e) => e?.id === sidebarId) as TrackedEntity | undefined) ??
@@ -170,8 +177,6 @@ export default function TraceabilityRoute() {
                       rootType={rootType}
                       width={width}
                       height={height}
-                      selectedId={selectedId}
-                      onSelect={(id) => setSelectedId(id)}
                     />
                   </Loading>
                 )}
@@ -182,7 +187,7 @@ export default function TraceabilityRoute() {
       </VStack>
       {!isEmpty && (
         <TraceabilitySidebar
-          key={`sidebar-${selectedId}`}
+          key={`sidebar-${sidebarId}`}
           entity={selectedEntity}
           activity={selectedActivity}
           payload={{
@@ -191,7 +196,7 @@ export default function TraceabilityRoute() {
             inputs,
             outputs
           }}
-          onSelect={(id) => setSelectedId(id)}
+          onSelect={(id) => setSelectedSingle(id)}
         />
       )}
     </div>

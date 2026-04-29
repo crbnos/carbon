@@ -21,6 +21,8 @@ type Props = NodeProps & {
     isExpanded?: boolean;
     canExpandUp?: boolean;
     canExpandDown?: boolean;
+    onExpand?: (id: string, direction: "up" | "down" | "both") => void;
+    onCollapse?: (id: string) => void;
   };
 };
 
@@ -47,7 +49,7 @@ const STATUS_META: Record<
   }
 };
 
-function EntityNodeImpl({ data, selected }: Props) {
+function EntityNodeImpl({ data, selected, id }: Props) {
   const entity = data.entity;
   const headline =
     entity.sourceDocumentReadableId ??
@@ -126,28 +128,43 @@ function EntityNodeImpl({ data, selected }: Props) {
         {formatQuantity(entity.quantity)}
       </div>
       {data.isExpanded && (
-        <div
-          className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-foreground text-background flex items-center justify-center pointer-events-none shadow-sm"
-          title="Click to collapse"
+        <button
+          type="button"
+          className="nodrag absolute -top-2 left-1/2 -translate-x-1/2 w-[18px] h-[18px] rounded-full bg-card border border-border text-muted-foreground hover:text-foreground hover:border-foreground/40 flex items-center justify-center ring-1 ring-background shadow-sm z-20 transition-colors"
+          title="Collapse"
+          onClick={(e) => {
+            e.stopPropagation();
+            data.onCollapse?.(id);
+          }}
         >
-          <LuMinus className="w-2.5 h-2.5" />
-        </div>
+          <LuMinus className="w-3 h-3" strokeWidth={2.5} />
+        </button>
       )}
       {!data.isExpanded && data.canExpandUp && (
-        <div
-          className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-card border border-border text-muted-foreground flex items-center justify-center pointer-events-none shadow-sm"
-          title="More upstream available"
+        <button
+          type="button"
+          className="nodrag absolute -top-2 left-1/2 -translate-x-1/2 w-[18px] h-[18px] rounded-full bg-card border border-border text-muted-foreground hover:text-foreground hover:border-foreground/40 flex items-center justify-center ring-1 ring-background shadow-sm z-20 transition-colors"
+          title="Expand upstream"
+          onClick={(e) => {
+            e.stopPropagation();
+            data.onExpand?.(id, "up");
+          }}
         >
-          <LuChevronUp className="w-2.5 h-2.5" />
-        </div>
+          <LuChevronUp className="w-3 h-3" strokeWidth={2.5} />
+        </button>
       )}
       {!data.isExpanded && data.canExpandDown && (
-        <div
-          className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-card border border-border text-muted-foreground flex items-center justify-center pointer-events-none shadow-sm"
-          title="More downstream available"
+        <button
+          type="button"
+          className="nodrag absolute -bottom-2 left-1/2 -translate-x-1/2 w-[18px] h-[18px] rounded-full bg-card border border-border text-muted-foreground hover:text-foreground hover:border-foreground/40 flex items-center justify-center ring-1 ring-background shadow-sm z-20 transition-colors"
+          title="Expand downstream"
+          onClick={(e) => {
+            e.stopPropagation();
+            data.onExpand?.(id, "down");
+          }}
         >
-          <LuChevronDown className="w-2.5 h-2.5" />
-        </div>
+          <LuChevronDown className="w-3 h-3" strokeWidth={2.5} />
+        </button>
       )}
       {showLabel && (
         <div
