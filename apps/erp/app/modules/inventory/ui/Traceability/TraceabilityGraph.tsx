@@ -47,7 +47,6 @@ import {
   type LineageEdge,
   type LineagePayload,
   lineagePathEdgesMulti,
-  lineageReachableMulti,
   mergePayloads,
   payloadToFlow
 } from "./utils";
@@ -319,11 +318,12 @@ function TraceabilityGraphInner({
 
   const isolated = useMemo(() => {
     if (!isolate || selectedIds.length === 0) return null;
-    return lineageReachableMulti(
-      selectedIds,
-      edges as unknown as LineageEdge[]
-    );
-  }, [isolate, selectedIds, edges]);
+    if (selectionPath) return selectionPath;
+    return {
+      nodeIds: new Set(selectedIds),
+      edgeIds: new Set<string>()
+    };
+  }, [isolate, selectedIds, selectionPath]);
 
   const boundaryByNode = useMemo(() => {
     const incoming = new Set<string>();
@@ -361,7 +361,7 @@ function TraceabilityGraphInner({
       const isRoot = !isJobRoot && n.id === rootId;
       const selected = selectedIdSet.has(n.id);
       const inPath = selectionPath?.nodeIds.has(n.id) ?? false;
-      const dimmed = isolated ? !isolated.has(n.id) : false;
+      const dimmed = isolated ? !isolated.nodeIds.has(n.id) : false;
       const isExpanded = expansions.has(n.id);
       const isEntity = (n.data as any)?.kind === "entity";
       const isExpandable = expandable.has(n.id);
@@ -407,9 +407,7 @@ function TraceabilityGraphInner({
 
   const enrichedEdges = useMemo<Edge[]>(() => {
     return edges.map((e) => {
-      const dimmed = isolated
-        ? !(isolated.has(e.source) && isolated.has(e.target))
-        : false;
+      const dimmed = isolated ? !isolated.edgeIds.has(e.id) : false;
       const highlighted = selectionPath?.edgeIds.has(e.id) ?? false;
       const touchesDragged =
         draggedIds.has(e.source) || draggedIds.has(e.target);
