@@ -87,7 +87,7 @@ function ActivityNodeImpl({ data, selected }: Props) {
         >
           <span
             className={cn(
-              "text-[11px] tracking-tight px-1.5 py-px rounded bg-background/75 backdrop-blur-sm",
+              "text-[11px] tracking-tight px-1.5 py-px rounded bg-background",
               (data.isRoot || selected) && "font-medium"
             )}
           >

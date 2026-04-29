@@ -15,6 +15,7 @@ import {
   useReactFlow
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { cn } from "@carbon/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import type {
@@ -189,10 +190,14 @@ function TraceabilityGraphInner({
     laidEdges as Edge[]
   );
 
+  const [layoutAnimating, setLayoutAnimating] = useState(false);
   useEffect(() => {
     setNodes(laidNodes as Node[]);
     setEdges(laidEdges as Edge[]);
     setDraggedIds(new Set());
+    setLayoutAnimating(true);
+    const t = setTimeout(() => setLayoutAnimating(false), 220);
+    return () => clearTimeout(t);
   }, [laidNodes, laidEdges, setNodes, setEdges]);
 
   const selectedId = selectedIdProp ?? null;
@@ -463,13 +468,19 @@ function TraceabilityGraphInner({
   }
 
   return (
-    <div className="relative w-full h-full" style={{ width, height }}>
+    <div
+      className={cn(
+        "relative w-full h-full",
+        layoutAnimating && "trace-layout-animating"
+      )}
+      style={{ width, height }}
+    >
       <style>{`
-        .react-flow__node {
+        .trace-layout-animating .react-flow__node {
           transition: transform 180ms ease-out;
         }
         @media (prefers-reduced-motion: reduce) {
-          .react-flow__node { transition: none; }
+          .trace-layout-animating .react-flow__node { transition: none; }
         }
       `}</style>
       <ReactFlow
@@ -511,7 +522,7 @@ function TraceabilityGraphInner({
         <MiniMap
           pannable
           zoomable
-          className="!bg-card/80 !backdrop-blur !border-border"
+          className="!bg-card !border-border"
           nodeColor={(n) => {
             const data = (n as any).data;
             if (data?.kind === "entity") {
