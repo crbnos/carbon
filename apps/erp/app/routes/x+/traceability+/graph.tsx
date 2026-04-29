@@ -185,6 +185,13 @@ export default function TraceabilityRoute() {
           key={`sidebar-${selectedId}`}
           entity={selectedEntity}
           activity={selectedActivity}
+          payload={{
+            entities: entities as TrackedEntity[],
+            activities: activities as Activity[],
+            inputs,
+            outputs
+          }}
+          onSelect={(id) => setSelectedId(id)}
         />
       )}
     </div>

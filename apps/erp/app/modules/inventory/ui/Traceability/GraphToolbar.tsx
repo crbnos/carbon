@@ -14,6 +14,7 @@ import {
   LuMoveRight,
   LuNetwork,
   LuPlus,
+  LuRotateCcw,
   LuTable
 } from "react-icons/lu";
 import type { LayoutDirection } from "./hooks/useDagreLayout";
@@ -30,6 +31,8 @@ type Props = {
   isolate: boolean;
   onIsolateChange: (next: boolean) => void;
   hasSelection?: boolean;
+  canReset?: boolean;
+  onReset?: () => void;
 };
 
 const PANEL =
@@ -44,7 +47,9 @@ export function GraphToolbar({
   onViewChange,
   isolate,
   onIsolateChange,
-  hasSelection = false
+  hasSelection = false,
+  canReset = false,
+  onReset
 }: Props) {
   return (
     <>
@@ -58,6 +63,8 @@ export function GraphToolbar({
           isolate={isolate}
           onIsolateChange={onIsolateChange}
           hasSelection={hasSelection}
+          canReset={canReset}
+          onReset={onReset}
         />
       )}
     </>
@@ -100,7 +107,9 @@ function GraphControlsChip({
   onDirectionChange,
   isolate,
   onIsolateChange,
-  hasSelection
+  hasSelection,
+  canReset,
+  onReset
 }: {
   depth: number;
   onDepthChange: (next: number) => void;
@@ -109,6 +118,8 @@ function GraphControlsChip({
   isolate: boolean;
   onIsolateChange: (next: boolean) => void;
   hasSelection: boolean;
+  canReset: boolean;
+  onReset?: () => void;
 }) {
   const { fitView } = useReactFlow();
 
@@ -254,6 +265,29 @@ function GraphControlsChip({
           </button>
         </TooltipTrigger>
         <TooltipContent side="bottom">Fit to view</TooltipContent>
+      </Tooltip>
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            onClick={() => canReset && onReset?.()}
+            aria-disabled={!canReset}
+            className={cn(
+              "h-7 w-7 rounded-md flex items-center justify-center transition-colors",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              !canReset
+                ? "opacity-40 cursor-not-allowed text-muted-foreground"
+                : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
+            )}
+            aria-label="Reset expansions"
+          >
+            <LuRotateCcw className="w-3.5 h-3.5" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom">
+          {canReset ? "Collapse all expansions" : "No expansions to reset"}
+        </TooltipContent>
       </Tooltip>
     </HStack>
   );

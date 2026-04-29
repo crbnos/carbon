@@ -2639,7 +2639,6 @@ msgstr "Skopiowano link do schowka"
 msgid "Copied!"
 msgstr "Skopiowano!"
 
-#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:72
 #: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceProperties.tsx:155
 #: apps/erp/app/modules/invoicing/ui/SalesInvoice/SalesInvoiceProperties.tsx:154
 #: apps/erp/app/modules/items/ui/Consumables/ConsumableProperties.tsx:196
@@ -2693,6 +2692,10 @@ msgstr "Skopiuj nazwę dokumentu"
 msgid "Copy document unique identifier"
 msgstr "Skopiuj unikalny identyfikator dokumentu"
 
+#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:158
+msgid "Copy ID"
+msgstr ""
+
 #: apps/erp/app/modules/quality/ui/Issue/IssueProperties.tsx:227
 msgid "Copy issue number"
 msgstr "Skopiuj numer problemu"
@@ -2704,6 +2707,10 @@ msgstr "Skopiuj unikalny identyfikator problemu"
 #: apps/erp/app/modules/production/ui/Jobs/JobProperties.tsx:214
 msgid "Copy Job number"
 msgstr "Skopiuj numer zadania"
+
+#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:144
+msgid "Copy link"
+msgstr ""
 
 #: apps/erp/app/modules/items/ui/Consumables/ConsumableProperties.tsx:187
 msgid "Copy link to consumable"
@@ -7191,7 +7198,6 @@ msgstr "Linie wymagają wewnętrznych numerów części"
 msgid "Lines need prices or lead times"
 msgstr "Linie wymagają cen lub czasów realizacji"
 
-#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:56
 #: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceProperties.tsx:134
 #: apps/erp/app/modules/invoicing/ui/SalesInvoice/SalesInvoiceProperties.tsx:133
 #: apps/erp/app/modules/items/ui/Consumables/ConsumableProperties.tsx:173

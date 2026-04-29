@@ -1,9 +1,14 @@
-import { cn, HStack, VStack } from "@carbon/react";
-import { useState } from "react";
+import {
+  cn,
+  HStack,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  VStack
+} from "@carbon/react";
 import type { IconType } from "react-icons";
 import {
-  LuChevronDown,
-  LuChevronRight,
+  LuInfo,
   LuPackageCheck,
   LuPackageMinus,
   LuPackageOpen,
@@ -65,36 +70,42 @@ const ACTIVITY_ENTRIES: Entry[] = (
 });
 
 export function GraphLegend() {
-  const [open, setOpen] = useState(true);
-
   return (
-    <div className="absolute bottom-3 left-3 z-20 rounded-md border border-border bg-card/90 backdrop-blur shadow-sm text-xs overflow-hidden">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1 w-full px-2 py-1.5 text-[10px] uppercase tracking-wide text-muted-foreground hover:text-foreground"
-      >
-        {open ? (
-          <LuChevronDown className="w-3 h-3" />
-        ) : (
-          <LuChevronRight className="w-3 h-3" />
-        )}
-        Legend
-      </button>
-      {open && (
-        <VStack spacing={3} className="px-3 pb-3 pt-1">
-          <Section title="Entities" entries={ENTITY_ENTRIES} />
-          <Section title="Activities" entries={ACTIVITY_ENTRIES} />
-        </VStack>
-      )}
+    <div className="absolute bottom-3 left-3 z-20">
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            aria-label="Show legend"
+            className={cn(
+              "h-8 w-8 rounded-md flex items-center justify-center transition-colors",
+              "border border-border bg-card/90 backdrop-blur shadow-sm",
+              "text-muted-foreground hover:text-foreground hover:bg-accent/60",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            )}
+          >
+            <LuInfo className="w-4 h-4" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent
+          side="top"
+          align="start"
+          className="w-[420px] p-0 border-border"
+        >
+          <HStack spacing={0} className="items-stretch divide-x divide-border">
+            <Section title="Entities" entries={ENTITY_ENTRIES} />
+            <Section title="Activities" entries={ACTIVITY_ENTRIES} />
+          </HStack>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
 
 function Section({ title, entries }: { title: string; entries: Entry[] }) {
   return (
-    <VStack spacing={1}>
-      <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+    <VStack spacing={2} className="p-4 flex-1 min-w-0">
+      <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
         {title}
       </span>
       {entries.map((entry) => (
@@ -107,21 +118,23 @@ function Section({ title, entries }: { title: string; entries: Entry[] }) {
 function Row({ entry }: { entry: Entry }) {
   const Icon = entry.icon;
   return (
-    <HStack spacing={2} className="items-center">
-      <div className="relative w-4 h-4 flex items-center justify-center">
+    <HStack spacing={3} className="items-center">
+      <div className="relative w-6 h-6 flex items-center justify-center shrink-0">
         <div
           className={cn(
             "absolute inset-0",
-            entry.shape === "circle" ? "rounded-full" : "rounded-sm"
+            entry.shape === "circle" ? "rounded-full" : "rounded"
           )}
           style={{
             background: entry.color,
             transform: entry.shape === "diamond" ? "rotate(45deg)" : undefined
           }}
         />
-        <Icon className="relative w-2.5 h-2.5 text-white" />
+        <Icon className="relative w-3.5 h-3.5 text-white" />
       </div>
-      <span className="text-foreground">{entry.label}</span>
+      <span className="text-[13px] text-foreground truncate">
+        {entry.label}
+      </span>
     </HStack>
   );
 }

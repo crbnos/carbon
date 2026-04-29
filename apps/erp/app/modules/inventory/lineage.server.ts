@@ -99,35 +99,11 @@ export async function fetchLineageSubgraph(
     for (let i = 0; i < frontier.length; i++) {
       const sourceId = frontier[i];
 
+      // The "descendants" RPC actually returns ancestors of sourceId via an
+      // activity that OUTPUTS sourceId. So sourceId is the activity's OUTPUT
+      // and row.id is the activity's INPUT.
       const desc = descendantsResults[i] ?? [];
       for (const row of desc) {
-        if (!row?.id) continue;
-        activityIds.add(row.trackedActivityId);
-        const inputKey = `${row.trackedActivityId}:${sourceId}`;
-        if (!inputs.has(inputKey)) {
-          inputs.set(inputKey, {
-            trackedActivityId: row.trackedActivityId,
-            trackedEntityId: sourceId,
-            quantity: row.quantity
-          });
-        }
-        if (!visited.has(row.id)) {
-          visited.add(row.id);
-          newEntityIds.add(row.id);
-          nextFrontier.add(row.id);
-        }
-        const outputKey = `${row.trackedActivityId}:${row.id}`;
-        if (!outputs.has(outputKey)) {
-          outputs.set(outputKey, {
-            trackedActivityId: row.trackedActivityId,
-            trackedEntityId: row.id,
-            quantity: row.quantity
-          });
-        }
-      }
-
-      const anc = ancestorsResults[i] ?? [];
-      for (const row of anc) {
         if (!row?.id) continue;
         activityIds.add(row.trackedActivityId);
         const outputKey = `${row.trackedActivityId}:${sourceId}`;
@@ -152,6 +128,36 @@ export async function fetchLineageSubgraph(
           });
         }
       }
+
+      // The "ancestors" RPC actually returns descendants of sourceId via an
+      // activity that INPUTS sourceId. So sourceId is the activity's INPUT
+      // and row.id is the activity's OUTPUT.
+      const anc = ancestorsResults[i] ?? [];
+      for (const row of anc) {
+        if (!row?.id) continue;
+        activityIds.add(row.trackedActivityId);
+        const inputKey = `${row.trackedActivityId}:${sourceId}`;
+        if (!inputs.has(inputKey)) {
+          inputs.set(inputKey, {
+            trackedActivityId: row.trackedActivityId,
+            trackedEntityId: sourceId,
+            quantity: row.quantity
+          });
+        }
+        if (!visited.has(row.id)) {
+          visited.add(row.id);
+          newEntityIds.add(row.id);
+          nextFrontier.add(row.id);
+        }
+        const outputKey = `${row.trackedActivityId}:${row.id}`;
+        if (!outputs.has(outputKey)) {
+          outputs.set(outputKey, {
+            trackedActivityId: row.trackedActivityId,
+            trackedEntityId: row.id,
+            quantity: row.quantity
+          });
+        }
+      }
     }
 
     if (newEntityIds.size > 0) {
@@ -167,16 +173,76 @@ export async function fetchLineageSubgraph(
     }
 
     if (activityIds.size > 0) {
-      const idsToFetch = Array.from(activityIds).filter(
+      const newActivityIds = Array.from(activityIds).filter(
         (id) => !activities.has(id)
       );
-      if (idsToFetch.length > 0) {
+      if (newActivityIds.length > 0) {
         const fetched = await client
           .from("trackedActivity")
           .select("*")
-          .in("id", idsToFetch);
+          .in("id", newActivityIds);
         for (const row of fetched.data ?? []) {
           activities.set(row.id, row as unknown as Activity);
+        }
+      }
+
+      // Pull sibling inputs/outputs for every activity touched this hop so
+      // by-products (e.g. SCRAP from a manufacturing activity) appear even
+      // when not on the direct upstream/downstream path.
+      const allActivityIds = Array.from(activityIds);
+      const [siblingInputs, siblingOutputs] = await Promise.all([
+        client
+          .from("trackedActivityInput")
+          .select("*")
+          .in("trackedActivityId", allActivityIds),
+        client
+          .from("trackedActivityOutput")
+          .select("*")
+          .in("trackedActivityId", allActivityIds)
+      ]);
+
+      const siblingEntityIds = new Set<string>();
+      for (const row of siblingInputs.data ?? []) {
+        const key = `${row.trackedActivityId}:${row.trackedEntityId}`;
+        if (!inputs.has(key)) {
+          inputs.set(key, {
+            trackedActivityId: row.trackedActivityId,
+            trackedEntityId: row.trackedEntityId,
+            quantity: row.quantity
+          });
+        }
+        if (!entities.has(row.trackedEntityId)) {
+          siblingEntityIds.add(row.trackedEntityId);
+        }
+      }
+      for (const row of siblingOutputs.data ?? []) {
+        const key = `${row.trackedActivityId}:${row.trackedEntityId}`;
+        if (!outputs.has(key)) {
+          outputs.set(key, {
+            trackedActivityId: row.trackedActivityId,
+            trackedEntityId: row.trackedEntityId,
+            quantity: row.quantity
+          });
+        }
+        if (!entities.has(row.trackedEntityId)) {
+          siblingEntityIds.add(row.trackedEntityId);
+        }
+      }
+
+      if (siblingEntityIds.size > 0) {
+        const remainingCapacity = MAX_ENTITIES - entities.size;
+        const idsToFetch = Array.from(siblingEntityIds).slice(
+          0,
+          remainingCapacity
+        );
+        if (idsToFetch.length > 0) {
+          const fetched = await client
+            .from("trackedEntity")
+            .select("*")
+            .in("id", idsToFetch);
+          for (const row of fetched.data ?? []) {
+            entities.set(row.id, row as TrackedEntity);
+          }
         }
       }
     }

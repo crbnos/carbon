@@ -219,6 +219,27 @@ export function lineageReachable(
   return result;
 }
 
+export function sourceLinkHref(
+  doc: string | null | undefined,
+  id: string | null | undefined
+): string | null {
+  if (!doc || !id) return null;
+  switch (doc) {
+    case "Job":
+      return `/x/job/${id}`;
+    case "Receipt":
+      return `/x/inventory/receipts/${id}`;
+    case "Shipment":
+      return `/x/inventory/shipments/${id}`;
+    case "Purchase Order":
+      return `/x/purchase-order/${id}`;
+    case "Sales Order":
+      return `/x/sales/orders/${id}`;
+    default:
+      return null;
+  }
+}
+
 export function annotateEdgeWeights(
   edges: LineageEdge[],
   rejectIds: Set<string>

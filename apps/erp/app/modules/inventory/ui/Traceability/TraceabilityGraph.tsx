@@ -101,11 +101,29 @@ function TraceabilityGraphInner({
     [entities, activities, inputs, outputs]
   );
 
-  const [payload, setPayload] = useState<LineagePayload>(initialPayload);
+  const [expansions, setExpansions] = useState<Map<string, LineagePayload>>(
+    () => new Map()
+  );
+  const [, setExhausted] = useState<Set<string>>(() => new Set());
+  const [expandable, setExpandable] = useState<Set<string>>(() => new Set());
+  const probeCacheRef = useRef<Map<string, LineagePayload>>(new Map());
+  const probedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    setPayload(initialPayload);
+    setExpansions(new Map());
+    setExhausted(new Set());
+    setExpandable(new Set());
+    probeCacheRef.current = new Map();
+    probedRef.current = new Set();
   }, [initialPayload]);
+
+  const payload = useMemo<LineagePayload>(() => {
+    let merged = initialPayload;
+    for (const exp of expansions.values()) {
+      merged = mergePayloads(merged, exp);
+    }
+    return merged;
+  }, [initialPayload, expansions]);
 
   const [direction, setDirection] = useState<LayoutDirection>(() => {
     if (typeof window === "undefined") return "TB";
@@ -182,13 +200,34 @@ function TraceabilityGraphInner({
     [onSelect]
   );
 
-  const expandedRef = useRef<Set<string>>(new Set());
-
   const onExpandResult = useCallback(
-    (incoming: LineagePayload, _originId: string) => {
-      setPayload((current) => mergePayloads(current, incoming));
+    (incoming: LineagePayload, originId: string) => {
+      const knownEntityIds = new Set(payload.entities.map((e) => e.id));
+      const knownActivityIds = new Set(payload.activities.map((a) => a.id));
+      const hasNewEntity = incoming.entities.some(
+        (e) => !knownEntityIds.has(e.id)
+      );
+      const hasNewActivity = incoming.activities.some(
+        (a) => !knownActivityIds.has(a.id)
+      );
+
+      if (!hasNewEntity && !hasNewActivity) {
+        setExhausted((prev) => {
+          if (prev.has(originId)) return prev;
+          const next = new Set(prev);
+          next.add(originId);
+          return next;
+        });
+        return;
+      }
+
+      setExpansions((prev) => {
+        const next = new Map(prev);
+        next.set(originId, incoming);
+        return next;
+      });
     },
-    []
+    [payload]
   );
 
   const { expand, isLoading: isExpanding } = useExpandNode(onExpandResult);
@@ -197,23 +236,31 @@ function TraceabilityGraphInner({
     (_, node) => {
       setSelected(node.id);
       if ((node.data as any)?.kind !== "entity") return;
-      if (expandedRef.current.has(node.id)) return;
-
-      const hasOutgoing = edges.some((e) => e.source === node.id);
-      const hasIncoming = edges.some((e) => e.target === node.id);
-      const direction =
-        !hasOutgoing && !hasIncoming
-          ? "both"
-          : !hasOutgoing
-            ? "down"
-            : !hasIncoming
-              ? "up"
-              : "both";
-      expandedRef.current.add(node.id);
-      expand(node.id, direction, 1);
+      if (expansions.has(node.id)) {
+        setExpansions((prev) => {
+          const next = new Map(prev);
+          next.delete(node.id);
+          return next;
+        });
+        return;
+      }
+      const cached = probeCacheRef.current.get(node.id);
+      if (cached) {
+        setExpansions((prev) => {
+          const next = new Map(prev);
+          next.set(node.id, cached);
+          return next;
+        });
+        return;
+      }
+      expand(node.id, "both", 1);
     },
-    [setSelected, edges, expand]
+    [setSelected, expand, expansions]
   );
+
+  const handleReset = useCallback(() => {
+    setExpansions(new Map());
+  }, []);
 
   const onPaneClick = useCallback(() => {
     setSelected(null);
@@ -229,18 +276,105 @@ function TraceabilityGraphInner({
     return lineageReachable(selectedId, edges as unknown as LineageEdge[]);
   }, [isolate, selectedId, edges]);
 
+  const boundaryByNode = useMemo(() => {
+    const incoming = new Set<string>();
+    const outgoing = new Set<string>();
+    for (const e of edges) {
+      incoming.add(e.target);
+      outgoing.add(e.source);
+    }
+    return { incoming, outgoing };
+  }, [edges]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const candidates = payload.entities.filter((e) => {
+      if (probedRef.current.has(e.id)) return false;
+      const hasIn = boundaryByNode.incoming.has(e.id);
+      const hasOut = boundaryByNode.outgoing.has(e.id);
+      return !hasIn || !hasOut;
+    });
+    if (candidates.length === 0) return;
+
+    const knownEntityIds = new Set(payload.entities.map((e) => e.id));
+    const knownActivityIds = new Set(payload.activities.map((a) => a.id));
+
+    for (const ent of candidates) {
+      probedRef.current.add(ent.id);
+      const params = new URLSearchParams({
+        trackedEntityId: ent.id,
+        direction: "both",
+        depth: "1"
+      });
+      fetch(`/api/traceability/expand?${params.toString()}`)
+        .then((r) => r.json() as Promise<LineagePayload>)
+        .then((res) => {
+          if (cancelled) return;
+          const hasNew =
+            res.entities.some((e) => !knownEntityIds.has(e.id)) ||
+            res.activities.some((a) => !knownActivityIds.has(a.id));
+          if (hasNew) {
+            probeCacheRef.current.set(ent.id, res);
+            setExpandable((prev) => {
+              if (prev.has(ent.id)) return prev;
+              const next = new Set(prev);
+              next.add(ent.id);
+              return next;
+            });
+          } else {
+            setExhausted((prev) => {
+              if (prev.has(ent.id)) return prev;
+              const next = new Set(prev);
+              next.add(ent.id);
+              return next;
+            });
+          }
+        })
+        .catch(() => {
+          // probe fail = silently leave indicator off
+        });
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [payload, boundaryByNode]);
+
   const enrichedNodes = useMemo<Node[]>(() => {
     return nodes.map((n) => {
       const isRoot = n.id === rootId;
       const selected = n.id === selectedId;
       const dimmed = isolated ? !isolated.has(n.id) : false;
+      const isExpanded = expansions.has(n.id);
+      const isEntity = (n.data as any)?.kind === "entity";
+      const isExpandable = expandable.has(n.id);
+      const canExpandUp =
+        isEntity && isExpandable && !boundaryByNode.incoming.has(n.id);
+      const canExpandDown =
+        isEntity && isExpandable && !boundaryByNode.outgoing.has(n.id);
       return {
         ...n,
-        data: { ...(n.data as any), isRoot, selected, dimmed },
+        data: {
+          ...(n.data as any),
+          isRoot,
+          selected,
+          dimmed,
+          isExpanded,
+          canExpandUp,
+          canExpandDown
+        },
         selected
       };
     });
-  }, [nodes, rootId, selectedId, isolated]);
+  }, [
+    nodes,
+    rootId,
+    selectedId,
+    isolated,
+    expansions,
+    boundaryByNode,
+    expandable
+  ]);
 
   const enrichedEdges = useMemo<Edge[]>(() => {
     return edges.map((e) => {
@@ -317,6 +451,8 @@ function TraceabilityGraphInner({
           isolate={isolate}
           onIsolateChange={setIsolate}
           hasSelection={!!selectedId}
+          canReset={expansions.size > 0}
+          onReset={handleReset}
         />
       </div>
     );

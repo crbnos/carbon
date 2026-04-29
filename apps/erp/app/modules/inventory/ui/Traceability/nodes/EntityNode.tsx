@@ -3,6 +3,9 @@ import { Handle, type NodeProps, Position, useStore } from "@xyflow/react";
 import { memo } from "react";
 import type { IconType } from "react-icons";
 import {
+  LuChevronDown,
+  LuChevronUp,
+  LuMinus,
   LuPackageCheck,
   LuPackageMinus,
   LuPackageOpen,
@@ -15,6 +18,9 @@ type Props = NodeProps & {
   data: EntityNodeData & {
     selected?: boolean;
     isRoot?: boolean;
+    isExpanded?: boolean;
+    canExpandUp?: boolean;
+    canExpandDown?: boolean;
   };
 };
 
@@ -119,6 +125,30 @@ function EntityNodeImpl({ data, selected }: Props) {
       >
         {formatQuantity(entity.quantity)}
       </div>
+      {data.isExpanded && (
+        <div
+          className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-foreground text-background flex items-center justify-center pointer-events-none shadow-sm"
+          title="Click to collapse"
+        >
+          <LuMinus className="w-2.5 h-2.5" />
+        </div>
+      )}
+      {!data.isExpanded && data.canExpandUp && (
+        <div
+          className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-card border border-border text-muted-foreground flex items-center justify-center pointer-events-none shadow-sm"
+          title="More upstream available"
+        >
+          <LuChevronUp className="w-2.5 h-2.5" />
+        </div>
+      )}
+      {!data.isExpanded && data.canExpandDown && (
+        <div
+          className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-card border border-border text-muted-foreground flex items-center justify-center pointer-events-none shadow-sm"
+          title="More downstream available"
+        >
+          <LuChevronDown className="w-2.5 h-2.5" />
+        </div>
+      )}
       {showLabel && (
         <div
           className={cn(
@@ -131,7 +161,7 @@ function EntityNodeImpl({ data, selected }: Props) {
         >
           <span
             className={cn(
-              "text-[11px] tracking-tight",
+              "text-[11px] tracking-tight px-1.5 py-px rounded bg-background/75 backdrop-blur-sm",
               (data.isRoot || selected) && "font-medium"
             )}
           >
