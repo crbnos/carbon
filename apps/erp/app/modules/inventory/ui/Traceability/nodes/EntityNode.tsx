@@ -13,6 +13,7 @@ type Props = NodeProps & {
     isExpanded?: boolean;
     canExpandUp?: boolean;
     canExpandDown?: boolean;
+    containmentStatus?: "Contained" | "Uncontained";
     onExpand?: (id: string, direction: "up" | "down" | "both") => void;
     onCollapse?: (id: string) => void;
   };
@@ -28,6 +29,7 @@ function EntityNodeImpl({ data, selected, id }: Props) {
   const meta = entityStatusMeta(entity.status);
   const Icon = meta.icon;
   const isRejected = entity.status === "Rejected";
+  const containmentStatus = data.containmentStatus;
   const radius = NODE_RADIUS;
   const size = NODE_SIZE;
   const iconSize = 18;
@@ -69,6 +71,21 @@ function EntityNodeImpl({ data, selected, id }: Props) {
             r={radius + 3}
             fill="none"
             stroke="hsl(0 84% 60%)"
+            strokeWidth={1.5}
+            strokeDasharray="3 3"
+          />
+        )}
+        {!isRejected && containmentStatus && (
+          <circle
+            cx={radius}
+            cy={radius}
+            r={radius + 3}
+            fill="none"
+            stroke={
+              containmentStatus === "Uncontained"
+                ? "hsl(0 84% 60%)"
+                : "hsl(38 95% 53%)"
+            }
             strokeWidth={1.5}
             strokeDasharray="3 3"
           />

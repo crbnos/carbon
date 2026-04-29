@@ -26,7 +26,7 @@ type ScopePickerProps = {
   value: string;
   options: ScopeOption[];
   onChange: (value: string) => void;
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "lg";
   placeholder?: string;
 };
 

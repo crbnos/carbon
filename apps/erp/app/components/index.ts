@@ -30,6 +30,7 @@ import Location from "./Location";
 import New from "./New";
 import RealtimeDataProvider from "./RealtimeDataProvider";
 import SearchFilter from "./SearchFilter";
+import { SearchLandingPage } from "./SearchLandingPage";
 import Select from "./Select";
 import SupplierAvatar from "./SupplierAvatar";
 import Table from "./Table";
@@ -64,6 +65,7 @@ export {
   OperationStatusIcon,
   RealtimeDataProvider,
   SearchFilter,
+  SearchLandingPage,
   Select,
   SourcingTypeIcon,
   SupplierAvatar,

@@ -1,3 +1,4 @@
+import { cn } from "@carbon/react";
 import {
   Background,
   BackgroundVariant,
@@ -15,7 +16,6 @@ import {
   useReactFlow
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { cn } from "@carbon/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { useShallow } from "zustand/react/shallow";
@@ -68,8 +68,10 @@ type Props = {
   activities: Activity[];
   inputs: ActivityInput[];
   outputs: ActivityOutput[];
+  stepRecords?: import("./utils").StepRecord[];
+  containments?: import("./utils").IssueContainment[];
   rootId: string;
-  rootType: "entity" | "activity";
+  rootType: "entity" | "activity" | "job";
   width: number;
   height: number;
 };
@@ -87,7 +89,10 @@ function TraceabilityGraphInner({
   activities,
   inputs,
   outputs,
+  stepRecords,
+  containments,
   rootId,
+  rootType,
   width,
   height
 }: Props) {
@@ -98,8 +103,15 @@ function TraceabilityGraphInner({
   const lastFitSignatureRef = useRef<string>("");
 
   const initialPayload = useMemo<LineagePayload>(
-    () => ({ entities, activities, inputs, outputs }),
-    [entities, activities, inputs, outputs]
+    () => ({
+      entities,
+      activities,
+      inputs,
+      outputs,
+      stepRecords,
+      containments
+    }),
+    [entities, activities, inputs, outputs, stepRecords, containments]
   );
 
   const expansions = useTraceabilityStore((s) => s.expansions);
@@ -332,9 +344,21 @@ function TraceabilityGraphInner({
     probedRef
   });
 
+  const containmentByEntity = useMemo(() => {
+    const m = new Map<string, "Contained" | "Uncontained">();
+    for (const c of payload.containments ?? []) {
+      const prev = m.get(c.trackedEntityId);
+      if (c.containmentStatus === "Uncontained" || !prev) {
+        m.set(c.trackedEntityId, c.containmentStatus);
+      }
+    }
+    return m;
+  }, [payload.containments]);
+
   const enrichedNodes = useMemo<Node[]>(() => {
+    const isJobRoot = rootType === "job";
     return nodes.map((n) => {
-      const isRoot = n.id === rootId;
+      const isRoot = !isJobRoot && n.id === rootId;
       const selected = selectedIdSet.has(n.id);
       const inPath = selectionPath?.nodeIds.has(n.id) ?? false;
       const dimmed = isolated ? !isolated.has(n.id) : false;
@@ -345,6 +369,9 @@ function TraceabilityGraphInner({
         isEntity && isExpandable && !boundaryByNode.incoming.has(n.id);
       const canExpandDown =
         isEntity && isExpandable && !boundaryByNode.outgoing.has(n.id);
+      const containmentStatus = isEntity
+        ? containmentByEntity.get(n.id)
+        : undefined;
       return {
         ...n,
         data: {
@@ -356,6 +383,7 @@ function TraceabilityGraphInner({
           isExpanded,
           canExpandUp,
           canExpandDown,
+          containmentStatus,
           onExpand: onExpandNode,
           onCollapse: onCollapseNode
         },
@@ -365,12 +393,14 @@ function TraceabilityGraphInner({
   }, [
     nodes,
     rootId,
+    rootType,
     selectedIdSet,
     isolated,
     expansions,
     boundaryByNode,
     expandable,
     selectionPath,
+    containmentByEntity,
     onExpandNode,
     onCollapseNode
   ]);

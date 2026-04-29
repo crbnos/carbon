@@ -8,6 +8,11 @@ import type {
   TrackedEntity
 } from "./types";
 import { clampDepth } from "./ui/Traceability/constants";
+import type {
+  IssueContainment,
+  IssueContainmentStatus,
+  StepRecord
+} from "./ui/Traceability/utils";
 
 export type LineageDirection = "up" | "down" | "both";
 
@@ -16,34 +21,116 @@ export type LineagePayload = {
   inputs: ActivityInput[];
   outputs: ActivityOutput[];
   activities: Activity[];
+  stepRecords?: StepRecord[];
+  containments?: IssueContainment[];
 };
 
 const MAX_ENTITIES = 200;
 
-export async function fetchLineageSubgraph(
+type LineageState = {
+  entities: Map<string, TrackedEntity>;
+  activities: Map<string, Activity>;
+  inputs: Map<string, ActivityInput>;
+  outputs: Map<string, ActivityOutput>;
+  visited: Set<string>;
+};
+
+function newLineageState(): LineageState {
+  return {
+    entities: new Map(),
+    activities: new Map(),
+    inputs: new Map(),
+    outputs: new Map(),
+    visited: new Set()
+  };
+}
+
+async function expandActivitySiblings(
   client: SupabaseClient<Database>,
-  rootEntityId: string,
-  depth: number,
-  direction: LineageDirection = "both"
-): Promise<LineagePayload> {
-  const safeDepth = clampDepth(depth);
+  state: LineageState,
+  activityIds: string[]
+): Promise<void> {
+  const { entities, activities, inputs, outputs } = state;
+  const newActivityIds = activityIds.filter((id) => !activities.has(id));
+  if (newActivityIds.length > 0) {
+    const fetched = await client
+      .from("trackedActivity")
+      .select("*")
+      .in("id", newActivityIds);
+    for (const row of fetched.data ?? []) {
+      activities.set(row.id, row as unknown as Activity);
+    }
+  }
 
-  const rootEntity = await client
-    .from("trackedEntity")
-    .select("*")
-    .eq("id", rootEntityId)
-    .maybeSingle();
+  // Pull sibling inputs/outputs for every activity so by-products (e.g. SCRAP)
+  // appear even when not on the direct upstream/downstream path.
+  const [siblingInputs, siblingOutputs] = await Promise.all([
+    client
+      .from("trackedActivityInput")
+      .select("*")
+      .in("trackedActivityId", activityIds),
+    client
+      .from("trackedActivityOutput")
+      .select("*")
+      .in("trackedActivityId", activityIds)
+  ]);
 
-  const entities = new Map<string, TrackedEntity>();
-  const activities = new Map<string, Activity>();
-  const inputs = new Map<string, ActivityInput>();
-  const outputs = new Map<string, ActivityOutput>();
+  const siblingEntityIds = new Set<string>();
+  for (const row of siblingInputs.data ?? []) {
+    const key = `${row.trackedActivityId}:${row.trackedEntityId}`;
+    if (!inputs.has(key)) {
+      inputs.set(key, {
+        trackedActivityId: row.trackedActivityId,
+        trackedEntityId: row.trackedEntityId,
+        quantity: row.quantity
+      });
+    }
+    if (!entities.has(row.trackedEntityId)) {
+      siblingEntityIds.add(row.trackedEntityId);
+    }
+  }
+  for (const row of siblingOutputs.data ?? []) {
+    const key = `${row.trackedActivityId}:${row.trackedEntityId}`;
+    if (!outputs.has(key)) {
+      outputs.set(key, {
+        trackedActivityId: row.trackedActivityId,
+        trackedEntityId: row.trackedEntityId,
+        quantity: row.quantity
+      });
+    }
+    if (!entities.has(row.trackedEntityId)) {
+      siblingEntityIds.add(row.trackedEntityId);
+    }
+  }
 
-  if (rootEntity.data)
-    entities.set(rootEntity.data.id, rootEntity.data as TrackedEntity);
+  if (siblingEntityIds.size > 0) {
+    const remainingCapacity = MAX_ENTITIES - entities.size;
+    const idsToFetch = Array.from(siblingEntityIds).slice(0, remainingCapacity);
+    if (idsToFetch.length > 0) {
+      const fetched = await client
+        .from("trackedEntity")
+        .select("*")
+        .in("id", idsToFetch);
+      for (const row of fetched.data ?? []) {
+        entities.set(row.id, row as TrackedEntity);
+      }
+    }
+  }
+}
 
-  const visited = new Set<string>([rootEntityId]);
-  let frontier: string[] = [rootEntityId];
+async function runLineageBfs(
+  client: SupabaseClient<Database>,
+  state: LineageState,
+  initialFrontier: string[],
+  direction: LineageDirection,
+  safeDepth: number
+): Promise<void> {
+  const { entities, inputs, outputs, visited } = state;
+  let frontier = initialFrontier.filter((id) => {
+    if (visited.has(id)) return true;
+    visited.add(id);
+    return true;
+  });
 
   for (let hop = 0; hop < safeDepth; hop++) {
     if (frontier.length === 0) break;
@@ -67,9 +154,7 @@ export async function fetchLineageSubgraph(
           (async () => {
             const res = await client.rpc(
               "get_direct_descendants_of_tracked_entity_strict",
-              {
-                p_tracked_entity_id: id
-              }
+              { p_tracked_entity_id: id }
             );
             descendantsResults.push((res.data ?? []) as any);
           })()
@@ -80,9 +165,7 @@ export async function fetchLineageSubgraph(
           (async () => {
             const res = await client.rpc(
               "get_direct_ancestors_of_tracked_entity_strict",
-              {
-                p_tracked_entity_id: id
-              }
+              { p_tracked_entity_id: id }
             );
             ancestorsResults.push((res.data ?? []) as any);
           })()
@@ -98,10 +181,6 @@ export async function fetchLineageSubgraph(
 
     for (let i = 0; i < frontier.length; i++) {
       const sourceId = frontier[i];
-
-      // The "descendants" RPC actually returns ancestors of sourceId via an
-      // activity that OUTPUTS sourceId. So sourceId is the activity's OUTPUT
-      // and row.id is the activity's INPUT.
       const desc = descendantsResults[i] ?? [];
       for (const row of desc) {
         if (!row?.id) continue;
@@ -129,9 +208,6 @@ export async function fetchLineageSubgraph(
         }
       }
 
-      // The "ancestors" RPC actually returns descendants of sourceId via an
-      // activity that INPUTS sourceId. So sourceId is the activity's INPUT
-      // and row.id is the activity's OUTPUT.
       const anc = ancestorsResults[i] ?? [];
       for (const row of anc) {
         if (!row?.id) continue;
@@ -173,88 +249,164 @@ export async function fetchLineageSubgraph(
     }
 
     if (activityIds.size > 0) {
-      const newActivityIds = Array.from(activityIds).filter(
-        (id) => !activities.has(id)
-      );
-      if (newActivityIds.length > 0) {
-        const fetched = await client
-          .from("trackedActivity")
-          .select("*")
-          .in("id", newActivityIds);
-        for (const row of fetched.data ?? []) {
-          activities.set(row.id, row as unknown as Activity);
-        }
-      }
-
-      // Pull sibling inputs/outputs for every activity touched this hop so
-      // by-products (e.g. SCRAP from a manufacturing activity) appear even
-      // when not on the direct upstream/downstream path.
-      const allActivityIds = Array.from(activityIds);
-      const [siblingInputs, siblingOutputs] = await Promise.all([
-        client
-          .from("trackedActivityInput")
-          .select("*")
-          .in("trackedActivityId", allActivityIds),
-        client
-          .from("trackedActivityOutput")
-          .select("*")
-          .in("trackedActivityId", allActivityIds)
-      ]);
-
-      const siblingEntityIds = new Set<string>();
-      for (const row of siblingInputs.data ?? []) {
-        const key = `${row.trackedActivityId}:${row.trackedEntityId}`;
-        if (!inputs.has(key)) {
-          inputs.set(key, {
-            trackedActivityId: row.trackedActivityId,
-            trackedEntityId: row.trackedEntityId,
-            quantity: row.quantity
-          });
-        }
-        if (!entities.has(row.trackedEntityId)) {
-          siblingEntityIds.add(row.trackedEntityId);
-        }
-      }
-      for (const row of siblingOutputs.data ?? []) {
-        const key = `${row.trackedActivityId}:${row.trackedEntityId}`;
-        if (!outputs.has(key)) {
-          outputs.set(key, {
-            trackedActivityId: row.trackedActivityId,
-            trackedEntityId: row.trackedEntityId,
-            quantity: row.quantity
-          });
-        }
-        if (!entities.has(row.trackedEntityId)) {
-          siblingEntityIds.add(row.trackedEntityId);
-        }
-      }
-
-      if (siblingEntityIds.size > 0) {
-        const remainingCapacity = MAX_ENTITIES - entities.size;
-        const idsToFetch = Array.from(siblingEntityIds).slice(
-          0,
-          remainingCapacity
-        );
-        if (idsToFetch.length > 0) {
-          const fetched = await client
-            .from("trackedEntity")
-            .select("*")
-            .in("id", idsToFetch);
-          for (const row of fetched.data ?? []) {
-            entities.set(row.id, row as TrackedEntity);
-          }
-        }
-      }
+      await expandActivitySiblings(client, state, Array.from(activityIds));
     }
 
     frontier = Array.from(nextFrontier);
   }
+}
+
+export async function fetchLineageSubgraph(
+  client: SupabaseClient<Database>,
+  rootEntityId: string,
+  depth: number,
+  direction: LineageDirection = "both"
+): Promise<LineagePayload> {
+  const safeDepth = clampDepth(depth);
+
+  const rootEntity = await client
+    .from("trackedEntity")
+    .select("*")
+    .eq("id", rootEntityId)
+    .maybeSingle();
+
+  const state = newLineageState();
+  if (rootEntity.data)
+    state.entities.set(rootEntity.data.id, rootEntity.data as TrackedEntity);
+
+  await runLineageBfs(client, state, [rootEntityId], direction, safeDepth);
 
   return {
-    entities: Array.from(entities.values()),
-    inputs: Array.from(inputs.values()),
-    outputs: Array.from(outputs.values()),
-    activities: Array.from(activities.values())
+    entities: Array.from(state.entities.values()),
+    inputs: Array.from(state.inputs.values()),
+    outputs: Array.from(state.outputs.values()),
+    activities: Array.from(state.activities.values())
+  };
+}
+
+export async function fetchJobStepRecords(
+  client: SupabaseClient<Database>,
+  jobId: string
+): Promise<StepRecord[]> {
+  const res = await client.rpc("get_job_operation_step_records", {
+    p_job_id: jobId
+  });
+  if (!res.data) return [];
+  return (res.data as any[]).map((r) => ({
+    id: r.id,
+    jobOperationStepId: r.jobOperationStepId,
+    index: r.index,
+    type: r.type,
+    name: r.name,
+    value: r.value,
+    numericValue: r.numericValue,
+    booleanValue: r.booleanValue,
+    userValue: r.userValue,
+    unitOfMeasureCode: r.unitOfMeasureCode,
+    minValue: r.minValue,
+    maxValue: r.maxValue,
+    operationId: r.operationId,
+    operationDescription: r.operationDescription,
+    itemId: r.itemId,
+    itemReadableId: r.itemReadableId,
+    createdAt: r.createdAt,
+    createdBy: r.createdBy
+  }));
+}
+
+export async function fetchContainmentsForEntities(
+  client: SupabaseClient<Database>,
+  entityIds: string[]
+): Promise<IssueContainment[]> {
+  if (entityIds.length === 0) return [];
+
+  const linkRes = await client
+    .from("nonConformanceTrackedEntity")
+    .select("nonConformanceId, trackedEntityId")
+    .in("trackedEntityId", entityIds);
+  const links = linkRes.data ?? [];
+  if (links.length === 0) return [];
+
+  const issueIds = Array.from(new Set(links.map((l) => l.nonConformanceId)));
+
+  const issuesRes = await client
+    .from("issues")
+    .select("id, nonConformanceId, status, priority, containmentStatus")
+    .in("id", issueIds);
+  type IssueRow = NonNullable<typeof issuesRes.data>[number];
+  const issuesById = new Map<string, IssueRow>();
+  for (const row of issuesRes.data ?? []) {
+    if (row.id) issuesById.set(row.id, row);
+  }
+
+  const containments: IssueContainment[] = [];
+  for (const link of links) {
+    const issue = issuesById.get(link.nonConformanceId);
+    if (!issue) continue;
+    const status = issue.containmentStatus;
+    if (status !== "Contained" && status !== "Uncontained") continue;
+    containments.push({
+      id: issue.id ?? link.nonConformanceId,
+      readableId: issue.nonConformanceId,
+      containmentStatus: status as IssueContainmentStatus,
+      status: issue.status ?? "",
+      priority: issue.priority ?? null,
+      trackedEntityId: link.trackedEntityId
+    });
+  }
+  return containments;
+}
+
+export async function fetchJobScopedLineage(
+  client: SupabaseClient<Database>,
+  jobId: string,
+  depth: number
+): Promise<LineagePayload> {
+  const safeDepth = clampDepth(depth);
+
+  const [seedEntitiesRes, seedActivitiesRes] = await Promise.all([
+    client.from("trackedEntity").select("*").eq("attributes->>Job", jobId),
+    client.from("trackedActivity").select("*").eq("attributes->>Job", jobId)
+  ]);
+
+  const state = newLineageState();
+  for (const row of (seedEntitiesRes.data ?? []) as TrackedEntity[]) {
+    state.entities.set(row.id, row);
+  }
+  for (const row of (seedActivitiesRes.data ?? []) as unknown as Activity[]) {
+    state.activities.set(row.id, row);
+  }
+
+  if (state.activities.size > 0) {
+    await expandActivitySiblings(
+      client,
+      state,
+      Array.from(state.activities.keys())
+    );
+  }
+
+  if (state.entities.size > 0) {
+    await runLineageBfs(
+      client,
+      state,
+      Array.from(state.entities.keys()),
+      "both",
+      safeDepth
+    );
+  }
+
+  const [stepRecords, containments] = await Promise.all([
+    fetchJobStepRecords(client, jobId),
+    fetchContainmentsForEntities(client, Array.from(state.entities.keys()))
+  ]);
+
+  return {
+    entities: Array.from(state.entities.values()),
+    inputs: Array.from(state.inputs.values()),
+    outputs: Array.from(state.outputs.values()),
+    activities: Array.from(state.activities.values()),
+    stepRecords,
+    containments
   };
 }
 

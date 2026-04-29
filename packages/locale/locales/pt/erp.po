@@ -1492,7 +1492,7 @@ msgstr "Voltar"
 msgid "Back to home"
 msgstr "Voltar para casa"
 
-#: apps/erp/app/routes/x+/traceability+/graph.tsx:161
+#: apps/erp/app/routes/x+/traceability+/graph.tsx:226
 msgid "Back to traceability"
 msgstr "Voltar para rastreabilidade"
 
@@ -2105,10 +2105,6 @@ msgstr "Chinês"
 msgid "Choose another file"
 msgstr "Escolher outro arquivo"
 
-#: apps/erp/app/modules/sales/ui/Pricing/PriceListScopeEmpty.tsx:35
-msgid "Choose scope to continue"
-msgstr "Escolha um escopo para continuar"
-
 #: apps/erp/app/modules/account/ui/Profile/ProfileLanguageForm.tsx:53
 msgid "Choose your preferred language for the interface."
 msgstr "Escolha seu idioma preferido para a interface."
@@ -2692,7 +2688,7 @@ msgstr "Copiar nome do documento"
 msgid "Copy document unique identifier"
 msgstr "Copiar identificador único do documento"
 
-#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:203
+#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:216
 msgid "Copy ID"
 msgstr ""
 
@@ -2708,7 +2704,7 @@ msgstr "Copiar identificador único do problema"
 msgid "Copy Job number"
 msgstr "Copiar número do trabalho"
 
-#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:189
+#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:202
 msgid "Copy link"
 msgstr ""
 
@@ -5047,7 +5043,7 @@ msgid "Entered At Receipt"
 msgstr "Inserido no Recebimento"
 
 #: apps/erp/app/modules/settings/ui/AuditLog/AuditLogTable.tsx:207
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:146
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:174
 msgid "Entities"
 msgstr "Entidades"
 
@@ -8708,7 +8704,7 @@ msgstr "Nenhum tipo de problema configurado"
 msgid "No logo uploaded"
 msgstr "Nenhum logo enviado"
 
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:157
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:187
 msgid "No matches"
 msgstr ""
 
@@ -9577,13 +9573,13 @@ msgstr "Selecionar"
 msgid "Pick a column to sort by"
 msgstr "Escolha uma coluna para ordenar"
 
+#: apps/erp/app/modules/sales/ui/Pricing/PriceListScopeEmpty.tsx:23
+msgid "Pick a customer or customer type to view their pricing."
+msgstr ""
+
 #: apps/erp/app/modules/inventory/ui/Traceability/EditExpiryModal.tsx:78
 msgid "Pick a date or leave blank to clear it."
 msgstr "Escolha uma data ou deixe em branco para limpar."
-
-#: apps/erp/app/modules/sales/ui/Pricing/PriceListScopeEmpty.tsx:27
-msgid "Pick a scope to view resolved prices and create price overrides."
-msgstr "Escolha um escopo para visualizar preços resolvidos e criar substituições de preço."
 
 #: apps/erp/app/modules/inventory/ui/StockTransfers/StockTransferHeader.tsx:142
 msgid "Pick List"
@@ -9842,6 +9838,7 @@ msgstr "Quebras de Preço"
 msgid "Price List"
 msgstr "Lista de Preços"
 
+#: apps/erp/app/modules/sales/ui/Pricing/PriceListScopeEmpty.tsx:22
 #: apps/erp/app/modules/sales/ui/useSalesSubmodules.tsx:73
 msgid "Price Lists"
 msgstr "Listas de Preços"
@@ -10648,7 +10645,7 @@ msgstr "Local de Recebimento"
 
 #: apps/erp/app/components/Layout/Topbar/Search.tsx:223
 #: apps/erp/app/modules/documents/ui/useDocumentsSubmodules.tsx:28
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:162
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:193
 msgid "Recent"
 msgstr "Recente"
 
@@ -11590,7 +11587,7 @@ msgstr "Guardar Visualização"
 msgid "Scan"
 msgstr "Digitalizar"
 
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:126
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:153
 msgid "Scan a label or search by ID, serial number, or batch number."
 msgstr ""
 
@@ -11598,7 +11595,7 @@ msgstr ""
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "Digitalize ou insira ID da entidade rastreada, série ou lote"
 
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:135
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:161
 msgid "Scan or search..."
 msgstr ""
 
@@ -11703,6 +11700,10 @@ msgstr "Pesquisar por título do problema Linear..."
 msgid "Search customers and types..."
 msgstr "Pesquisar clientes e tipos..."
 
+#: apps/erp/app/modules/sales/ui/Pricing/PriceListScopeEmpty.tsx:31
+msgid "Search customers or types..."
+msgstr ""
+
 #: apps/erp/app/modules/resources/ui/Training/TrainingAssignmentForm.tsx:206
 #: apps/erp/app/routes/x+/resources+/assignments.$trainingId.tsx:263
 msgid "Search employees..."
@@ -11760,10 +11761,6 @@ msgstr "Pesquisar na web"
 msgid "Search..."
 msgstr "Pesquisar..."
 
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:157
-msgid "Searching..."
-msgstr ""
-
 #: apps/erp/app/components/Form/StandardFactor.tsx:36
 msgid "Seconds/Piece"
 msgstr "Segundos/Peça"
@@ -11785,10 +11782,6 @@ msgstr "Selecionar"
 #: apps/erp/app/modules/quality/ui/Issue/Linear/CreateIssue.tsx:85
 msgid "Select a assignee"
 msgstr "Selecione um responsável"
-
-#: apps/erp/app/modules/sales/ui/Pricing/PriceListScopeEmpty.tsx:24
-msgid "Select a customer or customer type"
-msgstr "Selecione um cliente ou tipo de cliente"
 
 #: apps/erp/app/modules/settings/ui/Approvals/ApprovalRuleForm.tsx:127
 msgid "Select a default approver"
@@ -12637,10 +12630,6 @@ msgstr "Início do Ano Fiscal"
 #: apps/erp/app/modules/resources/ui/Maintenance/MaintenanceDispatchProperties.tsx:639
 msgid "Start Time"
 msgstr "Hora de Início"
-
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:175
-msgid "Start typing or scan a label to begin tracing"
-msgstr ""
 
 #: apps/erp/app/routes/x+/resources+/assignments.$trainingId.tsx:161
 msgid "Started"
@@ -13745,9 +13734,9 @@ msgid "Totaling"
 msgstr "Totalização"
 
 #: apps/erp/app/modules/inventory/ui/useInventorySubmodules.tsx:76
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:24
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:123
-#: apps/erp/app/routes/x+/traceability+/graph.tsx:20
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:25
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:152
+#: apps/erp/app/routes/x+/traceability+/graph.tsx:26
 msgid "Traceability"
 msgstr "Rastreabilidade"
 

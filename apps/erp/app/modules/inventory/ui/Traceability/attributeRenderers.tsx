@@ -1,18 +1,38 @@
 import { useCarbon } from "@carbon/auth";
-import { useMount, VStack } from "@carbon/react";
+import { cn, useMount } from "@carbon/react";
 import type {
   TrackedActivityAttributes,
   TrackedEntityAttributes
 } from "@carbon/utils";
 import { useState } from "react";
-import {
-  CustomerAvatar,
-  EmployeeAvatar,
-  Hyperlink,
-  SupplierAvatar
-} from "~/components";
+import { Link } from "react-router";
+import { CustomerAvatar, EmployeeAvatar, SupplierAvatar } from "~/components";
 import { useWorkCenters } from "~/components/Form/WorkCenter";
 import { path } from "~/utils/path";
+
+function InlineLink({
+  to,
+  children,
+  className
+}: {
+  to: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <Link
+      to={to}
+      prefetch="intent"
+      className={cn(
+        "text-sm font-medium text-foreground hover:underline truncate",
+        className
+      )}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {children}
+    </Link>
+  );
+}
 
 const SKIPPED_ATTRIBUTE_KEYS = new Set([
   "Job Material",
@@ -35,7 +55,7 @@ export function hasRenderedAttributes(attrs: Record<string, any>): boolean {
 
 export function AttributeList({ attrs }: { attrs: Record<string, any> }) {
   return (
-    <VStack spacing={3}>
+    <dl className="divide-y divide-border/30">
       {Object.entries(attrs)
         .sort((a, b) => a[0].localeCompare(b[0]))
         .map(([key, value]) => {
@@ -44,11 +64,23 @@ export function AttributeList({ attrs }: { attrs: Record<string, any> }) {
             key as keyof (TrackedEntityAttributes & TrackedActivityAttributes)
           ) {
             case "Customer":
-              return <CustomerAttribute key={key} value={value} />;
+              return (
+                <Row key={key} label="Customer">
+                  <CustomerAvatar customerId={value} />
+                </Row>
+              );
             case "Employee":
-              return <EmployeeAttribute key={key} value={value} />;
+              return (
+                <Row key={key} label="Employee">
+                  <EmployeeAvatar employeeId={value} />
+                </Row>
+              );
             case "Inspector":
-              return <InspectorAttribute key={key} value={value} />;
+              return (
+                <Row key={key} label="Inspector">
+                  <EmployeeAvatar employeeId={value} />
+                </Row>
+              );
             case "Job":
               return <JobAttribute key={key} jobId={value} />;
             case "Job Material":
@@ -97,7 +129,11 @@ export function AttributeList({ attrs }: { attrs: Record<string, any> }) {
                 />
               );
             case "Supplier":
-              return <SupplierAttribute key={key} value={value} />;
+              return (
+                <Row key={key} label="Supplier">
+                  <SupplierAvatar supplierId={value} />
+                </Row>
+              );
             case "Work Center":
             case "WorkCenter" as any:
               return <WorkCenterAttribute key={key} value={value} />;
@@ -111,51 +147,37 @@ export function AttributeList({ attrs }: { attrs: Record<string, any> }) {
               if (value === null || value === undefined) return null;
               if (typeof value === "object") {
                 return (
-                  <VStack spacing={0} key={key}>
-                    <span className="text-xs text-muted-foreground">{key}</span>
-                    <span className="text-sm font-mono break-all">
+                  <Row key={key} label={key}>
+                    <span className="text-[11px] font-mono break-all">
                       {JSON.stringify(value)}
                     </span>
-                  </VStack>
+                  </Row>
                 );
               }
               return (
-                <VStack spacing={0} key={key}>
-                  <span className="text-xs text-muted-foreground">{key}</span>
-                  <span className="text-sm">{String(value)}</span>
-                </VStack>
+                <Row key={key} label={key}>
+                  <span className="text-sm truncate">{String(value)}</span>
+                </Row>
               );
             }
           }
         })}
-    </VStack>
+    </dl>
   );
 }
 
-function CustomerAttribute({ value }: { value: string }) {
+function Row({
+  label,
+  children
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
-    <VStack spacing={1}>
-      <span className="text-xs text-muted-foreground">Customer</span>
-      <CustomerAvatar customerId={value} />
-    </VStack>
-  );
-}
-
-function EmployeeAttribute({ value }: { value: string }) {
-  return (
-    <VStack spacing={1}>
-      <span className="text-xs text-muted-foreground">Employee</span>
-      <EmployeeAvatar employeeId={value} />
-    </VStack>
-  );
-}
-
-function InspectorAttribute({ value }: { value: string }) {
-  return (
-    <VStack spacing={1}>
-      <span className="text-xs text-muted-foreground">Inspector</span>
-      <EmployeeAvatar employeeId={value} />
-    </VStack>
+    <div className="grid grid-cols-[8rem_1fr] items-center gap-3 py-1.5 first:pt-0 last:pb-0">
+      <dt className="text-xs text-muted-foreground truncate">{label}</dt>
+      <dd className="text-right min-w-0 truncate text-sm">{children}</dd>
+    </div>
   );
 }
 
@@ -177,10 +199,9 @@ function JobAttribute({ jobId }: { jobId: string }) {
   });
 
   return (
-    <VStack spacing={1}>
-      <span className="text-xs text-muted-foreground">Job</span>
-      <Hyperlink to={path.to.jobDetails(jobId)}>{job ?? jobId}</Hyperlink>
-    </VStack>
+    <Row label="Job">
+      <InlineLink to={path.to.jobDetails(jobId)}>{job ?? jobId}</InlineLink>
+    </Row>
   );
 }
 
@@ -192,16 +213,15 @@ function JobProductionEvent({
   eventId: string;
 }) {
   return (
-    <VStack spacing={1}>
-      <span className="text-xs text-muted-foreground">Production Event</span>
+    <Row label="Production Event">
       {jobId && eventId ? (
-        <Hyperlink to={path.to.jobProductionEvent(jobId, eventId)}>
+        <InlineLink to={path.to.jobProductionEvent(jobId, eventId)}>
           {eventId}
-        </Hyperlink>
+        </InlineLink>
       ) : (
         <span className="text-sm text-muted-foreground">{eventId}</span>
       )}
-    </VStack>
+    </Row>
   );
 }
 
@@ -213,20 +233,21 @@ function JobOperationAttribute({
   operationId: string;
 }) {
   return (
-    <VStack spacing={1}>
-      <span className="text-xs text-muted-foreground">Job Operation</span>
+    <Row label="Job Operation">
       {jobId && operationId ? (
-        <Hyperlink
+        <InlineLink
           to={`${path.to.jobProductionEvents(
             jobId
           )}?filter=jobOperationId:eq:${operationId}`}
         >
           {operationId}
-        </Hyperlink>
+        </InlineLink>
       ) : (
-        <span className="text-sm text-muted-foreground">{operationId}</span>
+        <span className="text-sm text-muted-foreground truncate">
+          {operationId}
+        </span>
       )}
-    </VStack>
+    </Row>
   );
 }
 
@@ -240,9 +261,8 @@ function JobMakeMethodAttribute({
   materialId: string;
 }) {
   return (
-    <VStack spacing={1}>
-      <span className="text-xs text-muted-foreground">Job Make Method</span>
-      <Hyperlink
+    <Row label="Job Make Method">
+      <InlineLink
         to={
           materialId
             ? path.to.jobMakeMethod(jobId, makeMethodId)
@@ -250,8 +270,8 @@ function JobMakeMethodAttribute({
         }
       >
         {makeMethodId}
-      </Hyperlink>
-    </VStack>
+      </InlineLink>
+    </Row>
   );
 }
 
@@ -277,12 +297,11 @@ function PurchaseOrderAttribute({
   });
 
   return (
-    <VStack spacing={1}>
-      <span className="text-xs text-muted-foreground">Purchase Order</span>
-      <Hyperlink to={path.to.purchaseOrderDetails(purchaseOrderId)}>
+    <Row label="Purchase Order">
+      <InlineLink to={path.to.purchaseOrderDetails(purchaseOrderId)}>
         {poNumber ?? purchaseOrderId}
-      </Hyperlink>
-    </VStack>
+      </InlineLink>
+    </Row>
   );
 }
 
@@ -304,12 +323,11 @@ function SalesOrderAttribute({ salesOrderId }: { salesOrderId: string }) {
   });
 
   return (
-    <VStack spacing={1}>
-      <span className="text-xs text-muted-foreground">Sales Order</span>
-      <Hyperlink to={path.to.salesOrderDetails(salesOrderId)}>
+    <Row label="Sales Order">
+      <InlineLink to={path.to.salesOrderDetails(salesOrderId)}>
         {soNumber ?? salesOrderId}
-      </Hyperlink>
-    </VStack>
+      </InlineLink>
+    </Row>
   );
 }
 
@@ -331,12 +349,11 @@ function ReceiptAttribute({ receiptId }: { receiptId: string }) {
   });
 
   return (
-    <VStack spacing={1}>
-      <span className="text-xs text-muted-foreground">Receipt</span>
-      <Hyperlink to={path.to.receiptDetails(receiptId)}>
+    <Row label="Receipt">
+      <InlineLink to={path.to.receiptDetails(receiptId)}>
         {receiptNumber ?? receiptId}
-      </Hyperlink>
-    </VStack>
+      </InlineLink>
+    </Row>
   );
 }
 
@@ -358,21 +375,11 @@ function ShipmentAttribute({ shipmentId }: { shipmentId: string }) {
   });
 
   return (
-    <VStack spacing={1}>
-      <span className="text-xs text-muted-foreground">Shipment</span>
-      <Hyperlink to={path.to.shipmentDetails(shipmentId)}>
+    <Row label="Shipment">
+      <InlineLink to={path.to.shipmentDetails(shipmentId)}>
         {shipmentNumber ?? shipmentId}
-      </Hyperlink>
-    </VStack>
-  );
-}
-
-function SupplierAttribute({ value }: { value: string }) {
-  return (
-    <VStack spacing={1}>
-      <span className="text-xs text-muted-foreground">Supplier</span>
-      <SupplierAvatar supplierId={value} />
-    </VStack>
+      </InlineLink>
+    </Row>
   );
 }
 
@@ -380,9 +387,8 @@ function WorkCenterAttribute({ value }: { value: string }) {
   const workCenters = useWorkCenters({});
   const workCenter = workCenters.options.find((wc) => wc.value === value);
   return (
-    <VStack spacing={0}>
-      <span className="text-xs text-muted-foreground">Work Center</span>
-      <span className="text-sm">{workCenter?.label}</span>
-    </VStack>
+    <Row label="Work Center">
+      <span className="text-sm truncate">{workCenter?.label ?? value}</span>
+    </Row>
   );
 }

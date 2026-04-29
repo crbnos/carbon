@@ -2,11 +2,9 @@ import {
   Badge,
   Button,
   cn,
-  HStack,
   Tooltip,
   TooltipContent,
-  TooltipTrigger,
-  VStack
+  TooltipTrigger
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
@@ -21,7 +19,9 @@ import { Link } from "react-router";
 import type { Activity, TrackedEntity } from "~/modules/inventory";
 import { capitalize, copyToClipboard } from "~/utils/string";
 import { AttributeList, hasRenderedAttributes } from "./attributeRenderers";
+import { ContainmentList } from "./ContainmentList";
 import { ACTIVITY_KIND_META, activityKindFor } from "./metadata";
+import { StepRecordsList } from "./StepRecordsList";
 import { useTraceabilityStore } from "./store";
 import TrackedEntityStatus from "./TrackedEntityStatus";
 import {
@@ -110,62 +110,75 @@ export function TraceabilitySidebar({
     return { producedBy, consumedBy, inputs, outputs };
   }, [payload, entity, activity]);
 
+  const stepRecordsForActivity = useMemo(() => {
+    if (!activity || !payload?.stepRecords?.length) return [];
+    const opId = (activity.attributes as Record<string, any> | null)?.[
+      "Job Operation"
+    ];
+    if (!opId) return [];
+    return payload.stepRecords.filter((r) => r.operationId === opId);
+  }, [activity, payload?.stepRecords]);
+
+  const containmentsForEntity = useMemo(() => {
+    if (!entity || !payload?.containments?.length) return [];
+    return payload.containments.filter((c) => c.trackedEntityId === entity.id);
+  }, [entity, payload?.containments]);
+
+  const hasMultiSelect = selectedIds && selectedIds.length > 1;
+
   return (
-    <VStack
-      spacing={4}
-      className="w-96 flex-shrink-0 bg-sidebar h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-5 py-5 text-sm"
-    >
-      <VStack spacing={3}>
-        {selectedIds && selectedIds.length > 1 && (
-          <HStack className="w-full justify-between items-center bg-muted/40 rounded-md px-2 py-1">
-            <HStack spacing={2} className="items-center">
-              <Badge
-                variant="secondary"
-                className="uppercase tracking-wide text-[10px]"
-              >
-                {selectedIds.length} selected
-              </Badge>
-              <span className="text-[11px] text-muted-foreground tabular-nums">
-                {(focusedIndex ?? 0) + 1} / {selectedIds.length}
-              </span>
-            </HStack>
-            <HStack spacing={1}>
-              <Button
-                variant="ghost"
-                size="sm"
-                aria-label="Previous selected"
-                className="p-1 h-6 w-6"
-                onClick={() => {
-                  const i = focusedIndex ?? 0;
-                  const next =
-                    (i - 1 + selectedIds.length) % selectedIds.length;
-                  onFocusedIndexChange?.(next);
-                }}
-              >
-                <LuChevronLeft className="w-3.5 h-3.5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                aria-label="Next selected"
-                className="p-1 h-6 w-6"
-                onClick={() => {
-                  const i = focusedIndex ?? 0;
-                  const next = (i + 1) % selectedIds.length;
-                  onFocusedIndexChange?.(next);
-                }}
-              >
-                <LuChevronRight className="w-3.5 h-3.5" />
-              </Button>
-            </HStack>
-          </HStack>
-        )}
-        <HStack className="w-full justify-between items-start">
-          <HStack spacing={2} className="items-center flex-wrap">
+    <aside className="w-[426px] flex-shrink-0 bg-sidebar h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border text-sm">
+      {hasMultiSelect && (
+        <div className="flex items-center justify-between gap-2 bg-muted/40 mx-3 mt-3 rounded-md px-2 py-1">
+          <div className="flex items-center gap-2 min-w-0">
+            <Badge
+              variant="secondary"
+              className="uppercase tracking-wide text-[10px]"
+            >
+              {selectedIds.length} selected
+            </Badge>
+            <span className="text-[11px] text-muted-foreground tabular-nums">
+              {(focusedIndex ?? 0) + 1} / {selectedIds.length}
+            </span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-label="Previous selected"
+              className="p-1 h-6 w-6"
+              onClick={() => {
+                const i = focusedIndex ?? 0;
+                const next = (i - 1 + selectedIds.length) % selectedIds.length;
+                onFocusedIndexChange?.(next);
+              }}
+            >
+              <LuChevronLeft className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-label="Next selected"
+              className="p-1 h-6 w-6"
+              onClick={() => {
+                const i = focusedIndex ?? 0;
+                const next = (i + 1) % selectedIds.length;
+                onFocusedIndexChange?.(next);
+              }}
+            >
+              <LuChevronRight className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <header className="px-3 pt-3 pb-2.5">
+        <div className="flex items-center justify-between gap-2 mb-1.5">
+          <div className="flex items-center gap-1.5 min-w-0">
             {entity ? (
               <Badge
                 variant="secondary"
-                className="uppercase tracking-wide text-[10px]"
+                className="uppercase tracking-wide text-[10px] shrink-0"
               >
                 Entity
               </Badge>
@@ -173,22 +186,22 @@ export function TraceabilitySidebar({
               <>
                 <Badge
                   variant="outline"
-                  className="uppercase tracking-wide text-[10px]"
+                  className="uppercase tracking-wide text-[10px] shrink-0"
                 >
                   Activity
                 </Badge>
                 <ActivityTypeChip type={activity.type} />
               </>
             ) : null}
-          </HStack>
-          <HStack spacing={1}>
+          </div>
+          <div className="flex items-center gap-0.5 shrink-0">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   aria-label={t`Copy link`}
                   size="sm"
-                  className="p-1"
+                  className="p-1 h-7 w-7"
                   onClick={() => copyToClipboard(window.location.href)}
                 >
                   <LuLink className="w-3.5 h-3.5" />
@@ -202,7 +215,7 @@ export function TraceabilitySidebar({
                   variant="ghost"
                   aria-label={t`Copy ID`}
                   size="sm"
-                  className="p-1"
+                  className="p-1 h-7 w-7"
                   onClick={() => copyToClipboard(selectedNode?.id ?? "")}
                 >
                   <LuCopy className="w-3.5 h-3.5" />
@@ -212,101 +225,174 @@ export function TraceabilitySidebar({
                 Copy {capitalize(selectedNodeType)} ID
               </TooltipContent>
             </Tooltip>
-          </HStack>
-        </HStack>
+          </div>
+        </div>
+        <h2 className="text-[15px] font-semibold leading-5 text-foreground truncate">
+          {headline}
+        </h2>
+        <p className="text-[11px] text-muted-foreground/70 font-mono break-all leading-4 mt-0.5">
+          {selectedNode?.id}
+        </p>
+      </header>
 
-        <VStack spacing={0}>
-          <span className="text-base font-semibold leading-tight">
-            {headline}
-          </span>
-          <span className="text-xs text-muted-foreground font-mono break-all mt-1">
-            {selectedNode?.id}
-          </span>
-        </VStack>
-      </VStack>
+      <div className="flex flex-col divide-y divide-border/40">
+        {(selectedNodeType === "entity" || sourceDoc) && (
+          <Section>
+            <dl className="divide-y divide-border/30">
+              {selectedNodeType === "entity" && (
+                <>
+                  <PropRow label="Status">
+                    <TrackedEntityStatus status={entity?.status} />
+                  </PropRow>
+                  <PropRow label="Quantity">
+                    <span className="text-sm font-medium tabular-nums">
+                      {entity?.quantity}
+                    </span>
+                  </PropRow>
+                  {entity?.readableId && (
+                    <PropRow label="Serial / Batch">
+                      <span className="text-sm font-mono">
+                        {entity.readableId}
+                      </span>
+                    </PropRow>
+                  )}
+                </>
+              )}
+              {sourceDoc && (
+                <PropRow label={sourceDoc}>
+                  <SourceDocValue
+                    readableId={sourceDocReadableId}
+                    fallbackId={sourceDocId}
+                    href={sourceHref}
+                  />
+                </PropRow>
+              )}
+            </dl>
+          </Section>
+        )}
 
-      {selectedNodeType === "entity" && (
-        <VStack spacing={2}>
-          <HStack className="w-full justify-between items-center min-h-[28px]">
-            <span className="text-xs text-muted-foreground">Status</span>
-            <TrackedEntityStatus status={entity?.status} />
-          </HStack>
-          <HStack className="w-full justify-between items-center min-h-[28px]">
-            <span className="text-xs text-muted-foreground">Quantity</span>
-            <span className="text-sm font-medium tabular-nums">
-              {entity?.quantity}
-            </span>
-          </HStack>
-          {entity?.readableId && (
-            <HStack className="w-full justify-between items-center min-h-[28px]">
-              <span className="text-xs text-muted-foreground">
-                Serial / Batch
-              </span>
-              <span className="text-sm font-mono">{entity.readableId}</span>
-            </HStack>
-          )}
-        </VStack>
-      )}
+        {producedBy.length > 0 && (
+          <Section title="Produced by" count={producedBy.length}>
+            <ul role="list" className="divide-y divide-border/30">
+              {producedBy.map((item) => (
+                <RelatedActivityRow
+                  key={item.activity.id}
+                  item={item}
+                  onSelect={onSelect}
+                />
+              ))}
+            </ul>
+          </Section>
+        )}
+        {consumedBy.length > 0 && (
+          <Section title="Consumed by" count={consumedBy.length}>
+            <ul role="list" className="divide-y divide-border/30">
+              {consumedBy.map((item) => (
+                <RelatedActivityRow
+                  key={item.activity.id}
+                  item={item}
+                  onSelect={onSelect}
+                />
+              ))}
+            </ul>
+          </Section>
+        )}
+        {inputs.length > 0 && (
+          <Section title="Inputs" count={inputs.length}>
+            <ul role="list" className="divide-y divide-border/30">
+              {inputs.map((item) => (
+                <RelatedEntityRow
+                  key={item.entity.id}
+                  item={item}
+                  onSelect={onSelect}
+                />
+              ))}
+            </ul>
+          </Section>
+        )}
+        {outputs.length > 0 && (
+          <Section title="Outputs" count={outputs.length}>
+            <ul role="list" className="divide-y divide-border/30">
+              {outputs.map((item) => (
+                <RelatedEntityRow
+                  key={item.entity.id}
+                  item={item}
+                  onSelect={onSelect}
+                />
+              ))}
+            </ul>
+          </Section>
+        )}
 
-      {sourceDoc && (
-        <VStack spacing={2}>
-          <SectionHeader>Source Document</SectionHeader>
-          <SourceDocCard
-            sourceDoc={sourceDoc}
-            sourceDocId={sourceDocId ?? null}
-            sourceDocReadableId={sourceDocReadableId ?? null}
-            href={sourceHref}
-          />
-        </VStack>
-      )}
+        {containmentsForEntity.length > 0 && (
+          <Section title="Containments" count={containmentsForEntity.length}>
+            <ContainmentList items={containmentsForEntity} />
+          </Section>
+        )}
 
-      {producedBy.length > 0 && (
-        <RelatedActivitySection
-          title="Produced by"
-          items={producedBy}
-          onSelect={onSelect}
-        />
-      )}
-      {consumedBy.length > 0 && (
-        <RelatedActivitySection
-          title="Consumed by"
-          items={consumedBy}
-          onSelect={onSelect}
-        />
-      )}
-      {inputs.length > 0 && (
-        <RelatedEntitySection
-          title="Inputs"
-          items={inputs}
-          onSelect={onSelect}
-        />
-      )}
-      {outputs.length > 0 && (
-        <RelatedEntitySection
-          title="Outputs"
-          items={outputs}
-          onSelect={onSelect}
-        />
-      )}
+        {stepRecordsForActivity.length > 0 && (
+          <Section title="Step records" count={stepRecordsForActivity.length}>
+            <StepRecordsList
+              records={stepRecordsForActivity}
+              jobId={
+                (activity?.attributes as Record<string, any> | null)?.Job ??
+                null
+              }
+            />
+          </Section>
+        )}
 
-      {hasRenderedAttributes(selectedNodeAttributes) && (
-        <VStack spacing={3}>
-          <SectionHeader>Attributes</SectionHeader>
-          <AttributeList attrs={selectedNodeAttributes} />
-        </VStack>
-      )}
-    </VStack>
+        {hasRenderedAttributes(selectedNodeAttributes) && (
+          <Section title="Attributes">
+            <AttributeList attrs={selectedNodeAttributes} />
+          </Section>
+        )}
+      </div>
+    </aside>
   );
 }
 
 type RelatedActivity = { activity: Activity; quantity: number };
 type RelatedEntity = { entity: TrackedEntity; quantity: number };
 
-function SectionHeader({ children }: { children: React.ReactNode }) {
+function Section({
+  title,
+  count,
+  children
+}: {
+  title?: string;
+  count?: number;
+  children: React.ReactNode;
+}) {
   return (
-    <span className="block text-[10px] uppercase tracking-wider text-muted-foreground font-semibold pb-1 border-b border-border/40">
+    <section className="px-3 py-3">
+      {title && (
+        <header className="flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+          <span>{title}</span>
+          {typeof count === "number" && (
+            <span className="tabular-nums text-muted-foreground/60">
+              {count}
+            </span>
+          )}
+        </header>
+      )}
       {children}
-    </span>
+    </section>
+  );
+}
+
+function PropRow({
+  label,
+  children
+}: {
+  label: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="grid grid-cols-[8rem_1fr] items-center gap-3 py-1.5 first:pt-0 last:pb-0">
+      <dt className="text-xs text-muted-foreground truncate">{label}</dt>
+      <dd className="text-right min-w-0 truncate">{children}</dd>
+    </div>
   );
 }
 
@@ -315,146 +401,113 @@ function ActivityTypeChip({ type }: { type: string | null | undefined }) {
   const meta = ACTIVITY_KIND_META[kind];
   const Icon = meta.icon;
   return (
-    <HStack spacing={2} className="items-center">
+    <div className="flex items-center gap-1.5 min-w-0">
       <span
-        className="w-4 h-4 rounded-sm flex items-center justify-center"
+        className="size-3.5 rounded-sm flex items-center justify-center shrink-0"
         style={{ background: meta.color }}
       >
-        <Icon className="w-2.5 h-2.5 text-white" />
+        <Icon className="size-2.5 text-white" />
       </span>
-      <span className="text-sm">{type ?? meta.label}</span>
-    </HStack>
+      <span className="text-xs truncate">{type ?? meta.label}</span>
+    </div>
   );
 }
 
-function SourceDocCard({
-  sourceDoc,
-  sourceDocId,
-  sourceDocReadableId,
+function SourceDocValue({
+  readableId,
+  fallbackId,
   href
 }: {
-  sourceDoc: string;
-  sourceDocId: string | null;
-  sourceDocReadableId: string | null;
+  readableId: string | null | undefined;
+  fallbackId: string | null | undefined;
   href: string | null;
 }) {
-  const inner = (
-    <HStack className="w-full items-center justify-between rounded-md border border-border bg-card px-3 py-2 text-sm">
-      <VStack spacing={0}>
-        <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-          {sourceDoc}
-        </span>
-        <span className="font-medium">
-          {sourceDocReadableId ?? sourceDocId ?? "—"}
-        </span>
-      </VStack>
-      {href && (
-        <LuExternalLink className="w-4 h-4 text-muted-foreground shrink-0" />
-      )}
-    </HStack>
-  );
-  if (!href) return inner;
+  const label = readableId ?? fallbackId ?? "—";
+  if (href) {
+    return (
+      <Link
+        to={href}
+        className="inline-flex items-center gap-1 text-sm font-medium hover:underline"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <span className="truncate">{label}</span>
+        <LuExternalLink className="size-3 text-muted-foreground shrink-0" />
+      </Link>
+    );
+  }
+  return <span className="text-sm font-medium truncate">{label}</span>;
+}
+
+function RelatedActivityRow({
+  item,
+  onSelect
+}: {
+  item: RelatedActivity;
+  onSelect?: (id: string) => void;
+}) {
+  const kind = activityKindFor(item.activity.type);
+  const meta = ACTIVITY_KIND_META[kind];
+  const Icon = meta.icon;
+  const label = activityHeadline(item.activity, 8);
   return (
-    <Link
-      to={href}
-      className="block hover:opacity-80 transition-opacity"
-      onClick={(e) => e.stopPropagation()}
-    >
-      {inner}
-    </Link>
+    <li>
+      <button
+        type="button"
+        onClick={() => onSelect?.(item.activity.id)}
+        className={cn(
+          "group w-full flex items-center justify-between gap-2 px-2 py-1.5 text-left rounded-md",
+          "hover:bg-accent/50 transition-colors"
+        )}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <span
+            className="size-3.5 rounded-sm flex items-center justify-center shrink-0"
+            style={{ background: meta.color }}
+          >
+            <Icon className="size-2.5 text-white" />
+          </span>
+          <span className="text-sm truncate">{label}</span>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          <span className="text-xs tabular-nums text-muted-foreground">
+            {item.quantity}
+          </span>
+          <LuChevronRight className="size-3 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
+        </div>
+      </button>
+    </li>
   );
 }
 
-function RelatedActivitySection({
-  title,
-  items,
+function RelatedEntityRow({
+  item,
   onSelect
 }: {
-  title: string;
-  items: RelatedActivity[];
+  item: RelatedEntity;
   onSelect?: (id: string) => void;
 }) {
+  const label = entityHeadline(item.entity, 8);
   return (
-    <VStack spacing={1}>
-      <SectionHeader>{title}</SectionHeader>
-      <VStack spacing={1}>
-        {items.map((item) => {
-          const kind = activityKindFor(item.activity.type);
-          const meta = ACTIVITY_KIND_META[kind];
-          const Icon = meta.icon;
-          const label = activityHeadline(item.activity, 8);
-          return (
-            <button
-              key={item.activity.id}
-              type="button"
-              onClick={() => onSelect?.(item.activity.id)}
-              className={cn(
-                "group w-full flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left",
-                "border border-transparent bg-card hover:bg-accent/40 hover:border-border transition-colors"
-              )}
-            >
-              <HStack spacing={2} className="items-center min-w-0">
-                <span
-                  className="w-4 h-4 rounded-sm flex items-center justify-center shrink-0"
-                  style={{ background: meta.color }}
-                >
-                  <Icon className="w-2.5 h-2.5 text-white" />
-                </span>
-                <span className="text-sm truncate">{label}</span>
-              </HStack>
-              <HStack spacing={1} className="items-center shrink-0">
-                <span className="text-xs tabular-nums text-muted-foreground">
-                  {item.quantity}
-                </span>
-                <LuChevronRight className="w-3 h-3 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
-              </HStack>
-            </button>
-          );
-        })}
-      </VStack>
-    </VStack>
-  );
-}
-
-function RelatedEntitySection({
-  title,
-  items,
-  onSelect
-}: {
-  title: string;
-  items: RelatedEntity[];
-  onSelect?: (id: string) => void;
-}) {
-  return (
-    <VStack spacing={1}>
-      <SectionHeader>{title}</SectionHeader>
-      <VStack spacing={1}>
-        {items.map((item) => {
-          const label = entityHeadline(item.entity, 8);
-          return (
-            <button
-              key={item.entity.id}
-              type="button"
-              onClick={() => onSelect?.(item.entity.id)}
-              className={cn(
-                "group w-full flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left",
-                "border border-transparent bg-card hover:bg-accent/40 hover:border-border transition-colors"
-              )}
-            >
-              <HStack spacing={2} className="items-center min-w-0">
-                <TrackedEntityStatus status={item.entity.status} />
-                <span className="text-sm truncate">{label}</span>
-              </HStack>
-              <HStack spacing={1} className="items-center shrink-0">
-                <span className="text-xs tabular-nums text-muted-foreground">
-                  {item.quantity}
-                </span>
-                <LuChevronRight className="w-3 h-3 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
-              </HStack>
-            </button>
-          );
-        })}
-      </VStack>
-    </VStack>
+    <li>
+      <button
+        type="button"
+        onClick={() => onSelect?.(item.entity.id)}
+        className={cn(
+          "group w-full flex items-center justify-between gap-2 px-2 py-1.5 text-left rounded-md",
+          "hover:bg-accent/50 transition-colors"
+        )}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <TrackedEntityStatus status={item.entity.status} />
+          <span className="text-sm truncate">{label}</span>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          <span className="text-xs tabular-nums text-muted-foreground">
+            {item.quantity}
+          </span>
+          <LuChevronRight className="size-3 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
+        </div>
+      </button>
+    </li>
   );
 }

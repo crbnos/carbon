@@ -1492,7 +1492,7 @@ msgstr "戻る"
 msgid "Back to home"
 msgstr "ホームに戻る"
 
-#: apps/erp/app/routes/x+/traceability+/graph.tsx:161
+#: apps/erp/app/routes/x+/traceability+/graph.tsx:226
 msgid "Back to traceability"
 msgstr "トレーサビリティに戻る"
 
@@ -2105,10 +2105,6 @@ msgstr "中国語"
 msgid "Choose another file"
 msgstr "別のファイルを選択"
 
-#: apps/erp/app/modules/sales/ui/Pricing/PriceListScopeEmpty.tsx:35
-msgid "Choose scope to continue"
-msgstr "スコープを選択して続行"
-
 #: apps/erp/app/modules/account/ui/Profile/ProfileLanguageForm.tsx:53
 msgid "Choose your preferred language for the interface."
 msgstr "インターフェースの言語を選択してください。"
@@ -2692,7 +2688,7 @@ msgstr "ドキュメント名をコピー"
 msgid "Copy document unique identifier"
 msgstr "ドキュメントの一意の識別子をコピー"
 
-#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:203
+#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:216
 msgid "Copy ID"
 msgstr ""
 
@@ -2708,7 +2704,7 @@ msgstr "問題の一意の識別子をコピー"
 msgid "Copy Job number"
 msgstr "ジョブ番号をコピー"
 
-#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:189
+#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:202
 msgid "Copy link"
 msgstr ""
 
@@ -5047,7 +5043,7 @@ msgid "Entered At Receipt"
 msgstr "受領時に入力"
 
 #: apps/erp/app/modules/settings/ui/AuditLog/AuditLogTable.tsx:207
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:146
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:174
 msgid "Entities"
 msgstr "エンティティ"
 
@@ -8708,7 +8704,7 @@ msgstr "問題タイプが設定されていません"
 msgid "No logo uploaded"
 msgstr "ロゴがアップロードされていません"
 
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:157
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:187
 msgid "No matches"
 msgstr ""
 
@@ -9577,13 +9573,13 @@ msgstr "ピック"
 msgid "Pick a column to sort by"
 msgstr "ソート対象の列を選択"
 
+#: apps/erp/app/modules/sales/ui/Pricing/PriceListScopeEmpty.tsx:23
+msgid "Pick a customer or customer type to view their pricing."
+msgstr ""
+
 #: apps/erp/app/modules/inventory/ui/Traceability/EditExpiryModal.tsx:78
 msgid "Pick a date or leave blank to clear it."
 msgstr "日付を選択するか、空白のままにしてクリアしてください。"
-
-#: apps/erp/app/modules/sales/ui/Pricing/PriceListScopeEmpty.tsx:27
-msgid "Pick a scope to view resolved prices and create price overrides."
-msgstr "スコープを選択して、解決済みの価格を表示し、価格オーバーライドを作成します。"
 
 #: apps/erp/app/modules/inventory/ui/StockTransfers/StockTransferHeader.tsx:142
 msgid "Pick List"
@@ -9842,6 +9838,7 @@ msgstr "価格ブレーク"
 msgid "Price List"
 msgstr "価格リスト"
 
+#: apps/erp/app/modules/sales/ui/Pricing/PriceListScopeEmpty.tsx:22
 #: apps/erp/app/modules/sales/ui/useSalesSubmodules.tsx:73
 msgid "Price Lists"
 msgstr "価格リスト"
@@ -10648,7 +10645,7 @@ msgstr "受取場所"
 
 #: apps/erp/app/components/Layout/Topbar/Search.tsx:223
 #: apps/erp/app/modules/documents/ui/useDocumentsSubmodules.tsx:28
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:162
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:193
 msgid "Recent"
 msgstr "最近"
 
@@ -11590,7 +11587,7 @@ msgstr "ビューを保存"
 msgid "Scan"
 msgstr "スキャン"
 
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:126
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:153
 msgid "Scan a label or search by ID, serial number, or batch number."
 msgstr ""
 
@@ -11598,7 +11595,7 @@ msgstr ""
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "スキャンするか、追跡対象エンティティID、シリアル番号、またはバッチ番号を入力してください"
 
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:135
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:161
 msgid "Scan or search..."
 msgstr ""
 
@@ -11703,6 +11700,10 @@ msgstr "Linear イシュータイトルで検索..."
 msgid "Search customers and types..."
 msgstr "顧客とタイプを検索..."
 
+#: apps/erp/app/modules/sales/ui/Pricing/PriceListScopeEmpty.tsx:31
+msgid "Search customers or types..."
+msgstr ""
+
 #: apps/erp/app/modules/resources/ui/Training/TrainingAssignmentForm.tsx:206
 #: apps/erp/app/routes/x+/resources+/assignments.$trainingId.tsx:263
 msgid "Search employees..."
@@ -11760,10 +11761,6 @@ msgstr "ウェブを検索"
 msgid "Search..."
 msgstr "検索..."
 
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:157
-msgid "Searching..."
-msgstr ""
-
 #: apps/erp/app/components/Form/StandardFactor.tsx:36
 msgid "Seconds/Piece"
 msgstr "秒/個"
@@ -11785,10 +11782,6 @@ msgstr "選択"
 #: apps/erp/app/modules/quality/ui/Issue/Linear/CreateIssue.tsx:85
 msgid "Select a assignee"
 msgstr "担当者を選択"
-
-#: apps/erp/app/modules/sales/ui/Pricing/PriceListScopeEmpty.tsx:24
-msgid "Select a customer or customer type"
-msgstr "顧客または顧客タイプを選択"
 
 #: apps/erp/app/modules/settings/ui/Approvals/ApprovalRuleForm.tsx:127
 msgid "Select a default approver"
@@ -12637,10 +12630,6 @@ msgstr "税年度の開始"
 #: apps/erp/app/modules/resources/ui/Maintenance/MaintenanceDispatchProperties.tsx:639
 msgid "Start Time"
 msgstr "開始時刻"
-
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:175
-msgid "Start typing or scan a label to begin tracing"
-msgstr ""
 
 #: apps/erp/app/routes/x+/resources+/assignments.$trainingId.tsx:161
 msgid "Started"
@@ -13745,9 +13734,9 @@ msgid "Totaling"
 msgstr "合計"
 
 #: apps/erp/app/modules/inventory/ui/useInventorySubmodules.tsx:76
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:24
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:123
-#: apps/erp/app/routes/x+/traceability+/graph.tsx:20
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:25
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:152
+#: apps/erp/app/routes/x+/traceability+/graph.tsx:26
 msgid "Traceability"
 msgstr "トレーサビリティ"
 

@@ -8,11 +8,17 @@ import type { LoaderFunctionArgs } from "react-router";
 import { Link, redirect, useLoaderData, useNavigation } from "react-router";
 import { Empty } from "~/components";
 import type { Activity, TrackedEntity } from "~/modules/inventory";
-import { fetchLineageSubgraph } from "~/modules/inventory/lineage.server";
+import {
+  fetchContainmentsForEntities,
+  fetchJobScopedLineage,
+  fetchJobStepRecords,
+  fetchLineageSubgraph
+} from "~/modules/inventory/lineage.server";
 import { clampDepth } from "~/modules/inventory/ui/Traceability/constants";
 import { useTraceabilityStore } from "~/modules/inventory/ui/Traceability/store";
 import { TraceabilityGraph } from "~/modules/inventory/ui/Traceability/TraceabilityGraph";
 import { TraceabilitySidebar } from "~/modules/inventory/ui/Traceability/TraceabilitySidebar";
+import type { StepRecord } from "~/modules/inventory/ui/Traceability/utils";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -31,11 +37,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const trackedEntityId = url.searchParams.get("trackedEntityId");
   const trackedActivityId = url.searchParams.get("trackedActivityId");
+  const jobId = url.searchParams.get("jobId");
   const depthParam = url.searchParams.get("depth");
   const depth = clampDepth(Number(depthParam) || 1);
 
-  if (!trackedEntityId && !trackedActivityId) {
+  if (!trackedEntityId && !trackedActivityId && !jobId) {
     throw redirect(path.to.traceability);
+  }
+
+  if (jobId) {
+    const payload = await fetchJobScopedLineage(client, jobId, depth);
+    return {
+      ...payload,
+      stepRecords: payload.stepRecords ?? [],
+      containments: payload.containments ?? [],
+      rootId: jobId,
+      rootType: "job" as const,
+      depth
+    };
   }
 
   if (trackedEntityId) {
@@ -45,8 +64,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
       depth,
       "both"
     );
+    const [containments, stepRecords] = await Promise.all([
+      fetchContainmentsForEntities(
+        client,
+        payload.entities.map((e) => e.id)
+      ),
+      collectStepRecordsForActivities(client, payload.activities)
+    ]);
     return {
       ...payload,
+      stepRecords,
+      containments,
       rootId: trackedEntityId,
       rootType: "entity" as const,
       depth
@@ -105,26 +133,63 @@ export async function loader({ request }: LoaderFunctionArgs) {
     .select("*")
     .in("id", additionalActivityIds);
 
+  const allEntities = (directEntities?.data ?? []) as TrackedEntity[];
+  const allActivities = [
+    ...((activity?.data || []) as unknown as Activity[]),
+    ...((additionalActivities?.data || []) as unknown as Activity[])
+  ];
+
+  const [containments, stepRecords] = await Promise.all([
+    fetchContainmentsForEntities(
+      client,
+      allEntities.map((e) => e.id)
+    ),
+    collectStepRecordsForActivities(client, allActivities)
+  ]);
+
   return {
-    entities: (directEntities?.data ?? []) as TrackedEntity[],
+    entities: allEntities,
     inputs: [...(directInputs?.data || []), ...(additionalInputs?.data || [])],
     outputs: [
       ...(directOutputs?.data || []),
       ...(additionalOutputs?.data || [])
     ],
-    activities: [
-      ...((activity?.data || []) as unknown as Activity[]),
-      ...((additionalActivities?.data || []) as unknown as Activity[])
-    ],
+    activities: allActivities,
+    stepRecords,
+    containments,
     rootId: trackedActivityId!,
     rootType: "activity" as const,
     depth: 1
   };
 }
 
+async function collectStepRecordsForActivities(
+  client: Parameters<typeof fetchJobStepRecords>[0],
+  activities: Activity[]
+): Promise<StepRecord[]> {
+  const jobIds = new Set<string>();
+  for (const a of activities) {
+    const jobId = (a.attributes as Record<string, unknown> | null)?.Job;
+    if (typeof jobId === "string" && jobId) jobIds.add(jobId);
+  }
+  if (jobIds.size === 0) return [];
+  const results = await Promise.all(
+    Array.from(jobIds).map((jobId) => fetchJobStepRecords(client, jobId))
+  );
+  return results.flat();
+}
+
 export default function TraceabilityRoute() {
-  const { entities, inputs, outputs, activities, rootId, rootType } =
-    useLoaderData<typeof loader>();
+  const {
+    entities,
+    inputs,
+    outputs,
+    activities,
+    stepRecords,
+    containments,
+    rootId,
+    rootType
+  } = useLoaderData<typeof loader>();
 
   const isEmpty = useMemo(
     () => entities.length === 0 && activities.length === 0,
@@ -174,6 +239,8 @@ export default function TraceabilityRoute() {
                       activities={activities as Activity[]}
                       inputs={inputs}
                       outputs={outputs}
+                      stepRecords={stepRecords}
+                      containments={containments}
                       rootId={rootId}
                       rootType={rootType}
                       width={width}
@@ -195,7 +262,9 @@ export default function TraceabilityRoute() {
             entities: entities as TrackedEntity[],
             activities: activities as Activity[],
             inputs,
-            outputs
+            outputs,
+            stepRecords,
+            containments
           }}
           onSelect={(id) => setSelectedSingle(id)}
         />

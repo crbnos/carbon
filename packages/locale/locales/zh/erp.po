@@ -1492,7 +1492,7 @@ msgstr "返回"
 msgid "Back to home"
 msgstr "返回主页"
 
-#: apps/erp/app/routes/x+/traceability+/graph.tsx:161
+#: apps/erp/app/routes/x+/traceability+/graph.tsx:226
 msgid "Back to traceability"
 msgstr "返回可追溯性"
 
@@ -2105,10 +2105,6 @@ msgstr "中文"
 msgid "Choose another file"
 msgstr "选择另一个文件"
 
-#: apps/erp/app/modules/sales/ui/Pricing/PriceListScopeEmpty.tsx:35
-msgid "Choose scope to continue"
-msgstr "选择范围以继续"
-
 #: apps/erp/app/modules/account/ui/Profile/ProfileLanguageForm.tsx:53
 msgid "Choose your preferred language for the interface."
 msgstr "选择您偏好的界面语言。"
@@ -2692,7 +2688,7 @@ msgstr "复制文档名称"
 msgid "Copy document unique identifier"
 msgstr "复制文档唯一标识符"
 
-#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:203
+#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:216
 msgid "Copy ID"
 msgstr ""
 
@@ -2708,7 +2704,7 @@ msgstr "复制问题唯一标识符"
 msgid "Copy Job number"
 msgstr "复制工作单号"
 
-#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:189
+#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:202
 msgid "Copy link"
 msgstr ""
 
@@ -5047,7 +5043,7 @@ msgid "Entered At Receipt"
 msgstr "在收货时输入"
 
 #: apps/erp/app/modules/settings/ui/AuditLog/AuditLogTable.tsx:207
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:146
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:174
 msgid "Entities"
 msgstr "实体"
 
@@ -8708,7 +8704,7 @@ msgstr "未配置问题类型"
 msgid "No logo uploaded"
 msgstr "未上传徽标"
 
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:157
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:187
 msgid "No matches"
 msgstr ""
 
@@ -9577,13 +9573,13 @@ msgstr "拣选"
 msgid "Pick a column to sort by"
 msgstr "选择要排序的列"
 
+#: apps/erp/app/modules/sales/ui/Pricing/PriceListScopeEmpty.tsx:23
+msgid "Pick a customer or customer type to view their pricing."
+msgstr ""
+
 #: apps/erp/app/modules/inventory/ui/Traceability/EditExpiryModal.tsx:78
 msgid "Pick a date or leave blank to clear it."
 msgstr "选择日期或留空以清除。"
-
-#: apps/erp/app/modules/sales/ui/Pricing/PriceListScopeEmpty.tsx:27
-msgid "Pick a scope to view resolved prices and create price overrides."
-msgstr "选择范围以查看已解决的价格并创建价格覆盖。"
 
 #: apps/erp/app/modules/inventory/ui/StockTransfers/StockTransferHeader.tsx:142
 msgid "Pick List"
@@ -9842,6 +9838,7 @@ msgstr "价格阶梯"
 msgid "Price List"
 msgstr "价格表"
 
+#: apps/erp/app/modules/sales/ui/Pricing/PriceListScopeEmpty.tsx:22
 #: apps/erp/app/modules/sales/ui/useSalesSubmodules.tsx:73
 msgid "Price Lists"
 msgstr "价格表"
@@ -10648,7 +10645,7 @@ msgstr "收货地点"
 
 #: apps/erp/app/components/Layout/Topbar/Search.tsx:223
 #: apps/erp/app/modules/documents/ui/useDocumentsSubmodules.tsx:28
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:162
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:193
 msgid "Recent"
 msgstr "最近"
 
@@ -11590,7 +11587,7 @@ msgstr "保存视图"
 msgid "Scan"
 msgstr "扫描"
 
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:126
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:153
 msgid "Scan a label or search by ID, serial number, or batch number."
 msgstr ""
 
@@ -11598,7 +11595,7 @@ msgstr ""
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "扫描或输入跟踪实体ID、序列号或批次号"
 
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:135
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:161
 msgid "Scan or search..."
 msgstr ""
 
@@ -11703,6 +11700,10 @@ msgstr "按线性问题标题搜索..."
 msgid "Search customers and types..."
 msgstr "搜索客户和类型..."
 
+#: apps/erp/app/modules/sales/ui/Pricing/PriceListScopeEmpty.tsx:31
+msgid "Search customers or types..."
+msgstr ""
+
 #: apps/erp/app/modules/resources/ui/Training/TrainingAssignmentForm.tsx:206
 #: apps/erp/app/routes/x+/resources+/assignments.$trainingId.tsx:263
 msgid "Search employees..."
@@ -11760,10 +11761,6 @@ msgstr "搜索网络"
 msgid "Search..."
 msgstr "搜索..."
 
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:157
-msgid "Searching..."
-msgstr ""
-
 #: apps/erp/app/components/Form/StandardFactor.tsx:36
 msgid "Seconds/Piece"
 msgstr "秒/件"
@@ -11785,10 +11782,6 @@ msgstr "选择"
 #: apps/erp/app/modules/quality/ui/Issue/Linear/CreateIssue.tsx:85
 msgid "Select a assignee"
 msgstr "选择受理人"
-
-#: apps/erp/app/modules/sales/ui/Pricing/PriceListScopeEmpty.tsx:24
-msgid "Select a customer or customer type"
-msgstr "选择客户或客户类型"
 
 #: apps/erp/app/modules/settings/ui/Approvals/ApprovalRuleForm.tsx:127
 msgid "Select a default approver"
@@ -12637,10 +12630,6 @@ msgstr "税年开始"
 #: apps/erp/app/modules/resources/ui/Maintenance/MaintenanceDispatchProperties.tsx:639
 msgid "Start Time"
 msgstr "开始时间"
-
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:175
-msgid "Start typing or scan a label to begin tracing"
-msgstr ""
 
 #: apps/erp/app/routes/x+/resources+/assignments.$trainingId.tsx:161
 msgid "Started"
@@ -13745,9 +13734,9 @@ msgid "Totaling"
 msgstr "合计"
 
 #: apps/erp/app/modules/inventory/ui/useInventorySubmodules.tsx:76
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:24
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:123
-#: apps/erp/app/routes/x+/traceability+/graph.tsx:20
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:25
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:152
+#: apps/erp/app/routes/x+/traceability+/graph.tsx:26
 msgid "Traceability"
 msgstr "可追溯性"
 

@@ -1,3 +1,4 @@
+import { useCarbon } from "@carbon/auth";
 import {
   Badge,
   Command,
@@ -6,15 +7,15 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-  Heading,
-  HStack,
-  useMount
+  HStack
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useRef, useState } from "react";
-import { LuBarcode, LuQrCode, LuRoute } from "react-icons/lu";
+import { LuQrCode, LuRoute } from "react-icons/lu";
 import { useFetcher, useNavigate } from "react-router";
+import { SearchLandingPage } from "~/components";
+import { useUser } from "~/hooks";
 import { TRACE_API } from "~/modules/inventory/ui/Traceability/constants";
 import { entityStatusMeta } from "~/modules/inventory/ui/Traceability/metadata";
 import type { Handle } from "~/utils/handle";
@@ -26,7 +27,11 @@ export const handle: Handle = {
   module: "inventory"
 };
 
-const RECENT_SEARCHES_KEY = "traceability-searches";
+const RECENT_SEARCHES_PREFIX = "traceability-searches";
+
+function recentSearchesKey(companyId: string): string {
+  return `${RECENT_SEARCHES_PREFIX}:${companyId}`;
+}
 
 type EntityRow = {
   id: string;
@@ -49,21 +54,57 @@ export default function TraceabilityRoute() {
   const { t } = useLingui();
   const navigate = useNavigate();
   const fetcher = useFetcher<SearchResult>();
+  const { carbon } = useCarbon();
+  const { company } = useUser();
+  const storageKey = recentSearchesKey(company.id);
   const [query, setQuery] = useState("");
   const [recentSearches, setRecentSearches] = useState<EntityRow[]>([]);
   const debounceRef = useRef<number | null>(null);
 
-  useMount(() => {
-    const stored = localStorage.getItem(RECENT_SEARCHES_KEY);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) setRecentSearches(parsed);
-      } catch {
-        // ignore parse failures
-      }
+  useEffect(() => {
+    let cancelled = false;
+    const stored = localStorage.getItem(storageKey);
+    if (!stored) {
+      setRecentSearches([]);
+      return;
     }
-  });
+    let parsed: EntityRow[] = [];
+    try {
+      const raw = JSON.parse(stored);
+      if (Array.isArray(raw)) parsed = raw;
+    } catch {
+      localStorage.removeItem(storageKey);
+      return;
+    }
+    if (parsed.length === 0 || !carbon) {
+      setRecentSearches(parsed);
+      return;
+    }
+    // Show cached entries immediately, then refresh from server and drop stale.
+    setRecentSearches(parsed);
+    const ids = parsed.map((p) => p.id);
+    carbon
+      .from("trackedEntity")
+      .select(
+        "id, quantity, status, sourceDocument, sourceDocumentId, sourceDocumentReadableId, readableId, attributes, createdAt"
+      )
+      .eq("companyId", company.id)
+      .in("id", ids)
+      .then(({ data }) => {
+        if (cancelled) return;
+        const rows = (data ?? []) as unknown as EntityRow[];
+        const byId = new Map(rows.map((r) => [r.id, r]));
+        const next = parsed
+          .map((p) => byId.get(p.id))
+          .filter((e): e is EntityRow => e !== undefined);
+        setRecentSearches(next);
+        if (next.length === 0) localStorage.removeItem(storageKey);
+        else localStorage.setItem(storageKey, JSON.stringify(next));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [storageKey, carbon, company.id]);
 
   useEffect(() => {
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
@@ -89,7 +130,7 @@ export default function TraceabilityRoute() {
       ...recentSearches.filter((e) => e.id !== entity.id)
     ].slice(0, 5);
     setRecentSearches(next);
-    localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(next));
+    localStorage.setItem(storageKey, JSON.stringify(next));
   };
 
   const openEntity = (entity: EntityRow) => {
@@ -106,81 +147,64 @@ export default function TraceabilityRoute() {
   };
 
   return (
-    <div
-      className="relative flex w-full h-full flex-1 items-center justify-center bg-card overflow-hidden"
-      style={{
-        backgroundImage:
-          "radial-gradient(circle at 1px 1px, hsl(var(--muted-foreground) / 0.12) 1px, transparent 0)"
-      }}
+    <SearchLandingPage
+      icon={LuRoute}
+      heading={t`Traceability`}
+      description={t`Scan a label or search by ID, serial number, or batch number.`}
     >
-      <div className="relative flex flex-col items-center w-full max-w-md px-6 gap-8">
-        <div className="flex flex-col items-center gap-4">
-          <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-foreground/5 border border-border text-foreground">
-            <LuRoute className="w-6 h-6" />
-          </div>
-          <div className="flex flex-col items-center gap-2 text-center">
-            <Heading size="h1" className="tracking-tight">
-              {t`Traceability`}
-            </Heading>
-            <p className="text-sm text-muted-foreground max-w-[42ch]">
-              {t`Scan a label or search by ID, serial number, or batch number.`}
-            </p>
-          </div>
+      <Command
+        shouldFilter={false}
+        className="rounded-md border border-border bg-background overflow-hidden"
+      >
+        <div className="relative">
+          <CommandInput
+            placeholder={t`Scan or search...`}
+            value={query}
+            onValueChange={setQuery}
+            className="h-12 text-base pr-12"
+            autoFocus
+          />
+          <LuQrCode className="absolute right-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground pointer-events-none" />
         </div>
-
-        <div className="w-full rounded-xl border border-border bg-background shadow-md overflow-hidden">
-          <Command shouldFilter={false} className="bg-background">
-            <div className="relative">
-              <CommandInput
-                placeholder={t`Scan or search...`}
-                value={query}
-                onValueChange={setQuery}
-                className="h-12 text-base pr-12"
-              />
-              <LuQrCode className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
-            </div>
-            <CommandList className="h-[320px] border-t border-border">
-              {showSearchResults ? (
-                <>
-                  {entities.length > 0 ? (
-                    <CommandGroup heading={t`Entities`}>
-                      {entities.map((entity) => (
-                        <EntityRowItem
-                          key={entity.id}
-                          entity={entity}
-                          onSelect={() => openEntity(entity)}
-                        />
-                      ))}
-                    </CommandGroup>
-                  ) : (
-                    <CommandEmpty className="py-12 text-center text-sm text-muted-foreground">
-                      {isLoading ? t`Searching...` : t`No matches`}
-                    </CommandEmpty>
-                  )}
-                </>
-              ) : recentSearches.length > 0 ? (
-                <CommandGroup heading={t`Recent`}>
-                  {recentSearches.map((entity) => (
+        <CommandList className="h-(--cmdk-list-height) max-h-[400px] min-h-0 border-t border-border transition-[height] duration-200 ease-out [&[hidden]]:hidden">
+          {showSearchResults ? (
+            <>
+              {entities.length > 0 ? (
+                <CommandGroup
+                  heading={t`Entities`}
+                  className="[&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-1.5"
+                >
+                  {entities.map((entity) => (
                     <EntityRowItem
                       key={entity.id}
                       entity={entity}
-                      onSelect={() => openId(entity.id)}
+                      onSelect={() => openEntity(entity)}
                     />
                   ))}
                 </CommandGroup>
               ) : (
-                <div className="flex flex-col items-center justify-center h-full gap-2 px-6 text-center">
-                  <LuBarcode className="w-6 h-6 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">
-                    {t`Start typing or scan a label to begin tracing`}
-                  </p>
-                </div>
+                <CommandEmpty className="text-center text-sm text-muted-foreground py-3">
+                  {isLoading ? <SearchSkeleton /> : <Trans>No matches</Trans>}
+                </CommandEmpty>
               )}
-            </CommandList>
-          </Command>
-        </div>
-      </div>
-    </div>
+            </>
+          ) : recentSearches.length > 0 ? (
+            <CommandGroup
+              heading={t`Recent`}
+              className="[&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-1.5"
+            >
+              {recentSearches.map((entity) => (
+                <EntityRowItem
+                  key={entity.id}
+                  entity={entity}
+                  onSelect={() => openId(entity.id)}
+                />
+              ))}
+            </CommandGroup>
+          ) : null}
+        </CommandList>
+      </Command>
+    </SearchLandingPage>
   );
 }
 
@@ -200,33 +224,36 @@ function EntityRowItem({
     ? `Serial · ${serial}`
     : batch
       ? `Batch · ${batch}`
-      : (entity.sourceDocument ?? "—");
+      : (entity.sourceDocument ?? entity.id.slice(0, 12));
 
   return (
     <CommandItem
       value={`${headline} ${entity.id} ${serial ?? ""} ${batch ?? ""} ${entity.sourceDocumentReadableId ?? ""} ${entity.readableId ?? ""}`}
       onSelect={onSelect}
-      className="!py-2.5 !px-3 gap-3 cursor-pointer"
+      className="!py-2.5 !px-3 gap-3 cursor-pointer rounded-lg"
     >
       <span
-        className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+        className="size-9 rounded-lg flex items-center justify-center shrink-0 ring-1 ring-foreground/10 shadow-sm"
         style={{ background: meta.color }}
       >
-        <Icon className="w-4 h-4 text-white" />
+        <Icon className="size-4 text-white drop-shadow-sm" />
       </span>
-      <div className="flex flex-col flex-1 min-w-0">
-        <span className="text-sm font-medium truncate">{headline}</span>
-        <span className="text-[11px] text-muted-foreground truncate">
+      <div className="flex flex-col flex-1 min-w-0 gap-0.5">
+        <p className="text-sm font-medium truncate leading-5">{headline}</p>
+        <p className="text-[11px] text-muted-foreground truncate leading-4">
           {trackingHint}
-        </span>
+        </p>
       </div>
       <HStack spacing={2} className="items-center shrink-0">
         {entity.status && (
-          <Badge variant="secondary" className="text-[10px]">
+          <Badge
+            variant="secondary"
+            className="text-[10px] uppercase tracking-wide font-semibold px-1.5 py-0.5"
+          >
             {entity.status}
           </Badge>
         )}
-        <span className="text-xs tabular-nums text-muted-foreground w-10 text-right">
+        <span className="text-xs tabular-nums font-medium text-foreground w-10 text-right">
           {entity.quantity}
         </span>
       </HStack>
@@ -241,5 +268,39 @@ function headlineFor(entity: EntityRow): string {
     entity.sourceDocumentReadableId ??
     entity.readableId ??
     entity.id.slice(0, 12)
+  );
+}
+
+function SearchSkeleton() {
+  return (
+    <div role="status" aria-live="polite" aria-busy="true" className="py-2">
+      <span className="sr-only">Searching</span>
+      <div className="px-3 pt-1 pb-1.5">
+        <div className="h-2.5 w-16 rounded-full bg-foreground/10 animate-pulse" />
+      </div>
+      {[0, 1, 2, 3].map((i) => (
+        <div
+          key={i}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg [animation-delay:var(--d)]"
+          style={{ ["--d" as any]: `${i * 90}ms` }}
+        >
+          <div className="size-9 rounded-lg shrink-0 bg-foreground/10 animate-pulse" />
+          <div className="flex flex-col flex-1 min-w-0 gap-1.5">
+            <div
+              className="h-3 rounded-full bg-foreground/10 animate-pulse"
+              style={{ width: `${60 + ((i * 13) % 30)}%` }}
+            />
+            <div
+              className="h-2.5 rounded-full bg-foreground/[0.07] animate-pulse"
+              style={{ width: `${30 + ((i * 17) % 25)}%` }}
+            />
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="h-4 w-14 rounded-md bg-foreground/10 animate-pulse" />
+            <div className="h-3 w-6 rounded-full bg-foreground/10 animate-pulse" />
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }

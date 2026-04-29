@@ -182,8 +182,8 @@ export function TraceabilityTable({
   }, [selectedId, rootId, downstream]);
 
   return (
-    <div className="w-full h-full overflow-auto p-2">
-      <div className="rounded-md border border-border bg-card">
+    <div className="w-full h-full overflow-auto py-2">
+      <div className="bg-card border-y border-border/40">
         {rows.map((row, i) => (
           <TreeRow
             key={`${row.id}:${i}`}
@@ -239,7 +239,7 @@ function TreeRow({
         type="button"
         onClick={onSelect}
         className={cn(
-          "group w-full flex items-center gap-2 px-2 py-1.5 text-left",
+          "group w-full flex items-center gap-2 px-4 text-left h-12",
           "border-b border-border/40 last:border-b-0 transition-colors",
           isSelected ? "bg-accent/40" : "hover:bg-accent/20",
           row.isReference && "text-muted-foreground italic"
@@ -305,7 +305,7 @@ function TreeRow({
       type="button"
       onClick={onSelect}
       className={cn(
-        "group w-full flex items-center gap-2 px-2 py-1.5 text-left",
+        "group w-full flex items-center gap-2 px-4 text-left h-12",
         "border-b border-border/40 last:border-b-0 transition-colors",
         isSelected ? "bg-accent/40" : "hover:bg-accent/20",
         row.isReference && "text-muted-foreground italic"
@@ -365,7 +365,7 @@ function Indent({ depth }: { depth: number }) {
   return (
     <div className="flex shrink-0">
       {Array.from({ length: depth }).map((_, i) => (
-        <div key={i} className="w-4 h-6 border-l border-border/50 ml-px" />
+        <div key={i} className="w-4 h-12 border-l border-border/50 ml-px" />
       ))}
     </div>
   );
@@ -394,9 +394,9 @@ function ToggleOrLeaf({
         aria-label={isCollapsed ? "Expand" : "Collapse"}
       >
         {isCollapsed ? (
-          <LuChevronRight className="w-3.5 h-3.5" />
+          <LuChevronRight className="size-4.5" />
         ) : (
-          <LuChevronDown className="w-3.5 h-3.5" />
+          <LuChevronDown className="size-4.5" />
         )}
       </button>
     );
