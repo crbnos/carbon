@@ -140,6 +140,17 @@ function TraceabilityGraphInner({
   const [isolate, setIsolate] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [layoutVersion, setLayoutVersion] = useState(0);
+  const [spacing, setSpacing] = useState<number>(() => {
+    if (typeof window === "undefined") return 2;
+    const stored = Number(localStorage.getItem("traceability:spacing:v1"));
+    return Number.isFinite(stored) && stored >= 1 && stored <= 5 ? stored : 2;
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("traceability:spacing:v1", String(spacing));
+    }
+  }, [spacing]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -193,7 +204,8 @@ function TraceabilityGraphInner({
     const { positioned, backEdges, edgePoints } = computeDagreLayout(
       flow.nodes,
       weightedEdges,
-      direction
+      direction,
+      spacing
     );
     const finalEdges: LineageEdge[] = weightedEdges.map((e) => ({
       ...e,
@@ -204,7 +216,7 @@ function TraceabilityGraphInner({
       }
     }));
     return { laidNodes: positioned, laidEdges: finalEdges };
-  }, [payload, direction, rejectIds, layoutVersion]);
+  }, [payload, direction, rejectIds, layoutVersion, spacing]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>(
     laidNodes as Node[]
@@ -426,7 +438,7 @@ function TraceabilityGraphInner({
     if (view !== "graph") return;
     if (nodes.length === 0) return;
     if (width === 0 || height === 0) return;
-    const sig = `${nodes.length}:${edges.length}:${rootId}:${direction}:${width}x${height}:v${layoutVersion}`;
+    const sig = `${nodes.length}:${edges.length}:${rootId}:${direction}:${width}x${height}`;
     if (lastFitSignatureRef.current === sig) return;
     const isFirstFit = lastFitSignatureRef.current === "";
     lastFitSignatureRef.current = sig;
@@ -448,7 +460,6 @@ function TraceabilityGraphInner({
     view,
     width,
     height,
-    layoutVersion,
     fitView
   ]);
 
@@ -486,6 +497,8 @@ function TraceabilityGraphInner({
           onIsolateChange={setIsolate}
           hasSelection={!!selectedId}
           onOpenSearch={() => setSearchOpen(true)}
+          spacing={spacing}
+          onSpacingChange={setSpacing}
         />
       </div>
     );
@@ -576,6 +589,8 @@ function TraceabilityGraphInner({
         hasSelection={!!selectedId}
         onRelayout={handleRelayout}
         onOpenSearch={() => setSearchOpen(true)}
+        spacing={spacing}
+        onSpacingChange={setSpacing}
       />
 
       <GraphLegend />

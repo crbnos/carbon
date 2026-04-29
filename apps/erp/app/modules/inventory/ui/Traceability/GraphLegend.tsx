@@ -96,6 +96,38 @@ export function GraphLegend() {
             <Section title="Entities" entries={ENTITY_ENTRIES} />
             <Section title="Activities" entries={ACTIVITY_ENTRIES} />
           </HStack>
+          <div className="border-t border-border p-4">
+            <span className="block text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">
+              Lines
+            </span>
+            <VStack spacing={2}>
+              <LineRow
+                label="Normal flow"
+                color="hsl(0 0% 55%)"
+                width={1.2}
+                opacity={0.6}
+              />
+              <LineRow
+                label="Selection path"
+                color="hsl(0 0% 92%)"
+                width={2.5}
+                opacity={1}
+              />
+              <LineRow
+                label="Reject branch"
+                color="hsl(0 72% 55%)"
+                width={1.5}
+                opacity={0.9}
+              />
+              <LineRow
+                label="Cycle back-edge"
+                color="hsl(0 0% 55%)"
+                width={1.2}
+                opacity={0.3}
+                dashed
+              />
+            </VStack>
+          </div>
         </PopoverContent>
       </Popover>
     </div>
@@ -104,7 +136,7 @@ export function GraphLegend() {
 
 function Section({ title, entries }: { title: string; entries: Entry[] }) {
   return (
-    <VStack spacing={2} className="p-4 flex-1 min-w-0">
+    <VStack spacing={3} className="p-4 flex-1 min-w-0">
       <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
         {title}
       </span>
@@ -112,6 +144,38 @@ function Section({ title, entries }: { title: string; entries: Entry[] }) {
         <Row key={entry.label} entry={entry} />
       ))}
     </VStack>
+  );
+}
+
+function LineRow({
+  label,
+  color,
+  width,
+  opacity,
+  dashed = false
+}: {
+  label: string;
+  color: string;
+  width: number;
+  opacity: number;
+  dashed?: boolean;
+}) {
+  return (
+    <HStack spacing={3} className="items-center">
+      <svg width={36} height={6} className="shrink-0">
+        <line
+          x1={0}
+          y1={3}
+          x2={36}
+          y2={3}
+          stroke={color}
+          strokeWidth={width}
+          strokeOpacity={opacity}
+          strokeDasharray={dashed ? "5 3" : undefined}
+        />
+      </svg>
+      <span className="text-[13px] text-foreground truncate">{label}</span>
+    </HStack>
   );
 }
 

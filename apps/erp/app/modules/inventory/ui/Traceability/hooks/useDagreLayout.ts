@@ -58,11 +58,22 @@ function detectBackEdges(
   return backEdgeIds;
 }
 
+const SPACING_TABLE: Record<
+  number,
+  { nodesep: number; ranksep: number; edgesep: number }
+> = {
+  1: { nodesep: 60, ranksep: 100, edgesep: 30 },
+  2: { nodesep: 100, ranksep: 160, edgesep: 50 },
+  3: { nodesep: 160, ranksep: 240, edgesep: 80 },
+  4: { nodesep: 240, ranksep: 340, edgesep: 130 },
+  5: { nodesep: 360, ranksep: 480, edgesep: 200 }
+};
+
 export function computeDagreLayout(
   nodes: LineageNode[],
   edges: LineageEdge[],
   direction: LayoutDirection,
-  spacing: "compact" | "exploded" = "compact"
+  spacingLevel: number = 2
 ): LayoutResult {
   if (nodes.length === 0) {
     return { positioned: nodes, backEdges: new Set(), edgePoints: new Map() };
@@ -71,15 +82,16 @@ export function computeDagreLayout(
   const backEdges = detectBackEdges(nodes, edges);
 
   const g = new dagre.graphlib.Graph({ multigraph: true });
-  const isExploded = spacing === "exploded";
+  const clamped = Math.min(Math.max(1, Math.round(spacingLevel)), 5);
+  const sp = SPACING_TABLE[clamped];
   g.setGraph({
     rankdir: direction,
-    nodesep: isExploded ? 400 : 80,
-    ranksep: isExploded ? 500 : 140,
-    edgesep: isExploded ? 250 : 40,
+    nodesep: sp.nodesep,
+    ranksep: sp.ranksep,
+    edgesep: sp.edgesep,
     marginx: 40,
     marginy: 40,
-    ranker: isExploded ? "network-simplex" : "tight-tree",
+    ranker: clamped >= 4 ? "network-simplex" : "tight-tree",
     acyclicer: "greedy"
   });
   g.setDefaultEdgeLabel(() => ({}));

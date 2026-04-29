@@ -46,7 +46,13 @@ function QuantityEdgeImpl({
     : isReject
       ? "hsl(0 72% 55%)"
       : "hsl(0 0% 45%)";
-  const baseOpacity = highlighted ? 1 : isReject ? 0.85 : 0.4;
+  const baseOpacity = highlighted
+    ? 1
+    : isReject
+      ? 0.85
+      : isBackEdge
+        ? 0.2
+        : 0.4;
 
   return (
     <>
@@ -77,7 +83,9 @@ function QuantityEdgeImpl({
                 ? "bg-background text-[hsl(0_72%_55%)] border-[hsl(0_72%_55%)]"
                 : highlighted
                   ? "bg-foreground text-background border-foreground"
-                  : "bg-background text-foreground border-border"
+                  : isBackEdge
+                    ? "bg-background text-muted-foreground/60 border-border/40"
+                    : "bg-background text-foreground border-border"
             }`}
           >
             {data.quantity}

@@ -1,9 +1,13 @@
 import {
   cn,
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
   HStack,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  VStack
 } from "@carbon/react";
 import { useReactFlow } from "@xyflow/react";
 import {
@@ -34,6 +38,8 @@ type Props = {
   hasSelection?: boolean;
   onRelayout?: () => void;
   onOpenSearch?: () => void;
+  spacing?: number;
+  onSpacingChange?: (next: number) => void;
 };
 
 const PANEL =
@@ -50,7 +56,9 @@ export function GraphToolbar({
   onIsolateChange,
   hasSelection = false,
   onRelayout,
-  onOpenSearch
+  onOpenSearch,
+  spacing = 2,
+  onSpacingChange
 }: Props) {
   return (
     <>
@@ -65,6 +73,8 @@ export function GraphToolbar({
         hasSelection={hasSelection}
         onRelayout={onRelayout}
         onOpenSearch={onOpenSearch}
+        spacing={spacing}
+        onSpacingChange={onSpacingChange}
         showGraphOnly={view === "graph"}
       />
     </>
@@ -110,6 +120,8 @@ function GraphControlsChip({
   hasSelection,
   onRelayout,
   onOpenSearch,
+  spacing,
+  onSpacingChange,
   showGraphOnly
 }: {
   depth: number;
@@ -121,6 +133,8 @@ function GraphControlsChip({
   hasSelection: boolean;
   onRelayout?: () => void;
   onOpenSearch?: () => void;
+  spacing: number;
+  onSpacingChange?: (next: number) => void;
   showGraphOnly: boolean;
 }) {
   const { fitView } = useReactFlow();
@@ -132,8 +146,8 @@ function GraphControlsChip({
     >
       {onOpenSearch && (
         <>
-          <Tooltip>
-            <TooltipTrigger asChild>
+          <HoverCard openDelay={150} closeDelay={50}>
+            <HoverCardTrigger asChild>
               <button
                 type="button"
                 onClick={onOpenSearch}
@@ -149,14 +163,20 @@ function GraphControlsChip({
                   /
                 </kbd>
               </button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">Search nodes</TooltipContent>
-          </Tooltip>
+            </HoverCardTrigger>
+            <HoverCardContent
+              side="top"
+              sideOffset={8}
+              className="!w-auto !p-2 text-xs"
+            >
+              Search nodes
+            </HoverCardContent>
+          </HoverCard>
           <div className="w-px h-5 bg-border mx-1" />
         </>
       )}
-      <Tooltip>
-        <TooltipTrigger asChild>
+      <HoverCard openDelay={150} closeDelay={50}>
+        <HoverCardTrigger asChild>
           <HStack spacing={0} className="rounded-md bg-muted/40 p-0.5">
             <button
               type="button"
@@ -195,19 +215,23 @@ function GraphControlsChip({
               <LuPlus className="w-3 h-3" />
             </button>
           </HStack>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">
+        </HoverCardTrigger>
+        <HoverCardContent
+          side="top"
+          sideOffset={8}
+          className="!w-auto !p-2 text-xs"
+        >
           Hops fetched per direction (1–5)
-        </TooltipContent>
-      </Tooltip>
+        </HoverCardContent>
+      </HoverCard>
 
       {showGraphOnly && (
         <>
           <div className="w-px h-5 bg-border mx-1" />
 
           <HStack spacing={0} className="rounded-md bg-muted/40 p-0.5">
-            <Tooltip>
-              <TooltipTrigger asChild>
+            <HoverCard openDelay={150} closeDelay={50}>
+              <HoverCardTrigger asChild>
                 <button
                   onClick={() => onDirectionChange("TB")}
                   className={cn(
@@ -222,11 +246,13 @@ function GraphControlsChip({
                 >
                   <LuMoveDown className="w-3.5 h-3.5" />
                 </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Top-down</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
+              </HoverCardTrigger>
+              <HoverCardContent side="top" sideOffset={8}>
+                Top-down
+              </HoverCardContent>
+            </HoverCard>
+            <HoverCard openDelay={150} closeDelay={50}>
+              <HoverCardTrigger asChild>
                 <button
                   onClick={() => onDirectionChange("LR")}
                   className={cn(
@@ -241,15 +267,17 @@ function GraphControlsChip({
                 >
                   <LuMoveRight className="w-3.5 h-3.5" />
                 </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Left-right</TooltipContent>
-            </Tooltip>
+              </HoverCardTrigger>
+              <HoverCardContent side="top" sideOffset={8}>
+                Left-right
+              </HoverCardContent>
+            </HoverCard>
           </HStack>
 
           <div className="w-px h-5 bg-border mx-1" />
 
-          <Tooltip>
-            <TooltipTrigger asChild>
+          <HoverCard openDelay={150} closeDelay={50}>
+            <HoverCardTrigger asChild>
               <button
                 type="button"
                 onClick={() => {
@@ -273,14 +301,18 @@ function GraphControlsChip({
               >
                 <LuFocus className="w-3.5 h-3.5" />
               </button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
+            </HoverCardTrigger>
+            <HoverCardContent
+              side="top"
+              sideOffset={8}
+              className="!w-auto !p-2 text-xs"
+            >
               {hasSelection ? "Isolate lineage" : "Select a node first"}
-            </TooltipContent>
-          </Tooltip>
+            </HoverCardContent>
+          </HoverCard>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
+          <HoverCard openDelay={150} closeDelay={50}>
+            <HoverCardTrigger asChild>
               <button
                 onClick={() => fitView({ duration: 300, padding: 0.2 })}
                 className={cn(
@@ -292,18 +324,21 @@ function GraphControlsChip({
               >
                 <LuMaximize className="w-3.5 h-3.5" />
               </button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">Fit to view</TooltipContent>
-          </Tooltip>
+            </HoverCardTrigger>
+            <HoverCardContent
+              side="top"
+              sideOffset={8}
+              className="!w-auto !p-2 text-xs"
+            >
+              Fit to view
+            </HoverCardContent>
+          </HoverCard>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
+          <HoverCard openDelay={150} closeDelay={50}>
+            <HoverCardTrigger asChild>
               <button
                 type="button"
-                onClick={() => {
-                  console.log("Click");
-                  onRelayout?.();
-                }}
+                onClick={() => onRelayout?.()}
                 className={cn(
                   "h-7 w-7 rounded-md flex items-center justify-center transition-colors",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
@@ -313,12 +348,97 @@ function GraphControlsChip({
               >
                 <LuMove className="w-3.5 h-3.5" />
               </button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">Re-layout graph</TooltipContent>
-          </Tooltip>
+            </HoverCardTrigger>
+            <HoverCardContent
+              side="top"
+              sideOffset={8}
+              className="!w-auto !p-2 text-xs"
+            >
+              Re-layout graph
+            </HoverCardContent>
+          </HoverCard>
+
+          <div className="w-px h-5 bg-border mx-1" />
+
+          <SpacingSlider value={spacing} onChange={onSpacingChange} />
         </>
       )}
     </HStack>
+  );
+}
+
+function SpacingSlider({
+  value,
+  onChange
+}: {
+  value: number;
+  onChange?: (next: number) => void;
+}) {
+  return (
+    <Popover>
+      <HoverCard openDelay={150} closeDelay={50}>
+        <HoverCardTrigger asChild>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              aria-label="Layout spacing"
+              className={cn(
+                "h-7 px-2 rounded-md flex items-center gap-1 transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                "text-muted-foreground hover:text-foreground hover:bg-accent/60"
+              )}
+            >
+              <span className="text-[10px] uppercase tracking-wide">
+                Spacing
+              </span>
+              <span className="text-xs tabular-nums font-medium text-foreground">
+                {value}
+              </span>
+            </button>
+          </PopoverTrigger>
+        </HoverCardTrigger>
+        <HoverCardContent
+          side="top"
+          sideOffset={8}
+          className="!w-auto !p-2 text-xs"
+        >
+          Spacing
+        </HoverCardContent>
+      </HoverCard>
+      <PopoverContent
+        side="bottom"
+        align="end"
+        sideOffset={8}
+        collisionPadding={16}
+        className="w-auto p-3"
+      >
+        <VStack spacing={2} className="items-center">
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+            Spacing
+          </span>
+          <span className="text-base font-medium tabular-nums text-foreground">
+            {value}
+          </span>
+          <div className="relative h-32 w-6 flex items-center justify-center">
+            <input
+              type="range"
+              min={1}
+              max={5}
+              step={1}
+              value={value}
+              onChange={(e) => onChange?.(Number(e.target.value))}
+              aria-label="Layout spacing"
+              className="absolute h-32 w-32 -rotate-90 cursor-pointer accent-foreground"
+              style={{ accentColor: "hsl(var(--foreground))" }}
+            />
+          </div>
+          <HStack className="w-full justify-between text-[10px] text-muted-foreground tabular-nums">
+            <span>1</span>
+            <span>5</span>
+          </HStack>
+        </VStack>
+      </PopoverContent>
+    </Popover>
   );
 }
 
