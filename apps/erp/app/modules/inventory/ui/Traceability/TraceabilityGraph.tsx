@@ -32,6 +32,7 @@ import {
   type LayoutDirection
 } from "./hooks/useDagreLayout";
 import { useExpandNode } from "./hooks/useExpandNode";
+import { NodeSearchDialog } from "./NodeSearchDialog";
 import { ActivityNode } from "./nodes/ActivityNode";
 import { EntityNode } from "./nodes/EntityNode";
 import { TraceabilityTable } from "./TraceabilityTable";
@@ -137,7 +138,29 @@ function TraceabilityGraphInner({
   });
 
   const [isolate, setIsolate] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [layoutVersion, setLayoutVersion] = useState(0);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const isMeta = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k";
+      if (e.key === "/" || isMeta) {
+        const target = e.target as HTMLElement | null;
+        if (
+          target &&
+          (target.tagName === "INPUT" ||
+            target.tagName === "TEXTAREA" ||
+            target.isContentEditable)
+        ) {
+          if (!isMeta) return;
+        }
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   const handleRelayout = useCallback(() => {
     setLayoutVersion((v) => v + 1);
   }, []);
@@ -462,6 +485,7 @@ function TraceabilityGraphInner({
           isolate={isolate}
           onIsolateChange={setIsolate}
           hasSelection={!!selectedId}
+          onOpenSearch={() => setSearchOpen(true)}
         />
       </div>
     );
@@ -551,9 +575,17 @@ function TraceabilityGraphInner({
         onIsolateChange={setIsolate}
         hasSelection={!!selectedId}
         onRelayout={handleRelayout}
+        onOpenSearch={() => setSearchOpen(true)}
       />
 
       <GraphLegend />
+
+      <NodeSearchDialog
+        open={searchOpen}
+        onOpenChange={setSearchOpen}
+        payload={payload}
+        onSelect={(id) => setSelected(id)}
+      />
 
       {isExpanding && (
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 rounded-full border border-border bg-card px-3 py-1 text-xs shadow-sm">

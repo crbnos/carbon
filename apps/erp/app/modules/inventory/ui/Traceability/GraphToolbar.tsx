@@ -15,6 +15,7 @@ import {
   LuMoveRight,
   LuNetwork,
   LuPlus,
+  LuSearch,
   LuTable
 } from "react-icons/lu";
 import type { LayoutDirection } from "./hooks/useDagreLayout";
@@ -32,6 +33,7 @@ type Props = {
   onIsolateChange: (next: boolean) => void;
   hasSelection?: boolean;
   onRelayout?: () => void;
+  onOpenSearch?: () => void;
 };
 
 const PANEL =
@@ -47,7 +49,8 @@ export function GraphToolbar({
   isolate,
   onIsolateChange,
   hasSelection = false,
-  onRelayout
+  onRelayout,
+  onOpenSearch
 }: Props) {
   return (
     <>
@@ -61,6 +64,7 @@ export function GraphToolbar({
         onIsolateChange={onIsolateChange}
         hasSelection={hasSelection}
         onRelayout={onRelayout}
+        onOpenSearch={onOpenSearch}
         showGraphOnly={view === "graph"}
       />
     </>
@@ -105,6 +109,7 @@ function GraphControlsChip({
   onIsolateChange,
   hasSelection,
   onRelayout,
+  onOpenSearch,
   showGraphOnly
 }: {
   depth: number;
@@ -115,6 +120,7 @@ function GraphControlsChip({
   onIsolateChange: (next: boolean) => void;
   hasSelection: boolean;
   onRelayout?: () => void;
+  onOpenSearch?: () => void;
   showGraphOnly: boolean;
 }) {
   const { fitView } = useReactFlow();
@@ -124,6 +130,31 @@ function GraphControlsChip({
       spacing={1}
       className={cn("absolute top-3 right-3 z-30 px-1.5 py-1", PANEL)}
     >
+      {onOpenSearch && (
+        <>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={onOpenSearch}
+                className={cn(
+                  "h-7 px-2 rounded-md flex items-center gap-1 transition-colors text-xs",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  "text-muted-foreground hover:text-foreground hover:bg-accent/60"
+                )}
+                aria-label="Search nodes"
+              >
+                <LuSearch className="w-3.5 h-3.5" />
+                <kbd className="text-[10px] text-muted-foreground bg-muted/50 px-1 rounded">
+                  /
+                </kbd>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Search nodes</TooltipContent>
+          </Tooltip>
+          <div className="w-px h-5 bg-border mx-1" />
+        </>
+      )}
       <Tooltip>
         <TooltipTrigger asChild>
           <HStack spacing={0} className="rounded-md bg-muted/40 p-0.5">

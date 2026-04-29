@@ -111,8 +111,8 @@ export function TraceabilitySidebar({
 
   return (
     <VStack
-      spacing={5}
-      className="w-96 flex-shrink-0 bg-sidebar h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-4 text-sm"
+      spacing={4}
+      className="w-96 flex-shrink-0 bg-sidebar h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-5 py-5 text-sm"
     >
       <VStack spacing={3}>
         <HStack className="w-full justify-between items-start">
@@ -181,19 +181,19 @@ export function TraceabilitySidebar({
       </VStack>
 
       {selectedNodeType === "entity" && (
-        <VStack spacing={3}>
-          <HStack className="w-full justify-between items-center">
+        <VStack spacing={2}>
+          <HStack className="w-full justify-between items-center min-h-[28px]">
             <span className="text-xs text-muted-foreground">Status</span>
             <TrackedEntityStatus status={entity?.status} />
           </HStack>
-          <HStack className="w-full justify-between items-center">
+          <HStack className="w-full justify-between items-center min-h-[28px]">
             <span className="text-xs text-muted-foreground">Quantity</span>
             <span className="text-sm font-medium tabular-nums">
               {entity?.quantity}
             </span>
           </HStack>
           {entity?.readableId && (
-            <HStack className="w-full justify-between items-center">
+            <HStack className="w-full justify-between items-center min-h-[28px]">
               <span className="text-xs text-muted-foreground">
                 Serial / Batch
               </span>
@@ -381,7 +381,7 @@ function hasRenderedAttributes(attrs: Record<string, any>): boolean {
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
-    <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold pb-1.5 border-b border-border/40">
+    <span className="block text-[10px] uppercase tracking-wider text-muted-foreground font-semibold pb-1 border-b border-border/40">
       {children}
     </span>
   );
@@ -452,7 +452,7 @@ function RelatedActivitySection({
   onSelect?: (id: string) => void;
 }) {
   return (
-    <VStack spacing={2}>
+    <VStack spacing={1}>
       <SectionHeader>{title}</SectionHeader>
       <VStack spacing={1}>
         {items.map((item) => {
@@ -506,7 +506,7 @@ function RelatedEntitySection({
   onSelect?: (id: string) => void;
 }) {
   return (
-    <VStack spacing={2}>
+    <VStack spacing={1}>
       <SectionHeader>{title}</SectionHeader>
       <VStack spacing={1}>
         {items.map((item) => {
