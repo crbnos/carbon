@@ -57,7 +57,7 @@ export function AttributeList({ attrs }: { attrs: Record<string, any> }) {
               return (
                 <JobMakeMethodAttribute
                   key={key}
-                  jobId={attrs["Job"]}
+                  jobId={attrs.Job}
                   makeMethodId={value}
                   materialId={attrs["Job Material"]}
                 />
@@ -66,7 +66,7 @@ export function AttributeList({ attrs }: { attrs: Record<string, any> }) {
               return (
                 <JobOperationAttribute
                   key={key}
-                  jobId={attrs["Job"]}
+                  jobId={attrs.Job}
                   operationId={value}
                 />
               );
@@ -92,7 +92,7 @@ export function AttributeList({ attrs }: { attrs: Record<string, any> }) {
               return (
                 <JobProductionEvent
                   key={key}
-                  jobId={attrs["Job"]}
+                  jobId={attrs.Job}
                   eventId={value}
                 />
               );
