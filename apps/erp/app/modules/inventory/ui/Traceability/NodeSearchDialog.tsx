@@ -168,7 +168,7 @@ export function NodeSearchDialog({
                       {entity.sourceDocument ?? "—"}
                     </span>
                   </div>
-                  <HStack spacing={1.5} className="items-center shrink-0">
+                  <HStack spacing={2} className="items-center shrink-0">
                     <StatusPill status={entity.status} />
                     <span className="text-xs tabular-nums text-muted-foreground w-10 text-right">
                       {entity.quantity}
