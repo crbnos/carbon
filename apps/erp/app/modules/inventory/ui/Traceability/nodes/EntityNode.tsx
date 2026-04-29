@@ -23,8 +23,8 @@ function EntityNodeImpl({ data, selected, id }: Props) {
   const entity = data.entity;
   const headline = entityHeadline(entity, 8);
 
-  const zoom = useStore((s) => s.transform[2]);
-  const showLabel = zoom > 0.5 || data.isRoot || selected;
+  const zoomedIn = useStore((s) => s.transform[2] > 0.5);
+  const showLabel = zoomedIn || data.isRoot || selected;
 
   const meta = entityStatusMeta(entity.status);
   const Icon = meta.icon;

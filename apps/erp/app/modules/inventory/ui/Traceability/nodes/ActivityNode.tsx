@@ -19,8 +19,8 @@ function ActivityNodeImpl({ data, selected }: Props) {
   const Icon = meta.icon;
   const label = activity.type ?? meta.label;
 
-  const zoom = useStore((s) => s.transform[2]);
-  const showLabel = zoom > 0.5 || data.isRoot || selected;
+  const zoomedIn = useStore((s) => s.transform[2] > 0.5);
+  const showLabel = zoomedIn || data.isRoot || selected;
 
   const half = NODE_RADIUS;
   const size = NODE_SIZE;

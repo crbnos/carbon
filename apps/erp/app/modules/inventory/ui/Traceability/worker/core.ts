@@ -1,18 +1,47 @@
 import dagre from "dagre";
-import { useMemo } from "react";
-import type { LineageEdge, LineageNode } from "../utils";
+import {
+  annotateEdgeWeights,
+  type LineageEdge,
+  type LineageEdgeData,
+  type LineageNode,
+  type LineagePayload,
+  lineagePathEdgesMulti,
+  payloadToFlow
+} from "../utils";
 
 export type LayoutDirection = "TB" | "LR";
+
+export type EdgePoint = { x: number; y: number };
+
+export type LayoutInput = {
+  payload: LineagePayload;
+  direction: LayoutDirection;
+  spacing: number;
+  rejectIds: string[];
+};
+
+export type LayoutResult = {
+  nodes: LineageNode[];
+  edges: LineageEdge[];
+};
+
+export type SelectionPathResult = {
+  pathNodeIds: string[];
+  pathEdgeIds: string[];
+};
 
 const NODE_WIDTH = 44;
 const NODE_HEIGHT = 44;
 
-export type EdgePoint = { x: number; y: number };
-
-export type LayoutResult = {
-  positioned: LineageNode[];
-  backEdges: Set<string>;
-  edgePoints: Map<string, EdgePoint[]>;
+const SPACING_TABLE: Record<
+  number,
+  { nodesep: number; ranksep: number; edgesep: number }
+> = {
+  1: { nodesep: 60, ranksep: 100, edgesep: 30 },
+  2: { nodesep: 100, ranksep: 160, edgesep: 50 },
+  3: { nodesep: 160, ranksep: 240, edgesep: 80 },
+  4: { nodesep: 240, ranksep: 340, edgesep: 130 },
+  5: { nodesep: 360, ranksep: 480, edgesep: 200 }
 };
 
 function detectBackEdges(
@@ -58,23 +87,16 @@ function detectBackEdges(
   return backEdgeIds;
 }
 
-const SPACING_TABLE: Record<
-  number,
-  { nodesep: number; ranksep: number; edgesep: number }
-> = {
-  1: { nodesep: 60, ranksep: 100, edgesep: 30 },
-  2: { nodesep: 100, ranksep: 160, edgesep: 50 },
-  3: { nodesep: 160, ranksep: 240, edgesep: 80 },
-  4: { nodesep: 240, ranksep: 340, edgesep: 130 },
-  5: { nodesep: 360, ranksep: 480, edgesep: 200 }
-};
-
 export function computeDagreLayout(
   nodes: LineageNode[],
   edges: LineageEdge[],
   direction: LayoutDirection,
   spacingLevel: number = 2
-): LayoutResult {
+): {
+  positioned: LineageNode[];
+  backEdges: Set<string>;
+  edgePoints: Map<string, EdgePoint[]>;
+} {
   if (nodes.length === 0) {
     return { positioned: nodes, backEdges: new Set(), edgePoints: new Map() };
   }
@@ -130,13 +152,37 @@ export function computeDagreLayout(
   return { positioned, backEdges, edgePoints };
 }
 
-export function useDagreLayout(
-  nodes: LineageNode[],
-  edges: LineageEdge[],
-  direction: LayoutDirection
-): LayoutResult {
-  return useMemo(
-    () => computeDagreLayout(nodes, edges, direction),
-    [nodes, edges, direction]
+export function computeFullLayout(input: LayoutInput): LayoutResult {
+  const flow = payloadToFlow(input.payload);
+  const weightedEdges = annotateEdgeWeights(
+    flow.edges,
+    new Set(input.rejectIds)
   );
+  const { positioned, backEdges, edgePoints } = computeDagreLayout(
+    flow.nodes,
+    weightedEdges,
+    input.direction,
+    input.spacing
+  );
+  const finalEdges: LineageEdge[] = weightedEdges.map((e) => ({
+    ...e,
+    data: {
+      ...(e.data as LineageEdgeData),
+      isBackEdge: backEdges.has(e.id),
+      points: edgePoints.get(e.id)
+    }
+  }));
+  return { nodes: positioned, edges: finalEdges };
+}
+
+export function computeSelectionPath(
+  edges: LineageEdge[],
+  rootIds: string[]
+): SelectionPathResult | null {
+  if (rootIds.length === 0) return null;
+  const r = lineagePathEdgesMulti(rootIds, edges);
+  return {
+    pathNodeIds: Array.from(r.nodeIds),
+    pathEdgeIds: Array.from(r.edgeIds)
+  };
 }

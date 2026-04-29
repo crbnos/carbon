@@ -22,7 +22,7 @@ import {
   LuSearch,
   LuTable
 } from "react-icons/lu";
-import type { LayoutDirection } from "./hooks/useDagreLayout";
+import type { LayoutDirection } from "./worker/core";
 
 export type ViewMode = "graph" | "table";
 

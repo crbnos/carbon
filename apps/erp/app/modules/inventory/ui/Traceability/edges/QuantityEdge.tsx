@@ -59,6 +59,7 @@ function QuantityEdgeImpl({
       <BaseEdge
         id={id}
         path={edgePath}
+        className="trace-edge-path"
         style={{
           stroke,
           strokeWidth,

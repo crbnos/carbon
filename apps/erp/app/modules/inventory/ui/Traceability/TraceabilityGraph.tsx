@@ -29,7 +29,6 @@ import { clampDepth } from "./constants";
 import { QuantityEdge } from "./edges/QuantityEdge";
 import { GraphLegend } from "./GraphLegend";
 import { GraphToolbar } from "./GraphToolbar";
-import { computeDagreLayout } from "./hooks/useDagreLayout";
 import { useExpandNode } from "./hooks/useExpandNode";
 import { useProbeBoundary } from "./hooks/useProbeBoundary";
 import {
@@ -43,13 +42,16 @@ import { EntityNode } from "./nodes/EntityNode";
 import { useTraceabilityStore } from "./store";
 import { TraceabilityTable } from "./TraceabilityTable";
 import {
-  annotateEdgeWeights,
   type LineageEdge,
+  type LineageNode,
   type LineagePayload,
-  lineagePathEdgesMulti,
-  mergePayloads,
-  payloadToFlow
+  mergePayloads
 } from "./utils";
+import {
+  useAsyncLayout,
+  useAsyncSelectionPath,
+  useTracingGraphManager
+} from "./worker/hooks";
 
 const nodeTypes: NodeTypes = {
   entity: EntityNode as any,
@@ -61,6 +63,9 @@ const edgeTypes: EdgeTypes = {
 };
 
 const proOptions = { hideAttribution: true };
+
+const EMPTY_NODES: LineageNode[] = [];
+const EMPTY_EDGES: LineageEdge[] = [];
 
 type Props = {
   entities: TrackedEntity[];
@@ -208,26 +213,17 @@ function TraceabilityGraphInner({
     return set;
   }, [payload.entities]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: layoutVersion is a manual relayout trigger
-  const { laidNodes, laidEdges } = useMemo(() => {
-    const flow = payloadToFlow(payload);
-    const weightedEdges = annotateEdgeWeights(flow.edges, rejectIds);
-    const { positioned, backEdges, edgePoints } = computeDagreLayout(
-      flow.nodes,
-      weightedEdges,
-      direction,
-      spacing
-    );
-    const finalEdges: LineageEdge[] = weightedEdges.map((e) => ({
-      ...e,
-      data: {
-        ...(e.data as any),
-        isBackEdge: backEdges.has(e.id),
-        points: edgePoints.get(e.id)
-      }
-    }));
-    return { laidNodes: positioned, laidEdges: finalEdges };
-  }, [payload, direction, rejectIds, layoutVersion, spacing]);
+  const tracingGraphManager = useTracingGraphManager();
+  const layoutResult = useAsyncLayout(
+    tracingGraphManager,
+    payload,
+    direction,
+    spacing,
+    rejectIds,
+    layoutVersion
+  );
+  const laidNodes = layoutResult?.nodes ?? EMPTY_NODES;
+  const laidEdges = layoutResult?.edges ?? EMPTY_EDGES;
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>(
     laidNodes as Node[]
@@ -242,7 +238,7 @@ function TraceabilityGraphInner({
     setEdges(laidEdges as Edge[]);
     setDraggedIds(new Set());
     setLayoutAnimating(true);
-    const t = setTimeout(() => setLayoutAnimating(false), 220);
+    const t = setTimeout(() => setLayoutAnimating(false), 260);
     return () => clearTimeout(t);
   }, [laidNodes, laidEdges, setNodes, setEdges]);
 
@@ -308,13 +304,11 @@ function TraceabilityGraphInner({
     setSelectedSingle(null);
   }, [setSelectedSingle]);
 
-  const selectionPath = useMemo(() => {
-    if (selectedIds.length === 0) return null;
-    return lineagePathEdgesMulti(
-      selectedIds,
-      edges as unknown as LineageEdge[]
-    );
-  }, [selectedIds, edges]);
+  const selectionPath = useAsyncSelectionPath(
+    tracingGraphManager,
+    edges as unknown as LineageEdge[],
+    selectedIds
+  );
 
   const isolated = useMemo(() => {
     if (!isolate || selectedIds.length === 0) return null;
@@ -504,10 +498,20 @@ function TraceabilityGraphInner({
     >
       <style>{`
         .trace-layout-animating .react-flow__node {
-          transition: transform 180ms ease-out;
+          transition: transform 220ms cubic-bezier(0.645, 0.045, 0.355, 1);
+          will-change: transform;
+        }
+        .trace-fade-in {
+          transition: opacity 150ms cubic-bezier(0.215, 0.61, 0.355, 1);
+        }
+        .trace-edge-path {
+          transition: opacity 150ms cubic-bezier(0.215, 0.61, 0.355, 1),
+                      stroke-width 150ms cubic-bezier(0.215, 0.61, 0.355, 1);
         }
         @media (prefers-reduced-motion: reduce) {
           .trace-layout-animating .react-flow__node { transition: none; }
+          .trace-fade-in { transition: none; }
+          .trace-edge-path { transition: none; }
         }
       `}</style>
       <ReactFlow
@@ -517,10 +521,8 @@ function TraceabilityGraphInner({
         onEdgesChange={onEdgesChange}
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
-        style={{
-          opacity: fitted ? 1 : 0,
-          transition: "opacity 120ms ease-out"
-        }}
+        className="trace-fade-in"
+        style={{ opacity: fitted ? 1 : 0 }}
         onNodeDragStart={(_, node) =>
           setDraggedIds((prev) => {
             if (prev.has(node.id)) return prev;
@@ -538,6 +540,7 @@ function TraceabilityGraphInner({
         nodesConnectable={false}
         edgesFocusable={false}
         elevateNodesOnSelect={false}
+        onlyRenderVisibleElements
         defaultEdgeOptions={{ type: "quantity", zIndex: 0 }}
       >
         <Background
