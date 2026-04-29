@@ -1,7 +1,6 @@
 import {
   Background,
   BackgroundVariant,
-  Controls,
   type Edge,
   type EdgeTypes,
   MiniMap,
@@ -25,6 +24,7 @@ import type {
   TrackedEntity
 } from "~/modules/inventory";
 import { QuantityEdge } from "./edges/QuantityEdge";
+import { GraphLegend } from "./GraphLegend";
 import { GraphToolbar, type ViewMode } from "./GraphToolbar";
 import {
   computeDagreLayout,
@@ -360,22 +360,6 @@ function TraceabilityGraphInner({
           size={1}
           color="hsl(var(--muted-foreground) / 0.15)"
         />
-        <Controls
-          showInteractive={false}
-          className="!border-border !rounded-md overflow-hidden"
-          style={
-            {
-              ["--xy-controls-button-background-color" as any]:
-                "hsl(var(--card))",
-              ["--xy-controls-button-background-color-hover" as any]:
-                "hsl(var(--accent))",
-              ["--xy-controls-button-color" as any]: "hsl(var(--foreground))",
-              ["--xy-controls-button-color-hover" as any]:
-                "hsl(var(--foreground))",
-              ["--xy-controls-button-border-color" as any]: "hsl(var(--border))"
-            } as React.CSSProperties
-          }
-        />
         <MiniMap
           pannable
           zoomable
@@ -408,6 +392,8 @@ function TraceabilityGraphInner({
         onIsolateChange={setIsolate}
         hasSelection={!!selectedId}
       />
+
+      <GraphLegend />
 
       {isExpanding && (
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 rounded-full border border-border bg-card px-3 py-1 text-xs shadow-sm">
