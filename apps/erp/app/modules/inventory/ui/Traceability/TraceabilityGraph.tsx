@@ -104,6 +104,7 @@ function TraceabilityGraphInner({
   const probeCacheRef = useRef<Map<string, LineagePayload>>(new Map());
   const probedRef = useRef<Set<string>>(new Set());
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset on payload identity change (loader refetch)
   useEffect(() => {
     resetStore(rootId);
     probeCacheRef.current = new Map();
@@ -170,6 +171,7 @@ function TraceabilityGraphInner({
     return set;
   }, [payload.entities]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: layoutVersion is a manual relayout trigger
   const { laidNodes, laidEdges } = useMemo(() => {
     const flow = payloadToFlow(payload);
     const weightedEdges = annotateEdgeWeights(flow.edges, rejectIds);
@@ -270,8 +272,6 @@ function TraceabilityGraphInner({
   const onPaneClick = useCallback(() => {
     setSelectedSingle(null);
   }, [setSelectedSingle]);
-
-  void selectedId;
 
   const selectionPath = useMemo(() => {
     if (selectedIds.length === 0) return null;
@@ -376,7 +376,6 @@ function TraceabilityGraphInner({
   }, [
     nodes,
     rootId,
-    selectedId,
     selectedIdSet,
     isolated,
     expansions,
