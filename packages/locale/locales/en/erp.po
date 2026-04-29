@@ -1492,7 +1492,7 @@ msgstr "Back"
 msgid "Back to home"
 msgstr "Back to home"
 
-#: apps/erp/app/routes/x+/traceability+/graph.tsx:278
+#: apps/erp/app/routes/x+/traceability+/graph.tsx:153
 msgid "Back to traceability"
 msgstr "Back to traceability"
 
@@ -2639,7 +2639,7 @@ msgstr "Copied link to clipboard"
 msgid "Copied!"
 msgstr "Copied!"
 
-#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilityGraph.tsx:407
+#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:72
 #: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceProperties.tsx:155
 #: apps/erp/app/modules/invoicing/ui/SalesInvoice/SalesInvoiceProperties.tsx:154
 #: apps/erp/app/modules/items/ui/Consumables/ConsumableProperties.tsx:196
@@ -7191,7 +7191,7 @@ msgstr "Lines need internal part numbers"
 msgid "Lines need prices or lead times"
 msgstr "Lines need prices or lead times"
 
-#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilityGraph.tsx:391
+#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:56
 #: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceProperties.tsx:134
 #: apps/erp/app/modules/invoicing/ui/SalesInvoice/SalesInvoiceProperties.tsx:133
 #: apps/erp/app/modules/items/ui/Consumables/ConsumableProperties.tsx:173
@@ -13726,8 +13726,7 @@ msgstr "Totaling"
 
 #: apps/erp/app/modules/inventory/ui/useInventorySubmodules.tsx:76
 #: apps/erp/app/routes/x+/traceability+/_index.tsx:13
-#: apps/erp/app/routes/x+/traceability+/graph.tsx:35
-#: apps/erp/app/routes/x+/traceability+/graph.tsx:268
+#: apps/erp/app/routes/x+/traceability+/graph.tsx:18
 msgid "Traceability"
 msgstr "Traceability"
 

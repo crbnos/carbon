@@ -1492,7 +1492,7 @@ msgstr "戻る"
 msgid "Back to home"
 msgstr "ホームに戻る"
 
-#: apps/erp/app/routes/x+/traceability+/graph.tsx:278
+#: apps/erp/app/routes/x+/traceability+/graph.tsx:153
 msgid "Back to traceability"
 msgstr "トレーサビリティに戻る"
 
@@ -2639,7 +2639,7 @@ msgstr "クリップボードにリンクをコピーしました"
 msgid "Copied!"
 msgstr "コピーしました!"
 
-#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilityGraph.tsx:407
+#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:72
 #: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceProperties.tsx:155
 #: apps/erp/app/modules/invoicing/ui/SalesInvoice/SalesInvoiceProperties.tsx:154
 #: apps/erp/app/modules/items/ui/Consumables/ConsumableProperties.tsx:196
@@ -7191,7 +7191,7 @@ msgstr "ラインには内部部品番号が必要です"
 msgid "Lines need prices or lead times"
 msgstr "ラインには価格またはリードタイムが必要です"
 
-#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilityGraph.tsx:391
+#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:56
 #: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceProperties.tsx:134
 #: apps/erp/app/modules/invoicing/ui/SalesInvoice/SalesInvoiceProperties.tsx:133
 #: apps/erp/app/modules/items/ui/Consumables/ConsumableProperties.tsx:173
@@ -13726,8 +13726,7 @@ msgstr "合計"
 
 #: apps/erp/app/modules/inventory/ui/useInventorySubmodules.tsx:76
 #: apps/erp/app/routes/x+/traceability+/_index.tsx:13
-#: apps/erp/app/routes/x+/traceability+/graph.tsx:35
-#: apps/erp/app/routes/x+/traceability+/graph.tsx:268
+#: apps/erp/app/routes/x+/traceability+/graph.tsx:18
 msgid "Traceability"
 msgstr "トレーサビリティ"
 
