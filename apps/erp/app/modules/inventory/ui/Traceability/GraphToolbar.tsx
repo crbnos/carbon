@@ -10,11 +10,11 @@ import {
   LuFocus,
   LuMaximize,
   LuMinus,
+  LuMove,
   LuMoveDown,
   LuMoveRight,
   LuNetwork,
   LuPlus,
-  LuRotateCcw,
   LuTable
 } from "react-icons/lu";
 import type { LayoutDirection } from "./hooks/useDagreLayout";
@@ -31,8 +31,7 @@ type Props = {
   isolate: boolean;
   onIsolateChange: (next: boolean) => void;
   hasSelection?: boolean;
-  canReset?: boolean;
-  onReset?: () => void;
+  onRelayout?: () => void;
 };
 
 const PANEL =
@@ -48,25 +47,22 @@ export function GraphToolbar({
   isolate,
   onIsolateChange,
   hasSelection = false,
-  canReset = false,
-  onReset
+  onRelayout
 }: Props) {
   return (
     <>
       <ViewModeChip view={view} onViewChange={onViewChange} />
-      {view === "graph" && (
-        <GraphControlsChip
-          depth={depth}
-          onDepthChange={onDepthChange}
-          direction={direction}
-          onDirectionChange={onDirectionChange}
-          isolate={isolate}
-          onIsolateChange={onIsolateChange}
-          hasSelection={hasSelection}
-          canReset={canReset}
-          onReset={onReset}
-        />
-      )}
+      <GraphControlsChip
+        depth={depth}
+        onDepthChange={onDepthChange}
+        direction={direction}
+        onDirectionChange={onDirectionChange}
+        isolate={isolate}
+        onIsolateChange={onIsolateChange}
+        hasSelection={hasSelection}
+        onRelayout={onRelayout}
+        showGraphOnly={view === "graph"}
+      />
     </>
   );
 }
@@ -108,8 +104,8 @@ function GraphControlsChip({
   isolate,
   onIsolateChange,
   hasSelection,
-  canReset,
-  onReset
+  onRelayout,
+  showGraphOnly
 }: {
   depth: number;
   onDepthChange: (next: number) => void;
@@ -118,8 +114,8 @@ function GraphControlsChip({
   isolate: boolean;
   onIsolateChange: (next: boolean) => void;
   hasSelection: boolean;
-  canReset: boolean;
-  onReset?: () => void;
+  onRelayout?: () => void;
+  showGraphOnly: boolean;
 }) {
   const { fitView } = useReactFlow();
 
@@ -174,121 +170,123 @@ function GraphControlsChip({
         </TooltipContent>
       </Tooltip>
 
-      <div className="w-px h-5 bg-border mx-1" />
+      {showGraphOnly && (
+        <>
+          <div className="w-px h-5 bg-border mx-1" />
 
-      <HStack spacing={0} className="rounded-md bg-muted/40 p-0.5">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={() => onDirectionChange("TB")}
-              className={cn(
-                "h-6 w-6 rounded flex items-center justify-center transition-colors",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                direction === "TB"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-              aria-pressed={direction === "TB"}
-              aria-label="Top-down layout"
-            >
-              <LuMoveDown className="w-3.5 h-3.5" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">Top-down</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={() => onDirectionChange("LR")}
-              className={cn(
-                "h-6 w-6 rounded flex items-center justify-center transition-colors",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                direction === "LR"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-              aria-pressed={direction === "LR"}
-              aria-label="Left-right layout"
-            >
-              <LuMoveRight className="w-3.5 h-3.5" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">Left-right</TooltipContent>
-        </Tooltip>
-      </HStack>
+          <HStack spacing={0} className="rounded-md bg-muted/40 p-0.5">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => onDirectionChange("TB")}
+                  className={cn(
+                    "h-6 w-6 rounded flex items-center justify-center transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    direction === "TB"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                  aria-pressed={direction === "TB"}
+                  aria-label="Top-down layout"
+                >
+                  <LuMoveDown className="w-3.5 h-3.5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Top-down</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => onDirectionChange("LR")}
+                  className={cn(
+                    "h-6 w-6 rounded flex items-center justify-center transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    direction === "LR"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                  aria-pressed={direction === "LR"}
+                  aria-label="Left-right layout"
+                >
+                  <LuMoveRight className="w-3.5 h-3.5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Left-right</TooltipContent>
+            </Tooltip>
+          </HStack>
 
-      <div className="w-px h-5 bg-border mx-1" />
+          <div className="w-px h-5 bg-border mx-1" />
 
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <button
-            type="button"
-            onClick={() => {
-              if (!hasSelection) return;
-              onIsolateChange(!isolate);
-            }}
-            aria-disabled={!hasSelection}
-            className={cn(
-              "h-7 w-7 rounded-md flex items-center justify-center transition-colors",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              !hasSelection && "opacity-40 cursor-not-allowed",
-              hasSelection &&
-                !isolate &&
-                "text-muted-foreground hover:text-foreground hover:bg-accent/60",
-              hasSelection &&
-                isolate &&
-                "bg-foreground/10 text-foreground ring-1 ring-foreground/20"
-            )}
-            aria-pressed={isolate}
-            aria-label="Isolate lineage"
-          >
-            <LuFocus className="w-3.5 h-3.5" />
-          </button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">
-          {hasSelection ? "Isolate lineage" : "Select a node first"}
-        </TooltipContent>
-      </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!hasSelection) return;
+                  onIsolateChange(!isolate);
+                }}
+                aria-disabled={!hasSelection}
+                className={cn(
+                  "h-7 w-7 rounded-md flex items-center justify-center transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  !hasSelection && "opacity-40 cursor-not-allowed",
+                  hasSelection &&
+                    !isolate &&
+                    "text-muted-foreground hover:text-foreground hover:bg-accent/60",
+                  hasSelection &&
+                    isolate &&
+                    "bg-foreground/10 text-foreground ring-1 ring-foreground/20"
+                )}
+                aria-pressed={isolate}
+                aria-label="Isolate lineage"
+              >
+                <LuFocus className="w-3.5 h-3.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              {hasSelection ? "Isolate lineage" : "Select a node first"}
+            </TooltipContent>
+          </Tooltip>
 
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <button
-            onClick={() => fitView({ duration: 300, padding: 0.2 })}
-            className={cn(
-              "h-7 w-7 rounded-md flex items-center justify-center transition-colors",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              "text-muted-foreground hover:text-foreground hover:bg-accent/60"
-            )}
-            aria-label="Fit to view"
-          >
-            <LuMaximize className="w-3.5 h-3.5" />
-          </button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">Fit to view</TooltipContent>
-      </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => fitView({ duration: 300, padding: 0.2 })}
+                className={cn(
+                  "h-7 w-7 rounded-md flex items-center justify-center transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  "text-muted-foreground hover:text-foreground hover:bg-accent/60"
+                )}
+                aria-label="Fit to view"
+              >
+                <LuMaximize className="w-3.5 h-3.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Fit to view</TooltipContent>
+          </Tooltip>
 
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <button
-            type="button"
-            onClick={() => canReset && onReset?.()}
-            aria-disabled={!canReset}
-            className={cn(
-              "h-7 w-7 rounded-md flex items-center justify-center transition-colors",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              !canReset
-                ? "opacity-40 cursor-not-allowed text-muted-foreground"
-                : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
-            )}
-            aria-label="Reset expansions"
-          >
-            <LuRotateCcw className="w-3.5 h-3.5" />
-          </button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">
-          {canReset ? "Collapse all expansions" : "No expansions to reset"}
-        </TooltipContent>
-      </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={() => {
+                  console.log("Click");
+                  onRelayout?.();
+                }}
+                className={cn(
+                  "h-7 w-7 rounded-md flex items-center justify-center transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  "text-muted-foreground hover:text-foreground hover:bg-accent/60"
+                )}
+                aria-label="Re-layout graph"
+              >
+                <LuMove className="w-3.5 h-3.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Re-layout graph</TooltipContent>
+          </Tooltip>
+        </>
+      )}
     </HStack>
   );
 }

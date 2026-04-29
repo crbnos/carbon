@@ -27,7 +27,7 @@ function ActivityNodeImpl({ data, selected }: Props) {
 
   return (
     <div
-      className={cn("relative transition-opacity", data.dimmed && "opacity-15")}
+      className={cn("relative", data.dimmed && "opacity-15")}
       style={{ width: size, height: size, zIndex: 10 }}
     >
       <Handle

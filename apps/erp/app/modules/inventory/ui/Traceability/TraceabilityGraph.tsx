@@ -136,6 +136,10 @@ function TraceabilityGraphInner({
   });
 
   const [isolate, setIsolate] = useState(false);
+  const [layoutVersion, setLayoutVersion] = useState(0);
+  const handleRelayout = useCallback(() => {
+    setLayoutVersion((v) => v + 1);
+  }, []);
 
   const [draggedIds, setDraggedIds] = useState<Set<string>>(new Set());
   const [fitted, setFitted] = useState(false);
@@ -176,7 +180,7 @@ function TraceabilityGraphInner({
       }
     }));
     return { laidNodes: positioned, laidEdges: finalEdges };
-  }, [payload, direction, rejectIds]);
+  }, [payload, direction, rejectIds, layoutVersion]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>(
     laidNodes as Node[]
@@ -257,10 +261,6 @@ function TraceabilityGraphInner({
     },
     [setSelected, expand, expansions]
   );
-
-  const handleReset = useCallback(() => {
-    setExpansions(new Map());
-  }, []);
 
   const onPaneClick = useCallback(() => {
     setSelected(null);
@@ -398,11 +398,16 @@ function TraceabilityGraphInner({
     if (view !== "graph") return;
     if (nodes.length === 0) return;
     if (width === 0 || height === 0) return;
-    const sig = `${nodes.length}:${edges.length}:${rootId}:${direction}:${width}x${height}`;
+    const sig = `${nodes.length}:${edges.length}:${rootId}:${direction}:${width}x${height}:v${layoutVersion}`;
     if (lastFitSignatureRef.current === sig) return;
+    const isFirstFit = lastFitSignatureRef.current === "";
     lastFitSignatureRef.current = sig;
     const raf = requestAnimationFrame(() => {
-      fitView({ padding: 0.2, duration: 0, maxZoom: 1 });
+      fitView({
+        padding: 0.2,
+        duration: isFirstFit ? 0 : 250,
+        maxZoom: 1
+      });
       requestAnimationFrame(() => setFitted(true));
     });
     return () => cancelAnimationFrame(raf);
@@ -415,6 +420,7 @@ function TraceabilityGraphInner({
     view,
     width,
     height,
+    layoutVersion,
     fitView
   ]);
 
@@ -451,8 +457,6 @@ function TraceabilityGraphInner({
           isolate={isolate}
           onIsolateChange={setIsolate}
           hasSelection={!!selectedId}
-          canReset={expansions.size > 0}
-          onReset={handleReset}
         />
       </div>
     );
@@ -460,6 +464,14 @@ function TraceabilityGraphInner({
 
   return (
     <div className="relative w-full h-full" style={{ width, height }}>
+      <style>{`
+        .react-flow__node {
+          transition: transform 180ms ease-out;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .react-flow__node { transition: none; }
+        }
+      `}</style>
       <ReactFlow
         nodes={enrichedNodes as Node[]}
         edges={enrichedEdges as Edge[]}
@@ -527,6 +539,7 @@ function TraceabilityGraphInner({
         isolate={isolate}
         onIsolateChange={setIsolate}
         hasSelection={!!selectedId}
+        onRelayout={handleRelayout}
       />
 
       <GraphLegend />

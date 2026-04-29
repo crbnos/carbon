@@ -68,6 +68,7 @@
     "lodash.debounce": "4.0.8",
     "lodash.words": "4.2.0",
     "monaco-editor": "0.44.0",
+    "motion": "12.38.0",
     "motion-number": "0.1.7",
     "nanoid": "5.1.7",
     "nanostores": "0.9.5",

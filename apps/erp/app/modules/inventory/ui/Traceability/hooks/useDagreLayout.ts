@@ -61,7 +61,8 @@ function detectBackEdges(
 export function computeDagreLayout(
   nodes: LineageNode[],
   edges: LineageEdge[],
-  direction: LayoutDirection
+  direction: LayoutDirection,
+  spacing: "compact" | "exploded" = "compact"
 ): LayoutResult {
   if (nodes.length === 0) {
     return { positioned: nodes, backEdges: new Set(), edgePoints: new Map() };
@@ -70,14 +71,15 @@ export function computeDagreLayout(
   const backEdges = detectBackEdges(nodes, edges);
 
   const g = new dagre.graphlib.Graph({ multigraph: true });
+  const isExploded = spacing === "exploded";
   g.setGraph({
     rankdir: direction,
-    nodesep: 80,
-    ranksep: 140,
-    edgesep: 40,
-    marginx: 20,
-    marginy: 20,
-    ranker: "tight-tree",
+    nodesep: isExploded ? 400 : 80,
+    ranksep: isExploded ? 500 : 140,
+    edgesep: isExploded ? 250 : 40,
+    marginx: 40,
+    marginy: 40,
+    ranker: isExploded ? "network-simplex" : "tight-tree",
     acyclicer: "greedy"
   });
   g.setDefaultEdgeLabel(() => ({}));
