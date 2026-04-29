@@ -10,6 +10,7 @@ import { useRouteData } from "~/hooks";
 import { InventoryDetails } from "~/modules/inventory";
 import type { PartSummary, UnitOfMeasureListItem } from "~/modules/items";
 import {
+  getBomHasShelfLifeManagedInput,
   getItemQuantities,
   getItemShelfLife,
   getItemStorageUnitQuantities,
@@ -104,10 +105,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   }
 
-  const [quantities, itemStorageUnitQuantities, shelfLife] = await Promise.all([
+  const [
+    quantities,
+    itemStorageUnitQuantities,
+    shelfLife,
+    bomHasShelfLifeManagedInput
+  ] = await Promise.all([
     getItemQuantities(client, itemId, companyId, locationId),
     getItemStorageUnitQuantities(client, itemId, companyId, locationId),
-    getItemShelfLife(client, itemId)
+    getItemShelfLife(client, itemId),
+    getBomHasShelfLifeManagedInput(client, itemId, companyId)
   ]);
   if (quantities.error) {
     throw redirect(
@@ -131,6 +138,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     itemStorageUnitQuantities: itemStorageUnitQuantities.data,
     quantities: quantities.data,
     shelfLife: shelfLife.data,
+    bomHasShelfLifeManagedInput,
     itemId,
     locationId
   };
@@ -159,7 +167,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     shelfLifeDays,
     shelfLifeTriggerProcessId,
     shelfLifeTriggerTiming,
-    shelfLifeInheritEarliestInputExpiry,
+    shelfLifeCalculateFromBom,
     ...pickMethodFields
   } = validation.data;
 
@@ -175,7 +183,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         days: shelfLifeDays,
         triggerProcessId: shelfLifeTriggerProcessId,
         triggerTiming: shelfLifeTriggerTiming,
-        inheritEarliestInputExpiry: shelfLifeInheritEarliestInputExpiry
+        calculateFromBom: shelfLifeCalculateFromBom
       }
     });
   } catch (err) {
@@ -202,6 +210,7 @@ export default function PartInventoryRoute() {
     itemStorageUnitQuantities,
     quantities,
     shelfLife,
+    bomHasShelfLifeManagedInput,
     itemId
   } = useLoaderData<typeof loader>();
 
@@ -220,8 +229,7 @@ export default function PartInventoryRoute() {
     shelfLifeDays: shelfLife?.days ?? undefined,
     shelfLifeTriggerProcessId: shelfLife?.triggerProcessId ?? undefined,
     shelfLifeTriggerTiming: shelfLife?.triggerTiming ?? undefined,
-    shelfLifeInheritEarliestInputExpiry:
-      shelfLife?.inheritEarliestInputExpiry ?? false,
+    shelfLifeCalculateFromBom: shelfLife?.calculateFromBom ?? false,
     ...getCustomFields(partInventory.customFields ?? {})
   };
 
@@ -242,6 +250,7 @@ export default function PartInventoryRoute() {
         type="Part"
         itemTrackingType={itemTrackingType ?? "Inventory"}
         replenishmentSystem={replenishmentSystem}
+        bomHasShelfLifeManagedInput={bomHasShelfLifeManagedInput}
       />
       <InventoryDetails
         itemStorageUnitQuantities={itemStorageUnitQuantities}

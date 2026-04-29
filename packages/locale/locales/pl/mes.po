@@ -305,8 +305,8 @@ msgstr "Zużyte wygasłe"
 
 #. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
 #. placeholder {0}: search.trim() === "" ? label : search
-#: packages/react/src/CreateableCombobox.tsx:291
-#: packages/react/src/CreateableMultiSelect.tsx:333
+#: packages/react/src/CreateableCombobox.tsx:338
+#: packages/react/src/CreateableMultiSelect.tsx:355
 msgid "Create {0}"
 msgstr "Utwórz {0}"
 
@@ -703,8 +703,8 @@ msgstr "Moje godziny"
 msgid "Name"
 msgstr "Nazwa"
 
-#: packages/react/src/CreateableCombobox.tsx:217
-#: packages/react/src/CreateableMultiSelect.tsx:255
+#: packages/react/src/CreateableCombobox.tsx:258
+#: packages/react/src/CreateableMultiSelect.tsx:274
 msgid "New"
 msgstr "Nowy"
 
@@ -765,7 +765,7 @@ msgstr "Brak materiałów"
 msgid "No operators"
 msgstr "Brak operatorów"
 
-#: packages/react/src/CreateableMultiSelect.tsx:285
+#: packages/react/src/CreateableMultiSelect.tsx:304
 #: packages/react/src/MultiSelect.tsx:271
 msgid "No option found."
 msgstr "Nie znaleziono opcji."
@@ -1031,10 +1031,10 @@ msgstr "Szukaj operatorów..."
 
 #: apps/mes/app/components/Filter/ActiveFilters.tsx:166
 #: apps/mes/app/components/Filter/Filter.tsx:163
-#: packages/react/src/Combobox.tsx:193
-#: packages/react/src/CreateableCombobox.tsx:237
-#: packages/react/src/CreateableMultiSelect.tsx:163
-#: packages/react/src/CreateableMultiSelect.tsx:275
+#: packages/react/src/Combobox.tsx:234
+#: packages/react/src/CreateableCombobox.tsx:278
+#: packages/react/src/CreateableMultiSelect.tsx:177
+#: packages/react/src/CreateableMultiSelect.tsx:294
 #: packages/react/src/MultiSelect.tsx:268
 msgid "Search..."
 msgstr "Szukaj..."
@@ -1044,8 +1044,8 @@ msgstr "Szukaj..."
 #: apps/mes/app/components/JobOperation/JobOperation.tsx:1666
 #: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:368
 #: apps/mes/app/components/MaintenanceDispatch/MaintenanceAddPartModal.tsx:488
-#: packages/react/src/Combobox.tsx:111
-#: packages/react/src/CreateableCombobox.tsx:121
+#: packages/react/src/Combobox.tsx:147
+#: packages/react/src/CreateableCombobox.tsx:157
 #: packages/react/src/MultiSelect.tsx:178
 msgid "Select"
 msgstr "Wybierz"

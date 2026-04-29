@@ -68,7 +68,7 @@ type ExpiryTracePopoverProps = {
   policy?: {
     mode: "Fixed Duration" | "Calculated" | "Set on Receipt" | null;
     days?: number | null;
-    inheritEarliestInputExpiry?: boolean | null;
+    calculateFromBom?: boolean | null;
   } | null;
   /** Optional precomputed input expiries when the policy is Calculated. */
   inputs?: Array<{ id: string; expirationDate: string | null; label?: string }>;
@@ -257,7 +257,7 @@ function buildSteps(
           ? "MIN expiry across consumed inputs"
           : "Date entered at receipt";
     const detailParts = [baseDetail];
-    if (policy.mode === "Fixed Duration" && policy.inheritEarliestInputExpiry) {
+    if (policy.mode === "Fixed Duration" && policy.calculateFromBom) {
       detailParts.push("Capped by earliest input expiry");
     }
     out.push({

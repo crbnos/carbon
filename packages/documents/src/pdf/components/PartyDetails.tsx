@@ -13,6 +13,7 @@ type CounterParty = {
   countryCode: string | null;
   taxId?: string | null;
   vatNumber?: string | null;
+  eori?: string | null;
   contactName?: string | null;
   contactEmail?: string | null;
 };
@@ -161,6 +162,7 @@ const PartyDetails = ({
             {counterParty.vatNumber && (
               <Text>VAT No: {counterParty.vatNumber}</Text>
             )}
+            {counterParty.eori && <Text>EORI: {counterParty.eori}</Text>}
             {(counterParty.contactName || counterParty.contactEmail) && (
               <Text>
                 Contact: {counterParty.contactName}

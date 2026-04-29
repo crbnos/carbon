@@ -85,7 +85,9 @@ export default function CustomerShippingRoute() {
       customerShipping?.shippingCustomerContactId ?? "",
     shippingCustomerLocationId:
       customerShipping?.shippingCustomerLocationId ?? "",
-    shippingMethodId: customerShipping?.shippingMethodId ?? ""
+    shippingMethodId: customerShipping?.shippingMethodId ?? "",
+    incoterm: customerShipping?.incoterm ?? undefined,
+    incotermLocation: customerShipping?.incotermLocation ?? ""
     // shippingTermId: customerShipping?.shippingTermId ?? "",
   };
 

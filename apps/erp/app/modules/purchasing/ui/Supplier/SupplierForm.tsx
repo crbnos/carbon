@@ -12,6 +12,7 @@ import {
   ModalCardTitle,
   toast
 } from "@carbon/react";
+import { isEoriCountry } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect } from "react";
@@ -28,7 +29,7 @@ import {
   SupplierStatus,
   SupplierType
 } from "~/components/Form";
-import { usePermissions, useSettings } from "~/hooks";
+import { usePermissions, useSettings, useUser } from "~/hooks";
 import type { Supplier } from "~/modules/purchasing";
 import {
   supplierApprovalValidator,
@@ -50,6 +51,7 @@ const SupplierForm = ({
   const { t } = useLingui();
   const permissions = usePermissions();
   const fetcher = useFetcher<PostgrestResponse<Supplier>>();
+  const { company } = useUser();
   const settings = useSettings();
   const supplierApprovalRequired = settings?.supplierApproval ?? false;
 
@@ -139,6 +141,9 @@ const SupplierForm = ({
                   <Currency name="currencyCode" label={t`Currency`} />
                   <Input name="taxId" label={t`Tax ID`} />
                   <Input name="vatNumber" label={t`VAT Number`} />
+                  {isEoriCountry(company.countryCode) && (
+                    <Input name="eori" label={t`EORI`} />
+                  )}
                   <Input name="website" label={t`Website`} />
 
                   {/* <EmailRecipients name="defaultCc" label={t`Default CC`} /> */}

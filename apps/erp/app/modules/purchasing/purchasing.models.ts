@@ -2,7 +2,7 @@ import { getLocalTimeZone, today } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { address, contact } from "~/types/validators";
-import { methodItemType } from "../shared";
+import { incoterms, methodItemType } from "../shared";
 
 export const KPIs = [
   {
@@ -156,7 +156,9 @@ export const purchaseOrderDeliveryValidator = z
     customerId: zfd.text(z.string().optional()),
     customerLocationId: zfd.text(z.string().optional()),
     supplierShippingCost: zfd.numeric(z.number().optional()),
-    notes: zfd.text(z.string().optional())
+    notes: zfd.text(z.string().optional()),
+    incoterm: zfd.text(z.enum(incoterms).optional()),
+    incotermLocation: zfd.text(z.string().optional())
   })
   .refine(
     (data) => {
@@ -314,6 +316,7 @@ export const supplierValidator = z.object({
   purchasingContactId: zfd.text(z.string().optional()),
   taxId: zfd.text(z.string().optional()),
   vatNumber: zfd.text(z.string().optional()),
+  eori: zfd.text(z.string().optional()),
   website: zfd.text(z.string().optional())
   // defaultCc: z.array(z.string().email()).default([])
 });
@@ -332,6 +335,7 @@ export const supplierApprovalValidator = z.object({
   purchasingContactId: zfd.text(z.string().optional()),
   taxId: zfd.text(z.string().optional()),
   vatNumber: zfd.text(z.string().optional()),
+  eori: zfd.text(z.string().optional()),
   website: zfd.text(z.string().optional())
   // defaultCc: z.array(z.string().email()).default([])
 });
@@ -378,14 +382,17 @@ export const supplierShippingValidator = z.object({
   shippingSupplierLocationId: zfd.text(z.string().optional()),
   shippingSupplierContactId: zfd.text(z.string().optional()),
   // shippingTermId: zfd.text(z.string().optional()),
-  shippingMethodId: zfd.text(z.string().optional())
+  shippingMethodId: zfd.text(z.string().optional()),
+  incoterm: zfd.text(z.enum(incoterms).optional()),
+  incotermLocation: zfd.text(z.string().optional())
 });
 
 export const supplierAccountingValidator = z.object({
   id: zfd.text(z.string()),
   supplierTypeId: zfd.text(z.string().optional()),
   taxId: zfd.text(z.string().optional()),
-  vatNumber: zfd.text(z.string().optional())
+  vatNumber: zfd.text(z.string().optional()),
+  eori: zfd.text(z.string().optional())
 });
 
 export const supplierTypeValidator = z.object({

@@ -2137,11 +2137,49 @@ export async function getItemShelfLife(
 ) {
   return client
     .from("itemShelfLife")
-    .select(
-      "mode, days, triggerProcessId, triggerTiming, inheritEarliestInputExpiry"
-    )
+    .select("mode, days, triggerProcessId, triggerTiming, calculateFromBom")
     .eq("itemId", itemId)
     .maybeSingle();
+}
+
+/**
+ * Returns true when the item's active make-method has at least one BOM
+ * input with a managed shelf-life policy. Used to surface a warning when
+ * the user picks a BOM-driven shelf-life mode (Calculated, or Fixed
+ * Duration with calculateFromBom) but no input would actually contribute
+ * an expiry date.
+ *
+ * Returns false when there is no make-method, no materials, or every
+ * material has shelf-life NotManaged. Errors are coerced to false — this
+ * is a UI hint, not a correctness gate.
+ */
+export async function getBomHasShelfLifeManagedInput(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+): Promise<boolean> {
+  const makeMethods = await getMakeMethods(client, itemId, companyId);
+  if (makeMethods.error || !makeMethods.data?.length) return false;
+
+  const active =
+    makeMethods.data.find((m) => m.status === "Active") ?? makeMethods.data[0];
+
+  const materials = await getMethodMaterialsByMakeMethod(client, active.id);
+  const inputItemIds = (materials.data ?? [])
+    .map((m) => m.itemId)
+    .filter((id): id is string => !!id);
+  if (inputItemIds.length === 0) return false;
+
+  // Any row in itemShelfLife is by definition managed - the upsert path
+  // deletes the row when mode = 'NotManaged' and the column enum has no
+  // such value, so presence is sufficient.
+  const managed = await client
+    .from("itemShelfLife")
+    .select("itemId")
+    .in("itemId", inputItemIds)
+    .limit(1);
+
+  return !managed.error && (managed.data?.length ?? 0) > 0;
 }
 
 export async function upsertItemShelfLife(
@@ -2154,7 +2192,7 @@ export async function upsertItemShelfLife(
     days?: number;
     triggerProcessId?: string;
     triggerTiming?: (typeof shelfLifeTriggerTimings)[number];
-    inheritEarliestInputExpiry?: boolean;
+    calculateFromBom?: boolean;
   }
 ) {
   if (args.mode === undefined) {
@@ -2174,13 +2212,11 @@ export async function upsertItemShelfLife(
   const triggerTiming = triggerProcessId
     ? (args.triggerTiming ?? "After")
     : "After";
-  // Inherit-earliest-input is meaningful only on Fixed Duration; the table
+  // Calculate-from-BOM is meaningful only on Fixed Duration; the table
   // CHECK enforces the same rule. Coerce any stale flag back to false on
   // mode switches so the row never carries an inconsistent combo.
-  const inheritEarliestInputExpiry =
-    args.mode === "Fixed Duration"
-      ? (args.inheritEarliestInputExpiry ?? false)
-      : false;
+  const calculateFromBom =
+    args.mode === "Fixed Duration" ? (args.calculateFromBom ?? false) : false;
 
   // Reject trigger processes that aren't on the item's active recipe.
   // The set-shelf-life helper gates on processId equality, so a process
@@ -2222,7 +2258,7 @@ export async function upsertItemShelfLife(
         days,
         triggerProcessId,
         triggerTiming,
-        inheritEarliestInputExpiry,
+        calculateFromBom,
         updatedBy: args.userId,
         updatedAt: new Date().toISOString()
       })
@@ -2246,7 +2282,7 @@ export async function upsertItemShelfLife(
     days,
     triggerProcessId,
     triggerTiming,
-    inheritEarliestInputExpiry,
+    calculateFromBom,
     companyId: companyId!,
     createdBy: args.userId
   });
@@ -2274,7 +2310,7 @@ export async function upsertPickMethodWithShelfLife(
       days?: number;
       triggerProcessId?: string;
       triggerTiming?: (typeof shelfLifeTriggerTimings)[number];
-      inheritEarliestInputExpiry?: boolean;
+      calculateFromBom?: boolean;
     };
   }
 ) {
@@ -2293,13 +2329,8 @@ export async function upsertPickMethodWithShelfLife(
       .where("locationId", "=", args.locationId)
       .execute();
 
-    const {
-      mode,
-      days,
-      triggerProcessId,
-      triggerTiming,
-      inheritEarliestInputExpiry
-    } = args.shelfLife;
+    const { mode, days, triggerProcessId, triggerTiming, calculateFromBom } =
+      args.shelfLife;
 
     // mode undefined = caller didn't surface the field; leave any existing
     // row alone (matches upsertItemShelfLife semantics).
@@ -2319,8 +2350,8 @@ export async function upsertPickMethodWithShelfLife(
     const normalizedTriggerTiming = normalizedTriggerProcess
       ? (triggerTiming ?? "After")
       : "After";
-    const normalizedInherit =
-      mode === "Fixed Duration" ? (inheritEarliestInputExpiry ?? false) : false;
+    const normalizedCalcFromBom =
+      mode === "Fixed Duration" ? (calculateFromBom ?? false) : false;
 
     // Reject trigger processes that aren't on the item's active recipe.
     // The set-shelf-life helper gates on processId equality, so picking a
@@ -2359,7 +2390,7 @@ export async function upsertPickMethodWithShelfLife(
           days: normalizedDays,
           triggerProcessId: normalizedTriggerProcess,
           triggerTiming: normalizedTriggerTiming,
-          inheritEarliestInputExpiry: normalizedInherit,
+          calculateFromBom: normalizedCalcFromBom,
           updatedBy: args.userId,
           updatedAt
         })
@@ -2386,7 +2417,7 @@ export async function upsertPickMethodWithShelfLife(
         days: normalizedDays,
         triggerProcessId: normalizedTriggerProcess,
         triggerTiming: normalizedTriggerTiming,
-        inheritEarliestInputExpiry: normalizedInherit,
+        calculateFromBom: normalizedCalcFromBom,
         companyId: itemRow.companyId,
         createdBy: args.userId
       })
@@ -2464,8 +2495,7 @@ export async function upsertConsumable(
         days: consumable.shelfLifeDays,
         triggerProcessId: consumable.shelfLifeTriggerProcessId,
         triggerTiming: consumable.shelfLifeTriggerTiming,
-        inheritEarliestInputExpiry:
-          consumable.shelfLifeInheritEarliestInputExpiry
+        calculateFromBom: consumable.shelfLifeCalculateFromBom
       });
       if (shelfLife.error) return shelfLife;
     }
@@ -2528,7 +2558,7 @@ export async function upsertConsumable(
     days: consumable.shelfLifeDays,
     triggerProcessId: consumable.shelfLifeTriggerProcessId,
     triggerTiming: consumable.shelfLifeTriggerTiming,
-    inheritEarliestInputExpiry: consumable.shelfLifeInheritEarliestInputExpiry
+    calculateFromBom: consumable.shelfLifeCalculateFromBom
   });
   if (shelfLife.error) return shelfLife;
 
@@ -2619,7 +2649,7 @@ export async function upsertPart(
         days: part.shelfLifeDays,
         triggerProcessId: part.shelfLifeTriggerProcessId,
         triggerTiming: part.shelfLifeTriggerTiming,
-        inheritEarliestInputExpiry: part.shelfLifeInheritEarliestInputExpiry
+        calculateFromBom: part.shelfLifeCalculateFromBom
       });
       if (shelfLife.error) return shelfLife;
     }
@@ -2682,7 +2712,7 @@ export async function upsertPart(
     days: part.shelfLifeDays,
     triggerProcessId: part.shelfLifeTriggerProcessId,
     triggerTiming: part.shelfLifeTriggerTiming,
-    inheritEarliestInputExpiry: part.shelfLifeInheritEarliestInputExpiry
+    calculateFromBom: part.shelfLifeCalculateFromBom
   });
   if (shelfLife.error) return shelfLife;
 
@@ -3275,7 +3305,7 @@ export async function upsertMaterial(
         days: material.shelfLifeDays,
         triggerProcessId: material.shelfLifeTriggerProcessId,
         triggerTiming: material.shelfLifeTriggerTiming,
-        inheritEarliestInputExpiry: material.shelfLifeInheritEarliestInputExpiry
+        calculateFromBom: material.shelfLifeCalculateFromBom
       });
       if (shelfLife.error) return shelfLife;
     }
@@ -3361,7 +3391,7 @@ export async function upsertMaterial(
     days: material.shelfLifeDays,
     triggerProcessId: material.shelfLifeTriggerProcessId,
     triggerTiming: material.shelfLifeTriggerTiming,
-    inheritEarliestInputExpiry: material.shelfLifeInheritEarliestInputExpiry
+    calculateFromBom: material.shelfLifeCalculateFromBom
   });
   if (shelfLife.error) return shelfLife;
 
@@ -3803,7 +3833,7 @@ export async function upsertTool(
         days: tool.shelfLifeDays,
         triggerProcessId: tool.shelfLifeTriggerProcessId,
         triggerTiming: tool.shelfLifeTriggerTiming,
-        inheritEarliestInputExpiry: tool.shelfLifeInheritEarliestInputExpiry
+        calculateFromBom: tool.shelfLifeCalculateFromBom
       });
       if (shelfLife.error) return shelfLife;
     }
@@ -3866,7 +3896,7 @@ export async function upsertTool(
     days: tool.shelfLifeDays,
     triggerProcessId: tool.shelfLifeTriggerProcessId,
     triggerTiming: tool.shelfLifeTriggerTiming,
-    inheritEarliestInputExpiry: tool.shelfLifeInheritEarliestInputExpiry
+    calculateFromBom: tool.shelfLifeCalculateFromBom
   });
   if (shelfLife.error) return shelfLife;
 

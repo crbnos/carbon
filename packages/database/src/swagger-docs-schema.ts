@@ -958,6 +958,12 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderShipment.shippingCost"
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderShipment.incoterm"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderShipment.incotermLocation"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -1077,6 +1083,12 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderShipment.shippingCost"
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderShipment.incoterm"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderShipment.incotermLocation"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -1148,6 +1160,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderShipment.shippingCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderShipment.incoterm"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderShipment.incotermLocation"
           },
           {
             $ref: "#/parameters/body.salesOrderShipment"
@@ -2176,6 +2194,12 @@ export default {
             $ref: "#/parameters/rowFilter.quoteShipment.shippingCost"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteShipment.incoterm"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteShipment.incotermLocation"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -2262,6 +2286,12 @@ export default {
             $ref: "#/parameters/rowFilter.quoteShipment.shippingCost"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteShipment.incoterm"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteShipment.incotermLocation"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -2300,6 +2330,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteShipment.shippingCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteShipment.incoterm"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteShipment.incotermLocation"
           },
           {
             $ref: "#/parameters/body.quoteShipment"
@@ -3532,6 +3568,12 @@ export default {
             $ref: "#/parameters/rowFilter.customerShipping.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.customerShipping.incoterm"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerShipping.incotermLocation"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -3618,6 +3660,12 @@ export default {
             $ref: "#/parameters/rowFilter.customerShipping.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.customerShipping.incoterm"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerShipping.incotermLocation"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -3656,6 +3704,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customerShipping.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerShipping.incoterm"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerShipping.incotermLocation"
           },
           {
             $ref: "#/parameters/body.customerShipping"
@@ -6002,6 +6056,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLocations.supplierVatNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLocations.supplierEori"
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLocations.supplierContactName"
@@ -13303,6 +13360,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceLocations.customerCountryName"
           },
           {
+            $ref: "#/parameters/rowFilter.salesInvoiceLocations.customerEori"
+          },
+          {
             $ref: "#/parameters/rowFilter.salesInvoiceLocations.invoiceCustomerName"
           },
           {
@@ -14282,6 +14342,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customers.vatNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customers.eori"
           },
           {
             $ref: "#/parameters/rowFilter.customers.externalId"
@@ -17128,6 +17191,12 @@ export default {
             $ref: "#/parameters/rowFilter.supplierShipping.tags"
           },
           {
+            $ref: "#/parameters/rowFilter.supplierShipping.incoterm"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierShipping.incotermLocation"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -17220,6 +17289,12 @@ export default {
             $ref: "#/parameters/rowFilter.supplierShipping.tags"
           },
           {
+            $ref: "#/parameters/rowFilter.supplierShipping.incoterm"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierShipping.incotermLocation"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -17264,6 +17339,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierShipping.tags"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierShipping.incoterm"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierShipping.incotermLocation"
           },
           {
             $ref: "#/parameters/body.supplierShipping"
@@ -27265,7 +27346,7 @@ export default {
             $ref: "#/parameters/rowFilter.itemShelfLife.customFields"
           },
           {
-            $ref: "#/parameters/rowFilter.itemShelfLife.inheritEarliestInputExpiry"
+            $ref: "#/parameters/rowFilter.itemShelfLife.calculateFromBom"
           },
           {
             $ref: "#/parameters/select"
@@ -27360,7 +27441,7 @@ export default {
             $ref: "#/parameters/rowFilter.itemShelfLife.customFields"
           },
           {
-            $ref: "#/parameters/rowFilter.itemShelfLife.inheritEarliestInputExpiry"
+            $ref: "#/parameters/rowFilter.itemShelfLife.calculateFromBom"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -27409,7 +27490,7 @@ export default {
             $ref: "#/parameters/rowFilter.itemShelfLife.customFields"
           },
           {
-            $ref: "#/parameters/rowFilter.itemShelfLife.inheritEarliestInputExpiry"
+            $ref: "#/parameters/rowFilter.itemShelfLife.calculateFromBom"
           },
           {
             $ref: "#/parameters/body.itemShelfLife"
@@ -29225,6 +29306,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteCustomerDetails.customerCountryName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteCustomerDetails.customerEori"
           },
           {
             $ref: "#/parameters/select"
@@ -32744,6 +32828,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.suppliers.vatNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.suppliers.eori"
           },
           {
             $ref: "#/parameters/rowFilter.suppliers.website"
@@ -42076,6 +42163,9 @@ export default {
             $ref: "#/parameters/rowFilter.customer.vatNumber"
           },
           {
+            $ref: "#/parameters/rowFilter.customer.eori"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -42207,6 +42297,9 @@ export default {
             $ref: "#/parameters/rowFilter.customer.vatNumber"
           },
           {
+            $ref: "#/parameters/rowFilter.customer.eori"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -42290,6 +42383,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customer.vatNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customer.eori"
           },
           {
             $ref: "#/parameters/body.customer"
@@ -47899,6 +47995,12 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceDelivery.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceDelivery.incoterm"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceDelivery.incotermLocation"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -47985,6 +48087,12 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceDelivery.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceDelivery.incoterm"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceDelivery.incotermLocation"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -48023,6 +48131,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceDelivery.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceDelivery.incoterm"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceDelivery.incotermLocation"
           },
           {
             $ref: "#/parameters/body.purchaseInvoiceDelivery"
@@ -52249,6 +52363,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLocations.customerCountryName"
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLocations.customerEori"
+          },
+          {
             $ref: "#/parameters/rowFilter.salesOrderLocations.paymentCustomerName"
           },
           {
@@ -54997,6 +55114,12 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrders.shippingCost"
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrders.incoterm"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrders.incotermLocation"
+          },
+          {
             $ref: "#/parameters/rowFilter.salesOrders.externalId"
           },
           {
@@ -56356,6 +56479,12 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceShipment.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.incoterm"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.incotermLocation"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -56448,6 +56577,12 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceShipment.updatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.incoterm"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.incotermLocation"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -56492,6 +56627,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceShipment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.incoterm"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.incotermLocation"
           },
           {
             $ref: "#/parameters/body.salesInvoiceShipment"
@@ -57535,6 +57676,12 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderDelivery.supplierShippingCost"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderDelivery.incoterm"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderDelivery.incotermLocation"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -57648,6 +57795,12 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderDelivery.supplierShippingCost"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderDelivery.incoterm"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderDelivery.incotermLocation"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -57713,6 +57866,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderDelivery.supplierShippingCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderDelivery.incoterm"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderDelivery.incotermLocation"
           },
           {
             $ref: "#/parameters/body.purchaseOrderDelivery"
@@ -58420,6 +58579,12 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrders.supplierShippingCost"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrders.incoterm"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrders.incotermLocation"
+          },
+          {
             $ref: "#/parameters/rowFilter.purchaseOrders.createdByFullName"
           },
           {
@@ -58621,6 +58786,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplier.supplierStatus"
           },
           {
+            $ref: "#/parameters/rowFilter.supplier.eori"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -58752,6 +58920,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplier.supplierStatus"
           },
           {
+            $ref: "#/parameters/rowFilter.supplier.eori"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -58835,6 +59006,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplier.supplierStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplier.eori"
           },
           {
             $ref: "#/parameters/body.supplier"
@@ -75908,6 +76082,27 @@ export default {
           default: 0,
           format: "numeric",
           type: "number"
+        },
+        incoterm: {
+          enum: [
+            "EXW",
+            "FCA",
+            "FAS",
+            "FOB",
+            "CPT",
+            "CIP",
+            "CFR",
+            "CIF",
+            "DAP",
+            "DPU",
+            "DDP"
+          ],
+          format: "public.incoterm",
+          type: "string"
+        },
+        incotermLocation: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -76466,6 +76661,27 @@ export default {
           default: 0,
           format: "numeric",
           type: "number"
+        },
+        incoterm: {
+          enum: [
+            "EXW",
+            "FCA",
+            "FAS",
+            "FOB",
+            "CPT",
+            "CIP",
+            "CFR",
+            "CIF",
+            "DAP",
+            "DPU",
+            "DDP"
+          ],
+          format: "public.incoterm",
+          type: "string"
+        },
+        incotermLocation: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -77004,6 +77220,27 @@ export default {
         updatedBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        incoterm: {
+          enum: [
+            "EXW",
+            "FCA",
+            "FAS",
+            "FOB",
+            "CPT",
+            "CIP",
+            "CFR",
+            "CIF",
+            "DAP",
+            "DPU",
+            "DDP"
+          ],
+          format: "public.incoterm",
+          type: "string"
+        },
+        incotermLocation: {
           format: "text",
           type: "string"
         }
@@ -78133,6 +78370,10 @@ export default {
           type: "string"
         },
         supplierVatNumber: {
+          format: "text",
+          type: "string"
+        },
+        supplierEori: {
           format: "text",
           type: "string"
         },
@@ -79503,7 +79744,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -79552,7 +79793,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -81801,6 +82042,10 @@ export default {
           format: "text",
           type: "string"
         },
+        customerEori: {
+          format: "text",
+          type: "string"
+        },
         invoiceCustomerName: {
           format: "text",
           type: "string"
@@ -82335,6 +82580,10 @@ export default {
           type: "array"
         },
         vatNumber: {
+          format: "text",
+          type: "string"
+        },
+        eori: {
           format: "text",
           type: "string"
         },
@@ -83697,6 +83946,27 @@ export default {
             type: "string"
           },
           type: "array"
+        },
+        incoterm: {
+          enum: [
+            "EXW",
+            "FCA",
+            "FAS",
+            "FOB",
+            "CPT",
+            "CIP",
+            "CFR",
+            "CIF",
+            "DAP",
+            "DPU",
+            "DDP"
+          ],
+          format: "public.incoterm",
+          type: "string"
+        },
+        incotermLocation: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -88036,7 +88306,7 @@ export default {
         "companyId",
         "createdBy",
         "createdAt",
-        "inheritEarliestInputExpiry"
+        "calculateFromBom"
       ],
       properties: {
         itemId: {
@@ -88096,7 +88366,7 @@ export default {
         customFields: {
           format: "jsonb"
         },
-        inheritEarliestInputExpiry: {
+        calculateFromBom: {
           default: false,
           format: "boolean",
           type: "boolean"
@@ -89071,6 +89341,10 @@ export default {
           type: "string"
         },
         customerCountryName: {
+          format: "text",
+          type: "string"
+        },
+        customerEori: {
           format: "text",
           type: "string"
         }
@@ -90717,6 +90991,10 @@ export default {
           type: "string"
         },
         vatNumber: {
+          format: "text",
+          type: "string"
+        },
+        eori: {
           format: "text",
           type: "string"
         },
@@ -94947,6 +95225,10 @@ export default {
         vatNumber: {
           format: "text",
           type: "string"
+        },
+        eori: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -97964,6 +98246,27 @@ export default {
         },
         customFields: {
           format: "jsonb"
+        },
+        incoterm: {
+          enum: [
+            "EXW",
+            "FCA",
+            "FAS",
+            "FOB",
+            "CPT",
+            "CIP",
+            "CFR",
+            "CIF",
+            "DAP",
+            "DPU",
+            "DDP"
+          ],
+          format: "public.incoterm",
+          type: "string"
+        },
+        incotermLocation: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -100026,6 +100329,10 @@ export default {
           format: "text",
           type: "string"
         },
+        customerEori: {
+          format: "text",
+          type: "string"
+        },
         paymentCustomerName: {
           format: "text",
           type: "string"
@@ -101301,6 +101608,27 @@ export default {
           format: "numeric",
           type: "number"
         },
+        incoterm: {
+          enum: [
+            "EXW",
+            "FCA",
+            "FAS",
+            "FOB",
+            "CPT",
+            "CIP",
+            "CFR",
+            "CIF",
+            "DAP",
+            "DPU",
+            "DDP"
+          ],
+          format: "public.incoterm",
+          type: "string"
+        },
+        incotermLocation: {
+          format: "text",
+          type: "string"
+        },
         externalId: {
           format: "jsonb"
         }
@@ -102055,6 +102383,27 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string"
+        },
+        incoterm: {
+          enum: [
+            "EXW",
+            "FCA",
+            "FAS",
+            "FOB",
+            "CPT",
+            "CIP",
+            "CFR",
+            "CIF",
+            "DAP",
+            "DPU",
+            "DDP"
+          ],
+          format: "public.incoterm",
+          type: "string"
+        },
+        incotermLocation: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -102562,6 +102911,27 @@ export default {
           default: 0,
           format: "numeric",
           type: "number"
+        },
+        incoterm: {
+          enum: [
+            "EXW",
+            "FCA",
+            "FAS",
+            "FOB",
+            "CPT",
+            "CIP",
+            "CFR",
+            "CIF",
+            "DAP",
+            "DPU",
+            "DDP"
+          ],
+          format: "public.incoterm",
+          type: "string"
+        },
+        incotermLocation: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -102988,6 +103358,27 @@ export default {
           format: "numeric",
           type: "number"
         },
+        incoterm: {
+          enum: [
+            "EXW",
+            "FCA",
+            "FAS",
+            "FOB",
+            "CPT",
+            "CIP",
+            "CFR",
+            "CIF",
+            "DAP",
+            "DPU",
+            "DDP"
+          ],
+          format: "public.incoterm",
+          type: "string"
+        },
+        incotermLocation: {
+          format: "text",
+          type: "string"
+        },
         createdByFullName: {
           format: "text",
           type: "string"
@@ -103197,6 +103588,10 @@ export default {
         supplierStatus: {
           enum: ["Active", "Inactive", "Pending", "Rejected"],
           format: 'public."supplierStatusType"',
+          type: "string"
+        },
+        eori: {
+          format: "text",
           type: "string"
         }
       },
@@ -107839,6 +108234,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.salesOrderShipment.incoterm": {
+      name: "incoterm",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderShipment.incotermLocation": {
+      name: "incotermLocation",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.documentLabels": {
       name: "documentLabels",
       description: "documentLabels",
@@ -108511,6 +108918,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.quoteShipment.incoterm": {
+      name: "incoterm",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.quoteShipment.incotermLocation": {
+      name: "incotermLocation",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.customerLocation": {
       name: "customerLocation",
       description: "customerLocation",
@@ -109152,6 +109571,18 @@ export default {
     },
     "rowFilter.customerShipping.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerShipping.incoterm": {
+      name: "incoterm",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerShipping.incotermLocation": {
+      name: "incotermLocation",
       required: false,
       in: "query",
       type: "string"
@@ -110418,6 +110849,12 @@ export default {
     },
     "rowFilter.purchaseOrderLocations.supplierVatNumber": {
       name: "supplierVatNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderLocations.supplierEori": {
+      name: "supplierEori",
       required: false,
       in: "query",
       type: "string"
@@ -114613,6 +115050,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.salesInvoiceLocations.customerEori": {
+      name: "customerEori",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.salesInvoiceLocations.invoiceCustomerName": {
       name: "invoiceCustomerName",
       required: false,
@@ -115188,6 +115631,12 @@ export default {
     },
     "rowFilter.customers.vatNumber": {
       name: "vatNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customers.eori": {
+      name: "eori",
       required: false,
       in: "query",
       type: "string"
@@ -116703,6 +117152,18 @@ export default {
     },
     "rowFilter.supplierShipping.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierShipping.incoterm": {
+      name: "incoterm",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierShipping.incotermLocation": {
+      name: "incotermLocation",
       required: false,
       in: "query",
       type: "string"
@@ -121681,8 +122142,8 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.itemShelfLife.inheritEarliestInputExpiry": {
-      name: "inheritEarliestInputExpiry",
+    "rowFilter.itemShelfLife.calculateFromBom": {
+      name: "calculateFromBom",
       required: false,
       in: "query",
       type: "string"
@@ -122829,6 +123290,12 @@ export default {
     },
     "rowFilter.quoteCustomerDetails.customerCountryName": {
       name: "customerCountryName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.quoteCustomerDetails.customerEori": {
+      name: "customerEori",
       required: false,
       in: "query",
       type: "string"
@@ -124562,6 +125029,12 @@ export default {
     },
     "rowFilter.suppliers.vatNumber": {
       name: "vatNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.suppliers.eori": {
+      name: "eori",
       required: false,
       in: "query",
       type: "string"
@@ -129340,6 +129813,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.customer.eori": {
+      name: "eori",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.purchaseOrder": {
       name: "purchaseOrder",
       description: "purchaseOrder",
@@ -132880,6 +133359,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.purchaseInvoiceDelivery.incoterm": {
+      name: "incoterm",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseInvoiceDelivery.incotermLocation": {
+      name: "incotermLocation",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.quoteLinePrice": {
       name: "quoteLinePrice",
       description: "quoteLinePrice",
@@ -135144,6 +135635,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.salesOrderLocations.customerEori": {
+      name: "customerEori",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.salesOrderLocations.paymentCustomerName": {
       name: "paymentCustomerName",
       required: false,
@@ -136545,6 +137042,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.salesOrders.incoterm": {
+      name: "incoterm",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrders.incotermLocation": {
+      name: "incotermLocation",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.salesOrders.externalId": {
       name: "externalId",
       required: false,
@@ -137442,6 +137951,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.salesInvoiceShipment.incoterm": {
+      name: "incoterm",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesInvoiceShipment.incotermLocation": {
+      name: "incotermLocation",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.supplierQuoteFavorite": {
       name: "supplierQuoteFavorite",
       description: "supplierQuoteFavorite",
@@ -138015,6 +138536,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.purchaseOrderDelivery.incoterm": {
+      name: "incoterm",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrderDelivery.incotermLocation": {
+      name: "incotermLocation",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.note": {
       name: "note",
       description: "note",
@@ -138489,6 +139022,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.purchaseOrders.incoterm": {
+      name: "incoterm",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseOrders.incotermLocation": {
+      name: "incotermLocation",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.purchaseOrders.createdByFullName": {
       name: "createdByFullName",
       required: false,
@@ -138737,6 +139282,12 @@ export default {
     },
     "rowFilter.supplier.supplierStatus": {
       name: "supplierStatus",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplier.eori": {
+      name: "eori",
       required: false,
       in: "query",
       type: "string"

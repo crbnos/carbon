@@ -13,6 +13,7 @@ import {
 import { HStack } from "./HStack";
 import { IconButton } from "./IconButton";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
+import { TruncatedTooltipText } from "./TruncatedTooltipText";
 import { cn } from "./utils/cn";
 import { reactNodeToString } from "./utils/react";
 
@@ -67,6 +68,36 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
     const isInlinePreview = !!inline;
+    const selectedOption = useMemo(
+      () => options.find((option) => option.value === value),
+      [options, value]
+    );
+    const selectedOptionText = useMemo(() => {
+      if (!selectedOption) return undefined;
+      const labelText =
+        typeof selectedOption.label === "string"
+          ? selectedOption.label
+          : reactNodeToString(selectedOption.label);
+
+      return [labelText, selectedOption.helper].filter(Boolean).join(" - ");
+    }, [selectedOption]);
+    const dropdownContentWidthCh = useMemo(() => {
+      if (options.length === 0) return undefined;
+
+      const maxOptionChars = options.reduce((longest, option) => {
+        const labelText =
+          typeof option.label === "string"
+            ? option.label
+            : reactNodeToString(option.label);
+        const combined = [labelText, option.helper, option.helperRight]
+          .filter(Boolean)
+          .join(" ");
+
+        return Math.max(longest, combined.length);
+      }, 0);
+
+      return Math.min(72, Math.max(36, maxOptionChars + 8));
+    }, [options]);
 
     return (
       <HStack
@@ -115,7 +146,12 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
                 onClick={() => setOpen(true)}
               >
                 {value ? (
-                  options.find((option) => option.value === value)?.label
+                  <TruncatedTooltipText
+                    className="block min-w-0 flex-1 truncate text-left"
+                    tooltip={selectedOptionText}
+                  >
+                    {selectedOption?.label}
+                  </TruncatedTooltipText>
                 ) : (
                   <span className="!text-muted-foreground">
                     {placeholder ?? t`Select`}
@@ -126,7 +162,12 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
           </PopoverTrigger>
           <PopoverContent
             align="start"
-            className="min-w-[--radix-popover-trigger-width] max-w-[400px] p-1"
+            className="min-w-[--radix-popover-trigger-width] max-w-[min(560px,calc(100vw-2rem))] p-1"
+            style={{
+              width: dropdownContentWidthCh
+                ? `min(560px, max(var(--radix-popover-trigger-width), ${dropdownContentWidthCh}ch))`
+                : "var(--radix-popover-trigger-width)"
+            }}
           >
             <VirtualizedCommand
               label={label}
@@ -254,6 +295,12 @@ function VirtualizedCommand({
           >
             {items.map((virtualRow) => {
               const item = filteredOptions[virtualRow.index]!;
+              const itemHoverText =
+                typeof item.label === "string"
+                  ? [item.label, item.helper].filter(Boolean).join(" - ")
+                  : [reactNodeToString(item.label), item.helper]
+                      .filter(Boolean)
+                      .join(" - ");
 
               const isSelected = !!selected?.includes(item.value);
               const isCreateOption = item.value === "create";
@@ -298,9 +345,19 @@ function VirtualizedCommand({
                         isSelected || (item.value === value && "pr-2")
                       )}
                     >
-                      <p className="truncate">{item.label}</p>
+                      <TruncatedTooltipText
+                        className="block w-full truncate"
+                        tooltip={itemHoverText}
+                      >
+                        {item.label}
+                      </TruncatedTooltipText>
                       <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                        <span className="truncate flex-1">{item.helper}</span>
+                        <TruncatedTooltipText
+                          className="truncate flex-1"
+                          tooltip={itemHoverText}
+                        >
+                          {item.helper}
+                        </TruncatedTooltipText>
                         {item.helperRight && (
                           <span className="flex-shrink-0">
                             {item.helperRight}
@@ -309,7 +366,12 @@ function VirtualizedCommand({
                       </div>
                     </div>
                   ) : (
-                    <span className="truncate flex-1">{item.label}</span>
+                    <TruncatedTooltipText
+                      className="truncate flex-1"
+                      tooltip={itemHoverText}
+                    >
+                      {item.label}
+                    </TruncatedTooltipText>
                   )}
                   {!isCreateOption && (
                     <LuCheck

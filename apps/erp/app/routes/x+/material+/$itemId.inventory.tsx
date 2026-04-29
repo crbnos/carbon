@@ -10,6 +10,7 @@ import { useRouteData } from "~/hooks";
 import { InventoryDetails } from "~/modules/inventory";
 import type { Material, UnitOfMeasureListItem } from "~/modules/items";
 import {
+  getBomHasShelfLifeManagedInput,
   getItemQuantities,
   getItemShelfLife,
   getItemStorageUnitQuantities,
@@ -141,13 +142,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const shelfLife = await getItemShelfLife(client, itemId);
+  const [shelfLife, bomHasShelfLifeManagedInput] = await Promise.all([
+    getItemShelfLife(client, itemId),
+    getBomHasShelfLifeManagedInput(client, itemId, companyId)
+  ]);
 
   return {
     materialInventory: materialInventory.data,
     itemStorageUnitQuantities: itemStorageUnitQuantities.data,
     quantities: quantities.data,
     shelfLife: shelfLife.data,
+    bomHasShelfLifeManagedInput,
     itemId,
     locationId
   };
@@ -176,7 +181,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     shelfLifeDays,
     shelfLifeTriggerProcessId,
     shelfLifeTriggerTiming,
-    shelfLifeInheritEarliestInputExpiry,
+    shelfLifeCalculateFromBom,
     ...pickMethodFields
   } = validation.data;
 
@@ -192,7 +197,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         days: shelfLifeDays,
         triggerProcessId: shelfLifeTriggerProcessId,
         triggerTiming: shelfLifeTriggerTiming,
-        inheritEarliestInputExpiry: shelfLifeInheritEarliestInputExpiry
+        calculateFromBom: shelfLifeCalculateFromBom
       }
     });
   } catch (err) {
@@ -219,6 +224,7 @@ export default function MaterialInventoryRoute() {
     itemStorageUnitQuantities,
     quantities,
     shelfLife,
+    bomHasShelfLifeManagedInput,
     itemId
   } = useLoaderData<typeof loader>();
 
@@ -238,8 +244,7 @@ export default function MaterialInventoryRoute() {
     shelfLifeDays: shelfLife?.days ?? undefined,
     shelfLifeTriggerProcessId: shelfLife?.triggerProcessId ?? undefined,
     shelfLifeTriggerTiming: shelfLife?.triggerTiming ?? undefined,
-    shelfLifeInheritEarliestInputExpiry:
-      shelfLife?.inheritEarliestInputExpiry ?? false,
+    shelfLifeCalculateFromBom: shelfLife?.calculateFromBom ?? false,
     ...getCustomFields(materialInventory.customFields ?? {})
   };
 
@@ -260,6 +265,7 @@ export default function MaterialInventoryRoute() {
         type="Material"
         itemTrackingType={itemTrackingType ?? "Inventory"}
         replenishmentSystem={replenishmentSystem}
+        bomHasShelfLifeManagedInput={bomHasShelfLifeManagedInput}
       />
       <InventoryDetails
         itemStorageUnitQuantities={itemStorageUnitQuantities}

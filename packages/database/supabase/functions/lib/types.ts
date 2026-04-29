@@ -4351,6 +4351,7 @@ export type Database = {
           customFields: Json | null
           defaultCc: string[] | null
           embedding: unknown
+          eori: string | null
           fax: string | null
           id: string
           logo: string | null
@@ -4377,6 +4378,7 @@ export type Database = {
           customFields?: Json | null
           defaultCc?: string[] | null
           embedding?: unknown
+          eori?: string | null
           fax?: string | null
           id?: string
           logo?: string | null
@@ -4403,6 +4405,7 @@ export type Database = {
           customFields?: Json | null
           defaultCc?: string[] | null
           embedding?: unknown
+          eori?: string | null
           fax?: string | null
           id?: string
           logo?: string | null
@@ -5527,6 +5530,8 @@ export type Database = {
         Row: {
           companyId: string
           customerId: string
+          incoterm: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation: string | null
           shippingCustomerContactId: string | null
           shippingCustomerId: string | null
           shippingCustomerLocationId: string | null
@@ -5538,6 +5543,8 @@ export type Database = {
         Insert: {
           companyId: string
           customerId: string
+          incoterm?: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation?: string | null
           shippingCustomerContactId?: string | null
           shippingCustomerId?: string | null
           shippingCustomerLocationId?: string | null
@@ -5549,6 +5556,8 @@ export type Database = {
         Update: {
           companyId?: string
           customerId?: string
+          incoterm?: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation?: string | null
           shippingCustomerContactId?: string | null
           shippingCustomerId?: string | null
           shippingCustomerLocationId?: string | null
@@ -11640,12 +11649,12 @@ export type Database = {
       }
       itemShelfLife: {
         Row: {
+          calculateFromBom: boolean
           companyId: string
           createdAt: string
           createdBy: string
           customFields: Json | null
           days: number | null
-          inheritEarliestInputExpiry: boolean
           itemId: string
           mode: Database["public"]["Enums"]["shelfLifeMode"]
           triggerProcessId: string | null
@@ -11654,12 +11663,12 @@ export type Database = {
           updatedBy: string | null
         }
         Insert: {
+          calculateFromBom?: boolean
           companyId: string
           createdAt?: string
           createdBy: string
           customFields?: Json | null
           days?: number | null
-          inheritEarliestInputExpiry?: boolean
           itemId: string
           mode: Database["public"]["Enums"]["shelfLifeMode"]
           triggerProcessId?: string | null
@@ -11668,12 +11677,12 @@ export type Database = {
           updatedBy?: string | null
         }
         Update: {
+          calculateFromBom?: boolean
           companyId?: string
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
           days?: number | null
-          inheritEarliestInputExpiry?: boolean
           itemId?: string
           mode?: Database["public"]["Enums"]["shelfLifeMode"]
           triggerProcessId?: string | null
@@ -25909,6 +25918,8 @@ export type Database = {
           companyId: string
           customFields: Json | null
           id: string
+          incoterm: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation: string | null
           locationId: string | null
           shippingMethodId: string | null
           shippingTermId: string | null
@@ -25920,6 +25931,8 @@ export type Database = {
           companyId: string
           customFields?: Json | null
           id: string
+          incoterm?: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation?: string | null
           locationId?: string | null
           shippingMethodId?: string | null
           shippingTermId?: string | null
@@ -25931,6 +25944,8 @@ export type Database = {
           companyId?: string
           customFields?: Json | null
           id?: string
+          incoterm?: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation?: string | null
           locationId?: string | null
           shippingMethodId?: string | null
           shippingTermId?: string | null
@@ -26940,6 +26955,8 @@ export type Database = {
           deliveryDate: string | null
           dropShipment: boolean
           id: string
+          incoterm: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation: string | null
           locationId: string | null
           notes: string | null
           receiptPromisedDate: string | null
@@ -26960,6 +26977,8 @@ export type Database = {
           deliveryDate?: string | null
           dropShipment?: boolean
           id: string
+          incoterm?: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation?: string | null
           locationId?: string | null
           notes?: string | null
           receiptPromisedDate?: string | null
@@ -26980,6 +26999,8 @@ export type Database = {
           deliveryDate?: string | null
           dropShipment?: boolean
           id?: string
+          incoterm?: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation?: string | null
           locationId?: string | null
           notes?: string | null
           receiptPromisedDate?: string | null
@@ -31668,6 +31689,8 @@ export type Database = {
         Row: {
           companyId: string
           id: string
+          incoterm: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation: string | null
           locationId: string | null
           receiptRequestedDate: string | null
           shippingCost: number | null
@@ -31679,6 +31702,8 @@ export type Database = {
         Insert: {
           companyId: string
           id: string
+          incoterm?: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation?: string | null
           locationId?: string | null
           receiptRequestedDate?: string | null
           shippingCost?: number | null
@@ -31690,6 +31715,8 @@ export type Database = {
         Update: {
           companyId?: string
           id?: string
+          incoterm?: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation?: string | null
           locationId?: string | null
           receiptRequestedDate?: string | null
           shippingCost?: number | null
@@ -33233,6 +33260,8 @@ export type Database = {
           createdBy: string
           customFields: Json
           id: string
+          incoterm: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation: string | null
           locationId: string | null
           shippingCost: number
           shippingMethodId: string | null
@@ -33246,6 +33275,8 @@ export type Database = {
           createdBy: string
           customFields?: Json
           id: string
+          incoterm?: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation?: string | null
           locationId?: string | null
           shippingCost?: number
           shippingMethodId?: string | null
@@ -33259,6 +33290,8 @@ export type Database = {
           createdBy?: string
           customFields?: Json
           id?: string
+          incoterm?: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation?: string | null
           locationId?: string | null
           shippingCost?: number
           shippingMethodId?: string | null
@@ -34239,6 +34272,8 @@ export type Database = {
           deliveryDate: string | null
           dropShipment: boolean
           id: string
+          incoterm: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation: string | null
           locationId: string | null
           notes: string | null
           receiptPromisedDate: string | null
@@ -34261,6 +34296,8 @@ export type Database = {
           deliveryDate?: string | null
           dropShipment?: boolean
           id: string
+          incoterm?: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation?: string | null
           locationId?: string | null
           notes?: string | null
           receiptPromisedDate?: string | null
@@ -34283,6 +34320,8 @@ export type Database = {
           deliveryDate?: string | null
           dropShipment?: boolean
           id?: string
+          incoterm?: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation?: string | null
           locationId?: string | null
           notes?: string | null
           receiptPromisedDate?: string | null
@@ -37822,6 +37861,7 @@ export type Database = {
           customFields: Json | null
           defaultCc: string[] | null
           embedding: unknown
+          eori: string | null
           fax: string | null
           id: string
           logo: string | null
@@ -37850,6 +37890,7 @@ export type Database = {
           customFields?: Json | null
           defaultCc?: string[] | null
           embedding?: unknown
+          eori?: string | null
           fax?: string | null
           id?: string
           logo?: string | null
@@ -37878,6 +37919,7 @@ export type Database = {
           customFields?: Json | null
           defaultCc?: string[] | null
           embedding?: unknown
+          eori?: string | null
           fax?: string | null
           id?: string
           logo?: string | null
@@ -40109,6 +40151,8 @@ export type Database = {
         Row: {
           companyId: string
           customFields: Json | null
+          incoterm: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation: string | null
           shippingMethodId: string | null
           shippingSupplierContactId: string | null
           shippingSupplierId: string | null
@@ -40122,6 +40166,8 @@ export type Database = {
         Insert: {
           companyId: string
           customFields?: Json | null
+          incoterm?: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation?: string | null
           shippingMethodId?: string | null
           shippingSupplierContactId?: string | null
           shippingSupplierId?: string | null
@@ -40135,6 +40181,8 @@ export type Database = {
         Update: {
           companyId?: string
           customFields?: Json | null
+          incoterm?: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation?: string | null
           shippingMethodId?: string | null
           shippingSupplierContactId?: string | null
           shippingSupplierId?: string | null
@@ -46071,6 +46119,7 @@ export type Database = {
           customerTypeId: string | null
           customFields: Json | null
           defaultCc: string[] | null
+          eori: string | null
           externalId: Json | null
           fax: string | null
           id: string | null
@@ -51568,6 +51617,7 @@ export type Database = {
           supplierContactName: string | null
           supplierCountryCode: string | null
           supplierCountryName: string | null
+          supplierEori: string | null
           supplierName: string | null
           supplierPostalCode: string | null
           supplierStateProvince: string | null
@@ -51609,6 +51659,8 @@ export type Database = {
           exchangeRateUpdatedAt: string | null
           externalNotes: Json | null
           id: string | null
+          incoterm: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation: string | null
           internalNotes: Json | null
           itemType: Database["public"]["Enums"]["itemType"] | null
           jobId: string | null
@@ -52628,6 +52680,7 @@ export type Database = {
           customerCity: string | null
           customerCountryCode: string | null
           customerCountryName: string | null
+          customerEori: string | null
           customerName: string | null
           customerPostalCode: string | null
           customerStateProvince: string | null
@@ -54951,6 +55004,7 @@ export type Database = {
           customerCity: string | null
           customerCountryCode: string | null
           customerCountryName: string | null
+          customerEori: string | null
           customerName: string | null
           customerPostalCode: string | null
           customerStateProvince: string | null
@@ -55527,6 +55581,7 @@ export type Database = {
           customerCity: string | null
           customerCountryCode: string | null
           customerCountryName: string | null
+          customerEori: string | null
           customerName: string | null
           customerPostalCode: string | null
           customerStateProvince: string | null
@@ -55579,6 +55634,8 @@ export type Database = {
           externalId: Json | null
           externalNotes: Json | null
           id: string | null
+          incoterm: Database["public"]["Enums"]["incoterm"] | null
+          incotermLocation: string | null
           internalNotes: Json | null
           itemType: Database["public"]["Enums"]["itemType"] | null
           jobs: Json[] | null
@@ -57761,6 +57818,7 @@ export type Database = {
           customFields: Json | null
           defaultCc: string[] | null
           embedding: unknown
+          eori: string | null
           externalId: Json | null
           fax: string | null
           id: string | null
@@ -60900,6 +60958,18 @@ export type Database = {
         | "Passed"
         | "Failed"
         | "Partial"
+      incoterm:
+        | "EXW"
+        | "FCA"
+        | "FAS"
+        | "FOB"
+        | "CPT"
+        | "CIP"
+        | "CFR"
+        | "CIF"
+        | "DAP"
+        | "DPU"
+        | "DDP"
       inspectionLevel: "I" | "II" | "III" | "S1" | "S2" | "S3" | "S4"
       inspectionSeverity: "Normal" | "Tightened" | "Reduced"
       inspectionStatus: "Pass" | "Fail"
@@ -62088,6 +62158,19 @@ export const Constants = {
         "Passed",
         "Failed",
         "Partial",
+      ],
+      incoterm: [
+        "EXW",
+        "FCA",
+        "FAS",
+        "FOB",
+        "CPT",
+        "CIP",
+        "CFR",
+        "CIF",
+        "DAP",
+        "DPU",
+        "DDP",
       ],
       inspectionLevel: ["I", "II", "III", "S1", "S2", "S3", "S4"],
       inspectionSeverity: ["Normal", "Tightened", "Reduced"],

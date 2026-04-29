@@ -1,3 +1,45 @@
+CREATE TYPE "incoterm" AS ENUM (
+  'EXW',
+  'FCA',
+  'FAS',
+  'FOB',
+  'CPT',
+  'CIP',
+  'CFR',
+  'CIF',
+  'DAP',
+  'DPU',
+  'DDP'
+);
+
+ALTER TABLE "quoteShipment"
+  ADD COLUMN "incoterm" "incoterm",
+  ADD COLUMN "incotermLocation" TEXT;
+
+ALTER TABLE "salesOrderShipment"
+  ADD COLUMN "incoterm" "incoterm",
+  ADD COLUMN "incotermLocation" TEXT;
+
+ALTER TABLE "salesInvoiceShipment"
+  ADD COLUMN "incoterm" "incoterm",
+  ADD COLUMN "incotermLocation" TEXT;
+
+ALTER TABLE "purchaseOrderDelivery"
+  ADD COLUMN "incoterm" "incoterm",
+  ADD COLUMN "incotermLocation" TEXT;
+
+ALTER TABLE "purchaseInvoiceDelivery"
+  ADD COLUMN "incoterm" "incoterm",
+  ADD COLUMN "incotermLocation" TEXT;
+
+ALTER TABLE "customerShipping"
+  ADD COLUMN "incoterm" "incoterm",
+  ADD COLUMN "incotermLocation" TEXT;
+
+ALTER TABLE "supplierShipping"
+  ADD COLUMN "incoterm" "incoterm",
+  ADD COLUMN "incotermLocation" TEXT;
+
 DROP VIEW IF EXISTS "salesOrders";
 CREATE OR REPLACE VIEW "salesOrders" WITH(SECURITY_INVOKER=true) AS
   SELECT

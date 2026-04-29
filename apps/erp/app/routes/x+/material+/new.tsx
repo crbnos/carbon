@@ -77,7 +77,7 @@ export default function MaterialsNewRoute() {
     unitOfMeasureCode: "EA",
     unitCost: 0,
     active: true,
-    shelfLifeInheritEarliestInputExpiry: false
+    shelfLifeCalculateFromBom: false
   };
 
   return (

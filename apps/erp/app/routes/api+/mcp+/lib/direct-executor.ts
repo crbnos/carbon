@@ -18,6 +18,7 @@ import * as settingsFunctions from "~/modules/settings/settings.service";
 import * as sharedFunctions from "~/modules/shared/shared.service";
 import * as usersFunctions from "~/modules/users/users.service";
 import { isMcpBlockedTool } from "./mcp-blocked-tools";
+import toolMetadata from "./tool-metadata.json";
 
 // Combine all functions into a single registry
 const functionRegistry = {
@@ -102,14 +103,13 @@ export async function executeFunction(
   }
 
   try {
-    // Get function parameter names by converting to string and parsing
-    const funcString = (func as Function).toString();
-    const paramMatch = funcString.match(/\(([^)]*)\)/);
-    const paramNames =
-      paramMatch?.[1]
-        ?.split(",")
-        ?.map((p: string) => p.trim().split(/[=\s]/)[0])
-        ?.filter((p: string) => p) || [];
+    const toolMeta = toolMetadata.tools.find(
+      (t: { name: string }) => t.name === functionName
+    );
+    const paramNames: string[] =
+      toolMeta && "serviceParams" in toolMeta
+        ? (toolMeta as any).serviceParams
+        : [];
 
     // Build arguments array based on parameter names
     const functionArgs: any[] = [];

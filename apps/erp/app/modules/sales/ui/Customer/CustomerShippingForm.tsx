@@ -16,10 +16,13 @@ import {
   CustomerLocation,
   CustomFormFields,
   Hidden,
+  Input,
+  Select,
   ShippingMethod,
   Submit
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
+import { incoterms } from "~/modules/shared";
 import { customerShippingValidator } from "../../sales.models";
 
 type CustomerShippingFormProps = {
@@ -31,6 +34,9 @@ const CustomerShippingForm = ({ initialValues }: CustomerShippingFormProps) => {
   const permissions = usePermissions();
   const [customer, setCustomer] = useState<string | undefined>(
     initialValues.shippingCustomerId
+  );
+  const [incoterm, setIncoterm] = useState<string | undefined>(
+    initialValues.incoterm || undefined
   );
 
   // const shippingTermOptions =
@@ -76,6 +82,16 @@ const CustomerShippingForm = ({ initialValues }: CustomerShippingFormProps) => {
               name="shippingMethodId"
               label={t`Shipping Method`}
             />
+            <Select
+              name="incoterm"
+              label={t`Incoterm`}
+              isClearable
+              options={incoterms.map((i) => ({ value: i, label: i }))}
+              onChange={(v) => setIncoterm(v?.value as string)}
+            />
+            {incoterm && (
+              <Input name="incotermLocation" label={t`Incoterm Location`} />
+            )}
             {/* <Select
               name="shippingTermId"
               label="Shipping Term"

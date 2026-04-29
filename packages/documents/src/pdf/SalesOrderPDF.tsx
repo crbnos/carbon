@@ -76,6 +76,7 @@ const SalesOrderPDF = ({
     customerStateProvince,
     customerPostalCode,
     customerCountryName,
+    customerEori,
     paymentCustomerName,
     paymentAddressLine1,
     paymentAddressLine2,
@@ -138,7 +139,8 @@ const SalesOrderPDF = ({
           city: customerCity,
           stateProvince: customerStateProvince,
           postalCode: customerPostalCode,
-          countryCode: customerCountryName
+          countryCode: customerCountryName,
+          eori: customerEori
         }}
         counterPartyLabel="Buyer"
         accountsReceivableEmail={companySettings?.accountsReceivableEmail}
@@ -194,6 +196,14 @@ const SalesOrderPDF = ({
               {shippingMethod && <Text>Shipping: {shippingMethod.name}</Text>}
               {salesOrder?.shippingTermName && (
                 <Text>Shipping Terms: {salesOrder.shippingTermName}</Text>
+              )}
+              {salesOrder?.incoterm && (
+                <Text>
+                  Incoterm: {salesOrder.incoterm}
+                  {salesOrder.incotermLocation
+                    ? ` - ${salesOrder.incotermLocation}`
+                    : ""}
+                </Text>
               )}
               {paymentTerm && <Text>Payment Terms: {paymentTerm.name}</Text>}
             </View>

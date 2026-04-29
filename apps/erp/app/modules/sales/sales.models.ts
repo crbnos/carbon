@@ -3,6 +3,7 @@ import { zfd } from "zod-form-data";
 import { address, contact } from "~/types/validators";
 import { currencyCodes } from "../accounting";
 import {
+  incoterms,
   methodItemType,
   methodOperationOrders,
   methodType,
@@ -48,7 +49,8 @@ export const customerAccountingValidator = z.object({
   id: zfd.text(z.string()),
   customerTypeId: zfd.text(z.string().optional()),
   taxId: zfd.text(z.string().optional()),
-  vatNumber: zfd.text(z.string().optional())
+  vatNumber: zfd.text(z.string().optional()),
+  eori: zfd.text(z.string().optional())
 });
 
 export const customerContactValidator = z.object({
@@ -75,6 +77,7 @@ export const customerValidator = z.object({
     z.number().min(0).max(1, { message: "Tax percent must be between 0 and 1" })
   ),
   vatNumber: zfd.text(z.string().optional()),
+  eori: zfd.text(z.string().optional()),
   salesContactId: zfd.text(z.string().optional()),
   website: zfd.text(z.string().optional())
   // defaultCc: z.array(z.string().email()).default([])
@@ -94,7 +97,9 @@ export const customerShippingValidator = z.object({
   shippingCustomerLocationId: zfd.text(z.string().optional()),
   shippingCustomerContactId: zfd.text(z.string().optional()),
   // shippingTermId: zfd.text(z.string().optional()),
-  shippingMethodId: zfd.text(z.string().optional())
+  shippingMethodId: zfd.text(z.string().optional()),
+  incoterm: zfd.text(z.enum(incoterms).optional()),
+  incotermLocation: zfd.text(z.string().optional())
 });
 
 export const customerStatusValidator = z.object({
@@ -627,7 +632,9 @@ export const quoteShipmentValidator = z.object({
   locationId: zfd.text(z.string().optional()),
   shippingMethodId: zfd.text(z.string().optional()),
   receiptRequestedDate: zfd.text(z.string().optional()),
-  shippingCost: zfd.numeric(z.number().optional())
+  shippingCost: zfd.numeric(z.number().optional()),
+  incoterm: zfd.text(z.enum(incoterms).optional()),
+  incotermLocation: zfd.text(z.string().optional())
 });
 
 export const salesOrderLineType = [
@@ -704,7 +711,9 @@ export const salesOrderShipmentValidator = z
     supplierId: zfd.text(z.string().optional()),
     supplierLocationId: zfd.text(z.string().optional()),
     shippingCost: zfd.numeric(z.number().optional()),
-    notes: zfd.text(z.string().optional())
+    notes: zfd.text(z.string().optional()),
+    incoterm: zfd.text(z.enum(incoterms).optional()),
+    incotermLocation: zfd.text(z.string().optional())
   })
   .refine(
     (data) => {

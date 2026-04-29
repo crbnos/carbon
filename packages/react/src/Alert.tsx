@@ -6,16 +6,17 @@ import { forwardRef } from "react";
 import { cn } from "./utils/cn";
 
 const alertVariants = cva(
-  "relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-[19px] [&>svg]:text-foreground",
+  "relative w-full rounded-lg border p-4 transition-colors [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-[19px] [&>svg]:text-foreground dark:inset-ring dark:inset-ring-white/5",
   {
     variants: {
       variant: {
         default: "bg-background text-foreground",
         success:
-          "bg-gradient-to-tr via-card to-card hover:to-muted/30 hover:via-muted/30 border-emerald-600/30 from-emerald-600/10 text-emerald-600 [&>svg]:text-emerald-600 dark:text-foreground",
-        warning: "",
+          "bg-linear-to-tr via-card to-card hover:to-muted/30 hover:via-muted/30 border-emerald-600/40 from-emerald-600/15 text-emerald-700 [&>svg]:text-emerald-600 dark:text-emerald-100 dark:from-emerald-600/15 dark:border-emerald-500/30 dark:[&>svg]:text-emerald-400",
+        warning:
+          "bg-linear-to-tr via-card to-card hover:to-muted/30 hover:via-muted/30 border-amber-500/40 from-amber-500/20 text-amber-800 [&>svg]:text-amber-600 dark:text-amber-100 dark:from-amber-500/15 dark:border-amber-500/30 dark:[&>svg]:text-amber-400",
         destructive:
-          "bg-gradient-to-tr via-card to-card hover:to-muted/30 hover:via-muted/30 border-red-500/30 from-red-500/10 text-destructive [&>svg]:text-destructive dark:text-foreground  dark:[&>svg]:text-red-500"
+          "bg-linear-to-tr via-card to-card hover:to-muted/30 hover:via-muted/30 border-red-500/40 from-red-500/15 text-destructive [&>svg]:text-destructive dark:text-red-100 dark:from-red-500/15 dark:border-red-500/30 dark:[&>svg]:text-red-400"
       }
     },
     defaultVariants: {

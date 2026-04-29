@@ -142,7 +142,7 @@ const Items = (props: ItemsSelectProps) => {
             defaultMethodType: "Make to Order",
             unitCost: 0,
             lotSize: 0,
-            shelfLifeInheritEarliestInputExpiry: false,
+            shelfLifeCalculateFromBom: false,
             tags: []
           }}
         />
@@ -162,7 +162,7 @@ const Items = (props: ItemsSelectProps) => {
             replenishmentSystem: "Buy",
             defaultMethodType: "Pull from Inventory",
             unitCost: 0,
-            shelfLifeInheritEarliestInputExpiry: false,
+            shelfLifeCalculateFromBom: false,
             tags: []
           }}
         />
@@ -181,7 +181,7 @@ const Items = (props: ItemsSelectProps) => {
             replenishmentSystem: "Buy",
             defaultMethodType: "Pull from Inventory",
             unitCost: 0,
-            shelfLifeInheritEarliestInputExpiry: false,
+            shelfLifeCalculateFromBom: false,
             tags: []
           }}
         />
@@ -199,7 +199,7 @@ const Items = (props: ItemsSelectProps) => {
             replenishmentSystem: "Buy",
             defaultMethodType: "Pull from Inventory",
             unitCost: 0,
-            shelfLifeInheritEarliestInputExpiry: false,
+            shelfLifeCalculateFromBom: false,
             tags: []
           }}
         />

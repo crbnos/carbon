@@ -199,6 +199,8 @@ export default function PurchaseOrderBasicRoute() {
     customerId: orderData?.purchaseOrderDelivery.customerId ?? "",
     customerLocationId:
       orderData?.purchaseOrderDelivery.customerLocationId ?? "",
+    incoterm: orderData?.purchaseOrderDelivery.incoterm ?? undefined,
+    incotermLocation: orderData?.purchaseOrderDelivery.incotermLocation ?? "",
     ...getCustomFields(orderData?.purchaseOrderDelivery.customFields)
   };
   const paymentInitialValues = {

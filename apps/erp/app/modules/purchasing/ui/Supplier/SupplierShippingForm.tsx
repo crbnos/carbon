@@ -13,6 +13,8 @@ import type { z } from "zod";
 import {
   CustomFormFields,
   Hidden,
+  Input,
+  Select,
   ShippingMethod,
   Submit,
   Supplier,
@@ -21,6 +23,7 @@ import {
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { supplierShippingValidator } from "~/modules/purchasing";
+import { incoterms } from "~/modules/shared";
 
 type SupplierShippingFormProps = {
   initialValues: z.infer<typeof supplierShippingValidator>;
@@ -31,6 +34,9 @@ const SupplierShippingForm = ({ initialValues }: SupplierShippingFormProps) => {
   const permissions = usePermissions();
   const [supplier, setSupplier] = useState<string | undefined>(
     initialValues.shippingSupplierId
+  );
+  const [incoterm, setIncoterm] = useState<string | undefined>(
+    initialValues.incoterm || undefined
   );
 
   // const shippingTermOptions =
@@ -76,6 +82,16 @@ const SupplierShippingForm = ({ initialValues }: SupplierShippingFormProps) => {
               name="shippingMethodId"
               label={t`Shipping Method`}
             />
+            <Select
+              name="incoterm"
+              label={t`Incoterm`}
+              isClearable
+              options={incoterms.map((i) => ({ value: i, label: i }))}
+              onChange={(v) => setIncoterm(v?.value as string)}
+            />
+            {incoterm && (
+              <Input name="incotermLocation" label={t`Incoterm Location`} />
+            )}
             {/* <Select
               name="shippingTermId"
               label={t`Shipping Term`}

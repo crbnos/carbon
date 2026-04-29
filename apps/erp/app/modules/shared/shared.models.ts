@@ -91,6 +91,20 @@ export const documentTypes = [
   "Other"
 ] as const;
 
+export const incoterms = [
+  "EXW",
+  "FCA",
+  "FAS",
+  "FOB",
+  "CPT",
+  "CIP",
+  "CFR",
+  "CIF",
+  "DAP",
+  "DPU",
+  "DDP"
+] as const;
+
 export const inspectionStatus = ["Pass", "Fail"] as const;
 
 export const tablesWithTags = [

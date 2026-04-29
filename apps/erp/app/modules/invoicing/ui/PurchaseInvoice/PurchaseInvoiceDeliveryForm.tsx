@@ -13,8 +13,10 @@ import type { z } from "zod";
 import {
   CustomFormFields,
   Hidden,
+  Input,
   Location,
   Number,
+  Select,
   ShippingMethod,
   Submit
 } from "~/components/Form";
@@ -24,6 +26,7 @@ import {
   isPurchaseInvoiceLocked,
   purchaseInvoiceDeliveryValidator
 } from "~/modules/invoicing";
+import { incoterms } from "~/modules/shared";
 import type { action } from "~/routes/x+/purchase-invoice+/$invoiceId.delivery";
 import { path } from "~/utils/path";
 
@@ -58,6 +61,9 @@ const PurchaseInvoiceDeliveryForm = forwardRef<
   const permissions = usePermissions();
   const fetcher = useFetcher<typeof action>();
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+  const [incoterm, setIncoterm] = useState<string | undefined>(
+    initialValues.incoterm || undefined
+  );
 
   const shippingCostRef = useRef<HTMLInputElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -118,6 +124,16 @@ const PurchaseInvoiceDeliveryForm = forwardRef<
               name="shippingMethodId"
               label={t`Shipping Method`}
             />
+            <Select
+              name="incoterm"
+              label={t`Incoterm`}
+              isClearable
+              options={incoterms.map((i) => ({ value: i, label: i }))}
+              onChange={(v) => setIncoterm(v?.value as string)}
+            />
+            {incoterm && (
+              <Input name="incotermLocation" label={t`Incoterm Location`} />
+            )}
             <CustomFormFields table="purchaseInvoiceDelivery" />
           </div>
         </CardContent>

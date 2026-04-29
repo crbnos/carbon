@@ -88,8 +88,13 @@ const Number = forwardRef<HTMLInputElement, FormNumberProps>(
           isDisabled={isDisabled}
         >
           <NumberInputGroup className="relative">
-            <NumberInput isReadOnly={isReadOnly} ref={ref} size={size} />
-            {!isReadOnly && size !== "sm" && (
+            <NumberInput
+              isReadOnly={isReadOnly}
+              isDisabled={isDisabled}
+              ref={ref}
+              size={size}
+            />
+            {!isReadOnly && !isDisabled && size !== "sm" && (
               <NumberInputStepper>
                 <NumberIncrementStepper>
                   <LuChevronUp size="1em" strokeWidth="3" />

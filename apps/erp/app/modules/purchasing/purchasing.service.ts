@@ -1308,7 +1308,8 @@ export async function upsertPurchaseOrder(
     invoiceSupplierLocationId
   } = supplierPayment.data;
 
-  const { shippingMethodId, shippingTermId } = supplierShipping.data;
+  const { shippingMethodId, shippingTermId, incoterm, incotermLocation } =
+    supplierShipping.data;
 
   if (purchaseOrder.currencyCode) {
     const currency = await getCurrencyByCode(
@@ -1354,6 +1355,8 @@ export async function upsertPurchaseOrder(
         locationId: locationId,
         shippingMethodId: shippingMethodId,
         shippingTermId: shippingTermId,
+        incoterm: incoterm,
+        incotermLocation: incotermLocation,
         companyId: purchaseOrder.companyId
       }
     ]),

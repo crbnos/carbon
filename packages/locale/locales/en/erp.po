@@ -123,7 +123,7 @@ msgstr "A consumable is a physical item used to make a part that can be used acr
 msgid "A contractor is a supplier contact with particular abilities and available hours"
 msgstr "A contractor is a supplier contact with particular abilities and available hours"
 
-#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:95
+#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:97
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "A customer is a business or person who buys your parts or services."
 
@@ -199,7 +199,7 @@ msgstr "A shipment is a record of a part shipped to a customer or transferred to
 msgid "A tool is a physical item used to make a part that can be used across multiple jobs"
 msgstr "A tool is a physical item used to make a part that can be used across multiple jobs"
 
-#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:191
+#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:210
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 
@@ -245,10 +245,10 @@ msgstr "Account Categories"
 msgid "Account Category"
 msgstr "Account Category"
 
-#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierForm.tsx:128
+#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierForm.tsx:130
 #: apps/erp/app/modules/purchasing/ui/Supplier/SupplierHeader.tsx:257
 #: apps/erp/app/modules/purchasing/ui/Supplier/SuppliersTable.tsx:121
-#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:129
+#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:131
 #: apps/erp/app/modules/sales/ui/Customer/CustomerHeader.tsx:148
 #: apps/erp/app/modules/sales/ui/Customers/CustomersTable.tsx:127
 msgid "Account Manager"
@@ -1710,6 +1710,7 @@ msgstr "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy P
 msgid "CAD Model"
 msgstr "CAD Model"
 
+#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:374
 #: apps/erp/app/routes/x+/settings+/inventory.tsx:337
 msgid "Calculate from BOM"
 msgstr "Calculate from BOM"
@@ -2568,7 +2569,7 @@ msgstr "Contact (optional)"
 
 #: apps/erp/app/modules/people/ui/Contact/ContactTable.tsx:76
 #: apps/erp/app/modules/purchasing/ui/Supplier/SupplierContacts.tsx:101
-#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierSidebar/useSupplierSidebar.tsx:36
+#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierSidebar/useSupplierSidebar.tsx:37
 #: apps/erp/app/modules/purchasing/ui/Supplier/SuppliersTable.tsx:296
 #: apps/erp/app/modules/sales/ui/Customer/CustomerContacts.tsx:90
 #: apps/erp/app/modules/sales/ui/Customer/CustomerSidebar/useCustomerSidebar.tsx:38
@@ -2875,8 +2876,8 @@ msgstr "Create"
 
 #. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
 #. placeholder {0}: search.trim() === "" ? label : search
-#: packages/react/src/CreateableCombobox.tsx:291
-#: packages/react/src/CreateableMultiSelect.tsx:333
+#: packages/react/src/CreateableCombobox.tsx:338
+#: packages/react/src/CreateableMultiSelect.tsx:355
 msgid "Create {0}"
 msgstr "Create {0}"
 
@@ -3053,7 +3054,7 @@ msgid "Created customer type"
 msgstr "Created customer type"
 
 #. placeholder {0}: createdCustomer?.name ?? t`Customer`
-#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:61
+#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:63
 msgid "Created customer: {0}"
 msgstr "Created customer: {0}"
 
@@ -3189,11 +3190,11 @@ msgstr "Currencies"
 #: apps/erp/app/modules/invoicing/ui/SalesInvoice/SalesInvoiceProperties.tsx:405
 #: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderForm.tsx:174
 #: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderProperties.tsx:429
-#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierForm.tsx:139
+#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierForm.tsx:141
 #: apps/erp/app/modules/purchasing/ui/Supplier/SuppliersTable.tsx:162
 #: apps/erp/app/modules/purchasing/ui/SupplierQuote/SupplierQuoteForm.tsx:184
 #: apps/erp/app/modules/purchasing/ui/SupplierQuote/SupplierQuoteProperties.tsx:313
-#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:140
+#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:142
 #: apps/erp/app/modules/sales/ui/Customers/CustomersTable.tsx:168
 #: apps/erp/app/modules/sales/ui/Quotes/QuoteForm.tsx:211
 #: apps/erp/app/modules/sales/ui/Quotes/QuoteProperties.tsx:408
@@ -3252,9 +3253,9 @@ msgstr "Custom Fields"
 #: apps/erp/app/modules/production/ui/Jobs/JobForm.tsx:368
 #: apps/erp/app/modules/production/ui/Jobs/JobForm.tsx:535
 #: apps/erp/app/modules/production/ui/Jobs/JobsTable.tsx:266
-#: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderDeliveryForm.tsx:145
+#: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderDeliveryForm.tsx:160
 #: apps/erp/app/modules/quality/ui/Issue/IssueAssociations.tsx:356
-#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:61
+#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:63
 #: apps/erp/app/modules/sales/ui/CustomerPortals/CustomerPortalForm.tsx:91
 #: apps/erp/app/modules/sales/ui/CustomerPortals/CustomerPortalsTable.tsx:36
 #: apps/erp/app/modules/sales/ui/Customers/CustomersTable.tsx:326
@@ -3264,7 +3265,7 @@ msgstr "Custom Fields"
 #: apps/erp/app/modules/sales/ui/Quotes/QuotesTable.tsx:97
 #: apps/erp/app/modules/sales/ui/Quotes/QuoteToOrderDrawer.tsx:939
 #: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderForm.tsx:171
-#: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderShipmentForm.tsx:144
+#: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderShipmentForm.tsx:159
 #: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrdersTable.tsx:137
 #: apps/erp/app/modules/sales/ui/SalesRFQ/SalesRFQForm.tsx:156
 #: apps/erp/app/modules/sales/ui/SalesRFQ/SalesRFQsTable.tsx:73
@@ -3307,7 +3308,7 @@ msgstr "Customer Invoice Number"
 msgid "Customer Location"
 msgstr "Customer Location"
 
-#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:88
+#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:90
 msgid "Customer Overview"
 msgstr "Customer Overview"
 
@@ -3375,7 +3376,7 @@ msgid "Customer Scope"
 msgstr "Customer Scope"
 
 #: apps/erp/app/components/Form/CustomerStatus.tsx:37
-#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:119
+#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:121
 #: apps/erp/app/modules/sales/ui/CustomerStatuses/CustomerStatusesTable.tsx:37
 #: apps/erp/app/modules/sales/ui/CustomerStatuses/CustomerStatusesTable.tsx:99
 #: apps/erp/app/modules/sales/ui/CustomerStatuses/CustomerStatusForm.tsx:84
@@ -3389,7 +3390,7 @@ msgid "Customer Statuses"
 msgstr "Customer Statuses"
 
 #: apps/erp/app/modules/accounting/ui/PostingGroups/SalesPostingGroupsTable.tsx:71
-#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:124
+#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:126
 #: apps/erp/app/modules/sales/ui/CustomerTypes/CustomerTypeForm.tsx:84
 #: apps/erp/app/modules/sales/ui/CustomerTypes/CustomerTypeForm.tsx:91
 #: apps/erp/app/modules/sales/ui/CustomerTypes/CustomerTypesTable.tsx:31
@@ -3654,7 +3655,7 @@ msgid "Default Source"
 msgstr "Default Source"
 
 #: apps/erp/app/modules/items/ui/Item/ItemStorageFields.tsx:18
-#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:118
+#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:134
 #: apps/erp/app/modules/production/ui/Jobs/JobBillOfMaterial.tsx:929
 #: apps/erp/app/modules/production/ui/Jobs/JobMaterialsTable.tsx:245
 msgid "Default Storage Unit"
@@ -4056,13 +4057,13 @@ msgstr "Delete Warehouse Transfer"
 msgid "Delete Webhook"
 msgstr "Delete Webhook"
 
-#: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderDeliveryForm.tsx:133
+#: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderDeliveryForm.tsx:148
 #: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderProperties.tsx:389
 msgid "Delivery Date"
 msgstr "Delivery Date"
 
-#: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceDeliveryForm.tsx:113
-#: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderDeliveryForm.tsx:122
+#: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceDeliveryForm.tsx:119
+#: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderDeliveryForm.tsx:127
 msgid "Delivery Location"
 msgstr "Delivery Location"
 
@@ -4159,7 +4160,7 @@ msgstr "Detail"
 #: apps/erp/app/modules/items/ui/Parts/usePartNavigation.tsx:36
 #: apps/erp/app/modules/items/ui/Tools/useToolNavigation.tsx:35
 #: apps/erp/app/modules/production/ui/Jobs/JobBillOfProcess.tsx:735
-#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierSidebar/useSupplierSidebar.tsx:30
+#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierSidebar/useSupplierSidebar.tsx:31
 #: apps/erp/app/modules/quality/ui/Gauge/GaugeForm.tsx:137
 #: apps/erp/app/modules/resources/ui/Training/TrainingAssignmentForm.tsx:371
 #: apps/erp/app/modules/sales/ui/Customer/CustomerSidebar/useCustomerSidebar.tsx:32
@@ -4339,9 +4340,9 @@ msgstr "Drag and drop a Purchase Order PDF here, or click to select a file"
 msgid "Drag handle"
 msgstr "Drag handle"
 
-#: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderDeliveryForm.tsx:138
+#: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderDeliveryForm.tsx:153
 #: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrdersTable.tsx:260
-#: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderShipmentForm.tsx:137
+#: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderShipmentForm.tsx:152
 #: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrdersTable.tsx:457
 msgid "Drop Shipment"
 msgstr "Drop Shipment"
@@ -4570,7 +4571,7 @@ msgstr "Edit Employee Type"
 msgid "Edit expiration date"
 msgstr "Edit expiration date"
 
-#: apps/erp/app/modules/inventory/ui/Traceability/TrackedEntitiesTable.tsx:236
+#: apps/erp/app/modules/inventory/ui/Traceability/TrackedEntitiesTable.tsx:235
 msgid "Edit Expiry"
 msgstr "Edit Expiry"
 
@@ -5038,7 +5039,7 @@ msgstr "Enter or scan serial number"
 msgid "Enter PO number"
 msgstr "Enter PO number"
 
-#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:189
+#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:208
 msgid "Entered At Receipt"
 msgstr "Entered At Receipt"
 
@@ -5064,6 +5065,11 @@ msgstr "Entity"
 #: apps/erp/app/routes/x+/stock-transfer+/$id.scan.$lineId.tsx:249
 msgid "Entity is {status}"
 msgstr "Entity is {status}"
+
+#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierForm.tsx:145
+#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:160
+msgid "EORI"
+msgstr "EORI"
 
 #: apps/erp/app/routes/onboarding+/plan.tsx:35
 #: apps/erp/app/routes/onboarding+/plan.tsx:60
@@ -5392,7 +5398,7 @@ msgid "Failed to create customer type: {0}"
 msgstr "Failed to create customer type: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
-#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:64
+#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:66
 msgid "Failed to create customer: {0}"
 msgstr "Failed to create customer: {0}"
 
@@ -5965,7 +5971,7 @@ msgstr "Fixed"
 msgid "Fixed Reorder"
 msgstr "Fixed Reorder"
 
-#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:174
+#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:193
 msgid "Fixed Shelf Life"
 msgstr "Fixed Shelf Life"
 
@@ -6372,15 +6378,31 @@ msgstr "Income/Balance Sheet"
 msgid "Incoming"
 msgstr "Incoming"
 
+#: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceDeliveryForm.tsx:129
+#: apps/erp/app/modules/invoicing/ui/SalesInvoice/SalesInvoiceShipmentForm.tsx:126
+#: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderDeliveryForm.tsx:137
+#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierShippingForm.tsx:87
+#: apps/erp/app/modules/sales/ui/Customer/CustomerShippingForm.tsx:87
+#: apps/erp/app/modules/sales/ui/Quotes/QuoteShipmentForm.tsx:122
+#: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderShipmentForm.tsx:136
+msgid "Incoterm"
+msgstr "Incoterm"
+
+#: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceDeliveryForm.tsx:135
+#: apps/erp/app/modules/invoicing/ui/SalesInvoice/SalesInvoiceShipmentForm.tsx:132
+#: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderDeliveryForm.tsx:143
+#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierShippingForm.tsx:93
+#: apps/erp/app/modules/sales/ui/Customer/CustomerShippingForm.tsx:93
+#: apps/erp/app/modules/sales/ui/Quotes/QuoteShipmentForm.tsx:128
+#: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderShipmentForm.tsx:142
+msgid "Incoterm Location"
+msgstr "Incoterm Location"
+
 #: apps/erp/app/modules/resources/ui/useResourcesSubmodules.tsx:44
 msgid "Infrastructure"
 msgstr "Infrastructure"
 
-#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:358
-msgid "Inherit earliest input expiry"
-msgstr "Inherit earliest input expiry"
-
-#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:184
+#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:203
 msgid "Inherit From Materials"
 msgstr "Inherit From Materials"
 
@@ -6484,7 +6506,7 @@ msgstr "Invalid Invite"
 #: apps/erp/app/modules/items/ui/Consumables/ConsumablesTable.tsx:82
 #: apps/erp/app/modules/items/ui/Consumables/useConsumableNavigation.tsx:62
 #: apps/erp/app/modules/items/ui/Item/ItemForm.tsx:62
-#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:90
+#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:106
 #: apps/erp/app/modules/items/ui/Materials/MaterialForm.tsx:126
 #: apps/erp/app/modules/items/ui/Materials/MaterialProperties.tsx:70
 #: apps/erp/app/modules/items/ui/Materials/MaterialsTable.tsx:94
@@ -6641,7 +6663,7 @@ msgid "Invoiced Statuses"
 msgstr "Invoiced Statuses"
 
 #: apps/erp/app/modules/inventory/ui/Shipments/ShipmentHeader.tsx:331
-#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierSidebar/useSupplierSidebar.tsx:83
+#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierSidebar/useSupplierSidebar.tsx:91
 #: apps/erp/app/modules/purchasing/ui/usePurchasingSubmodules.tsx:50
 #: apps/erp/app/modules/sales/ui/Customer/CustomerSidebar/useCustomerSidebar.tsx:92
 #: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderHeader.tsx:523
@@ -7297,7 +7319,7 @@ msgstr "Loading..."
 #: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1050
 #: apps/erp/app/modules/production/ui/Jobs/JobsTable.tsx:504
 #: apps/erp/app/modules/production/ui/Projection/DemandProjectionForm.tsx:116
-#: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderDeliveryForm.tsx:150
+#: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderDeliveryForm.tsx:165
 #: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderForm.tsx:171
 #: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderLineForm.tsx:575
 #: apps/erp/app/modules/purchasing/ui/PurchasingRfq/PurchasingRFQsTable.tsx:172
@@ -7320,7 +7342,7 @@ msgstr "Loading..."
 #: apps/erp/app/modules/sales/ui/Quotes/QuotesTable.tsx:209
 #: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderLineForm.tsx:532
 #: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderLineJobs.tsx:221
-#: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderShipmentForm.tsx:149
+#: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderShipmentForm.tsx:164
 #: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrdersTable.tsx:420
 #: apps/erp/app/modules/sales/ui/SalesRFQ/SalesRFQsTable.tsx:168
 #: apps/erp/app/modules/users/ui/Employees/CreateEmployeeModal.tsx:83
@@ -7335,7 +7357,7 @@ msgid "Location Name"
 msgstr "Location Name"
 
 #: apps/erp/app/modules/purchasing/ui/Supplier/SupplierLocations.tsx:84
-#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierSidebar/useSupplierSidebar.tsx:44
+#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierSidebar/useSupplierSidebar.tsx:45
 #: apps/erp/app/modules/resources/ui/Locations/LocationsTable.tsx:172
 #: apps/erp/app/modules/resources/ui/useResourcesSubmodules.tsx:47
 #: apps/erp/app/modules/sales/ui/Customer/CustomerLocations.tsx:71
@@ -8114,7 +8136,7 @@ msgstr "My Saved View"
 #: apps/erp/app/modules/production/ui/Procedures/ProcedureExplorer.tsx:811
 #: apps/erp/app/modules/production/ui/Procedures/ProcedureForm.tsx:81
 #: apps/erp/app/modules/production/ui/Procedures/ProceduresTable.tsx:56
-#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierForm.tsx:114
+#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierForm.tsx:116
 #: apps/erp/app/modules/purchasing/ui/Supplier/SupplierLocationForm.tsx:94
 #: apps/erp/app/modules/purchasing/ui/Supplier/SuppliersTable.tsx:68
 #: apps/erp/app/modules/quality/ui/Documents/QualityDocumentExplorer.tsx:588
@@ -8128,7 +8150,7 @@ msgstr "My Saved View"
 #: apps/erp/app/modules/resources/ui/Training/TrainingForm.tsx:75
 #: apps/erp/app/modules/resources/ui/Training/TrainingsTable.tsx:50
 #: apps/erp/app/modules/resources/ui/WorkCenters/WorkCenterForm.tsx:110
-#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:115
+#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:117
 #: apps/erp/app/modules/sales/ui/Customer/CustomerLocationForm.tsx:89
 #: apps/erp/app/modules/sales/ui/Customers/CustomersTable.tsx:74
 #: apps/erp/app/modules/sales/ui/Opportunity/OpportunityDocuments.tsx:117
@@ -8188,8 +8210,8 @@ msgstr "Never"
 #: apps/erp/app/modules/sales/ui/NoQuoteReasons/NoQuoteReasonForm.tsx:83
 #: apps/erp/app/modules/sales/ui/Opportunity/OpportunityDocuments.tsx:440
 #: apps/erp/app/modules/sales/ui/Opportunity/OpportunityLineDocuments.tsx:711
-#: packages/react/src/CreateableCombobox.tsx:217
-#: packages/react/src/CreateableMultiSelect.tsx:255
+#: packages/react/src/CreateableCombobox.tsx:258
+#: packages/react/src/CreateableMultiSelect.tsx:274
 msgid "New"
 msgstr "New"
 
@@ -8247,7 +8269,7 @@ msgstr "New Currency"
 msgid "New Custom Field"
 msgstr "New Custom Field"
 
-#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:90
+#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:92
 msgid "New Customer"
 msgstr "New Customer"
 
@@ -8606,6 +8628,10 @@ msgstr "No archived logs yet. Logs older than {0} days will be automatically arc
 msgid "No available filters"
 msgstr "No available filters"
 
+#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:395
+msgid "No BOM input has a shelf-life policy"
+msgstr "No BOM input has a shelf-life policy"
+
 #: apps/erp/app/modules/quality/ui/Gauge/GaugeForm.tsx:292
 msgid "No calibration records found"
 msgstr "No calibration records found"
@@ -8721,7 +8747,7 @@ msgid "No notes"
 msgstr "No notes"
 
 #: apps/erp/app/components/Assignee.tsx:169
-#: packages/react/src/CreateableMultiSelect.tsx:285
+#: packages/react/src/CreateableMultiSelect.tsx:304
 #: packages/react/src/MultiSelect.tsx:271
 msgid "No option found."
 msgstr "No option found."
@@ -8909,13 +8935,13 @@ msgstr "Note"
 #: apps/erp/app/routes/share+/quote.$id.tsx:1183
 #: apps/erp/app/routes/x+/person+/$personId.notes.tsx:46
 #: apps/erp/app/routes/x+/purchase-invoice+/$invoiceId.$lineId.details.tsx:185
-#: apps/erp/app/routes/x+/purchase-invoice+/$invoiceId.details.tsx:188
+#: apps/erp/app/routes/x+/purchase-invoice+/$invoiceId.details.tsx:190
 #: apps/erp/app/routes/x+/quote+/$quoteId.$lineId.details.tsx:340
-#: apps/erp/app/routes/x+/quote+/$quoteId.details.tsx:182
+#: apps/erp/app/routes/x+/quote+/$quoteId.details.tsx:184
 #: apps/erp/app/routes/x+/sales-invoice+/$invoiceId.$lineId.details.tsx:179
-#: apps/erp/app/routes/x+/sales-invoice+/$invoiceId.details.tsx:179
+#: apps/erp/app/routes/x+/sales-invoice+/$invoiceId.details.tsx:181
 #: apps/erp/app/routes/x+/sales-order+/$orderId.$lineId.details.tsx:208
-#: apps/erp/app/routes/x+/sales-order+/$orderId.details.tsx:207
+#: apps/erp/app/routes/x+/sales-order+/$orderId.details.tsx:209
 #: apps/erp/app/routes/x+/sales-rfq+/$rfqId.$lineId.details.tsx:149
 #: apps/erp/app/routes/x+/sales-rfq+/$rfqId.details.tsx:130
 msgid "Notes"
@@ -9226,7 +9252,7 @@ msgid "Ordering"
 msgstr "Ordering"
 
 #: apps/erp/app/modules/production/ui/Jobs/JobMaterialsTable.tsx:646
-#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierSidebar/useSupplierSidebar.tsx:78
+#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierSidebar/useSupplierSidebar.tsx:86
 #: apps/erp/app/modules/purchasing/ui/usePurchasingSubmodules.tsx:44
 #: apps/erp/app/modules/sales/ui/Customer/CustomerSidebar/useCustomerSidebar.tsx:86
 #: apps/erp/app/modules/sales/ui/Quotes/QuoteLinePricingHistory.tsx:97
@@ -9258,7 +9284,7 @@ msgstr "Outgoing"
 msgid "Output"
 msgstr "Output"
 
-#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:359
+#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:375
 msgid "Output never outlasts its raw materials. Falls back to the fixed duration when no input has an expiry date."
 msgstr "Output never outlasts its raw materials. Falls back to the fixed duration when no input has an expiry date."
 
@@ -9448,7 +9474,7 @@ msgstr "Payables"
 #: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceHeader.tsx:355
 #: apps/erp/app/modules/invoicing/ui/SalesInvoice/SalesInvoiceHeader.tsx:336
 #: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderPaymentForm.tsx:69
-#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierSidebar/useSupplierSidebar.tsx:52
+#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierSidebar/useSupplierSidebar.tsx:53
 #: apps/erp/app/modules/sales/ui/Customer/CustomerSidebar/useCustomerSidebar.tsx:54
 #: apps/erp/app/modules/sales/ui/Quotes/QuotePaymentForm.tsx:61
 #: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderPaymentForm.tsx:63
@@ -9938,7 +9964,7 @@ msgid "Process Type"
 msgstr "Process Type"
 
 #: apps/erp/app/modules/production/ui/Jobs/JobEstimatesVsActuals.tsx:267
-#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierSidebar/useSupplierSidebar.tsx:59
+#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierSidebar/useSupplierSidebar.tsx:67
 #: apps/erp/app/modules/quality/ui/Issue/IssueTask.tsx:841
 #: apps/erp/app/modules/resources/ui/Processes/ProcessesTable.tsx:316
 #: apps/erp/app/modules/resources/ui/useResourcesSubmodules.tsx:53
@@ -10013,12 +10039,12 @@ msgstr "Project"
 msgid "Projections"
 msgstr "Projections"
 
-#: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderDeliveryForm.tsx:132
+#: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderDeliveryForm.tsx:147
 #: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrdersTable.tsx:168
 #: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderForm.tsx:220
 #: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderLineForm.tsx:521
 #: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderProperties.tsx:351
-#: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderShipmentForm.tsx:131
+#: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderShipmentForm.tsx:146
 #: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrdersTable.tsx:397
 msgid "Promised Date"
 msgstr "Promised Date"
@@ -10243,7 +10269,7 @@ msgstr "Purchased"
 msgid "Purchasing"
 msgstr "Purchasing"
 
-#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierForm.tsx:135
+#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierForm.tsx:137
 #: apps/erp/app/modules/sales/ui/Quotes/QuoteForm.tsx:174
 #: apps/erp/app/modules/sales/ui/Quotes/QuoteProperties.tsx:258
 #: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderForm.tsx:178
@@ -10493,7 +10519,7 @@ msgstr "Quote Number"
 msgid "Quoted Date"
 msgstr "Quoted Date"
 
-#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierSidebar/useSupplierSidebar.tsx:72
+#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierSidebar/useSupplierSidebar.tsx:80
 #: apps/erp/app/modules/purchasing/ui/usePurchasingSubmodules.tsx:38
 #: apps/erp/app/modules/sales/ui/Customer/CustomerSidebar/useCustomerSidebar.tsx:80
 #: apps/erp/app/modules/sales/ui/Quotes/QuoteLinePricingHistory.tsx:100
@@ -10914,13 +10940,13 @@ msgstr "Reports"
 msgid "Request Approval"
 msgstr "Request Approval"
 
-#: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderDeliveryForm.tsx:131
+#: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderDeliveryForm.tsx:146
 #: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrdersTable.tsx:160
-#: apps/erp/app/modules/sales/ui/Quotes/QuoteShipmentForm.tsx:115
+#: apps/erp/app/modules/sales/ui/Quotes/QuoteShipmentForm.tsx:131
 #: apps/erp/app/modules/sales/ui/Quotes/QuoteToOrderDrawer.tsx:1011
 #: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderForm.tsx:213
 #: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderProperties.tsx:332
-#: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderShipmentForm.tsx:130
+#: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderShipmentForm.tsx:145
 msgid "Requested Date"
 msgstr "Requested Date"
 
@@ -11190,7 +11216,7 @@ msgstr "Right item"
 msgid "Risk"
 msgstr "Risk"
 
-#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierSidebar/useSupplierSidebar.tsx:66
+#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierSidebar/useSupplierSidebar.tsx:74
 #: apps/erp/app/modules/quality/ui/RiskRegister/RiskRegisterCard.tsx:103
 #: apps/erp/app/modules/quality/ui/RiskRegister/RiskRegistersTable.tsx:259
 #: apps/erp/app/modules/quality/ui/useQualitySubmodules.tsx:43
@@ -11264,7 +11290,7 @@ msgstr "Sale Price"
 msgid "Sales"
 msgstr "Sales"
 
-#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:136
+#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:138
 msgid "Sales Contact"
 msgstr "Sales Contact"
 
@@ -11423,12 +11449,12 @@ msgstr "Saturday"
 #: apps/erp/app/modules/inventory/ui/StorageUnits/StorageUnitForm.tsx:113
 #: apps/erp/app/modules/inventory/ui/Traceability/EditExpiryModal.tsx:92
 #: apps/erp/app/modules/inventory/ui/WarehouseTransfers/WarehouseTransferForm.tsx:96
-#: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceDeliveryForm.tsx:126
+#: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceDeliveryForm.tsx:142
 #: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceForm.tsx:283
 #: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceLineForm.tsx:563
 #: apps/erp/app/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm.tsx:283
 #: apps/erp/app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:640
-#: apps/erp/app/modules/invoicing/ui/SalesInvoice/SalesInvoiceShipmentForm.tsx:125
+#: apps/erp/app/modules/invoicing/ui/SalesInvoice/SalesInvoiceShipmentForm.tsx:141
 #: apps/erp/app/modules/items/ui/Consumables/ConsumableForm.tsx:209
 #: apps/erp/app/modules/items/ui/Item/BillOfMaterial.tsx:1148
 #: apps/erp/app/modules/items/ui/Item/CustomerPartForm.tsx:78
@@ -11437,7 +11463,7 @@ msgstr "Saturday"
 #: apps/erp/app/modules/items/ui/Item/ItemPlanningForm.tsx:166
 #: apps/erp/app/modules/items/ui/Item/ItemPurchasingForm.tsx:102
 #: apps/erp/app/modules/items/ui/Item/ItemSalePriceForm.tsx:72
-#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:135
+#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:152
 #: apps/erp/app/modules/items/ui/Item/RevisionForm.tsx:122
 #: apps/erp/app/modules/items/ui/ItemPostingGroups/ItemPostingGroupForm.tsx:104
 #: apps/erp/app/modules/items/ui/MaterialDimensions/MaterialDimensionForm.tsx:102
@@ -11466,18 +11492,18 @@ msgstr "Saturday"
 #: apps/erp/app/modules/production/ui/Procedures/ProcedureExplorer.tsx:878
 #: apps/erp/app/modules/production/ui/Procedures/ProcedureExplorer.tsx:947
 #: apps/erp/app/modules/production/ui/ScrapReasons/ScrapReasonForm.tsx:97
-#: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderDeliveryForm.tsx:160
+#: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderDeliveryForm.tsx:175
 #: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderForm.tsx:205
 #: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderLineForm.tsx:636
 #: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderPaymentForm.tsx:99
 #: apps/erp/app/modules/purchasing/ui/PurchasingRfq/PurchasingRFQForm.tsx:101
 #: apps/erp/app/modules/purchasing/ui/PurchasingRfq/PurchasingRFQLineForm.tsx:289
 #: apps/erp/app/modules/purchasing/ui/Supplier/SupplierContactForm.tsx:117
-#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierForm.tsx:151
+#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierForm.tsx:156
 #: apps/erp/app/modules/purchasing/ui/Supplier/SupplierLocationForm.tsx:102
 #: apps/erp/app/modules/purchasing/ui/Supplier/SupplierPaymentForm.tsx:76
 #: apps/erp/app/modules/purchasing/ui/Supplier/SupplierProcessForm.tsx:139
-#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierShippingForm.tsx:90
+#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierShippingForm.tsx:106
 #: apps/erp/app/modules/purchasing/ui/SupplierQuote/SupplierQuoteForm.tsx:245
 #: apps/erp/app/modules/purchasing/ui/SupplierQuote/SupplierQuoteLineForm.tsx:339
 #: apps/erp/app/modules/purchasing/ui/SupplierTypes/SupplierTypeForm.tsx:97
@@ -11505,10 +11531,10 @@ msgstr "Saturday"
 #: apps/erp/app/modules/resources/ui/Training/TrainingForm.tsx:84
 #: apps/erp/app/modules/resources/ui/WorkCenters/WorkCenterForm.tsx:158
 #: apps/erp/app/modules/sales/ui/Customer/CustomerContactForm.tsx:118
-#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:166
+#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:171
 #: apps/erp/app/modules/sales/ui/Customer/CustomerLocationForm.tsx:97
 #: apps/erp/app/modules/sales/ui/Customer/CustomerPaymentForm.tsx:76
-#: apps/erp/app/modules/sales/ui/Customer/CustomerShippingForm.tsx:90
+#: apps/erp/app/modules/sales/ui/Customer/CustomerShippingForm.tsx:106
 #: apps/erp/app/modules/sales/ui/CustomerPortals/CustomerPortalForm.tsx:98
 #: apps/erp/app/modules/sales/ui/CustomerStatuses/CustomerStatusForm.tsx:98
 #: apps/erp/app/modules/sales/ui/CustomerTypes/CustomerTypeForm.tsx:98
@@ -11520,11 +11546,11 @@ msgstr "Saturday"
 #: apps/erp/app/modules/sales/ui/Quotes/QuoteLineForm.tsx:521
 #: apps/erp/app/modules/sales/ui/Quotes/QuoteMaterialForm.tsx:280
 #: apps/erp/app/modules/sales/ui/Quotes/QuotePaymentForm.tsx:89
-#: apps/erp/app/modules/sales/ui/Quotes/QuoteShipmentForm.tsx:122
+#: apps/erp/app/modules/sales/ui/Quotes/QuoteShipmentForm.tsx:138
 #: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderForm.tsx:284
 #: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderLineForm.tsx:692
 #: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderPaymentForm.tsx:91
-#: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderShipmentForm.tsx:159
+#: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderShipmentForm.tsx:174
 #: apps/erp/app/modules/sales/ui/SalesRFQ/SalesRFQForm.tsx:202
 #: apps/erp/app/modules/sales/ui/SalesRFQ/SalesRFQHeader.tsx:387
 #: apps/erp/app/modules/sales/ui/SalesRFQ/SalesRFQLineForm.tsx:340
@@ -11753,10 +11779,10 @@ msgstr "Search the web"
 #: apps/erp/app/routes/x+/part+/$itemId.tsx:361
 #: apps/erp/app/routes/x+/tool+/$itemId.tsx:172
 #: apps/erp/app/routes/x+/tool+/$itemId.tsx:357
-#: packages/react/src/Combobox.tsx:193
-#: packages/react/src/CreateableCombobox.tsx:237
-#: packages/react/src/CreateableMultiSelect.tsx:163
-#: packages/react/src/CreateableMultiSelect.tsx:275
+#: packages/react/src/Combobox.tsx:234
+#: packages/react/src/CreateableCombobox.tsx:278
+#: packages/react/src/CreateableMultiSelect.tsx:177
+#: packages/react/src/CreateableMultiSelect.tsx:294
 #: packages/react/src/MultiSelect.tsx:268
 msgid "Search..."
 msgstr "Search..."
@@ -11773,8 +11799,8 @@ msgstr "Seconds/Piece"
 #: apps/erp/app/modules/quality/ui/InboundInspections/ScanInspectionSample.tsx:204
 #: apps/erp/app/modules/resources/ui/Maintenance/MaintenanceAddPartModal.tsx:382
 #: apps/erp/app/modules/resources/ui/Maintenance/MaintenanceAddPartModal.tsx:502
-#: packages/react/src/Combobox.tsx:111
-#: packages/react/src/CreateableCombobox.tsx:121
+#: packages/react/src/Combobox.tsx:147
+#: packages/react/src/CreateableCombobox.tsx:157
 #: packages/react/src/MultiSelect.tsx:178
 msgid "Select"
 msgstr "Select"
@@ -11852,11 +11878,11 @@ msgstr "Select an option"
 msgid "Select Contact"
 msgstr "Select Contact"
 
-#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:120
+#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:122
 msgid "Select Customer Status"
 msgstr "Select Customer Status"
 
-#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:125
+#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:127
 msgid "Select Customer Type"
 msgstr "Select Customer Type"
 
@@ -11911,11 +11937,11 @@ msgstr "Select Row"
 msgid "Select scope"
 msgstr "Select scope"
 
-#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierForm.tsx:118
+#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierForm.tsx:120
 msgid "Select Supplier Status"
 msgstr "Select Supplier Status"
 
-#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierForm.tsx:124
+#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierForm.tsx:126
 msgid "Select Supplier Type"
 msgstr "Select Supplier Type"
 
@@ -12150,15 +12176,15 @@ msgstr "Share Quote"
 msgid "Shelf life"
 msgstr "Shelf life"
 
-#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:333
+#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:348
 msgid "Shelf Life (Days)"
 msgstr "Shelf Life (Days)"
 
-#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:341
+#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:356
 msgid "Shelf Life Start Process"
 msgstr "Shelf Life Start Process"
 
-#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:296
+#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:311
 msgid "Shelf-Life"
 msgstr "Shelf-Life"
 
@@ -12202,7 +12228,7 @@ msgstr "Ship to Customer"
 msgid "Shipment"
 msgstr "Shipment"
 
-#: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderShipmentForm.tsx:132
+#: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderShipmentForm.tsx:147
 msgid "Shipment Date"
 msgstr "Shipment Date"
 
@@ -12219,9 +12245,9 @@ msgstr "Shipment Line"
 msgid "Shipment Lines"
 msgstr "Shipment Lines"
 
-#: apps/erp/app/modules/invoicing/ui/SalesInvoice/SalesInvoiceShipmentForm.tsx:110
-#: apps/erp/app/modules/sales/ui/Quotes/QuoteShipmentForm.tsx:106
-#: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderShipmentForm.tsx:121
+#: apps/erp/app/modules/invoicing/ui/SalesInvoice/SalesInvoiceShipmentForm.tsx:116
+#: apps/erp/app/modules/sales/ui/Quotes/QuoteShipmentForm.tsx:112
+#: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderShipmentForm.tsx:126
 msgid "Shipment Location"
 msgstr "Shipment Location"
 
@@ -12249,61 +12275,62 @@ msgstr "Shipped Not Invoiced"
 msgid "Shipped Qty"
 msgstr "Shipped Qty"
 
-#: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceDeliveryForm.tsx:95
+#: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceDeliveryForm.tsx:101
 #: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceLineForm.tsx:473
-#: apps/erp/app/modules/invoicing/ui/SalesInvoice/SalesInvoiceShipmentForm.tsx:92
-#: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderDeliveryForm.tsx:104
+#: apps/erp/app/modules/invoicing/ui/SalesInvoice/SalesInvoiceShipmentForm.tsx:98
+#: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderDeliveryForm.tsx:109
 #: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderLineForm.tsx:525
-#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierShippingForm.tsx:53
+#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierShippingForm.tsx:59
+#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierSidebar/useSupplierSidebar.tsx:60
 #: apps/erp/app/modules/purchasing/ui/SupplierQuote/SupplierQuoteCompareDrawer.tsx:781
 #: apps/erp/app/modules/purchasing/ui/SupplierQuote/SupplierQuoteToOrderDrawer.tsx:312
-#: apps/erp/app/modules/sales/ui/Customer/CustomerShippingForm.tsx:53
+#: apps/erp/app/modules/sales/ui/Customer/CustomerShippingForm.tsx:59
 #: apps/erp/app/modules/sales/ui/Customer/CustomerSidebar/useCustomerSidebar.tsx:61
-#: apps/erp/app/modules/sales/ui/Quotes/QuoteShipmentForm.tsx:88
+#: apps/erp/app/modules/sales/ui/Quotes/QuoteShipmentForm.tsx:94
 #: apps/erp/app/modules/sales/ui/Quotes/QuoteSummary.tsx:427
 #: apps/erp/app/modules/sales/ui/Quotes/QuoteToOrderDrawer.tsx:617
 #: apps/erp/app/modules/sales/ui/Quotes/QuoteToOrderDrawer.tsx:991
-#: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderShipmentForm.tsx:101
+#: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderShipmentForm.tsx:106
 #: apps/erp/app/routes/share+/quote.$id.tsx:666
 #: apps/erp/app/routes/share+/quote.$id.tsx:1265
 msgid "Shipping"
 msgstr "Shipping"
 
-#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierShippingForm.tsx:71
-#: apps/erp/app/modules/sales/ui/Customer/CustomerShippingForm.tsx:71
+#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierShippingForm.tsx:77
+#: apps/erp/app/modules/sales/ui/Customer/CustomerShippingForm.tsx:77
 msgid "Shipping Contact"
 msgstr "Shipping Contact"
 
-#: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceDeliveryForm.tsx:103
+#: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceDeliveryForm.tsx:109
 #: apps/erp/app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:596
-#: apps/erp/app/modules/invoicing/ui/SalesInvoice/SalesInvoiceShipmentForm.tsx:100
-#: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderDeliveryForm.tsx:112
-#: apps/erp/app/modules/sales/ui/Quotes/QuoteShipmentForm.tsx:96
+#: apps/erp/app/modules/invoicing/ui/SalesInvoice/SalesInvoiceShipmentForm.tsx:106
+#: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderDeliveryForm.tsx:117
+#: apps/erp/app/modules/sales/ui/Quotes/QuoteShipmentForm.tsx:102
 #: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderLineForm.tsx:653
-#: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderShipmentForm.tsx:109
+#: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderShipmentForm.tsx:114
 msgid "Shipping Cost"
 msgstr "Shipping Cost"
 
-#: apps/erp/app/modules/sales/ui/Customer/CustomerShippingForm.tsx:61
+#: apps/erp/app/modules/sales/ui/Customer/CustomerShippingForm.tsx:67
 msgid "Shipping Customer"
 msgstr "Shipping Customer"
 
-#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierShippingForm.tsx:66
-#: apps/erp/app/modules/sales/ui/Customer/CustomerShippingForm.tsx:66
+#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierShippingForm.tsx:72
+#: apps/erp/app/modules/sales/ui/Customer/CustomerShippingForm.tsx:72
 msgid "Shipping Location"
 msgstr "Shipping Location"
 
 #: apps/erp/app/modules/inventory/ui/Shipments/ShipmentForm/ShipmentForm.tsx:157
 #: apps/erp/app/modules/inventory/ui/ShippingMethods/ShippingMethodsTable.tsx:141
-#: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceDeliveryForm.tsx:119
-#: apps/erp/app/modules/invoicing/ui/SalesInvoice/SalesInvoiceShipmentForm.tsx:116
-#: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderDeliveryForm.tsx:128
+#: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceDeliveryForm.tsx:125
+#: apps/erp/app/modules/invoicing/ui/SalesInvoice/SalesInvoiceShipmentForm.tsx:122
+#: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderDeliveryForm.tsx:133
 #: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrdersTable.tsx:229
-#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierShippingForm.tsx:77
-#: apps/erp/app/modules/sales/ui/Customer/CustomerShippingForm.tsx:77
-#: apps/erp/app/modules/sales/ui/Quotes/QuoteShipmentForm.tsx:112
+#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierShippingForm.tsx:83
+#: apps/erp/app/modules/sales/ui/Customer/CustomerShippingForm.tsx:83
+#: apps/erp/app/modules/sales/ui/Quotes/QuoteShipmentForm.tsx:118
 #: apps/erp/app/modules/sales/ui/Quotes/QuoteToOrderDrawer.tsx:1003
-#: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderShipmentForm.tsx:127
+#: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderShipmentForm.tsx:132
 #: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrdersTable.tsx:405
 #: apps/erp/app/routes/share+/quote.$id.tsx:1200
 msgid "Shipping Method"
@@ -12319,7 +12346,7 @@ msgstr "Shipping Methods"
 msgid "Shipping Notes"
 msgstr "Shipping Notes"
 
-#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierShippingForm.tsx:61
+#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierShippingForm.tsx:67
 msgid "Shipping Supplier"
 msgstr "Shipping Supplier"
 
@@ -12470,7 +12497,7 @@ msgstr "Source Analysis"
 #: apps/erp/app/modules/inventory/ui/Receipts/ReceiptsTable.tsx:72
 #: apps/erp/app/modules/inventory/ui/Shipments/ShipmentForm/ShipmentForm.tsx:131
 #: apps/erp/app/modules/inventory/ui/Shipments/ShipmentsTable.tsx:72
-#: apps/erp/app/modules/inventory/ui/Traceability/TrackedEntitiesTable.tsx:204
+#: apps/erp/app/modules/inventory/ui/Traceability/TrackedEntitiesTable.tsx:203
 msgid "Source Document"
 msgstr "Source Document"
 
@@ -12593,7 +12620,7 @@ msgstr "Start adding parts to your stock transfer"
 msgid "Start Date"
 msgstr "Start Date"
 
-#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:348
+#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:363
 msgid "Start Expiration"
 msgstr "Start Expiration"
 
@@ -12804,15 +12831,15 @@ msgstr "Storage Unit"
 msgid "Storage Units"
 msgstr "Storage Units"
 
-#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:180
+#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:199
 msgid "Store a fixed number of days on this item. Expiry start date is set on each batch or serial when it's created (or when the trigger process runs, if set)."
 msgstr "Store a fixed number of days on this item. Expiry start date is set on each batch or serial when it's created (or when the trigger process runs, if set)."
 
-#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:181
+#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:200
 msgid "Store a fixed number of days on this item. Expiry start date is set on each batch or serial when it's received or created (or when the trigger process runs, if set)."
 msgstr "Store a fixed number of days on this item. Expiry start date is set on each batch or serial when it's received or created (or when the trigger process runs, if set)."
 
-#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:178
+#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:197
 msgid "Store a fixed number of days on this item. Expiry start date is set on each batch or serial when it's received."
 msgstr "Store a fixed number of days on this item. Expiry start date is set on each batch or serial when it's received."
 
@@ -13077,13 +13104,13 @@ msgstr "Supplier Ref. Number"
 msgid "Supplier Reference"
 msgstr "Supplier Reference"
 
-#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierForm.tsx:117
+#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierForm.tsx:119
 #: apps/erp/app/modules/purchasing/ui/Supplier/SuppliersTable.tsx:82
 msgid "Supplier Status"
 msgstr "Supplier Status"
 
 #: apps/erp/app/modules/accounting/ui/PostingGroups/PurchasingPostingGroupsTable.tsx:71
-#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierForm.tsx:123
+#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierForm.tsx:125
 #: apps/erp/app/modules/purchasing/ui/SupplierTypes/SupplierTypeForm.tsx:90
 #: apps/erp/app/modules/purchasing/ui/SupplierTypes/SupplierTypesTable.tsx:31
 #: apps/erp/app/modules/purchasing/ui/SupplierTypes/SupplierTypesTable.tsx:94
@@ -13198,7 +13225,7 @@ msgstr "Table actions"
 msgid "Tags"
 msgstr "Tags"
 
-#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:186
+#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:205
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 
@@ -13274,8 +13301,8 @@ msgstr "Tax & Additional Costs"
 msgid "Tax Amount"
 msgstr "Tax Amount"
 
-#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierForm.tsx:140
-#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:155
+#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierForm.tsx:142
+#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:157
 #: apps/erp/app/modules/settings/ui/Company/CompanyForm.tsx:29
 msgid "Tax ID"
 msgstr "Tax ID"
@@ -13283,7 +13310,7 @@ msgstr "Tax ID"
 #: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceLineForm.tsx:536
 #: apps/erp/app/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm.tsx:552
 #: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderLineForm.tsx:607
-#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:144
+#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:146
 #: apps/erp/app/modules/sales/ui/Quotes/QuoteLineForm.tsx:456
 #: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderLineForm.tsx:641
 msgid "Tax Percent"
@@ -13448,6 +13475,10 @@ msgstr "This is the month your fiscal year starts."
 #: apps/erp/app/modules/accounting/ui/FiscalYear/FiscalYearSettingsForm.tsx:52
 msgid "This is the month your tax year starts."
 msgstr "This is the month your tax year starts."
+
+#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:398
+msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
+msgstr "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 
 #: apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx:1024
 msgid "This job will be received to inventory. It will no longer be available on the shop floor."
@@ -13756,11 +13787,11 @@ msgstr "Track every change to your orders, invoices, customers, and more."
 msgid "Track every change to your orders, invoices, customers, suppliers, and more."
 msgstr "Track every change to your orders, invoices, customers, suppliers, and more."
 
-#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:299
+#: apps/erp/app/modules/items/ui/Item/PickMethodForm.tsx:314
 msgid "Track when batches or serials of this item expire."
 msgstr "Track when batches or serials of this item expire."
 
-#: apps/erp/app/modules/inventory/ui/Traceability/TrackedEntitiesTable.tsx:251
+#: apps/erp/app/modules/inventory/ui/Traceability/TrackedEntitiesTable.tsx:250
 #: apps/erp/app/modules/inventory/ui/useInventorySubmodules.tsx:70
 #: apps/erp/app/routes/x+/inventory+/tracked-entities.tsx:16
 #: apps/erp/app/routes/x+/issue+/$id.tsx:147
@@ -13800,8 +13831,8 @@ msgid "Tracking Labels"
 msgstr "Tracking Labels"
 
 #: apps/erp/app/modules/inventory/ui/Shipments/ShipmentForm/ShipmentForm.tsx:154
-#: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderDeliveryForm.tsx:135
-#: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderShipmentForm.tsx:134
+#: apps/erp/app/modules/purchasing/ui/PurchaseOrder/PurchaseOrderDeliveryForm.tsx:150
+#: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderShipmentForm.tsx:149
 msgid "Tracking Number"
 msgstr "Tracking Number"
 
@@ -14402,8 +14433,8 @@ msgstr "Validating job..."
 msgid "Value"
 msgstr "Value"
 
-#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierForm.tsx:141
-#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:156
+#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierForm.tsx:143
+#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:158
 #: apps/erp/app/modules/settings/ui/Company/CompanyForm.tsx:30
 msgid "VAT Number"
 msgstr "VAT Number"
@@ -14595,7 +14626,7 @@ msgstr "View Suggestion"
 msgid "View Suppliers"
 msgstr "View Suppliers"
 
-#: apps/erp/app/modules/inventory/ui/Traceability/TrackedEntitiesTable.tsx:229
+#: apps/erp/app/modules/inventory/ui/Traceability/TrackedEntitiesTable.tsx:228
 msgid "View Traceability Graph"
 msgstr "View Traceability Graph"
 
@@ -14743,9 +14774,9 @@ msgstr "Webhooks"
 msgid "Webhooks Docs"
 msgstr "Webhooks Docs"
 
-#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierForm.tsx:142
+#: apps/erp/app/modules/purchasing/ui/Supplier/SupplierForm.tsx:147
 #: apps/erp/app/modules/purchasing/ui/Supplier/SuppliersTable.tsx:186
-#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:157
+#: apps/erp/app/modules/sales/ui/Customer/CustomerForm.tsx:162
 #: apps/erp/app/modules/sales/ui/Customers/CustomersTable.tsx:192
 #: apps/erp/app/modules/settings/ui/Company/CompanyForm.tsx:40
 #: apps/erp/app/routes/onboarding+/company.tsx:216

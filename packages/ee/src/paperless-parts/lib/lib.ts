@@ -787,6 +787,43 @@ async function uploadModelFile(
   const { file, companyId, itemId, salesOrderLineId, createdBy } = args;
 
   try {
+    // If the item already has a model linked, reuse it for the line so item and
+    // line stay in sync — and so we don't overwrite the existing model's
+    // thumbnail with a freshly uploaded one that hasn't been processed yet.
+    const existingItem = await carbon
+      .from("item")
+      .select("modelUploadId")
+      .eq("id", itemId)
+      .single();
+
+    if (existingItem.error) {
+      console.error(
+        `Failed to read item ${itemId} before model upload:`,
+        existingItem.error
+      );
+      return false;
+    }
+
+    if (existingItem.data.modelUploadId) {
+      const lineUpdate = await carbon
+        .from("salesOrderLine")
+        .update({ modelUploadId: existingItem.data.modelUploadId })
+        .eq("id", salesOrderLineId);
+
+      if (lineUpdate.error) {
+        console.error(
+          `Failed to link existing model to sales order line:`,
+          lineUpdate.error
+        );
+        return false;
+      }
+
+      console.log(
+        `Item ${itemId} already has model ${existingItem.data.modelUploadId}; skipped uploading ${file.name} and linked line ${salesOrderLineId} to existing model`
+      );
+      return true;
+    }
+
     const modelId = nanoid();
     const fileExtension = file.name.split(".").pop();
     const modelPath = `${companyId}/models/${modelId}.${fileExtension}`;
@@ -828,8 +865,8 @@ async function uploadModelFile(
       return false;
     }
 
-    // Link model to sales order line
-    const [lineUpdate] = await Promise.all([
+    // Link the new model to both the line and the item so they stay in sync.
+    const [lineUpdate, itemUpdate] = await Promise.all([
       carbon
         .from("salesOrderLine")
         .update({ modelUploadId: modelId })
@@ -845,8 +882,13 @@ async function uploadModelFile(
       return false;
     }
 
+    if (itemUpdate.error) {
+      console.error(`Failed to link model to item:`, itemUpdate.error);
+      return false;
+    }
+
     console.log(
-      `Successfully uploaded CAD model ${file.name} and linked to line ${salesOrderLineId}`
+      `Successfully uploaded CAD model ${file.name} and linked to line ${salesOrderLineId} and item ${itemId}`
     );
     return true;
   } catch (error) {
@@ -963,13 +1005,14 @@ async function processSupportingFiles(
           createdBy
         });
 
-        if (!uploadSuccess) {
+        if (uploadSuccess) {
+          hasModel = true;
+        } else {
           console.error(
             `Failed to upload CAD model: ${supportingFile.filename}`
           );
         }
       } else {
-        hasModel = true;
         console.log(`Processing ${file.name} as document`);
         // Upload as regular document
         const uploadSuccess = await uploadFileToItem(carbon, {

@@ -130,7 +130,7 @@ const Tool = ({ name, label, helperText, ...props }: ToolSelectProps) => {
             replenishmentSystem: "Buy",
             defaultMethodType: "Pull from Inventory",
             unitCost: 0,
-            shelfLifeInheritEarliestInputExpiry: false,
+            shelfLifeCalculateFromBom: false,
             tags: []
           }}
         />

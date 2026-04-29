@@ -65,14 +65,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     itemIds.length > 0
       ? await client
           .from("itemShelfLife")
-          .select("itemId, mode, days, inheritEarliestInputExpiry")
+          .select("itemId, mode, days, calculateFromBom")
           .in("itemId", itemIds)
       : {
           data: [] as {
             itemId: string;
             mode: string;
             days: number | null;
-            inheritEarliestInputExpiry: boolean | null;
+            calculateFromBom: boolean | null;
           }[]
         };
   const shelfLifePolicies: Record<
@@ -80,7 +80,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     {
       mode: string;
       days: number | null;
-      inheritEarliestInputExpiry: boolean | null;
+      calculateFromBom: boolean | null;
     }
   > = {};
   for (const row of shelfLifeRows.data ?? []) {
@@ -88,7 +88,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       shelfLifePolicies[row.itemId] = {
         mode: row.mode,
         days: row.days ?? null,
-        inheritEarliestInputExpiry: row.inheritEarliestInputExpiry ?? false
+        calculateFromBom: row.calculateFromBom ?? false
       };
     }
   }

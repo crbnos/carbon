@@ -59,6 +59,7 @@ const NumberInput = forwardRef<HTMLInputElement, InputProps>(
           }
           internalRef(input);
         }}
+        isReadOnly={props.isDisabled || props.isReadOnly}
         className={cn("pr-6", className)}
         {...props}
       />

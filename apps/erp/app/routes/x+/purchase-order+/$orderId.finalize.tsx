@@ -84,8 +84,7 @@ export async function action(args: ActionFunctionArgs) {
       serviceRole,
       purchaseOrder.data.supplierId
     );
-    // @ts-expect-error TS2339 - TODO: fix type
-    if (supplier.data?.supplierStatus !== "Active") {
+    if (supplier.data?.status !== "Active") {
       throw redirect(
         path.to.purchaseOrder(orderId),
         await flash(

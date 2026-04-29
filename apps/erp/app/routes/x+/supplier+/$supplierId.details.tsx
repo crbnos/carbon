@@ -67,6 +67,7 @@ export default function SupplierEditRoute() {
     accountManagerId: routeData?.supplier?.accountManagerId ?? undefined,
     taxId: routeData?.supplier?.taxId ?? "",
     vatNumber: routeData?.supplier?.vatNumber ?? "",
+    eori: routeData?.supplier?.eori ?? "",
     currencyCode: routeData?.supplier?.currencyCode ?? undefined,
     website: routeData?.supplier?.website ?? "",
     purchasingContactId: routeData?.supplier?.purchasingContactId ?? undefined,

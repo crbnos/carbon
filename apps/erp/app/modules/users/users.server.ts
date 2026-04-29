@@ -371,6 +371,20 @@ export async function createEmployeeAccount(
 
   if (user.data) {
     userId = user.data.id;
+
+    const existingEmployee = await client
+      .from("employee")
+      .select("id")
+      .eq("id", userId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+
+    if (existingEmployee.data) {
+      return {
+        success: false,
+        message: "This user is already an employee in this company"
+      };
+    }
   } else {
     isNewUser = true;
     const createSupabaseUser = await serviceRole.auth.admin.createUser({
@@ -424,8 +438,6 @@ export async function createEmployeeAccount(
   if (employeeInsert.error) {
     if (isNewUser) {
       await deleteAuthAccount(serviceRole, userId);
-    } else {
-      await deactivateEmployee(serviceRole, userId, companyId);
     }
     return { success: false, message: employeeInsert.error.message };
   }

@@ -338,6 +338,8 @@ serve(async (req: Request) => {
                 purchaseOrderDelivery.data.supplierShippingCost ?? 0,
               shippingMethodId: purchaseOrderDelivery.data.shippingMethodId,
               shippingTermId: purchaseOrderDelivery.data.shippingTermId,
+              incoterm: purchaseOrderDelivery.data.incoterm,
+              incotermLocation: purchaseOrderDelivery.data.incotermLocation,
               companyId,
               updatedBy: userId,
             })
@@ -737,6 +739,8 @@ serve(async (req: Request) => {
               shippingCost: salesOrderShipment.data.shippingCost ?? 0,
               shippingMethodId: salesOrderShipment.data.shippingMethodId,
               shippingTermId: salesOrderShipment.data.shippingTermId,
+              incoterm: salesOrderShipment.data.incoterm,
+              incotermLocation: salesOrderShipment.data.incotermLocation,
               companyId,
               createdBy: userId,
             })
@@ -919,7 +923,7 @@ serve(async (req: Request) => {
           invoiceCustomerLocationId,
         } = customerPayment.data;
 
-        const { shippingMethodId, shippingTermId } = customerShipping.data;
+        const { shippingMethodId, shippingTermId, incoterm, incotermLocation } = customerShipping.data;
 
         let insertedQuoteId = "";
         let insertedQuoteLines: {
@@ -1040,6 +1044,8 @@ serve(async (req: Request) => {
               locationId: salesRfq.data?.locationId,
               shippingMethodId: shippingMethodId,
               shippingTermId: shippingTermId,
+              incoterm: incoterm,
+              incotermLocation: incotermLocation,
               companyId,
             })
             .execute();
@@ -1305,6 +1311,8 @@ serve(async (req: Request) => {
               shippingCost: salesOrderShipment.data.shippingCost ?? 0,
               shippingMethodId: salesOrderShipment.data.shippingMethodId,
               shippingTermId: salesOrderShipment.data.shippingTermId,
+              incoterm: salesOrderShipment.data.incoterm,
+              incotermLocation: salesOrderShipment.data.incotermLocation,
               companyId,
               createdBy: userId,
             })
@@ -1477,6 +1485,8 @@ serve(async (req: Request) => {
                 locationId: employeeJob.data?.locationId,
                 shippingMethodId: supplierShipping.data.shippingMethodId,
                 shippingTermId: supplierShipping.data.shippingTermId,
+                incoterm: supplierShipping.data.incoterm,
+                incotermLocation: supplierShipping.data.incotermLocation,
                 companyId: companyId,
               })
               .execute(),

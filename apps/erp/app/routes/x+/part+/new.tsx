@@ -79,7 +79,7 @@ export default function PartsNewRoute() {
     unitCost: 0,
     lotSize: 0,
     active: true,
-    shelfLifeInheritEarliestInputExpiry: false
+    shelfLifeCalculateFromBom: false
   };
 
   return (

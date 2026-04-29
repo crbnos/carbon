@@ -57,7 +57,7 @@ const Part = ({ itemReplenishmentSystem, ...props }: PartSelectProps) => {
             unitOfMeasureCode: "EA",
             unitCost: 0,
             lotSize: 0,
-            shelfLifeInheritEarliestInputExpiry: false
+            shelfLifeCalculateFromBom: false
           }}
         />
       )}

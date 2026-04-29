@@ -33,7 +33,7 @@ import TrackedEntityStatus from "./TrackedEntityStatus";
 type ShelfLifePolicy = {
   mode: string;
   days: number | null;
-  inheritEarliestInputExpiry?: boolean | null;
+  calculateFromBom?: boolean | null;
 };
 
 type TrackedEntitiesTableProps = {
@@ -185,8 +185,7 @@ const TrackedEntitiesTable = memo(
                           | "Calculated"
                           | "Set on Receipt",
                         days: policy.days,
-                        inheritEarliestInputExpiry:
-                          policy.inheritEarliestInputExpiry ?? false
+                        calculateFromBom: policy.calculateFromBom ?? false
                       }
                     : null
                 }

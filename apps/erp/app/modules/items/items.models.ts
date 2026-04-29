@@ -128,7 +128,8 @@ export const itemValidator = z.object({
   // Fixed Duration + Make items only: when true, the produced expiry is
   // capped by the earliest input expiry — the output cannot outlast its
   // raw materials. Falls back to today + days when no input has a date.
-  shelfLifeInheritEarliestInputExpiry: zfd.checkbox(),
+  // Mirrors the inventory-settings "Calculate from BOM" copy.
+  shelfLifeCalculateFromBom: zfd.checkbox(),
   requiresInspection: zfd.checkbox().optional()
 });
 
@@ -203,22 +204,20 @@ const applyStorageAndShelfLifeRefines = <T extends z.AnyZodObject>(
     )
     .refine(
       (data: z.infer<T>) =>
-        !data.shelfLifeInheritEarliestInputExpiry ||
+        !data.shelfLifeCalculateFromBom ||
         data.shelfLifeMode === "Fixed Duration",
       {
-        message:
-          "Inheriting the earliest input expiry only applies to Fixed Duration shelf life",
-        path: ["shelfLifeInheritEarliestInputExpiry"]
+        message: "Calculate from BOM only applies to Fixed Duration shelf life",
+        path: ["shelfLifeCalculateFromBom"]
       }
     )
     .refine(
       (data: z.infer<T>) =>
-        !data.shelfLifeInheritEarliestInputExpiry ||
-        data.replenishmentSystem !== "Buy",
+        !data.shelfLifeCalculateFromBom || data.replenishmentSystem !== "Buy",
       {
         message:
-          "Inheriting input expiry requires a BoM - only Make or Buy and Make items qualify",
-        path: ["shelfLifeInheritEarliestInputExpiry"]
+          "Calculate from BOM requires a BoM - only Make or Buy and Make items qualify",
+        path: ["shelfLifeCalculateFromBom"]
       }
     ) as z.ZodEffects<z.ZodTypeAny, z.infer<T>, z.input<T>>;
 
@@ -665,7 +664,7 @@ export const pickMethodWithShelfLifeValidator = pickMethodValidator
       shelfLifeDays: zfd.numeric(z.number().positive().optional()),
       shelfLifeTriggerProcessId: zfd.text(z.string().optional()),
       shelfLifeTriggerTiming: z.enum(shelfLifeTriggerTimings).optional(),
-      shelfLifeInheritEarliestInputExpiry: zfd.checkbox()
+      shelfLifeCalculateFromBom: zfd.checkbox()
     })
   )
   .refine(
@@ -700,12 +699,11 @@ export const pickMethodWithShelfLifeValidator = pickMethodValidator
   )
   .refine(
     (data) =>
-      !data.shelfLifeInheritEarliestInputExpiry ||
+      !data.shelfLifeCalculateFromBom ||
       data.shelfLifeMode === "Fixed Duration",
     {
-      message:
-        "Inheriting the earliest input expiry only applies to Fixed Duration shelf life",
-      path: ["shelfLifeInheritEarliestInputExpiry"]
+      message: "Calculate from BOM only applies to Fixed Duration shelf life",
+      path: ["shelfLifeCalculateFromBom"]
     }
   );
 

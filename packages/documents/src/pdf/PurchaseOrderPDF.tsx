@@ -136,6 +136,7 @@ const PurchaseOrderPDF = ({
           countryCode: supplierCountryCode,
           taxId: purchaseOrderLocations.supplierTaxId,
           vatNumber: purchaseOrderLocations.supplierVatNumber,
+          eori: purchaseOrderLocations.supplierEori,
           contactName: purchaseOrderLocations.supplierContactName,
           contactEmail: purchaseOrderLocations.supplierContactEmail
         }}
@@ -216,6 +217,14 @@ const PurchaseOrderPDF = ({
                 </Text>
               )}
               {paymentTerm && <Text>Payment Terms: {paymentTerm.name}</Text>}
+              {purchaseOrder?.incoterm && (
+                <Text>
+                  Incoterm: {purchaseOrder.incoterm}
+                  {purchaseOrder.incotermLocation
+                    ? ` - ${purchaseOrder.incotermLocation}`
+                    : ""}
+                </Text>
+              )}
             </View>
           </View>
           <View style={tw("w-1/2 p-3")}>

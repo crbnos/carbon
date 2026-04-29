@@ -165,6 +165,8 @@ export default function SalesInvoiceBasicRoute() {
     shippingCost: salesInvoiceShipment.shippingCost ?? 0,
     shippingMethodId: salesInvoiceShipment.shippingMethodId ?? "",
     shippingTermId: salesInvoiceShipment.shippingTermId ?? "",
+    incoterm: salesInvoiceShipment.incoterm ?? undefined,
+    incotermLocation: salesInvoiceShipment.incotermLocation ?? "",
     ...getCustomFields(salesInvoiceShipment.customFields)
   };
 

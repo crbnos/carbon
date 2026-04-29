@@ -13,12 +13,15 @@ import type { z } from "zod";
 import {
   DatePicker,
   Hidden,
+  Input,
   Location,
   Number,
+  Select,
   ShippingMethod,
   Submit
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { incoterms } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { isQuoteLocked, quoteShipmentValidator } from "../../sales.models";
 import type { Quotation } from "../../types";
@@ -40,6 +43,9 @@ const QuoteShipmentForm = forwardRef<
   const permissions = usePermissions();
   const fetcher = useFetcher<{}>();
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+  const [incoterm, setIncoterm] = useState<string | undefined>(
+    initialValues.incoterm || undefined
+  );
 
   const shippingCostRef = useRef<HTMLInputElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -111,6 +117,16 @@ const QuoteShipmentForm = forwardRef<
               name="shippingMethodId"
               label={t`Shipping Method`}
             />
+            <Select
+              name="incoterm"
+              label={t`Incoterm`}
+              isClearable
+              options={incoterms.map((i) => ({ value: i, label: i }))}
+              onChange={(v) => setIncoterm(v?.value as string)}
+            />
+            {incoterm && (
+              <Input name="incotermLocation" label={t`Incoterm Location`} />
+            )}
 
             <DatePicker name="receiptRequestedDate" label={t`Requested Date`} />
           </div>

@@ -1,5 +1,8 @@
 import { Boolean, useControlField, ValidatedForm } from "@carbon/form";
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Card,
   CardAction,
   CardContent,
@@ -16,7 +19,12 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { LuCalendarClock, LuClipboardCheck, LuLayers } from "react-icons/lu";
+import {
+  LuCalendarClock,
+  LuClipboardCheck,
+  LuLayers,
+  LuTriangleAlert
+} from "react-icons/lu";
 import type { z } from "zod";
 import {
   Combobox as ComboboxFormField,
@@ -56,6 +64,13 @@ type PickMethodFormProps = {
    * consumed). `Buy and Make` / null keeps every mode.
    */
   replenishmentSystem: ReplenishmentSystem | null;
+  /**
+   * Whether the active make-method has at least one BOM input with a
+   * managed shelf-life policy. Used to warn the user when they pick a
+   * BOM-driven shelf-life option (Calculated mode, or Fixed Duration with
+   * Calculate-from-BOM) but no input would actually contribute an expiry.
+   */
+  bomHasShelfLifeManagedInput?: boolean;
 };
 
 const PickMethodForm = ({
@@ -64,7 +79,8 @@ const PickMethodForm = ({
   storageUnits,
   type,
   itemTrackingType,
-  replenishmentSystem
+  replenishmentSystem,
+  bomHasShelfLifeManagedInput
 }: PickMethodFormProps) => {
   const permissions = usePermissions();
   const { t } = useLingui();
@@ -124,6 +140,7 @@ const PickMethodForm = ({
               <ShelfLifeFields
                 replenishmentSystem={replenishmentSystem}
                 itemId={initialValues.itemId}
+                bomHasShelfLifeManagedInput={bomHasShelfLifeManagedInput}
               />
             )}
 
@@ -156,10 +173,12 @@ const ALL_SHELF_LIFE_MODES: ManagedShelfLifeMode[] = [
 // (items.service.ts upsertItemShelfLife).
 function ShelfLifeFields({
   replenishmentSystem,
-  itemId
+  itemId,
+  bomHasShelfLifeManagedInput
 }: {
   replenishmentSystem: ReplenishmentSystem | null;
   itemId: string;
+  bomHasShelfLifeManagedInput?: boolean;
 }) {
   const { t } = useLingui();
   const { inventoryShelfLife } = useSettings();
@@ -199,12 +218,8 @@ function ShelfLifeFields({
   );
   const [shelfLifeTriggerProcessId, setShelfLifeTriggerProcessId] =
     useControlField<string | undefined>("shelfLifeTriggerProcessId");
-  const [
-    shelfLifeInheritEarliestInputExpiry,
-    setShelfLifeInheritEarliestInputExpiry
-  ] = useControlField<boolean | undefined>(
-    "shelfLifeInheritEarliestInputExpiry"
-  );
+  const [shelfLifeCalculateFromBom, setShelfLifeCalculateFromBom] =
+    useControlField<boolean | undefined>("shelfLifeCalculateFromBom");
 
   const availableModes = useMemo<ManagedShelfLifeMode[]>(() => {
     return ALL_SHELF_LIFE_MODES.filter((mode) => {
@@ -246,12 +261,12 @@ function ShelfLifeFields({
   useEffect(() => {
     if (replenishmentSystem === "Buy") {
       setShelfLifeTriggerProcessId(undefined);
-      setShelfLifeInheritEarliestInputExpiry(false);
+      setShelfLifeCalculateFromBom(false);
     }
   }, [
     replenishmentSystem,
     setShelfLifeTriggerProcessId,
-    setShelfLifeInheritEarliestInputExpiry
+    setShelfLifeCalculateFromBom
   ]);
 
   // Inherit-from-inputs only applies when mode is Fixed Duration. Coerce
@@ -260,9 +275,9 @@ function ShelfLifeFields({
   // keeps the form submission clean).
   useEffect(() => {
     if (shelfLifeMode !== "Fixed Duration") {
-      setShelfLifeInheritEarliestInputExpiry(false);
+      setShelfLifeCalculateFromBom(false);
     }
-  }, [shelfLifeMode, setShelfLifeInheritEarliestInputExpiry]);
+  }, [shelfLifeMode, setShelfLifeCalculateFromBom]);
 
   const handleToggle = (next: boolean) => {
     setHasShelfLife(next);
@@ -279,7 +294,7 @@ function ShelfLifeFields({
       setShelfLifeMode("");
       setShelfLifeDays(undefined);
       setShelfLifeTriggerProcessId(undefined);
-      setShelfLifeInheritEarliestInputExpiry(false);
+      setShelfLifeCalculateFromBom(false);
     }
   };
 
@@ -351,20 +366,43 @@ function ShelfLifeFields({
               )}
               {/* Make-only: optional input cap. Output expiry never outlasts
                   the earliest input expiry; falls back to the fixed clock
-                  when no input has a date. */}
+                  when no input has a date. Mirrors the inventory-settings
+                  "Calculate from BOM" copy. */}
               <div className="lg:col-span-3">
                 <Boolean
-                  name="shelfLifeInheritEarliestInputExpiry"
-                  label={t`Inherit earliest input expiry`}
+                  name="shelfLifeCalculateFromBom"
+                  label={t`Calculate from BOM`}
                   description={t`Output never outlasts its raw materials. Falls back to the fixed duration when no input has an expiry date.`}
-                  value={!!shelfLifeInheritEarliestInputExpiry}
-                  onChange={(v) => setShelfLifeInheritEarliestInputExpiry(v)}
+                  value={!!shelfLifeCalculateFromBom}
+                  onChange={(v) => setShelfLifeCalculateFromBom(v)}
                 />
               </div>
             </>
           )}
         </>
       )}
+
+      {hasShelfLife &&
+        bomHasShelfLifeManagedInput !== true &&
+        (choiceValue === "Calculated" ||
+          (choiceValue === "Fixed Duration" &&
+            !!shelfLifeCalculateFromBom &&
+            replenishmentSystem !== "Buy")) && (
+          <div className="lg:col-span-3">
+            <Alert variant="warning">
+              <LuTriangleAlert className="h-4 w-4" />
+              <AlertTitle>
+                <Trans>No BOM input has a shelf-life policy</Trans>
+              </AlertTitle>
+              <AlertDescription>
+                <Trans>
+                  This item's bill of materials has no inputs with shelf-life
+                  enabled, so no expiry will be calculated from the BOM.
+                </Trans>
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
     </>
   );
 }
