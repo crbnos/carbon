@@ -1,7 +1,8 @@
 import { cn } from "@carbon/react";
 import { Handle, type NodeProps, Position, useStore } from "@xyflow/react";
 import { memo } from "react";
-import { ACTIVITY_KIND_META, activityKindFor } from "../activityIcons";
+import { NODE_RADIUS, NODE_SIZE } from "../constants";
+import { ACTIVITY_KIND_META, activityKindFor } from "../metadata";
 import type { ActivityNodeData } from "../utils";
 
 type Props = NodeProps & {
@@ -21,8 +22,8 @@ function ActivityNodeImpl({ data, selected }: Props) {
   const zoom = useStore((s) => s.transform[2]);
   const showLabel = zoom > 0.5 || data.isRoot || selected;
 
-  const half = 22;
-  const size = half * 2;
+  const half = NODE_RADIUS;
+  const size = NODE_SIZE;
   const iconSize = 18;
 
   return (

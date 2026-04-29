@@ -4,11 +4,60 @@ import {
   LuFactory,
   LuForklift,
   LuPackage,
+  LuPackageCheck,
+  LuPackageMinus,
+  LuPackageOpen,
   LuPackagePlus,
+  LuPackageX,
+  LuPause,
   LuRotateCw,
   LuTruck,
   LuWrench
 } from "react-icons/lu";
+
+export type EntityStatus =
+  | "Available"
+  | "Reserved"
+  | "On Hold"
+  | "Rejected"
+  | "Consumed";
+
+export type EntityStatusMeta = {
+  color: string;
+  icon: IconType;
+  label: string;
+};
+
+export const ENTITY_STATUS_META: Record<EntityStatus, EntityStatusMeta> = {
+  Available: {
+    color: "hsl(142 71% 45%)",
+    icon: LuPackageCheck,
+    label: "Available"
+  },
+  Reserved: {
+    color: "hsl(220 9% 46%)",
+    icon: LuPackageOpen,
+    label: "Reserved"
+  },
+  "On Hold": { color: "hsl(25 95% 53%)", icon: LuPause, label: "On Hold" },
+  Rejected: { color: "hsl(0 84% 60%)", icon: LuPackageX, label: "Rejected" },
+  Consumed: {
+    color: "hsl(217 91% 60%)",
+    icon: LuPackageMinus,
+    label: "Consumed"
+  }
+};
+
+export const DEFAULT_ENTITY_STATUS: EntityStatus = "Consumed";
+
+export function entityStatusMeta(
+  status: string | null | undefined
+): EntityStatusMeta {
+  return (
+    ENTITY_STATUS_META[(status ?? DEFAULT_ENTITY_STATUS) as EntityStatus] ??
+    ENTITY_STATUS_META[DEFAULT_ENTITY_STATUS]
+  );
+}
 
 export type ActivityKind =
   | "Receipt"
@@ -20,10 +69,13 @@ export type ActivityKind =
   | "Inspection"
   | "Other";
 
-export const ACTIVITY_KIND_META: Record<
-  ActivityKind,
-  { label: string; color: string; icon: IconType }
-> = {
+export type ActivityKindMeta = {
+  label: string;
+  color: string;
+  icon: IconType;
+};
+
+export const ACTIVITY_KIND_META: Record<ActivityKind, ActivityKindMeta> = {
   Receipt: { label: "Receipt", color: "hsl(173 80% 40%)", icon: LuPackagePlus },
   Manufacturing: {
     label: "Manufacturing",

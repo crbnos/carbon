@@ -18,17 +18,25 @@ import "@xyflow/react/dist/style.css";
 import { cn } from "@carbon/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
+import { useShallow } from "zustand/react/shallow";
 import type {
   Activity,
   ActivityInput,
   ActivityOutput,
   TrackedEntity
 } from "~/modules/inventory";
+import { clampDepth } from "./constants";
 import { QuantityEdge } from "./edges/QuantityEdge";
 import { GraphLegend } from "./GraphLegend";
 import { GraphToolbar } from "./GraphToolbar";
 import { computeDagreLayout } from "./hooks/useDagreLayout";
 import { useExpandNode } from "./hooks/useExpandNode";
+import { useProbeBoundary } from "./hooks/useProbeBoundary";
+import {
+  ACTIVITY_KIND_META,
+  activityKindFor,
+  entityStatusMeta
+} from "./metadata";
 import { NodeSearchDialog } from "./NodeSearchDialog";
 import { ActivityNode } from "./nodes/ActivityNode";
 import { EntityNode } from "./nodes/EntityNode";
@@ -96,11 +104,33 @@ function TraceabilityGraphInner({
 
   const expansions = useTraceabilityStore((s) => s.expansions);
   const expandable = useTraceabilityStore((s) => s.expandable);
-  const addExpansion = useTraceabilityStore((s) => s.addExpansion);
-  const removeExpansion = useTraceabilityStore((s) => s.removeExpansion);
-  const markExpandable = useTraceabilityStore((s) => s.markExpandable);
-  const markExhausted = useTraceabilityStore((s) => s.markExhausted);
-  const resetStore = useTraceabilityStore((s) => s.reset);
+  const {
+    addExpansion,
+    removeExpansion,
+    markExpandable,
+    markExhausted,
+    reset: resetStore,
+    setDirection,
+    setView,
+    setSpacing,
+    setIsolate,
+    setSelectedSingle,
+    toggleSelected
+  } = useTraceabilityStore(
+    useShallow((s) => ({
+      addExpansion: s.addExpansion,
+      removeExpansion: s.removeExpansion,
+      markExpandable: s.markExpandable,
+      markExhausted: s.markExhausted,
+      reset: s.reset,
+      setDirection: s.setDirection,
+      setView: s.setView,
+      setSpacing: s.setSpacing,
+      setIsolate: s.setIsolate,
+      setSelectedSingle: s.setSelectedSingle,
+      toggleSelected: s.toggleSelected
+    }))
+  );
   const probeCacheRef = useRef<Map<string, LineagePayload>>(new Map());
   const probedRef = useRef<Set<string>>(new Set());
 
@@ -120,13 +150,9 @@ function TraceabilityGraphInner({
   }, [initialPayload, expansions]);
 
   const direction = useTraceabilityStore((s) => s.direction);
-  const setDirection = useTraceabilityStore((s) => s.setDirection);
   const view = useTraceabilityStore((s) => s.view);
-  const setView = useTraceabilityStore((s) => s.setView);
   const spacing = useTraceabilityStore((s) => s.spacing);
-  const setSpacing = useTraceabilityStore((s) => s.setSpacing);
   const isolate = useTraceabilityStore((s) => s.isolate);
-  const setIsolate = useTraceabilityStore((s) => s.setIsolate);
   const [searchOpen, setSearchOpen] = useState(false);
   const [layoutVersion, setLayoutVersion] = useState(0);
 
@@ -210,8 +236,6 @@ function TraceabilityGraphInner({
   }, [laidNodes, laidEdges, setNodes, setEdges]);
 
   const selectedIds = useTraceabilityStore((s) => s.selectedIds);
-  const setSelectedSingle = useTraceabilityStore((s) => s.setSelectedSingle);
-  const toggleSelected = useTraceabilityStore((s) => s.toggleSelected);
   const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const selectedId = selectedIds[0] ?? null;
 
@@ -299,49 +323,14 @@ function TraceabilityGraphInner({
     return { incoming, outgoing };
   }, [edges]);
 
-  useEffect(() => {
-    let cancelled = false;
-    const candidates = payload.entities.filter((e) => {
-      if (probedRef.current.has(e.id)) return false;
-      const hasIn = boundaryByNode.incoming.has(e.id);
-      const hasOut = boundaryByNode.outgoing.has(e.id);
-      return !hasIn || !hasOut;
-    });
-    if (candidates.length === 0) return;
-
-    const knownEntityIds = new Set(payload.entities.map((e) => e.id));
-    const knownActivityIds = new Set(payload.activities.map((a) => a.id));
-
-    for (const ent of candidates) {
-      probedRef.current.add(ent.id);
-      const params = new URLSearchParams({
-        trackedEntityId: ent.id,
-        direction: "both",
-        depth: "1"
-      });
-      fetch(`/api/traceability/expand?${params.toString()}`)
-        .then((r) => r.json() as Promise<LineagePayload>)
-        .then((res) => {
-          if (cancelled) return;
-          const hasNew =
-            res.entities.some((e) => !knownEntityIds.has(e.id)) ||
-            res.activities.some((a) => !knownActivityIds.has(a.id));
-          if (hasNew) {
-            probeCacheRef.current.set(ent.id, res);
-            markExpandable(ent.id);
-          } else {
-            markExhausted(ent.id);
-          }
-        })
-        .catch(() => {
-          // probe fail = silently leave indicator off
-        });
-    }
-
-    return () => {
-      cancelled = true;
-    };
-  }, [payload, boundaryByNode, markExpandable, markExhausted]);
+  useProbeBoundary({
+    payload,
+    boundaryByNode,
+    markExpandable,
+    markExhausted,
+    probeCacheRef,
+    probedRef
+  });
 
   const enrichedNodes = useMemo<Node[]>(() => {
     return nodes.map((n) => {
@@ -454,10 +443,7 @@ function TraceabilityGraphInner({
           />
         </div>
         <GraphToolbar
-          depth={Math.min(
-            Math.max(1, Number(searchParams.get("depth") ?? 2)),
-            5
-          )}
+          depth={clampDepth(Number(searchParams.get("depth") ?? 1))}
           onDepthChange={handleDepthChange}
           direction={direction}
           onDirectionChange={setDirection}
@@ -539,14 +525,10 @@ function TraceabilityGraphInner({
           nodeColor={(n) => {
             const data = (n as any).data;
             if (data?.kind === "entity") {
-              const status = data.entity?.status;
-              if (status === "Available") return "hsl(142 71% 45%)";
-              if (status === "Rejected") return "hsl(0 84% 60%)";
-              if (status === "On Hold") return "hsl(25 95% 53%)";
-              if (status === "Reserved") return "hsl(220 9% 46%)";
-              return "hsl(217 91% 60%)";
+              return entityStatusMeta(data.entity?.status).color;
             }
-            return "hsl(280 65% 60%)";
+            return ACTIVITY_KIND_META[activityKindFor(data?.activity?.type)]
+              .color;
           }}
           nodeStrokeWidth={0}
           maskColor="hsl(var(--background) / 0.7)"
@@ -554,7 +536,7 @@ function TraceabilityGraphInner({
       </ReactFlow>
 
       <GraphToolbar
-        depth={Math.min(Math.max(1, Number(searchParams.get("depth") ?? 2)), 5)}
+        depth={Math.min(Math.max(1, Number(searchParams.get("depth") ?? 1)), 5)}
         onDepthChange={handleDepthChange}
         direction={direction}
         onDirectionChange={setDirection}

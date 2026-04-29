@@ -9,6 +9,7 @@ import { Link, redirect, useLoaderData, useNavigation } from "react-router";
 import { Empty } from "~/components";
 import type { Activity, TrackedEntity } from "~/modules/inventory";
 import { fetchLineageSubgraph } from "~/modules/inventory/lineage.server";
+import { clampDepth } from "~/modules/inventory/ui/Traceability/constants";
 import { useTraceabilityStore } from "~/modules/inventory/ui/Traceability/store";
 import { TraceabilityGraph } from "~/modules/inventory/ui/Traceability/TraceabilityGraph";
 import { TraceabilitySidebar } from "~/modules/inventory/ui/Traceability/TraceabilitySidebar";
@@ -31,7 +32,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const trackedEntityId = url.searchParams.get("trackedEntityId");
   const trackedActivityId = url.searchParams.get("trackedActivityId");
   const depthParam = url.searchParams.get("depth");
-  const depth = Math.min(Math.max(1, Number(depthParam) || 2), 5);
+  const depth = clampDepth(Number(depthParam) || 1);
 
   if (!trackedEntityId && !trackedActivityId) {
     throw redirect(path.to.traceability);

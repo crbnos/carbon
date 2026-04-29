@@ -1492,7 +1492,7 @@ msgstr "Назад"
 msgid "Back to home"
 msgstr "Вернуться на главную"
 
-#: apps/erp/app/routes/x+/traceability+/graph.tsx:160
+#: apps/erp/app/routes/x+/traceability+/graph.tsx:161
 msgid "Back to traceability"
 msgstr "Вернуться к отслеживанию"
 
@@ -2692,7 +2692,7 @@ msgstr "Копировать имя документа"
 msgid "Copy document unique identifier"
 msgstr "Скопировать уникальный идентификатор документа"
 
-#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:213
+#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:203
 msgid "Copy ID"
 msgstr ""
 
@@ -2708,7 +2708,7 @@ msgstr "Скопировать уникальный идентификатор �
 msgid "Copy Job number"
 msgstr "Скопировать номер задания"
 
-#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:199
+#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:189
 msgid "Copy link"
 msgstr ""
 
@@ -5047,6 +5047,7 @@ msgid "Entered At Receipt"
 msgstr "Введено при получении"
 
 #: apps/erp/app/modules/settings/ui/AuditLog/AuditLogTable.tsx:207
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:146
 msgid "Entities"
 msgstr "Сущности"
 
@@ -6476,10 +6477,6 @@ msgstr "Пром. Промежуточное начисление"
 #: apps/erp/app/routes/_public+/invite.$code.tsx:122
 msgid "Invalid Invite"
 msgstr "Недействительное приглашение"
-
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:45
-msgid "Invalid tracking number"
-msgstr "Неверный номер отслеживания"
 
 #: apps/erp/app/components/Form/ConversionFactor.tsx:274
 #: apps/erp/app/components/Form/ConversionFactor.tsx:299
@@ -8711,6 +8708,10 @@ msgstr "Типы проблем не настроены"
 msgid "No logo uploaded"
 msgstr "Логотип не загружен"
 
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:157
+msgid "No matches"
+msgstr ""
+
 #: apps/erp/app/components/Layout/Topbar/Search/SearchEmptyState.tsx:46
 msgid "No matches for \"{query}\". Try a different search term."
 msgstr "Нет совпадений для \"{query}\". Попробуйте другой поисковый запрос."
@@ -10647,6 +10648,7 @@ msgstr "Место получения"
 
 #: apps/erp/app/components/Layout/Topbar/Search.tsx:223
 #: apps/erp/app/modules/documents/ui/useDocumentsSubmodules.tsx:28
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:162
 msgid "Recent"
 msgstr "Недавние"
 
@@ -11588,13 +11590,17 @@ msgstr "Сохранить представление"
 msgid "Scan"
 msgstr "Сканировать"
 
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:82
-msgid "Scan or enter a tracking number"
-msgstr "Отсканируйте или введите номер отслеживания"
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:126
+msgid "Scan a label or search by ID, serial number, or batch number."
+msgstr ""
 
 #: apps/erp/app/modules/quality/ui/InboundInspections/ScanInspectionSample.tsx:137
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "Отсканируйте или введите ID отслеживаемого объекта, серийный номер или партию"
+
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:135
+msgid "Scan or search..."
+msgstr ""
 
 #: apps/erp/app/modules/quality/ui/InboundInspections/ScanInspectionSample.tsx:100
 msgid "Scan or select a tracked entity from this lot and record the inspection result."
@@ -11753,6 +11759,10 @@ msgstr "Поиск в интернете"
 #: packages/react/src/MultiSelect.tsx:268
 msgid "Search..."
 msgstr "Поиск..."
+
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:157
+msgid "Searching..."
+msgstr ""
 
 #: apps/erp/app/components/Form/StandardFactor.tsx:36
 msgid "Seconds/Piece"
@@ -12627,6 +12637,10 @@ msgstr "Начало налогового года"
 #: apps/erp/app/modules/resources/ui/Maintenance/MaintenanceDispatchProperties.tsx:639
 msgid "Start Time"
 msgstr "Время начала"
+
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:175
+msgid "Start typing or scan a label to begin tracing"
+msgstr ""
 
 #: apps/erp/app/routes/x+/resources+/assignments.$trainingId.tsx:161
 msgid "Started"
@@ -13731,8 +13745,9 @@ msgid "Totaling"
 msgstr "Итого"
 
 #: apps/erp/app/modules/inventory/ui/useInventorySubmodules.tsx:76
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:13
-#: apps/erp/app/routes/x+/traceability+/graph.tsx:19
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:24
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:123
+#: apps/erp/app/routes/x+/traceability+/graph.tsx:20
 msgid "Traceability"
 msgstr "Отслеживаемость"
 

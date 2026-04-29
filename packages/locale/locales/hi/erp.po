@@ -1492,7 +1492,7 @@ msgstr "वापस"
 msgid "Back to home"
 msgstr "घर वापस जाएं"
 
-#: apps/erp/app/routes/x+/traceability+/graph.tsx:160
+#: apps/erp/app/routes/x+/traceability+/graph.tsx:161
 msgid "Back to traceability"
 msgstr "ट्रेसेबिलिटी पर वापस जाएं"
 
@@ -2692,7 +2692,7 @@ msgstr "दस्तावेज़ का नाम कॉपी करें"
 msgid "Copy document unique identifier"
 msgstr "दस्तावेज़ की अद्वितीय पहचान की प्रतिलिपि बनाएँ"
 
-#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:213
+#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:203
 msgid "Copy ID"
 msgstr ""
 
@@ -2708,7 +2708,7 @@ msgstr "समस्या की अद्वितीय पहचान क�
 msgid "Copy Job number"
 msgstr "जॉब नंबर कॉपी करें"
 
-#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:199
+#: apps/erp/app/modules/inventory/ui/Traceability/TraceabilitySidebar.tsx:189
 msgid "Copy link"
 msgstr ""
 
@@ -5047,6 +5047,7 @@ msgid "Entered At Receipt"
 msgstr "रसीद पर दर्ज"
 
 #: apps/erp/app/modules/settings/ui/AuditLog/AuditLogTable.tsx:207
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:146
 msgid "Entities"
 msgstr "संस्थाएं"
 
@@ -6476,10 +6477,6 @@ msgstr "इन्व. अंतरिम संचय"
 #: apps/erp/app/routes/_public+/invite.$code.tsx:122
 msgid "Invalid Invite"
 msgstr "अमान्य निमंत्रण"
-
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:45
-msgid "Invalid tracking number"
-msgstr "अमान्य ट्रैकिंग नंबर"
 
 #: apps/erp/app/components/Form/ConversionFactor.tsx:274
 #: apps/erp/app/components/Form/ConversionFactor.tsx:299
@@ -8711,6 +8708,10 @@ msgstr "कोई समस्या प्रकार कॉन्फ़िग
 msgid "No logo uploaded"
 msgstr "कोई लोगो अपलोड नहीं किया गया"
 
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:157
+msgid "No matches"
+msgstr ""
+
 #: apps/erp/app/components/Layout/Topbar/Search/SearchEmptyState.tsx:46
 msgid "No matches for \"{query}\". Try a different search term."
 msgstr "\"{query}\" के लिए कोई मिलान नहीं। एक अलग खोज शब्द आजमाएं।"
@@ -10647,6 +10648,7 @@ msgstr "प्राप्ति स्थान"
 
 #: apps/erp/app/components/Layout/Topbar/Search.tsx:223
 #: apps/erp/app/modules/documents/ui/useDocumentsSubmodules.tsx:28
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:162
 msgid "Recent"
 msgstr "हाल ही में"
 
@@ -11588,13 +11590,17 @@ msgstr "दृश्य सहेजें"
 msgid "Scan"
 msgstr "स्कैन करें"
 
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:82
-msgid "Scan or enter a tracking number"
-msgstr "ट्रैकिंग नंबर स्कैन करें या दर्ज करें"
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:126
+msgid "Scan a label or search by ID, serial number, or batch number."
+msgstr ""
 
 #: apps/erp/app/modules/quality/ui/InboundInspections/ScanInspectionSample.tsx:137
 msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "ट्रैक किए गए इकाई ID, सीरीज़ या बैच को स्कैन करें या दर्ज करें"
+
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:135
+msgid "Scan or search..."
+msgstr ""
 
 #: apps/erp/app/modules/quality/ui/InboundInspections/ScanInspectionSample.tsx:100
 msgid "Scan or select a tracked entity from this lot and record the inspection result."
@@ -11753,6 +11759,10 @@ msgstr "वेब खोजें"
 #: packages/react/src/MultiSelect.tsx:268
 msgid "Search..."
 msgstr "खोजें..."
+
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:157
+msgid "Searching..."
+msgstr ""
 
 #: apps/erp/app/components/Form/StandardFactor.tsx:36
 msgid "Seconds/Piece"
@@ -12627,6 +12637,10 @@ msgstr "कर वर्ष की शुरुआत"
 #: apps/erp/app/modules/resources/ui/Maintenance/MaintenanceDispatchProperties.tsx:639
 msgid "Start Time"
 msgstr "शुरुआत का समय"
+
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:175
+msgid "Start typing or scan a label to begin tracing"
+msgstr ""
 
 #: apps/erp/app/routes/x+/resources+/assignments.$trainingId.tsx:161
 msgid "Started"
@@ -13731,8 +13745,9 @@ msgid "Totaling"
 msgstr "कुल"
 
 #: apps/erp/app/modules/inventory/ui/useInventorySubmodules.tsx:76
-#: apps/erp/app/routes/x+/traceability+/_index.tsx:13
-#: apps/erp/app/routes/x+/traceability+/graph.tsx:19
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:24
+#: apps/erp/app/routes/x+/traceability+/_index.tsx:123
+#: apps/erp/app/routes/x+/traceability+/graph.tsx:20
 msgid "Traceability"
 msgstr "ट्रेसेबिलिटी"
 

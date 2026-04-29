@@ -5,6 +5,7 @@ import type {
   ActivityOutput,
   TrackedEntity
 } from "~/modules/inventory";
+import { NODE_SIZE } from "./constants";
 
 export type EntityNodeData = {
   kind: "entity";
@@ -55,9 +56,9 @@ export function payloadToFlow(
       id: entity.id,
       type: "entity",
       position: positions.get(entity.id) ?? { x: 0, y: 0 },
-      width: 44,
-      height: 44,
-      measured: { width: 44, height: 44 },
+      width: NODE_SIZE,
+      height: NODE_SIZE,
+      measured: { width: NODE_SIZE, height: NODE_SIZE },
       data: { kind: "entity", entity, dimmed: false }
     }));
 
@@ -71,9 +72,9 @@ export function payloadToFlow(
       id: activity.id,
       type: "activity",
       position: positions.get(activity.id) ?? { x: 0, y: 0 },
-      width: 44,
-      height: 44,
-      measured: { width: 44, height: 44 },
+      width: NODE_SIZE,
+      height: NODE_SIZE,
+      measured: { width: NODE_SIZE, height: NODE_SIZE },
       data: { kind: "activity", activity, dimmed: false }
     }));
 
@@ -256,6 +257,28 @@ export function lineageReachable(
   }
 
   return result;
+}
+
+export function entityHeadline(
+  e: Pick<TrackedEntity, "id" | "readableId" | "sourceDocumentReadableId">,
+  sliceTo?: number
+): string {
+  return (
+    e.sourceDocumentReadableId ??
+    e.readableId ??
+    (sliceTo ? e.id.slice(0, sliceTo) : e.id)
+  );
+}
+
+export function activityHeadline(
+  a: Pick<Activity, "id" | "type" | "sourceDocumentReadableId">,
+  sliceTo?: number
+): string {
+  return (
+    a.sourceDocumentReadableId ??
+    a.type ??
+    (sliceTo ? a.id.slice(0, sliceTo) : a.id)
+  );
 }
 
 export function sourceLinkHref(

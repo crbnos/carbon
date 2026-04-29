@@ -1,16 +1,11 @@
 import { Badge, cn, HStack } from "@carbon/react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  LuChevronDown,
-  LuChevronRight,
-  LuCornerDownRight,
-  LuExternalLink
-} from "react-icons/lu";
+import { LuChevronDown, LuChevronRight, LuExternalLink } from "react-icons/lu";
 import { Link } from "react-router";
 import type { Activity, TrackedEntity } from "~/modules/inventory";
-import { ACTIVITY_KIND_META, activityKindFor } from "./activityIcons";
+import { ACTIVITY_KIND_META, activityKindFor } from "./metadata";
 import TrackedEntityStatus from "./TrackedEntityStatus";
-import { type LineagePayload, sourceLinkHref } from "./utils";
+import { entityHeadline, type LineagePayload, sourceLinkHref } from "./utils";
 
 type Props = {
   payload: LineagePayload;
@@ -236,10 +231,7 @@ function TreeRow({
 }) {
   if (row.kind === "entity") {
     if (!entity) return null;
-    const headline =
-      entity.sourceDocumentReadableId ??
-      entity.readableId ??
-      entity.id.slice(0, 12);
+    const headline = entityHeadline(entity, 12);
     const href = sourceLinkHref(entity.sourceDocument, entity.sourceDocumentId);
     return (
       <button
@@ -407,11 +399,6 @@ function ToggleOrLeaf({
           <LuChevronDown className="w-3.5 h-3.5" />
         )}
       </button>
-    );
-  }
-  if (isReference) {
-    return (
-      <LuCornerDownRight className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" />
     );
   }
   return <div className="w-3.5 shrink-0" />;

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import { clampSpacing, SPACING } from "./constants";
 import type { LineagePayload } from "./utils";
 
 export type LayoutDirection = "TB" | "LR";
@@ -52,7 +53,7 @@ export const useTraceabilityStore = create<TraceabilityState>()(
       excludedIds: new Set(),
       direction: "TB",
       view: "graph",
-      spacing: 2,
+      spacing: SPACING.default,
 
       reset: (rootId) =>
         set({
@@ -140,7 +141,7 @@ export const useTraceabilityStore = create<TraceabilityState>()(
 
       setDirection: (next) => set({ direction: next }),
       setView: (next) => set({ view: next }),
-      setSpacing: (next) => set({ spacing: Math.min(Math.max(1, next), 5) })
+      setSpacing: (next) => set({ spacing: clampSpacing(next) })
     }),
     {
       name: "traceability:prefs:v1",

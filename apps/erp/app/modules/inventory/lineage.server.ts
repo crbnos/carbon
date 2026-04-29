@@ -7,6 +7,7 @@ import type {
   GraphData,
   TrackedEntity
 } from "./types";
+import { clampDepth } from "./ui/Traceability/constants";
 
 export type LineageDirection = "up" | "down" | "both";
 
@@ -17,7 +18,6 @@ export type LineagePayload = {
   activities: Activity[];
 };
 
-const MAX_DEPTH = 5;
 const MAX_ENTITIES = 200;
 
 export async function fetchLineageSubgraph(
@@ -26,7 +26,7 @@ export async function fetchLineageSubgraph(
   depth: number,
   direction: LineageDirection = "both"
 ): Promise<LineagePayload> {
-  const safeDepth = Math.min(Math.max(1, depth), MAX_DEPTH);
+  const safeDepth = clampDepth(depth);
 
   const rootEntity = await client
     .from("trackedEntity")

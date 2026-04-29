@@ -7,15 +7,13 @@ import {
   VStack
 } from "@carbon/react";
 import type { IconType } from "react-icons";
+import { LuInfo } from "react-icons/lu";
 import {
-  LuInfo,
-  LuPackageCheck,
-  LuPackageMinus,
-  LuPackageOpen,
-  LuPackageX,
-  LuPause
-} from "react-icons/lu";
-import { ACTIVITY_KIND_META, type ActivityKind } from "./activityIcons";
+  ACTIVITY_KIND_META,
+  type ActivityKind,
+  ENTITY_STATUS_META,
+  type EntityStatus
+} from "./metadata";
 
 type Entry = {
   label: string;
@@ -24,38 +22,23 @@ type Entry = {
   icon: IconType;
 };
 
-const ENTITY_ENTRIES: Entry[] = [
-  {
-    label: "Available",
-    color: "hsl(142 71% 45%)",
-    shape: "circle",
-    icon: LuPackageCheck
-  },
-  {
-    label: "Consumed",
-    color: "hsl(217 91% 60%)",
-    shape: "circle",
-    icon: LuPackageMinus
-  },
-  {
-    label: "Reserved",
-    color: "hsl(220 9% 46%)",
-    shape: "circle",
-    icon: LuPackageOpen
-  },
-  {
-    label: "On Hold",
-    color: "hsl(25 95% 53%)",
-    shape: "circle",
-    icon: LuPause
-  },
-  {
-    label: "Rejected",
-    color: "hsl(0 84% 60%)",
-    shape: "circle",
-    icon: LuPackageX
-  }
+const ENTITY_DISPLAY_ORDER: EntityStatus[] = [
+  "Available",
+  "Consumed",
+  "Reserved",
+  "On Hold",
+  "Rejected"
 ];
+
+const ENTITY_ENTRIES: Entry[] = ENTITY_DISPLAY_ORDER.map((status) => {
+  const meta = ENTITY_STATUS_META[status];
+  return {
+    label: meta.label,
+    color: meta.color,
+    shape: "circle",
+    icon: meta.icon
+  };
+});
 
 const ACTIVITY_ENTRIES: Entry[] = (
   Object.keys(ACTIVITY_KIND_META) as ActivityKind[]

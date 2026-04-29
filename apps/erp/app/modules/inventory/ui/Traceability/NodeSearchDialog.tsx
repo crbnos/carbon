@@ -9,18 +9,15 @@ import {
 } from "@carbon/react";
 import { useReactFlow } from "@xyflow/react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { IconType } from "react-icons";
-import {
-  LuPackageCheck,
-  LuPackageMinus,
-  LuPackageOpen,
-  LuPackageX,
-  LuPause
-} from "react-icons/lu";
 import { useFetcher, useNavigate } from "react-router";
 import type { Activity, TrackedEntity } from "~/modules/inventory";
-import { ACTIVITY_KIND_META, activityKindFor } from "./activityIcons";
-import type { LineagePayload } from "./utils";
+import { TRACE_API } from "./constants";
+import {
+  ACTIVITY_KIND_META,
+  activityKindFor,
+  entityStatusMeta
+} from "./metadata";
+import { entityHeadline, type LineagePayload } from "./utils";
 
 type Props = {
   open: boolean;
@@ -32,14 +29,6 @@ type Props = {
 type SearchResult = {
   entities: TrackedEntity[];
   activities: Activity[];
-};
-
-const ENTITY_STATUS_META: Record<string, { color: string; icon: IconType }> = {
-  Available: { color: "hsl(142 71% 45%)", icon: LuPackageCheck },
-  Reserved: { color: "hsl(220 9% 46%)", icon: LuPackageOpen },
-  "On Hold": { color: "hsl(25 95% 53%)", icon: LuPause },
-  Rejected: { color: "hsl(0 84% 60%)", icon: LuPackageX },
-  Consumed: { color: "hsl(217 91% 60%)", icon: LuPackageMinus }
 };
 
 export function NodeSearchDialog({
@@ -61,7 +50,7 @@ export function NodeSearchDialog({
     if (trimmed.length < 2) return;
     debounceRef.current = window.setTimeout(() => {
       const params = new URLSearchParams({ q: trimmed, kind: "all" });
-      fetcher.load(`/api/traceability/search?${params.toString()}`);
+      fetcher.load(`${TRACE_API.search}?${params.toString()}`);
     }, 200);
     return () => {
       if (debounceRef.current) window.clearTimeout(debounceRef.current);
@@ -138,13 +127,8 @@ export function NodeSearchDialog({
             }
           >
             {entities.map((entity) => {
-              const label =
-                entity.sourceDocumentReadableId ??
-                entity.readableId ??
-                entity.id.slice(0, 12);
-              const meta =
-                ENTITY_STATUS_META[entity.status ?? "Consumed"] ??
-                ENTITY_STATUS_META.Consumed;
+              const label = entityHeadline(entity, 12);
+              const meta = entityStatusMeta(entity.status);
               const Icon = meta.icon;
               const inGraph = localIds.e.has(entity.id);
               return (
@@ -228,17 +212,9 @@ export function NodeSearchDialog({
   );
 }
 
-const STATUS_PILL_COLOR: Record<string, string> = {
-  Available: "hsl(142 71% 45%)",
-  Reserved: "hsl(220 9% 46%)",
-  "On Hold": "hsl(25 95% 53%)",
-  Rejected: "hsl(0 84% 60%)",
-  Consumed: "hsl(217 91% 60%)"
-};
-
 function StatusPill({ status }: { status: string | null | undefined }) {
   if (!status) return null;
-  const color = STATUS_PILL_COLOR[status] ?? "hsl(220 9% 46%)";
+  const color = entityStatusMeta(status).color;
   return (
     <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wide text-foreground bg-muted/60 rounded px-1.5 py-0.5 leading-none">
       <span

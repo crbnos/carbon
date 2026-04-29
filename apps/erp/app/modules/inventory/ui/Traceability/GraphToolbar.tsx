@@ -221,7 +221,7 @@ function GraphControlsChip({
           sideOffset={8}
           className="!w-auto !p-2 text-xs"
         >
-          Hops fetched per direction (1–5)
+          Max connections fetched per direction (1–5)
         </HoverCardContent>
       </HoverCard>
 
