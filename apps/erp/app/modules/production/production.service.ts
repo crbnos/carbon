@@ -1168,7 +1168,7 @@ export async function getJobOperationStepRecords(
   }
 
   query = setGenericQueryFilters(query, args, [
-    { column: "type", ascending: true }
+    { column: "createdAt", ascending: false }
   ]);
 
   return query;

@@ -273,7 +273,7 @@ export function TraceabilitySidebar({
 
         {producedBy.length > 0 && (
           <Section title="Produced by" count={producedBy.length}>
-            <ul role="list" className="divide-y divide-border/30">
+            <ul className="divide-y divide-border/30">
               {producedBy.map((item) => (
                 <RelatedActivityRow
                   key={item.activity.id}
@@ -286,7 +286,7 @@ export function TraceabilitySidebar({
         )}
         {consumedBy.length > 0 && (
           <Section title="Consumed by" count={consumedBy.length}>
-            <ul role="list" className="divide-y divide-border/30">
+            <ul className="divide-y divide-border/30">
               {consumedBy.map((item) => (
                 <RelatedActivityRow
                   key={item.activity.id}
@@ -299,7 +299,7 @@ export function TraceabilitySidebar({
         )}
         {inputs.length > 0 && (
           <Section title="Inputs" count={inputs.length}>
-            <ul role="list" className="divide-y divide-border/30">
+            <ul className="divide-y divide-border/30">
               {inputs.map((item) => (
                 <RelatedEntityRow
                   key={item.entity.id}
@@ -312,7 +312,7 @@ export function TraceabilitySidebar({
         )}
         {outputs.length > 0 && (
           <Section title="Outputs" count={outputs.length}>
-            <ul role="list" className="divide-y divide-border/30">
+            <ul className="divide-y divide-border/30">
               {outputs.map((item) => (
                 <RelatedEntityRow
                   key={item.entity.id}

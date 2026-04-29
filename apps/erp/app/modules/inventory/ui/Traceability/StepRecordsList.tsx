@@ -21,7 +21,7 @@ export function StepRecordsList({ records, jobId }: Props) {
   const href = jobId ? path.to.jobOperationStepRecords(jobId) : null;
 
   return (
-    <ul role="list" className="divide-y divide-border/30">
+    <ul className="divide-y divide-border/30">
       {records.map((r) => {
         const employee = employees.find((e) => e.id === r.createdBy);
         const initials = employee?.name

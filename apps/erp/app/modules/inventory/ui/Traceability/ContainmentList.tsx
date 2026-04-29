@@ -9,7 +9,7 @@ type Props = { items: IssueContainment[] };
 export function ContainmentList({ items }: Props) {
   if (items.length === 0) return null;
   return (
-    <ul role="list" className="divide-y divide-border/30">
+    <ul className="divide-y divide-border/30">
       {items.map((item) => (
         <li key={item.id}>
           <Link

@@ -214,8 +214,8 @@ function buildSteps(
   // happened. For receipt-source entities this is the goods-in date.
   const sourceDate = entity.createdAt ?? null;
   const splitFrom = attrs["Split Entity ID"];
-  const receiptId = attrs["Receipt"];
-  const jobId = attrs["Job"];
+  const receiptId = attrs.Receipt;
+  const jobId = attrs.Job;
   if (typeof splitFrom === "string" && splitFrom) {
     out.push({
       step: "Source",

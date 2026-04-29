@@ -186,7 +186,7 @@ export function IssueMaterialModal({
           // small destructive Badge for expired stock — pops in the dropdown
           // far better than a plain "EXPIRED" prefix in the helper line.
           const label = expired ? (
-            <span className="flex items-center gap-2">
+            <span key={sn.id} className="flex items-center gap-2">
               <span className="truncate">{labelText}</span>
               <Badge variant="red">Expired</Badge>
             </span>

@@ -656,7 +656,7 @@ function BatchForm({
           .reduce((acc, [key, value]) => ({ ...acc, [key]: value || "" }), {})
       };
     });
-  }, [tracking?.id, tracking?.expirationDate, tracking?.readableId]);
+  }, [tracking]);
 
   const updateBatchNumber = async (newValues: typeof values, isNew = false) => {
     if (!receipt?.id || !newValues.number.trim()) return;
