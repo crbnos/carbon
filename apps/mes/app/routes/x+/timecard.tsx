@@ -28,8 +28,8 @@ import {
   Thead,
   Tr
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import { useEffect, useState } from "react";
 import {
   LuChevronLeft,
@@ -41,6 +41,7 @@ import {
 } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Link, useFetcher, useLoaderData } from "react-router";
+import { useDateFormatter } from "~/hooks";
 import {
   clockIn,
   clockOut,
@@ -91,15 +92,15 @@ function formatTotalHours(
   return `${hours}h ${minutes}m`;
 }
 
-function formatTime(dateStr: string) {
-  return new Date(dateStr).toLocaleTimeString([], {
+function formatTime(dateStr: string, locale: string) {
+  return new Date(dateStr).toLocaleTimeString(locale, {
     hour: "2-digit",
     minute: "2-digit"
   });
 }
 
-function formatDay(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString([], {
+function formatDay(dateStr: string, locale: string) {
+  return new Date(dateStr).toLocaleDateString(locale, {
     weekday: "short",
     month: "short",
     day: "numeric"
@@ -202,6 +203,8 @@ export default function MESTimecardPage() {
   const [editClockOut, setEditClockOut] = useState("");
   const [, setTick] = useState(0);
   const { t } = useLingui();
+  const { locale } = useLocale();
+  const { formatDate } = useDateFormatter();
   const [deletingEntry, setDeletingEntry] = useState<{
     id: string;
     clockIn: string;
@@ -269,7 +272,9 @@ export default function MESTimecardPage() {
             </HStack>
             {openEntry && (
               <Badge variant="green" className="w-fit">
-                <Trans>Clocked in since {formatTime(openEntry.clockIn)}</Trans>
+                <Trans>
+                  Clocked in since {formatTime(openEntry.clockIn, locale)}
+                </Trans>
               </Badge>
             )}
           </CardHeader>
@@ -342,7 +347,7 @@ export default function MESTimecardPage() {
                     editingId === entry.id ? (
                       <Tr key={entry.id}>
                         <Td className="whitespace-nowrap">
-                          {formatDay(entry.clockIn)}
+                          {formatDay(entry.clockIn, locale)}
                         </Td>
                         <Td>
                           <Input
@@ -413,12 +418,12 @@ export default function MESTimecardPage() {
                     ) : (
                       <Tr key={entry.id}>
                         <Td className="whitespace-nowrap">
-                          {formatDay(entry.clockIn)}
+                          {formatDay(entry.clockIn, locale)}
                         </Td>
-                        <Td>{formatTime(entry.clockIn)}</Td>
+                        <Td>{formatTime(entry.clockIn, locale)}</Td>
                         <Td>
                           {entry.clockOut ? (
-                            formatTime(entry.clockOut)
+                            formatTime(entry.clockOut, locale)
                           ) : (
                             <Badge variant="green">
                               <Trans>Active</Trans>
@@ -487,7 +492,7 @@ export default function MESTimecardPage() {
               <ModalTitle>
                 <Trans>
                   Delete Timecard (
-                  {new Date(deletingEntry.clockIn).toLocaleString()})
+                  {new Date(deletingEntry.clockIn).toLocaleString(locale)})
                 </Trans>
               </ModalTitle>
             </ModalHeader>

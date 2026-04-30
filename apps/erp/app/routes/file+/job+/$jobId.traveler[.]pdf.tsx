@@ -2,6 +2,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { Footer, JobTravelerPageContent } from "@carbon/documents/pdf";
 import type { JSONContent } from "@carbon/react";
+import { getPreferenceHeaders } from "@carbon/remix";
 import { flattenTree, generateBomIds } from "@carbon/utils";
 import {
   Document,
@@ -22,6 +23,7 @@ import { getBase64ImageFromSupabase } from "~/modules/shared";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {});
+  const { locale } = getPreferenceHeaders(request);
 
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find job id");
@@ -197,6 +199,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             item={data.item}
             batchNumber={data.batchNumber}
             bomId={data.bomId}
+            locale={locale}
             notes={index === 0 ? jobNotes : undefined}
             thumbnail={data.thumbnail}
             methodRevision={data.makeMethod.version?.toString()}

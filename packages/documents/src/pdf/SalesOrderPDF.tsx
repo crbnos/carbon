@@ -57,7 +57,6 @@ const SalesOrderPDF = ({
   accountsReceivableBillingAddress,
   company,
   companySettings,
-  locale,
   meta,
   salesOrder,
   salesOrderLines,
@@ -66,6 +65,7 @@ const SalesOrderPDF = ({
   paymentTerms,
   shippingMethods,
   thumbnails,
+  locale,
   title = "Sales Order"
 }: SalesOrderPDFProps) => {
   const {
@@ -114,6 +114,7 @@ const SalesOrderPDF = ({
         documentId={salesOrder?.salesOrderId}
         date={salesOrder?.orderDate}
         currencyCode={salesOrder?.currencyCode}
+        locale={locale}
       />
 
       <PartyDetails
@@ -178,19 +179,31 @@ const SalesOrderPDF = ({
             </Text>
             <View style={tw("text-[10px] text-gray-800")}>
               {salesOrder?.orderDate && (
-                <Text>Date: {formatDate(salesOrder.orderDate)}</Text>
+                <Text>
+                  Date: {formatDate(salesOrder.orderDate, undefined, locale)}
+                </Text>
               )}
               {salesOrder?.customerReference && (
                 <Text>Customer PO #: {salesOrder.customerReference}</Text>
               )}
               {salesOrder?.receiptRequestedDate && (
                 <Text>
-                  Requested: {formatDate(salesOrder.receiptRequestedDate)}
+                  Requested:{" "}
+                  {formatDate(
+                    salesOrder.receiptRequestedDate,
+                    undefined,
+                    locale
+                  )}
                 </Text>
               )}
               {salesOrder?.receiptPromisedDate && (
                 <Text>
-                  Promised: {formatDate(salesOrder.receiptPromisedDate)}
+                  Promised:{" "}
+                  {formatDate(
+                    salesOrder.receiptPromisedDate,
+                    undefined,
+                    locale
+                  )}
                 </Text>
               )}
               {shippingMethod && <Text>Shipping: {shippingMethod.name}</Text>}

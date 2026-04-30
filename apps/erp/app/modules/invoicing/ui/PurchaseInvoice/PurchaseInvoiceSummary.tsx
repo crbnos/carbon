@@ -14,7 +14,7 @@ import {
   Tr,
   VStack
 } from "@carbon/react";
-import { formatDate, getItemReadableId } from "@carbon/utils";
+import { getItemReadableId } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { motion } from "framer-motion";
@@ -25,6 +25,7 @@ import { MethodIcon, SupplierAvatar } from "~/components";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import {
   useCurrencyFormatter,
+  useDateFormatter,
   usePercentFormatter,
   useRouteData,
   useUser
@@ -347,6 +348,7 @@ const PurchaseInvoiceSummary = ({
 }: PurchaseInvoiceSummaryProps) => {
   const { invoiceId } = useParams();
   if (!invoiceId) throw new Error("Could not find invoiceId");
+  const { formatDate } = useDateFormatter();
 
   const routeData = useRouteData<{
     purchaseInvoice: PurchaseInvoice;

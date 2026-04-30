@@ -15,14 +15,13 @@ import {
   TooltipTrigger,
   toast
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse, SupabaseClient } from "@supabase/supabase-js";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { LuInfo, LuMoveRight } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { Submit } from "~/components/Form";
-import { useCurrencyFormatter, useUser } from "~/hooks";
+import { useCurrencyFormatter, useDateFormatter, useUser } from "~/hooks";
 import type { importSchemas } from "~/modules/shared";
 import { fieldMappings } from "~/modules/shared";
 import type { action } from "~/routes/api+/ai+/csv+/$table.columns";
@@ -317,6 +316,7 @@ function FieldRow({
   onColumnMappingChange: (name: string, value: string) => void;
 }) {
   const formatter = useCurrencyFormatter();
+  const { formatDate } = useDateFormatter();
   const { fileColumns, firstRows } = useCsvContext();
 
   const firstRow = firstRows?.at(0);

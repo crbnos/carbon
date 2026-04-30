@@ -1,5 +1,4 @@
 import { Badge, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
-import { formatDateTime } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -8,7 +7,7 @@ import { useNavigate, useParams } from "react-router";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions, useUrlParams } from "~/hooks";
+import { useDateFormatter, usePermissions, useUrlParams } from "~/hooks";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import type { ProductionQuantity, ScrapReason } from "../../types";
@@ -30,6 +29,7 @@ const ProductionQuantitiesTable = memo(
     const { jobId } = useParams();
     const { t } = useLingui();
     if (!jobId) throw new Error("Job ID is required");
+    const { formatDateTime } = useDateFormatter();
     const [people] = usePeople();
 
     const columns = useMemo<ColumnDef<ProductionQuantity>[]>(() => {

@@ -1,5 +1,5 @@
 import { Badge } from "@carbon/react";
-import { formatDate, getItemReadableId } from "@carbon/utils";
+import { getItemReadableId } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
@@ -12,7 +12,7 @@ import {
   LuTruck
 } from "react-icons/lu";
 import { EmployeeAvatar, Hyperlink, Table } from "~/components";
-import { useUrlParams } from "~/hooks";
+import { useDateFormatter, useUrlParams } from "~/hooks";
 import { inboundInspectionStatus } from "~/modules/quality/quality.models";
 import type { InboundInspection } from "~/modules/quality/types";
 import { useItems } from "~/stores/items";
@@ -46,6 +46,7 @@ function computeProgress(row: InboundInspection): {
 const InboundInspectionsTable = memo(
   ({ data, count }: InboundInspectionsTableProps) => {
     const { t } = useLingui();
+    const { formatDate } = useDateFormatter();
     const [params] = useUrlParams();
     const [items] = useItems();
 

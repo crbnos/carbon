@@ -1,6 +1,5 @@
 import type { Database } from "@carbon/database";
 import { Checkbox, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -30,7 +29,12 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions, useRouteData, useUrlParams } from "~/hooks";
+import {
+  useDateFormatter,
+  usePermissions,
+  useRouteData,
+  useUrlParams
+} from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { usePeople, useSuppliers } from "~/stores";
 import type { ListItem } from "~/types";
@@ -59,6 +63,7 @@ const GaugeCalibrationRecordsTable = memo(
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const { t } = useLingui();
+    const { formatDate } = useDateFormatter();
     const permissions = usePermissions();
     const deleteDisclosure = useDisclosure();
     const [selectedGaugeCalibrationRecord, setSelectedGaugeCalibrationRecord] =

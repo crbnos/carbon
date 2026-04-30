@@ -13,7 +13,6 @@ import {
   TooltipTrigger,
   useDisclosure
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import {
   getLocalTimeZone,
   isSameDay,
@@ -56,7 +55,11 @@ import { useLocations } from "~/components/Form/Location";
 import { usePaymentTerm } from "~/components/Form/PaymentTerm";
 import { useShippingMethod } from "~/components/Form/ShippingMethod";
 import { ConfirmDelete } from "~/components/Modals";
-import { useCurrencyFormatter, usePermissions } from "~/hooks";
+import {
+  useCurrencyFormatter,
+  useDateFormatter,
+  usePermissions
+} from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { jobStatus } from "~/modules/production/production.models";
 import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
@@ -93,6 +96,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const currencyFormatter = useCurrencyFormatter();
+  const { formatDate } = useDateFormatter();
 
   const [selectedSalesOrder, setSelectedSalesOrder] =
     useState<SalesOrder | null>(null);

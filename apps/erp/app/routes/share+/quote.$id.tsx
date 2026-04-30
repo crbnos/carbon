@@ -220,11 +220,13 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 const Header = ({
   company,
   quote,
-  customer
+  customer,
+  locale
 }: {
   company: QuoteData["company"];
   quote: QuoteData["quote"];
   customer: QuoteData["customerDetails"];
+  locale: string;
 }) => (
   <div className="flex justify-between">
     <div className="flex items-center space-x-4 tracking-tight">
@@ -235,7 +237,8 @@ const Header = ({
         )}
         {quote?.expirationDate && (
           <p className="text-lg text-muted-foreground">
-            <Trans>Expires</Trans> {formatDate(quote.expirationDate)}
+            <Trans>Expires</Trans>{" "}
+            {formatDate(quote.expirationDate, undefined, locale)}
           </p>
         )}
       </div>
@@ -1166,7 +1169,12 @@ const Quote = ({ data }: { data: QuoteData }) => {
             {quote?.status === "Lost" && <Badge variant="red">Rejected</Badge>}
           </div>
 
-          <Header company={company} quote={quote} customer={customerDetails} />
+          <Header
+            company={company}
+            quote={quote}
+            customer={customerDetails}
+            locale={locale}
+          />
         </CardHeader>
         <CardContent>
           <LineItems

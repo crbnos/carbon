@@ -19,9 +19,7 @@ import {
 } from "@carbon/react";
 import {
   convertDateStringToIsoString,
-  formatDate,
-  formatDurationMilliseconds,
-  formatRelativeTime
+  formatDurationMilliseconds
 } from "@carbon/utils";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -48,6 +46,7 @@ import { Link } from "react-router";
 import { z } from "zod";
 import { Assignee, CustomerAvatar, EmployeeAvatarGroup } from "~/components";
 import { Tags } from "~/components/Form";
+import { useDateFormatter } from "~/hooks";
 import { useTags } from "~/hooks/useTags";
 import { getDeadlineIcon } from "~/modules/production/ui/Jobs/Deadline";
 import { JobOperationStatus } from "~/modules/production/ui/Jobs/JobOperationStatus";
@@ -99,6 +98,7 @@ type ItemCardProps = {
 
 export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
   const { t } = useLingui();
+  const { formatDate, formatRelativeTime } = useDateFormatter();
   const { displaySettings, selectedGroup, setSelectedGroup, tags } =
     useKanban();
   const {

@@ -1,11 +1,11 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { StockTransferPDF } from "@carbon/documents/pdf";
+import { getPreferenceHeaders } from "@carbon/remix";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
 import { getStockTransfer, getStockTransferLines } from "~/modules/inventory";
 import { getCompany } from "~/modules/settings";
 import { getBase64ImageFromSupabase } from "~/modules/shared";
-import { getLocale } from "~/utils/request";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -54,7 +54,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Error("Failed to load location");
   }
 
-  const locale = getLocale(request);
+  const { locale } = getPreferenceHeaders(request);
 
   // Get thumbnails for items
   const thumbnailPaths = stockTransferLines.data?.reduce<

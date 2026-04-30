@@ -33,7 +33,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { formatDateTime, parseMentionsFromDocument } from "@carbon/utils";
+import { parseMentionsFromDocument } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import { useEffect, useMemo, useState } from "react";
@@ -48,7 +48,7 @@ import {
 import { useFetcher } from "react-router";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
 import ItemThumbnail from "~/components/ItemThumbnail";
-import { useUser } from "~/hooks";
+import { useDateFormatter, useUser } from "~/hooks";
 import { stepRecordValidator } from "~/services/models";
 import type { JobOperationStep } from "~/services/types";
 import { useItems, usePeople } from "~/stores";
@@ -282,6 +282,7 @@ export function PreviewStepRecord({
 }) {
   const [employees] = usePeople();
   const numberFormatter = useNumberFormatter();
+  const { formatDateTime } = useDateFormatter();
 
   if (!step.jobOperationStepRecord) return null;
   const record = step.jobOperationStepRecord.find(

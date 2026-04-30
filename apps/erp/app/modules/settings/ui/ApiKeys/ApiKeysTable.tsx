@@ -1,5 +1,4 @@
 import { Badge, Button, HStack, MenuIcon, MenuItem } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -16,7 +15,7 @@ import {
 } from "react-icons/lu";
 import { Link, Outlet, useNavigate } from "react-router";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
-import { usePermissions, useUrlParams } from "~/hooks";
+import { useDateFormatter, usePermissions, useUrlParams } from "~/hooks";
 import type { ApiKey } from "~/modules/settings";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -42,6 +41,7 @@ function formatRateLimit(limit: number, window: string): string {
 
 const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
   const { t } = useLingui();
+  const { formatDate } = useDateFormatter();
   const navigate = useNavigate();
   const [params] = useUrlParams();
   const permissions = usePermissions();

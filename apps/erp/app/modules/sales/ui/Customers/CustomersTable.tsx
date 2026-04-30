@@ -6,7 +6,6 @@ import {
   MenuItem,
   useDisclosure
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -35,7 +34,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useCustomerTypes } from "~/components/Form/CustomerType";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions } from "~/hooks";
+import { useDateFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -53,6 +52,7 @@ const CustomersTable = memo(
     const { t, i18n } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
+    const { formatDate } = useDateFormatter();
     const [people] = usePeople();
     const deleteModal = useDisclosure();
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(

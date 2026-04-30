@@ -29,8 +29,8 @@ import {
   Thead,
   Tr
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import { useEffect, useState } from "react";
 import {
   LuChevronLeft,
@@ -51,6 +51,7 @@ import {
 } from "react-router";
 import { Link } from "react-router-dom";
 import { ConfirmDelete } from "~/components/Modals";
+import { useDateFormatter } from "~/hooks";
 import {
   clockIn,
   clockInValidator,
@@ -108,15 +109,15 @@ function formatTotalHours(
   return `${hours}h ${minutes}m`;
 }
 
-function formatTime(dateStr: string) {
-  return new Date(dateStr).toLocaleTimeString([], {
+function formatTime(dateStr: string, locale: string) {
+  return new Date(dateStr).toLocaleTimeString(locale, {
     hour: "2-digit",
     minute: "2-digit"
   });
 }
 
-function formatDay(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString([], {
+function formatDay(dateStr: string, locale: string) {
+  return new Date(dateStr).toLocaleDateString(locale, {
     weekday: "short",
     month: "short",
     day: "numeric"
@@ -357,6 +358,8 @@ function getShiftTimesForDate(
 
 export default function PersonTimecardRoute() {
   const { t } = useLingui();
+  const { locale } = useLocale();
+  const { formatDate } = useDateFormatter();
   const { entries, openEntry, weekOffset, from, to, shift } =
     useLoaderData<typeof loader>();
   const { personId } = useParams();
@@ -469,7 +472,9 @@ export default function PersonTimecardRoute() {
         </HStack>
         {openEntry && (
           <Badge variant="green" className="w-fit">
-            <Trans>Clocked in since {formatTime(openEntry.clockIn)}</Trans>
+            <Trans>
+              Clocked in since {formatTime(openEntry.clockIn, locale)}
+            </Trans>
           </Badge>
         )}
       </CardHeader>
@@ -549,7 +554,7 @@ export default function PersonTimecardRoute() {
                         const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
                         return (
                           <SelectItem key={val} value={val}>
-                            {d.toLocaleDateString([], {
+                            {d.toLocaleDateString(locale, {
                               weekday: "short",
                               month: "short",
                               day: "numeric"
@@ -630,7 +635,7 @@ export default function PersonTimecardRoute() {
                 editingId === entry.id ? (
                   <Tr key={entry.id}>
                     <Td className="whitespace-nowrap">
-                      {formatDay(entry.clockIn)}
+                      {formatDay(entry.clockIn, locale)}
                     </Td>
                     <Td>
                       <Input
@@ -700,12 +705,12 @@ export default function PersonTimecardRoute() {
                 ) : (
                   <Tr key={entry.id}>
                     <Td className="whitespace-nowrap">
-                      {formatDay(entry.clockIn)}
+                      {formatDay(entry.clockIn, locale)}
                     </Td>
-                    <Td>{formatTime(entry.clockIn)}</Td>
+                    <Td>{formatTime(entry.clockIn, locale)}</Td>
                     <Td>
                       {entry.clockOut ? (
-                        formatTime(entry.clockOut)
+                        formatTime(entry.clockOut, locale)
                       ) : (
                         <Badge variant="green">
                           <Trans>Active</Trans>
@@ -759,7 +764,7 @@ export default function PersonTimecardRoute() {
       </CardContent>
       {deletingEntry && (
         <ConfirmDelete
-          name={`Timecard (${new Date(deletingEntry.clockIn).toLocaleString()})`}
+          name={`Timecard (${new Date(deletingEntry.clockIn).toLocaleString(locale)})`}
           text={t`Are you sure you want to delete this timecard? This cannot be undone.`}
           onCancel={() => setDeletingEntry(null)}
           onSubmit={() => {

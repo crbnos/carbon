@@ -5,13 +5,13 @@ import {
 } from "@carbon/database/audit.config";
 import type { AuditDiff, AuditLogEntry } from "@carbon/database/audit.types";
 import { Badge, HStack } from "@carbon/react";
-import { formatDateTime } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { LuFilePen, LuFilePlus, LuFileX } from "react-icons/lu";
 import { Link } from "react-router";
 import { EmployeeAvatar, Table } from "~/components";
+import { useDateFormatter } from "~/hooks";
 import { path } from "~/utils/path";
 
 type AuditLogTableProps = {
@@ -166,6 +166,7 @@ ExpandedRowContent.displayName = "ExpandedRowContent";
 
 const AuditLogTable = memo(({ entries, count }: AuditLogTableProps) => {
   const { t } = useLingui();
+  const { formatDateTime } = useDateFormatter();
   const columns = useMemo<ColumnDef<AuditLogEntry>[]>(
     () => [
       {

@@ -1,8 +1,8 @@
 "use client";
 import { DatePicker as DatePickerInput } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { useSubmit } from "react-router";
+import { useDateFormatter } from "~/hooks";
 import { path } from "~/utils/path";
 
 type OperationDueDatePickerProps = {
@@ -17,6 +17,7 @@ export function OperationDueDatePicker({
   onChange
 }: OperationDueDatePickerProps) {
   const submit = useSubmit();
+  const { formatDate } = useDateFormatter();
 
   return (
     <DatePickerInput

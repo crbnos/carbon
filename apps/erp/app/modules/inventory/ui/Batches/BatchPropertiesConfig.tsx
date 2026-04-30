@@ -26,7 +26,6 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { formatRelativeTime } from "@carbon/utils";
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import {
   DndContext,
@@ -51,6 +50,7 @@ import { useFetcher, useFetchers, useSubmit } from "react-router";
 import { EmployeeAvatar } from "~/components";
 import { ConfiguratorDataTypeIcon } from "~/components/Configurator/Icons";
 import { ConfirmDelete } from "~/components/Modals";
+import { useDateFormatter } from "~/hooks";
 import { batchPropertyDataTypes } from "~/modules/items/items.models";
 import type { action as batchPropertyAction } from "~/routes/x+/inventory+/batch-property+/$itemId.property";
 import { path } from "~/utils/path";
@@ -300,6 +300,7 @@ function BatchPropertyComponent({
   isOverlay?: boolean;
 }) {
   const { t } = useLingui();
+  const { formatRelativeTime } = useDateFormatter();
   const { isList, onChangeCheckForListType } = useBatchProperties(property);
 
   const disclosure = useDisclosure();

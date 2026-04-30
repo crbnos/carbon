@@ -23,10 +23,10 @@ import {
   CarouselNext,
   CarouselPrevious
 } from "@carbon/react/Carousel";
-import { formatDate } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { Link } from "react-router";
 import { Empty } from "~/components";
+import { useDateFormatter } from "~/hooks";
 import { useCustomers } from "~/stores/customers";
 import { path } from "~/utils/path";
 import type { HistoricalQuotationPrice, SalesOrderLine } from "../../types";
@@ -40,6 +40,7 @@ const QuoteLinePricingHistory = ({
   relatedSalesOrderLines: SalesOrderLine[];
   historicalQuoteLinePrices: HistoricalQuotationPrice[];
 }) => {
+  const { formatDate } = useDateFormatter();
   const historicalQuoteLines = historicalQuoteLinePrices.reduce<
     Record<
       string,

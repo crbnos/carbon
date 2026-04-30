@@ -6,6 +6,7 @@ import {
 } from "@carbon/remix";
 
 import { useCurrencyFormatter } from "./useCurrencyFormatter";
+import { useDateFormatter } from "./useDateFormatter";
 import { useGooglePlaces } from "./useGooglePlaces";
 import { useModules } from "./useModules";
 import { useMovingCellRef } from "./useMovingCellRef";
@@ -22,6 +23,7 @@ import { useUser } from "./useUser";
 
 export {
   useCurrencyFormatter,
+  useDateFormatter,
   useGooglePlaces,
   useModules,
   useMovingCellRef,

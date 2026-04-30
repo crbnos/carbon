@@ -13,9 +13,7 @@ import {
 } from "@carbon/react";
 import {
   convertDateStringToIsoString,
-  formatDate,
-  formatDurationMilliseconds,
-  formatRelativeTime
+  formatDurationMilliseconds
 } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { cva } from "class-variance-authority";
@@ -27,6 +25,7 @@ import {
 } from "react-icons/lu";
 import { Link } from "react-router";
 import EmployeeAvatar from "~/components/EmployeeAvatar";
+import { useDateFormatter } from "~/hooks";
 import type { Operation, OperationSettings } from "~/services/types";
 import { getPrivateUrl, path } from "~/utils/path";
 import { DeadlineIcon, OperationStatusIcon } from "./Icons";
@@ -93,6 +92,7 @@ function OperationCard({
   showThumbnail
 }: OperationCardProps) {
   const { t } = useLingui();
+  const { formatDate, formatRelativeTime } = useDateFormatter();
   const isOverdue =
     operation.jobDeadlineType !== "No Deadline" && operation.jobDueDate
       ? new Date(operation.jobDueDate) < new Date()

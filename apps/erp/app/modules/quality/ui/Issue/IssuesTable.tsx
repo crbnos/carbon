@@ -1,5 +1,4 @@
 import { Badge, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -23,7 +22,7 @@ import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions } from "~/hooks";
+import { useDateFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useItems } from "~/stores/items";
 import { usePeople } from "~/stores/people";
@@ -47,6 +46,7 @@ type IssuesTableProps = {
 const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
   const navigate = useNavigate();
   const { t } = useLingui();
+  const { formatDate } = useDateFormatter();
   const permissions = usePermissions();
   const deleteDisclosure = useDisclosure();
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);

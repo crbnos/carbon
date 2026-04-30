@@ -22,8 +22,17 @@ export const getPreferenceHeaders = (request: Request) => {
     ? "mac"
     : "windows";
 
+  let locale = cookieLocale ?? locales?.[0] ?? "en-US";
+
+  if (cookieLocale && !cookieLocale.includes("-") && locales?.length) {
+    const regionalMatch = locales.find((l) =>
+      l.toLowerCase().startsWith(cookieLocale.toLowerCase() + "-")
+    );
+    if (regionalMatch) locale = regionalMatch;
+  }
+
   return {
     platform,
-    locale: cookieLocale ?? locales?.[0] ?? "en-US"
+    locale
   };
 };

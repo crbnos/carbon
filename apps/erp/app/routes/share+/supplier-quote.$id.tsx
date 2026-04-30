@@ -192,7 +192,15 @@ const EditableBadge = () => {
   );
 };
 
-const Header = ({ company, quote }: { company: any; quote: any }) => (
+const Header = ({
+  company,
+  quote,
+  locale
+}: {
+  company: any;
+  quote: any;
+  locale: string;
+}) => (
   <div className="flex justify-between">
     <VStack spacing={4} className="tracking-tight">
       <div>
@@ -204,7 +212,7 @@ const Header = ({ company, quote }: { company: any; quote: any }) => (
         )}
         {quote?.expirationDate && (
           <p className="text-lg text-muted-foreground">
-            Expires {formatDate(quote.expirationDate)}
+            Expires {formatDate(quote.expirationDate, undefined, locale)}
           </p>
         )}
       </div>
@@ -893,7 +901,7 @@ const Quote = ({
             )}
           </div>
 
-          <Header company={company} quote={quote} />
+          <Header company={company} quote={quote} locale={locale} />
         </CardHeader>
         <CardContent>
           <LineItems

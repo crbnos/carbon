@@ -14,7 +14,6 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import {
   getLocalTimeZone,
   isSameDay,
@@ -51,7 +50,12 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions, useUrlParams, useUser } from "~/hooks";
+import {
+  useDateFormatter,
+  usePermissions,
+  useUrlParams,
+  useUser
+} from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { action } from "~/routes/x+/job+/update";
 import { useCustomers, useParts, usePeople, useTools } from "~/stores";
@@ -140,6 +144,7 @@ function useReadableTrackedEntities(data: Job[], companyId: string) {
 const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
   const navigate = useNavigate();
   const { t } = useLingui();
+  const { formatDate } = useDateFormatter();
   const [params] = useUrlParams();
   const parts = useParts();
   const tools = useTools();

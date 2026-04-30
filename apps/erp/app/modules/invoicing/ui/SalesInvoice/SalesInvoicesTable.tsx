@@ -1,5 +1,4 @@
 import { HStack, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
@@ -26,7 +25,12 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import { useCurrencyFormatter, usePermissions, useRealtime } from "~/hooks";
+import {
+  useCurrencyFormatter,
+  useDateFormatter,
+  usePermissions,
+  useRealtime
+} from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { SalesInvoice } from "~/modules/invoicing";
 import { salesInvoiceStatusType } from "~/modules/invoicing";
@@ -46,6 +50,7 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
   const permissions = usePermissions();
   const navigate = useNavigate();
   const currencyFormatter = useCurrencyFormatter();
+  const { formatDate } = useDateFormatter();
 
   const [selectedSalesInvoice, setSelectedSalesInvoice] =
     useState<SalesInvoice | null>(null);

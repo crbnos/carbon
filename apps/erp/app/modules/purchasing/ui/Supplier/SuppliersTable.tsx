@@ -6,7 +6,6 @@ import {
   MenuItem,
   useDisclosure
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
@@ -35,7 +34,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useSupplierTypes } from "~/components/Form/SupplierType";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions } from "~/hooks";
+import { useDateFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Supplier } from "~/modules/purchasing";
 import { supplierStatusType } from "~/modules/purchasing";
@@ -53,6 +52,7 @@ const SuppliersTable = memo(({ data, count, tags }: SuppliersTableProps) => {
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
+  const { formatDate } = useDateFormatter();
   const [people] = usePeople();
   const deleteModal = useDisclosure();
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(

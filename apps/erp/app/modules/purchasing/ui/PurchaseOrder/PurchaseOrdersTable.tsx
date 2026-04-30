@@ -11,7 +11,6 @@ import {
   toast,
   useDisclosure
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -43,7 +42,12 @@ import { Enumerable } from "~/components/Enumerable";
 import { usePaymentTerm } from "~/components/Form/PaymentTerm";
 import { useShippingMethod } from "~/components/Form/ShippingMethod";
 import { ConfirmDelete } from "~/components/Modals";
-import { useCurrencyFormatter, usePermissions, useRealtime } from "~/hooks";
+import {
+  useCurrencyFormatter,
+  useDateFormatter,
+  usePermissions,
+  useRealtime
+} from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { PurchaseOrder } from "~/modules/purchasing";
 import { purchaseOrderStatusType } from "~/modules/purchasing";
@@ -65,6 +69,7 @@ const PurchaseOrdersTable = memo(
     const { t } = useLingui();
     const permissions = usePermissions();
     const currencyFormatter = useCurrencyFormatter();
+    const { formatDate } = useDateFormatter();
 
     const [selectedPurchaseOrder, setSelectedPurchaseOrder] =
       useState<PurchaseOrder | null>(null);

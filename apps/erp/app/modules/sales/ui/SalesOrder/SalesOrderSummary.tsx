@@ -20,7 +20,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { formatDate, getSalesOrderJobStatus } from "@carbon/utils";
+import { getSalesOrderJobStatus } from "@carbon/utils";
 import {
   getLocalTimeZone,
   isSameDay,
@@ -42,7 +42,12 @@ import {
 import { Link, useParams } from "react-router";
 import { CustomerAvatar, Hyperlink, MethodIcon } from "~/components";
 import { Confirm } from "~/components/Modals";
-import { usePercentFormatter, usePermissions, useRouteData } from "~/hooks";
+import {
+  useDateFormatter,
+  usePercentFormatter,
+  usePermissions,
+  useRouteData
+} from "~/hooks";
 import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { getPrivateUrl, path } from "~/utils/path";
 import { isSalesOrderLocked } from "../../sales.models";
@@ -63,6 +68,7 @@ const SalesOrderSummary = ({
   const { t } = useLingui();
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
+  const { formatDate } = useDateFormatter();
 
   const routeData = useRouteData<{
     salesOrder: SalesOrder;

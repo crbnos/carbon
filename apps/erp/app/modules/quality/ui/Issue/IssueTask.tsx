@@ -27,7 +27,6 @@ import {
   useDisclosure
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { formatDate } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { DragControls } from "framer-motion";
@@ -49,7 +48,12 @@ import { Assignee } from "~/components";
 import { useProcesses } from "~/components/Form/Process";
 import { IssueTaskStatusIcon } from "~/components/Icons";
 import SupplierAvatar from "~/components/SupplierAvatar";
-import { usePermissions, useRouteData, useUser } from "~/hooks";
+import {
+  useDateFormatter,
+  usePermissions,
+  useRouteData,
+  useUser
+} from "~/hooks";
 import { useIntegrations } from "~/hooks/useIntegrations";
 import { useRealtime } from "~/hooks/useRealtime";
 import type {
@@ -692,6 +696,7 @@ function TaskDueDate({
   isDisabled: boolean;
 }) {
   const { t } = useLingui();
+  const { formatDate } = useDateFormatter();
   const submit = useSubmit();
   const [isOpen, setIsOpen] = useState(false);
   const permissions = usePermissions();

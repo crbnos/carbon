@@ -35,7 +35,7 @@ import {
   CarouselNext,
   CarouselPrevious
 } from "@carbon/react/Carousel";
-import { formatDate } from "@carbon/utils";
+
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -54,7 +54,12 @@ import {
   UnitOfMeasure
 } from "~/components/Form";
 import Grid from "~/components/Grid";
-import { useCurrencyFormatter, usePermissions, useUser } from "~/hooks";
+import {
+  useCurrencyFormatter,
+  useDateFormatter,
+  usePermissions,
+  useUser
+} from "~/hooks";
 import { path } from "~/utils/path";
 import { supplierPartValidator } from "../../items.models";
 
@@ -246,6 +251,7 @@ function PurchaseHistory({
   baseCurrency: string;
 }) {
   const { t } = useLingui();
+  const { formatDate } = useDateFormatter();
   if (history.length === 0) return null;
 
   return (

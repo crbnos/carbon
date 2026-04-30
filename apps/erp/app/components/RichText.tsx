@@ -1,14 +1,13 @@
 import { ValidatedForm } from "@carbon/form";
 import { Button, HStack, VStack } from "@carbon/react";
 import { HTML } from "@carbon/react/HTML";
-import { formatTimeAgo } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { Fragment } from "react";
 import { Form } from "react-router";
 import { Avatar } from "~/components";
 import { Hidden, Submit } from "~/components/Form";
 import RichTextForm from "~/components/Form/RichText";
-import { usePermissions, useUser } from "~/hooks";
+import { useDateFormatter, usePermissions, useUser } from "~/hooks";
 import type { Note } from "~/modules/shared";
 import { noteValidator } from "~/modules/shared";
 import { path } from "~/utils/path";
@@ -19,6 +18,7 @@ type RichTextProps = {
 };
 
 const RichText = ({ documentId, notes }: RichTextProps) => {
+  const { formatTimeAgo } = useDateFormatter();
   const user = useUser();
   const permissions = usePermissions();
   const isEmployee = permissions.is("employee");

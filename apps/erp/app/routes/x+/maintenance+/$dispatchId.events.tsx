@@ -10,6 +10,7 @@ import {
   HStack,
   VStack
 } from "@carbon/react";
+import { useLocale } from "@react-aria/i18n";
 import { LuPlay, LuSquare } from "react-icons/lu";
 import type { ActionFunctionArgs } from "react-router";
 import { data, useFetcher, useParams } from "react-router";
@@ -139,6 +140,7 @@ export default function MaintenanceDispatchEventsRoute() {
   if (!dispatchId) throw new Error("dispatchId not found");
 
   const user = useUser();
+  const { locale } = useLocale();
   const permissions = usePermissions();
   const fetcher = useFetcher();
 
@@ -217,12 +219,12 @@ export default function MaintenanceDispatchEventsRoute() {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-muted-foreground">Start:</span>{" "}
-                    {new Date(event.startTime).toLocaleString()}
+                    {new Date(event.startTime).toLocaleString(locale)}
                   </div>
                   <div>
                     <span className="text-muted-foreground">End:</span>{" "}
                     {event.endTime
-                      ? new Date(event.endTime).toLocaleString()
+                      ? new Date(event.endTime).toLocaleString(locale)
                       : "-"}
                   </div>
                   <div>

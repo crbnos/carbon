@@ -10,11 +10,10 @@ import {
 } from "@carbon/react";
 
 import { useUrlParams } from "@carbon/remix";
-import { formatTimeAgo } from "@carbon/utils";
-
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuMenu, LuSearch, LuTrash } from "react-icons/lu";
+import { useDateFormatter } from "~/hooks";
 
 type Chat = {
   id: string;
@@ -44,6 +43,7 @@ export function ChatHistory({
   isLoading: boolean;
 }) {
   const { t } = useLingui();
+  const { formatTimeAgo } = useDateFormatter();
   const [, setParams] = useUrlParams();
 
   const [searchQuery, setSearchQuery] = useState("");

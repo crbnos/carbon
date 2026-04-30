@@ -1,11 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
+
 import { Trans, useLingui } from "@lingui/react/macro";
 import clsx from "clsx";
 import type { IconType } from "react-icons";
 import { BsBarChartFill, BsCheckLg } from "react-icons/bs";
 import { FaThumbsUp } from "react-icons/fa";
 import { Link } from "react-router";
+import { useDateFormatter } from "~/hooks";
 import type { EmployeeAbility } from "~/modules/resources/types";
 import {
   AbilityEmployeeStatus,
@@ -36,6 +37,7 @@ const AbilityIcons: Record<
 
 const PersonAbilities = ({ abilities }: PersonAbilitiesProps) => {
   const { t } = useLingui();
+  const { formatDate } = useDateFormatter();
 
   const abilityDescriptions: Record<AbilityEmployeeStatus, string> = {
     [AbilityEmployeeStatus.Complete]: t`Fully trained for`,

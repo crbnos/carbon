@@ -20,13 +20,13 @@ import {
   useDisclosure,
   useMount
 } from "@carbon/react";
-import { formatDateTime } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LuChevronRight } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { MethodIcon } from "~/components";
 import { OnshapeStatus } from "~/components/Icons";
+import { useDateFormatter } from "~/hooks";
 import { methodType } from "~/modules/shared";
 import type { action as onShapeSyncAction } from "~/routes/api+/integrations.onshape.sync";
 import { path } from "~/utils/path";
@@ -61,6 +61,7 @@ export const OnshapeSync = ({
   isDisabled: boolean;
 }) => {
   const { t } = useLingui();
+  const { formatDateTime } = useDateFormatter();
   const [initialized, setInitialized] = useState(false);
   const [documentId, setDocumentId] = useState<string | null>(null);
   const [versionId, setVersionId] = useState<string | null>(null);

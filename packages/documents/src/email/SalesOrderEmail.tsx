@@ -1,5 +1,5 @@
 import type { Database } from "@carbon/database";
-import { formatCityStatePostalCode } from "@carbon/utils";
+import { formatCityStatePostalCode, formatDate } from "@carbon/utils";
 import {
   Body,
   Column,
@@ -159,7 +159,15 @@ const SalesOrderEmail = ({
                       >
                         Requested Date
                       </Text>
-                      <Text>{salesOrder.receiptRequestedDate ?? "-"}</Text>
+                      <Text>
+                        {salesOrder.receiptRequestedDate
+                          ? formatDate(
+                              salesOrder.receiptRequestedDate,
+                              undefined,
+                              locale
+                            )
+                          : "-"}
+                      </Text>
                     </Column>
                   </Row>
                 </Section>

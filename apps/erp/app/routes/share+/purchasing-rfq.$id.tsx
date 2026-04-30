@@ -19,6 +19,7 @@ import {
 } from "@carbon/react";
 import { useMode } from "@carbon/remix";
 import { formatDate } from "@carbon/utils";
+import { useLocale } from "@react-aria/i18n";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { LuChevronRight, LuImage } from "react-icons/lu";
@@ -105,7 +106,15 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   };
 }
 
-const Header = ({ company, rfq }: { company: Company | null; rfq: any }) => (
+const Header = ({
+  company,
+  rfq,
+  locale
+}: {
+  company: Company | null;
+  rfq: any;
+  locale: string;
+}) => (
   <CardHeader className="flex flex-col sm:flex-row items-start sm:items-start justify-between gap-4 sm:space-y-2 pb-7">
     <VStack spacing={4}>
       <div>
@@ -115,7 +124,7 @@ const Header = ({ company, rfq }: { company: Company | null; rfq: any }) => (
         )}
         {rfq?.dueDate && (
           <p className="text-lg text-muted-foreground">
-            Due {formatDate(rfq.dueDate)}
+            Due {formatDate(rfq.dueDate, undefined, locale)}
           </p>
         )}
       </div>
@@ -280,6 +289,7 @@ const RFQPreview = ({
   };
 }) => {
   const { company, rfq, lines, thumbnails } = data;
+  const { locale } = useLocale();
   const mode = useMode();
   const logo = mode === "dark" ? company?.logoDark : company?.logoLight;
 
@@ -298,7 +308,7 @@ const RFQPreview = ({
       </Badge>
 
       <Card className="w-full max-w-5xl mx-auto">
-        <Header company={company} rfq={rfq} />
+        <Header company={company} rfq={rfq} locale={locale} />
         <CardContent>
           <LineItems lines={lines} thumbnails={thumbnails} />
 

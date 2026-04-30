@@ -1,5 +1,6 @@
 import { Checkbox, HStack, MenuIcon, MenuItem } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import {
@@ -29,6 +30,7 @@ type PeopleTableProps = {
 const PeopleTable = memo(
   ({ attributeCategories, data, count, employeeTypes }: PeopleTableProps) => {
     const { t } = useLingui();
+    const { locale } = useLocale();
     const navigate = useNavigate();
     const permissions = usePermissions();
     const [params] = useUrlParams();
@@ -62,7 +64,7 @@ const PeopleTable = memo(
         }
 
         if (dataType === DataType.Date) {
-          return new Date(value as string).toLocaleDateString();
+          return new Date(value as string).toLocaleDateString(locale);
         }
 
         if (dataType === DataType.Numeric) {

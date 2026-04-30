@@ -12,7 +12,6 @@ import {
   PopoverTrigger,
   VStack
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -20,6 +19,7 @@ import { useCallback, useState } from "react";
 import { useFetcher, useNavigate } from "react-router";
 import z from "zod";
 import { Tags } from "~/components/Form";
+import { useDateFormatter } from "~/hooks";
 import { useTags } from "~/hooks/useTags";
 import type { Suggestion } from "~/modules/resources";
 import { path } from "~/utils/path";
@@ -40,6 +40,7 @@ export default function SuggestionDetails({
   tags
 }: SuggestionDetailsProps) {
   const { t } = useLingui();
+  const { formatDate } = useDateFormatter();
   const navigate = useNavigate();
   const onClose = () => navigate(-1);
   const fetcher = useFetcher();

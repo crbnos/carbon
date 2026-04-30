@@ -1,6 +1,5 @@
 import type { Database } from "@carbon/database";
 import { Checkbox, cn } from "@carbon/react";
-import { formatDateTime } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -18,6 +17,7 @@ import { useParams } from "react-router";
 import { EmployeeAvatar, Table } from "~/components";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
+import { useDateFormatter } from "~/hooks";
 import { procedureStepType } from "~/modules/shared/shared.models";
 import { usePeople } from "~/stores";
 import { getPrivateUrl } from "~/utils/path";
@@ -57,6 +57,7 @@ const JobOperationStepRecordsTable = memo(
     const { jobId } = useParams();
     const { t } = useLingui();
     if (!jobId) throw new Error("Job ID is required");
+    const { formatDateTime } = useDateFormatter();
 
     const numberFormatter = useNumberFormatter();
     const unitOfMeasures = useUnitOfMeasure();

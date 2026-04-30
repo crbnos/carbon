@@ -19,7 +19,6 @@ import {
   TooltipTrigger,
   VStack
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -42,7 +41,12 @@ import { useNavigate, useSearchParams } from "react-router";
 import { Hyperlink, ItemThumbnail, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
-import { useCurrencyFormatter, usePermissions, useUser } from "~/hooks";
+import {
+  useCurrencyFormatter,
+  useDateFormatter,
+  usePermissions,
+  useUser
+} from "~/hooks";
 import type { PriceListRow } from "~/modules/sales";
 import { path } from "~/utils/path";
 import { DuplicatePriceListModal } from "./DuplicatePriceListModal";
@@ -73,6 +77,7 @@ const PriceListTable = memo(
     const { t } = useLingui();
     const permissions = usePermissions();
     const currencyFormatter = useCurrencyFormatter();
+    const { formatDate } = useDateFormatter();
     const { company } = useUser();
     const baseCurrency = company?.baseCurrencyCode ?? "USD";
     const navigate = useNavigate();

@@ -15,9 +15,7 @@ import {
 import { useRouteData } from "@carbon/remix";
 import {
   convertDateStringToIsoString,
-  formatDate,
-  formatDurationMilliseconds,
-  formatRelativeTime
+  formatDurationMilliseconds
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { cva } from "class-variance-authority";
@@ -39,6 +37,7 @@ import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
 import Avatar from "~/components/Avatar";
 import EmployeeAvatar from "~/components/EmployeeAvatar";
 import { DeadlineIcon } from "~/components/Icons";
+import { useDateFormatter } from "~/hooks";
 import { getPrivateUrl, path } from "~/utils/path";
 import type { DisplaySettings, Item } from "../types";
 
@@ -87,6 +86,7 @@ export function ItemCard({
   showThumbnail
 }: ItemCardProps) {
   const { t } = useLingui();
+  const { formatDate, formatRelativeTime } = useDateFormatter();
   const routeData = useRouteData<{
     customers: { id: string; name: string }[];
   }>("/x/operations");

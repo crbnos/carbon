@@ -7,7 +7,6 @@ import {
   MenuIcon,
   MenuItem
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -32,6 +31,7 @@ import { useCustomerTypes } from "~/components/Form/CustomerType";
 import { useItemPostingGroups } from "~/components/Form/ItemPostingGroup";
 import {
   useCurrencyFormatter,
+  useDateFormatter,
   usePercentFormatter,
   usePermissions,
   useUrlParams
@@ -59,6 +59,7 @@ const PricingRulesTable = memo(({ data, count }: PricingRulesTableProps) => {
   const navigate = useNavigate();
   const { t } = useLingui();
   const permissions = usePermissions();
+  const { formatDate } = useDateFormatter();
   const canCreate = permissions.can("create", "sales");
   const canUpdate = permissions.can("update", "sales");
   const canDelete = permissions.can("delete", "sales");

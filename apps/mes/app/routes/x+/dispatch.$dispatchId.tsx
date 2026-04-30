@@ -18,6 +18,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import { useMemo } from "react";
 import { BsExclamationSquareFill } from "react-icons/bs";
 import { FaCheck, FaPause, FaPlay } from "react-icons/fa6";
@@ -184,6 +185,7 @@ export default function MaintenanceDetailRoute() {
   const { dispatch, events, items, activeEvent } =
     useLoaderData<typeof loader>();
   const { t } = useLingui();
+  const { locale } = useLocale();
   const fetcher = useFetcher();
   const deleteFetcher = useFetcher();
   const addPartModal = useDisclosure();
@@ -398,9 +400,9 @@ export default function MaintenanceDetailRoute() {
                           size="xs"
                         />
                         <span className="text-xs text-muted-foreground">
-                          {new Date(event.startTime).toLocaleString()}
+                          {new Date(event.startTime).toLocaleString(locale)}
                           {event.endTime &&
-                            ` - ${new Date(event.endTime).toLocaleTimeString()}`}
+                            ` - ${new Date(event.endTime).toLocaleTimeString(locale)}`}
                         </span>
                       </VStack>
                       <span className="text-sm font-mono">

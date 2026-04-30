@@ -1,6 +1,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { SalesOrderPDF } from "@carbon/documents/pdf";
 import type { JSONContent } from "@carbon/react";
+import { getPreferenceHeaders } from "@carbon/remix";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
 import { getPaymentTermsList } from "~/modules/accounting";
@@ -17,7 +18,6 @@ import {
   getCompanySettings
 } from "~/modules/settings";
 import { getBase64ImageFromSupabase } from "~/modules/shared";
-import { getLocale } from "~/utils/request";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -116,7 +116,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       }, {}) ?? {};
   }
 
-  const locale = getLocale(request);
+  const { locale } = getPreferenceHeaders(request);
 
   const stream = await renderToStream(
     <SalesOrderPDF

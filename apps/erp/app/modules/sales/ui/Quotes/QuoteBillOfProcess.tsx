@@ -35,7 +35,6 @@ import {
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { formatRelativeTime } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { DragControls } from "framer-motion";
@@ -94,7 +93,12 @@ import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
-import { usePermissions, useRouteData, useUser } from "~/hooks";
+import {
+  useDateFormatter,
+  usePermissions,
+  useRouteData,
+  useUser
+} from "~/hooks";
 import type {
   OperationParameter,
   OperationStep,
@@ -1205,6 +1209,7 @@ function AttributesListItem({
   className?: string;
 }) {
   const { t } = useLingui();
+  const { formatRelativeTime } = useDateFormatter();
   const {
     name,
     unitOfMeasureCode,
@@ -1619,6 +1624,7 @@ function ParametersListItem({
   className?: string;
 }) {
   const { t } = useLingui();
+  const { formatRelativeTime } = useDateFormatter();
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
@@ -2506,6 +2512,7 @@ function ToolsListItem({
   className?: string;
 }) {
   const { t } = useLingui();
+  const { formatRelativeTime } = useDateFormatter();
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);

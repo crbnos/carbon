@@ -25,6 +25,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import {
@@ -87,6 +88,7 @@ export function MaintenanceDispatchExplorer({
   events: MaintenanceDispatchEvent[];
 }) {
   const { t } = useLingui();
+  const { locale } = useLocale();
   const { dispatchId } = useParams();
   if (!dispatchId) throw new Error("dispatchId not found");
 
@@ -142,7 +144,7 @@ export function MaintenanceDispatchExplorer({
       return selectedChild.item?.name ?? "Item";
     }
     return selectedChild.startTime
-      ? new Date(selectedChild.startTime).toLocaleString()
+      ? new Date(selectedChild.startTime).toLocaleString(locale)
       : "Timecard";
   };
 
@@ -232,6 +234,7 @@ function MaintenanceExplorerItem({
   onEdit: (child: MaintenanceExplorerChild) => void;
 }) {
   const { t } = useLingui();
+  const { locale } = useLocale();
   const [isExpanded, setIsExpanded] = useState(
     node.children.length > 0 && node.children.length < 10
   );
@@ -239,7 +242,7 @@ function MaintenanceExplorerItem({
   const permissions = usePermissions();
 
   const filteredChildren = node.children.filter((child) => {
-    const searchText = getChildSearchText(child);
+    const searchText = getChildSearchText(child, locale);
     return searchText.toLowerCase().includes(filterText.toLowerCase());
   });
 
@@ -337,10 +340,11 @@ function MaintenanceExplorerChildItem({
   onEdit: (child: MaintenanceExplorerChild) => void;
 }) {
   const { t } = useLingui();
+  const { locale } = useLocale();
   const [items] = useItems();
   const link = getChildLink(child, items);
   const icon = getChildIcon(child);
-  const label = getChildLabel(child);
+  const label = getChildLabel(child, locale);
   const permissions = usePermissions();
 
   const content = (
@@ -550,14 +554,17 @@ function getChildIcon(child: MaintenanceExplorerChild) {
   }
 }
 
-function getChildLabel(child: MaintenanceExplorerChild): string {
+function getChildLabel(
+  child: MaintenanceExplorerChild,
+  locale?: string
+): string {
   switch (child.type) {
     case "item":
       return child.item?.name ?? child.itemId;
     case "event": {
       const employeeName = child.employee?.fullName;
       const timeLabel = child.startTime
-        ? new Date(child.startTime).toLocaleString()
+        ? new Date(child.startTime).toLocaleString(locale)
         : "Timecard";
       return employeeName ? `${employeeName} - ${timeLabel}` : timeLabel;
     }
@@ -566,7 +573,10 @@ function getChildLabel(child: MaintenanceExplorerChild): string {
   }
 }
 
-function getChildSearchText(child: MaintenanceExplorerChild): string {
+function getChildSearchText(
+  child: MaintenanceExplorerChild,
+  locale?: string
+): string {
   switch (child.type) {
     case "item":
       return child.item?.name ?? child.itemId;
@@ -574,7 +584,9 @@ function getChildSearchText(child: MaintenanceExplorerChild): string {
       const parts = [
         child.employee?.fullName,
         child.notes,
-        child.startTime ? new Date(child.startTime).toLocaleString() : null
+        child.startTime
+          ? new Date(child.startTime).toLocaleString(locale)
+          : null
       ].filter(Boolean);
       return parts.join(" ");
     }

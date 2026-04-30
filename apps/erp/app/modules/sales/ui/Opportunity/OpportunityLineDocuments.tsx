@@ -26,7 +26,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { convertKbToString, formatDate } from "@carbon/utils";
+import { convertKbToString } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
@@ -36,7 +36,7 @@ import { Link, useFetchers, useRevalidator, useSubmit } from "react-router";
 import { DocumentPreview, FileDropzone, Hyperlink } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { Enumerable } from "~/components/Enumerable";
-import { usePermissions, useUser } from "~/hooks";
+import { useDateFormatter, usePermissions, useUser } from "~/hooks";
 import type { OptimisticFileObject } from "~/modules/shared";
 import { getDocumentType } from "~/modules/shared";
 import type { ModelUpload } from "~/types";
@@ -391,6 +391,7 @@ const OpportunityLineDocuments = ({
   type,
   isReadOnly: isReadOnlyProp
 }: OpportunityLineDocumentsProps) => {
+  const { formatDate } = useDateFormatter();
   const {
     canDelete: canDeleteBase,
     canUpdate: canUpdateBase,

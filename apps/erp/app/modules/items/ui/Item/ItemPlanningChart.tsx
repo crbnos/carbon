@@ -22,7 +22,7 @@ import {
   ChartTooltip,
   ChartTooltipContent
 } from "@carbon/react/Chart";
-import { formatDate } from "@carbon/utils";
+
 import { getLocalTimeZone, parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useDateFormatter, useNumberFormatter } from "@react-aria/i18n";
@@ -49,6 +49,7 @@ import {
   YAxis
 } from "recharts";
 import { Empty, Hyperlink } from "~/components";
+import { useDateFormatter as useDateFormat } from "~/hooks";
 import type { loader as forecastLoader } from "~/routes/api+/items.$id.$locationId.forecast";
 import { path } from "~/utils/path";
 import type { PlannedOrder } from "../../../purchasing/purchasing.models";
@@ -621,6 +622,7 @@ const sourceTypeIcons: Record<SourceType, JSX.Element> = {
 function SupplyDemandPlanningItem({ item }: { item: PlanningItem }) {
   const { t } = useLingui();
   const numberFormatter = useNumberFormatter();
+  const { formatDate } = useDateFormat();
 
   return (
     <div className="flex flex-1 justify-between items-center w-full p-4 border-b last:border-b-0">

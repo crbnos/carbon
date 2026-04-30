@@ -1,5 +1,4 @@
 import { Popover, PopoverContent, PopoverTrigger } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import {
   getLocalTimeZone,
   parseAbsolute,
@@ -17,6 +16,7 @@ import {
   LuShieldCheck
 } from "react-icons/lu";
 import { Link } from "react-router";
+import { useDateFormatter } from "~/hooks";
 import type { TrackedEntity } from "~/modules/inventory";
 import { path } from "~/utils/path";
 
@@ -91,11 +91,12 @@ export function ExpiryTracePopover({
   inputs,
   children
 }: ExpiryTracePopoverProps) {
+  const { formatDate } = useDateFormatter();
   if (!entity.expirationDate) {
     return <>{children}</>;
   }
 
-  const steps = buildSteps(entity, policy, inputs);
+  const steps = buildSteps(entity, policy, inputs, formatDate);
 
   return (
     <Popover>
@@ -204,7 +205,8 @@ export function ExpiryTracePopover({
 function buildSteps(
   entity: ExpiryTracePopoverProps["entity"],
   policy: ExpiryTracePopoverProps["policy"],
-  inputs: ExpiryTracePopoverProps["inputs"]
+  inputs: ExpiryTracePopoverProps["inputs"],
+  formatDate: (date: string | null | undefined) => string
 ): ExpiryTraceStep[] {
   const attrs = (entity.attributes ?? {}) as Record<string, unknown>;
   const out: ExpiryTraceStep[] = [];

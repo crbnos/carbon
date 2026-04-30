@@ -14,7 +14,6 @@ import {
   TabsList,
   TabsTrigger
 } from "@carbon/react";
-import { formatTimeAgo } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import {
@@ -42,7 +41,7 @@ import {
   RiProgress8Line
 } from "react-icons/ri";
 import { Link, useFetcher } from "react-router";
-import { useNotifications, useUser } from "~/hooks";
+import { useDateFormatter, useNotifications, useUser } from "~/hooks";
 import type { ApprovalDocumentType } from "~/modules/shared";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -129,6 +128,7 @@ function Notification({
 }) {
   const { id: userId } = useUser();
   const { t } = useLingui();
+  const { formatTimeAgo } = useDateFormatter();
   const [people] = usePeople();
   let byUser = "";
   if (from) {

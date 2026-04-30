@@ -58,7 +58,6 @@ const SalesInvoicePDF = ({
   accountsReceivableBillingAddress,
   company,
   companySettings,
-  locale,
   meta,
   salesInvoice,
   salesInvoiceShipment,
@@ -68,6 +67,7 @@ const SalesInvoicePDF = ({
   paymentTerms,
   shippingMethods,
   thumbnails,
+  locale,
   title = "Invoice"
 }: SalesInvoicePDFProps) => {
   const {
@@ -123,6 +123,7 @@ const SalesInvoicePDF = ({
         documentId={salesInvoice?.invoiceId}
         date={salesInvoice?.dateIssued}
         currencyCode={salesInvoice?.currencyCode}
+        locale={locale}
       />
 
       <PartyDetails
@@ -187,10 +188,16 @@ const SalesInvoicePDF = ({
             </Text>
             <View style={tw("text-[10px] text-gray-800")}>
               {salesInvoice?.dateIssued && (
-                <Text>Date Issued: {formatDate(salesInvoice.dateIssued)}</Text>
+                <Text>
+                  Date Issued:{" "}
+                  {formatDate(salesInvoice.dateIssued, undefined, locale)}
+                </Text>
               )}
               {salesInvoice?.dateDue && (
-                <Text>Due Date: {formatDate(salesInvoice.dateDue)}</Text>
+                <Text>
+                  Due Date:{" "}
+                  {formatDate(salesInvoice.dateDue, undefined, locale)}
+                </Text>
               )}
               {salesInvoice?.customerReference && (
                 <Text>Customer Ref: {salesInvoice.customerReference}</Text>

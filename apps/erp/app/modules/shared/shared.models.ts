@@ -125,11 +125,6 @@ export const methodItemType = [
   // "Service",
 ] as const;
 
-export const methodOperationOrders = [
-  "After Previous",
-  "With Previous"
-] as const;
-
 export const months = [
   "January",
   "February",
@@ -143,6 +138,11 @@ export const months = [
   "October",
   "November",
   "December"
+] as const;
+
+export const methodOperationOrders = [
+  "After Previous",
+  "With Previous"
 ] as const;
 
 export const methodType = [

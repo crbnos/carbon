@@ -26,7 +26,6 @@ import {
   TooltipTrigger,
   useDisclosure
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -45,7 +44,12 @@ import {
 } from "react-icons/lu";
 import { Link, Outlet, useNavigate } from "react-router";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
-import { usePermissions, useUrlParams, useUser } from "~/hooks";
+import {
+  useDateFormatter,
+  usePermissions,
+  useUrlParams,
+  useUser
+} from "~/hooks";
 import type { Webhook } from "~/modules/settings";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -58,6 +62,7 @@ type WebhooksTableProps = {
 
 const WebhooksTable = memo(({ data, count }: WebhooksTableProps) => {
   const { t } = useLingui();
+  const { formatDate } = useDateFormatter();
   const navigate = useNavigate();
   const [params] = useUrlParams();
   const permissions = usePermissions();

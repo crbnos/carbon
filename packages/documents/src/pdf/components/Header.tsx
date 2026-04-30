@@ -9,6 +9,7 @@ type HeaderProps = {
   documentId?: string | null;
   date?: string | null;
   currencyCode?: string | null;
+  locale?: string;
 };
 
 const tw = createTw({
@@ -35,7 +36,8 @@ const Header = ({
   title,
   documentId,
   date,
-  currencyCode
+  currencyCode,
+  locale
 }: HeaderProps) => {
   return (
     <>
@@ -71,7 +73,7 @@ const Header = ({
           )}
           {date && (
             <Text style={tw("text-sm font-bold text-gray-600 tracking-tight")}>
-              Date: {formatDate(date)}
+              Date: {formatDate(date, undefined, locale)}
             </Text>
           )}
           {currencyCode && (

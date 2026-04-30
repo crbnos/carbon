@@ -11,6 +11,7 @@ import {
   useRealtimeChannel
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import { nanoid } from "nanoid";
 import { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
@@ -33,6 +34,7 @@ export function OperationChat({
   operation: OperationWithDetails;
 }) {
   const { t } = useLingui();
+  const { locale } = useLocale();
   const user = useUser();
 
   const [employees] = usePeople();
@@ -188,7 +190,7 @@ export function OperationChat({
                         <p className="text-sm">{m.note}</p>
 
                         <span className="text-xs opacity-70">
-                          {new Date(m.createdAt).toLocaleTimeString([], {
+                          {new Date(m.createdAt).toLocaleTimeString(locale, {
                             hour: "2-digit",
                             minute: "2-digit"
                           })}

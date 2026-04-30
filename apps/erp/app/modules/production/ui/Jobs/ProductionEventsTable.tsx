@@ -1,5 +1,5 @@
 import { Badge, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
-import { formatDateTime, formatDurationMilliseconds } from "@carbon/utils";
+import { formatDurationMilliseconds } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -14,7 +14,7 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions, useUrlParams } from "~/hooks";
+import { useDateFormatter, usePermissions, useUrlParams } from "~/hooks";
 import type { WorkCenter } from "~/modules/resources/types";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -32,6 +32,7 @@ const ProductionEventsTable = memo(
     const { jobId } = useParams();
     const { t } = useLingui();
     if (!jobId) throw new Error("Job ID is required");
+    const { formatDateTime } = useDateFormatter();
     const [people] = usePeople();
 
     const columns = useMemo<ColumnDef<ProductionEvent>[]>(() => {

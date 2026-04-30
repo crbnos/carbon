@@ -10,7 +10,7 @@ import {
   Status
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
-import { useNumberFormatter } from "@react-aria/i18n";
+import { useLocale, useNumberFormatter } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 import {
@@ -165,6 +165,7 @@ export default function CustomerPortal() {
     jobOperationAttachments
   } = useLoaderData<typeof loader>();
 
+  const { locale } = useLocale();
   const formatter = useNumberFormatter({
     minimumFractionDigits: 0,
     maximumFractionDigits: 2
@@ -254,7 +255,7 @@ export default function CustomerPortal() {
       {
         accessorKey: "orderDate",
         header: "Order Date",
-        cell: ({ row }) => formatDate(row.original.orderDate)
+        cell: ({ row }) => formatDate(row.original.orderDate, undefined, locale)
       },
       {
         accessorKey: "promisedDate",
@@ -263,7 +264,9 @@ export default function CustomerPortal() {
           formatDate(
             row.original.promisedDate ??
               row.original.receiptPromisedDate ??
-              row.original.receiptRequestedDate
+              row.original.receiptRequestedDate,
+            undefined,
+            locale
           )
       },
       {
@@ -335,7 +338,7 @@ export default function CustomerPortal() {
         }
       }
     ];
-  }, [formatter, thumbnails, jobOperationAttachments]);
+  }, [formatter, thumbnails, jobOperationAttachments, locale]);
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-background">

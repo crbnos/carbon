@@ -1,5 +1,4 @@
 import { Badge, MenuIcon, MenuItem, Status } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -16,7 +15,7 @@ import {
 import { useNavigate } from "react-router";
 import { EmployeeAvatar, Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { usePermissions } from "~/hooks";
+import { useDateFormatter, usePermissions } from "~/hooks";
 import { useItems } from "~/stores";
 import { usePeople } from "~/stores/people";
 import type { ListItem } from "~/types";
@@ -35,6 +34,7 @@ type ActionsTableProps = {
 const ActionsTable = memo(
   ({ data, issueTypes, requiredActions, count }: ActionsTableProps) => {
     const { t } = useLingui();
+    const { formatDate } = useDateFormatter();
     const navigate = useNavigate();
     const permissions = usePermissions();
 

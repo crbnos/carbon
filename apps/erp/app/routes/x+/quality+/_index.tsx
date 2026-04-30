@@ -35,6 +35,7 @@ import {
 import { today } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import type { DateRange } from "@react-types/datepicker";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { CSVLink } from "react-csv";
@@ -171,14 +172,14 @@ const weeklyLegendPayload = [
   }
 ];
 
-function formatWeekLabel(weekKey: string): string {
+function formatWeekLabel(weekKey: string, locale?: string): string {
   const match = weekKey.match(/^(\d{4})-W(\d{2})$/);
   if (!match) return weekKey;
   const year = Number.parseInt(match[1]);
   const week = Number.parseInt(match[2]);
   const d = new Date(Date.UTC(year, 0, 4));
   d.setUTCDate(d.getUTCDate() - (d.getUTCDay() || 7) + 1 + (week - 1) * 7);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return d.toLocaleDateString(locale, { month: "short", day: "numeric" });
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -281,6 +282,7 @@ export default function QualityDashboard() {
   } = useLoaderData<typeof loader>();
 
   const { t } = useLingui();
+  const { locale } = useLocale();
   const [selectedChart, setSelectedChart] = useState("weeklyTracking");
   const [interval, setInterval] = useState("month");
   const [issueTypeId, setIssueTypeId] = useState("all");
@@ -548,13 +550,15 @@ export default function QualityDashboard() {
                     dataKey="week"
                     tickLine={false}
                     axisLine={false}
-                    tickFormatter={formatWeekLabel}
+                    tickFormatter={(v) => formatWeekLabel(v, locale)}
                     minTickGap={32}
                   />
                   <YAxis tickLine={false} axisLine={false} />
                   <ChartTooltip
                     content={
-                      <ChartTooltipContent labelFormatter={formatWeekLabel} />
+                      <ChartTooltipContent
+                        labelFormatter={(v) => formatWeekLabel(v, locale)}
+                      />
                     }
                   />
                   <ChartLegend

@@ -22,6 +22,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import { memo, useMemo, useState } from "react";
 import {
   LuCalendar,
@@ -100,6 +101,7 @@ function AssignmentListItem({
   isLast: boolean;
 }) {
   const fetcher = useFetcher();
+  const { locale } = useLocale();
   const isSubmitting = fetcher.state !== "idle";
   const canMarkComplete =
     assignment.status !== "Completed" && assignment.status !== "Not Required";
@@ -115,7 +117,9 @@ function AssignmentListItem({
                 <LuCalendar className="size-3" />
                 <span>
                   Started{" "}
-                  {new Date(assignment.employeeStartDate).toLocaleDateString()}
+                  {new Date(assignment.employeeStartDate).toLocaleDateString(
+                    locale
+                  )}
                 </span>
               </HStack>
             )}
@@ -126,7 +130,7 @@ function AssignmentListItem({
           {assignment.completedAt && (
             <span className="text-xs text-muted-foreground">
               <LuClock className="inline mr-1 size-3" />
-              {new Date(assignment.completedAt).toLocaleDateString()}
+              {new Date(assignment.completedAt).toLocaleDateString(locale)}
             </span>
           )}
           {canMarkComplete && (

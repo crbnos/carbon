@@ -22,6 +22,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
 import {
@@ -81,6 +82,7 @@ const KanbansTable = memo(
   ({ data, count, locationId, kanbanOutput }: KanbansTableProps) => {
     const [params] = useUrlParams();
     const { t } = useLingui();
+    const { locale } = useLocale();
 
     const permissions = usePermissions();
     const [people] = usePeople();
@@ -495,7 +497,7 @@ const KanbansTable = memo(
           header: t`Created At`,
           cell: ({ row }) =>
             row.original.createdAt
-              ? new Date(row.original.createdAt).toLocaleDateString()
+              ? new Date(row.original.createdAt).toLocaleDateString(locale)
               : "",
           meta: {
             icon: <LuCalendar />
@@ -523,7 +525,7 @@ const KanbansTable = memo(
           header: t`Updated At`,
           cell: ({ row }) =>
             row.original.updatedAt
-              ? new Date(row.original.updatedAt).toLocaleDateString()
+              ? new Date(row.original.updatedAt).toLocaleDateString(locale)
               : "",
           meta: {
             icon: <LuCalendar />

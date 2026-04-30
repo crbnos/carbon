@@ -20,7 +20,7 @@ import {
   Tr,
   toast
 } from "@carbon/react";
-import { convertKbToString, formatDate } from "@carbon/utils";
+import { convertKbToString } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
@@ -29,7 +29,7 @@ import { LuEllipsisVertical, LuUpload } from "react-icons/lu";
 import { Outlet, useFetchers, useRevalidator, useSubmit } from "react-router";
 import { DocumentPreview, FileDropzone } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
-import { usePermissions, useUser } from "~/hooks";
+import { useDateFormatter, usePermissions, useUser } from "~/hooks";
 import { getDocumentType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
@@ -61,6 +61,7 @@ const SupplierInteractionDocuments = ({
     });
 
   const { t } = useLingui();
+  const { formatDate } = useDateFormatter();
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
       upload(acceptedFiles);

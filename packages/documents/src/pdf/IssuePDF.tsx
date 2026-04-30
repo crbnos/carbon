@@ -1,5 +1,6 @@
 import type { Database } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
+import { formatDate } from "@carbon/utils";
 import { Text, View } from "@react-pdf/renderer";
 import { createTw } from "react-pdf-tailwind";
 import type { PDF } from "../types";
@@ -74,20 +75,6 @@ const tw = createTw({
   }
 });
 
-const formatDate = (dateStr: string | null) => {
-  if (!dateStr) return null;
-  try {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric"
-    });
-  } catch {
-    return dateStr;
-  }
-};
-
 const IssuePDF = ({
   company,
   meta,
@@ -100,6 +87,7 @@ const IssuePDF = ({
   assignees = {},
   jobOperationStepRecords = [],
   operationToJobId = {},
+  locale,
   title = "Issue Report"
 }: IssuePDFProps) => {
   const sortedActionTasks = [...actionTasks].sort(
@@ -125,6 +113,7 @@ const IssuePDF = ({
         title="Issue Report"
         documentId={nonConformance.nonConformanceId}
         date={nonConformance.openDate}
+        locale={locale}
       />
 
       {/* Issue Details */}
@@ -159,10 +148,16 @@ const IssuePDF = ({
             </Text>
             <View style={tw("text-[10px] text-gray-800")}>
               {nonConformance.openDate && (
-                <Text>Started: {formatDate(nonConformance.openDate)}</Text>
+                <Text>
+                  Started:{" "}
+                  {formatDate(nonConformance.openDate, undefined, locale)}
+                </Text>
               )}
               {nonConformance.closeDate && (
-                <Text>Completed: {formatDate(nonConformance.closeDate)}</Text>
+                <Text>
+                  Completed:{" "}
+                  {formatDate(nonConformance.closeDate, undefined, locale)}
+                </Text>
               )}
             </View>
           </View>

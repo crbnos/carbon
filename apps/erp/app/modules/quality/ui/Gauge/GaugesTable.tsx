@@ -1,5 +1,4 @@
 import { MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -32,7 +31,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
-import { usePermissions, useUrlParams } from "~/hooks";
+import { useDateFormatter, usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { usePeople } from "~/stores/people";
 import { useSuppliers } from "~/stores/suppliers";
@@ -65,6 +64,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
   const [params] = useUrlParams();
   const navigate = useNavigate();
   const { t } = useLingui();
+  const { formatDate } = useDateFormatter();
   const permissions = usePermissions();
 
   const deleteDisclosure = useDisclosure();

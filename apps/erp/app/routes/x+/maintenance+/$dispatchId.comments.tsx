@@ -11,6 +11,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import { useState } from "react";
 import { LuSend } from "react-icons/lu";
 import type { ActionFunctionArgs } from "react-router";
@@ -76,6 +77,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function MaintenanceDispatchCommentsRoute() {
   const { t } = useLingui();
+  const { locale } = useLocale();
   const { dispatchId } = useParams();
   if (!dispatchId) throw new Error("dispatchId not found");
 
@@ -149,7 +151,7 @@ export default function MaintenanceDispatchCommentsRoute() {
                       <EmployeeAvatar employeeId={c.createdBy.id} size="xs" />
                     </HStack>
                     <span className="text-xs text-muted-foreground">
-                      {new Date(c.createdAt).toLocaleString()}
+                      {new Date(c.createdAt).toLocaleString(locale)}
                     </span>
                   </HStack>
                   <p className="text-sm">{c.comment}</p>

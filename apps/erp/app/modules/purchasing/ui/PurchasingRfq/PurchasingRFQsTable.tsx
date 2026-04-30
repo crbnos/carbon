@@ -1,5 +1,4 @@
 import { HStack, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
@@ -17,7 +16,7 @@ import { useNavigate } from "react-router";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions } from "~/hooks";
+import { useDateFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { usePeople, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
@@ -35,6 +34,7 @@ const PurchasingRFQsTable = memo(
     const { t } = useLingui();
     const permissions = usePermissions();
     const navigate = useNavigate();
+    const { formatDate } = useDateFormatter();
     const [suppliers] = useSuppliers();
 
     const [selectedPurchasingRFQ, setSelectedPurchasingRFQ] =

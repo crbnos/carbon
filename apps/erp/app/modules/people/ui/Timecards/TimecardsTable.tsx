@@ -6,8 +6,8 @@ import {
   MenuItem,
   useInterval
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
 import {
@@ -23,7 +23,7 @@ import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
-import { usePermissions, useUrlParams } from "~/hooks";
+import { useDateFormatter, usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 
 type TimeCardEntry = {
@@ -45,8 +45,8 @@ type TimecardsTableProps = {
   count: number;
 };
 
-function formatTime(dateStr: string) {
-  return new Date(dateStr).toLocaleTimeString([], {
+function formatTime(dateStr: string, locale: string) {
+  return new Date(dateStr).toLocaleTimeString(locale, {
     hour: "2-digit",
     minute: "2-digit"
   });
@@ -62,8 +62,10 @@ function formatDuration(clockInStr: string, clockOutStr: string | null) {
 
 const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
   const { t } = useLingui();
+  const { locale } = useLocale();
   const navigate = useNavigate();
   const permissions = usePermissions();
+  const { formatDate } = useDateFormatter();
   const [params] = useUrlParams();
   const locations = useLocations();
   const [, setTick] = useState(0);
@@ -108,7 +110,7 @@ const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
         id: "clockInTime",
         header: t`Clock In`,
         cell: ({ row }) =>
-          row.original.clockIn ? formatTime(row.original.clockIn) : "—",
+          row.original.clockIn ? formatTime(row.original.clockIn, locale) : "—",
         meta: {
           icon: <LuClock />
         }
@@ -117,7 +119,9 @@ const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
         id: "clockOutTime",
         header: t`Clock Out`,
         cell: ({ row }) =>
-          row.original.clockOut ? formatTime(row.original.clockOut) : "—",
+          row.original.clockOut
+            ? formatTime(row.original.clockOut, locale)
+            : "—",
         meta: {
           icon: <LuClock />
         }

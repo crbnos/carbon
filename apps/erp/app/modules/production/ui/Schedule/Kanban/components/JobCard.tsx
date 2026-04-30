@@ -17,7 +17,6 @@ import {
   TooltipContent,
   TooltipTrigger
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { parseDate } from "@internationalized/date";
@@ -40,6 +39,7 @@ import {
 import { RiProgress8Line } from "react-icons/ri";
 import { Link, useSubmit } from "react-router";
 import { Assignee, EmployeeAvatarGroup } from "~/components";
+import { useDateFormatter } from "~/hooks";
 import { getDeadlineIcon } from "~/modules/production/ui/Jobs/Deadline";
 import { useCustomers } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
@@ -146,6 +146,7 @@ type JobCardProps = {
 
 export function JobCard({ item, isOverlay, progressByItemId }: JobCardProps) {
   const { t } = useLingui();
+  const { formatDate } = useDateFormatter();
   const submit = useSubmit();
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { displaySettings, selectedGroup, setSelectedGroup, tags, columnIds } =

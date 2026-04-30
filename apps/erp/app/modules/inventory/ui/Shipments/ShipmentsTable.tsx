@@ -1,5 +1,4 @@
 import { Checkbox, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -24,7 +23,12 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions, useRealtime, useUrlParams } from "~/hooks";
+import {
+  useDateFormatter,
+  usePermissions,
+  useRealtime,
+  useUrlParams
+} from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useCustomers, usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -45,6 +49,7 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
 
   const [params] = useUrlParams();
   const { t } = useLingui();
+  const { formatDate } = useDateFormatter();
   const navigate = useNavigate();
   const permissions = usePermissions();
 

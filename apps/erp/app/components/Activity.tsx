@@ -1,5 +1,5 @@
-import { formatTimeAgo } from "@carbon/utils";
 import type { ReactNode } from "react";
+import { useDateFormatter } from "~/hooks";
 import { usePeople } from "~/stores";
 import Avatar from "./Avatar";
 
@@ -18,6 +18,7 @@ const Activity = ({
   activityIcon,
   comment
 }: ActivityProps) => {
+  const { formatTimeAgo } = useDateFormatter();
   const [people] = usePeople();
   if (!employeeId) return null;
 

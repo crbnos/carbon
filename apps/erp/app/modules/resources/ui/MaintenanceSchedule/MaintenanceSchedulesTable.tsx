@@ -7,6 +7,7 @@ import {
   Status
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import {
@@ -43,6 +44,7 @@ type MaintenanceSchedulesTableProps = {
 const MaintenanceSchedulesTable = memo(
   ({ data, count, locations, locationId }: MaintenanceSchedulesTableProps) => {
     const { t } = useLingui();
+    const { locale } = useLocale();
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const permissions = usePermissions();
@@ -203,7 +205,7 @@ const MaintenanceSchedulesTable = memo(
           header: t`Next Due`,
           cell: ({ row }) =>
             row.original.nextDueAt
-              ? new Date(row.original.nextDueAt).toLocaleDateString()
+              ? new Date(row.original.nextDueAt).toLocaleDateString(locale)
               : "-",
           meta: {
             icon: <LuCalendar />

@@ -1,5 +1,6 @@
 import { getAppUrl } from "@carbon/auth";
 import type { Database } from "@carbon/database";
+import { formatDate } from "@carbon/utils";
 import {
   Body,
   Column,
@@ -26,6 +27,7 @@ interface QuoteEmailProps extends Email {
 const QuoteEmail = ({
   company,
   companySettings,
+  locale,
   quote,
   recipient,
   sender
@@ -141,7 +143,11 @@ const QuoteEmail = ({
                       >
                         Expiration Date
                       </Text>
-                      <Text>{quote.expirationDate ?? "-"}</Text>
+                      <Text>
+                        {quote.expirationDate
+                          ? formatDate(quote.expirationDate, undefined, locale)
+                          : "-"}
+                      </Text>
                     </Column>
                   </Row>
                 </Section>

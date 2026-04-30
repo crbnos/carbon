@@ -1,15 +1,20 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getPreferenceHeaders } from "@carbon/remix";
 import { parseDateTime, toCalendarDateTime } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "react-router";
 import { KPIs } from "~/modules/sales/sales.models";
-import { months } from "~/modules/shared/shared.models";
 import { groupDataByDay, groupDataByMonth } from "~/utils/chart";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "sales"
   });
+  const { locale } = getPreferenceHeaders(request);
+  const monthName = (dateKey: string) =>
+    new Intl.DateTimeFormat(locale, { month: "long" }).format(
+      new Date(2000, Number(dateKey.split("-")[1]) - 1)
+    );
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
 
@@ -189,7 +194,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         ].map((data) =>
           Object.entries(data)
             .map(([date, d]) => ({
-              month: months[Number(date.split("-")[1]) - 1],
+              month: monthName(date),
               monthKey: date,
               value:
                 kpi.key === "salesOrderRevenue"
@@ -289,7 +294,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         ].map((data) =>
           Object.entries(data)
             .map(([date, d]) => ({
-              month: months[Number(date.split("-")[1]) - 1],
+              month: monthName(date),
               monthKey: date,
               value: d.length
             }))
@@ -383,7 +388,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         ].map((data) =>
           Object.entries(data)
             .map(([date, d]) => ({
-              month: months[Number(date.split("-")[1]) - 1],
+              month: monthName(date),
               monthKey: date,
               value: d.length
             }))

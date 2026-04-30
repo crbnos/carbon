@@ -1,5 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { IssuePDF } from "@carbon/documents/pdf";
+import { getPreferenceHeaders } from "@carbon/remix";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
 import {
@@ -13,7 +14,6 @@ import {
   getRequiredActionsList
 } from "~/modules/quality";
 import { getCompany } from "~/modules/settings";
-import { getLocale } from "~/utils/request";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -155,7 +155,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Error("Failed to load issue");
   }
 
-  const locale = getLocale(request);
+  const { locale } = getPreferenceHeaders(request);
 
   const stream = await renderToStream(
     <IssuePDF

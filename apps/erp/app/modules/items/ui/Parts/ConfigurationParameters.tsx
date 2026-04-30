@@ -31,7 +31,6 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { formatRelativeTime } from "@carbon/utils";
 import type {
   Active,
   DataRef,
@@ -73,6 +72,7 @@ import { ConfiguratorDataTypeIcon } from "~/components/Configurator/Icons";
 import { Enumerable } from "~/components/Enumerable";
 import { useShape } from "~/components/Form/Shape";
 import { ConfirmDelete } from "~/components/Modals";
+import { useDateFormatter } from "~/hooks";
 import type { ConfigurationParameter } from "~/modules/items";
 import {
   configurationParameterDataTypes,
@@ -816,6 +816,7 @@ function ConfigurableParameter({
   isOverlay?: boolean;
 }) {
   const { t } = useLingui();
+  const { formatRelativeTime } = useDateFormatter();
   const { isList, isMaterial, key, onChangeCheckForListType, updateKey } =
     useConfigurationParameters(parameter);
 

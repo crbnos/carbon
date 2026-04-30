@@ -48,9 +48,7 @@ import type { TrackedEntityAttributes } from "@carbon/utils";
 import {
   convertDateStringToIsoString,
   convertKbToString,
-  formatDate,
   formatDurationMilliseconds,
-  formatRelativeTime,
   getItemReadableId,
   labelSizes
 } from "@carbon/utils";
@@ -94,7 +92,7 @@ import {
   MethodItemTypeIcon,
   TrackingTypeIcon
 } from "~/components/Icons";
-import { useUrlParams, useUser } from "~/hooks";
+import { useDateFormatter, useUrlParams, useUser } from "~/hooks";
 import type { productionEventType } from "~/services/models";
 import { getFileType } from "~/services/operations.service";
 import type {
@@ -189,6 +187,7 @@ export const JobOperation = ({
   workCenter
 }: JobOperationProps) => {
   const { t } = useLingui();
+  const { formatDate, formatRelativeTime } = useDateFormatter();
   const [params, setParams] = useUrlParams();
 
   const trackedEntityParam = params.get("trackedEntityId");

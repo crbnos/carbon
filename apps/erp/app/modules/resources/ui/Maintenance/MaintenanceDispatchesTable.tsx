@@ -1,5 +1,4 @@
 import { Combobox, HStack, MenuIcon, MenuItem } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -19,7 +18,7 @@ import { useNavigate } from "react-router";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useWorkCenters } from "~/components/Form/WorkCenters";
-import { usePermissions, useUrlParams } from "~/hooks";
+import { useDateFormatter, usePermissions, useUrlParams } from "~/hooks";
 import { usePeople } from "~/stores";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
@@ -52,6 +51,7 @@ const MaintenanceDispatchesTable = memo(
     locationId
   }: MaintenanceDispatchesTableProps) => {
     const { t } = useLingui();
+    const { formatDate } = useDateFormatter();
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const permissions = usePermissions();

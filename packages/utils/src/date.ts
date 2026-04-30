@@ -5,11 +5,7 @@ import {
   toZoned
 } from "@internationalized/date";
 
-const LOCALE = "en-US";
-
-const relativeFormatter = new Intl.RelativeTimeFormat(LOCALE, {
-  numeric: "auto"
-});
+const DEFAULT_LOCALE = "en-US";
 
 const DIVISIONS: { amount: number; name: Intl.RelativeTimeFormatUnit }[] = [
   { amount: 60, name: "seconds" },
@@ -32,9 +28,11 @@ export function convertDateStringToIsoString(dateString: string) {
 
 export function formatDate(
   dateString?: string | null,
-  options?: Intl.DateTimeFormatOptions
+  options?: Intl.DateTimeFormatOptions,
+  locale?: string
 ) {
   if (!dateString) return "";
+  const _locale = locale || DEFAULT_LOCALE;
   try {
     const _dateString = toZoned(
       parseDate(dateString),
@@ -45,14 +43,14 @@ export function formatDate(
     const date = parseAbsolute(_dateString);
 
     return new Intl.DateTimeFormat(
-      LOCALE,
+      _locale,
       options || defaultFormatOptions
     ).format(date.toDate());
   } catch {
     try {
       const date = new Date(dateString);
       return new Intl.DateTimeFormat(
-        LOCALE,
+        _locale,
         options || defaultFormatOptions
       ).format(date);
     } catch {
@@ -61,19 +59,27 @@ export function formatDate(
   }
 }
 
-export function formatDateTime(isoString: string) {
-  return formatDate(isoString, { dateStyle: "short", timeStyle: "short" });
+export function formatDateTime(isoString: string, locale?: string) {
+  return formatDate(
+    isoString,
+    { dateStyle: "short", timeStyle: "short" },
+    locale
+  );
 }
 
-export function formatRelativeTime(isoString: string) {
+export function formatRelativeTime(isoString: string, locale?: string) {
   if (new Date(isoString).getTime() > new Date().getTime()) {
-    return formatTimeFromNow(isoString);
+    return formatTimeFromNow(isoString, locale);
   } else {
-    return formatTimeAgo(isoString);
+    return formatTimeAgo(isoString, locale);
   }
 }
 
-export function formatTimeAgo(isoString: string) {
+export function formatTimeAgo(isoString: string, locale?: string) {
+  const relativeFormatter = new Intl.RelativeTimeFormat(
+    locale || DEFAULT_LOCALE,
+    { numeric: "auto" }
+  );
   let duration = (new Date(isoString).getTime() - new Date().getTime()) / 1000;
 
   for (let i = 0; i <= DIVISIONS.length; i++) {
@@ -87,7 +93,11 @@ export function formatTimeAgo(isoString: string) {
   return "";
 }
 
-export function formatTimeFromNow(isoString: string) {
+export function formatTimeFromNow(isoString: string, locale?: string) {
+  const relativeFormatter = new Intl.RelativeTimeFormat(
+    locale || DEFAULT_LOCALE,
+    { numeric: "auto" }
+  );
   let duration = (new Date().getTime() - new Date(isoString).getTime()) / 1000;
 
   for (let i = 0; i <= DIVISIONS.length; i++) {

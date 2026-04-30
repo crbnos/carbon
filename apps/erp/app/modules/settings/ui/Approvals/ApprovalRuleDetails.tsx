@@ -1,5 +1,4 @@
 import { cn, HStack, VStack } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { memo } from "react";
 import {
@@ -11,6 +10,7 @@ import {
 } from "react-icons/lu";
 import { EmployeeAvatar } from "~/components";
 import { UserSelect } from "~/components/Selectors";
+import { useDateFormatter } from "~/hooks";
 import type { ApprovalDocumentType, ApprovalRule } from "~/modules/shared";
 
 type ApprovalRuleDetailsProps = {
@@ -47,6 +47,7 @@ FieldItem.displayName = "FieldItem";
 const ApprovalRuleDetails = memo(
   ({ rule, documentType, currencyFormatter }: ApprovalRuleDetailsProps) => {
     const { t } = useLingui();
+    const { formatDate } = useDateFormatter();
     return (
       <VStack spacing={4} className="w-full">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">

@@ -17,7 +17,6 @@ import {
   Tr,
   VStack
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { motion } from "framer-motion";
@@ -27,7 +26,12 @@ import { useEffect, useMemo, useState } from "react";
 import { LuChevronRight, LuImage } from "react-icons/lu";
 import { Link, useParams } from "react-router";
 import { CustomerAvatar } from "~/components";
-import { usePercentFormatter, useRouteData, useUser } from "~/hooks";
+import {
+  useDateFormatter,
+  usePercentFormatter,
+  useRouteData,
+  useUser
+} from "~/hooks";
 import { getPrivateUrl, path } from "~/utils/path";
 import { isQuoteLocked } from "../../sales.models";
 import type {
@@ -668,6 +672,7 @@ const QuoteSummary = ({
 }) => {
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("Could not find quote id");
+  const { formatDate } = useDateFormatter();
   const routeData = useRouteData<{
     quote: Quotation;
     lines: QuotationLine[];

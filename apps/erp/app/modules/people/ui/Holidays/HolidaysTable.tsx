@@ -1,5 +1,5 @@
 import { MenuIcon, MenuItem } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
+
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -9,7 +9,7 @@ import { LuCalendar, LuCalendarDays, LuCalendarRange } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { usePermissions, useUrlParams } from "~/hooks";
+import { useDateFormatter, usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
 import type { Holiday } from "../../types";
@@ -24,6 +24,7 @@ const HolidaysTable = memo(({ data, count, years }: HolidaysTableProps) => {
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
+  const { formatDate } = useDateFormatter();
   const [params] = useUrlParams();
 
   const customColumns = useCustomColumns<(typeof data)[number]>("holiday");

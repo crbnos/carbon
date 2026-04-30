@@ -33,6 +33,7 @@ import {
 } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LuChevronLeft, LuChevronRight, LuSettings2 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
@@ -513,8 +514,9 @@ const DISPLAY_SETTINGS_KEY = "kanban-schedule-dates-display-settings";
 
 function DateKanbanSchedule() {
   const { t } = useLingui();
+  const { locale } = useLocale();
   const {
-    columns,
+    columns: loaderColumns,
     items: initialItems,
     salesOrders,
     availableTags,
@@ -523,6 +525,59 @@ function DateKanbanSchedule() {
     view,
     currentDate
   } = useLoaderData<typeof loader>();
+
+  const timezone = getLocalTimeZone();
+
+  // Reformat column titles using user locale
+  const columns = useMemo(() => {
+    return loaderColumns.map((col) => {
+      // Skip non-date columns
+      if (["unscheduled", "next-week", "next-month"].includes(col.id)) {
+        if (col.id === "next-month") {
+          // Reformat the month name with locale
+          const monthStart = startOfMonth(parseDate(currentDate));
+          const nextMonth = endOfMonth(monthStart).add({ days: 1 });
+          return {
+            ...col,
+            title: nextMonth
+              .toDate(timezone)
+              .toLocaleDateString(locale, { month: "long" })
+          };
+        }
+        return col;
+      }
+
+      // Try to parse the column ID as a date
+      try {
+        const date = parseDate(col.id);
+        if (view === "week") {
+          return {
+            ...col,
+            title: date.toDate(timezone).toLocaleDateString(locale, {
+              weekday: "short",
+              month: "short",
+              day: "numeric"
+            })
+          };
+        } else {
+          // Month view - columns represent week ranges
+          const weekEnd = date.add({ days: 6 });
+          return {
+            ...col,
+            title: `${date.toDate(timezone).toLocaleDateString(locale, {
+              month: "short",
+              day: "numeric"
+            })} - ${weekEnd.toDate(timezone).toLocaleDateString(locale, {
+              month: "short",
+              day: "numeric"
+            })}`
+          };
+        }
+      } catch {
+        return col;
+      }
+    });
+  }, [loaderColumns, locale, view, currentDate, timezone]);
 
   const locations = useLocations();
   const navigate = useNavigate();
@@ -590,7 +645,6 @@ function DateKanbanSchedule() {
   }, [salesOrders, people, availableTags]);
 
   const parsedDate = parseDate(currentDate);
-  const timezone = getLocalTimeZone();
   const todayDate = toCalendarDate(now(timezone));
 
   const getDateSpanLabel = useCallback(
@@ -599,21 +653,21 @@ function DateKanbanSchedule() {
       if (viewType === "week") {
         const weekStart = startOfWeek(date, "en-GB");
         const weekEnd = endOfWeek(date, "en-GB");
-        return `${weekStart.toDate(tz).toLocaleDateString("en-US", {
+        return `${weekStart.toDate(tz).toLocaleDateString(locale, {
           month: "short",
           day: "numeric"
-        })} - ${weekEnd.toDate(tz).toLocaleDateString("en-US", {
+        })} - ${weekEnd.toDate(tz).toLocaleDateString(locale, {
           month: "short",
           day: "numeric"
         })}`;
       } else {
-        return date.toDate(tz).toLocaleDateString("en-US", {
+        return date.toDate(tz).toLocaleDateString(locale, {
           month: "short",
           year: "numeric"
         });
       }
     },
-    []
+    [locale]
   );
 
   const getSpanStartDate = useCallback(

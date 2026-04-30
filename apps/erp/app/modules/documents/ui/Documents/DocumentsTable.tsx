@@ -14,7 +14,7 @@ import {
   PopoverTrigger,
   useDisclosure
 } from "@carbon/react";
-import { convertKbToString, filterEmpty, formatDate } from "@carbon/utils";
+import { convertKbToString, filterEmpty } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
@@ -39,7 +39,7 @@ import { EmployeeAvatar, Hyperlink, Table } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { Enumerable } from "~/components/Enumerable";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
-import { usePermissions, useUrlParams } from "~/hooks";
+import { useDateFormatter, usePermissions, useUrlParams } from "~/hooks";
 import { documentTypes } from "~/modules/shared";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -58,6 +58,7 @@ type DocumentsTableProps = {
 const DocumentsTable = memo(
   ({ data, count, labels, extensions }: DocumentsTableProps) => {
     const { t } = useLingui();
+    const { formatDate } = useDateFormatter();
     const permissions = usePermissions();
     const revalidator = useRevalidator();
     const [params] = useUrlParams();

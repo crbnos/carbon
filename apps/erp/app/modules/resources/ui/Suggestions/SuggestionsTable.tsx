@@ -1,5 +1,5 @@
 import { Avatar, Badge, HStack, MenuIcon, MenuItem } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
+
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -13,7 +13,7 @@ import {
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Hyperlink, Table } from "~/components";
-import { usePermissions, useUrlParams } from "~/hooks";
+import { useDateFormatter, usePermissions, useUrlParams } from "~/hooks";
 import type { SuggestionListItem } from "~/modules/resources";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -31,6 +31,7 @@ const SuggestionsTable = memo(
     const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
+    const { formatDate } = useDateFormatter();
     const [params] = useUrlParams();
     const [people] = usePeople();
 

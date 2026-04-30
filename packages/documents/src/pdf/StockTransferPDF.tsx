@@ -1,6 +1,7 @@
 import bwipjs from "@bwip-js/node";
 import { getAppUrl } from "@carbon/auth";
 import type { Database } from "@carbon/database";
+import { formatDate } from "@carbon/utils";
 import { Image, Text, View } from "@react-pdf/renderer";
 import { createTw } from "react-pdf-tailwind";
 import { generateQRCode } from "../qr/qr-code";
@@ -40,6 +41,7 @@ const StockTransferPDF = ({
   stockTransfer,
   stockTransferLines,
   location,
+  locale,
   title = "Stock Transfer",
   thumbnails
 }: StockTransferPDFProps) => {
@@ -47,7 +49,7 @@ const StockTransferPDF = ({
     {
       label: "Date",
       value: stockTransfer?.createdAt
-        ? new Date(stockTransfer.createdAt).toLocaleDateString()
+        ? formatDate(stockTransfer.createdAt, undefined, locale)
         : ""
     },
     {
@@ -84,6 +86,7 @@ const StockTransferPDF = ({
             title={title}
             documentId={stockTransfer?.stockTransferId}
             date={stockTransfer?.createdAt}
+            locale={locale}
           />
           <Summary company={company} items={details} />
         </View>
