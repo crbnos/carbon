@@ -961,7 +961,7 @@ msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "Êtes-vous sûr de vouloir supprimer {0} ? Cette action ne peut pas être annulée."
 
 #. placeholder {0}: selectedCustomField?.name
-#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:231
+#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:234
 msgid "Are you sure you want to delete the {0} field?"
 msgstr "Êtes-vous sûr de vouloir supprimer le champ {0} ?"
 
@@ -1445,7 +1445,7 @@ msgstr "L'audit logging n'est pas activé"
 msgid "Audit Logs"
 msgstr "Journaux d'audit"
 
-#: apps/erp/app/routes/_public+/login.tsx:285
+#: apps/erp/app/routes/_public+/login.tsx:292
 msgid "Authentication Error"
 msgstr "Erreur d'authentification"
 
@@ -1693,7 +1693,7 @@ msgstr "par {byUser}"
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "En acceptant l'invitation, vous acceptez les <0>Conditions d'utilisation</0> et la <1>Politique de confidentialité</1>."
 
-#: apps/erp/app/routes/_public+/login.tsx:368
+#: apps/erp/app/routes/_public+/login.tsx:375
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "En vous connectant, vous acceptez les <0>Conditions d'utilisation</0> et la <1>Politique de confidentialité.</1>"
 
@@ -1883,7 +1883,7 @@ msgstr "Impossible de désactiver le seul palier actif. Ajoutez un autre palier 
 #: apps/erp/app/modules/sales/ui/SalesRFQ/SalesRFQHeader.tsx:527
 #: apps/erp/app/modules/settings/ui/ApiKeys/ApiKeysForm.tsx:139
 #: apps/erp/app/modules/settings/ui/Approvals/ApprovalRuleForm.tsx:153
-#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldForm.tsx:144
+#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldForm.tsx:146
 #: apps/erp/app/modules/settings/ui/Sequences/SequenceForm.tsx:119
 #: apps/erp/app/modules/settings/ui/Webhooks/WebhookForm.tsx:139
 #: apps/erp/app/modules/users/ui/components/DeactivateUsersModal.tsx:62
@@ -2002,7 +2002,7 @@ msgstr "Colonne Carbon"
 
 #: apps/erp/app/routes/_public+/invite.$code.tsx:116
 #: apps/erp/app/routes/_public+/invite.$code.tsx:148
-#: apps/erp/app/routes/_public+/login.tsx:227
+#: apps/erp/app/routes/_public+/login.tsx:234
 #: apps/erp/app/routes/_public+/magic-link.tsx:26
 #: apps/erp/app/routes/_public+/verify.tsx:147
 msgid "Carbon Logo"
@@ -2094,7 +2094,7 @@ msgstr "Plan comptable"
 msgid "Chat"
 msgstr "Chat"
 
-#: apps/erp/app/routes/_public+/login.tsx:236
+#: apps/erp/app/routes/_public+/login.tsx:243
 msgid "Check your email"
 msgstr "Vérifiez votre email"
 
@@ -3229,7 +3229,7 @@ msgstr "Personnalisé"
 msgid "Custom {label}"
 msgstr "Personnalisé {label}"
 
-#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:221
+#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:224
 msgid "Custom Field"
 msgstr "Champ personnalisé"
 
@@ -4871,7 +4871,7 @@ msgstr "Modifier le centre de travail"
 msgid "Email"
 msgstr "E-mail"
 
-#: apps/erp/app/routes/_public+/login.tsx:324
+#: apps/erp/app/routes/_public+/login.tsx:331
 #: apps/erp/app/routes/x+/users+/operators.$operatorId.tsx:143
 msgid "Email Address"
 msgstr "Adresse e-mail"
@@ -7348,7 +7348,7 @@ msgstr "Verrouiller"
 msgid "Log In"
 msgstr "Se connecter"
 
-#: apps/erp/app/routes/_public+/login.tsx:362
+#: apps/erp/app/routes/_public+/login.tsx:369
 msgid "Login or create a new account"
 msgstr "Connectez-vous ou créez un nouveau compte"
 
@@ -9697,7 +9697,7 @@ msgstr "Lien du portail"
 msgid "Portals"
 msgstr "Portails"
 
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryStorageUnits.tsx:338
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryStorageUnits.tsx:377
 msgid "Positive Adjustment"
 msgstr "Ajustement positif"
 
@@ -10661,7 +10661,7 @@ msgstr "Enregistrement supprimé"
 msgid "Records"
 msgstr "Enregistrements"
 
-#: apps/erp/app/routes/_public+/login.tsx:254
+#: apps/erp/app/routes/_public+/login.tsx:261
 msgid "Redirecting to verification page..."
 msgstr "Redirection vers la page de vérification..."
 
@@ -10933,6 +10933,7 @@ msgstr "Exiger une approbation pour les documents de qualité dans votre flux de
 #: apps/erp/app/modules/inventory/ui/StockTransfers/StockTransferWizard.tsx:854
 #: apps/erp/app/modules/production/ui/Jobs/JobMaterialsTable.tsx:226
 #: apps/erp/app/modules/production/ui/Jobs/JobMaterialsTable.tsx:348
+#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldForm.tsx:137
 msgid "Required"
 msgstr "Requis"
 
@@ -11517,7 +11518,7 @@ msgstr "Samedi"
 #: apps/erp/app/modules/sales/ui/SalesRFQ/SalesRFQLineForm.tsx:340
 #: apps/erp/app/modules/settings/ui/ApiKeys/ApiKeysForm.tsx:136
 #: apps/erp/app/modules/settings/ui/Company/CompanyForm.tsx:43
-#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldForm.tsx:141
+#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldForm.tsx:143
 #: apps/erp/app/modules/settings/ui/Sequences/SequenceForm.tsx:116
 #: apps/erp/app/modules/settings/ui/Webhooks/WebhookForm.tsx:136
 #: apps/erp/app/modules/users/ui/Employees/BulkEditPermissionsForm.tsx:139
@@ -12355,15 +12356,15 @@ msgstr "Afficher les vignettes des pièces sur les devis, les commandes de vente
 msgid "Show sync options"
 msgstr "Afficher les options de synchronisation"
 
-#: apps/erp/app/routes/_public+/login.tsx:337
+#: apps/erp/app/routes/_public+/login.tsx:344
 msgid "Sign in with Email"
 msgstr "Se connecter avec Email"
 
-#: apps/erp/app/routes/_public+/login.tsx:301
+#: apps/erp/app/routes/_public+/login.tsx:308
 msgid "Sign in with Google"
 msgstr "Se connecter avec Google"
 
-#: apps/erp/app/routes/_public+/login.tsx:314
+#: apps/erp/app/routes/_public+/login.tsx:321
 msgid "Sign in with Outlook"
 msgstr "Se connecter avec Outlook"
 
@@ -14302,7 +14303,7 @@ msgstr "Utilisez ... pour obtenir l'ID de pièce suivant"
 msgid "Use ... to get the next tool ID"
 msgstr "Utilisez ... pour obtenir l'ID d'outil suivant"
 
-#: apps/erp/app/routes/_public+/login.tsx:267
+#: apps/erp/app/routes/_public+/login.tsx:274
 #: apps/erp/app/routes/_public+/verify.tsx:182
 msgid "Use a different email"
 msgstr "Utiliser une adresse e-mail différente"
@@ -14396,7 +14397,7 @@ msgstr "Numéro de TVA"
 msgid "Verification Error"
 msgstr "Erreur de vérification"
 
-#: apps/erp/app/routes/_public+/login.tsx:248
+#: apps/erp/app/routes/_public+/login.tsx:255
 #: apps/erp/app/routes/_public+/verify.tsx:162
 msgid "Verify your email"
 msgstr "Vérifiez votre email"
@@ -14693,11 +14694,11 @@ msgstr "Nous avons mappé chaque colonne à ce que nous croyons être correct, m
 msgid "We've sent a verification code to {email}"
 msgstr "Nous avons envoyé un code de vérification à {email}"
 
-#: apps/erp/app/routes/_public+/login.tsx:251
+#: apps/erp/app/routes/_public+/login.tsx:258
 msgid "We've sent a verification code to {signupEmail}"
 msgstr "Nous avons envoyé un code de vérification à {signupEmail}"
 
-#: apps/erp/app/routes/_public+/login.tsx:239
+#: apps/erp/app/routes/_public+/login.tsx:246
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "Nous vous avons envoyé un lien magique pour vous connecter à votre compte."
 

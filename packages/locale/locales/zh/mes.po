@@ -132,7 +132,7 @@ msgstr "负责人"
 msgid "Attach File"
 msgstr "附加文件"
 
-#: apps/mes/app/routes/_public+/login.tsx:190
+#: apps/mes/app/routes/_public+/login.tsx:197
 msgid "Authentication Error"
 msgstr "认证错误"
 
@@ -168,7 +168,7 @@ msgstr "阻塞中"
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "但别担心。您可以使用忘记密码流程来请求新的魔法链接。"
 
-#: apps/mes/app/routes/_public+/login.tsx:249
+#: apps/mes/app/routes/_public+/login.tsx:256
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "登录即表示您同意<0>服务条款</0>和<1>隐私政策。</1>"
 
@@ -186,7 +186,7 @@ msgstr "登录即表示您同意<0>服务条款</0>和<1>隐私政策。</1>"
 msgid "Cancel"
 msgstr "取消"
 
-#: apps/mes/app/routes/_public+/login.tsx:159
+#: apps/mes/app/routes/_public+/login.tsx:166
 msgid "Carbon Logo"
 msgstr "Carbon 标志"
 
@@ -198,7 +198,7 @@ msgstr "卡片"
 msgid "Chat"
 msgstr "聊天"
 
-#: apps/mes/app/routes/_public+/login.tsx:168
+#: apps/mes/app/routes/_public+/login.tsx:175
 msgid "Check your email"
 msgstr "请查收邮件"
 
@@ -415,7 +415,7 @@ msgstr "时长"
 msgid "Edit"
 msgstr "编辑"
 
-#: apps/mes/app/routes/_public+/login.tsx:229
+#: apps/mes/app/routes/_public+/login.tsx:236
 msgid "Email Address"
 msgstr "电子邮箱"
 
@@ -1133,15 +1133,15 @@ msgstr "设置下班打卡时间"
 msgid "Setup"
 msgstr "设置"
 
-#: apps/mes/app/routes/_public+/login.tsx:239
+#: apps/mes/app/routes/_public+/login.tsx:246
 msgid "Sign in with Email"
 msgstr "使用邮箱登录"
 
-#: apps/mes/app/routes/_public+/login.tsx:206
+#: apps/mes/app/routes/_public+/login.tsx:213
 msgid "Sign in with Google"
 msgstr "使用 Google 登录"
 
-#: apps/mes/app/routes/_public+/login.tsx:219
+#: apps/mes/app/routes/_public+/login.tsx:226
 msgid "Sign in with Outlook"
 msgstr "使用 Outlook 登录"
 
@@ -1308,7 +1308,7 @@ msgstr "正在上传 {0}"
 msgid "View maintenance dispatch"
 msgstr "查看维护工单"
 
-#: apps/mes/app/routes/_public+/login.tsx:171
+#: apps/mes/app/routes/_public+/login.tsx:178
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "我们已向您发送了登录链接，请查收。"
 

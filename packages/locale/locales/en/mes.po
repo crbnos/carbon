@@ -132,7 +132,7 @@ msgstr "Assignee"
 msgid "Attach File"
 msgstr "Attach File"
 
-#: apps/mes/app/routes/_public+/login.tsx:190
+#: apps/mes/app/routes/_public+/login.tsx:197
 msgid "Authentication Error"
 msgstr "Authentication Error"
 
@@ -168,7 +168,7 @@ msgstr "Blocking"
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "But don't worry. You can use the forgot password flow to request a new magic link."
 
-#: apps/mes/app/routes/_public+/login.tsx:249
+#: apps/mes/app/routes/_public+/login.tsx:256
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 
@@ -186,7 +186,7 @@ msgstr "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy P
 msgid "Cancel"
 msgstr "Cancel"
 
-#: apps/mes/app/routes/_public+/login.tsx:159
+#: apps/mes/app/routes/_public+/login.tsx:166
 msgid "Carbon Logo"
 msgstr "Carbon Logo"
 
@@ -198,7 +198,7 @@ msgstr "Cards"
 msgid "Chat"
 msgstr "Chat"
 
-#: apps/mes/app/routes/_public+/login.tsx:168
+#: apps/mes/app/routes/_public+/login.tsx:175
 msgid "Check your email"
 msgstr "Check your email"
 
@@ -415,7 +415,7 @@ msgstr "Duration"
 msgid "Edit"
 msgstr "Edit"
 
-#: apps/mes/app/routes/_public+/login.tsx:229
+#: apps/mes/app/routes/_public+/login.tsx:236
 msgid "Email Address"
 msgstr "Email Address"
 
@@ -1133,15 +1133,15 @@ msgstr "Set clock-out time"
 msgid "Setup"
 msgstr "Setup"
 
-#: apps/mes/app/routes/_public+/login.tsx:239
+#: apps/mes/app/routes/_public+/login.tsx:246
 msgid "Sign in with Email"
 msgstr "Sign in with Email"
 
-#: apps/mes/app/routes/_public+/login.tsx:206
+#: apps/mes/app/routes/_public+/login.tsx:213
 msgid "Sign in with Google"
 msgstr "Sign in with Google"
 
-#: apps/mes/app/routes/_public+/login.tsx:219
+#: apps/mes/app/routes/_public+/login.tsx:226
 msgid "Sign in with Outlook"
 msgstr "Sign in with Outlook"
 
@@ -1308,7 +1308,7 @@ msgstr "Uploading {0}"
 msgid "View maintenance dispatch"
 msgstr "View maintenance dispatch"
 
-#: apps/mes/app/routes/_public+/login.tsx:171
+#: apps/mes/app/routes/_public+/login.tsx:178
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "We've sent you a magic link to sign in to your account."
 

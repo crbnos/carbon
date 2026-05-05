@@ -132,7 +132,7 @@ msgstr "Assegnatario"
 msgid "Attach File"
 msgstr "Allega File"
 
-#: apps/mes/app/routes/_public+/login.tsx:190
+#: apps/mes/app/routes/_public+/login.tsx:197
 msgid "Authentication Error"
 msgstr "Errore di Autenticazione"
 
@@ -168,7 +168,7 @@ msgstr "Bloccante"
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "Ma non preoccuparti. Puoi utilizzare il flusso password dimenticata per richiedere un nuovo magic link."
 
-#: apps/mes/app/routes/_public+/login.tsx:249
+#: apps/mes/app/routes/_public+/login.tsx:256
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "Effettuando l'accesso, accetti i <0>Termini di Servizio</0> e l'<1>Informativa sulla Privacy.</1>"
 
@@ -186,7 +186,7 @@ msgstr "Effettuando l'accesso, accetti i <0>Termini di Servizio</0> e l'<1>Infor
 msgid "Cancel"
 msgstr "Annulla"
 
-#: apps/mes/app/routes/_public+/login.tsx:159
+#: apps/mes/app/routes/_public+/login.tsx:166
 msgid "Carbon Logo"
 msgstr "Logo Carbon"
 
@@ -198,7 +198,7 @@ msgstr "Schede"
 msgid "Chat"
 msgstr "Chat"
 
-#: apps/mes/app/routes/_public+/login.tsx:168
+#: apps/mes/app/routes/_public+/login.tsx:175
 msgid "Check your email"
 msgstr "Controlla la tua email"
 
@@ -415,7 +415,7 @@ msgstr "Durata"
 msgid "Edit"
 msgstr "Modifica"
 
-#: apps/mes/app/routes/_public+/login.tsx:229
+#: apps/mes/app/routes/_public+/login.tsx:236
 msgid "Email Address"
 msgstr "Indirizzo Email"
 
@@ -1133,15 +1133,15 @@ msgstr "Imposta orario di uscita"
 msgid "Setup"
 msgstr "Attrezzaggio"
 
-#: apps/mes/app/routes/_public+/login.tsx:239
+#: apps/mes/app/routes/_public+/login.tsx:246
 msgid "Sign in with Email"
 msgstr "Accedi con Email"
 
-#: apps/mes/app/routes/_public+/login.tsx:206
+#: apps/mes/app/routes/_public+/login.tsx:213
 msgid "Sign in with Google"
 msgstr "Accedi con Google"
 
-#: apps/mes/app/routes/_public+/login.tsx:219
+#: apps/mes/app/routes/_public+/login.tsx:226
 msgid "Sign in with Outlook"
 msgstr "Accedi con Outlook"
 
@@ -1308,7 +1308,7 @@ msgstr "Caricamento di {0}"
 msgid "View maintenance dispatch"
 msgstr "Visualizza intervento di manutenzione"
 
-#: apps/mes/app/routes/_public+/login.tsx:171
+#: apps/mes/app/routes/_public+/login.tsx:178
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "Ti abbiamo inviato un link di accesso al tuo account."
 

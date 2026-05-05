@@ -132,7 +132,7 @@ msgstr "Assigné à"
 msgid "Attach File"
 msgstr "Joindre un fichier"
 
-#: apps/mes/app/routes/_public+/login.tsx:190
+#: apps/mes/app/routes/_public+/login.tsx:197
 msgid "Authentication Error"
 msgstr "Erreur d'authentification"
 
@@ -168,7 +168,7 @@ msgstr "Bloquant"
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
 msgstr "Mais ne vous inquiétez pas. Vous pouvez utiliser la procédure de réinitialisation de mot de passe pour demander un nouveau lien magique."
 
-#: apps/mes/app/routes/_public+/login.tsx:249
+#: apps/mes/app/routes/_public+/login.tsx:256
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "En vous connectant, vous acceptez les <0>Conditions d'utilisation</0> et la <1>Politique de confidentialité.</1>"
 
@@ -186,7 +186,7 @@ msgstr "En vous connectant, vous acceptez les <0>Conditions d'utilisation</0> et
 msgid "Cancel"
 msgstr "Annuler"
 
-#: apps/mes/app/routes/_public+/login.tsx:159
+#: apps/mes/app/routes/_public+/login.tsx:166
 msgid "Carbon Logo"
 msgstr "Logo Carbon"
 
@@ -198,7 +198,7 @@ msgstr "Cartes"
 msgid "Chat"
 msgstr "Discussion"
 
-#: apps/mes/app/routes/_public+/login.tsx:168
+#: apps/mes/app/routes/_public+/login.tsx:175
 msgid "Check your email"
 msgstr "Vérifiez votre e-mail"
 
@@ -415,7 +415,7 @@ msgstr "Durée"
 msgid "Edit"
 msgstr "Modifier"
 
-#: apps/mes/app/routes/_public+/login.tsx:229
+#: apps/mes/app/routes/_public+/login.tsx:236
 msgid "Email Address"
 msgstr "Adresse e-mail"
 
@@ -1133,15 +1133,15 @@ msgstr "Définir l'heure de sortie"
 msgid "Setup"
 msgstr "Réglage"
 
-#: apps/mes/app/routes/_public+/login.tsx:239
+#: apps/mes/app/routes/_public+/login.tsx:246
 msgid "Sign in with Email"
 msgstr "Se connecter avec l'e-mail"
 
-#: apps/mes/app/routes/_public+/login.tsx:206
+#: apps/mes/app/routes/_public+/login.tsx:213
 msgid "Sign in with Google"
 msgstr "Se connecter avec Google"
 
-#: apps/mes/app/routes/_public+/login.tsx:219
+#: apps/mes/app/routes/_public+/login.tsx:226
 msgid "Sign in with Outlook"
 msgstr "Se connecter avec Outlook"
 
@@ -1308,7 +1308,7 @@ msgstr "Téléversement de {0}"
 msgid "View maintenance dispatch"
 msgstr "Voir l'intervention de maintenance"
 
-#: apps/mes/app/routes/_public+/login.tsx:171
+#: apps/mes/app/routes/_public+/login.tsx:178
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "Nous vous avons envoyé un lien magique pour vous connecter à votre compte."
 

@@ -961,7 +961,7 @@ msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "क्या आप सुनिश्चित हैं कि आप {0} को हटाना चाहते हैं? यह पूर्ववत नहीं किया जा सकता।"
 
 #. placeholder {0}: selectedCustomField?.name
-#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:231
+#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:234
 msgid "Are you sure you want to delete the {0} field?"
 msgstr "क्या आप सुनिश्चित हैं कि आप {0} फ़ील्ड को हटाना चाहते हैं?"
 
@@ -1445,7 +1445,7 @@ msgstr "ऑडिट लॉगिंग सक्षम नहीं है"
 msgid "Audit Logs"
 msgstr "ऑडिट लॉग्स"
 
-#: apps/erp/app/routes/_public+/login.tsx:285
+#: apps/erp/app/routes/_public+/login.tsx:292
 msgid "Authentication Error"
 msgstr "प्रमाणीकरण त्रुटि"
 
@@ -1693,7 +1693,7 @@ msgstr "द्वारा {byUser}"
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "आमंत्रण स्वीकार करके, आप <0>सेवा की शर्तें</0> और <1>गोपनीयता नीति</1> से सहमत हैं।"
 
-#: apps/erp/app/routes/_public+/login.tsx:368
+#: apps/erp/app/routes/_public+/login.tsx:375
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "साइन इन करके, आप <0>सेवा की शर्तें</0> और <1>गोपनीयता नीति</1> से सहमत हैं।"
 
@@ -1883,7 +1883,7 @@ msgstr "केवल सक्रिय ब्रेक को अक्षम �
 #: apps/erp/app/modules/sales/ui/SalesRFQ/SalesRFQHeader.tsx:527
 #: apps/erp/app/modules/settings/ui/ApiKeys/ApiKeysForm.tsx:139
 #: apps/erp/app/modules/settings/ui/Approvals/ApprovalRuleForm.tsx:153
-#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldForm.tsx:144
+#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldForm.tsx:146
 #: apps/erp/app/modules/settings/ui/Sequences/SequenceForm.tsx:119
 #: apps/erp/app/modules/settings/ui/Webhooks/WebhookForm.tsx:139
 #: apps/erp/app/modules/users/ui/components/DeactivateUsersModal.tsx:62
@@ -2002,7 +2002,7 @@ msgstr "कार्बन कॉलम"
 
 #: apps/erp/app/routes/_public+/invite.$code.tsx:116
 #: apps/erp/app/routes/_public+/invite.$code.tsx:148
-#: apps/erp/app/routes/_public+/login.tsx:227
+#: apps/erp/app/routes/_public+/login.tsx:234
 #: apps/erp/app/routes/_public+/magic-link.tsx:26
 #: apps/erp/app/routes/_public+/verify.tsx:147
 msgid "Carbon Logo"
@@ -2094,7 +2094,7 @@ msgstr "खातों की सूची"
 msgid "Chat"
 msgstr "चैट"
 
-#: apps/erp/app/routes/_public+/login.tsx:236
+#: apps/erp/app/routes/_public+/login.tsx:243
 msgid "Check your email"
 msgstr "अपना ईमेल जांचें"
 
@@ -3229,7 +3229,7 @@ msgstr "कस्टम"
 msgid "Custom {label}"
 msgstr "कस्टम {label}"
 
-#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:221
+#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:224
 msgid "Custom Field"
 msgstr "कस्टम फील्ड"
 
@@ -4871,7 +4871,7 @@ msgstr "कार्य केंद्र संपादित करें"
 msgid "Email"
 msgstr "ईमेल"
 
-#: apps/erp/app/routes/_public+/login.tsx:324
+#: apps/erp/app/routes/_public+/login.tsx:331
 #: apps/erp/app/routes/x+/users+/operators.$operatorId.tsx:143
 msgid "Email Address"
 msgstr "ईमेल पता"
@@ -7348,7 +7348,7 @@ msgstr "लॉक करें"
 msgid "Log In"
 msgstr "लॉग इन करें"
 
-#: apps/erp/app/routes/_public+/login.tsx:362
+#: apps/erp/app/routes/_public+/login.tsx:369
 msgid "Login or create a new account"
 msgstr "लॉगिन करें या नया खाता बनाएं"
 
@@ -9697,7 +9697,7 @@ msgstr "पोर्टल लिंक"
 msgid "Portals"
 msgstr "पोर्टल"
 
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryStorageUnits.tsx:338
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryStorageUnits.tsx:377
 msgid "Positive Adjustment"
 msgstr "सकारात्मक समायोजन"
 
@@ -10661,7 +10661,7 @@ msgstr "रिकॉर्ड हटाया गया"
 msgid "Records"
 msgstr "रिकॉर्ड"
 
-#: apps/erp/app/routes/_public+/login.tsx:254
+#: apps/erp/app/routes/_public+/login.tsx:261
 msgid "Redirecting to verification page..."
 msgstr "सत्यापन पृष्ठ पर पुनः निर्देशित किया जा रहा है..."
 
@@ -10933,6 +10933,7 @@ msgstr "आपके वर्कफ़्लो में गुणवत्त
 #: apps/erp/app/modules/inventory/ui/StockTransfers/StockTransferWizard.tsx:854
 #: apps/erp/app/modules/production/ui/Jobs/JobMaterialsTable.tsx:226
 #: apps/erp/app/modules/production/ui/Jobs/JobMaterialsTable.tsx:348
+#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldForm.tsx:137
 msgid "Required"
 msgstr "आवश्यक"
 
@@ -11517,7 +11518,7 @@ msgstr "शनिवार"
 #: apps/erp/app/modules/sales/ui/SalesRFQ/SalesRFQLineForm.tsx:340
 #: apps/erp/app/modules/settings/ui/ApiKeys/ApiKeysForm.tsx:136
 #: apps/erp/app/modules/settings/ui/Company/CompanyForm.tsx:43
-#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldForm.tsx:141
+#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldForm.tsx:143
 #: apps/erp/app/modules/settings/ui/Sequences/SequenceForm.tsx:116
 #: apps/erp/app/modules/settings/ui/Webhooks/WebhookForm.tsx:136
 #: apps/erp/app/modules/users/ui/Employees/BulkEditPermissionsForm.tsx:139
@@ -12355,15 +12356,15 @@ msgstr "उद्धरण, बिक्री आदेश, बिक्री 
 msgid "Show sync options"
 msgstr "सिंक विकल्प दिखाएं"
 
-#: apps/erp/app/routes/_public+/login.tsx:337
+#: apps/erp/app/routes/_public+/login.tsx:344
 msgid "Sign in with Email"
 msgstr "ईमेल के साथ साइन इन करें"
 
-#: apps/erp/app/routes/_public+/login.tsx:301
+#: apps/erp/app/routes/_public+/login.tsx:308
 msgid "Sign in with Google"
 msgstr "Google के साथ साइन इन करें"
 
-#: apps/erp/app/routes/_public+/login.tsx:314
+#: apps/erp/app/routes/_public+/login.tsx:321
 msgid "Sign in with Outlook"
 msgstr "Outlook के साथ साइन इन करें"
 
@@ -14302,7 +14303,7 @@ msgstr "अगला पार्ट आईडी प्राप्त कर�
 msgid "Use ... to get the next tool ID"
 msgstr "अगली टूल ID प्राप्त करने के लिए ... का उपयोग करें"
 
-#: apps/erp/app/routes/_public+/login.tsx:267
+#: apps/erp/app/routes/_public+/login.tsx:274
 #: apps/erp/app/routes/_public+/verify.tsx:182
 msgid "Use a different email"
 msgstr "एक अलग ईमेल का उपयोग करें"
@@ -14396,7 +14397,7 @@ msgstr "VAT संख्या"
 msgid "Verification Error"
 msgstr "सत्यापन त्रुटि"
 
-#: apps/erp/app/routes/_public+/login.tsx:248
+#: apps/erp/app/routes/_public+/login.tsx:255
 #: apps/erp/app/routes/_public+/verify.tsx:162
 msgid "Verify your email"
 msgstr "अपनी ईमेल सत्यापित करें"
@@ -14693,11 +14694,11 @@ msgstr "हमने प्रत्येक कॉलम को मैप क�
 msgid "We've sent a verification code to {email}"
 msgstr "हमने {email} को एक सत्यापन कोड भेजा है"
 
-#: apps/erp/app/routes/_public+/login.tsx:251
+#: apps/erp/app/routes/_public+/login.tsx:258
 msgid "We've sent a verification code to {signupEmail}"
 msgstr "हमने {signupEmail} को एक सत्यापन कोड भेजा है"
 
-#: apps/erp/app/routes/_public+/login.tsx:239
+#: apps/erp/app/routes/_public+/login.tsx:246
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "हमने आपके खाते में साइन इन करने के लिए आपको एक जादुई लिंक भेजा है।"
 

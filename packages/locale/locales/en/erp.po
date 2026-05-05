@@ -961,7 +961,7 @@ msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "Are you sure you want to delete {0}? This cannot be undone."
 
 #. placeholder {0}: selectedCustomField?.name
-#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:231
+#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:234
 msgid "Are you sure you want to delete the {0} field?"
 msgstr "Are you sure you want to delete the {0} field?"
 
@@ -1445,7 +1445,7 @@ msgstr "Audit logging is not enabled"
 msgid "Audit Logs"
 msgstr "Audit Logs"
 
-#: apps/erp/app/routes/_public+/login.tsx:285
+#: apps/erp/app/routes/_public+/login.tsx:292
 msgid "Authentication Error"
 msgstr "Authentication Error"
 
@@ -1693,7 +1693,7 @@ msgstr "by {byUser}"
 msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 msgstr "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
 
-#: apps/erp/app/routes/_public+/login.tsx:368
+#: apps/erp/app/routes/_public+/login.tsx:375
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 
@@ -1883,7 +1883,7 @@ msgstr "Can't disable the only active break. Add another break or toggle the ove
 #: apps/erp/app/modules/sales/ui/SalesRFQ/SalesRFQHeader.tsx:527
 #: apps/erp/app/modules/settings/ui/ApiKeys/ApiKeysForm.tsx:139
 #: apps/erp/app/modules/settings/ui/Approvals/ApprovalRuleForm.tsx:153
-#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldForm.tsx:144
+#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldForm.tsx:146
 #: apps/erp/app/modules/settings/ui/Sequences/SequenceForm.tsx:119
 #: apps/erp/app/modules/settings/ui/Webhooks/WebhookForm.tsx:139
 #: apps/erp/app/modules/users/ui/components/DeactivateUsersModal.tsx:62
@@ -2002,7 +2002,7 @@ msgstr "Carbon column"
 
 #: apps/erp/app/routes/_public+/invite.$code.tsx:116
 #: apps/erp/app/routes/_public+/invite.$code.tsx:148
-#: apps/erp/app/routes/_public+/login.tsx:227
+#: apps/erp/app/routes/_public+/login.tsx:234
 #: apps/erp/app/routes/_public+/magic-link.tsx:26
 #: apps/erp/app/routes/_public+/verify.tsx:147
 msgid "Carbon Logo"
@@ -2094,7 +2094,7 @@ msgstr "Chart of Accounts"
 msgid "Chat"
 msgstr "Chat"
 
-#: apps/erp/app/routes/_public+/login.tsx:236
+#: apps/erp/app/routes/_public+/login.tsx:243
 msgid "Check your email"
 msgstr "Check your email"
 
@@ -3229,7 +3229,7 @@ msgstr "Custom"
 msgid "Custom {label}"
 msgstr "Custom {label}"
 
-#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:221
+#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:224
 msgid "Custom Field"
 msgstr "Custom Field"
 
@@ -4871,7 +4871,7 @@ msgstr "Edit Work Center"
 msgid "Email"
 msgstr "Email"
 
-#: apps/erp/app/routes/_public+/login.tsx:324
+#: apps/erp/app/routes/_public+/login.tsx:331
 #: apps/erp/app/routes/x+/users+/operators.$operatorId.tsx:143
 msgid "Email Address"
 msgstr "Email Address"
@@ -7348,7 +7348,7 @@ msgstr "Lock"
 msgid "Log In"
 msgstr "Log In"
 
-#: apps/erp/app/routes/_public+/login.tsx:362
+#: apps/erp/app/routes/_public+/login.tsx:369
 msgid "Login or create a new account"
 msgstr "Login or create a new account"
 
@@ -9697,7 +9697,7 @@ msgstr "Portal Link"
 msgid "Portals"
 msgstr "Portals"
 
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryStorageUnits.tsx:338
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryStorageUnits.tsx:377
 msgid "Positive Adjustment"
 msgstr "Positive Adjustment"
 
@@ -10661,7 +10661,7 @@ msgstr "Record deleted"
 msgid "Records"
 msgstr "Records"
 
-#: apps/erp/app/routes/_public+/login.tsx:254
+#: apps/erp/app/routes/_public+/login.tsx:261
 msgid "Redirecting to verification page..."
 msgstr "Redirecting to verification page..."
 
@@ -10933,6 +10933,7 @@ msgstr "Require approval for quality documents in your workflow"
 #: apps/erp/app/modules/inventory/ui/StockTransfers/StockTransferWizard.tsx:854
 #: apps/erp/app/modules/production/ui/Jobs/JobMaterialsTable.tsx:226
 #: apps/erp/app/modules/production/ui/Jobs/JobMaterialsTable.tsx:348
+#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldForm.tsx:137
 msgid "Required"
 msgstr "Required"
 
@@ -11517,7 +11518,7 @@ msgstr "Saturday"
 #: apps/erp/app/modules/sales/ui/SalesRFQ/SalesRFQLineForm.tsx:340
 #: apps/erp/app/modules/settings/ui/ApiKeys/ApiKeysForm.tsx:136
 #: apps/erp/app/modules/settings/ui/Company/CompanyForm.tsx:43
-#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldForm.tsx:141
+#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldForm.tsx:143
 #: apps/erp/app/modules/settings/ui/Sequences/SequenceForm.tsx:116
 #: apps/erp/app/modules/settings/ui/Webhooks/WebhookForm.tsx:136
 #: apps/erp/app/modules/users/ui/Employees/BulkEditPermissionsForm.tsx:139
@@ -12355,15 +12356,15 @@ msgstr "Show part thumbnails on quotes, sales orders, sales invoices, and shipme
 msgid "Show sync options"
 msgstr "Show sync options"
 
-#: apps/erp/app/routes/_public+/login.tsx:337
+#: apps/erp/app/routes/_public+/login.tsx:344
 msgid "Sign in with Email"
 msgstr "Sign in with Email"
 
-#: apps/erp/app/routes/_public+/login.tsx:301
+#: apps/erp/app/routes/_public+/login.tsx:308
 msgid "Sign in with Google"
 msgstr "Sign in with Google"
 
-#: apps/erp/app/routes/_public+/login.tsx:314
+#: apps/erp/app/routes/_public+/login.tsx:321
 msgid "Sign in with Outlook"
 msgstr "Sign in with Outlook"
 
@@ -14302,7 +14303,7 @@ msgstr "Use ... to get the next part ID"
 msgid "Use ... to get the next tool ID"
 msgstr "Use ... to get the next tool ID"
 
-#: apps/erp/app/routes/_public+/login.tsx:267
+#: apps/erp/app/routes/_public+/login.tsx:274
 #: apps/erp/app/routes/_public+/verify.tsx:182
 msgid "Use a different email"
 msgstr "Use a different email"
@@ -14396,7 +14397,7 @@ msgstr "VAT Number"
 msgid "Verification Error"
 msgstr "Verification Error"
 
-#: apps/erp/app/routes/_public+/login.tsx:248
+#: apps/erp/app/routes/_public+/login.tsx:255
 #: apps/erp/app/routes/_public+/verify.tsx:162
 msgid "Verify your email"
 msgstr "Verify your email"
@@ -14693,11 +14694,11 @@ msgstr "We've mapped each column to what we believe is correct, but please revie
 msgid "We've sent a verification code to {email}"
 msgstr "We've sent a verification code to {email}"
 
-#: apps/erp/app/routes/_public+/login.tsx:251
+#: apps/erp/app/routes/_public+/login.tsx:258
 msgid "We've sent a verification code to {signupEmail}"
 msgstr "We've sent a verification code to {signupEmail}"
 
-#: apps/erp/app/routes/_public+/login.tsx:239
+#: apps/erp/app/routes/_public+/login.tsx:246
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "We've sent you a magic link to sign in to your account."
 
