@@ -12,6 +12,10 @@ import { Form as ReactRouterForm, useSubmit } from "react-router";
 import * as R from "remeda";
 import type { z } from "zod";
 import { useIsSubmitting, useIsValid } from "./hooks";
+import {
+  type AdditionalValidateFunction,
+  AdditionalValidatorsContext
+} from "./internal/AdditionalValidators";
 import { FORM_ID_FIELD } from "./internal/constants";
 import type { InternalFormContextValue } from "./internal/formContext";
 import { InternalFormContext } from "./internal/formContext";
@@ -322,6 +326,21 @@ export function ValidatedForm<
   const cleanupForm = useRootFormStore((state) => state.cleanupForm);
   const registerForm = useRootFormStore((state) => state.registerForm);
 
+  const additionalValidatorsRef = useRef(
+    new Map<string, AdditionalValidateFunction>()
+  );
+  const additionalValidatorsContextValue = useMemo(
+    () => ({
+      register: (id: string, fn: AdditionalValidateFunction) => {
+        additionalValidatorsRef.current.set(id, fn);
+      },
+      unregister: (id: string) => {
+        additionalValidatorsRef.current.delete(id);
+      }
+    }),
+    []
+  );
+
   const customFocusHandlers = useMultiValueMap<string, () => void>();
   const registerReceiveFocus: SyncedFormProps["registerReceiveFocus"] =
     useCallback(
@@ -406,12 +425,26 @@ export function ValidatedForm<
     }
 
     const result = await zodValidator(validator).validate(formData);
-    if (result.error) {
-      setFieldErrors(result.error.fieldErrors);
+
+    const additionalErrors: Record<string, string> = {};
+    additionalValidatorsRef.current.forEach((validate) => {
+      const errors = validate(formData);
+      for (const [key, value] of Object.entries(errors)) {
+        if (value !== undefined) additionalErrors[key] = value;
+      }
+    });
+    const hasAdditionalErrors = Object.keys(additionalErrors).length > 0;
+
+    if (result.error || hasAdditionalErrors) {
+      const fieldErrors = {
+        ...(result.error?.fieldErrors ?? {}),
+        ...additionalErrors
+      };
+      setFieldErrors(fieldErrors);
       endSubmit();
       if (!disableFocusOnError) {
         focusFirstInvalidInput(
-          result.error.fieldErrors,
+          fieldErrors,
           customFocusHandlers(),
           formRef.current!
         );
@@ -473,22 +506,26 @@ export function ValidatedForm<
         reset();
       }}
     >
-      <InternalFormContext.Provider value={contextValue}>
-        <FormStateContext.Provider value={formStateValue}>
-          <>
-            <FormResetter
-              formRef={formRef}
-              resetAfterSubmit={resetAfterSubmit}
-              onComplete={onAfterSubmit}
-            />
-            {subaction && (
-              <input type="hidden" value={subaction} name="subaction" />
-            )}
-            {id && <input type="hidden" value={id} name={FORM_ID_FIELD} />}
-            {children}
-          </>
-        </FormStateContext.Provider>
-      </InternalFormContext.Provider>
+      <AdditionalValidatorsContext.Provider
+        value={additionalValidatorsContextValue}
+      >
+        <InternalFormContext.Provider value={contextValue}>
+          <FormStateContext.Provider value={formStateValue}>
+            <>
+              <FormResetter
+                formRef={formRef}
+                resetAfterSubmit={resetAfterSubmit}
+                onComplete={onAfterSubmit}
+              />
+              {subaction && (
+                <input type="hidden" value={subaction} name="subaction" />
+              )}
+              {id && <input type="hidden" value={id} name={FORM_ID_FIELD} />}
+              {children}
+            </>
+          </FormStateContext.Provider>
+        </InternalFormContext.Provider>
+      </AdditionalValidatorsContext.Provider>
     </Form>
   );
 }

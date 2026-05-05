@@ -1,4 +1,12 @@
-import { Boolean, DatePicker, Input, Number, Select } from "@carbon/form";
+import {
+  Boolean,
+  DatePicker,
+  Input,
+  Number,
+  Select,
+  useAdditionalValidatorsContext
+} from "@carbon/form";
+import { useEffect } from "react";
 import { useCustomFieldsSchema } from "~/hooks/useCustomFieldsSchema";
 import { DataType } from "~/modules/shared";
 import Customer from "./Customer";
@@ -13,6 +21,37 @@ type CustomFormFieldsProps = {
 const CustomFormFields = ({ table, tags = [] }: CustomFormFieldsProps) => {
   const customFormSchema = useCustomFieldsSchema();
   const tableFields = customFormSchema?.[table];
+  const additionalValidatorCtx = useAdditionalValidatorsContext();
+  const tagsKey = tags.join(",");
+
+  useEffect(() => {
+    if (!additionalValidatorCtx || !tableFields) return;
+
+    const requiredFields = tableFields.filter((field) => {
+      if (!field.required || field.dataTypeId === DataType.Boolean)
+        return false;
+      if (!field.tags || field.tags.length === 0) return true;
+      return field.tags.some((tag) => tags.includes(tag));
+    });
+
+    if (requiredFields.length === 0) return;
+
+    additionalValidatorCtx.register(`custom-${table}`, (formData) => {
+      const errors: Record<string, string | undefined> = {};
+      for (const field of requiredFields) {
+        const name = getCustomFieldName(field.id);
+        const value = formData.get(name);
+        if (!value || (typeof value === "string" && value.trim() === "")) {
+          errors[name] = "Required";
+        }
+      }
+      return errors;
+    });
+
+    return () => additionalValidatorCtx.unregister(`custom-${table}`);
+    // tagsKey stabilizes the tags array for the dep comparison
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tableFields, tagsKey, table, additionalValidatorCtx]);
 
   if (!tableFields) return null;
 
