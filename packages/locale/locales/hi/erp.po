@@ -961,7 +961,7 @@ msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "क्या आप सुनिश्चित हैं कि आप {0} को हटाना चाहते हैं? यह पूर्ववत नहीं किया जा सकता।"
 
 #. placeholder {0}: selectedCustomField?.name
-#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:234
+#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:236
 msgid "Are you sure you want to delete the {0} field?"
 msgstr "क्या आप सुनिश्चित हैं कि आप {0} फ़ील्ड को हटाना चाहते हैं?"
 
@@ -3229,7 +3229,7 @@ msgstr "कस्टम"
 msgid "Custom {label}"
 msgstr "कस्टम {label}"
 
-#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:224
+#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:226
 msgid "Custom Field"
 msgstr "कस्टम फील्ड"
 
@@ -10934,6 +10934,7 @@ msgstr "आपके वर्कफ़्लो में गुणवत्त
 #: apps/erp/app/modules/production/ui/Jobs/JobMaterialsTable.tsx:226
 #: apps/erp/app/modules/production/ui/Jobs/JobMaterialsTable.tsx:348
 #: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldForm.tsx:137
+#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:203
 msgid "Required"
 msgstr "आवश्यक"
 

@@ -961,7 +961,7 @@ msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "Êtes-vous sûr de vouloir supprimer {0} ? Cette action ne peut pas être annulée."
 
 #. placeholder {0}: selectedCustomField?.name
-#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:234
+#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:236
 msgid "Are you sure you want to delete the {0} field?"
 msgstr "Êtes-vous sûr de vouloir supprimer le champ {0} ?"
 
@@ -3229,7 +3229,7 @@ msgstr "Personnalisé"
 msgid "Custom {label}"
 msgstr "Personnalisé {label}"
 
-#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:224
+#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:226
 msgid "Custom Field"
 msgstr "Champ personnalisé"
 
@@ -10934,6 +10934,7 @@ msgstr "Exiger une approbation pour les documents de qualité dans votre flux de
 #: apps/erp/app/modules/production/ui/Jobs/JobMaterialsTable.tsx:226
 #: apps/erp/app/modules/production/ui/Jobs/JobMaterialsTable.tsx:348
 #: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldForm.tsx:137
+#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:203
 msgid "Required"
 msgstr "Requis"
 

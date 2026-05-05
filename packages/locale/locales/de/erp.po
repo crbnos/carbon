@@ -961,7 +961,7 @@ msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "Sind Sie sicher, dass Sie {0} löschen möchten? Dies kann nicht rückgängig gemacht werden."
 
 #. placeholder {0}: selectedCustomField?.name
-#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:234
+#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:236
 msgid "Are you sure you want to delete the {0} field?"
 msgstr "Sind Sie sicher, dass Sie das Feld {0} löschen möchten?"
 
@@ -3229,7 +3229,7 @@ msgstr "Benutzerdefiniert"
 msgid "Custom {label}"
 msgstr "Benutzerdefiniert {label}"
 
-#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:224
+#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:226
 msgid "Custom Field"
 msgstr "Benutzerdefiniertes Feld"
 
@@ -10934,6 +10934,7 @@ msgstr "Genehmigung für Qualitätsdokumente in Ihrem Workflow erforderlich"
 #: apps/erp/app/modules/production/ui/Jobs/JobMaterialsTable.tsx:226
 #: apps/erp/app/modules/production/ui/Jobs/JobMaterialsTable.tsx:348
 #: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldForm.tsx:137
+#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:203
 msgid "Required"
 msgstr "Erforderlich"
 

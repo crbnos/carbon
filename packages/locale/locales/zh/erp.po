@@ -961,7 +961,7 @@ msgid "Are you sure you want to delete {0}? This cannot be undone."
 msgstr "您确定要删除 {0} 吗？此操作无法撤销。"
 
 #. placeholder {0}: selectedCustomField?.name
-#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:234
+#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:236
 msgid "Are you sure you want to delete the {0} field?"
 msgstr "你确定要删除 {0} 字段吗？"
 
@@ -3229,7 +3229,7 @@ msgstr "自定义"
 msgid "Custom {label}"
 msgstr "自定义 {label}"
 
-#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:224
+#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:226
 msgid "Custom Field"
 msgstr "自定义字段"
 
@@ -10934,6 +10934,7 @@ msgstr "在您的工作流程中需要质量文件的批准"
 #: apps/erp/app/modules/production/ui/Jobs/JobMaterialsTable.tsx:226
 #: apps/erp/app/modules/production/ui/Jobs/JobMaterialsTable.tsx:348
 #: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldForm.tsx:137
+#: apps/erp/app/modules/settings/ui/CustomFields/CustomFieldsTableDetail.tsx:203
 msgid "Required"
 msgstr "必需"
 
