@@ -198,6 +198,9 @@ const CustomFieldCategoryDetail = ({
                         />
                         <p className="flex-grow text-foreground">
                           {fieldMap[sortId]?.name}
+                          {fieldMap[sortId]?.required && (
+                            <span className="ml-1 text-destructive" aria-label="Required">*</span>
+                          )}
                         </p>
                         <Button
                           isDisabled

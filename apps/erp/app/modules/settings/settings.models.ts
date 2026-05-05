@@ -89,7 +89,8 @@ export const customFieldValidator = z
       z.number().min(1, { message: "Data type is required" })
     ),
     listOptions: z.string().min(1).array().optional(),
-    tags: z.array(z.string()).optional()
+    tags: z.array(z.string()).optional(),
+    required: zfd.checkbox()
   })
   .refine((input) => {
     // allows bar to be optional only when foo is 'foo'

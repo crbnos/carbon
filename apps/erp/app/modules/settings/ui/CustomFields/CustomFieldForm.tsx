@@ -26,7 +26,7 @@ import {
 } from "react-icons/lu";
 import { useParams } from "react-router";
 import type { z } from "zod";
-import { Array, Hidden, Input, Submit, Tags } from "~/components/Form";
+import { Array, Boolean, Hidden, Input, Submit, Tags } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { AttributeDataType } from "~/modules/people";
 import { customFieldValidator } from "~/modules/settings";
@@ -133,6 +133,8 @@ const CustomFieldForm = ({
                   helperText={t`These custom fields will only be available for entities with the same tags`}
                 />
               )}
+
+              <Boolean name="required" label={t`Required`} />
             </VStack>
           </DrawerBody>
           <DrawerFooter>

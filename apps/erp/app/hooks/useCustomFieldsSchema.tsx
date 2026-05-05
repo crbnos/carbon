@@ -33,6 +33,7 @@ const fieldValidator = z
       id: z.string(),
       listOptions: z.array(z.string()).nullable(),
       name: z.string(),
+      required: z.boolean().default(false),
       sortOrder: z.number(),
       tags: z.array(z.string()).nullable()
     })
