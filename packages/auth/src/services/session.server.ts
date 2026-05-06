@@ -75,16 +75,9 @@ export async function clearAuthCookies(request: Request) {
 }
 
 export async function destroyAuthSession(request: Request) {
-  const session = await getSession(request);
-
-  const sessionCookie = await sessionStorage.destroySession(session);
-  const companyIdCookie = setCompanyId(null);
-
+  const headers = await clearAuthCookies(request);
   return redirect(path.to.login, {
-    headers: [
-      ["Set-Cookie", sessionCookie],
-      ["Set-Cookie", companyIdCookie]
-    ]
+    headers
   });
 }
 
