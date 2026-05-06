@@ -6,7 +6,7 @@ import {
   Select,
   useAdditionalValidatorsContext
 } from "@carbon/form";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useCustomFieldsSchema } from "~/hooks/useCustomFieldsSchema";
 import { DataType } from "~/modules/shared";
 import Customer from "./Customer";
@@ -24,22 +24,26 @@ const CustomFormFields = ({ table, tags = [] }: CustomFormFieldsProps) => {
   const additionalValidatorCtx = useAdditionalValidatorsContext();
   const tagsKey = tags.join(",");
 
+  const requiredFieldNames = useMemo(() => {
+    if (!tableFields) return [];
+    return tableFields
+      .filter((field) => {
+        if (!field.required || field.dataTypeId === DataType.Boolean)
+          return false;
+        if (!field.tags || field.tags.length === 0) return true;
+        return field.tags.some((tag) => tagsKey.split(",").includes(tag));
+      })
+      .map((field) => getCustomFieldName(field.id));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tableFields, tagsKey]);
+
   useEffect(() => {
-    if (!additionalValidatorCtx || !tableFields) return;
+    if (!additionalValidatorCtx || requiredFieldNames.length === 0) return;
 
-    const requiredFields = tableFields.filter((field) => {
-      if (!field.required || field.dataTypeId === DataType.Boolean)
-        return false;
-      if (!field.tags || field.tags.length === 0) return true;
-      return field.tags.some((tag) => tags.includes(tag));
-    });
-
-    if (requiredFields.length === 0) return;
-
-    additionalValidatorCtx.register(`custom-${table}`, (formData) => {
+    const id = `custom-${table}`;
+    additionalValidatorCtx.register(id, (formData) => {
       const errors: Record<string, string | undefined> = {};
-      for (const field of requiredFields) {
-        const name = getCustomFieldName(field.id);
+      for (const name of requiredFieldNames) {
         const value = formData.get(name);
         if (!value || (typeof value === "string" && value.trim() === "")) {
           errors[name] = "Required";
@@ -48,10 +52,8 @@ const CustomFormFields = ({ table, tags = [] }: CustomFormFieldsProps) => {
       return errors;
     });
 
-    return () => additionalValidatorCtx.unregister(`custom-${table}`);
-    // tagsKey stabilizes the tags array for the dep comparison
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tableFields, tagsKey, table, additionalValidatorCtx]);
+    return () => additionalValidatorCtx.unregister(id);
+  }, [requiredFieldNames, table, additionalValidatorCtx]);
 
   if (!tableFields) return null;
 

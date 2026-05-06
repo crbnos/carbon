@@ -16,6 +16,7 @@ export type ComboboxProps = Omit<ComboboxBaseProps, "onChange"> & {
   label?: string;
   isLoading?: boolean;
   isOptional?: boolean;
+  isRequired?: boolean;
   helperText?: string;
   onChange?: (
     newValue: { value: string; label: string | React.ReactNode } | null
@@ -35,6 +36,7 @@ const Combobox = ({
   label,
   isLoading = false,
   isOptional,
+  isRequired,
   helperText,
   ...props
 }: ComboboxProps) => {
@@ -43,7 +45,8 @@ const Combobox = ({
   const formState = useFormStateContext();
   const isReadOnly =
     formState.isReadOnly || formState.isDisabled || props.isReadOnly;
-  const resolvedIsOptional = isOptional ?? fieldIsOptional ?? false;
+  const resolvedIsOptional =
+    isOptional ?? (isRequired ? false : (fieldIsOptional ?? false));
 
   useEffect(() => {
     if (props.value !== null && props.value !== undefined)
@@ -59,7 +62,7 @@ const Combobox = ({
   };
 
   return (
-    <FormControl isInvalid={!!error}>
+    <FormControl isInvalid={!!error} isRequired={isRequired}>
       {label && (
         <FormLabel htmlFor={name} isOptional={resolvedIsOptional}>
           {label}
