@@ -44,7 +44,11 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (usersToRevoke.data.length == 1) {
-    const deactivate = await deactivateUser(serviceRole, users[0], companyId);
+    const deactivate = await deactivateUser(
+      serviceRole,
+      usersToRevoke.data[0].id,
+      companyId
+    );
     if (!deactivate.success) {
       return data(
         {},
@@ -68,21 +72,22 @@ export async function action({ request }: ActionFunctionArgs) {
     await batchTrigger("user-admin", batchPayload);
   }
 
-  const deleteInvites = await serviceRole
+  const revokeInvites = await serviceRole
     .from("invite")
-    .delete()
+    .update({ revokedAt: new Date().toISOString() })
     .in(
       "email",
       usersToRevoke.data.map((user) => user.email)
     )
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .is("revokedAt", null);
 
-  if (deleteInvites.error) {
+  if (revokeInvites.error) {
     return data(
       { success: false },
       await flash(
         request,
-        error(deleteInvites.error.message, "Failed to revoke invites")
+        error(revokeInvites.error.message, "Failed to revoke invites")
       )
     );
   }

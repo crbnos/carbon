@@ -283,6 +283,24 @@ export async function deactivateUser(
     await redis.del(getPermissionCacheKey(userId));
   }
 
+  // Mark any invite for this user/company as revoked so the link cannot be
+  // redeemed and the UI no longer surfaces resend/revoke actions on it.
+  if (result && result.success) {
+    const userRecord = await serviceRole
+      .from("user")
+      .select("email")
+      .eq("id", userId)
+      .single();
+    if (!userRecord.error && userRecord.data?.email) {
+      await serviceRole
+        .from("invite")
+        .update({ revokedAt: new Date().toISOString() })
+        .eq("email", userRecord.data.email)
+        .eq("companyId", companyId)
+        .is("revokedAt", null);
+    }
+  }
+
   // Update Stripe subscription quantity after successful deactivation
   if (result && result.success && CarbonEdition === Edition.Cloud) {
     await updateSubscriptionQuantityForCompany(companyId);

@@ -218,7 +218,7 @@ msgid "Accept Quote"
 msgstr "Aceitar Cotação"
 
 #: apps/erp/app/modules/accounting/ui/ChartOfAccounts/ChartOfAccountsTableFilters.tsx:105
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:362
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:359
 #: apps/erp/app/routes/x+/account+/_layout.tsx:14
 msgid "Account"
 msgstr "Conta"
@@ -355,12 +355,12 @@ msgstr "Ativar Centro de Trabalho"
 #: apps/erp/app/modules/sales/ui/Pricing/PricingRulesTable.tsx:337
 #: apps/erp/app/modules/sales/ui/Pricing/PricingRulesTable.tsx:344
 #: apps/erp/app/modules/settings/ui/Webhooks/WebhookForm.tsx:130
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:182
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:191
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:183
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:192
 #: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:165
 #: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:173
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:176
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:185
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:179
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:188
 #: apps/erp/app/routes/x+/person+/$personId.timecard.tsx:716
 #: apps/erp/app/routes/x+/settings+/billing.tsx:350
 msgid "Active"
@@ -1256,14 +1256,6 @@ msgstr "Tem a certeza de que deseja liberar este trabalho? Ele ficará disponív
 msgid "Are you sure you want to remove this item from the price list? This cannot be undone."
 msgstr "Tem a certeza de que deseja remover este item da lista de preços? Esta ação não pode ser desfeita."
 
-#: apps/erp/app/modules/users/ui/components/ResendInviteModal.tsx:57
-msgid "Are you sure you want to resend an invite to these users?"
-msgstr "Tem a certeza de que deseja reenviar um convite para estes utilizadores?"
-
-#: apps/erp/app/modules/users/ui/components/ResendInviteModal.tsx:53
-msgid "Are you sure you want to resend an invite to this user?"
-msgstr "Tem a certeza de que deseja reenviar um convite para este utilizador?"
-
 #: apps/erp/app/modules/users/ui/components/RevokeInviteModal.tsx:53
 msgid "Are you sure you want to revoke the invitation for this user?"
 msgstr "Tem a certeza de que deseja revogar o convite para este utilizador?"
@@ -1271,6 +1263,14 @@ msgstr "Tem a certeza de que deseja revogar o convite para este utilizador?"
 #: apps/erp/app/modules/users/ui/components/RevokeInviteModal.tsx:57
 msgid "Are you sure you want to revoke the invitations for these users?"
 msgstr "Tem a certeza de que deseja revogar os convites para estes utilizadores?"
+
+#: apps/erp/app/modules/users/ui/components/ResendInviteModal.tsx:57
+msgid "Are you sure you want to send an invite to these users?"
+msgstr ""
+
+#: apps/erp/app/modules/users/ui/components/ResendInviteModal.tsx:53
+msgid "Are you sure you want to send an invite to this user?"
+msgstr ""
 
 #: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceVoidModal.tsx:51
 msgid "Are you sure you want to void this purchase invoice? This action will reverse all financial transactions and cannot be undone."
@@ -3242,8 +3242,8 @@ msgstr "Campos Personalizados"
 #: apps/erp/app/modules/sales/ui/SalesRFQ/SalesRFQForm.tsx:156
 #: apps/erp/app/modules/sales/ui/SalesRFQ/SalesRFQsTable.tsx:73
 #: apps/erp/app/modules/users/ui/Customers/CreateCustomerModal.tsx:76
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:149
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:328
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:150
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:325
 #: apps/erp/app/routes/x+/issue+/$id.tsx:153
 #: apps/erp/app/routes/x+/sales+/_index.tsx:652
 #: apps/erp/app/routes/x+/sales+/_index.tsx:724
@@ -3252,7 +3252,7 @@ msgstr "Campos Personalizados"
 msgid "Customer"
 msgstr "Cliente"
 
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:333
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:330
 msgid "Customer Accounts"
 msgstr "Contas de Cliente"
 
@@ -3371,7 +3371,7 @@ msgstr "Estados do Cliente"
 #: apps/erp/app/modules/sales/ui/Pricing/PriceOverrideForm.tsx:183
 #: apps/erp/app/modules/sales/ui/Pricing/PricingRuleForm.tsx:180
 #: apps/erp/app/modules/sales/ui/Pricing/PricingRulesTable.tsx:147
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:164
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:165
 msgid "Customer Type"
 msgstr "Tipo de Cliente"
 
@@ -3523,9 +3523,9 @@ msgstr "Desativar {0}"
 msgid "Deactivate {name}"
 msgstr "Desativar {name}"
 
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:277
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:278
 #: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:308
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:271
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:274
 msgid "Deactivate Account"
 msgstr "Desativar Conta"
 
@@ -3545,9 +3545,9 @@ msgstr "Desativar Processo"
 msgid "Deactivate Supplier"
 msgstr "Desativar Fornecedor"
 
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:249
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:250
 #: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:255
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:243
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:246
 msgid "Deactivate Users"
 msgstr "Desativar Usuários"
 
@@ -4819,11 +4819,11 @@ msgstr "Editar Centro de Trabalho"
 #: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderHeader.tsx:142
 #: apps/erp/app/modules/settings/ui/Company/CompanyForm.tsx:39
 #: apps/erp/app/modules/users/ui/Customers/CreateCustomerModal.tsx:90
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:141
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:142
 #: apps/erp/app/modules/users/ui/Employees/CreateEmployeeModal.tsx:72
 #: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:126
 #: apps/erp/app/modules/users/ui/Suppliers/CreateSupplierModal/CreateSupplierModal.tsx:90
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:135
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:138
 #: apps/erp/app/routes/x+/settings+/purchasing.tsx:506
 #: apps/erp/app/routes/x+/settings+/sales.tsx:445
 msgid "Email"
@@ -4862,7 +4862,7 @@ msgstr "Emoji"
 msgid "Employee"
 msgstr "Funcionário"
 
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:367
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:364
 msgid "Employee Accounts"
 msgstr "Contas de Funcionários"
 
@@ -5890,11 +5890,11 @@ msgstr "Acabamentos"
 #: apps/erp/app/modules/purchasing/ui/Supplier/SupplierContactForm.tsx:98
 #: apps/erp/app/modules/sales/ui/Customer/CustomerContactForm.tsx:99
 #: apps/erp/app/modules/users/ui/Customers/CreateCustomerModal.tsx:97
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:125
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:126
 #: apps/erp/app/modules/users/ui/Employees/CreateEmployeeModal.tsx:74
 #: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:110
 #: apps/erp/app/modules/users/ui/Suppliers/CreateSupplierModal/CreateSupplierModal.tsx:97
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:119
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:122
 #: apps/erp/app/routes/onboarding+/user.tsx:102
 #: apps/erp/app/routes/x+/users+/operators.new.tsx:155
 msgid "First Name"
@@ -6251,9 +6251,9 @@ msgstr "no período selecionado"
 #: apps/erp/app/modules/people/ui/People/PeopleTable.tsx:168
 #: apps/erp/app/modules/sales/ui/Pricing/PricingRulesTable.tsx:337
 #: apps/erp/app/modules/sales/ui/Pricing/PricingRulesTable.tsx:345
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:195
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:196
 #: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:177
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:189
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:192
 #: apps/erp/app/routes/x+/production+/_index.tsx:886
 #: apps/erp/app/routes/x+/settings+/billing.tsx:356
 msgid "Inactive"
@@ -7024,11 +7024,11 @@ msgstr "Data da Última Calibração"
 #: apps/erp/app/modules/purchasing/ui/Supplier/SupplierContactForm.tsx:99
 #: apps/erp/app/modules/sales/ui/Customer/CustomerContactForm.tsx:100
 #: apps/erp/app/modules/users/ui/Customers/CreateCustomerModal.tsx:103
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:133
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:134
 #: apps/erp/app/modules/users/ui/Employees/CreateEmployeeModal.tsx:75
 #: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:118
 #: apps/erp/app/modules/users/ui/Suppliers/CreateSupplierModal/CreateSupplierModal.tsx:103
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:127
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:130
 #: apps/erp/app/routes/onboarding+/user.tsx:103
 #: apps/erp/app/routes/x+/users+/operators.new.tsx:156
 msgid "Last Name"
@@ -10851,23 +10851,6 @@ msgstr "Requer Inspeção"
 msgid "Requires Repair"
 msgstr "Requer Reparo"
 
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:290
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:321
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:284
-msgid "Resend Account Invite"
-msgstr "Reenviar Convite de Conta"
-
-#: apps/erp/app/modules/users/ui/components/ResendInviteModal.tsx:43
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:230
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:236
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:224
-msgid "Resend Invite"
-msgstr "Reenviar Convite"
-
-#: apps/erp/app/modules/users/ui/components/ResendInviteModal.tsx:45
-msgid "Resend Invites"
-msgstr "Reenviar Convites"
-
 #: apps/erp/app/modules/inventory/ui/Traceability/TrackedEntityStatus.tsx:20
 msgid "Reserved"
 msgstr "Reservado"
@@ -10975,9 +10958,9 @@ msgid "Revoke"
 msgstr "Revogar"
 
 #: apps/erp/app/modules/users/ui/components/RevokeInviteModal.tsx:43
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:301
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:332
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:295
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:290
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:321
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:286
 msgid "Revoke Invite"
 msgstr "Revogar Convite"
 
@@ -11782,6 +11765,20 @@ msgstr "Integração Autônoma com Carbon Academy"
 #: apps/erp/app/modules/users/ui/components/ResendInviteModal.tsx:85
 msgid "Send"
 msgstr "Enviar"
+
+#: apps/erp/app/modules/users/ui/components/ResendInviteModal.tsx:43
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:231
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:301
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:236
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:332
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:227
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:297
+msgid "Send Invite"
+msgstr ""
+
+#: apps/erp/app/modules/users/ui/components/ResendInviteModal.tsx:45
+msgid "Send Invites"
+msgstr ""
 
 #: apps/erp/app/modules/purchasing/ui/PurchasingRfq/FinalizeRFQModal.tsx:86
 msgid "Send RFQ to Suppliers"
@@ -12798,15 +12795,15 @@ msgstr "Supabase fornece funcionalidade em tempo real e transmite alterações d
 #: apps/erp/app/modules/resources/ui/Partners/PartnersTable.tsx:32
 #: apps/erp/app/modules/sales/ui/Quotes/QuoteBillOfProcess.tsx:2025
 #: apps/erp/app/modules/users/ui/Suppliers/CreateSupplierModal/CreateSupplierModal.tsx:76
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:143
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:322
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:146
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:321
 #: apps/erp/app/routes/x+/issue+/$id.tsx:160
 #: apps/erp/app/routes/x+/purchasing+/_index.tsx:662
 #: apps/erp/app/routes/x+/purchasing+/_index.tsx:813
 msgid "Supplier"
 msgstr "Fornecedor"
 
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:327
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:326
 msgid "Supplier Accounts"
 msgstr "Contas de Fornecedor"
 
@@ -12911,7 +12908,7 @@ msgstr "Status do Fornecedor"
 #: apps/erp/app/modules/purchasing/ui/SupplierTypes/SupplierTypeForm.tsx:90
 #: apps/erp/app/modules/purchasing/ui/SupplierTypes/SupplierTypesTable.tsx:31
 #: apps/erp/app/modules/purchasing/ui/SupplierTypes/SupplierTypesTable.tsx:94
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:158
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:161
 msgid "Supplier Type"
 msgstr "Tipo de Fornecedor"
 
@@ -14181,9 +14178,9 @@ msgid "Used to categorize items for reporting and analysis"
 msgstr "Usado para categorizar itens para relatórios e análise"
 
 #: apps/erp/app/modules/people/ui/People/PeopleTable.tsx:100
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:100
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:101
 #: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:91
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:100
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:103
 msgid "User"
 msgstr "Utilizador"
 

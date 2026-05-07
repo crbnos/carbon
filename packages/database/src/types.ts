@@ -10796,6 +10796,7 @@ export type Database = {
           email: string
           id: string
           permissions: Json
+          revokedAt: string | null
           role: Database["public"]["Enums"]["role"]
         }
         Insert: {
@@ -10807,6 +10808,7 @@ export type Database = {
           email: string
           id?: string
           permissions?: Json
+          revokedAt?: string | null
           role: Database["public"]["Enums"]["role"]
         }
         Update: {
@@ -10818,6 +10820,7 @@ export type Database = {
           email?: string
           id?: string
           permissions?: Json
+          revokedAt?: string | null
           role?: Database["public"]["Enums"]["role"]
         }
         Relationships: [

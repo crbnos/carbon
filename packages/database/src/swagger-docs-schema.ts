@@ -8959,6 +8959,9 @@ export default {
             $ref: "#/parameters/rowFilter.invite.acceptedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.invite.revokedAt"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -9045,6 +9048,9 @@ export default {
             $ref: "#/parameters/rowFilter.invite.acceptedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.invite.revokedAt"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -9083,6 +9089,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.invite.acceptedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.invite.revokedAt"
           },
           {
             $ref: "#/parameters/body.invite"
@@ -80990,6 +80999,10 @@ export default {
         acceptedAt: {
           format: "timestamp with time zone",
           type: "string"
+        },
+        revokedAt: {
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -114305,6 +114318,12 @@ export default {
     },
     "rowFilter.invite.acceptedAt": {
       name: "acceptedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.invite.revokedAt": {
+      name: "revokedAt",
       required: false,
       in: "query",
       type: "string"

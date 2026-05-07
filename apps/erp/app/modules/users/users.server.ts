@@ -38,6 +38,7 @@ export async function acceptInvite(
     .select("*")
     .eq("code", code)
     .is("acceptedAt", null)
+    .is("revokedAt", null)
     .single();
 
   if (invite.error) return invite;

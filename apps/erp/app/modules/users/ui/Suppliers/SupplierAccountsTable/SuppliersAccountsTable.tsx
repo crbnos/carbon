@@ -36,6 +36,7 @@ type SupplierAccountsTableProps = {
   data: Supplier[];
   count: number;
   supplierTypes: ListItem[];
+  unrevokedInviteEmails: string[];
 };
 
 const defaultColumnVisibility = {
@@ -44,7 +45,12 @@ const defaultColumnVisibility = {
 };
 
 const SupplierAccountsTable = memo(
-  ({ data, count, supplierTypes }: SupplierAccountsTableProps) => {
+  ({
+    data,
+    count,
+    supplierTypes,
+    unrevokedInviteEmails
+  }: SupplierAccountsTableProps) => {
     const { t } = useLingui();
     const permissions = usePermissions();
     const [params] = useUrlParams();
@@ -56,6 +62,20 @@ const SupplierAccountsTable = memo(
     const revokeInviteModal = useDisclosure();
 
     const [suppliers] = useSuppliers();
+
+    const unrevokedInviteSet = useMemo(
+      () => new Set(unrevokedInviteEmails),
+      [unrevokedInviteEmails]
+    );
+
+    const hasUnrevokedInviteForRow = useCallback(
+      (row: Supplier): boolean => {
+        const email =
+          row.user && !Array.isArray(row.user) ? row.user.email : null;
+        return !!email && unrevokedInviteSet.has(email);
+      },
+      [unrevokedInviteSet]
+    );
 
     const canEdit = permissions.can("update", "users");
 
@@ -186,19 +206,25 @@ const SupplierAccountsTable = memo(
               onClick={() => {
                 setSelectedUserIds(
                   selectedRows
-                    .filter((row) => row.active === false)
+                    .filter(
+                      (row) =>
+                        row.active === false && !hasUnrevokedInviteForRow(row)
+                    )
                     .map((row) => row.user.id)
                 );
                 resendInviteModal.onOpen();
               }}
               disabled={
                 !permissions.can("create", "users") ||
-                selectedRows.every((row) => row.active === true)
+                !selectedRows.some(
+                  (row) =>
+                    row.active === false && !hasUnrevokedInviteForRow(row)
+                )
               }
             >
               <LuMailCheck className="mr-2 h-4 w-4" />
               <span>
-                <Trans>Resend Invite</Trans>
+                <Trans>Send Invite</Trans>
               </span>
             </DropdownMenuItem>
             <DropdownMenuItem
@@ -223,56 +249,60 @@ const SupplierAccountsTable = memo(
           </DropdownMenuContent>
         );
       },
-      [permissions, deactivateSupplierModal, resendInviteModal]
+      [
+        permissions,
+        deactivateSupplierModal,
+        resendInviteModal,
+        hasUnrevokedInviteForRow
+      ]
     );
 
     const renderContextMenu = useCallback(
       (row: (typeof data)[number]) => {
+        const hasUnrevokedInvite = hasUnrevokedInviteForRow(row);
         return (
           <>
             {row.active === true ? (
-              <>
+              <MenuItem
+                onClick={(e) => {
+                  setSelectedUserIds([row.user.id]);
+                  deactivateSupplierModal.onOpen();
+                }}
+                destructive
+              >
+                <MenuIcon icon={<LuBan />} />
+                <Trans>Deactivate Account</Trans>
+              </MenuItem>
+            ) : hasUnrevokedInvite ? (
+              permissions.can("delete", "users") && (
                 <MenuItem
-                  onClick={(e) => {
+                  onClick={() => {
                     setSelectedUserIds([row.user.id]);
-                    deactivateSupplierModal.onOpen();
+                    revokeInviteModal.onOpen();
                   }}
                   destructive
                 >
                   <MenuIcon icon={<LuBan />} />
-                  <Trans>Deactivate Account</Trans>
+                  <Trans>Revoke Invite</Trans>
                 </MenuItem>
-              </>
+              )
             ) : (
-              <>
-                <MenuItem
-                  onClick={() => {
-                    setSelectedUserIds([row.user.id]);
-                    resendInviteModal.onOpen();
-                  }}
-                >
-                  <MenuIcon icon={<LuMailCheck />} />
-                  <Trans>Resend Account Invite</Trans>
-                </MenuItem>
-                {permissions.can("delete", "users") && (
-                  <MenuItem
-                    onClick={() => {
-                      setSelectedUserIds([row.user.id]);
-                      revokeInviteModal.onOpen();
-                    }}
-                    destructive
-                  >
-                    <MenuIcon icon={<LuBan />} />
-                    <Trans>Revoke Invite</Trans>
-                  </MenuItem>
-                )}
-              </>
+              <MenuItem
+                onClick={() => {
+                  setSelectedUserIds([row.user.id]);
+                  resendInviteModal.onOpen();
+                }}
+              >
+                <MenuIcon icon={<LuMailCheck />} />
+                <Trans>Send Invite</Trans>
+              </MenuItem>
             )}
           </>
         );
       },
       [
         deactivateSupplierModal,
+        hasUnrevokedInviteForRow,
         permissions,
         resendInviteModal,
         revokeInviteModal

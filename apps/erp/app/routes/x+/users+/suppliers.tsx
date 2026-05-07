@@ -6,7 +6,11 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
 import { getSupplierTypes } from "~/modules/purchasing";
-import { getSuppliers, SupplierAccountsTable } from "~/modules/users";
+import {
+  getSuppliers,
+  getUnrevokedInviteEmails,
+  SupplierAccountsTable
+} from "~/modules/users";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -29,7 +33,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [suppliers, supplierTypes] = await Promise.all([
+  const [suppliers, supplierTypes, invites] = await Promise.all([
     getSuppliers(client, companyId, {
       search,
       limit,
@@ -37,7 +41,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       sorts,
       filters
     }),
-    getSupplierTypes(client, companyId)
+    getSupplierTypes(client, companyId),
+    getUnrevokedInviteEmails(client, companyId)
   ]);
   if (suppliers.error) {
     throw redirect(
@@ -58,12 +63,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return {
     count: suppliers.count ?? 0,
     suppliers: suppliers.data,
-    supplierTypes: supplierTypes.data
+    supplierTypes: supplierTypes.data,
+    unrevokedInviteEmails: invites.data?.map((i) => i.email) ?? []
   };
 }
 
 export default function UsersSuppliersRoute() {
-  const { count, suppliers, supplierTypes } = useLoaderData<typeof loader>();
+  const { count, suppliers, supplierTypes, unrevokedInviteEmails } =
+    useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
@@ -71,6 +78,7 @@ export default function UsersSuppliersRoute() {
         data={suppliers}
         count={count}
         supplierTypes={supplierTypes}
+        unrevokedInviteEmails={unrevokedInviteEmails}
       />
       <Outlet />
     </VStack>

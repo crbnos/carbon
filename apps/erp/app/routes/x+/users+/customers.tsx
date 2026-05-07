@@ -6,7 +6,11 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
 import { getCustomerTypes } from "~/modules/sales";
-import { CustomerAccountsTable, getCustomers } from "~/modules/users";
+import {
+  CustomerAccountsTable,
+  getCustomers,
+  getUnrevokedInviteEmails
+} from "~/modules/users";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -29,9 +33,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [customers, customerTypes] = await Promise.all([
+  const [customers, customerTypes, invites] = await Promise.all([
     getCustomers(client, companyId, { search, limit, offset, sorts, filters }),
-    getCustomerTypes(client, companyId)
+    getCustomerTypes(client, companyId),
+    getUnrevokedInviteEmails(client, companyId)
   ]);
 
   if (customers.error) {
@@ -44,12 +49,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return {
     count: customers.count ?? 0,
     customers: customers.data ?? [],
-    customerTypes: customerTypes.data ?? []
+    customerTypes: customerTypes.data ?? [],
+    unrevokedInviteEmails: invites.data?.map((i) => i.email) ?? []
   };
 }
 
 export default function UsersCustomersRoute() {
-  const { count, customers, customerTypes } = useLoaderData<typeof loader>();
+  const { count, customers, customerTypes, unrevokedInviteEmails } =
+    useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
@@ -57,6 +64,7 @@ export default function UsersCustomersRoute() {
         data={customers}
         count={count}
         customerTypes={customerTypes}
+        unrevokedInviteEmails={unrevokedInviteEmails}
       />
       <Outlet />
     </VStack>

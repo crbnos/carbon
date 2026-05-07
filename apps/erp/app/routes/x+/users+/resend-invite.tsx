@@ -65,7 +65,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const newCode = nanoid();
     const refreshed = await serviceRole
       .from("invite")
-      .update({ code: newCode, acceptedAt: null })
+      .update({ code: newCode, acceptedAt: null, revokedAt: null })
       .eq("email", user.data.email)
       .eq("companyId", companyId)
       .select("code")

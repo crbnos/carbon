@@ -40,6 +40,7 @@ type EmployeesTableProps = {
   data: Employee[];
   count: number;
   employeeTypes: ListItem[];
+  unrevokedInviteEmails: string[];
 };
 
 const defaultColumnVisibility = {
@@ -48,7 +49,12 @@ const defaultColumnVisibility = {
 };
 
 const EmployeesTable = memo(
-  ({ data, count, employeeTypes }: EmployeesTableProps) => {
+  ({
+    data,
+    count,
+    employeeTypes,
+    unrevokedInviteEmails
+  }: EmployeesTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
@@ -62,6 +68,11 @@ const EmployeesTable = memo(
           return acc;
         }, {}),
       [employeeTypes]
+    );
+
+    const unrevokedInviteSet = useMemo(
+      () => new Set(unrevokedInviteEmails),
+      [unrevokedInviteEmails]
     );
 
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
@@ -200,19 +211,29 @@ const EmployeesTable = memo(
               onClick={() => {
                 setSelectedUserIds(
                   selectedRows
-                    .filter((row) => row.active === false)
+                    .filter(
+                      (row) =>
+                        row.active === false &&
+                        !!row.email &&
+                        !unrevokedInviteSet.has(row.email)
+                    )
                     .map((row) => row.id!)
                 );
                 resendInviteModal.onOpen();
               }}
               disabled={
                 !permissions.can("create", "users") ||
-                selectedRows.every((row) => row.active === true)
+                !selectedRows.some(
+                  (row) =>
+                    row.active === false &&
+                    !!row.email &&
+                    !unrevokedInviteSet.has(row.email)
+                )
               }
             >
               <LuMailCheck className="mr-2 h-4 w-4" />
               <span>
-                <Trans>Resend Invite</Trans>
+                <Trans>Send Invite</Trans>
               </span>
             </DropdownMenuItem>
             <DropdownMenuItem
@@ -237,11 +258,19 @@ const EmployeesTable = memo(
           </DropdownMenuContent>
         );
       },
-      [permissions, bulkEditDrawer, deactivateEmployeeModal, resendInviteModal]
+      [
+        permissions,
+        bulkEditDrawer,
+        deactivateEmployeeModal,
+        resendInviteModal,
+        unrevokedInviteSet
+      ]
     );
 
     const renderContextMenu = useCallback(
       (row: (typeof data)[number]) => {
+        const hasUnrevokedInvite =
+          !!row.email && unrevokedInviteSet.has(row.email);
         return (
           <>
             {row.active === true ? (
@@ -279,30 +308,29 @@ const EmployeesTable = memo(
                   <Trans>Deactivate Account</Trans>
                 </MenuItem>
               </>
-            ) : (
-              <>
+            ) : hasUnrevokedInvite ? (
+              permissions.can("delete", "users") && (
                 <MenuItem
                   onClick={() => {
                     setSelectedUserIds([row.id!]);
-                    resendInviteModal.onOpen();
+                    revokeInviteModal.onOpen();
                   }}
+                  destructive
                 >
-                  <MenuIcon icon={<LuMailCheck />} />
-                  <Trans>Resend Account Invite</Trans>
+                  <MenuIcon icon={<LuBan />} />
+                  <Trans>Revoke Invite</Trans>
                 </MenuItem>
-                {permissions.can("delete", "users") && (
-                  <MenuItem
-                    onClick={() => {
-                      setSelectedUserIds([row.id!]);
-                      revokeInviteModal.onOpen();
-                    }}
-                    destructive
-                  >
-                    <MenuIcon icon={<LuBan />} />
-                    <Trans>Revoke Invite</Trans>
-                  </MenuItem>
-                )}
-              </>
+              )
+            ) : (
+              <MenuItem
+                onClick={() => {
+                  setSelectedUserIds([row.id!]);
+                  resendInviteModal.onOpen();
+                }}
+              >
+                <MenuIcon icon={<LuMailCheck />} />
+                <Trans>Send Invite</Trans>
+              </MenuItem>
             )}
           </>
         );
@@ -314,7 +342,8 @@ const EmployeesTable = memo(
         permissions,
         resendInviteModal,
         revokeInviteModal,
-        settings.consoleEnabled
+        settings.consoleEnabled,
+        unrevokedInviteSet
       ]
     );
 

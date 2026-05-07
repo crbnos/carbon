@@ -40,9 +40,9 @@ const ResendInviteModal = ({
         <ModalHeader>
           <ModalTitle>
             {isSingleUser ? (
-              <Trans>Resend Invite</Trans>
+              <Trans>Send Invite</Trans>
             ) : (
-              <Trans>Resend Invites</Trans>
+              <Trans>Send Invites</Trans>
             )}
           </ModalTitle>
         </ModalHeader>
@@ -51,11 +51,11 @@ const ResendInviteModal = ({
           <p className="mb-2">
             {isSingleUser ? (
               <Trans>
-                Are you sure you want to resend an invite to this user?
+                Are you sure you want to send an invite to this user?
               </Trans>
             ) : (
               <Trans>
-                Are you sure you want to resend an invite to these users?
+                Are you sure you want to send an invite to these users?
               </Trans>
             )}
           </p>

@@ -82,6 +82,17 @@ export async function getEmployee(
     .single();
 }
 
+export async function getUnrevokedInviteEmails(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("invite")
+    .select("email")
+    .eq("companyId", companyId)
+    .is("revokedAt", null);
+}
+
 export async function getEmployees(
   client: SupabaseClient<Database>,
   companyId: string,
