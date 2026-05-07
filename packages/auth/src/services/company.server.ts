@@ -7,6 +7,12 @@ const cookieName = "companyId";
 const isTestEdition = CarbonEdition === Edition.Test;
 const cookieDomain = isTestEdition ? undefined : getCookieDomain(DOMAIN);
 
+export function getCompanyId(request: Request): string | null {
+  const cookieHeader = request.headers.get("Cookie");
+  if (!cookieHeader) return null;
+  return cookie.parse(cookieHeader)[cookieName] || null;
+}
+
 export function setCompanyId(companyId: string | null) {
   if (!companyId) {
     return cookie.serialize(cookieName, "", {

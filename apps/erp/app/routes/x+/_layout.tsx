@@ -120,7 +120,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ]);
 
   if (!claims || user.error || !user.data || !groups.data) {
-    await destroyAuthSession(request);
+    throw await destroyAuthSession(request);
   }
 
   let company = companies.data?.find((c) => c.companyId === companyId);

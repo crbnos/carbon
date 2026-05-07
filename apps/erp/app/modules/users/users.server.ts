@@ -1317,9 +1317,13 @@ async function setUserPermissions(
     }
   });
 
-  return client
+  const result = await client
     .from("userPermission")
     .upsert({ id: userId, permissions: newPermissions });
+
+  await redis.del(getPermissionCacheKey(userId));
+
+  return result;
 }
 
 export async function updateEmployee(

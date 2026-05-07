@@ -218,7 +218,7 @@ msgid "Accept Quote"
 msgstr "Accept Quote"
 
 #: apps/erp/app/modules/accounting/ui/ChartOfAccounts/ChartOfAccountsTableFilters.tsx:105
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:330
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:362
 #: apps/erp/app/routes/x+/account+/_layout.tsx:14
 msgid "Account"
 msgstr "Account"
@@ -355,12 +355,12 @@ msgstr "Activate Work Center"
 #: apps/erp/app/modules/sales/ui/Pricing/PricingRulesTable.tsx:337
 #: apps/erp/app/modules/sales/ui/Pricing/PricingRulesTable.tsx:344
 #: apps/erp/app/modules/settings/ui/Webhooks/WebhookForm.tsx:130
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:163
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:172
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:154
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:162
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:159
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:168
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:182
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:191
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:165
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:173
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:176
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:185
 #: apps/erp/app/routes/x+/person+/$personId.timecard.tsx:716
 #: apps/erp/app/routes/x+/settings+/billing.tsx:350
 msgid "Active"
@@ -2475,7 +2475,7 @@ msgstr "Console mode is disabled"
 msgid "Console mode is enabled"
 msgstr "Console mode is enabled"
 
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:121
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:132
 msgid "Console Operator"
 msgstr "Console Operator"
 
@@ -3242,8 +3242,8 @@ msgstr "Custom Fields"
 #: apps/erp/app/modules/sales/ui/SalesRFQ/SalesRFQForm.tsx:156
 #: apps/erp/app/modules/sales/ui/SalesRFQ/SalesRFQsTable.tsx:73
 #: apps/erp/app/modules/users/ui/Customers/CreateCustomerModal.tsx:76
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:130
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:295
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:149
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:328
 #: apps/erp/app/routes/x+/issue+/$id.tsx:153
 #: apps/erp/app/routes/x+/sales+/_index.tsx:652
 #: apps/erp/app/routes/x+/sales+/_index.tsx:724
@@ -3252,7 +3252,7 @@ msgstr "Custom Fields"
 msgid "Customer"
 msgstr "Customer"
 
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:300
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:333
 msgid "Customer Accounts"
 msgstr "Customer Accounts"
 
@@ -3371,7 +3371,7 @@ msgstr "Customer Statuses"
 #: apps/erp/app/modules/sales/ui/Pricing/PriceOverrideForm.tsx:183
 #: apps/erp/app/modules/sales/ui/Pricing/PricingRuleForm.tsx:180
 #: apps/erp/app/modules/sales/ui/Pricing/PricingRulesTable.tsx:147
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:145
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:164
 msgid "Customer Type"
 msgstr "Customer Type"
 
@@ -3395,7 +3395,7 @@ msgstr "Customer Types"
 #: apps/erp/app/routes/x+/customer+/new.tsx:16
 #: apps/erp/app/routes/x+/issue+/$id.tsx:154
 #: apps/erp/app/routes/x+/sales+/customers.tsx:16
-#: apps/erp/app/routes/x+/users+/customers.tsx:15
+#: apps/erp/app/routes/x+/users+/customers.tsx:19
 msgid "Customers"
 msgstr "Customers"
 
@@ -3523,9 +3523,9 @@ msgstr "Deactivate {0}"
 msgid "Deactivate {name}"
 msgstr "Deactivate {name}"
 
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:247
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:279
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:243
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:277
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:308
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:271
 msgid "Deactivate Account"
 msgstr "Deactivate Account"
 
@@ -3545,9 +3545,9 @@ msgstr "Deactivate Process"
 msgid "Deactivate Supplier"
 msgstr "Deactivate Supplier"
 
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:224
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:234
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:220
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:249
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:255
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:243
 msgid "Deactivate Users"
 msgstr "Deactivate Users"
 
@@ -4632,8 +4632,8 @@ msgstr "Edit Payment Term"
 
 #: apps/erp/app/modules/documents/ui/Documents/DocumentForm.tsx:72
 #: apps/erp/app/modules/users/ui/Employees/BulkEditPermissionsForm.tsx:104
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:196
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:257
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:207
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:286
 msgid "Edit Permissions"
 msgstr "Edit Permissions"
 
@@ -4819,11 +4819,11 @@ msgstr "Edit Work Center"
 #: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderHeader.tsx:142
 #: apps/erp/app/modules/settings/ui/Company/CompanyForm.tsx:39
 #: apps/erp/app/modules/users/ui/Customers/CreateCustomerModal.tsx:90
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:122
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:141
 #: apps/erp/app/modules/users/ui/Employees/CreateEmployeeModal.tsx:72
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:115
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:126
 #: apps/erp/app/modules/users/ui/Suppliers/CreateSupplierModal/CreateSupplierModal.tsx:90
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:118
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:135
 #: apps/erp/app/routes/x+/settings+/purchasing.tsx:506
 #: apps/erp/app/routes/x+/settings+/sales.tsx:445
 msgid "Email"
@@ -4862,14 +4862,14 @@ msgstr "Emoji"
 msgid "Employee"
 msgstr "Employee"
 
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:335
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:367
 msgid "Employee Accounts"
 msgstr "Employee Accounts"
 
 #: apps/erp/app/modules/people/ui/People/PeopleTable.tsx:139
 #: apps/erp/app/modules/users/ui/Employees/CreateEmployeeModal.tsx:79
 #: apps/erp/app/modules/users/ui/Employees/EmployeePermissionsForm.tsx:123
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:133
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:144
 #: apps/erp/app/modules/users/ui/EmployeeTypes/EmployeeTypeForm.tsx:99
 #: apps/erp/app/modules/users/ui/EmployeeTypes/EmployeeTypesTable.tsx:29
 #: apps/erp/app/modules/users/ui/EmployeeTypes/EmployeeTypesTable.tsx:91
@@ -4885,7 +4885,7 @@ msgstr "Employee Types"
 
 #: apps/erp/app/modules/people/ui/People/PeopleTable.tsx:241
 #: apps/erp/app/modules/people/ui/usePeopleSubmodules.tsx:23
-#: apps/erp/app/routes/x+/users+/employees.tsx:18
+#: apps/erp/app/routes/x+/users+/employees.tsx:19
 msgid "Employees"
 msgstr "Employees"
 
@@ -5021,7 +5021,7 @@ msgstr "Entity is {status}"
 msgid "ERP, MES, QMS"
 msgstr "ERP, MES, QMS"
 
-#: apps/erp/app/routes/_public+/callback.tsx:157
+#: apps/erp/app/routes/_public+/callback.tsx:159
 msgid "Error"
 msgstr "Error"
 
@@ -5890,11 +5890,11 @@ msgstr "Finishes"
 #: apps/erp/app/modules/purchasing/ui/Supplier/SupplierContactForm.tsx:98
 #: apps/erp/app/modules/sales/ui/Customer/CustomerContactForm.tsx:99
 #: apps/erp/app/modules/users/ui/Customers/CreateCustomerModal.tsx:97
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:106
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:125
 #: apps/erp/app/modules/users/ui/Employees/CreateEmployeeModal.tsx:74
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:99
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:110
 #: apps/erp/app/modules/users/ui/Suppliers/CreateSupplierModal/CreateSupplierModal.tsx:97
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:102
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:119
 #: apps/erp/app/routes/onboarding+/user.tsx:102
 #: apps/erp/app/routes/x+/users+/operators.new.tsx:155
 msgid "First Name"
@@ -6251,9 +6251,9 @@ msgstr "in selected period"
 #: apps/erp/app/modules/people/ui/People/PeopleTable.tsx:168
 #: apps/erp/app/modules/sales/ui/Pricing/PricingRulesTable.tsx:337
 #: apps/erp/app/modules/sales/ui/Pricing/PricingRulesTable.tsx:345
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:176
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:166
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:172
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:195
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:177
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:189
 #: apps/erp/app/routes/x+/production+/_index.tsx:886
 #: apps/erp/app/routes/x+/settings+/billing.tsx:356
 msgid "Inactive"
@@ -7024,11 +7024,11 @@ msgstr "Last Calibration Date"
 #: apps/erp/app/modules/purchasing/ui/Supplier/SupplierContactForm.tsx:99
 #: apps/erp/app/modules/sales/ui/Customer/CustomerContactForm.tsx:100
 #: apps/erp/app/modules/users/ui/Customers/CreateCustomerModal.tsx:103
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:114
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:133
 #: apps/erp/app/modules/users/ui/Employees/CreateEmployeeModal.tsx:75
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:107
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:118
 #: apps/erp/app/modules/users/ui/Suppliers/CreateSupplierModal/CreateSupplierModal.tsx:103
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:110
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:127
 #: apps/erp/app/routes/onboarding+/user.tsx:103
 #: apps/erp/app/routes/x+/users+/operators.new.tsx:156
 msgid "Last Name"
@@ -10851,16 +10851,16 @@ msgstr "Requires Inspection"
 msgid "Requires Repair"
 msgstr "Requires Repair"
 
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:259
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:291
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:255
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:290
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:321
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:284
 msgid "Resend Account Invite"
 msgstr "Resend Account Invite"
 
 #: apps/erp/app/modules/users/ui/components/ResendInviteModal.tsx:43
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:205
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:215
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:201
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:230
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:236
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:224
 msgid "Resend Invite"
 msgstr "Resend Invite"
 
@@ -10975,9 +10975,9 @@ msgid "Revoke"
 msgstr "Revoke"
 
 #: apps/erp/app/modules/users/ui/components/RevokeInviteModal.tsx:43
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:270
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:302
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:266
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:301
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:332
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:295
 msgid "Revoke Invite"
 msgstr "Revoke Invite"
 
@@ -11870,7 +11870,7 @@ msgstr "Set Clock Out"
 msgid "Set clock-out time"
 msgstr "Set clock-out time"
 
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:268
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:297
 msgid "Set Console PIN"
 msgstr "Set Console PIN"
 
@@ -12254,7 +12254,7 @@ msgstr "Skip scheduled maintenance on company holidays"
 msgid "Skipped"
 msgstr "Skipped"
 
-#: apps/erp/app/routes/_public+/callback.tsx:164
+#: apps/erp/app/routes/_public+/callback.tsx:166
 msgid "Something went wrong. Please try again."
 msgstr "Something went wrong. Please try again."
 
@@ -12798,15 +12798,15 @@ msgstr "Supabase provides realtime functionality and broadcasts database changes
 #: apps/erp/app/modules/resources/ui/Partners/PartnersTable.tsx:32
 #: apps/erp/app/modules/sales/ui/Quotes/QuoteBillOfProcess.tsx:2025
 #: apps/erp/app/modules/users/ui/Suppliers/CreateSupplierModal/CreateSupplierModal.tsx:76
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:126
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:291
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:143
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:322
 #: apps/erp/app/routes/x+/issue+/$id.tsx:160
 #: apps/erp/app/routes/x+/purchasing+/_index.tsx:662
 #: apps/erp/app/routes/x+/purchasing+/_index.tsx:813
 msgid "Supplier"
 msgstr "Supplier"
 
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:296
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:327
 msgid "Supplier Accounts"
 msgstr "Supplier Accounts"
 
@@ -12911,7 +12911,7 @@ msgstr "Supplier Status"
 #: apps/erp/app/modules/purchasing/ui/SupplierTypes/SupplierTypeForm.tsx:90
 #: apps/erp/app/modules/purchasing/ui/SupplierTypes/SupplierTypesTable.tsx:31
 #: apps/erp/app/modules/purchasing/ui/SupplierTypes/SupplierTypesTable.tsx:94
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:141
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:158
 msgid "Supplier Type"
 msgstr "Supplier Type"
 
@@ -12947,7 +12947,7 @@ msgstr "Supplier:"
 #: apps/erp/app/routes/x+/purchasing+/suppliers.tsx:16
 #: apps/erp/app/routes/x+/supplier+/$supplierId.tsx:22
 #: apps/erp/app/routes/x+/supplier+/new.tsx:16
-#: apps/erp/app/routes/x+/users+/suppliers.tsx:15
+#: apps/erp/app/routes/x+/users+/suppliers.tsx:19
 msgid "Suppliers"
 msgstr "Suppliers"
 
@@ -14181,9 +14181,9 @@ msgid "Used to categorize items for reporting and analysis"
 msgstr "Used to categorize items for reporting and analysis"
 
 #: apps/erp/app/modules/people/ui/People/PeopleTable.tsx:100
-#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:81
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:80
-#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:83
+#: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:100
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:91
+#: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:100
 msgid "User"
 msgstr "User"
 
