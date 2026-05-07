@@ -1033,7 +1033,7 @@ export async function getJobMaterialsByMethodId(
 ) {
   return client
     .from("jobMaterial")
-    .select("*, item(replenishmentSystem, itemTrackingType)")
+    .select("*, item(replenishmentSystem)")
     .eq("jobMakeMethodId", jobMakeMethodId)
     .order("order", { ascending: true });
 }

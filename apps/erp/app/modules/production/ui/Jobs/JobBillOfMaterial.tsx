@@ -1,6 +1,5 @@
 "use client";
 import { useCarbon } from "@carbon/auth";
-import type { Database } from "@carbon/database";
 import { ValidatedForm } from "@carbon/form";
 import {
   Badge,
@@ -85,7 +84,6 @@ type Material = z.infer<typeof jobMaterialValidator> & {
   requiresSerialTracking: boolean;
   item?: {
     replenishmentSystem: string | null;
-    itemTrackingType: Database["public"]["Enums"]["itemTrackingType"];
   } | null;
 };
 
@@ -715,10 +713,8 @@ function MaterialForm({
     unitOfMeasureCode: item.data.unitOfMeasureCode ?? "EA",
     quantity: item.data.quantity ?? 1,
     kit: item.data.kit ?? false,
-    requiresBatchTracking:
-      item.data.item?.itemTrackingType === ItemTrackingType.Batch,
-    requiresSerialTracking:
-      item.data.item?.itemTrackingType === ItemTrackingType.Serial,
+    requiresBatchTracking: item.data.requiresBatchTracking ?? false,
+    requiresSerialTracking: item.data.requiresSerialTracking ?? false,
     storageUnitId: item.data.storageUnitId ?? undefined,
     itemReplenishmentSystem: item.data.item?.replenishmentSystem ?? "Buy"
   });

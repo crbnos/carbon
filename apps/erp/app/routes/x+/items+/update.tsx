@@ -2,8 +2,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import type { Database } from "@carbon/database";
 import { getMaterialDescription, getMaterialId } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
+import type { InventoryItemType } from "~/modules/items";
 
+import { cascadeItemTrackingType } from "~/modules/items/items.service";
 import { getCompanySettings } from "~/modules/settings";
+import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -20,8 +23,39 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   switch (field) {
+    case "itemTrackingType": {
+      const newType = value as InventoryItemType;
+
+      const result = await client
+        .from("item")
+        .update({
+          itemTrackingType: newType,
+          updatedBy: userId,
+          updatedAt: new Date().toISOString()
+        })
+        .in("id", items as string[])
+        .eq("companyId", companyId);
+
+      if (result.error) return result;
+
+      try {
+        await cascadeItemTrackingType(getDatabaseClient(), {
+          itemIds: items as string[],
+          companyId,
+          newType,
+          userId
+        });
+      } catch (err) {
+        console.error(err);
+        return {
+          error: { message: "Failed to cascade tracking flags" },
+          data: null
+        };
+      }
+
+      return result;
+    }
     case "defaultMethodType":
-    case "itemTrackingType":
     case "name":
     case "replenishmentSystem":
     case "unitOfMeasureCode":
