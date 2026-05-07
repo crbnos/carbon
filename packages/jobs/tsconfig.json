@@ -3,7 +3,8 @@
     "outDir": "./dist",
     "sourceMap": true,
     "allowImportingTsExtensions": true,
-    "noEmit": true
+    "noEmit": true,
+    "strictNullChecks": true
   },
   "exclude": ["node_modules"],
   "extends": "@carbon/config/tsconfig/base.json",

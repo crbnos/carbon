@@ -10,11 +10,11 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   const formData = await request.formData();
-  const ids = formData.getAll("ids");
+  const ids = formData.getAll("ids") as string[];
   const field = formData.get("field");
   const value = formData.get("value");
 
-  // Look up the stock transfer from the first line to check locked status
+  // Look up the stock transfer from the first line to check locked status.
   if (ids.length > 0) {
     const line = await client
       .from("stockTransferLine")
@@ -46,24 +46,21 @@ export async function action({ request }: ActionFunctionArgs) {
     return { error: { message: "Invalid form data" }, data: null };
   }
 
-  switch (field) {
-    case "fromStorageUnitId":
-    case "toStorageUnitId":
-      const update = await client
-        .from("stockTransferLine")
-        .update({
-          [field]: value ? value : null,
-          updatedBy: userId,
-          updatedAt: new Date().toISOString()
-        })
-        .in("id", ids as string[])
-        .eq("companyId", companyId);
-
-      return update;
-    default:
-      return {
-        error: { message: `Invalid field: ${field}` },
-        data: null
-      };
+  if (field !== "fromStorageUnitId" && field !== "toStorageUnitId") {
+    return { error: { message: `Invalid field: ${field}` }, data: null };
   }
+
+  // Item Rule evaluation runs at commit time (when the transfer is posted),
+  // not on per-line edits. Saves go straight through.
+  const update = await client
+    .from("stockTransferLine")
+    .update({
+      [field]: value ? value : null,
+      updatedBy: userId,
+      updatedAt: new Date().toISOString()
+    })
+    .in("id", ids)
+    .eq("companyId", companyId);
+
+  return update;
 }

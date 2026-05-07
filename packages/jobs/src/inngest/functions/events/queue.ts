@@ -94,7 +94,7 @@ export const eventQueueFunction = inngest.createFunction(
 
       const chunks = chunk(events, CHUNK_SIZE);
       for (let i = 0; i < chunks.length; i++) {
-        await step.sendEvent(`dispatch-webhooks-${i}`, chunks[i]);
+        await step.sendEvent(`dispatch-webhooks-${i}`, chunks[i]!);
       }
     }
 
@@ -111,7 +111,7 @@ export const eventQueueFunction = inngest.createFunction(
 
       const chunks = chunk(events, CHUNK_SIZE);
       for (let i = 0; i < chunks.length; i++) {
-        await step.sendEvent(`dispatch-workflows-${i}`, chunks[i]);
+        await step.sendEvent(`dispatch-workflows-${i}`, chunks[i]!);
       }
     }
 

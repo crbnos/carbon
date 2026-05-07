@@ -998,6 +998,10 @@ export const registerInventoryTools: RegisterTools = (server, ctx) => {
       annotations: WRITE_ANNOTATIONS,
     },
     withErrorHandling(async (params) => {
+      // TODO(item-rules): MCP path bypasses item-rule gate. This wrapper is
+      // dead code — actual MCP dispatch goes through direct-executor.ts
+      // calling the service directly. Place the gate in direct-executor or
+      // inside insertManualInventoryAdjustment itself.
       const result = await insertManualInventoryAdjustment(ctx.client, { ...params.inventoryAdjustment, companyId: ctx.companyId, createdBy: ctx.userId });
       return toMcpResult(result);
     }, "Failed: inventory_insertManualInventoryAdjustment"),

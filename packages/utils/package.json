@@ -9,6 +9,7 @@
   },
   "devDependencies": {
     "@carbon/config": "*",
+    "@carbon/database": "*",
     "@types/lodash.template": "4.5.3",
     "@types/react": "18.3.28",
     "@types/react-dom": "18.3.7",

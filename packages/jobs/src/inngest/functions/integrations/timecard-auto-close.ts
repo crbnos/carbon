@@ -74,9 +74,9 @@ export const timeCardAutoCloseFunction = inngest.createFunction(
                 const startParts = shift.startTime.split(":").map(Number);
                 const endParts = shift.endTime.split(":").map(Number);
                 let durationMinutes =
-                  endParts[0] * 60 +
-                  endParts[1] -
-                  (startParts[0] * 60 + startParts[1]);
+                  endParts[0]! * 60 +
+                  endParts[1]! -
+                  (startParts[0]! * 60 + startParts[1]!);
                 // Handle overnight shifts
                 if (durationMinutes <= 0) durationMinutes += 24 * 60;
 

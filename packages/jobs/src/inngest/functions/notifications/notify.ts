@@ -219,7 +219,7 @@ async function getDescription(
       const jobOperation = await client
         .from("jobOperation")
         .select("*, job(id, jobId)")
-        .eq("id", operationId)
+        .eq("id", operationId!)
         .single();
 
       if (jobOperation.error) {

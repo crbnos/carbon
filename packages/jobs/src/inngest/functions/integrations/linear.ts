@@ -72,7 +72,7 @@ export const linearSyncFunction = inngest.createFunction(
       };
     }
 
-    let assignee = null;
+    let assignee: string | null = null;
 
     if (payload.event.data.assigneeId) {
       const [linearUser] = await linear.getUsers(payload.companyId, {

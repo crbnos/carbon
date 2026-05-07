@@ -149,6 +149,19 @@ export const uomsQuery = (companyId: string | null) => ({
   staleTime: RefreshRate.Medium
 });
 
+export const itemRulesQuery = (companyId: string | null) => ({
+  queryKey: ["itemRules", companyId ?? "null"],
+  staleTime: RefreshRate.Low
+});
+
+export const itemRuleAssignmentsQuery = (
+  itemId: string,
+  companyId: string | null
+) => ({
+  queryKey: ["itemRuleAssignments", itemId, companyId ?? "null"],
+  staleTime: RefreshRate.Low
+});
+
 export const webhookTablesQuery = () => ({
   queryKey: ["webhookTables"],
   staleTime: RefreshRate.Never

@@ -10,6 +10,7 @@ export * from "./date";
 export * from "./duration";
 export * from "./file";
 export * from "./geo";
+export * from "./itemRules";
 export * from "./items";
 export * from "./keyboard";
 export * from "./labels";

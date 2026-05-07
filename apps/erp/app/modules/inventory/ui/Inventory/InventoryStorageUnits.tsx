@@ -10,7 +10,6 @@ import {
   Card,
   CardAction,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
   Copy,
@@ -63,6 +62,7 @@ import {
 } from "~/components/Form";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { usePermissions } from "~/hooks";
+import { useItemRuleViolations } from "~/hooks/useItemRuleViolations";
 import type {
   ItemStorageUnitQuantities,
   itemTrackingTypes,
@@ -96,6 +96,10 @@ const InventoryStorageUnits = ({
   const permissions = usePermissions();
   const { t } = useLingui();
   const adjustmentModal = useDisclosure();
+  const ruleViolations = useItemRuleViolations({
+    action: path.to.inventoryItemAdjustment(pickMethod.itemId),
+    onSuccess: adjustmentModal.onClose
+  });
 
   const unitOfMeasures = useUnitOfMeasure();
 
@@ -188,17 +192,17 @@ const InventoryStorageUnits = ({
         <HStack className="w-full justify-between">
           <CardHeader>
             <CardTitle>
-              <Trans>Storage Units</Trans>
+              <HStack className="gap-2 items-center">
+                <Trans>Storage Units</Trans>
+                <Enumerable
+                  value={
+                    unitOfMeasures.find(
+                      (uom) => uom.value === itemUnitOfMeasureCode
+                    )?.label || itemUnitOfMeasureCode
+                  }
+                />
+              </HStack>
             </CardTitle>
-            <CardDescription>
-              <Enumerable
-                value={
-                  unitOfMeasures.find(
-                    (uom) => uom.value === itemUnitOfMeasureCode
-                  )?.label || itemUnitOfMeasureCode
-                }
-              />
-            </CardDescription>
           </CardHeader>
           <CardAction>
             <Button onClick={() => openAdjustmentModal()}>
@@ -319,6 +323,7 @@ const InventoryStorageUnits = ({
             <ValidatedForm
               method="post"
               validator={inventoryAdjustmentValidator}
+              fetcher={ruleViolations.fetcher}
               action={path.to.inventoryItemAdjustment(pickMethod.itemId)}
               defaultValues={{
                 itemId: pickMethod.itemId,
@@ -333,7 +338,6 @@ const InventoryStorageUnits = ({
                 readableId: selectedReadableId || undefined,
                 expirationDate: defaultExpirationDate
               }}
-              onSubmit={adjustmentModal.onClose}
             >
               <ModalHeader>
                 <ModalTitle>
@@ -433,6 +437,7 @@ const InventoryStorageUnits = ({
           </ModalContent>
         </Modal>
       )}
+      <ruleViolations.ViolationModal />
       <Outlet />
     </>
   );

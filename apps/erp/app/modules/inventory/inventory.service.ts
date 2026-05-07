@@ -569,6 +569,32 @@ export async function getStorageUnitsListForLocation(
   );
 }
 
+// Tree shape from storageUnits_recursive view: each row has its 1-based depth
+// and the full ancestorPath (root → node ids). Sort by ancestorPath so the
+// caller can render a flat list that visually nests by depth.
+export async function getStorageUnitsTreeForLocation(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  locationId: string
+) {
+  return fetchAllFromTable<{
+    id: string;
+    name: string;
+    parentId: string | null;
+    depth: number;
+    ancestorPath: string[];
+  }>(
+    client,
+    "storageUnits_recursive",
+    "id, name, parentId, depth, ancestorPath",
+    (query) =>
+      query
+        .eq("active", true)
+        .eq("companyId", companyId)
+        .eq("locationId", locationId)
+  );
+}
+
 export async function getStorageUnits(
   client: SupabaseClient<Database>,
   locationId: string,

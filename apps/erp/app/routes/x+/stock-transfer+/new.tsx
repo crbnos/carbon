@@ -1,5 +1,6 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { msg } from "@lingui/core/macro";
@@ -11,6 +12,10 @@ import {
   upsertStockTransfer,
   upsertStockTransferLines
 } from "~/modules/inventory";
+import {
+  evaluateLinesForSurface,
+  isBlocked
+} from "~/modules/items/itemRules.server";
 import { getNextSequence } from "~/modules/settings";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
@@ -49,6 +54,35 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const { locationId, lines } = validation.data;
+  const acknowledged = formData.get("acknowledged") === "true";
+
+  // Item Rule pre-flight. Create-Transfer auto-releases (insert sets
+  // status="Released"), so this is the gate where rules must fire before
+  // any stock-moving is started. Evaluate against the destination side
+  // (`toStorageUnitId`) — that's where stock will land.
+  const serviceRole = getCarbonServiceRole();
+  const { violations, ruleNames } = await evaluateLinesForSurface({
+    client: serviceRole,
+    companyId,
+    userId,
+    surface: "stockTransfer",
+    lines: lines.map((l, i) => ({
+      lineId: `pending-${i}`,
+      itemId: l.itemId,
+      storageUnitId: l.toStorageUnitId ?? null,
+      quantity: Number(l.quantity ?? 0),
+      locationId
+    }))
+  });
+
+  if (violations.length > 0 && isBlocked(violations, acknowledged)) {
+    return {
+      error: null,
+      data: null,
+      violations,
+      ruleNames
+    };
+  }
 
   const linesWithExpandedSerialTracking = lines.reduce<typeof lines>(
     (acc, line) => {

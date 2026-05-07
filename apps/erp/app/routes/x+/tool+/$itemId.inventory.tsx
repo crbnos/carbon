@@ -24,7 +24,9 @@ import {
   upsertPickMethod,
   upsertPickMethodWithShelfLife
 } from "~/modules/items";
+import { getItemRulesDataForItem } from "~/modules/items/itemRules.server";
 import { PickMethodForm } from "~/modules/items/ui/Item";
+import ItemRuleAssignments from "~/modules/items/ui/ItemRules/ItemRuleAssignments";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { getDatabaseClient } from "~/services/database.server";
@@ -143,12 +145,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     (row) => row.trackedEntityId
   );
 
-  const [shelfLife, bomHasShelfLifeManagedInput, trackedEntityExpirations] =
-    await Promise.all([
-      getItemShelfLife(client, itemId),
-      getBomHasShelfLifeManagedInput(client, itemId, companyId),
-      getTrackedEntityExpirations(client, trackedEntityIds)
-    ]);
+  const [
+    shelfLife,
+    bomHasShelfLifeManagedInput,
+    trackedEntityExpirations,
+    rulesData
+  ] = await Promise.all([
+    getItemShelfLife(client, itemId),
+    getBomHasShelfLifeManagedInput(client, itemId, companyId),
+    getTrackedEntityExpirations(client, trackedEntityIds),
+    getItemRulesDataForItem(client, itemId, companyId)
+  ]);
 
   return {
     toolInventory: toolInventory.data,
@@ -158,7 +165,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     bomHasShelfLifeManagedInput,
     trackedEntityExpirations,
     itemId,
-    locationId
+    locationId,
+    ruleAssignments: rulesData.assignments,
+    ruleLibrary: rulesData.library
   };
 }
 
@@ -230,7 +239,9 @@ export default function ToolInventoryRoute() {
     shelfLife,
     bomHasShelfLifeManagedInput,
     trackedEntityExpirations,
-    itemId
+    itemId,
+    ruleAssignments,
+    ruleLibrary
   } = useLoaderData<typeof loader>();
 
   const toolData = useRouteData<{
@@ -280,6 +291,11 @@ export default function ToolInventoryRoute() {
         pickMethod={initialValues}
         quantities={quantities}
         storageUnits={storageUnits.options}
+      />
+      <ItemRuleAssignments
+        itemId={itemId}
+        assignments={ruleAssignments as never}
+        library={ruleLibrary as never}
       />
     </VStack>
   );

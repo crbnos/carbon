@@ -66,10 +66,10 @@ import {
   LuTruck,
   LuX
 } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import { ItemThumbnail } from "~/components";
 import { getAccessorKey } from "~/components/Table/utils";
 import { useUser } from "~/hooks";
+import { useItemRuleViolations } from "~/hooks/useItemRuleViolations";
 import {
   addTransferLine,
   clearSelectedToItemStorageUnits,
@@ -1212,13 +1212,14 @@ function PaginationButtons({
 
 const StockTransferWizardWidget = ({ locationId }: { locationId: string }) => {
   const { t } = useLingui();
-  const fetcher = useFetcher<Result>();
-
-  useEffect(() => {
-    if (fetcher.data?.success) {
-      clearStockTransferWizard();
-    }
-  }, [fetcher.data]);
+  // Item Rule pre-flight on Create Transfer (auto-released → stock-commit
+  // gate sits at the wizard click). Modal surfaces violations before the
+  // transfer is created.
+  const createRules = useItemRuleViolations<Result>({
+    action: path.to.newStockTransfer,
+    onSuccess: () => clearStockTransferWizard()
+  });
+  const fetcher = createRules.fetcher;
 
   const [wizard] = useStockTransferWizard();
   const linesCount = useStockTransferWizardLinesCount();
@@ -1384,23 +1385,21 @@ const StockTransferWizardWidget = ({ locationId }: { locationId: string }) => {
             {/* Footer */}
             {activeLines.length > 0 && (
               <div className="p-4 border-t-2 border-border space-y-2">
-                <fetcher.Form method="post" action={path.to.newStockTransfer}>
-                  <input type="hidden" name="locationId" value={locationId} />
-                  <input
-                    type="hidden"
-                    name="lines"
-                    value={JSON.stringify(activeLines)}
-                  />
-                  <Button
-                    isLoading={fetcher.state !== "idle"}
-                    isDisabled={fetcher.state !== "idle"}
-                    size="lg"
-                    className="w-full"
-                    type="submit"
-                  >
-                    Create Transfer
-                  </Button>
-                </fetcher.Form>
+                <Button
+                  type="button"
+                  isLoading={fetcher.state !== "idle"}
+                  isDisabled={fetcher.state !== "idle"}
+                  size="lg"
+                  className="w-full"
+                  onClick={() => {
+                    const fd = new FormData();
+                    fd.set("locationId", locationId);
+                    fd.set("lines", JSON.stringify(activeLines));
+                    createRules.submit(fd);
+                  }}
+                >
+                  Create Transfer
+                </Button>
                 <Button
                   variant="ghost"
                   className="w-full"
@@ -1444,27 +1443,26 @@ const StockTransferWizardWidget = ({ locationId }: { locationId: string }) => {
               </div>
             )}
             {activeLines.length > 0 && (
-              <fetcher.Form method="post" action={path.to.newStockTransfer}>
-                <input type="hidden" name="locationId" value={locationId} />
-                <input
-                  type="hidden"
-                  name="lines"
-                  value={JSON.stringify(activeLines)}
-                />
-                <Button
-                  isLoading={fetcher.state !== "idle"}
-                  isDisabled={fetcher.state !== "idle"}
-                  size="lg"
-                  className="w-full"
-                  type="submit"
-                >
-                  Create Transfer
-                </Button>
-              </fetcher.Form>
+              <Button
+                type="button"
+                isLoading={fetcher.state !== "idle"}
+                isDisabled={fetcher.state !== "idle"}
+                size="lg"
+                className="w-full"
+                onClick={() => {
+                  const fd = new FormData();
+                  fd.set("locationId", locationId);
+                  fd.set("lines", JSON.stringify(activeLines));
+                  createRules.submit(fd);
+                }}
+              >
+                Create Transfer
+              </Button>
             )}
           </div>
         )}
       </div>
+      <createRules.ViolationModal />
     </div>
   );
 };

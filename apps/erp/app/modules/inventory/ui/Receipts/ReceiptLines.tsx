@@ -6,7 +6,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CreatableCombobox,
   cn,
   DatePicker,
   DropdownMenu,
@@ -40,7 +39,7 @@ import { labelSizes } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import {
   LuCalendar,
   LuCircleAlert,
@@ -64,7 +63,7 @@ import { DocumentPreview, Empty, ItemThumbnail } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { Enumerable } from "~/components/Enumerable";
 import FileDropzone from "~/components/FileDropzone";
-import { useStorageUnits } from "~/components/Form/StorageUnit";
+import { StorageUnitDrillSelect } from "~/components/Form/StorageUnitDrillSelect";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { ConfirmDelete } from "~/components/Modals";
 import { useRouteData, useUser } from "~/hooks";
@@ -74,9 +73,8 @@ import type {
   Receipt,
   ReceiptLine
 } from "~/modules/inventory";
-import { StorageUnitForm, splitValidator } from "~/modules/inventory";
+import { splitValidator } from "~/modules/inventory";
 import { getDocumentType } from "~/modules/shared/shared.service";
-import type { action as receiptLinesUpdateAction } from "~/routes/x+/receipt+/lines.update";
 import { useItems } from "~/stores";
 import type { StorageItem } from "~/types";
 import { path } from "~/utils/path";
@@ -88,7 +86,8 @@ const ReceiptLines = () => {
   const { receiptId } = useParams();
   if (!receiptId) throw new Error("receiptId not found");
 
-  const fetcher = useFetcher<typeof receiptLinesUpdateAction>();
+  const fetcher = useFetcher();
+
   const { upload, deleteFile, getPath } = useReceiptFiles(receiptId);
   const routeData = useRouteData<{
     receipt: Receipt;
@@ -467,18 +466,23 @@ function ReceiptLineItem({
             </VStack>
           </HStack>
 
-          <StorageUnit
-            locationId={line.locationId}
-            storageUnitId={line.storageUnitId}
-            isReadOnly={isReadOnly}
-            onChange={(storageUnit) => {
-              onUpdate({
-                lineId: line.id!,
-                field: "storageUnitId",
-                value: storageUnit
-              });
-            }}
-          />
+          <div className="flex flex-col items-start gap-1 min-w-[140px] text-sm">
+            <label className="text-xs text-muted-foreground">
+              Storage Unit
+            </label>
+            <StorageUnitDrillSelect
+              locationId={line.locationId}
+              value={line.storageUnitId}
+              isReadOnly={isReadOnly}
+              onChange={(storageUnit) => {
+                onUpdate({
+                  lineId: line.id!,
+                  field: "storageUnitId",
+                  value: storageUnit
+                });
+              }}
+            />
+          </div>
         </div>
       </div>
       {line.requiresBatchTracking && (
@@ -1163,69 +1167,6 @@ function SplitReceiptLineModal({
         </ValidatedForm>
       </ModalContent>
     </Modal>
-  );
-}
-
-function StorageUnit({
-  locationId,
-  storageUnitId,
-  isReadOnly,
-  onChange
-}: {
-  locationId: string | null;
-  storageUnitId: string | null;
-  isReadOnly: boolean;
-  onChange: (storageUnit: string) => void;
-}) {
-  const { options } = useStorageUnits(locationId ?? undefined);
-  const newStorageUnitModal = useDisclosure();
-  const [created, setCreated] = useState<string>("");
-  const triggerRef = useRef<HTMLButtonElement>(null);
-
-  if (!locationId) return null;
-
-  const StorageUnitPreview = (
-    value: string,
-    options: { value: string; label: string | JSX.Element }[]
-  ) => {
-    const storageUnit = options.find((o) => o.value === value);
-    if (!storageUnit) return null;
-    return storageUnit.label;
-  };
-
-  return (
-    <div className="flex flex-col items-start gap-1 min-w-[140px] text-sm">
-      <label className="text-xs text-muted-foreground">Storage Unit</label>
-      <CreatableCombobox
-        ref={triggerRef}
-        options={options}
-        value={storageUnitId ?? undefined}
-        onChange={onChange}
-        disabled={isReadOnly}
-        isReadOnly={isReadOnly}
-        inline={StorageUnitPreview}
-        onCreateOption={(option) => {
-          newStorageUnitModal.onOpen();
-          setCreated(option);
-        }}
-      />
-      {newStorageUnitModal.isOpen && (
-        <StorageUnitForm
-          locationId={locationId}
-          type="modal"
-          onClose={() => {
-            setCreated("");
-            newStorageUnitModal.onClose();
-            triggerRef.current?.click();
-          }}
-          initialValues={{
-            name: created,
-            locationId: locationId,
-            storageTypeIds: []
-          }}
-        />
-      )}
-    </div>
   );
 }
 

@@ -33,7 +33,7 @@ import {
   LuTrash,
   LuTruck
 } from "react-icons/lu";
-import { Link, useFetcher, useSubmit } from "react-router";
+import { Link, useSubmit } from "react-router";
 import type { z } from "zod";
 import { useAuditLog } from "~/components/AuditLog";
 import {
@@ -47,6 +47,7 @@ import {
 } from "~/components/Form";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useUser } from "~/hooks";
+import { useItemRuleViolations } from "~/hooks/useItemRuleViolations";
 import type { action as statusAction } from "~/routes/x+/warehouse-transfer+/$transferId.status";
 import { path } from "~/utils/path";
 import {
@@ -69,7 +70,15 @@ const WarehouseTransferForm = ({
 }: WarehouseTransferFormProps) => {
   const { company } = useUser();
   const permissions = usePermissions();
-  const statusFetcher = useFetcher<typeof statusAction>();
+  // Item rules eval at every "go" status transition (Confirm/Ship/Receive/
+  // Complete). Surface violations through the hook's modal rather than the
+  // plain navigation path.
+  const statusRules = useItemRuleViolations<typeof statusAction>({
+    action: warehouseTransfer?.id
+      ? path.to.warehouseTransferStatus(warehouseTransfer.id)
+      : ""
+  });
+  const statusFetcher = statusRules.fetcher;
   const deleteModal = useDisclosure();
   const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
     entityType: "warehouseTransfer",
@@ -157,62 +166,56 @@ const WarehouseTransferForm = ({
                 <WarehouseTransferStatus status={warehouseTransfer.status} />
               </HStack>
               <HStack>
-                <statusFetcher.Form
-                  method="post"
-                  action={path.to.warehouseTransferStatus(warehouseTransfer.id)}
+                <Button
+                  type="button"
+                  leftIcon={<LuCheckCheck />}
+                  variant={
+                    warehouseTransfer.status === "Draft"
+                      ? "primary"
+                      : "secondary"
+                  }
+                  isDisabled={
+                    !["Draft"].includes(warehouseTransfer.status) ||
+                    statusFetcher.state !== "idle" ||
+                    !permissions.can("update", "inventory")
+                  }
+                  isLoading={
+                    statusFetcher.state !== "idle" &&
+                    statusFetcher.formData?.get("status") ===
+                      "To Ship and Receive"
+                  }
+                  onClick={() => {
+                    const fd = new FormData();
+                    fd.set("status", "To Ship and Receive");
+                    statusRules.submit(fd);
+                  }}
                 >
-                  <input
-                    type="hidden"
-                    name="status"
-                    value="To Ship and Receive"
-                  />
-                  <Button
-                    type="submit"
-                    leftIcon={<LuCheckCheck />}
-                    variant={
-                      warehouseTransfer.status === "Draft"
-                        ? "primary"
-                        : "secondary"
-                    }
-                    isDisabled={
-                      !["Draft"].includes(warehouseTransfer.status) ||
-                      statusFetcher.state !== "idle" ||
-                      !permissions.can("update", "inventory")
-                    }
-                    isLoading={
-                      statusFetcher.state !== "idle" &&
-                      statusFetcher.formData?.get("status") ===
-                        "To Ship and Receive"
-                    }
-                  >
-                    <Trans>Confirm</Trans>
-                  </Button>
-                </statusFetcher.Form>
+                  <Trans>Confirm</Trans>
+                </Button>
 
-                <statusFetcher.Form
-                  method="post"
-                  action={path.to.warehouseTransferStatus(warehouseTransfer.id)}
+                <Button
+                  type="button"
+                  variant="secondary"
+                  leftIcon={<LuCircleStop />}
+                  isDisabled={
+                    ["Cancelled", "Completed"].includes(
+                      warehouseTransfer.status
+                    ) ||
+                    statusFetcher.state !== "idle" ||
+                    !permissions.can("update", "inventory")
+                  }
+                  isLoading={
+                    statusFetcher.state !== "idle" &&
+                    statusFetcher.formData?.get("status") === "Cancelled"
+                  }
+                  onClick={() => {
+                    const fd = new FormData();
+                    fd.set("status", "Cancelled");
+                    statusRules.submit(fd);
+                  }}
                 >
-                  <input type="hidden" name="status" value="Cancelled" />
-                  <Button
-                    type="submit"
-                    variant="secondary"
-                    leftIcon={<LuCircleStop />}
-                    isDisabled={
-                      ["Cancelled", "Completed"].includes(
-                        warehouseTransfer.status
-                      ) ||
-                      statusFetcher.state !== "idle" ||
-                      !permissions.can("update", "inventory")
-                    }
-                    isLoading={
-                      statusFetcher.state !== "idle" &&
-                      statusFetcher.formData?.get("status") === "Cancelled"
-                    }
-                  >
-                    <Trans>Cancel</Trans>
-                  </Button>
-                </statusFetcher.Form>
+                  <Trans>Cancel</Trans>
+                </Button>
 
                 {shipments.length > 0 ? (
                   <DropdownMenu>
@@ -353,7 +356,7 @@ const WarehouseTransferForm = ({
                   <InputControlled
                     name="transferId"
                     label={t`Transfer ID`}
-                    isDisabled
+                    isReadOnly
                     value={initialValues.transferId!}
                   />
                 ) : (
@@ -388,6 +391,7 @@ const WarehouseTransferForm = ({
         </Card>
       </ValidatedForm>
 
+      <statusRules.ViolationModal />
       {deleteModal.isOpen && warehouseTransfer && (
         <ConfirmDelete
           action={path.to.deleteWarehouseTransfer(warehouseTransfer.id)}

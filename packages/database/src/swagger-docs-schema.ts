@@ -18162,6 +18162,141 @@ export default {
         tags: ["supplierTax"]
       }
     },
+    "/itemRuleAssignment": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.itemRuleAssignment.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRuleAssignment.ruleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRuleAssignment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRuleAssignment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRuleAssignment.createdAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/itemRuleAssignment"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["itemRuleAssignment"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.itemRuleAssignment"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["itemRuleAssignment"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.itemRuleAssignment.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRuleAssignment.ruleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRuleAssignment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRuleAssignment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRuleAssignment.createdAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["itemRuleAssignment"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.itemRuleAssignment.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRuleAssignment.ruleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRuleAssignment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRuleAssignment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRuleAssignment.createdAt"
+          },
+          {
+            $ref: "#/parameters/body.itemRuleAssignment"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["itemRuleAssignment"]
+      }
+    },
     "/materialDimensions": {
       get: {
         parameters: [
@@ -30085,6 +30220,222 @@ export default {
           }
         },
         tags: ["document"]
+      }
+    },
+    "/itemRule": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.itemRule.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.message"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.severity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.conditionAst"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.surfaces"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.customFields"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/itemRule"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["itemRule"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.itemRule"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["itemRule"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.itemRule.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.message"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.severity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.conditionAst"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.surfaces"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.customFields"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["itemRule"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.itemRule.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.message"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.severity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.conditionAst"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.surfaces"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemRule.customFields"
+          },
+          {
+            $ref: "#/parameters/body.itemRule"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["itemRule"]
       }
     },
     "/supplierQuoteLines": {
@@ -85683,6 +86034,41 @@ export default {
       },
       type: "object"
     },
+    itemRuleAssignment: {
+      required: ["itemId", "ruleId", "companyId", "createdBy", "createdAt"],
+      properties: {
+        itemId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        ruleId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `itemRule.id`.<fk table='itemRule' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     materialDimensions: {
       properties: {
         id: {
@@ -91227,6 +91613,90 @@ export default {
         sourceDocumentId: {
           format: "text",
           type: "string"
+        }
+      },
+      type: "object"
+    },
+    itemRule: {
+      required: [
+        "id",
+        "companyId",
+        "name",
+        "message",
+        "severity",
+        "conditionAst",
+        "surfaces",
+        "active",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        name: {
+          format: "text",
+          type: "string"
+        },
+        description: {
+          format: "text",
+          type: "string"
+        },
+        message: {
+          format: "text",
+          type: "string"
+        },
+        severity: {
+          format: "text",
+          type: "string"
+        },
+        conditionAst: {
+          format: "jsonb"
+        },
+        surfaces: {
+          format: 'public."transactionSurface"[]',
+          items: {
+            type: "string"
+          },
+          type: "array"
+        },
+        active: {
+          default: true,
+          format: "boolean",
+          type: "boolean"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        customFields: {
+          format: "jsonb"
         }
       },
       type: "object"
@@ -119659,6 +120129,45 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.itemRuleAssignment": {
+      name: "itemRuleAssignment",
+      description: "itemRuleAssignment",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/itemRuleAssignment"
+      }
+    },
+    "rowFilter.itemRuleAssignment.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemRuleAssignment.ruleId": {
+      name: "ruleId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemRuleAssignment.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemRuleAssignment.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemRuleAssignment.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.materialDimensions": {
       name: "materialDimensions",
       description: "materialDimensions",
@@ -125796,6 +126305,99 @@ export default {
     },
     "rowFilter.document.sourceDocumentId": {
       name: "sourceDocumentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.itemRule": {
+      name: "itemRule",
+      description: "itemRule",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/itemRule"
+      }
+    },
+    "rowFilter.itemRule.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemRule.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemRule.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemRule.description": {
+      name: "description",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemRule.message": {
+      name: "message",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemRule.severity": {
+      name: "severity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemRule.conditionAst": {
+      name: "conditionAst",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemRule.surfaces": {
+      name: "surfaces",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemRule.active": {
+      name: "active",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemRule.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemRule.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemRule.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemRule.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.itemRule.customFields": {
+      name: "customFields",
       required: false,
       in: "query",
       type: "string"

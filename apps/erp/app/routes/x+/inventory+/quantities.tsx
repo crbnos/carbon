@@ -6,7 +6,7 @@ import { pluckUnique } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
 import type { InventoryItem } from "~/modules/inventory";
-import { getInventoryItems } from "~/modules/inventory";
+import { getInventoryItems, getStorageTypesList } from "~/modules/inventory";
 import InventoryTable from "~/modules/inventory/ui/Inventory/InventoryTable";
 import {
   getMaterialFormsList,
@@ -62,18 +62,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  const [inventoryItems, forms, substances, tags] = await Promise.all([
-    getInventoryItems(client, locationId, companyId, {
-      search,
-      limit,
-      offset,
-      sorts,
-      filters
-    }),
-    getMaterialFormsList(client, companyId),
-    getMaterialSubstancesList(client, companyId),
-    getTagsList(client, companyId)
-  ]);
+  const [inventoryItems, forms, substances, tags, storageTypes] =
+    await Promise.all([
+      getInventoryItems(client, locationId, companyId, {
+        search,
+        limit,
+        offset,
+        sorts,
+        filters
+      }),
+      getMaterialFormsList(client, companyId),
+      getMaterialSubstancesList(client, companyId),
+      getTagsList(client, companyId),
+      getStorageTypesList(client, companyId)
+    ]);
 
   if (inventoryItems.error) {
     redirect(
@@ -93,13 +95,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
     locationId,
     forms: forms.data ?? [],
     substances: substances.data ?? [],
-    tags: uniqueTags
+    tags: uniqueTags,
+    storageTypes: storageTypes.data ?? []
   };
 }
 
 export default function QuantitiesRoute() {
-  const { count, inventoryItems, locationId, forms, substances, tags } =
-    useLoaderData<typeof loader>();
+  const {
+    count,
+    inventoryItems,
+    locationId,
+    forms,
+    substances,
+    tags,
+    storageTypes
+  } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full ">
@@ -117,6 +127,7 @@ export default function QuantitiesRoute() {
             forms={forms}
             substances={substances}
             tags={tags}
+            storageTypes={storageTypes}
           />
         </ResizablePanel>
         <Outlet />

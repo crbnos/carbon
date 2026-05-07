@@ -1,5 +1,6 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
@@ -8,6 +9,10 @@ import {
   insertManualInventoryAdjustment,
   inventoryAdjustmentValidator
 } from "~/modules/inventory";
+import {
+  evaluateLinesForSurface,
+  isBlocked
+} from "~/modules/items/itemRules.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -28,6 +33,34 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
   const { ...d } = validation.data;
+  const acknowledged = formData.get("acknowledged") === "true";
+
+  // Item Rule evaluation. Single synthetic line covering the adjustment.
+  const serviceRole = getCarbonServiceRole();
+  const { violations, ruleNames } = await evaluateLinesForSurface({
+    client: serviceRole,
+    companyId,
+    userId,
+    surface: "inventoryAdjustment",
+    lines: [
+      {
+        lineId: itemId,
+        itemId,
+        storageUnitId: d.storageUnitId ?? null,
+        quantity: Number(d.quantity ?? 0),
+        locationId: d.locationId
+      }
+    ]
+  });
+
+  if (violations.length > 0 && isBlocked(violations, acknowledged)) {
+    return {
+      error: null,
+      data: null,
+      violations,
+      ruleNames
+    };
+  }
 
   const itemLedger = await insertManualInventoryAdjustment(client, {
     ...d,

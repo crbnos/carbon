@@ -7,7 +7,7 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   const formData = await request.formData();
-  const ids = formData.getAll("ids");
+  const ids = formData.getAll("ids") as string[];
   const field = formData.get("field");
   const value = formData.get("value");
 
@@ -18,24 +18,21 @@ export async function action({ request }: ActionFunctionArgs) {
     return { error: { message: "Invalid form data" }, data: null };
   }
 
-  switch (field) {
-    case "storageUnitId":
-    case "shippedQuantity":
-      const update = await client
-        .from("shipmentLine")
-        .update({
-          [field]: value ? value : null,
-          updatedBy: userId,
-          updatedAt: new Date().toISOString()
-        })
-        .in("id", ids as string[])
-        .eq("companyId", companyId);
-
-      return update;
-    default:
-      return {
-        error: { message: `Invalid field: ${field}` },
-        data: null
-      };
+  if (field !== "storageUnitId" && field !== "shippedQuantity") {
+    return { error: { message: `Invalid field: ${field}` }, data: null };
   }
+
+  // Item Rule evaluation runs at post time only (`$shipmentId.post.tsx`).
+  // Per-line saves go straight through.
+  const update = await client
+    .from("shipmentLine")
+    .update({
+      [field]: value ? value : null,
+      updatedBy: userId,
+      updatedAt: new Date().toISOString()
+    })
+    .in("id", ids)
+    .eq("companyId", companyId);
+
+  return update;
 }

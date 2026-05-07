@@ -67,3 +67,47 @@ export function pluckUnique<T, U>(
   }
   return out;
 }
+
+/**
+ * Build a `Map<K, T>` from an array, keyed by `getKey(row)`. Last write
+ * wins on duplicate keys. Designed for the common pattern of:
+ *
+ *   const byId = new Map(rows.map((r) => [r.id, r]));
+ *
+ * Indexed loop, no iterator protocol — the `.map` form allocates
+ * intermediate tuple arrays we don't need.
+ */
+export function indexBy<T, K>(
+  rows: readonly T[] | null | undefined,
+  getKey: (row: T) => K
+): Map<K, T> {
+  const out = new Map<K, T>();
+  if (rows === null || rows === undefined) return out;
+  const len = rows.length;
+  for (let i = 0; i < len; i++) {
+    const row = rows[i]!;
+    out.set(getKey(row), row);
+  }
+  return out;
+}
+
+/**
+ * Same as `indexBy` but lets the caller transform the value while
+ * indexing — useful for normalising rows into a synthetic shape (e.g.
+ * flattening a `string[]` column into the first element under a different
+ * key) without an extra `.map` pass.
+ */
+export function indexByMapped<T, K, V>(
+  rows: readonly T[] | null | undefined,
+  getKey: (row: T) => K,
+  getValue: (row: T) => V
+): Map<K, V> {
+  const out = new Map<K, V>();
+  if (rows === null || rows === undefined) return out;
+  const len = rows.length;
+  for (let i = 0; i < len; i++) {
+    const row = rows[i]!;
+    out.set(getKey(row), getValue(row));
+  }
+  return out;
+}

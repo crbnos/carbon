@@ -27,6 +27,7 @@ import Assignee, { useOptimisticAssignment } from "~/components/Assignee";
 import { useAuditLog } from "~/components/AuditLog";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { useItemRuleViolations } from "~/hooks/useItemRuleViolations";
 import {
   isStockTransferLocked,
   type StockTransfer,
@@ -55,6 +56,17 @@ const StockTransferHeader = () => {
   const postModal = useDisclosure();
   const deleteModal = useDisclosure();
   const statusFetcher = useFetcher<Result>();
+  // Item rules fire on Release + Complete (the "go" transitions). Each gets
+  // its own fetcher so Release's loading state doesn't disable Complete and
+  // vice versa, and violations surface via a single shared modal.
+  const releaseRules = useItemRuleViolations({
+    action: path.to.stockTransferStatus(id)
+  });
+  const releaseFetcher = releaseRules.fetcher;
+  const completeRules = useItemRuleViolations({
+    action: path.to.stockTransferStatus(id)
+  });
+  const completeFetcher = completeRules.fetcher;
   const { trigger: auditLogTrigger, drawer: auditLogDrawer } = useAuditLog({
     entityType: "stockTransfer",
     entityId: id,
@@ -164,34 +176,34 @@ const StockTransferHeader = () => {
                 <Trans>Pick List</Trans>
               </a>
             </Button>
-            <statusFetcher.Form
-              method="post"
-              action={path.to.stockTransferStatus(id)}
+            <Button
+              type="button"
+              leftIcon={<LuCirclePlay />}
+              variant={status === "Draft" ? "primary" : "secondary"}
+              isDisabled={
+                status !== "Draft" ||
+                releaseFetcher.state !== "idle" ||
+                !permissions.can("update", "inventory")
+              }
+              isLoading={releaseFetcher.state !== "idle"}
+              onClick={() => {
+                const fd = new FormData();
+                fd.set("status", "Released");
+                releaseRules.submit(fd);
+              }}
             >
-              <input type="hidden" name="status" value="Released" />
-              <Button
-                type="submit"
-                leftIcon={<LuCirclePlay />}
-                variant={status === "Draft" ? "primary" : "secondary"}
-                isDisabled={
-                  status !== "Draft" ||
-                  statusFetcher.state !== "idle" ||
-                  !permissions.can("update", "inventory")
-                }
-                isLoading={
-                  statusFetcher.state !== "idle" &&
-                  statusFetcher.formData?.get("status") === "Released"
-                }
-              >
-                <Trans>Release</Trans>
-              </Button>
-            </statusFetcher.Form>
+              <Trans>Release</Trans>
+            </Button>
+            <releaseRules.ViolationModal />
 
-            <statusFetcher.Form
-              method="post"
-              action={path.to.stockTransferStatus(id)}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const fd = new FormData();
+                fd.set("status", "Completed");
+                completeRules.submit(fd);
+              }}
             >
-              <input type="hidden" name="status" value="Completed" />
               <Button
                 type="submit"
                 variant={canComplete && !isCompleted ? "primary" : "secondary"}
@@ -199,18 +211,15 @@ const StockTransferHeader = () => {
                   !canComplete ||
                   isCompleted ||
                   !permissions.is("employee") ||
-                  (statusFetcher.state !== "idle" &&
-                    statusFetcher.formData?.get("status") === "Completed")
+                  completeFetcher.state !== "idle"
                 }
                 leftIcon={<LuCircleCheck />}
-                isLoading={
-                  statusFetcher.state !== "idle" &&
-                  statusFetcher.formData?.get("status") === "Completed"
-                }
+                isLoading={completeFetcher.state !== "idle"}
               >
                 <Trans>Complete</Trans>
               </Button>
-            </statusFetcher.Form>
+            </form>
+            <completeRules.ViolationModal />
           </HStack>
         </HStack>
       </div>

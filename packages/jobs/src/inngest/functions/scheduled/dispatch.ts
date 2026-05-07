@@ -43,13 +43,13 @@ function isDayEnabledForSchedule(
   }
 
   const dayOfWeek = targetDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
-  const dayField = dayOfWeekFields[dayOfWeek];
+  const dayField = dayOfWeekFields[dayOfWeek]!;
   return schedule[dayField] === true;
 }
 
 // Check if a date is a holiday for the company
 async function isHoliday(companyId: string, date: Date): Promise<boolean> {
-  const dateString = date.toISOString().split("T")[0]; // YYYY-MM-DD format
+  const dateString = date.toISOString().split("T")[0]!; // YYYY-MM-DD format
 
   const serviceRole = getCarbonServiceRole();
   const { data: holiday, error } = await serviceRole

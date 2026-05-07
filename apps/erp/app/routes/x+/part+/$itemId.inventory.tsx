@@ -24,7 +24,9 @@ import {
   upsertPickMethod,
   upsertPickMethodWithShelfLife
 } from "~/modules/items";
+import { getItemRulesDataForItem } from "~/modules/items/itemRules.server";
 import { PickMethodForm } from "~/modules/items/ui/Item";
+import ItemRuleAssignments from "~/modules/items/ui/ItemRules/ItemRuleAssignments";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { getDatabaseClient } from "~/services/database.server";
@@ -113,12 +115,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     quantities,
     itemStorageUnitQuantities,
     shelfLife,
-    bomHasShelfLifeManagedInput
+    bomHasShelfLifeManagedInput,
+    rulesData
   ] = await Promise.all([
     getItemQuantities(client, itemId, companyId, locationId),
     getItemStorageUnitQuantities(client, itemId, companyId, locationId),
     getItemShelfLife(client, itemId),
-    getBomHasShelfLifeManagedInput(client, itemId, companyId)
+    getBomHasShelfLifeManagedInput(client, itemId, companyId),
+    getItemRulesDataForItem(client, itemId, companyId)
   ]);
   if (quantities.error) {
     throw redirect(
@@ -154,7 +158,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     bomHasShelfLifeManagedInput,
     trackedEntityExpirations,
     itemId,
-    locationId
+    locationId,
+    ruleAssignments: rulesData.assignments,
+    ruleLibrary: rulesData.library
   };
 }
 
@@ -226,7 +232,9 @@ export default function PartInventoryRoute() {
     shelfLife,
     bomHasShelfLifeManagedInput,
     trackedEntityExpirations,
-    itemId
+    itemId,
+    ruleAssignments,
+    ruleLibrary
   } = useLoaderData<typeof loader>();
 
   const partData = useRouteData<{
@@ -276,6 +284,11 @@ export default function PartInventoryRoute() {
         pickMethod={initialValues}
         quantities={quantities}
         storageUnits={storageUnits.options}
+      />
+      <ItemRuleAssignments
+        itemId={itemId}
+        assignments={ruleAssignments as never}
+        library={ruleLibrary as never}
       />
     </VStack>
   );

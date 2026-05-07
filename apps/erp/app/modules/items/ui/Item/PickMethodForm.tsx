@@ -27,7 +27,6 @@ import {
 } from "react-icons/lu";
 import type { z } from "zod";
 import {
-  Combobox as ComboboxFormField,
   CustomFormFields,
   Hidden,
   NumberControlled,
@@ -35,6 +34,7 @@ import {
   ShelfLifeStartTiming,
   Submit
 } from "~/components/Form";
+import { StorageUnitDrillSelectField } from "~/components/Form/StorageUnitDrillSelect";
 import { usePermissions, useSettings } from "~/hooks";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
@@ -129,10 +129,10 @@ const PickMethodForm = ({
           <Hidden name="itemId" />
           <Hidden name="locationId" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
-            <ComboboxFormField
+            <StorageUnitDrillSelectField
               name="defaultStorageUnitId"
               label={t`Default Storage Unit`}
-              options={storageUnits}
+              locationId={initialValues.locationId}
               className="w-full"
             />
 

@@ -1144,7 +1144,9 @@ export async function getCustomerIdAndContactId(
     });
 
     let paperlessPartsAccountId: number = 0;
-    let existingPaperlessAccount = null;
+    let existingPaperlessAccount:
+      | NonNullable<typeof existingAccountsResponse.data>[number]
+      | undefined = undefined;
 
     if (
       existingAccountsResponse.data &&

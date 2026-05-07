@@ -20,10 +20,11 @@ import { useRouteData } from "@carbon/remix";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import { getItemReadableId } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
-import { useFetcher, useNavigation, useParams } from "react-router";
+import { useNavigation, useParams } from "react-router";
 import { useUser } from "~/hooks";
+import { useItemRuleViolations } from "~/hooks/useItemRuleViolations";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import type { ShipmentLine } from "../..";
@@ -134,14 +135,16 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
     validateShipmentTracking();
   });
 
-  const fetcher = useFetcher<{}>();
-  const submitted = useRef(false);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (fetcher.state === "idle" && submitted.current) {
-      onClose();
-    }
-  }, [fetcher.state]);
+  const ruleViolations = useItemRuleViolations({
+    action: path.to.shipmentPost(shipmentId),
+    onSuccess: onClose
+  });
+  const { fetcher } = ruleViolations;
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    ruleViolations.submit(new FormData());
+  };
 
   return (
     <Modal
@@ -190,13 +193,7 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
             <Button variant="solid" onClick={onClose}>
               <Trans>Cancel</Trans>
             </Button>
-            <fetcher.Form
-              action={path.to.shipmentPost(shipmentId)}
-              method="post"
-              onSubmit={() => {
-                submitted.current = true;
-              }}
-            >
+            <form onSubmit={handleSubmit}>
               <Button
                 isLoading={fetcher.state !== "idle"}
                 isDisabled={
@@ -209,10 +206,11 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
               >
                 Post Shipment
               </Button>
-            </fetcher.Form>
+            </form>
           </HStack>
         </ModalFooter>
       </ModalContent>
+      <ruleViolations.ViolationModal />
     </Modal>
   );
 };

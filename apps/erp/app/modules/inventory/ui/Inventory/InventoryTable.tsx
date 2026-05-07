@@ -32,7 +32,8 @@ import {
   LuRuler,
   LuShapes,
   LuStar,
-  LuTag
+  LuTag,
+  LuWarehouse
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import {
@@ -68,6 +69,7 @@ type InventoryTableProps = {
   forms: ListItem[];
   substances: ListItem[];
   tags: string[];
+  storageTypes: { id: string; name: string }[];
 };
 
 const InventoryTable = memo(
@@ -77,7 +79,8 @@ const InventoryTable = memo(
     locationId,
     forms,
     substances,
-    tags
+    tags,
+    storageTypes
   }: InventoryTableProps) => {
     const [params] = useUrlParams();
     const { t } = useLingui();
@@ -466,6 +469,38 @@ const InventoryTable = memo(
           }
         },
         {
+          accessorKey: "storageTypeIds",
+          header: t`Storage Type`,
+          cell: ({ row }) => {
+            const ids =
+              (
+                row.original as InventoryItem & {
+                  storageTypeIds?: string[] | null;
+                }
+              ).storageTypeIds ?? [];
+            return (
+              <HStack spacing={0} className="gap-1">
+                {ids.map((id) => {
+                  const st = (storageTypes ?? []).find((s) => s.id === id);
+                  return <Enumerable key={id} value={st?.name ?? null} />;
+                })}
+              </HStack>
+            );
+          },
+          meta: {
+            filter: {
+              type: "static",
+              options: (storageTypes ?? []).map((st) => ({
+                value: st.id,
+                label: <Enumerable value={st.name} />
+              })),
+              isArray: true
+            },
+            pluralHeader: t`Storage Types`,
+            icon: <LuWarehouse />
+          }
+        },
+        {
           accessorKey: "active",
           header: t`Active`,
           cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
@@ -490,6 +525,7 @@ const InventoryTable = memo(
       params,
       substances,
       tags,
+      storageTypes,
       unitOfMeasures,
       t,
       translateReplenishment
@@ -502,7 +538,8 @@ const InventoryTable = memo(
       finish: false,
       grade: false,
       dimension: false,
-      materialType: false
+      materialType: false,
+      storageTypeIds: false
     };
 
     const defaultColumnPinning = {

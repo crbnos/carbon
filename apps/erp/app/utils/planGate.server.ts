@@ -28,6 +28,31 @@ type RequirePlanArgs = {
 };
 
 /**
+ * Boolean variant of {@link requirePlan}. Returns `true` when the company is
+ * allowed to use a plan-gated feature, `false` otherwise. Self-hosted (non-
+ * Cloud) editions and bypass-listed companies always pass. Use from server
+ * code paths that need to skip a feature silently rather than redirect — e.g.
+ * conditional eval inside an action.
+ */
+export async function companyHasPlan(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  plan: PlanRequirement = DEFAULT_ALLOWED_PLANS
+): Promise<boolean> {
+  if (CarbonEdition !== Edition.Cloud) return true;
+  if (isBypassCompany(companyId)) return true;
+
+  const { data } = await client
+    .from("companyPlan")
+    .select("planId")
+    .eq("id", companyId)
+    .single();
+
+  const current = (data?.planId as Plan | undefined) ?? Plan.Unknown;
+  return planMeetsRequirement(current, plan);
+}
+
+/**
  * Guard for action handlers gated behind a paid plan. Self-hosted
  * Community/Enterprise installs and bypass-listed companies are never gated.
  * Throws a redirect with a flash error if the company's plan doesn't meet
