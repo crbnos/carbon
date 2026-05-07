@@ -218,7 +218,7 @@ msgid "Accept Quote"
 msgstr "Accepter le devis"
 
 #: apps/erp/app/modules/accounting/ui/ChartOfAccounts/ChartOfAccountsTableFilters.tsx:105
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:359
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:369
 #: apps/erp/app/routes/x+/account+/_layout.tsx:14
 msgid "Account"
 msgstr "Compte"
@@ -357,8 +357,8 @@ msgstr "Activer le centre de travail"
 #: apps/erp/app/modules/settings/ui/Webhooks/WebhookForm.tsx:130
 #: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:183
 #: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:192
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:165
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:173
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:166
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:174
 #: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:179
 #: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:188
 #: apps/erp/app/routes/x+/person+/$personId.timecard.tsx:716
@@ -2475,7 +2475,7 @@ msgstr "Le mode console est désactivé"
 msgid "Console mode is enabled"
 msgstr "Le mode console est activé"
 
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:132
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:133
 msgid "Console Operator"
 msgstr "Opérateur Console"
 
@@ -3524,7 +3524,7 @@ msgid "Deactivate {name}"
 msgstr "Désactiver {name}"
 
 #: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:278
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:308
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:316
 #: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:274
 msgid "Deactivate Account"
 msgstr "Désactiver le compte"
@@ -3546,7 +3546,7 @@ msgid "Deactivate Supplier"
 msgstr "Désactiver le fournisseur"
 
 #: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:250
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:255
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:260
 #: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:246
 msgid "Deactivate Users"
 msgstr "Désactiver les utilisateurs"
@@ -4632,8 +4632,8 @@ msgstr "Modifier le délai de paiement"
 
 #: apps/erp/app/modules/documents/ui/Documents/DocumentForm.tsx:72
 #: apps/erp/app/modules/users/ui/Employees/BulkEditPermissionsForm.tsx:104
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:207
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:286
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:208
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:293
 msgid "Edit Permissions"
 msgstr "Autorisations de modification"
 
@@ -4821,7 +4821,7 @@ msgstr "Modifier le centre de travail"
 #: apps/erp/app/modules/users/ui/Customers/CreateCustomerModal.tsx:90
 #: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:142
 #: apps/erp/app/modules/users/ui/Employees/CreateEmployeeModal.tsx:72
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:126
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:127
 #: apps/erp/app/modules/users/ui/Suppliers/CreateSupplierModal/CreateSupplierModal.tsx:90
 #: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:138
 #: apps/erp/app/routes/x+/settings+/purchasing.tsx:506
@@ -4862,14 +4862,14 @@ msgstr "Emoji"
 msgid "Employee"
 msgstr "Employé"
 
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:364
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:374
 msgid "Employee Accounts"
 msgstr "Comptes Employés"
 
 #: apps/erp/app/modules/people/ui/People/PeopleTable.tsx:139
 #: apps/erp/app/modules/users/ui/Employees/CreateEmployeeModal.tsx:79
 #: apps/erp/app/modules/users/ui/Employees/EmployeePermissionsForm.tsx:123
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:144
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:145
 #: apps/erp/app/modules/users/ui/EmployeeTypes/EmployeeTypeForm.tsx:99
 #: apps/erp/app/modules/users/ui/EmployeeTypes/EmployeeTypesTable.tsx:29
 #: apps/erp/app/modules/users/ui/EmployeeTypes/EmployeeTypesTable.tsx:91
@@ -5892,7 +5892,7 @@ msgstr "Finitions"
 #: apps/erp/app/modules/users/ui/Customers/CreateCustomerModal.tsx:97
 #: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:126
 #: apps/erp/app/modules/users/ui/Employees/CreateEmployeeModal.tsx:74
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:110
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:111
 #: apps/erp/app/modules/users/ui/Suppliers/CreateSupplierModal/CreateSupplierModal.tsx:97
 #: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:122
 #: apps/erp/app/routes/onboarding+/user.tsx:102
@@ -6252,7 +6252,7 @@ msgstr "dans la période sélectionnée"
 #: apps/erp/app/modules/sales/ui/Pricing/PricingRulesTable.tsx:337
 #: apps/erp/app/modules/sales/ui/Pricing/PricingRulesTable.tsx:345
 #: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:196
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:177
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:178
 #: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:192
 #: apps/erp/app/routes/x+/production+/_index.tsx:886
 #: apps/erp/app/routes/x+/settings+/billing.tsx:356
@@ -7026,7 +7026,7 @@ msgstr "Dernière date d'étalonnage"
 #: apps/erp/app/modules/users/ui/Customers/CreateCustomerModal.tsx:103
 #: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:134
 #: apps/erp/app/modules/users/ui/Employees/CreateEmployeeModal.tsx:75
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:118
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:119
 #: apps/erp/app/modules/users/ui/Suppliers/CreateSupplierModal/CreateSupplierModal.tsx:103
 #: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:130
 #: apps/erp/app/routes/onboarding+/user.tsx:103
@@ -10959,7 +10959,7 @@ msgstr "Révoquer"
 
 #: apps/erp/app/modules/users/ui/components/RevokeInviteModal.tsx:43
 #: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:290
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:321
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:330
 #: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:286
 msgid "Revoke Invite"
 msgstr "Révoquer l'invitation"
@@ -11769,8 +11769,8 @@ msgstr "Envoyer"
 #: apps/erp/app/modules/users/ui/components/ResendInviteModal.tsx:43
 #: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:231
 #: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:301
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:236
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:332
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:237
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:341
 #: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:227
 #: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:297
 msgid "Send Invite"
@@ -11867,7 +11867,7 @@ msgstr "Définir l'heure de départ"
 msgid "Set clock-out time"
 msgstr "Définir l'heure de départ"
 
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:297
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:304
 msgid "Set Console PIN"
 msgstr "Définir le PIN Console"
 
@@ -14179,7 +14179,7 @@ msgstr "Utilisé pour catégoriser les articles à des fins de rapports et d'ana
 
 #: apps/erp/app/modules/people/ui/People/PeopleTable.tsx:100
 #: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:101
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:91
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:92
 #: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:103
 msgid "User"
 msgstr "Utilisateur"

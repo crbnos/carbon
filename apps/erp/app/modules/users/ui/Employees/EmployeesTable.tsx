@@ -24,7 +24,7 @@ import {
 import { useNavigate } from "react-router";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { usePermissions, useUrlParams } from "~/hooks";
+import { usePermissions, useUrlParams, useUser } from "~/hooks";
 import { useSettings } from "~/hooks/useSettings";
 import type { Employee } from "~/modules/users";
 import {
@@ -60,6 +60,7 @@ const EmployeesTable = memo(
     const permissions = usePermissions();
     const settings = useSettings();
     const [params] = useUrlParams();
+    const { id: currentUserId } = useUser();
 
     const employeeTypesById = useMemo(
       () =>
@@ -240,14 +241,18 @@ const EmployeesTable = memo(
               onClick={() => {
                 setSelectedUserIds(
                   selectedRows
-                    .filter((row) => row.active === true)
+                    .filter(
+                      (row) => row.active === true && row.id !== currentUserId
+                    )
                     .map((row) => row.id!)
                 );
                 deactivateEmployeeModal.onOpen();
               }}
               disabled={
                 !permissions.can("delete", "users") ||
-                selectedRows.every((row) => row.active === false)
+                !selectedRows.some(
+                  (row) => row.active === true && row.id !== currentUserId
+                )
               }
             >
               <LuBan className="mr-2 h-4 w-4" />
@@ -263,7 +268,8 @@ const EmployeesTable = memo(
         bulkEditDrawer,
         deactivateEmployeeModal,
         resendInviteModal,
-        unrevokedInviteSet
+        unrevokedInviteSet,
+        currentUserId
       ]
     );
 
@@ -271,6 +277,7 @@ const EmployeesTable = memo(
       (row: (typeof data)[number]) => {
         const hasUnrevokedInvite =
           !!row.email && unrevokedInviteSet.has(row.email);
+        const isSelf = row.id === currentUserId;
         return (
           <>
             {row.active === true ? (
@@ -297,16 +304,18 @@ const EmployeesTable = memo(
                     <Trans>Set Console PIN</Trans>
                   </MenuItem>
                 )}
-                <MenuItem
-                  onClick={(e) => {
-                    setSelectedUserIds([row.id!]);
-                    deactivateEmployeeModal.onOpen();
-                  }}
-                  destructive
-                >
-                  <MenuIcon icon={<LuBan />} />
-                  <Trans>Deactivate Account</Trans>
-                </MenuItem>
+                {!isSelf && (
+                  <MenuItem
+                    onClick={(e) => {
+                      setSelectedUserIds([row.id!]);
+                      deactivateEmployeeModal.onOpen();
+                    }}
+                    destructive
+                  >
+                    <MenuIcon icon={<LuBan />} />
+                    <Trans>Deactivate Account</Trans>
+                  </MenuItem>
+                )}
               </>
             ) : hasUnrevokedInvite ? (
               permissions.can("delete", "users") && (
@@ -336,6 +345,7 @@ const EmployeesTable = memo(
         );
       },
       [
+        currentUserId,
         deactivateEmployeeModal,
         navigate,
         params,

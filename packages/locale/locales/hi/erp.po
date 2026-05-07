@@ -218,7 +218,7 @@ msgid "Accept Quote"
 msgstr "उद्धरण स्वीकार करें"
 
 #: apps/erp/app/modules/accounting/ui/ChartOfAccounts/ChartOfAccountsTableFilters.tsx:105
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:359
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:369
 #: apps/erp/app/routes/x+/account+/_layout.tsx:14
 msgid "Account"
 msgstr "खाता"
@@ -357,8 +357,8 @@ msgstr "वर्क सेंटर सक्रिय करें"
 #: apps/erp/app/modules/settings/ui/Webhooks/WebhookForm.tsx:130
 #: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:183
 #: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:192
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:165
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:173
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:166
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:174
 #: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:179
 #: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:188
 #: apps/erp/app/routes/x+/person+/$personId.timecard.tsx:716
@@ -2475,7 +2475,7 @@ msgstr "कंसोल मोड अक्षम है"
 msgid "Console mode is enabled"
 msgstr "कंसोल मोड सक्षम है"
 
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:132
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:133
 msgid "Console Operator"
 msgstr "कंसोल ऑपरेटर"
 
@@ -3524,7 +3524,7 @@ msgid "Deactivate {name}"
 msgstr "{name} को निष्क्रिय करें"
 
 #: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:278
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:308
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:316
 #: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:274
 msgid "Deactivate Account"
 msgstr "खाता निष्क्रिय करें"
@@ -3546,7 +3546,7 @@ msgid "Deactivate Supplier"
 msgstr "आपूर्तिकर्ता को निष्क्रिय करें"
 
 #: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:250
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:255
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:260
 #: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:246
 msgid "Deactivate Users"
 msgstr "उपयोगकर्ताओं को निष्क्रिय करें"
@@ -4632,8 +4632,8 @@ msgstr "भुगतान शर्त संपादित करें"
 
 #: apps/erp/app/modules/documents/ui/Documents/DocumentForm.tsx:72
 #: apps/erp/app/modules/users/ui/Employees/BulkEditPermissionsForm.tsx:104
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:207
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:286
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:208
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:293
 msgid "Edit Permissions"
 msgstr "अनुमतियों को संपादित करें"
 
@@ -4821,7 +4821,7 @@ msgstr "कार्य केंद्र संपादित करें"
 #: apps/erp/app/modules/users/ui/Customers/CreateCustomerModal.tsx:90
 #: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:142
 #: apps/erp/app/modules/users/ui/Employees/CreateEmployeeModal.tsx:72
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:126
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:127
 #: apps/erp/app/modules/users/ui/Suppliers/CreateSupplierModal/CreateSupplierModal.tsx:90
 #: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:138
 #: apps/erp/app/routes/x+/settings+/purchasing.tsx:506
@@ -4862,14 +4862,14 @@ msgstr "इमोजी"
 msgid "Employee"
 msgstr "कर्मचारी"
 
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:364
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:374
 msgid "Employee Accounts"
 msgstr "कर्मचारी खाते"
 
 #: apps/erp/app/modules/people/ui/People/PeopleTable.tsx:139
 #: apps/erp/app/modules/users/ui/Employees/CreateEmployeeModal.tsx:79
 #: apps/erp/app/modules/users/ui/Employees/EmployeePermissionsForm.tsx:123
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:144
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:145
 #: apps/erp/app/modules/users/ui/EmployeeTypes/EmployeeTypeForm.tsx:99
 #: apps/erp/app/modules/users/ui/EmployeeTypes/EmployeeTypesTable.tsx:29
 #: apps/erp/app/modules/users/ui/EmployeeTypes/EmployeeTypesTable.tsx:91
@@ -5892,7 +5892,7 @@ msgstr "फिनिशेस"
 #: apps/erp/app/modules/users/ui/Customers/CreateCustomerModal.tsx:97
 #: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:126
 #: apps/erp/app/modules/users/ui/Employees/CreateEmployeeModal.tsx:74
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:110
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:111
 #: apps/erp/app/modules/users/ui/Suppliers/CreateSupplierModal/CreateSupplierModal.tsx:97
 #: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:122
 #: apps/erp/app/routes/onboarding+/user.tsx:102
@@ -6252,7 +6252,7 @@ msgstr "चयनित अवधि में"
 #: apps/erp/app/modules/sales/ui/Pricing/PricingRulesTable.tsx:337
 #: apps/erp/app/modules/sales/ui/Pricing/PricingRulesTable.tsx:345
 #: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:196
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:177
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:178
 #: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:192
 #: apps/erp/app/routes/x+/production+/_index.tsx:886
 #: apps/erp/app/routes/x+/settings+/billing.tsx:356
@@ -7026,7 +7026,7 @@ msgstr "अंतिम अंशांकन तारीख"
 #: apps/erp/app/modules/users/ui/Customers/CreateCustomerModal.tsx:103
 #: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:134
 #: apps/erp/app/modules/users/ui/Employees/CreateEmployeeModal.tsx:75
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:118
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:119
 #: apps/erp/app/modules/users/ui/Suppliers/CreateSupplierModal/CreateSupplierModal.tsx:103
 #: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:130
 #: apps/erp/app/routes/onboarding+/user.tsx:103
@@ -10959,7 +10959,7 @@ msgstr "रद्द करें"
 
 #: apps/erp/app/modules/users/ui/components/RevokeInviteModal.tsx:43
 #: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:290
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:321
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:330
 #: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:286
 msgid "Revoke Invite"
 msgstr "आमंत्रण रद्द करें"
@@ -11769,8 +11769,8 @@ msgstr "भेजें"
 #: apps/erp/app/modules/users/ui/components/ResendInviteModal.tsx:43
 #: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:231
 #: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:301
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:236
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:332
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:237
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:341
 #: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:227
 #: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:297
 msgid "Send Invite"
@@ -11867,7 +11867,7 @@ msgstr "क्लॉक आउट सेट करें"
 msgid "Set clock-out time"
 msgstr "घड़ी बंद करने का समय सेट करें"
 
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:297
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:304
 msgid "Set Console PIN"
 msgstr "कंसोल पिन सेट करें"
 
@@ -14179,7 +14179,7 @@ msgstr "रिपोर्टिंग और विश्लेषण के �
 
 #: apps/erp/app/modules/people/ui/People/PeopleTable.tsx:100
 #: apps/erp/app/modules/users/ui/Customers/CustomerAccountsTable.tsx:101
-#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:91
+#: apps/erp/app/modules/users/ui/Employees/EmployeesTable.tsx:92
 #: apps/erp/app/modules/users/ui/Suppliers/SupplierAccountsTable/SuppliersAccountsTable.tsx:103
 msgid "User"
 msgstr "उपयोगकर्ता"

@@ -9,7 +9,7 @@ import { redirect } from "react-router";
 import { deactivateUsersValidator } from "~/modules/users";
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     delete: "users"
   });
 
@@ -23,10 +23,17 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { users, redirectTo } = validation.data;
 
+  if (users.includes(userId)) {
+    throw redirect(
+      safeRedirect(redirectTo),
+      await flash(request, error(null, "You cannot deactivate yourself"))
+    );
+  }
+
   if (users.length === 1) {
-    const [userId] = users;
+    const [targetUserId] = users;
     // deactivateUser() handles Stripe subscription quantity update internally
-    const result = await deactivateUser(client, userId, companyId);
+    const result = await deactivateUser(client, targetUserId, companyId);
 
     throw redirect(safeRedirect(redirectTo), await flash(request, result));
   } else {
