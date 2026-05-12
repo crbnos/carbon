@@ -6,7 +6,11 @@ import { pluckUnique } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
 import type { InventoryItem } from "~/modules/inventory";
-import { getInventoryItems, getStorageTypesList } from "~/modules/inventory";
+import {
+  expandStorageUnitIdsWithDescendants,
+  getInventoryItems,
+  getStorageTypesList
+} from "~/modules/inventory";
 import InventoryTable from "~/modules/inventory/ui/Inventory/InventoryTable";
 import {
   getMaterialFormsList,
@@ -30,6 +34,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
+
+  const storageUnitFilter = filters?.find(
+    (f) => f.column === "storageUnitIds" && f.value
+  );
+  if (storageUnitFilter?.value) {
+    const ids = storageUnitFilter.value.split(",");
+    const expanded = await expandStorageUnitIdsWithDescendants(client, ids);
+    storageUnitFilter.value = expanded.join(",");
+  }
 
   let locationId = searchParams.get("location");
 

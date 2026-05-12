@@ -83,7 +83,7 @@ export function getGenericFilter<
     case "lte":
       return query.lte(column, getSafeNumber(value));
     case "contains":
-      return query.contains(column, value.split(","));
+      return query.overlaps(column, value.split(","));
     case "startsWith":
       return query.ilike(column, `${value}%`);
     case "in":

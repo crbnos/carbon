@@ -22,6 +22,11 @@ import Filter from "./Filter";
 import type { ColumnFilter } from "./types";
 import { useFilters } from "./useFilters";
 
+function getCurrentValues(value: string, isArray: boolean | undefined) {
+  if (!value) return [];
+  return isArray ? value.split(",") : [value];
+}
+
 type ActiveFiltersProps = {
   filters: ColumnFilter[];
 };
@@ -109,7 +114,7 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
   }, [fetcher.data, filter.filter.type]);
 
   const makeLabel = (v: string) => {
-    const [, ...others] = v.split(",");
+    const [first, ...others] = v.split(",");
     if (others && others.length > 0) {
       return `${1 + others.length} ${
         filter.pluralHeader
@@ -117,6 +122,13 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
           : `${translate(filter.header)}s`
       }`;
     } else {
+      if (filter.filter.type === "custom" && filter.filter.getLabel) {
+        const node = filter.filter.getLabel(first);
+        if (node == null) return first;
+        return typeof node === "string"
+          ? translate(node)
+          : reactNodeToString(node);
+      }
       const node = options.find((o) => o.value === v)?.label ?? "";
       return typeof node === "string"
         ? translate(node)
@@ -139,7 +151,7 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
       <Button className="rounded-none border-l-0" size="sm" variant="secondary">
         {operator === "eq" ? (
           <Trans>is</Trans>
-        ) : operator === "in" ? (
+        ) : operator === "in" || operator === "contains" ? (
           <Trans>is any of</Trans>
         ) : (
           <Trans>matches</Trans>
@@ -148,7 +160,7 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
-            className="rounded-none"
+            className="rounded-none max-w-[200px]"
             role="combobox"
             variant="secondary"
             onClick={() => {
@@ -156,57 +168,81 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
             }}
             size="sm"
           >
-            {makeLabel(value)}
+            <span className="truncate">{makeLabel(value)}</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent
           align="start"
-          className="min-w-[200px] w-[--radix-popover-trigger-width] p-0"
+          className={
+            filter.filter.type === "custom"
+              ? "w-auto p-0"
+              : "min-w-[200px] w-[--radix-popover-trigger-width] p-0"
+          }
           sticky="always"
         >
-          <Command>
-            <CommandInput
-              value={input}
-              onValueChange={setInput}
-              placeholder={t`Search...`}
-              className="h-9"
-            />
-            <CommandEmpty>
-              {loading ? (
-                <Trans>Loading...</Trans>
-              ) : (
-                <Trans>No options found.</Trans>
-              )}
-            </CommandEmpty>
-            <CommandGroup>
-              {options.map((option) => {
-                const isChecked = hasFilter(filter.accessorKey, option.value);
-                return (
-                  <CommandItem
-                    value={reactNodeToString(option.label).replace(/"/g, '\\"')}
-                    key={option.value}
-                    onSelect={() => {
-                      toggleFilter(
-                        filter.accessorKey,
-                        option.value,
-                        filter.filter.isArray
-                      );
-                      setInput("");
-                    }}
-                  >
-                    <HStack spacing={2}>
-                      <Checkbox id={option.value} isChecked={isChecked} />
-                      <label htmlFor={option.value}>
-                        {typeof option.label === "string"
-                          ? translate(option.label)
-                          : option.label}
-                      </label>
-                    </HStack>
-                  </CommandItem>
-                );
+          {filter.filter.type === "custom" ? (
+            <div className="w-auto min-w-[280px] p-2">
+              {filter.filter.render({
+                values: getCurrentValues(value, filter.filter.isArray),
+                toggle: (v) =>
+                  toggleFilter(
+                    filter.accessorKey,
+                    v,
+                    filter.filter.type === "custom"
+                      ? filter.filter.isArray
+                      : false
+                  ),
+                close: () => setOpen(false)
               })}
-            </CommandGroup>
-          </Command>
+            </div>
+          ) : (
+            <Command>
+              <CommandInput
+                value={input}
+                onValueChange={setInput}
+                placeholder={t`Search...`}
+                className="h-9"
+              />
+              <CommandEmpty>
+                {loading ? (
+                  <Trans>Loading...</Trans>
+                ) : (
+                  <Trans>No options found.</Trans>
+                )}
+              </CommandEmpty>
+              <CommandGroup>
+                {options.map((option) => {
+                  const isChecked = hasFilter(filter.accessorKey, option.value);
+                  return (
+                    <CommandItem
+                      value={reactNodeToString(option.label).replace(
+                        /"/g,
+                        '\\"'
+                      )}
+                      key={option.value}
+                      onSelect={() => {
+                        toggleFilter(
+                          filter.accessorKey,
+                          option.value,
+                          filter.filter.isArray
+                        );
+                        setInput("");
+                      }}
+                    >
+                      <HStack spacing={2}>
+                        <Checkbox id={option.value} isChecked={isChecked} />
+                        <label htmlFor={option.value}>
+                          {typeof option.label === "string"
+                            ? translate(option.label)
+                            : option.label}
+                        </label>
+                      </HStack>
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            </Command>
+          )}
         </PopoverContent>
       </Popover>
       <Button

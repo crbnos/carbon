@@ -1899,6 +1899,22 @@ export async function getStorageUnitDescendants(
     .contains("ancestorPath", [storageUnitId]);
 }
 
+export async function expandStorageUnitIdsWithDescendants(
+  client: SupabaseClient<Database>,
+  storageUnitIds: string[]
+): Promise<string[]> {
+  if (storageUnitIds.length === 0) return [];
+  const { data } = await client
+    .from("storageUnits_recursive")
+    .select("id")
+    .overlaps("ancestorPath", storageUnitIds);
+  const expanded = new Set<string>(storageUnitIds);
+  (data ?? []).forEach((row) => {
+    if (row.id) expanded.add(row.id);
+  });
+  return Array.from(expanded);
+}
+
 // ----------------------------------------------------------------------------
 // storageType CRUD (mirrors materialType in items.service.ts)
 // ----------------------------------------------------------------------------

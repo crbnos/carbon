@@ -34,7 +34,8 @@ import {
   LuShapes,
   LuStar,
   LuTag,
-  LuWarehouse
+  LuWarehouse,
+  LuX
 } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import {
@@ -47,6 +48,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { useStorageUnits } from "~/components/Form/StorageUnit";
+import { StorageUnitDrillSelect } from "~/components/Form/StorageUnitDrillSelect";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { useUrlParams } from "~/hooks";
@@ -525,9 +527,46 @@ const InventoryTable = memo(
           },
           meta: {
             filter: {
-              type: "fetcher",
-              endpoint: path.to.api.storageUnits(locationId),
-              isArray: true
+              type: "custom",
+              isArray: true,
+              getLabel: (v: string) => {
+                const opt = storageUnitOptions.find((o) => o.value === v);
+                return typeof opt?.label === "string" ? opt.label : v;
+              },
+              render: ({ values, toggle }) => (
+                <div className="flex flex-col gap-2">
+                  {values.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {values.map((v) => {
+                        const opt = storageUnitOptions.find(
+                          (o) => o.value === v
+                        );
+                        const label =
+                          typeof opt?.label === "string" ? opt.label : v;
+                        return (
+                          <Badge
+                            key={v}
+                            variant="secondary"
+                            className="cursor-pointer gap-1 max-w-full"
+                            onClick={() => toggle(v)}
+                          >
+                            <span className="truncate">{label}</span>
+                            <LuX className="h-3 w-3 shrink-0" />
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <StorageUnitDrillSelect
+                    locationId={locationId}
+                    value={null}
+                    onChange={(id) => {
+                      if (id) toggle(id);
+                    }}
+                    allowCreate={false}
+                  />
+                </div>
+              )
             },
             pluralHeader: t`Storage Units`,
             icon: <LuBoxes />

@@ -34,8 +34,14 @@ export type FilterProps = Omit<
 const Filter = forwardRef<HTMLButtonElement, FilterProps>(
   ({ filters, trigger = "button", ...props }, ref) => {
     const { t, i18n } = useLingui();
-    const { clearFilters, hasFilter, hasFilters, hasFilterKey, toggleFilter } =
-      useFilters();
+    const {
+      clearFilters,
+      getFilter,
+      hasFilter,
+      hasFilters,
+      hasFilterKey,
+      toggleFilter
+    } = useFilters();
 
     const [open, setOpen] = useState(false);
     const [input, setInput] = useState("");
@@ -107,6 +113,8 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
         } else if (filter?.filter.type === "fetcher") {
           setLoading(true);
           fetcher.load(filter.filter.endpoint);
+        } else if (filter?.filter.type === "custom") {
+          setActiveOptions([]);
         }
       },
 
@@ -161,83 +169,100 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
           align="start"
           className="min-w-[--radix-popover-trigger-width] p-0"
         >
-          <Command>
-            <CommandInput
-              value={input}
-              onValueChange={setInput}
-              placeholder={t`Search...`}
-              className="h-9"
-            />
-            <CommandEmpty>
-              {loading ? (
-                <Trans>Loading...</Trans>
-              ) : (
-                <Trans>No available filters</Trans>
-              )}
-            </CommandEmpty>
-            {activeFilter === null ? (
-              <CommandGroup>
-                {columnFilters
-                  .filter((column) => !hasFilterKey(column.value))
-                  .map((option) => (
-                    <CommandItem
-                      key={option.value}
-                      value={`${option.label}:${option.value}`.replace(
-                        /"/g,
-                        '\\"'
-                      )}
-                      onSelect={updateActiveOptions}
-                      className="flex items-center gap-2"
-                    >
-                      {option.icon}
-                      {option.label}
-                    </CommandItem>
-                  ))}
-              </CommandGroup>
-            ) : (
-              <div className="max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+          {activeFilter?.filter.type === "custom" ? (
+            <div className="w-auto min-w-[280px] p-2">
+              {activeFilter.filter.render({
+                values: getFilter(activeFilter.accessorKey),
+                toggle: (value) =>
+                  toggleFilter(
+                    activeFilter.accessorKey,
+                    value,
+                    activeFilter.filter.type === "custom"
+                      ? activeFilter.filter.isArray
+                      : false
+                  ),
+                close: () => setOpen(false)
+              })}
+            </div>
+          ) : (
+            <Command>
+              <CommandInput
+                value={input}
+                onValueChange={setInput}
+                placeholder={t`Search...`}
+                className="h-9"
+              />
+              <CommandEmpty>
+                {loading ? (
+                  <Trans>Loading...</Trans>
+                ) : (
+                  <Trans>No available filters</Trans>
+                )}
+              </CommandEmpty>
+              {activeFilter === null ? (
                 <CommandGroup>
-                  {activeOptions.map((option) => {
-                    const isChecked = hasFilter(
-                      activeFilter.accessorKey,
-                      option.value
-                    );
-                    return (
+                  {columnFilters
+                    .filter((column) => !hasFilterKey(column.value))
+                    .map((option) => (
                       <CommandItem
-                        value={reactNodeToString(option.label).replace(
+                        key={option.value}
+                        value={`${option.label}:${option.value}`.replace(
                           /"/g,
                           '\\"'
                         )}
-                        key={option.value}
-                        onSelect={() => {
-                          toggleFilter(
-                            activeFilter.accessorKey,
-                            option.value,
-                            activeFilter.filter.isArray
-                          );
-                          setInput("");
-                        }}
+                        onSelect={updateActiveOptions}
+                        className="flex items-center gap-2"
                       >
-                        <HStack spacing={2}>
-                          <Checkbox id={option.value} isChecked={isChecked} />
-                          <label htmlFor={option.value}>
-                            <VStack spacing={0}>
-                              <span>{option.label}</span>
-                              {option.helperText && (
-                                <p className="text-xs text-muted-foreground truncate">
-                                  {translate(option.helperText)}
-                                </p>
-                              )}
-                            </VStack>
-                          </label>
-                        </HStack>
+                        {option.icon}
+                        {option.label}
                       </CommandItem>
-                    );
-                  })}
+                    ))}
                 </CommandGroup>
-              </div>
-            )}
-          </Command>
+              ) : (
+                <div className="max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+                  <CommandGroup>
+                    {activeOptions.map((option) => {
+                      const isChecked = hasFilter(
+                        activeFilter.accessorKey,
+                        option.value
+                      );
+                      return (
+                        <CommandItem
+                          value={reactNodeToString(option.label).replace(
+                            /"/g,
+                            '\\"'
+                          )}
+                          key={option.value}
+                          onSelect={() => {
+                            toggleFilter(
+                              activeFilter.accessorKey,
+                              option.value,
+                              activeFilter.filter.isArray
+                            );
+                            setInput("");
+                          }}
+                        >
+                          <HStack spacing={2}>
+                            <Checkbox id={option.value} isChecked={isChecked} />
+                            <label htmlFor={option.value}>
+                              <VStack spacing={0}>
+                                <span>{option.label}</span>
+                                {option.helperText && (
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    {translate(option.helperText)}
+                                  </p>
+                                )}
+                              </VStack>
+                            </label>
+                          </HStack>
+                        </CommandItem>
+                      );
+                    })}
+                  </CommandGroup>
+                </div>
+              )}
+            </Command>
+          )}
         </PopoverContent>
       </Popover>
     );

@@ -340,7 +340,7 @@ msgstr "Ativar Centro de Trabalho"
 
 #: apps/erp/app/components/Configurator/ConfigurationEditor/ConfigurationEditor.ee.tsx:338
 #: apps/erp/app/components/Contact.tsx:57
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:538
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:577
 #: apps/erp/app/modules/inventory/ui/StorageUnits/StorageUnitsTable.tsx:287
 #: apps/erp/app/modules/items/ui/Consumables/ConsumableProperties.tsx:418
 #: apps/erp/app/modules/items/ui/Consumables/ConsumablesTable.tsx:238
@@ -388,7 +388,7 @@ msgstr "Ativo"
 msgid "Active Jobs"
 msgstr "Trabalhos Ativos"
 
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:548
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:587
 #: apps/erp/app/modules/inventory/ui/StorageUnits/StorageUnitsTable.tsx:297
 #: apps/erp/app/modules/items/ui/Consumables/ConsumablesTable.tsx:248
 #: apps/erp/app/modules/items/ui/Materials/MaterialsTable.tsx:385
@@ -1680,7 +1680,7 @@ msgstr "Importação em Massa"
 msgid "Bulk Jobs"
 msgstr "Trabalhos em Lote"
 
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:92
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:94
 #: apps/erp/app/modules/items/ui/Item/ItemForm.tsx:91
 #: apps/erp/app/modules/items/ui/Parts/PartForm.tsx:200
 #: apps/erp/app/modules/items/ui/Parts/PartProperties.tsx:343
@@ -1693,7 +1693,7 @@ msgstr "Trabalhos em Lote"
 msgid "Buy"
 msgstr "Comprar"
 
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:92
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:94
 #: apps/erp/app/modules/items/ui/Item/ItemForm.tsx:94
 #: apps/erp/app/modules/items/ui/Parts/PartForm.tsx:203
 #: apps/erp/app/modules/items/ui/Parts/PartProperties.tsx:346
@@ -2159,7 +2159,7 @@ msgstr "Limpar Tudo"
 msgid "Clear due date"
 msgstr "Limpar data de vencimento"
 
-#: apps/erp/app/components/Table/components/Filter/Filter.tsx:126
+#: apps/erp/app/components/Table/components/Filter/Filter.tsx:134
 #: apps/erp/app/routes/x+/schedule+/operations.tsx:536
 msgid "Clear Filters"
 msgstr "Limpar Filtros"
@@ -3553,7 +3553,7 @@ msgstr "Intervalo de Datas"
 msgid "Dates"
 msgstr "Datas"
 
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:155
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:157
 #: apps/erp/app/modules/people/ui/Shifts/ShiftForm.tsx:78
 #: apps/erp/app/modules/people/ui/Shifts/ShiftsTable.tsx:99
 #: apps/erp/app/modules/resources/ui/MaintenanceSchedule/MaintenanceScheduleForm.tsx:76
@@ -4114,7 +4114,7 @@ msgstr "Local de Entrega"
 msgid "Demand"
 msgstr "Demanda"
 
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:287
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:289
 msgid "Demand Forecast"
 msgstr "Previsão de Demanda"
 
@@ -4226,7 +4226,7 @@ msgstr "Cotação Digital"
 msgid "Digital Quotes"
 msgstr "Cotações Digitais"
 
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:388
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:390
 #: apps/erp/app/modules/items/ui/MaterialDimensions/MaterialDimensionsTable.tsx:55
 #: apps/erp/app/modules/items/ui/Materials/MaterialsTable.tsx:228
 #: apps/erp/app/modules/items/ui/Parts/ConfigurationParameters.tsx:1047
@@ -5972,7 +5972,7 @@ msgstr "Tipo de arquivo não suportado. Use JPG, PNG, WebP ou GIF."
 msgid "Files"
 msgstr "Ficheiros"
 
-#: apps/erp/app/components/Table/components/Filter/Filter.tsx:156
+#: apps/erp/app/components/Table/components/Filter/Filter.tsx:164
 msgid "Filter"
 msgstr "Filtro"
 
@@ -5993,7 +5993,7 @@ msgstr "Filtragem"
 msgid "Finalize"
 msgstr "Finalizar"
 
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:354
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:356
 #: apps/erp/app/modules/items/ui/MaterialFinishes/MaterialFinishesTable.tsx:55
 #: apps/erp/app/modules/items/ui/Materials/MaterialForm.tsx:267
 #: apps/erp/app/modules/items/ui/Materials/MaterialProperties.tsx:586
@@ -6198,7 +6198,7 @@ msgstr "Bom dia, {0}"
 msgid "Google Places API key not configured"
 msgstr "Chave da API do Google Places não configurada"
 
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:371
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:373
 #: apps/erp/app/modules/items/ui/MaterialGrades/MaterialGradesTable.tsx:55
 #: apps/erp/app/modules/items/ui/Materials/MaterialForm.tsx:227
 #: apps/erp/app/modules/items/ui/Materials/MaterialProperties.tsx:546
@@ -6575,7 +6575,7 @@ msgstr "Convite Inválido"
 #: apps/erp/app/components/Form/ConversionFactor.tsx:274
 #: apps/erp/app/components/Form/ConversionFactor.tsx:299
 #: apps/erp/app/hooks/useModules.tsx:52
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:626
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:665
 #: apps/erp/app/modules/items/ui/Consumables/ConsumableForm.tsx:82
 #: apps/erp/app/modules/items/ui/Consumables/ConsumableProperties.tsx:50
 #: apps/erp/app/modules/items/ui/Consumables/ConsumablesTable.tsx:82
@@ -6740,11 +6740,11 @@ msgstr "Estados Faturados"
 msgid "Invoices"
 msgstr "Faturas"
 
-#: apps/erp/app/components/Table/components/Filter/ActiveFilters.tsx:141
+#: apps/erp/app/components/Table/components/Filter/ActiveFilters.tsx:153
 msgid "is"
 msgstr "é"
 
-#: apps/erp/app/components/Table/components/Filter/ActiveFilters.tsx:143
+#: apps/erp/app/components/Table/components/Filter/ActiveFilters.tsx:155
 msgid "is any of"
 msgstr "é qualquer um de"
 
@@ -6899,7 +6899,7 @@ msgstr "Grupo de Itens"
 msgid "Item Groups"
 msgstr "Grupos de Itens"
 
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:110
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:112
 #: apps/erp/app/modules/inventory/ui/StockTransfers/StockTransferWizard.tsx:373
 #: apps/erp/app/modules/inventory/ui/StockTransfers/StockTransferWizard.tsx:705
 #: apps/erp/app/modules/items/ui/Item/BoMExplorer.tsx:535
@@ -6923,7 +6923,7 @@ msgstr "Regras de Item"
 msgid "Item Scope"
 msgstr "Escopo do Item"
 
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:425
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:427
 #: apps/erp/app/modules/items/ui/Item/BoMExplorer.tsx:587
 #: apps/erp/app/modules/production/ui/Jobs/JobBoMExplorer.tsx:445
 msgid "Item Type"
@@ -7189,7 +7189,7 @@ msgstr "Última sincronização: {0}"
 msgid "Last updated: {formattedDate}"
 msgstr "Última atualização: {formattedDate}"
 
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:165
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:167
 #: apps/erp/app/modules/items/ui/Item/BillOfProcess.tsx:1231
 #: apps/erp/app/modules/production/ui/Jobs/JobBillOfProcess.tsx:2401
 #: apps/erp/app/modules/purchasing/ui/Planning/PurchasingPlanningTable.tsx:356
@@ -7369,8 +7369,8 @@ msgstr "Carregando detalhes do item..."
 
 #: apps/erp/app/components/Form/AddressAutocomplete.tsx:176
 #: apps/erp/app/components/ImportCSVModal/UploadCSV.tsx:164
-#: apps/erp/app/components/Table/components/Filter/ActiveFilters.tsx:176
-#: apps/erp/app/components/Table/components/Filter/Filter.tsx:173
+#: apps/erp/app/components/Table/components/Filter/ActiveFilters.tsx:208
+#: apps/erp/app/components/Table/components/Filter/Filter.tsx:197
 #: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderHeader.tsx:439
 #: apps/erp/app/modules/sales/ui/SalesOrder/SalesOrderHeader.tsx:446
 #: apps/erp/app/routes/x+/quality+/_index.tsx:927
@@ -7557,7 +7557,7 @@ msgstr "Agendamento de Manutenção"
 msgid "Maintenance Type"
 msgstr "Tipo de Manutenção"
 
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:92
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:94
 #: apps/erp/app/modules/items/ui/Item/ItemForm.tsx:93
 #: apps/erp/app/modules/items/ui/Parts/PartForm.tsx:202
 #: apps/erp/app/modules/items/ui/Parts/PartProperties.tsx:345
@@ -7730,7 +7730,7 @@ msgstr "Corresponder a qualquer"
 msgid "Match none"
 msgstr "Não corresponder a nenhum"
 
-#: apps/erp/app/components/Table/components/Filter/ActiveFilters.tsx:145
+#: apps/erp/app/components/Table/components/Filter/ActiveFilters.tsx:157
 msgid "matches"
 msgstr "corresponde"
 
@@ -8168,7 +8168,7 @@ msgstr "Mover para Lixo"
 msgid "Moved {0} to {1} bucket"
 msgstr "Movido {0} para o bucket {1}"
 
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:620
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:659
 #: apps/erp/app/modules/production/ui/Planning/ProductionPlanningTable.tsx:490
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP é executado automaticamente a cada 3 horas, mas você pode executá-lo manualmente aqui."
@@ -8700,7 +8700,7 @@ msgstr "Nenhum endereço encontrado"
 msgid "No archived logs yet. Logs older than {0} days will be automatically archived and available for download here."
 msgstr "Nenhum log arquivado ainda. Logs com mais de {0} dias serão automaticamente arquivados e disponíveis para download aqui."
 
-#: apps/erp/app/components/Table/components/Filter/Filter.tsx:175
+#: apps/erp/app/components/Table/components/Filter/Filter.tsx:199
 msgid "No available filters"
 msgstr "Nenhum filtro disponível"
 
@@ -8842,7 +8842,7 @@ msgstr "Nenhum operador."
 msgid "No option found."
 msgstr "Nenhuma opção encontrada."
 
-#: apps/erp/app/components/Table/components/Filter/ActiveFilters.tsx:178
+#: apps/erp/app/components/Table/components/Filter/ActiveFilters.tsx:210
 msgid "No options found."
 msgstr "Nenhuma opção encontrada."
 
@@ -9095,7 +9095,7 @@ msgstr "de"
 msgid "OK"
 msgstr "OK"
 
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:139
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:141
 #: apps/erp/app/modules/production/ui/Jobs/JobMaterialsTable.tsx:303
 #: apps/erp/app/modules/production/ui/Planning/ProductionPlanningTable.tsx:325
 #: apps/erp/app/modules/purchasing/ui/Planning/PurchasingPlanningTable.tsx:402
@@ -9106,16 +9106,16 @@ msgstr "Em Mãos"
 msgid "On Hold"
 msgstr "Em Espera"
 
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:255
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:266
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:257
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:268
 msgid "On Jobs"
 msgstr "Em Trabalhos"
 
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:245
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:247
 msgid "On Purchase Order"
 msgstr "Em Ordem de Compra"
 
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:277
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:279
 msgid "On Sales Order"
 msgstr "Em Pedido de Venda"
 
@@ -10632,7 +10632,7 @@ msgstr "Razões"
 msgid "Reassign specific tracked entities from this row to another disposition row."
 msgstr "Reatribua entidades rastreadas específicas desta linha para outra linha de disposição."
 
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:616
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:655
 #: apps/erp/app/modules/items/ui/Item/ItemCostingForm.tsx:98
 #: apps/erp/app/modules/items/ui/Item/ItemCostingForm.tsx:108
 #: apps/erp/app/modules/production/ui/Jobs/JobMaterialsTable.tsx:504
@@ -10849,8 +10849,8 @@ msgstr "Remover anexo"
 msgid "Remove condition"
 msgstr "Remover condição"
 
-#: apps/erp/app/components/Table/components/Filter/ActiveFilters.tsx:213
-#: apps/erp/app/components/Table/components/Filter/Filter.tsx:134
+#: apps/erp/app/components/Table/components/Filter/ActiveFilters.tsx:249
+#: apps/erp/app/components/Table/components/Filter/Filter.tsx:142
 msgid "Remove filter"
 msgstr "Remover filtro"
 
@@ -10933,7 +10933,7 @@ msgstr "Ponto de Reordenação"
 msgid "Reorder Point:"
 msgstr "Ponto de Reabastecimento:"
 
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:175
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:177
 #: apps/erp/app/modules/production/ui/Planning/ProductionPlanningTable.tsx:295
 #: apps/erp/app/modules/purchasing/ui/Planning/PurchasingPlanningTable.tsx:372
 msgid "Reorder Policy"
@@ -10964,7 +10964,7 @@ msgstr "Política de Reordenação"
 msgid "Replace existing pricing with source values"
 msgstr "Substituir preços existentes pelos valores de origem"
 
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:205
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:207
 #: apps/erp/app/modules/inventory/ui/Kanbans/KanbansTable.tsx:396
 #: apps/erp/app/modules/items/ui/Parts/PartProperties.tsx:337
 #: apps/erp/app/modules/items/ui/Parts/PartsTable.tsx:177
@@ -11793,8 +11793,8 @@ msgid "Search the web"
 msgstr "Pesquisar na web"
 
 #: apps/erp/app/components/Assignee.tsx:167
-#: apps/erp/app/components/Table/components/Filter/ActiveFilters.tsx:171
-#: apps/erp/app/components/Table/components/Filter/Filter.tsx:168
+#: apps/erp/app/components/Table/components/Filter/ActiveFilters.tsx:203
+#: apps/erp/app/components/Table/components/Filter/Filter.tsx:192
 #: apps/erp/app/modules/documents/ui/Documents/DocumentsTable.tsx:565
 #: apps/erp/app/modules/items/ui/Item/BoMExplorer.tsx:165
 #: apps/erp/app/modules/items/ui/Item/UsedIn.tsx:136
@@ -12206,7 +12206,7 @@ msgstr "Severidades"
 msgid "Severity"
 msgstr "Gravidade"
 
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:314
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:316
 #: apps/erp/app/modules/items/ui/MaterialDimensions/MaterialDimensionForm.tsx:95
 #: apps/erp/app/modules/items/ui/MaterialDimensions/MaterialDimensionsTable.tsx:40
 #: apps/erp/app/modules/items/ui/Materials/MaterialForm.tsx:238
@@ -12863,12 +12863,12 @@ msgstr "Assistente de Transferência de Estoque"
 msgid "Stock Transfers"
 msgstr "Transferências de Estoque"
 
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:476
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:478
 #: apps/erp/app/modules/inventory/ui/StorageTypes/StorageTypesTable.tsx:92
 msgid "Storage Type"
 msgstr "Tipo de Armazenamento"
 
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:502
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:504
 #: apps/erp/app/modules/inventory/ui/StorageTypes/StorageTypesTable.tsx:98
 #: apps/erp/app/modules/inventory/ui/StorageUnits/StorageUnitForm.tsx:105
 #: apps/erp/app/modules/inventory/ui/StorageUnits/StorageUnitsTable.tsx:258
@@ -12880,7 +12880,7 @@ msgstr "Tipos de Armazenamento"
 
 #: apps/erp/app/modules/inventory/ui/Inventory/InventoryStorageUnits.tsx:218
 #: apps/erp/app/modules/inventory/ui/Inventory/InventoryStorageUnits.tsx:356
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:508
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:510
 #: apps/erp/app/modules/inventory/ui/Kanbans/KanbanForm.tsx:284
 #: apps/erp/app/modules/inventory/ui/Kanbans/KanbansTable.tsx:430
 #: apps/erp/app/modules/inventory/ui/Shipments/ShipmentLines.tsx:1199
@@ -12900,7 +12900,7 @@ msgid "Storage Unit"
 msgstr "Unidade de Armazenamento"
 
 #: apps/erp/app/modules/inventory/ui/Inventory/InventoryStorageUnits.tsx:196
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:532
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:571
 #: apps/erp/app/modules/inventory/ui/StorageUnits/StorageUnitsTable.tsx:394
 #: apps/erp/app/modules/inventory/ui/useInventorySubmodules.tsx:88
 #: apps/erp/app/routes/x+/inventory+/storage-units.tsx:22
@@ -12964,7 +12964,7 @@ msgstr "Enviado por"
 msgid "Subscribe to changes"
 msgstr "Inscrever-se em alterações"
 
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:334
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:336
 #: apps/erp/app/modules/items/ui/MaterialFinishes/MaterialFinishesTable.tsx:40
 #: apps/erp/app/modules/items/ui/MaterialFinishes/MaterialFinishForm.tsx:95
 #: apps/erp/app/modules/items/ui/MaterialGrades/MaterialGradeForm.tsx:95
@@ -13274,7 +13274,7 @@ msgstr "Tabela"
 msgid "Table actions"
 msgstr "Ações da tabela"
 
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:451
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:453
 #: apps/erp/app/modules/items/ui/Consumables/ConsumableProperties.tsx:458
 #: apps/erp/app/modules/items/ui/Consumables/ConsumablesTable.tsx:214
 #: apps/erp/app/modules/items/ui/Materials/MaterialProperties.tsx:721
@@ -14002,7 +14002,7 @@ msgstr "Terça-feira"
 
 #: apps/erp/app/modules/api/ui/TableDocs.tsx:436
 #: apps/erp/app/modules/documents/ui/Documents/DocumentsTable.tsx:302
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:405
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:407
 #: apps/erp/app/modules/items/ui/Item/BillOfProcess.tsx:1880
 #: apps/erp/app/modules/items/ui/Item/BillOfProcess.tsx:2165
 #: apps/erp/app/modules/items/ui/Materials/MaterialForm.tsx:251
@@ -14119,7 +14119,7 @@ msgid "Unit Cost"
 msgstr "Custo Unitário"
 
 #: apps/erp/app/modules/inventory/ui/Inventory/InventoryStorageUnits.tsx:418
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:297
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:299
 #: apps/erp/app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceLineForm.tsx:519
 #: apps/erp/app/modules/items/ui/Consumables/ConsumableForm.tsx:171
 #: apps/erp/app/modules/items/ui/Consumables/ConsumableProperties.tsx:374
@@ -14417,11 +14417,11 @@ msgstr "Carregando {fileName}"
 msgid "Upon clicking Convert, parts will be created with the following internal part numbers:"
 msgstr "Ao clicar em Converter, as peças serão criadas com os seguintes números de peça internos:"
 
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:225
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:227
 msgid "Usage/Day (30d)"
 msgstr "Uso/Dia (30d)"
 
-#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:235
+#: apps/erp/app/modules/inventory/ui/Inventory/InventoryTable.tsx:237
 msgid "Usage/Day (90d)"
 msgstr "Uso/Dia (90d)"
 

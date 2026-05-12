@@ -14,6 +14,12 @@ export type Option = {
   helperText?: string;
 };
 
+export type CustomFilterRenderContext = {
+  values: string[];
+  toggle: (value: string) => void;
+  close: () => void;
+};
+
 export type ColumnFilterData =
   | {
       type: "static";
@@ -25,4 +31,10 @@ export type ColumnFilterData =
       endpoint: string;
       transform?: (result: any) => Option[];
       isArray?: boolean;
+    }
+  | {
+      type: "custom";
+      isArray?: boolean;
+      render: (ctx: CustomFilterRenderContext) => ReactNode;
+      getLabel?: (value: string) => ReactNode;
     };
