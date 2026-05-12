@@ -235,7 +235,10 @@ const TrackedEntitiesTable = memo(
               <Trans>View Traceability Graph</Trans>
             </MenuItem>
             <MenuItem
-              disabled={!permissions.can("update", "inventory")}
+              disabled={
+                !permissions.can("update", "inventory") ||
+                row.status === "Consumed"
+              }
               onClick={() => setEditingExpiry(row)}
             >
               <MenuIcon icon={<LuCalendarCog />} />
@@ -256,7 +259,7 @@ const TrackedEntitiesTable = memo(
           renderContextMenu={renderContextMenu}
           title={t`Tracked Entities`}
         />
-        {editingExpiry && (
+        {editingExpiry && editingExpiry.status !== "Consumed" && (
           <EditExpiryModal
             open={!!editingExpiry}
             onClose={() => setEditingExpiry(null)}

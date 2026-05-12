@@ -147,7 +147,7 @@ export function ExpiryTracePopover({
                 </div>
 
                 {/* Content */}
-                <div className={isLast ? "pb-0" : "pb-3"}>
+                <div className={"min-w-0 " + (isLast ? "pb-0" : "pb-3")}>
                   <div className="flex items-center gap-1.5">
                     <span className="text-[10px] uppercase tracking-wide font-medium text-muted-foreground">
                       {step.step}
@@ -158,7 +158,7 @@ export function ExpiryTracePopover({
                       to={step.href}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-sm font-medium hover:underline decoration-dotted underline-offset-2 inline-flex items-center gap-1"
+                      className="text-sm font-medium hover:underline decoration-dotted underline-offset-2 inline-flex items-center gap-1 min-w-0 max-w-full"
                     >
                       <span className="truncate">{step.label}</span>
                       <LuExternalLink className="size-3 shrink-0 text-muted-foreground" />

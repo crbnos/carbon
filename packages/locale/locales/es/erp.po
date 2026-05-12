@@ -4607,7 +4607,7 @@ msgstr "Editar Tipo de Empleado"
 msgid "Edit expiration date"
 msgstr "Editar fecha de vencimiento"
 
-#: apps/erp/app/modules/inventory/ui/Traceability/TrackedEntitiesTable.tsx:242
+#: apps/erp/app/modules/inventory/ui/Traceability/TrackedEntitiesTable.tsx:245
 msgid "Edit Expiry"
 msgstr "Editar Vencimiento"
 
@@ -13859,7 +13859,7 @@ msgstr "Realiza un seguimiento de cada cambio en tus pedidos, facturas, clientes
 msgid "Track when batches or serials of this item expire."
 msgstr "Realiza un seguimiento de cuándo vencen los lotes o números de serie de este artículo."
 
-#: apps/erp/app/modules/inventory/ui/Traceability/TrackedEntitiesTable.tsx:257
+#: apps/erp/app/modules/inventory/ui/Traceability/TrackedEntitiesTable.tsx:260
 #: apps/erp/app/modules/inventory/ui/useInventorySubmodules.tsx:71
 #: apps/erp/app/routes/x+/inventory+/tracked-entities.tsx:16
 #: apps/erp/app/routes/x+/issue+/$id.tsx:147

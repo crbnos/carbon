@@ -4607,7 +4607,7 @@ msgstr "従業員タイプを編集"
 msgid "Edit expiration date"
 msgstr "有効期限を編集"
 
-#: apps/erp/app/modules/inventory/ui/Traceability/TrackedEntitiesTable.tsx:242
+#: apps/erp/app/modules/inventory/ui/Traceability/TrackedEntitiesTable.tsx:245
 msgid "Edit Expiry"
 msgstr "有効期限を編集"
 
@@ -13859,7 +13859,7 @@ msgstr "ご注文、請求書、顧客、仕入先など、すべての変更を
 msgid "Track when batches or serials of this item expire."
 msgstr "このアイテムのバッチまたはシリアルの有効期限を追跡します。"
 
-#: apps/erp/app/modules/inventory/ui/Traceability/TrackedEntitiesTable.tsx:257
+#: apps/erp/app/modules/inventory/ui/Traceability/TrackedEntitiesTable.tsx:260
 #: apps/erp/app/modules/inventory/ui/useInventorySubmodules.tsx:71
 #: apps/erp/app/routes/x+/inventory+/tracked-entities.tsx:16
 #: apps/erp/app/routes/x+/issue+/$id.tsx:147

@@ -1,7 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import { getLocalTimeZone, now, today } from "@internationalized/date";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
 import type { StorageItem } from "~/types";
@@ -1029,10 +1029,19 @@ export async function updateTrackedEntityExpiry(
 ) {
   const existing = await client
     .from("trackedEntity")
-    .select("expirationDate, attributes")
+    .select("expirationDate, attributes, status")
     .eq("id", args.trackedEntityId)
     .single();
   if (existing.error) return existing;
+
+  if (existing.data?.status === "Consumed") {
+    return {
+      data: null,
+      error: {
+        message: "Cannot edit expiry of a consumed tracked entity"
+      } as unknown as PostgrestError
+    };
+  }
 
   const prevAttrs =
     (existing.data?.attributes as Record<string, unknown> | null) ?? {};
