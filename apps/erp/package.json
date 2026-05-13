@@ -166,7 +166,7 @@
     "build": "react-router build",
     "clean": "rimraf .cache .turbo node_modules dist build",
     "dev": "portless --script dev:app run --force",
-    "dev:app": "react-router dev",
+    "dev:app": "react-router dev --port $PORT --host $HOST",
     "dev:novu": "pnpm dlx novu@latest dev --port 3000",
     "sync:novu": "pnpm dlx novu@latest sync ",
     "lint": "biome lint --write ",

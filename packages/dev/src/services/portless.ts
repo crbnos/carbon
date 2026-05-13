@@ -235,11 +235,6 @@ export async function syncHostsFile() {
     reject: false
   });
   if (r.exitCode !== 0) {
-    if (process.platform === "win32") {
-      throw new Error(
-        `portless hosts sync failed (exit ${r.exitCode}). Run it from an Administrator terminal to fix DNS.`
-      );
-    }
     throw new Error(
       `sudo portless hosts sync failed (exit ${r.exitCode}). Run it manually to fix DNS.`
     );
