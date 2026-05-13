@@ -159,12 +159,29 @@ export const auditConfig = {
       label: "Item",
       tables: {
         item: { role: "root" },
+        itemShelfLife: { role: "root" },
         itemCost: { role: "extension" }, // PK = itemId
         itemPlanning: { role: "extension" }, // PK = itemId
         itemReplenishment: { role: "extension" }, // PK = itemId
         itemUnitSalePrice: { role: "extension" }, // PK = itemId
         supplierPart: { entityIdColumn: "itemId" },
         customerPartToItem: { entityIdColumn: "itemId" }
+      }
+    },
+
+    itemShelfLife: {
+      label: "Item Shelf Life",
+      tables: {
+        itemShelfLife: {
+          role: "root",
+          createFields: [
+            "mode",
+            "days",
+            "triggerProcessId",
+            "triggerTiming",
+            "calculateFromBom"
+          ]
+        }
       }
     },
 
@@ -364,6 +381,7 @@ export const auditConfig = {
     supplierTax: "Tax",
     supplierPart: "Supplier Part",
     item: "Item",
+    itemShelfLife: "Shelf Life",
     itemCost: "Cost",
     itemPlanning: "Planning",
     itemReplenishment: "Replenishment",
