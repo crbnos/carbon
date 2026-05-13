@@ -1,7 +1,7 @@
-import { join } from "node:path";
 import { box, intro, log, outro, progress, tasks } from "@clack/prompts";
 import { config as loadDotenv } from "dotenv";
 import { execa } from "execa";
+import { join } from "pathe";
 import type { AppId } from "../constants.js";
 import { renderEnv, syncAppPortlessConfigs, writeEnv } from "../env.js";
 import { currentBranch, isLinkedWorktree } from "../git.js";
@@ -348,22 +348,8 @@ async function ensureHostsFile() {
     log.info("/etc/hosts already in sync — skipping sudo");
     return;
   }
-  log.step(
-    process.platform === "win32"
-      ? "portless hosts sync (requires Administrator terminal)"
-      : "sudo portless hosts sync"
-  );
-  try {
-    await syncHostsFile();
-  } catch (err) {
-    if (process.platform === "win32") {
-      log.warn(
-        "Could not update hosts file from this terminal. Re-run from an Administrator terminal: `portless hosts sync`."
-      );
-      return;
-    }
-    throw err;
-  }
+  log.step("sudo portless hosts sync");
+  await syncHostsFile();
 }
 
 async function runAppsThenTeardown(root: string, selectedApps: AppId[]) {

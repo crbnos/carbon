@@ -1,5 +1,4 @@
 import { existsSync } from "node:fs";
-import { join } from "node:path";
 import {
   cancel,
   confirm,
@@ -10,6 +9,7 @@ import {
   select,
   text
 } from "@clack/prompts";
+import { join } from "pathe";
 import pc from "picocolors";
 import { APP_CHOICES, type AppId } from "./constants.js";
 import { branchExists, deleteBranch, listWorktrees } from "./git.js";

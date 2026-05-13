@@ -666,7 +666,7 @@ importers:
         version: 0.7.3(nanostores@0.9.5)(react@18.3.1)
       '@novu/framework':
         specifier: 2.10.0
-        version: 2.10.0(express@5.2.1)(zod-to-json-schema@3.25.2(zod@3.25.76))(zod@3.25.76)
+        version: 2.10.0(express@4.22.1)(zod-to-json-schema@3.25.2(zod@3.25.76))(zod@3.25.76)
       '@novu/headless':
         specifier: 2.7.0-alpha.0
         version: 2.7.0-alpha.0
@@ -774,7 +774,7 @@ importers:
         version: 11.18.2(@emotion/is-prop-valid@1.4.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       inngest:
         specifier: ^3.52.7
-        version: 3.54.0(@opentelemetry/core@2.6.1(@opentelemetry/api@1.9.0))(express@5.2.1)(hono@4.12.14)(typescript@5.8.3)(zod@3.25.76)
+        version: 3.54.0(@opentelemetry/core@2.6.1(@opentelemetry/api@1.9.0))(express@4.22.1)(hono@4.12.14)(typescript@5.8.3)(zod@3.25.76)
       intl-parse-accept-language:
         specifier: 'catalog:'
         version: 1.0.0
@@ -1888,6 +1888,9 @@ importers:
       execa:
         specifier: ^8.0.1
         version: 8.0.1
+      pathe:
+        specifier: ^2.0.3
+        version: 2.0.3
       pg:
         specifier: 8.20.0
         version: 8.20.0
@@ -14047,7 +14050,7 @@ snapshots:
     dependencies:
       '@novu/shared': 2.6.6
 
-  '@novu/framework@2.10.0(express@5.2.1)(zod-to-json-schema@3.25.2(zod@3.25.76))(zod@3.25.76)':
+  '@novu/framework@2.10.0(express@4.22.1)(zod-to-json-schema@3.25.2(zod@3.25.76))(zod@3.25.76)':
     dependencies:
       ajv: 8.18.0
       ajv-formats: 2.1.1(ajv@8.18.0)
@@ -14060,7 +14063,7 @@ snapshots:
       pluralize: 8.0.0
       sanitize-html: 2.17.3
     optionalDependencies:
-      express: 5.2.1
+      express: 4.22.1
       zod: 3.25.76
       zod-to-json-schema: 3.25.2(zod@3.25.76)
     transitivePeerDependencies:
@@ -20455,6 +20458,43 @@ snapshots:
   ini@1.3.8: {}
 
   inline-style-parser@0.2.7: {}
+
+  inngest@3.54.0(@opentelemetry/core@2.6.1(@opentelemetry/api@1.9.0))(express@4.22.1)(hono@4.12.14)(typescript@5.8.3)(zod@3.25.76):
+    dependencies:
+      '@bufbuild/protobuf': 2.11.0
+      '@inngest/ai': 0.1.7
+      '@jpwilliams/waitgroup': 2.1.1
+      '@opentelemetry/api': 1.9.0
+      '@opentelemetry/auto-instrumentations-node': 0.72.0(@opentelemetry/api@1.9.0)(@opentelemetry/core@2.6.1(@opentelemetry/api@1.9.0))
+      '@opentelemetry/context-async-hooks': 2.6.1(@opentelemetry/api@1.9.0)
+      '@opentelemetry/exporter-trace-otlp-http': 0.214.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/instrumentation': 0.214.0(@opentelemetry/api@1.9.0)
+      '@opentelemetry/resources': 2.6.1(@opentelemetry/api@1.9.0)
+      '@opentelemetry/sdk-trace-base': 2.6.1(@opentelemetry/api@1.9.0)
+      '@standard-schema/spec': 1.1.0
+      '@traceloop/instrumentation-anthropic': 0.20.0
+      '@types/debug': 4.1.13
+      '@types/ms': 2.1.0
+      canonicalize: 1.0.8
+      chalk: 4.1.2
+      cross-fetch: 4.1.0
+      debug: 4.4.3(supports-color@5.5.0)
+      hash.js: 1.1.7
+      json-stringify-safe: 5.0.1
+      ms: 2.1.3
+      serialize-error-cjs: 0.1.4
+      strip-ansi: 5.2.0
+      temporal-polyfill: 0.2.5
+      ulid: 2.4.0
+      zod: 3.25.76
+    optionalDependencies:
+      express: 4.22.1
+      hono: 4.12.14
+      typescript: 5.8.3
+    transitivePeerDependencies:
+      - '@opentelemetry/core'
+      - encoding
+      - supports-color
 
   inngest@3.54.0(@opentelemetry/core@2.6.1(@opentelemetry/api@1.9.0))(express@5.2.1)(hono@4.12.14)(typescript@5.8.3)(zod@3.25.76):
     dependencies:

@@ -1,5 +1,5 @@
-import { join } from "node:path";
 import { type ExecaChildProcess, execa } from "execa";
+import { join } from "pathe";
 import pc from "picocolors";
 import { isAtLeastAsNew, onShutdown, readLines } from "../helpers.js";
 

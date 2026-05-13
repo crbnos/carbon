@@ -1,5 +1,5 @@
 import { existsSync, unlinkSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join } from "pathe";
 import { APP_CHOICES } from "./constants.js";
 import { type JwtCreds, type PortMap, SHARED_REDIS_PORT } from "./worktree.js";
 

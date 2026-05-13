@@ -1,5 +1,5 @@
-import { dirname, resolve } from "node:path";
 import { execa } from "execa";
+import { dirname, resolve } from "pathe";
 
 export type Worktree = {
   path: string;

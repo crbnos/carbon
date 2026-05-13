@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { execa } from "execa";
+import { join } from "pathe";
 import pg from "pg";
 import { waitForPort } from "../helpers.js";
 

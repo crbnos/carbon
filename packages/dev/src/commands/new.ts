@@ -1,6 +1,6 @@
 import { copyFileSync, existsSync } from "node:fs";
-import { basename, dirname, join, relative, resolve } from "node:path";
 import { intro, outro, tasks } from "@clack/prompts";
+import { basename, dirname, join, relative, resolve } from "pathe";
 import pc from "picocolors";
 import { addWorktree, currentBranch } from "../git.js";
 import {

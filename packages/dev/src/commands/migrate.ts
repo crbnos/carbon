@@ -1,8 +1,8 @@
 import { existsSync } from "node:fs";
-import { join } from "node:path";
 import { intro, log, outro, tasks } from "@clack/prompts";
 import { config as loadDotenv } from "dotenv";
 import { execa } from "execa";
+import { join } from "pathe";
 import { requireNumberEnv, tryConnect } from "../helpers.js";
 import { applyMigrations } from "../services/migrations.js";
 import { getWorktreeRoot } from "../worktree.js";

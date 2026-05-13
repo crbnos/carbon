@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { createServer, type Server } from "node:net";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join } from "pathe";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { isAtLeastAsNew, requireNumberEnv, tryConnect } from "./helpers.js";
 

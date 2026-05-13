@@ -1,6 +1,6 @@
 import { copyFileSync, existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 import { intro, log, outro } from "@clack/prompts";
+import { join } from "pathe";
 import pc from "picocolors";
 import { mainCheckoutRoot } from "../git.js";
 import { isAtLeastAsNew } from "../helpers.js";
