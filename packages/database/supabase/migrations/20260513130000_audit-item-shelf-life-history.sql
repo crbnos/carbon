@@ -2,7 +2,7 @@
 -- 1) Attach event triggers for itemShelfLife.
 -- 2) Backfill AUDIT subscriptions for already-audit-enabled companies.
 
-SELECT attach_event_trigger('itemShelfLife', ARRAY[]::TEXT[]);
+SELECT attach_event_trigger('itemShelfLife', ARRAY[]::TEXT[], ARRAY[]::TEXT[]);
 
 DO $$
 DECLARE
