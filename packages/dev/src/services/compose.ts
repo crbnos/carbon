@@ -76,6 +76,39 @@ export async function pullStack(
   }
 }
 
+/** Resolved image refs for the dev compose file (tags as pinned in compose). */
+export async function devComposeImageRefs(
+  root: string,
+  slug: string
+): Promise<string[] | null> {
+  const r = await execa(
+    "docker",
+    devArgs(slug, "--env-file", ".env.local", "config", "--images"),
+    { cwd: root, reject: false }
+  );
+  if (r.exitCode !== 0) return null;
+  const refs = (r.stdout ?? "")
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return refs.length > 0 ? refs : null;
+}
+
+/** True when `docker image inspect` succeeds for every ref (parallel). */
+export async function allImagesPresentLocally(
+  refs: string[]
+): Promise<boolean> {
+  const results = await Promise.all(
+    refs.map((ref) =>
+      execa("docker", ["image", "inspect", ref], {
+        stdio: "ignore",
+        reject: false
+      }).then((x) => x.exitCode === 0)
+    )
+  );
+  return results.every(Boolean);
+}
+
 export async function stopStack(
   root: string,
   slug: string,

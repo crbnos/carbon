@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from "node:fs";
+import { parse } from "dotenv";
 import { type ExecaChildProcess, execa } from "execa";
 import { join } from "pathe";
 import pc from "picocolors";
@@ -18,6 +20,24 @@ function isNoiseLine(line: string): boolean {
   return NOISE_PATTERNS.some((re) => re.test(plain));
 }
 
+// `portless` inherits `crbn`'s `process.env`; a stale shell `SUPABASE_URL`
+// (e.g. `http://127.0.0.1:54321`) would otherwise win over `crbn`'s repo-root
+// `.env.local`. Merge the same `.env*` stack as ERP Vite (app then repo, last
+// wins) so spawned dev servers always see worktree URLs.
+function spawnAppEnv(repoRoot: string, appId: string): NodeJS.ProcessEnv {
+  const env: Record<string, string | undefined> = { ...process.env };
+  const appRoot = join(repoRoot, "apps", appId);
+  const mergeFile = (abs: string) => {
+    if (!existsSync(abs)) return;
+    Object.assign(env, parse(readFileSync(abs, "utf8")));
+  };
+  mergeFile(join(appRoot, ".env"));
+  mergeFile(join(appRoot, ".env.local"));
+  mergeFile(join(repoRoot, ".env"));
+  mergeFile(join(repoRoot, ".env.local"));
+  return env as NodeJS.ProcessEnv;
+}
+
 // Invoke portless directly per app, bypassing the per-app `dev` script.
 // Older branches still have `dev: portless` which recurses into itself in
 // portless default mode, racing to register `<prefix>.<app>.dev`.
@@ -35,6 +55,7 @@ export function spawnApps(opts: {
     // whole subtree (portless → react-router → vite → esbuild).
     const child = execa("portless", ["--script", "dev:app", "run", "--force"], {
       cwd: join(root, "apps", id),
+      env: spawnAppEnv(root, id),
       preferLocal: true,
       reject: false,
       stdin: "ignore",

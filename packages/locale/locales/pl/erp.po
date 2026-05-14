@@ -6868,7 +6868,7 @@ msgid "Shipping:"
 msgstr "WysyÃƒâ€¦Ã¢â‚¬Å¡ka:"
 
 msgid "Shop Floor"
-msgstr "Hala produkcyjna"
+msgstr ""
 
 msgid "Short Description"
 msgstr "KrÃƒÆ’Ã‚Â³tki opis"

@@ -1,0 +1,8361 @@
+msgid ""
+msgstr ""
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: @lingui/cli\n"
+"Language: nl\n"
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Plural-Forms: \n"
+
+msgid " A supplier is a business or person who sells you parts or services."
+msgstr ""
+
+msgid "\"{storageUnitName}\" has {childCount} direct nested storage units. Deleting it will also delete them and anything underneath them. This cannot be undone."
+msgstr ""
+
+msgid "\"{storageUnitName}\" has 1 direct nested storage unit. Deleting it will also delete that unit and anything underneath it. This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: rule.escalationDays
+msgid "{0} days"
+msgstr ""
+
+#. placeholder {0}: attachment.name
+#. placeholder {0}: file.name
+msgid "{0} deleted successfully"
+msgstr ""
+
+#. placeholder {0}: history.length
+msgid "{0} orders"
+msgstr ""
+
+#. placeholder {0}: selectedProcesses.length
+msgid "{0} Processes"
+msgstr ""
+
+#. placeholder {0}: lotEntities.length - inspected
+msgid "{0} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected."
+msgstr ""
+
+#. placeholder {0}: file.name
+msgid "{0} uploaded successfully"
+msgstr ""
+
+msgid "{maxSizeMB}MB limit"
+msgstr ""
+
+msgid "{scopeCount} permissions"
+msgstr ""
+
+msgid "/month/user"
+msgstr ""
+
+#. placeholder {0}: allItems.length - 3
+msgid "+{0} more"
+msgstr ""
+
+msgid "<0>delete</0> lets you delete rows. <1>delete</1> will match all rows by default, so remember to specify your filters!"
+msgstr ""
+
+msgid "<0>insert</0> lets you insert into your tables. You can also insert in bulk and do UPSERT."
+msgstr ""
+
+msgid "<0>insert</0> will also return the replaced values for UPSERT."
+msgstr ""
+
+msgid "<0>update</0> lets you update rows. <1>update</1> will match all rows by default. You can update specific rows using horizontal filters, e.g. <2>eq</2>, <3>lt</3>, and <4>is</4>."
+msgstr ""
+
+msgid "<0>update</0> will also return the replaced values for UPDATE."
+msgstr ""
+
+msgid "1 day"
+msgstr ""
+
+msgid "3D Model"
+msgstr ""
+
+msgid "5 User Minimum"
+msgstr ""
+
+msgid "5MB file limit"
+msgstr ""
+
+msgid "A consumable is a physical item used to make a part that can be used across multiple jobs"
+msgstr ""
+
+msgid "A contractor is a supplier contact with particular abilities and available hours"
+msgstr ""
+
+msgid "A customer is a business or person who buys your parts or services."
+msgstr ""
+
+msgid "A issue record tracks quality issues and their resolution process."
+msgstr ""
+
+msgid "A material is a physical item used to make a part that can be used across multiple jobs"
+msgstr ""
+
+msgid "A name is required to save a view"
+msgstr ""
+
+msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
+msgstr ""
+
+msgid "A new revision will be created using a copy of the current revision"
+msgstr ""
+
+msgid "A new size will be created using a copy of the current size"
+msgstr ""
+
+msgid "A part contains the information about a specific item that can be purchased or manufactured."
+msgstr ""
+
+msgid "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
+msgstr ""
+
+msgid "A quote is a set of prices for specific parts and quantities."
+msgstr ""
+
+msgid "A quote line contains pricing and lead times for a particular part"
+msgstr ""
+
+msgid "A sales invoice is a document that specifies the products or services sold to a customer and the corresponding cost."
+msgstr ""
+
+msgid "A sales invoice line contains invoice details for a particular item"
+msgstr ""
+
+msgid "A sales order contains information about the agreement between the company and a specific customer for parts and services."
+msgstr ""
+
+msgid "A sales order line contains order details for a particular item"
+msgstr ""
+
+msgid "A sales request for quote (RFQ) is a customer inquiry for pricing on a set of parts and quantities. It may result in a quote."
+msgstr ""
+
+msgid "A tool is a physical item used to make a part that can be used across multiple jobs"
+msgstr ""
+
+msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
+msgstr ""
+
+msgid "Abilities"
+msgstr ""
+
+msgid "About"
+msgstr ""
+
+msgid "Accept Lot"
+msgstr ""
+
+msgid "Accept lot?"
+msgstr ""
+
+msgid "Accept Quote"
+msgstr ""
+
+msgid "Account"
+msgstr ""
+
+msgid "Account Manager"
+msgstr ""
+
+msgid "Account Number"
+msgstr ""
+
+msgid "Account Settings"
+msgstr ""
+
+msgid "Account Type"
+msgstr ""
+
+msgid "Accounting"
+msgstr ""
+
+msgid "Accounting is disabled"
+msgstr ""
+
+msgid "Accounting is enabled"
+msgstr ""
+
+msgid "Accounts"
+msgstr ""
+
+msgid "Accounts Payable Billing Address"
+msgstr ""
+
+msgid "Accounts Receivable Billing Address"
+msgstr ""
+
+msgid "Accumulation Period (Weeks)"
+msgstr ""
+
+msgid "Accumulation Period:"
+msgstr ""
+
+msgid "Acknowledge & continue"
+msgstr ""
+
+msgid "Action Items"
+msgstr ""
+
+msgid "Action Status"
+msgstr ""
+
+msgid "Action Type"
+msgstr ""
+
+msgid "Action Types"
+msgstr ""
+
+msgid "Actions"
+msgstr ""
+
+msgid "Activate"
+msgstr ""
+
+msgid "Activate {name}"
+msgstr ""
+
+msgid "Activate Process"
+msgstr ""
+
+msgid "Activate Work Center"
+msgstr ""
+
+msgid "Active"
+msgstr ""
+
+msgid "Active Jobs"
+msgstr ""
+
+msgid "Active Statuses"
+msgstr ""
+
+msgid "Active Supplier Quotes"
+msgstr ""
+
+msgid "Activity"
+msgstr ""
+
+msgid "Actual"
+msgstr ""
+
+msgid "Actual Cost"
+msgstr ""
+
+msgid "Actual End"
+msgstr ""
+
+msgid "Actual Failure Mode"
+msgstr ""
+
+msgid "Actual Start"
+msgstr ""
+
+msgid "Add"
+msgstr ""
+
+msgid "Add & Issue"
+msgstr ""
+
+msgid "Add a column below to sort the view"
+msgstr ""
+
+msgid "Add a comment..."
+msgstr ""
+
+msgid "Add Actions"
+msgstr ""
+
+msgid "Add any notes about your decision..."
+msgstr ""
+
+msgid "Add Approval Requirement"
+msgstr ""
+
+msgid "Add attachments"
+msgstr ""
+
+msgid "Add Calibration Record"
+msgstr ""
+
+msgid "Add Child Storage Unit"
+msgstr ""
+
+msgid "Add Company"
+msgstr ""
+
+msgid "Add condition"
+msgstr ""
+
+msgid "Add Contractor"
+msgstr ""
+
+msgid "Add Entry"
+msgstr ""
+
+msgid "Add from library…"
+msgstr ""
+
+msgid "Add Group"
+msgstr ""
+
+msgid "Add Item"
+msgstr ""
+
+msgid "Add Line"
+msgstr ""
+
+msgid "Add Line Item"
+msgstr ""
+
+msgid "Add Note"
+msgstr ""
+
+msgid "Add notes and documentation for this maintenance dispatch"
+msgstr ""
+
+msgid "Add Operation"
+msgstr ""
+
+msgid "Add options above first"
+msgstr ""
+
+msgid "Add Pair"
+msgstr ""
+
+msgid "Add Parameter"
+msgstr ""
+
+msgid "Add Partner"
+msgstr ""
+
+msgid "Add Permissions"
+msgstr ""
+
+msgid "Add Property"
+msgstr ""
+
+msgid "Add Question"
+msgstr ""
+
+msgid "Add Receipt"
+msgstr ""
+
+msgid "Add Required Actions"
+msgstr ""
+
+msgid "Add Requirement"
+msgstr ""
+
+msgid "Add Risk"
+msgstr ""
+
+msgid "Add rule"
+msgstr ""
+
+msgid "Add Shipment"
+msgstr ""
+
+msgid "Add Shipping"
+msgstr ""
+
+msgid "Add Spare Part"
+msgstr ""
+
+msgid "Add Step"
+msgstr ""
+
+msgid "Add Supplier"
+msgstr ""
+
+msgid "Add Timecard"
+msgstr ""
+
+msgid "Add to stock for future use"
+msgstr ""
+
+msgid "Add-On"
+msgstr ""
+
+msgid "Add-On Cost"
+msgstr ""
+
+msgid "Adding..."
+msgstr ""
+
+msgid "Address"
+msgstr ""
+
+msgid "Address Line 1"
+msgstr ""
+
+msgid "Address Line 2"
+msgstr ""
+
+msgid "Adjustment Type"
+msgstr ""
+
+msgid "Advanced"
+msgstr ""
+
+msgid "After"
+msgstr ""
+
+msgid "AI Tokens"
+msgstr ""
+
+msgid "All"
+msgstr ""
+
+msgid "All Audit Logs"
+msgstr ""
+
+msgid "All changes to auditable entities are being recorded."
+msgstr ""
+
+msgid "All Customers"
+msgstr ""
+
+msgid "All Documents"
+msgstr ""
+
+msgid "All Items"
+msgstr ""
+
+msgid "All jobs completed"
+msgstr ""
+
+msgid "All members of selected groups and selected individuals will be able to approve requests"
+msgstr ""
+
+msgid "All Suppliers"
+msgstr ""
+
+msgid "All Types"
+msgstr ""
+
+msgid "All Work Centers"
+msgstr ""
+
+msgid "Allows acknowledge & continue"
+msgstr ""
+
+msgid "Alpha"
+msgstr ""
+
+msgid "Always"
+msgstr ""
+
+msgid "Amount"
+msgstr ""
+
+msgid "Amount Type"
+msgstr ""
+
+msgid "An item cannot be added to itself."
+msgstr ""
+
+msgid "and {remaining} more"
+msgstr ""
+
+msgid "API and Webhooks"
+msgstr ""
+
+msgid "API Docs"
+msgstr ""
+
+msgid "API Documentation"
+msgstr ""
+
+msgid "API Key"
+msgstr ""
+
+msgid "API Keys"
+msgstr ""
+
+msgid "Applies to"
+msgstr ""
+
+msgid "Apply pricing rules"
+msgstr ""
+
+msgid "Apply To"
+msgstr ""
+
+msgid "Approval Date"
+msgstr ""
+
+msgid "Approval Requirements"
+msgstr ""
+
+msgid "Approval Rules"
+msgstr ""
+
+msgid "Approve"
+msgstr ""
+
+msgid "Approved By"
+msgstr ""
+
+msgid "AQL"
+msgstr ""
+
+msgid "Archive"
+msgstr ""
+
+msgid "Archive all"
+msgstr ""
+
+msgid "Archived"
+msgstr ""
+
+msgid "Archived Logs"
+msgstr ""
+
+#. placeholder {0}: quote.quoteId
+#. placeholder {1}: formatter.format(total)
+msgid "Are you sure you want to accept quote {0} for {1}?"
+msgstr ""
+
+msgid "Are you sure you want to activate the process: {name}? It will appear in dropdowns again."
+msgstr ""
+
+msgid "Are you sure you want to activate this gauge?."
+msgstr ""
+
+#. placeholder {0}: routeData?.rfqSummary ?.rfqId!
+msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
+msgstr ""
+
+msgid "Are you sure you want to cancel this job? It will no longer be available on the shop floor."
+msgstr ""
+
+msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
+msgstr ""
+
+msgid "Are you sure you want to complete this stock transfer?"
+msgstr ""
+
+msgid "Are you sure you want to confirm this sales order? Confirming the order will affect on order quantities used to calculate supply and demand."
+msgstr ""
+
+msgid "Are you sure you want to convert the RFQ to a quote?"
+msgstr ""
+
+msgid "Are you sure you want to create jobs for this sales order? This will create jobs for all lines that don't already have jobs."
+msgstr ""
+
+#. placeholder {0}: routeData?.supplier?.name
+msgid "Are you sure you want to deactivate {0}?"
+msgstr ""
+
+#. placeholder {0}: selectedCategory?.name
+msgid "Are you sure you want to deactivate the {0} attribute category?"
+msgstr ""
+
+#. placeholder {0}: selectedAttribute?.name
+msgid "Are you sure you want to deactivate the {0} attribute?"
+msgstr ""
+
+msgid "Are you sure you want to deactivate the {label} configuration rule?"
+msgstr ""
+
+msgid "Are you sure you want to deactivate the process: {name}? It will no longer appear in dropdowns."
+msgstr ""
+
+msgid "Are you sure you want to deactivate these users?"
+msgstr ""
+
+msgid "Are you sure you want to deactivate this gauge?."
+msgstr ""
+
+msgid "Are you sure you want to deactivate this user?"
+msgstr ""
+
+#. placeholder {0}: tool.readableIdWithRevision
+msgid "Are you sure you want to delete {0} from this operation? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: selectedGroup.name
+msgid "Are you sure you want to delete {0}?"
+msgstr ""
+
+#. placeholder {0}: routeData?.consumableSummary?.readableIdWithRevision
+#. placeholder {0}: routeData?.customer?.name!
+#. placeholder {0}: routeData?.document?.name
+msgid "Are you sure you want to delete {0}? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: selectedCustomField?.name
+msgid "Are you sure you want to delete the {0} field?"
+msgstr ""
+
+#. placeholder {0}: parameter.label
+msgid "Are you sure you want to delete the {0} parameter? This will not update any formulas that are using this parameter."
+msgstr ""
+
+msgid "Are you sure you want to delete the {key} parameter from this operation? This cannot be undone."
+msgstr ""
+
+msgid "Are you sure you want to delete the {name} attribute from this operation? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: account.name
+#. placeholder {1}: account.number ? ` (${account.number})` : ""
+msgid "Are you sure you want to delete the account: {0}{1}? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: apiKey.name
+msgid "Are you sure you want to delete the API key: {0}? This cannot be undone."
+msgstr ""
+
+msgid "Are you sure you want to delete the contractor: {name}? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: customerPart?.customer?.name ?? ""
+msgid "Are you sure you want to delete the customer part for {0}? This cannot be undone."
+msgstr ""
+
+msgid "Are you sure you want to delete the customer portal for: {customerName}? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: customerStatus.name
+msgid "Are you sure you want to delete the customer status: {0}? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: customerType.name
+msgid "Are you sure you want to delete the customer type: {0}? This cannot be undone."
+msgstr ""
+
+msgid "Are you sure you want to delete the department: {name}? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: employeeType.name
+msgid "Are you sure you want to delete the employee type: {0}? This cannot be undone."
+msgstr ""
+
+msgid "Are you sure you want to delete the failure mode: {name}? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: gaugeType.name
+msgid "Are you sure you want to delete the gauge type: {0}? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: group.name
+msgid "Are you sure you want to delete the group: {0}? This cannot be undone."
+msgstr ""
+
+msgid "Are you sure you want to delete the holiday: {name}? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: nonConformanceType.name
+msgid "Are you sure you want to delete the issue type: {0}? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: itemPostingGroup.name
+msgid "Are you sure you want to delete the item group: {0}? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: line.customerPartId
+#. placeholder {0}: line.description
+#. placeholder {0}: line.itemReadableId
+msgid "Are you sure you want to delete the line: {0}? This cannot be undone."
+msgstr ""
+
+msgid "Are you sure you want to delete the line: {itemReadableId}? This cannot be undone."
+msgstr ""
+
+msgid "Are you sure you want to delete the location: {name}? This cannot be undone."
+msgstr ""
+
+msgid "Are you sure you want to delete the maintenance schedule: {name}? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: materialDimension.name
+msgid "Are you sure you want to delete the material dimension: {0}? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: materialFinish.name
+msgid "Are you sure you want to delete the material finish: {0}? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: materialForm.name
+msgid "Are you sure you want to delete the material form: {0}? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: materialGrade.name
+msgid "Are you sure you want to delete the material grade: {0}? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: materialSubstance.name
+msgid "Are you sure you want to delete the material substance: {0}? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: materialType.name
+msgid "Are you sure you want to delete the material type: {0}? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: noQuoteReason.name
+msgid "Are you sure you want to delete the no quote reason: {0}? This cannot be undone."
+msgstr ""
+
+msgid "Are you sure you want to delete the partner: {name}? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: paymentTerm.name
+msgid "Are you sure you want to delete the payment term: {0}? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: pricingRule.name
+msgid "Are you sure you want to delete the pricing rule: {0}? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: purchaseInvoiceLine.quantity ?? 0
+#. placeholder {1}: purchaseInvoiceLine.description ?? ""
+msgid "Are you sure you want to delete the purchase invoice line for {0} {1}? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: salesInvoiceLine.quantity ?? 0
+#. placeholder {1}: salesInvoiceLine.description ?? ""
+msgid "Are you sure you want to delete the sales invoice line for {0} {1}? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: salesOrderLine.saleQuantity ?? 0
+#. placeholder {1}: salesOrderLine.description ?? ""
+msgid "Are you sure you want to delete the sales order line for {0} {1}? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: scrapReason.name
+msgid "Are you sure you want to delete the scrap reason: {0}? This cannot be undone."
+msgstr ""
+
+msgid "Are you sure you want to delete the shift: {name} from {locationName}? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: shippingMethod.name
+msgid "Are you sure you want to delete the shipping method: {0}? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: storageType.name
+msgid "Are you sure you want to delete the storage type: {0}? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: storageUnit.name
+msgid "Are you sure you want to delete the storage unit: {0}? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: supplierType.name
+msgid "Are you sure you want to delete the supplier type: {0}? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: unitOfMeasure.name
+msgid "Are you sure you want to delete the unit of measure: {0}? This cannot be undone."
+msgstr ""
+
+#. placeholder {0}: selectedView.name
+msgid "Are you sure you want to delete the view \"{0}\"?"
+msgstr ""
+
+#. placeholder {0}: webhook.name
+msgid "Are you sure you want to delete the webhook: {0}? This cannot be undone."
+msgstr ""
+
+msgid "Are you sure you want to delete this approval rule? This cannot be undone."
+msgstr ""
+
+msgid "Are you sure you want to delete this gauge?"
+msgstr ""
+
+msgid "Are you sure you want to delete this issue workflow?"
+msgstr ""
+
+msgid "Are you sure you want to delete this issue?"
+msgstr ""
+
+msgid "Are you sure you want to delete this kanban card? This cannot be undone."
+msgstr ""
+
+msgid "Are you sure you want to delete this maintenance dispatch? This cannot be undone."
+msgstr ""
+
+msgid "Are you sure you want to delete this quality document?"
+msgstr ""
+
+msgid "Are you sure you want to delete this record?"
+msgstr ""
+
+msgid "Are you sure you want to delete this required action?"
+msgstr ""
+
+msgid "Are you sure you want to delete this risk?"
+msgstr ""
+
+msgid "Are you sure you want to delete this risk? This cannot be undone."
+msgstr ""
+
+msgid "Are you sure you want to delete this suggestion? This action cannot be undone."
+msgstr ""
+
+msgid "Are you sure you want to delete this timecard? This cannot be undone."
+msgstr ""
+
+msgid "Are you sure you want to finalize the quote?"
+msgstr ""
+
+msgid "Are you sure you want to finalize the supplier quote?"
+msgstr ""
+
+#. placeholder {0}: selectedPurchaseInvoice.invoiceId!
+#. placeholder {0}: selectedSalesInvoice.invoiceId!
+msgid "Are you sure you want to permanently delete {0}?"
+msgstr ""
+
+msgid "Are you sure you want to permanently delete the supplier process?"
+msgstr ""
+
+msgid "Are you sure you want to post this receipt?"
+msgstr ""
+
+msgid "Are you sure you want to post this shipment?"
+msgstr ""
+
+msgid "Are you sure you want to reject this quote?"
+msgstr ""
+
+msgid "Are you sure you want to release this job? It will become available to the shop floor, and drive purchasing and production."
+msgstr ""
+
+msgid "Are you sure you want to remove this item from the price list? This cannot be undone."
+msgstr ""
+
+msgid "Are you sure you want to revoke the invitation for this user?"
+msgstr ""
+
+msgid "Are you sure you want to revoke the invitations for these users?"
+msgstr ""
+
+msgid "Are you sure you want to send an invite to these users?"
+msgstr ""
+
+msgid "Are you sure you want to send an invite to this user?"
+msgstr ""
+
+msgid "Are you sure you want to void this purchase invoice? This action will reverse all financial transactions and cannot be undone."
+msgstr ""
+
+msgid "Are you sure you want to void this receipt? This action will reverse all inventory transactions and cannot be undone."
+msgstr ""
+
+msgid "Are you sure you want to void this sales invoice? This action will reverse all financial transactions and cannot be undone."
+msgstr ""
+
+msgid "Are you sure you want to void this shipment? This action will reverse all inventory transactions and cannot be undone."
+msgstr ""
+
+msgid "Are you sure?"
+msgstr ""
+
+msgid "As the company owner, you can transfer ownership to another employee. This will give them full access to billing and administrative settings."
+msgstr ""
+
+msgid "Ascending"
+msgstr ""
+
+#. js-lingui-explicit-id
+msgid "Ask anything"
+msgstr ""
+
+msgid "Assembly:"
+msgstr ""
+
+msgid "Assign To"
+msgstr ""
+
+msgid "Assign to Groups"
+msgstr ""
+
+msgid "Assigned"
+msgstr ""
+
+msgid "Assigned to Me"
+msgstr ""
+
+msgid "Assignee"
+msgstr ""
+
+msgid "Assignment"
+msgstr ""
+
+msgid "Assignments"
+msgstr ""
+
+msgid "At least one condition must match"
+msgstr ""
+
+msgid "Attach File"
+msgstr ""
+
+msgid "Attachment"
+msgstr ""
+
+msgid "Attribute"
+msgstr ""
+
+msgid "Attribute sampling standard used to compute lot sample sizes and accept/reject numbers on inbound inspections."
+msgstr ""
+
+msgid "Attributes"
+msgstr ""
+
+msgid "Attributes are inherited from the procedure."
+msgstr ""
+
+msgid "Audit Log"
+msgstr ""
+
+msgid "Audit Logging"
+msgstr ""
+
+msgid "Audit logging is disabled"
+msgstr ""
+
+msgid "Audit logging is enabled"
+msgstr ""
+
+msgid "Audit logging is not enabled"
+msgstr ""
+
+msgid "Audit Logs"
+msgstr ""
+
+msgid "Authentication Error"
+msgstr ""
+
+msgid "Auto Release"
+msgstr ""
+
+msgid "Auto release must be enabled to start a job automatically"
+msgstr ""
+
+msgid "Auto Start Job"
+msgstr ""
+
+msgid "Auto-generated QR Code"
+msgstr ""
+
+msgid "Automatically release the job when the kanban is scanned"
+msgstr ""
+
+msgid "Automatically start the job when the kanban is scanned"
+msgstr ""
+
+msgid "Available"
+msgstr ""
+
+msgid "Avg Days to Close"
+msgstr ""
+
+msgid "Back"
+msgstr ""
+
+msgid "Back to home"
+msgstr ""
+
+msgid "Back to traceability"
+msgstr ""
+
+msgid "Backflush"
+msgstr ""
+
+msgid "Balance Sheet"
+msgstr ""
+
+msgid "Base Currency"
+msgstr ""
+
+msgid "Base Price"
+msgstr ""
+
+msgid "Basic Information"
+msgstr ""
+
+msgid "Batch"
+msgstr ""
+
+msgid "Batch items require a sales order"
+msgstr ""
+
+msgid "Batch number"
+msgstr ""
+
+msgid "Batch Number"
+msgstr ""
+
+msgid "Batch Properties"
+msgstr ""
+
+msgid "Batch Size"
+msgstr ""
+
+msgid "Batch Tracking"
+msgstr ""
+
+msgid "Beta"
+msgstr ""
+
+msgid "Bill of Material"
+msgstr ""
+
+msgid "Bill of Materials"
+msgstr ""
+
+msgid "Bill of Process"
+msgstr ""
+
+msgid "Bill To"
+msgstr ""
+
+msgid "Billing"
+msgstr ""
+
+msgid "Billing Address"
+msgstr ""
+
+msgid "Block with an error"
+msgstr ""
+
+msgid "Block, allow override"
+msgstr ""
+
+#. placeholder {0}: workCenter.blockingDispatchReadableId
+msgid "Blocked by {0}"
+msgstr ""
+
+msgid "Blocks save until resolved"
+msgstr ""
+
+msgid "BoM"
+msgstr ""
+
+msgid "BoM + BoP"
+msgstr ""
+
+msgid "BOM synced successfully"
+msgstr ""
+
+msgid "Breadcrumb"
+msgstr ""
+
+msgid "Browse library"
+msgstr ""
+
+msgid "Bucket"
+msgstr ""
+
+msgid "Bulk Import"
+msgstr ""
+
+msgid "Bulk Jobs"
+msgstr ""
+
+msgid "Buy"
+msgstr ""
+
+msgid "Buy and Make"
+msgstr ""
+
+msgid "Buyer"
+msgstr ""
+
+msgid "by {byUser}"
+msgstr ""
+
+msgid "By accepting the invite, you agree to the <0>Terms of Service</0> and <1>Privacy Policy</1>."
+msgstr ""
+
+msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
+msgstr ""
+
+msgid "CAD Model"
+msgstr ""
+
+msgid "Calculate from BOM"
+msgstr ""
+
+msgid "Calculated finished-good expiry"
+msgstr ""
+
+msgid "Calculation Method"
+msgstr ""
+
+msgid "Calibration Expiration Notifications"
+msgstr ""
+
+msgid "Calibration Interval (Months)"
+msgstr ""
+
+msgid "Calibration Records"
+msgstr ""
+
+msgid "Calibration Status"
+msgstr ""
+
+msgid "Calibration Supplier"
+msgstr ""
+
+msgid "Calibrations"
+msgstr ""
+
+msgid "Can't disable the only active break. Add another break or toggle the override's Active instead."
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid "Cancel Job"
+msgstr ""
+
+msgid "Canceled"
+msgstr ""
+
+msgid "Cancelled"
+msgstr ""
+
+msgid "Cannot add parameters to unsaved operation"
+msgstr ""
+
+msgid "Cannot add steps to unsaved operation"
+msgstr ""
+
+msgid "Cannot add tools to unsaved operation"
+msgstr ""
+
+msgid "Cannot convert RFQ to quote"
+msgstr ""
+
+msgid "Cannot move to parts bucket without item ID"
+msgstr ""
+
+msgid "Cannot place order - no supplier associated with this item"
+msgstr ""
+
+msgid "Cannot post — shipment contains expired tracked entities."
+msgstr ""
+
+msgid "Cannot send RFQ"
+msgstr ""
+
+msgid "Cannot upload to parts bucket without item ID"
+msgstr ""
+
+msgid "Carbon client is not available"
+msgstr ""
+
+msgid "Carbon client not available"
+msgstr ""
+
+msgid "Carbon client not found"
+msgstr ""
+
+msgid "Carbon column"
+msgstr ""
+
+msgid "Carbon Logo"
+msgstr ""
+
+msgid "Carbon Value"
+msgstr ""
+
+msgid "Carrier"
+msgstr ""
+
+msgid "Carrier Account"
+msgstr ""
+
+msgid "Category"
+msgstr ""
+
+msgid "Category Name"
+msgstr ""
+
+msgid "CC"
+msgstr ""
+
+msgid "Change"
+msgstr ""
+
+msgid "Change status"
+msgstr ""
+
+msgid "Change the item type (e.g. Part, Material, Tool, etc.)"
+msgstr ""
+
+msgid "Change Type"
+msgstr ""
+
+msgid "Changed By"
+msgstr ""
+
+msgid "Changes"
+msgstr ""
+
+msgid "Changing this will overwrite the existing method"
+msgstr ""
+
+msgid "Changing this will update the part ID"
+msgstr ""
+
+msgid "Chart of Accounts"
+msgstr ""
+
+msgid "Chat"
+msgstr ""
+
+msgid "Check your email"
+msgstr ""
+
+msgid "Choose another file"
+msgstr ""
+
+msgid "Choose your preferred language for the interface."
+msgstr ""
+
+msgid "Choose your style"
+msgstr ""
+
+msgid "City"
+msgstr ""
+
+msgid "Class"
+msgstr ""
+
+msgid "Clear"
+msgstr ""
+
+msgid "Clear All"
+msgstr ""
+
+msgid "Clear due date"
+msgstr ""
+
+msgid "Clear Filters"
+msgstr ""
+
+msgid "Clear search"
+msgstr ""
+
+msgid "Clear search query"
+msgstr ""
+
+msgid "Clock In"
+msgstr ""
+
+msgid "Clock Out"
+msgstr ""
+
+#. placeholder {0}: formatTime(openEntry.clockIn, locale)
+msgid "Clocked in since {0}"
+msgstr ""
+
+msgid "Close"
+msgstr ""
+
+msgid "Close Date"
+msgstr ""
+
+msgid "Closed Date"
+msgstr ""
+
+msgid "Closure blocked"
+msgstr ""
+
+msgid "Cloud-Hosted"
+msgstr ""
+
+msgid "Code"
+msgstr ""
+
+msgid "Collapse all"
+msgstr ""
+
+msgid "Collapse Costs"
+msgstr ""
+
+msgid "Collapse Labor"
+msgstr ""
+
+msgid "Collapse Machine"
+msgstr ""
+
+msgid "Collapse Setup"
+msgstr ""
+
+msgid "Collapse subtree"
+msgstr ""
+
+msgid "Column"
+msgstr ""
+
+msgid "Column visibility and order"
+msgstr ""
+
+msgid "Columns"
+msgstr ""
+
+msgid "Coming soon"
+msgstr ""
+
+msgid "comma-separated values"
+msgstr ""
+
+msgid "Comment"
+msgstr ""
+
+msgid "Comments"
+msgstr ""
+
+msgid "Companies"
+msgstr ""
+
+msgid "Company"
+msgstr ""
+
+msgid "Company Name"
+msgstr ""
+
+msgid "Company policy asks for a different person to inspect inbound items than the one who received them."
+msgstr ""
+
+msgid "Compare and Order"
+msgstr ""
+
+msgid "Compare at quantity:"
+msgstr ""
+
+msgid "Compare Quotes"
+msgstr ""
+
+msgid "Compare Supplier Quotes"
+msgstr ""
+
+msgid "Complete"
+msgstr ""
+
+msgid "Complete All"
+msgstr ""
+
+msgid "Complete all quantities on barcode scan"
+msgstr ""
+
+msgid "Complete Job"
+msgstr ""
+
+msgid "Complete Stock Transfer"
+msgstr ""
+
+msgid "Completed"
+msgstr ""
+
+msgid "Completed At"
+msgstr ""
+
+msgid "Completed Date"
+msgstr ""
+
+msgid "Completed Job Notifications"
+msgstr ""
+
+msgid "Completed Qty"
+msgstr ""
+
+msgid "Completion Barcode"
+msgstr ""
+
+msgid "Completion Time"
+msgstr ""
+
+msgid "Conditions"
+msgstr ""
+
+msgid "Configuration Parameters"
+msgstr ""
+
+msgid "Configurator"
+msgstr ""
+
+msgid "Configure"
+msgstr ""
+
+msgid "Configure {label}"
+msgstr ""
+
+msgid "Configure defaults for the quality dashboard."
+msgstr ""
+
+msgid "Configure how preventative maintenance dispatches are automatically generated from maintenance schedules."
+msgstr ""
+
+msgid "Configure Item"
+msgstr ""
+
+msgid "Configure Materials"
+msgstr ""
+
+msgid "Configure notifications for when gauges go out of calibration."
+msgstr ""
+
+msgid "Configure notifications for when jobs are completed."
+msgstr ""
+
+msgid "Configure notifications for when maintenance dispatches are created from the shop floor. Notifications are routed based on the failure mode type."
+msgstr ""
+
+msgid "Configure notifications for when new suggestions are submitted."
+msgstr ""
+
+msgid "Configure the content displayed on job traveler PDFs."
+msgstr ""
+
+msgid "Configure the default accounts used for various transaction types across your system"
+msgstr ""
+
+msgid "Configure the start months for your fiscal and tax years"
+msgstr ""
+
+msgid "Configure when purchased item prices should be updated from supplier transactions."
+msgstr ""
+
+msgid "Configure who should receive notifications when a supplier submits a quote."
+msgstr ""
+
+msgid "Configured"
+msgstr ""
+
+msgid "Confirm"
+msgstr ""
+
+#. placeholder {0}: salesOrder?.salesOrderId
+msgid "Confirm {0}"
+msgstr ""
+
+msgid "Confirm ID Change"
+msgstr ""
+
+msgid "Confirm Import"
+msgstr ""
+
+msgid "Confirm Password"
+msgstr ""
+
+msgid "Connect Carbon to your accounting, project, and CAD tools and much more."
+msgstr ""
+
+msgid "Connect Jira issue"
+msgstr ""
+
+msgid "Connect Linear issue"
+msgstr ""
+
+msgid "Connected to"
+msgstr ""
+
+msgid "Console Mode"
+msgstr ""
+
+msgid "Console mode has been enabled. Use this PIN to identify yourself at MES terminals."
+msgstr ""
+
+msgid "Console mode is disabled"
+msgstr ""
+
+msgid "Console mode is enabled"
+msgstr ""
+
+msgid "Console Operator"
+msgstr ""
+
+msgid "Consumable"
+msgstr ""
+
+msgid "Consumable Details"
+msgstr ""
+
+msgid "Consumable ID"
+msgstr ""
+
+msgid "Consumables"
+msgstr ""
+
+msgid "Consumed"
+msgstr ""
+
+msgid "Contact"
+msgstr ""
+
+msgid "Contact (optional)"
+msgstr ""
+
+msgid "Contacts"
+msgstr ""
+
+msgid "Contained"
+msgstr ""
+
+msgid "Containment"
+msgstr ""
+
+msgid "Contractor"
+msgstr ""
+
+msgid "Contractors"
+msgstr ""
+
+msgid "Conversion"
+msgstr ""
+
+msgid "Conversion Factor"
+msgstr ""
+
+msgid "Conversion:"
+msgstr ""
+
+msgid "Convert"
+msgstr ""
+
+msgid "Convert Line to Job"
+msgstr ""
+
+msgid "Convert Lines to Jobs"
+msgstr ""
+
+msgid "Convert to Quote"
+msgstr ""
+
+msgid "Copied link to clipboard"
+msgstr ""
+
+msgid "Copied!"
+msgstr ""
+
+msgid "Copy"
+msgstr ""
+
+msgid "Copy all items and pricing to another customer or type."
+msgstr ""
+
+msgid "Copy API Key"
+msgstr ""
+
+msgid "Copy consumable number"
+msgstr ""
+
+msgid "Copy dispatch ID"
+msgstr ""
+
+msgid "Copy dispatch number"
+msgstr ""
+
+msgid "Copy document name"
+msgstr ""
+
+msgid "Copy document unique identifier"
+msgstr ""
+
+msgid "Copy ID"
+msgstr ""
+
+msgid "Copy issue number"
+msgstr ""
+
+msgid "Copy issue unique identifier"
+msgstr ""
+
+msgid "Copy Job number"
+msgstr ""
+
+msgid "Copy link"
+msgstr ""
+
+msgid "Copy link to consumable"
+msgstr ""
+
+msgid "Copy link to dispatch"
+msgstr ""
+
+msgid "Copy link to document"
+msgstr ""
+
+msgid "Copy link to issue"
+msgstr ""
+
+msgid "Copy link to Job"
+msgstr ""
+
+msgid "Copy link to material"
+msgstr ""
+
+msgid "Copy link to part"
+msgstr ""
+
+msgid "Copy link to procedure"
+msgstr ""
+
+msgid "Copy link to tool"
+msgstr ""
+
+msgid "Copy link to training"
+msgstr ""
+
+msgid "Copy material number"
+msgstr ""
+
+msgid "Copy material unique identifier"
+msgstr ""
+
+msgid "Copy MCP Command"
+msgstr ""
+
+msgid "Copy part number"
+msgstr ""
+
+msgid "Copy part unique identifier"
+msgstr ""
+
+msgid "Copy PIN"
+msgstr ""
+
+msgid "Copy pricing to a single customer"
+msgstr ""
+
+msgid "Copy pricing to all customers of a type"
+msgstr ""
+
+msgid "Copy procedure name"
+msgstr ""
+
+msgid "Copy procedure unique identifier"
+msgstr ""
+
+msgid "Copy Quote"
+msgstr ""
+
+msgid "Copy Quote number"
+msgstr ""
+
+msgid "Copy response"
+msgstr ""
+
+msgid "Copy this item's pricing to another scope."
+msgstr ""
+
+msgid "Copy this link to share the quote with a customer"
+msgstr ""
+
+msgid "Copy this link to share the quote with a supplier"
+msgstr ""
+
+msgid "Copy tool number"
+msgstr ""
+
+msgid "Copy tool unique identifier"
+msgstr ""
+
+msgid "Copy training name"
+msgstr ""
+
+msgid "Copy training unique identifier"
+msgstr ""
+
+msgid "Correct Answer"
+msgstr ""
+
+msgid "Correct Answers"
+msgstr ""
+
+msgid "Cost Center"
+msgstr ""
+
+msgid "Cost Centers"
+msgstr ""
+
+msgid "Cost History"
+msgstr ""
+
+msgid "Costing"
+msgstr ""
+
+msgid "Costing & Posting"
+msgstr ""
+
+msgid "Costing Method"
+msgstr ""
+
+msgid "Couldn't load documents"
+msgstr ""
+
+msgid "Country"
+msgstr ""
+
+msgid "Create"
+msgstr ""
+
+#. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
+#. placeholder {0}: search.trim() === "" ? label : search
+msgid "Create {0}"
+msgstr ""
+
+msgid "Create a new kanban card for scan-based replenishment."
+msgstr ""
+
+msgid "Create a new maintenance dispatch to track equipment repairs and maintenance activities"
+msgstr ""
+
+msgid "Create a new production job to fulfill the sales order"
+msgstr ""
+
+msgid "Create a quote with a new quote ID"
+msgstr ""
+
+msgid "Create Account"
+msgstr ""
+
+msgid "Create an account"
+msgstr ""
+
+msgid "Create audit trail entries"
+msgstr ""
+
+msgid "Create Issue"
+msgstr ""
+
+msgid "Create Issue from Inspection"
+msgstr ""
+
+msgid "Create Jobs"
+msgstr ""
+
+msgid "Create Kanban"
+msgstr ""
+
+msgid "Create new rule"
+msgstr ""
+
+msgid "Create Quote Revision"
+msgstr ""
+
+msgid "Create Revision"
+msgstr ""
+
+msgid "Create Rule"
+msgstr ""
+
+msgid "Create User"
+msgstr ""
+
+msgid "Create Version"
+msgstr ""
+
+msgid "Create Work Center"
+msgstr ""
+
+msgid "Created"
+msgstr ""
+
+msgid "Created account"
+msgstr ""
+
+msgid "Created At"
+msgstr ""
+
+msgid "Created By"
+msgstr ""
+
+msgid "Created consumable"
+msgstr ""
+
+msgid "Created customer portal"
+msgstr ""
+
+msgid "Created customer status"
+msgstr ""
+
+msgid "Created customer type"
+msgstr ""
+
+#. placeholder {0}: createdCustomer?.name ?? t`Customer`
+msgid "Created customer: {0}"
+msgstr ""
+
+msgid "Created department"
+msgstr ""
+
+msgid "Created failure mode"
+msgstr ""
+
+msgid "Created gauge type"
+msgstr ""
+
+msgid "Created item group"
+msgstr ""
+
+msgid "Created location"
+msgstr ""
+
+msgid "Created maintenance schedule"
+msgstr ""
+
+msgid "Created material"
+msgstr ""
+
+msgid "Created material dimension"
+msgstr ""
+
+msgid "Created material finish"
+msgstr ""
+
+msgid "Created material form"
+msgstr ""
+
+msgid "Created material grade"
+msgstr ""
+
+msgid "Created material substance"
+msgstr ""
+
+msgid "Created material type"
+msgstr ""
+
+msgid "Created no quote reason"
+msgstr ""
+
+msgid "Created non conformance type"
+msgstr ""
+
+msgid "Created part"
+msgstr ""
+
+msgid "Created payment term"
+msgstr ""
+
+msgid "Created process"
+msgstr ""
+
+msgid "Created required action"
+msgstr ""
+
+msgid "Created scrap reason"
+msgstr ""
+
+msgid "Created shipping method"
+msgstr ""
+
+msgid "Created stock transfer line"
+msgstr ""
+
+msgid "Created storage type"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.data.name
+msgid "Created supplier: {0}"
+msgstr ""
+
+msgid "Created tool"
+msgstr ""
+
+msgid "Created unit of measure"
+msgstr ""
+
+msgid "Created webhook"
+msgstr ""
+
+msgid "Created work center"
+msgstr ""
+
+msgid "Creating part..."
+msgstr ""
+
+msgid "CSV column"
+msgstr ""
+
+msgid "CSV file must have at least 2 rows."
+msgstr ""
+
+msgid "Currency"
+msgstr ""
+
+msgid "Current"
+msgstr ""
+
+msgid "Current Password"
+msgstr ""
+
+msgid "Current quantity"
+msgstr ""
+
+msgid "Currently training for"
+msgstr ""
+
+msgid "Custom"
+msgstr ""
+
+msgid "Custom {label}"
+msgstr ""
+
+msgid "Custom Field"
+msgstr ""
+
+msgid "Custom Fields"
+msgstr ""
+
+msgid "Customer"
+msgstr ""
+
+msgid "Customer Accounts"
+msgstr ""
+
+msgid "Customer Contact"
+msgstr ""
+
+msgid "Customer Details"
+msgstr ""
+
+msgid "Customer ID"
+msgstr ""
+
+msgid "Customer Invoice Number"
+msgstr ""
+
+msgid "Customer Location"
+msgstr ""
+
+msgid "Customer Overview"
+msgstr ""
+
+msgid "Customer Part"
+msgstr ""
+
+msgid "Customer Part ID"
+msgstr ""
+
+msgid "Customer Part Number"
+msgstr ""
+
+msgid "Customer Part Revision"
+msgstr ""
+
+msgid "Customer Parts"
+msgstr ""
+
+msgid "Customer PO"
+msgstr ""
+
+msgid "Customer PO Number"
+msgstr ""
+
+msgid "Customer Portal"
+msgstr ""
+
+msgid "Customer Portals"
+msgstr ""
+
+msgid "Customer Revision"
+msgstr ""
+
+msgid "Customer RFQ"
+msgstr ""
+
+msgid "Customer Scope"
+msgstr ""
+
+msgid "Customer Status"
+msgstr ""
+
+msgid "Customer Statuses"
+msgstr ""
+
+msgid "Customer Type"
+msgstr ""
+
+msgid "Customer Types"
+msgstr ""
+
+msgid "Customers"
+msgstr ""
+
+msgid "Daily Usage"
+msgstr ""
+
+msgid "Dark"
+msgstr ""
+
+msgid "Dark Mode"
+msgstr ""
+
+msgid "Dashboard"
+msgstr ""
+
+msgid "Data Type"
+msgstr ""
+
+msgid "Data type cannot be changed"
+msgstr ""
+
+msgid "Date"
+msgstr ""
+
+msgid "Date Acquired"
+msgstr ""
+
+msgid "Date Calibrated"
+msgstr ""
+
+msgid "Date Due"
+msgstr ""
+
+msgid "Date Issued"
+msgstr ""
+
+msgid "Date Paid"
+msgstr ""
+
+msgid "Date Range"
+msgstr ""
+
+msgid "Dates"
+msgstr ""
+
+msgid "Days"
+msgstr ""
+
+msgid "Days Discount"
+msgstr ""
+
+msgid "Days Due"
+msgstr ""
+
+msgid "Days in advance to generate dispatches"
+msgstr ""
+
+msgid "Days Off"
+msgstr ""
+
+msgid "Days Remaining"
+msgstr ""
+
+msgid "Deactivate"
+msgstr ""
+
+#. placeholder {0}: workCenter.name
+msgid "Deactivate {0}"
+msgstr ""
+
+msgid "Deactivate {name}"
+msgstr ""
+
+msgid "Deactivate Account"
+msgstr ""
+
+msgid "Deactivate Employee"
+msgstr ""
+
+msgid "Deactivate Employees"
+msgstr ""
+
+msgid "Deactivate Process"
+msgstr ""
+
+msgid "Deactivate Supplier"
+msgstr ""
+
+msgid "Deactivate Users"
+msgstr ""
+
+msgid "Deactivate Work Center"
+msgstr ""
+
+msgid "Deadline Type"
+msgstr ""
+
+msgid "Decide what an operator sees if they try to issue a batch or serial that's already expired."
+msgstr ""
+
+msgid "Default Accounts"
+msgstr ""
+
+msgid "Default Approver"
+msgstr ""
+
+msgid "Default CC Recipients"
+msgstr ""
+
+msgid "Default Method"
+msgstr ""
+
+msgid "Default Method Type"
+msgstr ""
+
+msgid "Default Permissions"
+msgstr ""
+
+msgid "Default Priority"
+msgstr ""
+
+msgid "Default shelf-life duration (days)"
+msgstr ""
+
+msgid "Default Source"
+msgstr ""
+
+msgid "Default Storage Unit"
+msgstr ""
+
+msgid "Default Unit"
+msgstr ""
+
+msgid "Defaults"
+msgstr ""
+
+msgid "Define the default size of the product label. Used for tracking items in inventory."
+msgstr ""
+
+msgid "Define the terms and conditions for purchase orders"
+msgstr ""
+
+msgid "Define the terms and conditions for quotes and sales orders"
+msgstr ""
+
+msgid "Defines how many tracked entities are inspected per lot, and how many failures are tolerated before the lot is rejected."
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "Delete {name}"
+msgstr ""
+
+msgid "Delete {storageUnitName}"
+msgstr ""
+
+msgid "Delete API Key"
+msgstr ""
+
+msgid "Delete Assignment"
+msgstr ""
+
+msgid "Delete Association"
+msgstr ""
+
+msgid "Delete Attribute"
+msgstr ""
+
+msgid "Delete Category"
+msgstr ""
+
+msgid "Delete chat"
+msgstr ""
+
+msgid "Delete Consumable"
+msgstr ""
+
+msgid "Delete Contact"
+msgstr ""
+
+msgid "Delete Contractor"
+msgstr ""
+
+msgid "Delete Custom Field"
+msgstr ""
+
+msgid "Delete Customer"
+msgstr ""
+
+msgid "Delete Customer Status"
+msgstr ""
+
+msgid "Delete Customer Type"
+msgstr ""
+
+msgid "Delete Department"
+msgstr ""
+
+msgid "Delete Dispatch"
+msgstr ""
+
+msgid "Delete Document"
+msgstr ""
+
+msgid "Delete Employee Type"
+msgstr ""
+
+msgid "Delete Failure Mode"
+msgstr ""
+
+msgid "Delete file"
+msgstr ""
+
+msgid "Delete Group"
+msgstr ""
+
+msgid "Delete Holiday"
+msgstr ""
+
+msgid "Delete Issue"
+msgstr ""
+
+msgid "Delete Line"
+msgstr ""
+
+msgid "Delete Location"
+msgstr ""
+
+msgid "Delete Material"
+msgstr ""
+
+msgid "Delete Material Dimension"
+msgstr ""
+
+msgid "Delete Material Finish"
+msgstr ""
+
+msgid "Delete Material Grade"
+msgstr ""
+
+msgid "Delete Material Shape"
+msgstr ""
+
+msgid "Delete Material Type"
+msgstr ""
+
+msgid "Delete Part"
+msgstr ""
+
+msgid "Delete Partner"
+msgstr ""
+
+msgid "Delete Payment Term"
+msgstr ""
+
+msgid "Delete Portal"
+msgstr ""
+
+msgid "Delete Price Break"
+msgstr ""
+
+msgid "Delete Pricing Rule"
+msgstr ""
+
+msgid "Delete Procedure"
+msgstr ""
+
+msgid "Delete Process"
+msgstr ""
+
+msgid "Delete Purchase Invoice"
+msgstr ""
+
+msgid "Delete Purchase Order"
+msgstr ""
+
+msgid "Delete Purchase Orders"
+msgstr ""
+
+msgid "Delete Question"
+msgstr ""
+
+msgid "Delete Quote"
+msgstr ""
+
+msgid "Delete Reason"
+msgstr ""
+
+msgid "Delete Receipt"
+msgstr ""
+
+msgid "Delete receipt line"
+msgstr ""
+
+msgid "Delete RFQ"
+msgstr ""
+
+msgid "Delete Risk"
+msgstr ""
+
+msgid "Delete rows"
+msgstr ""
+
+msgid "Delete Rule"
+msgstr ""
+
+msgid "Delete Sales Invoice"
+msgstr ""
+
+msgid "Delete Sales Order"
+msgstr ""
+
+msgid "Delete Schedule"
+msgstr ""
+
+msgid "Delete Shift"
+msgstr ""
+
+msgid "Delete Shipment"
+msgstr ""
+
+msgid "Delete shipment line"
+msgstr ""
+
+msgid "Delete Shipping Method"
+msgstr ""
+
+msgid "Delete Step"
+msgstr ""
+
+msgid "Delete Stock Transfer"
+msgstr ""
+
+msgid "Delete Storage Type"
+msgstr ""
+
+msgid "Delete Storage Unit"
+msgstr ""
+
+msgid "Delete Substance"
+msgstr ""
+
+msgid "Delete Suggestion"
+msgstr ""
+
+msgid "Delete Supplier"
+msgstr ""
+
+msgid "Delete Supplier Quote"
+msgstr ""
+
+msgid "Delete Supplier Type"
+msgstr ""
+
+msgid "Delete Timecard"
+msgstr ""
+
+msgid "Delete Tool"
+msgstr ""
+
+msgid "Delete Training"
+msgstr ""
+
+msgid "Delete Transfer"
+msgstr ""
+
+msgid "Delete Transfer Line"
+msgstr ""
+
+msgid "Delete View"
+msgstr ""
+
+msgid "Delete Warehouse Transfer"
+msgstr ""
+
+msgid "Delete Webhook"
+msgstr ""
+
+msgid "Delivery Date"
+msgstr ""
+
+msgid "Delivery Location"
+msgstr ""
+
+msgid "Demand"
+msgstr ""
+
+msgid "Demand Forecast"
+msgstr ""
+
+msgid "Demand Projections"
+msgstr ""
+
+msgid "Demand-Based"
+msgstr ""
+
+msgid "Department"
+msgstr ""
+
+msgid "Department Name"
+msgstr ""
+
+msgid "Departments"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "Description (optional)"
+msgstr ""
+
+msgid "Description of Issue"
+msgstr ""
+
+msgid "Detail"
+msgstr ""
+
+msgid "Details"
+msgstr ""
+
+msgid "Digital Quote"
+msgstr ""
+
+msgid "Digital Quotes"
+msgstr ""
+
+msgid "Dimension"
+msgstr ""
+
+msgid "Dimensions"
+msgstr ""
+
+msgid "Direct"
+msgstr ""
+
+msgid "Disabled"
+msgstr ""
+
+msgid "Discard"
+msgstr ""
+
+msgid "Discount"
+msgstr ""
+
+msgid "Discount Days after {selectedCalculationMethod}"
+msgstr ""
+
+msgid "Discount Percent"
+msgstr ""
+
+msgid "Discount Percentage"
+msgstr ""
+
+msgid "Dismiss"
+msgstr ""
+
+msgid "Dispatch"
+msgstr ""
+
+msgid "Dispatch ID"
+msgstr ""
+
+msgid "Dispatches"
+msgstr ""
+
+msgid "Display Settings"
+msgstr ""
+
+msgid "Disposition"
+msgstr ""
+
+msgid "Dispositions"
+msgstr ""
+
+msgid "Do you want to overwrite the user's current permissions with the default permissions for this employee type?"
+msgstr ""
+
+msgid "Document"
+msgstr ""
+
+msgid "Document Control"
+msgstr ""
+
+msgid "Document:"
+msgstr ""
+
+msgid "Documents"
+msgstr ""
+
+msgid "Don't Cancel"
+msgstr ""
+
+msgid "Done"
+msgstr ""
+
+msgid "Download"
+msgstr ""
+
+msgid "Download CSV"
+msgstr ""
+
+msgid "Draft"
+msgstr ""
+
+msgid "Drag and drop a Purchase Order PDF here, or click to select a file"
+msgstr ""
+
+msgid "Drag handle"
+msgstr ""
+
+msgid "Drop Shipment"
+msgstr ""
+
+msgid "Drop Shipment Statuses"
+msgstr ""
+
+msgid "Drop your file here, or click to browse."
+msgstr ""
+
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
+msgid "Due {0}"
+msgstr ""
+
+msgid "Due Date"
+msgstr ""
+
+msgid "Due Date of First Job"
+msgstr ""
+
+msgid "Due Date of Last Job"
+msgstr ""
+
+msgid "Due Days after {selectedCalculationMethod}"
+msgstr ""
+
+msgid "Duplicate"
+msgstr ""
+
+msgid "Duplicate Item"
+msgstr ""
+
+msgid "Duplicate Price List"
+msgstr ""
+
+msgid "Duplicate Pricing Rule"
+msgstr ""
+
+msgid "Duplicate To"
+msgstr ""
+
+msgid "Duplicate to..."
+msgstr ""
+
+msgid "Duration"
+msgstr ""
+
+msgid "Edit"
+msgstr ""
+
+msgid "Edit Account"
+msgstr ""
+
+msgid "Edit API Key"
+msgstr ""
+
+msgid "Edit Approval Rule"
+msgstr ""
+
+msgid "Edit Assignment"
+msgstr ""
+
+msgid "Edit Attribute"
+msgstr ""
+
+msgid "Edit Attribute Category"
+msgstr ""
+
+msgid "Edit Category"
+msgstr ""
+
+msgid "Edit column visibility"
+msgstr ""
+
+msgid "Edit Contact"
+msgstr ""
+
+msgid "Edit Contractor"
+msgstr ""
+
+msgid "Edit Currency"
+msgstr ""
+
+msgid "Edit Custom Field"
+msgstr ""
+
+msgid "Edit Customer Part"
+msgstr ""
+
+msgid "Edit Customer Status"
+msgstr ""
+
+msgid "Edit Customer Type"
+msgstr ""
+
+msgid "Edit date range"
+msgstr ""
+
+msgid "Edit Department"
+msgstr ""
+
+msgid "Edit Dispatch"
+msgstr ""
+
+msgid "Edit Employee"
+msgstr ""
+
+msgid "Edit Employee Type"
+msgstr ""
+
+msgid "Edit expiration date"
+msgstr ""
+
+msgid "Edit Expiry"
+msgstr ""
+
+msgid "Edit Failure Mode"
+msgstr ""
+
+msgid "Edit Gauge Calibration Record"
+msgstr ""
+
+msgid "Edit Gauge Type"
+msgstr ""
+
+msgid "Edit Group"
+msgstr ""
+
+msgid "Edit Holiday"
+msgstr ""
+
+msgid "Edit Item Group"
+msgstr ""
+
+msgid "Edit Kanban"
+msgstr ""
+
+msgid "Edit Line"
+msgstr ""
+
+msgid "Edit Location"
+msgstr ""
+
+msgid "Edit Maintenance Dispatch"
+msgstr ""
+
+msgid "Edit Material"
+msgstr ""
+
+msgid "Edit Material Dimension"
+msgstr ""
+
+msgid "Edit Material Finish"
+msgstr ""
+
+msgid "Edit Material Grade"
+msgstr ""
+
+msgid "Edit Material Shape"
+msgstr ""
+
+msgid "Edit Material Substance"
+msgstr ""
+
+msgid "Edit Material Type"
+msgstr ""
+
+msgid "Edit Non Conformance Type"
+msgstr ""
+
+msgid "Edit Part"
+msgstr ""
+
+msgid "Edit Partner"
+msgstr ""
+
+msgid "Edit Payment Term"
+msgstr ""
+
+msgid "Edit Permissions"
+msgstr ""
+
+msgid "Edit Portal"
+msgstr ""
+
+msgid "Edit Price Override"
+msgstr ""
+
+msgid "Edit Pricing"
+msgstr ""
+
+msgid "Edit Pricing Rule"
+msgstr ""
+
+msgid "Edit Process"
+msgstr ""
+
+msgid "Edit purchase order line type"
+msgstr ""
+
+msgid "Edit Question"
+msgstr ""
+
+msgid "Edit Reason"
+msgstr ""
+
+msgid "Edit Receipt"
+msgstr ""
+
+msgid "Edit Revision"
+msgstr ""
+
+msgid "Edit rule"
+msgstr ""
+
+msgid "Edit Rule"
+msgstr ""
+
+msgid "Edit Schedule"
+msgstr ""
+
+msgid "Edit Scheduled Maintenance"
+msgstr ""
+
+msgid "Edit Sequence"
+msgstr ""
+
+msgid "Edit Shift"
+msgstr ""
+
+msgid "Edit Shipment"
+msgstr ""
+
+msgid "Edit Shipping"
+msgstr ""
+
+msgid "Edit Shipping Method"
+msgstr ""
+
+msgid "Edit Size"
+msgstr ""
+
+msgid "Edit Step"
+msgstr ""
+
+msgid "Edit Stock Transfer"
+msgstr ""
+
+msgid "Edit Storage Type"
+msgstr ""
+
+msgid "Edit Storage Unit"
+msgstr ""
+
+msgid "Edit Substance"
+msgstr ""
+
+msgid "Edit Supplier"
+msgstr ""
+
+msgid "Edit Supplier Part"
+msgstr ""
+
+msgid "Edit supplier process"
+msgstr ""
+
+msgid "Edit Supplier Type"
+msgstr ""
+
+msgid "Edit Timecard"
+msgstr ""
+
+msgid "Edit Tool"
+msgstr ""
+
+msgid "Edit Training"
+msgstr ""
+
+msgid "Edit Transfer"
+msgstr ""
+
+msgid "Edit Transfer Line"
+msgstr ""
+
+msgid "Edit Unit of Measure"
+msgstr ""
+
+msgid "Edit View"
+msgstr ""
+
+msgid "Edit Webhook"
+msgstr ""
+
+msgid "Edit Work Center"
+msgstr ""
+
+msgid "Email"
+msgstr ""
+
+msgid "Email Address"
+msgstr ""
+
+msgid "Email notifications not configured"
+msgstr ""
+
+msgid "Emails"
+msgstr ""
+
+msgid "Emoji"
+msgstr ""
+
+msgid "Employee"
+msgstr ""
+
+msgid "Employee Accounts"
+msgstr ""
+
+msgid "Employee Type"
+msgstr ""
+
+msgid "Employee Types"
+msgstr ""
+
+msgid "Employees"
+msgstr ""
+
+msgid "Enable audit logging in settings to start tracking changes to your data."
+msgstr ""
+
+msgid "Enable digital quotes for your company. This will allow you to send digital quotes to your customers, and allow them to accept them online."
+msgstr ""
+
+msgid "Enable full accrual accounting with journal entries, financial reports, and general ledger posting."
+msgstr ""
+
+msgid "Enable in Settings"
+msgstr ""
+
+msgid "Enable notifications when an RFQ is marked as ready for quote."
+msgstr ""
+
+msgid "Enable shared workstation mode for MES terminals. Operators identify themselves via PIN before performing work."
+msgstr ""
+
+msgid "Enable this rule to automatically require approval for matching documents"
+msgstr ""
+
+msgid "Enable timecard tracking for work shifts."
+msgstr ""
+
+msgid "Enable to allow shared workstation mode."
+msgstr ""
+
+msgid "Enable to automatically post transactions to the general ledger."
+msgstr ""
+
+msgid "Enable to generate IDs and descriptions for raw materials."
+msgstr ""
+
+msgid "Enable to include work instructions on job traveler PDFs."
+msgstr ""
+
+msgid "Enable to show part thumbnails on purchase order PDFs."
+msgstr ""
+
+msgid "Enable to show part thumbnails on sales PDFs."
+msgstr ""
+
+msgid "Enable to start tracking changes to your data."
+msgstr ""
+
+msgid "Enable to start tracking work shifts."
+msgstr ""
+
+msgid "Enable to use metric units for material dimensions."
+msgstr ""
+
+msgid "Enabled"
+msgstr ""
+
+msgid "End Date"
+msgstr ""
+
+msgid "End Time"
+msgstr ""
+
+msgid "Enforce constraints on receipts, shipments, transfers and job operations for this item."
+msgstr ""
+
+msgid "Enforce per-item validation across receipts, shipments, transfers and adjustments."
+msgstr ""
+
+msgid "Enforce per-item validation and guidelines across receipts, shipments, transfers, and adjustments."
+msgstr ""
+
+msgid "Engineering Contact"
+msgstr ""
+
+msgid "Enter a batch number before setting the expiration date"
+msgstr ""
+
+msgid "Enter or scan serial number"
+msgstr ""
+
+msgid "Enter PO number"
+msgstr ""
+
+msgid "Entered At Receipt"
+msgstr ""
+
+msgid "Entities"
+msgstr ""
+
+msgid "Entities to move"
+msgstr ""
+
+msgid "Entities to split off"
+msgstr ""
+
+msgid "Entity"
+msgstr ""
+
+msgid "Entity is {status}"
+msgstr ""
+
+msgid "EORI"
+msgstr ""
+
+msgid "ERP, MES, QMS"
+msgstr ""
+
+msgid "Error"
+msgstr ""
+
+msgid "Error deleting file"
+msgstr ""
+
+msgid "Error downloading file"
+msgstr ""
+
+msgid "Error fetching customer data"
+msgstr ""
+
+msgid "Error fetching supplier data"
+msgstr ""
+
+msgid "Error loading assigned dispatches"
+msgstr ""
+
+msgid "Error loading assigned documents"
+msgstr ""
+
+msgid "Error loading assigned issues"
+msgstr ""
+
+msgid "Error loading job tree."
+msgstr ""
+
+msgid "Error loading make method"
+msgstr ""
+
+msgid "Error moving file"
+msgstr ""
+
+msgid "Error removing model from {sourceDocument}"
+msgstr ""
+
+msgid "Error removing model from item"
+msgstr ""
+
+msgid "Error removing model from job"
+msgstr ""
+
+msgid "Error removing model from quote line"
+msgstr ""
+
+msgid "Error removing model from RFQ line"
+msgstr ""
+
+msgid "Error removing model from sales invoice line"
+msgstr ""
+
+msgid "Error removing model from sales order line"
+msgstr ""
+
+msgid "Error validating serial number"
+msgstr ""
+
+msgid "Errors"
+msgstr ""
+
+msgid "Escalation"
+msgstr ""
+
+msgid "Est. Duration"
+msgstr ""
+
+msgid "Estimated Duration"
+msgstr ""
+
+msgid "Estimated Duration (minutes)"
+msgstr ""
+
+msgid "Estimated Scrap Quantity"
+msgstr ""
+
+msgid "Estimates vs Actual"
+msgstr ""
+
+msgid "Estimates vs Actuals"
+msgstr ""
+
+msgid "Estimator"
+msgstr ""
+
+msgid "Event Type"
+msgstr ""
+
+msgid "Events"
+msgstr ""
+
+msgid "Every condition must match"
+msgstr ""
+
+msgid "Everything from Starter"
+msgstr ""
+
+msgid "Exchange Rate"
+msgstr ""
+
+msgid "Exchange Rates"
+msgstr ""
+
+msgid "Expand"
+msgstr ""
+
+#. placeholder {0}: item.label
+msgid "Expand {0}"
+msgstr ""
+
+msgid "Expand all"
+msgstr ""
+
+msgid "Expand Costs"
+msgstr ""
+
+msgid "Expand Labor"
+msgstr ""
+
+msgid "Expand Machine"
+msgstr ""
+
+msgid "Expand Setup"
+msgstr ""
+
+msgid "Expand subtree"
+msgstr ""
+
+msgid "Expected Receipt"
+msgstr ""
+
+msgid "Expected Receipt Date"
+msgstr ""
+
+msgid "Expiration Date"
+msgstr ""
+
+msgid "Expiration Date (applies to all serials on this line)"
+msgstr ""
+
+msgid "Expired"
+msgstr ""
+
+msgid "Expired batch"
+msgstr ""
+
+msgid "Expired Batches"
+msgstr ""
+
+msgid "Expires"
+msgstr ""
+
+msgid "Expires At (optional)"
+msgstr ""
+
+msgid "Expiry"
+msgstr ""
+
+msgid "Expiry begins when the selected process completes."
+msgstr ""
+
+msgid "Expiry begins when the selected process starts."
+msgstr ""
+
+msgid "Expiry trace"
+msgstr ""
+
+msgid "Export"
+msgstr ""
+
+msgid "Export CSV"
+msgstr ""
+
+msgid "Export Lines to CSV"
+msgstr ""
+
+msgid "Extended Price"
+msgstr ""
+
+msgid "External"
+msgstr ""
+
+msgid "External Notes"
+msgstr ""
+
+msgid "External Ref."
+msgstr ""
+
+msgid "External Reference"
+msgstr ""
+
+msgid "Fail"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create consumable: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create customer portal: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create customer status: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create customer type: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create customer: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create department: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create failure mode: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create gauge type: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create item group: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create location: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create maintenance schedule: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create material dimension: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create material finish: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create material form: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create material grade: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create material substance: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create material type: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create material: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create no quote reason: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create part: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create payment term: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create process: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create shipping method: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create stock transfer line: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create storage type: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create supplier: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create tool: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create webhook: {0}"
+msgstr ""
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create work center: {0}"
+msgstr ""
+
+msgid "Failed to delete file from old location"
+msgstr ""
+
+msgid "Failed to download file for moving"
+msgstr ""
+
+msgid "Failed to fetch item costs"
+msgstr ""
+
+msgid "Failed to fetch place details"
+msgstr ""
+
+msgid "Failed to fetch risks"
+msgstr ""
+
+msgid "Failed to fetch suggestions"
+msgstr ""
+
+msgid "Failed to initialize Carbon client"
+msgstr ""
+
+msgid "Failed to insert quote line"
+msgstr ""
+
+msgid "Failed to insert supplier quote line"
+msgstr ""
+
+msgid "Failed to load configuration parameters"
+msgstr ""
+
+msgid "Failed to load customer part details"
+msgstr ""
+
+msgid "Failed to load data"
+msgstr ""
+
+msgid "Failed to load inbound inspections"
+msgstr ""
+
+msgid "Failed to load item data"
+msgstr ""
+
+msgid "Failed to load item details"
+msgstr ""
+
+msgid "Failed to load job operations"
+msgstr ""
+
+msgid "Failed to load jobs"
+msgstr ""
+
+msgid "Failed to load purchase order lines"
+msgstr ""
+
+msgid "Failed to load purchase orders"
+msgstr ""
+
+msgid "Failed to load receipt lines"
+msgstr ""
+
+msgid "Failed to load receipts"
+msgstr ""
+
+msgid "Failed to load sales order lines"
+msgstr ""
+
+msgid "Failed to load sales orders"
+msgstr ""
+
+msgid "Failed to load shipment lines"
+msgstr ""
+
+msgid "Failed to load shipments"
+msgstr ""
+
+msgid "Failed to load supplier part details"
+msgstr ""
+
+msgid "Failed to load tracked entities"
+msgstr ""
+
+msgid "Failed to remove image: {errorMessage}"
+msgstr ""
+
+msgid "Failed to remove model thumbnail"
+msgstr ""
+
+msgid "Failed to remove purchase order"
+msgstr ""
+
+msgid "Failed to remove thumbnail"
+msgstr ""
+
+msgid "Failed to resize image"
+msgstr ""
+
+msgid "Failed to resize image: {errorMessage}"
+msgstr ""
+
+msgid "Failed to retrieve CSV column data."
+msgstr ""
+
+msgid "Failed to save configuration rule"
+msgstr ""
+
+msgid "Failed to update batch property"
+msgstr ""
+
+msgid "Failed to update category markups"
+msgstr ""
+
+msgid "Failed to update configuration parameter"
+msgstr ""
+
+msgid "Failed to update item cost"
+msgstr ""
+
+msgid "Failed to update opportunity with purchase order"
+msgstr ""
+
+msgid "Failed to update quote line"
+msgstr ""
+
+msgid "Failed to update supplier quote line"
+msgstr ""
+
+msgid "Failed to update thumbnail path"
+msgstr ""
+
+msgid "Failed to upload CSV file."
+msgstr ""
+
+msgid "Failed to upload file"
+msgstr ""
+
+msgid "Failed to upload file to new location"
+msgstr ""
+
+#. placeholder {0}: file.name
+#. placeholder {0}: fileUpload.name
+msgid "Failed to upload file: {0}"
+msgstr ""
+
+msgid "Failed to upload image"
+msgstr ""
+
+msgid "Failed to upload logo: {errorMessage}"
+msgstr ""
+
+msgid "Failed to upload model"
+msgstr ""
+
+msgid "Failed to upload thumbnail"
+msgstr ""
+
+msgid "Failure Mode"
+msgstr ""
+
+msgid "Failure Modes"
+msgstr ""
+
+msgid "Favorite"
+msgstr ""
+
+msgid "Fax"
+msgstr ""
+
+msgid "Fax Number"
+msgstr ""
+
+msgid "Feedback"
+msgstr ""
+
+msgid "Fees"
+msgstr ""
+
+msgid "Fetch"
+msgstr ""
+
+msgid "Field"
+msgstr ""
+
+msgid "Field Mapping"
+msgstr ""
+
+msgid "Fields"
+msgstr ""
+
+msgid "File deleted successfully"
+msgstr ""
+
+msgid "File Extension"
+msgstr ""
+
+msgid "File is already in the selected bucket"
+msgstr ""
+
+#. placeholder {0}: ( logo.size / 1024 / 1024 ).toFixed(2)
+msgid "File size exceeds {maxSizeMB}MB limit. Current size: {0}MB"
+msgstr ""
+
+msgid "File size exceeds 10MB limit"
+msgstr ""
+
+#. placeholder {0}: SIZE_LIMIT.format()
+msgid "File size too big (max. {0})"
+msgstr ""
+
+msgid "File type not supported"
+msgstr ""
+
+msgid "File type not supported. Please use JPG, PNG, WebP, or GIF."
+msgstr ""
+
+msgid "Files"
+msgstr ""
+
+msgid "Filter"
+msgstr ""
+
+msgid "Filtering"
+msgstr ""
+
+msgid "Finalize"
+msgstr ""
+
+msgid "Finish"
+msgstr ""
+
+msgid "Finish To"
+msgstr ""
+
+msgid "Finishes"
+msgstr ""
+
+msgid "First Name"
+msgstr ""
+
+msgid "First Operation"
+msgstr ""
+
+msgid "Fiscal Year"
+msgstr ""
+
+msgid "Fiscal Year Settings"
+msgstr ""
+
+msgid "Fiscal Years"
+msgstr ""
+
+msgid "Fixed"
+msgstr ""
+
+msgid "Fixed Reorder"
+msgstr ""
+
+msgid "Fixed Shelf Life"
+msgstr ""
+
+msgid "For growing businesses that need support"
+msgstr ""
+
+msgid "For US companies handling ITAR data"
+msgstr ""
+
+msgid "Forgot to Clock Out?"
+msgstr ""
+
+msgid "Format"
+msgstr ""
+
+msgid "Frequencies"
+msgstr ""
+
+msgid "Frequency"
+msgstr ""
+
+msgid "Friday"
+msgstr ""
+
+msgid "From Location"
+msgstr ""
+
+msgid "From Storage Unit"
+msgstr ""
+
+msgid "Fully trained for"
+msgstr ""
+
+msgid "Gauge"
+msgstr ""
+
+msgid "Gauge Calibration Notifications"
+msgstr ""
+
+msgid "Gauge ID"
+msgstr ""
+
+msgid "Gauge not found"
+msgstr ""
+
+msgid "Gauge Type"
+msgstr ""
+
+msgid "Gauge Types"
+msgstr ""
+
+msgid "Gauges"
+msgstr ""
+
+msgid "General Ledger"
+msgstr ""
+
+msgid "Generate a new 4-digit PIN. Share it with the operator so they can pin in at MES terminals."
+msgstr ""
+
+msgid "Generate material IDs and descriptions based on the properties of the material."
+msgstr ""
+
+msgid "Generate new PIN"
+msgstr ""
+
+msgid "Generated IDs are disabled"
+msgstr ""
+
+msgid "Generated IDs are enabled"
+msgstr ""
+
+msgid "Get Method"
+msgstr ""
+
+msgid "GL Account"
+msgstr ""
+
+#. placeholder {0}: user.firstName
+msgid "Good afternoon, {0}"
+msgstr ""
+
+#. placeholder {0}: user.firstName
+msgid "Good evening, {0}"
+msgstr ""
+
+#. placeholder {0}: user.firstName
+msgid "Good morning, {0}"
+msgstr ""
+
+msgid "Google Places API key not configured"
+msgstr ""
+
+msgid "Grade"
+msgstr ""
+
+msgid "Grades"
+msgstr ""
+
+msgid "Group"
+msgstr ""
+
+msgid "Group Members"
+msgstr ""
+
+msgid "Group Name"
+msgstr ""
+
+msgid "Groups"
+msgstr ""
+
+msgid "Help"
+msgstr ""
+
+msgid "Hide, pin and reorder columns"
+msgstr ""
+
+msgid "Higher priority wins ties and applies first for markups"
+msgstr ""
+
+msgid "History"
+msgstr ""
+
+msgid "Holiday"
+msgstr ""
+
+msgid "Holiday Name"
+msgstr ""
+
+msgid "Holidays"
+msgstr ""
+
+msgid "Home Phone"
+msgstr ""
+
+msgid "Hours per Week"
+msgstr ""
+
+msgid "Hours/100 Pieces"
+msgstr ""
+
+msgid "Hours/1000 Pieces"
+msgstr ""
+
+msgid "Hours/Piece"
+msgstr ""
+
+msgid "How the resolved price was calculated."
+msgstr ""
+
+msgid "Humidity"
+msgstr ""
+
+msgid "I'm Still Working"
+msgstr ""
+
+msgid "ID"
+msgstr ""
+
+msgid "Ideas, suggestions or problems with this page?"
+msgstr ""
+
+msgid "Ideas, suggestions or problems?"
+msgstr ""
+
+msgid "IDs and descriptions are generated for raw materials."
+msgstr ""
+
+msgid "If items already exist"
+msgstr ""
+
+msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
+msgstr ""
+
+msgid "Implementation Support"
+msgstr ""
+
+msgid "Import {label} CSV"
+msgstr ""
+
+msgid "In order to convert this RFQ to a quote, all lines must have an internal part number."
+msgstr ""
+
+msgid "In order to convert this RFQ to a quote, it must be associated with a customer."
+msgstr ""
+
+msgid "In order to convert this RFQ to a quote, it must have a customer."
+msgstr ""
+
+msgid "In order to send this RFQ to suppliers, you must first add suppliers to the RFQ."
+msgstr ""
+
+msgid "In Process Only"
+msgstr ""
+
+msgid "In Progress"
+msgstr ""
+
+msgid "in selected period"
+msgstr ""
+
+msgid "Inactive"
+msgstr ""
+
+msgid "Inactive actions will not appear in selection lists"
+msgstr ""
+
+msgid "Inbound Inspection"
+msgstr ""
+
+msgid "Inbound Inspections"
+msgstr ""
+
+msgid "Inbound Inspections: Require Different Inspector"
+msgstr ""
+
+msgid "Inbox"
+msgstr ""
+
+msgid "Include extra parts in shipment"
+msgstr ""
+
+msgid "Include Inactive"
+msgstr ""
+
+msgid "Includes tax and shipping costs"
+msgstr ""
+
+msgid "Income Statement"
+msgstr ""
+
+msgid "Income/Balance"
+msgstr ""
+
+msgid "Incoming"
+msgstr ""
+
+msgid "Incoterm"
+msgstr ""
+
+msgid "Incoterm Location"
+msgstr ""
+
+msgid "Indirect"
+msgstr ""
+
+msgid "Infrastructure"
+msgstr ""
+
+msgid "Inherit From Materials"
+msgstr ""
+
+msgid "Insert rows"
+msgstr ""
+
+msgid "Insert token"
+msgstr ""
+
+msgid "Inspect"
+msgstr ""
+
+msgid "Inspect Item"
+msgstr ""
+
+msgid "Inspect Next Item"
+msgstr ""
+
+msgid "Inspection"
+msgstr ""
+
+msgid "Inspection Level"
+msgstr ""
+
+msgid "Inspection Status"
+msgstr ""
+
+msgid "Inspections"
+msgstr ""
+
+msgid "Inspector"
+msgstr ""
+
+msgid "Install"
+msgstr ""
+
+msgid "Installed"
+msgstr ""
+
+msgid "Instructions"
+msgstr ""
+
+msgid "Instructions are inherited from the procedure."
+msgstr ""
+
+msgid "Integration not found"
+msgstr ""
+
+msgid "Integrations"
+msgstr ""
+
+msgid "Intercompany"
+msgstr ""
+
+msgid "Internal"
+msgstr ""
+
+msgid "Internal Notes"
+msgstr ""
+
+msgid "Invalid Invite"
+msgstr ""
+
+msgid "Inventory"
+msgstr ""
+
+msgid "Inventory Adjustment"
+msgstr ""
+
+msgid "Inventory Job Notifications"
+msgstr ""
+
+msgid "Inventory Qty"
+msgstr ""
+
+msgid "Inventory Tracking"
+msgstr ""
+
+msgid "Inventory Unit of Measure"
+msgstr ""
+
+msgid "Invite"
+msgstr ""
+
+msgid "Invoice"
+msgstr ""
+
+msgid "Invoice Contact"
+msgstr ""
+
+msgid "Invoice Customer"
+msgstr ""
+
+msgid "Invoice Customer Contact"
+msgstr ""
+
+msgid "Invoice Customer Location"
+msgstr ""
+
+msgid "Invoice ID"
+msgstr ""
+
+msgid "Invoice Location"
+msgstr ""
+
+msgid "Invoice Number"
+msgstr ""
+
+msgid "Invoice Supplier"
+msgstr ""
+
+msgid "Invoice Supplier Contact"
+msgstr ""
+
+msgid "Invoice Supplier Location"
+msgstr ""
+
+msgid "Invoice Total"
+msgstr ""
+
+msgid "Invoiced"
+msgstr ""
+
+msgid "Invoiced Amount:"
+msgstr ""
+
+msgid "Invoiced Statuses"
+msgstr ""
+
+msgid "Invoices"
+msgstr ""
+
+msgid "is"
+msgstr ""
+
+msgid "is any of"
+msgstr ""
+
+msgid "Issue"
+msgstr ""
+
+msgid "Issue description"
+msgstr ""
+
+msgid "Issue not found"
+msgstr ""
+
+msgid "Issue scoped API keys for programmatic access to your Carbon data."
+msgstr ""
+
+msgid "Issue Status"
+msgstr ""
+
+msgid "Issue Target"
+msgstr ""
+
+msgid "Issue title"
+msgstr ""
+
+msgid "Issue Trend"
+msgstr ""
+
+msgid "Issue Type"
+msgstr ""
+
+msgid "Issue Types"
+msgstr ""
+
+msgid "Issue Workflow"
+msgstr ""
+
+msgid "Issue Workflows"
+msgstr ""
+
+msgid "Issued Date"
+msgstr ""
+
+msgid "Issues"
+msgstr ""
+
+msgid "item"
+msgstr ""
+
+msgid "Item"
+msgstr ""
+
+msgid "Item {scannedItem} is not the same as the item {expectedItem}"
+msgstr ""
+
+msgid "Item Group"
+msgstr ""
+
+msgid "Item Groups"
+msgstr ""
+
+msgid "Item ID"
+msgstr ""
+
+msgid "Item Master"
+msgstr ""
+
+msgid "Item Rules"
+msgstr ""
+
+msgid "Item Scope"
+msgstr ""
+
+msgid "Item Type"
+msgstr ""
+
+msgid "items"
+msgstr ""
+
+msgid "Items"
+msgstr ""
+
+msgid "Items inside this window get a yellow badge."
+msgstr ""
+
+msgid "Job"
+msgstr ""
+
+msgid "Job ID"
+msgstr ""
+
+msgid "Job Location"
+msgstr ""
+
+msgid "Job Materials"
+msgstr ""
+
+msgid "Job Operation"
+msgstr ""
+
+msgid "Job Operations"
+msgstr ""
+
+msgid "Job Traveler"
+msgstr ""
+
+msgid "Job traveler PDFs include work instructions."
+msgstr ""
+
+msgid "Jobs"
+msgstr ""
+
+msgid "Jobs Assigned to Me"
+msgstr ""
+
+msgid "Jobs in progress"
+msgstr ""
+
+msgid "Jobs Required"
+msgstr ""
+
+#. placeholder {0}: company?.name ?? "Company"
+msgid "Join {0}"
+msgstr ""
+
+msgid "Journal Entries"
+msgstr ""
+
+msgid "Kanban"
+msgstr ""
+
+msgid "Kanban for {kanbanName}"
+msgstr ""
+
+msgid "Kanban Output"
+msgstr ""
+
+msgid "Kanbans"
+msgstr ""
+
+msgid "Keep Current"
+msgstr ""
+
+msgid "Keep existing pricing, only add new items"
+msgstr ""
+
+msgid "Key"
+msgstr ""
+
+msgid "Kit"
+msgstr ""
+
+msgid "Label"
+msgstr ""
+
+msgid "Label to complete the current operation for this kanban"
+msgstr ""
+
+#. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
+msgid "Label to create a {0} for this kanban"
+msgstr ""
+
+msgid "Label to start the next operation for this kanban"
+msgstr ""
+
+msgid "Labels"
+msgstr ""
+
+msgid "Labor"
+msgstr ""
+
+msgid "Labor Rate"
+msgstr ""
+
+msgid "Labor Rate (Hourly)"
+msgstr ""
+
+msgid "Labor Time"
+msgstr ""
+
+msgid "Labor Unit"
+msgstr ""
+
+msgid "Language"
+msgstr ""
+
+msgid "Last Calibration"
+msgstr ""
+
+msgid "Last Calibration Date"
+msgstr ""
+
+msgid "Last Name"
+msgstr ""
+
+#. placeholder {0}: formatDateTime(lastSyncedAt)
+msgid "Last synced: {0}"
+msgstr ""
+
+msgid "Last updated: {formattedDate}"
+msgstr ""
+
+msgid "Lead Time"
+msgstr ""
+
+msgid "Lead Time (Days)"
+msgstr ""
+
+msgid "Lead Time Updates"
+msgstr ""
+
+msgid "Lead Time:"
+msgstr ""
+
+msgid "Learn more"
+msgstr ""
+
+msgid "Leave any related receipts untouched"
+msgstr ""
+
+msgid "Leave empty for exact match"
+msgstr ""
+
+msgid "Left item"
+msgstr ""
+
+msgid "Leftover Parts Detected"
+msgstr ""
+
+msgid "Let's build something"
+msgstr ""
+
+msgid "Let's set up your new company"
+msgstr ""
+
+msgid "Let's setup your account"
+msgstr ""
+
+msgid "Letter"
+msgstr ""
+
+msgid "Light"
+msgstr ""
+
+msgid "Light Mode"
+msgstr ""
+
+msgid "Likelihood"
+msgstr ""
+
+msgid "Line Item Comparison"
+msgstr ""
+
+msgid "Line options"
+msgstr ""
+
+msgid "Line Status"
+msgstr ""
+
+msgid "Linear Team"
+msgstr ""
+
+msgid "Lines need internal part numbers"
+msgstr ""
+
+msgid "Lines need prices or lead times"
+msgstr ""
+
+msgid "Link"
+msgstr ""
+
+msgid "Link Jira Issue"
+msgstr ""
+
+msgid "Link Linear Issue"
+msgstr ""
+
+#. placeholder {0}: r.linkedSum
+#. placeholder {1}: r.quantity
+msgid "Linked entity quantity ({0}) does not match row quantity ({1})."
+msgstr ""
+
+msgid "List Options"
+msgstr ""
+
+msgid "List Parameters"
+msgstr ""
+
+msgid "Live reloading"
+msgstr ""
+
+msgid "Load Templates"
+msgstr ""
+
+msgid "Loader"
+msgstr ""
+
+msgid "Loading item details..."
+msgstr ""
+
+msgid "Loading..."
+msgstr ""
+
+msgid "Location"
+msgstr ""
+
+msgid "Location Name"
+msgstr ""
+
+msgid "Locations"
+msgstr ""
+
+msgid "Lock"
+msgstr ""
+
+msgid "Log In"
+msgstr ""
+
+msgid "Login or create a new account"
+msgstr ""
+
+msgid "Logo removed successfully"
+msgstr ""
+
+msgid "Logo uploaded successfully"
+msgstr ""
+
+msgid "Logos"
+msgstr ""
+
+#. placeholder {0}: auditConfig.retentionDays
+msgid "Logs older than {0} days are automatically archived."
+msgstr ""
+
+msgid "Long Description"
+msgstr ""
+
+msgid "Looks empty here"
+msgstr ""
+
+msgid "Lost"
+msgstr ""
+
+msgid "Lot"
+msgstr ""
+
+msgid "Lot Size"
+msgstr ""
+
+msgid "Lot Size:"
+msgstr ""
+
+msgid "Machine"
+msgstr ""
+
+msgid "Machine Rate"
+msgstr ""
+
+msgid "Machine Rate (Hourly)"
+msgstr ""
+
+msgid "Machine Time"
+msgstr ""
+
+msgid "Machine Unit"
+msgstr ""
+
+msgid "Maintenance"
+msgstr ""
+
+msgid "Maintenance Dispatch Notifications"
+msgstr ""
+
+msgid "Maintenance Dispatches"
+msgstr ""
+
+msgid "Maintenance Scheduling"
+msgstr ""
+
+msgid "Maintenance Type"
+msgstr ""
+
+msgid "Make"
+msgstr ""
+
+msgid "Make Active"
+msgstr ""
+
+msgid "Make Default"
+msgstr ""
+
+msgid "Make Inactive"
+msgstr ""
+
+msgid "Make items cannot be invoiced directly. Change method to Pick to continue."
+msgstr ""
+
+msgid "Make Method Version"
+msgstr ""
+
+#. placeholder {0}: selectedRevision.revision
+msgid "Make revision {0} default?"
+msgstr ""
+
+#. placeholder {0}: selectedRevision.revision
+msgid "Make size {0} default?"
+msgstr ""
+
+msgid "Make to Order"
+msgstr ""
+
+msgid "Make tracked entities available again"
+msgstr ""
+
+msgid "Makes this document active again."
+msgstr ""
+
+msgid "Makes this document active and visible."
+msgstr ""
+
+msgid "Manage"
+msgstr ""
+
+msgid "Manage how shelf life is tracked, computed, and enforced across inventory."
+msgstr ""
+
+msgid "Manage Ownership"
+msgstr ""
+
+msgid "Manage Subscription"
+msgstr ""
+
+msgid "Manage your subscription and billing information"
+msgstr ""
+
+msgid "Manager"
+msgstr ""
+
+msgid "Manual"
+msgstr ""
+
+msgid "Manufacturer"
+msgstr ""
+
+msgid "Manufacturing"
+msgstr ""
+
+msgid "Mark as Planned"
+msgstr ""
+
+msgid "Mark as read"
+msgstr ""
+
+msgid "Mark Complete"
+msgstr ""
+
+msgid "Mark Dark Mode"
+msgstr ""
+
+msgid "Mark Light Mode"
+msgstr ""
+
+msgid "Mark lot as partial?"
+msgstr ""
+
+msgid "Mark Partial"
+msgstr ""
+
+msgid "Mark to delete"
+msgstr ""
+
+msgid "Match"
+msgstr ""
+
+msgid "Match all"
+msgstr ""
+
+msgid "Match any"
+msgstr ""
+
+msgid "Match none"
+msgstr ""
+
+msgid "matches"
+msgstr ""
+
+msgid "Matching Pairs"
+msgstr ""
+
+msgid "Material"
+msgstr ""
+
+msgid "Material Dimension"
+msgstr ""
+
+msgid "Material Dimensions"
+msgstr ""
+
+msgid "Material dimensions use metric units."
+msgstr ""
+
+msgid "Material Finish"
+msgstr ""
+
+msgid "Material Finishes"
+msgstr ""
+
+msgid "Material Form"
+msgstr ""
+
+msgid "Material Grade"
+msgstr ""
+
+msgid "Material Grades"
+msgstr ""
+
+msgid "Material ID"
+msgstr ""
+
+msgid "Material IDs"
+msgstr ""
+
+msgid "Material Shape"
+msgstr ""
+
+msgid "Material Shapes"
+msgstr ""
+
+msgid "Material Substance"
+msgstr ""
+
+msgid "Material Substances"
+msgstr ""
+
+msgid "Material Type"
+msgstr ""
+
+msgid "Material Types"
+msgstr ""
+
+msgid "Materials"
+msgstr ""
+
+msgid "Max Qty"
+msgstr ""
+
+msgid "Max Quantity"
+msgstr ""
+
+msgid "Maximum"
+msgstr ""
+
+msgid "Maximum Inventory Quantity"
+msgstr ""
+
+msgid "Maximum Inventory:"
+msgstr ""
+
+msgid "Maximum Order Quantity"
+msgstr ""
+
+msgid "Maximum Order:"
+msgstr ""
+
+msgid "MCP Command"
+msgstr ""
+
+msgid "Mean Time Between Failures"
+msgstr ""
+
+msgid "Mean Time To Repair"
+msgstr ""
+
+msgid "Measurement Standard"
+msgstr ""
+
+msgid "Members"
+msgstr ""
+
+msgid "Message"
+msgstr ""
+
+msgid "Method"
+msgstr ""
+
+msgid "Method Id"
+msgstr ""
+
+msgid "Method Materials"
+msgstr ""
+
+msgid "Method Operations"
+msgstr ""
+
+msgid "Method Type"
+msgstr ""
+
+msgid "Methods"
+msgstr ""
+
+msgid "Metric"
+msgstr ""
+
+msgid "Metric units are disabled"
+msgstr ""
+
+msgid "Metric units are enabled"
+msgstr ""
+
+msgid "Min Qty"
+msgstr ""
+
+msgid "Minimize"
+msgstr ""
+
+msgid "Minimum"
+msgstr ""
+
+msgid "Minimum Amount"
+msgstr ""
+
+msgid "Minimum Cost"
+msgstr ""
+
+msgid "Minimum Order Quantity"
+msgstr ""
+
+msgid "Minimum Order:"
+msgstr ""
+
+msgid "Minutes/100 Pieces"
+msgstr ""
+
+msgid "Minutes/1000 Pieces"
+msgstr ""
+
+msgid "Minutes/Piece"
+msgstr ""
+
+msgid "Missing Information"
+msgstr ""
+
+msgid "Missing Operations"
+msgstr ""
+
+msgid "Missing Shipping Costs"
+msgstr ""
+
+msgid "Missing Suppliers"
+msgstr ""
+
+msgid "Mobile Phone"
+msgstr ""
+
+msgid "Model data is missing"
+msgstr ""
+
+msgid "Model Number"
+msgstr ""
+
+msgid "Model Number:"
+msgstr ""
+
+msgid "Model removed from {sourceDocument}"
+msgstr ""
+
+msgid "Model removed from item"
+msgstr ""
+
+msgid "Model removed from job"
+msgstr ""
+
+msgid "Model removed from line"
+msgstr ""
+
+msgid "Module"
+msgstr ""
+
+msgid "Modules"
+msgstr ""
+
+msgid "Monday"
+msgstr ""
+
+msgid "More"
+msgstr ""
+
+msgid "More actions"
+msgstr ""
+
+msgid "More options"
+msgstr ""
+
+msgid "Move"
+msgstr ""
+
+msgid "Move entities"
+msgstr ""
+
+msgid "Move entities…"
+msgstr ""
+
+msgid "Move item"
+msgstr ""
+
+msgid "Move some of the quantity into a new disposition row so MRB can decide each portion separately (e.g. scrap some, rework some)."
+msgstr ""
+
+msgid "Move to"
+msgstr ""
+
+msgid "Move to Trash"
+msgstr ""
+
+#. placeholder {0}: file.name
+#. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
+msgid "Moved {0} to {1} bucket"
+msgstr ""
+
+msgid "MRP runs automatically every 3 hours, but you can run it manually here."
+msgstr ""
+
+msgid "Must be in the same location"
+msgstr ""
+
+msgid "My Documents"
+msgstr ""
+
+msgid "My Saved View"
+msgstr ""
+
+msgid "Name"
+msgstr ""
+
+msgid "Navigate"
+msgstr ""
+
+msgid "NCRs by Type"
+msgstr ""
+
+msgid "Negative Adjustment"
+msgstr ""
+
+msgid "Negative feedback"
+msgstr ""
+
+msgid "Never"
+msgstr ""
+
+msgid "New"
+msgstr ""
+
+msgid "New Account"
+msgstr ""
+
+msgid "New API Key"
+msgstr ""
+
+msgid "New Approval Rule"
+msgstr ""
+
+msgid "New Assignment"
+msgstr ""
+
+msgid "New Attribute"
+msgstr ""
+
+msgid "New Attribute Category"
+msgstr ""
+
+msgid "New chat"
+msgstr ""
+
+msgid "New Consumable"
+msgstr ""
+
+msgid "New Contractor"
+msgstr ""
+
+msgid "New Custom Field"
+msgstr ""
+
+msgid "New Customer"
+msgstr ""
+
+msgid "New Customer Part"
+msgstr ""
+
+msgid "New Department"
+msgstr ""
+
+msgid "New Employee Type"
+msgstr ""
+
+msgid "New expiration date"
+msgstr ""
+
+msgid "New Failure Mode"
+msgstr ""
+
+msgid "New Field"
+msgstr ""
+
+msgid "New Gauge Calibration Record"
+msgstr ""
+
+msgid "New Gauge Type"
+msgstr ""
+
+msgid "New Group"
+msgstr ""
+
+msgid "New Holiday"
+msgstr ""
+
+msgid "New Invoice"
+msgstr ""
+
+msgid "New Item Group"
+msgstr ""
+
+msgid "New Kanban"
+msgstr ""
+
+msgid "New Line"
+msgstr ""
+
+msgid "New Line Item"
+msgstr ""
+
+msgid "New Location"
+msgstr ""
+
+msgid "New Maintenance Dispatch"
+msgstr ""
+
+msgid "New Material"
+msgstr ""
+
+msgid "New Material Dimension"
+msgstr ""
+
+msgid "New Material Finish"
+msgstr ""
+
+msgid "New Material Grade"
+msgstr ""
+
+msgid "New Material Shape"
+msgstr ""
+
+msgid "New Material Substance"
+msgstr ""
+
+msgid "New Material Type"
+msgstr ""
+
+msgid "New Non Conformance Type"
+msgstr ""
+
+msgid "New Owner"
+msgstr ""
+
+msgid "New Part"
+msgstr ""
+
+msgid "New Password"
+msgstr ""
+
+msgid "New Payment Term"
+msgstr ""
+
+msgid "New PIN"
+msgstr ""
+
+msgid "New PO"
+msgstr ""
+
+msgid "New Price Override"
+msgstr ""
+
+msgid "New Pricing Rule"
+msgstr ""
+
+msgid "New Process"
+msgstr ""
+
+msgid "New Quote"
+msgstr ""
+
+msgid "New Quote Line"
+msgstr ""
+
+msgid "New Receipt"
+msgstr ""
+
+msgid "New record created"
+msgstr ""
+
+msgid "New Revision"
+msgstr ""
+
+msgid "New RFQ"
+msgstr ""
+
+msgid "New rule"
+msgstr ""
+
+msgid "New Rule"
+msgstr ""
+
+msgid "New Sales Invoice"
+msgstr ""
+
+msgid "New Sales Invoice Line"
+msgstr ""
+
+msgid "New Sales Order"
+msgstr ""
+
+msgid "New Sales Order Line"
+msgstr ""
+
+msgid "New Scheduled Maintenance"
+msgstr ""
+
+msgid "New Shift"
+msgstr ""
+
+msgid "New Shipment"
+msgstr ""
+
+msgid "New Shipping Method"
+msgstr ""
+
+msgid "New Size"
+msgstr ""
+
+msgid "New Storage Type"
+msgstr ""
+
+msgid "New Storage Unit"
+msgstr ""
+
+msgid "New Supplier"
+msgstr ""
+
+msgid "New Supplier Part"
+msgstr ""
+
+msgid "New Timecard"
+msgstr ""
+
+msgid "New Tool"
+msgstr ""
+
+msgid "New Training"
+msgstr ""
+
+msgid "New Transfer"
+msgstr ""
+
+msgid "New Transfer Line"
+msgstr ""
+
+msgid "New Unit of Measure"
+msgstr ""
+
+msgid "New Version"
+msgstr ""
+
+msgid "New Warehouse Transfer"
+msgstr ""
+
+msgid "New Webhook"
+msgstr ""
+
+msgid "New Work Center"
+msgstr ""
+
+msgid "Next"
+msgstr ""
+
+msgid "Next Calibration"
+msgstr ""
+
+msgid "Next Calibration Date"
+msgstr ""
+
+msgid "Next Date"
+msgstr ""
+
+msgid "Next Due"
+msgstr ""
+
+msgid "Next Sequence"
+msgstr ""
+
+msgid "No"
+msgstr ""
+
+#. placeholder {0}: node.name.toLowerCase()
+msgid "No {0} found"
+msgstr ""
+
+msgid "No abilities added"
+msgstr ""
+
+msgid "No Access"
+msgstr ""
+
+msgid "No action needed"
+msgstr ""
+
+msgid "No active plan"
+msgstr ""
+
+msgid "No Active Quotes"
+msgstr ""
+
+msgid "No addresses found"
+msgstr ""
+
+#. placeholder {0}: auditConfig.retentionDays
+msgid "No archived logs yet. Logs older than {0} days will be automatically archived and available for download here."
+msgstr ""
+
+msgid "No available filters"
+msgstr ""
+
+msgid "No BOM input has a shelf-life policy"
+msgstr ""
+
+msgid "No calibration records found"
+msgstr ""
+
+msgid "No changes recorded"
+msgstr ""
+
+msgid "No chat history"
+msgstr ""
+
+msgid "No chats found"
+msgstr ""
+
+msgid "No comments yet. Be the first to add a comment."
+msgstr ""
+
+msgid "No completed jobs within range"
+msgstr ""
+
+msgid "No condition may match"
+msgstr ""
+
+msgid "No conversion is required"
+msgstr ""
+
+msgid "No cost history found"
+msgstr ""
+
+msgid "No Data"
+msgstr ""
+
+msgid "No data exists"
+msgstr ""
+
+msgid "No days off scheduled"
+msgstr ""
+
+msgid "No draft versions available"
+msgstr ""
+
+msgid "No due date"
+msgstr ""
+
+msgid "No employees assigned yet. Add groups to see status."
+msgstr ""
+
+msgid "No employees found"
+msgstr ""
+
+msgid "No fields found."
+msgstr ""
+
+msgid "No files"
+msgstr ""
+
+msgid "No files uploaded"
+msgstr ""
+
+msgid "No Gauge Selected"
+msgstr ""
+
+msgid "No groups assigned"
+msgstr ""
+
+msgid "No image"
+msgstr ""
+
+msgid "No issue types configured"
+msgstr ""
+
+msgid "No logo uploaded"
+msgstr ""
+
+msgid "No matches"
+msgstr ""
+
+msgid "No matches for \"{query}\". Try a different search term."
+msgstr ""
+
+msgid "No new notifications"
+msgstr ""
+
+msgid "No notes"
+msgstr ""
+
+msgid "No operators."
+msgstr ""
+
+msgid "No option found."
+msgstr ""
+
+msgid "No options found."
+msgstr ""
+
+msgid "No other employees found. Add employees to enable ownership transfer."
+msgstr ""
+
+msgid "No outstanding trainings"
+msgstr ""
+
+msgid "No overtime scheduled"
+msgstr ""
+
+msgid "No part ID"
+msgstr ""
+
+msgid "No parts added yet"
+msgstr ""
+
+msgid "No planning data"
+msgstr ""
+
+msgid "No pricing for selected quantity"
+msgstr ""
+
+msgid "No pricing options found"
+msgstr ""
+
+msgid "No Quote"
+msgstr ""
+
+msgid "No Quote Reason"
+msgstr ""
+
+msgid "No Quote Reasons"
+msgstr ""
+
+msgid "No remaining entities to inspect."
+msgstr ""
+
+msgid "No results"
+msgstr ""
+
+msgid "No results found"
+msgstr ""
+
+msgid "No rules assigned"
+msgstr ""
+
+msgid "No samples inspected yet."
+msgstr ""
+
+msgid "No sorts applied to this view"
+msgstr ""
+
+msgid "No time entries for this week"
+msgstr ""
+
+msgid "No value needed"
+msgstr ""
+
+msgid "No values available"
+msgstr ""
+
+msgid "No work center utilization data within range"
+msgstr ""
+
+msgid "No work centers exist"
+msgstr ""
+
+msgid "Nominal Cost"
+msgstr ""
+
+msgid "Non Conformance Type"
+msgstr ""
+
+msgid "Non-Inventory"
+msgstr ""
+
+msgid "Non-Inventory Tracking"
+msgstr ""
+
+msgid "Non-Taxable Add-On Cost"
+msgstr ""
+
+msgid "None"
+msgstr ""
+
+msgid "Not enough jobs to cover quantity"
+msgstr ""
+
+msgid "Not Required"
+msgstr ""
+
+msgid "Not set"
+msgstr ""
+
+msgid "Not started training for"
+msgstr ""
+
+msgid "Note"
+msgstr ""
+
+msgid "Notes"
+msgstr ""
+
+msgid "Notes (optional)"
+msgstr ""
+
+msgid "Nothing in the archive"
+msgstr ""
+
+msgid "Notification"
+msgstr ""
+
+msgid "Notifications"
+msgstr ""
+
+msgid "Now let's set up your company"
+msgstr ""
+
+msgid "Number"
+msgstr ""
+
+msgid "Number of inventory units per purchase unit"
+msgstr ""
+
+msgid "OEE Impact"
+msgstr ""
+
+msgid "of"
+msgstr ""
+
+msgid "OK"
+msgstr ""
+
+msgid "On Hand"
+msgstr ""
+
+msgid "On Hold"
+msgstr ""
+
+msgid "On Jobs"
+msgstr ""
+
+msgid "On Purchase Order"
+msgstr ""
+
+msgid "On Sales Order"
+msgstr ""
+
+msgid "On Storage Unit"
+msgstr ""
+
+msgid "Onshape Status"
+msgstr ""
+
+msgid "Oops! The link you're trying to access has expired or is no longer valid."
+msgstr ""
+
+msgid "Oops! The link you're trying to access is not valid."
+msgstr ""
+
+msgid "Open"
+msgstr ""
+
+msgid "Open Actions"
+msgstr ""
+
+msgid "Open chat history"
+msgstr ""
+
+msgid "Open Date"
+msgstr ""
+
+msgid "Open Dispatches"
+msgstr ""
+
+msgid "Open Issues"
+msgstr ""
+
+msgid "Open menu"
+msgstr ""
+
+msgid "Open Purchase Invoices"
+msgstr ""
+
+msgid "Open Purchase Orders"
+msgstr ""
+
+msgid "Open Quotes"
+msgstr ""
+
+msgid "Open Reactive"
+msgstr ""
+
+msgid "Open RFQs"
+msgstr ""
+
+msgid "Open Sales Orders"
+msgstr ""
+
+msgid "Open Scheduled"
+msgstr ""
+
+msgid "Open task details"
+msgstr ""
+
+msgid "Operation"
+msgstr ""
+
+msgid "Operation Order"
+msgstr ""
+
+msgid "Operation Type"
+msgstr ""
+
+msgid "Operations"
+msgstr ""
+
+msgid "Operations Type"
+msgstr ""
+
+msgid "Operator"
+msgstr ""
+
+msgid "Operator gets a warning. Stock still goes through."
+msgstr ""
+
+msgid "Operator must pick a different batch/serial."
+msgstr ""
+
+msgid "Operators"
+msgstr ""
+
+msgid "Operators can use shared workstations with PIN authentication."
+msgstr ""
+
+msgid "Opportunity"
+msgstr ""
+
+msgid "Optional"
+msgstr ""
+
+msgid "Optional context for this rule"
+msgstr ""
+
+msgid "Options"
+msgstr ""
+
+msgid "Order"
+msgstr ""
+
+msgid "Order Date"
+msgstr ""
+
+msgid "Order Multiple"
+msgstr ""
+
+msgid "Order Parts"
+msgstr ""
+
+msgid "Order Qty"
+msgstr ""
+
+msgid "Order Total"
+msgstr ""
+
+msgid "Ordered"
+msgstr ""
+
+msgid "Ordering"
+msgstr ""
+
+msgid "Orders"
+msgstr ""
+
+msgid "Orders submitted"
+msgstr ""
+
+msgid "Other Type"
+msgstr ""
+
+msgid "Outgoing"
+msgstr ""
+
+msgid "Output"
+msgstr ""
+
+msgid "Output never outlasts its raw materials. Falls back to the fixed duration when no input has an expiry date."
+msgstr ""
+
+msgid "Overdue"
+msgstr ""
+
+msgid "Overhead Rate"
+msgstr ""
+
+msgid "Overhead Rate (Hourly)"
+msgstr ""
+
+msgid "Override needs the inventory:update permission and a reason."
+msgstr ""
+
+msgid "Override Price"
+msgstr ""
+
+msgid "Override price for a single customer"
+msgstr ""
+
+msgid "Override price for all customers of a type"
+msgstr ""
+
+msgid "Override the expiration on {label}."
+msgstr ""
+
+msgid "Overtime"
+msgstr ""
+
+msgid "Overwrite Existing"
+msgstr ""
+
+msgid "Overwrite Permissions"
+msgstr ""
+
+msgid "Overwrite the quote method with the source method"
+msgstr ""
+
+msgid "Overwrite the target manufacturing method with the quote method"
+msgstr ""
+
+msgid "Packing Slip"
+msgstr ""
+
+msgid "Paid Amount:"
+msgstr ""
+
+msgid "Paid Date"
+msgstr ""
+
+msgid "Parameters"
+msgstr ""
+
+msgid "Parameters are inherited from the procedure."
+msgstr ""
+
+msgid "Params"
+msgstr ""
+
+msgid "Parent Department"
+msgstr ""
+
+msgid "Parent Group"
+msgstr ""
+
+msgid "Parent Storage Unit"
+msgstr ""
+
+msgid "Pareto by Type"
+msgstr ""
+
+msgid "Part"
+msgstr ""
+
+msgid "Part Details"
+msgstr ""
+
+msgid "Part ID"
+msgstr ""
+
+msgid "Part is configured for manufacturing"
+msgstr ""
+
+msgid "Part thumbnails are shown on purchase order PDFs."
+msgstr ""
+
+msgid "Part thumbnails are shown on sales PDFs."
+msgstr ""
+
+msgid "Partial"
+msgstr ""
+
+msgid "Partner"
+msgstr ""
+
+msgid "Partners"
+msgstr ""
+
+msgid "Parts"
+msgstr ""
+
+msgid "Pass"
+msgstr ""
+
+msgid "Path"
+msgstr ""
+
+msgid "Payment"
+msgstr ""
+
+msgid "Payment Method"
+msgstr ""
+
+msgid "Payment Term"
+msgstr ""
+
+msgid "Payment Terms"
+msgstr ""
+
+msgid "PDF"
+msgstr ""
+
+msgid "PDF Watermark"
+msgstr ""
+
+msgid "PDFs"
+msgstr ""
+
+msgid "Pending"
+msgstr ""
+
+msgid "People"
+msgstr ""
+
+msgid "Per Unit"
+msgstr ""
+
+msgid "Percentage of Lot"
+msgstr ""
+
+msgid "Perfect for low-cost evaluation"
+msgstr ""
+
+msgid "Period"
+msgstr ""
+
+msgid "Permanently Delete"
+msgstr ""
+
+msgid "Permissions"
+msgstr ""
+
+msgid "Phone"
+msgstr ""
+
+msgid "Phone Number"
+msgstr ""
+
+msgid "Photo removed successfully"
+msgstr ""
+
+msgid "Photo uploaded successfully"
+msgstr ""
+
+msgid "Pick"
+msgstr ""
+
+msgid "Pick a column to sort by"
+msgstr ""
+
+msgid "Pick a customer or customer type to view their pricing."
+msgstr ""
+
+msgid "Pick a date or leave blank to clear it."
+msgstr ""
+
+msgid "Pick an existing rule from the library or create a new one to start enforcing constraints on this item."
+msgstr ""
+
+msgid "Pick List"
+msgstr ""
+
+msgid "Pieces/Hour"
+msgstr ""
+
+msgid "Pieces/Minute"
+msgstr ""
+
+msgid "Pinned"
+msgstr ""
+
+msgid "Plan"
+msgstr ""
+
+msgid "Plan Type"
+msgstr ""
+
+msgid "Planned End"
+msgstr ""
+
+msgid "Planned End Time"
+msgstr ""
+
+msgid "Planned Start"
+msgstr ""
+
+msgid "Planned Start Time"
+msgstr ""
+
+msgid "Planning"
+msgstr ""
+
+msgid "Please contact your administrator to enable audit logging."
+msgstr ""
+
+msgid "Please enter your email address"
+msgstr ""
+
+msgid "Please enter your name"
+msgstr ""
+
+msgid "Please fill out all required fields"
+msgstr ""
+
+msgid "Please save the operation before adding parameters."
+msgstr ""
+
+msgid "Please save the operation before adding steps."
+msgstr ""
+
+msgid "Please save the operation before adding tools."
+msgstr ""
+
+msgid "Please select an item"
+msgstr ""
+
+msgid "Please upload a CSV file of your data"
+msgstr ""
+
+msgid "PO"
+msgstr ""
+
+msgid "PO Number"
+msgstr ""
+
+msgid "Policy & Procedure"
+msgstr ""
+
+msgid "Portal Link"
+msgstr ""
+
+msgid "Portals"
+msgstr ""
+
+msgid "Positive Adjustment"
+msgstr ""
+
+msgid "Positive feedback"
+msgstr ""
+
+msgid "Post"
+msgstr ""
+
+msgid "Post Comment"
+msgstr ""
+
+msgid "Post Invoice"
+msgstr ""
+
+msgid "Post Receipt"
+msgstr ""
+
+msgid "Post Shipment"
+msgstr ""
+
+msgid "Postal Code"
+msgstr ""
+
+msgid "Posted"
+msgstr ""
+
+msgid "Posted By"
+msgstr ""
+
+msgid "Posting Date"
+msgstr ""
+
+msgid "Posting Groups"
+msgstr ""
+
+msgid "Potential Data Loss"
+msgstr ""
+
+msgid "Pre-filled for a new item when expiry is Fixed Duration."
+msgstr ""
+
+msgid "Preferred Supplier"
+msgstr ""
+
+msgid "Prefix"
+msgstr ""
+
+msgid "Prev"
+msgstr ""
+
+msgid "Preview"
+msgstr ""
+
+msgid "Preview Quantity"
+msgstr ""
+
+msgid "Previous"
+msgstr ""
+
+msgid "Previous Date"
+msgstr ""
+
+msgid "Price break actions"
+msgstr ""
+
+msgid "Price Break History"
+msgstr ""
+
+msgid "Price Breaks"
+msgstr ""
+
+msgid "Price List"
+msgstr ""
+
+msgid "Price Lists"
+msgstr ""
+
+msgid "Prices"
+msgstr ""
+
+msgid "Pricing"
+msgstr ""
+
+msgid "Pricing Rule"
+msgstr ""
+
+msgid "Pricing Rules"
+msgstr ""
+
+msgid "Pricing Trace"
+msgstr ""
+
+msgid "Print Label"
+msgstr ""
+
+msgid "Priorities"
+msgstr ""
+
+msgid "Priority"
+msgstr ""
+
+msgid "Privacy Policy"
+msgstr ""
+
+msgid "Private"
+msgstr ""
+
+msgid "Procedure"
+msgstr ""
+
+msgid "Procedures"
+msgstr ""
+
+msgid "Process"
+msgstr ""
+
+msgid "Process Name"
+msgstr ""
+
+msgid "Process Type"
+msgstr ""
+
+msgid "Processes"
+msgstr ""
+
+msgid "Product Label Size"
+msgstr ""
+
+msgid "Production"
+msgstr ""
+
+msgid "Production Event"
+msgstr ""
+
+msgid "Production Events"
+msgstr ""
+
+msgid "Production Qty"
+msgstr ""
+
+msgid "Production Quantities"
+msgstr ""
+
+msgid "Production Quantity"
+msgstr ""
+
+msgid "Profile"
+msgstr ""
+
+msgid "Progress"
+msgstr ""
+
+msgid "Project"
+msgstr ""
+
+msgid "Projections"
+msgstr ""
+
+msgid "Promised Date"
+msgstr ""
+
+msgid "Properties"
+msgstr ""
+
+msgid "Public"
+msgstr ""
+
+msgid "Publish"
+msgstr ""
+
+msgid "Published by Carbon"
+msgstr ""
+
+msgid "Pull From"
+msgstr ""
+
+msgid "Pull from Inventory"
+msgstr ""
+
+msgid "Purchase History"
+msgstr ""
+
+msgid "Purchase Invoice"
+msgstr ""
+
+msgid "Purchase Invoice Amount"
+msgstr ""
+
+msgid "Purchase Invoice Line"
+msgstr ""
+
+msgid "Purchase Invoices"
+msgstr ""
+
+msgid "Purchase Order"
+msgstr ""
+
+msgid "Purchase Order Amount"
+msgstr ""
+
+msgid "Purchase Order approval rule"
+msgstr ""
+
+msgid "Purchase Order ID"
+msgstr ""
+
+msgid "Purchase Order Line"
+msgstr ""
+
+msgid "Purchase Order Location"
+msgstr ""
+
+msgid "Purchase order removed successfully"
+msgstr ""
+
+msgid "Purchase Orders"
+msgstr ""
+
+msgid "Purchase orders required"
+msgstr ""
+
+msgid "Purchase Price Updates"
+msgstr ""
+
+msgid "Purchase Qty"
+msgstr ""
+
+msgid "Purchase to Order"
+msgstr ""
+
+msgid "Purchase Unit of Measure"
+msgstr ""
+
+msgid "Purchase Unit:"
+msgstr ""
+
+msgid "Purchased"
+msgstr ""
+
+msgid "Purchasing"
+msgstr ""
+
+msgid "Purchasing Contact"
+msgstr ""
+
+msgid "Purchasing Terms & Conditions"
+msgstr ""
+
+msgid "Purchasing Unit of Measure"
+msgstr ""
+
+msgid "Push record changes to external systems the moment they happen."
+msgstr ""
+
+#. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
+msgid "QR Code to create a {0} for this kanban"
+msgstr ""
+
+msgid "QR Code to start the next operation for this kanban"
+msgstr ""
+
+msgid "Qty to Order"
+msgstr ""
+
+msgid "Qty. Complete"
+msgstr ""
+
+msgid "Qty. per Parent"
+msgstr ""
+
+msgid "Qty. Reworked"
+msgstr ""
+
+msgid "Qty. Scrapped"
+msgstr ""
+
+msgid "Quality"
+msgstr ""
+
+msgid "Quality Document approval rule"
+msgstr ""
+
+msgid "Quality Documents"
+msgstr ""
+
+msgid "Quality Type"
+msgstr ""
+
+msgid "Quantities"
+msgstr ""
+
+msgid "Quantity"
+msgstr ""
+
+msgid "Quantity Completed"
+msgstr ""
+
+msgid "Quantity is derived from completed serials/batches in MES and cannot be edited."
+msgstr ""
+
+msgid "Quantity must be greater than 0"
+msgstr ""
+
+msgid "Quantity on Hand"
+msgstr ""
+
+msgid "Quantity on Jobs"
+msgstr ""
+
+msgid "Quantity on Purchase Order"
+msgstr ""
+
+msgid "Quantity on Sales Order"
+msgstr ""
+
+msgid "Quantity Per Job"
+msgstr ""
+
+msgid "Quantity per Parent"
+msgstr ""
+
+msgid "Quantity Type"
+msgstr ""
+
+msgid "Question"
+msgstr ""
+
+msgid "Quote"
+msgstr ""
+
+msgid "Quote Accepted By"
+msgstr ""
+
+msgid "Quote Accepted By Email"
+msgstr ""
+
+msgid "Quote expired"
+msgstr ""
+
+msgid "Quote ID"
+msgstr ""
+
+msgid "Quote Line"
+msgstr ""
+
+msgid "Quote Location"
+msgstr ""
+
+msgid "Quote Markups"
+msgstr ""
+
+msgid "Quote Materials"
+msgstr ""
+
+msgid "Quote not found"
+msgstr ""
+
+msgid "Quote Number"
+msgstr ""
+
+msgid "Quoted Date"
+msgstr ""
+
+msgid "Quotes"
+msgstr ""
+
+msgid "Rate Limit"
+msgstr ""
+
+msgid "Reactivate"
+msgstr ""
+
+msgid "Read rows"
+msgstr ""
+
+msgid "Ready for Quote"
+msgstr ""
+
+msgid "Reason"
+msgstr ""
+
+msgid "Reason for declining (Optional)"
+msgstr ""
+
+msgid "Reasons"
+msgstr ""
+
+msgid "Reassign specific tracked entities from this row to another disposition row."
+msgstr ""
+
+msgid "Recalculate"
+msgstr ""
+
+msgid "Recalculate Unit Cost"
+msgstr ""
+
+msgid "Receipt"
+msgstr ""
+
+msgid "Receipt ID"
+msgstr ""
+
+msgid "Receipt Line"
+msgstr ""
+
+msgid "Receipt Lines"
+msgstr ""
+
+msgid "Receipt Promised Date"
+msgstr ""
+
+msgid "Receipt Requested Date"
+msgstr ""
+
+msgid "Receipts"
+msgstr ""
+
+msgid "Receive"
+msgstr ""
+
+#. placeholder {0}: job.jobId
+msgid "Receive {0} to Inventory"
+msgstr ""
+
+msgid "Receive to Inventory"
+msgstr ""
+
+msgid "Received At"
+msgstr ""
+
+msgid "Received By"
+msgstr ""
+
+msgid "Received Qty"
+msgstr ""
+
+msgid "Receiving Location"
+msgstr ""
+
+msgid "Recent"
+msgstr ""
+
+msgid "Recently Created"
+msgstr ""
+
+msgid "Record"
+msgstr ""
+
+msgid "Record deleted"
+msgstr ""
+
+msgid "Records"
+msgstr ""
+
+msgid "Redirecting to verification page..."
+msgstr ""
+
+msgid "Reference"
+msgstr ""
+
+msgid "Refresh"
+msgstr ""
+
+msgid "Refresh exchange rate"
+msgstr ""
+
+msgid "Reject"
+msgstr ""
+
+msgid "Reject Lot"
+msgstr ""
+
+msgid "Reject Quote"
+msgstr ""
+
+msgid "Rejected"
+msgstr ""
+
+msgid "Rejected By"
+msgstr ""
+
+msgid "Rejected Date"
+msgstr ""
+
+msgid "Release"
+msgstr ""
+
+msgid "Release Job"
+msgstr ""
+
+msgid "Released"
+msgstr ""
+
+msgid "Remaining after split stays on the original row."
+msgstr ""
+
+msgid "Remember this PIN. You will need it to exit console mode on MES terminals."
+msgstr ""
+
+msgid "Remove"
+msgstr ""
+
+#. placeholder {0}: item.label
+msgid "Remove {0}"
+msgstr ""
+
+msgid "Remove attachment"
+msgstr ""
+
+msgid "Remove condition"
+msgstr ""
+
+msgid "Remove filter"
+msgstr ""
+
+msgid "Remove Filters"
+msgstr ""
+
+msgid "Remove from Price List"
+msgstr ""
+
+msgid "Remove item"
+msgstr ""
+
+msgid "Remove negative feedback"
+msgstr ""
+
+msgid "Remove order"
+msgstr ""
+
+msgid "Remove Order"
+msgstr ""
+
+msgid "Remove pair"
+msgstr ""
+
+msgid "Remove positive feedback"
+msgstr ""
+
+msgid "Remove sort by column"
+msgstr ""
+
+msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
+msgstr ""
+
+msgid "Remove Transfer"
+msgstr ""
+
+msgid "Reopen"
+msgstr ""
+
+msgid "Reorder"
+msgstr ""
+
+msgid "Reorder Group"
+msgstr ""
+
+msgid "Reorder Point"
+msgstr ""
+
+msgid "Reorder Point:"
+msgstr ""
+
+msgid "Reorder Policy"
+msgstr ""
+
+msgid "Reorder Policy:"
+msgstr ""
+
+msgid "Reorder Qty."
+msgstr ""
+
+msgid "Reorder Quantity"
+msgstr ""
+
+msgid "Reorder Quantity:"
+msgstr ""
+
+msgid "Reordering Policy"
+msgstr ""
+
+msgid "Replace existing pricing with source values"
+msgstr ""
+
+msgid "Replenishment"
+msgstr ""
+
+msgid "Replenishment System"
+msgstr ""
+
+msgid "Report"
+msgstr ""
+
+msgid "Reports"
+msgstr ""
+
+msgid "Request Approval"
+msgstr ""
+
+msgid "Requested Date"
+msgstr ""
+
+msgid "Require approval before suppliers can be set to Active"
+msgstr ""
+
+msgid "Require approval for purchase orders based on amount thresholds"
+msgstr ""
+
+msgid "Require approval for quality documents in your workflow"
+msgstr ""
+
+msgid "Required"
+msgstr ""
+
+msgid "Required Action"
+msgstr ""
+
+msgid "Required Actions"
+msgstr ""
+
+msgid "Required Date"
+msgstr ""
+
+msgid "Requires Action"
+msgstr ""
+
+msgid "Requires Adjustment"
+msgstr ""
+
+msgid "Requires Inspection"
+msgstr ""
+
+msgid "Requires Repair"
+msgstr ""
+
+msgid "Reserved"
+msgstr ""
+
+msgid "Reset"
+msgstr ""
+
+msgid "Reset PIN"
+msgstr ""
+
+#. placeholder {0}: operator.firstName
+#. placeholder {1}: operator.lastName
+msgid "Reset PIN for {0} {1}"
+msgstr ""
+
+msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
+msgstr ""
+
+msgid "Resolved Price"
+msgstr ""
+
+msgid "Resources"
+msgstr ""
+
+msgid "Restore from Trash"
+msgstr ""
+
+msgid "Restore tracked entities to available"
+msgstr ""
+
+msgid "Result"
+msgstr ""
+
+msgid "Results"
+msgstr ""
+
+msgid "Results per page"
+msgstr ""
+
+msgid "Retry"
+msgstr ""
+
+msgid "Retry response"
+msgstr ""
+
+msgid "Return Home"
+msgstr ""
+
+msgid "Rev {revision}"
+msgstr ""
+
+msgid "Reverse all inventory adjustments"
+msgstr ""
+
+msgid "Reverse all journal and cost ledger entries"
+msgstr ""
+
+msgid "Reverse any item ledger entries from this invoice"
+msgstr ""
+
+msgid "Reverse the related journal entries"
+msgstr ""
+
+msgid "Revision"
+msgstr ""
+
+#. placeholder {0}: revision.revision
+msgid "Revision {0}"
+msgstr ""
+
+msgid "Revoke"
+msgstr ""
+
+msgid "Revoke Invite"
+msgstr ""
+
+msgid "Revoke Invites"
+msgstr ""
+
+msgid "RFQ"
+msgstr ""
+
+msgid "RFQ Date"
+msgstr ""
+
+msgid "RFQ has no customer"
+msgstr ""
+
+msgid "RFQ has no suppliers"
+msgstr ""
+
+msgid "RFQ ID"
+msgstr ""
+
+msgid "RFQ Location"
+msgstr ""
+
+msgid "RFQ Number"
+msgstr ""
+
+msgid "RFQs"
+msgstr ""
+
+msgid "Right item"
+msgstr ""
+
+msgid "Risk"
+msgstr ""
+
+msgid "Risks"
+msgstr ""
+
+msgid "Role"
+msgstr ""
+
+msgid "Role:"
+msgstr ""
+
+msgid "rows"
+msgstr ""
+
+msgid "Rule"
+msgstr ""
+
+msgid "Rule applies to every customer."
+msgstr ""
+
+msgid "Rule applies to every item."
+msgstr ""
+
+msgid "Rule Type"
+msgstr ""
+
+msgid "Rule Violation"
+msgstr ""
+
+msgid "Rules"
+msgstr ""
+
+msgid "Run Test"
+msgstr ""
+
+msgid "Running Total"
+msgstr ""
+
+msgid "Safety Stock"
+msgstr ""
+
+msgid "Safety Stock:"
+msgstr ""
+
+msgid "Sale Price"
+msgstr ""
+
+msgid "Sales"
+msgstr ""
+
+msgid "Sales Contact"
+msgstr ""
+
+msgid "Sales Funnel"
+msgstr ""
+
+msgid "Sales Invoice"
+msgstr ""
+
+msgid "Sales Invoice Line"
+msgstr ""
+
+msgid "Sales Invoices"
+msgstr ""
+
+msgid "Sales Job Notifications"
+msgstr ""
+
+msgid "Sales Order"
+msgstr ""
+
+msgid "Sales Order ID"
+msgstr ""
+
+msgid "Sales Order Line"
+msgstr ""
+
+msgid "Sales Order Location"
+msgstr ""
+
+msgid "Sales Order Number"
+msgstr ""
+
+msgid "Sales Orders"
+msgstr ""
+
+msgid "Sales Person"
+msgstr ""
+
+msgid "Sales Revenue"
+msgstr ""
+
+msgid "Sales Terms & Conditions"
+msgstr ""
+
+msgid "Sample"
+msgstr ""
+
+msgid "Sample Size"
+msgstr ""
+
+msgid "Sampling Plan"
+msgstr ""
+
+msgid "Sampling Standard"
+msgstr ""
+
+msgid "Saturday"
+msgstr ""
+
+msgid "Save"
+msgstr ""
+
+msgid "Save & Close"
+msgstr ""
+
+msgid "Save and Overwrite"
+msgstr ""
+
+msgid "Save Method"
+msgstr ""
+
+msgid "Save View"
+msgstr ""
+
+msgid "Scan"
+msgstr ""
+
+msgid "Scan a label or search by ID, serial number, or batch number."
+msgstr ""
+
+msgid "Scan or enter tracked entity ID, serial, or batch"
+msgstr ""
+
+msgid "Scan or search..."
+msgstr ""
+
+msgid "Scan or select a tracked entity from this lot and record the inspection result."
+msgstr ""
+
+msgid "Scan the tracking ID for this line"
+msgstr ""
+
+msgid "SCAR"
+msgstr ""
+
+msgid "Schedule"
+msgstr ""
+
+msgid "Schedule Name"
+msgstr ""
+
+msgid "Scheduled Maintenance"
+msgstr ""
+
+msgid "Scheduled Maintenances"
+msgstr ""
+
+msgid "Schedules"
+msgstr ""
+
+msgid "Scope"
+msgstr ""
+
+msgid "Scopes"
+msgstr ""
+
+msgid "Scrap Percent"
+msgstr ""
+
+msgid "Scrap Qty"
+msgstr ""
+
+msgid "Scrap Quantity"
+msgstr ""
+
+msgid "Scrap Quantity Per Job"
+msgstr ""
+
+msgid "Scrap Reason"
+msgstr ""
+
+msgid "Scrap Reasons"
+msgstr ""
+
+msgid "Search"
+msgstr ""
+
+msgid "Search across your workspace..."
+msgstr ""
+
+msgid "Search by Jira issue title..."
+msgstr ""
+
+msgid "Search by linear issue title..."
+msgstr ""
+
+msgid "Search customers and types..."
+msgstr ""
+
+msgid "Search customers or types..."
+msgstr ""
+
+msgid "Search employees..."
+msgstr ""
+
+msgid "Search fields..."
+msgstr ""
+
+msgid "Search for existing or create a new one"
+msgstr ""
+
+msgid "Search history"
+msgstr ""
+
+msgid "Search Job"
+msgstr ""
+
+msgid "Search operators..."
+msgstr ""
+
+msgid "Search processes..."
+msgstr ""
+
+msgid "Search related items..."
+msgstr ""
+
+msgid "Search suppliers..."
+msgstr ""
+
+#. js-lingui-explicit-id
+msgid "Search the web"
+msgstr ""
+
+msgid "Search..."
+msgstr ""
+
+msgid "Seconds/Piece"
+msgstr ""
+
+msgid "Select"
+msgstr ""
+
+msgid "Select a assignee"
+msgstr ""
+
+msgid "Select a default approver"
+msgstr ""
+
+msgid "Select a new owner"
+msgstr ""
+
+msgid "Select a plan"
+msgstr ""
+
+#. placeholder {0}: plans[0].stripeTrialPeriodDays
+msgid "Select a plan to get started. You won't be charged for the first {0} days. Switch or cancel anytime."
+msgstr ""
+
+msgid "Select a project"
+msgstr ""
+
+msgid "Select a quote"
+msgstr ""
+
+msgid "Select a quote line"
+msgstr ""
+
+msgid "Select a reason for why the quote was not created."
+msgstr ""
+
+msgid "Select a team"
+msgstr ""
+
+msgid "Select an assignee"
+msgstr ""
+
+msgid "Select an issue type"
+msgstr ""
+
+msgid "Select an item and specify the quantity to issue"
+msgstr ""
+
+msgid "Select an item first"
+msgstr ""
+
+msgid "Select an item to configure"
+msgstr ""
+
+msgid "Select an option"
+msgstr ""
+
+msgid "Select Contact"
+msgstr ""
+
+msgid "Select Customer Status"
+msgstr ""
+
+msgid "Select Customer Type"
+msgstr ""
+
+msgid "Select customer types"
+msgstr ""
+
+msgid "Select customers"
+msgstr ""
+
+msgid "Select date range to filter net change and balance at date"
+msgstr ""
+
+msgid "Select Employee"
+msgstr ""
+
+msgid "Select Employee Type"
+msgstr ""
+
+msgid "Select field"
+msgstr ""
+
+msgid "Select Gauge"
+msgstr ""
+
+msgid "Select groups or individuals"
+msgstr ""
+
+msgid "Select Item Type"
+msgstr ""
+
+msgid "Select items"
+msgstr ""
+
+msgid "Select Quantities"
+msgstr ""
+
+msgid "Select Row"
+msgstr ""
+
+msgid "Select scope"
+msgstr ""
+
+msgid "Select Supplier Status"
+msgstr ""
+
+msgid "Select Supplier Type"
+msgstr ""
+
+msgid "Select surfaces"
+msgstr ""
+
+msgid "Select the groups that should complete this training"
+msgstr ""
+
+msgid "Select value"
+msgstr ""
+
+msgid "Select values"
+msgstr ""
+
+msgid "Selected"
+msgstr ""
+
+msgid "Selected Operation"
+msgstr ""
+
+#. placeholder {0}: target.maxQuantity - selectedSum
+msgid "Selected: {selectedSum} / remaining after split: {0}"
+msgstr ""
+
+msgid "Self Managed"
+msgstr ""
+
+msgid "Self-Onboarding with Carbon Academy"
+msgstr ""
+
+msgid "Send"
+msgstr ""
+
+msgid "Send Invite"
+msgstr ""
+
+msgid "Send Invites"
+msgstr ""
+
+msgid "Send RFQ to Suppliers"
+msgstr ""
+
+msgid "Send Via"
+msgstr ""
+
+msgid "Sends this document for approval before it can go active."
+msgstr ""
+
+msgid "Sequences"
+msgstr ""
+
+msgid "Serial"
+msgstr ""
+
+msgid "Serial / Batch"
+msgstr ""
+
+msgid "Serial items require a sales order"
+msgstr ""
+
+msgid "Serial Number"
+msgstr ""
+
+msgid "Serial number not found"
+msgstr ""
+
+msgid "Serial Number:"
+msgstr ""
+
+msgid "Serial or Batch Tracking Required"
+msgstr ""
+
+msgid "Serial Tracking"
+msgstr ""
+
+msgid "Serial/Batch #"
+msgstr ""
+
+msgid "Set Clock Out"
+msgstr ""
+
+msgid "Set clock-out time"
+msgstr ""
+
+msgid "Set Console PIN"
+msgstr ""
+
+msgid "Set default markup percentages for each cost category on new quote lines"
+msgstr ""
+
+msgid "Set due date"
+msgstr ""
+
+msgid "Set Pricing"
+msgstr ""
+
+msgid "Set Quantity"
+msgstr ""
+
+#. placeholder {0}: selectedVersion.version
+msgid "Set Version {0} as Active Version?"
+msgstr ""
+
+msgid "Set your default location in profile settings to pick a storage unit."
+msgstr ""
+
+msgid "Settings"
+msgstr ""
+
+msgid "Setup"
+msgstr ""
+
+msgid "Setup instructions"
+msgstr ""
+
+msgid "Setup Time"
+msgstr ""
+
+msgid "Setup Unit"
+msgstr ""
+
+msgid "Severities"
+msgstr ""
+
+msgid "Severity"
+msgstr ""
+
+msgid "Shape"
+msgstr ""
+
+msgid "Shapes"
+msgstr ""
+
+msgid "Share"
+msgstr ""
+
+msgid "Share Link"
+msgstr ""
+
+msgid "Share Quote"
+msgstr ""
+
+msgid "Shelf life"
+msgstr ""
+
+msgid "Shelf Life (Days)"
+msgstr ""
+
+msgid "Shelf Life Start Process"
+msgstr ""
+
+msgid "Shelf-Life"
+msgstr ""
+
+msgid "Shift"
+msgstr ""
+
+msgid "Shift Name"
+msgstr ""
+
+msgid "Shifts"
+msgstr ""
+
+msgid "Ship"
+msgstr ""
+
+msgid "Ship some, stock some"
+msgstr ""
+
+msgid "Ship to Customer"
+msgstr ""
+
+msgid "Shipment"
+msgstr ""
+
+msgid "Shipment Date"
+msgstr ""
+
+msgid "Shipment ID"
+msgstr ""
+
+msgid "Shipment Line"
+msgstr ""
+
+msgid "Shipment Lines"
+msgstr ""
+
+msgid "Shipment Location"
+msgstr ""
+
+msgid "Shipments"
+msgstr ""
+
+msgid "Shipped Qty"
+msgstr ""
+
+msgid "Shipping"
+msgstr ""
+
+msgid "Shipping Contact"
+msgstr ""
+
+msgid "Shipping Cost"
+msgstr ""
+
+msgid "Shipping Customer"
+msgstr ""
+
+msgid "Shipping Location"
+msgstr ""
+
+msgid "Shipping Method"
+msgstr ""
+
+msgid "Shipping Methods"
+msgstr ""
+
+msgid "Shipping Notes"
+msgstr ""
+
+msgid "Shipping Supplier"
+msgstr ""
+
+msgid "Shipping:"
+msgstr ""
+
+msgid "Shop Floor"
+msgstr ""
+
+msgid "Short Description"
+msgstr ""
+
+msgid "Shortcuts"
+msgstr ""
+
+msgid "Show Durations"
+msgstr ""
+
+msgid "Show parent items"
+msgstr ""
+
+msgid "Show part thumbnails on purchase orders."
+msgstr ""
+
+msgid "Show part thumbnails on quotes, sales orders, sales invoices, and shipments."
+msgstr ""
+
+msgid "Show sync options"
+msgstr ""
+
+msgid "Shown as a faint background behind every page of generated PDFs"
+msgstr ""
+
+msgid "Shown to the user when this rule fails."
+msgstr ""
+
+msgid "Sign in with Email"
+msgstr ""
+
+msgid "Sign in with Google"
+msgstr ""
+
+msgid "Sign in with Outlook"
+msgstr ""
+
+msgid "Sign Out"
+msgstr ""
+
+msgid "Signed in as {name}"
+msgstr ""
+
+msgid "Size"
+msgstr ""
+
+msgid "Sizes"
+msgstr ""
+
+msgid "Skip Existing"
+msgstr ""
+
+msgid "Skip Holidays"
+msgstr ""
+
+msgid "Skip raw-material dates set at receipt. Only inputs with their own shelf-life policy count."
+msgstr ""
+
+msgid "Skip scheduled maintenance on company holidays"
+msgstr ""
+
+msgid "Skipped"
+msgstr ""
+
+msgid "Something went wrong. Please try again."
+msgstr ""
+
+msgid "Soonest expiry across every material sets the finished good."
+msgstr ""
+
+msgid "Sort"
+msgstr ""
+
+msgid "Sort Ascending"
+msgstr ""
+
+msgid "Sort by"
+msgstr ""
+
+msgid "Sort Descending"
+msgstr ""
+
+msgid "Source"
+msgstr ""
+
+msgid "Source Analysis"
+msgstr ""
+
+msgid "Source Document"
+msgstr ""
+
+msgid "Source Document ID"
+msgstr ""
+
+msgid "Source Item"
+msgstr ""
+
+msgid "Source Method"
+msgstr ""
+
+msgid "Source Version"
+msgstr ""
+
+msgid "Sources"
+msgstr ""
+
+msgid "Sourcing Type"
+msgstr ""
+
+msgid "Spare Part Consumption"
+msgstr ""
+
+msgid "Spare Part Cost"
+msgstr ""
+
+msgid "Specific Customer"
+msgstr ""
+
+msgid "Specific Customers"
+msgstr ""
+
+msgid "Specific Items"
+msgstr ""
+
+msgid "Split"
+msgstr ""
+
+msgid "Split line"
+msgstr ""
+
+msgid "Split off quantity"
+msgstr ""
+
+msgid "Split receipt line"
+msgstr ""
+
+msgid "Split shipment line"
+msgstr ""
+
+msgid "Standard"
+msgstr ""
+
+msgid "Standard Lead Time"
+msgstr ""
+
+msgid "Start"
+msgstr ""
+
+#. placeholder {0}: plan.stripeTrialPeriodDays
+msgid "Start {0} Day Free Trial"
+msgstr ""
+
+msgid "Start adding parts to your stock transfer"
+msgstr ""
+
+msgid "Start Date"
+msgstr ""
+
+msgid "Start Expiration"
+msgstr ""
+
+msgid "Start expiration on process end"
+msgstr ""
+
+msgid "Start expiration on process start"
+msgstr ""
+
+msgid "Start Learning"
+msgstr ""
+
+msgid "Start Now"
+msgstr ""
+
+msgid "Start of Fiscal Year"
+msgstr ""
+
+msgid "Start of Tax Year"
+msgstr ""
+
+msgid "Start Time"
+msgstr ""
+
+msgid "Started"
+msgstr ""
+
+msgid "State / Province"
+msgstr ""
+
+#. placeholder {0}: lotEntities.length
+#. placeholder {1}: Math.max(0, lotEntities.length - inspected)
+msgid "Statistical acceptance failed, so the entire lot is considered non-conforming (ISO 9001:2015 §8.7). All {0} entities — {passes} sampled pass(es), {fails} failure(s), and {1} un-inspected — will be marked Rejected. An NCR will be opened automatically for MRB disposition."
+msgstr ""
+
+msgid "Status"
+msgstr ""
+
+msgid "Status Distribution"
+msgstr ""
+
+msgid "Statuses"
+msgstr ""
+
+msgid "Step"
+msgstr ""
+
+msgid "Step Records"
+msgstr ""
+
+msgid "Steps"
+msgstr ""
+
+msgid "Stock Transfer ID"
+msgstr ""
+
+msgid "Stock Transfer Lines"
+msgstr ""
+
+msgid "Stock Transfer Notes"
+msgstr ""
+
+msgid "Stock Transfer Wizard"
+msgstr ""
+
+msgid "Stock Transfers"
+msgstr ""
+
+msgid "Storage Type"
+msgstr ""
+
+msgid "Storage Types"
+msgstr ""
+
+msgid "Storage Unit"
+msgstr ""
+
+msgid "Storage Units"
+msgstr ""
+
+msgid "Store a fixed number of days on this item. Expiry start date is set on each batch or serial when it's created (or when the trigger process runs, if set)."
+msgstr ""
+
+msgid "Store a fixed number of days on this item. Expiry start date is set on each batch or serial when it's received or created (or when the trigger process runs, if set)."
+msgstr ""
+
+msgid "Store a fixed number of days on this item. Expiry start date is set on each batch or serial when it's received."
+msgstr ""
+
+msgid "Style of kanban output to show in the Kanban table"
+msgstr ""
+
+msgid "Sub-assembly expiries only"
+msgstr ""
+
+msgid "Sub-Departments"
+msgstr ""
+
+msgid "Subassembly"
+msgstr ""
+
+msgid "Submit"
+msgstr ""
+
+msgid "Submit anonymously"
+msgstr ""
+
+msgid "Submit for approval"
+msgstr ""
+
+msgid "Submit Inspection"
+msgstr ""
+
+msgid "Submitted By"
+msgstr ""
+
+msgid "Subscribe to changes"
+msgstr ""
+
+msgid "Substance"
+msgstr ""
+
+msgid "Substances"
+msgstr ""
+
+msgid "Subtotal"
+msgstr ""
+
+msgid "Subtotal:"
+msgstr ""
+
+msgid "Success"
+msgstr ""
+
+msgid "Successfully copied quote"
+msgstr ""
+
+msgid "Successfully created a new revision"
+msgstr ""
+
+msgid "Suffix"
+msgstr ""
+
+msgid "Suggested Actions"
+msgstr ""
+
+msgid "Suggestion"
+msgstr ""
+
+msgid "Suggestion Notifications"
+msgstr ""
+
+msgid "Suggestions"
+msgstr ""
+
+msgid "Sunday"
+msgstr ""
+
+msgid "Supabase provides a wide range of filters."
+msgstr ""
+
+msgid "Supabase provides realtime functionality and broadcasts database changes to authorized users depending on Row Level Security (RLS) policies."
+msgstr ""
+
+msgid "Supplier"
+msgstr ""
+
+msgid "Supplier Accounts"
+msgstr ""
+
+msgid "Supplier added and selected"
+msgstr ""
+
+msgid "Supplier Contact"
+msgstr ""
+
+msgid "Supplier ID"
+msgstr ""
+
+msgid "Supplier Invoice Number"
+msgstr ""
+
+msgid "Supplier Location"
+msgstr ""
+
+msgid "Supplier Order Number"
+msgstr ""
+
+msgid "Supplier Overview"
+msgstr ""
+
+msgid "Supplier Part ID"
+msgstr ""
+
+msgid "Supplier Part Number"
+msgstr ""
+
+msgid "Supplier Parts"
+msgstr ""
+
+msgid "Supplier Processes"
+msgstr ""
+
+msgid "Supplier Quality"
+msgstr ""
+
+msgid "Supplier Quote"
+msgstr ""
+
+msgid "Supplier Quote ID"
+msgstr ""
+
+msgid "Supplier Quote Notifications"
+msgstr ""
+
+msgid "Supplier Quotes"
+msgstr ""
+
+msgid "Supplier Ref."
+msgstr ""
+
+msgid "Supplier Ref. Number"
+msgstr ""
+
+msgid "Supplier Reference"
+msgstr ""
+
+msgid "Supplier Status"
+msgstr ""
+
+msgid "Supplier Type"
+msgstr ""
+
+msgid "Supplier Types"
+msgstr ""
+
+msgid "Supplier Unit Price"
+msgstr ""
+
+msgid "Supplier updated"
+msgstr ""
+
+msgid "Supplier:"
+msgstr ""
+
+msgid "Suppliers"
+msgstr ""
+
+msgid "Supply"
+msgstr ""
+
+msgid "Supply & Demand"
+msgstr ""
+
+#. placeholder {0}: supportedModelTypes.join(", ")
+msgid "Supports {0} files"
+msgstr ""
+
+msgid "Surfaces"
+msgstr ""
+
+msgid "Suspected Failure Mode"
+msgstr ""
+
+msgid "Switch"
+msgstr ""
+
+msgid "Sync"
+msgstr ""
+
+msgid "System"
+msgstr ""
+
+msgid "Table"
+msgstr ""
+
+msgid "Table actions"
+msgstr ""
+
+msgid "Tags"
+msgstr ""
+
+msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
+msgstr ""
+
+msgid "Talk to Sales"
+msgstr ""
+
+msgid "Target"
+msgstr ""
+
+msgid "Target an item group."
+msgstr ""
+
+msgid "Target customers by type."
+msgstr ""
+
+msgid "Target disposition row"
+msgstr ""
+
+msgid "Target Item"
+msgstr ""
+
+msgid "Target Method"
+msgstr ""
+
+msgid "Target number of open issues shown as a reference line on the Issue Trend chart."
+msgstr ""
+
+msgid "Target one or more customers."
+msgstr ""
+
+msgid "Target one or more items."
+msgstr ""
+
+msgid "Target Version"
+msgstr ""
+
+msgid "Tasks"
+msgstr ""
+
+msgid "Tax"
+msgstr ""
+
+msgid "Tax & Additional Costs"
+msgstr ""
+
+msgid "Tax Amount"
+msgstr ""
+
+msgid "Tax ID"
+msgstr ""
+
+msgid "Tax Percent"
+msgstr ""
+
+msgid "Tax:"
+msgstr ""
+
+msgid "Temperature"
+msgstr ""
+
+msgid "Terms and Privacy"
+msgstr ""
+
+msgid "Terms of Service"
+msgstr ""
+
+msgid "Test Value"
+msgstr ""
+
+msgid "The amount of days after the calculation method that the cash discount is available"
+msgstr ""
+
+msgid "The amount of days after the calculation method that the payment is due"
+msgstr ""
+
+msgid "The billing address used on purchase orders and other purchasing documents."
+msgstr ""
+
+msgid "The billing address used on quotes, sales orders, invoices, and other sales documents."
+msgstr ""
+
+msgid "The date the customer expects to receive the goods"
+msgstr ""
+
+msgid "The endpoint that receives a POST request with the updated data when the table is updated"
+msgstr ""
+
+msgid "The following assemblies have no operations. Please assign an operation to each before releasing."
+msgstr ""
+
+msgid "The following line items are missing prices or lead times:"
+msgstr ""
+
+msgid "The lot will still be rejected, but an NCR cannot be auto-created until at least one Issue Type is configured."
+msgstr ""
+
+msgid "The new version number of the method"
+msgstr ""
+
+msgid "The number of hours per week the contractor is available to work."
+msgstr ""
+
+msgid "The percentage of the cash discount. Use 0 for no discount."
+msgstr ""
+
+msgid "The quantity of the item to be reordered on scan-based replenishment."
+msgstr ""
+
+msgid "The quote has been created"
+msgstr ""
+
+msgid "The quote will be copied with a revision suffix"
+msgstr ""
+
+msgid "The revision number of the part"
+msgstr ""
+
+msgid "The size of the part"
+msgstr ""
+
+msgid "The storage service didn't respond in time. Please try again."
+msgstr ""
+
+msgid "The unit price of the item at the time of the purchase"
+msgstr ""
+
+msgid "Theme"
+msgstr ""
+
+msgid "Theme Color"
+msgstr ""
+
+msgid "There are no active supplier quotes to compare for this RFQ."
+msgstr ""
+
+msgid "There are outside operations associated with this job that have no suppliers. Please assign a supplier to each outside operation before releasing it."
+msgstr ""
+
+msgid "These custom fields will only be available for entities with the same tags"
+msgstr ""
+
+msgid "These email addresses will be automatically CC'd on all emails sent to suppliers (quotes, purchase orders, etc.)."
+msgstr ""
+
+msgid "These email addresses will be automatically CC'd on all quote emails sent to customers."
+msgstr ""
+
+msgid "These jobs have operations assigned to this work center:"
+msgstr ""
+
+msgid "This information will be used on document headers"
+msgstr ""
+
+msgid "This information will be visible to all users, so be careful what you share."
+msgstr ""
+
+msgid "This is a unique identifier for the webhook"
+msgstr ""
+
+msgid "This is the month your fiscal year starts."
+msgstr ""
+
+msgid "This is the month your tax year starts."
+msgstr ""
+
+msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
+msgstr ""
+
+msgid "This job will be received to inventory. It will no longer be available on the shop floor."
+msgstr ""
+
+msgid "This job will no longer be available on the shop floor."
+msgstr ""
+
+msgid "This sales order has lines that require jobs to be created"
+msgstr ""
+
+#. placeholder {0}: usageCount === 1 ? "" : "s"
+msgid "This storage type is currently used by {usageCount} storage unit{0}."
+msgstr ""
+
+msgid "This updates the theme for all users of the application"
+msgstr ""
+
+msgid "This will make this version read-only and replace any material make methods with this version."
+msgstr ""
+
+msgid "This will overwrite the existing job method"
+msgstr ""
+
+msgid "This will overwrite the existing manufacturing method and the latest versions of all subassemblies."
+msgstr ""
+
+msgid "This will overwrite the existing quote method"
+msgstr ""
+
+msgid "This will recalculate the unit cost from the active make method's bill of materials and processes using the batch size. The current cost will be overwritten. Do you want to continue?"
+msgstr ""
+
+msgid "This will replace all method materials of other revisions with this revision."
+msgstr ""
+
+msgid "This will replace all method materials of other sizes with this size."
+msgstr ""
+
+msgid "Thumbnail"
+msgstr ""
+
+msgid "Thumbnail removed"
+msgstr ""
+
+msgid "Thumbnail uploaded"
+msgstr ""
+
+msgid "Thumbnails are included"
+msgstr ""
+
+msgid "Thumbnails are not included"
+msgstr ""
+
+msgid "Thursday"
+msgstr ""
+
+msgid "Timecard"
+msgstr ""
+
+msgid "Timecards"
+msgstr ""
+
+msgid "Timecards are disabled"
+msgstr ""
+
+msgid "Timecards are enabled"
+msgstr ""
+
+msgid "Timezone"
+msgstr ""
+
+msgid "Title"
+msgstr ""
+
+msgid "To Location"
+msgstr ""
+
+msgid "To read rows in <0>{resourceId}</0>, use the <1>select</1> method."
+msgstr ""
+
+msgid "To Receive"
+msgstr ""
+
+msgid "To Ship"
+msgstr ""
+
+msgid "To Ship and Receive"
+msgstr ""
+
+msgid "To Storage Unit"
+msgstr ""
+
+msgid "Today"
+msgstr ""
+
+msgid "Toggle"
+msgstr ""
+
+msgid "Toggle Assignee"
+msgstr ""
+
+msgid "Toggle break active"
+msgstr ""
+
+msgid "Toggle column"
+msgstr ""
+
+msgid "Toggle dark/light mode"
+msgstr ""
+
+msgid "Toggle durations"
+msgstr ""
+
+msgid "Toggle Explorer"
+msgstr ""
+
+msgid "Toggle level"
+msgstr ""
+
+msgid "Toggle Properties"
+msgstr ""
+
+msgid "Toggle views"
+msgstr ""
+
+msgid "Tolerance (+/-)"
+msgstr ""
+
+msgid "Tool"
+msgstr ""
+
+msgid "Tool Details"
+msgstr ""
+
+msgid "Tool ID"
+msgstr ""
+
+msgid "Tools"
+msgstr ""
+
+msgid "Total"
+msgstr ""
+
+msgid "Total Hours"
+msgstr ""
+
+msgid "Total Minutes"
+msgstr ""
+
+msgid "Total Price"
+msgstr ""
+
+msgid "Total Quantity"
+msgstr ""
+
+msgid "Total:"
+msgstr ""
+
+msgid "Traceability"
+msgstr ""
+
+msgid "Track"
+msgstr ""
+
+msgid "Track changes to key business entities including invoices, orders, customers, suppliers, and more."
+msgstr ""
+
+msgid "Track every change to your orders, invoices, customers, and more."
+msgstr ""
+
+msgid "Track every change to your orders, invoices, customers, suppliers, and more."
+msgstr ""
+
+msgid "Track when batches or serials of this item expire."
+msgstr ""
+
+msgid "Tracked Entities"
+msgstr ""
+
+msgid "Tracked Entity"
+msgstr ""
+
+msgid "Tracked entity already picked"
+msgstr ""
+
+msgid "Tracked entity ID is required but none was found"
+msgstr ""
+
+msgid "Tracking"
+msgstr ""
+
+msgid "Tracking ID"
+msgstr ""
+
+msgid "Tracking Labels"
+msgstr ""
+
+msgid "Tracking Number"
+msgstr ""
+
+msgid "Tracking Type"
+msgstr ""
+
+msgid "Tracking URL"
+msgstr ""
+
+msgid "Training"
+msgstr ""
+
+msgid "Training Assignments"
+msgstr ""
+
+msgid "Trainings"
+msgstr ""
+
+msgid "Transactions will create journal entries and update the general ledger."
+msgstr ""
+
+msgid "Transfer"
+msgstr ""
+
+msgid "Transfer Date"
+msgstr ""
+
+msgid "Transfer From"
+msgstr ""
+
+msgid "Transfer ID"
+msgstr ""
+
+msgid "Transfer Lines"
+msgstr ""
+
+msgid "Transfer Ownership"
+msgstr ""
+
+msgid "Transfer ownership of this company to another user"
+msgstr ""
+
+msgid "Transfer To"
+msgstr ""
+
+msgid "Transfers"
+msgstr ""
+
+msgid "Trash"
+msgstr ""
+
+msgid "Trial Balance"
+msgstr ""
+
+msgid "Tuesday"
+msgstr ""
+
+msgid "Type"
+msgstr ""
+
+msgid "Type a message..."
+msgstr ""
+
+msgid "Type of Permission Update"
+msgstr ""
+
+msgid "Type to search across your workspace"
+msgstr ""
+
+msgid "Type:"
+msgstr ""
+
+msgid "Types"
+msgstr ""
+
+msgid "Un-sampled entities will remain On Hold so you can keep inspecting and disposition later. Sampled outcomes are preserved."
+msgstr ""
+
+msgid "Unapproved Supplier"
+msgstr ""
+
+msgid "Unassign rule"
+msgstr ""
+
+msgid "Unassigned"
+msgstr ""
+
+msgid "Uninstall"
+msgstr ""
+
+msgid "Unique, uppercase, without spaces"
+msgstr ""
+
+msgid "Unit"
+msgstr ""
+
+msgid "Unit Cost"
+msgstr ""
+
+msgid "Unit of Measure"
+msgstr ""
+
+msgid "Unit of Measures"
+msgstr ""
+
+msgid "Unit Price"
+msgstr ""
+
+msgid "Unit Sale Price"
+msgstr ""
+
+msgid "Units"
+msgstr ""
+
+msgid "Unknown"
+msgstr ""
+
+msgid "unknown location"
+msgstr ""
+
+msgid "Unlimited Functional Support"
+msgstr ""
+
+msgid "Unlink"
+msgstr ""
+
+msgid "Unsupported source document type: {sourceDocument}"
+msgstr ""
+
+msgid "UoM"
+msgstr ""
+
+msgid "Update"
+msgstr ""
+
+msgid "Update Inventory"
+msgstr ""
+
+msgid "Update Jira issue"
+msgstr ""
+
+msgid "Update Kanban"
+msgstr ""
+
+msgid "Update Linear issue"
+msgstr ""
+
+msgid "Update part lead times from posted purchase receipts."
+msgstr ""
+
+msgid "Update Password"
+msgstr ""
+
+msgid "Update Permissions"
+msgstr ""
+
+msgid "Update prices on"
+msgstr ""
+
+msgid "Update Quantity"
+msgstr ""
+
+msgid "Update rows"
+msgstr ""
+
+msgid "Update Rule"
+msgstr ""
+
+msgid "Update source document quantities"
+msgstr ""
+
+msgid "Update the kanban information for scan-based replenishment."
+msgstr ""
+
+msgid "Update the purchase order quantities"
+msgstr ""
+
+msgid "Updated"
+msgstr ""
+
+msgid "Updated account"
+msgstr ""
+
+msgid "Updated At"
+msgstr ""
+
+msgid "Updated By"
+msgstr ""
+
+msgid "Updated successfully"
+msgstr ""
+
+msgid "Upgrade"
+msgstr ""
+
+msgid "Upgrade to Business"
+msgstr ""
+
+msgid "Upgrade to unlock audit history"
+msgstr ""
+
+msgid "Upgrade to unlock item rules"
+msgstr ""
+
+msgid "Upload"
+msgstr ""
+
+msgid "Upload completed but no file path returned"
+msgstr ""
+
+msgid "Upload CSV"
+msgstr ""
+
+msgid "Uploaded model"
+msgstr ""
+
+#. placeholder {0}: file.name
+#. placeholder {0}: fileUpload.name
+msgid "Uploaded: {0}"
+msgstr ""
+
+#. placeholder {0}: avatarFile.name
+#. placeholder {0}: file.name
+#. placeholder {0}: fileUpload.name
+msgid "Uploading {0}"
+msgstr ""
+
+msgid "Uploading {fileName}"
+msgstr ""
+
+msgid "Upon clicking Convert, parts will be created with the following internal part numbers:"
+msgstr ""
+
+msgid "Usage/Day (30d)"
+msgstr ""
+
+msgid "Usage/Day (90d)"
+msgstr ""
+
+msgid "Use ... to get the next consumable ID"
+msgstr ""
+
+msgid "Use ... to get the next material ID"
+msgstr ""
+
+msgid "Use ... to get the next part ID"
+msgstr ""
+
+msgid "Use ... to get the next tool ID"
+msgstr ""
+
+msgid "Use a different email"
+msgstr ""
+
+msgid "Use metric system for default material dimensions."
+msgstr ""
+
+msgid "Used In"
+msgstr ""
+
+msgid "Used in the navigation and on documents like sales orders"
+msgstr ""
+
+msgid "Used in the navigation in dark mode"
+msgstr ""
+
+msgid "Used on the home screen and digital quotes"
+msgstr ""
+
+msgid "Used on the home screen in dark mode"
+msgstr ""
+
+msgid "Used to categorize items for reporting and analysis"
+msgstr ""
+
+msgid "User"
+msgstr ""
+
+msgid "Users"
+msgstr ""
+
+msgid "Users can update this value for themselves"
+msgstr ""
+
+msgid "Users to Update"
+msgstr ""
+
+msgid "Valid From"
+msgstr ""
+
+msgid "Valid Period"
+msgstr ""
+
+msgid "Valid To"
+msgstr ""
+
+msgid "Validating job..."
+msgstr ""
+
+msgid "Value"
+msgstr ""
+
+msgid "VAT Number"
+msgstr ""
+
+msgid "Verification Error"
+msgstr ""
+
+msgid "Verify your email"
+msgstr ""
+
+msgid "Version"
+msgstr ""
+
+msgid "Version:"
+msgstr ""
+
+msgid "Versions"
+msgstr ""
+
+msgid "via Digital Quote"
+msgstr ""
+
+msgid "View"
+msgstr ""
+
+msgid "View Active Jobs"
+msgstr ""
+
+msgid "View Active Quotes"
+msgstr ""
+
+msgid "View All"
+msgstr ""
+
+msgid "View Assigned Jobs"
+msgstr ""
+
+msgid "View Attachment"
+msgstr ""
+
+msgid "View Attributes"
+msgstr ""
+
+msgid "View Contact"
+msgstr ""
+
+msgid "View Custom Fields"
+msgstr ""
+
+msgid "View Customers"
+msgstr ""
+
+msgid "View Employees"
+msgstr ""
+
+msgid "View History"
+msgstr ""
+
+msgid "View in Academy"
+msgstr ""
+
+msgid "View Issue"
+msgstr ""
+
+msgid "View Item Master"
+msgstr ""
+
+msgid "View maintenance dispatch"
+msgstr ""
+
+msgid "View Open"
+msgstr ""
+
+msgid "View Open Invoices"
+msgstr ""
+
+msgid "View Open Orders"
+msgstr ""
+
+msgid "View Open POs"
+msgstr ""
+
+msgid "View Open Quotes"
+msgstr ""
+
+msgid "View Open RFQs"
+msgstr ""
+
+msgid "View Permissions"
+msgstr ""
+
+msgid "View Production Events"
+msgstr ""
+
+msgid "View Purchase Invoice"
+msgstr ""
+
+msgid "View Reactive"
+msgstr ""
+
+msgid "View Receipt"
+msgstr ""
+
+msgid "View Scheduled"
+msgstr ""
+
+msgid "View Shipment"
+msgstr ""
+
+msgid "View Status"
+msgstr ""
+
+msgid "View Stock Transfer"
+msgstr ""
+
+msgid "View Suggestion"
+msgstr ""
+
+msgid "View Suppliers"
+msgstr ""
+
+msgid "View Traceability Graph"
+msgstr ""
+
+msgid "View Transfer"
+msgstr ""
+
+msgid "Visibilities"
+msgstr ""
+
+msgid "Visibility"
+msgstr ""
+
+msgid "Visible on a user's public profile"
+msgstr ""
+
+msgid "Voice"
+msgstr ""
+
+msgid "Void"
+msgstr ""
+
+msgid "Void Invoice"
+msgstr ""
+
+msgid "Void Purchase Invoice"
+msgstr ""
+
+msgid "Void Receipt"
+msgstr ""
+
+msgid "Void Sales Invoice"
+msgstr ""
+
+msgid "Void Shipment"
+msgstr ""
+
+msgid "Voided"
+msgstr ""
+
+msgid "Voiding this purchase invoice will:"
+msgstr ""
+
+msgid "Voiding this receipt will:"
+msgstr ""
+
+msgid "Voiding this shipment will:"
+msgstr ""
+
+msgid "Warehouse Transfer"
+msgstr ""
+
+msgid "Warehouse Transfers"
+msgstr ""
+
+msgid "Warn"
+msgstr ""
+
+msgid "Warn but allow"
+msgstr ""
+
+msgid "Warn this many days before expiry"
+msgstr ""
+
+msgid "Warn when the person inspecting an inbound item is the same person who received it."
+msgstr ""
+
+msgid "Warning"
+msgstr ""
+
+msgid "Warnings"
+msgstr ""
+
+msgid "Watch full video"
+msgstr ""
+
+msgid "We've mapped each column to what we believe is correct, but please review the data below to confirm it's accurate."
+msgstr ""
+
+msgid "We've sent a verification code to {email}"
+msgstr ""
+
+msgid "We've sent a verification code to {signupEmail}"
+msgstr ""
+
+msgid "We've sent you a magic link to sign in to your account."
+msgstr ""
+
+msgid "Web Search"
+msgstr ""
+
+msgid "Webhook"
+msgstr ""
+
+msgid "Webhook Documentation"
+msgstr ""
+
+msgid "Webhook URL"
+msgstr ""
+
+msgid "Webhooks"
+msgstr ""
+
+msgid "Webhooks Docs"
+msgstr ""
+
+msgid "Website"
+msgstr ""
+
+msgid "Wednesday"
+msgstr ""
+
+msgid "Weeks Open"
+msgstr ""
+
+msgid "Weighted Average"
+msgstr ""
+
+msgid "Weighted average cost over last year calculated when the invoice is posted"
+msgstr ""
+
+msgid "Welcome to Carbon"
+msgstr ""
+
+msgid "When"
+msgstr ""
+
+msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
+msgstr ""
+
+msgid "When expired stock is used"
+msgstr ""
+
+msgid "Who Can Approve"
+msgstr ""
+
+msgid "Who should receive notifications for maintenance-related dispatches?"
+msgstr ""
+
+msgid "Who should receive notifications for operations-related dispatches?"
+msgstr ""
+
+msgid "Who should receive notifications for other dispatches?"
+msgstr ""
+
+msgid "Who should receive notifications for quality-related dispatches?"
+msgstr ""
+
+msgid "Who should receive notifications when a digital quote is accepted or expired?"
+msgstr ""
+
+msgid "Who should receive notifications when a gauge goes out of calibration?"
+msgstr ""
+
+msgid "Who should receive notifications when a new suggestion is submitted?"
+msgstr ""
+
+msgid "Who should receive notifications when a RFQ is marked ready for quote?"
+msgstr ""
+
+msgid "Who should receive notifications when a sales job is completed?"
+msgstr ""
+
+msgid "Who should receive notifications when a supplier quote is submitted?"
+msgstr ""
+
+msgid "Who should receive notifications when an inventory job is completed?"
+msgstr ""
+
+msgid "Why is the expiration being changed?"
+msgstr ""
+
+msgid "WIP"
+msgstr ""
+
+msgid "Won"
+msgstr ""
+
+msgid "Wordmark Dark Mode"
+msgstr ""
+
+msgid "Wordmark Light Mode"
+msgstr ""
+
+msgid "Work Center"
+msgstr ""
+
+msgid "Work Center Utilization"
+msgstr ""
+
+msgid "Work Centers"
+msgstr ""
+
+msgid "Work Instructions"
+msgstr ""
+
+msgid "Work instructions are included"
+msgstr ""
+
+msgid "Work instructions are not included"
+msgstr ""
+
+msgid "Work Phone"
+msgstr ""
+
+msgid "Work shift tracking is active."
+msgstr ""
+
+msgid "Workflow"
+msgstr ""
+
+msgid "Worst Performing Machines"
+msgstr ""
+
+msgid "Year"
+msgstr ""
+
+msgid "Yes"
+msgstr ""
+
+msgid "Yes, Accept"
+msgstr ""
+
+msgid "Yes, also delete every nested storage unit."
+msgstr ""
+
+msgid "Yes, Reject"
+msgstr ""
+
+msgid "Yes, Update IDs"
+msgstr ""
+
+msgid "You can change the UI style any time through the theme setting"
+msgstr ""
+
+msgid "You can only see this key once. Store it safely."
+msgstr ""
+
+#. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
+msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."
+msgstr ""
+
+#. placeholder {0}: leftoverQuantity === 1 ? "part" : "parts"
+#. placeholder {1}: job.quantity
+msgid ""
+"You completed {leftoverQuantity} more \n"
+"                        {0} than the\n"
+"                        ordered quantity of {1}. What would you like\n"
+"                        to do with the extra parts?"
+msgstr ""
+
+msgid "You haven't created any contacts yet."
+msgstr ""
+
+msgid "You received this item"
+msgstr ""
+
+msgid "You received this lot"
+msgstr ""
+
+msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
+msgstr ""
+
+msgid "Your Console PIN"
+msgstr ""
+
+msgid "Your Email"
+msgstr ""
+
+msgid "Your invitation is invalid or has already been accepted. Please contact support if you believe this is an error."
+msgstr ""
+
+msgid "Your Name"
+msgstr ""
+
+msgid "yourself"
+msgstr ""

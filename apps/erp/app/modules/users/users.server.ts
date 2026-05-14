@@ -701,6 +701,38 @@ export async function getUserDefaults(
     .maybeSingle();
 }
 
+export async function getModulePreferences(
+  client: SupabaseClient<Database>,
+  userId: string,
+  companyId: string
+) {
+  return client
+    .from("userModulePreference")
+    .select("module, position, hidden")
+    .eq("userId", userId)
+    .eq("companyId", companyId)
+    .order("position");
+}
+
+export async function upsertModulePreferences(
+  client: SupabaseClient<Database>,
+  userId: string,
+  companyId: string,
+  preferences: { module: string; position: number; hidden: boolean }[]
+) {
+  return client.from("userModulePreference").upsert(
+    preferences.map((p) => ({
+      userId,
+      companyId,
+      module: p.module,
+      position: p.position,
+      hidden: p.hidden,
+      updatedAt: new Date().toISOString()
+    })),
+    { onConflict: "userId,companyId,module" }
+  );
+}
+
 async function insertCustomerAccount(
   client: SupabaseClient<Database>,
   customerAccount: {

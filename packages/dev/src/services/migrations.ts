@@ -96,15 +96,22 @@ export async function waitForStorageReady(
   throw new Error("storage.buckets did not appear within 180s");
 }
 
-// Re-apply `packages/dev/docker/init.sql` as the superuser. Docker's
-// `docker-entrypoint-initdb.d` only runs on a fresh pgdata volume — a worktree
-// with a pre-existing volume from before init.sql evolved keeps the old role
-// passwords forever, so storage-api / gotrue / postgrest auth-fail on every
-// boot. Re-applying is idempotent (`ALTER USER ... PASSWORD`, `CREATE SCHEMA
-// IF NOT EXISTS`).
+// Re-apply `packages/dev/docker/init.sql` as the cluster superuser role.
+// Docker's `docker-entrypoint-initdb.d` only runs on a fresh pgdata volume —
+// a worktree with a pre-existing volume from before init.sql evolved keeps the
+// old role passwords forever, so storage-api / gotrue / postgrest auth-fail on
+// every boot. Re-applying is idempotent (`ALTER USER ... PASSWORD`, `CREATE
+// SCHEMA IF NOT EXISTS`).
+//
+// Connect as `supabase_admin` (not `postgres`): current supabase/postgres
+// images treat `supabase_admin` as a reserved role; only a superuser may
+// `ALTER` it, and the host TCP `postgres` role is no longer sufficient.
 export async function applyBootstrapSql(root: string, port: number) {
   const sql = readFileSync(join(root, "packages/dev/docker/init.sql"), "utf8");
-  await withClient(port, (c) => c.query(sql));
+  await withClient(port, (c) => c.query(sql), {
+    user: "supabase_admin",
+    password: "postgres"
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -115,6 +122,11 @@ export async function applyBootstrapSql(root: string, port: number) {
 // that makes earlier-timestamp migrations look "out of order" without it.
 // Returns `applied: true` when at least one migration ran — callers gate
 // type/swagger regen on this so a re-run against an up-to-date DB stays cheap.
+//
+// Use `supabase_admin`, not `postgres`: current supabase/postgres images mark
+// `session_authorization=postgres` as non-superuser (`is_superuser=off`), so
+// the CLI cannot INSERT migration bookkeeping rows into
+// `supabase_migrations.schema_migrations` as `postgres`.
 export async function applyMigrations(
   root: string,
   dbPort: number
@@ -124,7 +136,7 @@ export async function applyMigrations(
     "up",
     "--include-all",
     "--db-url",
-    `postgresql://postgres:postgres@localhost:${dbPort}/postgres`
+    `postgresql://supabase_admin:postgres@localhost:${dbPort}/postgres`
   ];
   const cwd = join(root, "packages/database");
   const r = await execa("supabase", args, {
@@ -147,18 +159,25 @@ export async function applyMigrations(
 // Private helpers
 // ---------------------------------------------------------------------------
 
-// Host-side superuser connection. `pg` avoids a host `psql` install —
+type HostPgOpts = {
+  user?: string;
+  password?: string;
+  database?: string;
+};
+
+// Host-side Postgres connection. `pg` avoids a host `psql` install —
 // previously a hidden requirement that bit at least one engineer.
 async function withClient<T>(
   port: number,
-  fn: (c: pg.Client) => Promise<T>
+  fn: (c: pg.Client) => Promise<T>,
+  opts: HostPgOpts = {}
 ): Promise<T> {
   const client = new pg.Client({
     host: "127.0.0.1",
     port,
-    user: "postgres",
-    password: "postgres",
-    database: "postgres"
+    user: opts.user ?? "postgres",
+    password: opts.password ?? "postgres",
+    database: opts.database ?? "postgres"
   });
   await client.connect();
   try {

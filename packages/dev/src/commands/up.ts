@@ -14,9 +14,11 @@ import {
   syncEnvSymlinks
 } from "../services/apps.js";
 import {
+  allImagesPresentLocally,
   bootSharedRedis,
   bootStack,
   type Container,
+  devComposeImageRefs,
   listComposeServices,
   listContainers,
   pullStack,
@@ -58,7 +60,13 @@ import {
 import { syncStaleCopyFiles } from "./copy.js";
 import { down } from "./down.js";
 
-type UpOpts = { migrate?: boolean; regen?: boolean; apps?: boolean };
+type UpOpts = {
+  migrate?: boolean;
+  regen?: boolean;
+  apps?: boolean;
+  /** When true, always `docker compose pull` even if images exist locally. */
+  pull?: boolean;
+};
 
 type Ctx = {
   root: string;
@@ -96,7 +104,7 @@ export async function up(opts: UpOpts = {}) {
   await ensureDepsInstalled(root);
 
   const ctx = await provisionSlot(root, slug);
-  await pullImages(ctx);
+  await pullImages(ctx, { force: opts.pull === true });
   await bootDockerStack(ctx);
   await waitForServices(ctx);
   await runDatabaseMigrations(ctx, { shouldMigrate, shouldRegen });
@@ -194,7 +202,15 @@ async function provisionSlot(root: string, slug: string): Promise<Ctx> {
 // Pull images outside `tasks()` so we can use clack's progress bar (one
 // tick per `<service> Pulled` event). Spinner subtitle inside `tasks()`
 // can't render a bar, only a single line of text.
-async function pullImages(ctx: Ctx) {
+async function pullImages(ctx: Ctx, opts: { force: boolean }) {
+  if (!opts.force) {
+    const refs = await devComposeImageRefs(ctx.root, ctx.slug);
+    if (refs && (await allImagesPresentLocally(refs))) {
+      log.info("docker images already present — skipping compose pull");
+      return;
+    }
+  }
+
   const services = await listComposeServices(ctx.root, ctx.slug);
   const max = Math.max(services.length, 1);
   const bar = progress({ style: "heavy", max });

@@ -44,9 +44,6 @@ services:
   gotrue:
     image: supabase/gotrue:v2.189.0
     restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
     environment:
       GOTRUE_API_HOST: 0.0.0.0
       GOTRUE_API_PORT: 9999
@@ -75,6 +72,17 @@ services:
       GOTRUE_EXTERNAL_AZURE_CLIENT_ID: ${SUPABASE_AUTH_EXTERNAL_AZURE_CLIENT_ID:-}
       GOTRUE_EXTERNAL_AZURE_SECRET: ${SUPABASE_AUTH_EXTERNAL_AZURE_CLIENT_SECRET:-}
       GOTRUE_EXTERNAL_AZURE_REDIRECT_URI: ${SUPABASE_AUTH_EXTERNAL_AZURE_REDIRECT_URI}
+      GOTRUE_MAILER_TEMPLATES_MAGIC_LINK: ${ERP_URL}/templates/magic-link.html
+      GOTRUE_MAILER_TEMPLATES_INVITE: ${ERP_URL}/templates/invite.html
+      SSL_CERT_FILE: /etc/ssl/certs/portless-ca.pem
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      - "${DOMAIN}:host-gateway"
+    volumes:
+      - ${HOME}/.portless/ca.pem:/etc/ssl/certs/portless-ca.pem:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   postgrest:
     image: postgrest/postgrest:v13.0.8
@@ -232,10 +240,15 @@ services:
     command:
       - inngest
       - dev
+      - --sdk-url=${ERP_URL}/api/inngest
+    environment:
+      SSL_CERT_FILE: /etc/ssl/certs/portless-ca.pem
     extra_hosts:
       - "host.docker.internal:host-gateway"
+      - "${DOMAIN}:host-gateway"
     volumes:
       - inngest:/data
+      - ${HOME}/.portless/ca.pem:/etc/ssl/certs/portless-ca.pem:ro
 
 volumes:
   pgdata:

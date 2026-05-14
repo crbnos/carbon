@@ -18,7 +18,8 @@ const handler = serve({
   client: inngest,
   functions,
   // Enable streaming for long-running functions on Vercel
-  streaming: "allow"
+  streaming: "allow",
+  serveHost: process.env.ERP_URL
 });
 
 // In connect mode, we still serve for discovery but can log/track differently
