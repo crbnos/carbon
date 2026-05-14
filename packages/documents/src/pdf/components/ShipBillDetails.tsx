@@ -65,7 +65,7 @@ const AddressBlock = ({ address }: { address: Address }) => (
 
 const ShipBillDetails = ({
   shipTo,
-  shipToLabel = "Ship To",
+  shipToLabel = "Deliver To",
   billTo,
   billToLabel = "Bill To"
 }: ShipBillDetailsProps) => {

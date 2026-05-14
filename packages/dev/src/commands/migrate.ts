@@ -1,11 +1,11 @@
 import { existsSync } from "node:fs";
-import net from "node:net";
-import { join } from "node:path";
 import { intro, log, outro, tasks } from "@clack/prompts";
 import { config as loadDotenv } from "dotenv";
 import { execa } from "execa";
-import { getWorktreeRoot } from "../lib/slug.js";
+import { join } from "pathe";
+import { requireNumberEnv, tryConnect } from "../helpers.js";
 import { applyMigrations } from "../services/migrations.js";
+import { getWorktreeRoot } from "../worktree.js";
 
 // Run database migrations against the worktree's local stack without booting
 // the full compose stack. Reads PORT_DB from `.env.local` (written by
@@ -29,16 +29,18 @@ export async function migrate(opts: { regen?: boolean } = {}) {
   loadDotenv({ path: envLocal, override: false });
   loadDotenv({ path: join(root, ".env"), override: false });
 
-  const portDb = Number(process.env.PORT_DB);
-  if (!portDb) {
+  let portDb: number;
+  try {
+    portDb = requireNumberEnv("PORT_DB");
+  } catch (err) {
     log.error(
-      "PORT_DB missing from .env.local. Re-run `crbn up` to regenerate it."
+      `${(err as Error).message}. Re-run \`crbn up\` to regenerate .env.local.`
     );
     outro("");
     process.exit(1);
   }
 
-  if (!(await reachable("127.0.0.1", portDb))) {
+  if (!(await tryConnect("127.0.0.1", portDb, 1500))) {
     log.error(
       `Local DB at 127.0.0.1:${portDb} is not reachable. Start the stack first: \`crbn up\`.`
     );
@@ -72,18 +74,4 @@ export async function migrate(opts: { regen?: boolean } = {}) {
   ]);
 
   outro("done");
-}
-
-function reachable(host: string, port: number): Promise<boolean> {
-  return new Promise((resolve) => {
-    const s = net.connect({ host, port });
-    const done = (ok: boolean) => {
-      s.removeAllListeners();
-      s.destroy();
-      resolve(ok);
-    };
-    s.once("connect", () => done(true));
-    s.once("error", () => done(false));
-    s.setTimeout(1500, () => done(false));
-  });
 }

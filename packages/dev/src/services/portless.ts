@@ -9,7 +9,7 @@ import {
   type AppId,
   PORTLESS_MIN_VERSION
 } from "../constants.js";
-import type { PortMap } from "../lib/ports.js";
+import type { PortMap } from "../worktree.js";
 
 // Strip npm_* / PNPM_* so portless doesn't refuse with "should not be run via
 // npx or pnpm dlx" when invoked from `pnpm exec tsx`. Pair with
@@ -21,6 +21,12 @@ function portlessEnv(): NodeJS.ProcessEnv {
     out[k] = v;
   }
   return out;
+}
+
+// `sudo` preserves HOME so portless state lands in the user's ~/.portless
+// rather than /var/root/.portless.
+function sudoPortless(args: string[]): string[] {
+  return [`HOME=${homedir()}`, "portless", ...args];
 }
 
 export async function ensurePortlessInstalled() {
@@ -185,33 +191,30 @@ export async function ensureProxyPrivileges() {
 
   log.info("running sudo commands — you'll be prompted for your password");
 
-  // Preserve user HOME — sudo resets to root's HOME otherwise, sending
-  // portless state (~/.portless) into /var/root/.portless.
-  const sudoEnvArg = `HOME=${homedir()}`;
-
-  await execa("sudo", [sudoEnvArg, "portless", "proxy", "stop"], {
+  await execa("sudo", sudoPortless(["proxy", "stop"]), {
     stdio: "inherit",
     reject: false
   });
 
   const start = await execa(
     "sudo",
-    [sudoEnvArg, "portless", "proxy", "start", "--tld", PORTLESS_TLD],
-    { stdio: "inherit", reject: false }
+    sudoPortless(["proxy", "start", "--tld", PORTLESS_TLD]),
+    {
+      stdio: "inherit",
+      reject: false
+    }
   );
   if (start.exitCode !== 0) {
-    throw new Error(
-      `sudo portless proxy start failed (exit ${start.exitCode})`
-    );
+    throw new Error(`portless proxy start failed (exit ${start.exitCode})`);
   }
 
-  const trust = await execa("sudo", [sudoEnvArg, "portless", "trust"], {
+  const trust = await execa("sudo", sudoPortless(["trust"]), {
     stdio: "inherit",
     reject: false
   });
   if (trust.exitCode !== 0) {
     log.warn(
-      `sudo portless trust failed (exit ${trust.exitCode}); browsers may show cert warnings until you run it manually.`
+      `portless trust failed (exit ${trust.exitCode}); browsers may show cert warnings until you run it manually.`
     );
   }
 
@@ -227,11 +230,10 @@ export async function ensureProxyPrivileges() {
 
 // Push registered routes into /etc/hosts. Needs sudo; idempotent.
 export async function syncHostsFile() {
-  const r = await execa(
-    "sudo",
-    [`HOME=${homedir()}`, "portless", "hosts", "sync"],
-    { stdio: "inherit", reject: false }
-  );
+  const r = await execa("sudo", sudoPortless(["hosts", "sync"]), {
+    stdio: "inherit",
+    reject: false
+  });
   if (r.exitCode !== 0) {
     throw new Error(
       `sudo portless hosts sync failed (exit ${r.exitCode}). Run it manually to fix DNS.`

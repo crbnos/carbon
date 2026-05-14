@@ -1,7 +1,9 @@
-import { existsSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { parse } from "dotenv";
 import { type ExecaChildProcess, execa } from "execa";
+import { join } from "pathe";
 import pc from "picocolors";
+import { isAtLeastAsNew, onShutdown, readLines } from "../helpers.js";
 
 const APP_COLORS: Record<string, (s: string) => string> = {
   erp: pc.cyan,
@@ -16,6 +18,24 @@ function isNoiseLine(line: string): boolean {
   // biome-ignore lint/suspicious/noControlCharactersInRegex: ignored using `--suppress`
   const plain = line.replace(/\x1b\[[0-9;]*m/g, "");
   return NOISE_PATTERNS.some((re) => re.test(plain));
+}
+
+// `portless` inherits `crbn`'s `process.env`; a stale shell `SUPABASE_URL`
+// (e.g. `http://127.0.0.1:54321`) would otherwise win over `crbn`'s repo-root
+// `.env.local`. Merge the same `.env*` stack as ERP Vite (app then repo, last
+// wins) so spawned dev servers always see worktree URLs.
+function spawnAppEnv(repoRoot: string, appId: string): NodeJS.ProcessEnv {
+  const env: Record<string, string | undefined> = { ...process.env };
+  const appRoot = join(repoRoot, "apps", appId);
+  const mergeFile = (abs: string) => {
+    if (!existsSync(abs)) return;
+    Object.assign(env, parse(readFileSync(abs, "utf8")));
+  };
+  mergeFile(join(appRoot, ".env"));
+  mergeFile(join(appRoot, ".env.local"));
+  mergeFile(join(repoRoot, ".env"));
+  mergeFile(join(repoRoot, ".env.local"));
+  return env as NodeJS.ProcessEnv;
 }
 
 // Invoke portless directly per app, bypassing the per-app `dev` script.
@@ -35,6 +55,7 @@ export function spawnApps(opts: {
     // whole subtree (portless → react-router → vite → esbuild).
     const child = execa("portless", ["--script", "dev:app", "run", "--force"], {
       cwd: join(root, "apps", id),
+      env: spawnAppEnv(root, id),
       preferLocal: true,
       reject: false,
       stdin: "ignore",
@@ -47,22 +68,10 @@ export function spawnApps(opts: {
       sink: NodeJS.WriteStream
     ) => {
       if (!stream) return;
-      let buf = "";
-      stream.on("data", (chunk) => {
+      readLines(stream, (line) => {
         // Mute shutdown noise (EPIPE, ELIFECYCLE 143, esbuild "stopped").
-        if (shuttingDown) return;
-        buf += chunk.toString();
-        const lines = buf.split("\n");
-        buf = lines.pop() ?? "";
-        for (const line of lines) {
-          if (isNoiseLine(line)) continue;
-          sink.write(`${prefix}${line}\n`);
-        }
-      });
-      stream.on("end", () => {
-        if (!shuttingDown && buf.length > 0 && !isNoiseLine(buf)) {
-          sink.write(`${prefix}${buf}\n`);
-        }
+        if (shuttingDown || isNoiseLine(line)) return;
+        sink.write(`${prefix}${line}\n`);
       });
     };
     pipe(child.stdout, process.stdout);
@@ -99,20 +108,19 @@ export function spawnApps(opts: {
     killTimer = setTimeout(() => shutdown("SIGKILL"), 3_000);
   };
 
-  const SIGNALS = ["SIGINT", "SIGTERM", "SIGHUP", "SIGBREAK"] as const;
-  for (const s of SIGNALS) process.on(s, onSignal);
+  const detach = onShutdown(onSignal);
 
   return Promise.all(children)
     .then(() => undefined)
     .catch(() => undefined)
     .finally(() => {
       if (killTimer) clearTimeout(killTimer);
-      for (const s of SIGNALS) process.off(s, onSignal);
+      detach();
     });
 }
 
 export function spawnStripeListener(root: string) {
-  execa("npm", ["run", "dev:stripe"], {
+  execa("pnpm", ["run", "dev:stripe"], {
     cwd: root,
     detached: true,
     stdio: "ignore"
@@ -139,12 +147,7 @@ export async function installDeps(root: string): Promise<boolean> {
 function depsInSync(root: string): boolean {
   const lockfile = join(root, "pnpm-lock.yaml");
   const marker = join(root, "node_modules", ".modules.yaml");
-  if (!existsSync(lockfile) || !existsSync(marker)) return false;
-  try {
-    return statSync(marker).mtimeMs >= statSync(lockfile).mtimeMs;
-  } catch {
-    return false;
-  }
+  return isAtLeastAsNew(marker, lockfile);
 }
 
 export async function syncEnvSymlinks(root: string) {

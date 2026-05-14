@@ -124,11 +124,15 @@ const PurchaseOrderPDF = ({
         countryCode: deliveryCountryCode
       };
 
+  const headerTitle = purchaseOrder?.purchaseOrderId
+    ? `${title}: ${purchaseOrder.purchaseOrderId}`
+    : title;
+
   let rowIndex = 0;
 
   return (
     <Template
-      title={title}
+      title={headerTitle}
       meta={{
         author: meta?.author ?? "Carbon",
         keywords: meta?.keywords ?? "purchase order",
@@ -155,13 +159,12 @@ const PurchaseOrderPDF = ({
       )}
       <Header
         company={company}
-        title="Purchase Order"
+        title={title}
         documentId={purchaseOrder?.purchaseOrderId}
-        date={purchaseOrder?.orderDate}
-        currencyCode={purchaseOrder?.currencyCode}
         locale={locale}
       />
 
+      {/* Order to (supplier) — top-left | Buyer (us) — top-right */}
       <PartyDetails
         company={company}
         companyLabel="Buyer"
@@ -175,61 +178,36 @@ const PurchaseOrderPDF = ({
           countryCode: supplierCountryCode,
           taxId: purchaseOrderLocations.supplierTaxId,
           vatNumber: purchaseOrderLocations.supplierVatNumber,
+          eori: purchaseOrderLocations.supplierEori,
           contactName: purchaseOrderLocations.supplierContactName,
           contactEmail: purchaseOrderLocations.supplierContactEmail
         }}
-        counterPartyLabel="Supplier"
+        counterPartyLabel="Order to:"
         createdByFullName={purchaseOrder.createdByFullName}
         createdByEmail={purchaseOrder.createdByEmail}
         createdByPhone={purchaseOrder.createdByPhone ?? null}
         accountsPayableEmail={accountsPayableBillingAddress?.email}
+        hideCompanyTaxLines
       />
 
-      {/* Ship To + Order Details */}
+      {/* Order Details | Deliver To */}
       <View style={tw("border border-gray-200 mb-4")}>
         <View style={tw("flex flex-row")}>
           <View style={tw("w-1/2 p-3 border-r border-gray-200")}>
             <Text
               style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}
             >
-              Ship To
-            </Text>
-            <View style={tw("text-[10px] text-gray-800")}>
-              {shipAddress.name && (
-                <Text style={tw("font-bold")}>{shipAddress.name}</Text>
-              )}
-              {shipAddress.addressLine1 && (
-                <Text>{shipAddress.addressLine1}</Text>
-              )}
-              {shipAddress.addressLine2 && (
-                <Text>{shipAddress.addressLine2}</Text>
-              )}
-              {(shipAddress.city ||
-                shipAddress.stateProvince ||
-                shipAddress.postalCode ||
-                shipAddress.countryCode) && (
-                <Text>
-                  {[
-                    formatCityStatePostalCode(
-                      shipAddress.city,
-                      shipAddress.stateProvince,
-                      shipAddress.postalCode
-                    ),
-                    shipAddress.countryCode
-                  ]
-                    .filter(Boolean)
-                    .join(" ")}
-                </Text>
-              )}
-            </View>
-          </View>
-          <View style={tw("w-1/2 p-3")}>
-            <Text
-              style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}
-            >
               Order Details
             </Text>
-            <View style={tw("text-[10px] text-gray-800")}>
+            <View style={tw("text-[9px] text-gray-800")}>
+              {purchaseOrder?.purchaseOrderId && (
+                <Text>PO Number: {purchaseOrder.purchaseOrderId}</Text>
+              )}
+              {purchaseOrder?.orderDate && (
+                <Text>
+                  Date: {formatDate(purchaseOrder.orderDate, undefined, locale)}
+                </Text>
+              )}
               <Text>Currency: {currencyCode}</Text>
               {purchaseOrder?.supplierReference && (
                 <Text>Reference: {purchaseOrder.supplierReference}</Text>
@@ -263,6 +241,44 @@ const PurchaseOrderPDF = ({
                     : ""}
                 </Text>
               )}
+              {company.taxId && <Text>Buyer Tax ID: {company.taxId}</Text>}
+              {company.vatNumber && <Text>Buyer VAT: {company.vatNumber}</Text>}
+              {company.eori && <Text>Buyer EORI: {company.eori}</Text>}
+            </View>
+          </View>
+          <View style={tw("w-1/2 p-3")}>
+            <Text
+              style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}
+            >
+              Deliver To
+            </Text>
+            <View style={tw("text-[9px] text-gray-800")}>
+              {shipAddress.name && (
+                <Text style={tw("font-bold")}>{shipAddress.name}</Text>
+              )}
+              {shipAddress.addressLine1 && (
+                <Text>{shipAddress.addressLine1}</Text>
+              )}
+              {shipAddress.addressLine2 && (
+                <Text>{shipAddress.addressLine2}</Text>
+              )}
+              {(shipAddress.city ||
+                shipAddress.stateProvince ||
+                shipAddress.postalCode ||
+                shipAddress.countryCode) && (
+                <Text>
+                  {[
+                    formatCityStatePostalCode(
+                      shipAddress.city,
+                      shipAddress.stateProvince,
+                      shipAddress.postalCode
+                    ),
+                    shipAddress.countryCode
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                </Text>
+              )}
             </View>
           </View>
         </View>
@@ -274,7 +290,7 @@ const PurchaseOrderPDF = ({
           <Text style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}>
             Notes
           </Text>
-          <View style={tw("text-[10px] text-gray-800")}>
+          <View style={tw("text-[9px] text-gray-800")}>
             {Object.keys(purchaseOrder?.externalNotes ?? {}).length > 0 ? (
               <Note
                 content={(purchaseOrder.externalNotes ?? {}) as JSONContent}
@@ -291,31 +307,37 @@ const PurchaseOrderPDF = ({
         {/* Header */}
         <View
           style={tw(
-            "flex flex-row bg-gray-800 py-3 px-3 text-white text-[10px] font-bold items-center"
+            "flex flex-row bg-gray-800 py-3 px-3 text-white text-[9px] font-bold items-center"
           )}
         >
-          <Text style={tw("w-[5%] text-center")}>#</Text>
-          <Text style={tw("w-[25%]")}>Description</Text>
-          <Text style={tw("w-[11%] text-center")}>Qty</Text>
-          <Text style={tw("w-[11%] text-center")}>UOM</Text>
-          <View style={tw("w-[11%] items-center")}>
-            <Text>Required By</Text>
+          <Text style={tw("w-[4%] text-center")}>#</Text>
+          <Text style={tw("w-[22%]")}>Description</Text>
+          <Text style={tw("w-[8%] text-center")}>Qty</Text>
+          <Text style={tw("w-[7%] text-center")}>UOM</Text>
+          <View style={tw("w-[10%] items-center")}>
+            <Text>Required</Text>
           </View>
           <View style={tw("w-[12%] items-center")}>
-            <Text>UOM Price</Text>
-            <Text style={[tw("text-[8px] font-normal"), { opacity: 0.7 }]}>
+            <Text>Unit Price</Text>
+            <Text style={[tw("text-[7px] font-normal"), { opacity: 0.7 }]}>
               {currencyCode}
             </Text>
           </View>
           <View style={tw("w-[12%] items-center")}>
-            <Text>Tax</Text>
-            <Text style={[tw("text-[8px] font-normal"), { opacity: 0.7 }]}>
+            <Text>Net Value</Text>
+            <Text style={[tw("text-[7px] font-normal"), { opacity: 0.7 }]}>
+              {currencyCode}
+            </Text>
+          </View>
+          <View style={tw("w-[12%] items-center")}>
+            <Text>Tax Value</Text>
+            <Text style={[tw("text-[7px] font-normal"), { opacity: 0.7 }]}>
               {currencyCode}
             </Text>
           </View>
           <View style={tw("w-[13%] items-center")}>
             <Text>Total</Text>
-            <Text style={[tw("text-[8px] font-normal"), { opacity: 0.7 }]}>
+            <Text style={[tw("text-[7px] font-normal"), { opacity: 0.7 }]}>
               {currencyCode}
             </Text>
           </View>
@@ -326,12 +348,15 @@ const PurchaseOrderPDF = ({
           const isEven = rowIndex % 2 === 0;
           rowIndex++;
 
+          const netValue =
+            (line.purchaseQuantity ?? 0) * (line.supplierUnitPrice ?? 0);
+
           return (
             <View key={line.id} wrap={false}>
               <View
                 style={[
                   tw(
-                    "flex flex-col py-2 px-3 border-b border-gray-200 text-[10px]"
+                    "flex flex-col py-2 px-3 border-b border-gray-200 text-[9px]"
                   ),
                   {
                     backgroundColor: isEven
@@ -341,19 +366,19 @@ const PurchaseOrderPDF = ({
                 ]}
               >
                 <View style={tw("flex flex-row")}>
-                  <Text style={tw("w-[5%] text-center text-gray-400")}>
+                  <Text style={tw("w-[4%] text-center text-gray-400")}>
                     {line.purchaseOrderLineType === "Comment" ? "" : rowIndex}
                   </Text>
-                  <View style={tw("w-[25%] pr-2")}>
+                  <View style={tw("w-[22%] pr-2")}>
                     <Text style={tw("text-gray-900")}>
                       {getLineDescription(line)}
                     </Text>
-                    <Text style={tw("text-[8px] text-gray-600 mt-0.5")}>
+                    <Text style={tw("text-[7px] text-gray-600 mt-0.5")}>
                       {getLineDescriptionDetails(line)}
                     </Text>
                     {purchaseOrder.purchaseOrderType === "Outside Processing" &&
                       line.jobOperationDescription && (
-                        <Text style={tw("text-[8px] text-gray-600 mt-0.5")}>
+                        <Text style={tw("text-[7px] text-gray-600 mt-0.5")}>
                           {line.jobOperationDescription}
                         </Text>
                       )}
@@ -369,17 +394,17 @@ const PurchaseOrderPDF = ({
                         </View>
                       )}
                   </View>
-                  <Text style={tw("w-[11%] text-center text-gray-600")}>
+                  <Text style={tw("w-[8%] text-center text-gray-600")}>
                     {line.purchaseOrderLineType === "Comment"
                       ? ""
                       : line.purchaseQuantity}
                   </Text>
-                  <Text style={tw("w-[11%] text-center text-gray-600")}>
+                  <Text style={tw("w-[7%] text-center text-gray-600")}>
                     {line.purchaseOrderLineType === "Comment"
                       ? ""
                       : line.purchaseUnitOfMeasureCode}
                   </Text>
-                  <Text style={tw("w-[11%] text-center text-gray-600")}>
+                  <Text style={tw("w-[10%] text-center text-gray-600")}>
                     {line.purchaseOrderLineType === "Comment" ||
                     !line.requiredDate
                       ? ""
@@ -390,6 +415,11 @@ const PurchaseOrderPDF = ({
                       ? ""
                       : numberFormatter.format(line.supplierUnitPrice ?? 0)}
                   </Text>
+                  <Text style={tw("w-[12%] text-center text-gray-600")}>
+                    {line.purchaseOrderLineType === "Comment"
+                      ? ""
+                      : numberFormatter.format(netValue)}
+                  </Text>
                   <View style={tw("w-[12%]")}>
                     {line.purchaseOrderLineType !== "Comment" && (
                       <View style={tw("flex flex-col items-center")}>
@@ -397,7 +427,7 @@ const PurchaseOrderPDF = ({
                           {numberFormatter.format(line.supplierTaxAmount ?? 0)}
                         </Text>
                         {formatTaxPercent(line.taxPercent) && (
-                          <Text style={tw("text-[7px] text-gray-400")}>
+                          <Text style={tw("text-[6px] text-gray-400")}>
                             {formatTaxPercent(line.taxPercent)}
                           </Text>
                         )}
@@ -427,10 +457,10 @@ const PurchaseOrderPDF = ({
 
         {/* Summary */}
         <View>
-          {/* Subtotal - before tax and shipping */}
+          {/* Subtotal */}
           <View
             style={[
-              tw("flex flex-row py-1.5 px-3 text-[10px]"),
+              tw("flex flex-row py-1.5 px-3 text-[9px]"),
               { backgroundColor: "rgba(249, 250, 251, 0.6)" }
             ]}
           >
@@ -453,7 +483,7 @@ const PurchaseOrderPDF = ({
           {shippingCost > 0 && (
             <View
               style={[
-                tw("flex flex-row py-1.5 px-3 text-[10px]"),
+                tw("flex flex-row py-1.5 px-3 text-[9px]"),
                 { backgroundColor: "rgba(249, 250, 251, 0.6)" }
               ]}
             >
@@ -470,7 +500,7 @@ const PurchaseOrderPDF = ({
           {taxAmount > 0 && (
             <View
               style={[
-                tw("flex flex-row py-1.5 px-3 text-[10px]"),
+                tw("flex flex-row py-1.5 px-3 text-[9px]"),
                 { backgroundColor: "rgba(249, 250, 251, 0.6)" }
               ]}
             >
@@ -485,7 +515,7 @@ const PurchaseOrderPDF = ({
                   purchaseOrderLines.find((line) => (line.taxPercent ?? 0) > 0)
                     ?.taxPercent
                 ) && (
-                  <Text style={tw("text-[7px] text-gray-400")}>
+                  <Text style={tw("text-[6px] text-gray-400")}>
                     {formatTaxPercent(
                       purchaseOrderLines.find(
                         (line) => (line.taxPercent ?? 0) > 0
@@ -498,7 +528,7 @@ const PurchaseOrderPDF = ({
           )}
 
           <View style={tw("h-[1px] bg-gray-200")} />
-          <View style={tw("flex flex-row py-2 px-3 text-[10px]")}>
+          <View style={tw("flex flex-row py-2 px-3 text-[9px]")}>
             <Text style={tw("w-[87%] text-right pr-3 text-gray-800 font-bold")}>
               Total
             </Text>

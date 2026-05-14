@@ -1,10 +1,10 @@
 import { intro, outro, tasks } from "@clack/prompts";
 import pc from "picocolors";
-import { currentBranch, isLinkedWorktree } from "../lib/git.js";
-import { syncAppPortlessConfigs } from "../lib/render-env.js";
-import { getWorktreeRoot, projectName, resolveSlug } from "../lib/slug.js";
+import { syncAppPortlessConfigs } from "../env.js";
+import { currentBranch, isLinkedWorktree } from "../git.js";
 import { stopStack } from "../services/compose.js";
 import { branchToPrefix, unregisterAliases } from "../services/portless.js";
+import { getWorktreeRoot, projectName, resolveSlug } from "../worktree.js";
 
 // silent: post-SIGINT path. clack tasks/spinner would EIO via setRawMode on
 // the freshly-interrupted stdin; fall back to plain printf progress.

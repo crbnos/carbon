@@ -27,7 +27,7 @@ function usePlans() {
   const { t } = useLingui();
   return {
     STARTER: {
-      price: 33,
+      price: 40,
       userMinimum: 0,
       talkToSales: false,
       description: t`Perfect for low-cost evaluation`,
@@ -38,7 +38,7 @@ function usePlans() {
       ]
     },
     BUSINESS: {
-      price: 92,
+      price: 100,
       userMinimum: 5,
       talkToSales: true,
       description: t`For growing businesses that need support`,
@@ -51,7 +51,7 @@ function usePlans() {
       ]
     },
     GOVCLOUD: {
-      price: 92,
+      price: 100,
       userMinimum: 5,
       talkToSales: true,
       description: t`For US companies handling ITAR data`,

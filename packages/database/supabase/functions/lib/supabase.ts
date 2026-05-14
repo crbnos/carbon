@@ -8,6 +8,40 @@ function hashApiKey(rawKey: string): string {
   return createHash("sha256").update(rawKey).digest("hex");
 }
 
+/** PostgREST may reject opaque `sb_secret_*` env keys; use caller JWT when env is not JWT-shaped. */
+function postgrestServiceKey(authorizationHeader: string | null): string {
+  const envKey = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "").trim();
+  if (envKey.split(".").length === 3) return envKey;
+  const token =
+    authorizationHeader?.replace(/^Bearer\s+/i, "").trim() ?? "";
+  const parts = token.split(".");
+  if (parts.length === 3) {
+    try {
+      const p = JSON.parse(atob(parts[1]!)) as { role?: string };
+      if (p.role === "service_role") return token;
+    } catch {
+      /* ignore */
+    }
+  }
+  return envKey;
+}
+
+function isTrustedServiceBearer(authorizationHeader: string | null): boolean {
+  const envKey = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "").trim();
+  const token =
+    authorizationHeader?.replace(/^Bearer\s+/i, "").trim() ?? "";
+  if (!token) return false;
+  if (token === envKey) return true;
+  const parts = token.split(".");
+  if (parts.length !== 3) return false;
+  try {
+    return (JSON.parse(atob(parts[1]!)) as { role?: string }).role ===
+      "service_role";
+  } catch {
+    return false;
+  }
+}
+
 type ApiKeyAuth = {
   client: ReturnType<typeof createClient<Database>>;
   companyId: string;
@@ -80,7 +114,7 @@ export const getSupabase = (authorizationHeader: string | null) => {
     Deno.env.get("SUPABASE_ANON_KEY") ?? "",
     {
       global: {
-        headers: { authorizationHeader },
+        headers: { Authorization: authorizationHeader },
       },
       auth: {
         autoRefreshToken: false,
@@ -101,7 +135,7 @@ export const getSupabaseServiceRole = async (
 
   const serviceRole = createClient<Database>(
     Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    postgrestServiceKey(authorizationHeader),
     {
       auth: {
         autoRefreshToken: false,
@@ -149,10 +183,7 @@ export const getSupabaseServiceRole = async (
   }
 
   if (authorizationHeader) {
-    const claims = JSON.parse(
-      atob(authorizationHeader.split(" ")[1].split(".")[1])
-    );
-    if (claims.role !== "service_role") {
+    if (!isTrustedServiceBearer(authorizationHeader)) {
       throw new Error("Service role is required");
     }
 

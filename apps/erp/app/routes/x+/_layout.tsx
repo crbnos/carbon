@@ -52,6 +52,7 @@ import {
   isApprovalRequired
 } from "~/modules/shared/shared.service";
 import {
+  getModulePreferences,
   getUser,
   getUserClaims,
   getUserDefaults,
@@ -109,7 +110,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     claims,
     groups,
     defaults,
-    auditLogEnabled
+    auditLogEnabled,
+    modulePreferences
   ] = await Promise.all([
     getCompanies(client, userId),
     getStripeCustomerByCompanyId(companyId, userId),
@@ -121,7 +123,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getUserClaims(userId, companyId),
     getUserGroups(client, userId),
     getUserDefaults(client, userId, companyId),
-    isAuditLogEnabled(client, companyId)
+    isAuditLogEnabled(client, companyId),
+    getModulePreferences(client, userId, companyId)
   ]);
 
   if (!claims || user.error || !user.data || !groups.data) {
@@ -170,6 +173,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     plan: stripeCustomer?.planId,
     role: claims?.role,
     user: user.data,
+    modulePreferences: modulePreferences.data ?? [],
     savedViews: savedViews.data ?? [],
     supplierApprovalRequired: isApprovalRequired(client, "supplier", companyId),
     openClockEntry: companySettings.data?.timeCardEnabled

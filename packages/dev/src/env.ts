@@ -1,8 +1,7 @@
 import { existsSync, unlinkSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
-import { APP_CHOICES } from "../constants.js";
-import type { JwtCreds } from "./jwt.js";
-import { type PortMap, SHARED_REDIS_PORT } from "./ports.js";
+import { join } from "pathe";
+import { APP_CHOICES } from "./constants.js";
+import { type JwtCreds, type PortMap, SHARED_REDIS_PORT } from "./worktree.js";
 
 export function renderEnv(opts: {
   slug: string;
@@ -58,6 +57,10 @@ export function renderEnv(opts: {
   lines.push(`REDIS_URL=redis://localhost:${SHARED_REDIS_PORT}/${redisDb}`);
   lines.push("INNGEST_DEV=1");
   lines.push(`INNGEST_BASE_URL=http://localhost:${ports.PORT_INNGEST}`);
+  // SDK advertises this as its serve URL during self-register. Must be
+  // reachable from inside the inngest container (handled via extra_hosts +
+  // portless CA mount in docker-compose.dev.yml).
+  lines.push(`INNGEST_SERVE_HOST=https://${host("erp")}`);
   lines.push("");
   return lines.join("\n");
 }

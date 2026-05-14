@@ -1,5 +1,9 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getEntityAuditLog, isAuditLogEnabled } from "@carbon/database/audit";
+import {
+  getEntityAuditLog,
+  isAuditLogEnabled,
+  syncAuditSubscriptions
+} from "@carbon/database/audit";
 import type { LoaderFunctionArgs } from "react-router";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -24,6 +28,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const enabled = await isAuditLogEnabled(client, companyId);
     if (!enabled) {
       return Response.json({ entries: [] });
+    }
+
+    // Keep subscriptions in sync so newly-audited tables (e.g. itemShelfLife)
+    // are captured for companies that enabled audit logging before they existed.
+    try {
+      await syncAuditSubscriptions(client, companyId);
+    } catch {
+      // Non-critical: return whatever history already exists.
     }
   } catch {
     // Table might not exist yet

@@ -42,6 +42,7 @@ type AuditLogDrawerProps = {
   entityType: string;
   entityId: string;
   companyId: string;
+  title?: React.ReactNode;
   /**
    * Optional: scope the view to a single raw row rather than the full entity.
    * When set, the drawer filters audit entries to `recordId = recordId`.
@@ -83,6 +84,7 @@ const AuditLogDrawer = memo(
     entityType,
     entityId,
     companyId,
+    title,
     recordId,
     planRestricted = false
   }: AuditLogDrawerProps) => {
@@ -214,7 +216,7 @@ const AuditLogDrawer = memo(
           <DrawerHeader>
             <DrawerTitle className="flex items-center gap-2">
               <LuHistory className="size-5" />
-              <Trans>History</Trans>
+              {title ?? <Trans>History</Trans>}
             </DrawerTitle>
           </DrawerHeader>
           <DrawerBody>{drawerBody}</DrawerBody>

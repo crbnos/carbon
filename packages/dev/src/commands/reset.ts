@@ -1,8 +1,12 @@
 import { cancel, intro, log } from "@clack/prompts";
-import { getSlot } from "../lib/ports.js";
-import { getWorktreeRoot, projectName, resolveSlug } from "../lib/slug.js";
+import { confirmReset } from "../prompts.js";
 import { flushDb, stopStack } from "../services/compose.js";
-import { confirmReset } from "../ui/prompts.js";
+import {
+  getSlot,
+  getWorktreeRoot,
+  projectName,
+  resolveSlug
+} from "../worktree.js";
 import { up } from "./up.js";
 
 export async function reset() {

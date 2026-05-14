@@ -8,7 +8,10 @@
   },
   "scripts": {
     "clean": "rimraf node_modules .turbo",
-    "lint": "biome lint --write"
+    "lint": "biome lint --write",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
     "@bomb.sh/tab": "^0.0.15",
@@ -17,14 +20,17 @@
     "cli-table3": "^0.6.5",
     "dotenv": "16.3.1",
     "execa": "^8.0.1",
-    "get-port-please": "^3.2.0",
+    "pathe": "^2.0.3",
+    "pg": "8.20.0",
     "picocolors": "^1.1.1"
   },
   "devDependencies": {
     "@carbon/config": "*",
     "@types/node": "20.19.39",
+    "@types/pg": "^8.11.6",
     "rimraf": "5.0.10",
     "tsx": "4.21.0",
-    "typescript": "5.8.3"
+    "typescript": "5.8.3",
+    "vitest": "catalog:"
   }
 }

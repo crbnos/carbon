@@ -1,9 +1,9 @@
 import { intro, log, outro } from "@clack/prompts";
 import pc from "picocolors";
-import { listWorktrees as gitListWorktrees } from "../lib/git.js";
-import { listSlugs } from "../lib/ports.js";
+import { listWorktrees as gitListWorktrees } from "../git.js";
 import { dockerProjectStates } from "../services/compose.js";
-import { worktreesTable } from "../ui/tables.js";
+import { worktreesTable } from "../ui.js";
+import { listSlugs } from "../worktree.js";
 
 export async function listWorktrees() {
   intro("Carbon · worktrees");

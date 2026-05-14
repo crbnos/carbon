@@ -1,9 +1,13 @@
 import { intro, log, outro } from "@clack/prompts";
 import pc from "picocolors";
-import { getSlot } from "../lib/ports.js";
-import { getWorktreeRoot, projectName, resolveSlug } from "../lib/slug.js";
 import { listContainers } from "../services/compose.js";
-import { portsTable, servicesTable } from "../ui/tables.js";
+import { portsTable, servicesTable } from "../ui.js";
+import {
+  getSlot,
+  getWorktreeRoot,
+  projectName,
+  resolveSlug
+} from "../worktree.js";
 
 export async function status() {
   intro("Carbon · dev status");

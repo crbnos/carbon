@@ -6,7 +6,13 @@ npx lint-staged
 # Compile lingui translations if any relevant files were modified
 if git diff --cached --name-only | grep -qE '\.(tsx?|jsx?)$|\.po$'; then
     echo "Compiling translations..."
-    npm run lingui:check
+    pnpm lingui:check
+    
+    # Strip `#:` origin refs before committing — they shift on any upstream
+    # code edit and are the biggest PR-conflict source. They're kept in the
+    # working dir during the translate flow (linguito needs them for LLM
+    # context) and only stripped right before commit.
+    pnpm lingui:clean
     
     # Add compiled locale files to the commit
     git add packages/locale/locales/**/*.po
@@ -14,6 +20,6 @@ fi
 
 # Regenerate MCP tools if any .service.ts file was modified
 if git diff --cached --name-only | grep -q '\.service\.ts$'; then
-  npx tsx scripts/generate-mcp.ts
-  git add apps/erp/app/routes/api+/mcp+/lib/tools/ apps/erp/app/routes/api+/mcp+/lib/server.ts apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json llm/cache/mcp-tools-reference.md
+    npx tsx scripts/generate-mcp.ts
+    git add apps/erp/app/routes/api+/mcp+/lib/tools/ apps/erp/app/routes/api+/mcp+/lib/server.ts apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json llm/cache/mcp-tools-reference.md
 fi

@@ -56,5 +56,6 @@ packages/database/supabase/seed.sql
 # Worktree-isolated dev environment
 .carbon-worktree
 .superpowers
+docs/superpowers
 llm/tasks
 apps/*/portless.json

@@ -1,5 +1,5 @@
-import { dirname, resolve } from "node:path";
 import { execa } from "execa";
+import { dirname, resolve } from "pathe";
 
 export type Worktree = {
   path: string;
@@ -73,30 +73,30 @@ export async function addWorktree(opts: {
   path: string;
   branch: string;
   baseRef: string;
-}): Promise<{ ok: true } | { ok: false; error: string }> {
+}): Promise<void> {
   const r = await execa(
     "git",
     ["worktree", "add", "-b", opts.branch, opts.path, opts.baseRef],
     { reject: false }
   );
   if (r.exitCode !== 0) {
-    return { ok: false, error: (r.stderr || r.stdout || "").trim() };
+    throw new Error((r.stderr || r.stdout || "git worktree add failed").trim());
   }
-  return { ok: true };
 }
 
 export async function removeWorktree(
   path: string,
   force = false
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<void> {
   const args = ["worktree", "remove"];
   if (force) args.push("--force");
   args.push(path);
   const r = await execa("git", args, { reject: false });
   if (r.exitCode !== 0) {
-    return { ok: false, error: (r.stderr || r.stdout || "").trim() };
+    throw new Error(
+      (r.stderr || r.stdout || "git worktree remove failed").trim()
+    );
   }
-  return { ok: true };
 }
 
 export async function isDirty(path: string): Promise<boolean> {
@@ -116,13 +116,12 @@ export async function branchExists(branch: string): Promise<boolean> {
   return r.exitCode === 0;
 }
 
-export async function deleteBranch(
-  branch: string
-): Promise<{ ok: true } | { ok: false; error: string }> {
+export async function deleteBranch(branch: string): Promise<void> {
   // -D forces even on unmerged; caller confirms.
   const r = await execa("git", ["branch", "-D", branch], { reject: false });
   if (r.exitCode !== 0) {
-    return { ok: false, error: (r.stderr || r.stdout || "").trim() };
+    throw new Error(
+      (r.stderr || r.stdout || `git branch -D ${branch} failed`).trim()
+    );
   }
-  return { ok: true };
 }

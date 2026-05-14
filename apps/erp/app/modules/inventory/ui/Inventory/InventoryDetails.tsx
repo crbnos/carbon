@@ -7,8 +7,10 @@ import {
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
+import { useState } from "react";
 import { LuMoveDown, LuMoveUp } from "react-icons/lu";
 import type { z } from "zod";
+import { DateSelect } from "~/components/DateSelect";
 import type {
   ItemQuantities,
   ItemStorageUnitQuantities,
@@ -47,6 +49,11 @@ const InventoryDetails = ({
     maximumFractionDigits: 2,
     useGrouping: true
   });
+  const [usageWindow, setUsageWindow] = useState<"30" | "90">("30");
+  const dailyUsage =
+    usageWindow === "30"
+      ? (quantities?.usageLast30Days ?? 0)
+      : (quantities?.usageLast90Days ?? 0);
 
   return (
     <VStack>
@@ -76,14 +83,25 @@ const InventoryDetails = ({
           </CardContent>
         </Card>
         <Card>
-          <CardHeader>
+          <CardHeader className="flex-row items-center justify-between">
             <CardTitle>
               <Trans>Daily Usage</Trans>
             </CardTitle>
+            <DateSelect
+              value={usageWindow}
+              onValueChange={(v) => {
+                if (v === "30" || v === "90") setUsageWindow(v);
+              }}
+              options={[
+                { value: "30", label: "30D" },
+                { value: "90", label: "90D" }
+              ]}
+              showCustom={false}
+            />
           </CardHeader>
           <CardContent>
             <h3 className="text-4xl font-medium tracking-tighter">
-              {formatter.format(quantities?.usageLast30Days ?? 0)}
+              {formatter.format(dailyUsage)}
             </h3>
           </CardContent>
         </Card>

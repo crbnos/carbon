@@ -383,7 +383,10 @@ export function getAppUrl() {
     return `https://${process.env.VERCEL_URL}`;
   }
 
-  return "http://localhost:3000";
+  // Dev: `crbn up` writes ERP_URL=https://<prefix>.erp.dev into .env.local.
+  // Honor it so cross-app sidebar links resolve to the portless hostname
+  // instead of the hardcoded localhost:3000 fallback.
+  return ERP_URL ?? "http://localhost:3000";
 }
 
 export function getMESUrl() {
@@ -399,7 +402,10 @@ export function getMESUrl() {
     return `https://${process.env.VERCEL_URL}`;
   }
 
-  return "http://localhost:3001";
+  // Dev: `crbn up` writes MES_URL=https://<prefix>.mes.dev into .env.local.
+  // Honor it so cross-app sidebar links resolve to the portless hostname
+  // instead of the hardcoded localhost:3001 fallback.
+  return MES_URL ?? "http://localhost:3001";
 }
 
 export function getBrowserEnv() {

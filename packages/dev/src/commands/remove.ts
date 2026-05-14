@@ -12,10 +12,10 @@ import {
   listWorktrees as gitListWorktrees,
   isDirty,
   removeWorktree
-} from "../lib/git.js";
-import { getSlot, listSlugs, removeSlot } from "../lib/ports.js";
+} from "../git.js";
+import { confirmRemove } from "../prompts.js";
 import { destroyProjectVolumes, flushDb } from "../services/compose.js";
-import { confirmRemove } from "../ui/prompts.js";
+import { getSlot, listSlugs, removeSlot } from "../worktree.js";
 
 export async function removeWorktreeCmd() {
   intro("Carbon · remove worktree");
@@ -91,8 +91,7 @@ export async function removeWorktreeCmd() {
     {
       title: `git worktree remove ${targetPath}`,
       task: async () => {
-        const r = await removeWorktree(targetPath, dirty);
-        if (!r.ok) throw new Error(r.error);
+        await removeWorktree(targetPath, dirty);
         return "worktree removed";
       }
     },

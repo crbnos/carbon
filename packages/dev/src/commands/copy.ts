@@ -1,8 +1,9 @@
-import { copyFileSync, existsSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { copyFileSync, existsSync, readFileSync } from "node:fs";
 import { intro, log, outro } from "@clack/prompts";
+import { join } from "pathe";
 import pc from "picocolors";
-import { mainCheckoutRoot } from "../lib/git.js";
+import { mainCheckoutRoot } from "../git.js";
+import { isAtLeastAsNew } from "../helpers.js";
 
 const DEFAULT_INCLUDES = [".env"];
 
@@ -21,9 +22,7 @@ export async function syncStaleCopyFiles(cwd: string): Promise<string[]> {
     const src = join(mainRoot, rel);
     const dest = join(cwd, rel);
     if (!existsSync(src)) continue;
-    const srcMtime = statSync(src).mtimeMs;
-    const destMtime = existsSync(dest) ? statSync(dest).mtimeMs : 0;
-    if (destMtime >= srcMtime) continue;
+    if (isAtLeastAsNew(dest, src)) continue;
     copyFileSync(src, dest);
     copied.push(rel);
   }

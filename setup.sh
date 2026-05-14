@@ -97,6 +97,22 @@ repo_root() {
     || { fail "not inside a git repo (cd into the carbon checkout first)"; exit 1; }
 }
 
+to_shell_path() {
+  local path="$1"
+  case "$(uname -s)" in
+    MINGW*|MSYS*|CYGWIN*)
+      if command -v cygpath >/dev/null 2>&1; then
+        cygpath -u "$path"
+      else
+        printf '%s\n' "$path"
+      fi
+      ;;
+    *)
+      printf '%s\n' "$path"
+      ;;
+  esac
+}
+
 detect_rc() {
   if [[ -n "${RC_FILE:-}" ]]; then printf '%s\n' "$RC_FILE"; return; fi
   case "${SHELL:-}" in
@@ -333,8 +349,9 @@ install() {
       ;;
   esac
 
-  local repo rc
+  local repo repo_shell rc
   repo="$(repo_root)"
+  repo_shell="$(to_shell_path "$repo")"
   rc="$(detect_rc)"
   mkdir -p "$(dirname "$rc")"
   touch "$rc"
@@ -366,7 +383,7 @@ install() {
 
   {
     printf '\n'
-    block_for "$repo" "$shell"
+    block_for "$repo_shell" "$shell"
     printf '\n'
   } >> "$rc"
 
@@ -385,7 +402,7 @@ install() {
   printf '      %s\n' "$(kbd "source ./setup.sh")"
 
   hdr "Verify"
-  printf '  %s\n' "$(dim "which crbn   # -> $repo/packages/dev/bin/crbn")"
+  printf '  %s\n' "$(dim "which crbn   # -> $repo_shell/packages/dev/bin/crbn")"
   printf '  %s\n\n' "$(dim "crbn         # -> help")"
 }
 

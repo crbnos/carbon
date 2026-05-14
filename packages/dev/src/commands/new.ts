@@ -1,15 +1,15 @@
 import { copyFileSync, existsSync } from "node:fs";
-import { basename, dirname, join, relative, resolve } from "node:path";
 import { intro, outro, tasks } from "@clack/prompts";
+import { basename, dirname, join, relative, resolve } from "pathe";
 import pc from "picocolors";
-import { addWorktree, currentBranch } from "../lib/git.js";
-import { getWorktreeRoot, slugify } from "../lib/slug.js";
+import { addWorktree, currentBranch } from "../git.js";
 import {
   promptBaseRef,
   promptBranch,
   promptCopyEnv,
   promptDirName
-} from "../ui/prompts.js";
+} from "../prompts.js";
+import { getWorktreeRoot, slugify } from "../worktree.js";
 
 export async function newWorktree() {
   intro("Carbon · new worktree");
@@ -34,8 +34,7 @@ export async function newWorktree() {
       title: `git worktree add ${dirName}`,
       task: async (msg) => {
         msg(`branching from ${baseRef}`);
-        const r = await addWorktree({ path: targetPath, branch, baseRef });
-        if (!r.ok) throw new Error(r.error);
+        await addWorktree({ path: targetPath, branch, baseRef });
         return `worktree at ${relative(here, targetPath)}`;
       }
     },
