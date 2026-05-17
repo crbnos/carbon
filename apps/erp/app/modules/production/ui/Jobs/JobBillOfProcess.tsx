@@ -48,7 +48,10 @@ import {
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { formatDurationMilliseconds } from "@carbon/utils";
+import {
+  formatDurationMilliseconds,
+  getCompanyPrivateBucket
+} from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale, useNumberFormatter } from "@react-aria/i18n";
@@ -609,7 +612,7 @@ const JobBillOfProcess = ({
     const fileType = file.name.split(".").pop();
     const fileName = `${companyId}/parts/${selectedItemId}/${nanoid()}.${fileType}`;
     const result = await carbon?.storage
-      .from("private")
+      .from(getCompanyPrivateBucket(companyId))
       .upload(fileName, file, { upsert: true });
 
     if (result?.error) {
@@ -1160,7 +1163,9 @@ function StepsForm({
     const fileType = file.name.split(".").pop();
     const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
 
-    const result = await carbon?.storage.from("private").upload(fileName, file);
+    const result = await carbon?.storage
+      .from(getCompanyPrivateBucket(companyId))
+      .upload(fileName, file);
 
     if (result?.error) {
       toast.error(t`Failed to upload image`);
@@ -1470,7 +1475,9 @@ function StepsListItem({
     const fileType = file.name.split(".").pop();
     const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
 
-    const result = await carbon?.storage.from("private").upload(fileName, file);
+    const result = await carbon?.storage
+      .from(getCompanyPrivateBucket(companyId))
+      .upload(fileName, file);
 
     if (result?.error) {
       toast.error(t`Failed to upload image`);

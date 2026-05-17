@@ -6,6 +6,10 @@ import { PurchaseOrderEmail } from "@carbon/documents/email";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { NotificationEvent } from "@carbon/notifications";
+import {
+  createCompanyPrivateSignedUrl,
+  getCompanyPrivateBucket
+} from "@carbon/utils";
 import { renderAsync } from "@react-email/components";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
 import type { ActionFunctionArgs } from "react-router";
@@ -216,9 +220,10 @@ export async function action(args: ActionFunctionArgs) {
     );
 
     documentFilePath = `${companyId}/supplier-interaction/${purchaseOrder.data.supplierInteractionId}/${fileName}`;
+    const companyPrivateBucket = getCompanyPrivateBucket(companyId);
 
     const documentFileUpload = await serviceRole.storage
-      .from("private")
+      .from(companyPrivateBucket)
       .upload(documentFilePath, file, {
         cacheControl: `${12 * 60 * 60}`,
         contentType: "application/pdf",
@@ -330,9 +335,35 @@ export async function action(args: ActionFunctionArgs) {
           const html = await renderAsync(emailTemplate);
           const text = await renderAsync(emailTemplate, { plainText: true });
 
-          const { data: signedUrlData } = await serviceRole.storage
-            .from("private")
-            .createSignedUrl(documentFilePath, 3600);
+          const signedUrlResult = await createCompanyPrivateSignedUrl({
+            companyId,
+            requestedBucket: getCompanyPrivateBucket(companyId),
+            objectPath: documentFilePath,
+            expiresIn: 3600,
+            createSignedUrl: async (physicalBucket, objectPath, expiresIn) => {
+              const { data, error } = await serviceRole.storage
+                .from(physicalBucket)
+                .createSignedUrl(objectPath, expiresIn);
+
+              return {
+                signedUrl: data?.signedUrl ?? null,
+                error: error ?? null
+              };
+            }
+          });
+
+          for (const bucketError of signedUrlResult.errors) {
+            console.error(
+              "Failed to create purchase order finalize attachment signed URL",
+              {
+                companyId,
+                orderId,
+                documentFilePath,
+                physicalBucket: bucketError.physicalBucket,
+                error: bucketError.error
+              }
+            );
+          }
 
           await Promise.all([
             trigger("send-email", {
@@ -342,10 +373,10 @@ export async function action(args: ActionFunctionArgs) {
               subject: `Purchase Order ${purchaseOrder.data.purchaseOrderId} from ${company.data.name}`,
               html,
               text,
-              attachments: signedUrlData?.signedUrl
+              attachments: signedUrlResult.signedUrl
                 ? [
                     {
-                      path: signedUrlData.signedUrl,
+                      path: signedUrlResult.signedUrl,
                       filename: fileName
                     }
                   ]

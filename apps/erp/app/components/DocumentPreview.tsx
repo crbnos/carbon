@@ -11,7 +11,7 @@ import { path } from "~/utils/path";
 type DocumentPreviewProps = ComponentPropsWithoutRef<
   typeof HoverCardContent
 > & {
-  bucket: "public" | "private";
+  bucket: string;
   pathToFile: string;
   type: "PDF" | "Image";
 };
@@ -35,7 +35,7 @@ const DocumentPreview = forwardRef<
             title={pathToFile}
             width="425"
             height="550"
-            src={path.to.file.previewFile(`${bucket}/${pathToFile}`)}
+            src={path.to.file.preview(bucket, pathToFile)}
           />
         </HoverCardContent>
       ) : (

@@ -35,12 +35,13 @@ type DocumentPreviewProps = {
 
 const DocumentPreview = ({ bucket, document }: DocumentPreviewProps) => {
   const { download } = useDocument();
+  const objectPath = document.path ?? "";
 
   switch (document.type) {
     case "Image":
       return (
         <img
-          src={path.to.file.previewFile(`${bucket}/${document.path}`)}
+          src={path.to.file.preview(bucket, objectPath)}
           className="object-contain"
           width={"680"}
           alt="Preview"
@@ -49,9 +50,7 @@ const DocumentPreview = ({ bucket, document }: DocumentPreviewProps) => {
     case "PDF":
       return (
         <Suspense fallback={<SkeletonDocument />}>
-          <PdfViewer
-            file={path.to.file.previewFile(`${bucket}/${document.path}`)}
-          />
+          <PdfViewer file={path.to.file.preview(bucket, objectPath)} />
         </Suspense>
       );
     default:

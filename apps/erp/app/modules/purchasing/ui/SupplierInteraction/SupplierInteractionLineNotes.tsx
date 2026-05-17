@@ -17,6 +17,7 @@ import {
   useDebounce
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
+import { getCompanyPrivateBucket } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
@@ -49,6 +50,7 @@ const SupplierInteractionLineNotes = ({
     id: userId,
     company: { id: companyId }
   } = useUser();
+  const companyPrivateBucket = getCompanyPrivateBucket(companyId);
   const { carbon } = useCarbon();
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -65,7 +67,9 @@ const SupplierInteractionLineNotes = ({
     const fileType = file.name.split(".").pop();
     const fileName = `${companyId}/supplier-interaction/${id}/${nanoid()}.${fileType}`;
 
-    const result = await carbon?.storage.from("private").upload(fileName, file);
+    const result = await carbon?.storage
+      .from(companyPrivateBucket)
+      .upload(fileName, file);
 
     if (result?.error) {
       toast.error(t`Failed to upload image`);

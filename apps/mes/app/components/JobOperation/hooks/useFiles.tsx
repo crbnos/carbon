@@ -1,4 +1,8 @@
 import { toast } from "@carbon/react";
+import {
+  buildCompanyPrivateStorageTarget,
+  getCompanyPrivateBucket
+} from "@carbon/utils";
 import { useCallback } from "react";
 import { useUser } from "~/hooks";
 import type { Job, StorageItem } from "~/services/types";
@@ -6,6 +10,7 @@ import { path } from "~/utils/path";
 
 export function useFiles(job: Job) {
   const user = useUser();
+  const companyPrivateBucket = getCompanyPrivateBucket(user.company.id);
 
   const getFilePath = useCallback(
     (file: StorageItem) => {
@@ -25,14 +30,19 @@ export function useFiles(job: Job) {
           break;
       }
 
-      return `${companyId}/${bucket}/${id}/${file.name}`;
+      return buildCompanyPrivateStorageTarget({
+        companyId,
+        logicalFolder: bucket,
+        entityId: id,
+        fileName: file.name
+      }).objectPath;
     },
     [job.id, job.itemId, job.quoteLineId, job.salesOrderLineId, user.company.id]
   );
 
   const downloadFile = useCallback(
     async (file: StorageItem) => {
-      const url = path.to.file.previewFile(`private/${getFilePath(file)}`);
+      const url = path.to.file.preview(companyPrivateBucket, getFilePath(file));
       try {
         const response = await fetch(url);
         const blob = await response.blob();
@@ -49,7 +59,7 @@ export function useFiles(job: Job) {
         console.error(error);
       }
     },
-    [getFilePath]
+    [companyPrivateBucket, getFilePath]
   );
 
   const downloadModel = useCallback(
@@ -59,7 +69,7 @@ export function useFiles(job: Job) {
         return;
       }
 
-      const url = path.to.file.previewFile(`private/${model.modelPath}`);
+      const url = path.to.file.preview(companyPrivateBucket, model.modelPath);
       try {
         const response = await fetch(url);
         const blob = await response.blob();
@@ -76,7 +86,7 @@ export function useFiles(job: Job) {
         console.error(error);
       }
     },
-    []
+    [companyPrivateBucket]
   );
 
   return {

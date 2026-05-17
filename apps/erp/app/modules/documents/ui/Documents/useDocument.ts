@@ -1,5 +1,6 @@
 import { useCarbon } from "@carbon/auth";
 import { toast } from "@carbon/react";
+import { getCompanyPrivateBucket } from "@carbon/utils";
 import { useCallback } from "react";
 import { useNavigate } from "react-router";
 import { usePermissions, useUrlParams, useUser } from "~/hooks";
@@ -15,6 +16,11 @@ export const useDocument = () => {
   const { carbon } = useCarbon();
   const [params, setParams] = useUrlParams();
   const user = useUser();
+  const getDocumentBucket = useCallback(
+    (doc: Pick<DocumentType, "companyId">) =>
+      getCompanyPrivateBucket(doc.companyId ?? user.company.id),
+    [user.company.id]
+  );
 
   const canDelete = useCallback(
     (doc: DocumentType) => {
@@ -71,7 +77,7 @@ export const useDocument = () => {
     async (doc: DocumentType) => {
       if (!doc.path) throw new Error("Document path is undefined");
 
-      const url = path.to.file.previewFile(`private/${doc.path}`);
+      const url = path.to.file.preview(getDocumentBucket(doc), doc.path);
       try {
         const response = await fetch(url);
         const blob = await response.blob();
@@ -90,7 +96,7 @@ export const useDocument = () => {
 
       await insertTransaction(doc, "Download");
     },
-    [insertTransaction]
+    [getDocumentBucket, insertTransaction]
   );
 
   const view = useCallback(
@@ -161,16 +167,19 @@ export const useDocument = () => {
   const makePreview = useCallback(
     async (doc: DocumentType) => {
       if (!doc.path) throw new Error("Document path is undefined");
-      const result = await carbon?.storage.from("private").download(doc.path);
+      const url = path.to.file.preview(getDocumentBucket(doc), doc.path);
 
-      if (!result || result.error) {
-        toast.error(result?.error?.message || "Error previewing file");
+      try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        return window.URL.createObjectURL(blob);
+      } catch (error) {
+        toast.error("Error previewing file");
+        console.error(error);
         return null;
       }
-
-      return window.URL.createObjectURL(result.data);
     },
-    [carbon]
+    [getDocumentBucket]
   );
 
   const removeLabel = useCallback(

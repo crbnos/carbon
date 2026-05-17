@@ -1,5 +1,9 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
+import {
+  getCompanyPrivateBucket,
+  listCompanyPrivateObjects
+} from "@carbon/utils";
 import { getLocalTimeZone, now, today } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
@@ -472,24 +476,50 @@ export async function getReceiptFiles(
   companyId: string,
   lineIds: string[]
 ): Promise<{ data: StorageItem[]; error: string | null }> {
-  const promises = lineIds.map((lineId) =>
-    client.storage
-      .from("private")
-      .list(`${companyId}/inventory/${lineId}`)
-      .then((result) => ({
-        ...result,
-        lineId
-      }))
-  );
+  const promises = lineIds.map(async (lineId) => {
+    const result = await listCompanyPrivateObjects({
+      companyId,
+      requestedBucket: getCompanyPrivateBucket(companyId),
+      objectPathPrefix: `${companyId}/inventory/${lineId}`,
+      listObjects: (physicalBucket, prefix) =>
+        client.storage.from(physicalBucket).list(prefix),
+      getItemKey: (item) => item.name
+    });
+
+    for (const bucketError of result.errors) {
+      console.error("Failed to list receipt files", {
+        companyId,
+        lineId,
+        physicalBucket: bucketError.physicalBucket,
+        prefix: `${companyId}/inventory/${lineId}`,
+        error: bucketError.error
+      });
+    }
+
+    return {
+      data: result.data,
+      error:
+        result.data.length === 0 && result.errors.length > 0
+          ? result.errors[result.errors.length - 1]?.error
+          : null,
+      lineId
+    };
+  });
 
   const results = await Promise.all(promises);
 
-  // Check for errors
   const firstError = results.find((result) => result.error);
   if (firstError) {
     return {
       data: [],
-      error: firstError.error?.message ?? "Failed to fetch files"
+      error:
+        firstError.error instanceof Error
+          ? firstError.error.message
+          : typeof firstError.error === "object" &&
+              firstError.error &&
+              "message" in firstError.error
+            ? String(firstError.error.message)
+            : "Failed to fetch files"
     };
   }
 
@@ -807,26 +837,22 @@ export async function getShipmentFiles(
   companyId: string,
   lineIds: string[]
 ): Promise<{ data: StorageItem[]; error: string | null }> {
-  const promises = lineIds.map((lineId) =>
-    client.storage
-      .from("private")
-      .list(`${companyId}/inventory/${lineId}`)
-      .then((result) => ({
-        ...result,
-        lineId
-      }))
-  );
+  const promises = lineIds.map(async (lineId) => ({
+    data: (
+      await listCompanyPrivateObjects({
+        companyId,
+        requestedBucket: getCompanyPrivateBucket(companyId),
+        objectPathPrefix: `${companyId}/inventory/${lineId}`,
+        listObjects: (physicalBucket, prefix) =>
+          client.storage.from(physicalBucket).list(prefix),
+        getItemKey: (item) => item.name
+      })
+    ).data,
+    error: null,
+    lineId
+  }));
 
   const results = await Promise.all(promises);
-
-  // Check for errors
-  const firstError = results.find((result) => result.error);
-  if (firstError) {
-    return {
-      data: [],
-      error: firstError.error?.message ?? "Failed to fetch files"
-    };
-  }
 
   // Merge data arrays and add lineId as bucketName
   return {
@@ -1414,7 +1440,7 @@ export async function insertManualInventoryAdjustment(
           : {})
       };
 
-      // Create a new tracked entity
+      // Create a new tracked entityr
       const trackedEntityInsert = await client
         .from("trackedEntity")
         .insert([

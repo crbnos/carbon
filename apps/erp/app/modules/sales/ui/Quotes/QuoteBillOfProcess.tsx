@@ -35,6 +35,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
+import { getCompanyPrivateBucket } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { DragControls } from "framer-motion";
@@ -408,7 +409,7 @@ const QuoteBillOfProcess = ({
     const fileType = file.name.split(".").pop();
     const fileName = `${companyId}/opportunity-line/${selectedItemId}/${nanoid()}.${fileType}`;
     const result = await carbon?.storage
-      .from("private")
+      .from(getCompanyPrivateBucket(companyId))
       .upload(fileName, file, { upsert: true });
 
     if (result?.error) {
@@ -962,7 +963,9 @@ function AttributesForm({
     const fileType = file.name.split(".").pop();
     const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
 
-    const result = await carbon?.storage.from("private").upload(fileName, file);
+    const result = await carbon?.storage
+      .from(getCompanyPrivateBucket(companyId))
+      .upload(fileName, file);
 
     if (result?.error) {
       toast.error(t`Failed to upload image`);
@@ -1269,7 +1272,9 @@ function AttributesListItem({
     const fileType = file.name.split(".").pop();
     const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
 
-    const result = await carbon?.storage.from("private").upload(fileName, file);
+    const result = await carbon?.storage
+      .from(getCompanyPrivateBucket(companyId))
+      .upload(fileName, file);
 
     if (result?.error) {
       toast.error("Failed to upload image");

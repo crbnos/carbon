@@ -2,12 +2,72 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { trigger } from "@carbon/jobs";
+import { getCompanyPrivateBucket } from "@carbon/utils";
 import { nanoid } from "nanoid";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { salesRfqDragValidator, upsertSalesRFQLine } from "~/modules/sales";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
+
+async function movePrivateObjectForCompany({
+  client,
+  companyId,
+  sourcePath,
+  targetPath
+}: {
+  client: Awaited<ReturnType<typeof requirePermissions>>["client"];
+  companyId: string;
+  sourcePath: string;
+  targetPath: string;
+}) {
+  const companyPrivateBucket = getCompanyPrivateBucket(companyId);
+  let sourceData: Blob | null = null;
+  let sourcePhysicalBucket = companyPrivateBucket;
+
+  for (const physicalBucket of [companyPrivateBucket]) {
+    const downloadResult = await client.storage
+      .from(physicalBucket)
+      .download(sourcePath);
+
+    if (!downloadResult.error && downloadResult.data) {
+      sourceData = downloadResult.data;
+      sourcePhysicalBucket = physicalBucket;
+      break;
+    }
+  }
+
+  if (!sourceData) {
+    return {
+      error: new Error("Failed to download file from storage")
+    };
+  }
+
+  const uploadResult = await client.storage
+    .from(companyPrivateBucket)
+    .upload(targetPath, sourceData, {
+      cacheControl: `${12 * 60 * 60}`,
+      upsert: true
+    });
+
+  if (uploadResult.error) {
+    return {
+      error: uploadResult.error
+    };
+  }
+
+  const removeResult = await client.storage
+    .from(sourcePhysicalBucket)
+    .remove([sourcePath]);
+
+  if (removeResult.error) {
+    return {
+      error: removeResult.error
+    };
+  }
+
+  return { error: null };
+}
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -119,9 +179,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
 
     // Move the file to the new path
-    const move = await client.storage
-      .from("private")
-      .move(documentPath, newPath);
+    const move = await movePrivateObjectForCompany({
+      client,
+      companyId,
+      sourcePath: documentPath,
+      targetPath: newPath
+    });
 
     if (move.error) {
       throw redirect(
@@ -137,9 +200,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   } else {
     newPath = `${companyId}/opportunity-line/${targetLineId}/${fileName}`;
     // Move the file to the new path
-    const move = await client.storage
-      .from("private")
-      .move(documentPath, newPath);
+    const move = await movePrivateObjectForCompany({
+      client,
+      companyId,
+      sourcePath: documentPath,
+      targetPath: newPath
+    });
 
     if (move.error) {
       throw redirect(

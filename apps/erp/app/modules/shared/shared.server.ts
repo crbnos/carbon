@@ -2,6 +2,10 @@ import type { Database } from "@carbon/database";
 import { SalesOrderEmail } from "@carbon/documents/email";
 import { trigger } from "@carbon/jobs";
 import { redis } from "@carbon/kv";
+import {
+  createCompanyPrivateSignedUrl,
+  getCompanyPrivateBucket
+} from "@carbon/utils";
 import type { CalendarDate } from "@internationalized/date";
 import { startOfWeek } from "@internationalized/date";
 import { renderAsync } from "@react-email/components";
@@ -149,9 +153,10 @@ export async function generateAndAttachSalesOrderPdf(args: {
 
   // 2. Upload to Supabase storage
   const documentFilePath = `${companyId}/opportunity/${opportunityId}/${fileName}`;
+  const companyPrivateBucket = getCompanyPrivateBucket(companyId);
 
   const uploadResult = await serviceRole.storage
-    .from("private")
+    .from(companyPrivateBucket)
     .upload(documentFilePath, file, {
       cacheControl: `${12 * 60 * 60}`,
       contentType: "application/pdf",
@@ -269,9 +274,32 @@ export async function sendSalesOrderEmail(args: {
 
   const html = await renderAsync(emailTemplate);
   const text = await renderAsync(emailTemplate, { plainText: true });
-  const { data: signedUrlData } = await serviceRole.storage
-    .from("private")
-    .createSignedUrl(documentFilePath, 3600);
+  const signedUrlResult = await createCompanyPrivateSignedUrl({
+    companyId,
+    requestedBucket: getCompanyPrivateBucket(companyId),
+    objectPath: documentFilePath,
+    expiresIn: 3600,
+    createSignedUrl: async (physicalBucket, objectPath, expiresIn) => {
+      const { data, error } = await serviceRole.storage
+        .from(physicalBucket)
+        .createSignedUrl(objectPath, expiresIn);
+
+      return {
+        signedUrl: data?.signedUrl ?? null,
+        error: error ?? null
+      };
+    }
+  });
+
+  for (const bucketError of signedUrlResult.errors) {
+    console.error("Failed to create sales order attachment signed URL", {
+      companyId,
+      salesOrderId,
+      documentFilePath,
+      physicalBucket: bucketError.physicalBucket,
+      error: bucketError.error
+    });
+  }
 
   await trigger("send-email", {
     to: [seller.data.email, customer.data.contact.email!],
@@ -280,10 +308,10 @@ export async function sendSalesOrderEmail(args: {
     subject: `Order ${salesOrder.data.salesOrderId} from ${company.data.name}`,
     html,
     text,
-    attachments: signedUrlData?.signedUrl
+    attachments: signedUrlResult.signedUrl
       ? [
           {
-            path: signedUrlData.signedUrl,
+            path: signedUrlResult.signedUrl,
             filename: fileName
           }
         ]

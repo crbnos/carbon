@@ -1,6 +1,10 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
+import {
+  getCompanyPrivateBucket,
+  listCompanyPrivateObjects
+} from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
@@ -1051,10 +1055,26 @@ export async function getQualityFiles(
   id: string,
   companyId: string
 ) {
-  const result = await client.storage
-    .from("private")
-    .list(`${companyId}/quality/${id}`);
-  return result.data || [];
+  const result = await listCompanyPrivateObjects({
+    companyId,
+    requestedBucket: getCompanyPrivateBucket(companyId),
+    objectPathPrefix: `${companyId}/quality/${id}`,
+    listObjects: (physicalBucket, prefix) =>
+      client.storage.from(physicalBucket).list(prefix),
+    getItemKey: (item) => item.name
+  });
+
+  for (const bucketError of result.errors) {
+    console.error("Failed to list quality files", {
+      companyId,
+      id,
+      physicalBucket: bucketError.physicalBucket,
+      prefix: `${companyId}/quality/${id}`,
+      error: bucketError.error
+    });
+  }
+
+  return result.data;
 }
 
 export async function getRequiredActionsList(

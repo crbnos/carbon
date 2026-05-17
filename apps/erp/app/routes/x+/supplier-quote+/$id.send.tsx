@@ -3,6 +3,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
+import {
+  createCompanyPrivateSignedUrl,
+  getCompanyPrivateBucket
+} from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
@@ -111,6 +115,40 @@ export async function action(args: ActionFunctionArgs) {
 
         const attachments: Array<{ filename: string; path: string }> = [];
 
+        const createSignedUrlWithFallback = async (objectPath: string) => {
+          const result = await createCompanyPrivateSignedUrl({
+            companyId,
+            requestedBucket: getCompanyPrivateBucket(companyId),
+            objectPath,
+            expiresIn: 3600,
+            createSignedUrl: async (
+              physicalBucket,
+              currentObjectPath,
+              expiresIn
+            ) => {
+              const { data, error } = await client.storage
+                .from(physicalBucket)
+                .createSignedUrl(currentObjectPath, expiresIn);
+
+              return {
+                signedUrl: data?.signedUrl ?? null,
+                error: error ?? null
+              };
+            }
+          });
+
+          for (const bucketError of result.errors) {
+            console.error("Failed to create attachment signed URL", {
+              companyId,
+              objectPath,
+              physicalBucket: bucketError.physicalBucket,
+              error: bucketError.error
+            });
+          }
+
+          return result.signedUrl;
+        };
+
         // Fetch top-level supplier interaction documents
         const interactionId = supplierQuote.data.supplierInteractionId;
         if (interactionId) {
@@ -122,14 +160,12 @@ export async function action(args: ActionFunctionArgs) {
 
           for (const doc of topDocs) {
             const storagePath = `${companyId}/supplier-interaction/${interactionId}/${doc.name}`;
-            const { data: signedUrlData } = await client.storage
-              .from("private")
-              .createSignedUrl(storagePath, 3600);
+            const signedUrl = await createSignedUrlWithFallback(storagePath);
 
-            if (signedUrlData?.signedUrl) {
+            if (signedUrl) {
               attachments.push({
                 filename: doc.name,
-                path: signedUrlData.signedUrl
+                path: signedUrl
               });
             }
           }
@@ -148,14 +184,12 @@ export async function action(args: ActionFunctionArgs) {
 
             for (const doc of docs) {
               const storagePath = `${companyId}/supplier-interaction-line/${line.id}/${doc.name}`;
-              const { data: signedUrlData } = await client.storage
-                .from("private")
-                .createSignedUrl(storagePath, 3600);
+              const signedUrl = await createSignedUrlWithFallback(storagePath);
 
-              if (signedUrlData?.signedUrl) {
+              if (signedUrl) {
                 attachments.push({
                   filename: doc.name,
-                  path: signedUrlData.signedUrl
+                  path: signedUrl
                 });
               }
             }

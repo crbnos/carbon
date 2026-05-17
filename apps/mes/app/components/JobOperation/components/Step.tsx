@@ -33,7 +33,10 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { parseMentionsFromDocument } from "@carbon/utils";
+import {
+  getCompanyPrivateBucket,
+  parseMentionsFromDocument
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import { nanoid } from "nanoid";
@@ -375,9 +378,10 @@ export function RecordModal({
     toast.info(t`Uploading ${fileUpload.name}`);
 
     const fileName = `${company.id}/job/${attribute.operationId}/${attribute.id}/${nanoid()}/${fileUpload.name}`;
+    const companyPrivateBucket = getCompanyPrivateBucket(company.id);
 
     const upload = await carbon?.storage
-      .from("private")
+      .from(companyPrivateBucket)
       .upload(fileName, fileUpload, {
         cacheControl: `${12 * 60 * 60}`,
         upsert: true

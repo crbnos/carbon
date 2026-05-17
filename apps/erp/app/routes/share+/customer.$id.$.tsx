@@ -1,6 +1,11 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { Ratelimit, redis } from "@carbon/kv";
-import { supportedModelTypes } from "@carbon/utils";
+import {
+  downloadCompanyPrivateObject,
+  getCompanyPrivateBucket,
+  hasCompanyPrivateObjectPathPrefix,
+  supportedModelTypes
+} from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { getJobByOperationId } from "~/modules/production";
 import { getCustomerPortal } from "~/modules/shared/shared.service";
@@ -61,25 +66,30 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
     throw new Error("Customer not found");
   }
 
-  if (!customer.data.customerId) {
+  const customerPortal = customer.data;
+
+  if (!customerPortal?.customerId) {
     console.error(customer.error);
     throw new Error("Customer not found");
   }
 
-  let path = params["*"];
-  let bucket = "private"; // TODO: refactor to use companyId when we separate the storage buckets
+  const objectPath = params["*"];
 
-  if (!path) throw new Error("Path not found");
+  if (!objectPath) throw new Error("Path not found");
+  const storageObjectPath = objectPath;
 
-  path = decodeURIComponent(path);
+  const decodedPath = decodeURIComponent(storageObjectPath);
+  const [pathCompanyId, logicalFolder, operationId, fileName, ...rest] =
+    decodedPath.split("/");
 
-  const pathMatch = params["*"]?.match(/^([^/]+)\/job\/([^/]+)\/[^/]+$/);
-  const companyId = pathMatch?.[1];
-  const operationId = pathMatch?.[2];
+  const fileType = decodedPath.split(".").pop()?.toLowerCase();
 
-  const fileType = path.split(".").pop()?.toLowerCase();
-
-  if (companyId !== customer.data.companyId) {
+  if (
+    pathCompanyId !== customerPortal.companyId ||
+    logicalFolder !== "job" ||
+    !fileName ||
+    rest.length > 0
+  ) {
     return new Response(null, { status: 403 });
   }
 
@@ -94,11 +104,11 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
     return new Response(null, { status: 403 });
   }
 
-  if (job.data.companyId !== customer.data.companyId) {
+  if (job.data.companyId !== customerPortal.companyId) {
     return new Response(null, { status: 403 });
   }
 
-  if (job.data.customerId !== customer.data.customerId) {
+  if (job.data.customerId !== customerPortal.customerId) {
     return new Response(null, { status: 403 });
   }
 
@@ -110,20 +120,33 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
     throw new Error(`File type ${fileType} not supported`);
   const contentType = supportedFileTypes[fileType];
 
-  if (!path.includes(customer.data.companyId)) {
+  if (
+    !hasCompanyPrivateObjectPathPrefix(customerPortal.companyId, decodedPath)
+  ) {
     return new Response(null, { status: 403 });
   }
 
-  async function downloadFile() {
-    const result = await serviceRole.storage.from(bucket!).download(`${path}`);
-    if (result.error) {
-      console.error(result.error);
-      return null;
-    }
-    return result.data;
+  async function downloadFile(): Promise<Blob | null> {
+    const result = await downloadCompanyPrivateObject<Blob>({
+      companyId: customerPortal.companyId,
+      objectPath: storageObjectPath,
+      requestedBucket: getCompanyPrivateBucket(customerPortal.companyId),
+      downloadObject: async (physicalBucket, currentObjectPath) => {
+        const result = await serviceRole.storage
+          .from(physicalBucket)
+          .download(currentObjectPath);
+
+        return {
+          data: result.data ?? null,
+          error: result.error ?? null
+        };
+      }
+    });
+
+    return result?.data ?? null;
   }
 
-  let fileData = await downloadFile();
+  let fileData: Blob | null = await downloadFile();
   if (!fileData) {
     // Wait for a second and try again
     await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -134,8 +157,12 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
   }
 
   const headers = new Headers({
-    "Content-Type": contentType,
     "Cache-Control": "private, max-age=31536000, immutable"
   });
+
+  if (contentType) {
+    headers.set("Content-Type", contentType);
+  }
+
   return new Response(fileData, { status: 200, headers });
 };

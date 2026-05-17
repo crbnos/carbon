@@ -50,6 +50,7 @@ import {
   convertDateStringToIsoString,
   convertKbToString,
   formatDurationMilliseconds,
+  getCompanyPrivateBucket,
   getItemReadableId,
   labelSizes
 } from "@carbon/utils";
@@ -206,6 +207,7 @@ export const JobOperation = ({
     id: userId,
     company: { id: companyId }
   } = useUser();
+  const companyPrivateBucket = getCompanyPrivateBucket(companyId);
 
   const [items] = useItems();
   const { downloadFile, downloadModel, getFilePath } = useFiles(job);
@@ -1502,10 +1504,9 @@ export const JobOperation = ({
                                               ["PDF", "Image"].includes(type)
                                             ) {
                                               window.open(
-                                                path.to.file.previewFile(
-                                                  `${"private"}/${getFilePath(
-                                                    file
-                                                  )}`
+                                                path.to.file.preview(
+                                                  companyPrivateBucket,
+                                                  getFilePath(file)
                                                 ),
                                                 "_blank"
                                               );
@@ -1514,7 +1515,7 @@ export const JobOperation = ({
                                         >
                                           {["PDF", "Image"].includes(type) ? (
                                             <FilePreview
-                                              bucket="private"
+                                              bucket={companyPrivateBucket}
                                               pathToFile={getFilePath(file)}
                                               // @ts-ignore
                                               type={getFileType(file.name)}

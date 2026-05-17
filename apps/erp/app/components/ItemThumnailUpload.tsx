@@ -1,5 +1,6 @@
 import { SUPABASE_URL, useCarbon } from "@carbon/auth";
 import { Button, File as FileUpload, HStack, toast } from "@carbon/react";
+import { getCompanyPrivateBucket } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import type { ChangeEvent } from "react";
@@ -18,6 +19,7 @@ export function ItemThumbnailUpload({
   const { t } = useLingui();
   const { company } = useUser();
   const { carbon } = useCarbon();
+  const companyPrivateBucket = getCompanyPrivateBucket(company.id);
 
   const [thumbnailPath, setThumbnailPath] = useState<string | null>(() => {
     if (path) {
@@ -114,7 +116,7 @@ export function ItemThumbnailUpload({
           });
 
           const { data, error } = await carbon.storage
-            .from("private")
+            .from(companyPrivateBucket)
             .upload(
               `${company.id}/thumbnails/${itemId}/${fileName}`,
               thumbnailFile,
@@ -150,7 +152,7 @@ export function ItemThumbnailUpload({
         }
       }
     },
-    [carbon, company.id, itemId, t]
+    [carbon, company.id, companyPrivateBucket, itemId, t]
   );
 
   return (

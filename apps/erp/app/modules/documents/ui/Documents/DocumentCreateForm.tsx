@@ -1,5 +1,9 @@
 import { useCarbon } from "@carbon/auth";
 import { File, toast } from "@carbon/react";
+import {
+  buildCompanyPrivateStorageTarget,
+  getCompanyPrivateBucket
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import type { ChangeEvent } from "react";
@@ -20,12 +24,16 @@ const DocumentCreateForm = () => {
     if (e.target.files && carbon) {
       const file = e.target.files[0];
       toast.info(t`Uploading ${file.name}`);
-      const fileExtension = file.name.substring(file.name.lastIndexOf(".") + 1);
-      const fileName = `${companyId}/${nanoid()}.${fileExtension}`;
+      const target = buildCompanyPrivateStorageTarget({
+        companyId,
+        logicalFolder: "documents",
+        entityId: nanoid(),
+        fileName: file.name
+      });
 
       const fileUpload = await carbon.storage
-        .from("private")
-        .upload(fileName, file, {
+        .from(getCompanyPrivateBucket(companyId))
+        .upload(target.objectPath, file, {
           cacheControl: `${12 * 60 * 60}`,
           upsert: true
         });

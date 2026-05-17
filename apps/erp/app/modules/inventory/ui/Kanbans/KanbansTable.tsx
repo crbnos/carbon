@@ -23,6 +23,7 @@ import {
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
 import {
@@ -82,6 +83,7 @@ const KanbansTable = memo(
   ({ data, count, locationId, kanbanOutput }: KanbansTableProps) => {
     const [params] = useUrlParams();
     const { t } = useLingui();
+    const { locale } = useLocale();
 
     const permissions = usePermissions();
     const [people] = usePeople();
@@ -524,7 +526,7 @@ const KanbansTable = memo(
           }
         }
       ],
-      [items, kanbanOutput, params, people, suppliers, t]
+      [items, kanbanOutput, params, people, suppliers, t, locale]
     );
 
     const renderContextMenu = useCallback(

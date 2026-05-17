@@ -1,8 +1,13 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import type { PickPartial } from "@carbon/utils";
+import {
+  getCompanyPrivateBucket,
+  listCompanyPrivateObjects,
+  type PickPartial
+} from "@carbon/utils";
 import { getLocalTimeZone, now, today } from "@internationalized/date";
+import type { FileObject } from "@supabase/storage-js";
 import type {
   PostgrestError,
   PostgrestSingleResponse,
@@ -1027,16 +1032,26 @@ export async function getOpportunityDocuments(
   companyId: string,
   opportunityId: string
 ) {
-  const result = await client.storage
-    .from("private")
-    .list(`${companyId}/opportunity/${opportunityId}`);
+  const result = await listCompanyPrivateObjects({
+    companyId,
+    requestedBucket: getCompanyPrivateBucket(companyId),
+    objectPathPrefix: `${companyId}/opportunity/${opportunityId}`,
+    listObjects: (physicalBucket, prefix) =>
+      client.storage.from(physicalBucket).list(prefix),
+    getItemKey: (item: FileObject) => item.name
+  });
 
-  if (result.error) {
-    console.error("Failed to list opportunity documents", result.error);
-    return [];
+  for (const bucketError of result.errors) {
+    console.error("Failed to list opportunity documents", {
+      companyId,
+      opportunityId,
+      physicalBucket: bucketError.physicalBucket,
+      prefix: `${companyId}/opportunity/${opportunityId}`,
+      error: bucketError.error
+    });
   }
 
-  return result.data?.map((f) => ({ ...f, bucket: "opportunity" })) ?? [];
+  return result.data.map((f) => ({ ...f, bucket: "opportunity" }));
 }
 
 export async function getOpportunityLineDocuments(
@@ -1046,31 +1061,55 @@ export async function getOpportunityLineDocuments(
   itemId?: string | null
 ) {
   const [opportunityLineResult, itemResult] = await Promise.all([
-    client.storage
-      .from("private")
-      .list(`${companyId}/opportunity-line/${lineId}`),
+    listCompanyPrivateObjects({
+      companyId,
+      requestedBucket: getCompanyPrivateBucket(companyId),
+      objectPathPrefix: `${companyId}/opportunity-line/${lineId}`,
+      listObjects: (physicalBucket, prefix) =>
+        client.storage.from(physicalBucket).list(prefix),
+      getItemKey: (item: FileObject) => item.name
+    }),
     itemId
-      ? client.storage.from("private").list(`${companyId}/parts/${itemId}`)
-      : Promise.resolve({ data: [] as any[], error: null })
+      ? listCompanyPrivateObjects({
+          companyId,
+          requestedBucket: getCompanyPrivateBucket(companyId),
+          objectPathPrefix: `${companyId}/parts/${itemId}`,
+          listObjects: (physicalBucket, prefix) =>
+            client.storage.from(physicalBucket).list(prefix),
+          getItemKey: (item: FileObject) => item.name
+        })
+      : Promise.resolve([])
   ]);
 
-  if (opportunityLineResult.error) {
-    console.error(
-      "Failed to list opportunity line documents",
-      opportunityLineResult.error
-    );
-  }
-  if (itemResult.error) {
-    console.error("Failed to list item documents", itemResult.error);
+  for (const bucketError of opportunityLineResult.errors) {
+    console.error("Failed to list opportunity line documents", {
+      companyId,
+      lineId,
+      physicalBucket: bucketError.physicalBucket,
+      prefix: `${companyId}/opportunity-line/${lineId}`,
+      error: bucketError.error
+    });
   }
 
-  const opportunityLineDocs =
-    opportunityLineResult.data?.map((f) => ({
-      ...f,
-      bucket: "opportunity-line"
-    })) ?? [];
-  const itemDocs =
-    itemResult.data?.map((f) => ({ ...f, bucket: "parts" })) ?? [];
+  if (itemId && !Array.isArray(itemResult)) {
+    for (const bucketError of itemResult.errors) {
+      console.error("Failed to list item documents", {
+        companyId,
+        itemId,
+        physicalBucket: bucketError.physicalBucket,
+        prefix: `${companyId}/parts/${itemId}`,
+        error: bucketError.error
+      });
+    }
+  }
+
+  const opportunityLineDocs = opportunityLineResult.data.map((f) => ({
+    ...f,
+    bucket: "opportunity-line"
+  }));
+  const itemDocs = (
+    Array.isArray(itemResult) ? itemResult : itemResult.data
+  ).map((f) => ({ ...f, bucket: "parts" }));
 
   return [...opportunityLineDocs, ...itemDocs];
 }

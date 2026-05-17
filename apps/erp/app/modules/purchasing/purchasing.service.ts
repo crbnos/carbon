@@ -1,7 +1,11 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import { getPurchaseOrderStatus } from "@carbon/utils";
+import {
+  getCompanyPrivateBucket,
+  getPurchaseOrderStatus,
+  listCompanyPrivateObjects
+} from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import type {
   PostgrestSingleResponse,
@@ -548,21 +552,26 @@ export async function getSupplierInteractionDocuments(
   companyId: string,
   interactionId: string
 ) {
-  const result = await client.storage
-    .from("private")
-    .list(`${companyId}/supplier-interaction/${interactionId}`);
+  const result = await listCompanyPrivateObjects({
+    companyId,
+    requestedBucket: getCompanyPrivateBucket(companyId),
+    objectPathPrefix: `${companyId}/supplier-interaction/${interactionId}`,
+    listObjects: (physicalBucket, prefix) =>
+      client.storage.from(physicalBucket).list(prefix),
+    getItemKey: (item) => item.name
+  });
 
-  if (result.error) {
-    console.error(
-      "Failed to list supplier interaction documents",
-      result.error
-    );
-    return [];
+  for (const bucketError of result.errors) {
+    console.error("Failed to list supplier interaction documents", {
+      companyId,
+      interactionId,
+      physicalBucket: bucketError.physicalBucket,
+      prefix: `${companyId}/supplier-interaction/${interactionId}`,
+      error: bucketError.error
+    });
   }
 
-  return (
-    result.data?.map((f) => ({ ...f, bucket: "supplier-interaction" })) ?? []
-  );
+  return result.data.map((f) => ({ ...f, bucket: "supplier-interaction" }));
 }
 
 export async function getSupplierInteractionLineDocuments(
@@ -570,24 +579,29 @@ export async function getSupplierInteractionLineDocuments(
   companyId: string,
   lineId: string
 ) {
-  const result = await client.storage
-    .from("private")
-    .list(`${companyId}/supplier-interaction-line/${lineId}`);
+  const result = await listCompanyPrivateObjects({
+    companyId,
+    requestedBucket: getCompanyPrivateBucket(companyId),
+    objectPathPrefix: `${companyId}/supplier-interaction-line/${lineId}`,
+    listObjects: (physicalBucket, prefix) =>
+      client.storage.from(physicalBucket).list(prefix),
+    getItemKey: (item) => item.name
+  });
 
-  if (result.error) {
-    console.error(
-      "Failed to list supplier interaction line documents",
-      result.error
-    );
-    return [];
+  for (const bucketError of result.errors) {
+    console.error("Failed to list supplier interaction line documents", {
+      companyId,
+      lineId,
+      physicalBucket: bucketError.physicalBucket,
+      prefix: `${companyId}/supplier-interaction-line/${lineId}`,
+      error: bucketError.error
+    });
   }
 
-  return (
-    result.data?.map((f) => ({
-      ...f,
-      bucket: "supplier-interaction-line"
-    })) ?? []
-  );
+  return result.data.map((f) => ({
+    ...f,
+    bucket: "supplier-interaction-line"
+  }));
 }
 
 export async function getSupplierLocations(

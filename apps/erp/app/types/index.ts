@@ -84,6 +84,8 @@ export interface SelectOption {
 }
 
 export type StorageItem = FileObject & {
+  // Legacy UI naming: many callers still use `bucket` for a logical folder
+  // such as `job` or `parts`, not the physical Supabase bucket name.
   bucket?: string;
   itemId?: string;
 };

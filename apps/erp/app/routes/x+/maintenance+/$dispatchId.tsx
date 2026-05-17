@@ -3,6 +3,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
+import {
+  getCompanyPrivateBucket,
+  listCompanyPrivateObjects
+} from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData, useParams } from "react-router";
@@ -36,10 +40,16 @@ async function getMaintenanceDispatchFiles(
   companyId: string,
   dispatchId: string
 ) {
-  const result = await client.storage
-    .from("private")
-    .list(`${companyId}/maintenance/${dispatchId}`);
-  return result.data || [];
+  return (
+    await listCompanyPrivateObjects({
+      companyId,
+      requestedBucket: getCompanyPrivateBucket(companyId),
+      objectPathPrefix: `${companyId}/maintenance/${dispatchId}`,
+      listObjects: (physicalBucket, prefix) =>
+        client.storage.from(physicalBucket).list(prefix),
+      getItemKey: (item) => item.name
+    })
+  ).data;
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

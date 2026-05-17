@@ -26,7 +26,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { convertKbToString } from "@carbon/utils";
+import { convertKbToString, getCompanyPrivateBucket } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
@@ -56,6 +56,7 @@ const useJobDocuments = ({
   const { carbon } = useCarbon();
   const { company } = useUser();
   const submit = useSubmit();
+  const companyPrivateBucket = getCompanyPrivateBucket(company.id);
 
   const canDelete = permissions.can("delete", "production");
   const canUpdate = permissions.can("update", "production");
@@ -75,19 +76,30 @@ const useJobDocuments = ({
   const deleteFile = useCallback(
     async (file: FileObject & { bucket?: string }) => {
       const bucket = file.bucket === "parts" ? "parts" : "job";
-      const fileDelete = await carbon?.storage
-        .from("private")
-        .remove([getPath(file, bucket as "job" | "parts")]);
+      let deleted = false;
+      let lastError: string | undefined;
 
-      if (!fileDelete || fileDelete.error) {
-        toast.error(fileDelete?.error?.message || "Error deleting file");
+      for (const physicalBucket of [companyPrivateBucket]) {
+        const fileDelete = await carbon?.storage
+          .from(physicalBucket)
+          .remove([getPath(file, bucket as "job" | "parts")]);
+
+        if (fileDelete && !fileDelete.error) {
+          deleted = true;
+        } else if (fileDelete?.error) {
+          lastError = fileDelete.error.message;
+        }
+      }
+
+      if (!deleted) {
+        toast.error(lastError || "Error deleting file");
         return;
       }
 
       toast.success(t`${file.name} deleted successfully`);
       revalidator.revalidate();
     },
-    [getPath, carbon?.storage, revalidator, t]
+    [company.id, companyPrivateBucket, getPath, carbon?.storage, revalidator, t]
   );
 
   const deleteModel = useCallback(async () => {
@@ -112,7 +124,7 @@ const useJobDocuments = ({
         return;
       }
 
-      const url = path.to.file.previewFile(`private/${model.modelPath}`);
+      const url = path.to.file.preview(companyPrivateBucket, model.modelPath);
       try {
         const response = await fetch(url);
         const blob = await response.blob();
@@ -130,15 +142,16 @@ const useJobDocuments = ({
       }
     },
 
-    [t]
+    [companyPrivateBucket, t]
   );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   const download = useCallback(
     async (file: FileObject & { bucket?: string }) => {
       const bucket = file.bucket === "parts" ? "parts" : "job";
-      const url = path.to.file.previewFile(
-        `private/${getPath(file, bucket as "job" | "parts")}`
+      const url = path.to.file.preview(
+        companyPrivateBucket,
+        getPath(file, bucket as "job" | "parts")
       );
       try {
         const response = await fetch(url);
@@ -157,7 +170,7 @@ const useJobDocuments = ({
       }
     },
 
-    []
+    [companyPrivateBucket, getPath]
   );
 
   const getModelPath = useCallback((model: ModelUpload) => {
@@ -212,7 +225,7 @@ const useJobDocuments = ({
         const fileName = getPath(file, bucket);
 
         const fileUpload = await carbon.storage
-          .from("private")
+          .from(companyPrivateBucket)
           .upload(fileName, file, {
             cacheControl: `${12 * 60 * 60}`,
             upsert: true
@@ -231,7 +244,15 @@ const useJobDocuments = ({
       }
       revalidator.revalidate();
     },
-    [getPath, createDocumentRecord, carbon, revalidator, itemId, t]
+    [
+      companyPrivateBucket,
+      getPath,
+      createDocumentRecord,
+      carbon,
+      revalidator,
+      itemId,
+      t
+    ]
   );
 
   const moveFile = useCallback(
@@ -257,21 +278,30 @@ const useJobDocuments = ({
       }
 
       try {
-        // Download the file first
         const sourcePath = getPath(file, currentBucket);
-        const { data: downloadData } = await carbon.storage
-          .from("private")
-          .download(sourcePath);
+        let downloadData: Blob | null = null;
+        let sourcePhysicalBucket = companyPrivateBucket;
+
+        for (const physicalBucket of [companyPrivateBucket]) {
+          const result = await carbon.storage
+            .from(physicalBucket)
+            .download(sourcePath);
+
+          if (!result.error && result.data) {
+            downloadData = result.data;
+            sourcePhysicalBucket = physicalBucket;
+            break;
+          }
+        }
 
         if (!downloadData) {
           toast.error(t`Failed to download file for moving`);
           return;
         }
 
-        // Upload to new location
         const targetPath = getPath(file, targetBucket);
         const { error: uploadError } = await carbon.storage
-          .from("private")
+          .from(companyPrivateBucket)
           .upload(targetPath, downloadData, {
             cacheControl: `${12 * 60 * 60}`,
             upsert: true
@@ -282,9 +312,8 @@ const useJobDocuments = ({
           return;
         }
 
-        // Delete from old location
         const { error: deleteError } = await carbon.storage
-          .from("private")
+          .from(sourcePhysicalBucket)
           .remove([sourcePath]);
 
         if (deleteError) {
@@ -303,7 +332,7 @@ const useJobDocuments = ({
         console.error(error);
       }
     },
-    [carbon, itemId, getPath, revalidator, t]
+    [carbon, company.id, companyPrivateBucket, itemId, getPath, revalidator, t]
   );
 
   return {
@@ -337,6 +366,10 @@ const JobDocuments = ({
   bucket = "job",
   isReadOnly
 }: JobDocumentsProps) => {
+  const {
+    company: { id: companyId }
+  } = useUser();
+  const companyPrivateBucket = getCompanyPrivateBucket(companyId);
   const { t } = useLingui();
   const { formatDate } = useDateFormatter();
   const {
@@ -479,11 +512,9 @@ const JobDocuments = ({
                                   ? "parts"
                                   : "job";
                               window.open(
-                                path.to.file.previewFile(
-                                  `${"private"}/${getPath(
-                                    file,
-                                    bucket as "job" | "parts"
-                                  )}`
+                                path.to.file.preview(
+                                  companyPrivateBucket,
+                                  getPath(file, bucket as "job" | "parts")
                                 ),
                                 "_blank"
                               );
@@ -494,7 +525,7 @@ const JobDocuments = ({
                         >
                           {["PDF", "Image"].includes(type) ? (
                             <DocumentPreview
-                              bucket="private"
+                              bucket={companyPrivateBucket}
                               pathToFile={getPath(
                                 file,
                                 (file as any).bucket === "parts"
@@ -642,6 +673,11 @@ const JobDocumentForm = ({
 };
 
 const usePendingItems = () => {
+  const {
+    company: { id: companyId }
+  } = useUser();
+  const companyPrivateBucket = getCompanyPrivateBucket(companyId);
+
   type PendingItem = ReturnType<typeof useFetchers>[number] & {
     formData: FormData;
   };
@@ -659,8 +695,8 @@ const usePendingItems = () => {
         const newItem: OptimisticFileObject = {
           id: path,
           name: name,
-          bucket_id: "private",
-          bucket: "private",
+          bucket_id: companyPrivateBucket,
+          bucket: "job",
           metadata: {
             size,
             mimetype: getDocumentType(name)

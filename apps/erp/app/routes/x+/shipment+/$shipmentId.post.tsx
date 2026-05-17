@@ -2,6 +2,7 @@ import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { getCompanyPrivateBucket } from "@carbon/utils";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -192,10 +193,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
             );
 
             const documentFilePath = `${companyId}/opportunity/${salesOrder.opportunityId}/${fileName}`;
+            const companyPrivateBucket = getCompanyPrivateBucket(companyId);
 
             // Upload the PDF to storage
             const documentFileUpload = await serviceRole.storage
-              .from("private")
+              .from(companyPrivateBucket)
               .upload(documentFilePath, file, {
                 cacheControl: `${12 * 60 * 60}`,
                 contentType: "application/pdf",

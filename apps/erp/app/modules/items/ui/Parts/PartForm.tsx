@@ -17,6 +17,7 @@ import {
 } from "@carbon/react";
 import {
   convertKbToString,
+  getCompanyPrivateBucket,
   getFileSizeLimit,
   supportedModelTypes
 } from "@carbon/utils";
@@ -78,6 +79,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
   const {
     company: { id: companyId }
   } = useUser();
+  const companyPrivateBucket = getCompanyPrivateBucket(companyId);
 
   const modelUpload = async (file: File) => {
     if (!carbon) return;
@@ -90,7 +92,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
     const fileName = `${companyId}/models/${modelId}.${fileExtension}`;
 
     const [fileUpload, recordInsert] = await Promise.all([
-      carbon.storage.from("private").upload(fileName, file),
+      carbon.storage.from(companyPrivateBucket).upload(fileName, file),
       carbon.from("modelUpload").insert({
         id: modelId,
         modelPath: fileName,

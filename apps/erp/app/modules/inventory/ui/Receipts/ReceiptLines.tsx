@@ -35,7 +35,7 @@ import {
   VStack
 } from "@carbon/react";
 import type { TrackedEntityAttributes } from "@carbon/utils";
-import { labelSizes } from "@carbon/utils";
+import { getCompanyPrivateBucket, labelSizes } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
@@ -334,6 +334,8 @@ function ReceiptLineItem({
   upload: (files: File[]) => Promise<void>;
   deleteFile: (file: StorageItem) => Promise<void>;
 }) {
+  const { company } = useUser();
+  const companyPrivateBucket = getCompanyPrivateBucket(company.id);
   const { t } = useLingui();
   const [items] = useItems();
   const item = items.find((p) => p.id === line.itemId);
@@ -530,7 +532,7 @@ function ReceiptLineItem({
                           <span className="font-medium text-sm">
                             {isPreviewable ? (
                               <DocumentPreview
-                                bucket="private"
+                                bucket={companyPrivateBucket}
                                 pathToFile={getPath(file)}
                                 // @ts-expect-error
                                 type={getDocumentType(file.name)}
@@ -1201,6 +1203,7 @@ function useReceiptFiles(receiptId: string) {
   const { t } = useLingui();
   const { company } = useUser();
   const { carbon } = useCarbon();
+  const companyPrivateBucket = getCompanyPrivateBucket(company.id);
 
   const getPath = useCallback(
     ({ name }: { name: string }, lineId: string) => {
@@ -1224,7 +1227,7 @@ function useReceiptFiles(receiptId: string) {
         const fileName = getPath({ name: file.name }, lineId);
         toast.info(`Uploading ${file.name}`);
         const fileUpload = await carbon.storage
-          .from("private")
+          .from(companyPrivateBucket)
           .upload(fileName, file, {
             cacheControl: `${12 * 60 * 60}`,
             upsert: true
@@ -1251,24 +1254,35 @@ function useReceiptFiles(receiptId: string) {
       }
       revalidator.revalidate();
     },
-    [carbon, revalidator, getPath, receiptId, submit, t]
+    [carbon, companyPrivateBucket, revalidator, getPath, receiptId, submit, t]
   );
 
   const deleteFile = useCallback(
     async (file: StorageItem, lineId: string) => {
-      const fileDelete = await carbon?.storage
-        .from("private")
-        .remove([getPath(file, lineId)]);
+      let deleted = false;
+      let lastError: string | undefined;
 
-      if (!fileDelete || fileDelete.error) {
-        toast.error(fileDelete?.error?.message || "Error deleting file");
+      for (const physicalBucket of [companyPrivateBucket]) {
+        const fileDelete = await carbon?.storage
+          .from(physicalBucket)
+          .remove([getPath(file, lineId)]);
+
+        if (fileDelete && !fileDelete.error) {
+          deleted = true;
+        } else if (fileDelete?.error) {
+          lastError = fileDelete.error.message;
+        }
+      }
+
+      if (!deleted) {
+        toast.error(lastError || "Error deleting file");
         return;
       }
 
       toast.success(`${file.name} deleted successfully`);
       revalidator.revalidate();
     },
-    [getPath, carbon?.storage, revalidator]
+    [company.id, companyPrivateBucket, getPath, carbon?.storage, revalidator]
   );
 
   return { upload, deleteFile, getPath };

@@ -20,7 +20,7 @@ import {
   Tr,
   toast
 } from "@carbon/react";
-import { convertKbToString } from "@carbon/utils";
+import { convertKbToString, getCompanyPrivateBucket } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
@@ -50,6 +50,10 @@ const ItemDocuments = ({
   modelUpload,
   type
 }: ItemDocumentsProps) => {
+  const {
+    company: { id: companyId }
+  } = useUser();
+  const companyPrivateBucket = getCompanyPrivateBucket(companyId);
   const { t } = useLingui();
   const { formatDate } = useDateFormatter();
   const {
@@ -192,7 +196,7 @@ const ItemDocuments = ({
                       >
                         {["PDF", "Image"].includes(type) ? (
                           <DocumentPreview
-                            bucket="private"
+                            bucket={companyPrivateBucket}
                             pathToFile={getPath(file)}
                             // @ts-ignore
                             type={type}
@@ -300,6 +304,7 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
   const { carbon } = useCarbon();
   const { company } = useUser();
   const submit = useSubmit();
+  const companyPrivateBucket = getCompanyPrivateBucket(company.id);
 
   const canDelete = permissions.can("delete", "parts");
   const getPath = useCallback(
@@ -314,7 +319,7 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
   const deleteFile = useCallback(
     async (file: FileObject) => {
       const fileDelete = await carbon?.storage
-        .from("private")
+        .from(companyPrivateBucket)
         .remove([getPath(file)]);
 
       if (!fileDelete || fileDelete.error) {
@@ -325,7 +330,7 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
       toast.success(t`File deleted successfully`);
       revalidator.revalidate();
     },
-    [getPath, carbon?.storage, revalidator, t]
+    [getPath, carbon?.storage, companyPrivateBucket, revalidator, t]
   );
 
   const deleteModel = useCallback(async () => {
@@ -355,7 +360,7 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
         return;
       }
 
-      const url = path.to.file.previewFile(`private/${model.modelPath}`);
+      const url = path.to.file.preview(companyPrivateBucket, model.modelPath);
       try {
         const response = await fetch(url);
         const blob = await response.blob();
@@ -373,12 +378,12 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
       }
     },
 
-    [t]
+    [companyPrivateBucket, t]
   );
 
   const download = useCallback(
     async (file: FileObject) => {
-      const url = path.to.file.previewFile(`private/${getPath(file)}`);
+      const url = path.to.file.preview(companyPrivateBucket, getPath(file));
       try {
         const response = await fetch(url);
         const blob = await response.blob();
@@ -396,7 +401,7 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
       }
     },
 
-    [getPath, t]
+    [companyPrivateBucket, getPath, t]
   );
 
   const getModelPath = useCallback((model: ModelUpload) => {
@@ -418,7 +423,7 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
         const fileName = getPath(file);
 
         const fileUpload = await carbon.storage
-          .from("private")
+          .from(companyPrivateBucket)
           .upload(fileName, file, {
             cacheControl: `${12 * 60 * 60}`,
             upsert: true
@@ -445,7 +450,16 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
       }
       revalidator.revalidate();
     },
-    [getPath, carbon, revalidator, submit, type, itemId, t]
+    [
+      companyPrivateBucket,
+      getPath,
+      carbon,
+      revalidator,
+      submit,
+      type,
+      itemId,
+      t
+    ]
   );
 
   return {
@@ -461,6 +475,11 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
 };
 
 const usePendingItems = () => {
+  const {
+    company: { id: companyId }
+  } = useUser();
+  const companyPrivateBucket = getCompanyPrivateBucket(companyId);
+
   type PendingItem = ReturnType<typeof useFetchers>[number] & {
     formData: FormData;
   };
@@ -478,8 +497,8 @@ const usePendingItems = () => {
         const newItem: OptimisticFileObject = {
           id: path,
           name: name,
-          bucket_id: "private",
-          bucket: "private",
+          bucket_id: companyPrivateBucket,
+          bucket: "parts",
           metadata: {
             size,
             mimetype: getDocumentType(name)

@@ -11,6 +11,7 @@ import {
 } from "@carbon/react";
 import {
   convertKbToString,
+  getCompanyPrivateBucket,
   getFileSizeLimit,
   supportedModelTypes
 } from "@carbon/utils";
@@ -51,6 +52,7 @@ const CadModel = ({
   const {
     company: { id: companyId }
   } = useUser();
+  const companyPrivateBucket = getCompanyPrivateBucket(companyId);
   const mode = useMode();
   const { carbon } = useCarbon();
 
@@ -73,7 +75,7 @@ const CadModel = ({
       const fileName = `${companyId}/models/${modelId}.${fileExtension}`;
 
       const modelUpload = await carbon.storage
-        .from("private")
+        .from(companyPrivateBucket)
         .upload(fileName, file, {
           upsert: true
         });

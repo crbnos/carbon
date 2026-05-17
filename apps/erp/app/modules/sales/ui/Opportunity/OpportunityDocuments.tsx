@@ -21,7 +21,7 @@ import {
   Tr,
   toast
 } from "@carbon/react";
-import { convertKbToString } from "@carbon/utils";
+import { convertKbToString, getCompanyPrivateBucket } from "@carbon/utils";
 import { useDndContext, useDraggable } from "@dnd-kit/core";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
@@ -229,6 +229,8 @@ const DraggableCell = ({
   const isPreviewable = ["PDF", "Image"].includes(
     getDocumentType(attachment.name)
   );
+  const { company } = useUser();
+  const companyPrivateBucket = getCompanyPrivateBucket(company.id);
 
   return (
     <Td ref={setNodeRef} style={style} {...attributes} {...listeners}>
@@ -242,7 +244,7 @@ const DraggableCell = ({
           onClick={() => {
             if (isPreviewable) {
               window.open(
-                path.to.file.previewFile(`private/${getPath(attachment)}`),
+                path.to.file.preview(companyPrivateBucket, getPath(attachment)),
                 "_blank"
               );
             } else {
@@ -252,7 +254,7 @@ const DraggableCell = ({
         >
           {isPreviewable ? (
             <DocumentPreview
-              bucket="private"
+              bucket={companyPrivateBucket}
               pathToFile={getPath(attachment)}
               // @ts-ignore
               type={getDocumentType(attachment.name)}
@@ -295,6 +297,7 @@ export const useOpportunityDocuments = ({
   const { carbon } = useCarbon();
   const revalidator = useRevalidator();
   const submit = useSubmit();
+  const companyPrivateBucket = getCompanyPrivateBucket(company.id);
 
   const canDelete = permissions.can("delete", "sales"); // TODO: or is document owner
 
@@ -311,24 +314,38 @@ export const useOpportunityDocuments = ({
 
   const deleteAttachment = useCallback(
     async (attachment: FileObject) => {
-      const result = await carbon?.storage
-        .from("private")
-        .remove([getPath(attachment)]);
+      let deleted = false;
+      let lastError: string | undefined;
 
-      if (!result || result.error) {
-        toast.error(result?.error?.message || "Error deleting file");
+      for (const physicalBucket of [companyPrivateBucket]) {
+        const result = await carbon?.storage
+          .from(physicalBucket)
+          .remove([getPath(attachment)]);
+
+        if (result && !result.error) {
+          deleted = true;
+        } else if (result?.error) {
+          lastError = result.error.message;
+        }
+      }
+
+      if (!deleted) {
+        toast.error(lastError || "Error deleting file");
         return;
       }
 
       toast.success(t`${attachment.name} deleted successfully`);
       revalidator.revalidate();
     },
-    [carbon?.storage, getPath, revalidator, t]
+    [carbon?.storage, company.id, companyPrivateBucket, getPath, revalidator, t]
   );
 
   const download = useCallback(
     async (attachment: FileObject) => {
-      const url = path.to.file.previewFile(`private/${getPath(attachment)}`);
+      const url = path.to.file.preview(
+        companyPrivateBucket,
+        getPath(attachment)
+      );
       try {
         const response = await fetch(url);
         const blob = await response.blob();
@@ -345,7 +362,7 @@ export const useOpportunityDocuments = ({
         console.error(error);
       }
     },
-    [getPath, t]
+    [companyPrivateBucket, getPath, t]
   );
 
   const createDocumentRecord = useCallback(
@@ -387,7 +404,7 @@ export const useOpportunityDocuments = ({
         toast.info(t`Uploading ${file.name}`);
 
         const fileUpload = await carbon.storage
-          .from("private")
+          .from(companyPrivateBucket)
           .upload(fileName, file, {
             cacheControl: `${12 * 60 * 60}`,
             upsert: true
@@ -406,7 +423,14 @@ export const useOpportunityDocuments = ({
       }
       revalidator.revalidate();
     },
-    [getPath, createDocumentRecord, carbon, revalidator, t]
+    [
+      companyPrivateBucket,
+      getPath,
+      createDocumentRecord,
+      carbon,
+      revalidator,
+      t
+    ]
   );
 
   return {

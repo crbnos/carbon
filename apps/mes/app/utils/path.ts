@@ -55,9 +55,14 @@ export const path = {
 
         return generatePath(url);
       },
+      preview: (bucket: string, path: string) =>
+        generatePath(`${file}/preview/${bucket}/${path}`),
       previewImage: (bucket: string, path: string) =>
         generatePath(`${file}/preview/image?file=${bucket}/${path}`),
-      previewFile: (path: string) => generatePath(`${file}/preview/${path}`),
+      previewFile: (bucketOrPath: string, path?: string) =>
+        path
+          ? generatePath(`${file}/preview/${bucketOrPath}/${path}`)
+          : generatePath(`${file}/preview/${bucketOrPath}`),
       trackedEntityLabelZpl: (
         id: string,
         { labelSize }: { labelSize?: string } = {}
@@ -163,10 +168,6 @@ export const removeSubdomain = (url?: string): string => {
   return domain;
 };
 
-export const getPrivateUrl = (path: string) => {
-  return `/file/preview/private/${path}`;
-};
-
 export const getStoragePath = (bucket: string, path: string) => {
   return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
 };
@@ -180,3 +181,21 @@ export const getParams = (request: Request) => {
   const searchParams = new URLSearchParams(url.search);
   return searchParams.toString();
 };
+
+const getRequestedPrivateBucketFromPath = (objectPath: string) => {
+  return objectPath.split("/").find(Boolean) ?? "private";
+};
+
+/**
+ * @deprecated Prefer `path.to.file.preview(bucket, objectPath)` in new code.
+ */
+export function getPrivateUrl(path: string): string;
+export function getPrivateUrl(bucket: string, objectPath: string): string;
+export function getPrivateUrl(bucketOrPath: string, objectPath?: string) {
+  return objectPath
+    ? path.to.file.preview(bucketOrPath, objectPath)
+    : path.to.file.preview(
+        getRequestedPrivateBucketFromPath(bucketOrPath),
+        bucketOrPath
+      );
+}

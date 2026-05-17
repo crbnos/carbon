@@ -4,6 +4,10 @@ import { flash } from "@carbon/auth/session.server";
 import { QuoteEmail } from "@carbon/documents/email";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
+import {
+  createCompanyPrivateSignedUrl,
+  getCompanyPrivateBucket
+} from "@carbon/utils";
 import { getLocalTimeZone, now } from "@internationalized/date";
 import { renderAsync } from "@react-email/components";
 import type { ActionFunctionArgs } from "react-router";
@@ -78,9 +82,10 @@ export async function action(args: ActionFunctionArgs) {
     );
 
     documentFilePath = `${companyId}/opportunity/${quote.data.opportunityId}/${fileName}`;
+    const companyPrivateBucket = getCompanyPrivateBucket(companyId);
 
     const documentFileUpload = await client.storage
-      .from("private")
+      .from(companyPrivateBucket)
       .upload(documentFilePath, file, {
         cacheControl: `${12 * 60 * 60}`,
         contentType: "application/pdf",
@@ -189,9 +194,32 @@ export async function action(args: ActionFunctionArgs) {
 
         const html = await renderAsync(emailTemplate);
         const text = await renderAsync(emailTemplate, { plainText: true });
-        const { data: signedUrlData } = await client.storage
-          .from("private")
-          .createSignedUrl(documentFilePath, 3600);
+        const signedUrlResult = await createCompanyPrivateSignedUrl({
+          companyId,
+          requestedBucket: getCompanyPrivateBucket(companyId),
+          objectPath: documentFilePath,
+          expiresIn: 3600,
+          createSignedUrl: async (physicalBucket, objectPath, expiresIn) => {
+            const { data, error } = await client.storage
+              .from(physicalBucket)
+              .createSignedUrl(objectPath, expiresIn);
+
+            return {
+              signedUrl: data?.signedUrl ?? null,
+              error: error ?? null
+            };
+          }
+        });
+
+        for (const bucketError of signedUrlResult.errors) {
+          console.error("Failed to create quote attachment signed URL", {
+            companyId,
+            quoteId,
+            documentFilePath,
+            physicalBucket: bucketError.physicalBucket,
+            error: bucketError.error
+          });
+        }
 
         await trigger("send-email", {
           to: [user.data.email, customerContact.data.contact!.email!],
@@ -200,10 +228,10 @@ export async function action(args: ActionFunctionArgs) {
           subject: `Quote ${quote.data.quoteId}`,
           html,
           text,
-          attachments: signedUrlData?.signedUrl
+          attachments: signedUrlResult.signedUrl
             ? [
                 {
-                  path: signedUrlData.signedUrl,
+                  path: signedUrlResult.signedUrl,
                   filename: fileName
                 }
               ]

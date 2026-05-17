@@ -26,6 +26,10 @@ import {
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
+import {
+  buildCompanyPrivateStorageTarget,
+  getCompanyPrivateBucket
+} from "@carbon/utils";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import { useEffect, useState } from "react";
@@ -127,10 +131,16 @@ export function MaintenanceDispatch({
   }, [fetcher.state, fetcher.data, onClose]);
 
   const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/maintenance/${nanoid()}.${fileType}`;
+    const target = buildCompanyPrivateStorageTarget({
+      companyId,
+      logicalFolder: "maintenance",
+      fileName: `${nanoid()}.${file.name.split(".").pop()}`
+    });
+    const companyPrivateBucket = getCompanyPrivateBucket(companyId);
 
-    const result = await carbon?.storage.from("private").upload(fileName, file);
+    const result = await carbon?.storage
+      .from(target.physicalBucket)
+      .upload(target.objectPath, file);
 
     if (result?.error) {
       toast.error("Failed to upload image");
@@ -141,7 +151,7 @@ export function MaintenanceDispatch({
       throw new Error("Failed to upload image");
     }
 
-    return getPrivateUrl(result.data.path);
+    return getPrivateUrl(companyPrivateBucket, result.data.path);
   };
 
   return (

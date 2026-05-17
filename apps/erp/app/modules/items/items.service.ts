@@ -7,6 +7,10 @@ import type {
   Severity,
   TransactionSurface
 } from "@carbon/utils";
+import {
+  getCompanyPrivateBucket,
+  listCompanyPrivateObjects
+} from "@carbon/utils";
 import { getLocalTimeZone, now, today } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
@@ -542,10 +546,26 @@ export async function getItemFiles(
   itemId: string,
   companyId: string
 ) {
-  const result = await client.storage
-    .from("private")
-    .list(`${companyId}/parts/${itemId}`);
-  return result.data || [];
+  const result = await listCompanyPrivateObjects({
+    companyId,
+    requestedBucket: getCompanyPrivateBucket(companyId),
+    objectPathPrefix: `${companyId}/parts/${itemId}`,
+    listObjects: (physicalBucket, prefix) =>
+      client.storage.from(physicalBucket).list(prefix),
+    getItemKey: (item) => item.name
+  });
+
+  for (const bucketError of result.errors) {
+    console.error("Failed to list item files", {
+      companyId,
+      itemId,
+      physicalBucket: bucketError.physicalBucket,
+      prefix: `${companyId}/parts/${itemId}`,
+      error: bucketError.error
+    });
+  }
+
+  return result.data;
 }
 
 export async function getItemPostingGroup(

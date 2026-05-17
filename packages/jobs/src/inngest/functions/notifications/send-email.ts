@@ -4,6 +4,10 @@ import { NonRetriableError, serializeError } from "inngest";
 import { Resend } from "resend";
 import { inngest } from "../../client";
 
+type EmailAttachment =
+  | { filename: string; content: string }
+  | { filename: string; path: string };
+
 export const sendEmailFunction = inngest.createFunction(
   {
     id: "send-email",
@@ -89,6 +93,22 @@ export const sendEmailFunction = inngest.createFunction(
     };
 
     const fromAddress = `${companyName} <${data.fromEmail}>`;
+    const normalizedAttachments = payload.attachments?.map(
+      (attachment: EmailAttachment) => {
+        if ("path" in attachment) {
+          return {
+            filename: attachment.filename,
+            path: attachment.path
+          };
+        }
+
+        return {
+          filename: attachment.filename,
+          content: attachment.content,
+          encoding: "base64" as const
+        };
+      }
+    );
 
     if (data.provider === "smtp") {
       const result = await step.run("send-email", async () => {
@@ -112,13 +132,7 @@ export const sendEmailFunction = inngest.createFunction(
           subject: payload.subject,
           html: payload.html,
           text: payload.text,
-          attachments: payload.attachments?.map(
-            (a: { filename: string; content: string }) => ({
-              filename: a.filename,
-              content: a.content,
-              encoding: "base64" as const
-            })
-          )
+          attachments: normalizedAttachments
         });
       });
 

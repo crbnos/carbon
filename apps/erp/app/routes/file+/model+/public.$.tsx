@@ -1,6 +1,10 @@
 import { notFound } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { supportedModelTypes } from "@carbon/utils";
+import {
+  downloadCompanyPrivateObject,
+  getCompanyPrivateBucket,
+  supportedModelTypes
+} from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 
 const supportedFileTypes: Record<string, string> = {
@@ -29,12 +33,14 @@ export async function loader({ params }: LoaderFunctionArgs) {
   const path = params["*"];
 
   if (!path) throw new Error("Path not found");
+  const objectPath = path;
+  const companyId = objectPath.split("/")[0] ?? "";
 
-  if (!path.includes("models")) {
+  if (!companyId || !objectPath.includes("models")) {
     throw notFound("Invalid path");
   }
 
-  const fileType = path.split(".").pop()?.toLowerCase();
+  const fileType = objectPath.split(".").pop()?.toLowerCase();
 
   if (
     !fileType ||
@@ -42,15 +48,19 @@ export async function loader({ params }: LoaderFunctionArgs) {
       !supportedModelTypes.includes(fileType))
   )
     throw new Error(`File type ${fileType} not supported`);
-  const contentType = supportedFileTypes[fileType];
+  const contentType =
+    supportedFileTypes[fileType] ?? "application/octet-stream";
 
-  async function downloadFile() {
-    const result = await client.storage.from("private").download(`${path}`);
-    if (result.error) {
-      console.error(result.error);
-      return null;
-    }
-    return result.data;
+  async function downloadFile(): Promise<Blob | null> {
+    const result = await downloadCompanyPrivateObject<Blob>({
+      companyId,
+      objectPath,
+      requestedBucket: getCompanyPrivateBucket(companyId),
+      downloadObject: (physicalBucket, objectPath) =>
+        client.storage.from(physicalBucket).download(objectPath)
+    });
+
+    return result?.data ?? null;
   }
 
   let fileData = await downloadFile();

@@ -20,7 +20,11 @@ import {
   Tr,
   toast
 } from "@carbon/react";
-import { convertKbToString } from "@carbon/utils";
+import {
+  buildCompanyPrivateStorageTarget,
+  convertKbToString,
+  getCompanyPrivateBucket
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
@@ -61,6 +65,7 @@ const Documents = ({
   const { carbon } = useCarbon();
   const { company } = useUser();
   const submit = useSubmit();
+  const companyPrivateBucket = getCompanyPrivateBucket(company.id);
 
   const canDelete = permissions.can("delete", writeBucketPermission);
   const canUpdate = permissions.can("update", writeBucketPermission);
@@ -82,7 +87,12 @@ const Documents = ({
   const getReadPath = useCallback(
     (file: StorageItem) => {
       const id = sourceDocumentLineId || sourceDocumentId;
-      return `${company.id}/${file.bucket ?? writeBucket}/${id}/${file.name}`;
+      return buildCompanyPrivateStorageTarget({
+        companyId: company.id,
+        logicalFolder: file.bucket ?? writeBucket,
+        entityId: id,
+        fileName: file.name
+      }).objectPath;
     },
     [company.id, sourceDocumentId, sourceDocumentLineId, writeBucket]
   );
@@ -90,28 +100,50 @@ const Documents = ({
   const getWritePath = useCallback(
     (file: { name: string }) => {
       const id = sourceDocumentLineId || sourceDocumentId;
-      return `${company.id}/${writeBucket}/${id}/${stripSpecialCharacters(
-        file.name
-      )}`;
+      return buildCompanyPrivateStorageTarget({
+        companyId: company.id,
+        logicalFolder: writeBucket,
+        entityId: id,
+        fileName: stripSpecialCharacters(file.name)
+      });
     },
     [company.id, sourceDocumentId, sourceDocumentLineId, writeBucket]
   );
 
   const deleteFile = useCallback(
     async (file: StorageItem) => {
-      const fileDelete = await carbon?.storage
-        .from("private")
-        .remove([getReadPath(file)]);
+      const objectPath = getReadPath(file);
+      let deleted = false;
+      let lastError: string | undefined;
 
-      if (!fileDelete || fileDelete.error) {
-        toast.error(fileDelete?.error?.message || t`Error deleting file`);
+      for (const physicalBucket of [companyPrivateBucket]) {
+        const fileDelete = await carbon?.storage
+          .from(physicalBucket)
+          .remove([objectPath]);
+
+        if (fileDelete && !fileDelete.error) {
+          deleted = true;
+        } else if (fileDelete?.error) {
+          lastError = fileDelete.error.message;
+        }
+      }
+
+      if (!deleted) {
+        toast.error(lastError || t`Error deleting file`);
         return;
       }
 
       toast.success(t`${file.name} deleted successfully`);
       revalidator.revalidate();
     },
-    [carbon?.storage, getReadPath, revalidator, t]
+    [
+      carbon?.storage,
+      getReadPath,
+      revalidator,
+      company.id,
+      companyPrivateBucket,
+      t
+    ]
   );
 
   const downloadModel = useCallback(
@@ -121,7 +153,7 @@ const Documents = ({
         return;
       }
 
-      const url = path.to.file.previewFile(`private/${model.modelPath}`);
+      const url = path.to.file.preview(companyPrivateBucket, model.modelPath);
       try {
         const response = await fetch(url);
         const blob = await response.blob();
@@ -139,7 +171,7 @@ const Documents = ({
       }
     },
 
-    [t]
+    [companyPrivateBucket, t]
   );
 
   const deleteModel = useCallback(async () => {
@@ -168,7 +200,7 @@ const Documents = ({
 
   const download = useCallback(
     async (file: StorageItem) => {
-      const url = path.to.file.previewFile(`private/${getReadPath(file)}`);
+      const url = path.to.file.preview(companyPrivateBucket, getReadPath(file));
       try {
         const response = await fetch(url);
         const blob = await response.blob();
@@ -185,7 +217,7 @@ const Documents = ({
         console.error(error);
       }
     },
-    [getReadPath, t]
+    [getReadPath, companyPrivateBucket, t]
   );
 
   const upload = useCallback(
@@ -199,8 +231,8 @@ const Documents = ({
         const fileName = getWritePath({ name: file.name });
         toast.info(t`Uploading ${file.name}`);
         const fileUpload = await carbon.storage
-          .from("private")
-          .upload(fileName, file, {
+          .from(fileName.physicalBucket)
+          .upload(fileName.objectPath, file, {
             cacheControl: `${12 * 60 * 60}`,
             upsert: true
           });
@@ -366,8 +398,9 @@ const Documents = ({
                         onClick={() => {
                           if (["PDF", "Image"].includes(type)) {
                             window.open(
-                              path.to.file.previewFile(
-                                `${"private"}/${getReadPath(file)}`
+                              path.to.file.preview(
+                                companyPrivateBucket,
+                                getReadPath(file)
                               ),
                               "_blank"
                             );
@@ -378,7 +411,7 @@ const Documents = ({
                       >
                         {isPreviewable ? (
                           <DocumentPreview
-                            bucket="private"
+                            bucket={companyPrivateBucket}
                             pathToFile={getReadPath(file)}
                             // @ts-ignore
                             type={getDocumentType(file.name)}
@@ -448,6 +481,11 @@ const Documents = ({
 export default Documents;
 
 const usePendingItems = () => {
+  const {
+    company: { id: companyId }
+  } = useUser();
+  const companyPrivateBucket = getCompanyPrivateBucket(companyId);
+
   type PendingItem = ReturnType<typeof useFetchers>[number] & {
     formData: FormData;
   };
@@ -465,8 +503,7 @@ const usePendingItems = () => {
         const newItem: OptimisticFileObject = {
           id: path,
           name: name,
-          bucket_id: "private",
-          bucket: "private",
+          bucket_id: companyPrivateBucket,
           metadata: {
             size,
             mimetype: getDocumentType(name)

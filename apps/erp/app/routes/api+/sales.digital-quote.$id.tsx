@@ -2,6 +2,7 @@ import { assertIsPost, notFound } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { trigger } from "@carbon/jobs";
 import { NotificationEvent } from "@carbon/notifications";
+import { getCompanyPrivateBucket } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import {
   convertQuoteToOrder,
@@ -147,9 +148,12 @@ export async function action(args: ActionFunctionArgs) {
 
       if (file && file instanceof File) {
         const purchaseOrderDocumentPath = `${companySettings.data.id}/opportunity/${quote.data.opportunityId}/${file.name}`;
+        const companyPrivateBucket = getCompanyPrivateBucket(
+          companySettings.data.id
+        );
 
         const fileUpload = await serviceRole.storage
-          .from("private")
+          .from(companyPrivateBucket)
           .upload(purchaseOrderDocumentPath, file);
 
         if (fileUpload.error) {

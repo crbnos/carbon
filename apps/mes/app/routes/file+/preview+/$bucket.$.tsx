@@ -1,5 +1,11 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import {
+  downloadCompanyPrivateObject,
+  getCompanyPrivateBucket,
+  hasCompanyPrivateObjectPathPrefix
+} from "@carbon/utils";
+
 import type { LoaderFunctionArgs } from "react-router";
 
 const supportedFileTypes: Record<string, string> = {
@@ -35,41 +41,52 @@ const supportedFileTypes: Record<string, string> = {
 export let loader = async ({ request, params }: LoaderFunctionArgs) => {
   const { companyId } = await requirePermissions(request, {});
   const { bucket } = params;
-  let path = params["*"];
+  const objectPath = params["*"];
 
   if (!bucket) throw new Error("Bucket not found");
-  if (!path) throw new Error("Path not found");
+  if (!objectPath) throw new Error("Path not found");
+  const storageObjectPath = objectPath;
 
-  // Don't decode the path here - let Supabase handle the URL encoding
-  // path = decodeURIComponent(path);
-
-  const fileType = path.split(".").pop()?.toLowerCase();
+  const fileType = storageObjectPath.split(".").pop()?.toLowerCase();
 
   if (!fileType) {
     return new Response(null, { status: 400 });
   }
   const contentType = supportedFileTypes[fileType];
 
-  // Check if the decoded path includes companyId for security
-  const decodedPath = decodeURIComponent(path);
-  if (!decodedPath.includes(companyId)) {
+  const decodedPath = decodeURIComponent(objectPath);
+
+  if (bucket !== getCompanyPrivateBucket(companyId)) {
+    return new Response(null, { status: 403 });
+  }
+
+  if (!hasCompanyPrivateObjectPathPrefix(companyId, decodedPath)) {
     return new Response(null, { status: 403 });
   }
 
   const serviceRole = await getCarbonServiceRole();
 
-  async function downloadFile() {
-    if (!path) throw new Error("Path not found");
-    // Use the original encoded path for the storage API call
-    const result = await serviceRole.storage.from(bucket!).download(path);
-    if (result.error) {
-      console.error(result.error);
-      return null;
-    }
-    return result.data;
+  async function downloadFile(): Promise<Blob | null> {
+    const result = await downloadCompanyPrivateObject<Blob>({
+      companyId,
+      objectPath: storageObjectPath,
+      requestedBucket: bucket,
+      downloadObject: async (physicalBucket, currentObjectPath) => {
+        const result = await serviceRole.storage
+          .from(physicalBucket)
+          .download(currentObjectPath);
+
+        return {
+          data: result.data ?? null,
+          error: result.error ?? null
+        };
+      }
+    });
+
+    return result?.data ?? null;
   }
 
-  let fileData = await downloadFile();
+  let fileData: Blob | null = await downloadFile();
   if (!fileData) {
     // Wait for a second and try again
     await new Promise((resolve) => setTimeout(resolve, 1000));

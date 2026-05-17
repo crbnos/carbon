@@ -13,6 +13,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
+import { getCompanyPrivateBucket } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Reorder, useDragControls } from "framer-motion";
 import { nanoid } from "nanoid";
@@ -133,7 +134,9 @@ const IssueWorkflowForm = ({
     const fileType = file.name.split(".").pop();
     const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
 
-    const result = await carbon?.storage.from("private").upload(fileName, file);
+    const result = await carbon?.storage
+      .from(getCompanyPrivateBucket(companyId))
+      .upload(fileName, file);
 
     if (result?.error) {
       toast.error(t`Failed to upload image`);
