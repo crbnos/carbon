@@ -14,13 +14,13 @@ import { getParams, path } from "~/utils/path";
 import { customerTypesQuery, getCompanyId } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
   const { customerTypeId } = params;
   if (!customerTypeId) throw notFound("customerTypeId not found");
 
-  const customerType = await getCustomerType(client, customerTypeId);
+  const customerType = await getCustomerType(customerTypeId);
   if (customerType.error) {
     throw redirect(
       `${path.to.customerTypes}?${getParams(request)}`,
@@ -35,7 +35,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "sales"
   });
 
@@ -47,10 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteTypeError } = await deleteCustomerType(
-    client,
-    customerTypeId
-  );
+  const { error: deleteTypeError } = await deleteCustomerType(customerTypeId);
   if (deleteTypeError) {
     throw redirect(
       `${path.to.customerTypes}?${getParams(request)}`,

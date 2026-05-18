@@ -1,4 +1,5 @@
 import { CONTROLLED_ENVIRONMENT, error, getBrowserEnv } from "@carbon/auth";
+import { authContextMiddleware } from "@carbon/auth/middleware/auth.server";
 import { flashClientMiddleware } from "@carbon/auth/middleware/flash.client";
 import {
   flashHeadersContext,
@@ -44,7 +45,9 @@ import Tailwind from "~/styles/tailwind.css?url";
 import type { Route } from "./+types/root";
 import { getTheme } from "./services/theme.server";
 
-export const middleware = [flashMiddleware];
+// authContextMiddleware FIRST: establishes the AuthContextHolder scope
+// before any other middleware or loader/action runs.
+export const middleware = [authContextMiddleware, flashMiddleware];
 export const clientMiddleware = [flashClientMiddleware];
 
 export const links: Route.LinksFunction = () => [

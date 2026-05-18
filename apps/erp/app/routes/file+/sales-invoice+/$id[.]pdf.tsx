@@ -21,7 +21,7 @@ import {
 import { getBase64ImageFromSupabase } from "~/modules/shared";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
@@ -40,16 +40,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     paymentTerms,
     shippingMethods
   ] = await Promise.all([
-    getCompany(client, companyId),
-    getCompanySettings(client, companyId),
-    getAccountsReceivableBillingAddress(client, companyId),
-    getSalesInvoice(client, id),
-    getSalesInvoiceLines(client, id),
-    getSalesInvoiceCustomerDetails(client, id),
-    getSalesInvoiceShipment(client, id),
-    getSalesTerms(client, companyId),
-    getPaymentTermsList(client, companyId),
-    getShippingMethodsList(client, companyId)
+    getCompany(),
+    getCompanySettings(),
+    getAccountsReceivableBillingAddress(),
+    getSalesInvoice(id),
+    getSalesInvoiceLines(id),
+    getSalesInvoiceCustomerDetails(id),
+    getSalesInvoiceShipment(id),
+    getSalesTerms(),
+    getPaymentTermsList(),
+    getShippingMethodsList()
   ]);
 
   if (company.error) {
@@ -109,7 +109,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
               if (!path) {
                 return null;
               }
-              return getBase64ImageFromSupabase(client, path).then((data) => ({
+              return getBase64ImageFromSupabase(path).then((data) => ({
                 id,
                 data
               }));

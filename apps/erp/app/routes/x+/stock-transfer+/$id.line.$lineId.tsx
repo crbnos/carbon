@@ -22,7 +22,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     create: "inventory"
   });
 
@@ -53,7 +53,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id: _id, ...d } = validation.data;
 
-  const updateStockTransferLine = await upsertStockTransferLine(client, {
+  const updateStockTransferLine = await upsertStockTransferLine({
     id: lineId,
     ...d,
     updatedBy: userId

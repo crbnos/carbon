@@ -44,9 +44,9 @@ export async function action({ request }: ActionFunctionArgs) {
     ...locationData
   } = validation.data;
 
-  const client = getCarbonServiceRole();
+  const _client = getCarbonServiceRole();
 
-  const companyInsert = await insertCompany(client, {
+  const companyInsert = await insertCompany({
     ...locationData,
     baseCurrencyCode
   });
@@ -68,7 +68,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const seed = await seedCompany(client, companyId, userId, parentCompanyId);
+  const seed = await seedCompany(parentCompanyId);
   if (seed.error) {
     throw redirect(
       path.to.companies,
@@ -76,7 +76,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const locationInsert = await upsertLocation(client, {
+  const locationInsert = await upsertLocation({
     ...locationData,
     name: "Headquarters",
     companyId,
@@ -102,7 +102,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const job = await insertEmployeeJob(client, {
+  const job = await insertEmployeeJob({
     id: userId,
     companyId,
     locationId

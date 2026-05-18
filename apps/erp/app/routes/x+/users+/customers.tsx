@@ -21,7 +21,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "users",
     bypassRls: true
   });
@@ -34,9 +34,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [customers, customerTypes, invites] = await Promise.all([
-    getCustomers(client, companyId, { search, limit, offset, sorts, filters }),
-    getCustomerTypes(client, companyId),
-    getUnrevokedInviteEmails(client, companyId)
+    getCustomers({ search, limit, offset, sorts, filters }),
+    getCustomerTypes(),
+    getUnrevokedInviteEmails()
   ]);
 
   if (customers.error) {

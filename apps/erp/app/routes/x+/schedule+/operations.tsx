@@ -138,7 +138,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await getLocationsList();
     if (locations.error || !locations.data?.length) {
       throw redirect(
         path.to.inventory,
@@ -152,10 +152,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const [workCenters, processes, operations, tags] = await Promise.all([
-    getWorkCentersByLocation(client, locationId),
-    getProcessesList(client, companyId),
-    getActiveJobOperationsByLocation(client, locationId, selectedWorkCenterIds),
-    getTagsList(client, companyId, "operation")
+    getWorkCentersByLocation(locationId),
+    getProcessesList(),
+    getActiveJobOperationsByLocation(locationId, selectedWorkCenterIds),
+    getTagsList("operation")
   ]);
 
   const activeWorkCenters = new Set();

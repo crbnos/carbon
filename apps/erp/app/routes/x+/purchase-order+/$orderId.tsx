@@ -94,15 +94,11 @@ export async function action(args: ActionFunctionArgs) {
     );
   }
 
-  const canApproveResult = await canApproveRequest(
-    serviceRole,
-    {
-      amount: approvalRequest.data.amount,
-      documentType: approvalRequest.data.documentType,
-      companyId: approvalRequest.data.companyId
-    },
-    userId
-  );
+  const canApproveResult = await canApproveRequest(serviceRole, {
+    amount: approvalRequest.data.amount,
+    documentType: approvalRequest.data.documentType,
+    companyId: approvalRequest.data.companyId
+  });
 
   if (!canApproveResult) {
     throw redirect(
@@ -221,11 +217,11 @@ export async function action(args: ActionFunctionArgs) {
             paymentTerms,
             buyer
           ] = await Promise.all([
-            getCompany(serviceRole, companyId),
+            getCompany(serviceRole),
             getSupplierContact(serviceRole, supplierContact),
             getPurchaseOrderLines(serviceRole, orderId),
             getPurchaseOrderLocations(serviceRole, orderId),
-            getPaymentTermsList(serviceRole, companyId),
+            getPaymentTermsList(serviceRole),
             getUser(serviceRole, userId)
           ]);
 
@@ -288,7 +284,7 @@ export async function action(args: ActionFunctionArgs) {
       }
 
       // Check if we should update prices on purchase order approval
-      const companySettings = await getCompanySettings(serviceRole, companyId);
+      const companySettings = await getCompanySettings(serviceRole);
       if (
         companySettings.data?.purchasePriceUpdateTiming ===
         "Purchase Order Finalize"
@@ -326,7 +322,7 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     view: "purchasing",
     bypassRls: true
   });
@@ -335,9 +331,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!orderId) throw new Error("Could not find orderId");
 
   const [purchaseOrder, lines, purchaseOrderDelivery] = await Promise.all([
-    getPurchaseOrder(client, orderId),
-    getPurchaseOrderLines(client, orderId),
-    getPurchaseOrderDelivery(client, orderId)
+    getPurchaseOrder(orderId),
+    getPurchaseOrderLines(orderId),
+    getPurchaseOrderDelivery(orderId)
   ]);
 
   if (purchaseOrder.data?.companyId !== companyId) {
@@ -368,9 +364,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const [supplier, interaction, approvalRequest, companySettings] =
     await Promise.all([
       purchaseOrder.data?.supplierId
-        ? getSupplier(client, purchaseOrder.data.supplierId)
+        ? getSupplier(purchaseOrder.data.supplierId)
         : null,
-      getSupplierInteraction(client, purchaseOrder.data.supplierInteractionId),
+      getSupplierInteraction(purchaseOrder.data.supplierInteractionId),
       // Only fetch approval request if status is "Needs Approval"
       purchaseOrder.data?.status === "Needs Approval"
         ? getLatestApprovalRequestForDocument(
@@ -379,7 +375,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             orderId
           )
         : Promise.resolve({ data: null, error: null }),
-      getCompanySettings(serviceRole, companyId)
+      getCompanySettings(serviceRole)
     ]);
 
   const defaultCc = supplier?.data?.defaultCc?.length
@@ -400,15 +396,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const requestedBy = approvalRequest.data.requestedBy;
     const status = approvalRequest.data.status;
 
-    canApprove = await canApproveRequest(
-      serviceRole,
-      {
-        amount: approvalRequest.data.amount,
-        documentType: approvalRequest.data.documentType,
-        companyId: approvalRequest.data.companyId
-      },
-      userId
-    );
+    canApprove = await canApproveRequest(serviceRole, {
+      amount: approvalRequest.data.amount,
+      documentType: approvalRequest.data.documentType,
+      companyId: approvalRequest.data.companyId
+    });
 
     // Check if user can reopen: must be requester OR approver
     const isRequester = canCancelRequest(
@@ -431,8 +423,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     purchaseOrderDelivery: purchaseOrderDelivery.data,
     lines: lines.data ?? [],
     files: getSupplierInteractionDocuments(
-      client,
-      companyId,
       purchaseOrder.data.supplierInteractionId!
     ),
     interaction: interaction?.data,

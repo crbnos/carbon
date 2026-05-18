@@ -51,7 +51,7 @@ export async function action({ request }: ActionFunctionArgs) {
     };
   }
 
-  const company = await getCompany(serviceRole, companyId);
+  const company = await getCompany(serviceRole);
 
   if (!company.error && company.data?.suggestionNotificationGroup?.length) {
     try {

@@ -214,14 +214,14 @@ export async function action(args: ActionFunctionArgs) {
           seller,
           paymentTerms
         ] = await Promise.all([
-          getCompany(serviceRole, companyId),
+          getCompany(serviceRole),
           getCustomerContact(serviceRole, customerContact),
           getSalesInvoice(serviceRole, invoiceId),
           getSalesInvoiceLines(serviceRole, invoiceId),
           getSalesInvoiceCustomerDetails(serviceRole, invoiceId),
           getSalesInvoiceShipment(serviceRole, invoiceId),
           getUser(serviceRole, userId),
-          getPaymentTermsList(serviceRole, companyId)
+          getPaymentTermsList(serviceRole)
         ]);
 
         if (!customer?.data?.contact) {

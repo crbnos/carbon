@@ -9,7 +9,7 @@ import { upsertProcedureStep } from "~/modules/production/production.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "production"
   });
 
@@ -30,7 +30,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...rest } = validation.data;
 
-  const create = await upsertProcedureStep(client, {
+  const create = await upsertProcedureStep({
     ...rest,
     companyId,
     createdBy: userId

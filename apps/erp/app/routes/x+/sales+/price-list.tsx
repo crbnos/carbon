@@ -40,7 +40,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const hasScope = Boolean(customerId || customerTypeId);
   const listPromise = hasScope
-    ? resolvePriceList(client, companyId, {
+    ? resolvePriceList({
         customerId: customerId ?? undefined,
         customerTypeId: customerTypeId ?? undefined,
         quantity,
@@ -50,7 +50,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         sorts,
         filters
       })
-    : getBaseCatalog(client, companyId, {
+    : getBaseCatalog({
         search: search ?? undefined,
         limit,
         offset,

@@ -9,14 +9,14 @@ import { deleteCustomerPortal, getCustomerPortal } from "~/modules/shared";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales",
     role: "employee"
   });
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const customerPortal = await getCustomerPortal(client, id);
+  const customerPortal = await getCustomerPortal(id);
   if (customerPortal.error) {
     throw redirect(
       `${path.to.customerPortals}?${getParams(request)}`,
@@ -31,7 +31,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "sales"
   });
 
@@ -43,10 +43,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteCustomerPortalError } = await deleteCustomerPortal(
-    client,
-    id
-  );
+  const { error: deleteCustomerPortalError } = await deleteCustomerPortal(id);
   if (deleteCustomerPortalError) {
     const errorMessage =
       deleteCustomerPortalError.code === "23503"

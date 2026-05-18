@@ -9,13 +9,13 @@ import { deleteMaterialForm, getMaterialForm } from "~/modules/items";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts"
   });
   const { formId } = params;
   if (!formId) throw notFound("formId not found");
 
-  const materialForm = await getMaterialForm(client, formId);
+  const materialForm = await getMaterialForm(formId);
   if (materialForm.error) {
     throw redirect(
       path.to.materialForms,
@@ -30,7 +30,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "parts"
   });
 
@@ -42,7 +42,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteTypeError } = await deleteMaterialForm(client, formId);
+  const { error: deleteTypeError } = await deleteMaterialForm(formId);
   if (deleteTypeError) {
     throw redirect(
       `${path.to.materialForms}?${getParams(request)}`,

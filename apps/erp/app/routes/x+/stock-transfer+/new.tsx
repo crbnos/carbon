@@ -27,7 +27,7 @@ export const handle: Handle = {
 };
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "inventory"
   });
 
@@ -38,11 +38,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const nextSequence = await getNextSequence(
-    client,
-    "stockTransfer",
-    companyId
-  );
+  const nextSequence = await getNextSequence("stockTransfer");
   if (nextSequence.error) {
     throw redirect(
       path.to.stockTransfers,
@@ -108,7 +104,7 @@ export async function action({ request }: ActionFunctionArgs) {
     []
   );
 
-  const createStockTransfer = await upsertStockTransfer(client, {
+  const createStockTransfer = await upsertStockTransfer({
     stockTransferId: nextSequence.data,
     locationId,
     companyId,
@@ -126,7 +122,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const createStockTransferLines = await upsertStockTransferLines(client, {
+  const createStockTransferLines = await upsertStockTransferLines({
     lines: linesWithExpandedSerialTracking,
     stockTransferId: createStockTransfer.data.id,
     companyId,
@@ -134,7 +130,7 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (createStockTransferLines.error) {
-    await deleteStockTransfer(client, createStockTransfer.data.id);
+    await deleteStockTransfer(createStockTransfer.data.id);
     throw redirect(
       path.to.stockTransfers,
       await flash(

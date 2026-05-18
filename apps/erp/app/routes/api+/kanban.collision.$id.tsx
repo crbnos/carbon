@@ -14,12 +14,12 @@ import {
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const kanban = await getKanban(client, id);
+  const kanban = await getKanban(id);
   if (
     kanban.data?.replenishmentSystem !== "Make" ||
     !kanban.data?.jobReadableId
@@ -28,7 +28,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw redirect(path.to.api.kanban(id));
   }
 
-  const job = await getJob(client, kanban.data.jobId!);
+  const job = await getJob(kanban.data.jobId!);
   if (job.error) {
     return {
       existingJob: null,
@@ -43,12 +43,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, userId, companyId } = await requirePermissions(request, {});
+  const { userId, companyId } = await requirePermissions(request, {});
 
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const kanbanUpdate = await updateKanbanJob(client, {
+  const kanbanUpdate = await updateKanbanJob({
     id,
     jobId: null,
     userId,

@@ -20,7 +20,7 @@ import { getCompanyId, locationsQuery } from "~/utils/react-query";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "resources"
   });
 
@@ -36,7 +36,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const createLocation = await upsertLocation(client, {
+  const createLocation = await upsertLocation({
     ...d,
     companyId,
     createdBy: userId,

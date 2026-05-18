@@ -45,8 +45,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   let leadTime = 7;
   if (useNextSequence) {
     const [nextSequence, manufacturing] = await Promise.all([
-      getNextSequence(serviceRole, "job", companyId),
-      getItemReplenishment(serviceRole, validation.data.itemId, companyId)
+      getNextSequence(serviceRole, "job"),
+      getItemReplenishment(serviceRole, validation.data.itemId)
     ]);
     if (nextSequence.error) {
       throw redirect(
@@ -62,8 +62,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   } else {
     const manufacturing = await getItemReplenishment(
       serviceRole,
-      validation.data.itemId,
-      companyId
+      validation.data.itemId
     );
     leadTime = manufacturing.data?.leadTime ?? 7;
   }
@@ -74,8 +73,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const storageUnitId = await getDefaultStorageUnitForJob(
     serviceRole,
     validation.data.itemId,
-    validation.data.locationId,
-    companyId
+    validation.data.locationId
   );
 
   const createJob = await upsertJob(serviceRole, {

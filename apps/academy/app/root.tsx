@@ -4,6 +4,7 @@ import {
   getBrowserEnv,
   getCarbon
 } from "@carbon/auth";
+import { authContextMiddleware } from "@carbon/auth/middleware/auth.server";
 import { flashClientMiddleware } from "@carbon/auth/middleware/flash.client";
 import {
   flashHeadersContext,
@@ -58,7 +59,9 @@ import AvatarMenu from "./components/AvatarMenu";
 import { useOptionalUser } from "./hooks/useUser";
 import { path } from "./utils/path";
 
-export const middleware = [flashMiddleware];
+// authContextMiddleware FIRST: establishes the AuthContextHolder scope
+// before any other middleware or loader/action runs.
+export const middleware = [authContextMiddleware, flashMiddleware];
 export const clientMiddleware = [flashClientMiddleware];
 
 export const links: Route.LinksFunction = () => [

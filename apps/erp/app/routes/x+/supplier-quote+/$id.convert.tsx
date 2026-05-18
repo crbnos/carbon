@@ -53,7 +53,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Check supplier approval status
   const [quote, supplierApprovalRequired] = await Promise.all([
     getSupplierQuote(serviceRole, id),
-    isApprovalRequired(serviceRole, "supplier", companyId)
+    isApprovalRequired(serviceRole, "supplier")
   ]);
 
   if (supplierApprovalRequired && quote.data?.supplierId) {

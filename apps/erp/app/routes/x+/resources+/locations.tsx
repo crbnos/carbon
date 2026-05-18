@@ -16,7 +16,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources",
     role: "employee",
     bypassRls: true
@@ -28,7 +28,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const locations = await getLocations(client, companyId, {
+  const locations = await getLocations({
     search,
     limit,
     offset,

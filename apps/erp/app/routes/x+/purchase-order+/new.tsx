@@ -30,11 +30,13 @@ export const handle: Handle = {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
+  const { companyId, companyGroupId, userId } = await requirePermissions(
+    request,
+    {
       create: "purchasing",
       bypassRls: true
-    });
+    }
+  );
 
   const formData = await request.formData();
   const validation = await validator(newPurchaseOrderValidator).validate(
@@ -49,11 +51,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const useNextSequence = !purchaseOrderId;
 
   if (useNextSequence) {
-    const nextSequence = await getNextSequence(
-      client,
-      "purchaseOrder",
-      companyId
-    );
+    const nextSequence = await getNextSequence("purchaseOrder");
     if (nextSequence.error) {
       throw redirect(
         path.to.newPurchaseOrder,
@@ -68,7 +66,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (!purchaseOrderId) throw new Error("purchaseOrderId is not defined");
 
-  const createPurchaseOrder = await upsertPurchaseOrder(client, {
+  const createPurchaseOrder = await upsertPurchaseOrder({
     ...validation.data,
     purchaseOrderId,
     companyId,

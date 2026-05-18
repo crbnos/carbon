@@ -149,14 +149,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [entries, openEntry, companySettings, employeeShift] =
     await Promise.all([
-      getTimeCardEntries(client, {
+      getTimeCardEntries({
         employeeId: personId,
         companyId,
         from,
         to
       }),
-      getOpenClockEntry(client, personId, companyId),
-      getCompanySettings(client, companyId),
+      getOpenClockEntry(personId),
+      getCompanySettings(),
       client
         .from("employeeJob")
         .select(
@@ -210,7 +210,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (validation.error) return data({}, { status: 400 });
 
     const employeeId = validation.data.employeeId || personId;
-    const result = await clockIn(client, {
+    const result = await clockIn({
       employeeId,
       companyId,
       createdBy: userId
@@ -230,7 +230,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (validation.error) return data({}, { status: 400 });
 
     const employeeId = validation.data.employeeId || personId;
-    const result = await clockOut(client, {
+    const result = await clockOut({
       employeeId,
       companyId,
       updatedBy: userId,
@@ -252,7 +252,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
     if (validation.error) return data({}, { status: 400 });
 
-    const result = await updateTimeCardEntry(client, {
+    const result = await updateTimeCardEntry({
       entryId: validation.data.entryId,
       clockIn: validation.data.clockIn,
       clockOut: validation.data.clockOut || null,
@@ -275,7 +275,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
     if (validation.error) return data({}, { status: 400 });
 
-    const result = await deleteTimeCardEntry(client, validation.data.entryId);
+    const result = await deleteTimeCardEntry(validation.data.entryId);
     if (result.error) {
       return data(
         {},

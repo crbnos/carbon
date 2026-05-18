@@ -34,7 +34,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     view: "sales",
     bypassRls: true
   });
@@ -43,8 +43,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!orderId) throw new Error("Could not find orderId");
 
   const [salesOrder, lines] = await Promise.all([
-    getSalesOrder(client, orderId),
-    getSalesOrderLines(client, orderId)
+    getSalesOrder(orderId),
+    getSalesOrderLines(orderId)
   ]);
 
   if (salesOrder.error) {
@@ -55,7 +55,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const opportunity = await getOpportunity(
-    client,
     salesOrder.data?.opportunityId ?? null
   );
 
@@ -68,13 +67,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const serviceRole = getCarbonServiceRole();
   const [quote, customer, companySettings, invoiceLines] = await Promise.all([
     opportunity.data.quotes[0]?.id
-      ? getQuote(client, opportunity.data.quotes[0].id)
+      ? getQuote(opportunity.data.quotes[0].id)
       : Promise.resolve(null),
     salesOrder.data?.customerId
-      ? getCustomer(client, salesOrder.data.customerId)
+      ? getCustomer(salesOrder.data.customerId)
       : Promise.resolve(null),
-    getCompanySettings(serviceRole, companyId),
-    getSalesOrderInvoiceLines(client, orderId)
+    getCompanySettings(serviceRole),
+    getSalesOrderInvoiceLines(orderId)
   ]);
 
   if (invoiceLines.error) {
@@ -98,7 +97,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   let currencyMismatchCount = 0;
 
   if (invoiceIds.length > 0) {
-    const invoices = await getSalesOrderInvoicesByIds(client, invoiceIds);
+    const invoices = await getSalesOrderInvoicesByIds(invoiceIds);
 
     if (invoices.error) {
       throw redirect(
@@ -140,12 +139,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     salesOrder: salesOrder.data,
     lines: lines.data ?? [],
-    files: getOpportunityDocuments(client, companyId, opportunity.data.id),
-    relatedItems: getSalesOrderRelatedItems(
-      client,
-      orderId,
-      opportunity.data.id
-    ),
+    files: getOpportunityDocuments(opportunity.data.id),
+    relatedItems: getSalesOrderRelatedItems(orderId, opportunity.data.id),
     opportunity: opportunity.data,
     customer: customer?.data ?? null,
     quote: quote?.data ?? null,

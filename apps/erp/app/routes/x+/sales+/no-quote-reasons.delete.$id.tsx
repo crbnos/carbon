@@ -9,14 +9,14 @@ import { deleteNoQuoteReason, getNoQuoteReason } from "~/modules/sales";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales",
     role: "employee"
   });
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const noQuoteReason = await getNoQuoteReason(client, id);
+  const noQuoteReason = await getNoQuoteReason(id);
   if (noQuoteReason.error) {
     throw redirect(
       `${path.to.customerStatuses}?${getParams(request)}`,
@@ -31,7 +31,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "sales"
   });
 
@@ -43,10 +43,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteNoQuoteReasonError } = await deleteNoQuoteReason(
-    client,
-    id
-  );
+  const { error: deleteNoQuoteReasonError } = await deleteNoQuoteReason(id);
   if (deleteNoQuoteReasonError) {
     const errorMessage =
       deleteNoQuoteReasonError.code === "23503"

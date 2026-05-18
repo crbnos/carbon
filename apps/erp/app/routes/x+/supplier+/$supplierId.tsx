@@ -24,7 +24,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     view: "purchasing"
   });
 
@@ -35,14 +35,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // Kick off approval in parallel — it only needs supplier.status, so we chain
   // off the supplier fetch rather than waiting for the whole Promise.all to
   // settle.
-  const supplierPromise = getSupplier(client, supplierId);
+  const supplierPromise = getSupplier(supplierId);
   const [supplier, contacts, locations, tags, supplierTax, approval] =
     await Promise.all([
       supplierPromise,
-      getSupplierContacts(client, supplierId),
-      getSupplierLocations(client, supplierId),
-      getTagsList(client, companyId, "supplier"),
-      getSupplierTax(client, supplierId),
+      getSupplierContacts(supplierId),
+      getSupplierLocations(supplierId),
+      getTagsList("supplier"),
+      getSupplierTax(supplierId),
       supplierPromise.then((s) =>
         getSupplierApprovalContext(
           serviceRole,

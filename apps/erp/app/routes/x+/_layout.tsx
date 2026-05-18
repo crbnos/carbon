@@ -113,12 +113,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     auditLogEnabled,
     modulePreferences
   ] = await Promise.all([
-    getCompanies(client, userId),
+    getCompanies(),
     getStripeCustomerByCompanyId(companyId, userId),
     getCustomFieldsSchemas(client, { companyId }),
-    getCompanyIntegrations(client, companyId),
-    getCompanySettings(client, companyId),
-    getSavedViews(client, userId, companyId),
+    getCompanyIntegrations(),
+    getCompanySettings(),
+    getSavedViews(),
     getUser(client, userId),
     getUserClaims(userId, companyId),
     getUserGroups(client, userId),
@@ -175,9 +175,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     user: user.data,
     modulePreferences: modulePreferences.data ?? [],
     savedViews: savedViews.data ?? [],
-    supplierApprovalRequired: isApprovalRequired(client, "supplier", companyId),
+    supplierApprovalRequired: isApprovalRequired(client, "supplier"),
     openClockEntry: companySettings.data?.timeCardEnabled
-      ? getOpenClockEntry(client, userId, companyId)
+      ? getOpenClockEntry()
       : null
   });
 }

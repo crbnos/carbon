@@ -5,14 +5,14 @@ import { deleteShipmentLine } from "~/modules/inventory";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "inventory"
   });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const lineDelete = await deleteShipmentLine(client, id);
+  const lineDelete = await deleteShipmentLine(id);
 
   if (lineDelete.error) {
     return {

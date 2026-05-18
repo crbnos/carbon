@@ -11,7 +11,7 @@ import {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "sales"
   });
 
@@ -26,7 +26,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error("id not found");
   }
 
-  const deleteMaterial = await deleteQuoteMaterial(client, id);
+  const deleteMaterial = await deleteQuoteMaterial(id);
   if (deleteMaterial.error) {
     return data(
       {
@@ -40,7 +40,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
-  await recalculateQuoteLinePrices(serviceRole, quoteId, lineId, userId);
+  await recalculateQuoteLinePrices(serviceRole, quoteId, lineId);
 
   return {};
 }

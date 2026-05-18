@@ -20,7 +20,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     view: "inventory"
   });
 
@@ -28,8 +28,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!id) throw new Error("Could not find id");
 
   const [stockTransfer, stockTransferLines] = await Promise.all([
-    getStockTransfer(client, id),
-    getStockTransferLines(client, id)
+    getStockTransfer(id),
+    getStockTransferLines(id)
   ]);
 
   if (stockTransfer.error) {

@@ -7,9 +7,9 @@ import { getWorkCentersList } from "~/modules/resources";
 import { getCompanyId, workCentersQuery } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
-  return await getWorkCentersList(client, companyId);
+  return await getWorkCentersList();
 }
 
 export async function clientLoader({ serverLoader }: ClientLoaderFunctionArgs) {

@@ -3,7 +3,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { getScrapReasonsList } from "~/modules/production";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
-  return await getScrapReasonsList(client, companyId);
+  return await getScrapReasonsList();
 }

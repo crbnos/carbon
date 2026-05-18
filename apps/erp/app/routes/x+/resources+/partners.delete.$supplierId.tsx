@@ -9,7 +9,7 @@ import { deletePartner, getPartnerBySupplierId } from "~/modules/resources";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources",
     role: "employee"
   });
@@ -17,7 +17,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { supplierId } = params;
   if (!supplierId) throw notFound("supplierId not found");
 
-  const partner = await getPartnerBySupplierId(client, supplierId);
+  const partner = await getPartnerBySupplierId(supplierId);
   if (partner.error) {
     throw redirect(
       path.to.partners,
@@ -31,7 +31,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "resources"
   });
 
@@ -43,7 +43,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deletePartnerError } = await deletePartner(client, supplierId);
+  const { error: deletePartnerError } = await deletePartner(supplierId);
   if (deletePartnerError) {
     throw redirect(
       path.to.partners,

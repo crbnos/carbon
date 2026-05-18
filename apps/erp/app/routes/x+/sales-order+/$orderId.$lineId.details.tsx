@@ -47,7 +47,7 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales",
     bypassRls: true
   });
@@ -77,9 +77,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     line: line?.data ?? null,
     itemReplenishment:
       itemId && line.data.methodType === "Make to Order"
-        ? getItemReplenishment(serviceRole, itemId, companyId)
+        ? getItemReplenishment(serviceRole, itemId)
         : Promise.resolve({ data: null }),
-    files: getOpportunityLineDocuments(serviceRole, companyId, lineId, itemId),
+    files: getOpportunityLineDocuments(serviceRole, lineId, itemId),
     jobs: jobs?.data ?? [],
     shipments: shipments?.data ?? []
   };
@@ -103,7 +103,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked sales order. Reopen it first."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     create: "sales"
   });
 
@@ -131,7 +131,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     d.assetId = undefined;
   }
 
-  const updateSalesOrderLine = await upsertSalesOrderLine(client, {
+  const updateSalesOrderLine = await upsertSalesOrderLine({
     id: lineId,
     ...d,
     updatedBy: userId,

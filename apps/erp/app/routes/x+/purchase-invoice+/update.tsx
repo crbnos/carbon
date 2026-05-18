@@ -51,7 +51,6 @@ export async function action({ request }: ActionFunctionArgs) {
         if (supplier.data?.currencyCode) {
           currencyCode = supplier.data.currencyCode;
           const currency = await getCurrencyByCode(
-            client,
             companyGroupId,
             currencyCode
           );
@@ -113,7 +112,6 @@ export async function action({ request }: ActionFunctionArgs) {
     case "currencyCode":
       if (value) {
         const currency = await getCurrencyByCode(
-          client,
           companyGroupId,
           value as string
         );

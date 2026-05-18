@@ -7,7 +7,7 @@ import { deleteMethodMaterial } from "~/modules/items";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "parts"
   });
 
@@ -16,7 +16,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error("id not found");
   }
 
-  const deleteMaterial = await deleteMethodMaterial(client, id);
+  const deleteMaterial = await deleteMethodMaterial(id);
   if (deleteMaterial.error) {
     return data(
       {

@@ -15,7 +15,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "quality",
     role: "employee"
   });
@@ -27,14 +27,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [gauges, gaugeTypes] = await Promise.all([
-    getGauges(client, companyId, {
+    getGauges({
       search,
       limit,
       offset,
       sorts,
       filters
     }),
-    getGaugeTypesList(client, companyId)
+    getGaugeTypesList()
   ]);
 
   return {

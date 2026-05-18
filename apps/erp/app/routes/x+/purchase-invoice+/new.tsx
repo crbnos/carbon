@@ -28,7 +28,7 @@ export const handle: Handle = {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   // we don't use the client here -- if they have this permission, we'll upgrade to a service role if needed
-  const { companyId, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "invoicing"
   });
 
@@ -43,9 +43,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       if (!sourceDocumentId) throw new Error("Missing sourceDocumentId");
       result = await createPurchaseInvoiceFromPurchaseOrder(
         getCarbonServiceRole(),
-        sourceDocumentId,
-        companyId,
-        userId
+        sourceDocumentId
       );
 
       if (result.error || !result?.data) {
@@ -67,10 +65,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
+  const { companyId, companyGroupId, userId } = await requirePermissions(
+    request,
+    {
       create: "invoicing"
-    });
+    }
+  );
 
   const formData = await request.formData();
   const validation = await validator(purchaseInvoiceValidator).validate(
@@ -87,11 +87,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const useNextSequence = !invoiceId;
 
   if (useNextSequence) {
-    const nextSequence = await getNextSequence(
-      client,
-      "purchaseInvoice",
-      companyId
-    );
+    const nextSequence = await getNextSequence("purchaseInvoice");
     if (nextSequence.error) {
       throw redirect(
         path.to.newPurchaseInvoice,
@@ -106,7 +102,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (!invoiceId) throw new Error("invoiceId is not defined");
 
-  const createPurchaseInvoice = await upsertPurchaseInvoice(client, {
+  const createPurchaseInvoice = await upsertPurchaseInvoice({
     ...d,
     invoiceId,
     companyId,

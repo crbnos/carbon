@@ -22,7 +22,7 @@ import { DataType } from "~/modules/shared";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "settings",
     role: "employee"
   });
@@ -31,7 +31,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!table) throw notFound("Invalid table");
   if (!id) throw new Error("id is not found");
 
-  const customField = await getCustomField(client, id);
+  const customField = await getCustomField(id);
   if (customField.error) {
     throw redirect(
       path.to.customFieldList(table),

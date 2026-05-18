@@ -14,7 +14,7 @@ import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "quality"
   });
 
@@ -39,7 +39,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error(`Invalid type: ${type}`);
   }
 
-  const deletion = await deleteIssueAssociation(client, type, associationId);
+  const deletion = await deleteIssueAssociation(type, associationId);
 
   if (deletion.error) {
     throw redirect(

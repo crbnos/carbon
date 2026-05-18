@@ -7,7 +7,7 @@ import { deleteAttribute } from "~/modules/people";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "people"
   });
 
@@ -19,7 +19,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const deactivateAttribute = await deleteAttribute(client, attributeId);
+  const deactivateAttribute = await deleteAttribute(attributeId);
   if (deactivateAttribute.error) {
     throw redirect(
       path.to.attributes,

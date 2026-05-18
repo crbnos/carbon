@@ -14,7 +14,7 @@ import { path } from "~/utils/path";
 import { getCompanyId, processesQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources",
     role: "employee"
   });
@@ -22,7 +22,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { processId } = params;
   if (!processId) throw notFound("processId not found");
 
-  const process = await getProcess(client, processId);
+  const process = await getProcess(processId);
   if (process.error) {
     throw redirect(
       path.to.processes,
@@ -36,7 +36,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "resources"
   });
 
@@ -48,7 +48,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteProcessError } = await deleteProcess(client, processId);
+  const { error: deleteProcessError } = await deleteProcess(processId);
   if (deleteProcessError) {
     throw redirect(
       path.to.processes,

@@ -7,14 +7,14 @@ import { deleteWarehouseTransfer } from "~/modules/inventory";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "inventory"
   });
 
   const { transferId } = params;
   if (!transferId) throw new Response("Not found", { status: 404 });
 
-  const result = await deleteWarehouseTransfer(client, transferId);
+  const result = await deleteWarehouseTransfer(transferId);
 
   if (result.error) {
     throw redirect(

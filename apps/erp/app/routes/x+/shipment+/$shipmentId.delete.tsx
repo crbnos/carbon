@@ -7,7 +7,7 @@ import { deleteShipment, getShipment } from "~/modules/inventory";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "inventory"
   });
 
@@ -20,10 +20,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // make sure the shipment has not been posted
-  const { error: getShipmentError, data: shipment } = await getShipment(
-    client,
-    shipmentId
-  );
+  const { error: getShipmentError, data: shipment } =
+    await getShipment(shipmentId);
   if (getShipmentError) {
     throw redirect(
       path.to.shipments,
@@ -41,10 +39,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteShipmentError } = await deleteShipment(
-    client,
-    shipmentId
-  );
+  const { error: deleteShipmentError } = await deleteShipment(shipmentId);
   if (deleteShipmentError) {
     throw redirect(
       path.to.shipments,

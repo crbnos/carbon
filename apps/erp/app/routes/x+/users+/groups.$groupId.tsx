@@ -14,7 +14,7 @@ import {
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "users",
     role: "employee"
   });
@@ -22,7 +22,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { groupId } = params;
   if (!groupId) throw notFound("groupId not found");
 
-  const groupWithMembers = await getGroupMembers(client, groupId);
+  const groupWithMembers = await getGroupMembers(groupId);
 
   if (groupWithMembers.error) {
     redirect(
@@ -57,7 +57,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     view: "users"
   });
 
@@ -72,8 +72,8 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, name, selections } = validation.data;
 
   const [updateGroup, updateGroupMembers] = await Promise.all([
-    upsertGroup(client, { id, name, companyId }),
-    upsertGroupMembers(client, id, selections)
+    upsertGroup({ id, name, companyId }),
+    upsertGroupMembers(id, selections)
   ]);
 
   if (updateGroup.error)

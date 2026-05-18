@@ -7,7 +7,7 @@ import { updateQuoteOperationStepOrder } from "~/modules/production";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "sales"
   });
 
@@ -37,7 +37,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     })
   );
 
-  const updateSortOrders = await updateQuoteOperationStepOrder(client, updates);
+  const updateSortOrders = await updateQuoteOperationStepOrder(updates);
   if (updateSortOrders.some((update) => update.error))
     return data(
       {},

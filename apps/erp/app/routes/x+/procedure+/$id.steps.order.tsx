@@ -8,7 +8,7 @@ import { updateProcedureStepOrder } from "~/modules/production";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "production"
   });
 
@@ -28,7 +28,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     })
   );
 
-  const updateSortOrders = await updateProcedureStepOrder(client, updates);
+  const updateSortOrders = await updateProcedureStepOrder(updates);
   if (updateSortOrders.some((update) => update.error))
     return data(
       {},

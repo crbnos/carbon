@@ -17,7 +17,7 @@ import { getTagsList } from "~/modules/shared";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "settings",
     role: "employee"
   });
@@ -26,8 +26,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!table) throw notFound("Invalid table");
 
   const [customFields, tags] = await Promise.all([
-    getCustomFields(client, table, companyId),
-    getTagsList(client, companyId, table)
+    getCustomFields(table),
+    getTagsList(table)
   ]);
 
   if (customFields.error) {

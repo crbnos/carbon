@@ -47,7 +47,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await getLocationsList();
     if (locations.error || !locations.data?.length) {
       throw redirect(
         path.to.inventory,
@@ -60,7 +60,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  const stockTransfers = await getStockTransfers(client, companyId, {
+  const stockTransfers = await getStockTransfers({
     locationId,
     search,
     limit,

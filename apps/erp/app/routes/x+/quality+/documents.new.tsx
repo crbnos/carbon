@@ -19,7 +19,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "quality"
   });
   const formData = await request.formData();
@@ -51,7 +51,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const insertQualityDocument = await upsertQualityDocument(client, {
+  const insertQualityDocument = await upsertQualityDocument({
     ...d,
     content: contentJSON,
     companyId,

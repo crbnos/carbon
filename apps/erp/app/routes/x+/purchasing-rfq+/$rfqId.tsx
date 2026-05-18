@@ -29,7 +29,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
 
@@ -103,7 +103,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       })) ?? [],
     linkedQuotes: supplierQuotes,
     // Use rfqId as the interaction ID for document storage
-    files: getSupplierInteractionDocuments(serviceRole, companyId, rfqId)
+    files: getSupplierInteractionDocuments(serviceRole, rfqId)
   };
 }
 

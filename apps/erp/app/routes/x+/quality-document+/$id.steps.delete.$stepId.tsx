@@ -6,7 +6,7 @@ import { data } from "react-router";
 import { deleteQualityDocumentStep } from "~/modules/quality/quality.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "quality"
   });
 
@@ -14,7 +14,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (!stepId) throw new Error("stepId is not found");
 
-  const deleteStep = await deleteQualityDocumentStep(client, stepId, companyId);
+  const deleteStep = await deleteQualityDocumentStep(stepId);
   if (deleteStep.error) {
     return data(
       {

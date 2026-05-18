@@ -18,7 +18,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client } = await requirePermissions(request, {
     view: "inventory",
     role: "employee"
   });
@@ -30,14 +30,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [trackedEntities, companySettings] = await Promise.all([
-    getTrackedEntities(client, companyId, {
+    getTrackedEntities({
       search,
       limit,
       offset,
       sorts,
       filters
     }),
-    getCompanySettings(client, companyId)
+    getCompanySettings()
   ]);
 
   if (trackedEntities.error) {

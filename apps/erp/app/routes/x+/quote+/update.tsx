@@ -67,11 +67,7 @@ export async function action({ request }: ActionFunctionArgs) {
         })
         .in("id", ids as string[]);
     case "currencyCode":
-      const currency = await getCurrencyByCode(
-        client,
-        companyGroupId,
-        value as string
-      );
+      const currency = await getCurrencyByCode(companyGroupId, value as string);
       if (currency.data) {
         return await client
           .from("quote")

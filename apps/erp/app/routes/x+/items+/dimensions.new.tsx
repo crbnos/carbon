@@ -23,7 +23,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     create: "parts"
   });
 
@@ -41,9 +41,9 @@ export async function action({ request }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...rest } = validation.data;
 
-  const settings = await getCompanySettings(client, companyId);
+  const settings = await getCompanySettings();
 
-  const insertMaterialDimension = await upsertMaterialDimension(client, {
+  const insertMaterialDimension = await upsertMaterialDimension({
     ...rest,
     companyId,
     isMetric: settings?.data?.useMetric ?? false

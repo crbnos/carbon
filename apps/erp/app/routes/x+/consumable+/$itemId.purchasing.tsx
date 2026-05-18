@@ -19,18 +19,14 @@ import { ItemPurchasingForm, SupplierParts } from "~/modules/items/ui/Item";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts"
   });
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const consumablePurchasingResult = await getItemReplenishment(
-    client,
-    itemId,
-    companyId
-  );
+  const consumablePurchasingResult = await getItemReplenishment(itemId);
 
   if (consumablePurchasingResult.error) {
     throw redirect(
@@ -47,13 +43,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     consumablePurchasing: consumablePurchasingResult.data,
-    batchProperties: getBatchProperties(client, [itemId], companyId)
+    batchProperties: getBatchProperties([itemId])
   };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -69,7 +65,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateConsumablePurchasing = await upsertItemPurchasing(client, {
+  const updateConsumablePurchasing = await upsertItemPurchasing({
     ...validation.data,
     itemId,
     updatedBy: userId

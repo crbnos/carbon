@@ -32,7 +32,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteApiKeyError } = await deleteApiKey(client, id);
+  const { error: deleteApiKeyError } = await deleteApiKey(id);
   if (deleteApiKeyError) {
     throw redirect(
       `${path.to.apiKeys}?${getParams(request)}`,

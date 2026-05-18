@@ -177,7 +177,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       node.data.itemReadableId
     },"${node.data.description?.replace(/"/g, '""')}",${
       node.data.quantity
-    },${total},${unitCost},${totalCost},,${node.data.methodType},${
+    },${total},${unitCost},${totalCost},${node.data.methodType},${
       node.data.itemType
     },${node.level},${node.data.version || ""}\n`;
 

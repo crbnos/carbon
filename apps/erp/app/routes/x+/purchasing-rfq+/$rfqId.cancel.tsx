@@ -12,14 +12,14 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "purchasing"
   });
 
   const { rfqId: id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const update = await updatePurchasingRFQStatus(client, {
+  const update = await updatePurchasingRFQStatus({
     id,
     status: "Closed",
     assignee: null,
@@ -33,11 +33,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const linkedQuotes = await getLinkedSupplierQuotes(client, id);
+  const linkedQuotes = await getLinkedSupplierQuotes(id);
   if (!linkedQuotes.error && linkedQuotes.data) {
     await Promise.all(
       linkedQuotes.data.map((link) =>
-        updateSupplierQuoteStatus(client, {
+        updateSupplierQuoteStatus({
           id: link.supplierQuoteId,
           status: "Cancelled",
           assignee: undefined,

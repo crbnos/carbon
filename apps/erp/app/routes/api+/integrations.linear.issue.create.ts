@@ -24,7 +24,7 @@ export const action: ActionFunction = async ({ request }) => {
     const assigneeId = data.get("assignee") as string;
 
     const [carbonIssue, issue] = await Promise.all([
-      getIssueAction(client, actionId),
+      getIssueAction(actionId),
       linear.createIssue(companyId, {
         teamId,
         title,

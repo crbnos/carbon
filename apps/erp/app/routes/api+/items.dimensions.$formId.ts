@@ -5,7 +5,7 @@ import { getMaterialDimensionList } from "~/modules/items";
 import { getCompanySettings } from "~/modules/settings";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts",
     role: "employee"
   });
@@ -14,12 +14,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     return data({ error: "Form ID is required" }, { status: 400 });
   }
 
-  const settings = await getCompanySettings(client, companyId);
+  const settings = await getCompanySettings();
 
   return await getMaterialDimensionList(
-    client,
     params.formId,
-    settings?.data?.useMetric ?? false,
-    companyId
+    settings?.data?.useMetric ?? false
   );
 }

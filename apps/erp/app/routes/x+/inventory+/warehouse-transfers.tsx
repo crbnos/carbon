@@ -17,7 +17,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "inventory"
   });
 
@@ -27,7 +27,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const warehouseTransfers = await getWarehouseTransfers(client, companyId, {
+  const warehouseTransfers = await getWarehouseTransfers({
     search,
     limit,
     offset,

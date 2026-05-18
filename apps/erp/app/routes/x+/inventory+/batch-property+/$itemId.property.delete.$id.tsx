@@ -5,14 +5,14 @@ import { deleteBatchProperty } from "~/modules/inventory";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "inventory"
   });
 
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const remove = await deleteBatchProperty(client, id);
+  const remove = await deleteBatchProperty(id);
 
   if (remove.error) {
     return {

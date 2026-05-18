@@ -17,7 +17,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources",
     role: "employee"
   });
@@ -29,14 +29,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [trainings, tags] = await Promise.all([
-    getTrainings(client, companyId, {
+    getTrainings({
       search,
       limit,
       offset,
       sorts,
       filters
     }),
-    getTagsList(client, companyId, "training")
+    getTagsList("training")
   ]);
 
   if (trainings.error) {

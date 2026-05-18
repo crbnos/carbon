@@ -11,7 +11,7 @@ import {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "resources"
   });
 
@@ -47,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  const update = await upsertTrainingQuestion(client, {
+  const update = await upsertTrainingQuestion({
     id: questionId,
     ...rest,
     options: options.length > 0 ? options : rest.options,

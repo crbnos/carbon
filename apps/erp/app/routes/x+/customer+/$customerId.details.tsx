@@ -13,7 +13,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "sales"
   });
 
@@ -33,7 +33,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const update = await upsertCustomer(client, {
+  const update = await upsertCustomer({
     id,
     ...d,
     customFields: setCustomFields(formData),

@@ -6,11 +6,11 @@ import { data } from "react-router";
 import { getServicesList } from "~/modules/items";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts"
   });
 
-  const services = await getServicesList(client, companyId);
+  const services = await getServicesList();
   if (services.error) {
     return data(
       services,

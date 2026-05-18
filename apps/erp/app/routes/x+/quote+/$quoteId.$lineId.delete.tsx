@@ -9,7 +9,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "sales"
   });
 
@@ -28,7 +28,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked quote. Reopen it first."
   });
 
-  const deleteLine = await deleteQuoteLine(client, quoteLineId);
+  const deleteLine = await deleteQuoteLine(quoteLineId);
 
   if (deleteLine.error) {
     return data(

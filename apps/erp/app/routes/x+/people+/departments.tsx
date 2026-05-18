@@ -28,13 +28,13 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "people",
     role: "employee",
     bypassRls: true
   });
 
-  const departments = await getDepartmentsTree(client, companyId);
+  const departments = await getDepartmentsTree();
 
   if (departments.error) {
     throw redirect(

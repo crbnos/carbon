@@ -26,7 +26,7 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing",
     role: "employee",
     bypassRls: true
@@ -36,7 +36,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!orderId) throw notFound("orderId not found");
   if (!lineId) throw notFound("lineId not found");
 
-  const line = await getPurchaseOrderLine(client, lineId);
+  const line = await getPurchaseOrderLine(lineId);
   if (line.error) {
     throw redirect(
       path.to.purchaseOrderDetails(orderId),
@@ -46,7 +46,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     line: line?.data ?? null,
-    files: getSupplierInteractionLineDocuments(client, companyId, lineId)
+    files: getSupplierInteractionLineDocuments(lineId)
   };
 }
 
@@ -95,7 +95,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase order."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "purchasing"
   });
 
@@ -111,7 +111,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const updatePurchaseOrderLine = await upsertPurchaseOrderLine(client, {
+  const updatePurchaseOrderLine = await upsertPurchaseOrderLine({
     id: lineId,
     ...d,
     updatedBy: userId,

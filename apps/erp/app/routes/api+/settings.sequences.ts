@@ -3,7 +3,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { getSequencesList } from "~/modules/settings";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
   const url = new URL(request.url);
   const table = url.searchParams.get("table");
@@ -15,5 +15,5 @@ export async function loader({ request }: LoaderFunctionArgs) {
     };
   }
 
-  return await getSequencesList(client, table, companyId);
+  return await getSequencesList(table);
 }

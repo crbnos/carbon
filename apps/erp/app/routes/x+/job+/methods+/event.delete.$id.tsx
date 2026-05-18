@@ -8,14 +8,14 @@ import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "production"
   });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const deletion = await deleteProductionEvent(client, id);
+  const deletion = await deleteProductionEvent(id);
   if (deletion.error) {
     throw redirect(
       requestReferrer(request) ?? path.to.jobs,

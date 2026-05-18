@@ -40,7 +40,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked sales invoice. Reopen it first."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "invoicing"
   });
 
@@ -53,7 +53,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateSalesInvoiceShipment = await upsertSalesInvoiceShipment(client, {
+  const updateSalesInvoiceShipment = await upsertSalesInvoiceShipment({
     ...validation.data,
     id: invoiceId,
     updatedBy: userId,

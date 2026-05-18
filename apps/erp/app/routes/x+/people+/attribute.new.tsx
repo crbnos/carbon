@@ -9,7 +9,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     create: "people"
   });
 
@@ -29,7 +29,7 @@ export async function action({ request }: ActionFunctionArgs) {
     canSelfManage
   } = validation.data;
 
-  const createAttribute = await insertAttribute(client, {
+  const createAttribute = await insertAttribute({
     name,
     attributeDataTypeId: Number(attributeDataTypeId),
     userAttributeCategoryId,

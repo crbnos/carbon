@@ -20,7 +20,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "settings"
   });
 
@@ -31,14 +31,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [webhooks, config] = await Promise.all([
-    getWebhooks(client, companyId, {
+    getWebhooks({
       limit,
       offset,
       sorts,
       search,
       filters
     }),
-    getConfig(client)
+    getConfig()
   ]);
 
   if (webhooks.error) {

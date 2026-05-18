@@ -50,7 +50,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       unitOfMeasureCode: "EA",
       order: 1
     };
-    const insertLine = await upsertSalesRFQLine(client, {
+    const insertLine = await upsertSalesRFQLine({
       ...data,
       description: "",
       companyId,

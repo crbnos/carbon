@@ -17,7 +17,7 @@ import { getCompany, getCompanySettings } from "~/modules/settings";
 import { getBase64ImageFromSupabase } from "~/modules/shared";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
   const { id } = params;
   if (!id) throw new Error("Could not find job make method id");
@@ -26,7 +26,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // we add the companyId to make sure we belong to the company
   // while allowing guys on the shop floor with no permissions to download the traveler
-  const jobMakeMethod = await getJobMakeMethodById(serviceRole, id, companyId);
+  const jobMakeMethod = await getJobMakeMethodById(serviceRole, id);
   if (jobMakeMethod.error) {
     console.error(jobMakeMethod.error);
     throw new Error("Failed to load job make method");

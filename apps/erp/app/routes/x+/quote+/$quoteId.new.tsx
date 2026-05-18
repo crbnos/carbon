@@ -85,11 +85,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const quantities = d.quantity ?? [1];
     const priceResult = await resolvePurchaseToOrderPrices(
       serviceRole,
-      companyId,
       quoteId,
       quoteLineId,
-      quantities,
-      userId
+      quantities
     );
     if (priceResult?.error) {
       throw redirect(
@@ -106,11 +104,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const quantities = d.quantity ?? [1];
     const priceResult = await resolveQuoteLinePrices(
       serviceRole,
-      companyId,
       quoteId,
       quoteLineId,
-      quantities,
-      userId
+      quantities
     );
     if (priceResult?.error) {
       throw redirect(
@@ -148,8 +144,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const recalcResult = await recalculateQuoteLinePrices(
       serviceRole,
       quoteId,
-      quoteLineId,
-      userId
+      quoteLineId
     );
     if (recalcResult?.error) {
       throw redirect(

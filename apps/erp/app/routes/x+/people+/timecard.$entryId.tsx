@@ -13,14 +13,14 @@ import { TimecardForm } from "~/modules/people/ui/Timecards";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "people"
   });
 
   const { entryId } = params;
   if (!entryId) throw notFound("Entry ID was not found");
 
-  const entry = await getTimeCardEntry(client, entryId);
+  const entry = await getTimeCardEntry(entryId);
 
   if (entry.error) {
     throw redirect(
@@ -36,7 +36,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "people"
   });
 
@@ -50,7 +50,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, clockIn, clockOut, note } = validation.data;
   if (!id) throw notFound("Entry ID was not found");
 
-  const result = await updateTimeCardEntry(client, {
+  const result = await updateTimeCardEntry({
     entryId: id,
     clockIn,
     clockOut: clockOut || null,

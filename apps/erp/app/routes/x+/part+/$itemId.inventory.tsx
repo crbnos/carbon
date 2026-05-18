@@ -63,7 +63,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await getLocationsList();
     if (locations.error || !locations.data?.length) {
       throw redirect(
         path.to.part(itemId),
@@ -76,12 +76,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let [partInventory] = await Promise.all([
-    getPickMethod(client, itemId, companyId, locationId)
-  ]);
+  let [partInventory] = await Promise.all([getPickMethod(itemId, locationId)]);
 
   if (partInventory.error || !partInventory.data) {
-    const insertPickMethod = await upsertPickMethod(client, {
+    const insertPickMethod = await upsertPickMethod({
       itemId,
       companyId,
       locationId,
@@ -99,7 +97,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       );
     }
 
-    partInventory = await getPickMethod(client, itemId, companyId, locationId);
+    partInventory = await getPickMethod(itemId, locationId);
     if (partInventory.error || !partInventory.data) {
       throw redirect(
         path.to.part(itemId),
@@ -118,10 +116,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     bomHasShelfLifeManagedInput,
     rulesData
   ] = await Promise.all([
-    getItemQuantities(client, itemId, companyId, locationId),
-    getItemStorageUnitQuantities(client, itemId, companyId, locationId),
-    getItemShelfLife(client, itemId),
-    getBomHasShelfLifeManagedInput(client, itemId, companyId),
+    getItemQuantities(itemId, locationId),
+    getItemStorageUnitQuantities(itemId, locationId),
+    getItemShelfLife(itemId),
+    getBomHasShelfLifeManagedInput(itemId),
     getItemRulesDataForItem(client, itemId, companyId)
   ]);
   if (quantities.error) {
@@ -145,10 +143,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     itemStorageUnitQuantities.data,
     (row) => row.trackedEntityId
   );
-  const trackedEntityExpirations = await getTrackedEntityExpirations(
-    client,
-    trackedEntityIds
-  );
+  const trackedEntityExpirations =
+    await getTrackedEntityExpirations(trackedEntityIds);
 
   return {
     partInventory: partInventory.data,

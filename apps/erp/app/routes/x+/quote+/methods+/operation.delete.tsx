@@ -5,7 +5,7 @@ import { data } from "react-router";
 import { recalculateQuoteLinePrices } from "~/modules/sales";
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {
+  const { client } = await requirePermissions(request, {
     delete: "sales"
   });
 
@@ -44,8 +44,7 @@ export async function action({ request }: ActionFunctionArgs) {
     await recalculateQuoteLinePrices(
       serviceRole,
       op.data.quoteId,
-      op.data.quoteLineId,
-      userId
+      op.data.quoteLineId
     );
   }
 

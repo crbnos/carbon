@@ -10,14 +10,14 @@ import { ProfileForm } from "~/modules/account/ui/Profile";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "people"
   });
 
   const { personId } = params;
   if (!personId) throw new Error("Could not find personId");
 
-  const account = await getAccount(client, personId);
+  const account = await getAccount(personId);
   if (account.error) {
     throw redirect(
       path.to.people,

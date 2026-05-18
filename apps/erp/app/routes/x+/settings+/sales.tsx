@@ -68,14 +68,14 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "settings"
   });
 
   const [companySettings, terms, arBillingAddress] = await Promise.all([
-    getCompanySettings(client, companyId),
-    getTerms(client, companyId),
-    getAccountsReceivableBillingAddress(client, companyId)
+    getCompanySettings(),
+    getTerms(),
+    getAccountsReceivableBillingAddress()
   ]);
   if (!companySettings.data)
     throw redirect(
@@ -93,7 +93,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "settings"
   });
 
@@ -103,11 +103,8 @@ export async function action({ request }: ActionFunctionArgs) {
   switch (intent) {
     case "accountsReceivableAddressToggle":
       const arToggleEnabled = formData.get("enabled") === "true";
-      const arToggleResult = await updateAccountsReceivableAddressSetting(
-        client,
-        companyId,
-        arToggleEnabled
-      );
+      const arToggleResult =
+        await updateAccountsReceivableAddressSetting(arToggleEnabled);
       if (arToggleResult.error) {
         return { success: false, message: arToggleResult.error.message };
       }
@@ -126,8 +123,6 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       const digitalQuote = await updateDigitalQuoteSetting(
-        client,
-        companyId,
         validation.data.digitalQuoteEnabled,
         validation.data.digitalQuoteNotificationGroup ?? [],
         validation.data.digitalQuoteIncludesPurchaseOrders
@@ -139,11 +134,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     case "pdfs": {
       const pdfEnabled = formData.get("enabled") === "true";
-      const thumbnailsResult = await updateSalesPdfThumbnails(
-        client,
-        companyId,
-        pdfEnabled
-      );
+      const thumbnailsResult = await updateSalesPdfThumbnails(pdfEnabled);
 
       if (thumbnailsResult.error)
         return { success: false, message: thumbnailsResult.error.message };
@@ -160,8 +151,6 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       const rfqSettings = await updateRfqReadySetting(
-        client,
-        companyId,
         rfqValidation.data.rfqReadyNotificationGroup ?? []
       );
 
@@ -180,8 +169,6 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       const categoryMarkupsResult = await updateQuoteLineCategoryMarkups(
-        client,
-        companyId,
         categoryMarkupsValidation.data
       );
 
@@ -206,10 +193,7 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       const arBillingResult = await updateAccountsReceivableBillingAddress(
-        client,
-        companyId,
-        arBillingValidation.data,
-        userId
+        arBillingValidation.data
       );
 
       if (arBillingResult.error) {
@@ -231,8 +215,6 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       const defaultCustomerCcResult = await updateDefaultCustomerCc(
-        client,
-        companyId,
         defaultCustomerCcValidation.data.defaultCustomerCc ?? []
       );
 

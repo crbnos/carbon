@@ -3,9 +3,9 @@ import type { LoaderFunctionArgs } from "react-router";
 import { getSuppliersList } from "~/modules/purchasing";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
 
-  return await getSuppliersList(client, companyId);
+  return await getSuppliersList();
 }

@@ -11,7 +11,7 @@ import {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "production"
   });
 
@@ -41,7 +41,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     })
   );
 
-  const updateSortOrders = await updateJobOperationOrder(client, updates);
+  const updateSortOrders = await updateJobOperationOrder(updates);
   if (updateSortOrders.some((update) => update.error))
     return data(
       {},

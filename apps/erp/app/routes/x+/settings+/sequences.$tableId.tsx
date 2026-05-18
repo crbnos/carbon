@@ -13,7 +13,7 @@ import {
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "settings",
     role: "employee"
   });
@@ -21,7 +21,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { tableId } = params;
   if (!tableId) throw notFound("tableId not found");
 
-  const sequence = await getSequence(client, tableId, companyId);
+  const sequence = await getSequence(tableId);
   if (sequence.error) {
     throw redirect(
       path.to.sequences,
@@ -36,7 +36,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "settings"
   });
 
@@ -50,7 +50,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { table, ...d } = validation.data;
 
-  const update = await updateSequence(client, table, companyId, {
+  const update = await updateSequence(table, {
     ...d,
     updatedBy: userId
   });

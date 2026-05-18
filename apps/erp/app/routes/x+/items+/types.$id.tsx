@@ -19,7 +19,7 @@ import { getParams, path } from "~/utils/path";
 import { getCompanyId, materialTypesQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts",
     role: "employee"
   });
@@ -27,7 +27,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const materialType = await getMaterialType(client, id);
+  const materialType = await getMaterialType(id);
 
   if (materialType.data?.companyId === null) {
     throw redirect(
@@ -46,7 +46,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "parts"
   });
 
@@ -60,7 +60,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateMaterialType = await upsertMaterialType(client, {
+  const updateMaterialType = await upsertMaterialType({
     id: id,
     ...validation.data
   });

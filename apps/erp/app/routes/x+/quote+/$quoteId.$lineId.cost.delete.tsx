@@ -10,7 +10,7 @@ import {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
 
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "sales"
   });
 
@@ -42,7 +42,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   delete parsedCharges.data[id];
 
-  const { error } = await upsertQuoteLineAdditionalCharges(client, lineId, {
+  const { error } = await upsertQuoteLineAdditionalCharges(lineId, {
     additionalCharges: parsedCharges.data,
     updatedBy: userId
   });

@@ -68,12 +68,12 @@ function usePlans() {
 }
 
 export async function loader({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  const { companyId } = await requirePermissions(request, {});
   if (CarbonEdition !== Edition.Cloud) {
     throw redirect(path.to.authenticatedRoot);
   }
 
-  const plans = await getPlans(client);
+  const plans = await getPlans();
 
   if (!companyId) {
     throw redirect(path.to.onboarding.company);
@@ -102,7 +102,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const [user, company] = await Promise.all([
     getUser(client, userId),
-    getCompany(client, companyId)
+    getCompany()
   ]);
 
   if (!user.data) {

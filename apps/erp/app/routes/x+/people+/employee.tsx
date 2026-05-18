@@ -11,7 +11,7 @@ import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client } = await requirePermissions(request, {
     view: "people",
     role: "employee",
     bypassRls: true
@@ -25,9 +25,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [attributeCategories, employeeTypes, people] = await Promise.all([
-    getAttributeCategories(client, companyId),
-    getEmployeeTypes(client, companyId),
-    getPeople(client, companyId, { search, limit, offset, sorts, filters })
+    getAttributeCategories(),
+    getEmployeeTypes(),
+    getPeople(client, { search, limit, offset, sorts, filters })
   ]);
   if (attributeCategories.error) {
     throw redirect(

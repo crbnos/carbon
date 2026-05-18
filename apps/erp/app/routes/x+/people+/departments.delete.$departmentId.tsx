@@ -9,7 +9,7 @@ import { deleteDepartment, getDepartment } from "~/modules/people";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "people",
     role: "employee"
   });
@@ -17,7 +17,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { departmentId } = params;
   if (!departmentId) throw notFound("departmentId not found");
 
-  const department = await getDepartment(client, departmentId);
+  const department = await getDepartment(departmentId);
   if (department.error) {
     throw redirect(
       path.to.departments,
@@ -31,7 +31,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "people"
   });
 
@@ -43,10 +43,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteDepartmentError } = await deleteDepartment(
-    client,
-    departmentId
-  );
+  const { error: deleteDepartmentError } = await deleteDepartment(departmentId);
   if (deleteDepartmentError) {
     throw redirect(
       path.to.departments,

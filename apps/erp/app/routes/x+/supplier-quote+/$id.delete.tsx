@@ -8,14 +8,14 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "purchasing"
   });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const quoteDelete = await deleteSupplierQuote(client, id);
+  const quoteDelete = await deleteSupplierQuote(id);
 
   if (quoteDelete.error) {
     return data(

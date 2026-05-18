@@ -35,11 +35,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "settings"
   });
 
-  const companySettings = await getCompanySettings(client, companyId);
+  const companySettings = await getCompanySettings();
 
   if (!companySettings.data)
     throw redirect(
@@ -53,7 +53,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "settings"
   });
 
@@ -62,11 +62,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const enabled = formData.get("enabled") === "true";
 
   if (intent === "accountingEnabled") {
-    const update = await updateAccountingEnabledSetting(
-      client,
-      companyId,
-      enabled
-    );
+    const update = await updateAccountingEnabledSetting(enabled);
     if (update.error) return { success: false, message: update.error.message };
     return { success: true, message: "Accounting settings updated" };
   }

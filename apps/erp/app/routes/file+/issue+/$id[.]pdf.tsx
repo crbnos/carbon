@@ -16,7 +16,7 @@ import {
 import { getCompany } from "~/modules/settings";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client } = await requirePermissions(request, {
     view: "quality"
   });
 
@@ -33,18 +33,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     requiredActions,
     items
   ] = await Promise.all([
-    getCompany(client, companyId),
-    getIssue(client, id),
-    getIssueTypes(client, companyId),
-    getIssueActionTasks(client, id, companyId),
-    getIssueApprovalTasks(client, id, companyId),
-    getIssueReviewers(client, id, companyId),
-    getRequiredActionsList(client, companyId),
-    getIssueItems(client, id, companyId)
+    getCompany(),
+    getIssue(id),
+    getIssueTypes(),
+    getIssueActionTasks(id),
+    getIssueApprovalTasks(id),
+    getIssueReviewers(id),
+    getRequiredActionsList(),
+    getIssueItems(id)
   ]);
 
   // Get associations separately (returns plain object, not wrapped in { data })
-  const associations = await getIssueAssociations(client, id, companyId);
+  const associations = await getIssueAssociations(id);
 
   // Get job operation step records for action tasks
   const actionTaskIds = actionTasks.data?.map((task) => task.id) ?? [];

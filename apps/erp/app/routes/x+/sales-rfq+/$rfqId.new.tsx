@@ -34,7 +34,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked RFQ. Reopen it first."
   });
 
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "sales"
   });
 
@@ -48,7 +48,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const insertLine = await upsertSalesRFQLine(client, {
+  const insertLine = await upsertSalesRFQLine({
     ...d,
     companyId,
     createdBy: userId,

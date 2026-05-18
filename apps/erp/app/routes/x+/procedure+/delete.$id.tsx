@@ -11,7 +11,7 @@ import { path } from "~/utils/path";
 import { getCompanyId, proceduresQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "production"
   });
 
@@ -19,7 +19,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (!id) throw new Error("id is not found");
 
-  const mutation = await deleteProcedure(client, id);
+  const mutation = await deleteProcedure(id);
   if (mutation.error) {
     return data(
       {

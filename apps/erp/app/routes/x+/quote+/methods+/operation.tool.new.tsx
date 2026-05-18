@@ -9,7 +9,7 @@ import { operationToolValidator } from "~/modules/shared";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "sales"
   });
 
@@ -20,7 +20,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const insert = await upsertQuoteOperationTool(client, {
+  const insert = await upsertQuoteOperationTool({
     ...validation.data,
     companyId,
     createdBy: userId

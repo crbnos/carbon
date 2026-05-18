@@ -43,7 +43,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase order."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "purchasing"
   });
 
@@ -56,7 +56,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updatePurchaseOrderPayment = await upsertPurchaseOrderPayment(client, {
+  const updatePurchaseOrderPayment = await upsertPurchaseOrderPayment({
     ...validation.data,
     id: orderId,
     updatedBy: userId,

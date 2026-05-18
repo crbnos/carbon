@@ -7,7 +7,7 @@ import { updateJobMaterialOrder } from "~/modules/production";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "production"
   });
 
@@ -27,7 +27,7 @@ export async function action({ request }: ActionFunctionArgs) {
     })
   );
 
-  const updateSortOrders = await updateJobMaterialOrder(client, updates);
+  const updateSortOrders = await updateJobMaterialOrder(updates);
   if (updateSortOrders.some((update) => update.error))
     return data(
       {},

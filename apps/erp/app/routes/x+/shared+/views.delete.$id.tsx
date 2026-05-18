@@ -8,14 +8,14 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
   const { id } = params;
   if (!id) {
     throw new Error("id not found");
   }
 
-  const deleteView = await deleteSavedView(client, id);
+  const deleteView = await deleteSavedView(id);
   if (deleteView.error) {
     return data(
       {

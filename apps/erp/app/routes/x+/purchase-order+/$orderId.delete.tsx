@@ -15,7 +15,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     delete: "purchasing"
   });
 
@@ -61,15 +61,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
         },
         userId
       );
-      const isApprover = await canApproveRequest(
-        serviceRole,
-        {
-          amount: approvalRequest.data.amount,
-          documentType: approvalRequest.data.documentType,
-          companyId: approvalRequest.data.companyId
-        },
-        userId
-      );
+      const isApprover = await canApproveRequest(serviceRole, {
+        amount: approvalRequest.data.amount,
+        documentType: approvalRequest.data.documentType,
+        companyId: approvalRequest.data.companyId
+      });
 
       // Only requester can delete POs in "Needs Approval" status
       // Approvers should reject instead, normal users have no permission
@@ -120,7 +116,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const remove = await deletePurchaseOrder(client, orderId);
+  const remove = await deletePurchaseOrder(orderId);
 
   if (remove.error) {
     console.error("Failed to delete purchase order:", remove.error);

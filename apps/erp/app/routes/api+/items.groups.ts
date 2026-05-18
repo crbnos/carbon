@@ -8,9 +8,9 @@ import { getItemPostingGroupsList } from "~/modules/items";
 import { getCompanyId, itemPostingGroupsQuery } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
-  return await getItemPostingGroupsList(client, companyId);
+  return await getItemPostingGroupsList();
 }
 
 export async function clientLoader({ serverLoader }: ClientLoaderFunctionArgs) {

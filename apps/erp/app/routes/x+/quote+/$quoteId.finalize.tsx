@@ -40,7 +40,7 @@ export async function action(args: ActionFunctionArgs) {
   let fileName: string;
   let documentFilePath: string;
 
-  const quote = await getQuote(client, quoteId);
+  const quote = await getQuote(quoteId);
   if (quote.error) {
     throw redirect(
       path.to.quote(quoteId),
@@ -48,7 +48,7 @@ export async function action(args: ActionFunctionArgs) {
     );
   }
 
-  const externalLink = await upsertExternalLink(client, {
+  const externalLink = await upsertExternalLink({
     id: quote.data.externalLinkId ?? undefined, // TODO
     documentType: "Quote",
     documentId: quoteId,
@@ -97,7 +97,7 @@ export async function action(args: ActionFunctionArgs) {
       );
     }
 
-    const createDocument = await upsertDocument(client, {
+    const createDocument = await upsertDocument({
       path: documentFilePath,
       name: fileName,
       size: Math.round(file.byteLength / 1024),
@@ -119,7 +119,7 @@ export async function action(args: ActionFunctionArgs) {
       );
     }
 
-    const finalize = await finalizeQuote(client, quoteId, userId);
+    const finalize = await finalizeQuote(quoteId);
     if (finalize.error) {
       throw redirect(
         path.to.quote(quoteId),
@@ -154,10 +154,10 @@ export async function action(args: ActionFunctionArgs) {
 
         const [company, companySettings, customer, customerContact, user] =
           await Promise.all([
-            getCompany(client, companyId),
-            getCompanySettings(client, companyId),
-            getCustomer(client, quote.data.customerId!),
-            getCustomerContact(client, customerContactId),
+            getCompany(),
+            getCompanySettings(),
+            getCustomer(quote.data.customerId!),
+            getCustomerContact(customerContactId),
             getUser(client, userId)
           ]);
 

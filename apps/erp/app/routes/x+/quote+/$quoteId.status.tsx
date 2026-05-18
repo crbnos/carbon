@@ -8,7 +8,7 @@ import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "sales"
   });
 
@@ -25,7 +25,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const update = await updateQuoteStatus(client, {
+  const update = await updateQuoteStatus({
     id,
     status,
     assignee: ["Closed"].includes(status) ? null : undefined,

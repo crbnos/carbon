@@ -69,7 +69,7 @@ type UserAnswer = {
 };
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
-  const { client, userId, companyId } = await requirePermissions(request, {
+  const { userId, companyId } = await requirePermissions(request, {
     role: "employee"
   });
 
@@ -78,7 +78,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     throw new Response("Assignment ID is required", { status: 400 });
   }
 
-  const assignment = await getTrainingAssignmentForCompletion(client, id);
+  const assignment = await getTrainingAssignmentForCompletion(id);
 
   if (assignment.error || !assignment.data) {
     throw new Response("Training assignment not found", { status: 404 });
@@ -116,7 +116,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, userId, companyId } = await requirePermissions(request, {
+  const { userId, companyId } = await requirePermissions(request, {
     role: "employee"
   });
 
@@ -216,7 +216,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const passed = score >= PASSING_THRESHOLD;
 
   if (passed) {
-    await insertTrainingCompletion(client, {
+    await insertTrainingCompletion({
       trainingAssignmentId: id,
       employeeId: userId,
       period: null,

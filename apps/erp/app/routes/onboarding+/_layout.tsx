@@ -18,12 +18,12 @@ import { onboardingSequence, path } from "~/utils/path";
 export const shouldRevalidate: ShouldRevalidateFunction = () => true;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { companyId, userId } = await requirePermissions(request, {});
 
   const [company, stripeCustomer, locations] = await Promise.all([
-    getCompany(client, companyId),
+    getCompany(),
     getStripeCustomerByCompanyId(companyId, userId),
-    getLocationsList(client, companyId)
+    getLocationsList()
   ]);
 
   const pathname = new URL(request.url).pathname;

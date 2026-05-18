@@ -9,13 +9,13 @@ import { deleteKanban, getKanban } from "~/modules/inventory";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "inventory"
   });
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const kanban = await getKanban(client, id);
+  const kanban = await getKanban(id);
   if (kanban.error) {
     throw redirect(
       path.to.kanbans,
@@ -27,7 +27,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "inventory"
   });
 
@@ -39,7 +39,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteKanbanError } = await deleteKanban(client, id);
+  const { error: deleteKanbanError } = await deleteKanban(id);
   if (deleteKanbanError) {
     throw redirect(
       path.to.kanbans,

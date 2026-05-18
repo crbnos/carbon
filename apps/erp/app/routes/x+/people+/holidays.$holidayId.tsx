@@ -10,14 +10,14 @@ import { getCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "people"
   });
 
   const { holidayId } = params;
   if (!holidayId) throw notFound("Holiday ID was not found");
 
-  const holiday = await getHoliday(client, holidayId);
+  const holiday = await getHoliday(holidayId);
 
   if (holiday.error) {
     throw redirect(
@@ -33,7 +33,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     create: "people"
   });
 
@@ -47,7 +47,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, name, date } = validation.data;
   if (!id) throw notFound("Holiday ID was not found");
 
-  const updateHoliday = await upsertHoliday(client, {
+  const updateHoliday = await upsertHoliday({
     id,
     name,
     date,

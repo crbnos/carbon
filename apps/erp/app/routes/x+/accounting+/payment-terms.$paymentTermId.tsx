@@ -20,7 +20,7 @@ import { getParams, path } from "~/utils/path";
 import { getCompanyId, paymentTermsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "accounting",
     role: "employee"
   });
@@ -28,7 +28,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { paymentTermId } = params;
   if (!paymentTermId) throw notFound("paymentTermId not found");
 
-  const paymentTerm = await getPaymentTerm(client, paymentTermId);
+  const paymentTerm = await getPaymentTerm(paymentTermId);
 
   return {
     paymentTerm: paymentTerm?.data ?? null
@@ -37,7 +37,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "accounting"
   });
 
@@ -51,7 +51,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, ...d } = validation.data;
   if (!id) throw new Error("id not found");
 
-  const updatePaymentTerm = await upsertPaymentTerm(client, {
+  const updatePaymentTerm = await upsertPaymentTerm({
     id,
     ...d,
     updatedBy: userId,

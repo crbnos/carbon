@@ -7,9 +7,9 @@ import { getCurrenciesList } from "~/modules/accounting";
 import { currenciesQuery } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
-  return await getCurrenciesList(client);
+  return await getCurrenciesList();
 }
 
 export async function clientLoader({ serverLoader }: ClientLoaderFunctionArgs) {

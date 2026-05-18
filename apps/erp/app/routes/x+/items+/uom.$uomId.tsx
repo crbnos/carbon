@@ -19,7 +19,7 @@ import { getParams, path } from "~/utils/path";
 import { getCompanyId, uomsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts",
     role: "employee"
   });
@@ -27,7 +27,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { uomId } = params;
   if (!uomId) throw notFound("uomId not found");
 
-  const unitOfMeasure = await getUnitOfMeasure(client, uomId, companyId);
+  const unitOfMeasure = await getUnitOfMeasure(uomId);
 
   return {
     unitOfMeasure: unitOfMeasure?.data ?? null
@@ -36,7 +36,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -50,7 +50,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, ...d } = validation.data;
   if (!id) throw notFound("id not found");
 
-  const updateUnitOfMeasure = await upsertUnitOfMeasure(client, {
+  const updateUnitOfMeasure = await upsertUnitOfMeasure({
     id,
     ...d,
     updatedBy: userId,

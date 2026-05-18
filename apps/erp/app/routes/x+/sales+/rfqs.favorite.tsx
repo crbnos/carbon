@@ -8,7 +8,7 @@ import { updateSalesRFQFavorite } from "~/modules/sales";
 import { favoriteSchema } from "~/types/validators";
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     view: "sales"
   });
 
@@ -21,7 +21,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { id, favorite } = validation.data;
 
-  const result = await updateSalesRFQFavorite(client, {
+  const result = await updateSalesRFQFavorite({
     id,
     favorite: favorite === "favorite",
     userId

@@ -11,7 +11,7 @@ import {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     delete: "production"
   });
 
@@ -24,7 +24,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error("jobId not found");
   }
 
-  const deleteMaterial = await deleteJobMaterial(client, id);
+  const deleteMaterial = await deleteJobMaterial(id);
   if (deleteMaterial.error) {
     return data(
       {

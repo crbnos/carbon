@@ -69,7 +69,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     case "weeklyTracking": {
       const [issuesResult, settingsResult] = await Promise.all([
         getIssuesQuery(client, { companyId, issueTypeId }),
-        getCompanySettings(client, companyId)
+        getCompanySettings()
       ]);
 
       const issues = issuesResult.data ?? [];

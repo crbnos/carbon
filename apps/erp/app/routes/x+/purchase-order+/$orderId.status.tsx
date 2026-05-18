@@ -52,7 +52,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const requiresDeletePermission =
     (status === "Draft" && isCurrentlyLocked) || status === "Closed";
 
-  const { client, userId, companyId } = await requirePermissions(request, {
+  const { userId, companyId } = await requirePermissions(request, {
     ...(requiresDeletePermission
       ? { delete: "purchasing" }
       : { update: "purchasing" })
@@ -114,15 +114,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
         // This prevents non-approvers from bypassing the approval workflow
         const latestApproval = pendingApprovals.data[0]; // Get the latest pending request
         const isRequester = latestApproval.requestedBy === userId;
-        const isApprover = await canApproveRequest(
-          serviceRole,
-          {
-            amount: latestApproval.amount,
-            documentType: latestApproval.documentType,
-            companyId: latestApproval.companyId
-          },
-          userId
-        );
+        const isApprover = await canApproveRequest(serviceRole, {
+          amount: latestApproval.amount,
+          documentType: latestApproval.documentType,
+          companyId: latestApproval.companyId
+        });
 
         if (!isRequester && !isApprover) {
           throw redirect(
@@ -154,7 +150,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  const update = await updatePurchaseOrderStatus(client, {
+  const update = await updatePurchaseOrderStatus({
     id,
     status,
     assignee: ["Closed"].includes(status) ? null : undefined,

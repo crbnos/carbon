@@ -22,11 +22,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const precision = Number(formData.get("precision") ?? 2);
 
-  const updatePrecision = await updateQuoteLinePrecision(
-    client,
-    lineId,
-    precision
-  );
+  const updatePrecision = await updateQuoteLinePrecision(lineId, precision);
   if (updatePrecision.error) {
     return data(
       { data: null, error: updatePrecision.error.message },
@@ -51,7 +47,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }));
 
     const updatePrices = await upsertQuoteLinePrices(
-      client,
       quoteId,
       lineId,
       roundedPrices

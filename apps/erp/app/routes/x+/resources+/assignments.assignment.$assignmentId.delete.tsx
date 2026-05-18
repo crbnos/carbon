@@ -11,7 +11,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "resources",
     role: "employee"
   });
@@ -24,7 +24,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const result = await deleteTrainingAssignment(client, assignmentId);
+  const result = await deleteTrainingAssignment(assignmentId);
 
   if (result.error) {
     throw redirect(

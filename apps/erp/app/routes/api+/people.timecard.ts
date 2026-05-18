@@ -3,13 +3,13 @@ import type { ActionFunctionArgs } from "react-router";
 import { clockIn, clockOut } from "~/modules/people";
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { companyId, userId } = await requirePermissions(request, {});
 
   const formData = await request.formData();
   const intent = formData.get("intent");
 
   if (intent === "clockIn") {
-    const result = await clockIn(client, {
+    const result = await clockIn({
       employeeId: userId,
       companyId,
       createdBy: userId
@@ -20,7 +20,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (intent === "clockOut") {
     const clockOutTime = formData.get("clockOut") as string | null;
     const note = formData.get("note") as string | null;
-    const result = await clockOut(client, {
+    const result = await clockOut({
       employeeId: userId,
       companyId,
       updatedBy: userId,

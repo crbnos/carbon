@@ -28,7 +28,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "invoicing"
   });
 
@@ -37,9 +37,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [purchaseInvoice, purchaseInvoiceLines, purchaseInvoiceDelivery] =
     await Promise.all([
-      getPurchaseInvoice(client, invoiceId),
-      getPurchaseInvoiceLines(client, invoiceId),
-      getPurchaseInvoiceDelivery(client, invoiceId)
+      getPurchaseInvoice(invoiceId),
+      getPurchaseInvoiceLines(invoiceId),
+      getPurchaseInvoiceDelivery(invoiceId)
     ]);
 
   if (purchaseInvoice.error) {
@@ -54,14 +54,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [supplier, interaction, files] = await Promise.all([
     purchaseInvoice.data?.supplierId
-      ? getSupplier(client, purchaseInvoice.data.supplierId)
+      ? getSupplier(purchaseInvoice.data.supplierId)
       : null,
-    getSupplierInteraction(client, purchaseInvoice.data.supplierInteractionId!),
-    getSupplierInteractionDocuments(
-      client,
-      companyId,
-      purchaseInvoice.data.supplierInteractionId!
-    )
+    getSupplierInteraction(purchaseInvoice.data.supplierInteractionId!),
+    getSupplierInteractionDocuments(purchaseInvoice.data.supplierInteractionId!)
   ]);
 
   return {

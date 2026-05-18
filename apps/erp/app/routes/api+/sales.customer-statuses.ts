@@ -3,9 +3,9 @@ import type { LoaderFunctionArgs } from "react-router";
 import { getCustomerStatusesList } from "~/modules/sales";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
-  return await getCustomerStatusesList(client, companyId);
+  return await getCustomerStatusesList();
 }

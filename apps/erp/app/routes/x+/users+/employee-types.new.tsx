@@ -17,11 +17,11 @@ import { makeEmptyPermissionsFromModules } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "users"
   });
 
-  const modules = await getModules(client);
+  const modules = await getModules();
   if (modules.error || modules.data === null) {
     throw redirect(
       path.to.employeeTypes,
@@ -36,7 +36,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     create: "users"
   });
 
@@ -66,7 +66,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const createEmployeeType = await insertEmployeeType(client, {
+  const createEmployeeType = await insertEmployeeType({
     name,
     companyId
   });
@@ -91,9 +91,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
   const insertEmployeeTypePermissions = await upsertEmployeeTypePermissions(
-    client,
     employeeTypeId,
-    companyId,
     permissions
   );
 

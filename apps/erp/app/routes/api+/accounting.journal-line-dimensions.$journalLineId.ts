@@ -6,7 +6,7 @@ import { saveJournalLineDimensions } from "~/modules/accounting";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "accounting"
   });
 
@@ -18,9 +18,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   };
 
   const result = await saveJournalLineDimensions(
-    client,
     journalLineId,
-    companyId,
     body.dimensions ?? []
   );
 

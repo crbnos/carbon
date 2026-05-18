@@ -10,7 +10,7 @@ import {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "purchasing"
   });
 
@@ -29,11 +29,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { purchasingRfqId, supplierIds } = validation.data;
 
   const update = await upsertPurchasingRFQSuppliers(
-    client,
     purchasingRfqId,
-    supplierIds,
-    companyId,
-    userId
+    supplierIds
   );
 
   if (update.error) {

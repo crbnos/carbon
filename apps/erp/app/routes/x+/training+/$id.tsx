@@ -36,7 +36,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources",
     bypassRls: true
   });
@@ -45,8 +45,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!id) throw new Error("Could not find id");
 
   const [training, tags] = await Promise.all([
-    getTraining(client, id),
-    getTagsList(client, companyId, "training")
+    getTraining(id),
+    getTagsList("training")
   ]);
 
   if (training.error) {

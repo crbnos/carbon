@@ -38,7 +38,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     view: "parts",
     bypassRls: true
   });
@@ -48,10 +48,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [consumableSummary, supplierParts, pickMethods, tags] =
     await Promise.all([
-      getConsumable(client, itemId, companyId),
-      getSupplierParts(client, itemId, companyId),
-      getPickMethods(client, itemId, companyId),
-      getTagsList(client, companyId, "consumable")
+      getConsumable(itemId, companyId),
+      getSupplierParts(itemId),
+      getPickMethods(itemId),
+      getTagsList("consumable")
     ]);
 
   if (consumableSummary.error) {
@@ -66,11 +66,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     consumableSummary: consumableSummary.data,
-    files: getItemFiles(client, itemId, companyId),
+    files: getItemFiles(itemId),
     supplierParts: supplierParts.data ?? [],
     pickMethods: pickMethods.data ?? [],
     tags: tags.data ?? [],
-    usedIn: getMaterialUsedIn(client, itemId, companyId)
+    usedIn: getMaterialUsedIn(itemId)
   };
 }
 

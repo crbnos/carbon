@@ -19,7 +19,7 @@ import { getCompanyId, workCentersQuery } from "~/utils/react-query";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "resources"
   });
 
@@ -35,7 +35,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const createWorkCenter = await upsertWorkCenter(client, {
+  const createWorkCenter = await upsertWorkCenter({
     ...d,
     companyId,
     createdBy: userId,

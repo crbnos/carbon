@@ -15,7 +15,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "quality"
   });
 
@@ -47,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const updateCurrency = await insertIssueReviewer(client, {
+  const updateCurrency = await insertIssueReviewer({
     ...validation.data,
     nonConformanceId: id,
     companyId,

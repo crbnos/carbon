@@ -4,7 +4,7 @@ import { data } from "react-router";
 import { priceResolutionInputValidator, resolvePrice } from "~/modules/sales";
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
@@ -17,7 +17,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const result = await resolvePrice(client, companyId, payload.data);
+  const result = await resolvePrice(payload.data);
 
   return data(result);
 }

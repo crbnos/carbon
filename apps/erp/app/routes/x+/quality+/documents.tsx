@@ -16,7 +16,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "quality",
     role: "employee"
   });
@@ -28,14 +28,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [qualityDocuments, tags] = await Promise.all([
-    getQualityDocuments(client, companyId, {
+    getQualityDocuments({
       search,
       limit,
       offset,
       sorts,
       filters
     }),
-    getTagsList(client, companyId, "qualityDocument")
+    getTagsList("qualityDocument")
   ]);
 
   return {

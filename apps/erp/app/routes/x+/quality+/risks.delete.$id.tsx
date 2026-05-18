@@ -7,14 +7,14 @@ import { deleteRisk } from "~/modules/quality/quality.service";
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "quality",
     role: "employee"
   });
   const { id } = params;
   invariant(id, "id is required");
 
-  const result = await deleteRisk(client, id);
+  const result = await deleteRisk(id);
 
   if (result.error) {
     return data(

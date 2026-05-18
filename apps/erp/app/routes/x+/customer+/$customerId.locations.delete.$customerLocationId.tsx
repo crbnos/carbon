@@ -11,7 +11,7 @@ import { path } from "~/utils/path";
 import { customerLocationsQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "sales"
   });
 
@@ -27,7 +27,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const { error: deleteCustomerLocationError } = await deleteCustomerLocation(
-    client,
     customerId,
     customerLocationId
   );

@@ -14,7 +14,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const company = await getCompany(client, companyId);
+  const company = await getCompany();
   if (company.error) {
     console.error(company.error);
     throw new Error("Failed to load company");

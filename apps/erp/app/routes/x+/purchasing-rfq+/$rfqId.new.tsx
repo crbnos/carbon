@@ -18,7 +18,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { client: viewClient } = await requirePermissions(request, {
     view: "purchasing"
   });
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "purchasing"
   });
 
@@ -47,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const insertLine = await upsertPurchasingRFQLine(client, {
+  const insertLine = await upsertPurchasingRFQLine({
     ...d,
     companyId,
     createdBy: userId,

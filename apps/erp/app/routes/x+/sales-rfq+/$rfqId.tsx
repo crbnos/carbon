@@ -34,7 +34,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
@@ -88,7 +88,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         itemId: line.itemId ?? "",
         quantity: line.quantity ?? [1]
       })) ?? [],
-    files: getOpportunityDocuments(serviceRole, companyId, opportunity.data.id),
+    files: getOpportunityDocuments(serviceRole, opportunity.data.id),
     opportunity: opportunity.data
   };
 }

@@ -3,9 +3,9 @@ import type { LoaderFunctionArgs } from "react-router";
 import { getQuotesList } from "~/modules/sales";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
-  return await getQuotesList(client, companyId);
+  return await getQuotesList();
 }

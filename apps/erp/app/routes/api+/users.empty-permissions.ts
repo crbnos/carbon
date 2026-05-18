@@ -7,12 +7,12 @@ import { getModules } from "~/modules/users";
 import { makeEmptyPermissionsFromModules } from "~/modules/users/users.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "users",
     role: "employee"
   });
 
-  const modules = await getModules(client);
+  const modules = await getModules();
   if (modules.error || modules.data === null) {
     return data(
       {

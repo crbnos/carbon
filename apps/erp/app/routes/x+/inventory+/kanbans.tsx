@@ -51,7 +51,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await getLocationsList();
     if (locations.error || !locations.data?.length) {
       throw redirect(
         path.to.kanbans,
@@ -65,14 +65,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const [kanbans, kanbanOutput] = await Promise.all([
-    getKanbans(client, locationId, companyId, {
+    getKanbans(locationId, {
       search,
       limit,
       offset,
       sorts,
       filters
     }),
-    getKanbanOutputSetting(client, companyId)
+    getKanbanOutputSetting()
   ]);
 
   if (kanbans.error) {

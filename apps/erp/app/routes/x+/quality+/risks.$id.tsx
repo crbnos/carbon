@@ -13,14 +13,14 @@ import RiskRegisterForm from "~/modules/quality/ui/RiskRegister/RiskRegisterForm
 import { getParams, path } from "~/utils/path";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "quality",
     role: "employee"
   });
   const { id } = params;
   invariant(id, "id is required");
 
-  const risk = await getRisk(client, id);
+  const risk = await getRisk(id);
   if (risk.error || !risk.data) {
     throw new Response("Not Found", { status: 404 });
   }
@@ -29,7 +29,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { client, userId, companyId } = await requirePermissions(request, {
+  const { userId, companyId } = await requirePermissions(request, {
     update: "quality",
     role: "employee"
   });
@@ -44,13 +44,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const riskId = validation.data.id!;
 
   // Get the previous assignee to check if it changed
-  const existingRisk = await getRisk(client, riskId);
+  const existingRisk = await getRisk(riskId);
   const previousAssignee = existingRisk.data?.assignee;
 
   const severity = parseInt(validation.data.severity ?? "1", 10);
   const likelihood = parseInt(validation.data.likelihood ?? "1", 10);
 
-  const result = await upsertRisk(client, {
+  const result = await upsertRisk({
     ...validation.data,
     id: riskId,
     assignee: validation.data.assignee || undefined,

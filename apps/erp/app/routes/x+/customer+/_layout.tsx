@@ -18,7 +18,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
@@ -27,8 +27,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     customerStatuses
     // shippingTerms,
   ] = await Promise.all([
-    getCustomerTypes(client, companyId),
-    getCustomerStatuses(client, companyId)
+    getCustomerTypes(),
+    getCustomerStatuses()
 
     // getShippingTermsList(client, companyId),
   ]);

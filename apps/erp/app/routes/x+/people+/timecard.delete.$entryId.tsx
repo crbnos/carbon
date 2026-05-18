@@ -10,7 +10,7 @@ import { deleteTimeCardEntry, getTimeCardEntry } from "~/modules/people";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "people",
     role: "employee"
   });
@@ -18,7 +18,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { entryId } = params;
   if (!entryId) throw notFound("entryId not found");
 
-  const entry = await getTimeCardEntry(client, entryId);
+  const entry = await getTimeCardEntry(entryId);
   if (entry.error) {
     throw redirect(
       path.to.peopleTimecard,
@@ -32,7 +32,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "people"
   });
 
@@ -44,7 +44,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteError } = await deleteTimeCardEntry(client, entryId);
+  const { error: deleteError } = await deleteTimeCardEntry(entryId);
   if (deleteError) {
     throw redirect(
       path.to.peopleTimecard,

@@ -47,7 +47,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await getLocationsList();
     if (locations.error || !locations.data?.length) {
       throw redirect(
         path.to.consumable(itemId),
@@ -60,12 +60,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let consumablePlanning = await getItemPlanning(
-    client,
-    itemId,
-    companyId,
-    locationId
-  );
+  let consumablePlanning = await getItemPlanning(itemId, locationId);
 
   if (consumablePlanning.error || !consumablePlanning.data) {
     throw redirect(
@@ -85,7 +80,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -99,7 +94,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateConsumablePlanning = await upsertItemPlanning(client, {
+  const updateConsumablePlanning = await upsertItemPlanning({
     ...validation.data,
     itemId,
     updatedBy: userId,

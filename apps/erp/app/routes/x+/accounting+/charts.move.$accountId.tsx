@@ -22,8 +22,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!accountId) throw notFound("accountId not found");
 
   const [account, allGroupAccounts] = await Promise.all([
-    getAccount(client, accountId),
-    getGroupAccounts(client, companyGroupId)
+    getAccount(accountId),
+    getGroupAccounts(companyGroupId)
   ]);
 
   if (account.error || !account.data) {

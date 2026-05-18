@@ -28,7 +28,7 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
 
@@ -49,7 +49,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
   return {
     line: line.data,
-    files: getSupplierInteractionLineDocuments(serviceRole, companyId, lineId)
+    files: getSupplierInteractionLineDocuments(serviceRole, lineId)
   };
 };
 
@@ -58,7 +58,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { client: viewClient } = await requirePermissions(request, {
     view: "purchasing"
   });
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "purchasing"
   });
 
@@ -87,7 +87,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const updateLine = await upsertPurchasingRFQLine(client, {
+  const updateLine = await upsertPurchasingRFQLine({
     id: lineId,
     ...d,
     companyId,

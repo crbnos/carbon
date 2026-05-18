@@ -219,8 +219,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .select("id", { count: "exact", head: true })
       .eq("companyId", companyId)
       .in("status", ["Pending", "In Progress"]),
-    getIssueTypesList(client, companyId),
-    getCompanySettings(client, companyId),
+    getIssueTypesList(),
+    getCompanySettings(),
     client
       .from("issues")
       .select("id, nonConformanceId, name, status, priority, createdAt")

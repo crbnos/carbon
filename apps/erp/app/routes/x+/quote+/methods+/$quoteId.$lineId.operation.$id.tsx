@@ -14,7 +14,7 @@ import { setCustomFields } from "~/utils/form";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "sales"
   });
 
@@ -38,7 +38,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateQuoteOperation = await upsertQuoteOperation(client, {
+  const updateQuoteOperation = await upsertQuoteOperation({
     quoteId,
     quoteLineId: lineId,
     ...validation.data,
@@ -73,7 +73,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
-  await recalculateQuoteLinePrices(serviceRole, quoteId, lineId, userId);
+  await recalculateQuoteLinePrices(serviceRole, quoteId, lineId);
 
   return {
     id: quoteOperationId,

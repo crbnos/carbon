@@ -38,7 +38,7 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
 
@@ -46,8 +46,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!orderId) throw new Error("Could not find orderId");
 
   const [purchaseOrder, purchaseOrderPayment] = await Promise.all([
-    getPurchaseOrder(client, orderId),
-    getPurchaseOrderPayment(client, orderId)
+    getPurchaseOrder(orderId),
+    getPurchaseOrderPayment(orderId)
   ]);
 
   if (purchaseOrderPayment.error) {
@@ -96,7 +96,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const isLocked = isPurchaseOrderLocked(purchaseOrder.data?.status);
 
   // If locked, require delete permission; otherwise require update permission
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     ...(isLocked ? { delete: "purchasing" } : { update: "purchasing" })
   });
 
@@ -119,7 +119,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { purchaseOrderId, ...d } = validation.data;
   if (!purchaseOrderId) throw new Error("Could not find purchaseOrderId");
 
-  const updatePurchaseOrder = await upsertPurchaseOrder(client, {
+  const updatePurchaseOrder = await upsertPurchaseOrder({
     id: orderId,
     purchaseOrderId,
     ...d,

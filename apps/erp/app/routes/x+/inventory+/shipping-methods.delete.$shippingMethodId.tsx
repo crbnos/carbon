@@ -14,13 +14,13 @@ import { getParams, path } from "~/utils/path";
 import { getCompanyId, shippingMethodsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "inventory"
   });
   const { shippingMethodId } = params;
   if (!shippingMethodId) throw notFound("shippingMethodId not found");
 
-  const shippingMethod = await getShippingMethod(client, shippingMethodId);
+  const shippingMethod = await getShippingMethod(shippingMethodId);
   if (shippingMethod.error) {
     throw redirect(
       path.to.shippingMethods,
@@ -35,7 +35,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "inventory"
   });
 
@@ -47,10 +47,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteTypeError } = await deleteShippingMethod(
-    client,
-    shippingMethodId
-  );
+  const { error: deleteTypeError } =
+    await deleteShippingMethod(shippingMethodId);
   if (deleteTypeError) {
     throw redirect(
       path.to.shippingMethods,

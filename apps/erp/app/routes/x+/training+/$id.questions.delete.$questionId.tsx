@@ -6,7 +6,7 @@ import { data } from "react-router";
 import { deleteTrainingQuestion } from "~/modules/resources";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "resources"
   });
 
@@ -14,11 +14,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (!questionId) throw new Error("questionId is not found");
 
-  const deleteQuestion = await deleteTrainingQuestion(
-    client,
-    questionId,
-    companyId
-  );
+  const deleteQuestion = await deleteTrainingQuestion(questionId);
 
   if (deleteQuestion.error) {
     return data(

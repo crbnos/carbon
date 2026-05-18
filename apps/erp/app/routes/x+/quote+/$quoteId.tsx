@@ -59,7 +59,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { quoteId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
 
-  const quote = await getQuote(client, quoteId);
+  const quote = await getQuote(quoteId);
 
   if (quote.error) {
     throw redirect(
@@ -83,15 +83,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     opportunityDocuments,
     companySettings
   ] = await Promise.all([
-    getCustomer(client, quote.data?.customerId ?? ""),
-    getQuoteShipment(client, quoteId),
-    getQuotePayment(client, quoteId),
-    getQuoteLines(client, quoteId),
-    getQuoteLinePricesByQuoteId(client, quoteId),
-    getOpportunity(client, quote.data?.opportunityId),
+    getCustomer(quote.data?.customerId ?? ""),
+    getQuoteShipment(quoteId),
+    getQuotePayment(quoteId),
+    getQuoteLines(quoteId),
+    getQuoteLinePricesByQuoteId(quoteId),
+    getOpportunity(quote.data?.opportunityId),
     getQuoteMethodTrees(client, quoteId),
-    getOpportunityDocuments(client, companyId, quote.data?.opportunityId ?? ""),
-    getCompanySettings(client, companyId)
+    getOpportunityDocuments(quote.data?.opportunityId ?? ""),
+    getCompanySettings()
   ]);
 
   if (!opportunity.data) throw new Error("Failed to get opportunity record");
@@ -120,7 +120,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   let exchangeRate = 1;
   if (quote.data?.currencyCode) {
     const presentationCurrency = await getCurrencyByCode(
-      client,
       companyGroupId,
       quote.data.currencyCode
     );
@@ -135,7 +134,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     opportunity.data.salesOrders[0]?.id
   ) {
     salesOrderLines = await getSalesOrderLines(
-      client,
       opportunity.data.salesOrders[0]?.id
     );
   }
@@ -165,7 +163,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const supplierPriceMap = await getSupplierPriceBreaksForItems(
-    client,
     Array.from(buyItemIds)
   );
 

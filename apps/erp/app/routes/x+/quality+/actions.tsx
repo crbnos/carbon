@@ -19,7 +19,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "quality",
     role: "employee"
   });
@@ -31,15 +31,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [actions, issueTypes, requiredActions] = await Promise.all([
-    getQualityActions(client, companyId, {
+    getQualityActions({
       search,
       limit,
       offset,
       sorts,
       filters
     }),
-    getIssueTypesList(client, companyId),
-    getRequiredActionsList(client, companyId)
+    getIssueTypesList(),
+    getRequiredActionsList()
   ]);
 
   if (actions.error) {

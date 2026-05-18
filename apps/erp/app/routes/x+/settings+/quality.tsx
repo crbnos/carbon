@@ -56,11 +56,11 @@ const samplingStandardValidator = z.object({
 });
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "settings"
   });
 
-  const companySettings = await getCompanySettings(client, companyId);
+  const companySettings = await getCompanySettings();
 
   if (!companySettings.data)
     throw redirect(

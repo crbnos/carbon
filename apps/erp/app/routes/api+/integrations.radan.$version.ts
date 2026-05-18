@@ -60,7 +60,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           if (jobDocumentsCache.has(item.jobId)) {
             documents = jobDocumentsCache.get(item.jobId);
           } else {
-            documents = await getJobDocuments(serviceRole, companyId, {
+            documents = await getJobDocuments(serviceRole, {
               id: item.jobId,
               salesOrderLineId: item.salesOrderLineId,
               itemId: item.itemId

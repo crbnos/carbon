@@ -23,12 +23,12 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "resources",
     role: "employee"
   });
 
-  const trainings = await getTrainingsList(client, companyId);
+  const trainings = await getTrainingsList();
 
   if (trainings.error) {
     throw redirect(
@@ -43,7 +43,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "resources",
     role: "employee"
   });
@@ -59,7 +59,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { trainingId, groupIds } = validation.data;
 
-  const result = await upsertTrainingAssignment(client, {
+  const result = await upsertTrainingAssignment({
     trainingId,
     groupIds,
     companyId,

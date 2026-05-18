@@ -29,14 +29,14 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const quote = await getSupplierQuote(client, id);
+  const quote = await getSupplierQuote(id);
   if (quote.error) {
     throw redirect(
       path.to.supplierQuotes,
@@ -52,7 +52,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyGroupId, userId } = await requirePermissions(request, {
+  const { companyGroupId, userId } = await requirePermissions(request, {
     update: "purchasing"
   });
 
@@ -80,7 +80,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { supplierQuoteId, ...d } = validation.data;
   if (!supplierQuoteId) throw new Error("Could not find supplierQuoteId");
 
-  const update = await upsertSupplierQuote(client, {
+  const update = await upsertSupplierQuote({
     id,
     supplierQuoteId,
     ...d,

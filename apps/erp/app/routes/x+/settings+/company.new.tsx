@@ -31,7 +31,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const client = getCarbonServiceRole();
 
-  const companyInsert = await insertCompany(client, validation.data);
+  const companyInsert = await insertCompany(validation.data);
   if (companyInsert.error) {
     console.error(companyInsert.error);
     throw new Error("Fatal: failed to insert company");
@@ -42,7 +42,7 @@ export async function action({ request }: ActionFunctionArgs) {
     throw new Error("Fatal: failed to get company ID");
   }
 
-  const seed = await seedCompany(client, companyId, userId);
+  const seed = await seedCompany();
   if (seed.error) {
     console.error(seed.error);
     throw new Error("Fatal: failed to seed company");
@@ -51,7 +51,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // TODO: move all of this to transaction
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { baseCurrencyCode, ...locationData } = validation.data;
-  const locationInsert = await upsertLocation(client, {
+  const locationInsert = await upsertLocation({
     ...locationData,
     name: "Headquarters",
     companyId,
@@ -70,7 +70,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const [job] = await Promise.all([
-    insertEmployeeJob(client, {
+    insertEmployeeJob({
       id: userId,
       companyId,
       locationId

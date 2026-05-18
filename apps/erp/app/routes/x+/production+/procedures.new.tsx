@@ -24,7 +24,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "production"
   });
   const formData = await request.formData();
@@ -54,7 +54,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const insertProcedure = await upsertProcedure(client, {
+  const insertProcedure = await upsertProcedure({
     ...d,
     content: contentJSON,
     companyId,

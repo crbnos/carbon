@@ -9,14 +9,14 @@ import { getCompanySettings } from "~/modules/settings";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
   const [companySettings, trackedEntities] = await Promise.all([
-    getCompanySettings(client, companyId),
-    getTrackedEntitiesByMakeMethodId(client, id)
+    getCompanySettings(),
+    getTrackedEntitiesByMakeMethodId(id)
   ]);
 
   // Get the label size from query params or default to zebra2x1

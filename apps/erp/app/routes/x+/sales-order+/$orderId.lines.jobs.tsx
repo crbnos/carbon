@@ -10,7 +10,7 @@ import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "production"
   });
 
@@ -23,7 +23,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     create: "production"
   });
 
-  const salesOrder = await getSalesOrder(client, orderId);
+  const salesOrder = await getSalesOrder(orderId);
   if (salesOrder.error) {
     throw redirect(
       path.to.salesOrder(orderId),

@@ -40,7 +40,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "quality",
     bypassRls: true
   });
@@ -55,11 +55,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     suppliers,
     tags
   ] = await Promise.all([
-    getIssue(client, id),
-    getIssueTypesList(client, companyId),
-    getRequiredActionsList(client, companyId),
-    getIssueSuppliers(client, id, companyId),
-    getTagsList(client, companyId, "nonConformance")
+    getIssue(id),
+    getIssueTypesList(),
+    getRequiredActionsList(),
+    getIssueSuppliers(id),
+    getTagsList("nonConformance")
   ]);
 
   if (nonConformance.error) {
@@ -70,8 +70,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return {
-    associations: getIssueAssociations(client, id, companyId),
-    files: getItemFiles(client, id, companyId),
+    associations: getIssueAssociations(id),
+    files: getItemFiles(id),
     nonConformance: nonConformance.data,
     nonConformanceTypes: nonConformanceTypes.data ?? [],
     requiredActions: requiredActions.data ?? [],

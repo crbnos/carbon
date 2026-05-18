@@ -8,14 +8,14 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "invoicing"
   });
 
   const { invoiceId } = params;
   if (!invoiceId) throw notFound("invoiceId not found");
 
-  const remove = await deleteSalesInvoice(client, invoiceId);
+  const remove = await deleteSalesInvoice(invoiceId);
 
   if (remove.error) {
     throw redirect(

@@ -9,14 +9,14 @@ import { deleteEmployeeType, getEmployeeType } from "~/modules/users";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "users",
     role: "employee"
   });
   const { employeeTypeId } = params;
   if (!employeeTypeId) throw notFound("EmployeeTypeId not found");
 
-  const employeeType = await getEmployeeType(client, employeeTypeId);
+  const employeeType = await getEmployeeType(employeeTypeId);
   if (employeeType.error) {
     throw redirect(
       path.to.employeeTypes,
@@ -33,7 +33,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "users"
   });
 
@@ -45,10 +45,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteTypeError } = await deleteEmployeeType(
-    client,
-    employeeTypeId
-  );
+  const { error: deleteTypeError } = await deleteEmployeeType(employeeTypeId);
   if (deleteTypeError) {
     throw redirect(
       path.to.employeeTypes,

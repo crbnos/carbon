@@ -12,18 +12,14 @@ import {
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
   const { overrideId } = params;
   if (!overrideId) throw notFound("overrideId not found");
 
-  const override = await getCustomerItemPriceOverrideById(
-    client,
-    overrideId,
-    companyId
-  );
+  const override = await getCustomerItemPriceOverrideById(overrideId);
 
   if (override.error) {
     throw redirect(
@@ -39,7 +35,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "sales"
   });
 
@@ -51,11 +47,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteError } = await deleteCustomerItemPriceOverride(
-    client,
-    overrideId,
-    companyId
-  );
+  const { error: deleteError } =
+    await deleteCustomerItemPriceOverride(overrideId);
 
   if (deleteError) {
     throw redirect(

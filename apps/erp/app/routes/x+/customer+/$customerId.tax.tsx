@@ -13,14 +13,14 @@ import { CustomerTaxForm } from "~/modules/sales/ui/Customer";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
   const { customerId } = params;
   if (!customerId) throw new Error("Could not find customerId");
 
-  const customerTax = await getCustomerTax(client, customerId);
+  const customerTax = await getCustomerTax(customerId);
 
   if (customerTax.error || !customerTax.data) {
     throw redirect(
@@ -39,7 +39,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "sales"
   });
 
@@ -56,7 +56,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const taxExemptionCertificatePath =
     formData.get("taxExemptionCertificatePath")?.toString() || null;
 
-  const update = await updateCustomerTax(client, {
+  const update = await updateCustomerTax({
     ...validation.data,
     customerId,
     taxExemptionCertificatePath,

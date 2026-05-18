@@ -8,14 +8,14 @@ import { CustomerLocations } from "~/modules/sales/ui/Customer";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
   const { customerId } = params;
   if (!customerId) throw new Error("Could not find customerId");
 
-  const locations = await getCustomerLocations(client, customerId);
+  const locations = await getCustomerLocations(customerId);
   if (locations.error) {
     throw redirect(
       path.to.customer(customerId),

@@ -17,7 +17,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "settings",
     role: "employee"
   });
@@ -29,14 +29,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [tables, dataTypes] = await Promise.all([
-    getCustomFieldsTables(client, companyId, {
+    getCustomFieldsTables({
       search,
       limit,
       offset,
       sorts,
       filters
     }),
-    getAttributeDataTypes(client)
+    getAttributeDataTypes()
   ]);
 
   if (tables.error) {

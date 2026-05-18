@@ -9,7 +9,7 @@ import { deleteContractor, getContractor } from "~/modules/resources";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources",
     role: "employee"
   });
@@ -17,7 +17,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { supplierId } = params;
   if (!supplierId) throw notFound("supplierId not found");
 
-  const contractor = await getContractor(client, supplierId);
+  const contractor = await getContractor(supplierId);
   if (contractor.error) {
     throw redirect(
       path.to.contractors,
@@ -31,7 +31,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "resources"
   });
 
@@ -43,10 +43,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteContractorError } = await deleteContractor(
-    client,
-    supplierId
-  );
+  const { error: deleteContractorError } = await deleteContractor(supplierId);
   if (deleteContractorError) {
     throw redirect(
       path.to.contractors,

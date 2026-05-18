@@ -19,7 +19,7 @@ import { getParams, path } from "~/utils/path";
 import { getCompanyId, storageUnitsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "inventory",
     role: "employee"
   });
@@ -27,7 +27,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { storageUnitId } = params;
   if (!storageUnitId) throw notFound("storageUnitId not found");
 
-  const storageUnit = await getStorageUnit(client, storageUnitId);
+  const storageUnit = await getStorageUnit(storageUnitId);
 
   return {
     storageUnit: storageUnit?.data ?? null
@@ -36,7 +36,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "inventory"
   });
 
@@ -50,7 +50,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, ...d } = validation.data;
   if (!id) throw new Error("id not found");
 
-  const updateStorageUnit = await upsertStorageUnit(client, {
+  const updateStorageUnit = await upsertStorageUnit({
     id,
     ...d,
     updatedBy: userId,

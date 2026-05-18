@@ -103,18 +103,14 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, userId, companyId } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "purchasing"
   });
 
   const serviceRole = getCarbonServiceRole();
 
   // Get pending approval requests to find which POs the user can approve
-  const pendingApprovals = await getPendingApprovalsForApprover(
-    serviceRole,
-    userId,
-    companyId
-  );
+  const pendingApprovals = await getPendingApprovalsForApprover(serviceRole);
 
   // Extract purchase order IDs that need approval and user can approve
   const approvalPoIds =
@@ -187,11 +183,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       : { data: [], error: null }
   ]);
 
-  const assignedToMePromise = getPurchasingDocumentsAssignedToMe(
-    client,
-    userId,
-    companyId
-  );
+  const assignedToMePromise = getPurchasingDocumentsAssignedToMe();
 
   return {
     openPurchaseOrders: openPurchaseOrders,

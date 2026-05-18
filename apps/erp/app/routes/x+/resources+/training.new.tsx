@@ -21,7 +21,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "resources"
   });
   const formData = await request.formData();
@@ -51,7 +51,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const insertTraining = await upsertTraining(client, {
+  const insertTraining = await upsertTraining({
     ...d,
     content: contentJSON,
     companyId,

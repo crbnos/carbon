@@ -133,7 +133,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await getLocationsList();
     if (locations.error || !locations.data?.length) {
       throw redirect(
         path.to.production,
@@ -174,9 +174,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const [jobs, unscheduledJobs, tags] = await Promise.all([
-    getJobsByDateRange(client, locationId ?? "", startDate, endDate),
-    getUnscheduledJobs(client, locationId ?? ""),
-    getTagsList(client, companyId, "job")
+    getJobsByDateRange(locationId ?? "", startDate, endDate),
+    getUnscheduledJobs(locationId ?? ""),
+    getTagsList("job")
   ]);
 
   if (jobs.error) {

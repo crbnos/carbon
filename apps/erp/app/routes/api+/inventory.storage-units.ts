@@ -7,7 +7,7 @@ import { getStorageUnitsListForLocation } from "~/modules/inventory";
 import { getCompanyId, storageUnitsQuery } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts"
   });
 
@@ -20,7 +20,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     };
   }
 
-  return await getStorageUnitsListForLocation(client, companyId, locationId);
+  return await getStorageUnitsListForLocation(locationId);
 }
 
 export async function clientLoader({

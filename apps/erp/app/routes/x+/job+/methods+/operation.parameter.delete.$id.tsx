@@ -7,7 +7,7 @@ import { deleteJobOperationParameter } from "~/modules/production";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "production"
   });
 
@@ -16,10 +16,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error("id not found");
   }
 
-  const deleteOperationParameter = await deleteJobOperationParameter(
-    client,
-    id
-  );
+  const deleteOperationParameter = await deleteJobOperationParameter(id);
   if (deleteOperationParameter.error) {
     return data(
       {

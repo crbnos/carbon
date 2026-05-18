@@ -61,7 +61,7 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "production",
     bypassRls: true
   });
@@ -69,7 +69,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
 
-  const job = await getJob(client, jobId);
+  const job = await getJob(jobId);
   if (job.error) {
     throw redirect(
       path.to.jobs,
@@ -77,11 +77,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const rootMethod = await getRootMakeMethod(client, jobId, companyId);
+  const rootMethod = await getRootMakeMethod(jobId);
   if (rootMethod.error) {
     return {
       notes: (job.data?.notes ?? {}) as JSONContent,
-      purchaseOrderLines: getJobPurchaseOrderLines(client, jobId),
+      purchaseOrderLines: getJobPurchaseOrderLines(jobId),
       materials: [],
       operations: [],
       makeMethod: null,
@@ -98,15 +98,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const methodId = rootMethod.data.id;
 
   const [materials, operations, tags, makeMethod] = await Promise.all([
-    getJobMaterialsByMethodId(client, methodId),
-    getJobOperationsByMethodId(client, methodId),
-    getTagsList(client, companyId, "operation"),
-    getJobMakeMethodById(client, methodId, companyId)
+    getJobMaterialsByMethodId(methodId),
+    getJobOperationsByMethodId(methodId),
+    getTagsList("operation"),
+    getJobMakeMethodById(methodId)
   ]);
 
   return {
     notes: (job.data?.notes ?? {}) as JSONContent,
-    purchaseOrderLines: getJobPurchaseOrderLines(client, jobId),
+    purchaseOrderLines: getJobPurchaseOrderLines(jobId),
     materials:
       materials?.data?.map((m) => ({
         ...m,
@@ -126,14 +126,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         workInstruction: o.workInstruction as JSONContent
       })) ?? [],
     makeMethod: makeMethod.data ?? null,
-    files: getJobDocumentsWithItemId(
-      client,
-      companyId,
-      job.data,
-      rootMethod.data.itemId
-    ),
+    files: getJobDocumentsWithItemId(job.data, rootMethod.data.itemId),
     productionData: getProductionDataByOperations(
-      client,
       operations?.data?.map((o) => o.id) ?? []
     ),
     tags: tags.data ?? []
@@ -142,7 +136,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "production"
   });
 
@@ -170,7 +164,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { jobId, ...d } = validation.data;
   if (!jobId) throw new Error("Could not find jobId in payload");
 
-  const updateJob = await upsertJob(client, {
+  const updateJob = await upsertJob({
     ...d,
     id: id,
     jobId,

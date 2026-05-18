@@ -15,7 +15,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "sales"
   });
 
@@ -26,12 +26,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const result = await createPricingRule(
-    client,
-    companyId,
-    userId,
-    validation.data
-  );
+  const result = await createPricingRule(validation.data);
 
   if (result.error) {
     throw redirect(

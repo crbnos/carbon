@@ -7,7 +7,7 @@ import { deleteQualityDocument } from "~/modules/quality/quality.service";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "quality"
   });
 
@@ -15,7 +15,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (!id) throw new Error("id is not found");
 
-  const mutation = await deleteQualityDocument(client, id);
+  const mutation = await deleteQualityDocument(id);
   if (mutation.error) {
     return data(
       {

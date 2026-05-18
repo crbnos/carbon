@@ -25,7 +25,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "quality"
   });
 
@@ -39,11 +39,7 @@ export async function action({ request }: ActionFunctionArgs) {
   let gaugeId = validation.data.gaugeId;
   const useNextSequence = !gaugeId;
   if (useNextSequence) {
-    const nextSequence = await getNextSequence(
-      getCarbonServiceRole(),
-      "gauge",
-      companyId
-    );
+    const nextSequence = await getNextSequence(getCarbonServiceRole(), "gauge");
     if (nextSequence.error) {
       throw redirect(
         path.to.newGauge,
@@ -67,7 +63,7 @@ export async function action({ request }: ActionFunctionArgs) {
         : "Pending"
     : "Pending";
 
-  const createGauge = await upsertGauge(client, {
+  const createGauge = await upsertGauge({
     ...d,
     gaugeId,
     gaugeCalibrationStatus,

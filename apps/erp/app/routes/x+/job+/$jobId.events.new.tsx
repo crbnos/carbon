@@ -17,14 +17,14 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "production"
   });
 
   const { jobId } = params;
   if (!jobId) throw notFound("jobId not found");
 
-  const jobOperations = await getJobOperations(client, jobId);
+  const jobOperations = await getJobOperations(jobId);
 
   const operationOptions =
     jobOperations.data?.map((operation) => ({
@@ -37,7 +37,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "production"
   });
 
@@ -71,7 +71,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const insert = await upsertProductionEvent(client, {
+  const insert = await upsertProductionEvent({
     ...d,
     companyId,
     createdBy: userId

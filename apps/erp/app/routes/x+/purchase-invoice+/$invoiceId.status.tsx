@@ -12,7 +12,7 @@ import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "invoicing"
   });
 
@@ -31,7 +31,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const invoice = await getPurchaseInvoice(client, id);
+  const invoice = await getPurchaseInvoice(id);
 
   if (invoice.error || !invoice.data) {
     throw redirect(
@@ -56,7 +56,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const update = await updatePurchaseInvoiceStatus(client, {
+  const update = await updatePurchaseInvoiceStatus({
     id,
     status,
     assignee: !["Partially Paid"].includes(status) ? null : undefined,

@@ -22,7 +22,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "people"
   });
 
@@ -31,9 +31,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [employeeSummary, attributeCategories, companySettings] =
     await Promise.all([
-      getEmployeeSummary(client, personId, companyId),
-      getAllAttributeCategories(client, personId, companyId),
-      getCompanySettings(client, companyId)
+      getEmployeeSummary(personId),
+      getAllAttributeCategories(personId),
+      getCompanySettings()
     ]);
 
   if (employeeSummary.error) {
@@ -55,7 +55,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "people"
   });
   const { personId } = params;
@@ -71,7 +71,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { firstName, lastName, about, phone } = validation.data;
 
-  const updateAccount = await updatePublicAccount(client, {
+  const updateAccount = await updatePublicAccount({
     id: personId,
     firstName,
     lastName,

@@ -87,7 +87,7 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, userId, companyId } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "sales"
   });
 
@@ -122,7 +122,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     openSalesOrders: openSalesOrders,
     openQuotes: openQuotes,
     openRFQs: openRFQs,
-    assignedToMe: getSalesDocumentsAssignedToMe(client, userId, companyId)
+    assignedToMe: getSalesDocumentsAssignedToMe()
   };
 }
 

@@ -26,9 +26,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Get RFQ, lines, and suppliers
   const [rfqResult, linesResult, suppliersResult] = await Promise.all([
-    getPurchasingRFQ(client, rfqId),
-    getPurchasingRFQLines(client, rfqId),
-    getPurchasingRFQSuppliers(client, rfqId)
+    getPurchasingRFQ(rfqId),
+    getPurchasingRFQLines(rfqId),
+    getPurchasingRFQSuppliers(rfqId)
   ]);
 
   if (rfqResult.error) {
@@ -80,14 +80,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const supplierId = rfqSupplier.supplierId;
 
     // Get next sequence number for the supplier quote
-    const sequence = await getNextSequence(client, "supplierQuote", companyId);
+    const sequence = await getNextSequence("supplierQuote");
     if (sequence.error || !sequence.data) {
       console.error("Failed to get sequence:", sequence.error);
       continue;
     }
 
     // Create the supplier quote
-    const quoteResult = await upsertSupplierQuote(client, {
+    const quoteResult = await upsertSupplierQuote({
       supplierQuoteId: sequence.data,
       supplierQuoteType: "Purchase",
       supplierId,
@@ -116,7 +116,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       // @ts-expect-error TS2339 - TODO: fix type
       const uom = line.unitOfMeasureCode ?? "EA";
 
-      await upsertSupplierQuoteLine(client, {
+      await upsertSupplierQuoteLine({
         supplierQuoteId,
         supplierQuoteLineType: "Part",
         itemId: line.itemId,
@@ -138,7 +138,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Update RFQ status to Received
-  await updatePurchasingRFQStatus(client, {
+  await updatePurchasingRFQStatus({
     id: rfqId,
     status: "Requested",
     updatedBy: userId

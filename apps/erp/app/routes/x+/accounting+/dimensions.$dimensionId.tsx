@@ -13,7 +13,7 @@ import { DimensionForm } from "~/modules/accounting/ui/Dimensions";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "accounting",
     role: "employee"
   });
@@ -21,7 +21,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { dimensionId } = params;
   if (!dimensionId) throw notFound("dimensionId not found");
 
-  const dimension = await getDimension(client, dimensionId);
+  const dimension = await getDimension(dimensionId);
 
   return {
     dimension: dimension?.data ?? null
@@ -30,7 +30,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "accounting"
   });
 
@@ -45,7 +45,6 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!id) throw new Error("id not found");
 
   const updateDimension = await upsertDimension(
-    client,
     {
       id,
       ...d,

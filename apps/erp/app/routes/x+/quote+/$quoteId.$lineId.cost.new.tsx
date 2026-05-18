@@ -11,7 +11,7 @@ import {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
 
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "sales"
   });
 
@@ -41,7 +41,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const id = nanoid();
-  const { error } = await upsertQuoteLineAdditionalCharges(client, lineId, {
+  const { error } = await upsertQuoteLineAdditionalCharges(lineId, {
     additionalCharges: {
       ...parsedCharges.data,
       [id]: {

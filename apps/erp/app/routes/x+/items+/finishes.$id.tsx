@@ -13,7 +13,7 @@ import MaterialFinishForm from "~/modules/items/ui/MaterialFinishes/MaterialFini
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts",
     role: "employee"
   });
@@ -21,7 +21,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const materialFinish = await getMaterialFinish(client, id);
+  const materialFinish = await getMaterialFinish(id);
 
   if (materialFinish.data?.companyId === null) {
     throw redirect(
@@ -40,7 +40,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "parts"
   });
 
@@ -56,7 +56,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateMaterialFinish = await upsertMaterialFinish(client, {
+  const updateMaterialFinish = await upsertMaterialFinish({
     id: id,
     ...validation.data
   });

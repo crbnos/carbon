@@ -36,7 +36,7 @@ export const action: ActionFunction = async ({ request }) => {
         }
 
         const [carbonIssue, issue, siteUrl] = await Promise.all([
-          getIssueAction(client, actionId),
+          getIssueAction(actionId),
           jira.getIssue(companyId, issueId),
           jira.getSiteUrl(companyId)
         ]);

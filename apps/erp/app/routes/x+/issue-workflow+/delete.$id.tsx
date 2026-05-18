@@ -7,7 +7,7 @@ import { deleteIssueWorkflow } from "~/modules/quality";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "quality"
   });
 
@@ -15,7 +15,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (!id) throw new Error("id is not found");
 
-  const mutation = await deleteIssueWorkflow(client, id);
+  const mutation = await deleteIssueWorkflow(id);
   if (mutation.error) {
     return data(
       {

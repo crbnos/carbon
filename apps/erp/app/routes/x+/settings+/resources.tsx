@@ -45,13 +45,13 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "settings"
   });
 
   const [company, companySettings] = await Promise.all([
-    getCompany(client, companyId),
-    getCompanySettings(client, companyId)
+    getCompany(),
+    getCompanySettings()
   ]);
 
   if (!company.data)
@@ -113,8 +113,6 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     const update = await updateSuggestionNotificationSetting(
-      client,
-      companyId,
       validation.data.suggestionNotificationGroup ?? []
     );
 
@@ -135,20 +133,16 @@ export async function action({ request }: ActionFunctionArgs) {
       return { success: false, message: "Invalid form data" };
     }
 
-    const update = await updateMaintenanceDispatchNotificationSettings(
-      client,
-      companyId,
-      {
-        maintenanceDispatchNotificationGroup:
-          validation.data.maintenanceDispatchNotificationGroup ?? [],
-        qualityDispatchNotificationGroup:
-          validation.data.qualityDispatchNotificationGroup ?? [],
-        operationsDispatchNotificationGroup:
-          validation.data.operationsDispatchNotificationGroup ?? [],
-        otherDispatchNotificationGroup:
-          validation.data.otherDispatchNotificationGroup ?? []
-      }
-    );
+    const update = await updateMaintenanceDispatchNotificationSettings({
+      maintenanceDispatchNotificationGroup:
+        validation.data.maintenanceDispatchNotificationGroup ?? [],
+      qualityDispatchNotificationGroup:
+        validation.data.qualityDispatchNotificationGroup ?? [],
+      operationsDispatchNotificationGroup:
+        validation.data.operationsDispatchNotificationGroup ?? [],
+      otherDispatchNotificationGroup:
+        validation.data.otherDispatchNotificationGroup ?? []
+    });
 
     if (update.error) return { success: false, message: update.error.message };
 

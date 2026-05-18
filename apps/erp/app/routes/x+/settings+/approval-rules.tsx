@@ -24,7 +24,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const serviceRole = getCarbonServiceRole();
 
   const [rules, groupsResult] = await Promise.all([
-    getApprovalRules(serviceRole, companyId),
+    getApprovalRules(serviceRole),
     client
       .from("group")
       .select("id, name")

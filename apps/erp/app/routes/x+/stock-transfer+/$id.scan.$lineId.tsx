@@ -85,7 +85,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const [stockTransferLine, itemStorageUnitQuantities] = await Promise.all([
     client.from("stockTransferLines").select("*").eq("id", lineId!).single(),
-    getItemStorageUnitQuantities(client, itemId, companyId, locationId)
+    getItemStorageUnitQuantities(itemId, locationId)
   ]);
 
   if (stockTransferLine.error || itemStorageUnitQuantities.error) {

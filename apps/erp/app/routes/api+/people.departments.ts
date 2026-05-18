@@ -3,7 +3,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { getDepartmentsList } from "~/modules/people";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
-  return await getDepartmentsList(client, companyId);
+  return await getDepartmentsList();
 }

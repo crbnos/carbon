@@ -110,7 +110,7 @@ export async function action({ request }: ActionFunctionArgs) {
     case "materialFormId":
     case "materialSubstanceId":
     case "materialTypeId":
-      const settings = await getCompanySettings(client, companyId);
+      const settings = await getCompanySettings();
 
       if (settings.data?.materialGeneratedIds) {
         let name = "";

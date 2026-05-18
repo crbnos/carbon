@@ -19,17 +19,14 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
 
   const [
     supplierTypes
     // shippingTerms,
-  ] = await Promise.all([
-    getSupplierTypes(client, companyId),
-    getShippingTermsList(client, companyId)
-  ]);
+  ] = await Promise.all([getSupplierTypes(), getShippingTermsList()]);
 
   return {
     supplierTypes: supplierTypes.data ?? []

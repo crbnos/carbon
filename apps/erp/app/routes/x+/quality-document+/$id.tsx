@@ -66,7 +66,7 @@ async function getQualityDocumentApprovalContext(
       "qualityDocument",
       documentId
     ),
-    isApprovalRequired(serviceRole, "qualityDocument", companyId, undefined)
+    isApprovalRequired(serviceRole, "qualityDocument", undefined)
   ]);
 
   const req = latest.data;
@@ -74,15 +74,11 @@ async function getQualityDocumentApprovalContext(
     return { ...defaultContext, isApprovalRequired: approvalRequired };
   }
 
-  const canApprove = await canApproveRequest(
-    serviceRole,
-    {
-      amount: req.amount,
-      documentType: req.documentType,
-      companyId: req.companyId
-    },
-    userId
-  );
+  const canApprove = await canApproveRequest(serviceRole, {
+    amount: req.amount,
+    documentType: req.documentType,
+    companyId: req.companyId
+  });
   const isRequester = canCancelRequest(
     { requestedBy: req.requestedBy, status: req.status },
     userId
@@ -138,15 +134,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const canApprove = await canApproveRequest(
-    serviceRole,
-    {
-      amount: approvalRequest.data.amount,
-      documentType: approvalRequest.data.documentType,
-      companyId: approvalRequest.data.companyId
-    },
-    userId
-  );
+  const canApprove = await canApproveRequest(serviceRole, {
+    amount: approvalRequest.data.amount,
+    documentType: approvalRequest.data.documentType,
+    companyId: approvalRequest.data.companyId
+  });
 
   if (!canApprove) {
     throw redirect(
@@ -208,7 +200,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     view: "quality",
     bypassRls: true
   });
@@ -219,10 +211,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const serviceRole = getCarbonServiceRole();
   // Kick off approval in parallel — it only needs document.status, so we chain
   // off the document fetch rather than waiting for Promise.all to settle.
-  const documentPromise = getQualityDocument(client, id);
+  const documentPromise = getQualityDocument(id);
   const [document, tags, approval] = await Promise.all([
     documentPromise,
-    getTagsList(client, companyId, "qualityDocument"),
+    getTagsList("qualityDocument"),
     documentPromise.then((d) =>
       getQualityDocumentApprovalContext(
         serviceRole,
@@ -243,7 +235,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     document: document.data,
-    versions: getQualityDocumentVersions(client, document.data, companyId),
+    versions: getQualityDocumentVersions(document.data),
     tags: tags.data ?? [],
     ...approval
   };

@@ -7,7 +7,7 @@ import { updateJobBatchNumber } from "~/modules/production/production.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "production",
     bypassRls: true
   });
@@ -20,7 +20,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const value = rawValue == null ? "" : String(rawValue).trim();
 
   const update = await updateJobBatchNumber(
-    client,
     trackedEntityId,
     value === "" ? null : value
   );

@@ -3,13 +3,13 @@ import type { LoaderFunctionArgs } from "react-router";
 import { getGaugesList, getGaugeTypesList } from "~/modules/quality";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "quality"
   });
 
   const [gauges, gaugeTypes] = await Promise.all([
-    getGaugesList(client, companyId),
-    getGaugeTypesList(client, companyId)
+    getGaugesList(),
+    getGaugeTypesList()
   ]);
 
   return { gauges: gauges.data ?? [], gaugeTypes: gaugeTypes.data ?? [] };

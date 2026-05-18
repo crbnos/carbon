@@ -10,14 +10,14 @@ import { deleteWebhook, getWebhook } from "~/modules/settings";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "settings"
   });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const webhook = await getWebhook(client, id);
+  const webhook = await getWebhook(id);
   if (webhook.error) {
     throw redirect(
       path.to.webhooks,
@@ -51,7 +51,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteWebhookError } = await deleteWebhook(client, id);
+  const { error: deleteWebhookError } = await deleteWebhook(id);
   if (deleteWebhookError) {
     throw redirect(
       `${path.to.webhooks}?${getParams(request)}`,

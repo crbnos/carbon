@@ -4,11 +4,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { getOutstandingTrainingsForUser } from "~/modules/resources";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { companyId, userId } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
-  return await getOutstandingTrainingsForUser(
-    getCarbonServiceRole(),
-    companyId,
-    userId
-  );
+  return await getOutstandingTrainingsForUser(getCarbonServiceRole());
 }

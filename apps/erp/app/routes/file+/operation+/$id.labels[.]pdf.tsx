@@ -10,15 +10,15 @@ import { getCompanySettings } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
   const [company, companySettings, trackedEntities] = await Promise.all([
-    getCompany(client, companyId),
-    getCompanySettings(client, companyId),
-    getTrackedEntitiesByMakeMethodId(client, id)
+    getCompany(),
+    getCompanySettings(),
+    getTrackedEntitiesByMakeMethodId(id)
   ]);
 
   if (company.error) {

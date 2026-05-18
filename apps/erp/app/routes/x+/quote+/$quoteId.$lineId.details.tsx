@@ -64,7 +64,7 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
@@ -97,7 +97,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
         const [materials, methodOperations, tags] = await Promise.all([
           getQuoteMaterialsByMethodId(serviceRole, methodId),
           getQuoteOperationsByMethodId(serviceRole, methodId),
-          getTagsList(client, companyId, "operation")
+          getTagsList("operation")
         ]);
 
         return {
@@ -123,8 +123,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
             })) ?? [],
           configurationParameters: getConfigurationParametersByQuoteLineId(
             serviceRole,
-            lineId,
-            companyId
+            lineId
           ),
           model: getModelByQuoteLineId(serviceRole, lineId),
           tags: tags.data ?? [],
@@ -136,7 +135,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   return {
     line: line.data,
     operations: operations?.data ?? [],
-    files: getOpportunityLineDocuments(serviceRole, companyId, lineId, itemId),
+    files: getOpportunityLineDocuments(serviceRole, lineId, itemId),
     pricesByQuantity: (prices?.data ?? []).reduce<
       Record<number, QuotationPrice>
     >((acc, price) => {
@@ -150,7 +149,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     create: "sales"
   });
 
@@ -180,7 +179,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const updateQuotationLine = await upsertQuoteLine(client, {
+  const updateQuotationLine = await upsertQuoteLine({
     id: lineId,
     ...d,
     updatedBy: userId,
@@ -230,25 +229,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
               serviceRole,
               quoteId,
               lineId,
-              addedQuantities,
-              userId
+              addedQuantities
             )
           : methodType === "Pull from Inventory"
             ? await resolveQuoteLinePrices(
                 serviceRole,
-                companyId,
                 quoteId,
                 lineId,
-                addedQuantities,
-                userId
+                addedQuantities
               )
             : await resolvePurchaseToOrderPrices(
                 serviceRole,
-                companyId,
                 quoteId,
                 lineId,
-                addedQuantities,
-                userId
+                addedQuantities
               );
 
       if (priceResult?.error) {

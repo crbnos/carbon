@@ -14,7 +14,7 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources"
   });
 
@@ -22,7 +22,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!supplierLocationId) throw notFound("Partner ID was not found");
   if (!abilityId) throw notFound("Ability ID was not found");
 
-  const partner = await getPartner(client, supplierLocationId, abilityId);
+  const partner = await getPartner(supplierLocationId, abilityId);
 
   if (partner.error) {
     throw redirect(
@@ -38,7 +38,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     create: "resources"
   });
 
@@ -52,7 +52,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { supplierId, ...d } = validation.data;
 
-  const updatePartner = await upsertPartner(client, {
+  const updatePartner = await upsertPartner({
     ...d,
     updatedBy: userId,
     customFields: setCustomFields(formData)

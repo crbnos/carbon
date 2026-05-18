@@ -27,7 +27,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "inventory"
   });
 
@@ -58,7 +58,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id: lineId, ...d } = validation.data;
 
-  const insertStockTransferLine = await upsertStockTransferLine(client, {
+  const insertStockTransferLine = await upsertStockTransferLine({
     ...d,
     companyId,
     createdBy: userId

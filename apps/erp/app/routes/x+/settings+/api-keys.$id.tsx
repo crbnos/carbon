@@ -39,7 +39,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Parse scopes from JSON string
   const scopes = scopesJson ? JSON.parse(scopesJson) : {};
 
-  const updateApiKey = await upsertApiKey(client, {
+  const updateApiKey = await upsertApiKey({
     id,
     ...d,
     scopes,

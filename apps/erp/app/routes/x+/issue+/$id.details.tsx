@@ -31,7 +31,7 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client } = await requirePermissions(request, {
     view: "quality",
     bypassRls: true
   });
@@ -51,14 +51,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     nonConformance: nonConformance.data,
-    actionTasks: getIssueActionTasks(client, id, companyId),
-    reviewers: getIssueReviewers(client, id, companyId)
+    actionTasks: getIssueActionTasks(id),
+    reviewers: getIssueReviewers(id)
   };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "quality"
   });
 
@@ -92,7 +92,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error("Could not find issue id");
   }
 
-  const updateIssue = await upsertIssue(client, {
+  const updateIssue = await upsertIssue({
     ...validation.data,
     id: id,
     nonConformanceId: nonConformanceId,

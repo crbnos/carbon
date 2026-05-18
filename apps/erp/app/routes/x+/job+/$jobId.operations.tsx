@@ -12,7 +12,7 @@ import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "production",
     role: "employee"
   });
@@ -26,7 +26,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const job = await getJob(client, jobId);
+  const job = await getJob(jobId);
   if (job.error) {
     throw redirect(
       path.to.jobs,
@@ -34,7 +34,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const operations = await getJobOperations(client, jobId, {
+  const operations = await getJobOperations(jobId, {
     search,
     limit,
     offset,

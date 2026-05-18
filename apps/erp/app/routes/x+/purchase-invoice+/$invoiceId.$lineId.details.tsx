@@ -28,7 +28,7 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "invoicing",
     role: "employee"
   });
@@ -37,8 +37,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!lineId) throw notFound("lineId not found");
 
   const [purchaseInvoiceLine, files] = await Promise.all([
-    getPurchaseInvoiceLine(client, lineId),
-    getSupplierInteractionLineDocuments(client, companyId, lineId)
+    getPurchaseInvoiceLine(lineId),
+    getSupplierInteractionLineDocuments(lineId)
   ]);
 
   return {
@@ -77,7 +77,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase invoice."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     create: "invoicing"
   });
 
@@ -109,7 +109,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   //   d.assetId = undefined;
   // }
 
-  const updatePurchaseInvoiceLine = await upsertPurchaseInvoiceLine(client, {
+  const updatePurchaseInvoiceLine = await upsertPurchaseInvoiceLine({
     id: lineId,
     ...d,
     updatedBy: userId,

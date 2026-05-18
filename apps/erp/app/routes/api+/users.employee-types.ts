@@ -3,10 +3,10 @@ import type { LoaderFunctionArgs } from "react-router";
 import { getEmployeeTypes } from "~/modules/users";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "users",
     role: "employee"
   });
 
-  return await getEmployeeTypes(client, companyId);
+  return await getEmployeeTypes();
 }

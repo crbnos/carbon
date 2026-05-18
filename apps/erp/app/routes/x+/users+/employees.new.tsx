@@ -28,11 +28,11 @@ import { path } from "~/utils/path";
 import { getCompanyId } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "users"
   });
 
-  const invitable = await getInvitable(client, companyId);
+  const invitable = await getInvitable();
   if (invitable.error) {
     throw redirect(
       path.to.employeeAccounts,

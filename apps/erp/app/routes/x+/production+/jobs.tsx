@@ -19,7 +19,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "production",
     role: "employee",
     bypassRls: true
@@ -32,15 +32,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [jobs, locations, tags] = await Promise.all([
-    getJobs(client, companyId, {
+    getJobs({
       search,
       limit,
       offset,
       sorts,
       filters
     }),
-    getLocationsList(client, companyId),
-    getTagsList(client, companyId, "job")
+    getLocationsList(),
+    getTagsList("job")
   ]);
 
   if (jobs.error) {

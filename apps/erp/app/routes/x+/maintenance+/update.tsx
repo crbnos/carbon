@@ -78,7 +78,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // Update each maintenance dispatch individually since upsertMaintenanceDispatch expects single records
   const results = await Promise.all(
     ids.map(async (id) => {
-      return await upsertMaintenanceDispatch(client, {
+      return await upsertMaintenanceDispatch({
         id: id as string,
         ...updateData
       } as Parameters<typeof upsertMaintenanceDispatch>[1]);

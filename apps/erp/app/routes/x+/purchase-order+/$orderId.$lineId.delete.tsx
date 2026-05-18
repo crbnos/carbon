@@ -13,14 +13,14 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "purchasing"
   });
   const { lineId, orderId } = params;
   if (!lineId) throw notFound("lineId not found");
   if (!orderId) throw notFound("orderId not found");
 
-  const purchaseOrder = await getPurchaseOrder(client, orderId);
+  const purchaseOrder = await getPurchaseOrder(orderId);
   await requireUnlocked({
     request,
     isLocked: isPurchaseOrderLocked(purchaseOrder.data?.status),
@@ -28,7 +28,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     message: "Cannot delete lines on a confirmed purchase order."
   });
 
-  const purchaseOrderLine = await getPurchaseOrderLine(client, lineId);
+  const purchaseOrderLine = await getPurchaseOrderLine(lineId);
   if (purchaseOrderLine.error) {
     throw redirect(
       path.to.purchaseOrderDetails(orderId),
@@ -43,7 +43,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "purchasing"
   });
 
@@ -51,7 +51,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!lineId) throw notFound("Could not find lineId");
   if (!orderId) throw notFound("Could not find orderId");
 
-  const purchaseOrder = await getPurchaseOrder(client, orderId);
+  const purchaseOrder = await getPurchaseOrder(orderId);
   await requireUnlocked({
     request,
     isLocked: isPurchaseOrderLocked(purchaseOrder.data?.status),
@@ -59,10 +59,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot delete lines on a confirmed purchase order."
   });
 
-  const { error: deleteTypeError } = await deletePurchaseOrderLine(
-    client,
-    lineId
-  );
+  const { error: deleteTypeError } = await deletePurchaseOrderLine(lineId);
   if (deleteTypeError) {
     throw redirect(
       path.to.purchaseOrderDetails(orderId),

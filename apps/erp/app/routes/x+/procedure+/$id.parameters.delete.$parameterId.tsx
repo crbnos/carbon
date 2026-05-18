@@ -6,7 +6,7 @@ import { data } from "react-router";
 import { deleteProcedureParameter } from "~/modules/production/production.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "production"
   });
 
@@ -14,11 +14,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (!parameterId) throw new Error("parameterId is not found");
 
-  const deleteParameter = await deleteProcedureParameter(
-    client,
-    parameterId,
-    companyId
-  );
+  const deleteParameter = await deleteProcedureParameter(parameterId);
   if (deleteParameter.error) {
     return data(
       {

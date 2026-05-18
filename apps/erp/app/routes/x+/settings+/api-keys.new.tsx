@@ -50,7 +50,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const keyHash = hashApiKey(rawKey);
   const keyPreview = rawKey.slice(-5);
 
-  const insertApiKey = await upsertApiKey(client, {
+  const insertApiKey = await upsertApiKey({
     ...d,
     scopes,
     expiresAt: expiresAt || undefined,

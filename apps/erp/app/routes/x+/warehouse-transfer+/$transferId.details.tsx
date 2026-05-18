@@ -25,7 +25,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "inventory"
   });
 
@@ -56,7 +56,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) throw new Error("id not found");
   if (!validatedTransferId) throw new Error("transferId not found");
 
-  const updateTransfer = await upsertWarehouseTransfer(client, {
+  const updateTransfer = await upsertWarehouseTransfer({
     id,
     transferId: validatedTransferId,
     ...d,

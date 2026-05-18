@@ -49,9 +49,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Get RFQ, lines, and suppliers
   const [rfqResult, linesResult, suppliersResult] = await Promise.all([
-    getPurchasingRFQ(client, rfqId),
-    getPurchasingRFQLines(client, rfqId),
-    getPurchasingRFQSuppliers(client, rfqId)
+    getPurchasingRFQ(rfqId),
+    getPurchasingRFQLines(rfqId),
+    getPurchasingRFQSuppliers(rfqId)
   ]);
 
   if (rfqResult.error) {
@@ -97,7 +97,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Get company and user info for emails
   const [company, user] = await Promise.all([
-    getCompany(client, companyId),
+    getCompany(),
     getUser(client, userId)
   ]);
 
@@ -120,14 +120,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
 
     // Get next sequence number for the supplier quote
-    const sequence = await getNextSequence(client, "supplierQuote", companyId);
+    const sequence = await getNextSequence("supplierQuote");
     if (sequence.error || !sequence.data) {
       console.error("Failed to get sequence:", sequence.error);
       continue;
     }
 
     // Create the supplier quote
-    const quoteResult = await upsertSupplierQuote(client, {
+    const quoteResult = await upsertSupplierQuote({
       supplierQuoteId: sequence.data,
       supplierQuoteType: "Purchase",
       supplierId,
@@ -153,7 +153,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         continue;
       }
 
-      await upsertSupplierQuoteLine(client, {
+      await upsertSupplierQuoteLine({
         supplierQuoteId,
         supplierQuoteLineType: "Part",
         itemId: line.itemId,
@@ -184,7 +184,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .eq("companyId", companyId)
       .maybeSingle();
 
-    const externalLinkResult = await upsertExternalLink(client, {
+    const externalLinkResult = await upsertExternalLink({
       id: existingLink.data?.id,
       documentType: "SupplierQuote",
       documentId: supplierQuoteId,
@@ -203,7 +203,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     // If contact was provided, queue up email
     if (supplierContactData?.contactId && externalLinkResult.data) {
       const supplierContact = await getSupplierContact(
-        client,
         supplierContactData.contactId
       );
 
@@ -219,7 +218,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Update RFQ status to Requested
-  await updatePurchasingRFQStatus(client, {
+  await updatePurchasingRFQStatus({
     id: rfqId,
     status: "Requested",
     updatedBy: userId
@@ -231,11 +230,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const attachments: Array<{ filename: string; path: string }> = [];
 
     // Fetch RFQ-level supplier interaction documents
-    const rfqDocs = await getSupplierInteractionDocuments(
-      client,
-      companyId,
-      rfqId
-    );
+    const rfqDocs = await getSupplierInteractionDocuments(rfqId);
 
     for (const doc of rfqDocs) {
       const storagePath = `${companyId}/supplier-interaction/${rfqId}/${doc.name}`;
@@ -252,11 +247,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     for (const line of lines) {
       if (!line.id) continue;
 
-      const lineDocs = await getSupplierInteractionLineDocuments(
-        client,
-        companyId,
-        line.id
-      );
+      const lineDocs = await getSupplierInteractionLineDocuments(line.id);
 
       for (const doc of lineDocs) {
         const storagePath = `${companyId}/supplier-interaction-line/${line.id}/${doc.name}`;

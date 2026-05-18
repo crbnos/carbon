@@ -8,7 +8,7 @@ import { updateJobOperationStatus } from "~/modules/production";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "production"
   });
 
@@ -16,7 +16,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const id = formData.get("id") as string;
   const status = formData.get("status") as JobOperation["status"];
 
-  const update = await updateJobOperationStatus(client, id, status, userId);
+  const update = await updateJobOperationStatus(id, status, userId);
   if (update.error) {
     return data(
       {},

@@ -9,7 +9,7 @@ import {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "parts"
   });
 
@@ -29,7 +29,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     };
   }
 
-  const upsert = await updateConfigurationParameterGroupOrder(client, {
+  const upsert = await updateConfigurationParameterGroupOrder({
     ...validation.data
   });
 

@@ -5,14 +5,14 @@ import { deleteConfigurationRule } from "~/modules/items";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "parts"
   });
 
   const { itemId, field } = params;
   if (!itemId || !field) throw notFound("itemId or field not found");
 
-  const remove = await deleteConfigurationRule(client, field, itemId);
+  const remove = await deleteConfigurationRule(field, itemId);
 
   if (remove.error) {
     return {

@@ -164,7 +164,7 @@ export async function action({ request }: ActionFunctionArgs) {
         }
 
         // Calculate new priority
-        const priority = await calculateJobPriority(client, {
+        const priority = await calculateJobPriority({
           jobId: id as string,
           dueDate: newDueDate,
           deadlineType: newDeadlineType as

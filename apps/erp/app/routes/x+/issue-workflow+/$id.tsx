@@ -30,7 +30,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "quality",
     role: "employee",
     bypassRls: true
@@ -40,8 +40,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!id) throw new Error("Could not find id");
 
   const [workflow, requiredActions] = await Promise.all([
-    getIssueWorkflow(client, id),
-    getRequiredActionsList(client, companyId)
+    getIssueWorkflow(id),
+    getRequiredActionsList()
   ]);
 
   if (workflow.error) {
@@ -62,7 +62,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "quality"
   });
   const formData = await request.formData();
@@ -75,7 +75,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, ...d } = validation.data;
   if (!id) throw new Error("Could not find id");
 
-  const updateIssueWorkflow = await upsertIssueWorkflow(client, {
+  const updateIssueWorkflow = await upsertIssueWorkflow({
     id,
     ...d,
     companyId,

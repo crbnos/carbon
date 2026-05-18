@@ -39,7 +39,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "sales"
   });
 
@@ -80,22 +80,17 @@ export async function action({ request }: ActionFunctionArgs) {
     validTo
   } = validation.data;
 
-  const result = await upsertCustomerItemPriceOverride(
-    client,
-    companyId,
-    userId,
-    {
-      customerId: customerId || undefined,
-      customerTypeId: customerTypeId || undefined,
-      itemId,
-      breaks,
-      active,
-      applyRulesOnTop,
-      notes,
-      validFrom,
-      validTo
-    }
-  );
+  const result = await upsertCustomerItemPriceOverride({
+    customerId: customerId || undefined,
+    customerTypeId: customerTypeId || undefined,
+    itemId,
+    breaks,
+    active,
+    applyRulesOnTop,
+    notes,
+    validFrom,
+    validTo
+  });
 
   if (result.error) {
     throw redirect(

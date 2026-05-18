@@ -33,7 +33,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId, companyGroupId } = await requirePermissions(request, {
+  const { companyGroupId } = await requirePermissions(request, {
     view: "purchasing"
   });
 
@@ -60,7 +60,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       getSupplierInteraction(serviceRole, quote.data.supplierInteractionId!),
       getCurrencyByCode(serviceRole, companyGroupId, quote.data.currencyCode!),
       getSupplier(serviceRole, quote.data.supplierId!),
-      getCompanySettings(serviceRole, companyId)
+      getCompanySettings(serviceRole)
     ]);
 
   if (supplierInteraction.error) {
@@ -105,7 +105,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     prices: prices.data ?? [],
     files: getSupplierInteractionDocuments(
       serviceRole,
-      companyId,
       quote.data.supplierInteractionId!
     ),
     interaction: supplierInteraction.data,

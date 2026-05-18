@@ -30,7 +30,7 @@ const defaultResponse = {
 const WEEKS_TO_FORECAST = 12 * 4;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     view: "parts"
   });
 
@@ -52,23 +52,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     openProductionOrders,
     openPurchaseOrderLines
   ] = await Promise.all([
-    getItemDemand(client, {
+    getItemDemand({
       itemId,
       locationId,
       periods: periods.map((p) => p.id ?? ""),
       companyId
     }),
-    getItemSupply(client, {
+    getItemSupply({
       itemId,
       locationId,
       periods: periods.map((p) => p.id ?? ""),
       companyId
     }),
-    getItemQuantities(client, itemId, companyId, locationId),
-    getOpenSalesOrderLines(client, { itemId, companyId, locationId }),
-    getOpenJobMaterials(client, { itemId, companyId, locationId }),
-    getOpenProductionOrders(client, { itemId, companyId, locationId }),
-    getOpenPurchaseOrderLines(client, { itemId, companyId, locationId })
+    getItemQuantities(itemId, locationId),
+    getOpenSalesOrderLines({ itemId, companyId, locationId }),
+    getOpenJobMaterials({ itemId, companyId, locationId }),
+    getOpenProductionOrders({ itemId, companyId, locationId }),
+    getOpenPurchaseOrderLines({ itemId, companyId, locationId })
   ]);
 
   if (demand.actuals.length === 0 && demand.forecasts.length === 0) {

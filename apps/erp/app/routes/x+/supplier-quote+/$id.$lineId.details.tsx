@@ -36,7 +36,7 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
 
@@ -60,7 +60,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
   return {
     line: line.data,
-    files: getSupplierInteractionLineDocuments(serviceRole, companyId, lineId),
+    files: getSupplierInteractionLineDocuments(serviceRole, lineId),
     pricesByQuantity: (prices?.data ?? []).reduce<
       Record<number, SupplierQuoteLinePrice>
     >((acc, price) => {
@@ -72,7 +72,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     create: "purchasing"
   });
 
@@ -103,7 +103,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id: _id, ...d } = validation.data;
 
-  const updateSupplierQuoteLine = await upsertSupplierQuoteLine(client, {
+  const updateSupplierQuoteLine = await upsertSupplierQuoteLine({
     id: lineId,
     ...d,
     updatedBy: userId,

@@ -7,12 +7,12 @@ import { getActiveJobOperationByJobId } from "~/modules/production";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const kanban = await getKanban(client, id);
+  const kanban = await getKanban(id);
   if (kanban.error) {
     throw notFound("Kanban not found");
   }
@@ -21,11 +21,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw notFound("Kanban has no active job");
   }
 
-  const operation = await getActiveJobOperationByJobId(
-    client,
-    kanban.data.jobId!,
-    companyId
-  );
+  const operation = await getActiveJobOperationByJobId(kanban.data.jobId!);
 
   if (!operation) {
     throw redirect(path.to.job(kanban.data.jobId!));

@@ -60,26 +60,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
               serviceRole,
               quoteId,
               line.id,
-              quantities,
-              userId
+              quantities
             );
           case "Pull from Inventory":
             return resolveQuoteLinePrices(
               serviceRole,
-              companyId,
               quoteId,
               line.id,
-              quantities,
-              userId
+              quantities
             );
           case "Purchase to Order":
             return resolvePurchaseToOrderPrices(
               serviceRole,
-              companyId,
               quoteId,
               line.id,
-              quantities,
-              userId
+              quantities
             );
           default:
             return null;

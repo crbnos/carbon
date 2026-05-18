@@ -53,7 +53,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await getLocationsList();
     if (locations.error || !locations.data?.length) {
       throw redirect(
         path.to.inventory,
@@ -72,10 +72,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
 
   const projections = await getProductionProjections(
-    client,
     locationId,
     periods.map((p) => p.id),
-    companyId,
     {
       search,
       limit,

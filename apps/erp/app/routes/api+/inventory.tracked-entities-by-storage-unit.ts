@@ -3,7 +3,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { getItemStorageUnitQuantities } from "~/modules/items/items.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
   const url = new URL(request.url);
   const itemId = url.searchParams.get("itemId");
@@ -18,12 +18,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   // Get all tracked entities for the item in the location
-  const result = await getItemStorageUnitQuantities(
-    client,
-    itemId,
-    companyId,
-    locationId
-  );
+  const result = await getItemStorageUnitQuantities(itemId, locationId);
 
   if (result.error) {
     return {

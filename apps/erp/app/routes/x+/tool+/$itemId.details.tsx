@@ -38,7 +38,7 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts",
     bypassRls: true
   });
@@ -49,7 +49,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const requestedMethodId = url.searchParams.get("methodId");
 
-  const makeMethods = await getMakeMethods(client, itemId, companyId);
+  const makeMethods = await getMakeMethods(itemId);
   const makeMethod = requestedMethodId
     ? (makeMethods.data?.find((m) => m.id === requestedMethodId) ??
       makeMethods.data?.find((m) => m.status === "Active") ??
@@ -61,17 +61,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     return { methodData: null, tags: [] };
   }
 
-  const fullMethod = await getMakeMethodById(client, makeMethod.id, companyId);
+  const fullMethod = await getMakeMethodById(makeMethod.id);
   if (fullMethod.error || !fullMethod.data) {
     return { methodData: null, tags: [] };
   }
 
   const [methodMaterials, methodOperations, tags, toolManufacturing] =
     await Promise.all([
-      getMethodMaterialsByMakeMethod(client, fullMethod.data.id),
-      getMethodOperationsByMakeMethodId(client, fullMethod.data.id),
-      getTagsList(client, companyId, "operation"),
-      getItemManufacturing(client, itemId, companyId)
+      getMethodMaterialsByMakeMethod(fullMethod.data.id),
+      getMethodOperationsByMakeMethodId(fullMethod.data.id),
+      getTagsList("operation"),
+      getItemManufacturing(itemId)
     ]);
 
   return {
@@ -100,7 +100,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -120,7 +120,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       return validationError(validation.error);
     }
 
-    const updateToolManufacturing = await upsertItemManufacturing(client, {
+    const updateToolManufacturing = await upsertItemManufacturing({
       ...validation.data,
       itemId,
       updatedBy: userId,
@@ -151,7 +151,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateTool = await upsertTool(client, {
+  const updateTool = await upsertTool({
     ...validation.data,
     id: itemId,
     customFields: setCustomFields(formData),

@@ -209,8 +209,8 @@ async function handleCreateNcrShortcut(
 
   try {
     const [types, workflows] = await Promise.all([
-      getIssueTypesList(serviceRole, companyId),
-      getIssueWorkflowsList(serviceRole, companyId)
+      getIssueTypesList(serviceRole),
+      getIssueWorkflowsList(serviceRole)
     ]);
 
     const slackClient = createSlackWebClient({ token: slackToken });
@@ -401,7 +401,7 @@ async function handleViewSubmission(
     }
 
     const [nextSequence, employee] = await Promise.all([
-      getNextSequence(serviceRole, "nonConformance", companyId),
+      getNextSequence(serviceRole, "nonConformance"),
       getCarbonEmployeeFromSlackId(serviceRole, slackToken, user_id, companyId)
     ]);
 

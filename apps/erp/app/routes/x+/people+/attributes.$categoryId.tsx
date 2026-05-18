@@ -13,7 +13,7 @@ import { AttributeCategoryForm } from "~/modules/people/ui/Attributes";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "people",
     role: "employee"
   });
@@ -21,7 +21,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { categoryId } = params;
   if (!categoryId) throw notFound("Invalid categoryId");
 
-  const attributeCategory = await getAttributeCategory(client, categoryId);
+  const attributeCategory = await getAttributeCategory(categoryId);
   if (attributeCategory.error) {
     throw redirect(
       path.to.attributes,
@@ -37,7 +37,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "people"
   });
 
@@ -52,7 +52,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, name, emoji, isPublic } = validation.data;
   if (!id) throw new Error("ID is was not found");
 
-  const updateCategory = await updateAttributeCategory(client, {
+  const updateCategory = await updateAttributeCategory({
     id,
     name,
     emoji,

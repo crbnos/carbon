@@ -40,7 +40,7 @@ async function handleKanban({
   userId: string;
   id: string;
 }): Promise<{ data: string; error: null } | { data: null; error: string }> {
-  const kanban = await getKanban(client, id);
+  const kanban = await getKanban(id);
   if (
     kanban.data?.replenishmentSystem === "Make" &&
     kanban.data?.jobReadableId
@@ -75,13 +75,11 @@ async function handleKanban({
 
     const [nextSequence, manufacturing, defaultStorageUnit] = await Promise.all(
       [
-        getNextSequence(client, "job", companyId),
-        getItemReplenishment(client, kanban.data.itemId!, companyId),
+        getNextSequence("job"),
+        getItemReplenishment(kanban.data.itemId!),
         getDefaultStorageUnitForJob(
-          client,
           kanban.data.itemId!,
-          kanban.data.locationId!,
-          companyId
+          kanban.data.locationId!
         )
       ]
     );
@@ -112,7 +110,7 @@ async function handleKanban({
     const storageUnitId =
       kanban.data.storageUnitId || defaultStorageUnit || undefined;
 
-    const createdJob = await upsertJob(client, {
+    const createdJob = await upsertJob({
       jobId: jobReadableId,
       itemId: kanban.data.itemId!,
       quantity: kanban.data.quantity!,
@@ -199,11 +197,7 @@ async function handleKanban({
     const jobId = id;
     let redirectUrl = path.to.job(jobId);
 
-    const operation = await getActiveJobOperationByJobId(
-      client,
-      jobId,
-      companyId
-    );
+    const operation = await getActiveJobOperationByJobId(jobId);
 
     if (operation && kanban.data.autoRelease) {
       let operationId = operation.id;
@@ -245,11 +239,7 @@ async function handleKanban({
     let purchaseOrderId = existingPurchaseOrder.data?.id;
 
     if (!purchaseOrderId) {
-      const nextSequence = await getNextSequence(
-        client,
-        "purchaseOrder",
-        companyId
-      );
+      const nextSequence = await getNextSequence("purchaseOrder");
       if (nextSequence.error) {
         console.error(nextSequence.error);
         return {
@@ -258,7 +248,7 @@ async function handleKanban({
         };
       }
 
-      const newPurchaseOrder = await upsertPurchaseOrder(client, {
+      const newPurchaseOrder = await upsertPurchaseOrder({
         purchaseOrderId: nextSequence.data!,
         supplierId: kanban.data.supplierId!,
         status: "Draft",
@@ -315,7 +305,7 @@ async function handleKanban({
       };
     }
 
-    const createPurchaseOrderLine = await upsertPurchaseOrderLine(client, {
+    const createPurchaseOrderLine = await upsertPurchaseOrderLine({
       purchaseOrderId: purchaseOrderId!,
       // @ts-expect-error
       purchaseOrderLineType: item.data?.type,

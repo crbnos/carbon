@@ -13,7 +13,7 @@ import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "resources"
   });
 
@@ -32,7 +32,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked dispatch. Reopen it first."
   });
 
-  const result = await deleteMaintenanceDispatchEvent(client, eventId);
+  const result = await deleteMaintenanceDispatchEvent(eventId);
 
   if (result.error) {
     throw redirect(

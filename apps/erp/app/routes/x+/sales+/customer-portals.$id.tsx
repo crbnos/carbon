@@ -11,7 +11,7 @@ import { getCustomerPortal, upsertExternalLink } from "~/modules/shared";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales",
     role: "employee"
   });
@@ -19,7 +19,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const customerPortal = await getCustomerPortal(client, id);
+  const customerPortal = await getCustomerPortal(id);
 
   if (customerPortal.error) {
     throw redirect(
@@ -38,7 +38,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "sales"
   });
 
@@ -54,7 +54,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, customerId } = validation.data;
   if (!id) throw new Error("id not found");
 
-  const updateCustomerPortal = await upsertExternalLink(client, {
+  const updateCustomerPortal = await upsertExternalLink({
     id,
     documentType: "Customer",
     documentId: customerId,

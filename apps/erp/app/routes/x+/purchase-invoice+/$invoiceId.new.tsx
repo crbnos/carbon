@@ -48,7 +48,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase invoice."
   });
 
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "invoicing"
   });
 
@@ -64,7 +64,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const createPurchaseInvoiceLine = await upsertPurchaseInvoiceLine(client, {
+  const createPurchaseInvoiceLine = await upsertPurchaseInvoiceLine({
     ...d,
     companyId,
     createdBy: userId,

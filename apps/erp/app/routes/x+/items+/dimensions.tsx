@@ -18,7 +18,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts",
     role: "employee"
   });
@@ -29,9 +29,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const settings = await getCompanySettings(client, companyId);
+  const settings = await getCompanySettings();
 
-  const materialDimensions = await getMaterialDimensions(client, companyId, {
+  const materialDimensions = await getMaterialDimensions({
     limit,
     offset,
     sorts,

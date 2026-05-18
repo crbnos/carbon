@@ -13,7 +13,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "resources"
   });
 
@@ -45,7 +45,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { itemId, quantity, unitOfMeasureCode, unitCost } = validation.data;
 
-  const result = await upsertMaintenanceDispatchItem(client, {
+  const result = await upsertMaintenanceDispatchItem({
     maintenanceDispatchId: dispatchId,
     itemId,
     quantity,

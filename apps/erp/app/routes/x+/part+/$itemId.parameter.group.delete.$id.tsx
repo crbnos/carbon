@@ -5,14 +5,14 @@ import { deleteConfigurationParameterGroup } from "~/modules/items";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "parts"
   });
 
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const remove = await deleteConfigurationParameterGroup(client, id);
+  const remove = await deleteConfigurationParameterGroup(id);
 
   if (remove.error) {
     return {

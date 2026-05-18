@@ -7,7 +7,7 @@ import { deleteQuoteOperationParameter } from "~/modules/sales";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "parts"
   });
 
@@ -16,10 +16,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error("id not found");
   }
 
-  const deleteOperationParameter = await deleteQuoteOperationParameter(
-    client,
-    id
-  );
+  const deleteOperationParameter = await deleteQuoteOperationParameter(id);
   if (deleteOperationParameter.error) {
     return data(
       {

@@ -112,14 +112,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .select("id,status,assignee")
       .eq("companyId", companyId)
       .eq("assignee", userId),
-    getWorkCentersListWithBlockingStatus(client, companyId)
+    getWorkCentersListWithBlockingStatus()
   ]);
 
   return {
     activeJobs: activeJobs.data?.length ?? 0,
     assignedJobs: assignedJobs.data?.length ?? 0,
     workCenters: workCenters.data ?? [],
-    events: getActiveProductionEvents(client, companyId)
+    events: getActiveProductionEvents()
   };
 }
 

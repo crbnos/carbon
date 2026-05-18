@@ -7,7 +7,7 @@ import { updateRevision } from "~/modules/items/items.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -29,7 +29,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     };
   }
 
-  const result = await updateRevision(client, {
+  const result = await updateRevision({
     id: id,
     revision: validation.data.revision,
     updatedBy: userId

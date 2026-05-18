@@ -46,8 +46,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const serviceRole = await getCarbonServiceRole();
   const paperlessPartsIntegration = await getIntegration(
     serviceRole,
-    "paperless-parts",
-    companyId
+    "paperless-parts"
   );
 
   if (paperlessPartsIntegration.error || !paperlessPartsIntegration.data) {

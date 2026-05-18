@@ -10,7 +10,7 @@ import { getUserClaims } from "~/modules/users/users.server";
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
 
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { companyId, userId } = await requirePermissions(request, {});
   const { userId: targetUserId } = params;
 
   if (!targetUserId) {
@@ -39,7 +39,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (!canUpdateAnyUser && userId === targetUserId) {
     // check if this is a self managed attribute
-    const attribute = await getAttribute(client, userAttributeId);
+    const attribute = await getAttribute(userAttributeId);
     if (attribute.error) {
       return data(
         null,
@@ -59,7 +59,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  const removeAttributeValue = await deleteUserAttributeValue(client, {
+  const removeAttributeValue = await deleteUserAttributeValue({
     userId: targetUserId,
     userAttributeId: userAttributeId,
     userAttributeValueId: userAttributeValueId

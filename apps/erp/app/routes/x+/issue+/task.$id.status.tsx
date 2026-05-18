@@ -32,7 +32,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     | "review";
   const assignee = formData.get("assignee") as string;
 
-  const update = await updateIssueTaskStatus(client, {
+  const update = await updateIssueTaskStatus({
     id,
     status,
     type,
@@ -47,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   try {
-    const integrations = await getCompanyIntegrations(client, companyId);
+    const integrations = await getCompanyIntegrations();
     if (update.data?.nonConformanceId) {
       await notifyTaskStatusChanged({ client }, integrations, {
         companyId,

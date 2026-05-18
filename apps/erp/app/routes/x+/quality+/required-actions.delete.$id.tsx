@@ -11,11 +11,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Required action ID is required");
 
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "quality"
   });
 
-  const deleteResult = await deleteRequiredAction(client, id);
+  const deleteResult = await deleteRequiredAction(id);
 
   if (deleteResult.error) {
     return redirect(

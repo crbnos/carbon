@@ -17,7 +17,7 @@ import {
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "settings",
     role: "employee"
   });
@@ -25,7 +25,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Rule ID is required");
 
-  const rule = await getApprovalRuleById(client, id, companyId);
+  const rule = await getApprovalRuleById(id);
 
   if (rule.error) {
     throw redirect(
@@ -49,7 +49,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
 
-  const { companyId, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "settings",
     role: "employee"
   });
@@ -66,7 +66,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Get existing rule to check permissions
-  const rules = await getApprovalRules(serviceRole, companyId);
+  const rules = await getApprovalRules(serviceRole);
   const existingRule = rules.data?.find((r) => r.id === id);
 
   if (!existingRule) {

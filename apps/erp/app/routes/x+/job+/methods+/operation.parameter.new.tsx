@@ -9,7 +9,7 @@ import { operationParameterValidator } from "~/modules/shared";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "production"
   });
 
@@ -22,7 +22,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const insert = await upsertJobOperationParameter(client, {
+  const insert = await upsertJobOperationParameter({
     ...validation.data,
     companyId,
     createdBy: userId

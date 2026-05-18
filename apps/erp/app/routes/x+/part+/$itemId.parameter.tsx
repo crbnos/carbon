@@ -9,7 +9,7 @@ import {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -30,7 +30,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { listOptions, ...d } = validation.data;
 
-  const upsert = await upsertConfigurationParameter(client, {
+  const upsert = await upsertConfigurationParameter({
     ...d,
     listOptions: d.dataType === "list" ? listOptions : undefined,
     companyId,

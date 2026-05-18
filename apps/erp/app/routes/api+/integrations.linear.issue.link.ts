@@ -34,7 +34,7 @@ export const action: ActionFunction = async ({ request }) => {
         }
 
         const [carbonIssue, issue] = await Promise.all([
-          getIssueAction(client, actionId),
+          getIssueAction(actionId),
           linear.getIssueById(companyId, issueId)
         ]);
 
@@ -87,7 +87,7 @@ export const action: ActionFunction = async ({ request }) => {
 
         // Best-effort: clean up attachment in Linear
         try {
-          const { data: action } = await getIssueAction(client, actionId);
+          const { data: action } = await getIssueAction(actionId);
 
           if (action?.nonConformanceId) {
             const [found] = await linear.listAttachments(

@@ -51,11 +51,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!dispatchId) throw new Error("Could not find dispatchId");
 
   const [dispatch, events, items, comments, failureModes] = await Promise.all([
-    getMaintenanceDispatch(client, dispatchId),
-    getMaintenanceDispatchEvents(client, dispatchId),
-    getMaintenanceDispatchItems(client, dispatchId),
-    getMaintenanceDispatchComments(client, dispatchId),
-    getFailureModesList(client, companyId)
+    getMaintenanceDispatch(dispatchId),
+    getMaintenanceDispatchEvents(dispatchId),
+    getMaintenanceDispatchItems(dispatchId),
+    getMaintenanceDispatchComments(dispatchId),
+    getFailureModesList()
   ]);
 
   if (dispatch.error) {

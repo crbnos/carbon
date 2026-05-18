@@ -14,14 +14,14 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "people"
   });
 
   const { departmentId } = params;
   if (!departmentId) throw notFound("Department ID was not found");
 
-  const department = await getDepartment(client, departmentId);
+  const department = await getDepartment(departmentId);
 
   if (department.error) {
     throw redirect(
@@ -37,7 +37,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     create: "people"
   });
 
@@ -51,7 +51,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, ...d } = validation.data;
   if (!id) throw notFound("Department ID was not found");
 
-  const updateDepartment = await upsertDepartment(client, {
+  const updateDepartment = await upsertDepartment({
     id,
     ...d,
     updatedBy: userId,

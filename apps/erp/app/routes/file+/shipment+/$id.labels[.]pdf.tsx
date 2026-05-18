@@ -19,9 +19,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!id) throw new Error("Could not find id");
 
   const [company, companySettings, shipmentTracking] = await Promise.all([
-    getCompany(client, companyId),
-    getCompanySettings(client, companyId),
-    getShipmentTracking(client, id, companyId)
+    getCompany(),
+    getCompanySettings(),
+    getShipmentTracking(id)
   ]);
 
   if (company.error) {

@@ -14,13 +14,13 @@ import { getParams, path } from "~/utils/path";
 import { getCompanyId, paymentTermsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "accounting"
   });
   const { paymentTermId } = params;
   if (!paymentTermId) throw notFound("paymentTermId not found");
 
-  const paymentTerm = await getPaymentTerm(client, paymentTermId);
+  const paymentTerm = await getPaymentTerm(paymentTermId);
   if (paymentTerm.error) {
     throw redirect(
       `${path.to.paymentTerms}?${getParams(request)}`,
@@ -35,7 +35,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "accounting"
   });
 
@@ -47,10 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteTypeError } = await deletePaymentTerm(
-    client,
-    paymentTermId
-  );
+  const { error: deleteTypeError } = await deletePaymentTerm(paymentTermId);
   if (deleteTypeError) {
     throw redirect(
       `${path.to.paymentTerms}?${getParams(request)}`,

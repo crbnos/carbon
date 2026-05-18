@@ -26,7 +26,7 @@ export const handle: Handle = {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "purchasing"
   });
 
@@ -41,11 +41,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const useNextSequence = !rfqId;
 
   if (useNextSequence) {
-    const nextSequence = await getNextSequence(
-      client,
-      "purchasingRfq",
-      companyId
-    );
+    const nextSequence = await getNextSequence("purchasingRfq");
     if (nextSequence.error) {
       throw redirect(
         path.to.newPurchasingRFQ,
@@ -63,7 +59,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // Extract supplier IDs
   const { supplierIds, ...rfqData } = validation.data;
 
-  const createPurchasingRFQ = await upsertPurchasingRFQ(client, {
+  const createPurchasingRFQ = await upsertPurchasingRFQ({
     ...rfqData,
     rfqId,
     companyId,
@@ -86,11 +82,8 @@ export async function action({ request }: ActionFunctionArgs) {
   // Create supplier associations
   if (supplierIds && supplierIds.length > 0) {
     const suppliersResult = await upsertPurchasingRFQSuppliers(
-      client,
       rfq.id,
-      supplierIds,
-      companyId,
-      userId
+      supplierIds
     );
     if (suppliersResult.error) {
       throw redirect(

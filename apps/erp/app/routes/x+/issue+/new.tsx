@@ -30,14 +30,14 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "quality"
   });
 
   const [workflows, types, requiredActions] = await Promise.all([
-    getIssueWorkflowsList(client, companyId),
-    getIssueTypesList(client, companyId),
-    getRequiredActionsList(client, companyId)
+    getIssueWorkflowsList(),
+    getIssueTypesList(),
+    getRequiredActionsList()
   ]);
 
   return {
@@ -62,11 +62,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const nextSequence = await getNextSequence(
-    serviceRole,
-    "nonConformance",
-    companyId
-  );
+  const nextSequence = await getNextSequence(serviceRole, "nonConformance");
   if (nextSequence.error) {
     throw redirect(
       path.to.newIssue,
@@ -151,7 +147,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   try {
-    const integrations = await getCompanyIntegrations(client, companyId);
+    const integrations = await getCompanyIntegrations();
     await notifyIssueCreated({ client, serviceRole }, integrations, {
       companyId,
       userId,

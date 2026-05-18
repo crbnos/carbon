@@ -19,7 +19,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts",
     role: "employee"
   });
@@ -30,7 +30,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const rules = await getItemRules(client, companyId, {
+  const rules = await getItemRules({
     limit,
     offset,
     sorts,
@@ -47,7 +47,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const ids = (rules.data ?? []).map((r) => r.id);
-  const counts = await getRuleAssignmentCounts(client, ids);
+  const counts = await getRuleAssignmentCounts(ids);
   const countMap = (counts.data ?? {}) as Record<string, number>;
 
   return {

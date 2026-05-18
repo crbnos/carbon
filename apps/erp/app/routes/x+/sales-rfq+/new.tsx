@@ -22,7 +22,7 @@ export const handle: Handle = {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "sales"
   });
 
@@ -37,7 +37,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const useNextSequence = !rfqId;
 
   if (useNextSequence) {
-    const nextSequence = await getNextSequence(client, "salesRfq", companyId);
+    const nextSequence = await getNextSequence("salesRfq");
     if (nextSequence.error) {
       throw redirect(
         path.to.newSalesRFQ,
@@ -52,7 +52,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (!rfqId) throw new Error("rfqId is not defined");
 
-  const createSalesRFQ = await upsertSalesRFQ(client, {
+  const createSalesRFQ = await upsertSalesRFQ({
     ...validation.data,
     rfqId,
     companyId,

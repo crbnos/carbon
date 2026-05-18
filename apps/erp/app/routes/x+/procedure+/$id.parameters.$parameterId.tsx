@@ -9,7 +9,7 @@ import { upsertProcedureParameter } from "~/modules/production/production.servic
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "production"
   });
 
@@ -30,7 +30,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const update = await upsertProcedureParameter(client, {
+  const update = await upsertProcedureParameter({
     id: parameterId,
     ...validation.data,
     updatedBy: userId

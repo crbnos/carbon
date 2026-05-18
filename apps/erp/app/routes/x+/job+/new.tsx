@@ -32,7 +32,7 @@ export const handle: Handle = {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "production",
     role: "employee"
   });
@@ -50,9 +50,9 @@ export async function action({ request }: ActionFunctionArgs) {
   // Fetch manufacturing data for lead time and scrap percentage
   const [nextSequenceResult, manufacturing] = await Promise.all([
     useNextSequence
-      ? getNextSequence(client, "job", companyId)
+      ? getNextSequence("job")
       : Promise.resolve({ data: null, error: null }),
-    getItemReplenishment(client, validation.data.itemId, companyId)
+    getItemReplenishment(validation.data.itemId)
   ]);
 
   if (useNextSequence) {
@@ -96,21 +96,19 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const storageUnitId = await getDefaultStorageUnitForJob(
-    client,
     validation.data.itemId,
-    validation.data.locationId,
-    companyId
+    validation.data.locationId
   );
 
   // Calculate priority based on due date and deadline type
-  const priority = await calculateJobPriority(client, {
+  const priority = await calculateJobPriority({
     dueDate: d.dueDate ?? null,
     deadlineType: d.deadlineType,
     companyId,
     locationId: validation.data.locationId
   });
 
-  const createJob = await upsertJob(client, {
+  const createJob = await upsertJob({
     ...d,
     jobId,
     configuration,

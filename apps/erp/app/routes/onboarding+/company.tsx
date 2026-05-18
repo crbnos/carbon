@@ -40,9 +40,9 @@ import {
 } from "~/modules/settings";
 
 export async function loader({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  const { companyId } = await requirePermissions(request, {});
 
-  const company = await getCompany(client, companyId ?? 1);
+  const company = await getCompany(companyId ?? 1);
 
   if (company.error || !company.data) {
     return {
@@ -55,7 +55,7 @@ export async function loader({ request }: ActionFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {});
+  const { userId } = await requirePermissions(request, {});
 
   // there are no entries in the userToCompany table which
   // dictates RLS for the company table
@@ -74,10 +74,10 @@ export async function action({ request }: ActionFunctionArgs) {
 
   let companyId: string | undefined;
 
-  const companies = await getCompanies(client, userId);
+  const companies = await getCompanies();
   const company = companies?.data?.[0];
 
-  const locations = await getLocationsList(client, company?.id ?? "");
+  const locations = await getLocationsList(company?.id ?? "");
   const location = locations?.data?.[0];
 
   if (company && location) {
@@ -118,7 +118,7 @@ export async function action({ request }: ActionFunctionArgs) {
       throw new Error("Fatal: failed to get company ID");
     }
 
-    const seed = await seedCompany(serviceRole, companyId, userId);
+    const seed = await seedCompany(serviceRole);
     if (seed.error) {
       console.error(seed.error);
       throw new Error("Fatal: failed to seed company");

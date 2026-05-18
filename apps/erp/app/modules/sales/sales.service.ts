@@ -8,9 +8,10 @@ import type {
   PostgrestSingleResponse,
   SupabaseClient
 } from "@supabase/supabase-js";
-import type { z } from "zod";
+import { z } from "zod";
 import { getSupplierPriceBreaksForItems } from "~/modules/items/items.service";
 import { getEmployeeJob } from "~/modules/people";
+import { AuthContextHolder, getAuthClient, mcpTool } from "~/services/mcp";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
@@ -142,103 +143,115 @@ export function applyPriceRules(
   return { finalPrice, appendedTrace };
 }
 
-export async function closeSalesOrder(
-  client: SupabaseClient<Database>,
-  salesOrderId: string,
-  userId: string
-) {
-  return client
-    .from("salesOrder")
-    .update({
-      closed: true,
-      closedAt: today(getLocalTimeZone()).toString(),
-      closedBy: userId
-    })
-    .eq("id", salesOrderId)
-    .select("id")
-    .single();
-}
-
-export async function convertSalesRfqToQuote(
-  client: SupabaseClient<Database>,
-  payload: {
-    id: string;
-    companyId: string;
-    userId: string;
+export const closeSalesOrder = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function closeSalesOrder(salesOrderId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { userId } = AuthContextHolder.get();
+    return client
+      .from("salesOrder")
+      .update({
+        closed: true,
+        closedAt: today(getLocalTimeZone()).toString(),
+        closedBy: userId
+      })
+      .eq("id", salesOrderId)
+      .select("id")
+      .single();
   }
-) {
-  return client.functions.invoke<{ convertedId: string }>("convert", {
-    body: {
-      type: "salesRfqToQuote",
-      ...payload
-    }
-  });
-}
+);
 
-export async function convertQuoteToOrder(
-  client: SupabaseClient<Database>,
-  payload: {
+export const convertSalesRfqToQuote = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function convertSalesRfqToQuote(payload: { id: string }) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.functions.invoke<{ convertedId: string }>("convert", {
+      body: {
+        type: "salesRfqToQuote",
+        ...payload
+      }
+    });
+  }
+);
+
+export const convertQuoteToOrder = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function convertQuoteToOrder(payload: {
     id: string;
     selectedLines: z.infer<typeof selectedLinesValidator>;
-    companyId: string;
     purchaseOrderNumber?: string;
-    userId: string;
     digitalQuoteAcceptedBy?: string;
     digitalQuoteAcceptedByEmail?: string;
-  }
-) {
-  return client.functions.invoke<{ convertedId: string }>("convert", {
-    body: {
-      type: "quoteToSalesOrder",
-      ...payload
-    }
-  });
-}
-
-export async function copyQuoteLine(
-  client: SupabaseClient<Database>,
-  payload: z.infer<typeof getMethodValidator> & {
-    companyId: string;
-    userId: string;
-  }
-) {
-  return client.functions.invoke<{ copiedId: string }>("get-method", {
-    body: {
-      ...payload,
-      type: "quoteLineToQuoteLine",
-      parts: {
-        billOfMaterial: payload.billOfMaterial,
-        billOfProcess: payload.billOfProcess,
-        parameters: payload.parameters,
-        tools: payload.tools,
-        steps: payload.steps,
-        workInstructions: payload.workInstructions
+  }) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.functions.invoke<{ convertedId: string }>("convert", {
+      body: {
+        type: "quoteToSalesOrder",
+        ...payload
       }
-    }
-  });
-}
-
-export async function copyQuote(
-  client: SupabaseClient<Database>,
-  payload: Omit<z.infer<typeof getMethodValidator>, "type"> & {
-    companyId: string;
-    userId: string;
+    });
   }
-) {
-  return client.functions.invoke<{ newQuoteId: string }>("get-method", {
-    body: {
-      ...payload,
-      type: "quoteToQuote"
+);
+
+export const copyQuoteLine = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function copyQuoteLine(
+    payload: z.infer<typeof getMethodValidator> & {
+      companyId: string;
+      userId: string;
     }
-  });
-}
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.functions.invoke<{ copiedId: string }>("get-method", {
+      body: {
+        ...payload,
+        type: "quoteLineToQuoteLine",
+        parts: {
+          billOfMaterial: payload.billOfMaterial,
+          billOfProcess: payload.billOfProcess,
+          parameters: payload.parameters,
+          tools: payload.tools,
+          steps: payload.steps,
+          workInstructions: payload.workInstructions
+        }
+      }
+    });
+  }
+);
+
+export const copyQuote = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function copyQuote(
+    payload: Omit<z.infer<typeof getMethodValidator>, "type"> & {
+      companyId: string;
+      userId: string;
+    }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.functions.invoke<{ newQuoteId: string }>("get-method", {
+      body: {
+        ...payload,
+        type: "quoteToQuote"
+      }
+    });
+  }
+);
 
 export async function createPricingRule(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  userId: string,
   data: z.infer<typeof pricingRuleValidator>
 ) {
+  const client = getAuthClient<SupabaseClient<Database>>();
+  const { userId, companyId } = AuthContextHolder.get();
   return client
     .from("pricingRule")
     .insert([
@@ -265,184 +278,237 @@ export async function createPricingRule(
     .single();
 }
 
-export async function deleteCustomer(
-  client: SupabaseClient<Database>,
-  customerId: string
-) {
-  return client.from("customer").delete().eq("id", customerId);
-}
+export const deleteCustomer = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteCustomer(customerId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("customer").delete().eq("id", customerId);
+  }
+);
 
-export async function deleteCustomerContact(
-  client: SupabaseClient<Database>,
-  customerId: string,
-  customerContactId: string
-) {
-  const customerContact = await client
-    .from("customerContact")
-    .select("contactId")
-    .eq("customerId", customerId)
-    .eq("id", customerContactId)
-    .single();
-  if (customerContact.data) {
-    const contactDelete = await client
-      .from("contact")
-      .delete()
-      .eq("id", customerContact.data.contactId);
+export const deleteCustomerContact = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteCustomerContact(
+    customerId: string,
+    customerContactId: string
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const customerContact = await client
+      .from("customerContact")
+      .select("contactId")
+      .eq("customerId", customerId)
+      .eq("id", customerContactId)
+      .single();
+    if (customerContact.data) {
+      const contactDelete = await client
+        .from("contact")
+        .delete()
+        .eq("id", customerContact.data.contactId);
 
-    if (contactDelete.error) {
-      return contactDelete;
+      if (contactDelete.error) {
+        return contactDelete;
+      }
+    }
+
+    return customerContact;
+  }
+);
+
+export const deleteCustomerLocation = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteCustomerLocation(
+    customerId: string,
+    customerLocationId: string
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { data: customerLocation } = await client
+      .from("customerLocation")
+      .select("addressId")
+      .eq("customerId", customerId)
+      .eq("id", customerLocationId)
+      .single();
+
+    if (customerLocation?.addressId) {
+      return client
+        .from("address")
+        .delete()
+        .eq("id", customerLocation.addressId);
+    } else {
+      // The customerLocation should always have an addressId, but just in case
+      return client
+        .from("customerLocation")
+        .delete()
+        .eq("customerId", customerId)
+        .eq("id", customerLocationId);
     }
   }
+);
 
-  return customerContact;
-}
-
-export async function deleteCustomerLocation(
-  client: SupabaseClient<Database>,
-  customerId: string,
-  customerLocationId: string
-) {
-  const { data: customerLocation } = await client
-    .from("customerLocation")
-    .select("addressId")
-    .eq("customerId", customerId)
-    .eq("id", customerLocationId)
-    .single();
-
-  if (customerLocation?.addressId) {
-    return client.from("address").delete().eq("id", customerLocation.addressId);
-  } else {
-    // The customerLocation should always have an addressId, but just in case
-    return client
-      .from("customerLocation")
-      .delete()
-      .eq("customerId", customerId)
-      .eq("id", customerLocationId);
+export const deleteCustomerStatus = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteCustomerStatus(customerStatusId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("customerStatus").delete().eq("id", customerStatusId);
   }
-}
+);
 
-export async function deleteCustomerStatus(
-  client: SupabaseClient<Database>,
-  customerStatusId: string
-) {
-  return client.from("customerStatus").delete().eq("id", customerStatusId);
-}
+export const deleteCustomerType = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteCustomerType(customerTypeId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("customerType").delete().eq("id", customerTypeId);
+  }
+);
 
-export async function deleteCustomerType(
-  client: SupabaseClient<Database>,
-  customerTypeId: string
-) {
-  return client.from("customerType").delete().eq("id", customerTypeId);
-}
+export const deleteNoQuoteReason = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteNoQuoteReason(noQuoteReasonId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("noQuoteReason").delete().eq("id", noQuoteReasonId);
+  }
+);
 
-export async function deleteNoQuoteReason(
-  client: SupabaseClient<Database>,
-  noQuoteReasonId: string
-) {
-  return client.from("noQuoteReason").delete().eq("id", noQuoteReasonId);
-}
-
-export async function deletePricingRule(
-  client: SupabaseClient<Database>,
-  pricingRuleId: string
-) {
+export async function deletePricingRule(pricingRuleId: string) {
+  const client = getAuthClient<SupabaseClient<Database>>();
   return client.from("pricingRule").delete().eq("id", pricingRuleId);
 }
 
-export async function deleteQuote(
-  client: SupabaseClient<Database>,
-  quoteId: string
-) {
-  return client.from("quote").delete().eq("id", quoteId);
-}
+export const deleteQuote = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteQuote(quoteId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("quote").delete().eq("id", quoteId);
+  }
+);
 
-export async function deleteQuoteMakeMethod(
-  client: SupabaseClient<Database>,
-  quoteMakeMethodId: string
-) {
-  return client.from("quoteMakeMethod").delete().eq("id", quoteMakeMethodId);
-}
+export const deleteQuoteMakeMethod = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteQuoteMakeMethod(quoteMakeMethodId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("quoteMakeMethod").delete().eq("id", quoteMakeMethodId);
+  }
+);
 
-export async function deleteQuoteLine(
-  client: SupabaseClient<Database>,
-  quoteLineId: string
-) {
-  return client.from("quoteLine").delete().eq("id", quoteLineId);
-}
+export const deleteQuoteLine = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteQuoteLine(quoteLineId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("quoteLine").delete().eq("id", quoteLineId);
+  }
+);
 
-export async function deleteQuoteMaterial(
-  client: SupabaseClient<Database>,
-  quoteMaterialId: string
-) {
-  return client.from("quoteMaterial").delete().eq("id", quoteMaterialId);
-}
+export const deleteQuoteMaterial = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteQuoteMaterial(quoteMaterialId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("quoteMaterial").delete().eq("id", quoteMaterialId);
+  }
+);
 
-export async function deleteQuoteOperation(
-  client: SupabaseClient<Database>,
-  quoteOperationId: string
-) {
-  return client.from("quoteOperation").delete().eq("id", quoteOperationId);
-}
+export const deleteQuoteOperation = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteQuoteOperation(quoteOperationId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("quoteOperation").delete().eq("id", quoteOperationId);
+  }
+);
 
-export async function deleteQuoteOperationStep(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("quoteOperationStep").delete().eq("id", id);
-}
+export const deleteQuoteOperationStep = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteQuoteOperationStep(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("quoteOperationStep").delete().eq("id", id);
+  }
+);
 
-export async function deleteQuoteOperationParameter(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("quoteOperationParameter").delete().eq("id", id);
-}
+export const deleteQuoteOperationParameter = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteQuoteOperationParameter(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("quoteOperationParameter").delete().eq("id", id);
+  }
+);
 
-export async function deleteQuoteOperationTool(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("quoteOperationTool").delete().eq("id", id);
-}
+export const deleteQuoteOperationTool = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteQuoteOperationTool(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("quoteOperationTool").delete().eq("id", id);
+  }
+);
 
-export async function deleteSalesOrder(
-  client: SupabaseClient<Database>,
-  salesOrderId: string
-) {
-  return client.from("salesOrder").delete().eq("id", salesOrderId);
-}
+export const deleteSalesOrder = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteSalesOrder(salesOrderId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("salesOrder").delete().eq("id", salesOrderId);
+  }
+);
 
-export async function deleteSalesOrderLine(
-  client: SupabaseClient<Database>,
-  salesOrderLineId: string
-) {
-  return client.from("salesOrderLine").delete().eq("id", salesOrderLineId);
-}
+export const deleteSalesOrderLine = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteSalesOrderLine(salesOrderLineId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("salesOrderLine").delete().eq("id", salesOrderLineId);
+  }
+);
 
-export async function deleteSalesRFQ(
-  client: SupabaseClient<Database>,
-  salesRfqId: string
-) {
-  return client.from("salesRfq").delete().eq("id", salesRfqId);
-}
+export const deleteSalesRFQ = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteSalesRFQ(salesRfqId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("salesRfq").delete().eq("id", salesRfqId);
+  }
+);
 
-export async function deleteSalesRFQLine(
-  client: SupabaseClient<Database>,
-  salesRFQLineId: string
-) {
-  return client.from("salesRfqLine").delete().eq("id", salesRFQLineId);
-}
+export const deleteSalesRFQLine = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteSalesRFQLine(salesRFQLineId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("salesRfqLine").delete().eq("id", salesRFQLineId);
+  }
+);
 
-export async function duplicatePricingRule(
-  client: SupabaseClient<Database>,
-  id: string,
-  companyId: string,
-  userId: string
-) {
-  const { data: original, error: fetchError } = await getPricingRule(
-    client,
-    id
-  );
+export async function duplicatePricingRule(id: string) {
+  const client = getAuthClient<SupabaseClient<Database>>();
+  const { userId, companyId } = AuthContextHolder.get();
+  const { data: original, error: fetchError } = await getPricingRule(id);
   if (fetchError || !original) return { data: null, error: fetchError };
 
   return client
@@ -471,87 +537,99 @@ export async function duplicatePricingRule(
     .single();
 }
 
-export async function getConfigurationParametersByQuoteLineId(
-  client: SupabaseClient<Database>,
-  quoteLineId: string,
-  companyId: string
-) {
-  const quoteLine = await client
-    .from("quoteLine")
-    .select("itemId")
-    .eq("id", quoteLineId)
-    .single();
+export const getConfigurationParametersByQuoteLineId = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getConfigurationParametersByQuoteLineId(quoteLineId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    const quoteLine = await client
+      .from("quoteLine")
+      .select("itemId")
+      .eq("id", quoteLineId)
+      .single();
 
-  if (quoteLine.error || !quoteLine.data) {
-    return { groups: [], parameters: [] };
+    if (quoteLine.error || !quoteLine.data) {
+      return { groups: [], parameters: [] };
+    }
+
+    const [parameters, groups] = await Promise.all([
+      client
+        .from("configurationParameter")
+        .select("*")
+        .eq("itemId", quoteLine.data.itemId)
+        .eq("companyId", companyId),
+      client
+        .from("configurationParameterGroup")
+        .select("*")
+        .eq("itemId", quoteLine.data.itemId)
+        .eq("companyId", companyId)
+    ]);
+
+    if (parameters.error) {
+      console.error(parameters.error);
+      return { groups: [], parameters: [] };
+    }
+
+    if (groups.error) {
+      console.error(groups.error);
+      return { groups: [], parameters: [] };
+    }
+
+    return { groups: groups.data ?? [], parameters: parameters.data ?? [] };
   }
+);
 
-  const [parameters, groups] = await Promise.all([
-    client
-      .from("configurationParameter")
-      .select("*")
-      .eq("itemId", quoteLine.data.itemId)
-      .eq("companyId", companyId),
-    client
-      .from("configurationParameterGroup")
-      .select("*")
-      .eq("itemId", quoteLine.data.itemId)
-      .eq("companyId", companyId)
-  ]);
-
-  if (parameters.error) {
-    console.error(parameters.error);
-    return { groups: [], parameters: [] };
+export const getCustomer = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getCustomer(customerId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("customers").select("*").eq("id", customerId).single();
   }
+);
 
-  if (groups.error) {
-    console.error(groups.error);
-    return { groups: [], parameters: [] };
+export const getCustomerContact = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getCustomerContact(customerContactId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("customerContact")
+      .select(
+        "*, contact(id, firstName, lastName, email, mobilePhone, homePhone, workPhone, fax, title, notes)"
+      )
+      .eq("id", customerContactId)
+      .single();
   }
+);
 
-  return { groups: groups.data ?? [], parameters: parameters.data ?? [] };
-}
-
-export async function getCustomer(
-  client: SupabaseClient<Database>,
-  customerId: string
-) {
-  return client.from("customers").select("*").eq("id", customerId).single();
-}
-
-export async function getCustomerContact(
-  client: SupabaseClient<Database>,
-  customerContactId: string
-) {
-  return client
-    .from("customerContact")
-    .select(
-      "*, contact(id, firstName, lastName, email, mobilePhone, homePhone, workPhone, fax, title, notes)"
-    )
-    .eq("id", customerContactId)
-    .single();
-}
-
-export async function getCustomerContacts(
-  client: SupabaseClient<Database>,
-  customerId: string
-) {
-  return client
-    .from("customerContact")
-    .select(
-      "*, contact(id, fullName, firstName, lastName, email, mobilePhone, homePhone, workPhone, fax, title, notes), user(id, active)"
-    )
-    .eq("customerId", customerId);
-}
+export const getCustomerContacts = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getCustomerContacts(customerId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("customerContact")
+      .select(
+        "*, contact(id, fullName, firstName, lastName, email, mobilePhone, homePhone, workPhone, fax, title, notes), user(id, active)"
+      )
+      .eq("customerId", customerId);
+  }
+);
 
 export async function getCustomerItemPriceOverride(
-  client: SupabaseClient<Database>,
   customerId: string,
   itemId: string,
-  companyId: string,
   quantity: number = 1,
   date?: string
 ) {
+  const client = getAuthClient<SupabaseClient<Database>>();
+  const { companyId } = AuthContextHolder.get();
   const { data, error } = await client
     .from("customerItemPriceOverride")
     .select(
@@ -567,72 +645,87 @@ export async function getCustomerItemPriceOverride(
   return { data: applyBreakToParent(data, quantity, date), error: null };
 }
 
-export async function getCustomerLocation(
-  client: SupabaseClient<Database>,
-  customerLocationId: string
-) {
-  return client
-    .from("customerLocation")
-    .select(
-      "*, address(id, addressLine1, addressLine2, city, stateProvince, countryCode, country(alpha2, name), postalCode)"
-    )
-    .eq("id", customerLocationId)
-    .single();
-}
+export const getCustomerLocation = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getCustomerLocation(customerLocationId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("customerLocation")
+      .select(
+        "*, address(id, addressLine1, addressLine2, city, stateProvince, countryCode, country(alpha2, name), postalCode)"
+      )
+      .eq("id", customerLocationId)
+      .single();
+  }
+);
 
-export async function getCustomerLocations(
-  client: SupabaseClient<Database>,
-  customerId: string
-) {
-  return client
-    .from("customerLocation")
-    .select(
-      "*, address(id, addressLine1, addressLine2, city, stateProvince, country(alpha2, name), postalCode)"
-    )
-    .eq("customerId", customerId);
-}
+export const getCustomerLocations = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getCustomerLocations(customerId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("customerLocation")
+      .select(
+        "*, address(id, addressLine1, addressLine2, city, stateProvince, country(alpha2, name), postalCode)"
+      )
+      .eq("customerId", customerId);
+  }
+);
 
-export async function getCustomerPayment(
-  client: SupabaseClient<Database>,
-  customerId: string
-) {
-  return client
-    .from("customerPayment")
-    .select("*")
-    .eq("customerId", customerId)
-    .single();
-}
+export const getCustomerPayment = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getCustomerPayment(customerId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("customerPayment")
+      .select("*")
+      .eq("customerId", customerId)
+      .single();
+  }
+);
 
-export async function getCustomerShipping(
-  client: SupabaseClient<Database>,
-  customerId: string
-) {
-  return client
-    .from("customerShipping")
-    .select("*")
-    .eq("customerId", customerId)
-    .single();
-}
+export const getCustomerShipping = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getCustomerShipping(customerId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("customerShipping")
+      .select("*")
+      .eq("customerId", customerId)
+      .single();
+  }
+);
 
-export async function getCustomerTax(
-  client: SupabaseClient<Database>,
-  customerId: string
-) {
-  return client
-    .from("customerTax")
-    .select("*")
-    .eq("customerId", customerId)
-    .single();
-}
+export const getCustomerTax = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getCustomerTax(customerId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("customerTax")
+      .select("*")
+      .eq("customerId", customerId)
+      .single();
+  }
+);
 
 export async function getCustomerTypeItemPriceOverride(
-  client: SupabaseClient<Database>,
   customerTypeId: string,
   itemId: string,
-  companyId: string,
   quantity: number = 1,
   date?: string
 ) {
+  const client = getAuthClient<SupabaseClient<Database>>();
+  const { companyId } = AuthContextHolder.get();
   const { data, error } = await client
     .from("customerItemPriceOverride")
     .select(
@@ -649,12 +742,12 @@ export async function getCustomerTypeItemPriceOverride(
 }
 
 export async function getAllCustomersItemPriceOverride(
-  client: SupabaseClient<Database>,
   itemId: string,
-  companyId: string,
   quantity: number = 1,
   date?: string
 ) {
+  const client = getAuthClient<SupabaseClient<Database>>();
+  const { companyId } = AuthContextHolder.get();
   const { data, error } = await client
     .from("customerItemPriceOverride")
     .select(
@@ -736,357 +829,419 @@ function pickBestBreak(
   return best;
 }
 
-export async function getCustomers(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args: GenericQueryFilters & {
-    search: string | null;
-  }
-) {
-  let query = client
-    .from("customers")
-    .select("*", {
-      count: "exact"
-    })
-    .eq("companyId", companyId);
-
-  if (args.search) {
-    query = query.ilike("name", `%${args.search}%`);
-  }
-
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
-  return query;
-}
-
-export async function getCustomersList(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return fetchAllFromTable<{
-    id: string;
-    name: string;
-  }>(client, "customer", "id, name", (query) =>
-    query.eq("companyId", companyId).order("name")
-  );
-}
-
-export async function getCustomerStatus(
-  client: SupabaseClient<Database>,
-  customerStatusId: string
-) {
-  return client
-    .from("customerStatus")
-    .select("*")
-    .eq("id", customerStatusId)
-    .single();
-}
-
-export async function getCustomerStatuses(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args?: GenericQueryFilters & { search: string | null }
-) {
-  let query = client
-    .from("customerStatus")
-    .select("id, name, customFields", { count: "exact" })
-    .eq("companyId", companyId);
-
-  if (args?.search) {
-    query = query.ilike("name", `%${args.search}%`);
-  }
-
-  if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
-  }
-
-  return query;
-}
-
-export async function getCustomerStatusesList(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return client
-    .from("customerStatus")
-    .select("id, name")
-    .eq("companyId", companyId)
-    .order("name");
-}
-
-export async function getCustomerType(
-  client: SupabaseClient<Database>,
-  customerTypeId: string
-) {
-  return client
-    .from("customerType")
-    .select("*")
-    .eq("id", customerTypeId)
-    .single();
-}
-
-export async function getCustomerTypes(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args?: GenericQueryFilters & { search: string | null }
-) {
-  let query = client
-    .from("customerType")
-    .select("*", { count: "exact" })
-    .eq("companyId", companyId);
-
-  if (args?.search) {
-    query = query.ilike("name", `%${args.search}%`);
-  }
-
-  if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
-  }
-
-  return query;
-}
-
-export async function getCustomerTypesList(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return client
-    .from("customerType")
-    .select("id, name")
-    .eq("companyId", companyId)
-    .order("name");
-}
-
-export async function getExternalSalesOrderLines(
-  client: SupabaseClient<Database>,
-  customerId: string,
-  args: GenericQueryFilters & { search: string | null }
-) {
-  let query = client.rpc(
-    "get_sales_order_lines_by_customer_id",
-    { customer_id: customerId },
-    {
-      count: "exact"
+export const getCustomers = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getCustomers(
+    args: GenericQueryFilters & {
+      search: string | null;
     }
-  );
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    let query = client
+      .from("customers")
+      .select("*", {
+        count: "exact"
+      })
+      .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      `readableId.ilike.%${args.search}%,customerReference.ilike.%${args.search}%,salesOrderId.ilike.%${args.search}%`
-    );
-  }
+    if (args.search) {
+      query = query.ilike("name", `%${args.search}%`);
+    }
 
-  if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "orderDate", ascending: true }
-    ]);
-  }
-
-  return query;
-}
-
-export async function getModelByQuoteLineId(
-  client: SupabaseClient<Database>,
-  quoteLineId: string
-) {
-  const quoteLine = await client
-    .from("quoteLine")
-    .select("itemId")
-    .eq("id", quoteLineId)
-    .single();
-
-  if (!quoteLine.data) return null;
-
-  const item = await client
-    .from("item")
-    .select("id, type, modelUploadId")
-    .eq("id", quoteLine.data.itemId)
-    .single();
-
-  if (!item.data || !item.data.modelUploadId) {
-    return {
-      itemId: item.data?.id ?? null,
-      type: item.data?.type ?? null,
-      modelPath: null
-    };
-  }
-
-  const model = await client
-    .from("modelUpload")
-    .select("*")
-    .eq("id", item.data.modelUploadId)
-    .maybeSingle();
-
-  if (!model.data) {
-    return {
-      itemId: item.data?.id ?? null,
-      type: item.data?.type ?? null,
-      modelSize: null
-    };
-  }
-
-  return {
-    itemId: item.data!.id,
-    type: item.data!.type,
-    ...model.data
-  };
-}
-
-export async function getNoQuoteReasonsList(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return client
-    .from("noQuoteReason")
-    .select("id, name")
-    .eq("companyId", companyId)
-    .order("name");
-}
-
-export async function getNoQuoteReason(
-  client: SupabaseClient<Database>,
-  noQuoteReasonId: string
-) {
-  return client
-    .from("noQuoteReason")
-    .select("*")
-    .eq("id", noQuoteReasonId)
-    .single();
-}
-
-export async function getNoQuoteReasons(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args?: GenericQueryFilters & { search: string | null }
-) {
-  let query = client
-    .from("noQuoteReason")
-    .select("*", { count: "exact" })
-    .eq("companyId", companyId);
-
-  if (args?.search) {
-    query = query.ilike("name", `%${args.search}%`);
-  }
-
-  if (args) {
     query = setGenericQueryFilters(query, args, [
       { column: "name", ascending: true }
     ]);
+    return query;
   }
+);
 
-  return query;
-}
-
-export async function getOpportunity(
-  client: SupabaseClient<Database>,
-  opportunityId: string | null
-): Promise<
-  PostgrestSingleResponse<{
-    id: string;
-    companyId: string;
-    purchaseOrderDocumentPath: string;
-    requestForQuoteDocumentPath: string;
-    salesRfqs: SalesRFQ[];
-    quotes: Quotation[];
-    salesOrders: SalesOrder[];
-  } | null>
-> {
-  if (!opportunityId) {
-    // @ts-expect-error
-    return {
-      data: null,
-      error: null
-    };
-  }
-
-  const response = await client.rpc("get_opportunity_with_related_records", {
-    opportunity_id: opportunityId
-  });
-
-  return {
-    data: response.data?.[0],
-    error: response.error
-  } as unknown as PostgrestSingleResponse<{
-    id: string;
-    companyId: string;
-    purchaseOrderDocumentPath: string;
-    requestForQuoteDocumentPath: string;
-    salesRfqs: SalesRFQ[];
-    quotes: Quotation[];
-    salesOrders: SalesOrder[];
-  }>;
-}
-
-export async function getOpportunityDocuments(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  opportunityId: string
-) {
-  const result = await client.storage
-    .from("private")
-    .list(`${companyId}/opportunity/${opportunityId}`);
-
-  if (result.error) {
-    console.error("Failed to list opportunity documents", result.error);
-    return [];
-  }
-
-  return result.data?.map((f) => ({ ...f, bucket: "opportunity" })) ?? [];
-}
-
-export async function getOpportunityLineDocuments(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  lineId: string,
-  itemId?: string | null
-) {
-  const [opportunityLineResult, itemResult] = await Promise.all([
-    client.storage
-      .from("private")
-      .list(`${companyId}/opportunity-line/${lineId}`),
-    itemId
-      ? client.storage.from("private").list(`${companyId}/parts/${itemId}`)
-      : Promise.resolve({ data: [] as any[], error: null })
-  ]);
-
-  if (opportunityLineResult.error) {
-    console.error(
-      "Failed to list opportunity line documents",
-      opportunityLineResult.error
+export const getCustomersList = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getCustomersList() {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return fetchAllFromTable<{
+      id: string;
+      name: string;
+    }>(client, "customer", "id, name", (query) =>
+      query.eq("companyId", companyId).order("name")
     );
   }
-  if (itemResult.error) {
-    console.error("Failed to list item documents", itemResult.error);
+);
+
+export const getCustomerStatus = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getCustomerStatus(customerStatusId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("customerStatus")
+      .select("*")
+      .eq("id", customerStatusId)
+      .single();
   }
+);
 
-  const opportunityLineDocs =
-    opportunityLineResult.data?.map((f) => ({
-      ...f,
-      bucket: "opportunity-line"
-    })) ?? [];
-  const itemDocs =
-    itemResult.data?.map((f) => ({ ...f, bucket: "parts" })) ?? [];
+export const getCustomerStatuses = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getCustomerStatuses(
+    args?: GenericQueryFilters & { search: string | null }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    let query = client
+      .from("customerStatus")
+      .select("id, name, customFields", { count: "exact" })
+      .eq("companyId", companyId);
 
-  return [...opportunityLineDocs, ...itemDocs];
-}
+    if (args?.search) {
+      query = query.ilike("name", `%${args.search}%`);
+    }
 
-export async function getPricingRule(
-  client: SupabaseClient<Database>,
-  id: string
-) {
+    if (args) {
+      query = setGenericQueryFilters(query, args, [
+        { column: "name", ascending: true }
+      ]);
+    }
+
+    return query;
+  }
+);
+
+export const getCustomerStatusesList = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getCustomerStatusesList() {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("customerStatus")
+      .select("id, name")
+      .eq("companyId", companyId)
+      .order("name");
+  }
+);
+
+export const getCustomerType = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getCustomerType(customerTypeId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("customerType")
+      .select("*")
+      .eq("id", customerTypeId)
+      .single();
+  }
+);
+
+export const getCustomerTypes = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getCustomerTypes(
+    args?: GenericQueryFilters & { search: string | null }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    let query = client
+      .from("customerType")
+      .select("*", { count: "exact" })
+      .eq("companyId", companyId);
+
+    if (args?.search) {
+      query = query.ilike("name", `%${args.search}%`);
+    }
+
+    if (args) {
+      query = setGenericQueryFilters(query, args, [
+        { column: "name", ascending: true }
+      ]);
+    }
+
+    return query;
+  }
+);
+
+export const getCustomerTypesList = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getCustomerTypesList() {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("customerType")
+      .select("id, name")
+      .eq("companyId", companyId)
+      .order("name");
+  }
+);
+
+export const getExternalSalesOrderLines = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getExternalSalesOrderLines(
+    customerId: string,
+    args: GenericQueryFilters & { search: string | null }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    let query = client.rpc(
+      "get_sales_order_lines_by_customer_id",
+      { customer_id: customerId },
+      {
+        count: "exact"
+      }
+    );
+
+    if (args.search) {
+      query = query.or(
+        `readableId.ilike.%${args.search}%,customerReference.ilike.%${args.search}%,salesOrderId.ilike.%${args.search}%`
+      );
+    }
+
+    if (args) {
+      query = setGenericQueryFilters(query, args, [
+        { column: "orderDate", ascending: true }
+      ]);
+    }
+
+    return query;
+  }
+);
+
+export const getModelByQuoteLineId = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getModelByQuoteLineId(quoteLineId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const quoteLine = await client
+      .from("quoteLine")
+      .select("itemId")
+      .eq("id", quoteLineId)
+      .single();
+
+    if (!quoteLine.data) return null;
+
+    const item = await client
+      .from("item")
+      .select("id, type, modelUploadId")
+      .eq("id", quoteLine.data.itemId)
+      .single();
+
+    if (!item.data || !item.data.modelUploadId) {
+      return {
+        itemId: item.data?.id ?? null,
+        type: item.data?.type ?? null,
+        modelPath: null
+      };
+    }
+
+    const model = await client
+      .from("modelUpload")
+      .select("*")
+      .eq("id", item.data.modelUploadId)
+      .maybeSingle();
+
+    if (!model.data) {
+      return {
+        itemId: item.data?.id ?? null,
+        type: item.data?.type ?? null,
+        modelSize: null
+      };
+    }
+
+    return {
+      itemId: item.data!.id,
+      type: item.data!.type,
+      ...model.data
+    };
+  }
+);
+
+export const getNoQuoteReasonsList = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getNoQuoteReasonsList() {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("noQuoteReason")
+      .select("id, name")
+      .eq("companyId", companyId)
+      .order("name");
+  }
+);
+
+export const getNoQuoteReason = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getNoQuoteReason(noQuoteReasonId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("noQuoteReason")
+      .select("*")
+      .eq("id", noQuoteReasonId)
+      .single();
+  }
+);
+
+export const getNoQuoteReasons = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getNoQuoteReasons(
+    args?: GenericQueryFilters & { search: string | null }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    let query = client
+      .from("noQuoteReason")
+      .select("*", { count: "exact" })
+      .eq("companyId", companyId);
+
+    if (args?.search) {
+      query = query.ilike("name", `%${args.search}%`);
+    }
+
+    if (args) {
+      query = setGenericQueryFilters(query, args, [
+        { column: "name", ascending: true }
+      ]);
+    }
+
+    return query;
+  }
+);
+
+export const getOpportunity = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getOpportunity(opportunityId: string | null): Promise<
+    PostgrestSingleResponse<{
+      id: string;
+      companyId: string;
+      purchaseOrderDocumentPath: string;
+      requestForQuoteDocumentPath: string;
+      salesRfqs: SalesRFQ[];
+      quotes: Quotation[];
+      salesOrders: SalesOrder[];
+    } | null>
+  > {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if (!opportunityId) {
+      // @ts-expect-error
+      return {
+        data: null,
+        error: null
+      };
+    }
+
+    const response = await client.rpc("get_opportunity_with_related_records", {
+      opportunity_id: opportunityId
+    });
+
+    return {
+      data: response.data?.[0],
+      error: response.error
+    } as unknown as PostgrestSingleResponse<{
+      id: string;
+      companyId: string;
+      purchaseOrderDocumentPath: string;
+      requestForQuoteDocumentPath: string;
+      salesRfqs: SalesRFQ[];
+      quotes: Quotation[];
+      salesOrders: SalesOrder[];
+    }>;
+  }
+);
+
+export const getOpportunityDocuments = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getOpportunityDocuments(opportunityId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    const result = await client.storage
+      .from("private")
+      .list(`${companyId}/opportunity/${opportunityId}`);
+
+    if (result.error) {
+      console.error("Failed to list opportunity documents", result.error);
+      return [];
+    }
+
+    return result.data?.map((f) => ({ ...f, bucket: "opportunity" })) ?? [];
+  }
+);
+
+export const getOpportunityLineDocuments = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getOpportunityLineDocuments(
+    lineId: string,
+    itemId?: string | null
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    const [opportunityLineResult, itemResult] = await Promise.all([
+      client.storage
+        .from("private")
+        .list(`${companyId}/opportunity-line/${lineId}`),
+      itemId
+        ? client.storage.from("private").list(`${companyId}/parts/${itemId}`)
+        : Promise.resolve({ data: [] as any[], error: null })
+    ]);
+
+    if (opportunityLineResult.error) {
+      console.error(
+        "Failed to list opportunity line documents",
+        opportunityLineResult.error
+      );
+    }
+    if (itemResult.error) {
+      console.error("Failed to list item documents", itemResult.error);
+    }
+
+    const opportunityLineDocs =
+      opportunityLineResult.data?.map((f) => ({
+        ...f,
+        bucket: "opportunity-line"
+      })) ?? [];
+    const itemDocs =
+      itemResult.data?.map((f) => ({ ...f, bucket: "parts" })) ?? [];
+
+    return [...opportunityLineDocs, ...itemDocs];
+  }
+);
+
+export async function getPricingRule(id: string) {
+  const client = getAuthClient<SupabaseClient<Database>>();
   return client.from("pricingRule").select("*").eq("id", id).single();
 }
 
 export async function getPricingRules(
-  client: SupabaseClient<Database>,
-  companyId: string,
   args?: GenericQueryFilters & { search?: string }
 ) {
+  const client = getAuthClient<SupabaseClient<Database>>();
+  const { companyId } = AuthContextHolder.get();
   let query = client
     .from("pricingRule")
     .select("*", { count: "exact" })
@@ -1111,106 +1266,136 @@ export const priceSourceTypes = [
   "Rule"
 ] as const;
 
-export async function getQuote(
-  client: SupabaseClient<Database>,
-  quoteId: string
-) {
-  return client.from("quotes").select("*").eq("id", quoteId).single();
-}
-
-export async function getQuoteFavorites(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  userId: string
-) {
-  return client
-    .from("quoteFavorite")
-    .select("*")
-    .eq("companyId", companyId)
-    .eq("userId", userId);
-}
-
-export async function getQuotes(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args: GenericQueryFilters & {
-    search: string | null;
+export const getQuote = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getQuote(quoteId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("quotes").select("*").eq("id", quoteId).single();
   }
-) {
-  let query = client
-    .from("quotes")
-    .select("*", { count: "exact" })
-    .eq("companyId", companyId);
+);
 
-  if (args.search) {
-    query = query.or(
-      `quoteId.ilike.%${args.search}%,customerReference.ilike.%${args.search}%`
+export const getQuoteFavorites = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getQuoteFavorites() {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { userId, companyId } = AuthContextHolder.get();
+    return client
+      .from("quoteFavorite")
+      .select("*")
+      .eq("companyId", companyId)
+      .eq("userId", userId);
+  }
+);
+
+export const getQuotes = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getQuotes(
+    args: GenericQueryFilters & {
+      search: string | null;
+    }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    let query = client
+      .from("quotes")
+      .select("*", { count: "exact" })
+      .eq("companyId", companyId);
+
+    if (args.search) {
+      query = query.or(
+        `quoteId.ilike.%${args.search}%,customerReference.ilike.%${args.search}%`
+      );
+    }
+
+    query = setGenericQueryFilters(query, args, [
+      { column: "quoteId", ascending: false }
+    ]);
+    return query;
+  }
+);
+
+export const getQuotesList = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getQuotesList() {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return fetchAllFromTable<{
+      id: string;
+      quoteId: string;
+      revisionId: string;
+    }>(client, "quote", "id, quoteId, revisionId", (query) =>
+      query.eq("companyId", companyId).order("createdAt", { ascending: false })
     );
   }
+);
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "quoteId", ascending: false }
-  ]);
-  return query;
-}
+export const getQuoteAssembliesByLine = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getQuoteAssembliesByLine(quoteLineId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("quoteMakeMethod")
+      .select("*")
+      .eq("quoteLineId", quoteLineId);
+  }
+);
 
-export async function getQuotesList(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return fetchAllFromTable<{
-    id: string;
-    quoteId: string;
-    revisionId: string;
-  }>(client, "quote", "id, quoteId, revisionId", (query) =>
-    query.eq("companyId", companyId).order("createdAt", { ascending: false })
-  );
-}
+export const getQuoteAssemblies = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getQuoteAssemblies(quoteId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("quoteMakeMethod").select("*").eq("quoteId", quoteId);
+  }
+);
 
-export async function getQuoteAssembliesByLine(
-  client: SupabaseClient<Database>,
-  quoteLineId: string
-) {
-  return client
-    .from("quoteMakeMethod")
-    .select("*")
-    .eq("quoteLineId", quoteLineId);
-}
+export const getQuoteCustomerDetails = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getQuoteCustomerDetails(quoteId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("quoteCustomerDetails")
+      .select("*")
+      .eq("quoteId", quoteId)
+      .single();
+  }
+);
 
-export async function getQuoteAssemblies(
-  client: SupabaseClient<Database>,
-  quoteId: string
-) {
-  return client.from("quoteMakeMethod").select("*").eq("quoteId", quoteId);
-}
+export const getQuoteLine = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getQuoteLine(quoteLineId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("quoteLines").select("*").eq("id", quoteLineId).single();
+  }
+);
 
-export async function getQuoteCustomerDetails(
-  client: SupabaseClient<Database>,
-  quoteId: string
-) {
-  return client
-    .from("quoteCustomerDetails")
-    .select("*")
-    .eq("quoteId", quoteId)
-    .single();
-}
-
-export async function getQuoteLine(
-  client: SupabaseClient<Database>,
-  quoteLineId: string
-) {
-  return client.from("quoteLines").select("*").eq("id", quoteLineId).single();
-}
-
-export async function getQuoteLinesList(
-  client: SupabaseClient<Database>,
-  quoteId: string
-) {
-  return client
-    .from("quoteLine")
-    .select("id, description, ...item(readableIdWithRevision)")
-    .eq("quoteId", quoteId);
-}
+export const getQuoteLinesList = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getQuoteLinesList(quoteId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("quoteLine")
+      .select("id, description, ...item(readableIdWithRevision)")
+      .eq("quoteId", quoteId);
+  }
+);
 
 type QuoteMethod = NonNullable<
   Awaited<ReturnType<typeof getQuoteMethodTreeArray>>["data"]
@@ -1221,52 +1406,63 @@ type QuoteMethodTreeItem = {
   children: QuoteMethodTreeItem[];
 };
 
-export async function getQuoteMakeMethod(
-  client: SupabaseClient<Database>,
-  quoteMakeMethodId: string
-) {
-  return client
-    .from("quoteMakeMethod")
-    .select("*, ...item(itemType:type)")
-    .eq("id", quoteMakeMethodId)
-    .single();
-}
+export const getQuoteMakeMethod = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getQuoteMakeMethod(quoteMakeMethodId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("quoteMakeMethod")
+      .select("*, ...item(itemType:type)")
+      .eq("id", quoteMakeMethodId)
+      .single();
+  }
+);
 
-export async function getRootQuoteMakeMethod(
-  client: SupabaseClient<Database>,
-  quoteLineId: string
-) {
-  return client
-    .from("quoteMakeMethod")
-    .select("*, ...item(itemType:type)")
-    .eq("quoteLineId", quoteLineId)
-    .is("parentMaterialId", null)
-    .single();
-}
+export const getRootQuoteMakeMethod = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getRootQuoteMakeMethod(quoteLineId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("quoteMakeMethod")
+      .select("*, ...item(itemType:type)")
+      .eq("quoteLineId", quoteLineId)
+      .is("parentMaterialId", null)
+      .single();
+  }
+);
 
-export async function getQuoteMethodTrees(
-  client: SupabaseClient<Database>,
-  quoteId: string
-) {
-  const items = await getQuoteMethodTreeArray(client, quoteId);
-  if (items.error) return items;
+export const getQuoteMethodTrees = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getQuoteMethodTrees(quoteId: string) {
+    const items = await getQuoteMethodTreeArray(quoteId);
+    if (items.error) return items;
 
-  const tree = getQuoteMethodTreeArrayToTree(items.data);
+    const tree = getQuoteMethodTreeArrayToTree(items.data);
 
-  return {
-    data: tree,
-    error: null
-  };
-}
+    return {
+      data: tree,
+      error: null
+    };
+  }
+);
 
-export async function getQuoteMethodTreeArray(
-  client: SupabaseClient<Database>,
-  quoteId: string
-) {
-  return client.rpc("get_quote_methods", {
-    qid: quoteId
-  });
-}
+export const getQuoteMethodTreeArray = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getQuoteMethodTreeArray(quoteId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.rpc("get_quote_methods", {
+      qid: quoteId
+    });
+  }
+);
 
 function getQuoteMethodTreeArrayToTree(
   items: QuoteMethod[]
@@ -1311,563 +1507,712 @@ function getQuoteMethodTreeArrayToTree(
   // return rootItems.map((item) => traverseAndRenameIds(item));
 }
 
-export async function getQuoteLines(
-  client: SupabaseClient<Database>,
-  quoteId: string
-) {
-  return client
-    .from("quoteLines")
-    .select("*")
-    .eq("quoteId", quoteId)
-    .order("sortOrder", { ascending: true })
-    .order("itemReadableId", { ascending: true });
-}
-
-export async function getQuoteByExternalId(
-  client: SupabaseClient<Database>,
-  externalId: string
-) {
-  return client
-    .from("quote")
-    .select("*")
-    .eq("externalLinkId", externalId)
-    .single();
-}
-
-export async function getQuoteLinePrices(
-  client: SupabaseClient<Database>,
-  quoteLineId: string
-) {
-  return client
-    .from("quoteLinePrice")
-    .select("*")
-    .eq("quoteLineId", quoteLineId);
-}
-
-export async function getQuoteLinePricesByQuoteId(
-  client: SupabaseClient<Database>,
-  quoteId: string
-) {
-  return client
-    .from("quoteLinePrice")
-    .select("*")
-    .eq("quoteId", quoteId)
-    .order("quoteLineId", { ascending: true });
-}
-
-export async function getQuoteLinePricesByItemId(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  currentQuoteId: string
-) {
-  return client
-    .from("quoteLinePrices")
-    .select("*")
-    .eq("itemId", itemId)
-    .neq("quoteId", currentQuoteId)
-    .order("quoteCreatedAt", { ascending: false })
-    .order("qty", { ascending: true });
-}
-
-export async function getQuoteLinePricesByItemIds(
-  client: SupabaseClient<Database>,
-  itemIds: string[],
-  currentQuoteId: string
-) {
-  return client
-    .from("quoteLinePrices")
-    .select("*")
-    .in("itemId", itemIds)
-    .neq("quoteId", currentQuoteId)
-    .order("quoteCreatedAt", { ascending: false })
-    .order("qty", { ascending: true })
-    .limit(10);
-}
-
-export async function getQuoteMaterials(
-  client: SupabaseClient<Database>,
-  quoteId: string
-) {
-  return client.from("quoteMaterial").select("*").eq("quoteId", quoteId);
-}
-
-export async function getQuoteMaterial(
-  client: SupabaseClient<Database>,
-  materialId: string
-) {
-  return client
-    .from("quoteMaterialWithMakeMethodId")
-    .select("*")
-    .eq("id", materialId)
-    .single();
-}
-
-export async function getQuoteMaterialsByLine(
-  client: SupabaseClient<Database>,
-  quoteLineId: string
-) {
-  return client
-    .from("quoteMaterial")
-    .select("*")
-    .eq("quoteLineId", quoteLineId);
-}
-
-export async function getQuoteMaterialsByMethodId(
-  client: SupabaseClient<Database>,
-  quoteMakeMethodId: string
-) {
-  return client
-    .from("quoteMaterial")
-    .select("*, item(name, itemTrackingType, replenishmentSystem)")
-    .eq("quoteMakeMethodId", quoteMakeMethodId)
-    .order("order", { ascending: true });
-}
-
-export async function getQuoteMaterialsByOperation(
-  client: SupabaseClient<Database>,
-  quoteOperationId: string
-) {
-  return client
-    .from("quoteMaterial")
-    .select("*")
-    .eq("quoteOperationId", quoteOperationId);
-}
-
-export async function getQuoteOperation(
-  client: SupabaseClient<Database>,
-  quoteOperationId: string
-) {
-  return client
-    .from("quoteOperation")
-    .select("*")
-    .eq("id", quoteOperationId)
-    .single();
-}
-
-export async function getQuoteOperationsByLine(
-  client: SupabaseClient<Database>,
-  quoteLineId: string
-) {
-  return client
-    .from("quoteOperation")
-    .select("*")
-    .eq("quoteLineId", quoteLineId);
-}
-
-export async function getQuoteOperationsByMethodId(
-  client: SupabaseClient<Database>,
-  quoteMakeMethodId: string
-) {
-  return client
-    .from("quoteOperation")
-    .select(
-      "*, quoteOperationTool(*), quoteOperationParameter(*), quoteOperationStep(*)"
-    )
-    .eq("quoteMakeMethodId", quoteMakeMethodId)
-    .order("order", { ascending: true });
-}
-
-export async function getQuoteOperations(
-  client: SupabaseClient<Database>,
-  quoteId: string
-) {
-  return client.from("quoteOperation").select("*").eq("quoteId", quoteId);
-}
-
-export async function getQuotePayment(
-  client: SupabaseClient<Database>,
-  quoteId: string
-) {
-  return client.from("quotePayment").select("*").eq("id", quoteId).single();
-}
-
-export async function getQuoteShipment(
-  client: SupabaseClient<Database>,
-  quoteId: string
-) {
-  return client.from("quoteShipment").select("*").eq("id", quoteId).single();
-}
-
-export async function getRelatedPricesForQuoteLine(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  quoteId: string
-) {
-  const item = await client
-    .rpc("get_part_details", {
-      item_id: itemId
-    })
-    .single();
-
-  const itemIds = (item.data?.revisions as { id: string }[])?.map(
-    (revision) => revision.id
-  ) ?? [itemId];
-
-  const [historicalQuoteLinePrices, relatedSalesOrderLines] = await Promise.all(
-    [
-      getQuoteLinePricesByItemIds(client, itemIds, quoteId),
-      getSalesOrderLinesByItemIds(client, itemIds)
-    ]
-  );
-
-  return {
-    historicalQuoteLinePrices: historicalQuoteLinePrices.data,
-    relatedSalesOrderLines: relatedSalesOrderLines.data
-  };
-}
-
-export async function getSalesDocumentsAssignedToMe(
-  client: SupabaseClient<Database>,
-  userId: string,
-  companyId: string
-) {
-  const [salesOrders, quotes, rfqs] = await Promise.all([
-    client
-      .from("salesOrder")
+export const getQuoteLines = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getQuoteLines(quoteId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("quoteLines")
       .select("*")
-      .eq("assignee", userId)
-      .eq("companyId", companyId),
-    client
+      .eq("quoteId", quoteId)
+      .order("sortOrder", { ascending: true })
+      .order("itemReadableId", { ascending: true });
+  }
+);
+
+export const getQuoteByExternalId = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getQuoteByExternalId(externalId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
       .from("quote")
       .select("*")
-      .eq("assignee", userId)
-      .eq("companyId", companyId),
-    client
-      .from("salesRfq")
+      .eq("externalLinkId", externalId)
+      .single();
+  }
+);
+
+export const getQuoteLinePrices = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getQuoteLinePrices(quoteLineId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("quoteLinePrice")
       .select("*")
-      .eq("assignee", userId)
+      .eq("quoteLineId", quoteLineId);
+  }
+);
+
+export const getQuoteLinePricesByQuoteId = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getQuoteLinePricesByQuoteId(quoteId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("quoteLinePrice")
+      .select("*")
+      .eq("quoteId", quoteId)
+      .order("quoteLineId", { ascending: true });
+  }
+);
+
+export const getQuoteLinePricesByItemId = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getQuoteLinePricesByItemId(
+    itemId: string,
+    currentQuoteId: string
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("quoteLinePrices")
+      .select("*")
+      .eq("itemId", itemId)
+      .neq("quoteId", currentQuoteId)
+      .order("quoteCreatedAt", { ascending: false })
+      .order("qty", { ascending: true });
+  }
+);
+
+export const getQuoteLinePricesByItemIds = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getQuoteLinePricesByItemIds(
+    itemIds: string[],
+    currentQuoteId: string
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("quoteLinePrices")
+      .select("*")
+      .in("itemId", itemIds)
+      .neq("quoteId", currentQuoteId)
+      .order("quoteCreatedAt", { ascending: false })
+      .order("qty", { ascending: true })
+      .limit(10);
+  }
+);
+
+export const getQuoteMaterials = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getQuoteMaterials(quoteId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("quoteMaterial").select("*").eq("quoteId", quoteId);
+  }
+);
+
+export const getQuoteMaterial = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getQuoteMaterial(materialId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("quoteMaterialWithMakeMethodId")
+      .select("*")
+      .eq("id", materialId)
+      .single();
+  }
+);
+
+export const getQuoteMaterialsByLine = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getQuoteMaterialsByLine(quoteLineId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("quoteMaterial")
+      .select("*")
+      .eq("quoteLineId", quoteLineId);
+  }
+);
+
+export const getQuoteMaterialsByMethodId = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getQuoteMaterialsByMethodId(quoteMakeMethodId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("quoteMaterial")
+      .select("*, item(name, itemTrackingType, replenishmentSystem)")
+      .eq("quoteMakeMethodId", quoteMakeMethodId)
+      .order("order", { ascending: true });
+  }
+);
+
+export const getQuoteMaterialsByOperation = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getQuoteMaterialsByOperation(quoteOperationId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("quoteMaterial")
+      .select("*")
+      .eq("quoteOperationId", quoteOperationId);
+  }
+);
+
+export const getQuoteOperation = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getQuoteOperation(quoteOperationId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("quoteOperation")
+      .select("*")
+      .eq("id", quoteOperationId)
+      .single();
+  }
+);
+
+export const getQuoteOperationsByLine = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getQuoteOperationsByLine(quoteLineId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("quoteOperation")
+      .select("*")
+      .eq("quoteLineId", quoteLineId);
+  }
+);
+
+export const getQuoteOperationsByMethodId = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getQuoteOperationsByMethodId(quoteMakeMethodId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("quoteOperation")
+      .select(
+        "*, quoteOperationTool(*), quoteOperationParameter(*), quoteOperationStep(*)"
+      )
+      .eq("quoteMakeMethodId", quoteMakeMethodId)
+      .order("order", { ascending: true });
+  }
+);
+
+export const getQuoteOperations = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getQuoteOperations(quoteId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("quoteOperation").select("*").eq("quoteId", quoteId);
+  }
+);
+
+export const getQuotePayment = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getQuotePayment(quoteId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("quotePayment").select("*").eq("id", quoteId).single();
+  }
+);
+
+export const getQuoteShipment = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getQuoteShipment(quoteId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("quoteShipment").select("*").eq("id", quoteId).single();
+  }
+);
+
+export const getRelatedPricesForQuoteLine = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getRelatedPricesForQuoteLine(itemId: string, quoteId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const item = await client
+      .rpc("get_part_details", {
+        item_id: itemId
+      })
+      .single();
+
+    const itemIds = (item.data?.revisions as { id: string }[])?.map(
+      (revision) => revision.id
+    ) ?? [itemId];
+
+    const [historicalQuoteLinePrices, relatedSalesOrderLines] =
+      await Promise.all([
+        getQuoteLinePricesByItemIds(itemIds, quoteId),
+        getSalesOrderLinesByItemIds(itemIds)
+      ]);
+
+    return {
+      historicalQuoteLinePrices: historicalQuoteLinePrices.data,
+      relatedSalesOrderLines: relatedSalesOrderLines.data
+    };
+  }
+);
+
+export const getSalesDocumentsAssignedToMe = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getSalesDocumentsAssignedToMe() {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { userId, companyId } = AuthContextHolder.get();
+    const [salesOrders, quotes, rfqs] = await Promise.all([
+      client
+        .from("salesOrder")
+        .select("*")
+        .eq("assignee", userId)
+        .eq("companyId", companyId),
+      client
+        .from("quote")
+        .select("*")
+        .eq("assignee", userId)
+        .eq("companyId", companyId),
+      client
+        .from("salesRfq")
+        .select("*")
+        .eq("assignee", userId)
+        .eq("companyId", companyId)
+    ]);
+
+    const merged = [
+      ...(salesOrders.data?.map((doc) => ({ ...doc, type: "salesOrder" })) ??
+        []),
+      ...(quotes.data?.map((doc) => ({ ...doc, type: "quote" })) ?? []),
+      ...(rfqs.data?.map((doc) => ({ ...doc, type: "rfq" })) ?? [])
+    ].sort((a, b) => (a.createdAt ?? "").localeCompare(b.createdAt ?? ""));
+
+    return merged;
+  }
+);
+
+export const getSalesOrder = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getSalesOrder(salesOrderId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("salesOrders")
+      .select("*")
+      .eq("id", salesOrderId)
+      .single();
+  }
+);
+
+export const getSalesOrderCustomerDetails = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getSalesOrderCustomerDetails(salesOrderId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("salesOrderLocations")
+      .select("*")
+      .eq("id", salesOrderId)
+      .single();
+  }
+);
+
+export const getSalesOrderFavorites = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getSalesOrderFavorites() {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { userId, companyId } = AuthContextHolder.get();
+    return client
+      .from("salesOrderFavorite")
+      .select("*")
       .eq("companyId", companyId)
-  ]);
-
-  const merged = [
-    ...(salesOrders.data?.map((doc) => ({ ...doc, type: "salesOrder" })) ?? []),
-    ...(quotes.data?.map((doc) => ({ ...doc, type: "quote" })) ?? []),
-    ...(rfqs.data?.map((doc) => ({ ...doc, type: "rfq" })) ?? [])
-  ].sort((a, b) => (a.createdAt ?? "").localeCompare(b.createdAt ?? ""));
-
-  return merged;
-}
-
-export async function getSalesOrder(
-  client: SupabaseClient<Database>,
-  salesOrderId: string
-) {
-  return client.from("salesOrders").select("*").eq("id", salesOrderId).single();
-}
-
-export async function getSalesOrderCustomerDetails(
-  client: SupabaseClient<Database>,
-  salesOrderId: string
-) {
-  return client
-    .from("salesOrderLocations")
-    .select("*")
-    .eq("id", salesOrderId)
-    .single();
-}
-
-export async function getSalesOrderFavorites(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  userId: string
-) {
-  return client
-    .from("salesOrderFavorite")
-    .select("*")
-    .eq("companyId", companyId)
-    .eq("userId", userId);
-}
-
-export async function getSalesOrderRelatedItems(
-  client: SupabaseClient<Database>,
-  salesOrderId: string,
-  opportunityId: string
-) {
-  const [jobs, shipments, invoices] = await Promise.all([
-    client.from("job").select("*").eq("salesOrderId", salesOrderId),
-    client
-      .from("shipment")
-      .select("*, shipmentLine(*)")
-      .eq("opportunityId", opportunityId),
-    client
-      .from("salesInvoice")
-      .select("id, invoiceId, status")
-      .eq("opportunityId", opportunityId)
-  ]);
-
-  return {
-    jobs: jobs.data ?? [],
-    shipments: shipments.data ?? [],
-    invoices: invoices.data ?? []
-  };
-}
-
-export async function getSalesOrders(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args: GenericQueryFilters & {
-    search: string | null;
-    status: string | null;
-    customerId: string | null;
+      .eq("userId", userId);
   }
-) {
-  let query = client
-    .from("salesOrders")
-    .select("*", { count: "exact" })
-    .eq("companyId", companyId);
+);
 
-  if (args.search) {
-    query = query.or(
-      `salesOrderId.ilike.%${args.search}%,customerReference.ilike.%${args.search}%`
+export const getSalesOrderRelatedItems = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getSalesOrderRelatedItems(
+    salesOrderId: string,
+    opportunityId: string
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const [jobs, shipments, invoices] = await Promise.all([
+      client.from("job").select("*").eq("salesOrderId", salesOrderId),
+      client
+        .from("shipment")
+        .select("*, shipmentLine(*)")
+        .eq("opportunityId", opportunityId),
+      client
+        .from("salesInvoice")
+        .select("id, invoiceId, status")
+        .eq("opportunityId", opportunityId)
+    ]);
+
+    return {
+      jobs: jobs.data ?? [],
+      shipments: shipments.data ?? [],
+      invoices: invoices.data ?? []
+    };
+  }
+);
+
+export const getSalesOrders = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getSalesOrders(
+    args: GenericQueryFilters & {
+      search: string | null;
+      status: string | null;
+      customerId: string | null;
+    }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    let query = client
+      .from("salesOrders")
+      .select("*", { count: "exact" })
+      .eq("companyId", companyId);
+
+    if (args.search) {
+      query = query.or(
+        `salesOrderId.ilike.%${args.search}%,customerReference.ilike.%${args.search}%`
+      );
+    }
+
+    if (args.customerId) {
+      query = query.eq("customerId", args.customerId);
+    }
+
+    query = setGenericQueryFilters(query, args, [
+      { column: "createdAt", ascending: false }
+    ]);
+
+    return query;
+  }
+);
+
+export const getSalesOrdersList = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getSalesOrdersList() {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return fetchAllFromTable<{
+      id: string;
+      salesOrderId: string;
+    }>(client, "salesOrder", "id, salesOrderId", (query) =>
+      query.eq("companyId", companyId)
     );
   }
+);
 
-  if (args.customerId) {
-    query = query.eq("customerId", args.customerId);
+export const getSalesOrderPayment = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getSalesOrderPayment(salesOrderId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("salesOrderPayment")
+      .select("*")
+      .eq("id", salesOrderId)
+      .single();
   }
+);
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
-  ]);
-
-  return query;
-}
-
-export async function getSalesOrdersList(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return fetchAllFromTable<{
-    id: string;
-    salesOrderId: string;
-  }>(client, "salesOrder", "id, salesOrderId", (query) =>
-    query.eq("companyId", companyId)
-  );
-}
-
-export async function getSalesOrderPayment(
-  client: SupabaseClient<Database>,
-  salesOrderId: string
-) {
-  return client
-    .from("salesOrderPayment")
-    .select("*")
-    .eq("id", salesOrderId)
-    .single();
-}
-
-export async function getSalesTerms(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return client.from("terms").select("salesTerms").eq("id", companyId).single();
-}
-
-export async function getSalesOrderShipment(
-  client: SupabaseClient<Database>,
-  salesOrderId: string
-) {
-  return client
-    .from("salesOrderShipment")
-    .select("*")
-    .eq("id", salesOrderId)
-    .single();
-}
-
-export async function getSalesOrderCustomers(client: SupabaseClient<Database>) {
-  return client.from("salesOrderCustomers").select("id, name");
-}
-
-export async function getSalesOrderLines(
-  client: SupabaseClient<Database>,
-  salesOrderId: string
-) {
-  return client
-    .from("salesOrderLines")
-    .select("*")
-    .eq("salesOrderId", salesOrderId)
-    .order("sortOrder", { ascending: true })
-    .order("itemReadableId", { ascending: true });
-}
-
-export async function getSalesOrderInvoiceLines(
-  client: SupabaseClient<Database>,
-  salesOrderId: string
-) {
-  return client
-    .from("salesInvoiceLine")
-    .select("invoiceId")
-    .eq("salesOrderId", salesOrderId);
-}
-
-export async function getSalesOrderInvoicesByIds(
-  client: SupabaseClient<Database>,
-  invoiceIds: string[]
-) {
-  return client
-    .from("salesInvoices")
-    .select("id, invoiceTotal, status, currencyCode")
-    .in("id", invoiceIds);
-}
-
-export async function getSalesOrderLinesByItemId(
-  client: SupabaseClient<Database>,
-  itemId: string
-) {
-  return client
-    .from("salesOrderLines")
-    .select("*")
-    .eq("itemId", itemId)
-    .order("orderDate", { ascending: false })
-    .order("createdAt", { ascending: false });
-}
-
-export async function getSalesOrderLinesByItemIds(
-  client: SupabaseClient<Database>,
-  itemIds: string[]
-) {
-  return client
-    .from("salesOrderLines")
-    .select("*")
-    .in("itemId", itemIds)
-    .order("orderDate", { ascending: false })
-    .order("createdAt", { ascending: false })
-    .limit(10);
-}
-
-export async function getSalesOrderLine(
-  client: SupabaseClient<Database>,
-  salesOrderLineId: string
-) {
-  return client
-    .from("salesOrderLines")
-    .select("*")
-    .eq("id", salesOrderLineId)
-    .single();
-}
-
-export async function getSalesOrderLineShipments(
-  client: SupabaseClient<Database>,
-  salesOrderLineId: string
-) {
-  return client
-    .from("shipmentLine")
-    .select("*, shipment(*), storageUnit(id, name)")
-    .eq("lineId", salesOrderLineId)
-    .gt("shippedQuantity", 0);
-}
-
-export async function getSalesRFQ(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("salesRfqs").select("*").eq("id", id).single();
-}
-
-export async function getSalesRFQFavorites(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  userId: string
-) {
-  return client
-    .from("salesRfqFavorite")
-    .select("*")
-    .eq("companyId", companyId)
-    .eq("userId", userId);
-}
-
-export async function getSalesRFQs(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args: GenericQueryFilters & {
-    search: string | null;
+export const getSalesTerms = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getSalesTerms() {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("terms")
+      .select("salesTerms")
+      .eq("id", companyId)
+      .single();
   }
-) {
-  let query = client
-    .from("salesRfqs")
-    .select("*", { count: "exact" })
-    .eq("companyId", companyId);
+);
 
-  if (args.search) {
-    query = query.or(
-      `rfqId.ilike.%${args.search}%,customerReference.ilike.%${args.search}%`
-    );
+export const getSalesOrderShipment = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getSalesOrderShipment(salesOrderId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("salesOrderShipment")
+      .select("*")
+      .eq("id", salesOrderId)
+      .single();
   }
+);
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "rfqId", ascending: false }
-  ]);
-  return query;
-}
+export const getSalesOrderCustomers = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getSalesOrderCustomers() {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("salesOrderCustomers").select("id, name");
+  }
+);
 
-export async function getSalesRFQLine(
-  client: SupabaseClient<Database>,
-  lineId: string
-) {
-  return client.from("salesRfqLines").select("*").eq("id", lineId).single();
-}
+export const getSalesOrderLines = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getSalesOrderLines(salesOrderId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("salesOrderLines")
+      .select("*")
+      .eq("salesOrderId", salesOrderId)
+      .order("sortOrder", { ascending: true })
+      .order("itemReadableId", { ascending: true });
+  }
+);
 
-export async function getSalesRFQLines(
-  client: SupabaseClient<Database>,
-  salesRfqId: string
-) {
-  return client
-    .from("salesRfqLines")
-    .select("*")
-    .eq("salesRfqId", salesRfqId)
-    .order("order", { ascending: true })
-    .order("customerPartId", { ascending: true });
-}
+export const getSalesOrderInvoiceLines = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getSalesOrderInvoiceLines(salesOrderId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("salesInvoiceLine")
+      .select("invoiceId")
+      .eq("salesOrderId", salesOrderId);
+  }
+);
 
-export async function insertCustomerContact(
-  client: SupabaseClient<Database>,
-  customerContact: {
+export const getSalesOrderInvoicesByIds = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getSalesOrderInvoicesByIds(invoiceIds: string[]) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("salesInvoices")
+      .select("id, invoiceTotal, status, currencyCode")
+      .in("id", invoiceIds);
+  }
+);
+
+export const getSalesOrderLinesByItemId = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getSalesOrderLinesByItemId(itemId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("salesOrderLines")
+      .select("*")
+      .eq("itemId", itemId)
+      .order("orderDate", { ascending: false })
+      .order("createdAt", { ascending: false });
+  }
+);
+
+export const getSalesOrderLinesByItemIds = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getSalesOrderLinesByItemIds(itemIds: string[]) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("salesOrderLines")
+      .select("*")
+      .in("itemId", itemIds)
+      .order("orderDate", { ascending: false })
+      .order("createdAt", { ascending: false })
+      .limit(10);
+  }
+);
+
+export const getSalesOrderLine = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getSalesOrderLine(salesOrderLineId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("salesOrderLines")
+      .select("*")
+      .eq("id", salesOrderLineId)
+      .single();
+  }
+);
+
+export const getSalesOrderLineShipments = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getSalesOrderLineShipments(salesOrderLineId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("shipmentLine")
+      .select("*, shipment(*), storageUnit(id, name)")
+      .eq("lineId", salesOrderLineId)
+      .gt("shippedQuantity", 0);
+  }
+);
+
+export const getSalesRFQ = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getSalesRFQ(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("salesRfqs").select("*").eq("id", id).single();
+  }
+);
+
+export const getSalesRFQFavorites = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getSalesRFQFavorites() {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { userId, companyId } = AuthContextHolder.get();
+    return client
+      .from("salesRfqFavorite")
+      .select("*")
+      .eq("companyId", companyId)
+      .eq("userId", userId);
+  }
+);
+
+export const getSalesRFQs = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getSalesRFQs(
+    args: GenericQueryFilters & {
+      search: string | null;
+    }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    let query = client
+      .from("salesRfqs")
+      .select("*", { count: "exact" })
+      .eq("companyId", companyId);
+
+    if (args.search) {
+      query = query.or(
+        `rfqId.ilike.%${args.search}%,customerReference.ilike.%${args.search}%`
+      );
+    }
+
+    query = setGenericQueryFilters(query, args, [
+      { column: "rfqId", ascending: false }
+    ]);
+    return query;
+  }
+);
+
+export const getSalesRFQLine = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getSalesRFQLine(lineId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("salesRfqLines").select("*").eq("id", lineId).single();
+  }
+);
+
+export const getSalesRFQLines = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getSalesRFQLines(salesRfqId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("salesRfqLines")
+      .select("*")
+      .eq("salesRfqId", salesRfqId)
+      .order("order", { ascending: true })
+      .order("customerPartId", { ascending: true });
+  }
+);
+
+export const insertCustomerContact = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function insertCustomerContact(customerContact: {
     customerId: string;
-    companyId: string;
     contact: PickPartial<z.infer<typeof customerContactValidator>, "email">;
     customerLocationId?: string;
     customFields?: Json;
-  }
-) {
-  const insertContact = await client
-    .from("contact")
-    .insert([
-      {
-        ...customerContact.contact,
-        isCustomer: true,
-        companyId: customerContact.companyId
-      }
-    ])
-    .select("id")
-    .single();
-  if (insertContact.error) {
-    return insertContact;
-  }
+  }) {
+    const { companyId } = AuthContextHolder.get();
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const insertContact = await client
+      .from("contact")
+      .insert([
+        {
+          ...customerContact.contact,
+          isCustomer: true,
+          companyId: companyId
+        }
+      ])
+      .select("id")
+      .single();
+    if (insertContact.error) {
+      return insertContact;
+    }
 
-  const contactId = insertContact.data?.id;
-  if (!contactId) {
-    return { data: null, error: new Error("Contact ID not found") };
+    const contactId = insertContact.data?.id;
+    if (!contactId) {
+      return { data: null, error: new Error("Contact ID not found") };
+    }
+
+    return client
+      .from("customerContact")
+      .insert([
+        {
+          customerId: customerContact.customerId,
+          contactId,
+          customerLocationId: customerContact.customerLocationId,
+          customFields: customerContact.customFields
+        }
+      ])
+      .select("id")
+      .single();
   }
+);
 
-  return client
-    .from("customerContact")
-    .insert([
-      {
-        customerId: customerContact.customerId,
-        contactId,
-        customerLocationId: customerContact.customerLocationId,
-        customFields: customerContact.customFields
-      }
-    ])
-    .select("id")
-    .single();
-}
-
-export async function insertCustomerLocation(
-  client: SupabaseClient<Database>,
-  customerLocation: {
+export const insertCustomerLocation = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function insertCustomerLocation(customerLocation: {
     customerId: string;
-    companyId: string;
     name: string;
     address: {
       addressLine1?: string;
@@ -1878,98 +2223,109 @@ export async function insertCustomerLocation(
       postalCode?: string;
     };
     customFields?: Json;
+  }) {
+    const { companyId } = AuthContextHolder.get();
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const insertAddress = await client
+      .from("address")
+      .insert([{ ...customerLocation.address, companyId: companyId }])
+      .select("id")
+      .single();
+    if (insertAddress.error) {
+      return insertAddress;
+    }
+
+    const addressId = insertAddress.data?.id;
+    if (!addressId) {
+      return { data: null, error: new Error("Address ID not found") };
+    }
+
+    return client
+      .from("customerLocation")
+      .insert([
+        {
+          customerId: customerLocation.customerId,
+          addressId,
+          name: customerLocation.name,
+          customFields: customerLocation.customFields
+        }
+      ])
+      .select("id")
+      .single();
   }
-) {
-  const insertAddress = await client
-    .from("address")
-    .insert([
-      { ...customerLocation.address, companyId: customerLocation.companyId }
-    ])
-    .select("id")
-    .single();
-  if (insertAddress.error) {
-    return insertAddress;
+);
+
+export const insertSalesOrderLines = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function insertSalesOrderLines(
+    salesOrderLines: (Omit<z.infer<typeof salesOrderLineValidator>, "id"> & {
+      companyId: string;
+      createdBy: string;
+      customFields?: Json;
+    })[]
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("salesOrderLine").insert(salesOrderLines).select("id");
   }
+);
 
-  const addressId = insertAddress.data?.id;
-  if (!addressId) {
-    return { data: null, error: new Error("Address ID not found") };
+export const finalizeQuote = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function finalizeQuote(quoteId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { userId } = AuthContextHolder.get();
+    const quoteUpdate = await client
+      .from("quote")
+      .update({
+        status: "Sent",
+        updatedAt: today(getLocalTimeZone()).toString(),
+        updatedBy: userId
+      })
+      .eq("id", quoteId);
+
+    if (quoteUpdate.error) {
+      return quoteUpdate;
+    }
+
+    return client
+      .from("quoteLine")
+      .update({
+        status: "Complete",
+        updatedAt: today(getLocalTimeZone()).toString(),
+        updatedBy: userId
+      })
+      .neq("status", "No Quote")
+      .eq("quoteId", quoteId);
   }
+);
 
-  return client
-    .from("customerLocation")
-    .insert([
-      {
-        customerId: customerLocation.customerId,
-        addressId,
-        name: customerLocation.name,
-        customFields: customerLocation.customFields
-      }
-    ])
-    .select("id")
-    .single();
-}
-
-export async function insertSalesOrderLines(
-  client: SupabaseClient<Database>,
-  salesOrderLines: (Omit<z.infer<typeof salesOrderLineValidator>, "id"> & {
-    companyId: string;
-    createdBy: string;
-    customFields?: Json;
-  })[]
-) {
-  return client.from("salesOrderLine").insert(salesOrderLines).select("id");
-}
-
-export async function finalizeQuote(
-  client: SupabaseClient<Database>,
-  quoteId: string,
-  userId: string
-) {
-  const quoteUpdate = await client
-    .from("quote")
-    .update({
-      status: "Sent",
-      updatedAt: today(getLocalTimeZone()).toString(),
-      updatedBy: userId
-    })
-    .eq("id", quoteId);
-
-  if (quoteUpdate.error) {
-    return quoteUpdate;
+export const releaseSalesOrder = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function releaseSalesOrder(salesOrderId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { userId } = AuthContextHolder.get();
+    return client
+      .from("salesOrder")
+      .update({
+        status: "To Ship and Invoice",
+        updatedAt: today(getLocalTimeZone()).toString(),
+        updatedBy: userId
+      })
+      .eq("id", salesOrderId);
   }
-
-  return client
-    .from("quoteLine")
-    .update({
-      status: "Complete",
-      updatedAt: today(getLocalTimeZone()).toString(),
-      updatedBy: userId
-    })
-    .neq("status", "No Quote")
-    .eq("quoteId", quoteId);
-}
-
-export async function releaseSalesOrder(
-  client: SupabaseClient<Database>,
-  salesOrderId: string,
-  userId: string
-) {
-  return client
-    .from("salesOrder")
-    .update({
-      status: "To Ship and Invoice",
-      updatedAt: today(getLocalTimeZone()).toString(),
-      updatedBy: userId
-    })
-    .eq("id", salesOrderId);
-}
+);
 
 export async function resolvePrice(
-  client: SupabaseClient<Database>,
-  companyId: string,
   input: PriceResolutionInput
 ): Promise<PriceResolutionResult> {
+  const client = getAuthClient<SupabaseClient<Database>>();
+  const { companyId } = AuthContextHolder.get();
   const date = input.date ?? new Date().toISOString().split("T")[0]!;
   const trace: PriceTraceStep[] = [];
 
@@ -2023,10 +2379,8 @@ export async function resolvePrice(
 
   if (input.customerId) {
     const { data: override } = await getCustomerItemPriceOverride(
-      client,
       input.customerId,
       input.itemId,
-      companyId,
       input.quantity,
       date
     );
@@ -2048,10 +2402,8 @@ export async function resolvePrice(
 
   if (!overrideApplied && resolvedCustomerTypeId) {
     const { data: typeOverride } = await getCustomerTypeItemPriceOverride(
-      client,
       resolvedCustomerTypeId,
       input.itemId,
-      companyId,
       input.quantity,
       date
     );
@@ -2073,9 +2425,7 @@ export async function resolvePrice(
 
   if (!overrideApplied) {
     const { data: allOverride } = await getAllCustomersItemPriceOverride(
-      client,
       input.itemId,
-      companyId,
       input.quantity,
       date
     );
@@ -2161,13 +2511,13 @@ export async function resolvePrice(
 // return the remaining filters to apply normally. Returns { itemIds: null }
 // when no posting-group filter is present.
 async function resolvePostingGroupFilter(
-  client: SupabaseClient<Database>,
-  companyId: string,
   filters: GenericQueryFilters["filters"]
 ): Promise<{
   itemIds: string[] | null;
   filters: GenericQueryFilters["filters"];
 }> {
+  const client = getAuthClient<SupabaseClient<Database>>();
+  const { companyId } = AuthContextHolder.get();
   if (!filters || filters.length === 0) {
     return { itemIds: null, filters };
   }
@@ -2192,8 +2542,6 @@ async function resolvePostingGroupFilter(
 }
 
 export async function resolvePriceList(
-  client: SupabaseClient<Database>,
-  companyId: string,
   args: GenericQueryFilters & {
     customerId?: string;
     customerTypeId?: string;
@@ -2201,6 +2549,8 @@ export async function resolvePriceList(
     quantity?: number;
   }
 ): Promise<PriceListResult> {
+  const client = getAuthClient<SupabaseClient<Database>>();
+  const { companyId } = AuthContextHolder.get();
   const date = new Date().toISOString().split("T")[0]!;
   const previewQuantity = Math.max(args.quantity ?? 1, 0);
 
@@ -2240,7 +2590,7 @@ export async function resolvePriceList(
   }
 
   const { itemIds: postingGroupItemIds, filters: filtersWithoutPostingGroup } =
-    await resolvePostingGroupFilter(client, companyId, args.filters);
+    await resolvePostingGroupFilter(args.filters);
   if (postingGroupItemIds !== null) {
     if (postingGroupItemIds.length === 0) {
       return { data: [], count: 0 };
@@ -2503,10 +2853,10 @@ export async function resolvePriceList(
 }
 
 export async function getBaseCatalog(
-  client: SupabaseClient<Database>,
-  companyId: string,
   args: GenericQueryFilters & { search?: string }
 ): Promise<PriceListResult> {
+  const client = getAuthClient<SupabaseClient<Database>>();
+  const { companyId } = AuthContextHolder.get();
   let query = client
     .from("item")
     .select(
@@ -2523,7 +2873,7 @@ export async function getBaseCatalog(
   }
 
   const { itemIds: postingGroupItemIds, filters: filtersWithoutPostingGroup } =
-    await resolvePostingGroupFilter(client, companyId, args.filters);
+    await resolvePostingGroupFilter(args.filters);
   if (postingGroupItemIds !== null) {
     if (postingGroupItemIds.length === 0) {
       return { data: [], count: 0 };
@@ -2571,55 +2921,57 @@ export async function getBaseCatalog(
   return { data: rows, count: count ?? 0 };
 }
 
-export async function upsertCustomer(
-  client: SupabaseClient<Database>,
-  customer:
-    | (Omit<z.infer<typeof customerValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof customerValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in customer) {
+export const upsertCustomer = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertCustomer(
+    customer:
+      | (Omit<z.infer<typeof customerValidator>, "id"> & {
+          companyId: string;
+          createdBy: string;
+          customFields?: Json;
+        })
+      | (Omit<z.infer<typeof customerValidator>, "id"> & {
+          id: string;
+          updatedBy: string;
+          customFields?: Json;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("createdBy" in customer) {
+      return client
+        .from("customer")
+        .insert([customer])
+        .select("id, name")
+        .single();
+    }
     return client
       .from("customer")
-      .insert([customer])
-      .select("id, name")
+      .update({
+        ...sanitize(customer),
+        updatedAt: today(getLocalTimeZone()).toString()
+      })
+      .eq("id", customer.id)
+      .select("id")
       .single();
   }
-  return client
-    .from("customer")
-    .update({
-      ...sanitize(customer),
-      updatedAt: today(getLocalTimeZone()).toString()
-    })
-    .eq("id", customer.id)
-    .select("id")
-    .single();
-}
+);
 
-export async function upsertCustomerItemPriceOverride(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  userId: string,
-  data: {
-    id?: string;
-    customerId?: string;
-    customerTypeId?: string;
-    itemId: string;
-    breaks: PriceOverrideBreak[];
-    active: boolean;
-    applyRulesOnTop: boolean;
-    notes?: string;
-    validFrom?: string;
-    validTo?: string;
-  }
-) {
+export async function upsertCustomerItemPriceOverride(data: {
+  id?: string;
+  customerId?: string;
+  customerTypeId?: string;
+  itemId: string;
+  breaks: PriceOverrideBreak[];
+  active: boolean;
+  applyRulesOnTop: boolean;
+  notes?: string;
+  validFrom?: string;
+  validTo?: string;
+}) {
+  const client = getAuthClient<SupabaseClient<Database>>();
+  const { userId, companyId } = AuthContextHolder.get();
   if (data.customerId && data.customerTypeId) {
     return {
       data: null,
@@ -2779,11 +3131,9 @@ export async function upsertCustomerItemPriceOverride(
   return { data: { id: parentId }, error: null };
 }
 
-export async function deleteCustomerItemPriceOverride(
-  client: SupabaseClient<Database>,
-  id: string,
-  companyId: string
-) {
+export async function deleteCustomerItemPriceOverride(id: string) {
+  const client = getAuthClient<SupabaseClient<Database>>();
+  const { companyId } = AuthContextHolder.get();
   return client
     .from("customerItemPriceOverride")
     .delete()
@@ -2791,11 +3141,9 @@ export async function deleteCustomerItemPriceOverride(
     .eq("companyId", companyId);
 }
 
-export async function getCustomerItemPriceOverrideById(
-  client: SupabaseClient<Database>,
-  id: string,
-  companyId: string
-) {
+export async function getCustomerItemPriceOverrideById(id: string) {
+  const client = getAuthClient<SupabaseClient<Database>>();
+  const { companyId } = AuthContextHolder.get();
   return client
     .from("customerItemPriceOverride")
     .select(
@@ -2813,8 +3161,6 @@ export async function getCustomerItemPriceOverrideById(
 }
 
 export async function getCustomerItemPriceOverridesList(
-  client: SupabaseClient<Database>,
-  companyId: string,
   args: GenericQueryFilters & {
     search?: string;
     customerId?: string;
@@ -2822,6 +3168,8 @@ export async function getCustomerItemPriceOverridesList(
     itemId?: string;
   }
 ) {
+  const client = getAuthClient<SupabaseClient<Database>>();
+  const { companyId } = AuthContextHolder.get();
   let query = client
     .from("customerItemPriceOverride")
     .select(
@@ -2860,51 +3208,61 @@ export async function getCustomerItemPriceOverridesList(
   return query;
 }
 
-export async function updateCustomerAccounting(
-  client: SupabaseClient<Database>,
-  customerAccounting: z.infer<typeof customerAccountingValidator> & {
-    updatedBy: string;
+export const updateCustomerAccounting = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function updateCustomerAccounting(
+    customerAccounting: z.infer<typeof customerAccountingValidator> & {
+      updatedBy: string;
+    }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("customer")
+      .update(sanitize(customerAccounting))
+      .eq("id", customerAccounting.id);
   }
-) {
-  return client
-    .from("customer")
-    .update(sanitize(customerAccounting))
-    .eq("id", customerAccounting.id);
-}
+);
 
-export async function updateCustomerContact(
-  client: SupabaseClient<Database>,
-  customerContact: {
+export const updateCustomerContact = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function updateCustomerContact(customerContact: {
     contactId: string;
     contact: z.infer<typeof customerContactValidator>;
     customerLocationId?: string;
     customFields?: Json;
-  }
-) {
-  if (customerContact.customFields) {
-    const customFieldUpdate = await client
-      .from("customerContact")
-      .update({
-        customFields: customerContact.customFields,
-        customerLocationId: customerContact.customerLocationId
-      })
-      .eq("contactId", customerContact.contactId);
+  }) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if (customerContact.customFields) {
+      const customFieldUpdate = await client
+        .from("customerContact")
+        .update({
+          customFields: customerContact.customFields,
+          customerLocationId: customerContact.customerLocationId
+        })
+        .eq("contactId", customerContact.contactId);
 
-    if (customFieldUpdate.error) {
-      return customFieldUpdate;
+      if (customFieldUpdate.error) {
+        return customFieldUpdate;
+      }
     }
+    return client
+      .from("contact")
+      .update(sanitize(customerContact.contact))
+      .eq("id", customerContact.contactId)
+      .select("id")
+      .single();
   }
-  return client
-    .from("contact")
-    .update(sanitize(customerContact.contact))
-    .eq("id", customerContact.contactId)
-    .select("id")
-    .single();
-}
+);
 
-export async function updateCustomerLocation(
-  client: SupabaseClient<Database>,
-  customerLocation: {
+export const updateCustomerLocation = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function updateCustomerLocation(customerLocation: {
     addressId: string;
     name: string;
     address: {
@@ -2916,71 +3274,87 @@ export async function updateCustomerLocation(
       postalCode?: string;
     };
     customFields?: Json;
-  }
-) {
-  if (customerLocation.customFields) {
-    const customFieldUpdate = await client
-      .from("customerLocation")
-      .update({
-        name: customerLocation.name,
-        customFields: customerLocation.customFields
-      })
-      .eq("addressId", customerLocation.addressId);
+  }) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if (customerLocation.customFields) {
+      const customFieldUpdate = await client
+        .from("customerLocation")
+        .update({
+          name: customerLocation.name,
+          customFields: customerLocation.customFields
+        })
+        .eq("addressId", customerLocation.addressId);
 
-    if (customFieldUpdate.error) {
-      return customFieldUpdate;
+      if (customFieldUpdate.error) {
+        return customFieldUpdate;
+      }
     }
+    return client
+      .from("address")
+      .update(sanitize(customerLocation.address))
+      .eq("id", customerLocation.addressId)
+      .select("id")
+      .single();
   }
-  return client
-    .from("address")
-    .update(sanitize(customerLocation.address))
-    .eq("id", customerLocation.addressId)
-    .select("id")
-    .single();
-}
-export async function updateCustomerPayment(
-  client: SupabaseClient<Database>,
-  customerPayment: z.infer<typeof customerPaymentValidator> & {
-    updatedBy: string;
+);
+export const updateCustomerPayment = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function updateCustomerPayment(
+    customerPayment: z.infer<typeof customerPaymentValidator> & {
+      updatedBy: string;
+    }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("customerPayment")
+      .update(sanitize(customerPayment))
+      .eq("customerId", customerPayment.customerId);
   }
-) {
-  return client
-    .from("customerPayment")
-    .update(sanitize(customerPayment))
-    .eq("customerId", customerPayment.customerId);
-}
+);
 
-export async function updateCustomerShipping(
-  client: SupabaseClient<Database>,
-  customerShipping: z.infer<typeof customerShippingValidator> & {
-    updatedBy: string;
+export const updateCustomerShipping = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function updateCustomerShipping(
+    customerShipping: z.infer<typeof customerShippingValidator> & {
+      updatedBy: string;
+    }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("customerShipping")
+      .update(sanitize(customerShipping))
+      .eq("customerId", customerShipping.customerId);
   }
-) {
-  return client
-    .from("customerShipping")
-    .update(sanitize(customerShipping))
-    .eq("customerId", customerShipping.customerId);
-}
+);
 
-export async function updateCustomerTax(
-  client: SupabaseClient<Database>,
-  customerTax: z.infer<typeof customerTaxValidator> & {
-    updatedBy: string;
-    taxExemptionCertificatePath?: string | null;
+export const updateCustomerTax = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function updateCustomerTax(
+    customerTax: z.infer<typeof customerTaxValidator> & {
+      updatedBy: string;
+      taxExemptionCertificatePath?: string | null;
+    }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("customerTax")
+      .update(sanitize(customerTax))
+      .eq("customerId", customerTax.customerId);
   }
-) {
-  return client
-    .from("customerTax")
-    .update(sanitize(customerTax))
-    .eq("customerId", customerTax.customerId);
-}
+);
 
 export async function updatePricingRule(
-  client: SupabaseClient<Database>,
   id: string,
-  userId: string,
   data: Partial<z.infer<typeof pricingRuleValidator>>
 ) {
+  const client = getAuthClient<SupabaseClient<Database>>();
+  const { userId } = AuthContextHolder.get();
   return client
     .from("pricingRule")
     .update(
@@ -2995,249 +3369,301 @@ export async function updatePricingRule(
     .single();
 }
 
-export async function upsertCustomerStatus(
-  client: SupabaseClient<Database>,
-  customerStatus:
-    | (Omit<z.infer<typeof customerStatusValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof customerStatusValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in customerStatus) {
-    return client.from("customerStatus").insert([customerStatus]).select("id");
-  } else {
-    return client
-      .from("customerStatus")
-      .update(sanitize(customerStatus))
-      .eq("id", customerStatus.id);
+export const upsertCustomerStatus = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertCustomerStatus(
+    customerStatus:
+      | (Omit<z.infer<typeof customerStatusValidator>, "id"> & {
+          companyId: string;
+          createdBy: string;
+          customFields?: Json;
+        })
+      | (Omit<z.infer<typeof customerStatusValidator>, "id"> & {
+          id: string;
+          updatedBy: string;
+          customFields?: Json;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("createdBy" in customerStatus) {
+      return client
+        .from("customerStatus")
+        .insert([customerStatus])
+        .select("id");
+    } else {
+      return client
+        .from("customerStatus")
+        .update(sanitize(customerStatus))
+        .eq("id", customerStatus.id);
+    }
   }
-}
+);
 
-export async function upsertCustomerType(
-  client: SupabaseClient<Database>,
-  customerType:
-    | (Omit<z.infer<typeof customerTypeValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof customerTypeValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in customerType) {
-    return client.from("customerType").insert([customerType]).select("id");
-  } else {
-    return client
-      .from("customerType")
-      .update(sanitize(customerType))
-      .eq("id", customerType.id);
+export const upsertCustomerType = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertCustomerType(
+    customerType:
+      | (Omit<z.infer<typeof customerTypeValidator>, "id"> & {
+          companyId: string;
+          createdBy: string;
+          customFields?: Json;
+        })
+      | (Omit<z.infer<typeof customerTypeValidator>, "id"> & {
+          id: string;
+          updatedBy: string;
+          customFields?: Json;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("createdBy" in customerType) {
+      return client.from("customerType").insert([customerType]).select("id");
+    } else {
+      return client
+        .from("customerType")
+        .update(sanitize(customerType))
+        .eq("id", customerType.id);
+    }
   }
-}
+);
 
-export async function upsertNoQuoteReason(
-  client: SupabaseClient<Database>,
-  noQuoteReason:
-    | (Omit<z.infer<typeof noQuoteReasonValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof noQuoteReasonValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in noQuoteReason) {
-    return client.from("noQuoteReason").insert([noQuoteReason]).select("id");
-  } else {
-    return client
-      .from("noQuoteReason")
-      .update(sanitize(noQuoteReason))
-      .eq("id", noQuoteReason.id);
+export const upsertNoQuoteReason = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertNoQuoteReason(
+    noQuoteReason:
+      | (Omit<z.infer<typeof noQuoteReasonValidator>, "id"> & {
+          companyId: string;
+          createdBy: string;
+          customFields?: Json;
+        })
+      | (Omit<z.infer<typeof noQuoteReasonValidator>, "id"> & {
+          id: string;
+          updatedBy: string;
+          customFields?: Json;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("createdBy" in noQuoteReason) {
+      return client.from("noQuoteReason").insert([noQuoteReason]).select("id");
+    } else {
+      return client
+        .from("noQuoteReason")
+        .update(sanitize(noQuoteReason))
+        .eq("id", noQuoteReason.id);
+    }
   }
-}
+);
 
-export async function updateSalesRFQFavorite(
-  client: SupabaseClient<Database>,
-  args: {
+export const updateSalesRFQFavorite = mcpTool(
+  {
+    classification: "WRITE",
+    schema: z.object({
+      args: z.object({ id: z.string(), favorite: z.boolean() })
+    })
+  },
+  async function updateSalesRFQFavorite(args: {
     id: string;
     favorite: boolean;
-    userId: string;
+  }) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { id, favorite, userId } = args;
+    if (!favorite) {
+      return client
+        .from("salesRfqFavorite")
+        .delete()
+        .eq("rfqId", id)
+        .eq("userId", userId);
+    } else {
+      return client
+        .from("salesRfqFavorite")
+        .insert({ rfqId: id, userId: userId });
+    }
   }
-) {
-  const { id, favorite, userId } = args;
-  if (!favorite) {
-    return client
-      .from("salesRfqFavorite")
-      .delete()
-      .eq("rfqId", id)
-      .eq("userId", userId);
-  } else {
-    return client
-      .from("salesRfqFavorite")
-      .insert({ rfqId: id, userId: userId });
-  }
-}
+);
 
-export async function updateQuoteExchangeRate(
-  client: SupabaseClient<Database>,
-  data: {
+export const updateQuoteExchangeRate = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function updateQuoteExchangeRate(data: {
     id: string;
     exchangeRate: number;
+  }) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const update = {
+      id: data.id,
+      exchangeRate: data.exchangeRate,
+      exchangeRateUpdatedAt: new Date().toISOString()
+    };
+
+    return client.from("quote").update(update).eq("id", update.id);
   }
-) {
-  const update = {
-    id: data.id,
-    exchangeRate: data.exchangeRate,
-    exchangeRateUpdatedAt: new Date().toISOString()
-  };
+);
 
-  return client.from("quote").update(update).eq("id", update.id);
-}
+export const updateQuoteLinePrecision = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function updateQuoteLinePrecision(
+    quoteLineId: string,
+    precision: number
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("quoteLine")
+      .update({ unitPricePrecision: precision })
+      .eq("id", quoteLineId)
+      .select("id")
+      .single();
+  }
+);
 
-export async function updateQuoteLinePrecision(
-  client: SupabaseClient<Database>,
-  quoteLineId: string,
-  precision: number
-) {
-  return client
-    .from("quoteLine")
-    .update({ unitPricePrecision: precision })
-    .eq("id", quoteLineId)
-    .select("id")
-    .single();
-}
-
-export async function updateSalesOrderExchangeRate(
-  client: SupabaseClient<Database>,
-  data: {
+export const updateSalesOrderExchangeRate = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function updateSalesOrderExchangeRate(data: {
     id: string;
     exchangeRate: number;
-  }
-) {
-  const update = {
-    id: data.id,
-    exchangeRate: data.exchangeRate,
-    exchangeRateUpdatedAt: new Date().toISOString()
-  };
+  }) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const update = {
+      id: data.id,
+      exchangeRate: data.exchangeRate,
+      exchangeRateUpdatedAt: new Date().toISOString()
+    };
 
-  return client.from("salesOrder").update(update).eq("id", update.id);
-}
-
-export async function updateQuoteFavorite(
-  client: SupabaseClient<Database>,
-  args: {
-    id: string;
-    favorite: boolean;
-    userId: string;
+    return client.from("salesOrder").update(update).eq("id", update.id);
   }
-) {
-  const { id, favorite, userId } = args;
-  if (!favorite) {
-    return client
-      .from("quoteFavorite")
-      .delete()
-      .eq("quoteId", id)
-      .eq("userId", userId);
-  } else {
-    return client.from("quoteFavorite").insert({ quoteId: id, userId: userId });
-  }
-}
+);
 
-export async function updateSalesRFQStatus(
-  client: SupabaseClient<Database>,
-  update: {
+export const updateQuoteFavorite = mcpTool(
+  {
+    classification: "WRITE",
+    schema: z.object({
+      args: z.object({ id: z.string(), favorite: z.boolean() })
+    })
+  },
+  async function updateQuoteFavorite(args: { id: string; favorite: boolean }) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { id, favorite, userId } = args;
+    if (!favorite) {
+      return client
+        .from("quoteFavorite")
+        .delete()
+        .eq("quoteId", id)
+        .eq("userId", userId);
+    } else {
+      return client
+        .from("quoteFavorite")
+        .insert({ quoteId: id, userId: userId });
+    }
+  }
+);
+
+export const updateSalesRFQStatus = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function updateSalesRFQStatus(update: {
     id: string;
     status: (typeof salesRFQStatusType)[number];
     noQuoteReasonId: string | null;
     assignee: null | undefined;
-    updatedBy: string;
+  }) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { noQuoteReasonId, status, ...rest } = update;
+
+    // Only include noQuoteReasonId if it has a value to avoid foreign key constraint error
+    // Set completedAt when status is Ready for Quote
+    const updateData = {
+      status,
+      ...rest,
+      ...(noQuoteReasonId ? { noQuoteReasonId } : {}),
+      ...(status === "Ready for Quote"
+        ? { completedDate: now(getLocalTimeZone()).toAbsoluteString() }
+        : {})
+    };
+
+    return client.from("salesRfq").update(updateData).eq("id", update.id);
   }
-) {
-  const { noQuoteReasonId, status, ...rest } = update;
+);
 
-  // Only include noQuoteReasonId if it has a value to avoid foreign key constraint error
-  // Set completedAt when status is Ready for Quote
-  const updateData = {
-    status,
-    ...rest,
-    ...(noQuoteReasonId ? { noQuoteReasonId } : {}),
-    ...(status === "Ready for Quote"
-      ? { completedDate: now(getLocalTimeZone()).toAbsoluteString() }
-      : {})
-  };
+export const updateQuoteMaterialOrder = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function updateQuoteMaterialOrder(
+    updates: {
+      id: string;
+      order: number;
+      updatedBy: string;
+    }[]
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const updatePromises = updates.map(({ id, order, updatedBy }) =>
+      client.from("quoteMaterial").update({ order, updatedBy }).eq("id", id)
+    );
+    return Promise.all(updatePromises);
+  }
+);
 
-  return client.from("salesRfq").update(updateData).eq("id", update.id);
-}
+export const updateQuoteOperationOrder = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function updateQuoteOperationOrder(
+    updates: {
+      id: string;
+      order: number;
+      updatedBy: string;
+    }[]
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const updatePromises = updates.map(({ id, order, updatedBy }) =>
+      client.from("quoteOperation").update({ order, updatedBy }).eq("id", id)
+    );
+    return Promise.all(updatePromises);
+  }
+);
 
-export async function updateQuoteMaterialOrder(
-  client: SupabaseClient<Database>,
-  updates: {
-    id: string;
-    order: number;
-    updatedBy: string;
-  }[]
-) {
-  const updatePromises = updates.map(({ id, order, updatedBy }) =>
-    client.from("quoteMaterial").update({ order, updatedBy }).eq("id", id)
-  );
-  return Promise.all(updatePromises);
-}
-
-export async function updateQuoteOperationOrder(
-  client: SupabaseClient<Database>,
-  updates: {
-    id: string;
-    order: number;
-    updatedBy: string;
-  }[]
-) {
-  const updatePromises = updates.map(({ id, order, updatedBy }) =>
-    client.from("quoteOperation").update({ order, updatedBy }).eq("id", id)
-  );
-  return Promise.all(updatePromises);
-}
-
-export async function updateQuoteStatus(
-  client: SupabaseClient<Database>,
-  update: {
+export const updateQuoteStatus = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function updateQuoteStatus(update: {
     id: string;
     status: (typeof quoteStatusType)[number];
     assignee: null | undefined;
-    updatedBy: string;
+  }) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { status, ...rest } = update;
+
+    // Set completedDate when status is Ready for Quote
+    const updateData = {
+      status,
+      ...rest,
+      ...(status === "Sent"
+        ? { completedDate: now(getLocalTimeZone()).toAbsoluteString() }
+        : {})
+    };
+    return client.from("quote").update(updateData).eq("id", update.id);
   }
-) {
-  const { status, ...rest } = update;
+);
 
-  // Set completedDate when status is Ready for Quote
-  const updateData = {
-    status,
-    ...rest,
-    ...(status === "Sent"
-      ? { completedDate: now(getLocalTimeZone()).toAbsoluteString() }
-      : {})
-  };
-  return client.from("quote").update(updateData).eq("id", update.id);
-}
-
-export async function upsertMakeMethodFromQuoteLine(
-  client: SupabaseClient<Database>,
-  lineMethod: {
+export const upsertMakeMethodFromQuoteLine = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertMakeMethodFromQuoteLine(lineMethod: {
     itemId: string;
     quoteId: string;
     quoteLineId: string;
-    companyId: string;
-    userId: string;
     parts?: {
       billOfMaterial: boolean;
       billOfProcess: boolean;
@@ -3246,27 +3672,29 @@ export async function upsertMakeMethodFromQuoteLine(
       steps: boolean;
       workInstructions: boolean;
     };
+  }) {
+    const { companyId, userId } = AuthContextHolder.get();
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.functions.invoke("get-method", {
+      body: {
+        type: "quoteLineToItem",
+        sourceId: `${lineMethod.quoteId}:${lineMethod.quoteLineId}`,
+        targetId: lineMethod.itemId,
+        companyId: companyId,
+        userId: userId,
+        parts: lineMethod.parts
+      }
+    });
   }
-) {
-  return client.functions.invoke("get-method", {
-    body: {
-      type: "quoteLineToItem",
-      sourceId: `${lineMethod.quoteId}:${lineMethod.quoteLineId}`,
-      targetId: lineMethod.itemId,
-      companyId: lineMethod.companyId,
-      userId: lineMethod.userId,
-      parts: lineMethod.parts
-    }
-  });
-}
+);
 
-export async function upsertMakeMethodFromQuoteMethod(
-  client: SupabaseClient<Database>,
-  quoteMethod: {
+export const upsertMakeMethodFromQuoteMethod = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertMakeMethodFromQuoteMethod(quoteMethod: {
     sourceId: string;
     targetId: string;
-    companyId: string;
-    userId: string;
     parts?: {
       billOfMaterial: boolean;
       billOfProcess: boolean;
@@ -3275,241 +3703,249 @@ export async function upsertMakeMethodFromQuoteMethod(
       steps: boolean;
       workInstructions: boolean;
     };
-  }
-) {
-  const { error } = await client.functions.invoke("get-method", {
-    body: {
-      type: "quoteMakeMethodToItem",
-      sourceId: quoteMethod.sourceId,
-      targetId: quoteMethod.targetId,
-      companyId: quoteMethod.companyId,
-      userId: quoteMethod.userId,
-      parts: quoteMethod.parts
+  }) {
+    const { companyId, userId } = AuthContextHolder.get();
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { error } = await client.functions.invoke("get-method", {
+      body: {
+        type: "quoteMakeMethodToItem",
+        sourceId: quoteMethod.sourceId,
+        targetId: quoteMethod.targetId,
+        companyId: companyId,
+        userId: userId,
+        parts: quoteMethod.parts
+      }
+    });
+
+    if (error) {
+      return {
+        data: null,
+        error: { message: "Failed to save method" } as PostgrestError
+      };
     }
-  });
 
-  if (error) {
-    return {
-      data: null,
-      error: { message: "Failed to save method" } as PostgrestError
-    };
+    return { data: null, error: null };
   }
+);
 
-  return { data: null, error: null };
-}
+export const upsertQuote = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertQuote(
+    quote:
+      | (Omit<z.infer<typeof quoteValidator>, "id" | "quoteId"> & {
+          quoteId: string;
+          companyId: string;
+          companyGroupId: string;
+          createdBy: string;
+          customFields?: Json;
+        })
+      | (Omit<z.infer<typeof quoteValidator>, "id" | "quoteId"> & {
+          id: string;
+          quoteId: string;
+          companyGroupId: string;
+          updatedBy: string;
+          customFields?: Json;
+        })
+  ) {
+    const { companyId, userId } = AuthContextHolder.get();
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("createdBy" in quote) {
+      const [customerPayment, customerShipping, employee, opportunity] =
+        await Promise.all([
+          getCustomerPayment(quote.customerId),
+          getCustomerShipping(quote.customerId),
+          getEmployeeJob(userId, companyId),
+          client
+            .from("opportunity")
+            .insert([{ companyId: companyId, customerId: quote.customerId }])
+            .select("id")
+            .single()
+        ]);
 
-export async function upsertQuote(
-  client: SupabaseClient<Database>,
-  quote:
-    | (Omit<z.infer<typeof quoteValidator>, "id" | "quoteId"> & {
-        quoteId: string;
-        companyId: string;
-        companyGroupId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof quoteValidator>, "id" | "quoteId"> & {
-        id: string;
-        quoteId: string;
-        companyGroupId: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in quote) {
-    const [customerPayment, customerShipping, employee, opportunity] =
-      await Promise.all([
-        getCustomerPayment(client, quote.customerId),
-        getCustomerShipping(client, quote.customerId),
-        getEmployeeJob(client, quote.createdBy, quote.companyId),
-        client
-          .from("opportunity")
-          .insert([
-            { companyId: quote.companyId, customerId: quote.customerId }
-          ])
-          .select("id")
-          .single()
+      if (customerPayment.error) return customerPayment;
+      if (customerShipping.error) return customerShipping;
+
+      const {
+        paymentTermId,
+        invoiceCustomerId,
+        invoiceCustomerContactId,
+        invoiceCustomerLocationId
+      } = customerPayment.data;
+
+      const { shippingMethodId, shippingTermId, incoterm, incotermLocation } =
+        customerShipping.data;
+
+      if (quote.currencyCode) {
+        const currency = await getCurrencyByCode(
+          quote.companyGroupId,
+          quote.currencyCode
+        );
+        if (currency.data) {
+          quote.exchangeRate = currency.data.exchangeRate ?? undefined;
+          quote.exchangeRateUpdatedAt = new Date().toISOString();
+        }
+      } else {
+        quote.exchangeRate = 1;
+        quote.exchangeRateUpdatedAt = new Date().toISOString();
+      }
+
+      const locationId = employee?.data?.locationId ?? null;
+      const { companyGroupId: _companyGroupId, ...quoteData } = quote;
+      const insert = await client
+        .from("quote")
+        .insert([
+          {
+            ...quoteData,
+            opportunityId: opportunity.data?.id
+          }
+        ])
+        .select("id, quoteId");
+      if (insert.error) {
+        return insert;
+      }
+
+      const quoteId = insert.data?.[0]?.id;
+      if (!quoteId) return insert;
+
+      const [shipment, payment, externalLink] = await Promise.all([
+        client.from("quoteShipment").insert([
+          {
+            id: quoteId,
+            locationId: locationId,
+            shippingMethodId: shippingMethodId,
+            shippingTermId: shippingTermId,
+            incoterm: incoterm,
+            incotermLocation: incotermLocation,
+            companyId: companyId
+          }
+        ]),
+        client.from("quotePayment").insert([
+          {
+            id: quoteId,
+            invoiceCustomerId: invoiceCustomerId,
+            invoiceCustomerContactId: invoiceCustomerContactId,
+            invoiceCustomerLocationId: invoiceCustomerLocationId,
+            paymentTermId: paymentTermId,
+            companyId: companyId
+          }
+        ]),
+        upsertExternalLink({
+          documentType: "Quote",
+          documentId: quoteId,
+          customerId: quote.customerId,
+          expiresAt: quote.expirationDate,
+          companyId: companyId
+        })
       ]);
 
-    if (customerPayment.error) return customerPayment;
-    if (customerShipping.error) return customerShipping;
-
-    const {
-      paymentTermId,
-      invoiceCustomerId,
-      invoiceCustomerContactId,
-      invoiceCustomerLocationId
-    } = customerPayment.data;
-
-    const { shippingMethodId, shippingTermId, incoterm, incotermLocation } =
-      customerShipping.data;
-
-    if (quote.currencyCode) {
-      const currency = await getCurrencyByCode(
-        client,
-        quote.companyGroupId,
-        quote.currencyCode
-      );
-      if (currency.data) {
-        quote.exchangeRate = currency.data.exchangeRate ?? undefined;
-        quote.exchangeRateUpdatedAt = new Date().toISOString();
+      if (shipment.error) {
+        await deleteQuote(quoteId);
+        return payment;
       }
-    } else {
-      quote.exchangeRate = 1;
-      quote.exchangeRateUpdatedAt = new Date().toISOString();
-    }
+      if (payment.error) {
+        await deleteQuote(quoteId);
+        return payment;
+      }
+      if (opportunity.error) {
+        await deleteQuote(quoteId);
+        return opportunity;
+      }
+      if (externalLink.data) {
+        await client
+          .from("quote")
+          .update({ externalLinkId: externalLink.data.id })
+          .eq("id", quoteId);
+      }
 
-    const locationId = employee?.data?.locationId ?? null;
-    const { companyGroupId: _companyGroupId, ...quoteData } = quote;
-    const insert = await client
-      .from("quote")
-      .insert([
-        {
-          ...quoteData,
-          opportunityId: opportunity.data?.id
-        }
-      ])
-      .select("id, quoteId");
-    if (insert.error) {
       return insert;
-    }
-
-    const quoteId = insert.data?.[0]?.id;
-    if (!quoteId) return insert;
-
-    const [shipment, payment, externalLink] = await Promise.all([
-      client.from("quoteShipment").insert([
-        {
-          id: quoteId,
-          locationId: locationId,
-          shippingMethodId: shippingMethodId,
-          shippingTermId: shippingTermId,
-          incoterm: incoterm,
-          incotermLocation: incotermLocation,
-          companyId: quote.companyId
-        }
-      ]),
-      client.from("quotePayment").insert([
-        {
-          id: quoteId,
-          invoiceCustomerId: invoiceCustomerId,
-          invoiceCustomerContactId: invoiceCustomerContactId,
-          invoiceCustomerLocationId: invoiceCustomerLocationId,
-          paymentTermId: paymentTermId,
-          companyId: quote.companyId
-        }
-      ]),
-      upsertExternalLink(client, {
-        documentType: "Quote",
-        documentId: quoteId,
-        customerId: quote.customerId,
-        expiresAt: quote.expirationDate,
-        companyId: quote.companyId
-      })
-    ]);
-
-    if (shipment.error) {
-      await deleteQuote(client, quoteId);
-      return payment;
-    }
-    if (payment.error) {
-      await deleteQuote(client, quoteId);
-      return payment;
-    }
-    if (opportunity.error) {
-      await deleteQuote(client, quoteId);
-      return opportunity;
-    }
-    if (externalLink.data) {
-      await client
+    } else {
+      // Only update the exchange rate if the currency code has changed
+      const existingQuote = await client
         .from("quote")
-        .update({ externalLinkId: externalLink.data.id })
-        .eq("id", quoteId);
-    }
+        .select("companyId, currencyCode, opportunityId")
+        .eq("id", quote.id)
+        .single();
 
-    return insert;
-  } else {
-    // Only update the exchange rate if the currency code has changed
-    const existingQuote = await client
-      .from("quote")
-      .select("companyId, currencyCode, opportunityId")
-      .eq("id", quote.id)
-      .single();
+      if (existingQuote.error) return existingQuote;
 
-    if (existingQuote.error) return existingQuote;
+      const { currencyCode, opportunityId } = existingQuote.data;
 
-    const { currencyCode, opportunityId } = existingQuote.data;
-
-    if (quote.currencyCode && currencyCode !== quote.currencyCode) {
-      const currency = await getCurrencyByCode(
-        client,
-        quote.companyGroupId,
-        quote.currencyCode
-      );
-      if (currency.data) {
-        quote.exchangeRate = currency.data.exchangeRate ?? undefined;
-        quote.exchangeRateUpdatedAt = new Date().toISOString();
+      if (quote.currencyCode && currencyCode !== quote.currencyCode) {
+        const currency = await getCurrencyByCode(
+          quote.companyGroupId,
+          quote.currencyCode
+        );
+        if (currency.data) {
+          quote.exchangeRate = currency.data.exchangeRate ?? undefined;
+          quote.exchangeRateUpdatedAt = new Date().toISOString();
+        }
       }
-    }
 
-    // If customerId is being updated, also update the opportunity's customerId
-    if (quote.customerId && opportunityId) {
-      await client
-        .from("opportunity")
-        .update({ customerId: quote.customerId })
-        .eq("id", opportunityId);
-    }
+      // If customerId is being updated, also update the opportunity's customerId
+      if (quote.customerId && opportunityId) {
+        await client
+          .from("opportunity")
+          .update({ customerId: quote.customerId })
+          .eq("id", opportunityId);
+      }
 
-    const { companyGroupId: _cgId, ...quoteUpdateData } = quote;
-    return client
-      .from("quote")
-      .update({
-        ...sanitize(quoteUpdateData),
-        updatedAt: today(getLocalTimeZone()).toString()
-      })
-      .eq("id", quote.id);
+      const { companyGroupId: _cgId, ...quoteUpdateData } = quote;
+      return client
+        .from("quote")
+        .update({
+          ...sanitize(quoteUpdateData),
+          updatedAt: today(getLocalTimeZone()).toString()
+        })
+        .eq("id", quote.id);
+    }
   }
-}
+);
 
-export async function upsertQuoteLine(
-  client: SupabaseClient<Database>,
-  quotationLine:
-    | (Omit<z.infer<typeof quoteLineValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof quoteLineValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("id" in quotationLine) {
+export const upsertQuoteLine = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertQuoteLine(
+    quotationLine:
+      | (Omit<z.infer<typeof quoteLineValidator>, "id"> & {
+          companyId: string;
+          createdBy: string;
+          customFields?: Json;
+        })
+      | (Omit<z.infer<typeof quoteLineValidator>, "id"> & {
+          id: string;
+          updatedBy: string;
+          customFields?: Json;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("id" in quotationLine) {
+      return client
+        .from("quoteLine")
+        .update(sanitize(quotationLine))
+        .eq("id", quotationLine.id)
+        .select("id")
+        .single();
+    }
+    const existing = await client
+      .from("quoteLine")
+      .select("sortOrder")
+      .eq("quoteId", quotationLine.quoteId);
+
+    const maxSortOrder = (existing.data ?? []).reduce(
+      (max, row) => Math.max(max, row.sortOrder ?? 0),
+      0
+    );
+
     return client
       .from("quoteLine")
-      .update(sanitize(quotationLine))
-      .eq("id", quotationLine.id)
-      .select("id")
+      .insert([{ ...quotationLine, sortOrder: maxSortOrder + 1 }])
+      .select("*")
       .single();
   }
-
-  const existing = await client
-    .from("quoteLine")
-    .select("sortOrder")
-    .eq("quoteId", quotationLine.quoteId);
-
-  const maxSortOrder = (existing.data ?? []).reduce(
-    (max, row) => Math.max(max, row.sortOrder ?? 0),
-    0
-  );
-
-  return client
-    .from("quoteLine")
-    .insert([{ ...quotationLine, sortOrder: maxSortOrder + 1 }])
-    .select("*")
-    .single();
-}
+);
 
 export async function updateQuoteLineOrder(
   db: Kysely<KyselyDatabase>,
@@ -3526,104 +3962,111 @@ export async function updateQuoteLineOrder(
   });
 }
 
-export async function upsertQuoteLineAdditionalCharges(
-  client: SupabaseClient<Database>,
-  lineId: string,
-  update: {
-    additionalCharges: z.infer<typeof quoteLineAdditionalChargesValidator>;
-    updatedBy: string;
+export const upsertQuoteLineAdditionalCharges = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertQuoteLineAdditionalCharges(
+    lineId: string,
+    update: {
+      additionalCharges: z.infer<typeof quoteLineAdditionalChargesValidator>;
+    }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("quoteLine").update(update).eq("id", lineId);
   }
-) {
-  return client.from("quoteLine").update(update).eq("id", lineId);
-}
+);
 
-export async function upsertQuoteLinePrices(
-  client: SupabaseClient<Database>,
-  quoteId: string,
-  lineId: string,
-  quoteLinePrices: {
-    quoteLineId: string;
-    unitPrice: number;
-    leadTime: number;
-    discountPercent: number;
-    quantity: number;
-    createdBy: string;
-    categoryMarkups?: Record<string, number>;
-  }[]
-) {
-  const existingPrices = await client
-    .from("quoteLinePrice")
-    .select("*")
-    .eq("quoteLineId", lineId);
-  if (existingPrices.error) {
-    return existingPrices;
-  }
-
-  const deletePrices = await client
-    .from("quoteLinePrice")
-    .delete()
-    .eq("quoteLineId", lineId);
-  if (deletePrices.error) {
-    return deletePrices;
-  }
-
-  const quoteExchangeRate = await client
-    .from("quote")
-    .select("id, exchangeRate")
-    .eq("id", quoteId)
-    .single();
-
-  const quoteLineUnitPricePrecision = await client
-    .from("quoteLine")
-    .select("unitPricePrecision")
-    .eq("id", lineId)
-    .single();
-
-  const pricesByQuantity = existingPrices.data.reduce<
-    Record<
-      number,
-      {
-        discountPercent: number;
-        leadTime: number;
-        categoryMarkups: unknown;
-      }
-    >
-  >((acc, price) => {
-    acc[price.quantity] = price;
-    return acc;
-  }, {});
-
-  const pricesWithExistingDiscountsAndLeadTimes = quoteLinePrices.map((p) => {
-    const existing = pricesByQuantity[p.quantity];
-    const roundedUnitPrice = Number(
-      p.unitPrice.toFixed(
-        quoteLineUnitPricePrecision.data?.unitPricePrecision ?? 2
-      )
-    );
-
-    return {
-      ...p,
-      unitPrice: roundedUnitPrice,
-      discountPercent: existing?.discountPercent ?? p.discountPercent,
-      leadTime: existing?.leadTime ?? p.leadTime,
-      categoryMarkups: p.categoryMarkups ?? existing?.categoryMarkups ?? {},
-      quoteId: quoteId,
-      exchangeRate: quoteExchangeRate.data?.exchangeRate ?? 1
-    };
-  });
-
-  return (
-    client
+export const upsertQuoteLinePrices = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertQuoteLinePrices(
+    quoteId: string,
+    lineId: string,
+    quoteLinePrices: {
+      quoteLineId: string;
+      unitPrice: number;
+      leadTime: number;
+      discountPercent: number;
+      quantity: number;
+      createdBy: string;
+      categoryMarkups?: Record<string, number>;
+    }[]
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const existingPrices = await client
       .from("quoteLinePrice")
-      // @ts-expect-error - categoryMarkups is a Json object
-      .insert(pricesWithExistingDiscountsAndLeadTimes)
-  );
-}
+      .select("*")
+      .eq("quoteLineId", lineId);
+    if (existingPrices.error) {
+      return existingPrices;
+    }
 
-async function buildCostEffects(
-  client: SupabaseClient<Database>,
-  quoteLineId: string
-) {
+    const deletePrices = await client
+      .from("quoteLinePrice")
+      .delete()
+      .eq("quoteLineId", lineId);
+    if (deletePrices.error) {
+      return deletePrices;
+    }
+
+    const quoteExchangeRate = await client
+      .from("quote")
+      .select("id, exchangeRate")
+      .eq("id", quoteId)
+      .single();
+
+    const quoteLineUnitPricePrecision = await client
+      .from("quoteLine")
+      .select("unitPricePrecision")
+      .eq("id", lineId)
+      .single();
+
+    const pricesByQuantity = existingPrices.data.reduce<
+      Record<
+        number,
+        {
+          discountPercent: number;
+          leadTime: number;
+          categoryMarkups: unknown;
+        }
+      >
+    >((acc, price) => {
+      acc[price.quantity] = price;
+      return acc;
+    }, {});
+
+    const pricesWithExistingDiscountsAndLeadTimes = quoteLinePrices.map((p) => {
+      const existing = pricesByQuantity[p.quantity];
+      const roundedUnitPrice = Number(
+        p.unitPrice.toFixed(
+          quoteLineUnitPricePrecision.data?.unitPricePrecision ?? 2
+        )
+      );
+
+      return {
+        ...p,
+        unitPrice: roundedUnitPrice,
+        discountPercent: existing?.discountPercent ?? p.discountPercent,
+        leadTime: existing?.leadTime ?? p.leadTime,
+        categoryMarkups: p.categoryMarkups ?? existing?.categoryMarkups ?? {},
+        quoteId: quoteId,
+        exchangeRate: quoteExchangeRate.data?.exchangeRate ?? 1
+      };
+    });
+
+    return (
+      client
+        .from("quoteLinePrice")
+        // @ts-expect-error - categoryMarkups is a Json object
+        .insert(pricesWithExistingDiscountsAndLeadTimes)
+    );
+  }
+);
+
+async function buildCostEffects(quoteLineId: string) {
+  const client = getAuthClient<SupabaseClient<Database>>();
   const operationsResult = await client
     .from("quoteOperation")
     .select("*")
@@ -3641,7 +4084,7 @@ async function buildCostEffects(
   const buyItemIds = [
     ...new Set((buyMaterials.data ?? []).map((m) => m.itemId))
   ];
-  const priceMap = await getSupplierPriceBreaksForItems(client, buyItemIds);
+  const priceMap = await getSupplierPriceBreaksForItems(buyItemIds);
 
   for (const mat of buyMaterials.data ?? []) {
     const price = lookupBuyPriceFromMap(mat.itemId, 1, priceMap, mat.unitCost);
@@ -3889,121 +4332,127 @@ async function buildCostEffects(
   return { effects, costCategoryKeys };
 }
 
-export async function calculatePricesForQuantities(
-  client: SupabaseClient<Database>,
-  quoteId: string,
-  quoteLineId: string,
-  quantities: number[],
-  userId: string
-) {
-  if (!quantities.length) return { error: null };
+export const calculatePricesForQuantities = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function calculatePricesForQuantities(
+    quoteId: string,
+    quoteLineId: string,
+    quantities: number[]
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { userId } = AuthContextHolder.get();
+    if (!quantities.length) return { error: null };
 
-  // 1. Fetch quote (with companyId + customerId) and line in parallel
-  const [quoteResult, lineResult] = await Promise.all([
-    client
-      .from("quote")
-      .select("companyId, customerId, exchangeRate")
-      .eq("id", quoteId)
-      .single(),
-    client
-      .from("quoteLine")
-      .select("itemId, unitPricePrecision")
-      .eq("id", quoteLineId)
-      .single()
-  ]);
+    // 1. Fetch quote (with companyId + customerId) and line in parallel
+    const [quoteResult, lineResult] = await Promise.all([
+      client
+        .from("quote")
+        .select("companyId, customerId, exchangeRate")
+        .eq("id", quoteId)
+        .single(),
+      client
+        .from("quoteLine")
+        .select("itemId, unitPricePrecision")
+        .eq("id", quoteLineId)
+        .single()
+    ]);
 
-  if (quoteResult.error) return { error: quoteResult.error };
-  if (lineResult.error) return { error: lineResult.error };
+    if (quoteResult.error) return { error: quoteResult.error };
+    if (lineResult.error) return { error: lineResult.error };
 
-  // Fetch settings filtered by company (required for service-role access)
-  const settingsResult = await client
-    .from("companySettings")
-    .select("quoteLineCategoryMarkups")
-    .eq("id", quoteResult.data.companyId)
-    .single();
+    // Fetch settings filtered by company (required for service-role access)
+    const settingsResult = await client
+      .from("companySettings")
+      .select("quoteLineCategoryMarkups")
+      .eq("id", quoteResult.data.companyId)
+      .single();
 
-  if (settingsResult.error) return { error: settingsResult.error };
+    if (settingsResult.error) return { error: settingsResult.error };
 
-  const companyId = quoteResult.data.companyId;
-  const customerId = quoteResult.data.customerId ?? undefined;
-  const itemId = lineResult.data.itemId ?? undefined;
-  const exchangeRate = quoteResult.data.exchangeRate ?? 1;
-  const precision = lineResult.data.unitPricePrecision ?? 2;
+    const _companyId = quoteResult.data.companyId;
+    const customerId = quoteResult.data.customerId ?? undefined;
+    const itemId = lineResult.data.itemId ?? undefined;
+    const exchangeRate = quoteResult.data.exchangeRate ?? 1;
+    const precision = lineResult.data.unitPricePrecision ?? 2;
 
-  // Parse default markups (settings stores decimals, convert to whole numbers)
-  const rawMarkups =
-    (settingsResult.data.quoteLineCategoryMarkups as Record<string, number>) ??
-    {};
-  const defaultMarkups: Record<string, number> = {};
-  for (const [key, value] of Object.entries(rawMarkups)) {
-    defaultMarkups[key] = value * 100;
-  }
-
-  // 2. Build cost effects
-  const result = await buildCostEffects(client, quoteLineId);
-  // buildCostEffects returns null when the line has no costed method yet —
-  // treat as a no-op so partial drafts don't block the save.
-  if (!result) return { error: null };
-
-  const { effects } = result;
-
-  const priceRows = [];
-  for (const qty of quantities) {
-    const categoryCosts: Record<string, number> = {};
-    for (const key of costCategoryKeys) {
-      const total = effects[key].reduce((acc, fn) => acc + fn(qty), 0);
-      categoryCosts[key] = qty > 0 ? total / qty : 0;
+    // Parse default markups (settings stores decimals, convert to whole numbers)
+    const rawMarkups =
+      (settingsResult.data.quoteLineCategoryMarkups as Record<
+        string,
+        number
+      >) ?? {};
+    const defaultMarkups: Record<string, number> = {};
+    for (const [key, value] of Object.entries(rawMarkups)) {
+      defaultMarkups[key] = value * 100;
     }
 
-    const rollupPrice = costCategoryKeys.reduce((sum, key) => {
-      const cost = categoryCosts[key] ?? 0;
-      const markup = defaultMarkups[key] ?? 0;
-      return sum + cost * (1 + markup / 100);
-    }, 0);
+    // 2. Build cost effects
+    const result = await buildCostEffects(quoteLineId);
+    // buildCostEffects returns null when the line has no costed method yet —
+    // treat as a no-op so partial drafts don't block the save.
+    if (!result) return { error: null };
 
-    const finalPrice = itemId
-      ? (
-          await resolvePrice(client, companyId, {
-            itemId,
-            quantity: qty,
-            customerId,
-            existingBasePrice: rollupPrice
-          })
-        ).finalPrice
-      : rollupPrice;
+    const { effects } = result;
 
-    priceRows.push({
-      quoteId,
-      quoteLineId,
-      quantity: qty,
-      unitPrice: Number(finalPrice.toFixed(precision)),
-      categoryMarkups: defaultMarkups,
-      exchangeRate,
-      createdBy: userId,
-      leadTime: 0,
-      discountPercent: 0
-    });
+    const priceRows = [];
+    for (const qty of quantities) {
+      const categoryCosts: Record<string, number> = {};
+      for (const key of costCategoryKeys) {
+        const total = effects[key].reduce((acc, fn) => acc + fn(qty), 0);
+        categoryCosts[key] = qty > 0 ? total / qty : 0;
+      }
+
+      const rollupPrice = costCategoryKeys.reduce((sum, key) => {
+        const cost = categoryCosts[key] ?? 0;
+        const markup = defaultMarkups[key] ?? 0;
+        return sum + cost * (1 + markup / 100);
+      }, 0);
+
+      const finalPrice = itemId
+        ? (
+            await resolvePrice({
+              itemId,
+              quantity: qty,
+              customerId,
+              existingBasePrice: rollupPrice
+            })
+          ).finalPrice
+        : rollupPrice;
+
+      priceRows.push({
+        quoteId,
+        quoteLineId,
+        quantity: qty,
+        unitPrice: Number(finalPrice.toFixed(precision)),
+        categoryMarkups: defaultMarkups,
+        exchangeRate,
+        createdBy: userId,
+        leadTime: 0,
+        discountPercent: 0
+      });
+    }
+
+    const insertResult = await client.from("quoteLinePrice").insert(priceRows);
+    if (insertResult.error) {
+      console.error("[qpricing][MtO calc] INSERT ERROR", {
+        quoteLineId,
+        error: insertResult.error
+      });
+      return { error: insertResult.error };
+    }
+    return { error: null };
   }
-
-  const insertResult = await client.from("quoteLinePrice").insert(priceRows);
-  if (insertResult.error) {
-    console.error("[qpricing][MtO calc] INSERT ERROR", {
-      quoteLineId,
-      error: insertResult.error
-    });
-    return { error: insertResult.error };
-  }
-  return { error: null };
-}
+);
 
 export async function resolveQuoteLinePrices(
-  client: SupabaseClient<Database>,
-  companyId: string,
   quoteId: string,
   quoteLineId: string,
-  quantities: number[],
-  userId: string
+  quantities: number[]
 ) {
+  const client = getAuthClient<SupabaseClient<Database>>();
+  const { userId } = AuthContextHolder.get();
   if (!quantities.length) return { error: null };
 
   const [quoteResult, lineResult] = await Promise.all([
@@ -4031,7 +4480,7 @@ export async function resolveQuoteLinePrices(
 
   const priceRows = [];
   for (const qty of quantities) {
-    const resolved = await resolvePrice(client, companyId, {
+    const resolved = await resolvePrice({
       itemId,
       quantity: qty,
       customerId
@@ -4061,13 +4510,12 @@ export async function resolveQuoteLinePrices(
 }
 
 export async function resolvePurchaseToOrderPrices(
-  client: SupabaseClient<Database>,
-  companyId: string,
   quoteId: string,
   quoteLineId: string,
-  quantities: number[],
-  userId: string
+  quantities: number[]
 ) {
+  const client = getAuthClient<SupabaseClient<Database>>();
+  const { userId } = AuthContextHolder.get();
   if (!quantities.length) return { error: null };
 
   const [quoteResult, lineResult] = await Promise.all([
@@ -4092,12 +4540,12 @@ export async function resolvePurchaseToOrderPrices(
   const precision = lineResult.data.unitPricePrecision ?? 2;
   const customerId = quoteResult.data.customerId ?? undefined;
 
-  const priceMap = await getSupplierPriceBreaksForItems(client, [itemId]);
+  const priceMap = await getSupplierPriceBreaksForItems([itemId]);
 
   const priceRows = [];
   for (const qty of quantities) {
     const supplierPrice = lookupBuyPriceFromMap(itemId, qty, priceMap, 0);
-    const resolved = await resolvePrice(client, companyId, {
+    const resolved = await resolvePrice({
       itemId,
       quantity: qty,
       customerId,
@@ -4127,143 +4575,150 @@ export async function resolvePurchaseToOrderPrices(
   return { error: null };
 }
 
-export async function recalculateQuoteLinePrices(
-  client: SupabaseClient<Database>,
-  quoteId: string,
-  quoteLineId: string,
-  userId: string
-) {
-  // 1. Fetch existing price rows
-  const existingPrices = await client
-    .from("quoteLinePrice")
-    .select("*")
-    .eq("quoteLineId", quoteLineId);
+export const recalculateQuoteLinePrices = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function recalculateQuoteLinePrices(
+    quoteId: string,
+    quoteLineId: string
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { userId } = AuthContextHolder.get();
+    // 1. Fetch existing price rows
+    const existingPrices = await client
+      .from("quoteLinePrice")
+      .select("*")
+      .eq("quoteLineId", quoteLineId);
 
-  if (existingPrices.error) return { error: existingPrices.error };
-  if (!existingPrices.data?.length) return { error: null };
+    if (existingPrices.error) return { error: existingPrices.error };
+    if (!existingPrices.data?.length) return { error: null };
 
-  // 2. Fetch line precision and company + customer context for engine pipe-through
-  const [lineResult, quoteResult] = await Promise.all([
-    client
-      .from("quoteLine")
-      .select("itemId, unitPricePrecision")
-      .eq("id", quoteLineId)
-      .single(),
-    client
-      .from("quote")
-      .select("companyId, customerId")
-      .eq("id", quoteId)
-      .single()
-  ]);
+    // 2. Fetch line precision and company + customer context for engine pipe-through
+    const [lineResult, quoteResult] = await Promise.all([
+      client
+        .from("quoteLine")
+        .select("itemId, unitPricePrecision")
+        .eq("id", quoteLineId)
+        .single(),
+      client
+        .from("quote")
+        .select("companyId, customerId")
+        .eq("id", quoteId)
+        .single()
+    ]);
 
-  const precision = lineResult.data?.unitPricePrecision ?? 2;
-  const itemId = lineResult.data?.itemId ?? undefined;
-  const companyId = quoteResult.data?.companyId;
-  const customerId = quoteResult.data?.customerId ?? undefined;
+    const precision = lineResult.data?.unitPricePrecision ?? 2;
+    const itemId = lineResult.data?.itemId ?? undefined;
+    const companyId = quoteResult.data?.companyId;
+    const customerId = quoteResult.data?.customerId ?? undefined;
 
-  // Fetch default markups to use as fallback for legacy rows without categoryMarkups
-  let defaultMarkups: Record<string, number> = {};
-  if (companyId) {
-    const settingsResult = await client
-      .from("companySettings")
-      .select("quoteLineCategoryMarkups")
-      .eq("id", companyId)
-      .single();
+    // Fetch default markups to use as fallback for legacy rows without categoryMarkups
+    let defaultMarkups: Record<string, number> = {};
+    if (companyId) {
+      const settingsResult = await client
+        .from("companySettings")
+        .select("quoteLineCategoryMarkups")
+        .eq("id", companyId)
+        .single();
 
-    const rawDefaults =
-      (settingsResult.data?.quoteLineCategoryMarkups as Record<
-        string,
-        number
-      >) ?? {};
-    for (const [key, value] of Object.entries(rawDefaults)) {
-      defaultMarkups[key] = value * 100;
-    }
-  }
-
-  // 3. Build cost effects
-  const result = await buildCostEffects(client, quoteLineId);
-  if (!result) return { error: null };
-
-  const { effects } = result;
-
-  const updatedRows = [];
-  for (const row of existingPrices.data) {
-    const qty = row.quantity;
-    const rowMarkups = (row.categoryMarkups as Record<string, number>) ?? {};
-    const markups =
-      Object.keys(rowMarkups).length > 0 ? rowMarkups : defaultMarkups;
-
-    const categoryCosts: Record<string, number> = {};
-    for (const key of costCategoryKeys) {
-      const total = effects[key].reduce((acc, fn) => acc + fn(qty), 0);
-      categoryCosts[key] = qty > 0 ? total / qty : 0;
+      const rawDefaults =
+        (settingsResult.data?.quoteLineCategoryMarkups as Record<
+          string,
+          number
+        >) ?? {};
+      for (const [key, value] of Object.entries(rawDefaults)) {
+        defaultMarkups[key] = value * 100;
+      }
     }
 
-    const rollupPrice = costCategoryKeys.reduce((sum, key) => {
-      const cost = categoryCosts[key] ?? 0;
-      const markup = markups[key] ?? 0;
-      return sum + cost * (1 + markup / 100);
-    }, 0);
+    // 3. Build cost effects
+    const result = await buildCostEffects(quoteLineId);
+    if (!result) return { error: null };
 
-    const finalPrice =
-      itemId && companyId
-        ? (
-            await resolvePrice(client, companyId, {
-              itemId,
-              quantity: qty,
-              customerId,
-              existingBasePrice: rollupPrice
-            })
-          ).finalPrice
-        : rollupPrice;
+    const { effects } = result;
 
-    updatedRows.push({
-      quoteId: row.quoteId,
-      quoteLineId: row.quoteLineId,
-      quantity: row.quantity,
-      unitPrice: Number(finalPrice.toFixed(precision)),
-      categoryMarkups: markups,
-      exchangeRate: row.exchangeRate,
-      createdBy: row.createdBy,
-      updatedBy: userId,
-      leadTime: row.leadTime,
-      discountPercent: row.discountPercent
-    });
+    const updatedRows = [];
+    for (const row of existingPrices.data) {
+      const qty = row.quantity;
+      const rowMarkups = (row.categoryMarkups as Record<string, number>) ?? {};
+      const markups =
+        Object.keys(rowMarkups).length > 0 ? rowMarkups : defaultMarkups;
+
+      const categoryCosts: Record<string, number> = {};
+      for (const key of costCategoryKeys) {
+        const total = effects[key].reduce((acc, fn) => acc + fn(qty), 0);
+        categoryCosts[key] = qty > 0 ? total / qty : 0;
+      }
+
+      const rollupPrice = costCategoryKeys.reduce((sum, key) => {
+        const cost = categoryCosts[key] ?? 0;
+        const markup = markups[key] ?? 0;
+        return sum + cost * (1 + markup / 100);
+      }, 0);
+
+      const finalPrice =
+        itemId && companyId
+          ? (
+              await resolvePrice({
+                itemId,
+                quantity: qty,
+                customerId,
+                existingBasePrice: rollupPrice
+              })
+            ).finalPrice
+          : rollupPrice;
+
+      updatedRows.push({
+        quoteId: row.quoteId,
+        quoteLineId: row.quoteLineId,
+        quantity: row.quantity,
+        unitPrice: Number(finalPrice.toFixed(precision)),
+        categoryMarkups: markups,
+        exchangeRate: row.exchangeRate,
+        createdBy: row.createdBy,
+        updatedBy: userId,
+        leadTime: row.leadTime,
+        discountPercent: row.discountPercent
+      });
+    }
+
+    // 5. Delete existing and re-insert with updated prices
+    const deleteResult = await client
+      .from("quoteLinePrice")
+      .delete()
+      .eq("quoteLineId", quoteLineId);
+
+    if (deleteResult.error) {
+      console.error("[qpricing][recalc] DELETE ERROR", {
+        quoteLineId,
+        error: deleteResult.error
+      });
+      return { error: deleteResult.error };
+    }
+
+    const insertResult = await client
+      .from("quoteLinePrice")
+      .insert(updatedRows);
+    if (insertResult.error) {
+      console.error("[qpricing][recalc] INSERT ERROR", {
+        quoteLineId,
+        error: insertResult.error
+      });
+      return { error: insertResult.error };
+    }
+    return { error: null };
   }
+);
 
-  // 5. Delete existing and re-insert with updated prices
-  const deleteResult = await client
-    .from("quoteLinePrice")
-    .delete()
-    .eq("quoteLineId", quoteLineId);
-
-  if (deleteResult.error) {
-    console.error("[qpricing][recalc] DELETE ERROR", {
-      quoteLineId,
-      error: deleteResult.error
-    });
-    return { error: deleteResult.error };
-  }
-
-  const insertResult = await client.from("quoteLinePrice").insert(updatedRows);
-  if (insertResult.error) {
-    console.error("[qpricing][recalc] INSERT ERROR", {
-      quoteLineId,
-      error: insertResult.error
-    });
-    return { error: insertResult.error };
-  }
-  return { error: null };
-}
-
-export async function upsertQuoteLineMethod(
-  client: SupabaseClient<Database>,
-  lineMethod: {
+export const upsertQuoteLineMethod = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertQuoteLineMethod(lineMethod: {
     itemId: string;
     quoteId: string;
     quoteLineId: string;
-    companyId: string;
-    userId: string;
     configuration?: Record<string, unknown>;
     parts?: {
       billOfMaterial: boolean;
@@ -4273,87 +4728,94 @@ export async function upsertQuoteLineMethod(
       steps: boolean;
       workInstructions: boolean;
     };
-  }
-) {
-  const body: {
-    type: "itemToQuoteLine";
-    sourceId: string;
-    targetId: string;
-    companyId: string;
-    userId: string;
-    configuration?: Record<string, unknown>;
-    parts?: {
-      billOfMaterial: boolean;
-      billOfProcess: boolean;
-      parameters: boolean;
-      tools: boolean;
-      steps: boolean;
-      workInstructions: boolean;
+  }) {
+    const { companyId, userId } = AuthContextHolder.get();
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const body: {
+      type: "itemToQuoteLine";
+      sourceId: string;
+      targetId: string;
+      companyId: string;
+      userId: string;
+      configuration?: Record<string, unknown>;
+      parts?: {
+        billOfMaterial: boolean;
+        billOfProcess: boolean;
+        parameters: boolean;
+        tools: boolean;
+        steps: boolean;
+        workInstructions: boolean;
+      };
+    } = {
+      type: "itemToQuoteLine",
+      sourceId: lineMethod.itemId,
+      targetId: `${lineMethod.quoteId}:${lineMethod.quoteLineId}`,
+      companyId: companyId,
+      userId: userId
     };
-  } = {
-    type: "itemToQuoteLine",
-    sourceId: lineMethod.itemId,
-    targetId: `${lineMethod.quoteId}:${lineMethod.quoteLineId}`,
-    companyId: lineMethod.companyId,
-    userId: lineMethod.userId
-  };
 
-  // Only add configuration if it exists
-  if (lineMethod.configuration !== undefined) {
-    body.configuration = lineMethod.configuration;
+    // Only add configuration if it exists
+    if (lineMethod.configuration !== undefined) {
+      body.configuration = lineMethod.configuration;
+    }
+
+    // Only add parts if it exists
+    if (lineMethod.parts !== undefined) {
+      body.parts = lineMethod.parts;
+    }
+
+    return client.functions.invoke("get-method", {
+      body
+    });
   }
+);
 
-  // Only add parts if it exists
-  if (lineMethod.parts !== undefined) {
-    body.parts = lineMethod.parts;
-  }
-
-  return client.functions.invoke("get-method", {
-    body
-  });
-}
-
-export async function upsertQuoteMaterial(
-  client: SupabaseClient<Database>,
-  quoteMaterial:
-    | (z.infer<typeof quoteMaterialValidator> & {
-        quoteId: string;
-        quoteLineId: string;
-        quoteOperationId?: string;
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (z.infer<typeof quoteMaterialValidator> & {
-        quoteId: string;
-        quoteLineId: string;
-        quoteOperationId?: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("updatedBy" in quoteMaterial) {
+export const upsertQuoteMaterial = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertQuoteMaterial(
+    quoteMaterial:
+      | (z.infer<typeof quoteMaterialValidator> & {
+          quoteId: string;
+          quoteLineId: string;
+          quoteOperationId?: string;
+          companyId: string;
+          createdBy: string;
+          customFields?: Json;
+        })
+      | (z.infer<typeof quoteMaterialValidator> & {
+          quoteId: string;
+          quoteLineId: string;
+          quoteOperationId?: string;
+          updatedBy: string;
+          customFields?: Json;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("updatedBy" in quoteMaterial) {
+      return client
+        .from("quoteMaterial")
+        .update(sanitize(quoteMaterial))
+        .eq("id", quoteMaterial.id)
+        .select("id, methodType")
+        .single();
+    }
     return client
       .from("quoteMaterial")
-      .update(sanitize(quoteMaterial))
-      .eq("id", quoteMaterial.id)
+      .insert([quoteMaterial])
       .select("id, methodType")
       .single();
   }
-  return client
-    .from("quoteMaterial")
-    .insert([quoteMaterial])
-    .select("id, methodType")
-    .single();
-}
+);
 
-export async function upsertQuoteMaterialMakeMethod(
-  client: SupabaseClient<Database>,
-  quoteMethod: {
+export const upsertQuoteMaterialMakeMethod = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertQuoteMaterialMakeMethod(quoteMethod: {
     sourceId: string;
     targetId: string;
-    companyId: string;
-    userId: string;
     configuration?: Record<string, unknown>;
     parts?: {
       billOfMaterial: boolean;
@@ -4363,319 +4825,421 @@ export async function upsertQuoteMaterialMakeMethod(
       steps: boolean;
       workInstructions: boolean;
     };
-  }
-) {
-  const body: {
-    type: "itemToQuoteMakeMethod";
-    sourceId: string;
-    targetId: string;
-    companyId: string;
-    userId: string;
-    configuration?: Record<string, unknown>;
-    parts?: {
-      billOfMaterial: boolean;
-      billOfProcess: boolean;
-      parameters: boolean;
-      tools: boolean;
-      steps: boolean;
-      workInstructions: boolean;
+  }) {
+    const { companyId, userId } = AuthContextHolder.get();
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const body: {
+      type: "itemToQuoteMakeMethod";
+      sourceId: string;
+      targetId: string;
+      companyId: string;
+      userId: string;
+      configuration?: Record<string, unknown>;
+      parts?: {
+        billOfMaterial: boolean;
+        billOfProcess: boolean;
+        parameters: boolean;
+        tools: boolean;
+        steps: boolean;
+        workInstructions: boolean;
+      };
+    } = {
+      type: "itemToQuoteMakeMethod",
+      sourceId: quoteMethod.sourceId,
+      targetId: quoteMethod.targetId,
+      companyId: companyId,
+      userId: userId
     };
-  } = {
-    type: "itemToQuoteMakeMethod",
-    sourceId: quoteMethod.sourceId,
-    targetId: quoteMethod.targetId,
-    companyId: quoteMethod.companyId,
-    userId: quoteMethod.userId
-  };
 
-  // Only add configuration if it exists
-  if (quoteMethod.configuration !== undefined) {
-    body.configuration = quoteMethod.configuration;
+    // Only add configuration if it exists
+    if (quoteMethod.configuration !== undefined) {
+      body.configuration = quoteMethod.configuration;
+    }
+
+    // Only add parts if it exists
+    if (quoteMethod.parts !== undefined) {
+      body.parts = quoteMethod.parts;
+    }
+
+    const { error } = await client.functions.invoke("get-method", {
+      body
+    });
+
+    if (error) {
+      return {
+        data: null,
+        error: { message: "Failed to pull method" } as PostgrestError
+      };
+    }
+
+    return { data: null, error: null };
   }
+);
 
-  // Only add parts if it exists
-  if (quoteMethod.parts !== undefined) {
-    body.parts = quoteMethod.parts;
-  }
-
-  const { error } = await client.functions.invoke("get-method", {
-    body
-  });
-
-  if (error) {
-    return {
-      data: null,
-      error: { message: "Failed to pull method" } as PostgrestError
-    };
-  }
-
-  return { data: null, error: null };
-}
-
-export async function upsertQuoteOperation(
-  client: SupabaseClient<Database>,
-  operation:
-    | (Omit<z.infer<typeof quoteOperationValidator>, "id"> & {
-        quoteId: string;
-        quoteLineId: string;
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (z.infer<typeof quoteOperationValidator> & {
-        quoteId: string;
-        quoteLineId: string;
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof quoteOperationValidator>, "id"> & {
-        id: string;
-        quoteId: string;
-        quoteLineId: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in operation) {
+export const upsertQuoteOperation = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertQuoteOperation(
+    operation:
+      | (Omit<z.infer<typeof quoteOperationValidator>, "id"> & {
+          quoteId: string;
+          quoteLineId: string;
+          companyId: string;
+          createdBy: string;
+          customFields?: Json;
+        })
+      | (z.infer<typeof quoteOperationValidator> & {
+          quoteId: string;
+          quoteLineId: string;
+          companyId: string;
+          createdBy: string;
+          customFields?: Json;
+        })
+      | (Omit<z.infer<typeof quoteOperationValidator>, "id"> & {
+          id: string;
+          quoteId: string;
+          quoteLineId: string;
+          updatedBy: string;
+          customFields?: Json;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("createdBy" in operation) {
+      return client
+        .from("quoteOperation")
+        .insert([operation])
+        .select("id")
+        .single();
+    }
     return client
       .from("quoteOperation")
-      .insert([operation])
+      .update(sanitize(operation))
+      .eq("id", operation.id)
       .select("id")
       .single();
   }
-  return client
-    .from("quoteOperation")
-    .update(sanitize(operation))
-    .eq("id", operation.id)
-    .select("id")
-    .single();
-}
+);
 
-export async function upsertQuoteOperationStep(
-  client: SupabaseClient<Database>,
-  quoteOperationStep:
-    | (Omit<z.infer<typeof operationStepValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<
-        z.infer<typeof operationStepValidator>,
-        "id" | "minValue" | "maxValue"
-      > & {
-        id: string;
-        minValue: number | null;
-        maxValue: number | null;
-        updatedBy: string;
-        updatedAt: string;
-      })
-) {
-  if ("createdBy" in quoteOperationStep) {
+export const upsertQuoteOperationStep = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertQuoteOperationStep(
+    quoteOperationStep:
+      | (Omit<z.infer<typeof operationStepValidator>, "id"> & {
+          companyId: string;
+          createdBy: string;
+        })
+      | (Omit<
+          z.infer<typeof operationStepValidator>,
+          "id" | "minValue" | "maxValue"
+        > & {
+          id: string;
+          minValue: number | null;
+          maxValue: number | null;
+          updatedBy: string;
+          updatedAt: string;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("createdBy" in quoteOperationStep) {
+      return client
+        .from("quoteOperationStep")
+        .insert(quoteOperationStep)
+        .select("id")
+        .single();
+    }
+
     return client
       .from("quoteOperationStep")
-      .insert(quoteOperationStep)
+      .update(sanitize(quoteOperationStep))
+      .eq("id", quoteOperationStep.id)
       .select("id")
       .single();
   }
+);
 
-  return client
-    .from("quoteOperationStep")
-    .update(sanitize(quoteOperationStep))
-    .eq("id", quoteOperationStep.id)
-    .select("id")
-    .single();
-}
+export const upsertQuoteOperationParameter = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertQuoteOperationParameter(
+    quoteOperationParameter:
+      | (Omit<z.infer<typeof operationParameterValidator>, "id"> & {
+          companyId: string;
+          createdBy: string;
+        })
+      | (Omit<z.infer<typeof operationParameterValidator>, "id"> & {
+          id: string;
+          updatedBy: string;
+          updatedAt: string;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("createdBy" in quoteOperationParameter) {
+      return client
+        .from("quoteOperationParameter")
+        .insert(quoteOperationParameter)
+        .select("id")
+        .single();
+    }
 
-export async function upsertQuoteOperationParameter(
-  client: SupabaseClient<Database>,
-  quoteOperationParameter:
-    | (Omit<z.infer<typeof operationParameterValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof operationParameterValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        updatedAt: string;
-      })
-) {
-  if ("createdBy" in quoteOperationParameter) {
     return client
       .from("quoteOperationParameter")
-      .insert(quoteOperationParameter)
+      .update(sanitize(quoteOperationParameter))
+      .eq("id", quoteOperationParameter.id)
       .select("id")
       .single();
   }
+);
 
-  return client
-    .from("quoteOperationParameter")
-    .update(sanitize(quoteOperationParameter))
-    .eq("id", quoteOperationParameter.id)
-    .select("id")
-    .single();
-}
+export const upsertQuoteOperationTool = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertQuoteOperationTool(
+    quoteOperationTool:
+      | (Omit<z.infer<typeof operationToolValidator>, "id"> & {
+          companyId: string;
+          createdBy: string;
+        })
+      | (Omit<z.infer<typeof operationToolValidator>, "id"> & {
+          id: string;
+          updatedBy: string;
+          updatedAt: string;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("createdBy" in quoteOperationTool) {
+      return client
+        .from("quoteOperationTool")
+        .insert(quoteOperationTool)
+        .select("id")
+        .single();
+    }
 
-export async function upsertQuoteOperationTool(
-  client: SupabaseClient<Database>,
-  quoteOperationTool:
-    | (Omit<z.infer<typeof operationToolValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof operationToolValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        updatedAt: string;
-      })
-) {
-  if ("createdBy" in quoteOperationTool) {
     return client
       .from("quoteOperationTool")
-      .insert(quoteOperationTool)
+      .update(sanitize(quoteOperationTool))
+      .eq("id", quoteOperationTool.id)
       .select("id")
       .single();
   }
+);
 
-  return client
-    .from("quoteOperationTool")
-    .update(sanitize(quoteOperationTool))
-    .eq("id", quoteOperationTool.id)
-    .select("id")
-    .single();
-}
-
-export async function upsertQuotePayment(
-  client: SupabaseClient<Database>,
-  quotePayment:
-    | (z.infer<typeof quotePaymentValidator> & {
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (z.infer<typeof quotePaymentValidator> & {
-        id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("id" in quotePayment) {
+export const upsertQuotePayment = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertQuotePayment(
+    quotePayment:
+      | (z.infer<typeof quotePaymentValidator> & {
+          createdBy: string;
+          customFields?: Json;
+        })
+      | (z.infer<typeof quotePaymentValidator> & {
+          id: string;
+          updatedBy: string;
+          customFields?: Json;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("id" in quotePayment) {
+      return client
+        .from("quotePayment")
+        .update(sanitize(quotePayment))
+        .eq("id", quotePayment.id)
+        .select("id")
+        .single();
+    }
     return client
       .from("quotePayment")
-      .update(sanitize(quotePayment))
-      .eq("id", quotePayment.id)
+      .insert([quotePayment])
       .select("id")
       .single();
   }
-  return client
-    .from("quotePayment")
-    .insert([quotePayment])
-    .select("id")
-    .single();
-}
+);
 
-export async function upsertQuoteShipment(
-  client: SupabaseClient<Database>,
-  quoteShipment:
-    | (z.infer<typeof quoteShipmentValidator> & {
-        createdBy: string;
-      })
-    | (z.infer<typeof quoteShipmentValidator> & {
-        id: string;
-        updatedBy: string;
-      })
-) {
-  if ("id" in quoteShipment) {
+export const upsertQuoteShipment = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertQuoteShipment(
+    quoteShipment:
+      | (z.infer<typeof quoteShipmentValidator> & {
+          createdBy: string;
+        })
+      | (z.infer<typeof quoteShipmentValidator> & {
+          id: string;
+          updatedBy: string;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("id" in quoteShipment) {
+      return client
+        .from("quoteShipment")
+        .update(sanitize(quoteShipment))
+        .eq("id", quoteShipment.id)
+        .select("id")
+        .single();
+    }
     return client
       .from("quoteShipment")
-      .update(sanitize(quoteShipment))
-      .eq("id", quoteShipment.id)
+      .insert([quoteShipment])
       .select("id")
       .single();
   }
-  return client
-    .from("quoteShipment")
-    .insert([quoteShipment])
-    .select("id")
-    .single();
-}
+);
 
-export async function updateSalesOrderFavorite(
-  client: SupabaseClient<Database>,
-  args: {
+export const updateSalesOrderFavorite = mcpTool(
+  {
+    classification: "WRITE",
+    schema: z.object({
+      args: z.object({ id: z.string(), favorite: z.boolean() })
+    })
+  },
+  async function updateSalesOrderFavorite(args: {
     id: string;
     favorite: boolean;
-    userId: string;
+  }) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { id, favorite, userId } = args;
+    if (!favorite) {
+      return client
+        .from("salesOrderFavorite")
+        .delete()
+        .eq("salesOrderId", id)
+        .eq("userId", userId);
+    } else {
+      return client
+        .from("salesOrderFavorite")
+        .insert({ salesOrderId: id, userId: userId });
+    }
   }
-) {
-  const { id, favorite, userId } = args;
-  if (!favorite) {
-    return client
-      .from("salesOrderFavorite")
-      .delete()
-      .eq("salesOrderId", id)
-      .eq("userId", userId);
-  } else {
-    return client
-      .from("salesOrderFavorite")
-      .insert({ salesOrderId: id, userId: userId });
-  }
-}
+);
 
-export async function updateSalesOrderStatus(
-  client: SupabaseClient<Database>,
-  update: {
+export const updateSalesOrderStatus = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function updateSalesOrderStatus(update: {
     id: string;
     status: (typeof salesOrderStatusType)[number];
     assignee: null | undefined;
-    updatedBy: string;
+  }) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { status, ...rest } = update;
+
+    // Set completedDate when status is Confirmed
+    const updateData = {
+      status,
+      ...rest,
+      ...(["To Ship", "To Ship and Invoice"].includes(status)
+        ? { completedDate: now(getLocalTimeZone()).toAbsoluteString() }
+        : {})
+    };
+
+    return client.from("salesOrder").update(updateData).eq("id", update.id);
   }
-) {
-  const { status, ...rest } = update;
+);
 
-  // Set completedDate when status is Confirmed
-  const updateData = {
-    status,
-    ...rest,
-    ...(["To Ship", "To Ship and Invoice"].includes(status)
-      ? { completedDate: now(getLocalTimeZone()).toAbsoluteString() }
-      : {})
-  };
+export const upsertSalesOrder = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertSalesOrder(
+    salesOrder:
+      | (Omit<z.infer<typeof salesOrderValidator>, "id" | "salesOrderId"> & {
+          salesOrderId: string;
+          companyId: string;
+          companyGroupId: string;
+          createdBy: string;
+          customFields?: Json;
+        })
+      | (Omit<z.infer<typeof salesOrderValidator>, "id" | "salesOrderId"> & {
+          id: string;
+          salesOrderId: string;
+          companyGroupId: string;
+          updatedBy: string;
+          customFields?: Json;
+        })
+  ) {
+    const { companyId, userId } = AuthContextHolder.get();
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("id" in salesOrder) {
+      // Only update the exchange rate if the currency code has changed
+      const existingSalesOrder = await client
+        .from("salesOrder")
+        .select("companyId, currencyCode, opportunityId")
+        .eq("id", salesOrder.id)
+        .single();
 
-  return client.from("salesOrder").update(updateData).eq("id", update.id);
-}
+      if (existingSalesOrder.error) return existingSalesOrder;
 
-export async function upsertSalesOrder(
-  client: SupabaseClient<Database>,
-  salesOrder:
-    | (Omit<z.infer<typeof salesOrderValidator>, "id" | "salesOrderId"> & {
-        salesOrderId: string;
-        companyId: string;
-        companyGroupId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof salesOrderValidator>, "id" | "salesOrderId"> & {
-        id: string;
-        salesOrderId: string;
-        companyGroupId: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("id" in salesOrder) {
-    // Only update the exchange rate if the currency code has changed
-    const existingSalesOrder = await client
-      .from("salesOrder")
-      .select("companyId, currencyCode, opportunityId")
-      .eq("id", salesOrder.id)
-      .single();
+      const { currencyCode, opportunityId } = existingSalesOrder.data;
 
-    if (existingSalesOrder.error) return existingSalesOrder;
+      if (salesOrder.currencyCode && currencyCode !== salesOrder.currencyCode) {
+        const currency = await getCurrencyByCode(
+          salesOrder.companyGroupId,
+          salesOrder.currencyCode
+        );
+        if (currency.data) {
+          salesOrder.exchangeRate = currency.data.exchangeRate ?? undefined;
+          salesOrder.exchangeRateUpdatedAt = new Date().toISOString();
+        }
+      }
 
-    const { currencyCode, opportunityId } = existingSalesOrder.data;
+      // If customerId is being updated, also update the opportunity's customerId
+      if (salesOrder.customerId && opportunityId) {
+        await client
+          .from("opportunity")
+          .update({ customerId: salesOrder.customerId })
+          .eq("id", opportunityId);
+      }
 
-    if (salesOrder.currencyCode && currencyCode !== salesOrder.currencyCode) {
+      const { companyGroupId: _cgId, ...salesOrderUpdateData } = salesOrder;
+      return client
+        .from("salesOrder")
+        .update(sanitize(salesOrderUpdateData))
+        .eq("id", salesOrder.id)
+        .select("id, salesOrderId");
+    }
+
+    const [customerPayment, customerShipping, employee, opportunity] =
+      await Promise.all([
+        getCustomerPayment(salesOrder.customerId),
+        getCustomerShipping(salesOrder.customerId),
+        getEmployeeJob(userId, companyId),
+        client
+          .from("opportunity")
+          .insert([
+            {
+              companyId: companyId,
+              customerId: salesOrder.customerId
+            }
+          ])
+          .select("id")
+          .single()
+      ]);
+
+    if (customerPayment.error) return customerPayment;
+    if (customerShipping.error) return customerShipping;
+
+    const {
+      paymentTermId,
+      invoiceCustomerId,
+      invoiceCustomerContactId,
+      invoiceCustomerLocationId
+    } = customerPayment.data;
+
+    const { shippingMethodId, shippingTermId, incoterm, incotermLocation } =
+      customerShipping.data;
+
+    const locationId = employee?.data?.locationId ?? null;
+
+    if (salesOrder.currencyCode) {
       const currency = await getCurrencyByCode(
-        client,
         salesOrder.companyGroupId,
         salesOrder.currencyCode
       );
@@ -4683,218 +5247,169 @@ export async function upsertSalesOrder(
         salesOrder.exchangeRate = currency.data.exchangeRate ?? undefined;
         salesOrder.exchangeRateUpdatedAt = new Date().toISOString();
       }
-    }
-
-    // If customerId is being updated, also update the opportunity's customerId
-    if (salesOrder.customerId && opportunityId) {
-      await client
-        .from("opportunity")
-        .update({ customerId: salesOrder.customerId })
-        .eq("id", opportunityId);
-    }
-
-    const { companyGroupId: _cgId, ...salesOrderUpdateData } = salesOrder;
-    return client
-      .from("salesOrder")
-      .update(sanitize(salesOrderUpdateData))
-      .eq("id", salesOrder.id)
-      .select("id, salesOrderId");
-  }
-
-  const [customerPayment, customerShipping, employee, opportunity] =
-    await Promise.all([
-      getCustomerPayment(client, salesOrder.customerId),
-      getCustomerShipping(client, salesOrder.customerId),
-      getEmployeeJob(client, salesOrder.createdBy, salesOrder.companyId),
-      client
-        .from("opportunity")
-        .insert([
-          {
-            companyId: salesOrder.companyId,
-            customerId: salesOrder.customerId
-          }
-        ])
-        .select("id")
-        .single()
-    ]);
-
-  if (customerPayment.error) return customerPayment;
-  if (customerShipping.error) return customerShipping;
-
-  const {
-    paymentTermId,
-    invoiceCustomerId,
-    invoiceCustomerContactId,
-    invoiceCustomerLocationId
-  } = customerPayment.data;
-
-  const { shippingMethodId, shippingTermId, incoterm, incotermLocation } =
-    customerShipping.data;
-
-  const locationId = employee?.data?.locationId ?? null;
-
-  if (salesOrder.currencyCode) {
-    const currency = await getCurrencyByCode(
-      client,
-      salesOrder.companyGroupId,
-      salesOrder.currencyCode
-    );
-    if (currency.data) {
-      salesOrder.exchangeRate = currency.data.exchangeRate ?? undefined;
+    } else {
+      salesOrder.exchangeRate = 1;
       salesOrder.exchangeRateUpdatedAt = new Date().toISOString();
     }
-  } else {
-    salesOrder.exchangeRate = 1;
-    salesOrder.exchangeRateUpdatedAt = new Date().toISOString();
-  }
 
-  const {
-    requestedDate,
-    promisedDate,
-    companyGroupId: _companyGroupId,
-    ...orderData
-  } = salesOrder;
+    const {
+      requestedDate,
+      promisedDate,
+      companyGroupId: _companyGroupId,
+      ...orderData
+    } = salesOrder;
 
-  const order = await client
-    .from("salesOrder")
-    .insert([{ ...orderData, opportunityId: opportunity.data?.id }])
-    .select("id, salesOrderId");
+    const order = await client
+      .from("salesOrder")
+      .insert([{ ...orderData, opportunityId: opportunity.data?.id }])
+      .select("id, salesOrderId");
 
-  if (order.error) {
+    if (order.error) {
+      return order;
+    }
+
+    if (!order.data || order.data.length === 0) {
+      return {
+        error: {
+          message: "Sales order insert returned no data",
+          details:
+            "The insert operation completed but returned an empty result set"
+        } as PostgrestError,
+        data: null
+      };
+    }
+
+    const salesOrderId = order.data[0].id;
+
+    const [shipment, payment] = await Promise.all([
+      client.from("salesOrderShipment").insert([
+        {
+          id: salesOrderId,
+          locationId: locationId,
+          shippingMethodId: shippingMethodId,
+          receiptRequestedDate: requestedDate,
+          receiptPromisedDate: promisedDate,
+          shippingTermId: shippingTermId,
+          incoterm: incoterm,
+          incotermLocation: incotermLocation,
+          companyId: companyId
+        }
+      ]),
+      client.from("salesOrderPayment").insert([
+        {
+          id: salesOrderId,
+          invoiceCustomerId: invoiceCustomerId,
+          invoiceCustomerContactId: invoiceCustomerContactId,
+          invoiceCustomerLocationId: invoiceCustomerLocationId,
+          paymentTermId: paymentTermId,
+          companyId: companyId
+        }
+      ])
+    ]);
+
+    if (shipment.error) {
+      await deleteSalesOrder(salesOrderId);
+      return shipment;
+    }
+    if (payment.error) {
+      await deleteSalesOrder(salesOrderId);
+      return payment;
+    }
+    if (opportunity.error) {
+      await deleteSalesOrder(salesOrderId);
+      return opportunity;
+    }
+
     return order;
   }
+);
 
-  if (!order.data || order.data.length === 0) {
-    return {
-      error: {
-        message: "Sales order insert returned no data",
-        details:
-          "The insert operation completed but returned an empty result set"
-      } as PostgrestError,
-      data: null
-    };
-  }
-
-  const salesOrderId = order.data[0].id;
-
-  const [shipment, payment] = await Promise.all([
-    client.from("salesOrderShipment").insert([
-      {
-        id: salesOrderId,
-        locationId: locationId,
-        shippingMethodId: shippingMethodId,
-        receiptRequestedDate: requestedDate,
-        receiptPromisedDate: promisedDate,
-        shippingTermId: shippingTermId,
-        incoterm: incoterm,
-        incotermLocation: incotermLocation,
-        companyId: salesOrder.companyId
-      }
-    ]),
-    client.from("salesOrderPayment").insert([
-      {
-        id: salesOrderId,
-        invoiceCustomerId: invoiceCustomerId,
-        invoiceCustomerContactId: invoiceCustomerContactId,
-        invoiceCustomerLocationId: invoiceCustomerLocationId,
-        paymentTermId: paymentTermId,
-        companyId: salesOrder.companyId
-      }
-    ])
-  ]);
-
-  if (shipment.error) {
-    await deleteSalesOrder(client, salesOrderId);
-    return shipment;
-  }
-  if (payment.error) {
-    await deleteSalesOrder(client, salesOrderId);
-    return payment;
-  }
-  if (opportunity.error) {
-    await deleteSalesOrder(client, salesOrderId);
-    return opportunity;
-  }
-
-  return order;
-}
-
-export async function upsertSalesOrderShipment(
-  client: SupabaseClient<Database>,
-  salesOrderShipment:
-    | (z.infer<typeof salesOrderShipmentValidator> & {
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (z.infer<typeof salesOrderShipmentValidator> & {
-        id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("id" in salesOrderShipment) {
+export const upsertSalesOrderShipment = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertSalesOrderShipment(
+    salesOrderShipment:
+      | (z.infer<typeof salesOrderShipmentValidator> & {
+          createdBy: string;
+          customFields?: Json;
+        })
+      | (z.infer<typeof salesOrderShipmentValidator> & {
+          id: string;
+          updatedBy: string;
+          customFields?: Json;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("id" in salesOrderShipment) {
+      return client
+        .from("salesOrderShipment")
+        .update(sanitize(salesOrderShipment))
+        .eq("id", salesOrderShipment.id)
+        .select("id")
+        .single();
+    }
     return client
       .from("salesOrderShipment")
-      .update(sanitize(salesOrderShipment))
-      .eq("id", salesOrderShipment.id)
+      .insert([salesOrderShipment])
       .select("id")
       .single();
   }
-  return client
-    .from("salesOrderShipment")
-    .insert([salesOrderShipment])
-    .select("id")
-    .single();
-}
+);
 
-export async function upsertSalesOrderLine(
-  client: SupabaseClient<Database>,
-  salesOrderLine:
-    | (Omit<z.infer<typeof salesOrderLineValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof salesOrderLineValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("id" in salesOrderLine) {
+export const upsertSalesOrderLine = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertSalesOrderLine(
+    salesOrderLine:
+      | (Omit<z.infer<typeof salesOrderLineValidator>, "id"> & {
+          companyId: string;
+          createdBy: string;
+          customFields?: Json;
+        })
+      | (Omit<z.infer<typeof salesOrderLineValidator>, "id"> & {
+          id: string;
+          updatedBy: string;
+          customFields?: Json;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("id" in salesOrderLine) {
+      return client
+        .from("salesOrderLine")
+        .update(sanitize(salesOrderLine))
+        .eq("id", salesOrderLine.id)
+        .select("id")
+        .single();
+    }
+
+    const salesOrder = await getSalesOrder(salesOrderLine.salesOrderId);
+    if (salesOrder.error) return salesOrder;
+
+    const existing = await client
+      .from("salesOrderLine")
+      .select("sortOrder")
+      .eq("salesOrderId", salesOrderLine.salesOrderId);
+
+    const maxSortOrder = (existing.data ?? []).reduce(
+      (max, row) => Math.max(max, row.sortOrder ?? 0),
+      0
+    );
+
     return client
       .from("salesOrderLine")
-      .update(sanitize(salesOrderLine))
-      .eq("id", salesOrderLine.id)
+      .insert([
+        {
+          ...salesOrderLine,
+          exchangeRate: salesOrder.data?.exchangeRate ?? 1,
+          sortOrder: maxSortOrder + 1
+        }
+      ])
       .select("id")
       .single();
   }
-
-  const salesOrder = await getSalesOrder(client, salesOrderLine.salesOrderId);
-  if (salesOrder.error) return salesOrder;
-
-  const existing = await client
-    .from("salesOrderLine")
-    .select("sortOrder")
-    .eq("salesOrderId", salesOrderLine.salesOrderId);
-
-  const maxSortOrder = (existing.data ?? []).reduce(
-    (max, row) => Math.max(max, row.sortOrder ?? 0),
-    0
-  );
-
-  return client
-    .from("salesOrderLine")
-    .insert([
-      {
-        ...salesOrderLine,
-        exchangeRate: salesOrder.data?.exchangeRate ?? 1,
-        sortOrder: maxSortOrder + 1
-      }
-    ])
-    .select("id")
-    .single();
-}
+);
 
 export async function updateSalesOrderLineOrder(
   db: Kysely<KyselyDatabase>,
@@ -4911,141 +5426,156 @@ export async function updateSalesOrderLineOrder(
   });
 }
 
-export async function upsertSalesOrderPayment(
-  client: SupabaseClient<Database>,
-  salesOrderPayment:
-    | (z.infer<typeof salesOrderPaymentValidator> & {
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (z.infer<typeof salesOrderPaymentValidator> & {
-        id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("id" in salesOrderPayment) {
+export const upsertSalesOrderPayment = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertSalesOrderPayment(
+    salesOrderPayment:
+      | (z.infer<typeof salesOrderPaymentValidator> & {
+          createdBy: string;
+          customFields?: Json;
+        })
+      | (z.infer<typeof salesOrderPaymentValidator> & {
+          id: string;
+          updatedBy: string;
+          customFields?: Json;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("id" in salesOrderPayment) {
+      return client
+        .from("salesOrderPayment")
+        .update(sanitize(salesOrderPayment))
+        .eq("id", salesOrderPayment.id)
+        .select("id")
+        .single();
+    }
     return client
       .from("salesOrderPayment")
-      .update(sanitize(salesOrderPayment))
-      .eq("id", salesOrderPayment.id)
+      .insert([salesOrderPayment])
       .select("id")
       .single();
   }
-  return client
-    .from("salesOrderPayment")
-    .insert([salesOrderPayment])
-    .select("id")
-    .single();
-}
+);
 
-export async function upsertSalesRFQ(
-  client: SupabaseClient<Database>,
-  rfq:
-    | (Omit<z.infer<typeof salesRfqValidator>, "id" | "rfqId"> & {
-        rfqId: string;
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof salesRfqValidator>, "id" | "rfqId"> & {
-        id: string;
-        rfqId: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in rfq) {
-    const opportunity = await client
-      .from("opportunity")
-      .insert([{ companyId: rfq.companyId, customerId: rfq.customerId }])
-      .select("id")
-      .single();
-
-    if (opportunity.error) {
-      return opportunity;
-    }
-
-    const insert = await client
-      .from("salesRfq")
-      .insert([
-        {
-          ...rfq,
-          opportunityId: opportunity.data?.id
-        }
-      ])
-      .select("id, rfqId");
-    if (insert.error) {
-      return insert;
-    }
-
-    return insert;
-  } else {
-    // If customerId is being updated, also update the opportunity's customerId
-    if (rfq.customerId) {
-      const existingRfq = await client
-        .from("salesRfq")
-        .select("opportunityId")
-        .eq("id", rfq.id)
+export const upsertSalesRFQ = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertSalesRFQ(
+    rfq:
+      | (Omit<z.infer<typeof salesRfqValidator>, "id" | "rfqId"> & {
+          rfqId: string;
+          companyId: string;
+          createdBy: string;
+          customFields?: Json;
+        })
+      | (Omit<z.infer<typeof salesRfqValidator>, "id" | "rfqId"> & {
+          id: string;
+          rfqId: string;
+          updatedBy: string;
+          customFields?: Json;
+        })
+  ) {
+    const { companyId } = AuthContextHolder.get();
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("createdBy" in rfq) {
+      const opportunity = await client
+        .from("opportunity")
+        .insert([{ companyId: companyId, customerId: rfq.customerId }])
+        .select("id")
         .single();
 
-      if (existingRfq.data?.opportunityId) {
-        await client
-          .from("opportunity")
-          .update({ customerId: rfq.customerId })
-          .eq("id", existingRfq.data.opportunityId);
+      if (opportunity.error) {
+        return opportunity;
       }
+
+      const insert = await client
+        .from("salesRfq")
+        .insert([
+          {
+            ...rfq,
+            opportunityId: opportunity.data?.id
+          }
+        ])
+        .select("id, rfqId");
+      if (insert.error) {
+        return insert;
+      }
+
+      return insert;
+    } else {
+      // If customerId is being updated, also update the opportunity's customerId
+      if (rfq.customerId) {
+        const existingRfq = await client
+          .from("salesRfq")
+          .select("opportunityId")
+          .eq("id", rfq.id)
+          .single();
+
+        if (existingRfq.data?.opportunityId) {
+          await client
+            .from("opportunity")
+            .update({ customerId: rfq.customerId })
+            .eq("id", existingRfq.data.opportunityId);
+        }
+      }
+
+      return client
+        .from("salesRfq")
+        .update({
+          ...sanitize(rfq),
+          updatedAt: today(getLocalTimeZone()).toString()
+        })
+        .eq("id", rfq.id);
     }
-
-    return client
-      .from("salesRfq")
-      .update({
-        ...sanitize(rfq),
-        updatedAt: today(getLocalTimeZone()).toString()
-      })
-      .eq("id", rfq.id);
   }
-}
+);
 
-export async function upsertSalesRFQLine(
-  client: SupabaseClient<Database>,
+export const upsertSalesRFQLine = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertSalesRFQLine(
+    salesRfqLine:
+      | (Omit<z.infer<typeof salesRfqLineValidator>, "id"> & {
+          companyId: string;
+          createdBy: string;
+          customFields?: Json;
+        })
+      | (Omit<z.infer<typeof salesRfqLineValidator>, "id"> & {
+          id: string;
+          updatedBy: string;
+          customFields?: Json;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("createdBy" in salesRfqLine) {
+      const existing = await client
+        .from("salesRfqLine")
+        .select("order")
+        .eq("salesRfqId", salesRfqLine.salesRfqId);
 
-  salesRfqLine:
-    | (Omit<z.infer<typeof salesRfqLineValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof salesRfqLineValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in salesRfqLine) {
-    const existing = await client
-      .from("salesRfqLine")
-      .select("order")
-      .eq("salesRfqId", salesRfqLine.salesRfqId);
+      const maxOrder = (existing.data ?? []).reduce(
+        (max, row) => Math.max(max, row.order ?? 0),
+        0
+      );
 
-    const maxOrder = (existing.data ?? []).reduce(
-      (max, row) => Math.max(max, row.order ?? 0),
-      0
-    );
-
+      return client
+        .from("salesRfqLine")
+        .insert([{ ...salesRfqLine, order: maxOrder + 1 }])
+        .select("id")
+        .single();
+    }
     return client
       .from("salesRfqLine")
-      .insert([{ ...salesRfqLine, order: maxOrder + 1 }])
+      .update(sanitize(salesRfqLine))
+      .eq("id", salesRfqLine.id)
       .select("id")
       .single();
   }
-  return client
-    .from("salesRfqLine")
-    .update(sanitize(salesRfqLine))
-    .eq("id", salesRfqLine.id)
-    .select("id")
-    .single();
-}
+);
 
 export async function updateSalesRFQLineOrder(
   db: Kysely<KyselyDatabase>,

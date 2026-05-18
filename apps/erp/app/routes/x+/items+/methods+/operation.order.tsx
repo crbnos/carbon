@@ -7,7 +7,7 @@ import { updateOperationOrder } from "~/modules/items";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -27,7 +27,7 @@ export async function action({ request }: ActionFunctionArgs) {
     })
   );
 
-  const updateSortOrders = await updateOperationOrder(client, updates);
+  const updateSortOrders = await updateOperationOrder(updates);
   if (updateSortOrders.some((update) => update.error))
     return data(
       {},

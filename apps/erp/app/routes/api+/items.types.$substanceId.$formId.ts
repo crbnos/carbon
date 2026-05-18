@@ -8,7 +8,7 @@ import { getMaterialTypeList } from "~/modules/items";
 import { getCompanyId, materialTypesQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts",
     role: "employee"
   });
@@ -20,12 +20,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return await getMaterialTypeList(
-    client,
-    params.substanceId,
-    params.formId,
-    companyId
-  );
+  return await getMaterialTypeList(params.substanceId, params.formId);
 }
 
 export async function clientLoader({

@@ -7,11 +7,11 @@ import { getProceduresList } from "~/modules/production";
 import { getCompanyId, proceduresQuery } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "production"
   });
 
-  return await getProceduresList(client, companyId);
+  return await getProceduresList();
 }
 
 export async function clientLoader({ serverLoader }: ClientLoaderFunctionArgs) {

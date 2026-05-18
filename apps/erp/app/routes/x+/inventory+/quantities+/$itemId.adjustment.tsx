@@ -17,7 +17,7 @@ import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "inventory"
   });
 
@@ -62,7 +62,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     };
   }
 
-  const itemLedger = await insertManualInventoryAdjustment(client, {
+  const itemLedger = await insertManualInventoryAdjustment({
     ...d,
     companyId,
     createdBy: userId

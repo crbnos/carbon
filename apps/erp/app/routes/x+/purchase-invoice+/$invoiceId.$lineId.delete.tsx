@@ -15,14 +15,14 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "invoicing"
   });
   const { lineId, invoiceId } = params;
   if (!lineId) throw notFound("lineId not found");
   if (!invoiceId) throw notFound("invoiceId not found");
 
-  const purchaseInvoice = await getPurchaseInvoice(client, invoiceId);
+  const purchaseInvoice = await getPurchaseInvoice(invoiceId);
   await requireUnlocked({
     request,
     isLocked: isPurchaseInvoiceLocked(purchaseInvoice.data?.status),
@@ -30,7 +30,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     message: "Cannot delete lines on a confirmed purchase invoice."
   });
 
-  const purchaseInvoiceLine = await getPurchaseInvoiceLine(client, lineId);
+  const purchaseInvoiceLine = await getPurchaseInvoiceLine(lineId);
   if (purchaseInvoiceLine.error) {
     throw redirect(
       path.to.purchaseInvoiceDetails(invoiceId),
@@ -45,7 +45,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "invoicing"
   });
 
@@ -53,7 +53,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!lineId) throw notFound("Could not find lineId");
   if (!invoiceId) throw notFound("Could not find invoiceId");
 
-  const purchaseInvoice = await getPurchaseInvoice(client, invoiceId);
+  const purchaseInvoice = await getPurchaseInvoice(invoiceId);
   await requireUnlocked({
     request,
     isLocked: isPurchaseInvoiceLocked(purchaseInvoice.data?.status),
@@ -61,10 +61,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot delete lines on a confirmed purchase invoice."
   });
 
-  const { error: deleteTypeError } = await deletePurchaseInvoiceLine(
-    client,
-    lineId
-  );
+  const { error: deleteTypeError } = await deletePurchaseInvoiceLine(lineId);
   if (deleteTypeError) {
     throw redirect(
       path.to.purchaseInvoiceDetails(invoiceId),

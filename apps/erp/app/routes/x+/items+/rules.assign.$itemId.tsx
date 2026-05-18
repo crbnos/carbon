@@ -37,7 +37,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const result = await assignItemRule(client, {
+  const result = await assignItemRule({
     itemId,
     ruleId,
     companyId,

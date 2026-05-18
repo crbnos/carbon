@@ -31,7 +31,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked sales order. Reopen it first."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "sales"
   });
 
@@ -44,7 +44,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateSalesOrderPayment = await upsertSalesOrderPayment(client, {
+  const updateSalesOrderPayment = await upsertSalesOrderPayment({
     ...validation.data,
     id: orderId,
     updatedBy: userId,

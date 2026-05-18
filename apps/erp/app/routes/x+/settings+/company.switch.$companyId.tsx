@@ -12,8 +12,8 @@ import { getCompanies } from "~/modules/settings";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {});
-  const companies = await getCompanies(client, userId);
+  await requirePermissions(request, {});
+  const companies = await getCompanies();
 
   if (companies.error) {
     throw redirect(

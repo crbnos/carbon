@@ -61,3 +61,7 @@ Patterns learned from corrections. Review at the start of each session.
 ## Bash fallbacks when tools are missing
 
 - `pandoc` is not on the user's machine. For `.docx` extraction, use the `anthropic-skills:docx` skill's `unpack.py` (needs `defusedxml`; install via `mise x python@3.14.2 -- pip install defusedxml`) or an equivalent Python/JS extraction, rather than assuming pandoc is available.
+
+## Lesson (auth-als Step 2)
+- `git checkout -- <dir>` reverts ALL changes in that dir, including intentional hand edits made earlier in the session. Before bulk-reverting a codemod, check `git diff --name-only <dir>` and exclude/reapply intentional files. Reapplied MCP #4 edit after losing it this way.
+- Caller direction matters: Step 1 modified ONLY service files, NOT routes. So route callers still have the ORIGINAL `svc(client, companyId, userId, data)` form. Option-C caller pass must DROP stale companyId/userId positionals, NOT insert client (client is already there).

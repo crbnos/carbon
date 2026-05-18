@@ -43,7 +43,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase order."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "purchasing"
   });
 
@@ -56,15 +56,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updatePurchaseOrderDelivery = await upsertPurchaseOrderDelivery(
-    client,
-    {
-      ...validation.data,
-      id: orderId,
-      updatedBy: userId,
-      customFields: setCustomFields(formData)
-    }
-  );
+  const updatePurchaseOrderDelivery = await upsertPurchaseOrderDelivery({
+    ...validation.data,
+    id: orderId,
+    updatedBy: userId,
+    customFields: setCustomFields(formData)
+  });
   if (updatePurchaseOrderDelivery.error) {
     throw redirect(
       path.to.purchaseOrderDetails(orderId),

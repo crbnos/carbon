@@ -35,8 +35,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const client = getCarbonServiceRole();
   const [rawClaims, employee, employeeTypes] = await Promise.all([
     getClaims(client, employeeId, companyId),
-    getEmployee(client, employeeId, companyId),
-    getEmployeeTypes(client, companyId)
+    getEmployee(employeeId),
+    getEmployeeTypes()
   ]);
 
   if (rawClaims.error || employee.error || rawClaims.data === null) {
@@ -65,7 +65,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const types = employeeTypes.data ?? [];
   const permissionsByType = await Promise.all(
-    types.map((t) => getPermissionsByEmployeeType(client, t.id))
+    types.map((t) => getPermissionsByEmployeeType(t.id))
   );
   const employeeTypePermissions: Record<
     string,

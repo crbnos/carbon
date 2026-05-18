@@ -19,7 +19,7 @@ import { getParams, path } from "~/utils/path";
 import { getCompanyId, supplierTypesQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing",
     role: "employee"
   });
@@ -27,7 +27,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { supplierTypeId } = params;
   if (!supplierTypeId) throw notFound("supplierTypeId not found");
 
-  const supplierType = await getSupplierType(client, supplierTypeId);
+  const supplierType = await getSupplierType(supplierTypeId);
 
   if (supplierType.error) {
     throw redirect(
@@ -60,7 +60,7 @@ export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "purchasing"
   });
 
@@ -74,7 +74,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, ...d } = validation.data;
   if (!id) throw new Error("id not found");
 
-  const updateSupplierType = await upsertSupplierType(client, {
+  const updateSupplierType = await upsertSupplierType({
     id,
     ...d,
     updatedBy: userId,

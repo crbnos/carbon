@@ -22,9 +22,9 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {});
+  const { userId } = await requirePermissions(request, {});
 
-  const user = await getAccount(client, userId);
+  const user = await getAccount(userId);
 
   if (user.error || !user.data) {
     throw redirect(
@@ -38,7 +38,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {});
+  const { userId } = await requirePermissions(request, {});
   const formData = await request.formData();
 
   if (formData.get("intent") === "about") {
@@ -52,7 +52,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const { firstName, lastName, about, phone } = validation.data;
 
-    const updateAccount = await updatePublicAccount(client, {
+    const updateAccount = await updatePublicAccount({
       id: userId,
       firstName,
       lastName,
@@ -74,7 +74,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (formData.get("intent") === "photo") {
     const photoPath = formData.get("path");
     if (photoPath === null || typeof photoPath === "string") {
-      const avatarUpdate = await updateAvatar(client, userId, photoPath);
+      const avatarUpdate = await updateAvatar(photoPath);
       if (avatarUpdate.error) {
         throw redirect(
           path.to.profile,

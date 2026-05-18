@@ -11,7 +11,7 @@ export interface McpContext {
 
 export type RegisterTools = (server: McpServer, ctx: McpContext) => void;
 
-export type AuthField = "companyId" | "createdBy" | "updatedBy";
+export type { AuthField } from "~/services/mcp";
 
 export const READ_ONLY_ANNOTATIONS = {
   readOnlyHint: true,
@@ -76,13 +76,16 @@ export function withErrorHandling<T extends Record<string, unknown>>(
         `[withErrorHandling] Error stack:`,
         error instanceof Error ? error.stack : "No stack"
       );
+      // Surface error.message so agents can distinguish failure modes
+      // ("row not found" vs. "permission denied" vs. "constraint violation")
+      // and recover. Stacks stay in server logs above. Non-Error throws
+      // fall back to the caller-safe message.
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : fallbackMessage;
       return {
-        content: [
-          {
-            type: "text" as const,
-            text: error instanceof Error ? error.message : fallbackMessage
-          }
-        ],
+        content: [{ type: "text" as const, text: message }],
         isError: true
       };
     }

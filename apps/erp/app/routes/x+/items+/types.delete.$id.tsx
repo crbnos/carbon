@@ -9,13 +9,13 @@ import { deleteMaterialType, getMaterialType } from "~/modules/items";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts"
   });
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const materialType = await getMaterialType(client, id);
+  const materialType = await getMaterialType(id);
   if (materialType.error) {
     throw redirect(
       path.to.materialTypes,
@@ -30,7 +30,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "parts"
   });
 
@@ -42,7 +42,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteTypeError } = await deleteMaterialType(client, id);
+  const { error: deleteTypeError } = await deleteMaterialType(id);
   if (deleteTypeError) {
     throw redirect(
       `${path.to.materialTypes}?${getParams(request)}`,

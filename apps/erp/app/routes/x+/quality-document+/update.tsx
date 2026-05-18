@@ -42,7 +42,6 @@ async function processToActive(
     const approvalRequired = await isApprovalRequired(
       serviceRole,
       "qualityDocument",
-      companyId,
       undefined
     );
     if (!approvalRequired) continue;
@@ -67,7 +66,6 @@ async function processToActive(
     const rule = await getApprovalRuleByAmount(
       serviceRole,
       "qualityDocument",
-      companyId,
       undefined
     );
     const approverIds = rule.data
@@ -140,15 +138,11 @@ async function cancelPendingApprovalsForArchiveOrDraft(
     if (!req || req.status !== "Pending") continue;
     if (!allowAnyUpdater) {
       const isRequester = req.requestedBy === userId;
-      const isApprover = await canApproveRequest(
-        serviceRole,
-        {
-          amount: req.amount,
-          documentType: req.documentType,
-          companyId: req.companyId
-        },
-        userId
-      );
+      const isApprover = await canApproveRequest(serviceRole, {
+        amount: req.amount,
+        documentType: req.documentType,
+        companyId: req.companyId
+      });
       if (!isRequester && !isApprover) {
         return {
           message:

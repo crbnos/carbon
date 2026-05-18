@@ -14,14 +14,14 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources"
   });
 
   const { supplierContactId } = params;
   if (!supplierContactId) throw notFound("supplierContactId not found");
 
-  const contractor = await getContractor(client, supplierContactId);
+  const contractor = await getContractor(supplierContactId);
 
   if (contractor.error) {
     throw redirect(
@@ -37,7 +37,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     create: "resources"
   });
 
@@ -52,7 +52,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, supplierId, ...d } = validation.data;
   if (!id) throw notFound("Contractor ID was not found");
 
-  const updateContractor = await upsertContractor(client, {
+  const updateContractor = await upsertContractor({
     id,
     ...d,
     // @ts-expect-error TS2339 - TODO: fix type

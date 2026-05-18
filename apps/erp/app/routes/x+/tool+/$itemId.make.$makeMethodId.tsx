@@ -27,7 +27,7 @@ import { getModelByItemId, getTagsList } from "~/modules/shared";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts"
   });
 
@@ -37,10 +37,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [makeMethod, methodMaterials, methodOperations, tags] =
     await Promise.all([
-      getMakeMethodById(client, makeMethodId, companyId),
-      getMethodMaterialsByMakeMethod(client, makeMethodId),
-      getMethodOperationsByMakeMethodId(client, makeMethodId),
-      getTagsList(client, companyId, "operation")
+      getMakeMethodById(makeMethodId),
+      getMethodMaterialsByMakeMethod(makeMethodId),
+      getMethodOperationsByMakeMethodId(makeMethodId),
+      getTagsList("operation")
     ]);
 
   if (makeMethod.error) {
@@ -96,8 +96,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         workCenterId: operation.workCenterId ?? undefined,
         workInstruction: operation.workInstruction as JSONContent | null
       })) ?? [],
-    model: getModelByItemId(client, makeMethod.data.itemId),
-    makeMethods: getMakeMethods(client, makeMethod.data.itemId, companyId),
+    model: getModelByItemId(makeMethod.data.itemId),
+    makeMethods: getMakeMethods(makeMethod.data.itemId),
     tags: tags.data ?? []
   };
 }

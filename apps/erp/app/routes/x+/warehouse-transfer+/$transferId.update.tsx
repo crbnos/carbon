@@ -14,7 +14,7 @@ const updateStatusValidator = z.object({
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "inventory"
   });
 
@@ -29,7 +29,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const result = await updateWarehouseTransferStatus(
-    client,
     transferId,
     validation.data.status,
     userId

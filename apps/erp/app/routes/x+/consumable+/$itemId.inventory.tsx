@@ -64,7 +64,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await getLocationsList();
     if (locations.error || !locations.data?.length) {
       throw redirect(
         path.to.consumable(itemId),
@@ -78,11 +78,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   let [consumableInventory] = await Promise.all([
-    getPickMethod(client, itemId, companyId, locationId)
+    getPickMethod(itemId, locationId)
   ]);
 
   if (consumableInventory.error || !consumableInventory.data) {
-    const insertPickMethod = await upsertPickMethod(client, {
+    const insertPickMethod = await upsertPickMethod({
       itemId,
       companyId,
       locationId,
@@ -100,12 +100,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       );
     }
 
-    consumableInventory = await getPickMethod(
-      client,
-      itemId,
-      companyId,
-      locationId
-    );
+    consumableInventory = await getPickMethod(itemId, locationId);
     if (consumableInventory.error || !consumableInventory.data) {
       throw redirect(
         path.to.consumable(itemId),
@@ -120,12 +115,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   }
 
-  const quantities = await getItemQuantities(
-    client,
-    itemId,
-    companyId,
-    locationId
-  );
+  const quantities = await getItemQuantities(itemId, locationId);
   if (quantities.error) {
     throw redirect(
       path.to.items,
@@ -137,9 +127,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const itemStorageUnitQuantities = await getItemStorageUnitQuantities(
-    client,
     itemId,
-    companyId,
     locationId
   );
   if (itemStorageUnitQuantities.error || !itemStorageUnitQuantities.data) {
@@ -163,9 +151,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     trackedEntityExpirations,
     rulesData
   ] = await Promise.all([
-    getItemShelfLife(client, itemId),
-    getBomHasShelfLifeManagedInput(client, itemId, companyId),
-    getTrackedEntityExpirations(client, trackedEntityIds),
+    getItemShelfLife(itemId),
+    getBomHasShelfLifeManagedInput(itemId),
+    getTrackedEntityExpirations(trackedEntityIds),
     getItemRulesDataForItem(client, itemId, companyId)
   ]);
 

@@ -27,14 +27,14 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
   const { rfqId } = params;
   if (!rfqId) throw new Error("Could not find rfqId");
 
-  const rfq = await getSalesRFQ(client, rfqId);
+  const rfq = await getSalesRFQ(rfqId);
   if (rfq.error) {
     throw redirect(
       path.to.salesRfqs,
@@ -66,7 +66,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked RFQ. Reopen it first."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "sales"
   });
 
@@ -80,7 +80,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { rfqId, ...d } = validation.data;
   if (!rfqId) throw new Error("Could not find rfqId");
 
-  const update = await upsertSalesRFQ(client, {
+  const update = await upsertSalesRFQ({
     id,
     rfqId,
     ...d,

@@ -11,7 +11,7 @@ import { path } from "~/utils/path";
 import { getCompanyId, workCentersQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "resources"
   });
 
@@ -23,7 +23,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const activate = await activateWorkCenter(client, id);
+  const activate = await activateWorkCenter(id);
   if (activate.error) {
     throw redirect(
       path.to.workCenters,

@@ -20,7 +20,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     create: "sales"
   });
 
@@ -37,7 +37,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { customerId } = validation.data;
 
-  const insertCustomerPortal = await upsertExternalLink(client, {
+  const insertCustomerPortal = await upsertExternalLink({
     documentType: "Customer",
     documentId: customerId,
     customerId,

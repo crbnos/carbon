@@ -19,7 +19,7 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyGroupId } = await requirePermissions(request, {
+  const { companyGroupId } = await requirePermissions(request, {
     view: "accounting",
     role: "employee"
   });
@@ -28,8 +28,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!accountId) throw notFound("accountId not found");
 
   const [account, groupAccounts] = await Promise.all([
-    getAccount(client, accountId),
-    getGroupAccounts(client, companyGroupId)
+    getAccount(accountId),
+    getGroupAccounts(companyGroupId)
   ]);
 
   return {
@@ -40,14 +40,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "accounting"
   });
 
   // Root accounts (Balance Sheet, Income Statement) cannot be modified
   const { accountId } = params;
   if (accountId) {
-    const existing = await getAccount(client, accountId);
+    const existing = await getAccount(accountId);
     if (existing.data?.isSystem) {
       throw redirect(
         path.to.chartOfAccounts,
@@ -71,7 +71,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const { id, ...d } = validation.data;
     if (!id) throw new Error("id not found");
 
-    const updateAccount = await upsertAccount(client, {
+    const updateAccount = await upsertAccount({
       id,
       ...d,
       number: null,
@@ -106,7 +106,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id, ...d } = validation.data;
   if (!id) throw new Error("id not found");
 
-  const updateAccount = await upsertAccount(client, {
+  const updateAccount = await upsertAccount({
     id,
     ...d,
     parentId: d.parentId || undefined,

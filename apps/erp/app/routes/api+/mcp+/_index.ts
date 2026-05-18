@@ -1,29 +1,48 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import type { ActionFunctionArgs } from "react-router";
+import { ensureMcpToolsLoaded } from "~/services/mcp";
 import { createMcpServer } from "./lib/server";
 
+const isMcpDebug =
+  process.env.NODE_ENV !== "production" || process.env.MCP_DEBUG === "1";
+
 export async function action({ request }: ActionFunctionArgs) {
-  console.log("[MCP] Received request:", {
-    method: request.method,
-    url: request.url,
-    headers: Object.fromEntries(request.headers.entries())
-  });
-
-  const authHeader = request.headers.get("Authorization");
-  const hasCarbonKey = request.headers.has("carbon-key");
-
-  if (authHeader?.startsWith("Bearer ") && !hasCarbonKey) {
-    const token = authHeader.slice(7);
-    const headers = new Headers(request.headers);
-    headers.set("carbon-key", token);
-    request = new Request(request, { headers });
-    console.log("[MCP] Added carbon-key header from Bearer token");
+  if (isMcpDebug) {
+    // Redact credential-bearing headers before logging.
+    const redactedHeaders: Record<string, string> = {};
+    for (const [k, v] of request.headers.entries()) {
+      const lower = k.toLowerCase();
+      redactedHeaders[k] =
+        lower === "authorization" ||
+        lower === "carbon-key" ||
+        lower === "cookie"
+          ? "[redacted]"
+          : v;
+    }
+    console.log("[MCP] Received request:", {
+      method: request.method,
+      url: request.url,
+      headers: redactedHeaders
+    });
   }
 
+  // Auth identity is established by `authContextMiddleware` (root) before
+  // this resource-route action runs — verified that RR root middleware runs
+  // for resource routes. The `Authorization: Bearer` → `carbon-key`
+  // normalization now lives in `resolveApiKey`/`resolveAuthContext` (issue
+  // #4), so it is already applied. requirePermissions here only builds the
+  // RLS client (identity comes from the ALS scope, single-sourced).
   const { client, companyId, companyGroupId, userId } =
     await requirePermissions(request, {});
-  console.log("[MCP] Auth successful:", { companyId, userId });
+  if (isMcpDebug) {
+    console.log("[MCP] Auth successful:", { companyId, userId });
+  }
+
+  // Idempotent per cold-start: imports annotated service files so their
+  // mcpTool() calls populate McpToolRegistry. Awaited so the registry is
+  // ready before search_tools / describe_tool / call_tool run.
+  await ensureMcpToolsLoaded();
 
   const server = createMcpServer({ client, companyId, companyGroupId, userId });
   const transport = new WebStandardStreamableHTTPServerTransport({
@@ -32,20 +51,14 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   await server.connect(transport);
-  console.log("[MCP] Server connected");
-
-  const response = await transport.handleRequest(request);
-  console.log("[MCP] Response status:", response.status);
-
-  // Log response body for debugging
-  const clonedResponse = response.clone();
-  try {
-    const responseBody = await clonedResponse.text();
-    console.log("[MCP] Response body:", responseBody.substring(0, 500));
-  } catch (_e) {
-    console.log("[MCP] Could not read response body");
+  if (isMcpDebug) {
+    console.log("[MCP] Server connected");
   }
 
+  const response = await transport.handleRequest(request);
+  if (isMcpDebug) {
+    console.log("[MCP] Response status:", response.status);
+  }
   return response;
 }
 

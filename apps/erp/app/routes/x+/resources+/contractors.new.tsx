@@ -15,7 +15,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "resources"
   });
 
@@ -29,7 +29,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // @ts-expect-error TS2339 - TODO: fix type
   const { id, hoursPerWeek, abilities } = validation.data;
 
-  const createContractor = await upsertContractor(client, {
+  const createContractor = await upsertContractor({
     id,
     hoursPerWeek,
     abilities: abilities ?? [],

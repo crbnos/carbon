@@ -43,7 +43,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: id excluded on insert
   const { id, ...rest } = validation.data;
 
-  const insert = await upsertItemRule(client, {
+  const insert = await upsertItemRule({
     ...rest,
     description: rest.description ?? null,
     companyId,

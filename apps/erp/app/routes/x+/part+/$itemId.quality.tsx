@@ -15,15 +15,15 @@ import { getCompanySettings } from "~/modules/settings";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts"
   });
   const { itemId } = params;
   invariant(itemId, "itemId is required");
 
   const [plan, settings] = await Promise.all([
-    getItemSamplingPlan(client, itemId, companyId),
-    getCompanySettings(client, companyId)
+    getItemSamplingPlan(itemId),
+    getCompanySettings()
   ]);
 
   return data({
@@ -37,7 +37,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "quality"
   });
   const { itemId } = params;
@@ -49,7 +49,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
   if (validation.error) return validationError(validation.error);
 
-  const result = await upsertItemSamplingPlan(client, {
+  const result = await upsertItemSamplingPlan({
     ...validation.data,
     companyId,
     updatedBy: userId

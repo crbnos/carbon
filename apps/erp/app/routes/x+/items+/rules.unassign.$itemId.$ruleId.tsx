@@ -28,7 +28,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { itemId, ruleId } = params;
   if (!itemId || !ruleId) throw new Error("itemId and ruleId required");
 
-  const result = await unassignItemRule(client, { itemId, ruleId });
+  const result = await unassignItemRule({ itemId, ruleId });
   if (result.error) {
     throw redirect(
       request.headers.get("Referer") ?? path.to.itemRules,

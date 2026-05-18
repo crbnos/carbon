@@ -13,7 +13,7 @@ import RiskRegisterForm from "~/modules/quality/ui/RiskRegister/RiskRegisterForm
 import { getParams, path } from "~/utils/path";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { client, userId, companyId } = await requirePermissions(request, {
+  const { userId, companyId } = await requirePermissions(request, {
     role: "employee"
   });
 
@@ -29,7 +29,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const severity = parseInt(d.severity ?? "1", 10);
   const likelihood = parseInt(d.likelihood ?? "1", 10);
 
-  const result = await upsertRisk(client, {
+  const result = await upsertRisk({
     ...d,
     assignee: d.assignee ?? userId,
     severity,

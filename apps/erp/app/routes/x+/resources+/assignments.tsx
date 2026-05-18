@@ -49,14 +49,14 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources",
     role: "employee"
   });
 
   const [summary, assignments] = await Promise.all([
-    getTrainingAssignmentSummary(client, companyId),
-    getTrainingAssignments(client, companyId)
+    getTrainingAssignmentSummary(),
+    getTrainingAssignments()
   ]);
 
   if (summary.error) {

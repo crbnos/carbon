@@ -6,9 +6,9 @@ import { data } from "react-router";
 import { getPartsList } from "~/modules/items";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
-  const parts = await getPartsList(client, companyId);
+  const parts = await getPartsList();
   if (parts.error) {
     return data(
       parts,

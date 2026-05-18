@@ -13,11 +13,11 @@ import { IntercompanyTransactionForm } from "~/modules/accounting/ui/Intercompan
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyGroupId } = await requirePermissions(request, {
+  const { companyGroupId } = await requirePermissions(request, {
     create: "accounting"
   });
 
-  const companies = await getCompaniesInGroup(client, companyGroupId);
+  const companies = await getCompaniesInGroup(companyGroupId);
 
   return {
     companies: companies.data ?? []
@@ -26,7 +26,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyGroupId, userId } = await requirePermissions(request, {
+  const { companyGroupId, userId } = await requirePermissions(request, {
     create: "accounting"
   });
 
@@ -39,7 +39,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const result = await createIntercompanyTransaction(client, {
+  const result = await createIntercompanyTransaction({
     ...validation.data,
     companyGroupId,
     userId

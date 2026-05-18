@@ -15,7 +15,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { client: viewClient } = await requirePermissions(request, {
     view: "purchasing"
   });
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "purchasing"
   });
 
@@ -35,7 +35,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked RFQ. Reopen it first."
   });
 
-  const deleteLine = await deletePurchasingRFQLine(client, lineId);
+  const deleteLine = await deletePurchasingRFQLine(lineId);
   if (deleteLine.error) {
     throw redirect(
       path.to.purchasingRfqLine(rfqId, lineId),

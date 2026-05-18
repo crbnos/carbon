@@ -17,7 +17,7 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts"
   });
 
@@ -25,8 +25,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!itemId) throw new Error("Could not find itemId");
 
   const [itemCost, itemCostHistory] = await Promise.all([
-    getItemCost(client, itemId, companyId),
-    getItemCostHistory(client, itemId, companyId)
+    getItemCost(itemId),
+    getItemCostHistory(itemId)
   ]);
 
   if (itemCost.error) {
@@ -47,7 +47,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -61,7 +61,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateItemCost = await upsertItemCost(client, {
+  const updateItemCost = await upsertItemCost({
     ...validation.data,
     itemId,
     updatedBy: userId,

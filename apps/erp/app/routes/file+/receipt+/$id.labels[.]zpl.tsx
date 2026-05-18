@@ -9,7 +9,7 @@ import { getCompanySettings } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "inventory"
   });
 
@@ -17,8 +17,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!id) throw new Error("Could not find id");
 
   const [companySettings, receiptLineTracking] = await Promise.all([
-    getCompanySettings(client, companyId),
-    getReceiptTracking(client, id, companyId)
+    getCompanySettings(),
+    getReceiptTracking(id)
   ]);
 
   // Get the label size from query params or default to zebra2x1

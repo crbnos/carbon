@@ -15,7 +15,7 @@ import { path, requestReferrer } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "production"
   });
 
@@ -28,7 +28,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const operations = await getJobOperationsList(client, jobId);
+  const operations = await getJobOperationsList(jobId);
   if (operations.error) {
     redirect(
       requestReferrer(request) ?? path.to.job(jobId),
@@ -49,14 +49,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const [events, scrapReasons] = await Promise.all([
-    getProductionQuantities(client, operations.data?.map((o) => o.id) ?? [], {
+    getProductionQuantities(operations.data?.map((o) => o.id) ?? [], {
       search,
       limit,
       offset,
       sorts,
       filters
     }),
-    getScrapReasons(client, companyId)
+    getScrapReasons()
   ]);
 
   if (events.error) {

@@ -66,14 +66,14 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "settings"
   });
 
   const [companySettings, terms, apBillingAddress] = await Promise.all([
-    getCompanySettings(client, companyId),
-    getTerms(client, companyId),
-    getAccountsPayableBillingAddress(client, companyId)
+    getCompanySettings(),
+    getTerms(),
+    getAccountsPayableBillingAddress()
   ]);
 
   if (companySettings.error) {
@@ -101,7 +101,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "settings"
   });
 
@@ -111,11 +111,8 @@ export async function action({ request }: ActionFunctionArgs) {
   switch (intent) {
     case "accountsPayableAddressToggle":
       const apToggleEnabled = formData.get("enabled") === "true";
-      const apToggleResult = await updateAccountsPayableAddressSetting(
-        client,
-        companyId,
-        apToggleEnabled
-      );
+      const apToggleResult =
+        await updateAccountsPayableAddressSetting(apToggleEnabled);
       if (apToggleResult.error) {
         console.error(
           "Failed to update accounts payable address toggle:",
@@ -141,8 +138,6 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       const result = await updatePurchasePriceUpdateTimingSetting(
-        client,
-        companyId,
         validation.data.purchasePriceUpdateTiming
       );
 
@@ -165,8 +160,6 @@ export async function action({ request }: ActionFunctionArgs) {
     case "updateLeadTimesOnReceipt":
       const updateLeadTimesOnReceipt = formData.get("enabled") === "true";
       const updateLeadTimesResult = await updateLeadTimesOnReceiptSetting(
-        client,
-        companyId,
         updateLeadTimesOnReceipt
       );
 
@@ -196,8 +189,6 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       const supplierQuoteResult = await updateSupplierQuoteNotificationSetting(
-        client,
-        companyId,
         supplierQuoteValidation.data.supplierQuoteNotificationGroup ?? []
       );
 
@@ -219,11 +210,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     case "pdfs": {
       const pdfEnabled = formData.get("enabled") === "true";
-      const thumbnailsResult = await updatePurchasingPdfThumbnails(
-        client,
-        companyId,
-        pdfEnabled
-      );
+      const thumbnailsResult = await updatePurchasingPdfThumbnails(pdfEnabled);
 
       if (thumbnailsResult.error)
         return {
@@ -244,10 +231,7 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       const apBillingResult = await updateAccountsPayableBillingAddress(
-        client,
-        companyId,
-        apBillingValidation.data,
-        userId
+        apBillingValidation.data
       );
 
       if (apBillingResult.error) {
@@ -276,8 +260,6 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       const defaultSupplierCcResult = await updateDefaultSupplierCc(
-        client,
-        companyId,
         defaultSupplierCcValidation.data.defaultSupplierCc ?? []
       );
 

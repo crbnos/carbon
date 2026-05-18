@@ -12,7 +12,7 @@ import { setCustomFields } from "~/utils/form";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "parts"
   });
 
@@ -25,7 +25,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const insertMethodOperation = await upsertMethodOperation(client, {
+  const insertMethodOperation = await upsertMethodOperation({
     ...validation.data,
     companyId,
     createdBy: userId,

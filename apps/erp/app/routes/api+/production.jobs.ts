@@ -3,9 +3,9 @@ import type { LoaderFunctionArgs } from "react-router";
 import { getJobsList } from "~/modules/production";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "production"
   });
 
-  return await getJobsList(client, companyId);
+  return await getJobsList();
 }

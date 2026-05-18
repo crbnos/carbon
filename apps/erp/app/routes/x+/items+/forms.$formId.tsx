@@ -14,7 +14,7 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts",
     role: "employee"
   });
@@ -22,7 +22,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { formId } = params;
   if (!formId) throw notFound("formId not found");
 
-  const materialForm = await getMaterialForm(client, formId);
+  const materialForm = await getMaterialForm(formId);
 
   if (materialForm.data?.companyId === null) {
     throw redirect(
@@ -41,7 +41,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -55,7 +55,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateMaterialForm = await upsertMaterialForm(client, {
+  const updateMaterialForm = await upsertMaterialForm({
     id: formId,
     ...validation.data,
     updatedBy: userId,

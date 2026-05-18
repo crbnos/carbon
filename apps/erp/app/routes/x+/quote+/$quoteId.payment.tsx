@@ -16,7 +16,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "sales"
   });
 
@@ -41,7 +41,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateQuotePayment = await upsertQuotePayment(client, {
+  const updateQuotePayment = await upsertQuotePayment({
     ...validation.data,
     id: quoteId,
     updatedBy: userId,

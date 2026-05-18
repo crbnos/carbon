@@ -11,7 +11,7 @@ import { path } from "~/utils/path";
 import { supplierContactsQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "purchasing"
   });
 
@@ -26,7 +26,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // TODO: check whether this person has an account or is a partner first
 
   const { error: deleteSupplierContactError } = await deleteSupplierContact(
-    client,
     supplierId,
     supplierContactId
   );

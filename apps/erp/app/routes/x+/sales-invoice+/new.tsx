@@ -29,7 +29,7 @@ export const handle: Handle = {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   // we don't use the client here -- if they have this permission, we'll upgrade to a service role if needed
-  const { companyId, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "invoicing"
   });
 
@@ -45,9 +45,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
       result = await createSalesInvoiceFromSalesOrder(
         getCarbonServiceRole(),
-        sourceDocumentId,
-        companyId,
-        userId
+        sourceDocumentId
       );
 
       if (result.error || !result?.data) {
@@ -66,9 +64,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       if (!sourceDocumentId) throw new Error("Missing sourceDocumentId");
       result = await createSalesInvoiceFromShipment(
         getCarbonServiceRole(),
-        sourceDocumentId,
-        companyId,
-        userId
+        sourceDocumentId
       );
 
       if (result.error || !result?.data) {
@@ -90,10 +86,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
+  const { companyId, companyGroupId, userId } = await requirePermissions(
+    request,
+    {
       create: "invoicing"
-    });
+    }
+  );
 
   const formData = await request.formData();
   const validation = await validator(salesInvoiceValidator).validate(formData);
@@ -108,11 +106,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const useNextSequence = !invoiceId;
 
   if (useNextSequence) {
-    const nextSequence = await getNextSequence(
-      client,
-      "salesInvoice",
-      companyId
-    );
+    const nextSequence = await getNextSequence("salesInvoice");
     if (nextSequence.error) {
       throw redirect(
         path.to.newSalesInvoice,
@@ -127,7 +121,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (!invoiceId) throw new Error("invoiceId is not defined");
 
-  const createSalesInvoice = await upsertSalesInvoice(client, {
+  const createSalesInvoice = await upsertSalesInvoice({
     ...d,
     invoiceId,
     companyId,

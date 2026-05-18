@@ -48,14 +48,14 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   }
 
   // Require authentication - this is an internal preview
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
 
   const [rfqResult, linesResult, company] = await Promise.all([
-    getPurchasingRFQ(client, id),
-    getPurchasingRFQLines(client, id),
-    getCompany(client, companyId)
+    getPurchasingRFQ(id),
+    getPurchasingRFQLines(id),
+    getCompany()
   ]);
 
   if (rfqResult.error || !rfqResult.data) {
@@ -81,7 +81,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
       ? await Promise.all(
           Object.entries(thumbnailPaths).map(([lineId, path]) => {
             if (!path) return null;
-            return getBase64ImageFromSupabase(client, path).then((data) => ({
+            return getBase64ImageFromSupabase(path).then((data) => ({
               id: lineId,
               data
             }));

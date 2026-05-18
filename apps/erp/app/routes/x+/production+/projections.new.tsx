@@ -29,7 +29,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "production"
   });
 
@@ -75,7 +75,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const result = await upsertDemandProjections(client, demandProjections);
+  const result = await upsertDemandProjections(demandProjections);
 
   if (result.error) {
     return data(

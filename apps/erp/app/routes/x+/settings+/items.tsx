@@ -34,11 +34,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "settings"
   });
 
-  const companySettings = await getCompanySettings(client, companyId);
+  const companySettings = await getCompanySettings();
   if (!companySettings.data)
     throw redirect(
       path.to.settings,
@@ -51,7 +51,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "settings"
   });
 
@@ -62,18 +62,14 @@ export async function action({ request }: ActionFunctionArgs) {
 
   switch (intent) {
     case "materialIds": {
-      const result = await updateMaterialGeneratedIdsSetting(
-        client,
-        companyId,
-        enabled
-      );
+      const result = await updateMaterialGeneratedIdsSetting(enabled);
       if (result.error)
         return { success: false, message: result.error.message };
       return { success: true, message: "Material IDs setting updated" };
     }
 
     case "materialUnits": {
-      const result = await updateMetricSettings(client, companyId, enabled);
+      const result = await updateMetricSettings(enabled);
       if (result.error)
         return { success: false, message: result.error.message };
       return { success: true, message: "Material units setting updated" };

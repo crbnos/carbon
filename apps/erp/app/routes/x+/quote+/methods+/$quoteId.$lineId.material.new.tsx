@@ -105,7 +105,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  await recalculateQuoteLinePrices(serviceRole, quoteId, lineId, userId);
+  await recalculateQuoteLinePrices(serviceRole, quoteId, lineId);
 
   return {
     id: quoteMaterialId,

@@ -18,7 +18,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyGroupId, userId } = await requirePermissions(request, {
+  const { companyGroupId, userId } = await requirePermissions(request, {
     create: "accounting"
   });
 
@@ -33,7 +33,6 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, dimensionValues, ...rest } = validation.data;
 
   const insertDimension = await upsertDimension(
-    client,
     {
       ...rest,
       companyGroupId,

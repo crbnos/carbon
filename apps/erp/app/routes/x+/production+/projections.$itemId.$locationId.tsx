@@ -17,7 +17,7 @@ import { path } from "~/utils/path";
 const WEEKS_TO_PROJECT = 52;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     view: "production"
   });
 
@@ -33,7 +33,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
 
   // Load existing demand forecasts for this item and location
-  const existingProjections = await getDemandProjections(client, {
+  const existingProjections = await getDemandProjections({
     itemId,
     locationId,
     companyId,
@@ -65,7 +65,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "production"
   });
 
@@ -107,7 +107,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  const result = await upsertDemandProjections(client, demandProjections);
+  const result = await upsertDemandProjections(demandProjections);
 
   if (result.error) {
     return data(

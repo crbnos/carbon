@@ -40,7 +40,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await getLocationsList();
     if (locations.error || !locations.data?.length) {
       throw redirect(
         path.to.inventory,
@@ -53,13 +53,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  const itemLedgerRecords = await getItemLedgerPage(
-    client,
-    itemId,
-    companyId,
-    locationId,
-    true
-  );
+  const itemLedgerRecords = await getItemLedgerPage(itemId, locationId, true);
   if (itemLedgerRecords.error || !itemLedgerRecords.data) {
     throw redirect(
       path.to.inventory,
@@ -79,7 +73,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function ItemInventoryActivityRoute() {
-  const { initialItemLedgers, itemId, companyId, locationId } =
+  const { initialItemLedgers, itemId, locationId } =
     useLoaderData<typeof loader>();
 
   const { carbon } = useCarbon();
@@ -98,7 +92,6 @@ export default function ItemInventoryActivityRoute() {
     const newItemLedgers = await getItemLedgerPage(
       carbon!,
       itemId,
-      companyId,
       locationId,
       true,
       page + 1
@@ -115,7 +108,7 @@ export default function ItemInventoryActivityRoute() {
     }
 
     setIsLoading(false);
-  }, [page, carbon, companyId, locationId, itemId, isLoading, hasMore]);
+  }, [page, carbon, locationId, itemId, isLoading, hasMore]);
 
   return (
     <>

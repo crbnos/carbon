@@ -8,11 +8,11 @@ import { getParams, path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyGroupId, userId } = await requirePermissions(request, {
+  const { companyGroupId } = await requirePermissions(request, {
     create: "accounting"
   });
 
-  const result = await generateEliminations(client, companyGroupId, userId);
+  const result = await generateEliminations(companyGroupId);
 
   if (result.error) {
     throw redirect(

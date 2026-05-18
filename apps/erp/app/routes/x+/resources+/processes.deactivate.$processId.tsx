@@ -9,7 +9,7 @@ import { getProcess, processDeactivate } from "~/modules/resources";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources",
     role: "employee"
   });
@@ -17,7 +17,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { processId } = params;
   if (!processId) throw notFound("processId not found");
 
-  const process = await getProcess(client, processId);
+  const process = await getProcess(processId);
   if (process.error) {
     throw redirect(
       path.to.processes,
@@ -31,7 +31,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "resources"
   });
 
@@ -43,10 +43,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: processDeactivateError } = await processDeactivate(
-    client,
-    processId
-  );
+  const { error: processDeactivateError } = await processDeactivate(processId);
   if (processDeactivateError) {
     throw redirect(
       path.to.processes,

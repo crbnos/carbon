@@ -13,7 +13,7 @@ import MaterialGradeForm from "~/modules/items/ui/MaterialGrades/MaterialGradeFo
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts",
     role: "employee"
   });
@@ -21,7 +21,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const materialGrade = await getMaterialGrade(client, id);
+  const materialGrade = await getMaterialGrade(id);
 
   if (materialGrade.data?.companyId === null) {
     throw redirect(
@@ -40,7 +40,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "parts"
   });
 
@@ -54,7 +54,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateMaterialGrade = await upsertMaterialGrade(client, {
+  const updateMaterialGrade = await upsertMaterialGrade({
     id: id,
     ...validation.data
   });

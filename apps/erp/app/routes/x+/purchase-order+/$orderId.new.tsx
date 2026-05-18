@@ -45,7 +45,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase order."
   });
 
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "purchasing"
   });
 
@@ -61,7 +61,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const createPurchaseOrderLine = await upsertPurchaseOrderLine(client, {
+  const createPurchaseOrderLine = await upsertPurchaseOrderLine({
     ...d,
     companyId,
     createdBy: userId,

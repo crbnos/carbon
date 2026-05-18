@@ -33,7 +33,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const createPartSupplier = await upsertSupplierPart(client, {
+  const createPartSupplier = await upsertSupplierPart({
     ...d,
     companyId,
     createdBy: userId,

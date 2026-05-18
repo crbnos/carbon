@@ -52,7 +52,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const existingRules = await getApprovalRules(serviceRole, companyId);
+  const existingRules = await getApprovalRules(serviceRole);
   const rulesForType =
     existingRules.data?.filter(
       (r) => r.documentType === validation.data.documentType

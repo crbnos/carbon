@@ -10,7 +10,8 @@ import type {
 import { getLocalTimeZone, now, today } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
-import type { z } from "zod";
+import { z } from "zod";
+import { AuthContextHolder, getAuthClient, mcpTool } from "~/services/mcp";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
@@ -32,7 +33,7 @@ import {
   type configurationRuleValidator,
   type consumableValidator,
   type customerPartValidator,
-  type getMethodValidator,
+  getMethodValidator,
   ItemTrackingType,
   type itemCostValidator,
   type itemManufacturingValidator,
@@ -61,1168 +62,1413 @@ import {
   type unitOfMeasureValidator
 } from "./items.models";
 import type { InventoryItemType } from "./types";
-
-export async function activateMethodVersion(
-  client: SupabaseClient<Database>,
-  payload: {
-    id: string;
-    companyId: string;
-    userId: string;
-  }
-) {
-  return client.functions.invoke<{ convertedId: string }>("convert", {
-    body: {
-      type: "methodVersionToActive",
-      ...payload
-    }
-  });
-}
-
-export async function copyItem(
-  client: SupabaseClient<Database>,
-  args: z.infer<typeof getMethodValidator> & {
-    companyId: string;
-    userId: string;
-  }
-) {
-  return client.functions.invoke("get-method", {
-    body: {
-      type: "itemToItem",
-      sourceId: args.sourceId,
-      targetId: args.targetId,
-      companyId: args.companyId,
-      userId: args.userId,
-      parts: {
-        billOfMaterial: args.billOfMaterial,
-        billOfProcess: args.billOfProcess,
-        parameters: args.parameters,
-        tools: args.tools,
-        steps: args.steps,
-        workInstructions: args.workInstructions
-      }
-    }
-  });
-}
-
-export async function copyMakeMethod(
-  client: SupabaseClient<Database>,
-  args: z.infer<typeof getMethodValidator> & {
-    companyId: string;
-    userId: string;
-  }
-) {
-  return client.functions.invoke("get-method", {
-    body: {
-      type: "makeMethodToMakeMethod",
-      sourceId: args.sourceId,
-      targetId: args.targetId,
-      companyId: args.companyId,
-      userId: args.userId
-    }
-  });
-}
-
-export async function createRevision(
-  client: SupabaseClient<Database>,
-  args: {
-    item: NonNullable<Awaited<ReturnType<typeof getItem>>["data"]>;
-    revision: string;
-    createdBy: string;
-  }
-) {
-  const { item, revision, createdBy } = args;
-  const itemInsert = await client
-    .from("item")
-    .insert({
-      readableId: item.readableId,
-      revision: revision,
-      name: item.name,
-      type: item.type,
-      replenishmentSystem: item.replenishmentSystem,
-      defaultMethodType: item.defaultMethodType,
-      itemTrackingType: item.itemTrackingType,
-      unitOfMeasureCode: item.unitOfMeasureCode,
-      active: true,
-      modelUploadId: item.modelUploadId,
-      companyId: item.companyId,
-      createdBy: createdBy
-    })
-    .select("id")
-    .single();
-
-  if (itemInsert.error) {
-    return itemInsert;
-  }
-
-  if (item.replenishmentSystem !== "Buy") {
-    await client.functions.invoke("get-method", {
+export const activateMethodVersion = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function activateMethodVersion(payload: { id: string }) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.functions.invoke<{ convertedId: string }>("convert", {
       body: {
-        type: "itemToItem",
-        sourceId: item.id,
-        targetId: itemInsert.data.id,
-        companyId: item.companyId,
-        userId: createdBy
+        type: "methodVersionToActive",
+        ...payload
       }
     });
   }
+);
 
-  return itemInsert;
-}
+export const copyItem = mcpTool(
+  {
+    classification: "WRITE",
+    schema: z.object({ args: getMethodValidator })
+  },
+  async function copyItem(
+    args: z.infer<typeof getMethodValidator> & {
+      companyId: string;
+      userId: string;
+    }
+  ) {
+    const { companyId, userId } = AuthContextHolder.get();
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.functions.invoke("get-method", {
+      body: {
+        type: "itemToItem",
+        sourceId: args.sourceId,
+        targetId: args.targetId,
+        companyId: companyId,
+        userId: userId,
+        parts: {
+          billOfMaterial: args.billOfMaterial,
+          billOfProcess: args.billOfProcess,
+          parameters: args.parameters,
+          tools: args.tools,
+          steps: args.steps,
+          workInstructions: args.workInstructions
+        }
+      }
+    });
+  }
+);
 
-export async function deleteConfigurationParameter(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("configurationParameter").delete().eq("id", id);
-}
+export const copyMakeMethod = mcpTool(
+  {
+    classification: "WRITE",
+    schema: z.object({ args: getMethodValidator })
+  },
+  async function copyMakeMethod(
+    args: z.infer<typeof getMethodValidator> & {
+      companyId: string;
+      userId: string;
+    }
+  ) {
+    const { companyId, userId } = AuthContextHolder.get();
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.functions.invoke("get-method", {
+      body: {
+        type: "makeMethodToMakeMethod",
+        sourceId: args.sourceId,
+        targetId: args.targetId,
+        companyId: companyId,
+        userId: userId
+      }
+    });
+  }
+);
 
-export async function deleteConfigurationRule(
-  client: SupabaseClient<Database>,
-  field: string,
-  itemId: string
-) {
-  return client
-    .from("configurationRule")
-    .delete()
-    .eq("field", field)
-    .eq("itemId", itemId);
-}
-
-export async function deleteItemCustomerPart(
-  client: SupabaseClient<Database>,
-  id: string,
-  companyId: string
-) {
-  return client
-    .from("customerPartToItem")
-    .delete()
-    .eq("id", id)
-    .eq("companyId", companyId);
-}
-
-export async function deleteConfigurationParameterGroup(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  // Get any parameters that belong to this group
-  const { data: parameters } = await client
-    .from("configurationParameter")
-    .select("id")
-    .eq("configurationParameterGroupId", id);
-
-  if (parameters && parameters.length > 0) {
-    // Get the ungrouped group
-    const { data: ungrouped } = await client
-      .from("configurationParameterGroup")
+export const createRevision = mcpTool(
+  {
+    classification: "WRITE",
+    schema: z.object({
+      args: z.object({ item: z.any(), revision: z.string() })
+    })
+  },
+  async function createRevision(args: {
+    item: NonNullable<Awaited<ReturnType<typeof getItem>>["data"]>;
+    revision: string;
+  }) {
+    const { companyId } = AuthContextHolder.get();
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { item, revision, createdBy } = args;
+    const itemInsert = await client
+      .from("item")
+      .insert({
+        readableId: item.readableId,
+        revision: revision,
+        name: item.name,
+        type: item.type,
+        replenishmentSystem: item.replenishmentSystem,
+        defaultMethodType: item.defaultMethodType,
+        itemTrackingType: item.itemTrackingType,
+        unitOfMeasureCode: item.unitOfMeasureCode,
+        active: true,
+        modelUploadId: item.modelUploadId,
+        companyId: companyId,
+        createdBy: createdBy
+      })
       .select("id")
-      .eq("isUngrouped", true)
       .single();
 
-    if (ungrouped) {
-      // Update all parameters to use the ungrouped group
-      await client
-        .from("configurationParameter")
-        .update({ configurationParameterGroupId: ungrouped.id })
-        .eq("configurationParameterGroupId", id);
+    if (itemInsert.error) {
+      return itemInsert;
+    }
+
+    if (item.replenishmentSystem !== "Buy") {
+      await client.functions.invoke("get-method", {
+        body: {
+          type: "itemToItem",
+          sourceId: item.id,
+          targetId: itemInsert.data.id,
+          companyId: companyId,
+          userId: createdBy
+        }
+      });
+    }
+
+    return itemInsert;
+  }
+);
+
+export const deleteConfigurationParameter = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteConfigurationParameter(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("configurationParameter").delete().eq("id", id);
+  }
+);
+
+export const deleteConfigurationRule = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteConfigurationRule(field: string, itemId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("configurationRule")
+      .delete()
+      .eq("field", field)
+      .eq("itemId", itemId);
+  }
+);
+
+export const deleteItemCustomerPart = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteItemCustomerPart(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("customerPartToItem")
+      .delete()
+      .eq("id", id)
+      .eq("companyId", companyId);
+  }
+);
+
+export const deleteConfigurationParameterGroup = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteConfigurationParameterGroup(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    // Get any parameters that belong to this group
+    const { data: parameters } = await client
+      .from("configurationParameter")
+      .select("id")
+      .eq("configurationParameterGroupId", id);
+
+    if (parameters && parameters.length > 0) {
+      // Get the ungrouped group
+      const { data: ungrouped } = await client
+        .from("configurationParameterGroup")
+        .select("id")
+        .eq("isUngrouped", true)
+        .single();
+
+      if (ungrouped) {
+        // Update all parameters to use the ungrouped group
+        await client
+          .from("configurationParameter")
+          .update({ configurationParameterGroupId: ungrouped.id })
+          .eq("configurationParameterGroupId", id);
+      }
+    }
+    return client.from("configurationParameterGroup").delete().eq("id", id);
+  }
+);
+
+export const deleteItem = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteItem(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("item").delete().eq("id", id);
+  }
+);
+
+export const deleteItemPostingGroup = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteItemPostingGroup(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("itemPostingGroup").delete().eq("id", id);
+  }
+);
+
+export const deleteMaterialDimension = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteMaterialDimension(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("materialDimension").delete().eq("id", id);
+  }
+);
+
+export const deleteMaterialFinish = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteMaterialFinish(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("materialFinish").delete().eq("id", id);
+  }
+);
+
+export const deleteMaterialForm = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteMaterialForm(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("materialForm").delete().eq("id", id);
+  }
+);
+
+export const deleteMaterialGrade = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteMaterialGrade(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("materialGrade").delete().eq("id", id);
+  }
+);
+
+export const deleteMaterialSubstance = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteMaterialSubstance(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("materialSubstance").delete().eq("id", id);
+  }
+);
+
+export const deleteMethodMaterial = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteMethodMaterial(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("methodMaterial").delete().eq("id", id);
+  }
+);
+
+export const assertMethodOperationIsDraft = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function assertMethodOperationIsDraft(operationId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const result = await client
+      .from("methodOperation")
+      .select("makeMethodId, makeMethod!inner(status)")
+      .eq("id", operationId)
+      .single();
+
+    if (result.error || !result.data) {
+      throw new Error("Failed to find method operation");
+    }
+
+    const status = (result.data.makeMethod as { status: string }).status;
+    if (status !== "Draft") {
+      throw new Error(
+        `Cannot modify steps on a method version with status "${status}". Only Draft versions can be modified.`
+      );
     }
   }
-  return client.from("configurationParameterGroup").delete().eq("id", id);
-}
+);
 
-export async function deleteItem(client: SupabaseClient<Database>, id: string) {
-  return client.from("item").delete().eq("id", id);
-}
-
-export async function deleteItemPostingGroup(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("itemPostingGroup").delete().eq("id", id);
-}
-
-export async function deleteMaterialDimension(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("materialDimension").delete().eq("id", id);
-}
-
-export async function deleteMaterialFinish(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("materialFinish").delete().eq("id", id);
-}
-
-export async function deleteMaterialForm(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("materialForm").delete().eq("id", id);
-}
-
-export async function deleteMaterialGrade(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("materialGrade").delete().eq("id", id);
-}
-
-export async function deleteMaterialSubstance(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("materialSubstance").delete().eq("id", id);
-}
-
-export async function deleteMethodMaterial(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("methodMaterial").delete().eq("id", id);
-}
-
-export async function assertMethodOperationIsDraft(
-  client: SupabaseClient<Database>,
-  operationId: string
-) {
-  const result = await client
-    .from("methodOperation")
-    .select("makeMethodId, makeMethod!inner(status)")
-    .eq("id", operationId)
-    .single();
-
-  if (result.error || !result.data) {
-    throw new Error("Failed to find method operation");
-  }
-
-  const status = (result.data.makeMethod as { status: string }).status;
-  if (status !== "Draft") {
-    throw new Error(
-      `Cannot modify steps on a method version with status "${status}". Only Draft versions can be modified.`
-    );
-  }
-}
-
-export async function deleteMethodOperationStep(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("methodOperationStep").delete().eq("id", id);
-}
-
-export async function deleteMethodOperationParameter(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("methodOperationParameter").delete().eq("id", id);
-}
-
-export async function deleteMethodOperationTool(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("methodOperationTool").delete().eq("id", id);
-}
-
-export async function deleteUnitOfMeasure(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("unitOfMeasure").delete().eq("id", id);
-}
-
-export async function getConfigurationParameters(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string
-) {
-  const [parameters, groups] = await Promise.all([
-    client
-      .from("configurationParameter")
-      .select("*")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId),
-    client
-      .from("configurationParameterGroup")
-      .select("*")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-  ]);
-
-  if (parameters.error) {
-    console.error(parameters.error);
-    return { groups: [], parameters: [] };
-  }
-
-  if (groups.error) {
-    console.error(groups.error);
-    return { groups: [], parameters: [] };
-  }
-
-  return { groups: groups.data ?? [], parameters: parameters.data ?? [] };
-}
-
-export async function getConfigurationRules(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string
-) {
-  const result = await client
-    .from("configurationRule")
-    .select("*")
-    .eq("itemId", itemId)
-    .eq("companyId", companyId);
-  if (result.error) {
-    console.error(result.error);
-    return [];
-  }
-  return result.data ?? [];
-}
-
-export async function getConsumable(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string
-) {
-  return client
-    .rpc("get_consumable_details", {
-      item_id: itemId
-    })
-    .single();
-}
-
-export async function getConsumables(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args: GenericQueryFilters & {
-    search: string | null;
-    supplierId: string | null;
-  }
-) {
-  let query = client
-    .from("consumables")
-    .select("*", {
-      count: "exact"
-    })
-    .eq("companyId", companyId);
-
-  if (args.search) {
-    query = query.or(
-      `readableIdWithRevision.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%,supplierIds.ilike.%${args.search}%`
-    );
-  }
-
-  if (args.supplierId) {
-    query = query.contains("supplierIds", [args.supplierId]);
-  }
-
-  query = setGenericQueryFilters(query, args, [
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
-  return query;
-}
-
-export async function getConsumablesList(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return fetchAllFromTable<{
-    id: string;
-    name: string;
-    readableIdWithRevision: string;
-  }>(client, "item", "id, name, readableIdWithRevision", (query) =>
-    query
-      .eq("type", "Consumable")
-      .eq("companyId", companyId)
-      .eq("active", true)
-      .order("name")
-  );
-}
-export async function getItem(client: SupabaseClient<Database>, id: string) {
-  return client.from("item").select("*").eq("id", id).single();
-}
-
-export async function getItemCost(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string
-) {
-  return client
-    .from("itemCost")
-    .select("*, ...item(readableIdWithRevision)")
-    .eq("itemId", itemId)
-    .eq("companyId", companyId)
-    .single();
-}
-
-export async function getItemCostHistory(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string
-) {
-  const dateOneYearAgo = today(getLocalTimeZone())
-    .subtract({ years: 1 })
-    .toString();
-
-  return client
-    .from("costLedger")
-    .select("*")
-    .eq("itemId", itemId)
-    .eq("companyId", companyId)
-    .gte("postingDate", dateOneYearAgo)
-    .order("postingDate", { ascending: false });
-}
-
-export async function getItemCustomerPart(
-  client: SupabaseClient<Database>,
-  id: string,
-  companyId: string
-) {
-  return client
-    .from("customerPartToItem")
-    .select("*, customer(id, name)")
-    .eq("id", id)
-    .eq("companyId", companyId)
-    .single();
-}
-
-export async function getItemCustomerParts(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string
-) {
-  return client
-    .from("customerPartToItem")
-    .select("*, customer(id, name)")
-    .eq("itemId", itemId)
-    .eq("companyId", companyId);
-}
-
-export async function getItemDemand(
-  client: SupabaseClient<Database>,
+export const deleteMethodOperationStep = mcpTool(
   {
-    itemId,
-    locationId,
-    periods,
-    companyId
-  }: {
-    itemId: string;
-    locationId: string;
-    periods: string[];
-    companyId: string;
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteMethodOperationStep(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("methodOperationStep").delete().eq("id", id);
   }
-) {
-  const [actuals, forecasts] = await Promise.all([
-    client
-      .from("demandActual")
-      .select("*")
-      .eq("itemId", itemId)
-      .eq("locationId", locationId)
-      .eq("companyId", companyId)
-      .in("periodId", periods),
-    client
-      .from("demandForecast")
-      .select("*")
-      .eq("itemId", itemId)
-      .eq("locationId", locationId)
-      .eq("companyId", companyId)
-      .in("periodId", periods)
-      .order("periodId")
-  ]);
+);
 
-  return {
-    actuals: actuals.data ?? [],
-    forecasts: forecasts.data ?? []
-  };
-}
-
-export async function getItemFiles(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string
-) {
-  const result = await client.storage
-    .from("private")
-    .list(`${companyId}/parts/${itemId}`);
-  return result.data || [];
-}
-
-export async function getItemPostingGroup(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("itemPostingGroup").select("*").eq("id", id).single();
-}
-
-export async function getItemPostingGroups(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args?: GenericQueryFilters & { search: string | null }
-) {
-  let query = client
-    .from("itemPostingGroup")
-    .select("*", {
-      count: "exact"
-    })
-    .eq("companyId", companyId);
-
-  if (args?.search) {
-    query = query.ilike("name", `%${args.search}%`);
+export const deleteMethodOperationParameter = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteMethodOperationParameter(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("methodOperationParameter").delete().eq("id", id);
   }
+);
 
-  if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
+export const deleteMethodOperationTool = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteMethodOperationTool(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("methodOperationTool").delete().eq("id", id);
+  }
+);
+
+export const deleteUnitOfMeasure = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteUnitOfMeasure(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("unitOfMeasure").delete().eq("id", id);
+  }
+);
+
+export const getConfigurationParameters = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getConfigurationParameters(itemId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    const [parameters, groups] = await Promise.all([
+      client
+        .from("configurationParameter")
+        .select("*")
+        .eq("itemId", itemId)
+        .eq("companyId", companyId),
+      client
+        .from("configurationParameterGroup")
+        .select("*")
+        .eq("itemId", itemId)
+        .eq("companyId", companyId)
     ]);
+
+    if (parameters.error) {
+      console.error(parameters.error);
+      return { groups: [], parameters: [] };
+    }
+
+    if (groups.error) {
+      console.error(groups.error);
+      return { groups: [], parameters: [] };
+    }
+
+    return { groups: groups.data ?? [], parameters: parameters.data ?? [] };
   }
+);
 
-  return query;
-}
-
-export async function getItemPostingGroupsList(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return client
-    .from("itemPostingGroup")
-    .select("id, name", { count: "exact" })
-    .eq("companyId", companyId)
-    .order("name");
-}
-
-export async function getItemManufacturing(
-  client: SupabaseClient<Database>,
-  id: string,
-  companyId: string
-) {
-  return client
-    .from("itemReplenishment")
-    .select("*")
-    .eq("itemId", id)
-    .eq("companyId", companyId)
-    .single();
-}
-
-export async function getItemPlanning(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string,
-  locationId: string
-) {
-  return client
-    .from("itemPlanning")
-    .select("*")
-    .eq("itemId", itemId)
-    .eq("companyId", companyId)
-    .eq("locationId", locationId)
-    .maybeSingle();
-}
-
-export async function getItemQuantities(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string,
-  locationId: string
-) {
-  return client
-    .rpc("get_inventory_quantities", {
-      location_id: locationId,
-      company_id: companyId
-    })
-    .eq("id", itemId)
-    .maybeSingle();
-}
-
-export async function getItemReplenishment(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string
-) {
-  return client
-    .from("itemReplenishment")
-    .select("*")
-    .eq("itemId", itemId)
-    .eq("companyId", companyId)
-    .single();
-}
-
-export async function getItemStorageUnitQuantities(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string,
-  locationId: string
-) {
-  return client.rpc("get_item_quantities_by_tracking_id", {
-    item_id: itemId,
-    company_id: companyId,
-    location_id: locationId
-  });
-}
-
-export async function getItemSupply(
-  client: SupabaseClient<Database>,
+export const getConfigurationRules = mcpTool(
   {
+    classification: "READ"
+  },
+  async function getConfigurationRules(itemId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    const result = await client
+      .from("configurationRule")
+      .select("*")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId);
+    if (result.error) {
+      console.error(result.error);
+      return [];
+    }
+    return result.data ?? [];
+  }
+);
+
+export const getConsumable = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getConsumable(itemId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .rpc("get_consumable_details", {
+        item_id: itemId
+      })
+      .single();
+  }
+);
+
+export const getConsumables = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getConsumables(
+    args: GenericQueryFilters & {
+      search: string | null;
+      supplierId: string | null;
+    }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    let query = client
+      .from("consumables")
+      .select("*", {
+        count: "exact"
+      })
+      .eq("companyId", companyId);
+
+    if (args.search) {
+      query = query.or(
+        `readableIdWithRevision.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%,supplierIds.ilike.%${args.search}%`
+      );
+    }
+
+    if (args.supplierId) {
+      query = query.contains("supplierIds", [args.supplierId]);
+    }
+
+    query = setGenericQueryFilters(query, args, [
+      { column: "readableIdWithRevision", ascending: true }
+    ]);
+    return query;
+  }
+);
+
+export const getConsumablesList = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getConsumablesList() {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return fetchAllFromTable<{
+      id: string;
+      name: string;
+      readableIdWithRevision: string;
+    }>(client, "item", "id, name, readableIdWithRevision", (query) =>
+      query
+        .eq("type", "Consumable")
+        .eq("companyId", companyId)
+        .eq("active", true)
+        .order("name")
+    );
+  }
+);
+export const getItem = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getItem(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("item").select("*").eq("id", id).single();
+  }
+);
+
+export const getItemCost = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getItemCost(itemId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("itemCost")
+      .select("*, ...item(readableIdWithRevision)")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId)
+      .single();
+  }
+);
+
+export const getItemCostHistory = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getItemCostHistory(itemId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    const dateOneYearAgo = today(getLocalTimeZone())
+      .subtract({ years: 1 })
+      .toString();
+
+    return client
+      .from("costLedger")
+      .select("*")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId)
+      .gte("postingDate", dateOneYearAgo)
+      .order("postingDate", { ascending: false });
+  }
+);
+
+export const getItemCustomerPart = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getItemCustomerPart(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("customerPartToItem")
+      .select("*, customer(id, name)")
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .single();
+  }
+);
+
+export const getItemCustomerParts = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getItemCustomerParts(itemId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("customerPartToItem")
+      .select("*, customer(id, name)")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId);
+  }
+);
+
+export const getItemDemand = mcpTool(
+  {
+    classification: "READ",
+    argOrder: ["args"]
+  },
+  async function getItemDemand({
     itemId,
     locationId,
-    periods,
-    companyId
+    periods
   }: {
     itemId: string;
     locationId: string;
     periods: string[];
-    companyId: string;
+  }) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    const [actuals, forecasts] = await Promise.all([
+      client
+        .from("demandActual")
+        .select("*")
+        .eq("itemId", itemId)
+        .eq("locationId", locationId)
+        .eq("companyId", companyId)
+        .in("periodId", periods),
+      client
+        .from("demandForecast")
+        .select("*")
+        .eq("itemId", itemId)
+        .eq("locationId", locationId)
+        .eq("companyId", companyId)
+        .in("periodId", periods)
+        .order("periodId")
+    ]);
+
+    return {
+      actuals: actuals.data ?? [],
+      forecasts: forecasts.data ?? []
+    };
   }
-) {
-  const [actuals, forecasts] = await Promise.all([
-    client
-      .from("supplyActual")
+);
+
+export const getItemFiles = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getItemFiles(itemId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    const result = await client.storage
+      .from("private")
+      .list(`${companyId}/parts/${itemId}`);
+    return result.data || [];
+  }
+);
+
+export const getItemPostingGroup = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getItemPostingGroup(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("itemPostingGroup").select("*").eq("id", id).single();
+  }
+);
+
+export const getItemPostingGroups = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getItemPostingGroups(
+    args?: GenericQueryFilters & { search: string | null }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    let query = client
+      .from("itemPostingGroup")
+      .select("*", {
+        count: "exact"
+      })
+      .eq("companyId", companyId);
+
+    if (args?.search) {
+      query = query.ilike("name", `%${args.search}%`);
+    }
+
+    if (args) {
+      query = setGenericQueryFilters(query, args, [
+        { column: "name", ascending: true }
+      ]);
+    }
+
+    return query;
+  }
+);
+
+export const getItemPostingGroupsList = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getItemPostingGroupsList() {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("itemPostingGroup")
+      .select("id, name", { count: "exact" })
+      .eq("companyId", companyId)
+      .order("name");
+  }
+);
+
+export const getItemManufacturing = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getItemManufacturing(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("itemReplenishment")
+      .select("*")
+      .eq("itemId", id)
+      .eq("companyId", companyId)
+      .single();
+  }
+);
+
+export const getItemPlanning = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getItemPlanning(itemId: string, locationId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("itemPlanning")
       .select("*")
       .eq("itemId", itemId)
-      .eq("locationId", locationId)
       .eq("companyId", companyId)
-      .in("periodId", periods)
-      .order("periodId"),
-    client
-      .from("supplyForecast")
+      .eq("locationId", locationId)
+      .maybeSingle();
+  }
+);
+
+export const getItemQuantities = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getItemQuantities(itemId: string, locationId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .rpc("get_inventory_quantities", {
+        location_id: locationId,
+        company_id: companyId
+      })
+      .eq("id", itemId)
+      .maybeSingle();
+  }
+);
+
+export const getItemReplenishment = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getItemReplenishment(itemId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("itemReplenishment")
       .select("*")
       .eq("itemId", itemId)
-      .eq("locationId", locationId)
       .eq("companyId", companyId)
-      .in("periodId", periods)
-      .order("periodId")
-  ]);
+      .single();
+  }
+);
 
-  return {
-    actuals: actuals.data ?? [],
-    forecasts: forecasts.data ?? []
-  };
-}
+export const getItemStorageUnitQuantities = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getItemStorageUnitQuantities(
+    itemId: string,
+    locationId: string
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client.rpc("get_item_quantities_by_tracking_id", {
+      item_id: itemId,
+      company_id: companyId,
+      location_id: locationId
+    });
+  }
+);
 
-export async function getItemUnitSalePrice(
-  client: SupabaseClient<Database>,
-  id: string,
-  companyId: string
-) {
-  return client
-    .from("itemUnitSalePrice")
-    .select("*")
-    .eq("itemId", id)
-    .eq("companyId", companyId)
-    .single();
-}
+export const getItemSupply = mcpTool(
+  {
+    classification: "READ",
+    argOrder: ["args"]
+  },
+  async function getItemSupply({
+    itemId,
+    locationId,
+    periods
+  }: {
+    itemId: string;
+    locationId: string;
+    periods: string[];
+  }) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    const [actuals, forecasts] = await Promise.all([
+      client
+        .from("supplyActual")
+        .select("*")
+        .eq("itemId", itemId)
+        .eq("locationId", locationId)
+        .eq("companyId", companyId)
+        .in("periodId", periods)
+        .order("periodId"),
+      client
+        .from("supplyForecast")
+        .select("*")
+        .eq("itemId", itemId)
+        .eq("locationId", locationId)
+        .eq("companyId", companyId)
+        .in("periodId", periods)
+        .order("periodId")
+    ]);
 
-export async function getMaterialUsedIn(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string
-) {
-  const [
-    issues,
-    jobMaterials,
-    maintenanceDispatchItems,
-    methodMaterials,
-    purchaseOrderLines,
-    receiptLines,
-    quoteMaterials,
-    salesOrderLines,
-    shipmentLines,
-    supplierQuotes
-  ] = await Promise.all([
-    client
-      .from("nonConformanceItem")
-      .select(
-        "id, ...nonConformance(documentReadableId:nonConformanceId, documentId:id)"
-      )
-      .eq("itemId", itemId)
+    return {
+      actuals: actuals.data ?? [],
+      forecasts: forecasts.data ?? []
+    };
+  }
+);
+
+export const getItemUnitSalePrice = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getItemUnitSalePrice(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("itemUnitSalePrice")
+      .select("*")
+      .eq("itemId", id)
       .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("jobMaterial")
-      .select("id, methodType, ...job(documentReadableId:jobId, documentId:id)")
+      .single();
+  }
+);
+
+export const getMaterialUsedIn = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getMaterialUsedIn(itemId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    const [
+      issues,
+      jobMaterials,
+      maintenanceDispatchItems,
+      methodMaterials,
+      purchaseOrderLines,
+      receiptLines,
+      quoteMaterials,
+      salesOrderLines,
+      shipmentLines,
+      supplierQuotes
+    ] = await Promise.all([
+      client
+        .from("nonConformanceItem")
+        .select(
+          "id, ...nonConformance(documentReadableId:nonConformanceId, documentId:id)"
+        )
+        .eq("itemId", itemId)
+        .eq("companyId", companyId)
+        .limit(100)
+        .order("createdAt", { ascending: false }),
+      client
+        .from("jobMaterial")
+        .select(
+          "id, methodType, ...job(documentReadableId:jobId, documentId:id)"
+        )
+        .eq("itemId", itemId)
+        .eq("companyId", companyId)
+        .limit(100)
+        .order("createdAt", { ascending: false }),
+      client
+        .from("maintenanceDispatchItem")
+        .select(
+          "id, ...maintenanceDispatch!maintenanceDispatchId(documentReadableId:maintenanceDispatchId, documentId:id)"
+        )
+        .eq("itemId", itemId)
+        .eq("companyId", companyId)
+        .limit(100)
+        .order("createdAt", { ascending: false }),
+      client
+        .from("methodMaterial")
+        .select(
+          "id, methodType, ...makeMethod!makeMethodId(documentId:id, version, ...item(documentReadableId:readableIdWithRevision, documentParentId:id, itemType:type))"
+        )
+        .eq("itemId", itemId)
+        .eq("companyId", companyId)
+        .limit(100)
+        .order("createdAt", { ascending: false }),
+      client
+        .from("purchaseOrderLine")
+        .select(
+          "id, ...purchaseOrder(documentReadableId:purchaseOrderId, documentId:id)"
+        )
+        .eq("itemId", itemId)
+        .eq("companyId", companyId)
+        .limit(100)
+        .order("createdAt", { ascending: false }),
+      client
+        .from("receiptLine")
+        .select("id, ...receipt(documentReadableId:receiptId, documentId:id)")
+        .eq("itemId", itemId)
+        .eq("companyId", companyId),
+      client
+        .from("quoteMaterial")
+        .select(
+          "id, methodType, documentParentId:quoteId, documentId:quoteLineId, ...quoteLine(...item(documentReadableId:readableIdWithRevision))"
+        )
+        .eq("itemId", itemId)
+        .eq("companyId", companyId)
+        .limit(100)
+        .order("createdAt", { ascending: false }),
+      client
+        .from("salesOrderLine")
+        .select(
+          "id, methodType, ...salesOrder(documentReadableId:salesOrderId, documentId:id)"
+        )
+        .eq("itemId", itemId)
+        .eq("companyId", companyId)
+        .limit(100)
+        .order("createdAt", { ascending: false }),
+      client
+        .from("shipmentLine")
+        .select("id, ...shipment(documentReadableId:shipmentId, documentId:id)")
+        .eq("itemId", itemId)
+        .eq("companyId", companyId)
+        .limit(100)
+        .order("createdAt", { ascending: false }),
+      client
+        .from("supplierQuoteLine")
+        .select(
+          "id, ...supplierQuote(documentReadableId:supplierQuoteId, documentId:id)"
+        )
+        .eq("itemId", itemId)
+        .eq("companyId", companyId)
+        .limit(100)
+    ]);
+
+    return {
+      issues: issues.data ?? [],
+      jobMaterials: jobMaterials.data ?? [],
+      maintenanceDispatchItems: maintenanceDispatchItems.data ?? [],
+      methodMaterials: methodMaterials.data ?? [],
+      purchaseOrderLines: purchaseOrderLines.data ?? [],
+      receiptLines: receiptLines.data ?? [],
+      quoteMaterials: quoteMaterials.data ?? [],
+      salesOrderLines: salesOrderLines.data ?? [],
+      shipmentLines: shipmentLines.data ?? [],
+      supplierQuotes: supplierQuotes.data ?? []
+    };
+  }
+);
+
+export const getMakeMethods = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getMakeMethods(itemId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("makeMethod")
+      .select("*")
       .eq("itemId", itemId)
+      .eq("companyId", companyId);
+  }
+);
+
+export const getMakeMethodById = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getMakeMethodById(makeMethodId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("makeMethod")
+      .select("*")
+      .eq("id", makeMethodId)
       .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("maintenanceDispatchItem")
-      .select(
-        "id, ...maintenanceDispatch!maintenanceDispatchId(documentReadableId:maintenanceDispatchId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
+      .single();
+  }
+);
+
+export const getMaterial = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getMaterial(itemId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .rpc("get_material_details", {
+        item_id: itemId
+      })
+      .single();
+  }
+);
+
+export const getMaterials = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getMaterials(
+    args: GenericQueryFilters & {
+      search: string | null;
+      supplierId: string | null;
+    }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    let query = client
+      .from("materials")
+      .select("*", {
+        count: "exact"
+      })
+      .or(`companyId.eq.${companyId},companyId.is.null`);
+
+    if (args.search) {
+      query = query.or(
+        `readableIdWithRevision.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%,supplierIds.ilike.%${args.search}%`
+      );
+    }
+
+    if (args.supplierId) {
+      query = query.contains("supplierIds", [args.supplierId]);
+    }
+
+    query = setGenericQueryFilters(query, args, [
+      { column: "readableIdWithRevision", ascending: true }
+    ]);
+    return query;
+  }
+);
+
+export const getMaterialsList = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getMaterialsList() {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return fetchAllFromTable<{
+      id: string;
+      name: string;
+      readableIdWithRevision: string;
+    }>(client, "item", "id, name, readableIdWithRevision", (query) =>
+      query
+        .eq("type", "Material")
+        .or(`companyId.eq.${companyId},companyId.is.null`)
+        .eq("active", true)
+        .order("name")
+    );
+  }
+);
+
+export const getMaterialDimension = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getMaterialDimension(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("materialDimension").select("*").eq("id", id).single();
+  }
+);
+
+export const getMaterialDimensions = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getMaterialDimensions(
+    args?: GenericQueryFilters & { search: string | null; isMetric: boolean }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    let query = client
+      .from("materialDimensions")
+      .select("*", {
+        count: "exact"
+      })
+      .eq("isMetric", args?.isMetric ?? false)
+      .or(`companyId.eq.${companyId},companyId.is.null`);
+
+    if (args?.search) {
+      query = query.ilike("name", `%${args.search}%`);
+    }
+
+    if (args) {
+      query = setGenericQueryFilters(query, args, [
+        { column: "formName", ascending: true },
+        { column: "name", ascending: true }
+      ]);
+    }
+
+    return query;
+  }
+);
+
+export const getMaterialDimensionList = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getMaterialDimensionList(
+    materialFormId: string,
+    isMetric: boolean
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("materialDimension")
+      .select("*")
+      .eq("materialFormId", materialFormId)
+      .eq("isMetric", isMetric)
+      .or(`companyId.eq.${companyId},companyId.is.null`);
+  }
+);
+
+export const getMaterialFinish = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getMaterialFinish(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("materialFinish").select("*").eq("id", id).single();
+  }
+);
+
+export const getMaterialFinishes = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getMaterialFinishes(
+    args?: GenericQueryFilters & { search: string | null }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    let query = client
+      .from("materialFinishes")
+      .select("*", {
+        count: "exact"
+      })
+      .or(`companyId.eq.${companyId},companyId.is.null`);
+
+    if (args?.search) {
+      query = query.ilike("name", `%${args.search}%`);
+    }
+
+    if (args) {
+      query = setGenericQueryFilters(query, args, [
+        { column: "substanceName", ascending: true },
+        { column: "name", ascending: true }
+      ]);
+    }
+
+    return query;
+  }
+);
+
+export const getMaterialFinishList = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getMaterialFinishList(materialSubstanceId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("materialFinish")
+      .select("*")
+      .eq("materialSubstanceId", materialSubstanceId)
+      .or(`companyId.eq.${companyId},companyId.is.null`);
+  }
+);
+
+export const getMaterialForm = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getMaterialForm(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("materialForm").select("*").eq("id", id).single();
+  }
+);
+
+export const getMaterialForms = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getMaterialForms(
+    args?: GenericQueryFilters & { search: string | null }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    let query = client
+      .from("materialForm")
+      .select("*", {
+        count: "exact"
+      })
+      .or(`companyId.eq.${companyId},companyId.is.null`);
+
+    if (args?.search) {
+      query = query.ilike("name", `%${args.search}%`);
+    }
+
+    if (args) {
+      query = setGenericQueryFilters(query, args, [
+        { column: "name", ascending: true }
+      ]);
+    }
+
+    return query;
+  }
+);
+
+export const getMaterialFormsList = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getMaterialFormsList() {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("materialForm")
+      .select("id, name, code, companyId")
+      .or(`companyId.eq.${companyId},companyId.is.null`)
+      .order("name");
+  }
+);
+
+export const getMaterialGrades = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getMaterialGrades(
+    args?: GenericQueryFilters & { search: string | null }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    let query = client
+      .from("materialGrades")
+      .select("*", {
+        count: "exact"
+      })
+      .or(`companyId.eq.${companyId},companyId.is.null`);
+
+    if (args?.search) {
+      query = query.ilike("name", `%${args.search}%`);
+    }
+
+    if (args) {
+      query = setGenericQueryFilters(query, args, [
+        { column: "substanceName", ascending: true },
+        { column: "name", ascending: true }
+      ]);
+    }
+
+    return query;
+  }
+);
+
+export const getMaterialGrade = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getMaterialGrade(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("materialGrade").select("*").eq("id", id).single();
+  }
+);
+
+export const getMaterialGradeList = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getMaterialGradeList(materialSubstanceId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("materialGrade")
+      .select("*")
+      .eq("materialSubstanceId", materialSubstanceId)
+      .or(`companyId.eq.${companyId},companyId.is.null`);
+  }
+);
+
+export const getMaterialSubstance = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getMaterialSubstance(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("materialSubstance").select("*").eq("id", id).single();
+  }
+);
+
+export const getMaterialSubstances = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getMaterialSubstances(
+    args?: GenericQueryFilters & { search: string | null }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    let query = client
+      .from("materialSubstance")
+      .select("*", {
+        count: "exact"
+      })
+      .or(`companyId.eq.${companyId},companyId.is.null`);
+
+    if (args?.search) {
+      query = query.ilike("name", `%${args.search}%`);
+    }
+
+    if (args) {
+      query = setGenericQueryFilters(query, args, [
+        { column: "name", ascending: true }
+      ]);
+    }
+
+    return query;
+  }
+);
+
+export const getMaterialSubstancesList = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getMaterialSubstancesList() {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("materialSubstance")
+      .select("id, name, code, companyId")
+      .or(`companyId.eq.${companyId},companyId.is.null`)
+      .order("name");
+  }
+);
+
+export const getMethodMaterial = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getMethodMaterial(materialId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("methodMaterial")
+      .select("*, item(name)")
+      .eq("id", materialId)
+      .single();
+  }
+);
+
+export const getMethodMaterials = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getMethodMaterials(
+    args?: GenericQueryFilters & { search: string | null }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    let query = client
       .from("methodMaterial")
       .select(
-        "id, methodType, ...makeMethod!makeMethodId(documentId:id, version, ...item(documentReadableId:readableIdWithRevision, documentParentId:id, itemType:type))"
+        "*, item(name, readableIdWithRevision), makeMethod!makeMethodId(item(id, type, name, readableIdWithRevision))",
+        {
+          count: "exact"
+        }
       )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("purchaseOrderLine")
+      .eq("companyId", companyId);
+
+    if (args?.search) {
+      query = query.ilike("item.readableIdWithRevision", `%${args.search}%`);
+    }
+
+    if (args) {
+      query = setGenericQueryFilters(query, args, []);
+    }
+
+    return query;
+  }
+);
+
+export const getMethodMaterialsByMakeMethod = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getMethodMaterialsByMakeMethod(makeMethodId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("methodMaterial")
+      .select("*, item(name, itemTrackingType, replenishmentSystem)")
+      .eq("makeMethodId", makeMethodId)
+      .order("order", { ascending: true });
+  }
+);
+
+export const getMethodOperations = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getMethodOperations(
+    args?: GenericQueryFilters & { search: string | null }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    let query = client
+      .from("methodOperation")
       .select(
-        "id, ...purchaseOrder(documentReadableId:purchaseOrderId, documentId:id)"
+        "*, makeMethod!makeMethodId(item(id, type, name, readableIdWithRevision))",
+        {
+          count: "exact"
+        }
       )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("receiptLine")
-      .select("id, ...receipt(documentReadableId:receiptId, documentId:id)")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId),
-    client
-      .from("quoteMaterial")
+      .eq("companyId", companyId);
+
+    if (args?.search) {
+      query = query.ilike("description", `%${args.search}%`);
+    }
+
+    if (args) {
+      query = setGenericQueryFilters(query, args, [
+        { column: "order", ascending: true }
+      ]);
+    }
+
+    return query;
+  }
+);
+
+export const getMethodOperationsByMakeMethodId = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getMethodOperationsByMakeMethodId(makeMethodId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("methodOperation")
       .select(
-        "id, methodType, documentParentId:quoteId, documentId:quoteLineId, ...quoteLine(...item(documentReadableId:readableIdWithRevision))"
+        "*, methodOperationTool(*), methodOperationParameter(*), methodOperationStep(*)"
       )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("salesOrderLine")
-      .select(
-        "id, methodType, ...salesOrder(documentReadableId:salesOrderId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("shipmentLine")
-      .select("id, ...shipment(documentReadableId:shipmentId, documentId:id)")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("supplierQuoteLine")
-      .select(
-        "id, ...supplierQuote(documentReadableId:supplierQuoteId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-  ]);
-
-  return {
-    issues: issues.data ?? [],
-    jobMaterials: jobMaterials.data ?? [],
-    maintenanceDispatchItems: maintenanceDispatchItems.data ?? [],
-    methodMaterials: methodMaterials.data ?? [],
-    purchaseOrderLines: purchaseOrderLines.data ?? [],
-    receiptLines: receiptLines.data ?? [],
-    quoteMaterials: quoteMaterials.data ?? [],
-    salesOrderLines: salesOrderLines.data ?? [],
-    shipmentLines: shipmentLines.data ?? [],
-    supplierQuotes: supplierQuotes.data ?? []
-  };
-}
-
-export async function getMakeMethods(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string
-) {
-  return client
-    .from("makeMethod")
-    .select("*")
-    .eq("itemId", itemId)
-    .eq("companyId", companyId);
-}
-
-export async function getMakeMethodById(
-  client: SupabaseClient<Database>,
-  makeMethodId: string,
-  companyId: string
-) {
-  return client
-    .from("makeMethod")
-    .select("*")
-    .eq("id", makeMethodId)
-    .eq("companyId", companyId)
-    .single();
-}
-
-export async function getMaterial(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string
-) {
-  return client
-    .rpc("get_material_details", {
-      item_id: itemId
-    })
-    .single();
-}
-
-export async function getMaterials(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args: GenericQueryFilters & {
-    search: string | null;
-    supplierId: string | null;
+      .eq("makeMethodId", makeMethodId)
+      .order("order", { ascending: true });
   }
-) {
-  let query = client
-    .from("materials")
-    .select("*", {
-      count: "exact"
-    })
-    .or(`companyId.eq.${companyId},companyId.is.null`);
-
-  if (args.search) {
-    query = query.or(
-      `readableIdWithRevision.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%,supplierIds.ilike.%${args.search}%`
-    );
-  }
-
-  if (args.supplierId) {
-    query = query.contains("supplierIds", [args.supplierId]);
-  }
-
-  query = setGenericQueryFilters(query, args, [
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
-  return query;
-}
-
-export async function getMaterialsList(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return fetchAllFromTable<{
-    id: string;
-    name: string;
-    readableIdWithRevision: string;
-  }>(client, "item", "id, name, readableIdWithRevision", (query) =>
-    query
-      .eq("type", "Material")
-      .or(`companyId.eq.${companyId},companyId.is.null`)
-      .eq("active", true)
-      .order("name")
-  );
-}
-
-export async function getMaterialDimension(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("materialDimension").select("*").eq("id", id).single();
-}
-
-export async function getMaterialDimensions(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args?: GenericQueryFilters & { search: string | null; isMetric: boolean }
-) {
-  let query = client
-    .from("materialDimensions")
-    .select("*", {
-      count: "exact"
-    })
-    .eq("isMetric", args?.isMetric ?? false)
-    .or(`companyId.eq.${companyId},companyId.is.null`);
-
-  if (args?.search) {
-    query = query.ilike("name", `%${args.search}%`);
-  }
-
-  if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "formName", ascending: true },
-      { column: "name", ascending: true }
-    ]);
-  }
-
-  return query;
-}
-
-export async function getMaterialDimensionList(
-  client: SupabaseClient<Database>,
-  materialFormId: string,
-  isMetric: boolean,
-  companyId: string
-) {
-  return client
-    .from("materialDimension")
-    .select("*")
-    .eq("materialFormId", materialFormId)
-    .eq("isMetric", isMetric)
-    .or(`companyId.eq.${companyId},companyId.is.null`);
-}
-
-export async function getMaterialFinish(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("materialFinish").select("*").eq("id", id).single();
-}
-
-export async function getMaterialFinishes(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args?: GenericQueryFilters & { search: string | null }
-) {
-  let query = client
-    .from("materialFinishes")
-    .select("*", {
-      count: "exact"
-    })
-    .or(`companyId.eq.${companyId},companyId.is.null`);
-
-  if (args?.search) {
-    query = query.ilike("name", `%${args.search}%`);
-  }
-
-  if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "substanceName", ascending: true },
-      { column: "name", ascending: true }
-    ]);
-  }
-
-  return query;
-}
-
-export async function getMaterialFinishList(
-  client: SupabaseClient<Database>,
-  materialSubstanceId: string,
-  companyId: string
-) {
-  return client
-    .from("materialFinish")
-    .select("*")
-    .eq("materialSubstanceId", materialSubstanceId)
-    .or(`companyId.eq.${companyId},companyId.is.null`);
-}
-
-export async function getMaterialForm(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("materialForm").select("*").eq("id", id).single();
-}
-
-export async function getMaterialForms(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args?: GenericQueryFilters & { search: string | null }
-) {
-  let query = client
-    .from("materialForm")
-    .select("*", {
-      count: "exact"
-    })
-    .or(`companyId.eq.${companyId},companyId.is.null`);
-
-  if (args?.search) {
-    query = query.ilike("name", `%${args.search}%`);
-  }
-
-  if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
-  }
-
-  return query;
-}
-
-export async function getMaterialFormsList(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return client
-    .from("materialForm")
-    .select("id, name, code, companyId")
-    .or(`companyId.eq.${companyId},companyId.is.null`)
-    .order("name");
-}
-
-export async function getMaterialGrades(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args?: GenericQueryFilters & { search: string | null }
-) {
-  let query = client
-    .from("materialGrades")
-    .select("*", {
-      count: "exact"
-    })
-    .or(`companyId.eq.${companyId},companyId.is.null`);
-
-  if (args?.search) {
-    query = query.ilike("name", `%${args.search}%`);
-  }
-
-  if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "substanceName", ascending: true },
-      { column: "name", ascending: true }
-    ]);
-  }
-
-  return query;
-}
-
-export async function getMaterialGrade(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("materialGrade").select("*").eq("id", id).single();
-}
-
-export async function getMaterialGradeList(
-  client: SupabaseClient<Database>,
-  materialSubstanceId: string,
-  companyId: string
-) {
-  return client
-    .from("materialGrade")
-    .select("*")
-    .eq("materialSubstanceId", materialSubstanceId)
-    .or(`companyId.eq.${companyId},companyId.is.null`);
-}
-
-export async function getMaterialSubstance(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("materialSubstance").select("*").eq("id", id).single();
-}
-
-export async function getMaterialSubstances(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args?: GenericQueryFilters & { search: string | null }
-) {
-  let query = client
-    .from("materialSubstance")
-    .select("*", {
-      count: "exact"
-    })
-    .or(`companyId.eq.${companyId},companyId.is.null`);
-
-  if (args?.search) {
-    query = query.ilike("name", `%${args.search}%`);
-  }
-
-  if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
-  }
-
-  return query;
-}
-
-export async function getMaterialSubstancesList(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return client
-    .from("materialSubstance")
-    .select("id, name, code, companyId")
-    .or(`companyId.eq.${companyId},companyId.is.null`)
-    .order("name");
-}
-
-export async function getMethodMaterial(
-  client: SupabaseClient<Database>,
-  materialId: string
-) {
-  return client
-    .from("methodMaterial")
-    .select("*, item(name)")
-    .eq("id", materialId)
-    .single();
-}
-
-export async function getMethodMaterials(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args?: GenericQueryFilters & { search: string | null }
-) {
-  let query = client
-    .from("methodMaterial")
-    .select(
-      "*, item(name, readableIdWithRevision), makeMethod!makeMethodId(item(id, type, name, readableIdWithRevision))",
-      {
-        count: "exact"
-      }
-    )
-    .eq("companyId", companyId);
-
-  if (args?.search) {
-    query = query.ilike("item.readableIdWithRevision", `%${args.search}%`);
-  }
-
-  if (args) {
-    query = setGenericQueryFilters(query, args, []);
-  }
-
-  return query;
-}
-
-export async function getMethodMaterialsByMakeMethod(
-  client: SupabaseClient<Database>,
-  makeMethodId: string
-) {
-  return client
-    .from("methodMaterial")
-    .select("*, item(name, itemTrackingType, replenishmentSystem)")
-    .eq("makeMethodId", makeMethodId)
-    .order("order", { ascending: true });
-}
-
-export async function getMethodOperations(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args?: GenericQueryFilters & { search: string | null }
-) {
-  let query = client
-    .from("methodOperation")
-    .select(
-      "*, makeMethod!makeMethodId(item(id, type, name, readableIdWithRevision))",
-      {
-        count: "exact"
-      }
-    )
-    .eq("companyId", companyId);
-
-  if (args?.search) {
-    query = query.ilike("description", `%${args.search}%`);
-  }
-
-  if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "order", ascending: true }
-    ]);
-  }
-
-  return query;
-}
-
-export async function getMethodOperationsByMakeMethodId(
-  client: SupabaseClient<Database>,
-  makeMethodId: string
-) {
-  return client
-    .from("methodOperation")
-    .select(
-      "*, methodOperationTool(*), methodOperationParameter(*), methodOperationStep(*)"
-    )
-    .eq("makeMethodId", makeMethodId)
-    .order("order", { ascending: true });
-}
+);
 
 type Method = NonNullable<
   Awaited<ReturnType<typeof getMethodTreeArray>>["data"]
@@ -1233,29 +1479,34 @@ type MethodTreeItem = {
   children: MethodTreeItem[];
 };
 
-export async function getMethodTree(
-  client: SupabaseClient<Database>,
-  makeMethodId: string
-) {
-  const items = await getMethodTreeArray(client, makeMethodId);
-  if (items.error) return items;
+export const getMethodTree = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getMethodTree(makeMethodId: string) {
+    const items = await getMethodTreeArray(makeMethodId);
+    if (items.error) return items;
 
-  const tree = getMethodTreeArrayToTree(items.data);
+    const tree = getMethodTreeArrayToTree(items.data);
 
-  return {
-    data: tree,
-    error: null
-  };
-}
+    return {
+      data: tree,
+      error: null
+    };
+  }
+);
 
-export async function getMethodTreeArray(
-  client: SupabaseClient<Database>,
-  makeMethodId: string
-) {
-  return client.rpc("get_method_tree", {
-    uid: makeMethodId
-  });
-}
+export const getMethodTreeArray = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getMethodTreeArray(makeMethodId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.rpc("get_method_tree", {
+      uid: makeMethodId
+    });
+  }
+);
 
 function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
   function traverseAndRenameIds(node: MethodTreeItem) {
@@ -1298,735 +1549,863 @@ function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
   return rootItems.map((item) => traverseAndRenameIds(item));
 }
 
-export async function getOpenJobMaterials(
-  client: SupabaseClient<Database>,
+export const getOpenJobMaterials = mcpTool(
   {
+    classification: "READ",
+    argOrder: ["args"]
+  },
+  async function getOpenJobMaterials({
     itemId,
-    companyId,
     locationId
-  }: { itemId: string; companyId: string; locationId: string }
-) {
-  return client
-    .from("openJobMaterialLines")
-    .select(
-      "id, parentMaterialId, jobMakeMethodId, jobId, quantity:quantityToIssue, documentReadableId:jobReadableId, documentId:jobId, dueDate"
-    )
-    .eq("itemId", itemId)
-    .eq("locationId", locationId)
-    .eq("companyId", companyId);
-}
-
-export async function getOpenProductionOrders(
-  client: SupabaseClient<Database>,
-  {
-    itemId,
-    companyId,
-    locationId
-  }: { itemId: string; companyId: string; locationId: string }
-) {
-  return client
-    .from("openProductionOrders")
-    .select(
-      "id, quantity:quantityToReceive, documentReadableId:jobId, documentId:id, dueDate"
-    )
-    .eq("itemId", itemId)
-    .eq("locationId", locationId)
-    .eq("companyId", companyId);
-}
-
-export async function getOpenPurchaseOrderLines(
-  client: SupabaseClient<Database>,
-  {
-    itemId,
-    companyId,
-    locationId
-  }: { itemId: string; companyId: string; locationId: string }
-) {
-  return client
-    .from("openPurchaseOrderLines")
-    .select(
-      "id, quantity:quantityToReceive, dueDate:promisedDate, ...purchaseOrder(documentReadableId:purchaseOrderId, documentId:id)"
-    )
-    .eq("itemId", itemId)
-    .eq("locationId", locationId)
-    .eq("companyId", companyId);
-}
-
-export async function getOpenSalesOrderLines(
-  client: SupabaseClient<Database>,
-  {
-    itemId,
-    companyId,
-    locationId
-  }: { itemId: string; companyId: string; locationId: string }
-) {
-  return client
-    .from("openSalesOrderLines")
-    .select(
-      "id, quantity:quantityToSend, dueDate:promisedDate, ...salesOrder(documentReadableId:salesOrderId, documentId:id)"
-    )
-    .eq("itemId", itemId)
-    .eq("companyId", companyId)
-    .eq("locationId", locationId);
-}
-
-export async function getPart(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string
-) {
-  return client
-    .rpc("get_part_details", {
-      item_id: itemId
-    })
-    .single();
-}
-
-export async function getParts(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args: GenericQueryFilters & {
-    search: string | null;
-    supplierId: string | null;
+  }: {
+    itemId: string;
+    locationId: string;
+  }) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("openJobMaterialLines")
+      .select(
+        "id, parentMaterialId, jobMakeMethodId, jobId, quantity:quantityToIssue, documentReadableId:jobReadableId, documentId:jobId, dueDate"
+      )
+      .eq("itemId", itemId)
+      .eq("locationId", locationId)
+      .eq("companyId", companyId);
   }
-) {
-  let query = client
-    .from("parts")
-    .select("*", {
-      count: "exact"
-    })
-    .eq("companyId", companyId);
+);
 
-  if (args.search) {
-    query = query.or(
-      `readableIdWithRevision.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%,supplierIds.ilike.%${args.search}%`
+export const getOpenProductionOrders = mcpTool(
+  {
+    classification: "READ",
+    argOrder: ["args"]
+  },
+  async function getOpenProductionOrders({
+    itemId,
+    locationId
+  }: {
+    itemId: string;
+    locationId: string;
+  }) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("openProductionOrders")
+      .select(
+        "id, quantity:quantityToReceive, documentReadableId:jobId, documentId:id, dueDate"
+      )
+      .eq("itemId", itemId)
+      .eq("locationId", locationId)
+      .eq("companyId", companyId);
+  }
+);
+
+export const getOpenPurchaseOrderLines = mcpTool(
+  {
+    classification: "READ",
+    argOrder: ["args"]
+  },
+  async function getOpenPurchaseOrderLines({
+    itemId,
+    locationId
+  }: {
+    itemId: string;
+    locationId: string;
+  }) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("openPurchaseOrderLines")
+      .select(
+        "id, quantity:quantityToReceive, dueDate:promisedDate, ...purchaseOrder(documentReadableId:purchaseOrderId, documentId:id)"
+      )
+      .eq("itemId", itemId)
+      .eq("locationId", locationId)
+      .eq("companyId", companyId);
+  }
+);
+
+export const getOpenSalesOrderLines = mcpTool(
+  {
+    classification: "READ",
+    argOrder: ["args"]
+  },
+  async function getOpenSalesOrderLines({
+    itemId,
+    locationId
+  }: {
+    itemId: string;
+    locationId: string;
+  }) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("openSalesOrderLines")
+      .select(
+        "id, quantity:quantityToSend, dueDate:promisedDate, ...salesOrder(documentReadableId:salesOrderId, documentId:id)"
+      )
+      .eq("itemId", itemId)
+      .eq("companyId", companyId)
+      .eq("locationId", locationId);
+  }
+);
+
+export const getPart = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getPart(itemId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .rpc("get_part_details", {
+        item_id: itemId
+      })
+      .single();
+  }
+);
+
+export const getParts = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getParts(
+    args: GenericQueryFilters & {
+      search: string | null;
+      supplierId: string | null;
+    }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    let query = client
+      .from("parts")
+      .select("*", {
+        count: "exact"
+      })
+      .eq("companyId", companyId);
+
+    if (args.search) {
+      query = query.or(
+        `readableIdWithRevision.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%,supplierIds.ilike.%${args.search}%`
+      );
+    }
+
+    if (args.supplierId) {
+      query = query.contains("supplierIds", [args.supplierId]);
+    }
+
+    query = setGenericQueryFilters(query, args, [
+      { column: "readableIdWithRevision", ascending: true }
+    ]);
+    return query;
+  }
+);
+
+export const getPartsList = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getPartsList() {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return fetchAllFromTable<{
+      id: string;
+      name: string;
+      readableIdWithRevision: string;
+    }>(client, "item", "id, name, readableIdWithRevision", (query) =>
+      query
+        .eq("type", "Part")
+        .eq("companyId", companyId)
+        .eq("active", true)
+        .order("name")
     );
   }
+);
 
-  if (args.supplierId) {
-    query = query.contains("supplierIds", [args.supplierId]);
+export const getPartUsedIn = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getPartUsedIn(itemId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    const [
+      issues,
+      jobMaterials,
+      jobs,
+      maintenanceDispatchItems,
+      methodMaterials,
+      purchaseOrderLines,
+      receiptLines,
+      quoteLines,
+      quoteMaterials,
+      salesOrderLines,
+      shipmentLines,
+      supplierQuotes
+    ] = await Promise.all([
+      client
+        .from("nonConformanceItem")
+        .select(
+          "id, ...nonConformance(documentReadableId:nonConformanceId, documentId:id)"
+        )
+        .eq("itemId", itemId)
+        .eq("companyId", companyId)
+        .limit(100)
+        .order("createdAt", { ascending: false }),
+      client
+        .from("jobMaterial")
+        .select(
+          "id, methodType, ...job(documentReadableId:jobId, documentId:id)"
+        )
+        .eq("itemId", itemId)
+        .eq("companyId", companyId)
+        .limit(100)
+        .order("createdAt", { ascending: false }),
+      client
+        .from("job")
+        .select("id, documentReadableId:jobId")
+        .eq("itemId", itemId)
+        .eq("companyId", companyId)
+        .limit(100)
+        .order("createdAt", { ascending: false }),
+      client
+        .from("maintenanceDispatchItem")
+        .select(
+          "id, ...maintenanceDispatch!maintenanceDispatchId(documentReadableId:maintenanceDispatchId, documentId:id)"
+        )
+        .eq("itemId", itemId)
+        .eq("companyId", companyId)
+        .limit(100)
+        .order("createdAt", { ascending: false }),
+      client
+        .from("methodMaterial")
+        .select(
+          "id, methodType, ...makeMethod!makeMethodId(documentId:id, version, ...item(documentReadableId:readableIdWithRevision, documentParentId:id, itemType:type))"
+        )
+        .eq("itemId", itemId)
+        .eq("companyId", companyId)
+        .limit(100)
+        .order("createdAt", { ascending: false }),
+      client
+        .from("purchaseOrderLine")
+        .select(
+          "id, ...purchaseOrder(documentReadableId:purchaseOrderId, documentId:id)"
+        )
+        .eq("itemId", itemId)
+        .eq("companyId", companyId)
+        .limit(100)
+        .order("createdAt", { ascending: false }),
+      client
+        .from("receiptLine")
+        .select("id, ...receipt(documentReadableId:receiptId, documentId:id)")
+        .eq("itemId", itemId)
+        .eq("companyId", companyId)
+        .limit(100)
+        .order("createdAt", { ascending: false }),
+      client
+        .from("quoteLine")
+        .select(
+          "id, methodType, ...quote(documentReadableId:quoteId, documentId:id)"
+        )
+        .eq("itemId", itemId)
+        .eq("companyId", companyId)
+        .limit(100),
+
+      client
+        .from("quoteMaterial")
+        .select(
+          "id, methodType, documentParentId:quoteId, documentId:quoteLineId, ...quoteLine(...item(documentReadableId:readableIdWithRevision))"
+        )
+        .eq("itemId", itemId)
+        .eq("companyId", companyId)
+        .limit(100)
+        .order("createdAt", { ascending: false }),
+      client
+        .from("salesOrderLine")
+        .select(
+          "id, methodType, ...salesOrder(documentReadableId:salesOrderId, documentId:id)"
+        )
+        .eq("itemId", itemId)
+        .eq("companyId", companyId)
+        .limit(100)
+        .order("createdAt", { ascending: false }),
+      client
+        .from("shipmentLine")
+        .select("id, ...shipment(documentReadableId:shipmentId, documentId:id)")
+        .eq("itemId", itemId)
+        .eq("companyId", companyId)
+        .limit(100)
+        .order("createdAt", { ascending: false }),
+      client
+        .from("supplierQuoteLine")
+        .select(
+          "id, ...supplierQuote(documentReadableId:supplierQuoteId, documentId:id)"
+        )
+        .eq("itemId", itemId)
+        .eq("companyId", companyId)
+        .limit(100)
+    ]);
+
+    return {
+      issues: issues.data ?? [],
+      jobMaterials: jobMaterials.data ?? [],
+      jobs: jobs.data ?? [],
+      maintenanceDispatchItems: maintenanceDispatchItems.data ?? [],
+      methodMaterials: methodMaterials.data ?? [],
+      purchaseOrderLines: purchaseOrderLines.data ?? [],
+      receiptLines: receiptLines.data ?? [],
+      quoteLines: quoteLines.data ?? [],
+      quoteMaterials: quoteMaterials.data ?? [],
+      salesOrderLines: salesOrderLines.data ?? [],
+      shipmentLines: shipmentLines.data ?? [],
+      supplierQuotes: supplierQuotes.data ?? []
+    };
   }
+);
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
-  return query;
-}
-
-export async function getPartsList(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return fetchAllFromTable<{
-    id: string;
-    name: string;
-    readableIdWithRevision: string;
-  }>(client, "item", "id, name, readableIdWithRevision", (query) =>
-    query
-      .eq("type", "Part")
+export const getPickMethod = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getPickMethod(itemId: string, locationId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("pickMethod")
+      .select("*")
+      .eq("itemId", itemId)
       .eq("companyId", companyId)
+      .eq("locationId", locationId)
+      .maybeSingle();
+  }
+);
+
+export const getPickMethods = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getPickMethods(itemId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("pickMethod")
+      .select("*")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId);
+  }
+);
+
+export const getServices = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getServices(
+    args: GenericQueryFilters & {
+      search: string | null;
+      type: string | null;
+      group: string | null;
+      supplierId: string | null;
+    }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    let query = client
+      .from("service")
+      .select("*", {
+        count: "exact"
+      })
+      .eq("companyId", companyId);
+
+    if (args.search) {
+      query = query.or(
+        `readableIdWithRevision.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%`
+      );
+    }
+
+    if (args.type) {
+      query = query.eq(
+        "serviceType",
+        args.type as NonNullable<"Internal" | "External">
+      );
+    }
+
+    if (args.group) {
+      query = query.eq("itemPostingGroupId", args.group);
+    }
+
+    if (args.supplierId) {
+      query = query.contains("supplierIds", [args.supplierId]);
+    }
+
+    query = setGenericQueryFilters(query, args, [
+      { column: "readableIdWithRevision", ascending: true }
+    ]);
+    return query;
+  }
+);
+
+export const getService = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getService(itemId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("service")
+      .select("*")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId)
+      .single();
+  }
+);
+
+export const getServicesList = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getServicesList() {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return fetchAllFromTable<{
+      id: string;
+      name: string;
+    }>(client, "item", "id, name", (query) =>
+      query
+        .eq("type", "Service")
+        .eq("companyId", companyId)
+        .eq("active", true)
+        .order("name")
+    );
+  }
+);
+
+export const getSupplierParts = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getSupplierParts(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("supplierPart")
+      .select("*")
       .eq("active", true)
-      .order("name")
-  );
-}
-
-export async function getPartUsedIn(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string
-) {
-  const [
-    issues,
-    jobMaterials,
-    jobs,
-    maintenanceDispatchItems,
-    methodMaterials,
-    purchaseOrderLines,
-    receiptLines,
-    quoteLines,
-    quoteMaterials,
-    salesOrderLines,
-    shipmentLines,
-    supplierQuotes
-  ] = await Promise.all([
-    client
-      .from("nonConformanceItem")
-      .select(
-        "id, ...nonConformance(documentReadableId:nonConformanceId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("jobMaterial")
-      .select("id, methodType, ...job(documentReadableId:jobId, documentId:id)")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("job")
-      .select("id, documentReadableId:jobId")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("maintenanceDispatchItem")
-      .select(
-        "id, ...maintenanceDispatch!maintenanceDispatchId(documentReadableId:maintenanceDispatchId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("methodMaterial")
-      .select(
-        "id, methodType, ...makeMethod!makeMethodId(documentId:id, version, ...item(documentReadableId:readableIdWithRevision, documentParentId:id, itemType:type))"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("purchaseOrderLine")
-      .select(
-        "id, ...purchaseOrder(documentReadableId:purchaseOrderId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("receiptLine")
-      .select("id, ...receipt(documentReadableId:receiptId, documentId:id)")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("quoteLine")
-      .select(
-        "id, methodType, ...quote(documentReadableId:quoteId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100),
-
-    client
-      .from("quoteMaterial")
-      .select(
-        "id, methodType, documentParentId:quoteId, documentId:quoteLineId, ...quoteLine(...item(documentReadableId:readableIdWithRevision))"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("salesOrderLine")
-      .select(
-        "id, methodType, ...salesOrder(documentReadableId:salesOrderId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("shipmentLine")
-      .select("id, ...shipment(documentReadableId:shipmentId, documentId:id)")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("supplierQuoteLine")
-      .select(
-        "id, ...supplierQuote(documentReadableId:supplierQuoteId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-  ]);
-
-  return {
-    issues: issues.data ?? [],
-    jobMaterials: jobMaterials.data ?? [],
-    jobs: jobs.data ?? [],
-    maintenanceDispatchItems: maintenanceDispatchItems.data ?? [],
-    methodMaterials: methodMaterials.data ?? [],
-    purchaseOrderLines: purchaseOrderLines.data ?? [],
-    receiptLines: receiptLines.data ?? [],
-    quoteLines: quoteLines.data ?? [],
-    quoteMaterials: quoteMaterials.data ?? [],
-    salesOrderLines: salesOrderLines.data ?? [],
-    shipmentLines: shipmentLines.data ?? [],
-    supplierQuotes: supplierQuotes.data ?? []
-  };
-}
-
-export async function getPickMethod(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string,
-  locationId: string
-) {
-  return client
-    .from("pickMethod")
-    .select("*")
-    .eq("itemId", itemId)
-    .eq("companyId", companyId)
-    .eq("locationId", locationId)
-    .maybeSingle();
-}
-
-export async function getPickMethods(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string
-) {
-  return client
-    .from("pickMethod")
-    .select("*")
-    .eq("itemId", itemId)
-    .eq("companyId", companyId);
-}
-
-export async function getServices(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args: GenericQueryFilters & {
-    search: string | null;
-    type: string | null;
-    group: string | null;
-    supplierId: string | null;
+      .eq("itemId", id)
+      .eq("companyId", companyId);
   }
-) {
-  let query = client
-    .from("service")
-    .select("*", {
-      count: "exact"
-    })
-    .eq("companyId", companyId);
+);
 
-  if (args.search) {
-    query = query.or(
-      `readableIdWithRevision.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%`
+export const getTool = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getTool(itemId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .rpc("get_tool_details", {
+        item_id: itemId
+      })
+      .single();
+  }
+);
+
+export const getTools = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getTools(
+    args: GenericQueryFilters & {
+      search: string | null;
+      supplierId: string | null;
+    }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    let query = client
+      .from("tools")
+      .select("*", {
+        count: "exact"
+      })
+      .eq("companyId", companyId);
+
+    if (args.search) {
+      query = query.or(
+        `readableIdWithRevision.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%,supplierIds.ilike.%${args.search}%`
+      );
+    }
+
+    if (args.supplierId) {
+      query = query.contains("supplierIds", [args.supplierId]);
+    }
+
+    query = setGenericQueryFilters(query, args, [
+      { column: "readableIdWithRevision", ascending: true }
+    ]);
+    return query;
+  }
+);
+
+export const getToolsList = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getToolsList() {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return fetchAllFromTable<{
+      id: string;
+      name: string;
+      readableIdWithRevision: string;
+    }>(client, "item", "id, name, readableIdWithRevision", (query) =>
+      query
+        .eq("type", "Tool")
+        .eq("companyId", companyId)
+        .eq("active", true)
+        .order("name")
     );
   }
+);
 
-  if (args.type) {
-    query = query.eq(
-      "serviceType",
-      args.type as NonNullable<"Internal" | "External">
-    );
-  }
-
-  if (args.group) {
-    query = query.eq("itemPostingGroupId", args.group);
-  }
-
-  if (args.supplierId) {
-    query = query.contains("supplierIds", [args.supplierId]);
-  }
-
-  query = setGenericQueryFilters(query, args, [
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
-  return query;
-}
-
-export async function getService(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string
-) {
-  return client
-    .from("service")
-    .select("*")
-    .eq("itemId", itemId)
-    .eq("companyId", companyId)
-    .single();
-}
-
-export async function getServicesList(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return fetchAllFromTable<{
-    id: string;
-    name: string;
-  }>(client, "item", "id, name", (query) =>
-    query
-      .eq("type", "Service")
+export const getUnitOfMeasure = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getUnitOfMeasure(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("unitOfMeasure")
+      .select("*")
+      .eq("id", id)
       .eq("companyId", companyId)
-      .eq("active", true)
-      .order("name")
-  );
-}
-
-export async function getSupplierParts(
-  client: SupabaseClient<Database>,
-  id: string,
-  companyId: string
-) {
-  return client
-    .from("supplierPart")
-    .select("*")
-    .eq("active", true)
-    .eq("itemId", id)
-    .eq("companyId", companyId);
-}
-
-export async function getTool(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string
-) {
-  return client
-    .rpc("get_tool_details", {
-      item_id: itemId
-    })
-    .single();
-}
-
-export async function getTools(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args: GenericQueryFilters & {
-    search: string | null;
-    supplierId: string | null;
+      .single();
   }
-) {
-  let query = client
-    .from("tools")
-    .select("*", {
-      count: "exact"
-    })
-    .eq("companyId", companyId);
+);
 
-  if (args.search) {
-    query = query.or(
-      `readableIdWithRevision.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%,supplierIds.ilike.%${args.search}%`
-    );
+export const getUnitOfMeasures = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getUnitOfMeasures(
+    args: GenericQueryFilters & { search: string | null }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    let query = client
+      .from("unitOfMeasure")
+      .select("*", {
+        count: "exact"
+      })
+      .eq("companyId", companyId);
+
+    if (args.search) {
+      query = query.or(
+        `name.ilike.%${args.search}%,code.ilike.%${args.search}%`
+      );
+    }
+
+    query = setGenericQueryFilters(query, args, [
+      { column: "name", ascending: true }
+    ]);
+    return query;
   }
+);
 
-  if (args.supplierId) {
-    query = query.contains("supplierIds", [args.supplierId]);
-  }
-
-  query = setGenericQueryFilters(query, args, [
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
-  return query;
-}
-
-export async function getToolsList(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return fetchAllFromTable<{
-    id: string;
-    name: string;
-    readableIdWithRevision: string;
-  }>(client, "item", "id, name, readableIdWithRevision", (query) =>
-    query
-      .eq("type", "Tool")
+export const getUnitOfMeasuresList = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getUnitOfMeasuresList() {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("unitOfMeasure")
+      .select("name, code")
       .eq("companyId", companyId)
-      .eq("active", true)
-      .order("name")
-  );
-}
-
-export async function getUnitOfMeasure(
-  client: SupabaseClient<Database>,
-  id: string,
-  companyId: string
-) {
-  return client
-    .from("unitOfMeasure")
-    .select("*")
-    .eq("id", id)
-    .eq("companyId", companyId)
-    .single();
-}
-
-export async function getUnitOfMeasures(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args: GenericQueryFilters & { search: string | null }
-) {
-  let query = client
-    .from("unitOfMeasure")
-    .select("*", {
-      count: "exact"
-    })
-    .eq("companyId", companyId);
-
-  if (args.search) {
-    query = query.or(`name.ilike.%${args.search}%,code.ilike.%${args.search}%`);
+      .order("name");
   }
+);
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
-  return query;
-}
-
-export async function getUnitOfMeasuresList(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return client
-    .from("unitOfMeasure")
-    .select("name, code")
-    .eq("companyId", companyId)
-    .order("name");
-}
-
-export async function updateConfigurationParameterGroupOrder(
-  client: SupabaseClient<Database>,
-  data: z.infer<typeof configurationParameterGroupOrderValidator>
-) {
-  return client
-    .from("configurationParameterGroup")
-    .update(sanitize(data))
-    .eq("id", data.id);
-}
-
-export async function updateDefaultRevision(
-  client: SupabaseClient<Database>,
-  data: {
-    id: string;
-    updatedBy: string;
+export const updateConfigurationParameterGroupOrder = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function updateConfigurationParameterGroupOrder(
+    data: z.infer<typeof configurationParameterGroupOrderValidator>
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("configurationParameterGroup")
+      .update(sanitize(data))
+      .eq("id", data.id);
   }
-) {
-  const [item, makeMethod] = await Promise.all([
-    client
+);
+
+export const updateDefaultRevision = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function updateDefaultRevision(data: { id: string }) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const [item, makeMethod] = await Promise.all([
+      client
+        .from("item")
+        .select("id,readableId, readableIdWithRevision, type, companyId")
+        .eq("id", data.id)
+        .single(),
+      client
+        .from("activeMakeMethods")
+        .select("id, version")
+        .eq("itemId", data.id)
+        .maybeSingle()
+    ]);
+    if (item.error) return item;
+    const { readableId, type, companyId } = item.data;
+    if (!companyId) return item;
+    const relatedItems = await client
       .from("item")
-      .select("id,readableId, readableIdWithRevision, type, companyId")
-      .eq("id", data.id)
-      .single(),
-    client
-      .from("activeMakeMethods")
-      .select("id, version")
-      .eq("itemId", data.id)
-      .maybeSingle()
-  ]);
-  if (item.error) return item;
-  const { readableId, type, companyId } = item.data;
-  if (!companyId) return item;
-  const relatedItems = await client
-    .from("item")
-    .select("id")
-    .eq("readableId", readableId)
-    .eq("type", type)
-    .eq("companyId", companyId);
+      .select("id")
+      .eq("readableId", readableId)
+      .eq("type", type)
+      .eq("companyId", companyId);
 
-  const itemIds = relatedItems.data?.map((item) => item.id) ?? [];
+    const itemIds = relatedItems.data?.map((item) => item.id) ?? [];
 
-  return client
-    .from("methodMaterial")
-    .update({
-      itemId: item.data.id,
-      materialMakeMethodId: makeMethod.data?.id
-    })
-    .in("itemId", itemIds);
-}
-
-export async function updateConfigurationParameterOrder(
-  client: SupabaseClient<Database>,
-  data: Omit<
-    z.infer<typeof configurationParameterOrderValidator>,
-    "configurationParameterGroupId"
-  > & {
-    configurationParameterGroupId?: string | null;
-    updatedBy: string;
+    return client
+      .from("methodMaterial")
+      .update({
+        itemId: item.data.id,
+        materialMakeMethodId: makeMethod.data?.id
+      })
+      .in("itemId", itemIds);
   }
-) {
-  return client
-    .from("configurationParameter")
-    .update(sanitize(data))
-    .eq("id", data.id);
-}
+);
 
-export async function updateItemCost(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  cost: {
-    unitCost: number;
-    updatedBy: string;
-  }
-) {
-  return client
-    .from("itemCost")
-    .update({
-      ...cost,
-      costIsAdjusted: true,
-      updatedAt: today(getLocalTimeZone()).toString()
-    })
-    .eq("itemId", itemId)
-    .single();
-}
-
-export async function updateMaterialOrder(
-  client: SupabaseClient<Database>,
-  updates: {
-    id: string;
-    order: number;
-    updatedBy: string;
-  }[]
-) {
-  const updatePromises = updates.map(({ id, order, updatedBy }) =>
-    client.from("methodMaterial").update({ order, updatedBy }).eq("id", id)
-  );
-  return Promise.all(updatePromises);
-}
-
-export async function updateOperationOrder(
-  client: SupabaseClient<Database>,
-  updates: {
-    id: string;
-    order: number;
-    updatedBy: string;
-  }[]
-) {
-  const updatePromises = updates.map(({ id, order, updatedBy }) =>
-    client.from("methodOperation").update({ order, updatedBy }).eq("id", id)
-  );
-  return Promise.all(updatePromises);
-}
-
-export async function updateRevision(
-  client: SupabaseClient<Database>,
-  revision: {
-    id: string;
-    revision: string;
-    updatedBy: string;
-  }
-) {
-  return client
-    .from("item")
-    .update({
-      ...revision,
-      updatedAt: today(getLocalTimeZone()).toString()
-    })
-    .eq("id", revision.id);
-}
-
-export async function upsertConfigurationParameter(
-  client: SupabaseClient<Database>,
-  configurationParameter: z.infer<typeof configurationParameterValidator> & {
-    companyId: string;
-    userId: string;
-  }
-) {
-  const { userId, ...data } = configurationParameter;
-  if (configurationParameter.id) {
+export const updateConfigurationParameterOrder = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function updateConfigurationParameterOrder(
+    data: Omit<
+      z.infer<typeof configurationParameterOrderValidator>,
+      "configurationParameterGroupId"
+    > & {
+      configurationParameterGroupId?: string | null;
+      updatedBy: string;
+    }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
     return client
       .from("configurationParameter")
-      .update(
-        sanitize({
-          ...data,
-          updatedBy: userId,
-          updatedAt: now(getLocalTimeZone()).toAbsoluteString()
-        })
-      )
-      .eq("id", configurationParameter.id);
+      .update(sanitize(data))
+      .eq("id", data.id);
   }
+);
 
-  let ungroupedGroupId: string | null = null;
-  const existingGroups = await client
-    .from("configurationParameterGroup")
-    .select("id, isUngrouped, sortOrder")
-    .eq("itemId", data.itemId);
+export const updateItemCost = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function updateItemCost(
+    itemId: string,
+    cost: {
+      unitCost: number;
+    }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("itemCost")
+      .update({
+        ...cost,
+        costIsAdjusted: true,
+        updatedAt: today(getLocalTimeZone()).toString()
+      })
+      .eq("itemId", itemId)
+      .single();
+  }
+);
 
-  const ungroupedGroup = existingGroups.data?.find(
-    (group) => group.isUngrouped
-  );
+export const updateMaterialOrder = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function updateMaterialOrder(
+    updates: {
+      id: string;
+      order: number;
+      updatedBy: string;
+    }[]
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const updatePromises = updates.map(({ id, order, updatedBy }) =>
+      client.from("methodMaterial").update({ order, updatedBy }).eq("id", id)
+    );
+    return Promise.all(updatePromises);
+  }
+);
 
-  if (ungroupedGroup) {
-    ungroupedGroupId = ungroupedGroup.id;
-  } else {
+export const updateOperationOrder = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function updateOperationOrder(
+    updates: {
+      id: string;
+      order: number;
+      updatedBy: string;
+    }[]
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const updatePromises = updates.map(({ id, order, updatedBy }) =>
+      client.from("methodOperation").update({ order, updatedBy }).eq("id", id)
+    );
+    return Promise.all(updatePromises);
+  }
+);
+
+export const updateRevision = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function updateRevision(revision: { id: string; revision: string }) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("item")
+      .update({
+        ...revision,
+        updatedAt: today(getLocalTimeZone()).toString()
+      })
+      .eq("id", revision.id);
+  }
+);
+
+export const upsertConfigurationParameter = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertConfigurationParameter(
+    configurationParameter: z.infer<typeof configurationParameterValidator> & {
+      companyId: string;
+      userId: string;
+    }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    const { userId, ...data } = configurationParameter;
+    if (configurationParameter.id) {
+      return client
+        .from("configurationParameter")
+        .update(
+          sanitize({
+            ...data,
+            updatedBy: userId,
+            updatedAt: now(getLocalTimeZone()).toAbsoluteString()
+          })
+        )
+        .eq("id", configurationParameter.id);
+    }
+
+    let ungroupedGroupId: string | null = null;
+    const existingGroups = await client
+      .from("configurationParameterGroup")
+      .select("id, isUngrouped, sortOrder")
+      .eq("itemId", data.itemId);
+
+    const ungroupedGroup = existingGroups.data?.find(
+      (group) => group.isUngrouped
+    );
+
+    if (ungroupedGroup) {
+      ungroupedGroupId = ungroupedGroup.id;
+    } else {
+      const maxSortOrder =
+        existingGroups.data?.reduce(
+          (max, group) => Math.max(max, group.sortOrder ?? 1),
+          1
+        ) ?? 0;
+      const ungroupedGroupInsert = await client
+        .from("configurationParameterGroup")
+        .insert({
+          itemId: data.itemId,
+          name: "Ungrouped",
+          isUngrouped: true,
+          sortOrder: maxSortOrder + 1,
+          companyId: companyId
+        })
+        .select("id")
+        .single();
+      if (ungroupedGroupInsert.error) return ungroupedGroupInsert;
+      ungroupedGroupId = ungroupedGroupInsert.data.id;
+    }
+
+    return client.from("configurationParameter").insert({
+      ...data,
+      key: data.key ?? "",
+      createdBy: userId,
+      configurationParameterGroupId: ungroupedGroupId
+    });
+  }
+);
+
+export const upsertConfigurationParameterGroup = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertConfigurationParameterGroup(
+    configurationParameterGroup: z.infer<
+      typeof configurationParameterGroupValidator
+    > & {
+      companyId: string;
+      itemId: string;
+    }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { itemId, ...data } = configurationParameterGroup;
+    if (configurationParameterGroup.id) {
+      return client
+        .from("configurationParameterGroup")
+        .update({
+          name: data.name
+        })
+        .eq("id", configurationParameterGroup.id);
+    }
+
+    const existingGroups = await client
+      .from("configurationParameterGroup")
+      .select("id, isUngrouped, sortOrder")
+      .eq("itemId", itemId);
+
     const maxSortOrder =
       existingGroups.data?.reduce(
         (max, group) => Math.max(max, group.sortOrder ?? 1),
         1
       ) ?? 0;
-    const ungroupedGroupInsert = await client
-      .from("configurationParameterGroup")
-      .insert({
-        itemId: data.itemId,
-        name: "Ungrouped",
-        isUngrouped: true,
-        sortOrder: maxSortOrder + 1,
-        companyId: data.companyId
-      })
-      .select("id")
-      .single();
-    if (ungroupedGroupInsert.error) return ungroupedGroupInsert;
-    ungroupedGroupId = ungroupedGroupInsert.data.id;
+
+    return client.from("configurationParameterGroup").insert({
+      ...data,
+      itemId,
+      name: data.name,
+      sortOrder: maxSortOrder + 1
+    });
   }
+);
 
-  return client.from("configurationParameter").insert({
-    ...data,
-    key: data.key ?? "",
-    createdBy: userId,
-    configurationParameterGroupId: ungroupedGroupId
-  });
-}
-
-export async function upsertConfigurationParameterGroup(
-  client: SupabaseClient<Database>,
-  configurationParameterGroup: z.infer<
-    typeof configurationParameterGroupValidator
-  > & {
-    companyId: string;
-    itemId: string;
+export const upsertConfigurationRule = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertConfigurationRule(
+    configurationRule: z.infer<typeof configurationRuleValidator> & {
+      itemId: string;
+      companyId: string;
+      updatedBy: string;
+    }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("configurationRule").upsert(configurationRule, {
+      onConflict: "itemId,field"
+    });
   }
-) {
-  const { itemId, ...data } = configurationParameterGroup;
-  if (configurationParameterGroup.id) {
-    return client
-      .from("configurationParameterGroup")
-      .update({
-        name: data.name
-      })
-      .eq("id", configurationParameterGroup.id);
-  }
-
-  const existingGroups = await client
-    .from("configurationParameterGroup")
-    .select("id, isUngrouped, sortOrder")
-    .eq("itemId", itemId);
-
-  const maxSortOrder =
-    existingGroups.data?.reduce(
-      (max, group) => Math.max(max, group.sortOrder ?? 1),
-      1
-    ) ?? 0;
-
-  return client.from("configurationParameterGroup").insert({
-    ...data,
-    itemId,
-    name: data.name,
-    sortOrder: maxSortOrder + 1
-  });
-}
-
-export async function upsertConfigurationRule(
-  client: SupabaseClient<Database>,
-  configurationRule: z.infer<typeof configurationRuleValidator> & {
-    itemId: string;
-    companyId: string;
-    updatedBy: string;
-  }
-) {
-  return client.from("configurationRule").upsert(configurationRule, {
-    onConflict: "itemId,field"
-  });
-}
+);
 
 /**
  * Persist (or clear) the per-item shelf-life policy. Shelf life lives on the
@@ -2068,14 +2447,12 @@ export async function upsertConfigurationRule(
  *     Existing defaultStorageUnit for that location is overwritten with
  *     the new pick.
  */
-export async function upsertItemDefaultPickMethod(
-  client: SupabaseClient<Database>,
-  args: {
-    itemId: string;
-    userId: string;
-    storageUnitId?: string;
-  }
-) {
+export async function upsertItemDefaultPickMethod(args: {
+  itemId: string;
+  storageUnitId?: string;
+}) {
+  const { userId } = AuthContextHolder.get();
+  const client = getAuthClient<SupabaseClient<Database>>();
   if (!args.storageUnitId) {
     return { data: null, error: null };
   }
@@ -2093,8 +2470,8 @@ export async function upsertItemDefaultPickMethod(
       locationId: storageUnit.data.locationId,
       defaultStorageUnitId: args.storageUnitId,
       companyId: storageUnit.data.companyId,
-      createdBy: args.userId,
-      updatedBy: args.userId,
+      createdBy: userId,
+      updatedBy: userId,
       updatedAt: today(getLocalTimeZone()).toString()
     },
     { onConflict: "itemId,locationId" }
@@ -2108,10 +2485,8 @@ export async function upsertItemDefaultPickMethod(
  * process the trigger never matches against (the set-shelf-life helper short-circuits
  * on processId mismatch). Empty array when the item has no active recipe.
  */
-export async function getRecipeProcessIdsForItem(
-  client: SupabaseClient<Database>,
-  itemId: string
-) {
+export async function getRecipeProcessIdsForItem(itemId: string) {
+  const client = getAuthClient<SupabaseClient<Database>>();
   const makeMethod = await client
     .from("activeMakeMethods")
     .select("id")
@@ -2142,10 +2517,8 @@ export async function getRecipeProcessIdsForItem(
  * an error) when the item has no row, since absence = "not managed" and
  * that's a valid state we don't want to treat as an error path.
  */
-export async function getItemShelfLife(
-  client: SupabaseClient<Database>,
-  itemId: string
-) {
+export async function getItemShelfLife(itemId: string) {
+  const client = getAuthClient<SupabaseClient<Database>>();
   return client
     .from("itemShelfLife")
     .select("mode, days, triggerProcessId, triggerTiming, calculateFromBom")
@@ -2165,17 +2538,16 @@ export async function getItemShelfLife(
  * is a UI hint, not a correctness gate.
  */
 export async function getBomHasShelfLifeManagedInput(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string
+  itemId: string
 ): Promise<boolean> {
-  const makeMethods = await getMakeMethods(client, itemId, companyId);
+  const client = getAuthClient<SupabaseClient<Database>>();
+  const makeMethods = await getMakeMethods(itemId);
   if (makeMethods.error || !makeMethods.data?.length) return false;
 
   const active =
     makeMethods.data.find((m) => m.status === "Active") ?? makeMethods.data[0];
 
-  const materials = await getMethodMaterialsByMakeMethod(client, active.id);
+  const materials = await getMethodMaterialsByMakeMethod(active.id);
   const inputItemIds = (materials.data ?? [])
     .map((m) => m.itemId)
     .filter((id): id is string => !!id);
@@ -2193,19 +2565,16 @@ export async function getBomHasShelfLifeManagedInput(
   return !managed.error && (managed.data?.length ?? 0) > 0;
 }
 
-export async function upsertItemShelfLife(
-  client: SupabaseClient<Database>,
-  args: {
-    itemId: string;
-    userId: string;
-    companyId?: string;
-    mode?: (typeof shelfLifeModes)[number];
-    days?: number;
-    triggerProcessId?: string;
-    triggerTiming?: (typeof shelfLifeTriggerTimings)[number];
-    calculateFromBom?: boolean;
-  }
-) {
+export async function upsertItemShelfLife(args: {
+  itemId: string;
+  mode?: (typeof shelfLifeModes)[number];
+  days?: number;
+  triggerProcessId?: string;
+  triggerTiming?: (typeof shelfLifeTriggerTimings)[number];
+  calculateFromBom?: boolean;
+}) {
+  const client = getAuthClient<SupabaseClient<Database>>();
+  const { userId } = AuthContextHolder.get();
   if (args.mode === undefined) {
     return { data: null, error: null };
   }
@@ -2235,7 +2604,7 @@ export async function upsertItemShelfLife(
   // silently never get set. Mirrors the guard inside
   // upsertPickMethodWithShelfLife.
   if (triggerProcessId) {
-    const recipe = await getRecipeProcessIdsForItem(client, args.itemId);
+    const recipe = await getRecipeProcessIdsForItem(args.itemId);
     if (recipe.error) {
       return { data: null, error: recipe.error } as any;
     }
@@ -2270,7 +2639,7 @@ export async function upsertItemShelfLife(
         triggerProcessId,
         triggerTiming,
         calculateFromBom,
-        updatedBy: args.userId,
+        updatedBy: userId,
         updatedAt: new Date().toISOString()
       })
       .eq("itemId", args.itemId);
@@ -2295,7 +2664,7 @@ export async function upsertItemShelfLife(
     triggerTiming,
     calculateFromBom,
     companyId: companyId!,
-    createdBy: args.userId
+    createdBy: userId
   });
 }
 
@@ -2325,6 +2694,7 @@ export async function upsertPickMethodWithShelfLife(
     };
   }
 ) {
+  const { userId } = AuthContextHolder.get();
   const updatedAt = now(getLocalTimeZone()).toAbsoluteString();
 
   return db.transaction().execute(async (trx) => {
@@ -2333,7 +2703,7 @@ export async function upsertPickMethodWithShelfLife(
       .set({
         defaultStorageUnitId: args.defaultStorageUnitId ?? null,
         customFields: args.customFields ?? null,
-        updatedBy: args.userId,
+        updatedBy: userId,
         updatedAt
       })
       .where("itemId", "=", args.itemId)
@@ -2402,7 +2772,7 @@ export async function upsertPickMethodWithShelfLife(
           triggerProcessId: normalizedTriggerProcess,
           triggerTiming: normalizedTriggerTiming,
           calculateFromBom: normalizedCalcFromBom,
-          updatedBy: args.userId,
+          updatedBy: userId,
           updatedAt
         })
         .where("itemId", "=", args.itemId)
@@ -2430,7 +2800,7 @@ export async function upsertPickMethodWithShelfLife(
         triggerTiming: normalizedTriggerTiming,
         calculateFromBom: normalizedCalcFromBom,
         companyId: itemRow.companyId,
-        createdBy: args.userId
+        createdBy: userId
       })
       .execute();
   });
@@ -2454,6 +2824,7 @@ export async function cascadeItemTrackingType(
     userId: string;
   }
 ) {
+  const { companyId, userId } = AuthContextHolder.get();
   if (args.itemIds.length === 0) return;
 
   const requiresSerialTracking = args.newType === ItemTrackingType.Serial;
@@ -2466,11 +2837,11 @@ export async function cascadeItemTrackingType(
       .set({
         requiresSerialTracking,
         requiresBatchTracking,
-        updatedBy: args.userId,
+        updatedBy: userId,
         updatedAt
       })
       .where("itemId", "in", args.itemIds)
-      .where("companyId", "=", args.companyId)
+      .where("companyId", "=", companyId)
       .where((eb) =>
         eb(
           "jobId",
@@ -2478,7 +2849,7 @@ export async function cascadeItemTrackingType(
           eb
             .selectFrom("job")
             .select("id")
-            .where("companyId", "=", args.companyId)
+            .where("companyId", "=", companyId)
             .where("status", "in", ["Draft", "Planned"])
         )
       )
@@ -2489,11 +2860,11 @@ export async function cascadeItemTrackingType(
       .set({
         requiresSerialTracking,
         requiresBatchTracking,
-        updatedBy: args.userId,
+        updatedBy: userId,
         updatedAt
       })
       .where("itemId", "in", args.itemIds)
-      .where("companyId", "=", args.companyId)
+      .where("companyId", "=", companyId)
       .where((eb) =>
         eb(
           "jobId",
@@ -2501,7 +2872,7 @@ export async function cascadeItemTrackingType(
           eb
             .selectFrom("job")
             .select("id")
-            .where("companyId", "=", args.companyId)
+            .where("companyId", "=", companyId)
             .where("status", "in", ["Draft", "Planned"])
         )
       )
@@ -2512,11 +2883,11 @@ export async function cascadeItemTrackingType(
       .set({
         requiresSerialTracking,
         requiresBatchTracking,
-        updatedBy: args.userId,
+        updatedBy: userId,
         updatedAt
       })
       .where("itemId", "in", args.itemIds)
-      .where("companyId", "=", args.companyId)
+      .where("companyId", "=", companyId)
       .where((eb) =>
         eb(
           "receiptId",
@@ -2524,7 +2895,7 @@ export async function cascadeItemTrackingType(
           eb
             .selectFrom("receipt")
             .select("id")
-            .where("companyId", "=", args.companyId)
+            .where("companyId", "=", companyId)
             .where("status", "=", "Draft")
         )
       )
@@ -2535,11 +2906,11 @@ export async function cascadeItemTrackingType(
       .set({
         requiresSerialTracking,
         requiresBatchTracking,
-        updatedBy: args.userId,
+        updatedBy: userId,
         updatedAt
       })
       .where("itemId", "in", args.itemIds)
-      .where("companyId", "=", args.companyId)
+      .where("companyId", "=", companyId)
       .where((eb) =>
         eb(
           "shipmentId",
@@ -2547,7 +2918,7 @@ export async function cascadeItemTrackingType(
           eb
             .selectFrom("shipment")
             .select("id")
-            .where("companyId", "=", args.companyId)
+            .where("companyId", "=", companyId)
             .where("status", "=", "Draft")
         )
       )
@@ -2558,11 +2929,11 @@ export async function cascadeItemTrackingType(
       .set({
         requiresSerialTracking,
         requiresBatchTracking,
-        updatedBy: args.userId,
+        updatedBy: userId,
         updatedAt
       })
       .where("itemId", "in", args.itemIds)
-      .where("companyId", "=", args.companyId)
+      .where("companyId", "=", companyId)
       .where((eb) =>
         eb(
           "stockTransferId",
@@ -2570,7 +2941,7 @@ export async function cascadeItemTrackingType(
           eb
             .selectFrom("stockTransfer")
             .select("id")
-            .where("companyId", "=", args.companyId)
+            .where("companyId", "=", companyId)
             .where("status", "=", "Draft")
         )
       )
@@ -2578,542 +2949,611 @@ export async function cascadeItemTrackingType(
   });
 }
 
-export async function upsertConsumable(
-  client: SupabaseClient<Database>,
-  consumable:
-    | (z.infer<typeof consumableValidator> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (z.infer<typeof consumableValidator> & {
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in consumable) {
-    const itemInsert = await client
-      .from("item")
-      .insert({
-        readableId: consumable.id,
-        name: consumable.name,
-        type: "Consumable",
-        replenishmentSystem: consumable.replenishmentSystem,
-        defaultMethodType: consumable.defaultMethodType,
-        itemTrackingType: consumable.itemTrackingType,
-        unitOfMeasureCode: consumable.unitOfMeasureCode,
-        active: true,
-        companyId: consumable.companyId,
-        createdBy: consumable.createdBy
-      })
-      .select("id")
-      .single();
-    if (itemInsert.error) return itemInsert;
-    const itemId = itemInsert.data?.id;
+export const upsertConsumable = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertConsumable(
+    consumable:
+      | (z.infer<typeof consumableValidator> & {
+          companyId: string;
+          createdBy: string;
+          customFields?: Json;
+        })
+      | (z.infer<typeof consumableValidator> & {
+          updatedBy: string;
+          customFields?: Json;
+        })
+  ) {
+    const { companyId, userId } = AuthContextHolder.get();
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("createdBy" in consumable) {
+      const itemInsert = await client
+        .from("item")
+        .insert({
+          readableId: consumable.id,
+          name: consumable.name,
+          type: "Consumable",
+          replenishmentSystem: consumable.replenishmentSystem,
+          defaultMethodType: consumable.defaultMethodType,
+          itemTrackingType: consumable.itemTrackingType,
+          unitOfMeasureCode: consumable.unitOfMeasureCode,
+          active: true,
+          companyId: companyId,
+          createdBy: userId
+        })
+        .select("id")
+        .single();
+      if (itemInsert.error) return itemInsert;
+      const itemId = itemInsert.data?.id;
 
-    const [consumableInsert, itemCostUpdate] = await Promise.all([
-      client.from("consumable").upsert({
-        id: consumable.id,
-        companyId: consumable.companyId,
-        createdBy: consumable.createdBy,
-        customFields: consumable.customFields
-      }),
-      client
-        .from("itemCost")
-        .update(
-          sanitize({
-            itemPostingGroupId: consumable.postingGroupId,
-            unitCost: consumable.unitCost
-          })
-        )
-        .eq("itemId", itemId)
-    ]);
+      const [consumableInsert, itemCostUpdate] = await Promise.all([
+        client.from("consumable").upsert({
+          id: consumable.id,
+          companyId: companyId,
+          createdBy: userId,
+          customFields: consumable.customFields
+        }),
+        client
+          .from("itemCost")
+          .update(
+            sanitize({
+              itemPostingGroupId: consumable.postingGroupId,
+              unitCost: consumable.unitCost
+            })
+          )
+          .eq("itemId", itemId)
+      ]);
 
-    if (consumableInsert.error) return consumableInsert;
-    if (itemCostUpdate.error) return itemCostUpdate;
+      if (consumableInsert.error) return consumableInsert;
+      if (itemCostUpdate.error) return itemCostUpdate;
 
-    if (itemId) {
-      const pickMethod = await upsertItemDefaultPickMethod(client, {
-        itemId,
-        userId: consumable.createdBy,
-        storageUnitId: consumable.defaultStorageUnitId
-      });
-      if (pickMethod.error) return pickMethod;
+      if (itemId) {
+        const pickMethod = await upsertItemDefaultPickMethod({
+          itemId,
+          userId: userId,
+          storageUnitId: consumable.defaultStorageUnitId
+        });
+        if (pickMethod.error) return pickMethod;
 
-      const shelfLife = await upsertItemShelfLife(client, {
-        itemId,
-        userId: consumable.createdBy,
-        companyId: consumable.companyId,
-        mode: consumable.shelfLifeMode,
-        days: consumable.shelfLifeDays,
-        triggerProcessId: consumable.shelfLifeTriggerProcessId,
-        triggerTiming: consumable.shelfLifeTriggerTiming,
-        calculateFromBom: consumable.shelfLifeCalculateFromBom
-      });
-      if (shelfLife.error) return shelfLife;
-    }
-
-    const newConsumable = await client
-      .from("consumables")
-      .select("id")
-      .eq("readableId", consumable.id)
-      .eq("companyId", consumable.companyId)
-      .single();
-
-    return newConsumable;
-  }
-
-  const itemUpdate = {
-    id: consumable.id,
-    name: consumable.name,
-    description: consumable.description,
-    replenishmentSystem: consumable.replenishmentSystem,
-    defaultMethodType: consumable.defaultMethodType,
-    itemTrackingType: consumable.itemTrackingType,
-    unitOfMeasureCode: consumable.unitOfMeasureCode,
-    active: true
-  };
-
-  const consumableUpdate = {
-    customFields: consumable.customFields
-  };
-
-  const [updateItem, updateConsumable] = await Promise.all([
-    client
-      .from("item")
-      .update({
-        ...sanitize(itemUpdate),
-        updatedAt: today(getLocalTimeZone()).toString()
-      })
-      .eq("id", consumable.id),
-    client
-      .from("consumable")
-      .update({
-        ...sanitize(consumableUpdate),
-        updatedAt: today(getLocalTimeZone()).toString()
-      })
-      .eq("id", consumable.id)
-  ]);
-
-  if (updateItem.error) return updateItem;
-
-  const pickMethod = await upsertItemDefaultPickMethod(client, {
-    itemId: consumable.id,
-    userId: consumable.updatedBy,
-    storageUnitId: consumable.defaultStorageUnitId
-  });
-  if (pickMethod.error) return pickMethod;
-
-  const shelfLife = await upsertItemShelfLife(client, {
-    itemId: consumable.id,
-    userId: consumable.updatedBy,
-    mode: consumable.shelfLifeMode,
-    days: consumable.shelfLifeDays,
-    triggerProcessId: consumable.shelfLifeTriggerProcessId,
-    triggerTiming: consumable.shelfLifeTriggerTiming,
-    calculateFromBom: consumable.shelfLifeCalculateFromBom
-  });
-  if (shelfLife.error) return shelfLife;
-
-  return updateConsumable;
-}
-
-export async function upsertPart(
-  client: SupabaseClient<Database>,
-  part:
-    | (z.infer<typeof partValidator> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (z.infer<typeof partValidator> & {
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in part) {
-    const itemInsert = await client
-      .from("item")
-      .insert({
-        readableId: part.id,
-        revision: part.revision ?? "0",
-        name: part.name,
-        type: "Part",
-        replenishmentSystem: part.replenishmentSystem,
-        defaultMethodType: part.defaultMethodType,
-        itemTrackingType: part.itemTrackingType,
-        unitOfMeasureCode: part.unitOfMeasureCode,
-        active: true,
-        modelUploadId: part.modelUploadId,
-        companyId: part.companyId,
-        createdBy: part.createdBy
-      })
-      .select("id")
-      .single();
-    if (itemInsert.error) return itemInsert;
-    const itemId = itemInsert.data?.id;
-
-    const [partInsert, itemCostUpdate] = await Promise.all([
-      client.from("part").upsert({
-        id: part.id,
-        companyId: part.companyId,
-        createdBy: part.createdBy,
-        customFields: part.customFields
-      }),
-      client
-        .from("itemCost")
-        .update(
-          sanitize({
-            itemPostingGroupId: part.postingGroupId,
-            unitCost:
-              part.replenishmentSystem !== "Make" ? part.unitCost : undefined
-          })
-        )
-        .eq("itemId", itemId)
-    ]);
-
-    if (partInsert.error) return partInsert;
-    if (itemCostUpdate.error) {
-      console.error(itemCostUpdate.error);
-    }
-
-    if (part.replenishmentSystem !== "Buy") {
-      const itemReplenishmentInsert = await client
-        .from("itemReplenishment")
-        .update({ lotSize: part.lotSize })
-        .eq("itemId", itemId);
-
-      if (itemReplenishmentInsert.error) return itemReplenishmentInsert;
-    }
-
-    if (itemId) {
-      const pickMethod = await upsertItemDefaultPickMethod(client, {
-        itemId,
-        userId: part.createdBy,
-        storageUnitId: part.defaultStorageUnitId
-      });
-      if (pickMethod.error) return pickMethod;
-
-      const shelfLife = await upsertItemShelfLife(client, {
-        itemId,
-        userId: part.createdBy,
-        companyId: part.companyId,
-        mode: part.shelfLifeMode,
-        days: part.shelfLifeDays,
-        triggerProcessId: part.shelfLifeTriggerProcessId,
-        triggerTiming: part.shelfLifeTriggerTiming,
-        calculateFromBom: part.shelfLifeCalculateFromBom
-      });
-      if (shelfLife.error) return shelfLife;
-    }
-
-    const newPart = await client
-      .from("parts")
-      .select("id")
-      .eq("readableId", part.id)
-      .eq("companyId", part.companyId)
-      .single();
-
-    return newPart;
-  }
-
-  const itemUpdate = {
-    id: part.id,
-    name: part.name,
-    description: part.description,
-    replenishmentSystem: part.replenishmentSystem,
-    defaultMethodType: part.defaultMethodType,
-    itemTrackingType: part.itemTrackingType,
-    unitOfMeasureCode: part.unitOfMeasureCode,
-    active: true
-  };
-
-  const partUpdate = {
-    customFields: part.customFields
-  };
-
-  const [updateItem, updatePart] = await Promise.all([
-    client
-      .from("item")
-      .update({
-        ...sanitize(itemUpdate),
-        updatedAt: today(getLocalTimeZone()).toString()
-      })
-      .eq("id", part.id),
-    client
-      .from("part")
-      .update({
-        ...sanitize(partUpdate),
-        updatedAt: today(getLocalTimeZone()).toString()
-      })
-      .eq("id", part.id)
-  ]);
-
-  if (updateItem.error) return updateItem;
-
-  const pickMethod = await upsertItemDefaultPickMethod(client, {
-    itemId: part.id,
-    userId: part.updatedBy,
-    storageUnitId: part.defaultStorageUnitId
-  });
-  if (pickMethod.error) return pickMethod;
-
-  const shelfLife = await upsertItemShelfLife(client, {
-    itemId: part.id,
-    userId: part.updatedBy,
-    mode: part.shelfLifeMode,
-    days: part.shelfLifeDays,
-    triggerProcessId: part.shelfLifeTriggerProcessId,
-    triggerTiming: part.shelfLifeTriggerTiming,
-    calculateFromBom: part.shelfLifeCalculateFromBom
-  });
-  if (shelfLife.error) return shelfLife;
-
-  return updatePart;
-}
-
-export async function updateItem(
-  client: SupabaseClient<Database>,
-  item: z.infer<typeof itemValidator> & {
-    companyId: string;
-    type: Database["public"]["Enums"]["itemType"];
-  }
-) {
-  return client
-    .from("item")
-    .update(sanitize(item))
-    .eq("id", item.id)
-    .eq("companyId", item.companyId);
-}
-
-export async function upsertItemCost(
-  client: SupabaseClient<Database>,
-  itemCost: z.infer<typeof itemCostValidator> & {
-    updatedBy: string;
-    customFields?: Json;
-  }
-) {
-  return client
-    .from("itemCost")
-    .update(sanitize(itemCost))
-    .eq("itemId", itemCost.itemId);
-}
-
-export async function upsertPickMethod(
-  client: SupabaseClient<Database>,
-  pickMethod:
-    | (z.infer<typeof pickMethodValidator> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (z.infer<typeof pickMethodValidator> & {
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in pickMethod) {
-    return client.from("pickMethod").upsert(pickMethod, {
-      onConflict: "itemId,locationId"
-    });
-  }
-
-  return client
-    .from("pickMethod")
-    .update(sanitize(pickMethod))
-    .eq("itemId", pickMethod.itemId)
-    .eq("locationId", pickMethod.locationId);
-}
-
-export async function upsertItemManufacturing(
-  client: SupabaseClient<Database>,
-  partManufacturing: z.infer<typeof itemManufacturingValidator> & {
-    updatedBy: string;
-    customFields?: Json;
-  }
-) {
-  return client
-    .from("itemReplenishment")
-    .update(sanitize(partManufacturing))
-    .eq("itemId", partManufacturing.itemId);
-}
-
-export async function upsertItemPlanning(
-  client: SupabaseClient<Database>,
-  partPlanning:
-    | {
-        companyId: string;
-        itemId: string;
-        locationId: string;
-        createdBy: string;
+        const shelfLife = await upsertItemShelfLife({
+          itemId,
+          userId: userId,
+          companyId: companyId,
+          mode: consumable.shelfLifeMode,
+          days: consumable.shelfLifeDays,
+          triggerProcessId: consumable.shelfLifeTriggerProcessId,
+          triggerTiming: consumable.shelfLifeTriggerTiming,
+          calculateFromBom: consumable.shelfLifeCalculateFromBom
+        });
+        if (shelfLife.error) return shelfLife;
       }
-    | (z.infer<typeof itemPlanningValidator> & {
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in partPlanning) {
-    return client.from("itemPlanning").insert(partPlanning);
-  }
-  return client
-    .from("itemPlanning")
-    .update(sanitize(partPlanning))
-    .eq("itemId", partPlanning.itemId)
-    .eq("locationId", partPlanning.locationId);
-}
 
-export async function upsertItemPurchasing(
-  client: SupabaseClient<Database>,
-  itemPurchasing: z.infer<typeof itemPurchasingValidator> & {
-    updatedBy: string;
-  }
-) {
-  return client
-    .from("itemReplenishment")
-    .update(sanitize(itemPurchasing))
-    .eq("itemId", itemPurchasing.itemId);
-}
+      const newConsumable = await client
+        .from("consumables")
+        .select("id")
+        .eq("readableId", consumable.id)
+        .eq("companyId", companyId)
+        .single();
 
-export async function upsertItemPostingGroup(
-  client: SupabaseClient<Database>,
-  itemPostingGroup:
-    | (Omit<z.infer<typeof itemPostingGroupValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof itemPostingGroupValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in itemPostingGroup) {
+      return newConsumable;
+    }
+
+    const itemUpdate = {
+      id: consumable.id,
+      name: consumable.name,
+      description: consumable.description,
+      replenishmentSystem: consumable.replenishmentSystem,
+      defaultMethodType: consumable.defaultMethodType,
+      itemTrackingType: consumable.itemTrackingType,
+      unitOfMeasureCode: consumable.unitOfMeasureCode,
+      active: true
+    };
+
+    const consumableUpdate = {
+      customFields: consumable.customFields
+    };
+
+    const [updateItem, updateConsumable] = await Promise.all([
+      client
+        .from("item")
+        .update({
+          ...sanitize(itemUpdate),
+          updatedAt: today(getLocalTimeZone()).toString()
+        })
+        .eq("id", consumable.id),
+      client
+        .from("consumable")
+        .update({
+          ...sanitize(consumableUpdate),
+          updatedAt: today(getLocalTimeZone()).toString()
+        })
+        .eq("id", consumable.id)
+    ]);
+
+    if (updateItem.error) return updateItem;
+
+    const pickMethod = await upsertItemDefaultPickMethod({
+      itemId: consumable.id,
+      userId: userId,
+      storageUnitId: consumable.defaultStorageUnitId
+    });
+    if (pickMethod.error) return pickMethod;
+
+    const shelfLife = await upsertItemShelfLife({
+      itemId: consumable.id,
+      userId: userId,
+      mode: consumable.shelfLifeMode,
+      days: consumable.shelfLifeDays,
+      triggerProcessId: consumable.shelfLifeTriggerProcessId,
+      triggerTiming: consumable.shelfLifeTriggerTiming,
+      calculateFromBom: consumable.shelfLifeCalculateFromBom
+    });
+    if (shelfLife.error) return shelfLife;
+
+    return updateConsumable;
+  }
+);
+
+export const upsertPart = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertPart(
+    part:
+      | (z.infer<typeof partValidator> & {
+          companyId: string;
+          createdBy: string;
+          customFields?: Json;
+        })
+      | (z.infer<typeof partValidator> & {
+          updatedBy: string;
+          customFields?: Json;
+        })
+  ) {
+    const { companyId, userId } = AuthContextHolder.get();
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("createdBy" in part) {
+      const itemInsert = await client
+        .from("item")
+        .insert({
+          readableId: part.id,
+          revision: part.revision ?? "0",
+          name: part.name,
+          type: "Part",
+          replenishmentSystem: part.replenishmentSystem,
+          defaultMethodType: part.defaultMethodType,
+          itemTrackingType: part.itemTrackingType,
+          unitOfMeasureCode: part.unitOfMeasureCode,
+          active: true,
+          modelUploadId: part.modelUploadId,
+          companyId: companyId,
+          createdBy: userId
+        })
+        .select("id")
+        .single();
+      if (itemInsert.error) return itemInsert;
+      const itemId = itemInsert.data?.id;
+
+      const [partInsert, itemCostUpdate] = await Promise.all([
+        client.from("part").upsert({
+          id: part.id,
+          companyId: companyId,
+          createdBy: userId,
+          customFields: part.customFields
+        }),
+        client
+          .from("itemCost")
+          .update(
+            sanitize({
+              itemPostingGroupId: part.postingGroupId,
+              unitCost:
+                part.replenishmentSystem !== "Make" ? part.unitCost : undefined
+            })
+          )
+          .eq("itemId", itemId)
+      ]);
+
+      if (partInsert.error) return partInsert;
+      if (itemCostUpdate.error) {
+        console.error(itemCostUpdate.error);
+      }
+
+      if (part.replenishmentSystem !== "Buy") {
+        const itemReplenishmentInsert = await client
+          .from("itemReplenishment")
+          .update({ lotSize: part.lotSize })
+          .eq("itemId", itemId);
+
+        if (itemReplenishmentInsert.error) return itemReplenishmentInsert;
+      }
+
+      if (itemId) {
+        const pickMethod = await upsertItemDefaultPickMethod({
+          itemId,
+          userId: userId,
+          storageUnitId: part.defaultStorageUnitId
+        });
+        if (pickMethod.error) return pickMethod;
+
+        const shelfLife = await upsertItemShelfLife({
+          itemId,
+          userId: userId,
+          companyId: companyId,
+          mode: part.shelfLifeMode,
+          days: part.shelfLifeDays,
+          triggerProcessId: part.shelfLifeTriggerProcessId,
+          triggerTiming: part.shelfLifeTriggerTiming,
+          calculateFromBom: part.shelfLifeCalculateFromBom
+        });
+        if (shelfLife.error) return shelfLife;
+      }
+
+      const newPart = await client
+        .from("parts")
+        .select("id")
+        .eq("readableId", part.id)
+        .eq("companyId", companyId)
+        .single();
+
+      return newPart;
+    }
+
+    const itemUpdate = {
+      id: part.id,
+      name: part.name,
+      description: part.description,
+      replenishmentSystem: part.replenishmentSystem,
+      defaultMethodType: part.defaultMethodType,
+      itemTrackingType: part.itemTrackingType,
+      unitOfMeasureCode: part.unitOfMeasureCode,
+      active: true
+    };
+
+    const partUpdate = {
+      customFields: part.customFields
+    };
+
+    const [updateItem, updatePart] = await Promise.all([
+      client
+        .from("item")
+        .update({
+          ...sanitize(itemUpdate),
+          updatedAt: today(getLocalTimeZone()).toString()
+        })
+        .eq("id", part.id),
+      client
+        .from("part")
+        .update({
+          ...sanitize(partUpdate),
+          updatedAt: today(getLocalTimeZone()).toString()
+        })
+        .eq("id", part.id)
+    ]);
+
+    if (updateItem.error) return updateItem;
+
+    const pickMethod = await upsertItemDefaultPickMethod({
+      itemId: part.id,
+      userId: userId,
+      storageUnitId: part.defaultStorageUnitId
+    });
+    if (pickMethod.error) return pickMethod;
+
+    const shelfLife = await upsertItemShelfLife({
+      itemId: part.id,
+      userId: userId,
+      mode: part.shelfLifeMode,
+      days: part.shelfLifeDays,
+      triggerProcessId: part.shelfLifeTriggerProcessId,
+      triggerTiming: part.shelfLifeTriggerTiming,
+      calculateFromBom: part.shelfLifeCalculateFromBom
+    });
+    if (shelfLife.error) return shelfLife;
+
+    return updatePart;
+  }
+);
+
+export const updateItem = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function updateItem(
+    item: z.infer<typeof itemValidator> & {
+      companyId: string;
+      type: Database["public"]["Enums"]["itemType"];
+    }
+  ) {
+    const { companyId } = AuthContextHolder.get();
+    const client = getAuthClient<SupabaseClient<Database>>();
     return client
-      .from("itemPostingGroup")
-      .insert([itemPostingGroup])
-      .select("*")
-      .single();
+      .from("item")
+      .update(sanitize(item))
+      .eq("id", item.id)
+      .eq("companyId", companyId);
   }
-  return (
-    client
-      .from("itemPostingGroup")
-      .update(sanitize(itemPostingGroup))
-      // @ts-ignore
-      .eq("id", itemPostingGroup.id)
-      .select("id")
-      .single()
-  );
-}
+);
 
-export async function upsertSupplierPart(
-  client: SupabaseClient<Database>,
-  supplierPart:
-    | (Omit<z.infer<typeof supplierPartValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof supplierPartValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in supplierPart) {
+export const upsertItemCost = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertItemCost(
+    itemCost: z.infer<typeof itemCostValidator> & {
+      updatedBy: string;
+      customFields?: Json;
+    }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("itemCost")
+      .update(sanitize(itemCost))
+      .eq("itemId", itemCost.itemId);
+  }
+);
+
+export const upsertPickMethod = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertPickMethod(
+    pickMethod:
+      | (z.infer<typeof pickMethodValidator> & {
+          companyId: string;
+          createdBy: string;
+          customFields?: Json;
+        })
+      | (z.infer<typeof pickMethodValidator> & {
+          updatedBy: string;
+          customFields?: Json;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("createdBy" in pickMethod) {
+      return client.from("pickMethod").upsert(pickMethod, {
+        onConflict: "itemId,locationId"
+      });
+    }
+
+    return client
+      .from("pickMethod")
+      .update(sanitize(pickMethod))
+      .eq("itemId", pickMethod.itemId)
+      .eq("locationId", pickMethod.locationId);
+  }
+);
+
+export const upsertItemManufacturing = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertItemManufacturing(
+    partManufacturing: z.infer<typeof itemManufacturingValidator> & {
+      updatedBy: string;
+      customFields?: Json;
+    }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("itemReplenishment")
+      .update(sanitize(partManufacturing))
+      .eq("itemId", partManufacturing.itemId);
+  }
+);
+
+export const upsertItemPlanning = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertItemPlanning(
+    partPlanning:
+      | {
+          companyId: string;
+          itemId: string;
+          locationId: string;
+          createdBy: string;
+        }
+      | (z.infer<typeof itemPlanningValidator> & {
+          updatedBy: string;
+          customFields?: Json;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("createdBy" in partPlanning) {
+      return client.from("itemPlanning").insert(partPlanning);
+    }
+    return client
+      .from("itemPlanning")
+      .update(sanitize(partPlanning))
+      .eq("itemId", partPlanning.itemId)
+      .eq("locationId", partPlanning.locationId);
+  }
+);
+
+export const upsertItemPurchasing = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertItemPurchasing(
+    itemPurchasing: z.infer<typeof itemPurchasingValidator> & {
+      updatedBy: string;
+    }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("itemReplenishment")
+      .update(sanitize(itemPurchasing))
+      .eq("itemId", itemPurchasing.itemId);
+  }
+);
+
+export const upsertItemPostingGroup = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertItemPostingGroup(
+    itemPostingGroup:
+      | (Omit<z.infer<typeof itemPostingGroupValidator>, "id"> & {
+          companyId: string;
+          createdBy: string;
+          customFields?: Json;
+        })
+      | (Omit<z.infer<typeof itemPostingGroupValidator>, "id"> & {
+          id: string;
+          updatedBy: string;
+          customFields?: Json;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("createdBy" in itemPostingGroup) {
+      return client
+        .from("itemPostingGroup")
+        .insert([itemPostingGroup])
+        .select("*")
+        .single();
+    }
+    return (
+      client
+        .from("itemPostingGroup")
+        .update(sanitize(itemPostingGroup))
+        // @ts-ignore
+        .eq("id", itemPostingGroup.id)
+        .select("id")
+        .single()
+    );
+  }
+);
+
+export const upsertSupplierPart = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertSupplierPart(
+    supplierPart:
+      | (Omit<z.infer<typeof supplierPartValidator>, "id"> & {
+          companyId: string;
+          createdBy: string;
+          customFields?: Json;
+        })
+      | (Omit<z.infer<typeof supplierPartValidator>, "id"> & {
+          id: string;
+          updatedBy: string;
+          customFields?: Json;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("createdBy" in supplierPart) {
+      return client
+        .from("supplierPart")
+        .insert([supplierPart])
+        .select("id")
+        .single();
+    }
     return client
       .from("supplierPart")
-      .insert([supplierPart])
+      .update(sanitize(supplierPart))
+      .eq("id", supplierPart.id)
       .select("id")
       .single();
   }
-  return client
-    .from("supplierPart")
-    .update(sanitize(supplierPart))
-    .eq("id", supplierPart.id)
-    .select("id")
-    .single();
-}
+);
 
-export async function upsertItemCustomerPart(
-  client: SupabaseClient<Database>,
-  customerPart:
-    | (Omit<z.infer<typeof customerPartValidator>, "id"> & {
-        companyId: string;
-      })
-    | (Omit<z.infer<typeof customerPartValidator>, "id"> & {
-        id: string;
-      })
-) {
-  if ("id" in customerPart) {
+export const upsertItemCustomerPart = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertItemCustomerPart(
+    customerPart:
+      | (Omit<z.infer<typeof customerPartValidator>, "id"> & {
+          companyId: string;
+        })
+      | (Omit<z.infer<typeof customerPartValidator>, "id"> & {
+          id: string;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("id" in customerPart) {
+      return client
+        .from("customerPartToItem")
+        .update(sanitize(customerPart))
+        .eq("id", customerPart.id)
+        .select("id")
+        .single();
+    }
     return client
       .from("customerPartToItem")
-      .update(sanitize(customerPart))
-      .eq("id", customerPart.id)
+      .insert([customerPart])
       .select("id")
       .single();
   }
-  return client
-    .from("customerPartToItem")
-    .insert([customerPart])
-    .select("id")
-    .single();
-}
+);
 
-export async function upsertItemUnitSalePrice(
-  client: SupabaseClient<Database>,
-  itemUnitSalePrice: z.infer<typeof itemUnitSalePriceValidator> & {
-    updatedBy: string;
-    customFields?: Json;
+export const upsertItemUnitSalePrice = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertItemUnitSalePrice(
+    itemUnitSalePrice: z.infer<typeof itemUnitSalePriceValidator> & {
+      updatedBy: string;
+      customFields?: Json;
+    }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("itemUnitSalePrice")
+      .update(sanitize(itemUnitSalePrice))
+      .eq("itemId", itemUnitSalePrice.itemId);
   }
-) {
-  return client
-    .from("itemUnitSalePrice")
-    .update(sanitize(itemUnitSalePrice))
-    .eq("itemId", itemUnitSalePrice.itemId);
-}
+);
 
-export async function upsertMakeMethodVersion(
-  client: SupabaseClient<Database>,
-  makeMethodVersion: z.infer<typeof makeMethodVersionValidator> & {
-    companyId: string;
-    createdBy: string;
-  }
-) {
-  const currentMakeMethod = await client
-    .from("makeMethod")
-    .select("*")
-    .eq("id", makeMethodVersion.copyFromId)
-    .eq("companyId", makeMethodVersion.companyId)
-    .single();
-
-  if (currentMakeMethod.error) return currentMakeMethod;
-
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { id, version, ...data } = currentMakeMethod.data;
-
-  const insert = await client
-    .from("makeMethod")
-    .insert({
-      ...data,
-      status: "Draft",
-      version: makeMethodVersion.version,
-      createdBy: makeMethodVersion.createdBy
-    })
-    .select("id, ...item(itemId:id, type)")
-    .single();
-
-  if (insert.error) return insert;
-
-  if (makeMethodVersion.activeVersionId) {
-    await client
+export const upsertMakeMethodVersion = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertMakeMethodVersion(
+    makeMethodVersion: z.infer<typeof makeMethodVersionValidator> & {
+      companyId: string;
+      createdBy: string;
+    }
+  ) {
+    const { companyId, userId } = AuthContextHolder.get();
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const currentMakeMethod = await client
       .from("makeMethod")
-      .update({ status: "Active" })
-      .eq("id", makeMethodVersion.activeVersionId);
-  }
+      .select("*")
+      .eq("id", makeMethodVersion.copyFromId)
+      .eq("companyId", companyId)
+      .single();
 
-  return insert;
-}
+    if (currentMakeMethod.error) return currentMakeMethod;
+
+    // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+    const { id, version, ...data } = currentMakeMethod.data;
+
+    const insert = await client
+      .from("makeMethod")
+      .insert({
+        ...data,
+        status: "Draft",
+        version: makeMethodVersion.version,
+        createdBy: userId
+      })
+      .select("id, ...item(itemId:id, type)")
+      .single();
+
+    if (insert.error) return insert;
+
+    if (makeMethodVersion.activeVersionId) {
+      await client
+        .from("makeMethod")
+        .update({ status: "Active" })
+        .eq("id", makeMethodVersion.activeVersionId);
+    }
+
+    return insert;
+  }
+);
 
 /**
  * On BoM material add, seed `methodMaterial.storageUnitIds` with every
@@ -3126,13 +3566,11 @@ export async function upsertMakeMethodVersion(
  * where an item can be stocked across multiple locations, each with its
  * own preferred bin.
  */
-async function resolveMethodMaterialStorageUnitIds(
-  client: SupabaseClient<Database>,
-  args: {
-    itemId?: string | null;
-    current?: Record<string, string>;
-  }
-): Promise<Record<string, string>> {
+async function resolveMethodMaterialStorageUnitIds(args: {
+  itemId?: string | null;
+  current?: Record<string, string>;
+}): Promise<Record<string, string>> {
+  const client = getAuthClient<SupabaseClient<Database>>();
   const current = { ...(args.current ?? {}) };
   if (!args.itemId) return current;
 
@@ -3154,907 +3592,996 @@ async function resolveMethodMaterialStorageUnitIds(
   return current;
 }
 
-export async function upsertMethodMaterial(
-  client: SupabaseClient<Database>,
+export const upsertMethodMaterial = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertMethodMaterial(
+    methodMaterial:
+      | (z.infer<typeof methodMaterialValidator> & {
+          companyId: string;
+          createdBy: string;
+          customFields?: Json;
+        })
+      | (z.infer<typeof methodMaterialValidator> & {
+          id: string;
+          updatedBy: string;
+          customFields?: Json;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    let materialMakeMethodId: string | null = null;
+    if (methodMaterial.methodType === "Make to Order") {
+      const makeMethod = await client
+        .from("activeMakeMethods")
+        .select("id, version")
+        .eq("itemId", methodMaterial.itemId!)
+        .single();
 
-  methodMaterial:
-    | (z.infer<typeof methodMaterialValidator> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (z.infer<typeof methodMaterialValidator> & {
-        id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  let materialMakeMethodId: string | null = null;
-  if (methodMaterial.methodType === "Make to Order") {
-    const makeMethod = await client
-      .from("activeMakeMethods")
-      .select("id, version")
-      .eq("itemId", methodMaterial.itemId!)
-      .single();
+      if (makeMethod.error) return makeMethod;
+      materialMakeMethodId = makeMethod.data?.id;
+    }
 
-    if (makeMethod.error) return makeMethod;
-    materialMakeMethodId = makeMethod.data?.id;
-  }
-
-  if ("createdBy" in methodMaterial) {
-    // Seed storageUnitIds from the child item's default location/storage-unit
-    // if the caller didn't already provide one for that location. Respects
-    // the form value when supplied, adds a sensible default otherwise.
-    const seededStorageUnitIds = await resolveMethodMaterialStorageUnitIds(
-      client,
-      {
+    if ("createdBy" in methodMaterial) {
+      // Seed storageUnitIds from the child item's default location/storage-unit
+      // if the caller didn't already provide one for that location. Respects
+      // the form value when supplied, adds a sensible default otherwise.
+      const seededStorageUnitIds = await resolveMethodMaterialStorageUnitIds({
         itemId: methodMaterial.itemId,
         current: methodMaterial.storageUnitIds as
           | Record<string, string>
           | undefined
-      }
-    );
-    return client
-      .from("methodMaterial")
-      .insert([
-        {
-          ...methodMaterial,
-          itemId: methodMaterial.itemId!,
-          storageUnitIds: seededStorageUnitIds,
-          materialMakeMethodId
-        }
-      ])
-      .select("id")
-      .single();
-  }
-  return client
-    .from("methodMaterial")
-    .update(sanitize({ ...methodMaterial, materialMakeMethodId }))
-    .eq("id", methodMaterial.id)
-    .select("id")
-    .single();
-}
-
-export async function upsertMethodOperation(
-  client: SupabaseClient<Database>,
-
-  methodOperation:
-    | (Omit<z.infer<typeof methodOperationValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (z.infer<typeof methodOperationValidator> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof methodOperationValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in methodOperation) {
-    return client
-      .from("methodOperation")
-      .insert([methodOperation])
-      .select("id")
-      .single();
-  }
-  return client
-    .from("methodOperation")
-    .update(sanitize(methodOperation))
-    .eq("id", methodOperation.id)
-    .select("id")
-    .single();
-}
-
-export async function upsertMethodOperationStep(
-  client: SupabaseClient<Database>,
-  methodOperationStep:
-    | (Omit<z.infer<typeof operationStepValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<
-        z.infer<typeof operationStepValidator>,
-        "id" | "minValue" | "maxValue"
-      > & {
-        id: string;
-        minValue: number | null;
-        maxValue: number | null;
-        updatedBy: string;
-        updatedAt: string;
-      })
-) {
-  if ("createdBy" in methodOperationStep) {
-    return client
-      .from("methodOperationStep")
-      .insert(methodOperationStep)
-      .select("id")
-      .single();
-  }
-
-  return client
-    .from("methodOperationStep")
-    .update(sanitize(methodOperationStep))
-    .eq("id", methodOperationStep.id)
-    .select("id")
-    .single();
-}
-
-export async function upsertMethodOperationParameter(
-  client: SupabaseClient<Database>,
-  methodOperationParameter:
-    | (Omit<z.infer<typeof operationParameterValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof operationParameterValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        updatedAt: string;
-      })
-) {
-  if ("createdBy" in methodOperationParameter) {
-    return client
-      .from("methodOperationParameter")
-      .insert(methodOperationParameter)
-      .select("id")
-      .single();
-  }
-
-  return client
-    .from("methodOperationParameter")
-    .update(sanitize(methodOperationParameter))
-    .eq("id", methodOperationParameter.id)
-    .select("id")
-    .single();
-}
-
-export async function upsertMethodOperationTool(
-  client: SupabaseClient<Database>,
-  methodOperationTool:
-    | (Omit<z.infer<typeof operationToolValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof operationToolValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        updatedAt: string;
-      })
-) {
-  if ("createdBy" in methodOperationTool) {
-    return client
-      .from("methodOperationTool")
-      .insert(methodOperationTool)
-      .select("id")
-      .single();
-  }
-
-  return client
-    .from("methodOperationTool")
-    .update(sanitize(methodOperationTool))
-    .eq("id", methodOperationTool.id)
-    .select("id")
-    .single();
-}
-
-export async function upsertMaterial(
-  client: SupabaseClient<Database>,
-  material:
-    | (z.infer<typeof materialValidator> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-        sizes?: string[];
-      })
-    | (z.infer<typeof materialValidator> & {
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in material) {
-    // Collect every newly-created item id across the sizes / no-sizes
-    // branches so the shelf-life policy can be applied uniformly.
-    const newItemIds: string[] = [];
-
-    if (material.sizes) {
-      const itemInserts = await Promise.all(
-        material.sizes.map((size) =>
-          client
-            .from("item")
-            .insert({
-              readableId: material.id,
-              name: material.name,
-              type: "Material",
-              replenishmentSystem: material.replenishmentSystem,
-              defaultMethodType: material.defaultMethodType,
-              itemTrackingType: material.itemTrackingType,
-              unitOfMeasureCode: material.unitOfMeasureCode,
-              active: true,
-              revision: size,
-              companyId: material.companyId,
-              createdBy: material.createdBy
-            })
-            .select("id")
-            .single()
-        )
-      );
-
-      const hasErrors = itemInserts.some((insert) => insert.error);
-      if (hasErrors) {
-        const firstError = itemInserts.find((insert) => insert.error);
-        return firstError!;
-      }
-      for (const insert of itemInserts) {
-        if (insert.data?.id) newItemIds.push(insert.data.id);
-      }
-      const itemCostUpdate = await Promise.all(
-        itemInserts.map((insert) =>
-          client
-            .from("itemCost")
-            .update(
-              sanitize({
-                itemPostingGroupId: material.postingGroupId,
-                unitCost: material.unitCost
-              })
-            )
-            .eq("itemId", insert.data?.id ?? "")
-        )
-      );
-      if (itemCostUpdate.some((update) => update.error)) {
-        console.error(itemCostUpdate.find((update) => update.error));
-      }
-    } else {
-      const itemInsert = await client
-        .from("item")
-        .insert({
-          readableId: material.id,
-          name: material.name,
-          type: "Material",
-          replenishmentSystem: material.replenishmentSystem,
-          defaultMethodType: material.defaultMethodType,
-          itemTrackingType: material.itemTrackingType,
-          unitOfMeasureCode: material.unitOfMeasureCode,
-          active: true,
-          companyId: material.companyId,
-          createdBy: material.createdBy
-        })
+      });
+      return client
+        .from("methodMaterial")
+        .insert([
+          {
+            ...methodMaterial,
+            itemId: methodMaterial.itemId!,
+            storageUnitIds: seededStorageUnitIds,
+            materialMakeMethodId
+          }
+        ])
         .select("id")
         .single();
-      if (itemInsert.error) return itemInsert;
-      const itemId = itemInsert.data?.id;
-      if (itemId) newItemIds.push(itemId);
-      const itemCostUpdate = await client
-        .from("itemCost")
-        .update(
-          sanitize({
-            itemPostingGroupId: material.postingGroupId,
-            unitCost: material.unitCost
+    }
+    return client
+      .from("methodMaterial")
+      .update(sanitize({ ...methodMaterial, materialMakeMethodId }))
+      .eq("id", methodMaterial.id)
+      .select("id")
+      .single();
+  }
+);
+
+export const upsertMethodOperation = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertMethodOperation(
+    methodOperation:
+      | (Omit<z.infer<typeof methodOperationValidator>, "id"> & {
+          companyId: string;
+          createdBy: string;
+          customFields?: Json;
+        })
+      | (z.infer<typeof methodOperationValidator> & {
+          companyId: string;
+          createdBy: string;
+          customFields?: Json;
+        })
+      | (Omit<z.infer<typeof methodOperationValidator>, "id"> & {
+          id: string;
+          updatedBy: string;
+          customFields?: Json;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("createdBy" in methodOperation) {
+      return client
+        .from("methodOperation")
+        .insert([methodOperation])
+        .select("id")
+        .single();
+    }
+    return client
+      .from("methodOperation")
+      .update(sanitize(methodOperation))
+      .eq("id", methodOperation.id)
+      .select("id")
+      .single();
+  }
+);
+
+export const upsertMethodOperationStep = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertMethodOperationStep(
+    methodOperationStep:
+      | (Omit<z.infer<typeof operationStepValidator>, "id"> & {
+          companyId: string;
+          createdBy: string;
+        })
+      | (Omit<
+          z.infer<typeof operationStepValidator>,
+          "id" | "minValue" | "maxValue"
+        > & {
+          id: string;
+          minValue: number | null;
+          maxValue: number | null;
+          updatedBy: string;
+          updatedAt: string;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("createdBy" in methodOperationStep) {
+      return client
+        .from("methodOperationStep")
+        .insert(methodOperationStep)
+        .select("id")
+        .single();
+    }
+
+    return client
+      .from("methodOperationStep")
+      .update(sanitize(methodOperationStep))
+      .eq("id", methodOperationStep.id)
+      .select("id")
+      .single();
+  }
+);
+
+export const upsertMethodOperationParameter = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertMethodOperationParameter(
+    methodOperationParameter:
+      | (Omit<z.infer<typeof operationParameterValidator>, "id"> & {
+          companyId: string;
+          createdBy: string;
+        })
+      | (Omit<z.infer<typeof operationParameterValidator>, "id"> & {
+          id: string;
+          updatedBy: string;
+          updatedAt: string;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("createdBy" in methodOperationParameter) {
+      return client
+        .from("methodOperationParameter")
+        .insert(methodOperationParameter)
+        .select("id")
+        .single();
+    }
+
+    return client
+      .from("methodOperationParameter")
+      .update(sanitize(methodOperationParameter))
+      .eq("id", methodOperationParameter.id)
+      .select("id")
+      .single();
+  }
+);
+
+export const upsertMethodOperationTool = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertMethodOperationTool(
+    methodOperationTool:
+      | (Omit<z.infer<typeof operationToolValidator>, "id"> & {
+          companyId: string;
+          createdBy: string;
+        })
+      | (Omit<z.infer<typeof operationToolValidator>, "id"> & {
+          id: string;
+          updatedBy: string;
+          updatedAt: string;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("createdBy" in methodOperationTool) {
+      return client
+        .from("methodOperationTool")
+        .insert(methodOperationTool)
+        .select("id")
+        .single();
+    }
+
+    return client
+      .from("methodOperationTool")
+      .update(sanitize(methodOperationTool))
+      .eq("id", methodOperationTool.id)
+      .select("id")
+      .single();
+  }
+);
+
+export const upsertMaterial = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertMaterial(
+    material:
+      | (z.infer<typeof materialValidator> & {
+          companyId: string;
+          createdBy: string;
+          customFields?: Json;
+          sizes?: string[];
+        })
+      | (z.infer<typeof materialValidator> & {
+          updatedBy: string;
+          customFields?: Json;
+        })
+  ) {
+    const { companyId, userId } = AuthContextHolder.get();
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("createdBy" in material) {
+      // Collect every newly-created item id across the sizes / no-sizes
+      // branches so the shelf-life policy can be applied uniformly.
+      const newItemIds: string[] = [];
+
+      if (material.sizes) {
+        const itemInserts = await Promise.all(
+          material.sizes.map((size) =>
+            client
+              .from("item")
+              .insert({
+                readableId: material.id,
+                name: material.name,
+                type: "Material",
+                replenishmentSystem: material.replenishmentSystem,
+                defaultMethodType: material.defaultMethodType,
+                itemTrackingType: material.itemTrackingType,
+                unitOfMeasureCode: material.unitOfMeasureCode,
+                active: true,
+                revision: size,
+                companyId: companyId,
+                createdBy: userId
+              })
+              .select("id")
+              .single()
+          )
+        );
+
+        const hasErrors = itemInserts.some((insert) => insert.error);
+        if (hasErrors) {
+          const firstError = itemInserts.find((insert) => insert.error);
+          return firstError!;
+        }
+        for (const insert of itemInserts) {
+          if (insert.data?.id) newItemIds.push(insert.data.id);
+        }
+        const itemCostUpdate = await Promise.all(
+          itemInserts.map((insert) =>
+            client
+              .from("itemCost")
+              .update(
+                sanitize({
+                  itemPostingGroupId: material.postingGroupId,
+                  unitCost: material.unitCost
+                })
+              )
+              .eq("itemId", insert.data?.id ?? "")
+          )
+        );
+        if (itemCostUpdate.some((update) => update.error)) {
+          console.error(itemCostUpdate.find((update) => update.error));
+        }
+      } else {
+        const itemInsert = await client
+          .from("item")
+          .insert({
+            readableId: material.id,
+            name: material.name,
+            type: "Material",
+            replenishmentSystem: material.replenishmentSystem,
+            defaultMethodType: material.defaultMethodType,
+            itemTrackingType: material.itemTrackingType,
+            unitOfMeasureCode: material.unitOfMeasureCode,
+            active: true,
+            companyId: companyId,
+            createdBy: userId
           })
-        )
-        .eq("itemId", itemId);
-      if (itemCostUpdate.error) {
-        console.error(itemCostUpdate.error);
+          .select("id")
+          .single();
+        if (itemInsert.error) return itemInsert;
+        const itemId = itemInsert.data?.id;
+        if (itemId) newItemIds.push(itemId);
+        const itemCostUpdate = await client
+          .from("itemCost")
+          .update(
+            sanitize({
+              itemPostingGroupId: material.postingGroupId,
+              unitCost: material.unitCost
+            })
+          )
+          .eq("itemId", itemId);
+        if (itemCostUpdate.error) {
+          console.error(itemCostUpdate.error);
+        }
       }
+
+      for (const itemId of newItemIds) {
+        const pickMethod = await upsertItemDefaultPickMethod({
+          itemId,
+          userId: userId,
+          storageUnitId: material.defaultStorageUnitId
+        });
+        if (pickMethod.error) return pickMethod;
+
+        const shelfLife = await upsertItemShelfLife({
+          itemId,
+          userId: userId,
+          companyId: companyId,
+          mode: material.shelfLifeMode,
+          days: material.shelfLifeDays,
+          triggerProcessId: material.shelfLifeTriggerProcessId,
+          triggerTiming: material.shelfLifeTriggerTiming,
+          calculateFromBom: material.shelfLifeCalculateFromBom
+        });
+        if (shelfLife.error) return shelfLife;
+      }
+
+      const materialInsert = await client.from("material").upsert({
+        id: material.id,
+        materialFormId: material.materialFormId,
+        materialSubstanceId: material.materialSubstanceId,
+        finishId: material.finishId,
+        gradeId: material.gradeId,
+        dimensionId: material.dimensionId,
+        materialTypeId: material.materialTypeId,
+        companyId: companyId,
+        createdBy: userId,
+        customFields: material.customFields
+      });
+
+      if (materialInsert.error) return materialInsert;
+
+      const newMaterial = await client
+        .from("materials")
+        .select("*")
+        .eq("readableId", material.id)
+        .eq("companyId", companyId);
+
+      return {
+        data: newMaterial.data?.[0] ?? null,
+        error: newMaterial.error
+      };
     }
 
-    for (const itemId of newItemIds) {
-      const pickMethod = await upsertItemDefaultPickMethod(client, {
-        itemId,
-        userId: material.createdBy,
-        storageUnitId: material.defaultStorageUnitId
-      });
-      if (pickMethod.error) return pickMethod;
-
-      const shelfLife = await upsertItemShelfLife(client, {
-        itemId,
-        userId: material.createdBy,
-        companyId: material.companyId,
-        mode: material.shelfLifeMode,
-        days: material.shelfLifeDays,
-        triggerProcessId: material.shelfLifeTriggerProcessId,
-        triggerTiming: material.shelfLifeTriggerTiming,
-        calculateFromBom: material.shelfLifeCalculateFromBom
-      });
-      if (shelfLife.error) return shelfLife;
-    }
-
-    const materialInsert = await client.from("material").upsert({
+    const itemUpdate = {
       id: material.id,
+      name: material.name,
+      description: material.description,
+      replenishmentSystem: material.replenishmentSystem,
+      defaultMethodType: material.defaultMethodType,
+      itemTrackingType: material.itemTrackingType,
+      unitOfMeasureCode: material.unitOfMeasureCode,
+      active: true
+    };
+
+    const materialUpdate = {
       materialFormId: material.materialFormId,
       materialSubstanceId: material.materialSubstanceId,
       finishId: material.finishId,
       gradeId: material.gradeId,
       dimensionId: material.dimensionId,
       materialTypeId: material.materialTypeId,
-      companyId: material.companyId,
-      createdBy: material.createdBy,
       customFields: material.customFields
-    });
-
-    if (materialInsert.error) return materialInsert;
-
-    const newMaterial = await client
-      .from("materials")
-      .select("*")
-      .eq("readableId", material.id)
-      .eq("companyId", material.companyId);
-
-    return {
-      data: newMaterial.data?.[0] ?? null,
-      error: newMaterial.error
     };
-  }
 
-  const itemUpdate = {
-    id: material.id,
-    name: material.name,
-    description: material.description,
-    replenishmentSystem: material.replenishmentSystem,
-    defaultMethodType: material.defaultMethodType,
-    itemTrackingType: material.itemTrackingType,
-    unitOfMeasureCode: material.unitOfMeasureCode,
-    active: true
-  };
-
-  const materialUpdate = {
-    materialFormId: material.materialFormId,
-    materialSubstanceId: material.materialSubstanceId,
-    finishId: material.finishId,
-    gradeId: material.gradeId,
-    dimensionId: material.dimensionId,
-    materialTypeId: material.materialTypeId,
-    customFields: material.customFields
-  };
-
-  const [updateItem, updateMaterial] = await Promise.all([
-    client
-      .from("item")
-      .update({
-        ...sanitize(itemUpdate),
-        updatedAt: today(getLocalTimeZone()).toString()
-      })
-      .eq("id", material.id),
-    client
-      .from("material")
-      .update({
-        ...sanitize(materialUpdate),
-        updatedAt: today(getLocalTimeZone()).toString()
-      })
-      .eq("id", material.id)
-  ]);
-
-  if (updateItem.error) return updateItem;
-
-  const pickMethod = await upsertItemDefaultPickMethod(client, {
-    itemId: material.id,
-    userId: material.updatedBy,
-    storageUnitId: material.defaultStorageUnitId
-  });
-  if (pickMethod.error) return pickMethod;
-
-  const shelfLife = await upsertItemShelfLife(client, {
-    itemId: material.id,
-    userId: material.updatedBy,
-    mode: material.shelfLifeMode,
-    days: material.shelfLifeDays,
-    triggerProcessId: material.shelfLifeTriggerProcessId,
-    triggerTiming: material.shelfLifeTriggerTiming,
-    calculateFromBom: material.shelfLifeCalculateFromBom
-  });
-  if (shelfLife.error) return shelfLife;
-
-  return updateMaterial;
-}
-
-export async function upsertMaterialDimension(
-  client: SupabaseClient<Database>,
-  materialDimension:
-    | (Omit<z.infer<typeof materialDimensionValidator>, "id"> & {
-        companyId: string;
-        isMetric: boolean;
-      })
-    | (Omit<z.infer<typeof materialDimensionValidator>, "id"> & {
-        id: string;
-      })
-) {
-  if ("id" in materialDimension) {
-    return (
+    const [updateItem, updateMaterial] = await Promise.all([
       client
-        .from("materialDimension")
-        .update(sanitize(materialDimension))
-        // @ts-ignore
-        .eq("id", materialDimension.id)
-        .select("id")
-        .single()
-    );
-  }
-
-  return client
-    .from("materialDimension")
-    .insert([materialDimension])
-    .select("*")
-    .single();
-}
-
-export async function upsertMaterialFinish(
-  client: SupabaseClient<Database>,
-  materialFinish:
-    | (Omit<z.infer<typeof materialFinishValidator>, "id"> & {
-        companyId: string;
-      })
-    | (Omit<z.infer<typeof materialFinishValidator>, "id"> & {
-        id: string;
-      })
-) {
-  if ("id" in materialFinish) {
-    return (
+        .from("item")
+        .update({
+          ...sanitize(itemUpdate),
+          updatedAt: today(getLocalTimeZone()).toString()
+        })
+        .eq("id", material.id),
       client
-        .from("materialFinish")
-        .update(sanitize(materialFinish))
-        // @ts-ignore
-        .eq("id", materialFinish.id)
-        .select("id")
-        .single()
-    );
-  }
-  return client
-    .from("materialFinish")
-    .insert([materialFinish])
-    .select("*")
-    .single();
-}
-
-export async function upsertMaterialForm(
-  client: SupabaseClient<Database>,
-  materialForm:
-    | (Omit<z.infer<typeof materialFormValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof materialFormValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in materialForm) {
-    return client
-      .from("materialForm")
-      .insert([materialForm])
-      .select("*")
-      .single();
-  }
-  return (
-    client
-      .from("materialForm")
-      .update(sanitize(materialForm))
-      // @ts-ignore
-      .eq("id", materialForm.id)
-      .select("id")
-      .single()
-  );
-}
-
-export async function upsertMaterialGrade(
-  client: SupabaseClient<Database>,
-  materialGrade:
-    | (Omit<z.infer<typeof materialGradeValidator>, "id"> & {
-        companyId: string;
-      })
-    | (Omit<z.infer<typeof materialGradeValidator>, "id"> & {
-        id: string;
-      })
-) {
-  if ("id" in materialGrade) {
-    return (
-      client
-        .from("materialGrade")
-        .update(sanitize(materialGrade))
-        // @ts-ignore
-        .eq("id", materialGrade.id)
-        .select("id")
-        .single()
-    );
-  }
-  return client
-    .from("materialGrade")
-    .insert([materialGrade])
-    .select("*")
-    .single();
-}
-
-export async function deleteMaterialType(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("materialType").delete().eq("id", id);
-}
-
-export async function getMaterialTypes(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args?: GenericQueryFilters & { search: string | null }
-) {
-  let query = client
-    .from("materialTypes")
-    .select("*", { count: "exact" })
-    .or(`companyId.eq.${companyId},companyId.is.null`);
-
-  if (args?.search) {
-    query = query.ilike("name", `%${args.search}%`);
-  }
-
-  query = setGenericQueryFilters(query, args ?? {});
-  return query;
-}
-
-export async function getMaterialType(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("materialType").select("*").eq("id", id).single();
-}
-
-export async function getMaterialTypeList(
-  client: SupabaseClient<Database>,
-  materialSubstanceId: string,
-  materialFormId: string,
-  companyId: string
-) {
-  return client
-    .from("materialType")
-    .select("*")
-    .eq("materialSubstanceId", materialSubstanceId)
-    .eq("materialFormId", materialFormId)
-    .or(`companyId.eq.${companyId},companyId.is.null`);
-}
-
-export async function upsertMaterialType(
-  client: SupabaseClient<Database>,
-  materialType:
-    | (Omit<z.infer<typeof materialTypeValidator>, "id"> & {
-        companyId: string;
-      })
-    | (Omit<z.infer<typeof materialTypeValidator>, "id"> & {
-        id: string;
-      })
-) {
-  if ("id" in materialType) {
-    return (
-      client
-        .from("materialType")
-        .update(sanitize(materialType))
-        // @ts-ignore
-        .eq("id", materialType.id)
-        .select("id")
-        .single()
-    );
-  }
-  return client
-    .from("materialType")
-    .insert([materialType])
-    .select("*")
-    .single();
-}
-
-export async function upsertMaterialSubstance(
-  client: SupabaseClient<Database>,
-  materialSubstance:
-    | (Omit<z.infer<typeof materialSubstanceValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof materialSubstanceValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in materialSubstance) {
-    return client
-      .from("materialSubstance")
-      .insert([materialSubstance])
-      .select("*")
-      .single();
-  }
-  return (
-    client
-      .from("materialSubstance")
-      .update(sanitize(materialSubstance))
-      // @ts-ignore
-      .eq("id", materialSubstance.id)
-      .select("id")
-      .single()
-  );
-}
-
-export async function upsertService(
-  client: SupabaseClient<Database>,
-  service:
-    | (z.infer<typeof serviceValidator> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof serviceValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in service) {
-    const itemInsert = await client
-      .from("item")
-      .insert({
-        readableId: service.id,
-        name: service.name,
-        type: "Service",
-        replenishmentSystem:
-          service.serviceType === "External" ? "Buy" : "Make",
-        defaultMethodType:
-          service.serviceType === "External"
-            ? "Purchase to Order"
-            : "Make to Order",
-        itemTrackingType: service.itemTrackingType,
-        unitOfMeasureCode: "EA",
-        active: true,
-        companyId: service.companyId,
-        createdBy: service.createdBy
-      })
-      .select("id")
-      .single();
-    if (itemInsert.error) return itemInsert;
-    const itemId = itemInsert.data?.id;
-
-    const serviceInsert = await client
-      .from("service")
-      .insert({
-        id: service.id,
-        serviceType: service.serviceType,
-        companyId: service.companyId,
-        createdBy: service.createdBy,
-        customFields: service.customFields
-      })
-      .select("*")
-      .single();
-
-    if (serviceInsert.error) return serviceInsert;
-
-    const costUpdate = await client
-      .from("itemCost")
-      .update({ unitCost: service.unitCost })
-      .eq("itemId", itemId)
-      .select("*")
-      .single();
-
-    if (costUpdate.error) return costUpdate;
-
-    const newService = await client
-      .from("service")
-      .select("*")
-      .eq("readableId", service.id)
-      .single();
-
-    return newService;
-  }
-  const itemUpdate = {
-    id: service.id,
-    name: service.name,
-    description: service.description,
-    replenishmentSystem:
-      service.serviceType === "External" ? "Buy" : ("Make" as "Buy"),
-    defaultMethodType:
-      service.serviceType === "External"
-        ? "Purchase to Order"
-        : ("Make to Order" as "Purchase to Order"),
-    itemTrackingType: service.itemTrackingType,
-    unitOfMeasureCode: null,
-    active: true
-  };
-
-  const serviceUpdate = {
-    serviceType: service.serviceType
-  };
-
-  const [updateItem, updateService] = await Promise.all([
-    client
-      .from("item")
-      .update({
-        ...sanitize(itemUpdate),
-        updatedAt: today(getLocalTimeZone()).toString()
-      })
-      .eq("id", service.id),
-    client
-      .from("service")
-      .update({
-        ...sanitize(serviceUpdate),
-        updatedAt: today(getLocalTimeZone()).toString()
-      })
-      .eq("itemId", service.id)
-  ]);
-
-  if (updateItem.error) return updateItem;
-  return updateService;
-}
-
-export async function upsertUnitOfMeasure(
-  client: SupabaseClient<Database>,
-  unitOfMeasure:
-    | (Omit<z.infer<typeof unitOfMeasureValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof unitOfMeasureValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("id" in unitOfMeasure) {
-    return client
-      .from("unitOfMeasure")
-      .update(sanitize(unitOfMeasure))
-      .eq("id", unitOfMeasure.id)
-      .select("id")
-      .single();
-  }
-
-  return client
-    .from("unitOfMeasure")
-    .insert([unitOfMeasure])
-    .select("id")
-    .single();
-}
-
-export async function upsertTool(
-  client: SupabaseClient<Database>,
-  tool:
-    | (z.infer<typeof toolValidator> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (z.infer<typeof toolValidator> & {
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in tool) {
-    const itemInsert = await client
-      .from("item")
-      .insert({
-        readableId: tool.id,
-        revision: tool.revision ?? "0",
-        name: tool.name,
-        type: "Tool",
-        replenishmentSystem: tool.replenishmentSystem,
-        defaultMethodType: tool.defaultMethodType,
-        itemTrackingType: tool.itemTrackingType,
-        unitOfMeasureCode: tool.unitOfMeasureCode,
-        active: true,
-        modelUploadId: tool.modelUploadId,
-        companyId: tool.companyId,
-        createdBy: tool.createdBy
-      })
-      .select("id")
-      .single();
-    if (itemInsert.error) return itemInsert;
-    const itemId = itemInsert.data?.id;
-
-    const [toolInsert, itemCostUpdate] = await Promise.all([
-      client.from("tool").upsert({
-        id: tool.id,
-        companyId: tool.companyId,
-        createdBy: tool.createdBy,
-        customFields: tool.customFields
-      }),
-      client
-        .from("itemCost")
-        .update(
-          sanitize({
-            itemPostingGroupId: tool.postingGroupId,
-            unitCost: tool.unitCost
-          })
-        )
-        .eq("itemId", itemId)
+        .from("material")
+        .update({
+          ...sanitize(materialUpdate),
+          updatedAt: today(getLocalTimeZone()).toString()
+        })
+        .eq("id", material.id)
     ]);
 
-    if (toolInsert.error) return toolInsert;
-    if (itemCostUpdate.error) return itemCostUpdate;
+    if (updateItem.error) return updateItem;
 
-    if (itemId) {
-      const pickMethod = await upsertItemDefaultPickMethod(client, {
-        itemId,
-        userId: tool.createdBy,
-        storageUnitId: tool.defaultStorageUnitId
-      });
-      if (pickMethod.error) return pickMethod;
+    const pickMethod = await upsertItemDefaultPickMethod({
+      itemId: material.id,
+      userId: userId,
+      storageUnitId: material.defaultStorageUnitId
+    });
+    if (pickMethod.error) return pickMethod;
 
-      const shelfLife = await upsertItemShelfLife(client, {
-        itemId,
-        userId: tool.createdBy,
-        companyId: tool.companyId,
-        mode: tool.shelfLifeMode,
-        days: tool.shelfLifeDays,
-        triggerProcessId: tool.shelfLifeTriggerProcessId,
-        triggerTiming: tool.shelfLifeTriggerTiming,
-        calculateFromBom: tool.shelfLifeCalculateFromBom
-      });
-      if (shelfLife.error) return shelfLife;
+    const shelfLife = await upsertItemShelfLife({
+      itemId: material.id,
+      userId: userId,
+      mode: material.shelfLifeMode,
+      days: material.shelfLifeDays,
+      triggerProcessId: material.shelfLifeTriggerProcessId,
+      triggerTiming: material.shelfLifeTriggerTiming,
+      calculateFromBom: material.shelfLifeCalculateFromBom
+    });
+    if (shelfLife.error) return shelfLife;
+
+    return updateMaterial;
+  }
+);
+
+export const upsertMaterialDimension = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertMaterialDimension(
+    materialDimension:
+      | (Omit<z.infer<typeof materialDimensionValidator>, "id"> & {
+          companyId: string;
+          isMetric: boolean;
+        })
+      | (Omit<z.infer<typeof materialDimensionValidator>, "id"> & {
+          id: string;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("id" in materialDimension) {
+      return (
+        client
+          .from("materialDimension")
+          .update(sanitize(materialDimension))
+          // @ts-ignore
+          .eq("id", materialDimension.id)
+          .select("id")
+          .single()
+      );
     }
 
-    const newTool = await client
-      .from("tools")
+    return client
+      .from("materialDimension")
+      .insert([materialDimension])
       .select("*")
-      .eq("readableId", tool.id)
-      .eq("companyId", tool.companyId)
       .single();
-
-    return newTool;
   }
+);
 
-  const itemUpdate = {
-    id: tool.id,
-    name: tool.name,
-    description: tool.description,
-    replenishmentSystem: tool.replenishmentSystem,
-    defaultMethodType: tool.defaultMethodType,
-    itemTrackingType: tool.itemTrackingType,
-    unitOfMeasureCode: tool.unitOfMeasureCode,
-    active: true
-  };
+export const upsertMaterialFinish = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertMaterialFinish(
+    materialFinish:
+      | (Omit<z.infer<typeof materialFinishValidator>, "id"> & {
+          companyId: string;
+        })
+      | (Omit<z.infer<typeof materialFinishValidator>, "id"> & {
+          id: string;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("id" in materialFinish) {
+      return (
+        client
+          .from("materialFinish")
+          .update(sanitize(materialFinish))
+          // @ts-ignore
+          .eq("id", materialFinish.id)
+          .select("id")
+          .single()
+      );
+    }
+    return client
+      .from("materialFinish")
+      .insert([materialFinish])
+      .select("*")
+      .single();
+  }
+);
 
-  const toolUpdate = {
-    customFields: tool.customFields
-  };
+export const upsertMaterialForm = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertMaterialForm(
+    materialForm:
+      | (Omit<z.infer<typeof materialFormValidator>, "id"> & {
+          companyId: string;
+          createdBy: string;
+          customFields?: Json;
+        })
+      | (Omit<z.infer<typeof materialFormValidator>, "id"> & {
+          id: string;
+          updatedBy: string;
+          customFields?: Json;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("createdBy" in materialForm) {
+      return client
+        .from("materialForm")
+        .insert([materialForm])
+        .select("*")
+        .single();
+    }
+    return (
+      client
+        .from("materialForm")
+        .update(sanitize(materialForm))
+        // @ts-ignore
+        .eq("id", materialForm.id)
+        .select("id")
+        .single()
+    );
+  }
+);
 
-  const [updateItem, updateTool] = await Promise.all([
-    client
-      .from("item")
-      .update({
-        ...sanitize(itemUpdate),
-        updatedAt: today(getLocalTimeZone()).toString()
-      })
-      .eq("id", tool.id),
-    client
-      .from("tool")
-      .update({
-        ...sanitize(toolUpdate),
-        updatedAt: today(getLocalTimeZone()).toString()
-      })
-      .eq("id", tool.id)
-  ]);
+export const upsertMaterialGrade = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertMaterialGrade(
+    materialGrade:
+      | (Omit<z.infer<typeof materialGradeValidator>, "id"> & {
+          companyId: string;
+        })
+      | (Omit<z.infer<typeof materialGradeValidator>, "id"> & {
+          id: string;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("id" in materialGrade) {
+      return (
+        client
+          .from("materialGrade")
+          .update(sanitize(materialGrade))
+          // @ts-ignore
+          .eq("id", materialGrade.id)
+          .select("id")
+          .single()
+      );
+    }
+    return client
+      .from("materialGrade")
+      .insert([materialGrade])
+      .select("*")
+      .single();
+  }
+);
 
-  if (updateItem.error) return updateItem;
+export const deleteMaterialType = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteMaterialType(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("materialType").delete().eq("id", id);
+  }
+);
 
-  const pickMethod = await upsertItemDefaultPickMethod(client, {
-    itemId: tool.id,
-    userId: tool.updatedBy,
-    storageUnitId: tool.defaultStorageUnitId
-  });
-  if (pickMethod.error) return pickMethod;
+export const getMaterialTypes = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getMaterialTypes(
+    args?: GenericQueryFilters & { search: string | null }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    let query = client
+      .from("materialTypes")
+      .select("*", { count: "exact" })
+      .or(`companyId.eq.${companyId},companyId.is.null`);
 
-  const shelfLife = await upsertItemShelfLife(client, {
-    itemId: tool.id,
-    userId: tool.updatedBy,
-    mode: tool.shelfLifeMode,
-    days: tool.shelfLifeDays,
-    triggerProcessId: tool.shelfLifeTriggerProcessId,
-    triggerTiming: tool.shelfLifeTriggerTiming,
-    calculateFromBom: tool.shelfLifeCalculateFromBom
-  });
-  if (shelfLife.error) return shelfLife;
+    if (args?.search) {
+      query = query.ilike("name", `%${args.search}%`);
+    }
 
-  return updateTool;
-}
+    query = setGenericQueryFilters(query, args ?? {});
+    return query;
+  }
+);
+
+export const getMaterialType = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getMaterialType(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("materialType").select("*").eq("id", id).single();
+  }
+);
+
+export const getMaterialTypeList = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getMaterialTypeList(
+    materialSubstanceId: string,
+    materialFormId: string
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("materialType")
+      .select("*")
+      .eq("materialSubstanceId", materialSubstanceId)
+      .eq("materialFormId", materialFormId)
+      .or(`companyId.eq.${companyId},companyId.is.null`);
+  }
+);
+
+export const upsertMaterialType = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertMaterialType(
+    materialType:
+      | (Omit<z.infer<typeof materialTypeValidator>, "id"> & {
+          companyId: string;
+        })
+      | (Omit<z.infer<typeof materialTypeValidator>, "id"> & {
+          id: string;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("id" in materialType) {
+      return (
+        client
+          .from("materialType")
+          .update(sanitize(materialType))
+          // @ts-ignore
+          .eq("id", materialType.id)
+          .select("id")
+          .single()
+      );
+    }
+    return client
+      .from("materialType")
+      .insert([materialType])
+      .select("*")
+      .single();
+  }
+);
+
+export const upsertMaterialSubstance = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertMaterialSubstance(
+    materialSubstance:
+      | (Omit<z.infer<typeof materialSubstanceValidator>, "id"> & {
+          companyId: string;
+          createdBy: string;
+          customFields?: Json;
+        })
+      | (Omit<z.infer<typeof materialSubstanceValidator>, "id"> & {
+          id: string;
+          updatedBy: string;
+          customFields?: Json;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("createdBy" in materialSubstance) {
+      return client
+        .from("materialSubstance")
+        .insert([materialSubstance])
+        .select("*")
+        .single();
+    }
+    return (
+      client
+        .from("materialSubstance")
+        .update(sanitize(materialSubstance))
+        // @ts-ignore
+        .eq("id", materialSubstance.id)
+        .select("id")
+        .single()
+    );
+  }
+);
+
+export const upsertService = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertService(
+    service:
+      | (z.infer<typeof serviceValidator> & {
+          companyId: string;
+          createdBy: string;
+          customFields?: Json;
+        })
+      | (Omit<z.infer<typeof serviceValidator>, "id"> & {
+          id: string;
+          updatedBy: string;
+          customFields?: Json;
+        })
+  ) {
+    const { companyId, userId } = AuthContextHolder.get();
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("createdBy" in service) {
+      const itemInsert = await client
+        .from("item")
+        .insert({
+          readableId: service.id,
+          name: service.name,
+          type: "Service",
+          replenishmentSystem:
+            service.serviceType === "External" ? "Buy" : "Make",
+          defaultMethodType:
+            service.serviceType === "External"
+              ? "Purchase to Order"
+              : "Make to Order",
+          itemTrackingType: service.itemTrackingType,
+          unitOfMeasureCode: "EA",
+          active: true,
+          companyId: companyId,
+          createdBy: userId
+        })
+        .select("id")
+        .single();
+      if (itemInsert.error) return itemInsert;
+      const itemId = itemInsert.data?.id;
+
+      const serviceInsert = await client
+        .from("service")
+        .insert({
+          id: service.id,
+          serviceType: service.serviceType,
+          companyId: companyId,
+          createdBy: userId,
+          customFields: service.customFields
+        })
+        .select("*")
+        .single();
+
+      if (serviceInsert.error) return serviceInsert;
+
+      const costUpdate = await client
+        .from("itemCost")
+        .update({ unitCost: service.unitCost })
+        .eq("itemId", itemId)
+        .select("*")
+        .single();
+
+      if (costUpdate.error) return costUpdate;
+
+      const newService = await client
+        .from("service")
+        .select("*")
+        .eq("readableId", service.id)
+        .single();
+
+      return newService;
+    }
+    const itemUpdate = {
+      id: service.id,
+      name: service.name,
+      description: service.description,
+      replenishmentSystem:
+        service.serviceType === "External" ? "Buy" : ("Make" as "Buy"),
+      defaultMethodType:
+        service.serviceType === "External"
+          ? "Purchase to Order"
+          : ("Make to Order" as "Purchase to Order"),
+      itemTrackingType: service.itemTrackingType,
+      unitOfMeasureCode: null,
+      active: true
+    };
+
+    const serviceUpdate = {
+      serviceType: service.serviceType
+    };
+
+    const [updateItem, updateService] = await Promise.all([
+      client
+        .from("item")
+        .update({
+          ...sanitize(itemUpdate),
+          updatedAt: today(getLocalTimeZone()).toString()
+        })
+        .eq("id", service.id),
+      client
+        .from("service")
+        .update({
+          ...sanitize(serviceUpdate),
+          updatedAt: today(getLocalTimeZone()).toString()
+        })
+        .eq("itemId", service.id)
+    ]);
+
+    if (updateItem.error) return updateItem;
+    return updateService;
+  }
+);
+
+export const upsertUnitOfMeasure = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertUnitOfMeasure(
+    unitOfMeasure:
+      | (Omit<z.infer<typeof unitOfMeasureValidator>, "id"> & {
+          companyId: string;
+          createdBy: string;
+          customFields?: Json;
+        })
+      | (Omit<z.infer<typeof unitOfMeasureValidator>, "id"> & {
+          id: string;
+          updatedBy: string;
+          customFields?: Json;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("id" in unitOfMeasure) {
+      return client
+        .from("unitOfMeasure")
+        .update(sanitize(unitOfMeasure))
+        .eq("id", unitOfMeasure.id)
+        .select("id")
+        .single();
+    }
+
+    return client
+      .from("unitOfMeasure")
+      .insert([unitOfMeasure])
+      .select("id")
+      .single();
+  }
+);
+
+export const upsertTool = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertTool(
+    tool:
+      | (z.infer<typeof toolValidator> & {
+          companyId: string;
+          createdBy: string;
+          customFields?: Json;
+        })
+      | (z.infer<typeof toolValidator> & {
+          updatedBy: string;
+          customFields?: Json;
+        })
+  ) {
+    const { companyId, userId } = AuthContextHolder.get();
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if ("createdBy" in tool) {
+      const itemInsert = await client
+        .from("item")
+        .insert({
+          readableId: tool.id,
+          revision: tool.revision ?? "0",
+          name: tool.name,
+          type: "Tool",
+          replenishmentSystem: tool.replenishmentSystem,
+          defaultMethodType: tool.defaultMethodType,
+          itemTrackingType: tool.itemTrackingType,
+          unitOfMeasureCode: tool.unitOfMeasureCode,
+          active: true,
+          modelUploadId: tool.modelUploadId,
+          companyId: companyId,
+          createdBy: userId
+        })
+        .select("id")
+        .single();
+      if (itemInsert.error) return itemInsert;
+      const itemId = itemInsert.data?.id;
+
+      const [toolInsert, itemCostUpdate] = await Promise.all([
+        client.from("tool").upsert({
+          id: tool.id,
+          companyId: companyId,
+          createdBy: userId,
+          customFields: tool.customFields
+        }),
+        client
+          .from("itemCost")
+          .update(
+            sanitize({
+              itemPostingGroupId: tool.postingGroupId,
+              unitCost: tool.unitCost
+            })
+          )
+          .eq("itemId", itemId)
+      ]);
+
+      if (toolInsert.error) return toolInsert;
+      if (itemCostUpdate.error) return itemCostUpdate;
+
+      if (itemId) {
+        const pickMethod = await upsertItemDefaultPickMethod({
+          itemId,
+          userId: userId,
+          storageUnitId: tool.defaultStorageUnitId
+        });
+        if (pickMethod.error) return pickMethod;
+
+        const shelfLife = await upsertItemShelfLife({
+          itemId,
+          userId: userId,
+          companyId: companyId,
+          mode: tool.shelfLifeMode,
+          days: tool.shelfLifeDays,
+          triggerProcessId: tool.shelfLifeTriggerProcessId,
+          triggerTiming: tool.shelfLifeTriggerTiming,
+          calculateFromBom: tool.shelfLifeCalculateFromBom
+        });
+        if (shelfLife.error) return shelfLife;
+      }
+
+      const newTool = await client
+        .from("tools")
+        .select("*")
+        .eq("readableId", tool.id)
+        .eq("companyId", companyId)
+        .single();
+
+      return newTool;
+    }
+
+    const itemUpdate = {
+      id: tool.id,
+      name: tool.name,
+      description: tool.description,
+      replenishmentSystem: tool.replenishmentSystem,
+      defaultMethodType: tool.defaultMethodType,
+      itemTrackingType: tool.itemTrackingType,
+      unitOfMeasureCode: tool.unitOfMeasureCode,
+      active: true
+    };
+
+    const toolUpdate = {
+      customFields: tool.customFields
+    };
+
+    const [updateItem, updateTool] = await Promise.all([
+      client
+        .from("item")
+        .update({
+          ...sanitize(itemUpdate),
+          updatedAt: today(getLocalTimeZone()).toString()
+        })
+        .eq("id", tool.id),
+      client
+        .from("tool")
+        .update({
+          ...sanitize(toolUpdate),
+          updatedAt: today(getLocalTimeZone()).toString()
+        })
+        .eq("id", tool.id)
+    ]);
+
+    if (updateItem.error) return updateItem;
+
+    const pickMethod = await upsertItemDefaultPickMethod({
+      itemId: tool.id,
+      userId: userId,
+      storageUnitId: tool.defaultStorageUnitId
+    });
+    if (pickMethod.error) return pickMethod;
+
+    const shelfLife = await upsertItemShelfLife({
+      itemId: tool.id,
+      userId: userId,
+      mode: tool.shelfLifeMode,
+      days: tool.shelfLifeDays,
+      triggerProcessId: tool.shelfLifeTriggerProcessId,
+      triggerTiming: tool.shelfLifeTriggerTiming,
+      calculateFromBom: tool.shelfLifeCalculateFromBom
+    });
+    if (shelfLife.error) return shelfLife;
+
+    return updateTool;
+  }
+);
 
 /**
  * Batch pre-fetch supplier price breaks for multiple items.
@@ -4063,59 +4590,67 @@ export async function upsertTool(
  *
  * Used by the quote loader to pre-load pricing data for BOM costing.
  */
-export async function getSupplierPriceBreaksForItems(
-  client: SupabaseClient<Database>,
-  itemIds: string[]
-): Promise<SupplierPriceMap> {
-  if (!itemIds.length) return {};
+export const getSupplierPriceBreaksForItems = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getSupplierPriceBreaksForItems(
+    itemIds: string[]
+  ): Promise<SupplierPriceMap> {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if (!itemIds.length) return {};
 
-  const supplierParts = await client
-    .from("supplierPart")
-    .select("id, itemId, unitPrice")
-    .in("itemId", itemIds);
+    const supplierParts = await client
+      .from("supplierPart")
+      .select("id, itemId, unitPrice")
+      .in("itemId", itemIds);
 
-  if (!supplierParts.data?.length) return {};
+    if (!supplierParts.data?.length) return {};
 
-  const supplierPartIds = supplierParts.data.map((sp) => sp.id);
+    const supplierPartIds = supplierParts.data.map((sp) => sp.id);
 
-  const prices = await client
-    .from("supplierPartPrice")
-    .select("supplierPartId, quantity, unitPrice")
-    .in("supplierPartId", supplierPartIds)
-    .order("quantity", { ascending: true });
+    const prices = await client
+      .from("supplierPartPrice")
+      .select("supplierPartId, quantity, unitPrice")
+      .in("supplierPartId", supplierPartIds)
+      .order("quantity", { ascending: true });
 
-  // Build a lookup from supplierPartId → itemId
-  const spToItem = new Map<string, string>();
-  for (const sp of supplierParts.data) {
-    spToItem.set(sp.id, sp.itemId);
-  }
-
-  const result: SupplierPriceMap = {};
-
-  // Initialize entries with fallback prices
-  for (const sp of supplierParts.data) {
-    if (!result[sp.itemId]) {
-      result[sp.itemId] = { priceBreaks: [], fallbackUnitPrice: null };
+    // Build a lookup from supplierPartId → itemId
+    const spToItem = new Map<string, string>();
+    for (const sp of supplierParts.data) {
+      spToItem.set(sp.id, sp.itemId);
     }
-    const current = result[sp.itemId].fallbackUnitPrice;
-    if (sp.unitPrice != null && (current === null || sp.unitPrice < current)) {
-      result[sp.itemId].fallbackUnitPrice = sp.unitPrice;
-    }
-  }
 
-  // Add price breaks
-  for (const price of prices.data ?? []) {
-    const itemId = spToItem.get(price.supplierPartId);
-    if (itemId && result[itemId]) {
-      result[itemId].priceBreaks.push({
-        quantity: price.quantity,
-        unitPrice: price.unitPrice
-      });
-    }
-  }
+    const result: SupplierPriceMap = {};
 
-  return result;
-}
+    // Initialize entries with fallback prices
+    for (const sp of supplierParts.data) {
+      if (!result[sp.itemId]) {
+        result[sp.itemId] = { priceBreaks: [], fallbackUnitPrice: null };
+      }
+      const current = result[sp.itemId].fallbackUnitPrice;
+      if (
+        sp.unitPrice != null &&
+        (current === null || sp.unitPrice < current)
+      ) {
+        result[sp.itemId].fallbackUnitPrice = sp.unitPrice;
+      }
+    }
+
+    // Add price breaks
+    for (const price of prices.data ?? []) {
+      const itemId = spToItem.get(price.supplierPartId);
+      if (itemId && result[itemId]) {
+        result[itemId].priceBreaks.push({
+          quantity: price.quantity,
+          unitPrice: price.unitPrice
+        });
+      }
+    }
+
+    return result;
+  }
+);
 
 /**
  * Async price lookup across ALL suppliers for an item.
@@ -4123,35 +4658,44 @@ export async function getSupplierPriceBreaksForItems(
  *
  * Used in quote creation where the specific supplier isn't known.
  */
-export async function lookupBuyPrice(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  qty: number,
-  fallbackCost: number
-): Promise<number> {
-  const map = await getSupplierPriceBreaksForItems(client, [itemId]);
-  return lookupBuyPriceFromMap(itemId, qty, map, fallbackCost);
-}
+export const lookupBuyPrice = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function lookupBuyPrice(
+    itemId: string,
+    qty: number,
+    fallbackCost: number
+  ): Promise<number> {
+    const map = await getSupplierPriceBreaksForItems([itemId]);
+    return lookupBuyPriceFromMap(itemId, qty, map, fallbackCost);
+  }
+);
 
 /**
  * Fetch price breaks array for a specific supplier part.
  * Used by PO and Invoice forms to cache breaks in state.
  */
-export async function getSupplierPartPriceBreaks(
-  client: SupabaseClient<Database>,
-  supplierPartId: string
-): Promise<PriceBreak[]> {
-  const result = await client
-    .from("supplierPartPrice")
-    .select("quantity, unitPrice")
-    .eq("supplierPartId", supplierPartId)
-    .order("quantity", { ascending: true });
+export const getSupplierPartPriceBreaks = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getSupplierPartPriceBreaks(
+    supplierPartId: string
+  ): Promise<PriceBreak[]> {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const result = await client
+      .from("supplierPartPrice")
+      .select("quantity, unitPrice")
+      .eq("supplierPartId", supplierPartId)
+      .order("quantity", { ascending: true });
 
-  return (result.data ?? []).map((pb) => ({
-    quantity: pb.quantity,
-    unitPrice: pb.unitPrice
-  }));
-}
+    return (result.data ?? []).map((pb) => ({
+      quantity: pb.quantity,
+      unitPrice: pb.unitPrice
+    }));
+  }
+);
 
 // ---------------------------------------------------------------------------
 // Item Rules
@@ -4182,10 +4726,10 @@ type ItemRuleUpdate = {
 };
 
 export async function getItemRules(
-  client: SupabaseClient<Database>,
-  companyId: string,
   args?: GenericQueryFilters & { search: string | null }
 ) {
+  const client = getAuthClient<SupabaseClient<Database>>();
+  const { companyId } = AuthContextHolder.get();
   let query = client
     .from("itemRule")
     .select("*", { count: "exact" })
@@ -4201,17 +4745,14 @@ export async function getItemRules(
   return query;
 }
 
-export async function getItemRule(
-  client: SupabaseClient<Database>,
-  id: string
-) {
+export async function getItemRule(id: string) {
+  const client = getAuthClient<SupabaseClient<Database>>();
   return client.from("itemRule").select("*").eq("id", id).single();
 }
 
-export async function getItemRulesList(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
+export async function getItemRulesList() {
+  const client = getAuthClient<SupabaseClient<Database>>();
+  const { companyId } = AuthContextHolder.get();
   return fetchAllFromTable<{
     id: string;
     name: string;
@@ -4223,10 +4764,8 @@ export async function getItemRulesList(
   );
 }
 
-export async function upsertItemRule(
-  client: SupabaseClient<Database>,
-  rule: ItemRuleInsert | ItemRuleUpdate
-) {
+export async function upsertItemRule(rule: ItemRuleInsert | ItemRuleUpdate) {
+  const client = getAuthClient<SupabaseClient<Database>>();
   if ("createdBy" in rule) {
     return client
       .from("itemRule")
@@ -4248,10 +4787,8 @@ export async function upsertItemRule(
     .single();
 }
 
-export async function deleteItemRule(
-  client: SupabaseClient<Database>,
-  id: string
-) {
+export async function deleteItemRule(id: string) {
+  const client = getAuthClient<SupabaseClient<Database>>();
   return client.from("itemRule").delete().eq("id", id);
 }
 
@@ -4260,11 +4797,9 @@ export async function deleteItemRule(
  * Single JOIN — never per-row lookups.
  */
 export async function getActiveRulesForItem(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string
+  itemId: string
 ): Promise<{ data: ItemRuleRow[]; error: unknown }> {
-  const batched = await getActiveRulesForItems(client, [itemId], companyId);
+  const batched = await getActiveRulesForItems([itemId]);
   return { data: batched.data.get(itemId) ?? [], error: batched.error };
 }
 
@@ -4275,10 +4810,10 @@ export async function getActiveRulesForItem(
  * `getActiveRulesForItem` per item.
  */
 export async function getActiveRulesForItems(
-  client: SupabaseClient<Database>,
-  itemIds: string[],
-  companyId: string
+  itemIds: string[]
 ): Promise<{ data: Map<string, ItemRuleRow[]>; error: unknown }> {
+  const client = getAuthClient<SupabaseClient<Database>>();
+  const { companyId } = AuthContextHolder.get();
   const out = new Map<string, ItemRuleRow[]>();
   if (itemIds.length === 0) return { data: out, error: null };
 
@@ -4310,11 +4845,9 @@ export async function getActiveRulesForItems(
   return { data: out, error: null };
 }
 
-export async function getRuleAssignmentsForItem(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string
-) {
+export async function getRuleAssignmentsForItem(itemId: string) {
+  const client = getAuthClient<SupabaseClient<Database>>();
+  const { companyId } = AuthContextHolder.get();
   return client
     .from("itemRuleAssignment")
     .select(
@@ -4324,10 +4857,8 @@ export async function getRuleAssignmentsForItem(
     .eq("companyId", companyId);
 }
 
-export async function getRuleAssignmentCounts(
-  client: SupabaseClient<Database>,
-  ruleIds: string[]
-) {
+export async function getRuleAssignmentCounts(ruleIds: string[]) {
+  const client = getAuthClient<SupabaseClient<Database>>();
   if (ruleIds.length === 0) return { data: {}, error: null };
   const { data, error } = await client
     .from("itemRuleAssignment")
@@ -4341,26 +4872,26 @@ export async function getRuleAssignmentCounts(
   return { data: counts, error: null };
 }
 
-export async function assignItemRule(
-  client: SupabaseClient<Database>,
-  args: { itemId: string; ruleId: string; companyId: string; userId: string }
-) {
+export async function assignItemRule(args: { itemId: string; ruleId: string }) {
+  const { companyId, userId } = AuthContextHolder.get();
+  const client = getAuthClient<SupabaseClient<Database>>();
   return client
     .from("itemRuleAssignment")
     .insert({
       itemId: args.itemId,
       ruleId: args.ruleId,
-      companyId: args.companyId,
-      createdBy: args.userId
+      companyId: companyId,
+      createdBy: userId
     })
     .select("itemId, ruleId")
     .single();
 }
 
-export async function unassignItemRule(
-  client: SupabaseClient<Database>,
-  args: { itemId: string; ruleId: string }
-) {
+export async function unassignItemRule(args: {
+  itemId: string;
+  ruleId: string;
+}) {
+  const client = getAuthClient<SupabaseClient<Database>>();
   return client
     .from("itemRuleAssignment")
     .delete()

@@ -9,7 +9,7 @@ import {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "inventory"
   });
 
@@ -28,7 +28,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { listOptions, ...d } = validation.data;
 
-  const upsert = await upsertBatchProperty(client, {
+  const upsert = await upsertBatchProperty({
     ...d,
     listOptions: d.dataType === "list" ? listOptions : undefined,
     companyId,

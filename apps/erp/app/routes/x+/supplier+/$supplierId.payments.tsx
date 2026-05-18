@@ -14,14 +14,14 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
 
   const { supplierId } = params;
   if (!supplierId) throw new Error("Could not find supplierId");
 
-  const supplierPayment = await getSupplierPayment(client, supplierId);
+  const supplierPayment = await getSupplierPayment(supplierId);
 
   if (supplierPayment.error || !supplierPayment.data) {
     throw redirect(
@@ -40,7 +40,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "purchasing"
   });
 
@@ -56,7 +56,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const update = await updateSupplierPayment(client, {
+  const update = await updateSupplierPayment({
     ...validation.data,
     supplierId,
     updatedBy: userId,

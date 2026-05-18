@@ -38,7 +38,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const createWebhook = await upsertWebhook(client, {
+  const createWebhook = await upsertWebhook({
     ...validation.data,
     companyId,
     createdBy: userId

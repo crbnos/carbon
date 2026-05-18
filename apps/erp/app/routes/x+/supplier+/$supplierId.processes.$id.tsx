@@ -20,7 +20,7 @@ import { supplierProcessesQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     create: "purchasing"
   });
 
@@ -40,7 +40,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id, ...d } = validation.data;
   if (!id) throw new Error("Could not find id");
 
-  const createSupplierProcess = await upsertSupplierProcess(client, {
+  const createSupplierProcess = await upsertSupplierProcess({
     id,
     ...d,
     updatedBy: userId,

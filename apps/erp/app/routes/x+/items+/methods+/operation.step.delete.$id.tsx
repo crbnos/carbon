@@ -29,9 +29,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error("Step not found");
   }
 
-  await assertMethodOperationIsDraft(client, step.data.operationId);
+  await assertMethodOperationIsDraft(step.data.operationId);
 
-  const deleteOperationStep = await deleteMethodOperationStep(client, id);
+  const deleteOperationStep = await deleteMethodOperationStep(id);
   if (deleteOperationStep.error) {
     return data(
       {

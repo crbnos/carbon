@@ -36,7 +36,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   try {
-    const integrations = await getCompanyIntegrations(client, companyId);
+    const integrations = await getCompanyIntegrations();
     await notifyIssueStatusChanged({ client }, integrations, {
       companyId,
       userId,

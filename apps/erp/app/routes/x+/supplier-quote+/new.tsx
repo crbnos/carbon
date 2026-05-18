@@ -25,11 +25,13 @@ export const handle: Handle = {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
+  const { companyId, companyGroupId, userId } = await requirePermissions(
+    request,
+    {
       create: "purchasing",
       bypassRls: true
-    });
+    }
+  );
 
   const formData = await request.formData();
   const validation = await validator(supplierQuoteValidator).validate(formData);
@@ -42,11 +44,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const useNextSequence = !supplierQuoteId;
 
   if (useNextSequence) {
-    const nextSequence = await getNextSequence(
-      client,
-      "supplierQuote",
-      companyId
-    );
+    const nextSequence = await getNextSequence("supplierQuote");
     if (nextSequence.error) {
       throw redirect(
         path.to.newSupplierQuote,
@@ -61,7 +59,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (!supplierQuoteId) throw new Error("supplierQuoteId is not defined");
 
-  const createSupplierQuote = await upsertSupplierQuote(client, {
+  const createSupplierQuote = await upsertSupplierQuote({
     ...validation.data,
     supplierQuoteId,
     companyId,

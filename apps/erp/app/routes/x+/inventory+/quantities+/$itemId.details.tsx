@@ -58,7 +58,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await getLocationsList();
     if (locations.error || !locations.data?.length) {
       throw redirect(
         path.to.inventory,
@@ -71,12 +71,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let [pickMethod] = await Promise.all([
-    getPickMethod(client, itemId, companyId, locationId)
-  ]);
+  let [pickMethod] = await Promise.all([getPickMethod(itemId, locationId)]);
 
   if (pickMethod.error || !pickMethod.data) {
-    const insertPickMethod = await upsertPickMethod(client, {
+    const insertPickMethod = await upsertPickMethod({
       itemId,
       companyId,
       locationId,
@@ -97,7 +95,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       );
     }
 
-    pickMethod = await getPickMethod(client, itemId, companyId, locationId);
+    pickMethod = await getPickMethod(itemId, locationId);
     if (pickMethod.error || !pickMethod.data) {
       throw redirect(
         path.to.inventory,
@@ -110,8 +108,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const [quantities, item] = await Promise.all([
-    getItemQuantities(client, itemId, companyId, locationId),
-    getItem(client, itemId)
+    getItemQuantities(itemId, locationId),
+    getItem(itemId)
   ]);
   if (quantities.error) {
     throw redirect(
@@ -128,9 +126,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const itemStorageUnitQuantities = await getItemStorageUnitQuantities(
-    client,
     itemId,
-    companyId,
     locationId
   );
   if (itemStorageUnitQuantities.error || !itemStorageUnitQuantities.data) {
@@ -153,8 +149,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     (row) => row.trackedEntityId
   );
   const [itemShelfLife, trackedEntityExpirations] = await Promise.all([
-    getItemShelfLife(client, itemId),
-    getTrackedEntityExpirations(client, trackedEntityIds)
+    getItemShelfLife(itemId),
+    getTrackedEntityExpirations(trackedEntityIds)
   ]);
 
   // Load manufacturing data for manufactured parts
@@ -162,23 +158,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   let tags: { name: string }[] = [];
 
   if (item.data.replenishmentSystem !== "Buy") {
-    const makeMethods = await getMakeMethods(client, itemId, companyId);
+    const makeMethods = await getMakeMethods(itemId);
     const makeMethod =
       makeMethods.data?.find((m) => m.status === "Active") ??
       makeMethods.data?.[0];
 
     if (makeMethod) {
-      const fullMethod = await getMakeMethodById(
-        client,
-        makeMethod.id,
-        companyId
-      );
+      const fullMethod = await getMakeMethodById(makeMethod.id);
       if (!fullMethod.error && fullMethod.data) {
         const [methodMaterials, methodOperations, operationTags] =
           await Promise.all([
-            getMethodMaterialsByMakeMethod(client, fullMethod.data.id),
-            getMethodOperationsByMakeMethodId(client, fullMethod.data.id),
-            getTagsList(client, companyId, "operation")
+            getMethodMaterialsByMakeMethod(fullMethod.data.id),
+            getMethodOperationsByMakeMethodId(fullMethod.data.id),
+            getTagsList("operation")
           ]);
 
         methodData = {

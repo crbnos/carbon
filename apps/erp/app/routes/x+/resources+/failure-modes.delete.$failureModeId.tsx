@@ -9,14 +9,14 @@ import { deleteFailureMode, getFailureMode } from "~/modules/resources";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources",
     role: "employee"
   });
   const { failureModeId } = params;
   if (!failureModeId) throw notFound("failureModeId not found");
 
-  const failureMode = await getFailureMode(client, failureModeId);
+  const failureMode = await getFailureMode(failureModeId);
   if (failureMode.error) {
     throw redirect(
       `${path.to.failureModes}?${getParams(request)}`,
@@ -31,7 +31,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "resources"
   });
 
@@ -43,10 +43,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteFailureModeError } = await deleteFailureMode(
-    client,
-    failureModeId
-  );
+  const { error: deleteFailureModeError } =
+    await deleteFailureMode(failureModeId);
   if (deleteFailureModeError) {
     const errorMessage =
       deleteFailureModeError.code === "23503"

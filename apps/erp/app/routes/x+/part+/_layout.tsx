@@ -18,13 +18,13 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts"
   });
 
   const [unitOfMeasures, locations] = await Promise.all([
-    getUnitOfMeasuresList(client, companyId),
-    getLocationsList(client, companyId)
+    getUnitOfMeasuresList(),
+    getLocationsList()
   ]);
 
   return {

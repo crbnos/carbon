@@ -21,11 +21,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "accounting"
   });
 
-  const settings = await getFiscalYearSettings(client, companyId);
+  const settings = await getFiscalYearSettings();
   if (settings.error) {
     throw redirect(
       path.to.accounting,
@@ -41,7 +41,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "accounting"
   });
 
@@ -53,7 +53,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const update = await updateFiscalYearSettings(client, {
+  const update = await updateFiscalYearSettings({
     ...validation.data,
     companyId,
     updatedBy: userId

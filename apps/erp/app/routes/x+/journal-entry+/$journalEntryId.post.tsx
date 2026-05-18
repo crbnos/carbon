@@ -8,14 +8,14 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "accounting"
   });
 
   const { journalEntryId } = params;
   if (!journalEntryId) throw new Error("Could not find journalEntryId");
 
-  const result = await postJournalEntry(client, journalEntryId, userId);
+  const result = await postJournalEntry(journalEntryId);
 
   if (result.error) {
     throw redirect(

@@ -9,7 +9,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     create: "parts"
   });
 
@@ -27,7 +27,7 @@ export async function action({ request }: ActionFunctionArgs) {
     };
   }
 
-  const currentItem = await getItem(client, validation.data.copyFromId);
+  const currentItem = await getItem(validation.data.copyFromId);
 
   if (currentItem.error) {
     return { success: false, error: "Failed to get current item" };

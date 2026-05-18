@@ -55,7 +55,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "quality"
   });
 
@@ -80,7 +80,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         : "Pending"
     : "Pending";
 
-  const update = await upsertGauge(client, {
+  const update = await upsertGauge({
     id,
     gaugeId,
     gaugeCalibrationStatus,

@@ -6,7 +6,7 @@ import { getKanban } from "~/modules/inventory/inventory.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "inventory"
   });
 
@@ -17,7 +17,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Error("Invalid kanban action");
   }
 
-  const kanban = await getKanban(client, id);
+  const kanban = await getKanban(id);
 
   if (kanban.error) {
     return data({ error: "Unauthorized" }, { status: 401 });

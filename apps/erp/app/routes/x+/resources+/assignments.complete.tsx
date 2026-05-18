@@ -7,7 +7,7 @@ import { insertTrainingCompletion } from "~/modules/resources";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "resources",
     role: "employee"
   });
@@ -28,7 +28,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const result = await insertTrainingCompletion(client, {
+  const result = await insertTrainingCompletion({
     trainingAssignmentId: trainingAssignmentId.toString(),
     employeeId: employeeId.toString(),
     period: period?.toString() || null,

@@ -6,12 +6,12 @@ import { redirect } from "react-router";
 import { deleteNote } from "~/modules/shared";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
   const { noteId } = params;
   if (!noteId) throw new Error("noteId not found");
 
-  const result = await deleteNote(client, noteId);
+  const result = await deleteNote(noteId);
   if (result.error) {
     throw redirect(
       request.headers.get("Referer") ?? new URL(request.url).pathname,

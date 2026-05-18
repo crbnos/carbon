@@ -35,7 +35,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const [receipt, receiptLines, receiptLineTracking] = await Promise.all([
     getReceipt(serviceRole, receiptId),
     getReceiptLines(serviceRole, receiptId),
-    getReceiptTracking(serviceRole, receiptId, companyId)
+    getReceiptTracking(serviceRole, receiptId)
   ]);
 
   if (receipt.error) {
@@ -72,12 +72,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     receipt: receipt.data,
     receiptLines: receiptLines.data ?? [],
-    receiptFiles: getReceiptFiles(serviceRole, companyId, receiptLineIds) ?? [],
+    receiptFiles: getReceiptFiles(serviceRole, receiptLineIds) ?? [],
     receiptLineTracking: receiptLineTracking.data ?? [],
     batchProperties:
-      getBatchProperties(serviceRole, itemsWithBatchProperties, companyId) ??
-      [],
-    companySettings: getCompanySettings(serviceRole, companyId),
+      getBatchProperties(serviceRole, itemsWithBatchProperties) ?? [],
+    companySettings: getCompanySettings(serviceRole),
     itemShelfLife: await getShelfLifeForItems(serviceRole, trackedItemIds)
   };
 }

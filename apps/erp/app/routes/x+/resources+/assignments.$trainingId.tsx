@@ -43,7 +43,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources",
     role: "employee"
   });
@@ -57,8 +57,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const [training, assignmentStatus] = await Promise.all([
-    getTraining(client, trainingId),
-    getTrainingAssignmentStatus(client, companyId, {
+    getTraining(trainingId),
+    getTrainingAssignmentStatus({
       trainingId,
       status: undefined,
       search: undefined,

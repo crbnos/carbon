@@ -35,14 +35,14 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "invoicing"
   });
 
   const { invoiceId } = params;
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
-  const invoice = await getPurchaseInvoice(client, invoiceId);
+  const invoice = await getPurchaseInvoice(invoiceId);
   if (invoice.error) {
     throw redirect(
       path.to.purchaseInvoices,
@@ -87,7 +87,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase invoice."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "invoicing"
   });
 
@@ -103,7 +103,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { invoiceId, ...d } = validation.data;
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
-  const updatePurchaseInvoice = await upsertPurchaseInvoice(client, {
+  const updatePurchaseInvoice = await upsertPurchaseInvoice({
     id,
     invoiceId,
     ...d,

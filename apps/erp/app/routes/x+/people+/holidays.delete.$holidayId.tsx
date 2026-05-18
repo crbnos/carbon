@@ -9,7 +9,7 @@ import { deleteHoliday, getHoliday } from "~/modules/people";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "people",
     role: "employee"
   });
@@ -17,7 +17,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { holidayId } = params;
   if (!holidayId) throw notFound("holidayId not found");
 
-  const holiday = await getHoliday(client, holidayId);
+  const holiday = await getHoliday(holidayId);
   if (holiday.error) {
     throw redirect(
       path.to.holidays,
@@ -31,7 +31,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "people"
   });
 
@@ -43,7 +43,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteHolidayError } = await deleteHoliday(client, holidayId);
+  const { error: deleteHolidayError } = await deleteHoliday(holidayId);
   if (deleteHolidayError) {
     throw redirect(
       path.to.holidays,

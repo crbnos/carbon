@@ -8,7 +8,7 @@ import { updateDocumentFavorite } from "~/modules/documents";
 import { favoriteSchema } from "~/types/validators";
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     view: "purchasing"
   });
 
@@ -21,7 +21,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { id, favorite } = validation.data;
 
-  const result = await updateDocumentFavorite(client, {
+  const result = await updateDocumentFavorite({
     id,
     favorite: favorite === "favorite",
     userId

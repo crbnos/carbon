@@ -75,7 +75,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const rule = await getApprovalRuleByAmount(
       serviceRole,
       "supplier",
-      companyId,
       undefined
     );
     const approverIds = rule.data
@@ -106,15 +105,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (intent === "make-inactive") {
     const serviceRole = getCarbonServiceRole();
 
-    const canApprove = await canApproveRequest(
-      serviceRole,
-      {
-        amount: null,
-        documentType: "supplier",
-        companyId
-      },
-      userId
-    );
+    const canApprove = await canApproveRequest(serviceRole, {
+      amount: null,
+      documentType: "supplier",
+      companyId
+    });
 
     if (!canApprove) {
       throw redirect(
@@ -167,15 +162,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const canApprove = await canApproveRequest(
-    serviceRole,
-    {
-      amount: approvalRequest.data.amount,
-      documentType: approvalRequest.data.documentType,
-      companyId: approvalRequest.data.companyId
-    },
-    userId
-  );
+  const canApprove = await canApproveRequest(serviceRole, {
+    amount: approvalRequest.data.amount,
+    documentType: approvalRequest.data.documentType,
+    companyId: approvalRequest.data.companyId
+  });
 
   if (!canApprove) {
     throw redirect(

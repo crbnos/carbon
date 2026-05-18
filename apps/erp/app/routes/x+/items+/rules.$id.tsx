@@ -21,7 +21,7 @@ import { getParams, path } from "~/utils/path";
 import { getCompanyId, itemRulesQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts",
     role: "employee"
   });
@@ -29,7 +29,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const rule = await getItemRule(client, id);
+  const rule = await getItemRule(id);
 
   return { rule: rule.data ?? null };
 }
@@ -57,7 +57,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const update = await upsertItemRule(client, {
+  const update = await upsertItemRule({
     id,
     ...validation.data,
     description: validation.data.description ?? null,

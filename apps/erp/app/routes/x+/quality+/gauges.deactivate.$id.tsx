@@ -7,7 +7,7 @@ import { deactivateGauge } from "~/modules/quality";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "quality"
   });
 
@@ -15,7 +15,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (!id) throw new Error("id is not found");
 
-  const mutation = await deactivateGauge(client, id);
+  const mutation = await deactivateGauge(id);
   if (mutation.error) {
     return data(
       {

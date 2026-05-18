@@ -8,14 +8,14 @@ import SupplierContacts from "~/modules/purchasing/ui/Supplier/SupplierContacts"
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
 
   const { supplierId } = params;
   if (!supplierId) throw new Error("Could not find supplierId");
 
-  const contacts = await getSupplierContacts(client, supplierId);
+  const contacts = await getSupplierContacts(supplierId);
   if (contacts.error) {
     throw redirect(
       path.to.supplier(supplierId),

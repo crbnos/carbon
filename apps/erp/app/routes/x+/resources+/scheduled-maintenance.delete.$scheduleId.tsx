@@ -12,14 +12,14 @@ import {
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources",
     role: "employee"
   });
   const { scheduleId } = params;
   if (!scheduleId) throw notFound("scheduleId not found");
 
-  const schedule = await getMaintenanceSchedule(client, scheduleId);
+  const schedule = await getMaintenanceSchedule(scheduleId);
   if (schedule.error) {
     throw redirect(
       `${path.to.maintenanceSchedules}?${getParams(request)}`,
@@ -34,7 +34,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "resources"
   });
 
@@ -46,10 +46,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteError } = await deleteMaintenanceSchedule(
-    client,
-    scheduleId
-  );
+  const { error: deleteError } = await deleteMaintenanceSchedule(scheduleId);
   if (deleteError) {
     const errorMessage =
       deleteError.code === "23503"

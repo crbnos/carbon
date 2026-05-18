@@ -12,14 +12,14 @@ import {
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources",
     role: "employee"
   });
   const { dispatchId } = params;
   if (!dispatchId) throw notFound("dispatchId not found");
 
-  const dispatch = await getMaintenanceDispatch(client, dispatchId);
+  const dispatch = await getMaintenanceDispatch(dispatchId);
   if (dispatch.error) {
     throw redirect(
       `${path.to.maintenanceDispatches}?${getParams(request)}`,
@@ -34,7 +34,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "production"
   });
 
@@ -46,10 +46,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteError } = await deleteMaintenanceDispatch(
-    client,
-    dispatchId
-  );
+  const { error: deleteError } = await deleteMaintenanceDispatch(dispatchId);
   if (deleteError) {
     const errorMessage =
       deleteError.code === "23503"

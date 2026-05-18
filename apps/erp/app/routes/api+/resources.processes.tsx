@@ -7,9 +7,9 @@ import { getProcessesList } from "~/modules/resources";
 import { getCompanyId, processesQuery } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
-  return await getProcessesList(client, companyId);
+  return await getProcessesList();
 }
 
 export async function clientLoader({ serverLoader }: ClientLoaderFunctionArgs) {

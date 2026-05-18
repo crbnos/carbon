@@ -7,7 +7,7 @@ import { getCurrentSequence } from "~/modules/settings";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsDelete(request);
-  const { client, companyId } = await requirePermissions(request, {});
+  const { client } = await requirePermissions(request, {});
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -28,7 +28,7 @@ export async function action({ request }: ActionFunctionArgs) {
       )
     );
 
-  const verifyCurrent = await getCurrentSequence(client, table, companyId);
+  const verifyCurrent = await getCurrentSequence(client, table);
   if (verifyCurrent.error) {
     return data(
       verifyCurrent,

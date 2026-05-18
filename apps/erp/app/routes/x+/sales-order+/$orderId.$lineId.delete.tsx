@@ -15,14 +15,14 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "sales"
   });
   const { lineId, orderId } = params;
   if (!lineId) throw notFound("lineId not found");
   if (!orderId) throw notFound("orderId not found");
 
-  const salesOrderLine = await getSalesOrderLine(client, lineId);
+  const salesOrderLine = await getSalesOrderLine(lineId);
   if (salesOrderLine.error) {
     throw redirect(
       path.to.salesOrder(orderId),
@@ -53,11 +53,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot delete lines on a locked sales order. Reopen it first."
   });
 
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "sales"
   });
 
-  const { error: deleteTypeError } = await deleteSalesOrderLine(client, lineId);
+  const { error: deleteTypeError } = await deleteSalesOrderLine(lineId);
   if (deleteTypeError) {
     throw redirect(
       requestReferrer(request) ?? path.to.salesOrder(orderId),

@@ -23,11 +23,13 @@ export const handle: Handle = {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
+  const { companyId, companyGroupId, userId } = await requirePermissions(
+    request,
+    {
       create: "sales",
       bypassRls: true
-    });
+    }
+  );
 
   const formData = await request.formData();
   const validation = await validator(quoteValidator).validate(formData);
@@ -40,7 +42,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const useNextSequence = !quoteId;
 
   if (useNextSequence) {
-    const nextSequence = await getNextSequence(client, "quote", companyId);
+    const nextSequence = await getNextSequence("quote");
     if (nextSequence.error) {
       throw redirect(
         path.to.newQuote,
@@ -55,7 +57,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (!quoteId) throw new Error("quoteId is not defined");
 
-  const createQuote = await upsertQuote(client, {
+  const createQuote = await upsertQuote({
     ...validation.data,
     quoteId,
     companyId,

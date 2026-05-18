@@ -28,7 +28,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   const [failureModes, defaults] = await Promise.all([
-    getFailureModesList(client, companyId),
+    getFailureModesList(),
     getUserDefaults(client, userId, companyId)
   ]);
 
@@ -40,7 +40,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "resources"
   });
 
@@ -53,11 +53,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const nextSequence = await getNextSequence(
-    client,
-    "maintenanceDispatch",
-    companyId
-  );
+  const nextSequence = await getNextSequence("maintenanceDispatch");
   if (nextSequence.error) {
     throw redirect(
       path.to.maintenanceDispatches,
@@ -72,7 +68,7 @@ export async function action({ request }: ActionFunctionArgs) {
     ? JSON.parse(validation.data.content)
     : {};
 
-  const insertDispatch = await upsertMaintenanceDispatch(client, {
+  const insertDispatch = await upsertMaintenanceDispatch({
     maintenanceDispatchId: nextSequence.data,
     status: validation.data.status,
     priority: validation.data.priority,

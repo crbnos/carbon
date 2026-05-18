@@ -23,7 +23,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
-  const integration = await getIntegration(serviceRole, "linear", companyId);
+  const integration = await getIntegration(serviceRole, "linear");
 
   if (integration.error) {
     console.error(

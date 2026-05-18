@@ -9,14 +9,14 @@ import { deleteSubsidiary, getSubsidiary } from "~/modules/settings";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "settings"
   });
 
   const { id } = params;
   if (!id) throw notFound("Subsidiary not found");
 
-  const subsidiary = await getSubsidiary(client, id);
+  const subsidiary = await getSubsidiary(id);
   if (subsidiary.error) {
     throw redirect(
       path.to.companies,

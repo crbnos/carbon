@@ -30,7 +30,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "resources"
   });
 
@@ -57,7 +57,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const upsertComment = await upsertMaintenanceDispatchComment(client, {
+  const upsertComment = await upsertMaintenanceDispatchComment({
     ...validation.data,
     maintenanceDispatchId: dispatchId,
     createdBy: validation.data.id ? undefined : userId,

@@ -4,7 +4,7 @@ import { data } from "react-router";
 import { getCustomerItemPriceOverride } from "~/modules/sales";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
@@ -17,10 +17,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const { data: override } = await getCustomerItemPriceOverride(
-    client,
     customerId,
-    itemId,
-    companyId
+    itemId
   );
 
   return data({ override });

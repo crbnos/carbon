@@ -43,7 +43,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase invoice."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "invoicing"
   });
 
@@ -57,15 +57,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Note: Need to add upsertPurchaseInvoiceDelivery to invoicing.service.ts
-  const updatePurchaseInvoiceDelivery = await upsertPurchaseInvoiceDelivery(
-    client,
-    {
-      ...validation.data,
-      id: invoiceId,
-      updatedBy: userId,
-      customFields: setCustomFields(formData)
-    }
-  );
+  const updatePurchaseInvoiceDelivery = await upsertPurchaseInvoiceDelivery({
+    ...validation.data,
+    id: invoiceId,
+    updatedBy: userId,
+    customFields: setCustomFields(formData)
+  });
   if (updatePurchaseInvoiceDelivery.error) {
     throw redirect(
       path.to.purchaseInvoice(invoiceId),

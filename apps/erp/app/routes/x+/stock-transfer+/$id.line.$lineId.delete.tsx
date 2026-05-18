@@ -12,7 +12,7 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "inventory"
   });
 
@@ -32,7 +32,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked stock transfer. Reopen it first."
   });
 
-  const mutation = await deleteStockTransferLine(client, lineId);
+  const mutation = await deleteStockTransferLine(lineId);
   if (mutation.error) {
     return data(
       {

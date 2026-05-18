@@ -57,7 +57,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // Always fetch the locations list server-side so the Location column can
   // render the resolved name on first paint instead of flashing the raw
   // locationId while the client-side useLocations() fetcher catches up.
-  const locationsList = await getLocationsList(client, companyId);
+  const locationsList = await getLocationsList();
   if (locationsList.error || !locationsList.data?.length) {
     throw redirect(
       path.to.storageUnits,
@@ -73,11 +73,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const [parentIdsWithChildren, storageTypesList] = await Promise.all([
-    getStorageUnitParentIdsWithChildren(client, companyId, locationId),
+    getStorageUnitParentIdsWithChildren(locationId),
     // Fetch storage types server-side so the Storage Types column can render
     // resolved names on first paint instead of flashing raw ids while the
     // client-side useStorageTypes() fetcher catches up.
-    getStorageTypesList(client, companyId)
+    getStorageTypesList()
   ]);
 
   let rows: any[];
@@ -86,8 +86,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   if (search) {
     const searchResult = await searchStorageUnitsWithAncestors(
-      client,
-      companyId,
       locationId,
       search
     );
@@ -104,12 +102,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     count = searchResult.rows.length;
     initialExpanded = searchResult.expandedParentIds;
   } else {
-    const rootsResult = await getStorageUnitRoots(
-      client,
-      companyId,
-      locationId,
-      { search, limit, offset, sorts, filters }
-    );
+    const rootsResult = await getStorageUnitRoots(locationId, {
+      search,
+      limit,
+      offset,
+      sorts,
+      filters
+    });
     if (rootsResult.error) {
       throw redirect(
         path.to.authenticatedRoot,

@@ -40,7 +40,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
   if (storageUnitFilter?.value) {
     const ids = storageUnitFilter.value.split(",");
-    const expanded = await expandStorageUnitIdsWithDescendants(client, ids);
+    const expanded = await expandStorageUnitIdsWithDescendants(ids);
     storageUnitFilter.value = expanded.join(",");
   }
 
@@ -62,7 +62,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await getLocationsList();
     if (locations.error || !locations.data?.length) {
       throw redirect(
         path.to.inventory,
@@ -77,17 +77,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const [inventoryItems, forms, substances, tags, storageTypes] =
     await Promise.all([
-      getInventoryItems(client, locationId, companyId, {
+      getInventoryItems(locationId, {
         search,
         limit,
         offset,
         sorts,
         filters
       }),
-      getMaterialFormsList(client, companyId),
-      getMaterialSubstancesList(client, companyId),
-      getTagsList(client, companyId),
-      getStorageTypesList(client, companyId)
+      getMaterialFormsList(),
+      getMaterialSubstancesList(),
+      getTagsList(),
+      getStorageTypesList()
     ]);
 
   if (inventoryItems.error) {

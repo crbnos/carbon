@@ -26,14 +26,14 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
 
   const { rfqId } = params;
   if (!rfqId) throw new Error("Could not find rfqId");
 
-  const rfq = await getPurchasingRFQ(client, rfqId);
+  const rfq = await getPurchasingRFQ(rfqId);
   if (rfq.error) {
     throw redirect(
       path.to.purchasingRfqs,
@@ -51,7 +51,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { client: viewClient } = await requirePermissions(request, {
     view: "purchasing"
   });
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "purchasing"
   });
 
@@ -76,7 +76,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { rfqId, ...d } = validation.data;
   if (!rfqId) throw new Error("Could not find rfqId");
 
-  const update = await upsertPurchasingRFQ(client, {
+  const update = await upsertPurchasingRFQ({
     id,
     rfqId,
     ...d,

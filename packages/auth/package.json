@@ -12,11 +12,13 @@
   "exports": {
     ".": "./src/index.ts",
     "./auth.server": "./src/services/auth.server.ts",
+    "./auth-context": "./src/services/auth-context.ts",
     "./client.server": "./src/lib/supabase/client.server.ts",
     "./company.server": "./src/services/company.server.ts",
     "./session.server": "./src/services/session.server.ts",
     "./users.server": "./src/services/users.server.ts",
     "./verification.server": "./src/services/verification.server.ts",
+    "./middleware/auth.server": "./src/middleware/auth.server.ts",
     "./middleware/flash.server": "./src/middleware/flash.server.ts",
     "./middleware/flash.client": "./src/middleware/flash.client.ts"
   },

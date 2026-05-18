@@ -14,7 +14,7 @@ import PriceOverrideForm from "~/modules/sales/ui/Pricing/PriceOverrideForm";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales",
     role: "employee"
   });
@@ -22,18 +22,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { overrideId } = params;
   if (!overrideId) throw notFound("overrideId not found");
 
-  const override = await getCustomerItemPriceOverrideById(
-    client,
-    overrideId,
-    companyId
-  );
+  const override = await getCustomerItemPriceOverrideById(overrideId);
 
   return { override: override?.data ?? null };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "sales"
   });
 
@@ -78,23 +74,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     validTo
   } = validation.data;
 
-  const result = await upsertCustomerItemPriceOverride(
-    client,
-    companyId,
-    userId,
-    {
-      id: overrideId,
-      customerId: customerId || undefined,
-      customerTypeId: customerTypeId || undefined,
-      itemId,
-      breaks,
-      active,
-      applyRulesOnTop,
-      notes,
-      validFrom,
-      validTo
-    }
-  );
+  const result = await upsertCustomerItemPriceOverride({
+    id: overrideId,
+    customerId: customerId || undefined,
+    customerTypeId: customerTypeId || undefined,
+    itemId,
+    breaks,
+    active,
+    applyRulesOnTop,
+    notes,
+    validFrom,
+    validTo
+  });
 
   if (result.error) {
     throw redirect(

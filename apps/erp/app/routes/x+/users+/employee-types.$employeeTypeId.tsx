@@ -17,7 +17,7 @@ import { makeCompanyPermissionsFromEmployeeType } from "~/modules/users/users.se
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     view: "users",
     role: "employee"
   });
@@ -26,8 +26,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!employeeTypeId) throw notFound("employeeTypeId not found");
 
   const [employeeType, employeeTypePermissions] = await Promise.all([
-    getEmployeeType(client, employeeTypeId),
-    getPermissionsByEmployeeType(client, employeeTypeId)
+    getEmployeeType(employeeTypeId),
+    getPermissionsByEmployeeType(employeeTypeId)
   ]);
 
   return {
@@ -41,7 +41,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "users"
   });
 
@@ -69,7 +69,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const updateEmployeeType = await upsertEmployeeType(client, {
+  const updateEmployeeType = await upsertEmployeeType({
     id,
     name
   });
@@ -85,9 +85,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const updateEmployeeTypePermissions = await upsertEmployeeTypePermissions(
-    client,
     id,
-    companyId,
     permissions
   );
 

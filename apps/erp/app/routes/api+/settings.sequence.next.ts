@@ -6,7 +6,7 @@ import { data } from "react-router";
 import { getNextSequence } from "~/modules/settings";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -18,7 +18,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       await flash(request, error(request, "Bad request for next sequence"))
     );
 
-  const nextSequence = await getNextSequence(client, table, companyId);
+  const nextSequence = await getNextSequence(table);
   if (nextSequence.error) {
     return data(
       nextSequence,

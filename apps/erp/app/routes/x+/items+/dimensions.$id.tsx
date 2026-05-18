@@ -14,7 +14,7 @@ import MaterialDimensionForm from "~/modules/items/ui/MaterialDimensions/Materia
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts",
     role: "employee"
   });
@@ -22,7 +22,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const materialDimension = await getMaterialDimension(client, id);
+  const materialDimension = await getMaterialDimension(id);
 
   if (materialDimension.data?.companyId === null) {
     throw redirect(
@@ -41,7 +41,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "parts"
   });
 
@@ -57,7 +57,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateMaterialDimension = await upsertMaterialDimension(client, {
+  const updateMaterialDimension = await upsertMaterialDimension({
     id: id,
     ...validation.data
   });

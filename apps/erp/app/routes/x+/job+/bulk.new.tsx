@@ -62,11 +62,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  const manufacturing = await getItemReplenishment(
-    serviceRole,
-    jobData.itemId,
-    companyId
-  );
+  const manufacturing = await getItemReplenishment(serviceRole, jobData.itemId);
 
   // Calculate due date distribution if both dates are provided
   let dueDateDistribution: string[] = [];
@@ -105,12 +101,11 @@ export async function action({ request }: ActionFunctionArgs) {
   const storageUnitId = await getDefaultStorageUnitForJob(
     serviceRole,
     jobData.itemId,
-    jobData.locationId,
-    companyId
+    jobData.locationId
   );
 
   for await (const [i] of Array.from({ length: jobs }, (_, i) => [i])) {
-    const nextSequence = await getNextSequence(serviceRole, "job", companyId);
+    const nextSequence = await getNextSequence(serviceRole, "job");
     if (nextSequence.error) {
       throw redirect(
         path.to.newJob,

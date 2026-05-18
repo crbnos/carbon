@@ -17,8 +17,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!id) throw new Error("Could not find id");
 
   const [companySettings, shipmentTracking] = await Promise.all([
-    getCompanySettings(client, companyId),
-    getShipmentTracking(client, id, companyId)
+    getCompanySettings(),
+    getShipmentTracking(id)
   ]);
 
   // Get the label size from query params or default to zebra2x1

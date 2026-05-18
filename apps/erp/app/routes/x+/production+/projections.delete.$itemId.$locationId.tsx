@@ -10,7 +10,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     delete: "production"
   });
 
@@ -32,7 +32,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Only delete projections for future periods (current week and beyond)
   const futurePeriodIds = periods.map((p) => p.id);
 
-  const result = await deleteDemandProjections(client, {
+  const result = await deleteDemandProjections({
     itemId,
     locationId,
     companyId,

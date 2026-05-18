@@ -16,9 +16,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!id) throw new Error("Could not find id");
 
   const [company, stockTransfer, stockTransferLines] = await Promise.all([
-    getCompany(client, companyId),
-    getStockTransfer(client, id),
-    getStockTransferLines(client, id)
+    getCompany(),
+    getStockTransfer(id),
+    getStockTransferLines(id)
   ]);
 
   if (company.error) {
@@ -73,7 +73,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             if (!path) {
               return null;
             }
-            return getBase64ImageFromSupabase(client, path).then((data) => ({
+            return getBase64ImageFromSupabase(path).then((data) => ({
               id,
               data
             }));

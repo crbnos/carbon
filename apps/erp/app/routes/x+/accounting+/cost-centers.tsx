@@ -28,14 +28,14 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "accounting",
     role: "employee"
   });
 
   const [costCenters, approvalRules] = await Promise.all([
-    getCostCentersTree(client, companyId),
-    getApprovalRulesForApprover(client, "purchaseOrder", companyId)
+    getCostCentersTree(),
+    getApprovalRulesForApprover("purchaseOrder")
   ]);
 
   if (costCenters.error) {

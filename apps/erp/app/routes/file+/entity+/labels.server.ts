@@ -9,8 +9,8 @@ export async function getEntityLabelData(
   trackedEntityId: string
 ) {
   const [companySettings, trackedEntity] = await Promise.all([
-    getCompanySettings(client, companyId),
-    getTrackedEntity(client, trackedEntityId)
+    getCompanySettings(),
+    getTrackedEntity(trackedEntityId)
   ]);
 
   if (!trackedEntity.data) {

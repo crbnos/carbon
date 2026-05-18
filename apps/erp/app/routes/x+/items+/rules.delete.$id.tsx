@@ -18,8 +18,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const { client } = await requirePermissions(request, { view: "parts" });
-  const rule = await getItemRule(client, id);
+  await requirePermissions(request, { view: "parts" });
+  const rule = await getItemRule(id);
   if (rule.error) {
     throw redirect(
       path.to.itemRules,
@@ -50,7 +50,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const result = await deleteItemRule(client, id);
+  const result = await deleteItemRule(id);
   if (result.error) {
     throw redirect(
       path.to.itemRules,

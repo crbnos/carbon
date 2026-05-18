@@ -3,12 +3,12 @@ import type { LoaderFunctionArgs } from "react-router";
 import { getQuoteLinesList } from "~/modules/sales";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
   const { id } = params;
   if (!id) return { data: [], error: null };
 
-  return await getQuoteLinesList(client, id);
+  return await getQuoteLinesList(id);
 }

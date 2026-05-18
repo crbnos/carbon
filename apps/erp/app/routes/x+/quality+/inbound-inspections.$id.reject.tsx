@@ -56,9 +56,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const serviceRole = await getCarbonServiceRole();
 
   const [inspection, userDefaults, issueTypes] = await Promise.all([
-    getInboundInspection(client, id),
+    getInboundInspection(id),
     getUserDefaults(client, userId, companyId),
-    getIssueTypesList(client, companyId)
+    getIssueTypesList()
   ]);
 
   if (inspection.error || !inspection.data) {
@@ -90,11 +90,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const nextSequence = await getNextSequence(
-    serviceRole,
-    "nonConformance",
-    companyId
-  );
+  const nextSequence = await getNextSequence(serviceRole, "nonConformance");
   if (nextSequence.error || !nextSequence.data) {
     throw redirect(
       path.to.inboundInspection(id),
@@ -271,7 +267,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   try {
-    const integrations = await getCompanyIntegrations(client, companyId);
+    const integrations = await getCompanyIntegrations();
     await notifyIssueCreated({ client, serviceRole }, integrations, {
       companyId,
       userId,

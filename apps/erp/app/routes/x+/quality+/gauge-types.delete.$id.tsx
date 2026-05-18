@@ -9,14 +9,14 @@ import { deleteGaugeType, getGaugeType } from "~/modules/quality";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "quality",
     role: "employee"
   });
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const gaugeType = await getGaugeType(client, id);
+  const gaugeType = await getGaugeType(id);
   if (gaugeType.error) {
     throw redirect(
       `${path.to.gaugeTypes}?${getParams(request)}`,
@@ -28,7 +28,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "quality"
   });
 
@@ -40,7 +40,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteGaugeTypeError } = await deleteGaugeType(client, id);
+  const { error: deleteGaugeTypeError } = await deleteGaugeType(id);
   if (deleteGaugeTypeError) {
     const errorMessage =
       deleteGaugeTypeError.code === "23503"

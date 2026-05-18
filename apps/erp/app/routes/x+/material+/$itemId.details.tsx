@@ -20,7 +20,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -34,7 +34,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateMaterial = await upsertMaterial(client, {
+  const updateMaterial = await upsertMaterial({
     ...validation.data,
     id: itemId,
     customFields: setCustomFields(formData),

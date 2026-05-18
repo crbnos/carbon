@@ -39,7 +39,7 @@ export async function action(args: ActionFunctionArgs) {
   const { request, params } = args;
   assertIsPost(request);
 
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "purchasing",
     role: "employee"
   });
@@ -77,8 +77,7 @@ export async function action(args: ActionFunctionArgs) {
   // Check supplier approval status
   const supplierApprovalRequired = await isApprovalRequired(
     serviceRole,
-    "supplier",
-    companyId
+    "supplier"
   );
   if (supplierApprovalRequired && purchaseOrder.data.supplierId) {
     const supplier = await getSupplier(
@@ -100,11 +99,10 @@ export async function action(args: ActionFunctionArgs) {
   const approvalRequired = await isApprovalRequired(
     serviceRole,
     "purchaseOrder",
-    companyId,
     orderAmount
   );
 
-  const finalize = await finalizePurchaseOrder(client, orderId, userId);
+  const finalize = await finalizePurchaseOrder(orderId);
   if (finalize.error) {
     throw redirect(
       path.to.purchaseOrder(orderId),
@@ -137,7 +135,6 @@ export async function action(args: ActionFunctionArgs) {
       const rule = await getApprovalRuleByAmount(
         serviceRole,
         "purchaseOrder",
-        companyId,
         orderAmount
       );
       const approverIds = rule.data
@@ -160,7 +157,7 @@ export async function action(args: ActionFunctionArgs) {
       }
     }
 
-    await updatePurchaseOrderStatus(client, {
+    await updatePurchaseOrderStatus({
       id: orderId,
       status: "Needs Approval",
       assignee: undefined,
@@ -174,7 +171,7 @@ export async function action(args: ActionFunctionArgs) {
   }
 
   // Check if we should update prices on purchase order finalize
-  const companySettings = await getCompanySettings(serviceRole, companyId);
+  const companySettings = await getCompanySettings(serviceRole);
   if (
     companySettings.data?.purchasePriceUpdateTiming ===
     "Purchase Order Finalize"
@@ -287,12 +284,12 @@ export async function action(args: ActionFunctionArgs) {
           paymentTerms,
           buyer
         ] = await Promise.all([
-          getCompany(serviceRole, companyId),
+          getCompany(serviceRole),
           getSupplierContact(serviceRole, supplierContact),
           getPurchaseOrder(serviceRole, orderId),
           getPurchaseOrderLines(serviceRole, orderId),
           getPurchaseOrderLocations(serviceRole, orderId),
-          getPaymentTermsList(serviceRole, companyId),
+          getPaymentTermsList(serviceRole),
           getUser(serviceRole, userId)
         ]);
 

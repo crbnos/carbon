@@ -20,11 +20,13 @@ export const handle: Handle = {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
+  const { companyId, companyGroupId, userId } = await requirePermissions(
+    request,
+    {
       create: "sales",
       bypassRls: true
-    });
+    }
+  );
 
   const formData = await request.formData();
   const validation = await validator(salesOrderValidator).validate(formData);
@@ -39,7 +41,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const useNextSequence = !salesOrderId;
 
   if (useNextSequence) {
-    const nextSequence = await getNextSequence(client, "salesOrder", companyId);
+    const nextSequence = await getNextSequence("salesOrder");
     if (nextSequence.error) {
       throw redirect(
         path.to.newSalesOrder,
@@ -54,7 +56,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (!salesOrderId) throw new Error("salesOrderId is not defined");
 
-  const createSalesOrder = await upsertSalesOrder(client, {
+  const createSalesOrder = await upsertSalesOrder({
     ...d,
     salesOrderId,
     companyId,

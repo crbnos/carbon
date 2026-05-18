@@ -13,7 +13,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "sales"
   });
 
@@ -32,7 +32,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked supplier quote. Reopen it first."
   });
 
-  const deleteLine = await deleteSupplierQuoteLine(client, lineId);
+  const deleteLine = await deleteSupplierQuoteLine(lineId);
 
   if (deleteLine.error) {
     return data(

@@ -29,7 +29,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const update = await updateIssueStatus(client, {
+  const update = await updateIssueStatus({
     id,
     status,
     assignee: ["Closed"].includes(status) ? null : undefined,
@@ -45,7 +45,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Send status update notifications (non-blocking)
   try {
-    const integrations = await getCompanyIntegrations(client, companyId);
+    const integrations = await getCompanyIntegrations();
     await notifyIssueStatusChanged({ client }, integrations, {
       companyId,
       userId,

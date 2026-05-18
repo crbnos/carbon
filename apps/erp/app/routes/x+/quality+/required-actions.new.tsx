@@ -13,7 +13,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "quality"
   });
 
@@ -28,7 +28,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { name, active } = validation.data;
 
-  const createResult = await upsertRequiredAction(client, {
+  const createResult = await upsertRequiredAction({
     name,
     active: active ?? true,
     companyId,

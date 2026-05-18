@@ -1,6 +1,7 @@
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { z } from "zod";
+import { z } from "zod";
+import { AuthContextHolder, getAuthClient, mcpTool } from "~/services/mcp";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
@@ -10,233 +11,297 @@ import type {
   documentSourceTypes,
   documentValidator
 } from "./documents.models";
-
-export async function deleteDocument(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("document").delete().eq("id", id);
-}
-
-export async function deleteDocumentFavorite(
-  client: SupabaseClient<Database>,
-  id: string,
-  userId: string
-) {
-  return client
-    .from("documentFavorite")
-    .delete()
-    .eq("documentId", id)
-    .eq("userId", userId);
-}
-
-export async function deleteDocumentLabel(
-  client: SupabaseClient<Database>,
-  id: string,
-  label: string
-) {
-  return client
-    .from("documentLabel")
-    .delete()
-    .eq("documentId", id)
-    .eq("label", label);
-}
-
-export async function getDocument(
-  client: SupabaseClient<Database>,
-  documentId: string
-) {
-  return client.from("documents").select("*").eq("id", documentId).single();
-}
-
-export async function getDocuments(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args: GenericQueryFilters & {
-    search: string | null;
-    favorite?: boolean;
-    recent?: boolean;
-    createdBy?: string;
-    active: boolean;
+export const deleteDocument = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteDocument(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("document").delete().eq("id", id);
   }
-) {
-  let query = client
-    .from("documents")
-    .select("*", {
-      count: "exact"
+);
+
+export const deleteDocumentFavorite = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteDocumentFavorite(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { userId } = AuthContextHolder.get();
+    return client
+      .from("documentFavorite")
+      .delete()
+      .eq("documentId", id)
+      .eq("userId", userId);
+  }
+);
+
+export const deleteDocumentLabel = mcpTool(
+  {
+    classification: "DESTRUCTIVE"
+  },
+  async function deleteDocumentLabel(id: string, label: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client
+      .from("documentLabel")
+      .delete()
+      .eq("documentId", id)
+      .eq("label", label);
+  }
+);
+
+export const getDocument = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getDocument(documentId: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("documents").select("*").eq("id", documentId).single();
+  }
+);
+
+export const getDocuments = mcpTool(
+  {
+    classification: "READ",
+    schema: z.object({
+      args: z.object({
+        limit: z.number().int().default(100),
+        offset: z.number().int().default(0),
+        search: z.string().nullable(),
+        favorite: z.boolean().optional(),
+        recent: z.boolean().optional(),
+        active: z.boolean()
+      })
     })
-    .eq("companyId", companyId)
-    .eq("active", args.active);
+  },
+  async function getDocuments(
+    args: GenericQueryFilters & {
+      search: string | null;
+      favorite?: boolean;
+      recent?: boolean;
+      createdBy?: string;
+      active: boolean;
+    }
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
+    let query = client
+      .from("documents")
+      .select("*", {
+        count: "exact"
+      })
+      .eq("companyId", companyId)
+      .eq("active", args.active);
 
-  if (args?.search) {
-    query = query.or(
-      `name.ilike.%${args.search}%,description.ilike.%${args.search}%`
-    );
+    if (args?.search) {
+      query = query.or(
+        `name.ilike.%${args.search}%,description.ilike.%${args.search}%`
+      );
+    }
+
+    if (args?.favorite) {
+      query = query.eq("favorite", true);
+    }
+
+    if (args.recent) {
+      query = query.order("lastActivityAt", { ascending: false });
+    }
+
+    query = setGenericQueryFilters(query, args, [
+      { column: "favorite", ascending: false }
+    ]);
+
+    return query;
   }
+);
 
-  if (args?.favorite) {
-    query = query.eq("favorite", true);
+export const getDocumentExtensions = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getDocumentExtensions() {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    return client.from("documentExtensions").select("extension");
   }
+);
 
-  if (args.recent) {
-    query = query.order("lastActivityAt", { ascending: false });
+export const getDocumentLabels = mcpTool(
+  {
+    classification: "READ"
+  },
+  async function getDocumentLabels() {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { userId } = AuthContextHolder.get();
+    return client.from("documentLabels").select("*").eq("userId", userId);
   }
+);
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "favorite", ascending: false }
-  ]);
+export const insertDocumentFavorite = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function insertDocumentFavorite(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { userId } = AuthContextHolder.get();
+    return client.from("documentFavorite").insert({ documentId: id, userId });
+  }
+);
 
-  return query;
-}
+export const insertDocumentLabel = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function insertDocumentLabel(id: string, label: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { userId } = AuthContextHolder.get();
+    return client
+      .from("documentLabel")
+      .insert({ documentId: id, label, userId });
+  }
+);
 
-export async function getDocumentExtensions(client: SupabaseClient<Database>) {
-  return client.from("documentExtensions").select("extension");
-}
+export const moveDocumentToTrash = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function moveDocumentToTrash(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { userId } = AuthContextHolder.get();
+    return client
+      .from("document")
+      .update({
+        active: false,
+        updatedBy: userId,
+        updatedAt: new Date().toISOString()
+      })
+      .eq("id", id);
+  }
+);
 
-export async function getDocumentLabels(
-  client: SupabaseClient<Database>,
-  userId: string
-) {
-  return client.from("documentLabels").select("*").eq("userId", userId);
-}
-
-export async function insertDocumentFavorite(
-  client: SupabaseClient<Database>,
-  id: string,
-  userId: string
-) {
-  return client.from("documentFavorite").insert({ documentId: id, userId });
-}
-
-export async function insertDocumentLabel(
-  client: SupabaseClient<Database>,
-  id: string,
-  label: string,
-  userId: string
-) {
-  return client.from("documentLabel").insert({ documentId: id, label, userId });
-}
-
-export async function moveDocumentToTrash(
-  client: SupabaseClient<Database>,
-  id: string,
-  userId: string
-) {
-  return client
-    .from("document")
-    .update({
-      active: false,
-      updatedBy: userId,
-      updatedAt: new Date().toISOString()
-    })
-    .eq("id", id);
-}
-
-export async function restoreDocument(
-  client: SupabaseClient<Database>,
-  id: string,
-  userId: string
-) {
-  return client
-    .from("document")
-    .update({
-      active: true,
-      updatedBy: userId,
-      updatedAt: new Date().toISOString()
-    })
-    .eq("id", id);
-}
+export const restoreDocument = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function restoreDocument(id: string) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { userId } = AuthContextHolder.get();
+    return client
+      .from("document")
+      .update({
+        active: true,
+        updatedBy: userId,
+        updatedAt: new Date().toISOString()
+      })
+      .eq("id", id);
+  }
+);
 
 type SourceDocumentData = {
   sourceDocument?: (typeof documentSourceTypes)[number];
   sourceDocumentId?: string;
 };
 
-export async function upsertDocument(
-  client: SupabaseClient<Database>,
-  document:
-    | (Omit<z.infer<typeof documentValidator>, "id"> & {
-        path: string;
-        size: number;
-        companyId: string;
-        createdBy: string;
-      } & SourceDocumentData)
-    | (Omit<z.infer<typeof documentValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-      })
-) {
-  const type = getDocumentType(document.name ?? "");
-  if ("createdBy" in document) {
-    return (
-      client
-        .from("document")
-        // @ts-ignore
-        .insert({ ...document, type })
-        .select("*")
-        .single()
-    );
+export const upsertDocument = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function upsertDocument(
+    document:
+      | (Omit<z.infer<typeof documentValidator>, "id"> & {
+          path: string;
+          size: number;
+          companyId: string;
+          createdBy: string;
+        } & SourceDocumentData)
+      | (Omit<z.infer<typeof documentValidator>, "id"> & {
+          id: string;
+          updatedBy: string;
+        })
+  ) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const type = getDocumentType(document.name ?? "");
+    if ("createdBy" in document) {
+      return (
+        client
+          .from("document")
+          // @ts-ignore
+          .insert({ ...document, type })
+          .select("*")
+          .single()
+      );
+    }
+
+    // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+    const { extension, ...data } = document;
+    return client
+      .from("document")
+      .update(
+        sanitize({
+          ...data,
+          type,
+          updatedAt: new Date().toISOString()
+        })
+      )
+      .eq("id", document.id);
   }
+);
 
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { extension, ...data } = document;
-  return client
-    .from("document")
-    .update(
-      sanitize({
-        ...data,
-        type,
-        updatedAt: new Date().toISOString()
-      })
-    )
-    .eq("id", document.id);
-}
-
-export async function updateDocumentFavorite(
-  client: SupabaseClient<Database>,
-  args: {
+export const updateDocumentFavorite = mcpTool(
+  {
+    classification: "WRITE",
+    schema: z.object({
+      args: z.object({ id: z.string(), favorite: z.boolean() })
+    })
+  },
+  async function updateDocumentFavorite(args: {
     id: string;
     favorite: boolean;
-    userId: string;
+  }) {
+    const client = getAuthClient<SupabaseClient<Database>>();
+    const { id, favorite, userId } = args;
+    if (!favorite) {
+      return client
+        .from("documentFavorite")
+        .delete()
+        .eq("documentId", id)
+        .eq("userId", userId);
+    } else {
+      return client
+        .from("documentFavorite")
+        .insert({ documentId: id, userId: userId });
+    }
   }
-) {
-  const { id, favorite, userId } = args;
-  if (!favorite) {
+);
+
+export const updateDocumentLabels = mcpTool(
+  {
+    classification: "WRITE"
+  },
+  async function updateDocumentLabels(
+    document: z.infer<typeof documentLabelsValidator> & {
+      userId: string;
+    }
+  ) {
+    const { userId } = AuthContextHolder.get();
+    const client = getAuthClient<SupabaseClient<Database>>();
+    if (!document.labels) {
+      throw new Error("No labels provided");
+    }
+
     return client
-      .from("documentFavorite")
+      .from("documentLabel")
       .delete()
-      .eq("documentId", id)
-      .eq("userId", userId);
-  } else {
-    return client
-      .from("documentFavorite")
-      .insert({ documentId: id, userId: userId });
+      .eq("documentId", document.documentId)
+      .eq("userId", userId)
+      .then(() => {
+        return client.from("documentLabel").insert(
+          // @ts-ignore
+          document.labels.map((label) => ({
+            documentId: document.documentId,
+            label,
+            userId: userId
+          }))
+        );
+      });
   }
-}
-
-export async function updateDocumentLabels(
-  client: SupabaseClient<Database>,
-  document: z.infer<typeof documentLabelsValidator> & {
-    userId: string;
-  }
-) {
-  if (!document.labels) {
-    throw new Error("No labels provided");
-  }
-
-  return client
-    .from("documentLabel")
-    .delete()
-    .eq("documentId", document.documentId)
-    .eq("userId", document.userId)
-    .then(() => {
-      return client.from("documentLabel").insert(
-        // @ts-ignore
-        document.labels.map((label) => ({
-          documentId: document.documentId,
-          label,
-          userId: document.userId
-        }))
-      );
-    });
-}
+);

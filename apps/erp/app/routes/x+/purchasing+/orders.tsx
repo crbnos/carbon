@@ -17,7 +17,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing",
     bypassRls: true
   });
@@ -31,7 +31,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const purchasOrders = await getPurchaseOrders(client, companyId, {
+  const purchasOrders = await getPurchaseOrders({
     search,
     status,
     supplierId,

@@ -9,14 +9,14 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "accounting"
   });
 
   const { journalEntryId } = params;
   if (!journalEntryId) throw new Error("Could not find journalEntryId");
 
-  const nextSequence = await getNextSequence(client, "journalEntry", companyId);
+  const nextSequence = await getNextSequence("journalEntry");
 
   if (nextSequence.error) {
     throw redirect(
@@ -28,7 +28,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const result = await reverseJournalEntry(client, journalEntryId, {
+  const result = await reverseJournalEntry(journalEntryId, {
     journalEntryId: nextSequence.data,
     companyId,
     userId

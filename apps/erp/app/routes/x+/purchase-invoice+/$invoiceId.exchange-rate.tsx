@@ -14,7 +14,7 @@ import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyGroupId } = await requirePermissions(request, {
+  const { companyGroupId } = await requirePermissions(request, {
     update: "invoicing"
   });
 
@@ -48,15 +48,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const currencyCode = formData.get("currencyCode") as string;
   if (!currencyCode) throw new Error("Could not find currencyCode");
 
-  const currency = await getCurrencyByCode(
-    client,
-    companyGroupId,
-    currencyCode
-  );
+  const currency = await getCurrencyByCode(companyGroupId, currencyCode);
   if (currency.error || !currency.data.exchangeRate)
     throw new Error("Could not find currency");
 
-  const update = await updatePurchaseInvoiceExchangeRate(client, {
+  const update = await updatePurchaseInvoiceExchangeRate({
     id: invoiceId,
     exchangeRate: currency.data.exchangeRate
   });

@@ -9,14 +9,14 @@ import { deletePricingRule, getPricingRule } from "~/modules/sales";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
   const { ruleId } = params;
   if (!ruleId) throw notFound("ruleId not found");
 
-  const pricingRule = await getPricingRule(client, ruleId);
+  const pricingRule = await getPricingRule(ruleId);
   if (pricingRule.error) {
     throw redirect(
       `${path.to.salesPricingRules}?${getParams(request)}`,
@@ -31,7 +31,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "sales"
   });
 
@@ -43,7 +43,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteError } = await deletePricingRule(client, ruleId);
+  const { error: deleteError } = await deletePricingRule(ruleId);
   if (deleteError) {
     throw redirect(
       path.to.salesPricingRules,

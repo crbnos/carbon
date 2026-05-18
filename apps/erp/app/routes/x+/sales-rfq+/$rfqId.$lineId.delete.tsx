@@ -34,11 +34,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked RFQ. Reopen it first."
   });
 
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "sales"
   });
 
-  const deleteLine = await deleteSalesRFQLine(client, lineId);
+  const deleteLine = await deleteSalesRFQLine(lineId);
   if (deleteLine.error) {
     throw redirect(
       path.to.quoteLine(rfqId, lineId),

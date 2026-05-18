@@ -4,7 +4,7 @@ import { data } from "react-router";
 import { getMaterialFinishList } from "~/modules/items";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts",
     role: "employee"
   });
@@ -13,5 +13,5 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     return data({ error: "Substance ID is required" }, { status: 400 });
   }
 
-  return await getMaterialFinishList(client, params.substanceId, companyId);
+  return await getMaterialFinishList(params.substanceId);
 }

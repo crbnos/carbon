@@ -8,7 +8,7 @@ import { itemValidator, updateItem } from "~/modules/items";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     create: "parts"
   });
 
@@ -26,7 +26,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const update = await updateItem(client, {
+  const update = await updateItem({
     ...validation.data,
     type: type as "Part",
     companyId

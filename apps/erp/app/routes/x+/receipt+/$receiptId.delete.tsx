@@ -7,7 +7,7 @@ import { deleteReceipt, getReceipt } from "~/modules/inventory";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "inventory"
   });
 
@@ -20,10 +20,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // make sure the receipt has not been posted
-  const { error: getReceiptError, data: receipt } = await getReceipt(
-    client,
-    receiptId
-  );
+  const { error: getReceiptError, data: receipt } = await getReceipt(receiptId);
   if (getReceiptError) {
     throw redirect(
       path.to.receipts,
@@ -41,7 +38,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteReceiptError } = await deleteReceipt(client, receiptId);
+  const { error: deleteReceiptError } = await deleteReceipt(receiptId);
   if (deleteReceiptError) {
     throw redirect(
       path.to.receipts,
