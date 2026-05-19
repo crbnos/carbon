@@ -1354,9 +1354,6 @@ export const getJobOperationStepRecords = mcpTool(
   }
 );
 
-  return query;
-}
-
 export async function getJobOperationDependencies(
   client: SupabaseClient<Database>,
   jobId: string
@@ -1365,100 +1362,6 @@ export async function getJobOperationDependencies(
     .from("jobOperationDependency")
     .select("operationId, dependsOnId")
     .eq("jobId", jobId);
-}
-
-export async function getJobOperationsAssignedToEmployee(
-  client: SupabaseClient<Database>,
-  employeeId: string,
-  companyId: string
-) {
-  return client
-    .from("jobOperation")
-    .select(
-      "id, description, workCenterId, ...job(jobId:id, jobReadableId:jobId)"
-    )
-    .eq("assignee", employeeId)
-    .eq("companyId", companyId);
-}
-
-export async function getJobOperationAttachments(
-  client: SupabaseClient<Database>,
-  jobOperationIds: string[]
-): Promise<Record<string, string[]>> {
-  if (jobOperationIds.length === 0) return {};
-
-  const { data: operationAttributes } = await client
-    .from("jobOperationStep")
-    .select("*, jobOperationStepRecord(*)")
-    .in("operationId", jobOperationIds);
-
-  if (!operationAttributes) return {};
-
-  const attachmentsByOperation: Record<string, string[]> = {};
-  operationAttributes.forEach((attr) => {
-    if (
-      attr.jobOperationStepRecord &&
-      Array.isArray(attr.jobOperationStepRecord)
-    ) {
-      attr.jobOperationStepRecord.forEach((record) => {
-        if (attr.type === "File" && record.value) {
-          if (!attachmentsByOperation[attr.operationId]) {
-            attachmentsByOperation[attr.operationId] = [];
-          }
-          attachmentsByOperation[attr.operationId].push(record.value);
-        }
-      });
-    }
-  });
-
-  return attachmentsByOperation;
-}
-
-export async function getJobOperationsList(
-  client: SupabaseClient<Database>,
-  jobId: string
-) {
-  return client
-    .from("jobOperation")
-    .select("id, description, order")
-    .eq("jobId", jobId)
-    .order("order", { ascending: true });
-}
-
-export async function getJobOperationsByMethodId(
-  client: SupabaseClient<Database>,
-  jobMakeMethodId: string
-) {
-  return client
-    .from("jobOperation")
-    .select(
-      "*, jobOperationTool(*), jobOperationParameter(*), jobOperationStep(*, jobOperationStepRecord(*))"
-    )
-    .eq("jobMakeMethodId", jobMakeMethodId)
-    .order("order", { ascending: true });
-}
-
-export async function getJobOperationStepRecords(
-  client: SupabaseClient<Database>,
-  jobId: string,
-  args: GenericQueryFilters & {
-    search: string | null;
-  }
-) {
-  let query = client
-    .from("jobOperationStepRecord")
-    .select("id, value, jobOperationStep:operationId!inner(id, description)")
-    .eq("jobOperationStep.jobId", jobId);
-
-  if (args.search) {
-    query = query.ilike("value", `%${args.search}%`);
-  }
-
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false },
-  ]);
-
-  return query;
 }
 
 export const getOutsideOperationsByJobId = mcpTool(

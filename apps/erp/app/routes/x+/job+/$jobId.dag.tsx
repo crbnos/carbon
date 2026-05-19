@@ -22,7 +22,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
 
-  const job = await getJob(client, jobId);
+  const job = await getJob(jobId);
   if (job.error) {
     throw redirect(
       path.to.jobs,
