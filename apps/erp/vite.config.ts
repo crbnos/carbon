@@ -60,6 +60,14 @@ export default defineConfig(({ isSsrBuild, mode }) => {
           __dirname,
           "../../packages/form/src/index.tsx",
         ),
+        ...(isSsrBuild
+          ? {}
+          : {
+              "node:async_hooks": path.resolve(
+                __dirname,
+                "app/stubs/async_hooks.ts",
+              ),
+            }),
       },
     },
   };

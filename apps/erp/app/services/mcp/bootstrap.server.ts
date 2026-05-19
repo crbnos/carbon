@@ -18,7 +18,7 @@ export function ensureMcpToolsLoaded(): Promise<number> {
 async function loadAnnotatedServices(): Promise<number> {
   // Lazy import so test environments (and tooling) that exercise the registry
   // directly don't pay the cost of pulling in every service module.
-  const { registerAll } = await import("./mcp-tools.generated");
+  const { registerAll } = await import("./mcp-tools.generated.server");
   registerAll();
   const size = McpToolRegistry.getInstance().size();
   console.log(`[mcp] loaded ${size} annotated tools into registry`);

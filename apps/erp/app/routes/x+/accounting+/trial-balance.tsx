@@ -7,10 +7,12 @@ import { redirect, useLoaderData } from "react-router";
 import type { Chart } from "~/modules/accounting";
 import {
   getCompaniesInGroup,
-  getConsolidatedBalances,
-  getFinancialStatementBalances,
-  translateCompanyBalances
+  getFinancialStatementBalances
 } from "~/modules/accounting";
+import {
+  getConsolidatedBalances,
+  translateCompanyBalances
+} from "~/modules/accounting/accounting.server";
 import {
   ReportFilters,
   TrialBalanceTree

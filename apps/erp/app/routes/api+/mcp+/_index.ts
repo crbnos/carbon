@@ -1,7 +1,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
 import type { ActionFunctionArgs } from "react-router";
-import { ensureMcpToolsLoaded } from "~/services/mcp";
+import { ensureMcpToolsLoaded } from "~/services/mcp/bootstrap.server";
 import { createMcpServer } from "./lib/server";
 
 const isMcpDebug =

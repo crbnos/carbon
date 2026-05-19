@@ -100,9 +100,12 @@ describe("manifest helpers", () => {
 // the registry. If the generator regresses to emitting only
 // module/name/argOrder, registration would crash at boot
 // (description.trim() on undefined) and silently drop identity injection.
-describe("mcp-tools.generated.ts runtime contract", () => {
+describe("mcp-tools.generated.server.ts runtime contract", () => {
   const generated = readFileSync(
-    resolve(dirname(fileURLToPath(import.meta.url)), "mcp-tools.generated.ts"),
+    resolve(
+      dirname(fileURLToPath(import.meta.url)),
+      "mcp-tools.generated.server.ts"
+    ),
     "utf8"
   );
 

@@ -4,7 +4,7 @@ export {
   AuthContextHolder,
   getAuthClient
 } from "./auth-context";
-export { ensureMcpToolsLoaded } from "./bootstrap";
+
 export type {
   ExecutorAuthorize,
   ExecutorContext,

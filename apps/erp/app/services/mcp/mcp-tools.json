@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-17T17:23:44.418Z",
-  "contentHash": "sha256:a58a487fc3f497fbe6fb1b5a16fa62142b38c710a319883a3fcc09b787d68325",
+  "generatedAt": "2026-05-19T13:07:57.803Z",
+  "contentHash": "sha256:428966687e5d828b5180a793977da2a0871398160cba97d0f38380314115338d",
   "tools": [
     {
       "id": "account_deleteUserAttributeValue",
@@ -209,14 +209,6 @@
       "description": "get companies in group",
       "classification": "READ",
       "descriptionHash": "sha256:4d8a048e17d20d0a05f42ee7d59689f828acc19c5e2db0e7c2e0c66b08e564ce"
-    },
-    {
-      "id": "accounting_getConsolidatedBalances",
-      "module": "accounting",
-      "name": "getConsolidatedBalances",
-      "description": "get consolidated balances",
-      "classification": "READ",
-      "descriptionHash": "sha256:da8d3be37804ef3de08c3cf76e93889de86fa875bc265e91cef365c35118dcd5"
     },
     {
       "id": "accounting_getCostCenter",
@@ -457,14 +449,6 @@
       "description": "save journal line dimensions",
       "classification": "WRITE",
       "descriptionHash": "sha256:645959b8712265e344d53f58a007f12cbd965cae928257f1607e38a6059953cf"
-    },
-    {
-      "id": "accounting_translateCompanyBalances",
-      "module": "accounting",
-      "name": "translateCompanyBalances",
-      "description": "translate company balances",
-      "classification": "WRITE",
-      "descriptionHash": "sha256:34a97ec2c54737386a0a8e47fefb399ba9f8a6a6f3b5d072603bf2e2e8c1a88f"
     },
     {
       "id": "accounting_updateDefaultBalanceSheetAccounts",

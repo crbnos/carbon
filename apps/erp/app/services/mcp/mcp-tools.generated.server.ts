@@ -5,6 +5,7 @@
 // side effect runs) and calls registry.registerParsed() once per tool.
 
 import * as account from "~/modules/account/account.service";
+import * as accountingServer from "~/modules/accounting/accounting.server";
 import * as accounting from "~/modules/accounting/accounting.service";
 import * as documents from "~/modules/documents/documents.service";
 import * as inventory from "~/modules/inventory/inventory.service";
@@ -96,7 +97,7 @@ export function registerAll(): void {
     inject: []
   });
 
-  // accounting (56 tools)
+  // accounting (58 tools)
   registry.registerParsed(accounting.createIntercompanyTransaction, {
     module: "accounting",
     name: "createIntercompanyTransaction",
@@ -207,6 +208,19 @@ export function registerAll(): void {
     name: "getCompaniesInGroup",
     argOrder: ["companyGroupId"],
     description: "get companies in group",
+    inject: []
+  });
+  registry.registerParsed(accountingServer.getConsolidatedBalances, {
+    module: "accounting",
+    name: "getConsolidatedBalances",
+    argOrder: [
+      "companyGroupId",
+      "companyIds",
+      "targetCurrency",
+      "periodEnd",
+      "periodStart?"
+    ],
+    description: "get consolidated balances",
     inject: []
   });
   registry.registerParsed(accounting.getCostCenter, {
@@ -417,6 +431,19 @@ export function registerAll(): void {
     name: "saveJournalLineDimensions",
     argOrder: ["journalLineId", "dimensions"],
     description: "save journal line dimensions",
+    inject: []
+  });
+  registry.registerParsed(accountingServer.translateCompanyBalances, {
+    module: "accounting",
+    name: "translateCompanyBalances",
+    argOrder: [
+      "companyGroupId",
+      "companyId",
+      "targetCurrency",
+      "periodEnd",
+      "periodStart?"
+    ],
+    description: "translate company balances",
     inject: []
   });
   registry.registerParsed(accounting.updateDefaultBalanceSheetAccounts, {

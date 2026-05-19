@@ -1,4 +1,3 @@
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database, Json } from "@carbon/database";
 import { getDateNYearsAgo, toStoredAmount } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -21,7 +20,7 @@ import type {
   journalEntryValidator,
   paymentTermValidator
 } from "./accounting.models";
-import type { Transaction, TranslatedBalance } from "./types";
+import type { Transaction } from "./types";
 
 /**
  * Sign multiplier for root account aggregation.
@@ -50,7 +49,7 @@ function rootSignMultiplier(accountClass: string | null): number {
  *   Balance Sheet  = Assets − Liabilities − Equity   (should ≈ 0)
  *   Income Statement = Revenue − Expenses             (= Net Income)
  */
-function applyRootSignCorrection<
+export function applyRootSignCorrection<
   T extends {
     id: string;
     parentId: string | null;
@@ -1319,231 +1318,6 @@ export const saveJournalLineDimensions = mcpTool(
         companyId
       }))
     );
-  }
-);
-
-export const translateCompanyBalances = mcpTool(
-  {
-    classification: "WRITE"
-  },
-  async function translateCompanyBalances(
-    companyGroupId: string,
-    companyId: string,
-    targetCurrency: string,
-    periodEnd: string,
-    periodStart?: string
-  ): Promise<{
-    data: TranslatedBalance[] | null;
-    cta: number;
-    error: string | null;
-  }> {
-    const client = getAuthClient<SupabaseClient<Database>>();
-
-    const { data, error } = await client.rpc("translateTrialBalance", {
-      p_company_group_id: companyGroupId,
-      p_company_id: companyId ?? undefined,
-      p_target_currency: targetCurrency,
-      p_period_end: periodEnd,
-      p_period_start: periodStart ?? undefined
-    });
-
-    if (error) {
-      return { data: null, cta: 0, error: error.message };
-    }
-
-    const rows = (data ?? []) as unknown as TranslatedBalance[];
-
-    // Look up each account's class to compute CTA.
-    // This runs cross-company (the caller passes the target companyId), so
-    // we use getCarbonServiceRole() to bypass RLS — the actor's RLS client
-    // would filter accounts to only their own company.
-    const accountIds = rows.map((r) => r.accountId);
-    const { data: accounts } = await getCarbonServiceRole()
-      .from("account")
-      .select("id, class")
-      .in("id", accountIds);
-
-    const classById = new Map((accounts ?? []).map((a) => [a.id, a.class]));
-
-    let totalTranslatedAssets = 0;
-    let totalTranslatedLiabilitiesAndEquity = 0;
-
-    for (const row of rows) {
-      const cls = classById.get(row.accountId);
-      if (cls === "Asset") {
-        totalTranslatedAssets += Number(row.translatedBalance);
-      } else {
-        // Liability, Equity, Revenue, Expense (but income statement
-        // accounts net to retained earnings on balance sheet)
-        totalTranslatedLiabilitiesAndEquity += Number(row.translatedBalance);
-      }
-    }
-
-    // CTA = translated assets - translated (liabilities + equity)
-    // A balanced sheet means assets = liabilities + equity + CTA
-    const cta = totalTranslatedAssets - totalTranslatedLiabilitiesAndEquity;
-
-    return { data: rows, cta, error: null };
-  }
-);
-
-export const getConsolidatedBalances = mcpTool(
-  {
-    classification: "READ"
-  },
-  async function getConsolidatedBalances(
-    companyGroupId: string,
-    companyIds: string[],
-    targetCurrency: string,
-    periodEnd: string,
-    periodStart?: string
-  ) {
-    const _client = getAuthClient<SupabaseClient<Database>>();
-    // Find elimination entities that should be included automatically.
-    // An elimination entity is included when its parentCompanyId is an ancestor
-    // of any selected company (i.e. it sits at or above the selected companies
-    // in the hierarchy and captures their intercompany eliminations).
-    // This queries across companies so we use getCarbonServiceRole() to bypass
-    // RLS — the actor's RLS client would only return their own company.
-    const { data: allGroupCompanies } = await getCarbonServiceRole()
-      .from("company")
-      .select("id, parentCompanyId, isEliminationEntity")
-      .eq("companyGroupId", companyGroupId)
-      .eq("active", true);
-
-    const groupCompanies = allGroupCompanies ?? [];
-    const selectedSet = new Set(companyIds);
-
-    // Collect all ancestors of selected companies
-    const ancestors = new Set<string>();
-    const companyById = new Map(groupCompanies.map((c) => [c.id, c]));
-    for (const id of companyIds) {
-      let current = companyById.get(id);
-      while (current?.parentCompanyId) {
-        ancestors.add(current.parentCompanyId);
-        current = companyById.get(current.parentCompanyId);
-      }
-    }
-
-    // Include elimination entities whose parent is an ancestor of (or is) a
-    // selected company — these hold the reversing entries for IC transactions
-    const eliminationIds = groupCompanies
-      .filter(
-        (c) =>
-          c.isEliminationEntity &&
-          c.parentCompanyId &&
-          (ancestors.has(c.parentCompanyId) ||
-            selectedSet.has(c.parentCompanyId))
-      )
-      .map((c) => c.id);
-
-    // All companies whose balances we need (operating + elimination entities)
-    const allIds = [...companyIds, ...eliminationIds];
-
-    // Get balances for all companies and translate to target currency
-    const [allBalances, translations] = await Promise.all([
-      Promise.all(
-        allIds.map((id) =>
-          getFinancialStatementBalances(companyGroupId, id, {
-            startDate: periodStart ?? null,
-            endDate: periodEnd
-          })
-        )
-      ),
-      Promise.all(
-        allIds.map((id) =>
-          translateCompanyBalances(
-            companyGroupId,
-            id,
-            targetCurrency,
-            periodEnd,
-            periodStart
-          )
-        )
-      )
-    ]);
-
-    // Build a map of translated balances per account, summed across companies
-    const translationByAccount = new Map<
-      string,
-      { translatedBalance: number; exchangeRate: number }
-    >();
-
-    for (const translation of translations) {
-      if (!translation.data) continue;
-      for (const row of translation.data) {
-        const existing = translationByAccount.get(row.accountId);
-        if (existing) {
-          existing.translatedBalance += Number(row.translatedBalance);
-        } else {
-          translationByAccount.set(row.accountId, {
-            translatedBalance: Number(row.translatedBalance),
-            exchangeRate: Number(row.exchangeRate)
-          });
-        }
-      }
-    }
-
-    // Sum CTA across all companies
-    const totalCta = translations.reduce((sum, t) => sum + t.cta, 0);
-
-    // Merge all company balances into one set of accounts, summing balances
-    const accountMap = new Map<
-      string,
-      {
-        balance: number;
-        balanceAtDate: number;
-        netChange: number;
-        translatedBalance: number;
-        exchangeRate: number;
-      }
-    >();
-
-    for (const result of allBalances) {
-      if (result.error || !result.data) continue;
-      for (const account of result.data) {
-        const existing = accountMap.get(account.id);
-        if (existing) {
-          existing.balance += account.balance ?? 0;
-          existing.balanceAtDate += account.balanceAtDate ?? 0;
-          existing.netChange += account.netChange ?? 0;
-        } else {
-          accountMap.set(account.id, {
-            balance: account.balance ?? 0,
-            balanceAtDate: account.balanceAtDate ?? 0,
-            netChange: account.netChange ?? 0,
-            translatedBalance: 0,
-            exchangeRate: 0
-          });
-        }
-      }
-    }
-
-    // Overlay translated values
-    for (const [accountId, translation] of translationByAccount) {
-      const account = accountMap.get(accountId);
-      if (account) {
-        account.translatedBalance = translation.translatedBalance;
-        account.exchangeRate = translation.exchangeRate;
-      }
-    }
-
-    // Use the first company's account structure as the base (shared chart of accounts)
-    const baseAccounts = allBalances.find((r) => r.data)?.data ?? [];
-
-    const consolidated = baseAccounts.map((account) => {
-      const summed = accountMap.get(account.id);
-      return {
-        ...account,
-        balance: summed?.balance ?? 0,
-        balanceAtDate: summed?.balanceAtDate ?? 0,
-        netChange: summed?.netChange ?? 0,
-        translatedBalance: summed?.translatedBalance ?? 0,
-        exchangeRate: summed?.exchangeRate ?? 0
-      };
-    });
-
-    return { data: applyRootSignCorrection(consolidated), cta: totalCta };
   }
 );
 
