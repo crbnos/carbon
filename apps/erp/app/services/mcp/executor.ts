@@ -1,4 +1,4 @@
-import { AuthContextHolder } from "./auth-context";
+import { AuthClientScope, AuthContextHolder } from "./auth-context";
 import { BLOCKED_TOOL_IDS } from "./blocked";
 import { McpToolRegistry } from "./registry";
 import type { McpClassification, McpToolMetadata } from "./types";
@@ -14,6 +14,10 @@ export interface ExecutorContext {
   // sourced from the ambient scope instead of reconstructed.
   sessionUserId?: string;
   companyGroupId?: string;
+  // Same optional-with-default treatment as the fields above. Defaults to ""
+  // (no associated email) — matches the API-key identity path in
+  // resolveAuthContext, so MCP tool execution behavior is unchanged.
+  email?: string;
 }
 
 export type ExecutorErrorCode =
@@ -179,16 +183,25 @@ export class ToolExecutor {
     // identity at runtime; it is fed only from the server-resolved `context`,
     // never from caller input. ALS isolates this per async execution, so
     // concurrent tool calls never observe each other's identity.
+    //
+    // The client factory is also registered for the MCP scope so that tools
+    // using getAuthClient() (instead of receiving client positionally) can
+    // resolve their Supabase handle.
     try {
       const data = await AuthContextHolder.run(
         {
           client: context.client,
           userId: context.userId,
           sessionUserId: context.sessionUserId ?? context.userId,
+          email: context.email ?? "",
           companyId: context.companyId,
           companyGroupId: context.companyGroupId ?? ""
         },
-        () => meta.fn(...args)
+        () =>
+          AuthClientScope.run(() => {
+            AuthClientScope.setFactory(() => context.client);
+            return meta.fn(...args);
+          })
       );
       return { ok: true, data };
     } catch (error) {

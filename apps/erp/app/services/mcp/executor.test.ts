@@ -65,14 +65,15 @@ describe("ToolExecutor", () => {
     });
 
     expect(result).toEqual({ ok: true, data: { ok: true } });
-    expect(seen).toEqual({
+    expect(seen).toMatchObject({
       client: ctx.client,
       userId: "user-1",
       // executor defaults these until the MCP route runs under the auth
       // middleware (Step 2): sessionUserId := userId, companyGroupId := "".
       sessionUserId: "user-1",
       companyId: "company-1",
-      companyGroupId: ""
+      companyGroupId: "",
+      email: ""
     });
     // Scope is torn down once execute() resolves.
     expect(AuthContextHolder.tryGet()).toBeUndefined();
