@@ -81,8 +81,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     assignee: ["Completed"].includes(status) ? null : undefined,
     completedAt: ["Completed"].includes(status)
       ? new Date().toISOString()
-      : null,
-    updatedBy: userId
+      : null
   });
   if (update.error) {
     throw redirect(

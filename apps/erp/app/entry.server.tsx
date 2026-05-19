@@ -12,6 +12,8 @@ let mcpBootTriggered = false;
 function triggerMcpBootOnce(): void {
   if (mcpBootTriggered) return;
   mcpBootTriggered = true;
+  // Boot-time, no request/auth context: use the service-role client. The
+  // pgmq_send RPC is not user-scoped and must run regardless of RLS.
   void notifyManifestQueue(getCarbonServiceRole()).catch(() => {
     // already logged inside notifyManifestQueue
   });

@@ -1,6 +1,5 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
@@ -29,12 +28,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     view: "quality"
   });
 
-  const serviceRole = await getCarbonServiceRole();
-
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const gauge = await getGauge(serviceRole, id);
+  const gauge = await getGauge(id);
 
   if (gauge.error) {
     throw redirect(
@@ -49,7 +46,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     gauge: gauge.data,
-    records: getGaugeCalibrationRecordsByGaugeId(serviceRole, id)
+    records: getGaugeCalibrationRecordsByGaugeId(id)
   };
 }
 

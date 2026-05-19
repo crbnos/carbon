@@ -10,7 +10,7 @@ import { getCustomerLocations } from "~/modules/sales";
 import { customerLocationsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const authorized = await requirePermissions(request, {
+  const _authorized = await requirePermissions(request, {
     view: "sales"
   });
 
@@ -21,7 +21,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       data: []
     };
 
-  const locations = await getCustomerLocations(authorized.client, customerId);
+  const locations = await getCustomerLocations(customerId);
   if (locations.error) {
     return data(
       locations,

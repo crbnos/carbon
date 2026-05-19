@@ -9,7 +9,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "people"
   });
 
@@ -22,8 +22,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const update = await updateAttribute({
-    ...validation.data,
-    updatedBy: userId
+    ...validation.data
   });
   if (update.error)
     redirect(

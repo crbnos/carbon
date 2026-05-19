@@ -1,3 +1,4 @@
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database, Json } from "@carbon/database";
 import { getDateNYearsAgo, toStoredAmount } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -601,14 +602,17 @@ export const getPaymentTermsList = mcpTool(
   {
     classification: "READ"
   },
-  async function getPaymentTermsList() {
-    const { companyId } = AuthContextHolder.get();
+  // `companyId` is optional: defaults to the ambient (actor's) company for
+  // authed routes. It is an explicit override for public/share routes (e.g.
+  // digital quote acceptance) where no AuthContextHolder is available.
+  async function getPaymentTermsList(companyId?: string) {
+    const resolvedCompanyId = companyId ?? AuthContextHolder.get().companyId;
     const client = getAuthClient<SupabaseClient<Database>>();
 
     return client
       .from("paymentTerm")
       .select("id, name")
-      .eq("companyId", companyId)
+      .eq("companyId", resolvedCompanyId)
       .eq("active", true)
       .order("name", { ascending: true });
   }
@@ -1324,6 +1328,7 @@ export const translateCompanyBalances = mcpTool(
   },
   async function translateCompanyBalances(
     companyGroupId: string,
+    companyId: string,
     targetCurrency: string,
     periodEnd: string,
     periodStart?: string
@@ -1332,7 +1337,6 @@ export const translateCompanyBalances = mcpTool(
     cta: number;
     error: string | null;
   }> {
-    const { companyId } = AuthContextHolder.get();
     const client = getAuthClient<SupabaseClient<Database>>();
 
     const { data, error } = await client.rpc("translateTrialBalance", {
@@ -1349,9 +1353,12 @@ export const translateCompanyBalances = mcpTool(
 
     const rows = (data ?? []) as unknown as TranslatedBalance[];
 
-    // Look up each account's class to compute CTA
+    // Look up each account's class to compute CTA.
+    // This runs cross-company (the caller passes the target companyId), so
+    // we use getCarbonServiceRole() to bypass RLS — the actor's RLS client
+    // would filter accounts to only their own company.
     const accountIds = rows.map((r) => r.accountId);
-    const { data: accounts } = await client
+    const { data: accounts } = await getCarbonServiceRole()
       .from("account")
       .select("id, class")
       .in("id", accountIds);
@@ -1391,12 +1398,14 @@ export const getConsolidatedBalances = mcpTool(
     periodEnd: string,
     periodStart?: string
   ) {
-    const client = getAuthClient<SupabaseClient<Database>>();
+    const _client = getAuthClient<SupabaseClient<Database>>();
     // Find elimination entities that should be included automatically.
     // An elimination entity is included when its parentCompanyId is an ancestor
     // of any selected company (i.e. it sits at or above the selected companies
     // in the hierarchy and captures their intercompany eliminations).
-    const { data: allGroupCompanies } = await client
+    // This queries across companies so we use getCarbonServiceRole() to bypass
+    // RLS — the actor's RLS client would only return their own company.
+    const { data: allGroupCompanies } = await getCarbonServiceRole()
       .from("company")
       .select("id, parentCompanyId, isEliminationEntity")
       .eq("companyGroupId", companyGroupId)

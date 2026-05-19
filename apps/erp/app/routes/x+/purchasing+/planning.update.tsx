@@ -449,8 +449,7 @@ export async function action({ request }: ActionFunctionArgs) {
           if (!createdNewPO && purchaseOrderId) {
             const updateResult = await updatePurchaseOrder({
               id: purchaseOrderId,
-              status: "Planned" as const,
-              updatedBy: userId
+              status: "Planned" as const
             });
 
             if (updateResult.error) {

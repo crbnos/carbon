@@ -32,7 +32,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const [employeeSummary, attributeCategories, companySettings] =
     await Promise.all([
       getEmployeeSummary(personId),
-      getAllAttributeCategories(personId),
+      getAllAttributeCategories(),
       getCompanySettings()
     ]);
 

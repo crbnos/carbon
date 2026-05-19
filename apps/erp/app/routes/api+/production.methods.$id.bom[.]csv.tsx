@@ -64,7 +64,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     });
   }
 
-  const methodTree = await getJobMethodTree(client, id);
+  const methodTree = await getJobMethodTree(id);
   if (methodTree.error) {
     return new Response(headers, {
       headers: {

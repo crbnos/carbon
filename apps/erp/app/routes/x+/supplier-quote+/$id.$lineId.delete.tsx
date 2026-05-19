@@ -21,10 +21,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) throw new Error("Could not find supplierQuoteId");
   if (!lineId) throw new Error("Could not find supplierQuoteLineId");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
-  const quote = await getSupplierQuote(viewClient, id);
+  const quote = await getSupplierQuote(id);
   await requireUnlocked({
     request,
     isLocked: isSupplierQuoteLocked(quote.data?.status),

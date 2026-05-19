@@ -40,9 +40,9 @@ import {
 } from "~/modules/settings";
 
 export async function loader({ request }: ActionFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
-  const company = await getCompany(companyId ?? 1);
+  const company = await getCompany();
 
   if (company.error || !company.data) {
     return {
@@ -77,16 +77,16 @@ export async function action({ request }: ActionFunctionArgs) {
   const companies = await getCompanies();
   const company = companies?.data?.[0];
 
-  const locations = await getLocationsList(company?.id ?? "");
+  const locations = await getLocationsList();
   const location = locations?.data?.[0];
 
   if (company && location) {
     const [companyUpdate, locationUpdate] = await Promise.all([
-      updateCompany(serviceRole, company.id!, {
+      updateCompany({
         ...d,
         updatedBy: userId
       }),
-      upsertLocation(serviceRole, {
+      upsertLocation({
         ...location,
         ...d,
         timezone: getLocalTimeZone(),
@@ -103,9 +103,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   } else {
     if (!companyId) {
-      const [companyInsert] = await Promise.all([
-        insertCompany(serviceRole, d)
-      ]);
+      const [companyInsert] = await Promise.all([insertCompany(d)]);
       if (companyInsert.error) {
         console.error(companyInsert.error);
         throw new Error("Fatal: failed to insert company");
@@ -118,7 +116,7 @@ export async function action({ request }: ActionFunctionArgs) {
       throw new Error("Fatal: failed to get company ID");
     }
 
-    const seed = await seedCompany(serviceRole);
+    const seed = await seedCompany();
     if (seed.error) {
       console.error(seed.error);
       throw new Error("Fatal: failed to seed company");
@@ -137,7 +135,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     // TODO: move all of this to transaction
     const [locationInsert] = await Promise.all([
-      upsertLocation(serviceRole, {
+      upsertLocation({
         ...locationData,
         name: "Headquarters",
         companyId,
@@ -157,9 +155,8 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     const [job] = await Promise.all([
-      insertEmployeeJob(serviceRole, {
+      insertEmployeeJob({
         id: userId,
-        companyId,
         locationId
       })
     ]);

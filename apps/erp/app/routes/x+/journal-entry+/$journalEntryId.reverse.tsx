@@ -9,7 +9,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "accounting"
   });
 
@@ -29,9 +29,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const result = await reverseJournalEntry(journalEntryId, {
-    journalEntryId: nextSequence.data,
-    companyId,
-    userId
+    journalEntryId: nextSequence.data
   });
 
   if (result.error) {

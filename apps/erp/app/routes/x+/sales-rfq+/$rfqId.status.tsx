@@ -11,7 +11,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "sales"
   });
 
@@ -61,8 +61,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     id,
     status,
     noQuoteReasonId,
-    assignee: status === "Closed" ? null : undefined,
-    updatedBy: userId
+    assignee: status === "Closed" ? null : undefined
   });
 
   if (update.error) {

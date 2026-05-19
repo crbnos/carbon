@@ -22,10 +22,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { quoteId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
-  const quote = await getQuote(viewClient, quoteId);
+  const quote = await getQuote(quoteId);
   await requireUnlocked({
     request,
     isLocked: isQuoteLocked(quote.data?.status),

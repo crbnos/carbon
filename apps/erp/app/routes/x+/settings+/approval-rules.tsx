@@ -1,6 +1,5 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
@@ -21,10 +20,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     role: "employee"
   });
 
-  const serviceRole = getCarbonServiceRole();
-
   const [rules, groupsResult] = await Promise.all([
-    getApprovalRules(serviceRole),
+    getApprovalRules(),
     client
       .from("group")
       .select("id, name")

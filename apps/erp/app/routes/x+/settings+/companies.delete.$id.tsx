@@ -5,7 +5,7 @@ import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteSubsidiary, getSubsidiary } from "~/modules/settings";
+import { getSubsidiary } from "~/modules/settings";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -40,10 +40,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteError } = await deleteSubsidiary(
-    getCarbonServiceRole(),
-    id
-  );
+  const serviceRole = getCarbonServiceRole();
+  const { error: deleteError } = await serviceRole
+    .from("company")
+    .delete()
+    .eq("id", id);
   if (deleteError) {
     throw redirect(
       path.to.companies,

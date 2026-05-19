@@ -1095,13 +1095,16 @@ export const getShippingMethodsList = mcpTool(
   {
     classification: "READ"
   },
-  async function getShippingMethodsList() {
+  // `companyId` is optional: defaults to the ambient (actor's) company for
+  // authed routes. It is an explicit override for public/share routes where
+  // no AuthContextHolder is available.
+  async function getShippingMethodsList(companyId?: string) {
+    const resolvedCompanyId = companyId ?? AuthContextHolder.get().companyId;
     const client = getAuthClient<SupabaseClient<Database>>();
-    const { companyId } = AuthContextHolder.get();
     return client
       .from("shippingMethod")
       .select("id, name")
-      .eq("companyId", companyId)
+      .eq("companyId", resolvedCompanyId)
       .eq("active", true)
       .order("name", { ascending: true });
   }
@@ -1427,8 +1430,7 @@ export const insertManualInventoryAdjustment = mcpTool(
         trackedEntityId,
         expirationDate: providedExpirationDate,
         reason: comment?.trim() || "Updated via inventory adjustment",
-        source: "Inventory Adjustment",
-        userId: userId
+        source: "Inventory Adjustment"
       });
     };
 
@@ -1684,7 +1686,8 @@ export const updateStockTransferStatus = mcpTool(
     completedAt: string | null;
   }) {
     const client = getAuthClient<SupabaseClient<Database>>();
-    const { id, status, assignee, completedAt, updatedBy } = args;
+    const { userId: updatedBy } = AuthContextHolder.get();
+    const { id, status, assignee, completedAt } = args;
     return client
       .from("stockTransfer")
       .update({
@@ -1996,7 +1999,8 @@ export const upsertStockTransferLines = mcpTool(
     stockTransferId: string;
   }) {
     const client = getAuthClient<SupabaseClient<Database>>();
-    const { lines, stockTransferId, companyId, createdBy } = args;
+    const { companyId, userId: createdBy } = AuthContextHolder.get();
+    const { lines, stockTransferId } = args;
     return client.from("stockTransferLine").insert(
       lines.map((line) => ({
         ...line,

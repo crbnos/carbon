@@ -62,11 +62,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) throw new Error("Could not find invoiceId");
 
   // Check if SI is locked
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "invoicing"
   });
 
-  const invoice = await getSalesInvoice(viewClient, id);
+  const invoice = await getSalesInvoice(id);
   if (invoice.error) {
     throw redirect(
       path.to.salesInvoice(id),

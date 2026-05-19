@@ -23,11 +23,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!orderId) throw new Error("Could not find orderId");
 
   // First check with view permission to verify PO status
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
 
-  const purchaseOrder = await getPurchaseOrder(viewClient, orderId);
+  const purchaseOrder = await getPurchaseOrder(orderId);
   if (purchaseOrder.error) {
     throw redirect(
       path.to.purchaseOrderDetails(orderId),

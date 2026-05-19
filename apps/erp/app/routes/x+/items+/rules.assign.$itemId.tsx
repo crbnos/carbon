@@ -13,7 +13,7 @@ import { getCompanyId, itemRuleAssignmentsQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     create: "parts"
   });
 
@@ -37,12 +37,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const result = await assignItemRule({
-    itemId,
-    ruleId,
-    companyId,
-    userId
-  });
+  const result = await assignItemRule({ itemId, ruleId });
 
   if (result.error) {
     throw redirect(

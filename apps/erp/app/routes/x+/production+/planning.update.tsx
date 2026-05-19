@@ -219,9 +219,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
               const upsertMethod = await upsertJobMethod("itemToJob", {
                 sourceId: item.id,
-                targetId: id,
-                companyId,
-                userId
+                targetId: id
               });
 
               if (upsertMethod.error) {
@@ -336,9 +334,7 @@ export async function action({ request }: ActionFunctionArgs) {
         if (allJobIds.length > 0) {
           for (const jobId of allJobIds) {
             await recalculateJobRequirements({
-              id: jobId,
-              companyId,
-              userId
+              id: jobId
             });
           }
         }

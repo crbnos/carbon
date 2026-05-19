@@ -27,7 +27,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     return { data: [], error: null };
   }
 
-  const methodTree = await getMethodTree(client, id);
+  const methodTree = await getMethodTree(id);
   if (methodTree.error) {
     return { data: [], error: methodTree.error };
   }

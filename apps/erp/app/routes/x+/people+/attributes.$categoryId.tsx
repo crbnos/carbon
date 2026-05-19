@@ -37,7 +37,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "people"
   });
 
@@ -56,8 +56,7 @@ export async function action({ request }: ActionFunctionArgs) {
     id,
     name,
     emoji,
-    public: isPublic,
-    updatedBy: userId
+    public: isPublic
   });
   if (updateCategory.error) {
     throw redirect(

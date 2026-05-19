@@ -23,10 +23,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!type) throw new Error("Could not find type");
   if (!associationId) throw new Error("Could not find associationId");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "quality"
   });
-  const issue = await getIssue(viewClient, id);
+  const issue = await getIssue(id);
   await requireUnlocked({
     request,
     isLocked: isIssueLocked(issue.data?.status),

@@ -12,7 +12,7 @@ import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "inventory"
   });
 
@@ -28,8 +28,7 @@ export async function action({ request }: ActionFunctionArgs) {
     trackedEntityId,
     expirationDate:
       expirationDate && expirationDate.length > 0 ? expirationDate : null,
-    reason,
-    userId
+    reason
   });
 
   if (result.error) {

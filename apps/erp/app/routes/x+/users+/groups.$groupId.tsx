@@ -57,7 +57,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "users"
   });
 
@@ -72,7 +72,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, name, selections } = validation.data;
 
   const [updateGroup, updateGroupMembers] = await Promise.all([
-    upsertGroup({ id, name, companyId }),
+    upsertGroup({ id, name }),
     upsertGroupMembers(id, selections)
   ]);
 

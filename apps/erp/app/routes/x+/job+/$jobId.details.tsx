@@ -1,6 +1,5 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -136,17 +135,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "production"
   });
 
   const { jobId: id } = params;
   if (!id) throw new Error("Could not find jobId");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "production"
   });
-  const job = await getJob(viewClient, id);
+  const job = await getJob(id);
   await requireUnlocked({
     request,
     isLocked: isJobLocked(job.data?.status),
@@ -178,10 +177,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const recalculate = await recalculateJobRequirements(getCarbonServiceRole(), {
-    id,
-    companyId,
-    userId
+  const recalculate = await recalculateJobRequirements({
+    id
   });
   if (recalculate.error) {
     throw redirect(

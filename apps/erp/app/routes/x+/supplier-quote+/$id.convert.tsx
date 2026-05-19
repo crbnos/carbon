@@ -1,6 +1,5 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -17,7 +16,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "purchasing"
   });
 
@@ -48,16 +47,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const selectedLines = parseResult.data;
 
-  const serviceRole = getCarbonServiceRole();
-
   // Check supplier approval status
   const [quote, supplierApprovalRequired] = await Promise.all([
-    getSupplierQuote(serviceRole, id),
-    isApprovalRequired(serviceRole, "supplier")
+    getSupplierQuote(id),
+    isApprovalRequired("supplier")
   ]);
 
   if (supplierApprovalRequired && quote.data?.supplierId) {
-    const supplier = await getSupplier(serviceRole, quote.data.supplierId);
+    const supplier = await getSupplier(quote.data.supplierId);
     if (supplier.data?.status !== "Active") {
       throw redirect(
         path.to.supplierQuoteDetails(id),
@@ -69,10 +66,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  const convert = await convertSupplierQuoteToOrder(serviceRole, {
+  const convert = await convertSupplierQuoteToOrder({
     id: id,
-    companyId,
-    userId,
     selectedLines
   });
 

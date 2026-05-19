@@ -93,7 +93,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "settings"
   });
 
@@ -193,7 +193,8 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       const arBillingResult = await updateAccountsReceivableBillingAddress(
-        arBillingValidation.data
+        arBillingValidation.data,
+        userId
       );
 
       if (arBillingResult.error) {

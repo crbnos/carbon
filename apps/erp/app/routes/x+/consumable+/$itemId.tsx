@@ -38,7 +38,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts",
     bypassRls: true
   });
@@ -48,7 +48,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [consumableSummary, supplierParts, pickMethods, tags] =
     await Promise.all([
-      getConsumable(itemId, companyId),
+      getConsumable(itemId),
       getSupplierParts(itemId),
       getPickMethods(itemId),
       getTagsList("consumable")

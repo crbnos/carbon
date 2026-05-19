@@ -124,9 +124,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const createStockTransferLines = await upsertStockTransferLines({
     lines: linesWithExpandedSerialTracking,
-    stockTransferId: createStockTransfer.data.id,
-    companyId,
-    createdBy: userId
+    stockTransferId: createStockTransfer.data.id
   });
 
   if (createStockTransferLines.error) {

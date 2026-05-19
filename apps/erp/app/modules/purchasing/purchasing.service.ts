@@ -70,10 +70,13 @@ export const convertSupplierQuoteToOrder = mcpTool(
     selectedLines: z.infer<typeof selectedLinesValidator>;
   }) {
     const client = getAuthClient<SupabaseClient<Database>>();
+    const { userId, companyId } = AuthContextHolder.get();
     return client.functions.invoke<{ convertedId: string }>("convert", {
       body: {
         type: "supplierQuoteToPurchaseOrder",
-        ...payload
+        ...payload,
+        companyId,
+        userId
       }
     });
   }
@@ -507,14 +510,13 @@ export const getSupplierApprovalContext = mcpTool(
   ): Promise<ApprovalContext> {
     const { companyId } = AuthContextHolder.get();
     const latest = await getLatestApprovalRequestForDocument(
-      serviceRole,
       "supplier",
       supplierId
     );
 
     const req = latest.data;
 
-    const canApprove = await canApproveRequest(serviceRole, {
+    const canApprove = await canApproveRequest({
       amount: req?.amount ?? null,
       documentType: "supplier",
       companyId
@@ -1275,7 +1277,8 @@ export const updatePurchaseOrderFavorite = mcpTool(
     favorite: boolean;
   }) {
     const client = getAuthClient<SupabaseClient<Database>>();
-    const { id, favorite, userId } = args;
+    const { userId } = AuthContextHolder.get();
+    const { id, favorite } = args;
     if (!favorite) {
       return client
         .from("purchaseOrderFavorite")
@@ -1443,7 +1446,8 @@ export const updateSupplierQuoteFavorite = mcpTool(
     favorite: boolean;
   }) {
     const client = getAuthClient<SupabaseClient<Database>>();
-    const { id, favorite, userId } = args;
+    const { userId } = AuthContextHolder.get();
+    const { id, favorite } = args;
     if (!favorite) {
       return client
         .from("supplierQuoteFavorite")
@@ -1563,10 +1567,10 @@ export const upsertPurchaseOrder = mcpTool(
 
     const [supplierInteraction, supplierPayment, supplierShipping, purchaser] =
       await Promise.all([
-        insertSupplierInteraction(companyId, purchaseOrder.supplierId),
+        insertSupplierInteraction(purchaseOrder.supplierId),
         getSupplierPayment(purchaseOrder.supplierId),
         getSupplierShipping(purchaseOrder.supplierId),
-        getEmployeeJob(userId, companyId)
+        getEmployeeJob(userId)
       ]);
 
     if (supplierInteraction.error) return supplierInteraction;
@@ -1903,7 +1907,6 @@ export const upsertSupplierQuote = mcpTool(
       }
 
       const supplierInteraction = await insertSupplierInteraction(
-        companyId,
         supplierQuote.supplierId
       );
 
@@ -2215,17 +2218,18 @@ export const upsertPurchasingRFQ = mcpTool(
     customFields?: Json;
   }) {
     const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId, userId } = AuthContextHolder.get();
     if (purchasingRfq.id) {
       return client
         .from("purchasingRfq")
-        .update(sanitize(purchasingRfq))
+        .update(sanitize({ ...purchasingRfq, updatedBy: userId }))
         .eq("id", purchasingRfq.id)
         .select("id")
         .single();
     }
     return client
       .from("purchasingRfq")
-      .insert([purchasingRfq])
+      .insert([{ ...purchasingRfq, companyId, createdBy: userId }])
       .select("id")
       .single();
   }
@@ -2303,11 +2307,10 @@ export const upsertPurchasingRFQSuppliers = mcpTool(
   },
   async function upsertPurchasingRFQSuppliers(
     purchasingRfqId: string,
-    supplierIds: string[],
-    createdBy: string
+    supplierIds: string[]
   ) {
     const client = getAuthClient<SupabaseClient<Database>>();
-    const { companyId } = AuthContextHolder.get();
+    const { companyId, userId: createdBy } = AuthContextHolder.get();
     // Delete existing suppliers for this RFQ
     await client
       .from("purchasingRfqSupplier")

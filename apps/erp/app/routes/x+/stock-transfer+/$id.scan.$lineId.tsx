@@ -55,10 +55,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("id is not found");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "inventory"
   });
-  const transfer = await getStockTransfer(viewClient, id);
+  const transfer = await getStockTransfer(id);
   await requireUnlocked({
     request,
     isLocked: transfer.data?.status === "Completed",

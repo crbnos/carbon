@@ -258,7 +258,8 @@ export const updateDocumentFavorite = mcpTool(
     favorite: boolean;
   }) {
     const client = getAuthClient<SupabaseClient<Database>>();
-    const { id, favorite, userId } = args;
+    const { id, favorite } = args;
+    const { userId } = AuthContextHolder.get();
     if (!favorite) {
       return client
         .from("documentFavorite")

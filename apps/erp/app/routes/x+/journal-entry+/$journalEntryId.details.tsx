@@ -19,12 +19,9 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      update: "accounting"
-    }
-  );
+  const { companyGroupId } = await requirePermissions(request, {
+    update: "accounting"
+  });
 
   const { journalEntryId } = params;
   if (!journalEntryId) throw new Error("Could not find journalEntryId");
@@ -82,9 +79,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     journalEntryId,
     postingDate,
     description,
-    updatedBy: userId,
     lines,
-    companyId,
     companyGroupId
   });
 

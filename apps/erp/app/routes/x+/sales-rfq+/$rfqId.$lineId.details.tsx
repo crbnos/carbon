@@ -1,6 +1,5 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -37,9 +36,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   if (!rfqId) throw new Error("Could not find rfqId");
   if (!lineId) throw new Error("Could not find lineId");
 
-  const serviceRole = await getCarbonServiceRole();
-
-  const line = await getSalesRFQLine(serviceRole, lineId);
+  const line = await getSalesRFQLine(lineId);
 
   if (line.error) {
     throw redirect(
@@ -52,7 +49,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
   return {
     line: line.data,
-    files: getOpportunityLineDocuments(serviceRole, lineId, itemId)
+    files: getOpportunityLineDocuments(lineId, itemId)
   };
 };
 
@@ -63,11 +60,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!rfqId) throw new Error("Could not find rfqId");
   if (!lineId) throw new Error("Could not find lineId");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
-  const rfq = await getSalesRFQ(viewClient, rfqId);
+  const rfq = await getSalesRFQ(rfqId);
   await requireUnlocked({
     request,
     isLocked: isSalesRfqLocked(rfq.data?.status),

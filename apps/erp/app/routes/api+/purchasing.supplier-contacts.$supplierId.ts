@@ -10,7 +10,7 @@ import { getSupplierContacts } from "~/modules/purchasing";
 import { supplierContactsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const authorized = await requirePermissions(request, {
+  const _authorized = await requirePermissions(request, {
     view: "purchasing"
   });
 
@@ -21,7 +21,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       data: []
     };
 
-  const contacts = await getSupplierContacts(authorized.client, supplierId);
+  const contacts = await getSupplierContacts(supplierId);
   if (contacts.error) {
     return data(
       contacts,

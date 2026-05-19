@@ -1,6 +1,5 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
@@ -29,7 +28,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { companyId, userId } = await requirePermissions(request, {
     create: "production"
   });
-  const serviceRole = getCarbonServiceRole();
 
   const formData = await request.formData();
   const validation = await validator(salesOrderToJobValidator).validate(
@@ -45,8 +43,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   let leadTime = 7;
   if (useNextSequence) {
     const [nextSequence, manufacturing] = await Promise.all([
-      getNextSequence(serviceRole, "job"),
-      getItemReplenishment(serviceRole, validation.data.itemId)
+      getNextSequence("job"),
+      getItemReplenishment(validation.data.itemId)
     ]);
     if (nextSequence.error) {
       throw redirect(
@@ -60,10 +58,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     jobId = nextSequence.data;
     leadTime = manufacturing.data?.leadTime ?? 7;
   } else {
-    const manufacturing = await getItemReplenishment(
-      serviceRole,
-      validation.data.itemId
-    );
+    const manufacturing = await getItemReplenishment(validation.data.itemId);
     leadTime = manufacturing.data?.leadTime ?? 7;
   }
 
@@ -71,12 +66,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id: _id, ...d } = validation.data;
 
   const storageUnitId = await getDefaultStorageUnitForJob(
-    serviceRole,
     validation.data.itemId,
     validation.data.locationId
   );
 
-  const createJob = await upsertJob(serviceRole, {
+  const createJob = await upsertJob({
     ...d,
     jobId,
     storageUnitId: storageUnitId ?? undefined,
@@ -98,11 +92,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (validation.data.quoteId && validation.data.quoteLineId) {
-    const upsertMethod = await upsertJobMethod(serviceRole, "quoteLineToJob", {
+    const upsertMethod = await upsertJobMethod("quoteLineToJob", {
       sourceId: `${d.quoteId}:${d.quoteLineId}`,
-      targetId: id,
-      companyId,
-      userId
+      targetId: id
     });
 
     if (upsertMethod.error) {
@@ -116,11 +108,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
   } else {
-    const upsertMethod = await upsertJobMethod(serviceRole, "itemToJob", {
+    const upsertMethod = await upsertJobMethod("itemToJob", {
       sourceId: d.itemId,
-      targetId: id,
-      companyId,
-      userId
+      targetId: id
     });
 
     if (upsertMethod.error) {

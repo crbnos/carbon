@@ -55,9 +55,7 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
   >([]);
 
   const { carbon } = useCarbon();
-  const {
-    company: { id: companyId }
-  } = useUser();
+  const _user = useUser();
   const settings = useSettings();
   const expiredPolicy: ExpiredEntityPolicy =
     (
@@ -93,11 +91,7 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
       return;
     }
 
-    const shipmentLineTracking = await getShipmentTracking(
-      carbon,
-      shipmentId,
-      companyId
-    );
+    const shipmentLineTracking = await getShipmentTracking(shipmentId);
 
     if (
       routeData?.shipmentLines.length === 0 ||

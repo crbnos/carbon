@@ -1,6 +1,5 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
@@ -54,7 +53,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const serviceRole = getCarbonServiceRole();
   const [customer, opportunity, companySettings] = await Promise.all([
     salesInvoice.data?.customerId
       ? getCustomer(salesInvoice.data.customerId)
@@ -62,7 +60,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     salesInvoice.data?.opportunityId
       ? getOpportunity(salesInvoice.data.opportunityId)
       : null,
-    getCompanySettings(serviceRole)
+    getCompanySettings()
   ]);
 
   const defaultCc = customer?.data?.defaultCc?.length

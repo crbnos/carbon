@@ -1,6 +1,5 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -44,11 +43,9 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   if (!id) throw new Error("Could not find id");
   if (!lineId) throw new Error("Could not find lineId");
 
-  const serviceRole = await getCarbonServiceRole();
-
   const [line, prices] = await Promise.all([
-    getSupplierQuoteLine(serviceRole, lineId),
-    getSupplierQuoteLinePrices(serviceRole, lineId)
+    getSupplierQuoteLine(lineId),
+    getSupplierQuoteLinePrices(lineId)
   ]);
 
   if (line.error) {
@@ -60,7 +57,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
   return {
     line: line.data,
-    files: getSupplierInteractionLineDocuments(serviceRole, lineId),
+    files: getSupplierInteractionLineDocuments(lineId),
     pricesByQuantity: (prices?.data ?? []).reduce<
       Record<number, SupplierQuoteLinePrice>
     >((acc, price) => {
@@ -80,10 +77,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) throw new Error("Could not find id");
   if (!lineId) throw new Error("Could not find lineId");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
-  const quote = await getSupplierQuote(viewClient, id);
+  const quote = await getSupplierQuote(id);
   await requireUnlocked({
     request,
     isLocked: isSupplierQuoteLocked(quote.data?.status),

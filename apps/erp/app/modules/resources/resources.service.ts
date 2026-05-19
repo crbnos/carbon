@@ -1307,7 +1307,12 @@ export const insertAbility = mcpTool(
     shadowWeeks: number;
   }) {
     const client = getAuthClient<SupabaseClient<Database>>();
-    return client.from("ability").insert([ability]).select("*").single();
+    const { companyId, userId: createdBy } = AuthContextHolder.get();
+    return client
+      .from("ability")
+      .insert([{ ...ability, companyId, createdBy }])
+      .select("*")
+      .single();
   }
 );
 
@@ -1347,10 +1352,13 @@ export const insertTrainingCompletion = mcpTool(
     completedBy: string;
   }) {
     const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId, userId: createdBy } = AuthContextHolder.get();
     return client
       .from("trainingCompletion")
       .insert({
         ...completion,
+        companyId,
+        createdBy,
         completedAt: new Date().toISOString()
       })
       .select("id")
@@ -1495,6 +1503,7 @@ export const upsertEmployeeAbility = mcpTool(
     trainingDays?: number;
   }) {
     const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
     const { id, ...update } = employeeAbility;
     if (id) {
       return client
@@ -1520,7 +1529,7 @@ export const upsertEmployeeAbility = mcpTool(
 
     return client
       .from("employeeAbility")
-      .insert([{ ...update }])
+      .insert([{ ...update, companyId }])
       .select("id")
       .single();
   }

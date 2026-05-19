@@ -22,11 +22,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error("lineId not found");
   }
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
-  const rfq = await getSalesRFQ(viewClient, rfqId);
+  const rfq = await getSalesRFQ(rfqId);
   await requireUnlocked({
     request,
     isLocked: isSalesRfqLocked(rfq.data?.status),

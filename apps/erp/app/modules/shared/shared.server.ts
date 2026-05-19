@@ -163,7 +163,7 @@ export async function generateAndAttachSalesOrderPdf(args: {
   }
 
   // 3. Create the document DB record
-  const documentResult = await upsertDocument(serviceRole, {
+  const documentResult = await upsertDocument({
     path: documentFilePath,
     name: fileName,
     size: Math.round(file.byteLength / 1024),
@@ -220,13 +220,13 @@ export async function sendSalesOrderEmail(args: {
     seller,
     paymentTerms
   ] = await Promise.all([
-    getCompany(serviceRole, companyId),
-    getCustomerContact(serviceRole, customerContactId),
-    getSalesOrder(serviceRole, salesOrderId),
-    getSalesOrderLines(serviceRole, salesOrderId),
-    getSalesOrderCustomerDetails(serviceRole, salesOrderId),
+    getCompany(),
+    getCustomerContact(customerContactId),
+    getSalesOrder(salesOrderId),
+    getSalesOrderLines(salesOrderId),
+    getSalesOrderCustomerDetails(salesOrderId),
     getUser(serviceRole, userId),
-    getPaymentTermsList(serviceRole, companyId)
+    getPaymentTermsList()
   ]);
 
   if (!customer?.data?.contact) {

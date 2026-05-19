@@ -98,7 +98,7 @@ export async function action(args: ActionFunctionArgs) {
     };
   }
 
-  const salesInvoice = await getSalesInvoice(serviceRole, invoiceId);
+  const salesInvoice = await getSalesInvoice(invoiceId);
   if (salesInvoice.error) {
     return {
       success: false,
@@ -155,7 +155,7 @@ export async function action(args: ActionFunctionArgs) {
       };
     }
 
-    const createDocument = await upsertDocument(serviceRole, {
+    const createDocument = await upsertDocument({
       path: documentFilePath,
       name: fileName,
       size: Math.round(file.byteLength / 1024),
@@ -214,14 +214,14 @@ export async function action(args: ActionFunctionArgs) {
           seller,
           paymentTerms
         ] = await Promise.all([
-          getCompany(serviceRole),
-          getCustomerContact(serviceRole, customerContact),
-          getSalesInvoice(serviceRole, invoiceId),
-          getSalesInvoiceLines(serviceRole, invoiceId),
-          getSalesInvoiceCustomerDetails(serviceRole, invoiceId),
-          getSalesInvoiceShipment(serviceRole, invoiceId),
-          getUser(serviceRole, userId),
-          getPaymentTermsList(serviceRole)
+          getCompany(),
+          getCustomerContact(customerContact),
+          getSalesInvoice(invoiceId),
+          getSalesInvoiceLines(invoiceId),
+          getSalesInvoiceCustomerDetails(invoiceId),
+          getSalesInvoiceShipment(invoiceId),
+          getUser(client, userId),
+          getPaymentTermsList()
         ]);
 
         if (!customer?.data?.contact) {

@@ -19,7 +19,7 @@ import { customerLocationsQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "sales"
   });
 
@@ -42,7 +42,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const createCustomerLocation = await insertCustomerLocation({
     customerId,
-    companyId,
     name,
     address,
     customFields: setCustomFields(formData)

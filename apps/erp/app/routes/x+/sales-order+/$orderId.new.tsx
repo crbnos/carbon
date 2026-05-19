@@ -22,11 +22,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
-  const salesOrder = await getSalesOrder(viewClient, orderId);
+  const salesOrder = await getSalesOrder(orderId);
   await requireUnlocked({
     request,
     isLocked: isSalesOrderLocked(salesOrder.data?.status),

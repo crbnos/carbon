@@ -1,6 +1,5 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
@@ -39,13 +38,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
-  const serviceRole = await getCarbonServiceRole();
 
   const [quote, lines, prices, siblingQuotes] = await Promise.all([
-    getSupplierQuote(serviceRole, id),
-    getSupplierQuoteLines(serviceRole, id),
-    getSupplierQuoteLinePricesByQuoteId(serviceRole, id),
-    getSiblingQuotesForQuote(serviceRole, id)
+    getSupplierQuote(id),
+    getSupplierQuoteLines(id),
+    getSupplierQuoteLinePricesByQuoteId(id),
+    getSiblingQuotesForQuote(id)
   ]);
 
   if (quote.error) {
@@ -57,10 +55,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [supplierInteraction, presentationCurrency, supplier, companySettings] =
     await Promise.all([
-      getSupplierInteraction(serviceRole, quote.data.supplierInteractionId!),
-      getCurrencyByCode(serviceRole, companyGroupId, quote.data.currencyCode!),
-      getSupplier(serviceRole, quote.data.supplierId!),
-      getCompanySettings(serviceRole)
+      getSupplierInteraction(quote.data.supplierInteractionId!),
+      getCurrencyByCode(companyGroupId, quote.data.currencyCode!),
+      getSupplier(quote.data.supplierId!),
+      getCompanySettings()
     ]);
 
   if (supplierInteraction.error) {
@@ -103,10 +101,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     quote: quote.data,
     lines: lines.data ?? [],
     prices: prices.data ?? [],
-    files: getSupplierInteractionDocuments(
-      serviceRole,
-      quote.data.supplierInteractionId!
-    ),
+    files: getSupplierInteractionDocuments(quote.data.supplierInteractionId!),
     interaction: supplierInteraction.data,
     exchangeRate,
     siblingQuotes: siblingQuotesData,

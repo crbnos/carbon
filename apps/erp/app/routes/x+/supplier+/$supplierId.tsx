@@ -24,7 +24,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
 
@@ -47,9 +47,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         getSupplierApprovalContext(
           serviceRole,
           supplierId,
-          s.data?.status ?? null,
-          companyId,
-          userId
+          s.data?.status ?? null
         )
       )
     ]);

@@ -11,7 +11,7 @@ import {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
 
-  const { userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "sales"
   });
 
@@ -49,8 +49,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         amounts: {},
         taxable: true
       }
-    },
-    updatedBy: userId
+    }
   });
 
   if (error) {

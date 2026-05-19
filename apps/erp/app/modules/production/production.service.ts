@@ -182,7 +182,6 @@ export const convertSalesOrderLinesToJobs = mcpTool(
           const priority = await calculateJobPriority({
             dueDate: data.dueDate ?? null,
             deadlineType: data.deadlineType,
-            companyId,
             locationId: locationId!
           });
 
@@ -309,7 +308,8 @@ export const calculateJobPriority = mcpTool(
     locationId: string;
   }): Promise<number> {
     const client = getAuthClient<SupabaseClient<Database>>();
-    const { jobId, dueDate, deadlineType, companyId, locationId } = params;
+    const { companyId } = AuthContextHolder.get();
+    const { jobId, dueDate, deadlineType, locationId } = params;
 
     // Define deadline type priority order (lower number = higher priority)
     const deadlineTypePriority: Record<string, number> = {
@@ -394,7 +394,8 @@ export const deleteDemandForecasts = mcpTool(
     futurePeriodIds: string[];
   }) {
     const client = getAuthClient<SupabaseClient<Database>>();
-    const { itemId, locationId, companyId, futurePeriodIds } = params;
+    const { companyId } = AuthContextHolder.get();
+    const { itemId, locationId, futurePeriodIds } = params;
 
     const result = await client
       .from("demandForecast")
@@ -421,7 +422,8 @@ export const deleteDemandProjections = mcpTool(
     futurePeriodIds: string[];
   }) {
     const client = getAuthClient<SupabaseClient<Database>>();
-    const { itemId, locationId, companyId, futurePeriodIds } = params;
+    const { companyId } = AuthContextHolder.get();
+    const { itemId, locationId, futurePeriodIds } = params;
 
     const result = await client
       .from("demandProjection")
@@ -2313,7 +2315,8 @@ export const updateJobStatus = mcpTool(
     assignee?: string | null;
   }) {
     const client = getAuthClient<SupabaseClient<Database>>();
-    const { id, status, assignee, updatedBy } = params;
+    const { userId: updatedBy } = AuthContextHolder.get();
+    const { id, status, assignee } = params;
 
     return client
       .from("job")
@@ -2394,7 +2397,8 @@ export const updateKanbanJob = mcpTool(
   async function updateKanbanJob(params: { id: string; jobId: string | null }) {
     const client = getAuthClient<SupabaseClient<Database>>();
 
-    const { id, jobId, companyId, userId } = params;
+    const { companyId, userId } = AuthContextHolder.get();
+    const { id, jobId } = params;
     return client
       .from("kanban")
       .update({ jobId, updatedBy: userId, updatedAt: new Date().toISOString() })
@@ -2940,9 +2944,7 @@ export const upsertJobMethod = mcpTool(
       return getMethodResult;
     }
     return recalculateJobRequirements({
-      id: jobMethod.targetId,
-      companyId: companyId,
-      userId: userId
+      id: jobMethod.targetId
     });
   }
 );

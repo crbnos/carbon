@@ -62,7 +62,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const nextSequence = await getNextSequence(serviceRole, "nonConformance");
+  const nextSequence = await getNextSequence("nonConformance");
   if (nextSequence.error) {
     throw redirect(
       path.to.newIssue,
@@ -76,7 +76,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...nonConformance } = validation.data;
 
-  const createIssue = await upsertIssue(serviceRole, {
+  const createIssue = await upsertIssue({
     ...nonConformance,
     nonConformanceId: nextSequence.data,
     companyId,
@@ -139,7 +139,7 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (tasks.error) {
-    await deleteIssue(serviceRole, ncrId);
+    await deleteIssue(ncrId);
     throw redirect(
       path.to.issue(ncrId!),
       await flash(request, error("Failed to create tasks"))
@@ -147,7 +147,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   try {
-    const integrations = await getCompanyIntegrations();
+    const integrations = await getCompanyIntegrations(client, companyId);
     await notifyIssueCreated({ client, serviceRole }, integrations, {
       companyId,
       userId,

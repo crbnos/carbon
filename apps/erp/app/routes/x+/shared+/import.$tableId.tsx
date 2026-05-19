@@ -1,6 +1,5 @@
 import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
@@ -17,7 +16,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw notFound("Table not found in the list of supported tables");
   }
 
-  const { companyId, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: importPermissions[table]
   });
 
@@ -37,14 +36,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { filePath, enumMappings, ...columnMappings } = validation.data;
 
-  const serviceRole = getCarbonServiceRole();
-  const importResult = await importCsv(serviceRole, {
+  const importResult = await importCsv({
     table,
     filePath: filePath as string,
     columnMappings,
-    enumMappings: enumMappings ? JSON.parse(enumMappings as string) : undefined,
-    companyId,
-    userId
+    enumMappings: enumMappings ? JSON.parse(enumMappings as string) : undefined
   });
 
   if (importResult.error) {

@@ -95,9 +95,9 @@ const QuoteMaterialForm = ({
 
   const lookupBuyPrice = useCallback(
     async (itemId: string, qty: number, fallbackCost: number) => {
-      return lookupBuyPriceAsync(carbon, itemId, qty, fallbackCost);
+      return lookupBuyPriceAsync(itemId, qty, fallbackCost);
     },
-    [carbon]
+    []
   );
 
   const onItemChange = async (itemId: string) => {

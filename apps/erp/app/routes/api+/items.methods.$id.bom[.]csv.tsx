@@ -68,7 +68,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     });
   }
 
-  const methodTree = await getMethodTree(client, id);
+  const methodTree = await getMethodTree(id);
   if (methodTree.error) {
     return new Response(headers, {
       headers: {

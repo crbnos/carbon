@@ -3,7 +3,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { getBatchNumbersForItem } from "~/modules/inventory/inventory.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
   const url = new URL(request.url);
   const itemId = url.searchParams.get("itemId");
@@ -14,8 +14,5 @@ export async function loader({ request }: LoaderFunctionArgs) {
     };
   }
 
-  return await getBatchNumbersForItem({
-    companyId,
-    itemId
-  });
+  return await getBatchNumbersForItem({ itemId });
 }

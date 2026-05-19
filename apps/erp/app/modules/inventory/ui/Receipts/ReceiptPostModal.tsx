@@ -52,9 +52,7 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
   >([]);
 
   const { carbon } = useCarbon();
-  const {
-    company: { id: companyId }
-  } = useUser();
+  const _user = useUser();
 
   const validateReceiptTracking = async () => {
     const errors: {
@@ -68,11 +66,7 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
       return;
     }
 
-    const receiptLineTracking = await getReceiptTracking(
-      carbon,
-      receiptId,
-      companyId
-    );
+    const receiptLineTracking = await getReceiptTracking(receiptId);
 
     if (
       routeData?.receiptLines.length === 0 ||

@@ -45,7 +45,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const createCustomerContact = await insertCustomerContact({
     customerId,
-    companyId,
     contact,
     customerLocationId,
     customFields: setCustomFields(formData)

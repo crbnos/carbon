@@ -116,7 +116,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { userId, companyId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     role: "employee"
   });
 
@@ -220,9 +220,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       trainingAssignmentId: id,
       employeeId: userId,
       period: null,
-      companyId,
-      completedBy: userId,
-      createdBy: userId
+      completedBy: userId
     });
   }
 

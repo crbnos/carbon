@@ -73,8 +73,8 @@ const QuotationFinalizeModal = ({
     if (!carbon) return;
 
     const [lines, prices] = await Promise.all([
-      getQuoteLines(carbon, quoteId),
-      getQuoteLinePricesByQuoteId(carbon, quoteId)
+      getQuoteLines(quoteId),
+      getQuoteLinePricesByQuoteId(quoteId)
     ]);
     setLines(lines.data ?? []);
     setPrices(prices.data ?? []);

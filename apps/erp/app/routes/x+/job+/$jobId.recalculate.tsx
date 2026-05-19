@@ -1,6 +1,5 @@
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -8,18 +7,14 @@ import { recalculateJobRequirements } from "~/modules/production";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { companyId, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "production",
     role: "employee"
   });
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
 
-  const recalculate = await recalculateJobRequirements(getCarbonServiceRole(), {
-    id: jobId,
-    companyId,
-    userId
-  });
+  const recalculate = await recalculateJobRequirements({ id: jobId });
   if (recalculate.error) {
     throw redirect(
       requestReferrer(request) ?? path.to.job(jobId),

@@ -71,18 +71,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (validation.data.methodType === "Make to Order") {
     const promises = [
       recalculateJobMakeMethodRequirements({
-        id: validation.data.jobMakeMethodId,
-        companyId,
-        userId
+        id: validation.data.jobMakeMethodId
       })
     ];
 
     if (validation.data.jobOperationId) {
       promises.push(
         recalculateJobOperationDependencies({
-          jobId,
-          companyId,
-          userId
+          jobId
         })
       );
     }
@@ -117,9 +113,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   } else {
     const recalculateResult = await recalculateJobMakeMethodRequirements({
-      id: validation.data.jobMakeMethodId,
-      companyId,
-      userId
+      id: validation.data.jobMakeMethodId
     });
 
     if (recalculateResult.error) {

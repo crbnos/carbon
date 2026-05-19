@@ -682,9 +682,7 @@ const JobBillOfProcess = ({
     setIsLoading(true);
 
     const newProductionEvents = await getProductionEventsPage(
-      carbon!,
       selectedItemId,
-      companyId,
       false,
       page + 1
     );
@@ -697,7 +695,7 @@ const JobBillOfProcess = ({
     }
 
     setIsLoading(false);
-  }, [isLoading, hasMore, carbon, selectedItemId, companyId, page]);
+  }, [isLoading, hasMore, selectedItemId, page]);
 
   const [tabChangeRerender, setTabChangeRerender] = useState<number>(1);
 

@@ -1,6 +1,5 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
@@ -28,10 +27,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { quoteId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
-  const quote = await getQuote(viewClient, quoteId);
+  const quote = await getQuote(quoteId);
   await requireUnlocked({
     request,
     isLocked: isQuoteLocked(quote.data?.status),
@@ -57,8 +56,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  const serviceRole = getCarbonServiceRole();
-  const createQuotationLine = await upsertQuoteLine(serviceRole, {
+  const createQuotationLine = await upsertQuoteLine({
     ...d,
     companyId,
     configuration,
@@ -84,7 +82,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (d.methodType === "Purchase to Order") {
     const quantities = d.quantity ?? [1];
     const priceResult = await resolvePurchaseToOrderPrices(
-      serviceRole,
       quoteId,
       quoteLineId,
       quantities
@@ -103,7 +100,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (d.methodType === "Pull from Inventory") {
     const quantities = d.quantity ?? [1];
     const priceResult = await resolveQuoteLinePrices(
-      serviceRole,
       quoteId,
       quoteLineId,
       quantities
@@ -123,13 +119,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (d.methodType === "Make to Order") {
-    const upsertMethod = await upsertQuoteLineMethod(serviceRole, {
+    const upsertMethod = await upsertQuoteLineMethod({
       quoteId,
       quoteLineId,
       itemId: d.itemId,
-      configuration,
-      companyId,
-      userId
+      configuration
     });
 
     if (upsertMethod.error) {
@@ -141,11 +135,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         )
       );
     }
-    const recalcResult = await recalculateQuoteLinePrices(
-      serviceRole,
-      quoteId,
-      quoteLineId
-    );
+    const recalcResult = await recalculateQuoteLinePrices(quoteId, quoteLineId);
     if (recalcResult?.error) {
       throw redirect(
         path.to.quoteLine(quoteId, quoteLineId),

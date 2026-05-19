@@ -42,8 +42,10 @@ export const authContextMiddleware: MiddlewareFunction<Response> = async (
         client: undefined,
         userId: identity.userId,
         sessionUserId: identity.sessionUserId,
+        email: identity.email,
         companyId: identity.companyId,
-        companyGroupId: identity.companyGroupId
+        companyGroupId: identity.companyGroupId,
+        apiKeyRecord: identity.apiKeyRecord
       },
       () => next()
     );

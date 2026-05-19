@@ -11,7 +11,7 @@ import { getCustomerContacts } from "~/modules/sales";
 import { customerContactsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const authorized = await requirePermissions(request, {
+  const _authorized = await requirePermissions(request, {
     view: "sales"
   });
 
@@ -22,7 +22,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       data: []
     };
 
-  const contacts = await getCustomerContacts(authorized.client, customerId);
+  const contacts = await getCustomerContacts(customerId);
   if (contacts.error) {
     return data(
       contacts,

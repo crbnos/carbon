@@ -5,6 +5,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
 import { getIntegration } from "~/modules/settings/settings.service";
+import { AuthClientScope } from "~/services/mcp";
 
 const integrationValidator = z.object({
   apiKey: z.string(),
@@ -43,10 +44,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return data({ success: false }, { status: 400 });
   }
 
+  // Public webhook: no session/middleware identity. Establish the service-
+  // role client scope explicitly (replaces main's serviceRole threading) and
+  // pass the URL-target companyId explicitly (it is NOT an actor's company).
   const serviceRole = await getCarbonServiceRole();
+  AuthClientScope.setFactory(() => serviceRole);
+
   const paperlessPartsIntegration = await getIntegration(
-    serviceRole,
-    "paperless-parts"
+    "paperless-parts",
+    companyId
   );
 
   if (paperlessPartsIntegration.error || !paperlessPartsIntegration.data) {

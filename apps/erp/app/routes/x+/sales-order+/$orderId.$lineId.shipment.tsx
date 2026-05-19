@@ -20,7 +20,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   const serviceRole = getCarbonServiceRole();
-  const salesOrderLine = await getSalesOrderLine(serviceRole, lineId);
+  const salesOrderLine = await getSalesOrderLine(lineId);
 
   if (salesOrderLine.error) {
     throw redirect(

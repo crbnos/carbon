@@ -11,6 +11,7 @@ import {
 } from "~/modules/purchasing/purchasing.models";
 import { getSupplierQuoteByExternalLinkId } from "~/modules/purchasing/purchasing.service";
 import { getCompanySettings } from "~/modules/settings";
+import { AuthClientScope } from "~/services/mcp";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -21,8 +22,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await request.formData();
   const intent = String(formData.get("intent"));
 
+  // Public digital-quote acceptance route: no session/middleware identity.
+  // Establish the service-role client scope explicitly so service-layer fns
+  // resolve a client via getAuthClient(). Replaces main's serviceRole
+  // threading. Identity (company) is the quote's, passed explicitly.
   const serviceRole = getCarbonServiceRole();
-  const quote = await getSupplierQuoteByExternalLinkId(serviceRole, id);
+  AuthClientScope.setFactory(() => serviceRole);
+  const quote = await getSupplierQuoteByExternalLinkId(id);
 
   if (quote.error || !quote.data) {
     console.error("Quote not found", quote.error);
@@ -32,10 +38,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     };
   }
 
-  const companySettings = await getCompanySettings(
-    serviceRole,
-    quote.data.companyId
-  );
+  const companySettings = await getCompanySettings(quote.data.companyId);
 
   switch (intent) {
     case "decline": {

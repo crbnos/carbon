@@ -1,6 +1,5 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { batchTrigger } from "@carbon/jobs";
@@ -28,8 +27,6 @@ export async function action({ request }: ActionFunctionArgs) {
     create: "production",
     bypassRls: true
   });
-
-  const serviceRole = await getCarbonServiceRole();
 
   const formData = await request.formData();
   const validation = await validator(bulkJobValidator).validate(formData);
@@ -62,7 +59,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  const manufacturing = await getItemReplenishment(serviceRole, jobData.itemId);
+  const manufacturing = await getItemReplenishment(jobData.itemId);
 
   // Calculate due date distribution if both dates are provided
   let dueDateDistribution: string[] = [];
@@ -99,13 +96,12 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const storageUnitId = await getDefaultStorageUnitForJob(
-    serviceRole,
     jobData.itemId,
     jobData.locationId
   );
 
   for await (const [i] of Array.from({ length: jobs }, (_, i) => [i])) {
-    const nextSequence = await getNextSequence(serviceRole, "job");
+    const nextSequence = await getNextSequence("job");
     if (nextSequence.error) {
       throw redirect(
         path.to.newJob,
@@ -120,7 +116,7 @@ export async function action({ request }: ActionFunctionArgs) {
       "T"
     )[0];
 
-    const createJob = await upsertJob(serviceRole, {
+    const createJob = await upsertJob({
       jobId,
       ...jobData,
       quantity: i === jobs - 1 ? quantityOfLastJob : quantityPerJob,
@@ -158,11 +154,9 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    const upsertMethod = await upsertJobMethod(serviceRole, "itemToJob", {
+    const upsertMethod = await upsertJobMethod("itemToJob", {
       sourceId: jobData.itemId,
       targetId: id,
-      companyId,
-      userId,
       configuration
     });
 

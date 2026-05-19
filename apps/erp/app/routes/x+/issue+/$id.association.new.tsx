@@ -16,10 +16,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id: nonConformanceId } = params;
   if (!nonConformanceId) throw new Error("Could not find id");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "quality"
   });
-  const issue = await getIssue(viewClient, nonConformanceId);
+  const issue = await getIssue(nonConformanceId);
   await requireUnlocked({
     request,
     isLocked: isIssueLocked(issue.data?.status),

@@ -31,7 +31,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const serviceRole = await getCarbonServiceRole();
 
   // Get the job first
-  const job = await getJob(serviceRole, jobId);
+  const job = await getJob(jobId);
   if (job.error || !job.data) {
     console.error(job.error);
     throw new Error("Failed to load job");
@@ -55,8 +55,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const [company, companySettings] = await Promise.all([
-    getCompany(serviceRole, job.data.companyId ?? ""),
-    getCompanySettings(serviceRole, job.data.companyId ?? "")
+    getCompany(job.data.companyId ?? ""),
+    getCompanySettings(job.data.companyId ?? "")
   ]);
   if (company.error) {
     console.error(company.error);
@@ -78,7 +78,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // Compute BOM IDs for all make methods
   const bomIdMap = new Map<string, string>();
-  const methodTree = await getJobMethodTree(serviceRole, jobId);
+  const methodTree = await getJobMethodTree(jobId);
   if (!methodTree.error && methodTree.data?.length > 0) {
     const flatMethods = flattenTree(methodTree.data[0]);
     const bomIds = generateBomIds(flatMethods);
@@ -91,7 +91,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const makeMethodsWithData = await Promise.all(
     jobMakeMethods.data.map(async (makeMethod) => {
       const [operations, item] = await Promise.all([
-        getJobOperationsByMethodId(serviceRole, makeMethod.id),
+        getJobOperationsByMethodId(makeMethod.id),
         serviceRole
           .from("item")
           .select("*, modelUpload(thumbnailPath)")
@@ -115,7 +115,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       let thumbnail: string | null = null;
       if (item.data.thumbnailPath || item.data.modelUpload?.thumbnailPath) {
         thumbnail = await getBase64ImageFromSupabase(
-          serviceRole,
           item.data.thumbnailPath ?? item.data.modelUpload?.thumbnailPath ?? ""
         );
       }
@@ -126,10 +125,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         ["Batch", "Serial"].includes(item.data.itemTrackingType) &&
         makeMethod.parentMaterialId === null
       ) {
-        const trackedEntity = await getTrackedEntityByJobId(
-          serviceRole,
-          job.data!.id!
-        );
+        const trackedEntity = await getTrackedEntityByJobId(job.data!.id!);
         if (!trackedEntity.error && trackedEntity.data) {
           batchNumber = trackedEntity.data.readableId ?? undefined;
         }

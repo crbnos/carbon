@@ -1,5 +1,4 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   Badge,
   Button,
@@ -107,10 +106,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "purchasing"
   });
 
-  const serviceRole = getCarbonServiceRole();
-
   // Get pending approval requests to find which POs the user can approve
-  const pendingApprovals = await getPendingApprovalsForApprover(serviceRole);
+  const pendingApprovals = await getPendingApprovalsForApprover();
 
   // Extract purchase order IDs that need approval and user can approve
   const approvalPoIds =

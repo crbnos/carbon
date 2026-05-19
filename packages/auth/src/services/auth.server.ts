@@ -22,13 +22,33 @@ import { error } from "../utils/result";
 import {
   AuthClientScope,
   AuthContextHolder,
-  getAuthClient
+  getAuthClient,
+  type ResolvedApiKeyRecord
 } from "./auth-context";
 import {
   destroyAuthSession,
   flash,
-  requireAuthSession
+  requireAuthSession as requireAuthSessionOriginal
 } from "./session.server";
+
+// Per-request cache for requireAuthSession: it is called twice per request
+// (once in resolveAuthContext / middleware, once in requirePermissions) and
+// each call re-reads the cookie, re-decodes it, and may re-refresh the token.
+// WeakMap<Request, AuthSession> means the entry lives exactly as long as the
+// request object — no manual cleanup needed.
+const authSessionCache = new WeakMap<
+  Request,
+  Awaited<ReturnType<typeof requireAuthSessionOriginal>>
+>();
+
+async function requireAuthSession(request: Request) {
+  const cached = authSessionCache.get(request);
+  if (cached) return cached;
+  const session = await requireAuthSessionOriginal(request);
+  authSessionCache.set(request, session);
+  return session;
+}
+
 import { getCompaniesForUser } from "./users";
 import { getUserClaims } from "./users.server";
 
@@ -78,17 +98,6 @@ export async function getAuthAccountByAccessToken(accessToken: string) {
 export function hashApiKey(rawKey: string): string {
   return createHash("sha256").update(rawKey).digest("hex");
 }
-
-type ApiKeyRecord = {
-  id: string;
-  companyId: string;
-  companyGroupId: string;
-  createdBy: string;
-  scopes: Record<string, string[]>;
-  rateLimit: number;
-  rateLimitWindow: "1m" | "1h" | "1d";
-  expiresAt: string | null;
-};
 
 function getCompanyIdFromAPIKey(apiKey: string) {
   const serviceRole = getCarbonServiceRole();
@@ -186,6 +195,8 @@ export interface ResolvedAuthIdentity {
   /** Raw session/console account. */
   sessionUserId: string;
   email: string;
+  /** Resolved API key record — present only for API-key-authenticated requests. */
+  apiKeyRecord?: ResolvedApiKeyRecord;
 }
 
 // #4: single source for the API key. Reads the `carbon-key` header, falling
@@ -210,7 +221,7 @@ export async function resolveAuthContext(
   if (apiKey) {
     const company = await getCompanyIdFromAPIKey(apiKey);
     if (company.data) {
-      const apiKeyData = company.data as unknown as ApiKeyRecord;
+      const apiKeyData = company.data as unknown as ResolvedApiKeyRecord;
       // Expiry is enforced again (with the same message) by
       // requirePermissions' API-key branch; here we only need identity. An
       // expired key still resolves identity — the request is rejected later.
@@ -219,10 +230,15 @@ export async function resolveAuthContext(
         companyGroupId: apiKeyData.companyGroupId,
         userId: apiKeyData.createdBy,
         sessionUserId: apiKeyData.createdBy,
-        email: ""
+        email: "",
+        apiKeyRecord: apiKeyData
       };
     }
-    return null;
+    // Bearer token was present but is NOT a valid API key (e.g. it's a
+    // Supabase JWT from client-side code). Fall through to session auth so
+    // a request with both a session cookie AND a Bearer JWT is still
+    // authenticated by cookie — rejecting here would break session auth for
+    // all non-MCP routes.
   }
 
   // Session path. requireAuthSession throws/redirects for a genuinely
@@ -280,15 +296,32 @@ export async function requirePermissions(
   const apiKey = resolveApiKey(request);
 
   if (apiKey) {
-    const company = await getCompanyIdFromAPIKey(apiKey);
-    if (company.data) {
-      const apiKeyData = company.data as unknown as ApiKeyRecord;
+    // Read the resolved API key record from the ALS identity scope — it was
+    // fetched ONCE by resolveAuthContext (middleware). We do NOT re-fetch
+    // here, which avoids a wasteful DB round-trip AND eliminates a TOCTOU
+    // gap where the key could be deleted between the two fetches.
+    const apiKeyData = identity.apiKeyRecord;
+
+    if (!apiKeyData) {
+      // resolveAuthContext also couldn't resolve this Bearer token as an API
+      // key — it's probably a Supabase JWT. Fall through to session auth.
+    } else {
       // Identity from the ALS scope (resolveAuthContext derived these from
-      // the same apiKey). Kept as locals so the rate-limit / scope / plan
+      // the same apikey). Kept as locals so the rate-limit / scope / plan
       // checks below remain byte-identical.
       const companyId = identity.companyId;
       const companyGroupId = identity.companyGroupId;
       const userId = identity.userId;
+
+      // LOW: Assert consistency — the ALS identity must match the key record.
+      if (
+        identity.companyId !== apiKeyData.companyId ||
+        identity.userId !== apiKeyData.createdBy
+      ) {
+        throw new Error(
+          "Auth context integrity violation: ALS identity differs from API key record"
+        );
+      }
 
       // Check expiration
       if (apiKeyData.expiresAt && new Date(apiKeyData.expiresAt) < new Date()) {

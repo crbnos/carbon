@@ -1,6 +1,5 @@
 import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -56,12 +55,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!orderId) throw notFound("orderId not found");
   if (!lineId) throw notFound("lineId not found");
 
-  const serviceRole = await getCarbonServiceRole();
-
   const [line, jobs, shipments] = await Promise.all([
-    getSalesOrderLine(serviceRole, lineId),
-    getJobsBySalesOrderLine(serviceRole, lineId),
-    getSalesOrderLineShipments(serviceRole, lineId)
+    getSalesOrderLine(lineId),
+    getJobsBySalesOrderLine(lineId),
+    getSalesOrderLineShipments(lineId)
   ]);
 
   if (line.error) {
@@ -77,9 +74,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     line: line?.data ?? null,
     itemReplenishment:
       itemId && line.data.methodType === "Make to Order"
-        ? getItemReplenishment(serviceRole, itemId)
+        ? getItemReplenishment(itemId)
         : Promise.resolve({ data: null }),
-    files: getOpportunityLineDocuments(serviceRole, lineId, itemId),
+    files: getOpportunityLineDocuments(lineId, itemId),
     jobs: jobs?.data ?? [],
     shipments: shipments?.data ?? []
   };
@@ -91,11 +88,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!orderId) throw new Error("Could not find orderId");
   if (!lineId) throw new Error("Could not find lineId");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
-  const salesOrder = await getSalesOrder(viewClient, orderId);
+  const salesOrder = await getSalesOrder(orderId);
   await requireUnlocked({
     request,
     isLocked: isSalesOrderLocked(salesOrder.data?.status),

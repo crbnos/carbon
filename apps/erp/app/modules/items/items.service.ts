@@ -68,10 +68,13 @@ export const activateMethodVersion = mcpTool(
   },
   async function activateMethodVersion(payload: { id: string }) {
     const client = getAuthClient<SupabaseClient<Database>>();
+    const { userId, companyId } = AuthContextHolder.get();
     return client.functions.invoke<{ convertedId: string }>("convert", {
       body: {
         type: "methodVersionToActive",
-        ...payload
+        ...payload,
+        companyId,
+        userId
       }
     });
   }
@@ -146,9 +149,9 @@ export const createRevision = mcpTool(
     item: NonNullable<Awaited<ReturnType<typeof getItem>>["data"]>;
     revision: string;
   }) {
-    const { companyId } = AuthContextHolder.get();
+    const { companyId, userId: createdBy } = AuthContextHolder.get();
     const client = getAuthClient<SupabaseClient<Database>>();
-    const { item, revision, createdBy } = args;
+    const { item, revision } = args;
     const itemInsert = await client
       .from("item")
       .insert({
@@ -2574,7 +2577,7 @@ export async function upsertItemShelfLife(args: {
   calculateFromBom?: boolean;
 }) {
   const client = getAuthClient<SupabaseClient<Database>>();
-  const { userId } = AuthContextHolder.get();
+  const { userId, companyId: authCompanyId } = AuthContextHolder.get();
   if (args.mode === undefined) {
     return { data: null, error: null };
   }
@@ -2645,7 +2648,7 @@ export async function upsertItemShelfLife(args: {
       .eq("itemId", args.itemId);
   }
 
-  let companyId = args.companyId;
+  let companyId: string | undefined = authCompanyId;
   if (!companyId) {
     const itemRow = await client
       .from("item")
@@ -3011,15 +3014,12 @@ export const upsertConsumable = mcpTool(
       if (itemId) {
         const pickMethod = await upsertItemDefaultPickMethod({
           itemId,
-          userId: userId,
           storageUnitId: consumable.defaultStorageUnitId
         });
         if (pickMethod.error) return pickMethod;
 
         const shelfLife = await upsertItemShelfLife({
           itemId,
-          userId: userId,
-          companyId: companyId,
           mode: consumable.shelfLifeMode,
           days: consumable.shelfLifeDays,
           triggerProcessId: consumable.shelfLifeTriggerProcessId,
@@ -3075,14 +3075,12 @@ export const upsertConsumable = mcpTool(
 
     const pickMethod = await upsertItemDefaultPickMethod({
       itemId: consumable.id,
-      userId: userId,
       storageUnitId: consumable.defaultStorageUnitId
     });
     if (pickMethod.error) return pickMethod;
 
     const shelfLife = await upsertItemShelfLife({
       itemId: consumable.id,
-      userId: userId,
       mode: consumable.shelfLifeMode,
       days: consumable.shelfLifeDays,
       triggerProcessId: consumable.shelfLifeTriggerProcessId,
@@ -3171,15 +3169,12 @@ export const upsertPart = mcpTool(
       if (itemId) {
         const pickMethod = await upsertItemDefaultPickMethod({
           itemId,
-          userId: userId,
           storageUnitId: part.defaultStorageUnitId
         });
         if (pickMethod.error) return pickMethod;
 
         const shelfLife = await upsertItemShelfLife({
           itemId,
-          userId: userId,
-          companyId: companyId,
           mode: part.shelfLifeMode,
           days: part.shelfLifeDays,
           triggerProcessId: part.shelfLifeTriggerProcessId,
@@ -3235,14 +3230,12 @@ export const upsertPart = mcpTool(
 
     const pickMethod = await upsertItemDefaultPickMethod({
       itemId: part.id,
-      userId: userId,
       storageUnitId: part.defaultStorageUnitId
     });
     if (pickMethod.error) return pickMethod;
 
     const shelfLife = await upsertItemShelfLife({
       itemId: part.id,
-      userId: userId,
       mode: part.shelfLifeMode,
       days: part.shelfLifeDays,
       triggerProcessId: part.shelfLifeTriggerProcessId,
@@ -3908,15 +3901,12 @@ export const upsertMaterial = mcpTool(
       for (const itemId of newItemIds) {
         const pickMethod = await upsertItemDefaultPickMethod({
           itemId,
-          userId: userId,
           storageUnitId: material.defaultStorageUnitId
         });
         if (pickMethod.error) return pickMethod;
 
         const shelfLife = await upsertItemShelfLife({
           itemId,
-          userId: userId,
-          companyId: companyId,
           mode: material.shelfLifeMode,
           days: material.shelfLifeDays,
           triggerProcessId: material.shelfLifeTriggerProcessId,
@@ -3995,14 +3985,12 @@ export const upsertMaterial = mcpTool(
 
     const pickMethod = await upsertItemDefaultPickMethod({
       itemId: material.id,
-      userId: userId,
       storageUnitId: material.defaultStorageUnitId
     });
     if (pickMethod.error) return pickMethod;
 
     const shelfLife = await upsertItemShelfLife({
       itemId: material.id,
-      userId: userId,
       mode: material.shelfLifeMode,
       days: material.shelfLifeDays,
       triggerProcessId: material.shelfLifeTriggerProcessId,
@@ -4499,15 +4487,12 @@ export const upsertTool = mcpTool(
       if (itemId) {
         const pickMethod = await upsertItemDefaultPickMethod({
           itemId,
-          userId: userId,
           storageUnitId: tool.defaultStorageUnitId
         });
         if (pickMethod.error) return pickMethod;
 
         const shelfLife = await upsertItemShelfLife({
           itemId,
-          userId: userId,
-          companyId: companyId,
           mode: tool.shelfLifeMode,
           days: tool.shelfLifeDays,
           triggerProcessId: tool.shelfLifeTriggerProcessId,
@@ -4563,14 +4548,12 @@ export const upsertTool = mcpTool(
 
     const pickMethod = await upsertItemDefaultPickMethod({
       itemId: tool.id,
-      userId: userId,
       storageUnitId: tool.defaultStorageUnitId
     });
     if (pickMethod.error) return pickMethod;
 
     const shelfLife = await upsertItemShelfLife({
       itemId: tool.id,
-      userId: userId,
       mode: tool.shelfLifeMode,
       days: tool.shelfLifeDays,
       triggerProcessId: tool.shelfLifeTriggerProcessId,

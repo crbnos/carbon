@@ -1,6 +1,5 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLocalTimeZone, today } from "@internationalized/date";
@@ -41,10 +40,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   switch (sourceDocument) {
     case "Purchase Order":
       if (!sourceDocumentId) throw new Error("Missing sourceDocumentId");
-      result = await createPurchaseInvoiceFromPurchaseOrder(
-        getCarbonServiceRole(),
-        sourceDocumentId
-      );
+      result = await createPurchaseInvoiceFromPurchaseOrder(sourceDocumentId);
 
       if (result.error || !result?.data) {
         throw redirect(

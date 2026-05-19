@@ -43,6 +43,7 @@ import {
   getBase64ImageFromSupabase,
   getCustomerPortal
 } from "~/modules/shared/shared.service";
+import { AuthClientScope } from "~/services/mcp";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
@@ -73,7 +74,8 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
-  const customer = await getCustomerPortal(serviceRole, id);
+  AuthClientScope.setFactory(() => serviceRole);
+  const customer = await getCustomerPortal(id);
 
   if (customer.error) {
     console.error(customer.error);
@@ -92,8 +94,8 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [company, salesOrderLines] = await Promise.all([
-    getCompany(serviceRole, customer.data.companyId),
-    getExternalSalesOrderLines(serviceRole, customer.data.customerId, {
+    getCompany(customer.data.companyId),
+    getExternalSalesOrderLines(customer.data.customerId, {
       search,
       limit,
       offset,
@@ -127,12 +129,10 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
             if (!path) {
               return null;
             }
-            return getBase64ImageFromSupabase(serviceRole, path).then(
-              (data) => ({
-                id,
-                data
-              })
-            );
+            return getBase64ImageFromSupabase(path).then((data) => ({
+              id,
+              data
+            }));
           })
         )
       : []
@@ -142,7 +142,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
       }
       return acc;
     }, {}) ?? {},
-    getJobOperationAttachments(serviceRole, jobOperationIds ?? [])
+    getJobOperationAttachments(jobOperationIds ?? [])
   ]);
 
   return {

@@ -23,13 +23,10 @@ export async function action({ request }: ActionFunctionArgs) {
       .single();
 
     if (line.data?.stockTransferId) {
-      const { client: viewClient } = await requirePermissions(request, {
+      await requirePermissions(request, {
         view: "inventory"
       });
-      const transfer = await getStockTransfer(
-        viewClient,
-        line.data.stockTransferId
-      );
+      const transfer = await getStockTransfer(line.data.stockTransferId);
       await requireUnlocked({
         request,
         isLocked: isStockTransferLocked(transfer.data?.status),

@@ -20,10 +20,32 @@ export interface AuthContext {
   // The raw logged-in / console account. Differs from `userId` in console
   // mode; kept for audit ("which terminal/account was used").
   sessionUserId: string;
+  // The authenticated account's email. Part of identity (resolved server-side
+  // by resolveAuthContext, never caller-supplied). Empty string for API-key
+  // requests, which have no associated email — same as the pre-ALS behavior.
+  email: string;
   companyId: string;
   // Derived from companyId (a company has exactly one group). Group-scoped
   // service code (e.g. sales quotes/orders) reads this ambiently.
   companyGroupId: string;
+  // Resolved API key record, set by resolveAuthContext when the request is
+  // API-key-authenticated. RequirePermissions reads this to avoid a second DB
+  // round-trip for the same key. Left undefined for session-authenticated
+  // requests. Defined here (the abstraction layer) so concrete consumers
+  // (auth.server.ts, auth.server.ts's requirePermissions) produce/consume
+  // it without a circular dependency.
+  apiKeyRecord?: ResolvedApiKeyRecord;
+}
+
+export interface ResolvedApiKeyRecord {
+  id: string;
+  companyId: string;
+  companyGroupId: string;
+  createdBy: string;
+  scopes: Record<string, string[]>;
+  rateLimit: number;
+  rateLimitWindow: "1m" | "1h" | "1d";
+  expiresAt: string | null;
 }
 
 // Module-private. The store is never exported, so the only way to read the
@@ -79,6 +101,10 @@ export class AuthContextHolder {
 
   static get sessionUserId(): string {
     return AuthContextHolder.get().sessionUserId;
+  }
+
+  static get email(): string {
+    return AuthContextHolder.get().email;
   }
 
   static get companyId(): string {

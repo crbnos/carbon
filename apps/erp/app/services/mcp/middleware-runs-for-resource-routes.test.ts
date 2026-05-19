@@ -20,7 +20,7 @@ import { describe, expect, it } from "vitest";
 
 const marker = createContext<string | null>(null);
 
-const rootMiddleware: MiddlewareFunction<Response> = async (
+const rootMiddleware: MiddlewareFunction<unknown> = async (
   { context },
   next
 ) => {

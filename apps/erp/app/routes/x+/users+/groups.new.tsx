@@ -19,7 +19,7 @@ import { getCompanyId } from "~/utils/react-query";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "users"
   });
 
@@ -33,7 +33,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { name, selections } = validation.data;
 
-  const createGroup = await insertGroup({ name, companyId });
+  const createGroup = await insertGroup({ name });
   if (createGroup.error) {
     return data(
       {},

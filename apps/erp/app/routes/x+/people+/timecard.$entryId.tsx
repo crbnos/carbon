@@ -36,7 +36,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "people"
   });
 
@@ -54,8 +54,7 @@ export async function action({ request }: ActionFunctionArgs) {
     entryId: id,
     clockIn,
     clockOut: clockOut || null,
-    note: note || null,
-    updatedBy: userId
+    note: note || null
   });
 
   if (result.error) {

@@ -33,8 +33,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     id,
     status,
     assignee: ["Closed"].includes(status) ? null : undefined,
-    closeDate: ["Closed"].includes(status) ? new Date().toISOString() : null,
-    updatedBy: userId
+    closeDate: ["Closed"].includes(status) ? new Date().toISOString() : null
   });
   if (update.error) {
     throw redirect(
@@ -45,7 +44,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Send status update notifications (non-blocking)
   try {
-    const integrations = await getCompanyIntegrations();
+    const integrations = await getCompanyIntegrations(client, companyId);
     await notifyIssueStatusChanged({ client }, integrations, {
       companyId,
       userId,

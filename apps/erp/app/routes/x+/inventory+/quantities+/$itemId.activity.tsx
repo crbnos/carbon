@@ -76,7 +76,7 @@ export default function ItemInventoryActivityRoute() {
   const { initialItemLedgers, itemId, locationId } =
     useLoaderData<typeof loader>();
 
-  const { carbon } = useCarbon();
+  useCarbon();
 
   const [itemLedgers, setItemLedgers] =
     useState<ItemLedger[]>(initialItemLedgers);
@@ -90,7 +90,6 @@ export default function ItemInventoryActivityRoute() {
     setIsLoading(true);
 
     const newItemLedgers = await getItemLedgerPage(
-      carbon!,
       itemId,
       locationId,
       true,
@@ -108,7 +107,7 @@ export default function ItemInventoryActivityRoute() {
     }
 
     setIsLoading(false);
-  }, [page, carbon, locationId, itemId, isLoading, hasMore]);
+  }, [page, locationId, itemId, isLoading, hasMore]);
 
   return (
     <>

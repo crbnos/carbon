@@ -140,8 +140,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Update RFQ status to Received
   await updatePurchasingRFQStatus({
     id: rfqId,
-    status: "Requested",
-    updatedBy: userId
+    status: "Requested"
   });
 
   throw redirect(

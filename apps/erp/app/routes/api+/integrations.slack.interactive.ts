@@ -114,7 +114,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     switch (payload.data.type) {
       case "shortcut":
-        return handleShortcut(payload.data, companyId, slackToken, serviceRole);
+        return handleShortcut(payload.data, companyId, slackToken);
 
       case "block_actions":
         return handleBlockActions(payload.data, companyId, slackToken);
@@ -175,19 +175,13 @@ async function handleBlockActions(
 async function handleShortcut(
   payload: z.infer<typeof slackInteractivePayloadSchema>,
   companyId: string,
-  slackToken: string,
-  serviceRole: SupabaseClient<Database>
+  slackToken: string
 ) {
   const callbackId = payload.callback_id;
 
   switch (callbackId) {
     case "create_ncr_modal":
-      return handleCreateNcrShortcut(
-        payload,
-        companyId,
-        slackToken,
-        serviceRole
-      );
+      return handleCreateNcrShortcut(payload, companyId, slackToken);
 
     default:
       return { ok: true };
@@ -197,8 +191,7 @@ async function handleShortcut(
 async function handleCreateNcrShortcut(
   payload: z.infer<typeof slackInteractivePayloadSchema>,
   companyId: string,
-  slackToken: string,
-  serviceRole: any
+  slackToken: string
 ) {
   if (!payload.trigger_id) {
     return {
@@ -209,8 +202,8 @@ async function handleCreateNcrShortcut(
 
   try {
     const [types, workflows] = await Promise.all([
-      getIssueTypesList(serviceRole),
-      getIssueWorkflowsList(serviceRole)
+      getIssueTypesList(),
+      getIssueWorkflowsList()
     ]);
 
     const slackClient = createSlackWebClient({ token: slackToken });
@@ -401,7 +394,7 @@ async function handleViewSubmission(
     }
 
     const [nextSequence, employee] = await Promise.all([
-      getNextSequence(serviceRole, "nonConformance"),
+      getNextSequence("nonConformance"),
       getCarbonEmployeeFromSlackId(serviceRole, slackToken, user_id, companyId)
     ]);
 
@@ -414,7 +407,7 @@ async function handleViewSubmission(
       throw new Error("Failed to get employee");
     }
 
-    const createResult = await upsertIssue(serviceRole, {
+    const createResult = await upsertIssue({
       nonConformanceId: nextSequence.data,
       approvalRequirements: [],
       companyId,

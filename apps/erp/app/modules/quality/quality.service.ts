@@ -1368,7 +1368,8 @@ export const updateIssueActionProcesses = mcpTool(
     processIds: string[];
   }) {
     const client = getAuthClient<SupabaseClient<Database>>();
-    const { actionTaskId, processIds, companyId, createdBy } = args;
+    const { companyId, userId: createdBy } = AuthContextHolder.get();
+    const { actionTaskId, processIds } = args;
     // Delete all existing process associations
     const deleteResult = await client
       .from("nonConformanceActionProcess")
@@ -1429,7 +1430,8 @@ export const updateIssueTaskStatus = mcpTool(
     assignee?: string | null;
   }) {
     const client = getAuthClient<SupabaseClient<Database>>();
-    const { id, status, type, userId, assignee } = args;
+    const { userId } = AuthContextHolder.get();
+    const { id, status, type, assignee } = args;
     const table =
       type === "action" || type === "investigation"
         ? "nonConformanceActionTask"

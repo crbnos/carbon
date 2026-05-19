@@ -36,7 +36,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Get the method tree
-  const methodTree = await getMethodTree(client, makeMethodId);
+  const methodTree = await getMethodTree(makeMethodId);
   if (methodTree.error) {
     return { success: false, message: "Failed to load method tree" };
   }

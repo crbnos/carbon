@@ -175,9 +175,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     user: user.data,
     modulePreferences: modulePreferences.data ?? [],
     savedViews: savedViews.data ?? [],
-    supplierApprovalRequired: isApprovalRequired(client, "supplier"),
+    supplierApprovalRequired: isApprovalRequired("supplier"),
     openClockEntry: companySettings.data?.timeCardEnabled
-      ? getOpenClockEntry()
+      ? getOpenClockEntry(userId)
       : null
   });
 }

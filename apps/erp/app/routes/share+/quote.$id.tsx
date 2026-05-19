@@ -77,6 +77,7 @@ import QuoteStatus from "~/modules/sales/ui/Quotes/QuoteStatus";
 import { getCompany, getCompanySettings } from "~/modules/settings";
 import { getBase64ImageFromSupabase } from "~/modules/shared";
 import type { action } from "~/routes/api+/sales.digital-quote.$id";
+import { AuthClientScope } from "~/services/mcp";
 import { path } from "~/utils/path";
 
 export const meta = () => {
@@ -99,7 +100,8 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
-  const quote = await getQuoteByExternalId(serviceRole, id);
+  AuthClientScope.setFactory(() => serviceRole);
+  const quote = await getQuoteByExternalId(id);
 
   if (quote.error) {
     return {
@@ -132,17 +134,17 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     shippingMethods,
     opportunity
   ] = await Promise.all([
-    getCompany(serviceRole, quote.data.companyId),
-    getCompanySettings(serviceRole, quote.data.companyId),
-    getQuoteLines(serviceRole, quote.data.id),
-    getQuoteLinePricesByQuoteId(serviceRole, quote.data.id),
-    getQuoteCustomerDetails(serviceRole, quote.data.id),
-    getQuotePayment(serviceRole, quote.data.id),
-    getQuoteShipment(serviceRole, quote.data.id),
-    getPaymentTermsList(serviceRole, quote.data.companyId),
-    getSalesTerms(serviceRole, quote.data.companyId),
-    getShippingMethodsList(serviceRole, quote.data.companyId),
-    getOpportunity(serviceRole, quote.data.opportunityId)
+    getCompany(quote.data.companyId),
+    getCompanySettings(quote.data.companyId),
+    getQuoteLines(quote.data.id),
+    getQuoteLinePricesByQuoteId(quote.data.id),
+    getQuoteCustomerDetails(quote.data.id),
+    getQuotePayment(quote.data.id),
+    getQuoteShipment(quote.data.id),
+    getPaymentTermsList(quote.data.companyId),
+    getSalesTerms(quote.data.companyId),
+    getShippingMethodsList(quote.data.companyId),
+    getOpportunity(quote.data.opportunityId)
   ]);
 
   let salesOrderLines: PostgrestResponse<SalesOrderLine> | null = null;
@@ -151,7 +153,6 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     opportunity.data.salesOrders[0]?.id
   ) {
     salesOrderLines = await getSalesOrderLines(
-      serviceRole,
       opportunity.data.salesOrders[0].id
     );
   }
@@ -173,12 +174,10 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
             if (!path) {
               return null;
             }
-            return getBase64ImageFromSupabase(serviceRole, path).then(
-              (data) => ({
-                id,
-                data
-              })
-            );
+            return getBase64ImageFromSupabase(path).then((data) => ({
+              id,
+              data
+            }));
           })
         )
       : []

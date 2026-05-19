@@ -22,10 +22,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Non-conformance ID is required");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "quality"
   });
-  const issue = await getIssue(viewClient, id);
+  const issue = await getIssue(id);
   await requireUnlocked({
     request,
     isLocked: isIssueLocked(issue.data?.status),

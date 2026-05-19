@@ -162,10 +162,9 @@ export const canApproveRequest = mcpTool(
     approvalRequest: ApprovalRequestForApproveCheck
   ): Promise<boolean> {
     const client = getAuthClient<SupabaseClient<Database>>();
-    const { companyId, userId } = AuthContextHolder.get();
+    const { userId } = AuthContextHolder.get();
     const rules = await getApprovalRulesForApprover(
-      approvalRequest.documentType,
-      companyId
+      approvalRequest.documentType
     );
 
     if (!rules.data || rules.data.length === 0) {
@@ -210,10 +209,9 @@ export const canApproveRequestInWindow = mcpTool(
     approvalRequest: ApprovalRequestForApproveCheck
   ): Promise<boolean> {
     const client = getAuthClient<SupabaseClient<Database>>();
-    const { companyId, userId } = AuthContextHolder.get();
+    const { userId } = AuthContextHolder.get();
     const rule = await getApprovalRuleByAmount(
       approvalRequest.documentType,
-      companyId,
       approvalRequest.amount ?? undefined
     );
 
@@ -1040,7 +1038,12 @@ export const insertNote = mcpTool(
   },
   async function insertNote(note: { note: string; documentId: string }) {
     const client = getAuthClient<SupabaseClient<Database>>();
-    return client.from("note").insert([note]).select("*").single();
+    const { companyId, userId: createdBy } = AuthContextHolder.get();
+    return client
+      .from("note")
+      .insert([{ ...note, companyId, createdBy }])
+      .select("*")
+      .single();
   }
 );
 
@@ -1372,7 +1375,8 @@ export const upsertSavedView = mcpTool(
     columnOrder?: string[];
   }) {
     const client = getAuthClient<SupabaseClient<Database>>();
-    const { userId, ...data } = view;
+    const { companyId, userId } = AuthContextHolder.get();
+    const data = view;
     if ("id" in view && view.id) {
       return client
         .from("tableView")
@@ -1402,6 +1406,7 @@ export const upsertSavedView = mcpTool(
       .from("tableView")
       .insert({
         ...data,
+        companyId,
         createdBy: userId,
         sortOrder: newSortOrder
       })

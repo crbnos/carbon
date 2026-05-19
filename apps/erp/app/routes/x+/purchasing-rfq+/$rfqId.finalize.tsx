@@ -220,8 +220,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Update RFQ status to Requested
   await updatePurchasingRFQStatus({
     id: rfqId,
-    status: "Requested",
-    updatedBy: userId
+    status: "Requested"
   });
 
   // Send emails if we have any contacts (using same format as supplier quote send)

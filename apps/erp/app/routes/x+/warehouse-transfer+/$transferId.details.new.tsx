@@ -26,10 +26,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error("transferId not found");
   }
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "inventory"
   });
-  const transfer = await getWarehouseTransfer(viewClient, transferId);
+  const transfer = await getWarehouseTransfer(transferId);
   await requireUnlocked({
     request,
     isLocked: isWarehouseTransferLocked(transfer.data?.status),

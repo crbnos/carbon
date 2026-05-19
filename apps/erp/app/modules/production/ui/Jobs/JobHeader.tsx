@@ -541,7 +541,7 @@ export function JobStartModal({
         .select("*")
         .eq("jobId", job.id!),
       carbon.from("jobOperation").select("*").eq("jobId", job.id!),
-      getJobMethodTree(carbon, job.id!)
+      getJobMethodTree(job.id!)
     ]);
 
     // Check for existing purchase order lines for outside operations

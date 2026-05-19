@@ -1,5 +1,4 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
@@ -23,8 +22,6 @@ export async function action({ request }: ActionFunctionArgs) {
   const configuration = configurationStr
     ? JSON.parse(configurationStr)
     : undefined;
-
-  const serviceRole = getCarbonServiceRole();
 
   const validation = await validator(getJobMethodValidator).validate(formData);
   if (validation.error) {
@@ -52,21 +49,16 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     const jobMethod = await upsertJobMethod(
-      serviceRole,
       type === "item" ? "itemToJob" : "quoteLineToJob",
       jobMethodPayload
     );
 
     const [calculateQuantities, calculateDependencies] = await Promise.all([
-      recalculateJobRequirements(serviceRole, {
-        id: validation.data.targetId,
-        companyId: companyId,
-        userId: userId
+      recalculateJobRequirements({
+        id: validation.data.targetId
       }),
-      recalculateJobOperationDependencies(serviceRole, {
-        jobId: validation.data.targetId,
-        companyId: companyId,
-        userId: userId
+      recalculateJobOperationDependencies({
+        jobId: validation.data.targetId
       })
     ]);
 
@@ -107,10 +99,7 @@ export async function action({ request }: ActionFunctionArgs) {
       makeMethodPayload.configuration = configuration;
     }
 
-    const makeMethod = await upsertJobMaterialMakeMethod(
-      serviceRole,
-      makeMethodPayload
-    );
+    const makeMethod = await upsertJobMaterialMakeMethod(makeMethodPayload);
 
     if (makeMethod.error) {
       return {

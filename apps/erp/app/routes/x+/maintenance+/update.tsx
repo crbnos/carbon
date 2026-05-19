@@ -81,7 +81,7 @@ export async function action({ request }: ActionFunctionArgs) {
       return await upsertMaintenanceDispatch({
         id: id as string,
         ...updateData
-      } as Parameters<typeof upsertMaintenanceDispatch>[1]);
+      } as Parameters<typeof upsertMaintenanceDispatch>[0]);
     })
   );
 

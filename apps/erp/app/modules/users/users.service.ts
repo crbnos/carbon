@@ -411,9 +411,10 @@ export const insertEmployeeType = mcpTool(
   },
   async function insertEmployeeType(employeeType: { name: string }) {
     const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId } = AuthContextHolder.get();
     return client
       .from("employeeType")
-      .insert([employeeType])
+      .insert([{ ...employeeType, companyId }])
       .select("id")
       .single();
   }

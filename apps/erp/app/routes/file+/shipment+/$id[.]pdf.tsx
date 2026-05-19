@@ -56,7 +56,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
-  const terms = await getSalesTerms(serviceRole);
+  const terms = await getSalesTerms();
 
   if (terms.error) {
     console.error(terms.error);
@@ -77,8 +77,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   switch (shipment.data.sourceDocument) {
     case "Sales Order": {
       const [salesOrder, salesOrderShipment] = await Promise.all([
-        getSalesOrder(serviceRole, shipment.data.sourceDocumentId),
-        getSalesOrderShipment(serviceRole, shipment.data.sourceDocumentId)
+        getSalesOrder(shipment.data.sourceDocumentId),
+        getSalesOrderShipment(shipment.data.sourceDocumentId)
       ]);
 
       const [
@@ -93,18 +93,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           .select("*")
           .eq("id", salesOrder.data?.customerId ?? "")
           .single(),
-        getCustomerLocation(
-          serviceRole,
-          salesOrder.data?.customerLocationId ?? ""
-        ),
-        getPaymentTerm(serviceRole, salesOrder.data?.paymentTermId ?? ""),
+        getCustomerLocation(salesOrder.data?.customerLocationId ?? ""),
+        getPaymentTerm(salesOrder.data?.paymentTermId ?? ""),
         getShippingMethod(
-          serviceRole,
           shipment.data.shippingMethodId ??
             salesOrderShipment.data?.shippingMethodId ??
             ""
         ),
-        getShipmentTracking(serviceRole, shipment.data.id)
+        getShipmentTracking(shipment.data.id)
       ]);
 
       if (customer.error) {
@@ -131,12 +127,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
                   if (!path) {
                     return null;
                   }
-                  return getBase64ImageFromSupabase(serviceRole, path).then(
-                    (data) => ({
-                      id,
-                      data
-                    })
-                  );
+                  return getBase64ImageFromSupabase(path).then((data) => ({
+                    id,
+                    data
+                  }));
                 })
               )
             : []
@@ -215,15 +209,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           .select("*")
           .eq("id", salesInvoice.data?.customerId ?? "")
           .single(),
-        getCustomerLocation(serviceRole, salesInvoice.data?.locationId ?? ""),
-        getPaymentTerm(serviceRole, salesInvoice.data?.paymentTermId ?? ""),
+        getCustomerLocation(salesInvoice.data?.locationId ?? ""),
+        getPaymentTerm(salesInvoice.data?.paymentTermId ?? ""),
         getShippingMethod(
-          serviceRole,
           shipment.data.shippingMethodId ??
             salesInvoice.data?.salesInvoiceShipment?.shippingMethodId ??
             ""
         ),
-        getShipmentTracking(serviceRole, shipment.data.id)
+        getShipmentTracking(shipment.data.id)
       ]);
 
       if (customer.error) {
@@ -250,12 +243,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
                   if (!path) {
                     return null;
                   }
-                  return getBase64ImageFromSupabase(serviceRole, path).then(
-                    (data) => ({
-                      id,
-                      data
-                    })
-                  );
+                  return getBase64ImageFromSupabase(path).then((data) => ({
+                    id,
+                    data
+                  }));
                 })
               )
             : []

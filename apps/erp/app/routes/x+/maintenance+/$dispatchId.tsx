@@ -32,7 +32,7 @@ export const handle: Handle = {
 };
 
 async function getMaintenanceDispatchFiles(
-  client: Parameters<typeof getMaintenanceDispatch>[0],
+  client: Awaited<ReturnType<typeof requirePermissions>>["client"],
   companyId: string,
   dispatchId: string
 ) {

@@ -72,12 +72,10 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   if (!quoteId) throw new Error("Could not find quoteId");
   if (!lineId) throw new Error("Could not find lineId");
 
-  const serviceRole = await getCarbonServiceRole();
-
   const [line, operations, prices] = await Promise.all([
-    getQuoteLine(serviceRole, lineId),
-    getQuoteOperationsByLine(serviceRole, lineId),
-    getQuoteLinePrices(serviceRole, lineId)
+    getQuoteLine(lineId),
+    getQuoteOperationsByLine(lineId),
+    getQuoteLinePrices(lineId)
   ]);
 
   if (line.error) {
@@ -89,14 +87,14 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
   const itemId = line.data.itemId!;
 
-  const rootMethod = await getRootQuoteMakeMethod(serviceRole, lineId);
+  const rootMethod = await getRootQuoteMakeMethod(lineId);
 
   const methodData = rootMethod.data
     ? await (async () => {
         const methodId = rootMethod.data.id;
         const [materials, methodOperations, tags] = await Promise.all([
-          getQuoteMaterialsByMethodId(serviceRole, methodId),
-          getQuoteOperationsByMethodId(serviceRole, methodId),
+          getQuoteMaterialsByMethodId(methodId),
+          getQuoteOperationsByMethodId(methodId),
           getTagsList("operation")
         ]);
 
@@ -121,11 +119,9 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
               workInstruction: o.workInstruction as JSONContent,
               tags: o.tags ?? []
             })) ?? [],
-          configurationParameters: getConfigurationParametersByQuoteLineId(
-            serviceRole,
-            lineId
-          ),
-          model: getModelByQuoteLineId(serviceRole, lineId),
+          configurationParameters:
+            getConfigurationParametersByQuoteLineId(lineId),
+          model: getModelByQuoteLineId(lineId),
           tags: tags.data ?? [],
           rootMethodId: methodId
         };
@@ -135,14 +131,14 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   return {
     line: line.data,
     operations: operations?.data ?? [],
-    files: getOpportunityLineDocuments(serviceRole, lineId, itemId),
+    files: getOpportunityLineDocuments(lineId, itemId),
     pricesByQuantity: (prices?.data ?? []).reduce<
       Record<number, QuotationPrice>
     >((acc, price) => {
       acc[price.quantity] = price;
       return acc;
     }, {}),
-    relatedPrices: getRelatedPricesForQuoteLine(serviceRole, itemId, quoteId),
+    relatedPrices: getRelatedPricesForQuoteLine(itemId, quoteId),
     methodData
   };
 };
@@ -157,10 +153,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!quoteId) throw new Error("Could not find quoteId");
   if (!lineId) throw new Error("Could not find lineId");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
-  const quote = await getQuote(viewClient, quoteId);
+  const quote = await getQuote(quoteId);
   await requireUnlocked({
     request,
     isLocked: isQuoteLocked(quote.data?.status),
@@ -225,21 +221,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (addedQuantities.length > 0) {
       const priceResult =
         methodType === "Make to Order"
-          ? await calculatePricesForQuantities(
-              serviceRole,
-              quoteId,
-              lineId,
-              addedQuantities
-            )
+          ? await calculatePricesForQuantities(quoteId, lineId, addedQuantities)
           : methodType === "Pull from Inventory"
-            ? await resolveQuoteLinePrices(
-                serviceRole,
-                quoteId,
-                lineId,
-                addedQuantities
-              )
+            ? await resolveQuoteLinePrices(quoteId, lineId, addedQuantities)
             : await resolvePurchaseToOrderPrices(
-                serviceRole,
                 quoteId,
                 lineId,
                 addedQuantities

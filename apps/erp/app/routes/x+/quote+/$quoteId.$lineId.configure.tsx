@@ -10,7 +10,7 @@ import { lookupBuyPriceFromMap } from "~/modules/shared";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { client, userId } = await requirePermissions(request, {
     update: "production",
     role: "employee"
   });
@@ -48,13 +48,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
 
     const serviceRole = await getCarbonServiceRole();
-    const upsertMethod = await upsertQuoteLineMethod(serviceRole, {
+    const upsertMethod = await upsertQuoteLineMethod({
       quoteId,
       quoteLineId: lineId,
       itemId: quoteLine.data.itemId,
-      configuration,
-      companyId,
-      userId
+      configuration
     });
 
     if (upsertMethod.error) {
@@ -74,10 +72,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const buyItemIds = [
       ...new Set((buyMaterials.data ?? []).map((m) => m.itemId))
     ];
-    const priceMap = await getSupplierPriceBreaksForItems(
-      serviceRole,
-      buyItemIds
-    );
+    const priceMap = await getSupplierPriceBreaksForItems(buyItemIds);
 
     for (const mat of buyMaterials.data ?? []) {
       const price = lookupBuyPriceFromMap(

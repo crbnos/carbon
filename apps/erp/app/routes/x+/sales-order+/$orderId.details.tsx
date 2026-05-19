@@ -82,14 +82,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
   const { orderId: id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const salesOrder = await getSalesOrder(viewClient, id);
+  const salesOrder = await getSalesOrder(id);
   if (salesOrder.error) {
     throw redirect(
       path.to.salesOrder(id),

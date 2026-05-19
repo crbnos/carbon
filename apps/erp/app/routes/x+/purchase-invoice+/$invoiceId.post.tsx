@@ -60,7 +60,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     receiptIds = postPurchaseInvoice.data?.receiptIds;
 
     // Check if we should update prices on invoice post
-    const companySettings = await getCompanySettings(serviceRole);
+    const companySettings = await getCompanySettings();
     if (
       !companySettings.data?.purchasePriceUpdateTiming ||
       companySettings.data.purchasePriceUpdateTiming === "Purchase Invoice Post"

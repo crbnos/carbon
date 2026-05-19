@@ -73,7 +73,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!quote.data?.quoteId) {
     throw new Error("Failed to fetch quote");
   }
-  const methodTrees = await getQuoteMethodTrees(client, quote.data?.quoteId);
+  const methodTrees = await getQuoteMethodTrees(quote.data?.quoteId);
 
   if (methodTrees.error) {
     return new Response(bomHeaders.join(",") + "\n", {

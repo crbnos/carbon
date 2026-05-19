@@ -53,7 +53,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts",
     bypassRls: true
   });
@@ -62,7 +62,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!itemId) throw new Error("Could not find itemId");
 
   const [toolSummary, supplierParts, pickMethods, tags] = await Promise.all([
-    getTool(itemId, companyId),
+    getTool(itemId),
     getSupplierParts(itemId),
     getPickMethods(itemId),
     getTagsList("tool")
@@ -93,7 +93,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const fullMethod = await getMakeMethodById(makeMethod.id);
     if (fullMethod.error || !fullMethod.data) return null;
 
-    const tree = await getMethodTree(client, fullMethod.data.id);
+    const tree = await getMethodTree(fullMethod.data.id);
     if (tree.error) return null;
 
     const methods = tree.data.length > 0 ? flattenTree(tree.data[0]) : [];

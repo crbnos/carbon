@@ -12,6 +12,7 @@ import {
 import { getCompanySettings } from "~/modules/settings";
 import { generateAndAttachSalesOrderPdf } from "~/modules/shared/shared.server";
 import { loader as pdfLoader } from "~/routes/file+/sales-order+/$id[.]pdf";
+import { AuthClientScope } from "~/services/mcp";
 
 export async function action(args: ActionFunctionArgs) {
   const { request, params } = args;
@@ -23,8 +24,14 @@ export async function action(args: ActionFunctionArgs) {
   const formData = await request.formData();
   const type = String(formData.get("type"));
 
+  // Public digital-quote acceptance route: no session/middleware identity.
+  // Establish the service-role client scope explicitly so service-layer fns
+  // (getQuoteByExternalId/getCompanySettings/getSalesOrder/convertQuoteToOrder)
+  // resolve a client via getAuthClient(). Replaces main's serviceRole
+  // threading. Identity (company/user) is the quote's, passed explicitly.
   const serviceRole = getCarbonServiceRole();
-  const quote = await getQuoteByExternalId(serviceRole, id);
+  AuthClientScope.setFactory(() => serviceRole);
+  const quote = await getQuoteByExternalId(id);
 
   if (quote.error) {
     console.error("Quote not found", quote.error);
@@ -34,10 +41,7 @@ export async function action(args: ActionFunctionArgs) {
     };
   }
 
-  const companySettings = await getCompanySettings(
-    serviceRole,
-    quote.data.companyId
-  );
+  const companySettings = await getCompanySettings(quote.data.companyId);
 
   switch (type) {
     case "accept":
@@ -72,7 +76,7 @@ export async function action(args: ActionFunctionArgs) {
       }
 
       const [convert] = await Promise.all([
-        convertQuoteToOrder(serviceRole, {
+        convertQuoteToOrder({
           id: quote.data.id,
           companyId: quote.data.companyId,
           userId: quote.data.createdBy,
@@ -95,7 +99,7 @@ export async function action(args: ActionFunctionArgs) {
       const salesOrderId = convert.data?.convertedId;
       if (salesOrderId) {
         try {
-          const salesOrder = await getSalesOrder(serviceRole, salesOrderId);
+          const salesOrder = await getSalesOrder(salesOrderId);
           if (salesOrder.data?.salesOrderId && salesOrder.data?.opportunityId) {
             await generateAndAttachSalesOrderPdf({
               routeArgs: args,

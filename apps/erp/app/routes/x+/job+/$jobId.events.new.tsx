@@ -46,10 +46,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw notFound("jobId not found");
   }
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "production"
   });
-  const job = await getJob(viewClient, jobId);
+  const job = await getJob(jobId);
   await requireUnlocked({
     request,
     isLocked: isJobLocked(job.data?.status),

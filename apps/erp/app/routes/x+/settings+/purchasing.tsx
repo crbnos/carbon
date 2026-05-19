@@ -101,7 +101,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "settings"
   });
 
@@ -231,7 +231,8 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       const apBillingResult = await updateAccountsPayableBillingAddress(
-        apBillingValidation.data
+        apBillingValidation.data,
+        userId
       );
 
       if (apBillingResult.error) {

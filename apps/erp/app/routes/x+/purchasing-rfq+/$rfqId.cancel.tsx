@@ -12,7 +12,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "purchasing"
   });
 
@@ -22,8 +22,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const update = await updatePurchasingRFQStatus({
     id,
     status: "Closed",
-    assignee: null,
-    updatedBy: userId
+    assignee: null
   });
 
   if (update.error) {
@@ -40,8 +39,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         updateSupplierQuoteStatus({
           id: link.supplierQuoteId,
           status: "Cancelled",
-          assignee: undefined,
-          updatedBy: userId
+          assignee: undefined
         })
       )
     );

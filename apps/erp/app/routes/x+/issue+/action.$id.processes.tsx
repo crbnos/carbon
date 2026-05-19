@@ -10,7 +10,7 @@ const updateProcessesSchema = z.object({
 });
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { userId, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "quality"
   });
 
@@ -28,9 +28,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const updateProcesses = await updateIssueActionProcesses({
     actionTaskId: id,
-    processIds,
-    companyId,
-    createdBy: userId
+    processIds
   });
 
   if (updateProcesses.error) {

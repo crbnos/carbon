@@ -36,8 +36,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     id,
     status,
     type,
-    assignee,
-    userId
+    assignee
   });
   if (update.error) {
     return data(
@@ -47,7 +46,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   try {
-    const integrations = await getCompanyIntegrations();
+    const integrations = await getCompanyIntegrations(client, companyId);
     if (update.data?.nonConformanceId) {
       await notifyTaskStatusChanged({ client }, integrations, {
         companyId,

@@ -97,8 +97,8 @@ export async function getItemRulesDataForItem(
   companyId: string
 ) {
   const [assignmentsRes, libraryRes] = await Promise.all([
-    getRuleAssignmentsForItem(client, itemId, companyId),
-    getItemRulesList(client, companyId)
+    getRuleAssignmentsForItem(itemId),
+    getItemRulesList()
   ]);
 
   const assignments: { ruleId: string; rule: AssignedRuleNode }[] = [];
@@ -147,11 +147,7 @@ async function loadCompiledRulesForItems(
   const out = new Map<string, CompiledRule[]>();
   if (itemIds.length === 0) return out;
 
-  const { data: byItem } = await getActiveRulesForItems(
-    client,
-    itemIds,
-    companyId
-  );
+  const { data: byItem } = await getActiveRulesForItems(itemIds);
   for (const [itemId, rows] of byItem) {
     const compiled = new Array<CompiledRule>(rows.length);
     for (let i = 0; i < rows.length; i++) {
@@ -170,16 +166,12 @@ async function loadCompiledRulesForItems(
 // Loader-label resolver — UUID condition values → human labels
 // ---------------------------------------------------------------------------
 
-type LoaderFn = (
-  client: Client,
-  companyId: string
-) => Promise<{ id: string; name: string }[]>;
+type LoaderFn = () => Promise<{ id: string; name: string }[]>;
 
 const LOADERS: Record<ValueOptionsLoader, LoaderFn | null> = {
-  locations: async (c, id) => (await getLocationsList(c, id)).data ?? [],
-  storageTypes: async (c, id) => (await getStorageTypesList(c, id)).data ?? [],
-  itemPostingGroups: async (c, id) =>
-    (await getItemPostingGroupsList(c, id)).data ?? [],
+  locations: async () => (await getLocationsList()).data ?? [],
+  storageTypes: async () => (await getStorageTypesList()).data ?? [],
+  itemPostingGroups: async () => (await getItemPostingGroupsList()).data ?? [],
   // Static enums — value is already the label.
   itemTypes: null,
   replenishmentSystems: null,
@@ -223,7 +215,7 @@ async function buildConditionValueResolver(
   await Promise.all(
     Array.from(byLoader.keys()).map(async (loader) => {
       const fn = LOADERS[loader]!;
-      const rows = await fn(client, companyId);
+      const rows = await fn();
       const map = new Map<string, string>();
       for (const r of rows) map.set(r.id, r.name);
       labels.set(loader, map);

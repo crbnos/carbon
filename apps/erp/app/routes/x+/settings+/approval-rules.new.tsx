@@ -1,6 +1,5 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -43,8 +42,6 @@ export async function action({ request }: ActionFunctionArgs) {
     role: "employee"
   });
 
-  const serviceRole = getCarbonServiceRole();
-
   const formData = await request.formData();
   const validation = await validator(approvalRuleValidator).validate(formData);
 
@@ -52,7 +49,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const existingRules = await getApprovalRules(serviceRole);
+  const existingRules = await getApprovalRules();
   const rulesForType =
     existingRules.data?.filter(
       (r) => r.documentType === validation.data.documentType
@@ -69,7 +66,7 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
-  const result = await upsertApprovalRule(serviceRole, {
+  const result = await upsertApprovalRule({
     createdBy: userId,
     companyId,
     documentType: validation.data.documentType,

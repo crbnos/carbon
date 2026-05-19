@@ -169,10 +169,13 @@ export const convertSalesRfqToQuote = mcpTool(
   },
   async function convertSalesRfqToQuote(payload: { id: string }) {
     const client = getAuthClient<SupabaseClient<Database>>();
+    const { userId, companyId } = AuthContextHolder.get();
     return client.functions.invoke<{ convertedId: string }>("convert", {
       body: {
         type: "salesRfqToQuote",
-        ...payload
+        ...payload,
+        companyId,
+        userId
       }
     });
   }
@@ -182,9 +185,16 @@ export const convertQuoteToOrder = mcpTool(
   {
     classification: "WRITE"
   },
+  // companyId/userId are NOT ambient identity here: this runs on the public
+  // digital-quote acceptance route (no authenticated actor / no
+  // AuthContextHolder). They are the QUOTE's company and creator, passed
+  // explicitly by the caller, and must flow into the "convert" edge function
+  // body verbatim (it needs them to create the sales order).
   async function convertQuoteToOrder(payload: {
     id: string;
     selectedLines: z.infer<typeof selectedLinesValidator>;
+    companyId: string;
+    userId: string;
     purchaseOrderNumber?: string;
     digitalQuoteAcceptedBy?: string;
     digitalQuoteAcceptedByEmail?: string;
@@ -1946,13 +1956,16 @@ export const getSalesTerms = mcpTool(
   {
     classification: "READ"
   },
-  async function getSalesTerms() {
+  // `companyId` is optional: defaults to the ambient (actor's) company for
+  // authed routes. It is an explicit override for public/share routes where
+  // no AuthContextHolder is available.
+  async function getSalesTerms(companyId?: string) {
+    const resolvedCompanyId = companyId ?? AuthContextHolder.get().companyId;
     const client = getAuthClient<SupabaseClient<Database>>();
-    const { companyId } = AuthContextHolder.get();
     return client
       .from("terms")
       .select("salesTerms")
-      .eq("id", companyId)
+      .eq("id", resolvedCompanyId)
       .single();
   }
 );
@@ -3471,7 +3484,8 @@ export const updateSalesRFQFavorite = mcpTool(
     favorite: boolean;
   }) {
     const client = getAuthClient<SupabaseClient<Database>>();
-    const { id, favorite, userId } = args;
+    const { userId } = AuthContextHolder.get();
+    const { id, favorite } = args;
     if (!favorite) {
       return client
         .from("salesRfqFavorite")
@@ -3551,7 +3565,8 @@ export const updateQuoteFavorite = mcpTool(
   },
   async function updateQuoteFavorite(args: { id: string; favorite: boolean }) {
     const client = getAuthClient<SupabaseClient<Database>>();
-    const { id, favorite, userId } = args;
+    const { userId } = AuthContextHolder.get();
+    const { id, favorite } = args;
     if (!favorite) {
       return client
         .from("quoteFavorite")
@@ -3756,7 +3771,7 @@ export const upsertQuote = mcpTool(
         await Promise.all([
           getCustomerPayment(quote.customerId),
           getCustomerShipping(quote.customerId),
-          getEmployeeJob(userId, companyId),
+          getEmployeeJob(userId),
           client
             .from("opportunity")
             .insert([{ companyId: companyId, customerId: quote.customerId }])
@@ -5104,7 +5119,8 @@ export const updateSalesOrderFavorite = mcpTool(
     favorite: boolean;
   }) {
     const client = getAuthClient<SupabaseClient<Database>>();
-    const { id, favorite, userId } = args;
+    const { userId } = AuthContextHolder.get();
+    const { id, favorite } = args;
     if (!favorite) {
       return client
         .from("salesOrderFavorite")
@@ -5210,7 +5226,7 @@ export const upsertSalesOrder = mcpTool(
       await Promise.all([
         getCustomerPayment(salesOrder.customerId),
         getCustomerShipping(salesOrder.customerId),
-        getEmployeeJob(userId, companyId),
+        getEmployeeJob(userId),
         client
           .from("opportunity")
           .insert([

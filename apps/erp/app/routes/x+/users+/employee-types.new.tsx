@@ -36,7 +36,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "users"
   });
 
@@ -67,8 +67,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const createEmployeeType = await insertEmployeeType({
-    name,
-    companyId
+    name
   });
   if (createEmployeeType.error) {
     return data(

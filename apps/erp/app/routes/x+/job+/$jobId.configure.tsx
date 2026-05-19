@@ -1,6 +1,5 @@
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { trigger } from "@carbon/jobs";
 import type { ActionFunctionArgs } from "react-router";
@@ -45,12 +44,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    const serviceRole = await getCarbonServiceRole();
-    const upsertMethod = await upsertJobMethod(serviceRole, "itemToJob", {
+    const upsertMethod = await upsertJobMethod("itemToJob", {
       sourceId: job.data.itemId,
       targetId: jobId,
-      companyId,
-      userId,
       configuration
     });
 

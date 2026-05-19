@@ -17,7 +17,7 @@ import { path } from "~/utils/path";
 const WEEKS_TO_PROJECT = 52;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "production"
   });
 
@@ -36,7 +36,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const existingProjections = await getDemandProjections({
     itemId,
     locationId,
-    companyId,
     periodIds: periods.map((p) => p.id)
   });
 

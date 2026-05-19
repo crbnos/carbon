@@ -55,7 +55,7 @@ export const handle: Handle = {
 export async function action(args: ActionFunctionArgs) {
   const { request, params } = args;
   assertIsPost(request);
-  const { userId, companyId } = await requirePermissions(request, {
+  const { client, userId, companyId } = await requirePermissions(request, {
     update: "purchasing"
   });
 
@@ -82,7 +82,6 @@ export async function action(args: ActionFunctionArgs) {
 
   // Verify user can approve this request
   const approvalRequest = await getLatestApprovalRequestForDocument(
-    serviceRole,
     "purchaseOrder",
     orderId
   );
@@ -94,7 +93,7 @@ export async function action(args: ActionFunctionArgs) {
     );
   }
 
-  const canApproveResult = await canApproveRequest(serviceRole, {
+  const canApproveResult = await canApproveRequest({
     amount: approvalRequest.data.amount,
     documentType: approvalRequest.data.documentType,
     companyId: approvalRequest.data.companyId
@@ -114,8 +113,8 @@ export async function action(args: ActionFunctionArgs) {
   const db = getDatabaseClient();
   const result =
     decision === "Approved"
-      ? await approveRequest(db, approvalRequestId, userId)
-      : await rejectRequest(db, approvalRequestId, userId);
+      ? await approveRequest(db, approvalRequestId)
+      : await rejectRequest(db, approvalRequestId);
 
   if (result.error) {
     throw redirect(
@@ -151,7 +150,7 @@ export async function action(args: ActionFunctionArgs) {
 
   // If approved, handle post-approval tasks: PDF generation, document creation, email, price updates
   if (decision === "Approved") {
-    const purchaseOrder = await getPurchaseOrder(serviceRole, orderId);
+    const purchaseOrder = await getPurchaseOrder(orderId);
     if (purchaseOrder.data) {
       let fileName: string | undefined;
       let documentFilePath: string | undefined;
@@ -178,7 +177,7 @@ export async function action(args: ActionFunctionArgs) {
             });
 
           if (!documentFileUpload.error) {
-            await upsertDocument(serviceRole, {
+            await upsertDocument({
               path: documentFilePath,
               name: fileName,
               size: Math.round(file.byteLength / 1024),
@@ -217,12 +216,12 @@ export async function action(args: ActionFunctionArgs) {
             paymentTerms,
             buyer
           ] = await Promise.all([
-            getCompany(serviceRole),
-            getSupplierContact(serviceRole, supplierContact),
-            getPurchaseOrderLines(serviceRole, orderId),
-            getPurchaseOrderLocations(serviceRole, orderId),
-            getPaymentTermsList(serviceRole),
-            getUser(serviceRole, userId)
+            getCompany(),
+            getSupplierContact(supplierContact),
+            getPurchaseOrderLines(orderId),
+            getPurchaseOrderLocations(orderId),
+            getPaymentTermsList(),
+            getUser(client, userId)
           ]);
 
           const supplierEmail = supplier?.data?.contact?.email;
@@ -284,7 +283,7 @@ export async function action(args: ActionFunctionArgs) {
       }
 
       // Check if we should update prices on purchase order approval
-      const companySettings = await getCompanySettings(serviceRole);
+      const companySettings = await getCompanySettings();
       if (
         companySettings.data?.purchasePriceUpdateTiming ===
         "Purchase Order Finalize"
@@ -360,7 +359,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw redirect(path.to.purchaseOrders);
   }
 
-  const serviceRole = getCarbonServiceRole();
   const [supplier, interaction, approvalRequest, companySettings] =
     await Promise.all([
       purchaseOrder.data?.supplierId
@@ -369,13 +367,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       getSupplierInteraction(purchaseOrder.data.supplierInteractionId),
       // Only fetch approval request if status is "Needs Approval"
       purchaseOrder.data?.status === "Needs Approval"
-        ? getLatestApprovalRequestForDocument(
-            serviceRole,
-            "purchaseOrder",
-            orderId
-          )
+        ? getLatestApprovalRequestForDocument("purchaseOrder", orderId)
         : Promise.resolve({ data: null, error: null }),
-      getCompanySettings(serviceRole)
+      getCompanySettings()
     ]);
 
   const defaultCc = supplier?.data?.defaultCc?.length
@@ -396,7 +390,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const requestedBy = approvalRequest.data.requestedBy;
     const status = approvalRequest.data.status;
 
-    canApprove = await canApproveRequest(serviceRole, {
+    canApprove = await canApproveRequest({
       amount: approvalRequest.data.amount,
       documentType: approvalRequest.data.documentType,
       companyId: approvalRequest.data.companyId

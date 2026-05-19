@@ -8,7 +8,7 @@ import { insertNote, noteValidator } from "~/modules/shared";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
   const validation = await validator(noteValidator).validate(
     await request.formData()
@@ -21,9 +21,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { documentId, note } = validation.data;
   const createNote = await insertNote({
     documentId,
-    note,
-    companyId,
-    createdBy: userId
+    note
   });
   if (createNote.error) {
     throw redirect(

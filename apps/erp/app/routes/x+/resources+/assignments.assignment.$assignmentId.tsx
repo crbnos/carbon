@@ -111,9 +111,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const result = await upsertTrainingAssignment({
     id: assignmentId,
     trainingId,
-    groupIds,
-    companyId: "", // not used for updates
-    updatedBy: userId
+    groupIds
   });
 
   if (result.error) {

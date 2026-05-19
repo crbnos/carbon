@@ -55,11 +55,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!lineId) throw new Error("Could not find lineId");
 
   // Check if PI is locked
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "invoicing"
   });
 
-  const purchaseInvoice = await getPurchaseInvoice(viewClient, invoiceId);
+  const purchaseInvoice = await getPurchaseInvoice(invoiceId);
   if (purchaseInvoice.error) {
     throw redirect(
       path.to.purchaseInvoiceLine(invoiceId, lineId),

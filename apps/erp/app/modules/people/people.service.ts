@@ -532,6 +532,7 @@ export const insertAttribute = mcpTool(
     canSelfManage: boolean;
   }) {
     const client = getAuthClient<SupabaseClient<Database>>();
+    const { userId: createdBy } = AuthContextHolder.get();
     // TODO: there's got to be a better way to get the max
     const sortOrders = await client
       .from("userAttribute")
@@ -545,7 +546,7 @@ export const insertAttribute = mcpTool(
 
     return client
       .from("userAttribute")
-      .upsert([{ ...attribute, sortOrder: maxSortOrder + 1 }])
+      .upsert([{ ...attribute, sortOrder: maxSortOrder + 1, createdBy }])
       .select("id")
       .single();
   }
@@ -561,9 +562,10 @@ export const insertAttributeCategory = mcpTool(
     public: boolean;
   }) {
     const client = getAuthClient<SupabaseClient<Database>>();
+    const { userId: createdBy } = AuthContextHolder.get();
     return client
       .from("userAttributeCategory")
-      .upsert([attributeCategory])
+      .upsert([{ ...attributeCategory, createdBy }])
       .select("id")
       .single();
   }
@@ -575,7 +577,12 @@ export const insertEmployeeJob = mcpTool(
   },
   async function insertEmployeeJob(job: { id: string; locationId?: string }) {
     const client = getAuthClient<SupabaseClient<Database>>();
-    return client.from("employeeJob").insert(job).select("*").single();
+    const { companyId } = AuthContextHolder.get();
+    return client
+      .from("employeeJob")
+      .insert({ ...job, companyId })
+      .select("*")
+      .single();
   }
 );
 
@@ -755,7 +762,7 @@ export const clockIn = mcpTool(
   async function clockIn(args: { employeeId: string }) {
     const { companyId, userId } = AuthContextHolder.get();
     const client = getAuthClient<SupabaseClient<Database>>();
-    const existing = await getOpenClockEntry(args.employeeId, companyId);
+    const existing = await getOpenClockEntry(args.employeeId);
     if (existing.data) {
       return { data: null, error: { message: "Already clocked in" } };
     }
@@ -784,9 +791,9 @@ export const clockOut = mcpTool(
     clockOut?: string;
     note?: string;
   }) {
-    const { companyId, userId } = AuthContextHolder.get();
+    const { userId } = AuthContextHolder.get();
     const client = getAuthClient<SupabaseClient<Database>>();
-    const open = await getOpenClockEntry(args.employeeId, companyId);
+    const open = await getOpenClockEntry(args.employeeId);
     if (!open.data) {
       return { data: null, error: { message: "Not currently clocked in" } };
     }
@@ -816,9 +823,10 @@ export const createTimeCardEntry = mcpTool(
     note?: string | null;
   }) {
     const client = getAuthClient<SupabaseClient<Database>>();
+    const { companyId, userId } = AuthContextHolder.get();
     return client
       .from("timeCardEntry")
-      .insert(sanitize(entry))
+      .insert(sanitize({ ...entry, companyId, createdBy: userId }))
       .select("id")
       .single();
   }

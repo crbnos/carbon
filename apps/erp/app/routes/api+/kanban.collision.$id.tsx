@@ -43,17 +43,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { userId, companyId } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const kanbanUpdate = await updateKanbanJob({
-    id,
-    jobId: null,
-    userId,
-    companyId
-  });
+  const kanbanUpdate = await updateKanbanJob({ id, jobId: null });
 
   if (kanbanUpdate.error) {
     return data(

@@ -245,12 +245,7 @@ const SalesOrderLineForm = ({
 
     // Get default storage unit or storage unit with highest quantity
     const defaultStorageUnitId = locationId
-      ? await getDefaultStorageUnitForJob(
-          carbon,
-          itemId,
-          locationId,
-          company.id
-        )
+      ? await getDefaultStorageUnitForJob(itemId, locationId)
       : null;
 
     let resolvedPrice = price.data?.unitSalePrice ?? 0;
@@ -287,10 +282,8 @@ const SalesOrderLineForm = ({
 
     // Get default storage unit or storage unit with highest quantity for the new location
     const defaultStorageUnitId = await getDefaultStorageUnitForJob(
-      carbon,
       itemData.itemId,
-      newLocation.value,
-      company.id
+      newLocation.value
     );
 
     setItemData((d) => ({

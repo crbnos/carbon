@@ -66,7 +66,7 @@ export async function action(args: ActionFunctionArgs) {
   const cc = notificationValidation.data?.cc;
 
   const serviceRole = getCarbonServiceRole();
-  const convert = await convertQuoteToOrder(serviceRole, {
+  const convert = await convertQuoteToOrder({
     id: quoteId,
     purchaseOrderNumber: poNumber ?? "",
     companyId,
@@ -89,7 +89,7 @@ export async function action(args: ActionFunctionArgs) {
   // Generate PDF and optionally send email — failures here should not block
   // the redirect to the new sales order.
   try {
-    const salesOrder = await getSalesOrder(serviceRole, salesOrderId);
+    const salesOrder = await getSalesOrder(salesOrderId);
     if (salesOrder.data?.salesOrderId && salesOrder.data?.opportunityId) {
       const { fileName, documentFilePath } =
         await generateAndAttachSalesOrderPdf({

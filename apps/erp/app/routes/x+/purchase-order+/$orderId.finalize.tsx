@@ -53,7 +53,7 @@ export async function action(args: ActionFunctionArgs) {
 
   const serviceRole = getCarbonServiceRole();
 
-  const purchaseOrder = await getPurchaseOrder(serviceRole, orderId);
+  const purchaseOrder = await getPurchaseOrder(orderId);
   if (purchaseOrder.error) {
     throw redirect(
       path.to.purchaseOrder(orderId),
@@ -75,15 +75,9 @@ export async function action(args: ActionFunctionArgs) {
   }
 
   // Check supplier approval status
-  const supplierApprovalRequired = await isApprovalRequired(
-    serviceRole,
-    "supplier"
-  );
+  const supplierApprovalRequired = await isApprovalRequired("supplier");
   if (supplierApprovalRequired && purchaseOrder.data.supplierId) {
-    const supplier = await getSupplier(
-      serviceRole,
-      purchaseOrder.data.supplierId
-    );
+    const supplier = await getSupplier(purchaseOrder.data.supplierId);
     if (supplier.data?.status !== "Active") {
       throw redirect(
         path.to.purchaseOrder(orderId),
@@ -97,7 +91,6 @@ export async function action(args: ActionFunctionArgs) {
 
   const orderAmount = purchaseOrder.data.orderTotal ?? 0;
   const approvalRequired = await isApprovalRequired(
-    serviceRole,
     "purchaseOrder",
     orderAmount
   );
@@ -116,14 +109,10 @@ export async function action(args: ActionFunctionArgs) {
   // If approval is required, create the request and return early
   // PDF generation, email sending, and price updates happen after approval
   if (approvalRequired) {
-    const hasPending = await hasPendingApproval(
-      serviceRole,
-      "purchaseOrder",
-      orderId
-    );
+    const hasPending = await hasPendingApproval("purchaseOrder", orderId);
 
     if (!hasPending) {
-      await createApprovalRequest(serviceRole, {
+      await createApprovalRequest({
         documentType: "purchaseOrder",
         documentId: orderId,
         companyId,
@@ -132,13 +121,9 @@ export async function action(args: ActionFunctionArgs) {
         amount: orderAmount
       });
 
-      const rule = await getApprovalRuleByAmount(
-        serviceRole,
-        "purchaseOrder",
-        orderAmount
-      );
+      const rule = await getApprovalRuleByAmount("purchaseOrder", orderAmount);
       const approverIds = rule.data
-        ? await getApproverUserIdsForRule(serviceRole, rule.data)
+        ? await getApproverUserIdsForRule(rule.data)
         : [];
 
       if (approverIds.length > 0) {
@@ -160,8 +145,7 @@ export async function action(args: ActionFunctionArgs) {
     await updatePurchaseOrderStatus({
       id: orderId,
       status: "Needs Approval",
-      assignee: undefined,
-      updatedBy: userId
+      assignee: undefined
     });
 
     throw redirect(
@@ -171,7 +155,7 @@ export async function action(args: ActionFunctionArgs) {
   }
 
   // Check if we should update prices on purchase order finalize
-  const companySettings = await getCompanySettings(serviceRole);
+  const companySettings = await getCompanySettings();
   if (
     companySettings.data?.purchasePriceUpdateTiming ===
     "Purchase Order Finalize"
@@ -232,7 +216,7 @@ export async function action(args: ActionFunctionArgs) {
       );
     }
 
-    const createDocument = await upsertDocument(serviceRole, {
+    const createDocument = await upsertDocument({
       path: documentFilePath,
       name: fileName,
       size: Math.round(file.byteLength / 1024),
@@ -284,12 +268,12 @@ export async function action(args: ActionFunctionArgs) {
           paymentTerms,
           buyer
         ] = await Promise.all([
-          getCompany(serviceRole),
-          getSupplierContact(serviceRole, supplierContact),
-          getPurchaseOrder(serviceRole, orderId),
-          getPurchaseOrderLines(serviceRole, orderId),
-          getPurchaseOrderLocations(serviceRole, orderId),
-          getPaymentTermsList(serviceRole),
+          getCompany(),
+          getSupplierContact(supplierContact),
+          getPurchaseOrder(orderId),
+          getPurchaseOrderLines(orderId),
+          getPurchaseOrderLocations(orderId),
+          getPaymentTermsList(),
           getUser(serviceRole, userId)
         ]);
 

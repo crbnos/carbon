@@ -39,10 +39,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources"
   });
-  const dispatch = await getMaintenanceDispatch(viewClient, dispatchId);
+  const dispatch = await getMaintenanceDispatch(dispatchId);
   await requireUnlocked({
     request,
     isLocked: isMaintenanceDispatchLocked(dispatch.data?.status),

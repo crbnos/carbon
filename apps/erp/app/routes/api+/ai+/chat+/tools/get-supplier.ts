@@ -74,7 +74,7 @@ export const getSupplierTool = tool({
     }
 
     if (description) {
-      const embedding = await generateEmbedding(context.client, description);
+      const embedding = await generateEmbedding(description);
 
       const search = await context.client.rpc("suppliers_search", {
         query_embedding: JSON.stringify(embedding),

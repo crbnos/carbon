@@ -77,12 +77,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!orderId) throw new Error("Could not find orderId");
 
   // First check with basic update permission to get the PO
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
 
   // Check if PO is locked
-  const purchaseOrder = await getPurchaseOrder(viewClient, orderId);
+  const purchaseOrder = await getPurchaseOrder(orderId);
   if (purchaseOrder.error) {
     throw redirect(
       path.to.purchaseOrder(orderId),

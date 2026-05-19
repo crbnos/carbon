@@ -151,7 +151,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     await Promise.all([
       getTimeCardEntries({
         employeeId: personId,
-        companyId,
         from,
         to
       }),
@@ -211,9 +210,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     const employeeId = validation.data.employeeId || personId;
     const result = await clockIn({
-      employeeId,
-      companyId,
-      createdBy: userId
+      employeeId
     });
 
     if (result.error) {
@@ -232,8 +229,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const employeeId = validation.data.employeeId || personId;
     const result = await clockOut({
       employeeId,
-      companyId,
-      updatedBy: userId,
       note: validation.data.note
     });
 
@@ -256,8 +251,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       entryId: validation.data.entryId,
       clockIn: validation.data.clockIn,
       clockOut: validation.data.clockOut || null,
-      note: validation.data.note || null,
-      updatedBy: userId
+      note: validation.data.note || null
     });
 
     if (result.error) {

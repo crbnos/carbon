@@ -10,7 +10,7 @@ import { getSupplierProcessesByProcess } from "~/modules/purchasing";
 import { supplierProcessesQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const authorized = await requirePermissions(request, {});
+  const _authorized = await requirePermissions(request, {});
 
   const { processId } = params;
 
@@ -19,10 +19,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       data: []
     };
 
-  const processes = await getSupplierProcessesByProcess(
-    authorized.client,
-    processId
-  );
+  const processes = await getSupplierProcessesByProcess(processId);
   if (processes.error) {
     return data(
       processes,

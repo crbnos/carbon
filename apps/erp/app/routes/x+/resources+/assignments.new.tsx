@@ -61,9 +61,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const result = await upsertTrainingAssignment({
     trainingId,
-    groupIds,
-    companyId,
-    createdBy: userId
+    groupIds
   });
 
   if (result.error) {

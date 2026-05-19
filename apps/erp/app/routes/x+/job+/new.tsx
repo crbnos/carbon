@@ -1,6 +1,5 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
@@ -104,7 +103,6 @@ export async function action({ request }: ActionFunctionArgs) {
   const priority = await calculateJobPriority({
     dueDate: d.dueDate ?? null,
     deadlineType: d.deadlineType,
-    companyId,
     locationId: validation.data.locationId
   });
 
@@ -132,17 +130,11 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const upsertMethod = await upsertJobMethod(
-    getCarbonServiceRole(),
-    "itemToJob",
-    {
-      sourceId: d.itemId,
-      targetId: id,
-      companyId,
-      userId,
-      configuration
-    }
-  );
+  const upsertMethod = await upsertJobMethod("itemToJob", {
+    sourceId: d.itemId,
+    targetId: id,
+    configuration
+  });
 
   if (upsertMethod.error) {
     throw redirect(

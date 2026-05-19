@@ -21,10 +21,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!dispatchId) throw new Error("Could not find dispatchId");
   if (!itemId) throw new Error("Could not find itemId");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources"
   });
-  const dispatch = await getMaintenanceDispatch(viewClient, dispatchId);
+  const dispatch = await getMaintenanceDispatch(dispatchId);
   await requireUnlocked({
     request,
     isLocked: isMaintenanceDispatchLocked(dispatch.data?.status),

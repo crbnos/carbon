@@ -1,6 +1,5 @@
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   disableAuditLog,
@@ -53,8 +52,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   let archives: Awaited<ReturnType<typeof getAuditLogArchives>> = [];
   if (enabled) {
     try {
-      const serviceRole = getCarbonServiceRole();
-      archives = await getAuditLogArchives(serviceRole, companyId);
+      archives = await getAuditLogArchives(client, companyId);
     } catch {
       // Archives table might not exist
     }
@@ -126,8 +124,7 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       try {
-        const serviceRole = getCarbonServiceRole();
-        const downloadUrl = await getArchiveDownloadUrl(serviceRole, archiveId);
+        const downloadUrl = await getArchiveDownloadUrl(client, archiveId);
         // Redirect to the signed URL for download
         return redirect(downloadUrl);
       } catch (err) {

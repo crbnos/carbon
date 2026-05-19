@@ -1,6 +1,5 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
@@ -64,7 +63,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (!opportunity.data) throw new Error("Failed to get opportunity record");
 
-  const serviceRole = getCarbonServiceRole();
   const [quote, customer, companySettings, invoiceLines] = await Promise.all([
     opportunity.data.quotes[0]?.id
       ? getQuote(opportunity.data.quotes[0].id)
@@ -72,7 +70,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     salesOrder.data?.customerId
       ? getCustomer(salesOrder.data.customerId)
       : Promise.resolve(null),
-    getCompanySettings(serviceRole),
+    getCompanySettings(),
     getSalesOrderInvoiceLines(orderId)
   ]);
 

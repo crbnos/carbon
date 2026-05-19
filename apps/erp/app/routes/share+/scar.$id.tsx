@@ -45,6 +45,7 @@ import { statusActions, TaskProgress } from "~/modules/quality/ui/Issue";
 import IssueStatus from "~/modules/quality/ui/Issue/IssueStatus";
 import { getCompany } from "~/modules/settings";
 import { getExternalLink } from "~/modules/shared";
+import { AuthClientScope } from "~/services/mcp";
 import { path } from "~/utils/path";
 import { ErrorMessage } from "./quote.$id";
 
@@ -67,7 +68,8 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
-  const externalLink = await getExternalLink(serviceRole, id);
+  AuthClientScope.setFactory(() => serviceRole);
+  const externalLink = await getExternalLink(id);
   if (!externalLink.data || !externalLink.data?.documentId) {
     return {
       state: IssueState.NotFound,
@@ -75,10 +77,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     };
   }
 
-  const issue = await getIssueFromExternalLink(
-    serviceRole,
-    externalLink.data.documentId
-  );
+  const issue = await getIssueFromExternalLink(externalLink.data.documentId);
   if (!issue.data) {
     return {
       state: IssueState.NotFound,
@@ -87,14 +86,9 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   }
 
   const [company, supplier, actionTasks] = await Promise.all([
-    getCompany(serviceRole, externalLink.data.companyId),
-    getSupplier(serviceRole, issue.data.supplierId),
-    getIssueActionTasks(
-      serviceRole,
-      issue.data.nonConformanceId,
-      externalLink.data.companyId,
-      issue.data.supplierId
-    )
+    getCompany(issue.data.nonConformance.companyId ?? undefined),
+    getSupplier(issue.data.supplierId),
+    getIssueActionTasks(issue.data.nonConformanceId, issue.data.supplierId)
   ]);
 
   return {
@@ -133,19 +127,17 @@ export const scarValidator = z.object({
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const serviceRole = getCarbonServiceRole();
+  AuthClientScope.setFactory(() => serviceRole);
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const externalLink = await getExternalLink(serviceRole, id);
+  const externalLink = await getExternalLink(id);
   if (!externalLink.data || !externalLink.data?.documentId) {
     throw new Error("Could not find id");
   }
 
-  const issue = await getIssueFromExternalLink(
-    serviceRole,
-    externalLink.data.documentId
-  );
+  const issue = await getIssueFromExternalLink(externalLink.data.documentId);
   if (!issue.data) {
     throw new Error("Could not find the issue");
   }
@@ -161,9 +153,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const tasks = await getIssueActionTasks(
-    serviceRole,
     issue.data.nonConformanceId,
-    externalLink.data.companyId,
     issue.data.supplierId
   );
 
@@ -173,7 +163,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (validation.data.status) {
-    const statusUpdate = await updateIssueTaskStatus(serviceRole, {
+    const statusUpdate = await updateIssueTaskStatus({
       id: validation.data.taskId,
       status: validation.data.status,
       type: validation.data.type
@@ -200,7 +190,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (validation.data.content) {
-    const contentUpdate = await updateIssueTaskContent(serviceRole, {
+    const contentUpdate = await updateIssueTaskContent({
       id: validation.data.taskId,
       content: validation.data.content,
       type: validation.data.type

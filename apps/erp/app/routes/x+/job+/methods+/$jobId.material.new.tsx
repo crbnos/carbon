@@ -33,7 +33,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
-  const insertJobMaterial = await upsertJobMaterial(serviceRole, {
+  const insertJobMaterial = await upsertJobMaterial({
     ...validation.data,
     jobId,
     companyId,
@@ -90,11 +90,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
         )
       );
     }
-    const makeMethod = await upsertJobMaterialMakeMethod(serviceRole, {
+    const makeMethod = await upsertJobMaterialMakeMethod({
       sourceId: validation.data.itemId,
-      targetId: materialMakeMethod.data?.jobMaterialMakeMethodId!,
-      companyId,
-      userId
+      targetId: materialMakeMethod.data?.jobMaterialMakeMethodId!
     });
 
     if (makeMethod.error) {
@@ -113,19 +111,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Recalculate for ALL material types if job is released
   if (isReleased) {
     const promises = [
-      recalculateJobMakeMethodRequirements(serviceRole, {
-        id: validation.data.jobMakeMethodId,
-        companyId,
-        userId
+      recalculateJobMakeMethodRequirements({
+        id: validation.data.jobMakeMethodId
       })
     ];
 
     if (validation.data.jobOperationId) {
       promises.push(
-        recalculateJobOperationDependencies(serviceRole, {
-          jobId,
-          companyId,
-          userId
+        recalculateJobOperationDependencies({
+          jobId
         })
       );
     }

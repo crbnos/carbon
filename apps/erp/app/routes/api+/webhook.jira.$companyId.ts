@@ -2,6 +2,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { syncIssueFromJiraSchema, trigger } from "@carbon/jobs";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { AuthClientScope } from "~/services/mcp";
 import { getIntegration } from "../../modules/settings";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -21,9 +22,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return data({ success: false }, { status: 400 });
   }
 
+  // Public webhook: no session/middleware identity. Establish the service-
+  // role client scope explicitly (replaces main's serviceRole threading) and
+  // pass the URL-target companyId explicitly (it is NOT an actor's company).
   const serviceRole = getCarbonServiceRole();
+  AuthClientScope.setFactory(() => serviceRole);
 
-  const integration = await getIntegration(serviceRole, "jira");
+  const integration = await getIntegration("jira", companyId);
 
   if (integration.error) {
     return data(

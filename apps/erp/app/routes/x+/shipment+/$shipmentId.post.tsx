@@ -204,7 +204,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
             if (!documentFileUpload.error) {
               // Create document record
-              await upsertDocument(serviceRole, {
+              await upsertDocument({
                 path: documentFilePath,
                 name: fileName,
                 size: Math.round(file.byteLength / 1024),

@@ -727,7 +727,7 @@ function MaterialForm({
   const lookupBuyPriceFn = useCallback(
     async (itemId: string, qty: number, fallbackCost: number) => {
       if (!carbon) return fallbackCost;
-      return lookupBuyPriceAsync(carbon, itemId, qty, fallbackCost);
+      return lookupBuyPriceAsync(itemId, qty, fallbackCost);
     },
     [carbon]
   );

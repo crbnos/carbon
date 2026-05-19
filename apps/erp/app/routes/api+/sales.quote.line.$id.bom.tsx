@@ -32,7 +32,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     return { data: [], error: "Failed to load quote line" };
   }
 
-  const methodTrees = await getQuoteMethodTrees(client, quote.data?.quoteId);
+  const methodTrees = await getQuoteMethodTrees(quote.data?.quoteId);
 
   if (methodTrees.error) {
     return { data: [], error: methodTrees.error };

@@ -137,18 +137,14 @@ async function handleKanban({
     const serviceRole = getCarbonServiceRole();
 
     const [upsertMethod, associateKanban] = await Promise.all([
-      upsertJobMethod(serviceRole, "itemToJob", {
+      upsertJobMethod("itemToJob", {
         sourceId: kanban.data.itemId!,
         targetId: id,
-        companyId,
-        userId,
         configuration: undefined
       }),
-      updateKanbanJob(serviceRole, {
+      updateKanbanJob({
         id: kanban.data.id!,
-        jobId: id,
-        companyId,
-        userId
+        jobId: id
       })
     ]);
 
@@ -168,11 +164,9 @@ async function handleKanban({
           companyId,
           userId
         }),
-        runMRP(serviceRole, {
+        runMRP({
           type: "job",
-          id,
-          companyId,
-          userId
+          id
         }),
         serviceRole.functions.invoke("schedule", {
           body: {

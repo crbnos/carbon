@@ -13,7 +13,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "people"
   });
 
@@ -30,9 +30,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const createAttributeCategory = await insertAttributeCategory({
     name,
     emoji,
-    public: isPublic,
-    companyId,
-    createdBy: userId
+    public: isPublic
   });
   if (createAttributeCategory.error) {
     throw redirect(

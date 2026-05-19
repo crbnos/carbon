@@ -90,7 +90,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const nextSequence = await getNextSequence(serviceRole, "nonConformance");
+  const nextSequence = await getNextSequence("nonConformance");
   if (nextSequence.error || !nextSequence.data) {
     throw redirect(
       path.to.inboundInspection(id),
@@ -116,7 +116,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .filter(Boolean)
     .join(" ");
 
-  const createIssue = await upsertIssue(serviceRole, {
+  const createIssue = await upsertIssue({
     nonConformanceId: nextSequence.data,
     name: issueTitle,
     description: `Auto-created from inbound inspection ${inspectionReadableId}. Lot size ${insp.lotSize}, sample ${insp.sampleSize}, Ac ${insp.acceptanceNumber} / Re ${insp.rejectionNumber}. Supplier: ${supplierName}.`,
@@ -256,7 +256,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     region: FunctionRegion.UsEast1
   });
   if (tasks.error) {
-    await deleteIssue(serviceRole, ncrId);
+    await deleteIssue(ncrId);
     throw redirect(
       path.to.inboundInspection(id),
       await flash(
@@ -267,7 +267,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   try {
-    const integrations = await getCompanyIntegrations();
+    const integrations = await getCompanyIntegrations(client, companyId);
     await notifyIssueCreated({ client, serviceRole }, integrations, {
       companyId,
       userId,

@@ -1,6 +1,5 @@
 import { assertIsPost, ERP_URL, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { notifyIssueStatusChanged } from "@carbon/ee/notifications";
 import type { ActionFunctionArgs } from "react-router";
@@ -18,8 +17,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const serviceRole = await getCarbonServiceRole();
-  const result = await closeIssue(serviceRole, {
+  const result = await closeIssue(client, {
     nonConformanceId: id,
     companyId,
     userId
@@ -36,7 +34,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   try {
-    const integrations = await getCompanyIntegrations();
+    const integrations = await getCompanyIntegrations(client, companyId);
     await notifyIssueStatusChanged({ client }, integrations, {
       companyId,
       userId,

@@ -39,7 +39,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     view: "production",
     bypassRls: true
   });
@@ -65,7 +65,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     tags: tags.data ?? [],
     files: getJobDocuments(job.data),
     trackedEntities: getTrackedEntitiesByJobId(jobId),
-    method: getJobMethodTree(client, jobId), // returns a promise
+    method: getJobMethodTree(jobId), // returns a promise
     configurationParameters: getConfigurationParameters(job.data.itemId!)
   };
 }

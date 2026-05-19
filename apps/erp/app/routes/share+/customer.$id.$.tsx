@@ -4,6 +4,7 @@ import { supportedModelTypes } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { getJobByOperationId } from "~/modules/production";
 import { getCustomerPortal } from "~/modules/shared/shared.service";
+import { AuthClientScope } from "~/services/mcp";
 
 const supportedFileTypes: Record<string, string> = {
   pdf: "application/pdf",
@@ -54,7 +55,8 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
   }
 
   const serviceRole = getCarbonServiceRole();
-  const customer = await getCustomerPortal(serviceRole, id);
+  AuthClientScope.setFactory(() => serviceRole);
+  const customer = await getCustomerPortal(id);
 
   if (customer.error) {
     console.error(customer.error);
@@ -87,7 +89,7 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
     return new Response(null, { status: 403 });
   }
 
-  const job = await getJobByOperationId(serviceRole, operationId);
+  const job = await getJobByOperationId(operationId);
 
   if (job.error) {
     console.error(job.error);

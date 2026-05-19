@@ -48,13 +48,10 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      view: "sales",
-      bypassRls: true
-    }
-  );
+  const { companyId, companyGroupId } = await requirePermissions(request, {
+    view: "sales",
+    bypassRls: true
+  });
 
   const { quoteId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
@@ -89,7 +86,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getQuoteLines(quoteId),
     getQuoteLinePricesByQuoteId(quoteId),
     getOpportunity(quote.data?.opportunityId),
-    getQuoteMethodTrees(client, quoteId),
+    getQuoteMethodTrees(quoteId),
     getOpportunityDocuments(quote.data?.opportunityId ?? ""),
     getCompanySettings()
   ]);

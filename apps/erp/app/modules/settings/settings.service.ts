@@ -113,9 +113,8 @@ export const deleteSubsidiary = mcpTool(
   {
     classification: "DESTRUCTIVE"
   },
-  async function deleteSubsidiary() {
+  async function deleteSubsidiary(companyId: string) {
     const client = getAuthClient<SupabaseClient<Database>>();
-    const { companyId } = AuthContextHolder.get();
     return client.from("company").delete().eq("id", companyId);
   }
 );
@@ -205,13 +204,18 @@ export const getCompany = mcpTool(
   {
     classification: "READ"
   },
-  async function getCompany() {
+  // `companyId` defaults to the ambient (actor's) company for authed routes.
+  // It is an explicit optional override for public/share & file/PDF routes
+  // (which have a client scope via AuthClientScope but NO AuthContextHolder),
+  // and for any cross-company caller, where the target company id is known
+  // and must NOT be sourced from the (absent or different) actor context.
+  async function getCompany(companyId?: string) {
     const client = getAuthClient<SupabaseClient<Database>>();
-    const { companyId } = AuthContextHolder.get();
+    const resolvedCompanyId = companyId ?? AuthContextHolder.get().companyId;
     const company = await client
       .from("company")
       .select("*")
-      .eq("id", companyId)
+      .eq("id", resolvedCompanyId)
       .single();
     if (company.error) {
       return company;
@@ -270,13 +274,16 @@ export const getCompanySettings = mcpTool(
   {
     classification: "READ"
   },
-  async function getCompanySettings() {
+  // Same optional-override rationale as getCompany: explicit `companyId` for
+  // public/share & file routes (no AuthContextHolder) and cross-company; ALS
+  // fallback for normal authed routes.
+  async function getCompanySettings(companyId?: string) {
     const client = getAuthClient<SupabaseClient<Database>>();
-    const { companyId } = AuthContextHolder.get();
+    const resolvedCompanyId = companyId ?? AuthContextHolder.get().companyId;
     return client
       .from("companySettings")
       .select("*")
-      .eq("id", companyId)
+      .eq("id", resolvedCompanyId)
       .single();
   }
 );
@@ -373,14 +380,19 @@ export const getIntegration = mcpTool(
   {
     classification: "READ"
   },
-  async function getIntegration(id: string) {
+  // `companyId` defaults to the ambient (actor's) company for authed routes
+  // (e.g. settings+/integrations). It is an explicit optional override for
+  // webhook routes (api+/webhook.*.$companyId) which have NO session/
+  // AuthContextHolder — there the company is the URL param target and MUST
+  // be passed explicitly.
+  async function getIntegration(id: string, companyId?: string) {
     const client = getAuthClient<SupabaseClient<Database>>();
-    const { companyId } = AuthContextHolder.get();
+    const resolvedCompanyId = companyId ?? AuthContextHolder.get().companyId;
     return client
       .from("companyIntegration")
       .select("*")
       .eq("id", id)
-      .eq("companyId", companyId)
+      .eq("companyId", resolvedCompanyId)
       .maybeSingle();
   }
 );
@@ -415,12 +427,16 @@ export const getNextSequence = mcpTool(
   {
     classification: "READ"
   },
-  async function getNextSequence(table: string) {
+  // `companyId` defaults to the ambient (actor's) company. It is an explicit
+  // optional override ONLY for cross-company flows (e.g. intercompany
+  // transactions) where the sequence must be drawn for a company OTHER than
+  // the actor's — there the caller passes the explicit target company id.
+  async function getNextSequence(table: string, companyId?: string) {
     const client = getAuthClient<SupabaseClient<Database>>();
-    const { companyId } = AuthContextHolder.get();
+    const resolvedCompanyId = companyId ?? AuthContextHolder.get().companyId;
     return client.rpc("get_next_sequence", {
       sequence_name: table,
-      company_id: companyId
+      company_id: resolvedCompanyId
     });
   }
 );
@@ -526,9 +542,8 @@ export const getSubsidiary = mcpTool(
   {
     classification: "READ"
   },
-  async function getSubsidiary() {
+  async function getSubsidiary(companyId: string) {
     const client = getAuthClient<SupabaseClient<Database>>();
-    const { companyId } = AuthContextHolder.get();
     return client.from("company").select("*").eq("id", companyId).single();
   }
 );
@@ -667,10 +682,9 @@ export const updateCompanyPlan = mcpTool(
     subscriptionStartDate: string;
   }) {
     const client = getAuthClient<SupabaseClient<Database>>();
-    // Extract companyId and build the update data without it
-    const { companyId, ...updateData } = data;
+    const { companyId } = AuthContextHolder.get();
 
-    return client.from("companyPlan").update(updateData).eq("id", companyId);
+    return client.from("companyPlan").update(data).eq("id", companyId);
   }
 );
 

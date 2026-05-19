@@ -237,7 +237,7 @@ export async function createCustomerAccount(
   | { success: false; message: string }
   | { success: true; code: string; userId: string; email: string }
 > {
-  const customerContact = await getCustomerContact(client, id);
+  const customerContact = await getCustomerContact(id);
   if (
     customerContact.error ||
     customerContact.data === null ||
@@ -356,10 +356,8 @@ export async function createEmployeeAccount(
   | { success: false; message: string }
   | { success: true; code: string; userId: string }
 > {
-  const employeeTypePermissions = await getPermissionsByEmployeeType(
-    client,
-    employeeType
-  );
+  const employeeTypePermissions =
+    await getPermissionsByEmployeeType(employeeType);
   if (employeeTypePermissions.error) {
     return { success: false, message: employeeTypePermissions.error.message };
   }
@@ -421,9 +419,8 @@ export async function createEmployeeAccount(
       active: false,
       companyId
     }),
-    insertEmployeeJob(client, {
+    insertEmployeeJob({
       id: userId,
-      companyId,
       locationId
     }),
     insertInvite(serviceRole, {
@@ -481,7 +478,7 @@ export async function createSupplierAccount(
   | { success: false; message: string }
   | { success: true; code: string; userId: string; email: string }
 > {
-  const supplierContact = await getSupplierContact(client, id);
+  const supplierContact = await getSupplierContact(id);
   if (
     supplierContact.error ||
     supplierContact.data === null ||
@@ -859,9 +856,8 @@ export async function createConsoleOperator(
   }
 
   // 3. Insert employeeJob
-  const jobInsert = await insertEmployeeJob(client, {
+  const jobInsert = await insertEmployeeJob({
     id: userId,
-    companyId,
     locationId
   });
 
@@ -984,7 +980,6 @@ export async function convertConsoleOperatorToUser(
 
   if (employee.data?.employeeTypeId) {
     const employeeTypePermissions = await getPermissionsByEmployeeType(
-      client,
       employee.data.employeeTypeId
     );
 

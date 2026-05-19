@@ -12,7 +12,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
   await requirePermissions(request, {
@@ -27,7 +27,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error("lineId not found");
   }
 
-  const rfq = await getPurchasingRFQ(viewClient, rfqId);
+  const rfq = await getPurchasingRFQ(rfqId);
   await requireUnlocked({
     request,
     isLocked: isRfqLocked(rfq.data?.status),

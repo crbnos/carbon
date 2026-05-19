@@ -5,7 +5,7 @@ import { scheduleJobUpdateValidator } from "~/modules/production/production.mode
 import { triggerJobSchedule } from "~/modules/production/production.service";
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, userId, companyId } = await requirePermissions(request, {
+  const { client, userId } = await requirePermissions(request, {
     update: "production"
   });
 
@@ -53,7 +53,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // Trigger background job rescheduling
   try {
-    await triggerJobSchedule(validation.data.id, companyId, userId);
+    await triggerJobSchedule(validation.data.id);
   } catch (rescheduleError) {
     // Log error but don't fail the request - reschedule can retry
     console.error("Failed to trigger job reschedule:", rescheduleError);

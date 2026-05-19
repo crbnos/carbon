@@ -25,7 +25,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!personId) throw new Error("Could not find personId");
   if (!categoryId) throw new Error("Could not find categoryId");
 
-  const category = await getAttributeCategoryWithValues(categoryId, personId);
+  const category = await getAttributeCategoryWithValues(categoryId);
 
   if (category.error || !category.data) {
     throw redirect(

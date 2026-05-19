@@ -45,7 +45,7 @@ const TARGET_UPDATERS = {
 type LogoTarget = keyof typeof TARGET_UPDATERS;
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "settings"
   });
 
@@ -57,11 +57,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return data({ error: "Invalid target" }, { status: 400 });
   }
 
-  const { error } = await TARGET_UPDATERS[target as LogoTarget](
-    client,
-    companyId,
-    logoPath
-  );
+  const { error } = await TARGET_UPDATERS[target as LogoTarget](logoPath);
   if (error) return data({ error: "Failed to update logo" }, { status: 500 });
 
   return { success: true };

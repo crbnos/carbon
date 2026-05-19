@@ -64,6 +64,7 @@ import type { Company } from "~/modules/settings";
 import { getCompany, getCompanySettings } from "~/modules/settings";
 import { getBase64ImageFromSupabase } from "~/modules/shared";
 import type { action } from "~/routes/api+/purchasing.digital-quote.$id";
+import { AuthClientScope } from "~/services/mcp";
 import { path } from "~/utils/path";
 
 export const meta = () => {
@@ -96,7 +97,8 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
-  const quote = await getSupplierQuoteByExternalLinkId(serviceRole, id);
+  AuthClientScope.setFactory(() => serviceRole);
+  const quote = await getSupplierQuoteByExternalLinkId(id);
 
   if (quote.error) {
     return {
@@ -128,10 +130,10 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
   const [company, companySettings, quoteLines, quoteLinePrices] =
     await Promise.all([
-      getCompany(serviceRole, quote.data.companyId),
-      getCompanySettings(serviceRole, quote.data.companyId),
-      getSupplierQuoteLines(serviceRole, quote.data.id),
-      getSupplierQuoteLinePricesByQuoteId(serviceRole, quote.data.id)
+      getCompany(quote.data.companyId),
+      getCompanySettings(quote.data.companyId),
+      getSupplierQuoteLines(quote.data.id),
+      getSupplierQuoteLinePricesByQuoteId(quote.data.id)
     ]);
 
   const thumbnailPaths = quoteLines.data?.reduce<Record<string, string | null>>(
@@ -151,12 +153,10 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
             if (!path) {
               return null;
             }
-            return getBase64ImageFromSupabase(serviceRole, path).then(
-              (data) => ({
-                id,
-                data
-              })
-            );
+            return getBase64ImageFromSupabase(path).then((data) => ({
+              id,
+              data
+            }));
           })
         )
       : []

@@ -232,10 +232,7 @@ const PurchaseOrderLineForm = ({
         .maybeSingle();
 
       if (supplierPart?.data?.id) {
-        const breaks = await getSupplierPartPriceBreaks(
-          carbon,
-          supplierPart.data.id
-        );
+        const breaks = await getSupplierPartPriceBreaks(supplierPart.data.id);
         setItemData((d) => ({ ...d, priceBreaks: breaks }));
       }
     })();
@@ -315,7 +312,7 @@ const PurchaseOrderLineForm = ({
           exchangeRate;
 
         const breaks = supplierPart?.data?.id
-          ? await getSupplierPartPriceBreaks(carbon, supplierPart.data.id)
+          ? await getSupplierPartPriceBreaks(supplierPart.data.id)
           : [];
         const resolvedPrice = resolveSupplierPrice(
           breaks,

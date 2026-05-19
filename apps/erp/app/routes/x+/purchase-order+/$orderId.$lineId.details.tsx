@@ -58,14 +58,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!lineId) throw new Error("Could not find lineId");
 
   // First check with view permission to get the PO status
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
 
   // Get PO status and current line data
   const [purchaseOrder, currentLine] = await Promise.all([
-    getPurchaseOrder(viewClient, orderId),
-    getPurchaseOrderLine(viewClient, lineId)
+    getPurchaseOrder(orderId),
+    getPurchaseOrderLine(lineId)
   ]);
 
   if (purchaseOrder.error) {

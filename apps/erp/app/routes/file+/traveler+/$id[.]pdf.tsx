@@ -26,16 +26,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // we add the companyId to make sure we belong to the company
   // while allowing guys on the shop floor with no permissions to download the traveler
-  const jobMakeMethod = await getJobMakeMethodById(serviceRole, id);
+  const jobMakeMethod = await getJobMakeMethodById(id);
   if (jobMakeMethod.error) {
     console.error(jobMakeMethod.error);
     throw new Error("Failed to load job make method");
   }
 
   const [company, job, companySettings] = await Promise.all([
-    getCompany(serviceRole, jobMakeMethod.data?.companyId ?? ""),
-    getJob(serviceRole, jobMakeMethod.data?.jobId ?? ""),
-    getCompanySettings(serviceRole, jobMakeMethod.data?.companyId ?? "")
+    getCompany(jobMakeMethod.data?.companyId ?? ""),
+    getJob(jobMakeMethod.data?.jobId ?? ""),
+    getCompanySettings(jobMakeMethod.data?.companyId ?? "")
   ]);
 
   if (company.error) {
@@ -54,7 +54,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const [jobOperations, customer, item] = await Promise.all([
-    getJobOperationsByMethodId(serviceRole, id),
+    getJobOperationsByMethodId(id),
     serviceRole
       .from("customer")
       .select("*")
@@ -79,10 +79,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   let batchNumber: string | undefined;
   if (["Batch", "Serial"].includes(item.data.itemTrackingType)) {
-    const trackedEntity = await getTrackedEntityByJobId(
-      serviceRole,
-      job.data.id!
-    );
+    const trackedEntity = await getTrackedEntityByJobId(job.data.id!);
     if (trackedEntity.error) {
       console.error(trackedEntity.error);
       throw new Error("Failed to load tracked entity");
@@ -95,7 +92,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // Compute BOM ID for this make method
   let bomId: string | undefined;
-  const methodTree = await getJobMethodTree(serviceRole, job.data.id!);
+  const methodTree = await getJobMethodTree(job.data.id!);
   if (!methodTree.error && methodTree.data?.length > 0) {
     const flatMethods = flattenTree(methodTree.data[0]);
     const bomIds = generateBomIds(flatMethods);
@@ -112,7 +109,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   let thumbnail: string | null = null;
   if (item.data.thumbnailPath || item.data.modelUpload?.thumbnailPath) {
     thumbnail = await getBase64ImageFromSupabase(
-      serviceRole,
       item.data.thumbnailPath ?? item.data.modelUpload?.thumbnailPath ?? ""
     );
   }

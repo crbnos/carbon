@@ -96,7 +96,7 @@ export const getPartTool = tool({
         "[getPartTool] searching by embedding for description:",
         description
       );
-      const embedding = await generateEmbedding(context.client, description);
+      const embedding = await generateEmbedding(description);
       console.log(
         "[getPartTool] embedding generated, length:",
         embedding?.length

@@ -1,6 +1,5 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
@@ -27,15 +26,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     view: "inventory"
   });
 
-  const serviceRole = await getCarbonServiceRole();
-
   const { receiptId } = params;
   if (!receiptId) throw new Error("Could not find receiptId");
 
   const [receipt, receiptLines, receiptLineTracking] = await Promise.all([
-    getReceipt(serviceRole, receiptId),
-    getReceiptLines(serviceRole, receiptId),
-    getReceiptTracking(serviceRole, receiptId)
+    getReceipt(receiptId),
+    getReceiptLines(receiptId),
+    getReceiptTracking(receiptId)
   ]);
 
   if (receipt.error) {
@@ -72,12 +69,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     receipt: receipt.data,
     receiptLines: receiptLines.data ?? [],
-    receiptFiles: getReceiptFiles(serviceRole, receiptLineIds) ?? [],
+    receiptFiles: getReceiptFiles(receiptLineIds) ?? [],
     receiptLineTracking: receiptLineTracking.data ?? [],
-    batchProperties:
-      getBatchProperties(serviceRole, itemsWithBatchProperties) ?? [],
-    companySettings: getCompanySettings(serviceRole),
-    itemShelfLife: await getShelfLifeForItems(serviceRole, trackedItemIds)
+    batchProperties: getBatchProperties(itemsWithBatchProperties) ?? [],
+    companySettings: getCompanySettings(),
+    itemShelfLife: await getShelfLifeForItems(trackedItemIds)
   };
 }
 

@@ -59,10 +59,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
-  const quote = await getSupplierQuote(viewClient, id);
+  const quote = await getSupplierQuote(id);
   await requireUnlocked({
     request,
     isLocked: isSupplierQuoteLocked(quote.data?.status),

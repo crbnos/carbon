@@ -393,12 +393,14 @@ export const updatePurchaseInvoiceStatus = mcpTool(
     assignee: null | undefined;
   }) {
     const client = getAuthClient<SupabaseClient<Database>>();
+    const { userId } = AuthContextHolder.get();
     const { status, ...rest } = update;
 
     // Set completedDate when status is Confirmed
     const updateData = {
       status,
       ...rest,
+      updatedBy: userId,
       ...(["Paid"].includes(status)
         ? { datePaid: now(getLocalTimeZone()).toAbsoluteString() }
         : {})
@@ -440,11 +442,13 @@ export const updateSalesInvoiceStatus = mcpTool(
     assignee: null | undefined;
   }) {
     const client = getAuthClient<SupabaseClient<Database>>();
+    const { userId } = AuthContextHolder.get();
     const { status, ...rest } = update;
 
     const updateData = {
       status,
       ...rest,
+      updatedBy: userId,
       ...(["Paid"].includes(status)
         ? { datePaid: now(getLocalTimeZone()).toAbsoluteString() }
         : {})
@@ -489,10 +493,10 @@ export const upsertPurchaseInvoice = mcpTool(
 
     const [supplierInteraction, supplierPayment, supplierShipping, purchaser] =
       await Promise.all([
-        insertSupplierInteraction(companyId, purchaseInvoice.supplierId),
+        insertSupplierInteraction(purchaseInvoice.supplierId),
         getSupplierPayment(purchaseInvoice.supplierId),
         getSupplierShipping(purchaseInvoice.supplierId),
-        getEmployeeJob(userId, companyId)
+        getEmployeeJob(userId)
       ]);
 
     if (supplierInteraction.error) return supplierInteraction;
@@ -703,7 +707,7 @@ export const upsertSalesInvoice = mcpTool(
           .single(),
         getCustomerPayment(salesInvoice.customerId),
         getCustomerShipping(salesInvoice.customerId),
-        getEmployeeJob(userId, companyId)
+        getEmployeeJob(userId)
       ]);
 
     if (opportunity.error) return opportunity;

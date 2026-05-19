@@ -1,5 +1,4 @@
 import { getAppUrl } from "@carbon/auth";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { tool } from "ai";
 import { getCurrencyByCode } from "~/modules/accounting/accounting.service";
 import { getEmployeeJob } from "~/modules/people/people.service";
@@ -34,20 +33,12 @@ export const createPurchaseOrderTool = tool({
       supplierShipping,
       employeeJob
     ] = await Promise.all([
-      getNextSequence(
-        getCarbonServiceRole(),
-        "purchaseOrder",
-        context.companyId
-      ),
-      insertSupplierInteraction(
-        context.client,
-        context.companyId,
-        args.supplierId
-      ),
-      getSupplierById(context.client, args.supplierId),
-      getSupplierPayment(context.client, args.supplierId),
-      getSupplierShipping(context.client, args.supplierId),
-      getEmployeeJob(context.client, context.userId, context.companyId)
+      getNextSequence("purchaseOrder"),
+      insertSupplierInteraction(args.supplierId),
+      getSupplierById(args.supplierId),
+      getSupplierPayment(args.supplierId),
+      getSupplierShipping(args.supplierId),
+      getEmployeeJob(context.userId)
     ]);
 
     if (!supplierInteraction.data) {
@@ -93,7 +84,6 @@ export const createPurchaseOrderTool = tool({
 
     if (supplier.data?.currencyCode) {
       const currency = await getCurrencyByCode(
-        context.client,
         context.companyGroupId,
         supplier.data?.currencyCode ?? ""
       );
@@ -232,7 +222,7 @@ export const createPurchaseOrderTool = tool({
       };
     } catch (error) {
       if (purchaseOrderId) {
-        await deletePurchaseOrder(context.client, purchaseOrderId);
+        await deletePurchaseOrder(purchaseOrderId);
       }
       return {
         error: `Failed to create purchase order details: ${

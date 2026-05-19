@@ -25,7 +25,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const serviceRole = getCarbonServiceRole();
 
   // Get PO status and check if it's in "Needs Approval"
-  const purchaseOrder = await getPurchaseOrder(serviceRole, orderId);
+  const purchaseOrder = await getPurchaseOrder(orderId);
   if (purchaseOrder.error || !purchaseOrder.data) {
     throw redirect(
       path.to.purchaseOrders,
@@ -44,7 +44,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // If PO is in "Needs Approval", check permissions
   if (poStatus && poStatus === "Needs Approval") {
     const approvalRequest = await getLatestApprovalRequestForDocument(
-      serviceRole,
       "purchaseOrder",
       orderId
     );
@@ -61,7 +60,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         },
         userId
       );
-      const isApprover = await canApproveRequest(serviceRole, {
+      const isApprover = await canApproveRequest({
         amount: approvalRequest.data.amount,
         documentType: approvalRequest.data.documentType,
         companyId: approvalRequest.data.companyId

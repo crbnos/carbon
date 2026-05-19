@@ -5,6 +5,7 @@ const ctx = (id: string): AuthContext => ({
   client: { tag: id },
   userId: `user-${id}`,
   sessionUserId: `session-${id}`,
+  email: `user-${id}@example.com`,
   companyId: `company-${id}`,
   companyGroupId: `group-${id}`
 });

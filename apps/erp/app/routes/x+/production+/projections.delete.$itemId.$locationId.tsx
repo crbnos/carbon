@@ -10,7 +10,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "production"
   });
 
@@ -35,7 +35,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const result = await deleteDemandProjections({
     itemId,
     locationId,
-    companyId,
     futurePeriodIds
   });
 

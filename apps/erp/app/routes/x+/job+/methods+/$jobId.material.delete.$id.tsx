@@ -1,6 +1,5 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -11,7 +10,7 @@ import {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "production"
   });
 
@@ -37,14 +36,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const recalculateResult = await recalculateJobOperationDependencies(
-    getCarbonServiceRole(),
-    {
-      jobId,
-      companyId,
-      userId
-    }
-  );
+  const recalculateResult = await recalculateJobOperationDependencies({
+    jobId
+  });
 
   if (recalculateResult?.error) {
     return data(

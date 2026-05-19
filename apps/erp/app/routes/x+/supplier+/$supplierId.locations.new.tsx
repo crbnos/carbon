@@ -19,7 +19,7 @@ import { supplierLocationsQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "purchasing"
   });
 
@@ -42,7 +42,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const createSupplierLocation = await insertSupplierLocation({
     supplierId,
-    companyId,
     name,
     address,
     customFields: setCustomFields(formData)

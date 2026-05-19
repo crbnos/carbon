@@ -10,7 +10,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "people"
   });
 
@@ -25,11 +25,9 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const result = await createTimeCardEntry({
     employeeId: data.employeeId,
-    companyId,
     clockIn: data.clockIn,
     clockOut: data.clockOut || null,
-    note: data.note || null,
-    createdBy: userId
+    note: data.note || null
   });
 
   if (result.error) {

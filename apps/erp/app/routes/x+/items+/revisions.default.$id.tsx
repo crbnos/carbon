@@ -7,17 +7,14 @@ import { updateDefaultRevision } from "~/modules/items/items.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "parts"
   });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const update = await updateDefaultRevision({
-    id: id,
-    updatedBy: userId
-  });
+  const update = await updateDefaultRevision({ id: id });
 
   if (update.error) {
     return data(

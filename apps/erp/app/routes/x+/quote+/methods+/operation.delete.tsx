@@ -1,5 +1,4 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { recalculateQuoteLinePrices } from "~/modules/sales";
@@ -40,12 +39,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (op.data) {
-    const serviceRole = getCarbonServiceRole();
-    await recalculateQuoteLinePrices(
-      serviceRole,
-      op.data.quoteId,
-      op.data.quoteLineId
-    );
+    await recalculateQuoteLinePrices(op.data.quoteId, op.data.quoteLineId);
   }
 
   return { success: true };
