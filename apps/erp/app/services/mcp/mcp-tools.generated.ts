@@ -386,7 +386,7 @@ export function registerAll(): void {
   registry.registerParsed(accounting.getPaymentTermsList, {
     module: "accounting",
     name: "getPaymentTermsList",
-    argOrder: [],
+    argOrder: ["companyId?"],
     description: "get payment terms list",
     inject: []
   });
@@ -435,7 +435,13 @@ export function registerAll(): void {
   registry.registerParsed(accounting.translateCompanyBalances, {
     module: "accounting",
     name: "translateCompanyBalances",
-    argOrder: ["companyGroupId", "targetCurrency", "periodEnd", "periodStart?"],
+    argOrder: [
+      "companyGroupId",
+      "companyId",
+      "targetCurrency",
+      "periodEnd",
+      "periodStart?"
+    ],
     description: "translate company balances",
     inject: []
   });
@@ -884,7 +890,7 @@ export function registerAll(): void {
   registry.registerParsed(inventory.getShippingMethodsList, {
     module: "inventory",
     name: "getShippingMethodsList",
-    argOrder: [],
+    argOrder: ["companyId?"],
     description: "get shipping methods list",
     inject: []
   });
@@ -4142,7 +4148,7 @@ export function registerAll(): void {
   registry.registerParsed(purchasing.upsertPurchasingRFQSuppliers, {
     module: "purchasing",
     name: "upsertPurchasingRFQSuppliers",
-    argOrder: ["purchasingRfqId", "supplierIds", "createdBy"],
+    argOrder: ["purchasingRfqId", "supplierIds"],
     description: "upsert purchasing rfq suppliers",
     inject: []
   });
@@ -6045,7 +6051,7 @@ export function registerAll(): void {
   registry.registerParsed(sales.getSalesTerms, {
     module: "sales",
     name: "getSalesTerms",
-    argOrder: [],
+    argOrder: ["companyId?"],
     description: "get sales terms",
     inject: []
   });
@@ -6397,7 +6403,7 @@ export function registerAll(): void {
   registry.registerParsed(settings.deleteSubsidiary, {
     module: "settings",
     name: "deleteSubsidiary",
-    argOrder: [],
+    argOrder: ["companyId"],
     description: "delete subsidiary",
     inject: []
   });
@@ -6439,7 +6445,7 @@ export function registerAll(): void {
   registry.registerParsed(settings.getCompany, {
     module: "settings",
     name: "getCompany",
-    argOrder: [],
+    argOrder: ["companyId?"],
     description: "get company",
     inject: []
   });
@@ -6460,7 +6466,7 @@ export function registerAll(): void {
   registry.registerParsed(settings.getCompanySettings, {
     module: "settings",
     name: "getCompanySettings",
-    argOrder: [],
+    argOrder: ["companyId?"],
     description: "get company settings",
     inject: []
   });
@@ -6502,7 +6508,7 @@ export function registerAll(): void {
   registry.registerParsed(settings.getIntegration, {
     module: "settings",
     name: "getIntegration",
-    argOrder: ["id"],
+    argOrder: ["id", "companyId?"],
     description: "get integration",
     inject: []
   });
@@ -6523,7 +6529,7 @@ export function registerAll(): void {
   registry.registerParsed(settings.getNextSequence, {
     module: "settings",
     name: "getNextSequence",
-    argOrder: ["table"],
+    argOrder: ["table", "companyId?"],
     description: "get next sequence",
     inject: []
   });
@@ -6572,7 +6578,7 @@ export function registerAll(): void {
   registry.registerParsed(settings.getSubsidiary, {
     module: "settings",
     name: "getSubsidiary",
-    argOrder: [],
+    argOrder: ["companyId"],
     description: "get subsidiary",
     inject: []
   });
