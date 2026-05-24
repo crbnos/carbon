@@ -1178,6 +1178,9 @@ msgstr "Carbon Logo"
 msgid "Carbon Value"
 msgstr "Carbon Value"
 
+msgid "Cards"
+msgstr "Cards"
+
 msgid "Carrier"
 msgstr "Carrier"
 
@@ -2829,6 +2832,9 @@ msgstr "Employee Types"
 
 msgid "Employees"
 msgstr "Employees"
+
+msgid "Empty work centers"
+msgstr "Empty work centers"
 
 msgid "Enable audit logging in settings to start tracking changes to your data."
 msgstr "Enable audit logging in settings to start tracking changes to your data."

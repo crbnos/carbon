@@ -1178,6 +1178,9 @@ msgstr "Logo de Carbon"
 msgid "Carbon Value"
 msgstr "Valor de Carbon"
 
+msgid "Cards"
+msgstr ""
+
 msgid "Carrier"
 msgstr "Transportista"
 
@@ -2458,7 +2461,7 @@ msgid "Dispatches"
 msgstr "Despachos"
 
 msgid "Display Settings"
-msgstr "ConfiguraciÃƒÆ’Ã‚Â³n de pantalla"
+msgstr ""
 
 msgid "Disposition"
 msgstr "DisposiciÃƒÆ’Ã‚Â³n"
@@ -2829,6 +2832,9 @@ msgstr "Tipos de Empleados"
 
 msgid "Employees"
 msgstr "Empleados"
+
+msgid "Empty work centers"
+msgstr ""
 
 msgid "Enable audit logging in settings to start tracking changes to your data."
 msgstr "Habilita el registro de auditorÃƒÆ’Ã‚Â­a en la configuraciÃƒÆ’Ã‚Â³n para comenzar a rastrear cambios en tus datos."
