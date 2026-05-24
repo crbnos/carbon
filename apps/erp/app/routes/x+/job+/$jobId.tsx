@@ -112,7 +112,7 @@ export default function JobRoute() {
                 </div>
               }
               content={
-                <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                <div className="h-[calc(100dvh-99px)] overflow-hidden w-full">
                   <Outlet />
                 </div>
               }
