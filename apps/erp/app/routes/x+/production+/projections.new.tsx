@@ -7,7 +7,7 @@ import { getLocalTimeZone, today } from "@internationalized/date";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useNavigate } from "react-router";
 import { demandProjectionValidator } from "~/modules/production/production.models";
-import { upsertDemandProjections } from "~/modules/production/production.service";
+import { upsertDemandProjections } from "~/modules/production/production.service.server";
 import DemandProjectionForm from "~/modules/production/ui/Projection/DemandProjectionForm";
 import { getOrCreatePeriods } from "~/modules/shared/shared.server";
 import { path } from "~/utils/path";
@@ -29,7 +29,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "production"
   });
 
@@ -75,7 +75,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const result = await upsertDemandProjections(client, demandProjections);
+  const result = await upsertDemandProjections(demandProjections);
 
   if (result.error) {
     return data(

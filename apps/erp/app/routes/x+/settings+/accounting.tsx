@@ -31,12 +31,12 @@ import {
   Submit
 } from "~/components/Form";
 import { useFlags } from "~/hooks";
-import { getDefaultAccounts } from "~/modules/accounting";
+import { getDefaultAccounts } from "~/modules/accounting/accounting.service.server";
 import {
   getCompanySettings,
   updateAccountingEnabledSetting,
   updateAssetTaxDepreciationSettings
-} from "~/modules/settings";
+} from "~/modules/settings/settings.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -57,13 +57,13 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "settings"
   });
 
   const [companySettings, accountDefaults] = await Promise.all([
-    getCompanySettings(client, companyId),
-    getDefaultAccounts(client, companyId)
+    getCompanySettings(),
+    getDefaultAccounts()
   ]);
 
   if (!companySettings.data)
@@ -91,18 +91,14 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (intent === "accountingEnabled") {
     const enabled = formData.get("enabled") === "true";
-    const update = await updateAccountingEnabledSetting(
-      client,
-      companyId,
-      enabled
-    );
+    const update = await updateAccountingEnabledSetting(enabled);
     if (update.error) return { success: false, message: update.error.message };
     return { success: true, message: "Accounting settings updated" };
   }
 
   if (intent === "assetTaxDepreciationEnabled") {
     const enabled = formData.get("enabled") === "true";
-    const update = await updateAssetTaxDepreciationSettings(client, companyId, {
+    const update = await updateAssetTaxDepreciationSettings({
       assetTaxDepreciationEnabled: enabled,
       assetTaxRate: null
     });
@@ -125,11 +121,10 @@ export async function action({ request }: ActionFunctionArgs) {
       deferredTaxExpenseAccountId
     } = validation.data;
 
-    const settingsUpdate = await updateAssetTaxDepreciationSettings(
-      client,
-      companyId,
-      { assetTaxDepreciationEnabled: true, assetTaxRate }
-    );
+    const settingsUpdate = await updateAssetTaxDepreciationSettings({
+      assetTaxDepreciationEnabled: true,
+      assetTaxRate
+    });
 
     if (settingsUpdate.error)
       return { success: false, message: settingsUpdate.error.message };

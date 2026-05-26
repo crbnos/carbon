@@ -9,12 +9,12 @@ import {
   convertSalesRfqToQuote,
   resolvePurchaseToOrderPrices,
   resolveQuoteLinePrices
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "sales"
   });
 
@@ -22,10 +22,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) throw new Error("Could not find id");
 
   const serviceRole = getCarbonServiceRole();
-  const convert = await convertSalesRfqToQuote(serviceRole, {
-    id,
-    companyId,
-    userId
+  const convert = await convertSalesRfqToQuote({
+    id
   });
 
   if (convert.error) {
@@ -56,31 +54,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
         switch (line.methodType) {
           case "Make to Order":
-            return calculatePricesForQuantities(
-              serviceRole,
-              quoteId,
-              line.id,
-              quantities,
-              userId
-            );
+            return calculatePricesForQuantities(quoteId, line.id, quantities);
           case "Pull from Inventory":
-            return resolveQuoteLinePrices(
-              serviceRole,
-              companyId,
-              quoteId,
-              line.id,
-              quantities,
-              userId
-            );
+            return resolveQuoteLinePrices(quoteId, line.id, quantities);
           case "Purchase to Order":
-            return resolvePurchaseToOrderPrices(
-              serviceRole,
-              companyId,
-              quoteId,
-              line.id,
-              quantities,
-              userId
-            );
+            return resolvePurchaseToOrderPrices(quoteId, line.id, quantities);
           default:
             return null;
         }

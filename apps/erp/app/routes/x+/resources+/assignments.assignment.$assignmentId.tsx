@@ -14,13 +14,15 @@ import {
   useParams
 } from "react-router";
 import {
+  TrainingAssignmentForm,
+  trainingAssignmentValidator
+} from "~/modules/resources";
+import {
   getTrainingAssignment,
   getTrainingAssignmentStatus,
   getTrainingsList,
-  TrainingAssignmentForm,
-  trainingAssignmentValidator,
   upsertTrainingAssignment
-} from "~/modules/resources";
+} from "~/modules/resources/resources.service.server";
 import type {
   TrainingAssignmentStatusItem,
   TrainingListItem
@@ -34,7 +36,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources",
     role: "employee"
   });
@@ -48,10 +50,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const [assignment, trainings, assignmentStatus] = await Promise.all([
-    getTrainingAssignment(client, assignmentId),
-    getTrainingsList(client, companyId),
+    getTrainingAssignment(assignmentId),
+    getTrainingsList(),
     // @ts-expect-error TS2345 - TODO: fix type
-    getTrainingAssignmentStatus(client, companyId, {
+    getTrainingAssignmentStatus({
       // We'll filter by trainingId which we'll get from the assignment
     })
   ]);
@@ -87,7 +89,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "resources",
     role: "employee"
   });
@@ -108,12 +110,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { trainingId, groupIds } = validation.data;
 
-  const result = await upsertTrainingAssignment(client, {
+  const result = await upsertTrainingAssignment({
     id: assignmentId,
     trainingId,
-    groupIds,
-    companyId: "", // not used for updates
-    updatedBy: userId
+    groupIds
   });
 
   if (result.error) {

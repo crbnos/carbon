@@ -3,15 +3,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { nanoid } from "nanoid";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  quoteLineAdditionalChargesValidator,
-  upsertQuoteLineAdditionalCharges
-} from "~/modules/sales";
+import { quoteLineAdditionalChargesValidator } from "~/modules/sales";
+import { upsertQuoteLineAdditionalCharges } from "~/modules/sales/sales.service.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
 
-  const { client, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "sales"
   });
 
@@ -41,7 +39,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const id = nanoid();
-  const { error } = await upsertQuoteLineAdditionalCharges(client, lineId, {
+  const { error } = await upsertQuoteLineAdditionalCharges(lineId, {
     additionalCharges: {
       ...parsedCharges.data,
       [id]: {
@@ -49,8 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         amounts: {},
         taxable: true
       }
-    },
-    updatedBy: userId
+    }
   });
 
   if (error) {

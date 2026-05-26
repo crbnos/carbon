@@ -15,20 +15,20 @@ import {
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { ExplorerSkeleton } from "~/components/Skeletons";
 import { flattenTree } from "~/components/TreeView";
-import { getConfigurationParameters } from "~/modules/items";
-import type { JobMethodTreeItem } from "~/modules/production";
+import { getConfigurationParameters } from "~/modules/items/items.service.server";
+import type { JobMethodTreeItem } from "~/modules/production/production.service.server";
 import {
   getJob,
   getJobDocuments,
   getJobMethodTree,
   getTrackedEntitiesByJobId
-} from "~/modules/production";
+} from "~/modules/production/production.service.server";
 import {
   JobBoMExplorer,
   JobHeader,
   JobProperties
 } from "~/modules/production/ui/Jobs";
-import { getTagsList } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared/shared.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -39,7 +39,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     view: "production",
     bypassRls: true
   });
@@ -47,10 +47,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
 
-  const [job, tags] = await Promise.all([
-    getJob(client, jobId),
-    getTagsList(client, companyId, "job")
-  ]);
+  const [job, tags] = await Promise.all([getJob(jobId), getTagsList("job")]);
 
   if (companyId !== job.data?.companyId) {
     throw redirect(path.to.jobs);
@@ -66,14 +63,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     job: job.data,
     tags: tags.data ?? [],
-    files: getJobDocuments(client, companyId, job.data),
-    trackedEntities: getTrackedEntitiesByJobId(client, jobId),
-    method: getJobMethodTree(client, jobId), // returns a promise
-    configurationParameters: getConfigurationParameters(
-      client,
-      job.data.itemId!,
-      companyId
-    )
+    files: getJobDocuments(job.data),
+    trackedEntities: getTrackedEntitiesByJobId(jobId),
+    method: getJobMethodTree(jobId), // returns a promise
+    configurationParameters: getConfigurationParameters(job.data.itemId!)
   };
 }
 

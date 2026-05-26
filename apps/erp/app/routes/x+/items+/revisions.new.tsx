@@ -1,15 +1,14 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { revisionValidator } from "~/modules/items/items.models";
-import { createRevision, getItem } from "~/modules/items/items.service";
+import { createRevision, getItem } from "~/modules/items/items.service.server";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "parts"
   });
 
@@ -27,16 +26,15 @@ export async function action({ request }: ActionFunctionArgs) {
     };
   }
 
-  const currentItem = await getItem(client, validation.data.copyFromId);
+  const currentItem = await getItem(validation.data.copyFromId);
 
   if (currentItem.error) {
     return { success: false, error: "Failed to get current item" };
   }
 
-  const result = await createRevision(getCarbonServiceRole(), {
+  const result = await createRevision({
     item: currentItem.data,
-    revision: validation.data.revision,
-    createdBy: userId
+    revision: validation.data.revision
   });
 
   if (result.error) {

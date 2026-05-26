@@ -6,11 +6,13 @@ import { useRouteData } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useNavigate, useParams } from "react-router";
 import {
-  getStockTransfer,
   isStockTransferLocked,
-  stockTransferLineValidator,
-  upsertStockTransferLine
+  stockTransferLineValidator
 } from "~/modules/inventory";
+import {
+  getStockTransfer,
+  upsertStockTransferLine
+} from "~/modules/inventory/inventory.service.server";
 import type { StockTransfer } from "~/modules/inventory/types";
 import StockTransferLineForm from "~/modules/inventory/ui/StockTransfers/StockTransferLineForm";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
@@ -27,17 +29,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "inventory"
   });
 
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "inventory"
   });
-  const transfer = await getStockTransfer(viewClient, id);
+  const transfer = await getStockTransfer(id);
   await requireUnlocked({
     request,
     isLocked: isStockTransferLocked(transfer.data?.status),
@@ -58,7 +60,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id: lineId, ...d } = validation.data;
 
-  const insertStockTransferLine = await upsertStockTransferLine(client, {
+  const insertStockTransferLine = await upsertStockTransferLine({
     ...d,
     companyId,
     createdBy: userId

@@ -9,15 +9,13 @@ import {
 } from "@carbon/ee/custom-rules.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import {
-  updateWarehouseTransferStatus,
-  warehouseTransferStatusType
-} from "~/modules/inventory";
+import { warehouseTransferStatusType } from "~/modules/inventory";
+import { updateWarehouseTransferStatus } from "~/modules/inventory/inventory.service.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "inventory"
   });
 
@@ -100,12 +98,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  const update = await updateWarehouseTransferStatus(
-    client,
-    id,
-    status,
-    userId
-  );
+  const update = await updateWarehouseTransferStatus(id, status);
 
   if (update.error) {
     throw redirect(

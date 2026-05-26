@@ -5,18 +5,21 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteSuggestion, getSuggestion } from "~/modules/resources";
+import {
+  deleteSuggestion,
+  getSuggestion
+} from "~/modules/resources/resources.service.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "resources"
   });
 
   const { suggestionId } = params;
   if (!suggestionId) throw notFound("suggestionId was not found");
 
-  const suggestion = await getSuggestion(client, suggestionId);
+  const suggestion = await getSuggestion(suggestionId);
 
   if (suggestion.error) {
     throw redirect(
@@ -32,14 +35,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "resources"
   });
 
   const { suggestionId } = params;
   if (!suggestionId) throw notFound("suggestionId was not found");
 
-  const result = await deleteSuggestion(client, suggestionId);
+  const result = await deleteSuggestion(suggestionId);
 
   if (result.error) {
     throw redirect(

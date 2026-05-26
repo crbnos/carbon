@@ -1,6 +1,5 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
@@ -18,7 +17,7 @@ import {
   getOpportunityDocuments,
   getSalesRFQ,
   getSalesRFQLines
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service.server";
 import {
   SalesRFQExplorer,
   SalesRFQHeader,
@@ -34,22 +33,19 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
   const { rfqId } = params;
   if (!rfqId) throw new Error("Could not find rfqId");
 
-  const serviceRole = await getCarbonServiceRole();
-
   const [rfqSummary, lines] = await Promise.all([
-    getSalesRFQ(serviceRole, rfqId),
-    getSalesRFQLines(serviceRole, rfqId)
+    getSalesRFQ(rfqId),
+    getSalesRFQLines(rfqId)
   ]);
 
   const opportunity = await getOpportunity(
-    serviceRole,
     rfqSummary.data?.opportunityId ?? null
   );
 
@@ -88,7 +84,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         itemId: line.itemId ?? "",
         quantity: line.quantity ?? [1]
       })) ?? [],
-    files: getOpportunityDocuments(serviceRole, companyId, opportunity.data.id),
+    files: getOpportunityDocuments(opportunity.data.id),
     opportunity: opportunity.data
   };
 }

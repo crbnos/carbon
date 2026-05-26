@@ -4,18 +4,21 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { deletePurchaseOrder, getPurchaseOrder } from "~/modules/purchasing";
+import {
+  deletePurchaseOrder,
+  getPurchaseOrder
+} from "~/modules/purchasing/purchasing.service.server";
 import {
   canApproveRequest,
   canCancelRequest,
   getLatestApprovalRequestForDocument
-} from "~/modules/shared";
+} from "~/modules/shared/shared.service.server";
 
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     delete: "purchasing"
   });
 
@@ -25,7 +28,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const serviceRole = getCarbonServiceRole();
 
   // Get PO status and check if it's in "Needs Approval"
-  const purchaseOrder = await getPurchaseOrder(serviceRole, orderId);
+  const purchaseOrder = await getPurchaseOrder(orderId);
   if (purchaseOrder.error || !purchaseOrder.data) {
     throw redirect(
       path.to.purchaseOrders,
@@ -44,7 +47,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // If PO is in "Needs Approval", check permissions
   if (poStatus && poStatus === "Needs Approval") {
     const approvalRequest = await getLatestApprovalRequestForDocument(
-      serviceRole,
       "purchaseOrder",
       orderId
     );
@@ -61,15 +63,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
         },
         userId
       );
-      const isApprover = await canApproveRequest(
-        serviceRole,
-        {
-          amount: approvalRequest.data.amount,
-          documentType: approvalRequest.data.documentType,
-          companyId: approvalRequest.data.companyId
-        },
-        userId
-      );
+      const isApprover = await canApproveRequest({
+        amount: approvalRequest.data.amount,
+        documentType: approvalRequest.data.documentType,
+        companyId: approvalRequest.data.companyId
+      });
 
       // Only requester can delete POs in "Needs Approval" status
       // Approvers should reject instead, normal users have no permission
@@ -120,7 +118,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const remove = await deletePurchaseOrder(client, orderId);
+  const remove = await deletePurchaseOrder(orderId);
 
   if (remove.error) {
     console.error("Failed to delete purchase order:", remove.error);

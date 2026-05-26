@@ -15,7 +15,7 @@ export default function handleRequest(
     responseStatusCode,
     responseHeaders,
     routerContext,
-    // @ts-expect-error
-    _loadContext // Vercel's handler still expecting AppLoadContext type
+    // @ts-expect-error Vercel's handler still expects AppLoadContext
+    _loadContext
   );
 }

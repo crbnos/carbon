@@ -5,7 +5,10 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
-import { getHolidays, getHolidayYears } from "~/modules/people";
+import {
+  getHolidays,
+  getHolidayYears
+} from "~/modules/people/people.service.server";
 import { HolidaysTable } from "~/modules/people/ui/Holidays";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -17,7 +20,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "people",
     role: "employee",
     bypassRls: true
@@ -30,14 +33,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [holidays, years] = await Promise.all([
-    getHolidays(client, companyId, {
+    getHolidays({
       search,
       limit,
       offset,
       sorts,
       filters
     }),
-    getHolidayYears(client, companyId)
+    getHolidayYears()
   ]);
 
   if (holidays.error) {

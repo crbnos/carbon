@@ -11,9 +11,9 @@ import {
   getCustomerContacts,
   getCustomerLocations,
   getCustomerTax
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service.server";
 import { CustomerHeader, CustomerSidebar } from "~/modules/sales/ui/Customer";
-import { getTagsList } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared/shared.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -23,7 +23,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
@@ -31,11 +31,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!customerId) throw new Error("Could not find customerId");
 
   const [customer, contacts, locations, tags, customerTax] = await Promise.all([
-    getCustomer(client, customerId),
-    getCustomerContacts(client, customerId),
-    getCustomerLocations(client, customerId),
-    getTagsList(client, companyId, "customer"),
-    getCustomerTax(client, customerId)
+    getCustomer(customerId),
+    getCustomerContacts(customerId),
+    getCustomerLocations(customerId),
+    getTagsList("customer"),
+    getCustomerTax(customerId)
   ]);
 
   if (customer.error) {

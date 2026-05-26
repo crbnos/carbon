@@ -4,12 +4,11 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
+import { isSalesRfqLocked, salesRfqLineValidator } from "~/modules/sales";
 import {
   getSalesRFQ,
-  isSalesRfqLocked,
-  salesRfqLineValidator,
   upsertSalesRFQLine
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service.server";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
@@ -22,11 +21,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error("rfqId not found");
   }
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
-  const rfq = await getSalesRFQ(viewClient, rfqId);
+  const rfq = await getSalesRFQ(rfqId);
   await requireUnlocked({
     request,
     isLocked: isSalesRfqLocked(rfq.data?.status),
@@ -34,7 +33,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked RFQ. Reopen it first."
   });
 
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "sales"
   });
 
@@ -48,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const insertLine = await upsertSalesRFQLine(client, {
+  const insertLine = await upsertSalesRFQLine({
     ...d,
     companyId,
     createdBy: userId,

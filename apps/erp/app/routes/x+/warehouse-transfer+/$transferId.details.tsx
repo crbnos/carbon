@@ -10,11 +10,13 @@ import type {
   WarehouseTransferLine
 } from "~/modules/inventory";
 import {
-  getWarehouseTransfer,
   isWarehouseTransferLocked,
-  upsertWarehouseTransfer,
   warehouseTransferValidator
 } from "~/modules/inventory";
+import {
+  getWarehouseTransfer,
+  upsertWarehouseTransfer
+} from "~/modules/inventory/inventory.service.server";
 import {
   WarehouseTransferForm,
   WarehouseTransferLines
@@ -25,17 +27,17 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "inventory"
   });
 
   const { transferId } = params;
   if (!transferId) throw new Error("transferId not found");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "inventory"
   });
-  const transfer = await getWarehouseTransfer(viewClient, transferId);
+  const transfer = await getWarehouseTransfer(transferId);
   await requireUnlocked({
     request,
     isLocked: isWarehouseTransferLocked(transfer.data?.status),
@@ -56,7 +58,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) throw new Error("id not found");
   if (!validatedTransferId) throw new Error("transferId not found");
 
-  const updateTransfer = await upsertWarehouseTransfer(client, {
+  const updateTransfer = await upsertWarehouseTransfer({
     id,
     transferId: validatedTransferId,
     ...d,

@@ -3,13 +3,13 @@ import type {
   ClientLoaderFunctionArgs,
   LoaderFunctionArgs
 } from "react-router";
-import { getProcessesList } from "~/modules/resources";
+import { getProcessesList } from "~/modules/resources/resources.service.server";
 import { getCompanyId, processesQuery } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
-  return await getProcessesList(client, companyId);
+  return await getProcessesList();
 }
 
 export async function clientLoader({ serverLoader }: ClientLoaderFunctionArgs) {

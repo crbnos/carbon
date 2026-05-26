@@ -19,12 +19,12 @@ import {
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { usePermissions, useUser } from "~/hooks";
 import {
-  getTraining,
   TrainingExplorer,
   TrainingHeader,
   TrainingProperties
 } from "~/modules/resources";
-import { getTagsList } from "~/modules/shared";
+import { getTraining } from "~/modules/resources/resources.service.server";
+import { getTagsList } from "~/modules/shared/shared.service.server";
 import type { action } from "~/routes/x+/training+/update";
 import type { Handle } from "~/utils/handle";
 import { getPrivateUrl, path } from "~/utils/path";
@@ -36,7 +36,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources",
     bypassRls: true
   });
@@ -45,8 +45,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!id) throw new Error("Could not find id");
 
   const [training, tags] = await Promise.all([
-    getTraining(client, id),
-    getTagsList(client, companyId, "training")
+    getTraining(id),
+    getTagsList("training")
   ]);
 
   if (training.error) {

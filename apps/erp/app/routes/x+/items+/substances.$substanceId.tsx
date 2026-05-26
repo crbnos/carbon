@@ -4,17 +4,17 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData, useNavigate } from "react-router";
+import { materialSubstanceValidator } from "~/modules/items";
 import {
   getMaterialSubstance,
-  materialSubstanceValidator,
   upsertMaterialSubstance
-} from "~/modules/items";
+} from "~/modules/items/items.service.server";
 import { MaterialSubstanceForm } from "~/modules/items/ui/MaterialSubstances";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts",
     role: "employee"
   });
@@ -22,7 +22,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { substanceId } = params;
   if (!substanceId) throw notFound("substanceId not found");
 
-  const materialSubstance = await getMaterialSubstance(client, substanceId);
+  const materialSubstance = await getMaterialSubstance(substanceId);
 
   if (materialSubstance.data?.companyId === null) {
     throw redirect(
@@ -44,7 +44,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -60,7 +60,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateMaterialSubstance = await upsertMaterialSubstance(client, {
+  const updateMaterialSubstance = await upsertMaterialSubstance({
     id: substanceId,
     ...validation.data,
     updatedBy: userId,

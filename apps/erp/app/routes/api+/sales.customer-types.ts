@@ -3,15 +3,15 @@ import type {
   ClientLoaderFunctionArgs,
   LoaderFunctionArgs
 } from "react-router";
-import { getCustomerTypesList } from "~/modules/sales";
+import { getCustomerTypesList } from "~/modules/sales/sales.service.server";
 import { customerTypesQuery, getCompanyId } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
-  return await getCustomerTypesList(client, companyId);
+  return await getCustomerTypesList();
 }
 
 export async function clientLoader({ serverLoader }: ClientLoaderFunctionArgs) {

@@ -5,7 +5,7 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { data, Outlet, redirect, useLoaderData } from "react-router";
-import { getRisks } from "~/modules/quality/quality.service";
+import { getRisks } from "~/modules/quality/quality.service.server";
 import type { Risk } from "~/modules/quality/types";
 import RiskRegistersTable from "~/modules/quality/ui/RiskRegister/RiskRegistersTable";
 import type { Handle } from "~/utils/handle";
@@ -18,7 +18,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "quality",
     role: "employee"
   });
@@ -29,7 +29,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const risks = await getRisks(client, companyId, {
+  const risks = await getRisks({
     search,
     limit,
     offset,

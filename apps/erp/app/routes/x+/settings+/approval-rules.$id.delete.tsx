@@ -3,11 +3,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { deleteApprovalRule } from "~/modules/shared";
+import { deleteApprovalRule } from "~/modules/shared/shared.service.server";
 import { getParams, path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "settings",
     role: "employee"
   });
@@ -15,7 +15,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Rule ID is required");
 
-  const result = await deleteApprovalRule(client, id, companyId);
+  const result = await deleteApprovalRule(id);
 
   if (result.error) {
     throw redirect(

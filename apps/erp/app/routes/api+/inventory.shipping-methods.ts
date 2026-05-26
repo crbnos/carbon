@@ -3,13 +3,13 @@ import type {
   ClientLoaderFunctionArgs,
   LoaderFunctionArgs
 } from "react-router";
-import { getShippingMethodsList } from "~/modules/inventory";
+import { getShippingMethodsList } from "~/modules/inventory/inventory.service.server";
 import { getCompanyId, shippingMethodsQuery } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
-  return await getShippingMethodsList(client, companyId);
+  return await getShippingMethodsList();
 }
 
 export async function clientLoader({ serverLoader }: ClientLoaderFunctionArgs) {

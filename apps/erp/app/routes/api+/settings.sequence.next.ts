@@ -3,10 +3,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getNextSequence } from "~/modules/settings";
+import { getNextSequence } from "~/modules/settings/settings.service.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -18,7 +18,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       await flash(request, error(request, "Bad request for next sequence"))
     );
 
-  const nextSequence = await getNextSequence(client, table, companyId);
+  const nextSequence = await getNextSequence(table);
   if (nextSequence.error) {
     return data(
       nextSequence,

@@ -3,7 +3,8 @@ import { Combobox } from "@carbon/form";
 import { Badge, Combobox as ComboboxBase, useMount } from "@carbon/react";
 import { useEffect, useMemo, useState } from "react";
 import { useFetcher } from "react-router";
-import type { AccountClass, getAccountsList } from "~/modules/accounting";
+import type { AccountClass } from "~/modules/accounting";
+import type { getAccountsList } from "~/modules/accounting/accounting.service.server";
 import { path } from "~/utils/path";
 import {
   accountsQuery,

@@ -8,12 +8,14 @@ import { redirect, useParams } from "react-router";
 import { useUser } from "~/hooks";
 import type { PurchaseInvoice } from "~/modules/invoicing";
 import {
-  getPurchaseInvoice,
   isPurchaseInvoiceLocked,
   PurchaseInvoiceLineForm,
-  purchaseInvoiceLineValidator,
-  upsertPurchaseInvoiceLine
+  purchaseInvoiceLineValidator
 } from "~/modules/invoicing";
+import {
+  getPurchaseInvoice,
+  upsertPurchaseInvoiceLine
+} from "~/modules/invoicing/invoicing.service.server";
 import type { MethodItemType } from "~/modules/shared";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
@@ -26,11 +28,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
   // Check if PI is locked
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "invoicing"
   });
 
-  const purchaseInvoice = await getPurchaseInvoice(viewClient, invoiceId);
+  const purchaseInvoice = await getPurchaseInvoice(invoiceId);
   if (purchaseInvoice.error) {
     throw redirect(
       path.to.purchaseInvoiceDetails(invoiceId),
@@ -48,7 +50,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase invoice."
   });
 
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "invoicing"
   });
 
@@ -64,7 +66,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const createPurchaseInvoiceLine = await upsertPurchaseInvoiceLine(client, {
+  const createPurchaseInvoiceLine = await upsertPurchaseInvoiceLine({
     ...d,
     companyId,
     createdBy: userId,

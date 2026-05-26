@@ -1,6 +1,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
-import { getStockTransfer, isStockTransferLocked } from "~/modules/inventory";
+import { isStockTransferLocked } from "~/modules/inventory";
+import { getStockTransfer } from "~/modules/inventory/inventory.service.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
@@ -23,13 +24,10 @@ export async function action({ request }: ActionFunctionArgs) {
       .single();
 
     if (line.data?.stockTransferId) {
-      const { client: viewClient } = await requirePermissions(request, {
+      await requirePermissions(request, {
         view: "inventory"
       });
-      const transfer = await getStockTransfer(
-        viewClient,
-        line.data.stockTransferId
-      );
+      const transfer = await getStockTransfer(line.data.stockTransferId);
       await requireUnlocked({
         request,
         isLocked: isStockTransferLocked(transfer.data?.status),

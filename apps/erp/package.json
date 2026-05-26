@@ -157,6 +157,8 @@
   },
   "private": true,
   "scripts": {
+    "mcp:manifest": "tsx ../../scripts/generate-mcp-manifest.ts",
+    "prebuild": "pnpm mcp:manifest",
     "build": "react-router build",
     "clean": "rimraf .cache .turbo node_modules dist build",
     "dev": "portless --script dev:app run --force",

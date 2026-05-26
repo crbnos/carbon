@@ -3,18 +3,18 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { getCurrencyByCode } from "~/modules/accounting";
+import { getCurrencyByCode } from "~/modules/accounting/accounting.service.server";
+import { isSalesInvoiceLocked } from "~/modules/invoicing";
 import {
   getSalesInvoice,
-  isSalesInvoiceLocked,
   updateSalesInvoiceExchangeRate
-} from "~/modules/invoicing";
+} from "~/modules/invoicing/invoicing.service.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyGroupId } = await requirePermissions(request, {
+  const { companyGroupId } = await requirePermissions(request, {
     update: "invoicing"
   });
 
@@ -22,11 +22,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
   // Check if SI is locked
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "invoicing"
   });
 
-  const invoice = await getSalesInvoice(viewClient, invoiceId);
+  const invoice = await getSalesInvoice(invoiceId);
   if (invoice.error) {
     throw redirect(
       path.to.salesInvoiceDetails(invoiceId),
@@ -45,15 +45,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const currencyCode = formData.get("currencyCode") as string;
   if (!currencyCode) throw new Error("Could not find currencyCode");
 
-  const currency = await getCurrencyByCode(
-    client,
-    companyGroupId,
-    currencyCode
-  );
+  const currency = await getCurrencyByCode(companyGroupId, currencyCode);
   if (currency.error || !currency.data.exchangeRate)
     throw new Error("Could not find currency");
 
-  const update = await updateSalesInvoiceExchangeRate(client, {
+  const update = await updateSalesInvoiceExchangeRate({
     id: invoiceId,
     exchangeRate: currency.data.exchangeRate
   });

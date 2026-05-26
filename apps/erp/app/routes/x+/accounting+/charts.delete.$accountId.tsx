@@ -5,17 +5,20 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteAccount, getAccount } from "~/modules/accounting";
+import {
+  deleteAccount,
+  getAccount
+} from "~/modules/accounting/accounting.service.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "accounting"
   });
   const { accountId } = params;
   if (!accountId) throw notFound("accountId not found");
 
-  const account = await getAccount(client, accountId);
+  const account = await getAccount(accountId);
   if (account.error) {
     throw redirect(
       path.to.chartOfAccounts,
@@ -27,7 +30,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "accounting"
   });
 
@@ -40,7 +43,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Root accounts (Balance Sheet, Income Statement) cannot be deleted
-  const existing = await getAccount(client, accountId);
+  const existing = await getAccount(accountId);
   if (existing.data?.isSystem) {
     throw redirect(
       path.to.chartOfAccounts,
@@ -48,7 +51,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteTypeError } = await deleteAccount(client, accountId);
+  const { error: deleteTypeError } = await deleteAccount(accountId);
   if (deleteTypeError) {
     throw redirect(
       path.to.chartOfAccounts,

@@ -14,18 +14,18 @@ import type {
   LoaderFunctionArgs
 } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
+import { customerContactValidator } from "~/modules/sales";
 import {
-  customerContactValidator,
   getCustomerContact,
   updateCustomerContact
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service.server";
 import { CustomerContactForm } from "~/modules/sales/ui/Customer";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 import { customerContactsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
@@ -33,7 +33,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!customerId) throw notFound("customerId not found");
   if (!customerContactId) throw notFound("customerContactId not found");
 
-  const contact = await getCustomerContact(client, customerContactId);
+  const contact = await getCustomerContact(customerContactId);
   if (contact.error) {
     throw redirect(
       path.to.customerContacts(customerId),
@@ -51,7 +51,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "sales"
   });
 
@@ -76,7 +76,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (contactId === undefined)
     throw badRequest("contactId is undefined from form data");
 
-  const update = await updateCustomerContact(client, {
+  const update = await updateCustomerContact({
     contactId,
     contact,
     customerLocationId,

@@ -75,7 +75,7 @@ import type {
   ReceiptLine
 } from "~/modules/inventory";
 import { splitValidator } from "~/modules/inventory";
-import { getDocumentType } from "~/modules/shared/shared.service";
+import { getDocumentType } from "~/modules/shared";
 import { useItems } from "~/stores";
 import type { StorageItem } from "~/types";
 import { path } from "~/utils/path";

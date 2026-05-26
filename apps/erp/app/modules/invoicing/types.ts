@@ -10,7 +10,7 @@ import type {
   getSalesInvoiceLines,
   getSalesInvoiceShipment,
   getSalesInvoices
-} from "./invoicing.service";
+} from "./invoicing.service.server";
 
 export type PurchaseInvoice = NonNullable<
   Awaited<ReturnType<typeof getPurchaseInvoices>>["data"]

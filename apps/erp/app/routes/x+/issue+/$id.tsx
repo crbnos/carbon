@@ -14,14 +14,14 @@ import {
   useParams
 } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { getItemFiles } from "~/modules/items";
+import { getItemFiles } from "~/modules/items/items.service.server";
 import {
   getIssue,
   getIssueAssociations,
   getIssueSuppliers,
   getIssueTypesList,
   getRequiredActionsList
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service.server";
 import type { IssueAssociationNode } from "~/modules/quality/types";
 import {
   IssueAssociationsSkeleton,
@@ -29,7 +29,7 @@ import {
 } from "~/modules/quality/ui/Issue/IssueAssociations";
 import IssueHeader from "~/modules/quality/ui/Issue/IssueHeader";
 import IssueProperties from "~/modules/quality/ui/Issue/IssueProperties";
-import { getTagsList } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared/shared.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -40,7 +40,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "quality",
     bypassRls: true
   });
@@ -55,11 +55,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     suppliers,
     tags
   ] = await Promise.all([
-    getIssue(client, id),
-    getIssueTypesList(client, companyId),
-    getRequiredActionsList(client, companyId),
-    getIssueSuppliers(client, id, companyId),
-    getTagsList(client, companyId, "nonConformance")
+    getIssue(id),
+    getIssueTypesList(),
+    getRequiredActionsList(),
+    getIssueSuppliers(id),
+    getTagsList("nonConformance")
   ]);
 
   if (nonConformance.error) {
@@ -70,8 +70,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return {
-    associations: getIssueAssociations(client, id, companyId),
-    files: getItemFiles(client, id, companyId),
+    associations: getIssueAssociations(id),
+    files: getItemFiles(id),
     nonConformance: nonConformance.data,
     nonConformanceTypes: nonConformanceTypes.data ?? [],
     requiredActions: requiredActions.data ?? [],

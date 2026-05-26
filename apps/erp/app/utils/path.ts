@@ -123,6 +123,20 @@ export const path = {
       jiraSyncNotes: `${api}/integrations/jira/issue/sync-notes`,
       outsideOperations: (jobId: string) =>
         generatePath(`${api}/production/outside-operations/${jobId}`),
+      jobMethodTree: (jobId: string) =>
+        generatePath(`${api}/production/jobs/${jobId}/method-tree`),
+      jobOperationProductionEvents: (
+        jobOperationId: string,
+        page: number = 1,
+        sortDescending: boolean = false
+      ) =>
+        `${generatePath(
+          `${api}/production/job-operations/${jobOperationId}/events`
+        )}?page=${page}&sortDescending=${sortDescending}`,
+      supplierPartPriceBreaks: (supplierPartId: string) =>
+        generatePath(
+          `${api}/items/supplier-part/${supplierPartId}/price-breaks`
+        ),
       purchasingKpi: (key: string) =>
         generatePath(`${api}/purchasing/kpi/${key}`),
       qualityKpi: (key: string) => generatePath(`${api}/quality/kpi/${key}`),

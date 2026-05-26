@@ -4,10 +4,8 @@ import { Avatar, HStack, useDisclosure } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
-import type {
-  getSupplierContacts,
-  SupplierContact as SupplierContactType
-} from "~/modules/purchasing";
+import type { SupplierContact as SupplierContactType } from "~/modules/purchasing";
+import type { getSupplierContacts } from "~/modules/purchasing/purchasing.service.server";
 import { SupplierContactForm } from "~/modules/purchasing/ui/Supplier";
 import { path } from "~/utils/path";
 

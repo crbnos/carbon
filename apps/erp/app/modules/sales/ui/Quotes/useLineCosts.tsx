@@ -1,7 +1,8 @@
 import { useCallback, useMemo } from "react";
 import { useParams } from "react-router";
 import type { Tree } from "~/components/TreeView";
-import { lookupBuyPriceFromMap, type SupplierPriceMap } from "~/modules/shared";
+import type { SupplierPriceMap } from "~/modules/shared";
+import { lookupBuyPriceFromMap } from "~/modules/shared/shared.client";
 import type {
   CostEffects,
   Costs,

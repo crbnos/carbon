@@ -5,14 +5,14 @@ import { validationError, validator } from "@carbon/form";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, Outlet, redirect, useLoaderData } from "react-router";
+import { accountProfileValidator } from "~/modules/account";
 import {
-  accountProfileValidator,
   getAllAttributeCategories,
   updatePublicAccount
-} from "~/modules/account";
-import { getEmployeeSummary } from "~/modules/people";
+} from "~/modules/account/account.service.server";
+import { getEmployeeSummary } from "~/modules/people/people.service.server";
 import { PersonPreview, PersonSidebar } from "~/modules/people/ui/Person";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -22,7 +22,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "people"
   });
 
@@ -31,9 +31,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [employeeSummary, attributeCategories, companySettings] =
     await Promise.all([
-      getEmployeeSummary(client, personId, companyId),
-      getAllAttributeCategories(client, personId, companyId),
-      getCompanySettings(client, companyId)
+      getEmployeeSummary(personId),
+      getAllAttributeCategories(),
+      getCompanySettings()
     ]);
 
   if (employeeSummary.error) {
@@ -55,7 +55,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "people"
   });
   const { personId } = params;
@@ -71,7 +71,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { firstName, lastName, about, phone } = validation.data;
 
-  const updateAccount = await updatePublicAccount(client, {
+  const updateAccount = await updatePublicAccount({
     id: personId,
     firstName,
     lastName,

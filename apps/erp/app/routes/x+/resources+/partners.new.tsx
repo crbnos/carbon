@@ -5,17 +5,14 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { useUrlParams } from "~/hooks";
-import {
-  PartnerForm,
-  partnerValidator,
-  upsertPartner
-} from "~/modules/resources";
+import { PartnerForm, partnerValidator } from "~/modules/resources";
+import { upsertPartner } from "~/modules/resources/resources.service.server";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "resources"
   });
 
@@ -29,7 +26,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { supplierId, ...d } = validation.data;
 
-  const createPartner = await upsertPartner(client, {
+  const createPartner = await upsertPartner({
     ...d,
     companyId,
     createdBy: userId,

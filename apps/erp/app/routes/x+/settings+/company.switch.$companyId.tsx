@@ -8,12 +8,12 @@ import {
 } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { getCompanies } from "~/modules/settings";
+import { getCompanies } from "~/modules/settings/settings.service.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {});
-  const companies = await getCompanies(client, userId);
+  await requirePermissions(request, {});
+  const companies = await getCompanies();
 
   if (companies.error) {
     throw redirect(

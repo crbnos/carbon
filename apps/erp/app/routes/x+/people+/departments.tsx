@@ -14,7 +14,7 @@ import { useCallback } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData, useNavigate } from "react-router";
 import { New } from "~/components";
-import { getDepartmentsTree } from "~/modules/people";
+import { getDepartmentsTree } from "~/modules/people/people.service.server";
 import {
   DepartmentsListView,
   DepartmentsTreeView
@@ -28,13 +28,13 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "people",
     role: "employee",
     bypassRls: true
   });
 
-  const departments = await getDepartmentsTree(client, companyId);
+  const departments = await getDepartmentsTree();
 
   if (departments.error) {
     throw redirect(

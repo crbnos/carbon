@@ -14,11 +14,12 @@ import { requirePlan } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
-import { getIntegration, IntegrationForm } from "~/modules/settings";
+import { IntegrationForm } from "~/modules/settings";
 import {
   invalidateIntegrationHealthCache,
   upsertCompanyIntegration
 } from "~/modules/settings/settings.server";
+import { getIntegration } from "~/modules/settings/settings.service.server";
 import { path } from "~/utils/path";
 
 /**
@@ -119,11 +120,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const integration = availableIntegrations.find((i) => i.id === integrationId);
   if (!integration) throw new Error("Integration not found");
 
-  const integrationData = await getIntegration(
-    client,
-    integrationId,
-    companyId
-  );
+  const integrationData = await getIntegration(integrationId);
 
   if (integrationData.error || !integrationData.data) {
     return {
@@ -253,7 +250,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Fetch existing metadata so we merge form settings without
   // overwriting credentials and syncConfig
-  const existing = await getIntegration(client, integrationId, companyId);
+  const existing = await getIntegration(integrationId);
   const existingMetadata =
     (existing.data?.metadata as Record<string, unknown>) ?? {};
 

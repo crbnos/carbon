@@ -4,17 +4,17 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
+import { pricingRuleValidator } from "~/modules/sales";
 import {
   duplicatePricingRule,
   getPricingRule,
-  pricingRuleValidator,
   updatePricingRule
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service.server";
 import PricingRuleForm from "~/modules/sales/ui/Pricing/PricingRuleForm";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales",
     role: "employee"
   });
@@ -22,14 +22,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { ruleId } = params;
   if (!ruleId) throw notFound("ruleId not found");
 
-  const pricingRule = await getPricingRule(client, ruleId);
+  const pricingRule = await getPricingRule(ruleId);
 
   return { pricingRule: pricingRule?.data ?? null };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "sales"
   });
 
@@ -40,12 +40,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const intent = formData.get("intent");
 
   if (intent === "duplicate") {
-    const result = await duplicatePricingRule(
-      client,
-      ruleId,
-      companyId,
-      userId
-    );
+    const result = await duplicatePricingRule(ruleId);
     if (result.error) {
       throw redirect(
         `${path.to.salesPricingRules}?${getParams(request)}`,
@@ -67,12 +62,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const result = await updatePricingRule(
-    client,
-    ruleId,
-    userId,
-    validation.data
-  );
+  const result = await updatePricingRule(ruleId, validation.data);
 
   if (result.error) {
     throw redirect(

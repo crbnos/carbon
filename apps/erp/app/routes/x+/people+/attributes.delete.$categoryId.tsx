@@ -3,11 +3,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { deleteAttributeCategory } from "~/modules/people";
+import { deleteAttributeCategory } from "~/modules/people/people.service.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "people"
   });
 
@@ -19,7 +19,7 @@ export async function action({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const deactivateAttribute = await deleteAttributeCategory(client, categoryId);
+  const deactivateAttribute = await deleteAttributeCategory(categoryId);
   if (deactivateAttribute.error) {
     throw redirect(
       path.to.attributes,

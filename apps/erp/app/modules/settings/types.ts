@@ -7,7 +7,7 @@ import type {
   getSequences,
   getSubsidiaries,
   getWebhooks
-} from "./settings.service";
+} from "./settings.service.server";
 
 export type ApiKey = NonNullable<
   Awaited<ReturnType<typeof getApiKeys>>["data"]

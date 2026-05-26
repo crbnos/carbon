@@ -5,7 +5,7 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
-import { getMaterialSubstances } from "~/modules/items";
+import { getMaterialSubstances } from "~/modules/items/items.service.server";
 import { MaterialSubstancesTable } from "~/modules/items/ui/MaterialSubstances";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -17,7 +17,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts",
     role: "employee"
   });
@@ -28,7 +28,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const materialSubstances = await getMaterialSubstances(client, companyId, {
+  const materialSubstances = await getMaterialSubstances({
     limit,
     offset,
     sorts,

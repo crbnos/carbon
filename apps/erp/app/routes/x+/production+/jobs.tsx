@@ -5,10 +5,10 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
-import { getJobs } from "~/modules/production";
+import { getJobs } from "~/modules/production/production.service.server";
 import { JobsTable } from "~/modules/production/ui/Jobs";
-import { getLocationsList } from "~/modules/resources";
-import { getTagsList } from "~/modules/shared";
+import { getLocationsList } from "~/modules/resources/resources.service.server";
+import { getTagsList } from "~/modules/shared/shared.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -19,7 +19,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "production",
     role: "employee",
     bypassRls: true
@@ -32,15 +32,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [jobs, locations, tags] = await Promise.all([
-    getJobs(client, companyId, {
+    getJobs({
       search,
       limit,
       offset,
       sorts,
       filters
     }),
-    getLocationsList(client, companyId),
-    getTagsList(client, companyId, "job")
+    getLocationsList(),
+    getTagsList("job")
   ]);
 
   if (jobs.error) {

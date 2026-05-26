@@ -15,9 +15,9 @@ import {
   deleteStockTransfer,
   upsertStockTransfer,
   upsertStockTransferLines
-} from "~/modules/inventory";
-import { getJob } from "~/modules/production";
-import { getNextSequence } from "~/modules/settings";
+} from "~/modules/inventory/inventory.service.server";
+import { getJob } from "~/modules/production/production.service.server";
+import { getNextSequence } from "~/modules/settings/settings.service.server";
 import { getOrCreatePeriods } from "~/modules/shared/shared.server";
 import { path } from "~/utils/path";
 
@@ -77,7 +77,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Get job information to determine location
   const [jobResult, itemReplenishments] = await Promise.all([
-    getJob(client, jobId),
+    getJob(jobId),
     client
       .from("itemReplenishment")
       .select(
@@ -242,11 +242,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (linesWithExpandedSerialTracking.length > 0) {
       // Now that we have valid transfer lines, create the stock transfer
       // Get next sequence for stock transfer
-      const nextSequence = await getNextSequence(
-        client,
-        "stockTransfer",
-        companyId
-      );
+      const nextSequence = await getNextSequence("stockTransfer");
       if (nextSequence.error) {
         return data(
           { success: false, message: "Failed to get next sequence" },
@@ -258,7 +254,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
 
       // Create stock transfer
-      const createStockTransfer = await upsertStockTransfer(client, {
+      const createStockTransfer = await upsertStockTransfer({
         stockTransferId: nextSequence.data,
         locationId,
         companyId,
@@ -276,15 +272,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
 
       // Create stock transfer lines
-      const createStockTransferLines = await upsertStockTransferLines(client, {
+      const createStockTransferLines = await upsertStockTransferLines({
         lines: linesWithExpandedSerialTracking,
-        stockTransferId: createStockTransfer.data.id,
-        companyId,
-        createdBy: userId
+        stockTransferId: createStockTransfer.data.id
       });
 
       if (createStockTransferLines.error) {
-        await deleteStockTransfer(client, createStockTransfer.data.id);
+        await deleteStockTransfer(createStockTransfer.data.id);
         return data(
           { success: false, message: "Failed to create stock transfer lines" },
           await flash(

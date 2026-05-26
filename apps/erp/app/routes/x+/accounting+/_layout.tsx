@@ -11,7 +11,7 @@ import {
   getAccountsList,
   getBaseCurrency,
   getCompaniesInGroup
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service.server";
 import useAccountingSubmodules from "~/modules/accounting/ui/useAccountingSubmodules";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -27,19 +27,16 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      view: "accounting"
-    }
-  );
+  const { companyGroupId } = await requirePermissions(request, {
+    view: "accounting"
+  });
 
   const [accounts, baseCurrency, companies] = await Promise.all([
-    getAccountsList(client, companyGroupId, {
+    getAccountsList(companyGroupId, {
       isGroup: false
     }),
-    getBaseCurrency(client, companyId),
-    getCompaniesInGroup(client, companyGroupId)
+    getBaseCurrency(),
+    getCompaniesInGroup(companyGroupId)
   ]);
 
   if (accounts.error) {

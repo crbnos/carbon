@@ -11,13 +11,14 @@ import {
 } from "react-router";
 import { useRouteData, useUrlParams } from "~/hooks";
 import type { AttributeDataType } from "~/modules/people";
-import { CustomFieldsTableDetail, getCustomFields } from "~/modules/settings";
+import { CustomFieldsTableDetail } from "~/modules/settings";
 import { updateCustomFieldsSortOrder } from "~/modules/settings/settings.server";
-import { getTagsList } from "~/modules/shared";
+import { getCustomFields } from "~/modules/settings/settings.service.server";
+import { getTagsList } from "~/modules/shared/shared.service.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "settings",
     role: "employee"
   });
@@ -26,8 +27,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!table) throw notFound("Invalid table");
 
   const [customFields, tags] = await Promise.all([
-    getCustomFields(client, table, companyId),
-    getTagsList(client, companyId, table)
+    getCustomFields(table),
+    getTagsList(table)
   ]);
 
   if (customFields.error) {

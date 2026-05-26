@@ -5,7 +5,10 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import { getConfig, getWebhooks } from "~/modules/settings";
+import {
+  getConfig,
+  getWebhooks
+} from "~/modules/settings/settings.service.server";
 import {
   WebhooksTable,
   WebhooksUpgradeOverlay
@@ -20,7 +23,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "settings"
   });
 
@@ -31,14 +34,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [webhooks, config] = await Promise.all([
-    getWebhooks(client, companyId, {
+    getWebhooks({
       limit,
       offset,
       sorts,
       search,
       filters
     }),
-    getConfig(client)
+    getConfig()
   ]);
 
   if (webhooks.error) {

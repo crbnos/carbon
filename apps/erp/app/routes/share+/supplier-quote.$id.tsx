@@ -54,16 +54,23 @@ import {
   getSupplierQuoteByExternalLinkId,
   getSupplierQuoteLinePricesByQuoteId,
   getSupplierQuoteLines
-} from "~/modules/purchasing/purchasing.service";
+} from "~/modules/purchasing/purchasing.service.server";
 import type {
   SupplierQuote,
   SupplierQuoteLine,
   SupplierQuoteLinePrice
 } from "~/modules/purchasing/types";
 import type { Company } from "~/modules/settings";
-import { getCompany, getCompanySettings } from "~/modules/settings";
-import { getBase64ImageFromSupabase } from "~/modules/shared";
+import {
+  getCompany,
+  getCompanySettings
+} from "~/modules/settings/settings.service.server";
+import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service.server";
 import type { action } from "~/routes/api+/purchasing.digital-quote.$id";
+import {
+  runWithSystemClient,
+  runWithSystemContext
+} from "~/services/mcp/index.server";
 import { path } from "~/utils/path";
 
 export const meta = () => {
@@ -95,8 +102,14 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     };
   }
 
+  // Public share page (no session). Resolve the quote first (system client
+  // only) so we know the tenant companyId, then run the rest of the loader
+  // under a full system context so services reading `AuthContextHolder.get()`
+  // are satisfied.
   const serviceRole = getCarbonServiceRole();
-  const quote = await getSupplierQuoteByExternalLinkId(serviceRole, id);
+  const quote = await runWithSystemClient(serviceRole, () =>
+    getSupplierQuoteByExternalLinkId(id)
+  );
 
   if (quote.error) {
     return {
@@ -126,61 +139,64 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     };
   }
 
-  const [company, companySettings, quoteLines, quoteLinePrices] =
-    await Promise.all([
-      getCompany(serviceRole, quote.data.companyId),
-      getCompanySettings(serviceRole, quote.data.companyId),
-      getSupplierQuoteLines(serviceRole, quote.data.id),
-      getSupplierQuoteLinePricesByQuoteId(serviceRole, quote.data.id)
-    ]);
+  return runWithSystemContext(
+    { companyId: quote.data.companyId },
+    serviceRole,
+    async () => {
+      const [company, companySettings, quoteLines, quoteLinePrices] =
+        await Promise.all([
+          getCompany(quote.data.companyId),
+          getCompanySettings(quote.data.companyId),
+          getSupplierQuoteLines(quote.data.id),
+          getSupplierQuoteLinePricesByQuoteId(quote.data.id)
+        ]);
 
-  const thumbnailPaths = quoteLines.data?.reduce<Record<string, string | null>>(
-    (acc, line) => {
-      if (line.thumbnailPath) {
-        acc[line.id!] = line.thumbnailPath;
-      }
-      return acc;
-    },
-    {}
-  );
+      const thumbnailPaths = quoteLines.data?.reduce<
+        Record<string, string | null>
+      >((acc, line) => {
+        if (line.thumbnailPath) {
+          acc[line.id!] = line.thumbnailPath;
+        }
+        return acc;
+      }, {});
 
-  const thumbnails: Record<string, string | null> =
-    (thumbnailPaths
-      ? await Promise.all(
-          Object.entries(thumbnailPaths).map(([id, path]) => {
-            if (!path) {
-              return null;
-            }
-            return getBase64ImageFromSupabase(serviceRole, path).then(
-              (data) => ({
-                id,
-                data
+      const thumbnails: Record<string, string | null> =
+        (thumbnailPaths
+          ? await Promise.all(
+              Object.entries(thumbnailPaths).map(([id, path]) => {
+                if (!path) {
+                  return null;
+                }
+                return getBase64ImageFromSupabase(path).then((data) => ({
+                  id,
+                  data
+                }));
               })
-            );
-          })
-        )
-      : []
-    )?.reduce<Record<string, string | null>>((acc, thumbnail) => {
-      if (thumbnail) {
-        acc[thumbnail.id] = thumbnail.data;
-      }
-      return acc;
-    }, {}) ?? {};
+            )
+          : []
+        )?.reduce<Record<string, string | null>>((acc, thumbnail) => {
+          if (thumbnail) {
+            acc[thumbnail.id] = thumbnail.data;
+          }
+          return acc;
+        }, {}) ?? {};
 
-  return {
-    state: QuoteState.Valid,
-    data: {
-      quote: quote.data,
-      company: company.data,
-      companySettings: companySettings.data,
-      quoteLines:
-        quoteLines.data?.map(({ internalNotes, ...line }) => ({
-          ...line
-        })) ?? [],
-      thumbnails: thumbnails,
-      quoteLinePrices: quoteLinePrices.data ?? []
+      return {
+        state: QuoteState.Valid,
+        data: {
+          quote: quote.data,
+          company: company.data,
+          companySettings: companySettings.data,
+          quoteLines:
+            quoteLines.data?.map(({ internalNotes, ...line }) => ({
+              ...line
+            })) ?? [],
+          thumbnails: thumbnails,
+          quoteLinePrices: quoteLinePrices.data ?? []
+        }
+      };
     }
-  };
+  );
 }
 
 // rounded icon in badge class name "rounded-full"

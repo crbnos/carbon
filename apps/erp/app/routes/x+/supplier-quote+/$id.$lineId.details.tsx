@@ -1,6 +1,5 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -14,14 +13,16 @@ import type {
   SupplierQuoteLinePrice
 } from "~/modules/purchasing";
 import {
+  isSupplierQuoteLocked,
+  supplierQuoteLineValidator
+} from "~/modules/purchasing";
+import {
   getSupplierInteractionLineDocuments,
   getSupplierQuote,
   getSupplierQuoteLine,
   getSupplierQuoteLinePrices,
-  isSupplierQuoteLocked,
-  supplierQuoteLineValidator,
   upsertSupplierQuoteLine
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service.server";
 import {
   SupplierInteractionLineDocuments,
   SupplierInteractionLineNotes
@@ -36,7 +37,7 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
 
@@ -44,11 +45,9 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   if (!id) throw new Error("Could not find id");
   if (!lineId) throw new Error("Could not find lineId");
 
-  const serviceRole = await getCarbonServiceRole();
-
   const [line, prices] = await Promise.all([
-    getSupplierQuoteLine(serviceRole, lineId),
-    getSupplierQuoteLinePrices(serviceRole, lineId)
+    getSupplierQuoteLine(lineId),
+    getSupplierQuoteLinePrices(lineId)
   ]);
 
   if (line.error) {
@@ -60,7 +59,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
   return {
     line: line.data,
-    files: getSupplierInteractionLineDocuments(serviceRole, companyId, lineId),
+    files: getSupplierInteractionLineDocuments(lineId),
     pricesByQuantity: (prices?.data ?? []).reduce<
       Record<number, SupplierQuoteLinePrice>
     >((acc, price) => {
@@ -72,7 +71,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     create: "purchasing"
   });
 
@@ -80,10 +79,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) throw new Error("Could not find id");
   if (!lineId) throw new Error("Could not find lineId");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
-  const quote = await getSupplierQuote(viewClient, id);
+  const quote = await getSupplierQuote(id);
   await requireUnlocked({
     request,
     isLocked: isSupplierQuoteLocked(quote.data?.status),
@@ -103,7 +102,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id: _id, ...d } = validation.data;
 
-  const updateSupplierQuoteLine = await upsertSupplierQuoteLine(client, {
+  const updateSupplierQuoteLine = await upsertSupplierQuoteLine({
     id: lineId,
     ...d,
     updatedBy: userId,

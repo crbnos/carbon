@@ -4,7 +4,8 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useNavigate } from "react-router";
-import { materialFinishValidator, upsertMaterialFinish } from "~/modules/items";
+import { materialFinishValidator } from "~/modules/items";
+import { upsertMaterialFinish } from "~/modules/items/items.service.server";
 import MaterialFinishForm from "~/modules/items/ui/MaterialFinishes/MaterialFinishForm";
 
 import { getParams, path } from "~/utils/path";
@@ -19,7 +20,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     create: "parts"
   });
 
@@ -37,7 +38,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...rest } = validation.data;
 
-  const insertMaterialFinish = await upsertMaterialFinish(client, {
+  const insertMaterialFinish = await upsertMaterialFinish({
     ...rest,
     companyId
   });

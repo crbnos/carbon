@@ -12,7 +12,7 @@ import {
   getOpenProductionOrders,
   getOpenPurchaseOrderLines,
   getOpenSalesOrderLines
-} from "~/modules/items/items.service";
+} from "~/modules/items/items.service.server";
 import { getOrCreatePeriods } from "~/modules/shared/shared.server";
 
 const defaultResponse = {
@@ -30,7 +30,7 @@ const defaultResponse = {
 const WEEKS_TO_FORECAST = 12 * 4;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts"
   });
 
@@ -52,23 +52,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     openProductionOrders,
     openPurchaseOrderLines
   ] = await Promise.all([
-    getItemDemand(client, {
+    getItemDemand({
       itemId,
       locationId,
-      periods: periods.map((p) => p.id ?? ""),
-      companyId
+      periods: periods.map((p) => p.id ?? "")
     }),
-    getItemSupply(client, {
+    getItemSupply({
       itemId,
       locationId,
-      periods: periods.map((p) => p.id ?? ""),
-      companyId
+      periods: periods.map((p) => p.id ?? "")
     }),
-    getItemQuantities(client, itemId, companyId, locationId),
-    getOpenSalesOrderLines(client, { itemId, companyId, locationId }),
-    getOpenJobMaterials(client, { itemId, companyId, locationId }),
-    getOpenProductionOrders(client, { itemId, companyId, locationId }),
-    getOpenPurchaseOrderLines(client, { itemId, companyId, locationId })
+    getItemQuantities(itemId, locationId),
+    getOpenSalesOrderLines({ itemId, locationId }),
+    getOpenJobMaterials({ itemId, locationId }),
+    getOpenProductionOrders({ itemId, locationId }),
+    getOpenPurchaseOrderLines({ itemId, locationId })
   ]);
 
   if (demand.actuals.length === 0 && demand.forecasts.length === 0) {

@@ -4,7 +4,7 @@ import { useDisclosure, useMount } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
 import { Enumerable } from "~/components/Enumerable";
-import type { getSupplierTypesList } from "~/modules/purchasing";
+import type { getSupplierTypesList } from "~/modules/purchasing/purchasing.service.server";
 import SupplierTypeForm from "~/modules/purchasing/ui/SupplierTypes/SupplierTypeForm";
 
 import { path } from "~/utils/path";

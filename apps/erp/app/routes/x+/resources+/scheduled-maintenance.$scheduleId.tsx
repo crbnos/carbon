@@ -4,16 +4,16 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData, useNavigate } from "react-router";
+import { maintenanceScheduleValidator } from "~/modules/resources";
 import {
   getMaintenanceSchedule,
-  maintenanceScheduleValidator,
   upsertMaintenanceSchedule
-} from "~/modules/resources";
+} from "~/modules/resources/resources.service.server";
 import MaintenanceScheduleForm from "~/modules/resources/ui/MaintenanceSchedule/MaintenanceScheduleForm";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources",
     role: "employee"
   });
@@ -21,7 +21,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { scheduleId } = params;
   if (!scheduleId) throw notFound("scheduleId not found");
 
-  const schedule = await getMaintenanceSchedule(client, scheduleId);
+  const schedule = await getMaintenanceSchedule(scheduleId);
 
   if (schedule.error) {
     throw redirect(
@@ -40,7 +40,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "resources"
   });
 
@@ -56,7 +56,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, ...d } = validation.data;
   if (!id) throw new Error("id not found");
 
-  const updateSchedule = await upsertMaintenanceSchedule(client, {
+  const updateSchedule = await upsertMaintenanceSchedule({
     id,
     ...d,
     updatedBy: userId

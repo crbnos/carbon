@@ -54,15 +54,15 @@ import {
 import type { LoaderFunctionArgs } from "react-router";
 import { useFetcher, useLoaderData, useParams } from "react-router";
 import { usePercentFormatter } from "~/hooks";
-import { getPaymentTermsList } from "~/modules/accounting";
-import { getShippingMethodsList } from "~/modules/inventory";
+import { getPaymentTermsList } from "~/modules/accounting/accounting.service.server";
+import { getShippingMethodsList } from "~/modules/inventory/inventory.service.server";
 import type {
   QuotationLine,
   QuotationPrice,
   SalesOrderLine
 } from "~/modules/sales";
+import { externalQuoteValidator } from "~/modules/sales";
 import {
-  externalQuoteValidator,
   getOpportunity,
   getQuoteByExternalId,
   getQuoteCustomerDetails,
@@ -72,11 +72,18 @@ import {
   getQuoteShipment,
   getSalesOrderLines,
   getSalesTerms
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service.server";
 import QuoteStatus from "~/modules/sales/ui/Quotes/QuoteStatus";
-import { getCompany, getCompanySettings } from "~/modules/settings";
-import { getBase64ImageFromSupabase } from "~/modules/shared";
+import {
+  getCompany,
+  getCompanySettings
+} from "~/modules/settings/settings.service.server";
+import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service.server";
 import type { action } from "~/routes/api+/sales.digital-quote.$id";
+import {
+  runWithSystemClient,
+  runWithSystemContext
+} from "~/services/mcp/index.server";
 import { path } from "~/utils/path";
 
 export const meta = () => {
@@ -98,8 +105,13 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     };
   }
 
+  // Public share page (no session). Resolve the quote first so we know the
+  // tenant companyId, then run the rest of the loader under a full system
+  // context so services reading `AuthContextHolder.get()` are satisfied.
   const serviceRole = getCarbonServiceRole();
-  const quote = await getQuoteByExternalId(serviceRole, id);
+  const quote = await runWithSystemClient(serviceRole, () =>
+    getQuoteByExternalId(id)
+  );
 
   if (quote.error) {
     return {
@@ -119,101 +131,103 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     };
   }
 
-  const [
-    company,
-    companySettings,
-    quoteLines,
-    quoteLinePrices,
-    customerDetails,
-    quotePayment,
-    quoteShipment,
-    paymentTerms,
-    terms,
-    shippingMethods,
-    opportunity
-  ] = await Promise.all([
-    getCompany(serviceRole, quote.data.companyId),
-    getCompanySettings(serviceRole, quote.data.companyId),
-    getQuoteLines(serviceRole, quote.data.id),
-    getQuoteLinePricesByQuoteId(serviceRole, quote.data.id),
-    getQuoteCustomerDetails(serviceRole, quote.data.id),
-    getQuotePayment(serviceRole, quote.data.id),
-    getQuoteShipment(serviceRole, quote.data.id),
-    getPaymentTermsList(serviceRole, quote.data.companyId),
-    getSalesTerms(serviceRole, quote.data.companyId),
-    getShippingMethodsList(serviceRole, quote.data.companyId),
-    getOpportunity(serviceRole, quote.data.opportunityId)
-  ]);
+  return runWithSystemContext(
+    { companyId: quote.data.companyId },
+    serviceRole,
+    async () => {
+      const [
+        company,
+        companySettings,
+        quoteLines,
+        quoteLinePrices,
+        customerDetails,
+        quotePayment,
+        quoteShipment,
+        paymentTerms,
+        terms,
+        shippingMethods,
+        opportunity
+      ] = await Promise.all([
+        getCompany(quote.data.companyId),
+        getCompanySettings(quote.data.companyId),
+        getQuoteLines(quote.data.id),
+        getQuoteLinePricesByQuoteId(quote.data.id),
+        getQuoteCustomerDetails(quote.data.id),
+        getQuotePayment(quote.data.id),
+        getQuoteShipment(quote.data.id),
+        getPaymentTermsList(quote.data.companyId),
+        getSalesTerms(quote.data.companyId),
+        getShippingMethodsList(quote.data.companyId),
+        getOpportunity(quote.data.opportunityId)
+      ]);
 
-  let salesOrderLines: PostgrestResponse<SalesOrderLine> | null = null;
-  if (
-    opportunity.data?.salesOrders?.length &&
-    opportunity.data.salesOrders[0]?.id
-  ) {
-    salesOrderLines = await getSalesOrderLines(
-      serviceRole,
-      opportunity.data.salesOrders[0].id
-    );
-  }
-
-  const thumbnailPaths = quoteLines.data?.reduce<Record<string, string | null>>(
-    (acc, line) => {
-      if (line.thumbnailPath) {
-        acc[line.id!] = line.thumbnailPath;
+      let salesOrderLines: PostgrestResponse<SalesOrderLine> | null = null;
+      if (
+        opportunity.data?.salesOrders?.length &&
+        opportunity.data.salesOrders[0]?.id
+      ) {
+        salesOrderLines = await getSalesOrderLines(
+          opportunity.data.salesOrders[0].id
+        );
       }
-      return acc;
-    },
-    {}
-  );
 
-  const thumbnails: Record<string, string | null> =
-    (thumbnailPaths
-      ? await Promise.all(
-          Object.entries(thumbnailPaths).map(([id, path]) => {
-            if (!path) {
-              return null;
-            }
-            return getBase64ImageFromSupabase(serviceRole, path).then(
-              (data) => ({
-                id,
-                data
+      const thumbnailPaths = quoteLines.data?.reduce<
+        Record<string, string | null>
+      >((acc, line) => {
+        if (line.thumbnailPath) {
+          acc[line.id!] = line.thumbnailPath;
+        }
+        return acc;
+      }, {});
+
+      const thumbnails: Record<string, string | null> =
+        (thumbnailPaths
+          ? await Promise.all(
+              Object.entries(thumbnailPaths).map(([id, path]) => {
+                if (!path) {
+                  return null;
+                }
+                return getBase64ImageFromSupabase(path).then((data) => ({
+                  id,
+                  data
+                }));
               })
-            );
-          })
-        )
-      : []
-    )?.reduce<Record<string, string | null>>((acc, thumbnail) => {
-      if (thumbnail) {
-        acc[thumbnail.id] = thumbnail.data;
-      }
-      return acc;
-    }, {}) ?? {};
+            )
+          : []
+        )?.reduce<Record<string, string | null>>((acc, thumbnail) => {
+          if (thumbnail) {
+            acc[thumbnail.id] = thumbnail.data;
+          }
+          return acc;
+        }, {}) ?? {};
 
-  return {
-    state: QuoteState.Valid,
-    data: {
-      quote: quote.data,
-      company: company.data,
-      companySettings: companySettings.data,
-      quoteLines:
-        quoteLines.data?.map(({ internalNotes, ...line }) => ({
-          ...line
-        })) ?? [],
-      thumbnails: thumbnails,
-      quoteLinePrices: quoteLinePrices.data,
-      customerDetails: customerDetails.data,
-      quotePayment: quotePayment.data,
-      quoteShipment: quoteShipment.data,
-      paymentTerm: paymentTerms.data?.find(
-        (term) => term.id === quotePayment.data?.paymentTermId
-      )?.name,
-      terms: terms.data?.salesTerms ?? "",
-      shippingMethod: shippingMethods.data?.find(
-        (method) => method.id === quoteShipment.data?.shippingMethodId
-      )?.name,
-      salesOrderLines: salesOrderLines?.data ?? null
+      return {
+        state: QuoteState.Valid,
+        data: {
+          quote: quote.data,
+          company: company.data,
+          companySettings: companySettings.data,
+          quoteLines:
+            quoteLines.data?.map(({ internalNotes, ...line }) => ({
+              ...line
+            })) ?? [],
+          thumbnails: thumbnails,
+          quoteLinePrices: quoteLinePrices.data,
+          customerDetails: customerDetails.data,
+          quotePayment: quotePayment.data,
+          quoteShipment: quoteShipment.data,
+          paymentTerm: paymentTerms.data?.find(
+            (term) => term.id === quotePayment.data?.paymentTermId
+          )?.name,
+          terms: terms.data?.salesTerms ?? "",
+          shippingMethod: shippingMethods.data?.find(
+            (method) => method.id === quoteShipment.data?.shippingMethodId
+          )?.name,
+          salesOrderLines: salesOrderLines?.data ?? null
+        }
+      };
     }
-  };
+  );
 }
 
 const Header = ({

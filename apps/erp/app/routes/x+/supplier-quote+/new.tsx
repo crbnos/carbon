@@ -7,12 +7,10 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { useUrlParams, useUser } from "~/hooks";
-import {
-  supplierQuoteValidator,
-  upsertSupplierQuote
-} from "~/modules/purchasing";
+import { supplierQuoteValidator } from "~/modules/purchasing";
+import { upsertSupplierQuote } from "~/modules/purchasing/purchasing.service.server";
 import { SupplierQuoteForm } from "~/modules/purchasing/ui/SupplierQuote";
-import { getNextSequence } from "~/modules/settings/settings.service";
+import { getNextSequence } from "~/modules/settings/settings.service.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -25,11 +23,13 @@ export const handle: Handle = {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
+  const { companyId, companyGroupId, userId } = await requirePermissions(
+    request,
+    {
       create: "purchasing",
       bypassRls: true
-    });
+    }
+  );
 
   const formData = await request.formData();
   const validation = await validator(supplierQuoteValidator).validate(formData);
@@ -42,11 +42,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const useNextSequence = !supplierQuoteId;
 
   if (useNextSequence) {
-    const nextSequence = await getNextSequence(
-      client,
-      "supplierQuote",
-      companyId
-    );
+    const nextSequence = await getNextSequence("supplierQuote");
     if (nextSequence.error) {
       throw redirect(
         path.to.newSupplierQuote,
@@ -61,7 +57,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (!supplierQuoteId) throw new Error("supplierQuoteId is not defined");
 
-  const createSupplierQuote = await upsertSupplierQuote(client, {
+  const createSupplierQuote = await upsertSupplierQuote({
     ...validation.data,
     supplierQuoteId,
     companyId,

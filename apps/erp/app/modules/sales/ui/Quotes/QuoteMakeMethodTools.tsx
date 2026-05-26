@@ -46,11 +46,11 @@ import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
 import { Hidden, Item, Submit, useConfigurableItems } from "~/components/Form";
 import type { Tree } from "~/components/TreeView";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import {
-  type ConfigurationParameter,
-  type ConfigurationParameterGroup,
-  getConfigurationParameters
+import type {
+  ConfigurationParameter,
+  ConfigurationParameterGroup
 } from "~/modules/items";
+import { getConfigurationParameters } from "~/modules/items/items.client";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import MakeMethodVersionStatus from "~/modules/items/ui/Item/MakeMethodVersionStatus";
 import type { MethodItemType } from "~/modules/shared/types";
@@ -131,6 +131,9 @@ const QuoteMakeMethodTools = () => {
     pathname === path.to.quoteLineMakeMethod(quoteId, lineId!, methodId);
 
   const { carbon } = useCarbon();
+  const {
+    company: { id: companyId }
+  } = useUser();
 
   const configureSelectModal = useDisclosure();
   const configuratorModal = useDisclosure();
@@ -183,9 +186,6 @@ const QuoteMakeMethodTools = () => {
     );
   };
 
-  const {
-    company: { id: companyId }
-  } = useUser();
   const [makeMethods, setMakeMethods] = useState<
     { label: JSX.Element; value: string }[]
   >([]);

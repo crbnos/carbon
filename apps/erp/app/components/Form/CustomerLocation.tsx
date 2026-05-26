@@ -5,10 +5,8 @@ import { formatAddress } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
-import type {
-  CustomerLocation as CustomerLocationType,
-  getCustomerLocations
-} from "~/modules/sales";
+import type { CustomerLocation as CustomerLocationType } from "~/modules/sales";
+import type { getCustomerLocations } from "~/modules/sales/sales.service.server";
 import CustomerLocationForm from "~/modules/sales/ui/Customer/CustomerLocationForm";
 import { path } from "~/utils/path";
 

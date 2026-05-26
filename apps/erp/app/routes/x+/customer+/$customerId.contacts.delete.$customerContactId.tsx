@@ -6,12 +6,12 @@ import type {
   ClientActionFunctionArgs
 } from "react-router";
 import { redirect } from "react-router";
-import { deleteCustomerContact } from "~/modules/sales";
+import { deleteCustomerContact } from "~/modules/sales/sales.service.server";
 import { path } from "~/utils/path";
 import { customerContactsQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "sales"
   });
 
@@ -26,7 +26,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // TODO: check whether this person has an account or is a partner first
 
   const { error: deleteCustomerContactError } = await deleteCustomerContact(
-    client,
     customerId,
     customerContactId
   );

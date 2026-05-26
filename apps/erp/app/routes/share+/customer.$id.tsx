@@ -30,19 +30,21 @@ import {
   MethodIcon,
   Table
 } from "~/components";
-import {
-  getJobOperationAttachments,
-  jobOperationStatus
-} from "~/modules/production";
+import { jobOperationStatus } from "~/modules/production";
+import { getJobOperationAttachments } from "~/modules/production/production.service.server";
 import { JobStatus } from "~/modules/production/ui/Jobs";
-import { getExternalSalesOrderLines } from "~/modules/sales/sales.service";
+import { getExternalSalesOrderLines } from "~/modules/sales/sales.service.server";
 import { SalesStatus } from "~/modules/sales/ui/SalesOrder";
-import { getCompany } from "~/modules/settings/settings.service";
+import { getCompany } from "~/modules/settings/settings.service.server";
 import { operationTypes } from "~/modules/shared";
 import {
   getBase64ImageFromSupabase,
   getCustomerPortal
-} from "~/modules/shared/shared.service";
+} from "~/modules/shared/shared.service.server";
+import {
+  runWithSystemClient,
+  runWithSystemContext
+} from "~/services/mcp/index.server";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
@@ -72,87 +74,92 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     throw new Error("Customer ID is required");
   }
 
+  // Public share page (no session). Resolve the customer portal record first
+  // (system client only) so we know the tenant companyId, then run the rest
+  // of the loader under a full system context so services reading
+  // `AuthContextHolder.get()` are satisfied.
   const serviceRole = getCarbonServiceRole();
-  const customer = await getCustomerPortal(serviceRole, id);
+  const customer = await runWithSystemClient(serviceRole, () =>
+    getCustomerPortal(id)
+  );
 
-  if (customer.error) {
+  if (customer.error || !customer.data?.customerId) {
     console.error(customer.error);
     throw new Error("Customer not found");
   }
 
-  if (!customer.data.customerId) {
-    console.error(customer.error);
-    throw new Error("Customer not found");
-  }
+  return runWithSystemContext(
+    { companyId: customer.data.companyId },
+    serviceRole,
+    async () => {
+      const url = new URL(request.url);
+      const searchParams = new URLSearchParams(url.search);
+      const search = searchParams.get("search");
+      const { limit, offset, sorts, filters } =
+        getGenericQueryFilters(searchParams);
 
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
+      const [company, salesOrderLines] = await Promise.all([
+        getCompany(customer.data!.companyId),
+        getExternalSalesOrderLines(customer.data!.customerId!, {
+          search,
+          limit,
+          offset,
+          sorts,
+          filters
+        })
+      ]);
 
-  const [company, salesOrderLines] = await Promise.all([
-    getCompany(serviceRole, customer.data.companyId),
-    getExternalSalesOrderLines(serviceRole, customer.data.customerId, {
-      search,
-      limit,
-      offset,
-      sorts,
-      filters
-    })
-  ]);
-
-  if (salesOrderLines.error) {
-    console.error(salesOrderLines.error);
-    throw new Error("Sales order lines not found");
-  }
-
-  const jobOperationIds = jobOperationValidator
-    .safeParse(salesOrderLines.data?.flatMap((line) => line.jobOperations))
-    .data?.map((operation) => operation.id);
-
-  const thumbnailPaths = salesOrderLines.data?.reduce<
-    Record<string, string | null>
-  >((acc, line) => {
-    if (line.thumbnailPath) {
-      acc[line.readableIdWithRevision] = line.thumbnailPath;
-    }
-    return acc;
-  }, {});
-
-  const [thumbnails, jobOperationAttachments] = await Promise.all([
-    (thumbnailPaths
-      ? await Promise.all(
-          Object.entries(thumbnailPaths).map(([id, path]) => {
-            if (!path) {
-              return null;
-            }
-            return getBase64ImageFromSupabase(serviceRole, path).then(
-              (data) => ({
-                id,
-                data
-              })
-            );
-          })
-        )
-      : []
-    )?.reduce<Record<string, string | null>>((acc, thumbnail) => {
-      if (thumbnail) {
-        acc[thumbnail.id] = thumbnail.data;
+      if (salesOrderLines.error) {
+        console.error(salesOrderLines.error);
+        throw new Error("Sales order lines not found");
       }
-      return acc;
-    }, {}) ?? {},
-    getJobOperationAttachments(serviceRole, jobOperationIds ?? [])
-  ]);
 
-  return {
-    customer: customer.data,
-    company: company.data,
-    salesOrderLines: salesOrderLines.data ?? [],
-    jobOperationAttachments,
-    count: salesOrderLines.count,
-    thumbnails
-  };
+      const jobOperationIds = jobOperationValidator
+        .safeParse(salesOrderLines.data?.flatMap((line) => line.jobOperations))
+        .data?.map((operation) => operation.id);
+
+      const thumbnailPaths = salesOrderLines.data?.reduce<
+        Record<string, string | null>
+      >((acc, line) => {
+        if (line.thumbnailPath) {
+          acc[line.readableIdWithRevision] = line.thumbnailPath;
+        }
+        return acc;
+      }, {});
+
+      const [thumbnails, jobOperationAttachments] = await Promise.all([
+        (thumbnailPaths
+          ? await Promise.all(
+              Object.entries(thumbnailPaths).map(([id, path]) => {
+                if (!path) {
+                  return null;
+                }
+                return getBase64ImageFromSupabase(path).then((data) => ({
+                  id,
+                  data
+                }));
+              })
+            )
+          : []
+        )?.reduce<Record<string, string | null>>((acc, thumbnail) => {
+          if (thumbnail) {
+            acc[thumbnail.id] = thumbnail.data;
+          }
+          return acc;
+        }, {}) ?? {},
+        getJobOperationAttachments(jobOperationIds ?? [])
+      ]);
+
+      return {
+        customer: customer.data,
+        company: company.data,
+        salesOrderLines: salesOrderLines.data ?? [],
+        jobOperationAttachments,
+        count: salesOrderLines.count,
+        thumbnails
+      };
+    }
+  );
 }
 
 export default function CustomerPortal() {

@@ -3,13 +3,13 @@ import type {
   ClientLoaderFunctionArgs,
   LoaderFunctionArgs
 } from "react-router";
-import { getUnitOfMeasuresList } from "~/modules/items";
+import { getUnitOfMeasuresList } from "~/modules/items/items.service.server";
 import { getCompanyId, uomsQuery } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
-  return await getUnitOfMeasuresList(client, companyId);
+  return await getUnitOfMeasuresList();
 }
 
 export async function clientLoader({ serverLoader }: ClientLoaderFunctionArgs) {

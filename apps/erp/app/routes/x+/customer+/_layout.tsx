@@ -3,7 +3,10 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Outlet } from "react-router";
-import { getCustomerStatuses, getCustomerTypes } from "~/modules/sales";
+import {
+  getCustomerStatuses,
+  getCustomerTypes
+} from "~/modules/sales/sales.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -18,7 +21,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
@@ -27,8 +30,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     customerStatuses
     // shippingTerms,
   ] = await Promise.all([
-    getCustomerTypes(client, companyId),
-    getCustomerStatuses(client, companyId)
+    getCustomerTypes(),
+    getCustomerStatuses()
 
     // getShippingTermsList(client, companyId),
   ]);

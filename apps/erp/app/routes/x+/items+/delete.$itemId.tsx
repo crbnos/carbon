@@ -3,19 +3,19 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { deleteItem } from "~/modules/items";
+import { deleteItem } from "~/modules/items/items.service.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "parts"
   });
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const deletion = await deleteItem(client, itemId);
+  const deletion = await deleteItem(itemId);
   if (deletion.error) {
     // Postgres FK violations leak schema names ("violates foreign key
     // constraint trackedEntity_itemId_fkey on table trackedEntity").

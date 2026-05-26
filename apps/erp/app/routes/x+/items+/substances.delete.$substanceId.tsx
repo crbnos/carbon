@@ -5,17 +5,20 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteMaterialSubstance, getMaterialSubstance } from "~/modules/items";
+import {
+  deleteMaterialSubstance,
+  getMaterialSubstance
+} from "~/modules/items/items.service.server";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts"
   });
   const { substanceId } = params;
   if (!substanceId) throw notFound("substanceId not found");
 
-  const materialSubstance = await getMaterialSubstance(client, substanceId);
+  const materialSubstance = await getMaterialSubstance(substanceId);
   if (materialSubstance.error) {
     throw redirect(
       path.to.materialSubstances,
@@ -30,7 +33,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "parts"
   });
 
@@ -45,10 +48,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteTypeError } = await deleteMaterialSubstance(
-    client,
-    substanceId
-  );
+  const { error: deleteTypeError } = await deleteMaterialSubstance(substanceId);
   if (deleteTypeError) {
     throw redirect(
       `${path.to.materialSubstances}?${getParams(request)}`,

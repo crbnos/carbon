@@ -4,11 +4,11 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData, useNavigate } from "react-router";
+import { moveAccountValidator } from "~/modules/accounting";
 import {
   getAccount,
-  getGroupAccounts,
-  moveAccountValidator
-} from "~/modules/accounting";
+  getGroupAccounts
+} from "~/modules/accounting/accounting.service.server";
 import { MoveAccountForm } from "~/modules/accounting/ui/ChartOfAccounts";
 import { path } from "~/utils/path";
 
@@ -22,8 +22,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!accountId) throw notFound("accountId not found");
 
   const [account, allGroupAccounts] = await Promise.all([
-    getAccount(client, accountId),
-    getGroupAccounts(client, companyGroupId)
+    getAccount(accountId),
+    getGroupAccounts(companyGroupId)
   ]);
 
   if (account.error || !account.data) {

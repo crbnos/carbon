@@ -4,7 +4,7 @@ import type { Database } from "@carbon/database";
 import { pluckUnique } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { flattenTree } from "~/components/TreeView";
-import { getMethodTree } from "~/modules/items";
+import { getMethodTree } from "~/modules/items/items.service.server";
 import type { BomOperation, WorkCenterRate } from "~/utils/bom";
 import { calculateMadePartCosts, resolveOperationRates } from "~/utils/bom";
 
@@ -36,7 +36,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Get the method tree
-  const methodTree = await getMethodTree(client, makeMethodId);
+  const methodTree = await getMethodTree(makeMethodId);
   if (methodTree.error) {
     return { success: false, message: "Failed to load method tree" };
   }

@@ -19,28 +19,30 @@ import { data, useFetcher, useParams } from "react-router";
 import { EmployeeAvatar } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import {
-  getMaintenanceDispatch,
   isMaintenanceDispatchLocked,
-  maintenanceDispatchCommentValidator,
-  upsertMaintenanceDispatchComment
+  maintenanceDispatchCommentValidator
 } from "~/modules/resources";
+import {
+  getMaintenanceDispatch,
+  upsertMaintenanceDispatchComment
+} from "~/modules/resources/resources.service.server";
 import type { MaintenanceDispatchComment } from "~/modules/resources/types";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "resources"
   });
 
   const { dispatchId } = params;
   if (!dispatchId) throw new Error("dispatchId not found");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources"
   });
-  const dispatch = await getMaintenanceDispatch(viewClient, dispatchId);
+  const dispatch = await getMaintenanceDispatch(dispatchId);
   await requireUnlocked({
     request,
     isLocked: isMaintenanceDispatchLocked(dispatch.data?.status),
@@ -57,7 +59,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const upsertComment = await upsertMaintenanceDispatchComment(client, {
+  const upsertComment = await upsertMaintenanceDispatchComment({
     ...validation.data,
     maintenanceDispatchId: dispatchId,
     createdBy: validation.data.id ? undefined : userId,

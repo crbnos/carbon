@@ -9,12 +9,14 @@ import { data, redirect, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { Receipt, ReceiptLine } from "~/modules/inventory";
 import {
-  getReceipt,
   ReceiptForm,
   ReceiptLines,
-  receiptValidator,
-  upsertReceipt
+  receiptValidator
 } from "~/modules/inventory";
+import {
+  getReceipt,
+  upsertReceipt
+} from "~/modules/inventory/inventory.service.server";
 import { SupplierInteractionNotes } from "~/modules/purchasing/ui/SupplierInteraction";
 import type { Note } from "~/modules/shared";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -22,7 +24,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "inventory"
   });
 
@@ -36,7 +38,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, ...d } = validation.data;
   if (!id) throw new Error("id not found");
 
-  const currentReceipt = await getReceipt(client, id);
+  const currentReceipt = await getReceipt(id);
   if (currentReceipt.error) {
     return data(
       {},
@@ -106,7 +108,7 @@ export async function action({ request }: ActionFunctionArgs) {
         throw new Error("Unsupported source document");
     }
   } else {
-    const updateReceipt = await upsertReceipt(client, {
+    const updateReceipt = await upsertReceipt({
       id,
       ...d,
       updatedBy: userId,

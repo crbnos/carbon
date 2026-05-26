@@ -4,15 +4,13 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import {
-  documentLabelsValidator,
-  updateDocumentLabels
-} from "~/modules/documents";
+import { documentLabelsValidator } from "~/modules/documents";
+import { updateDocumentLabels } from "~/modules/documents/documents.service.server";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     view: "documents"
   });
   const validation = await validator(documentLabelsValidator).validate(
@@ -25,7 +23,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { documentId, labels } = validation.data;
 
-  const updateLabels = await updateDocumentLabels(client, {
+  const updateLabels = await updateDocumentLabels({
     documentId,
     labels: labels ?? [],
     userId

@@ -7,7 +7,10 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData, useParams } from "react-router";
 import { PanelProvider } from "~/components/Layout";
-import { getStockTransfer, getStockTransferLines } from "~/modules/inventory";
+import {
+  getStockTransfer,
+  getStockTransferLines
+} from "~/modules/inventory/inventory.service.server";
 import StockTransferHeader from "~/modules/inventory/ui/StockTransfers/StockTransferHeader";
 import StockTransferLines from "~/modules/inventory/ui/StockTransfers/StockTransferLines";
 import StockTransferNotes from "~/modules/inventory/ui/StockTransfers/StockTransferNotes";
@@ -20,7 +23,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     view: "inventory"
   });
 
@@ -28,8 +31,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!id) throw new Error("Could not find id");
 
   const [stockTransfer, stockTransferLines] = await Promise.all([
-    getStockTransfer(client, id),
-    getStockTransferLines(client, id)
+    getStockTransfer(id),
+    getStockTransferLines(id)
   ]);
 
   if (stockTransfer.error) {

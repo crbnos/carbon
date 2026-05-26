@@ -20,10 +20,35 @@ import type { AuthSession } from "../types";
 import { path } from "../utils/path";
 import { error } from "../utils/result";
 import {
+  AuthClientScope,
+  AuthContextHolder,
+  getAuthClient,
+  type ResolvedApiKeyRecord
+} from "./auth-context.server";
+import {
   destroyAuthSession,
   flash,
-  requireAuthSession
+  requireAuthSession as requireAuthSessionOriginal
 } from "./session.server";
+
+// Per-request cache for requireAuthSession: it is called twice per request
+// (once in resolveAuthContext / middleware, once in requirePermissions) and
+// each call re-reads the cookie, re-decodes it, and may re-refresh the token.
+// WeakMap<Request, AuthSession> means the entry lives exactly as long as the
+// request object — no manual cleanup needed.
+const authSessionCache = new WeakMap<
+  Request,
+  Awaited<ReturnType<typeof requireAuthSessionOriginal>>
+>();
+
+async function requireAuthSession(request: Request) {
+  const cached = authSessionCache.get(request);
+  if (cached) return cached;
+  const session = await requireAuthSessionOriginal(request);
+  authSessionCache.set(request, session);
+  return session;
+}
+
 import { getCompaniesForUser } from "./users";
 import { getUserClaims } from "./users.server";
 
@@ -73,17 +98,6 @@ export async function getAuthAccountByAccessToken(accessToken: string) {
 export function hashApiKey(rawKey: string): string {
   return createHash("sha256").update(rawKey).digest("hex");
 }
-
-type ApiKeyRecord = {
-  id: string;
-  companyId: string;
-  companyGroupId: string;
-  createdBy: string;
-  scopes: Record<string, string[]>;
-  rateLimit: number;
-  rateLimitWindow: "1m" | "1h" | "1d";
-  expiresAt: string | null;
-};
 
 function getCompanyIdFromAPIKey(apiKey: string) {
   const serviceRole = getCarbonServiceRole();
@@ -163,6 +177,107 @@ function getEffectiveUser(
   }
 }
 
+// Identity-only resolution, extracted verbatim from requirePermissions so
+// the two CANNOT diverge (the console-mode landmine: getEffectiveUser must
+// be applied identically, or shop-floor pin-in work is mis-attributed).
+//
+// Called ONCE per request by `authContextMiddleware` to establish the
+// `AuthContextHolder` scope. It does NOT build the RLS client and does
+// NOT enforce route permissions — those stay in `requirePermissions`
+// because they depend on the route's `requiredPermissions` (e.g.
+// `bypassRls`). Returns `null` for unauthenticated requests so the
+// middleware can run `next()` without opening an identity scope (public
+// routes don't read identity).
+export interface ResolvedAuthIdentity {
+  companyId: string;
+  companyGroupId: string;
+  /** Effective user — console pin-in aware. */
+  userId: string;
+  /** Raw session/console account. */
+  sessionUserId: string;
+  email: string;
+  /** Resolved API key record — present only for API-key-authenticated requests. */
+  apiKeyRecord?: ResolvedApiKeyRecord;
+}
+
+// #4: single source for the API key. Reads the `carbon-key` header, falling
+// back to a `Authorization: Bearer <token>` when no carbon-key is present.
+// Used by BOTH resolveAuthContext (middleware) and requirePermissions so a
+// Bearer-token request (e.g. MCP) is recognised by both — previously the
+// normalization mutated the request in the MCP route only, which would now
+// be a silent break since requirePermissions reads the header itself.
+export function resolveApiKey(request: Request): string | null {
+  const carbonKey = request.headers.get("carbon-key");
+  if (carbonKey) return carbonKey;
+  const authHeader = request.headers.get("Authorization");
+  if (authHeader?.startsWith("Bearer ")) return authHeader.slice(7);
+  return null;
+}
+
+export async function resolveAuthContext(
+  request: Request
+): Promise<ResolvedAuthIdentity | null> {
+  const apiKey = resolveApiKey(request);
+
+  if (apiKey) {
+    const company = await getCompanyIdFromAPIKey(apiKey);
+    if (company.data) {
+      const apiKeyData = company.data as unknown as ResolvedApiKeyRecord;
+      // Expiry is enforced again (with the same message) by
+      // requirePermissions' API-key branch; here we only need identity. An
+      // expired key still resolves identity — the request is rejected later.
+      return {
+        companyId: apiKeyData.companyId,
+        companyGroupId: apiKeyData.companyGroupId,
+        userId: apiKeyData.createdBy,
+        sessionUserId: apiKeyData.createdBy,
+        email: "",
+        apiKeyRecord: apiKeyData
+      };
+    }
+    // Bearer token was present but is NOT a valid API key (e.g. it's a
+    // Supabase JWT from client-side code). Fall through to session auth so
+    // a request with both a session cookie AND a Bearer JWT is still
+    // authenticated by cookie — rejecting here would break session auth for
+    // all non-MCP routes.
+  }
+
+  // Session path. `requireAuthSession` throws a `redirect(/login)` Response
+  // when there is no valid session — the standard "send the user to log in"
+  // mechanism for protected routes.
+  //
+  // The auth middleware runs for EVERY route, including public ones
+  // (/login, /callback, /verify, webhooks, …). For a request to a public
+  // route that has no session, reaching this point and throwing a redirect
+  // to /login would be wrong: the user is supposed to be ON /login. The
+  // correct behavior is "no identity scope, render the page."
+  //
+  // So we catch the redirect and return `null`. The middleware sees `null`
+  // and runs `next()` without opening `AuthContextHolder`. Any later code
+  // that genuinely needs identity will fail loudly via
+  // `AuthContextHolder.get()` (fail-closed). Anything that doesn't need
+  // identity (the login page) renders normally. This is the ONLY place
+  // where a redirect is intentionally suppressed and the suppression is
+  // safe — `next()` with no scope cannot escalate privilege.
+  let authSession: Awaited<ReturnType<typeof requireAuthSession>>;
+  try {
+    authSession = await requireAuthSession(request);
+  } catch {
+    return null;
+  }
+  const { companyId, companyGroupId, email, userId } = authSession;
+  const consoleMode = authSession.console === companyId;
+  return {
+    companyId,
+    companyGroupId,
+    email,
+    // EXACT same call requirePermissions uses (line further below) — single
+    // source of truth for the effective user.
+    userId: getEffectiveUser(request, companyId, userId, consoleMode),
+    sessionUserId: userId
+  };
+}
+
 export async function requirePermissions(
   request: Request,
   requiredPermissions: {
@@ -182,15 +297,48 @@ export async function requirePermissions(
   sessionUserId: string;
   consoleMode: boolean;
 }> {
-  const apiKey = request.headers.get("carbon-key");
+  // Prefer identity from `AuthContextHolder` (set by `authContextMiddleware`
+  // at module level for protected routes). When no middleware has run (e.g.
+  // standalone routes like api+/*, file+/* that have no layout), resolve
+  // identity independently via `resolveAuthContext`. Same code paths, same
+  // getEffectiveUser call — values are identical by construction.
+  const identity =
+    AuthContextHolder.tryGet() ?? (await resolveAuthContext(request));
+  if (!identity) {
+    throw redirect(path.to.login);
+  }
+
+  // Same normalization resolveAuthContext used (Bearer → key) so a
+  // Bearer-token request takes the API-key branch here too.
+  const apiKey = resolveApiKey(request);
 
   if (apiKey) {
-    const company = await getCompanyIdFromAPIKey(apiKey);
-    if (company.data) {
-      const apiKeyData = company.data as unknown as ApiKeyRecord;
-      const companyId = apiKeyData.companyId;
-      const companyGroupId = apiKeyData.companyGroupId;
-      const userId = apiKeyData.createdBy;
+    // Read the resolved API key record from the ALS identity scope — it was
+    // fetched ONCE by resolveAuthContext (middleware). We do NOT re-fetch
+    // here, which avoids a wasteful DB round-trip AND eliminates a TOCTOU
+    // gap where the key could be deleted between the two fetches.
+    const apiKeyData = identity.apiKeyRecord;
+
+    if (!apiKeyData) {
+      // resolveAuthContext also couldn't resolve this Bearer token as an API
+      // key — it's probably a Supabase JWT. Fall through to session auth.
+    } else {
+      // Identity from the ALS scope (resolveAuthContext derived these from
+      // the same apikey). Kept as locals so the rate-limit / scope / plan
+      // checks below remain byte-identical.
+      const companyId = identity.companyId;
+      const companyGroupId = identity.companyGroupId;
+      const userId = identity.userId;
+
+      // LOW: Assert consistency — the ALS identity must match the key record.
+      if (
+        identity.companyId !== apiKeyData.companyId ||
+        identity.userId !== apiKeyData.createdBy
+      ) {
+        throw new Error(
+          "Auth context integrity violation: ALS identity differs from API key record"
+        );
+      }
 
       // Check expiration
       if (apiKeyData.expiresAt && new Date(apiKeyData.expiresAt) < new Date()) {
@@ -278,10 +426,16 @@ export async function requirePermissions(
         }
       }
 
-      const client = getCarbonAPIKeyClient(apiKey);
+      // Register the authorized client builder (deferred — built lazily on
+      // first getAuthClient()). Decision logic unchanged: api-key path always
+      // uses the api-key client. Still expose `client` in the return so the
+      // ~951 existing callers that destructure it keep working.
+      AuthClientScope.setFactory(() => getCarbonAPIKeyClient(apiKey));
 
       return {
-        client,
+        get client() {
+          return getAuthClient<SupabaseClient<Database>>();
+        },
         companyId,
         companyGroupId,
         userId,
@@ -292,25 +446,47 @@ export async function requirePermissions(
     }
   }
 
-  const { accessToken, companyId, companyGroupId, email, userId } =
-    await requireAuthSession(request);
+  // accessToken is a credential, not identity — intentionally NOT in the ALS
+  // scope. The session path still needs it to build the RLS client, so we
+  // read the session here for the token only. Identity (companyId/userId/…)
+  // comes from the ALS scope so it cannot diverge from middleware.
   const authSession = await requireAuthSession(request);
+  const accessToken = authSession.accessToken;
+  const companyId = identity.companyId;
+  const companyGroupId = identity.companyGroupId;
+  const email = identity.email;
+  // sessionUserId is the raw session user the original code passed to
+  // getUserClaims (it used the pre-getEffectiveUser session userId).
+  const sessionUserId = identity.sessionUserId;
+  // consoleMode must be derived exactly as before — it is true whenever the
+  // session is pinned to this company, INDEPENDENT of whether an operator is
+  // pinned in (no pin-in ⇒ effective userId == sessionUserId, but console
+  // mode is still on). Deriving it from userId!=sessionUserId would be wrong.
   const consoleMode = authSession.console === companyId;
 
-  const myClaims = await getUserClaims(userId, companyId);
+  const myClaims = await getUserClaims(sessionUserId, companyId);
 
   // early exit if no requiredPermissions are required
   if (Object.keys(requiredPermissions).length === 0) {
+    // Same decision, deferred into the lazy client factory. The
+    // bypassRls && employee conjunction is UNCHANGED — the sole authorized
+    // place serviceRole is chosen.
+    AuthClientScope.setFactory(() =>
+      requiredPermissions.bypassRls && myClaims.role === "employee"
+        ? getCarbonServiceRole()
+        : getCarbon(accessToken)
+    );
     return {
-      client:
-        requiredPermissions.bypassRls && myClaims.role === "employee"
-          ? getCarbonServiceRole()
-          : getCarbon(accessToken),
+      get client() {
+        return getAuthClient<SupabaseClient<Database>>();
+      },
       companyId,
       companyGroupId,
       email,
-      userId: getEffectiveUser(request, companyId, userId, consoleMode),
-      sessionUserId: userId,
+      // identity.userId is ALREADY the effective user (resolveAuthContext
+      // applied getEffectiveUser); do not re-apply it.
+      userId: identity.userId,
+      sessionUserId,
       consoleMode
     };
   }
@@ -359,16 +535,23 @@ export async function requirePermissions(
     );
   }
 
+  // Same decision (verbatim, incl. the !! at this site), deferred into the
+  // lazy factory. Unchanged conjunction; sole authorized serviceRole site.
+  AuthClientScope.setFactory(() =>
+    !!requiredPermissions.bypassRls && myClaims.role === "employee"
+      ? getCarbonServiceRole()
+      : getCarbon(accessToken)
+  );
   return {
-    client:
-      !!requiredPermissions.bypassRls && myClaims.role === "employee"
-        ? getCarbonServiceRole()
-        : getCarbon(accessToken),
+    get client() {
+      return getAuthClient<SupabaseClient<Database>>();
+    },
     companyId,
     companyGroupId,
     email,
-    userId: getEffectiveUser(request, companyId, userId, consoleMode),
-    sessionUserId: userId,
+    // identity.userId is already the effective user (see above).
+    userId: identity.userId,
+    sessionUserId,
     consoleMode
   };
 }

@@ -7,18 +7,18 @@ import { startOfWeek } from "@internationalized/date";
 import { renderAsync } from "@react-email/components";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "react-router";
-import { getPaymentTermsList } from "~/modules/accounting";
+import { getPaymentTermsList } from "~/modules/accounting/accounting.service.server";
 import {
   getCustomerContact,
   getSalesOrder,
   getSalesOrderCustomerDetails,
   getSalesOrderLines
-} from "~/modules/sales";
-import { getCompany } from "~/modules/settings";
+} from "~/modules/sales/sales.service.server";
+import { getCompany } from "~/modules/settings/settings.service.server";
 import { getUser } from "~/modules/users/users.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { stripSpecialCharacters } from "~/utils/string";
-import { upsertDocument } from "../documents/documents.service";
+import { upsertDocument } from "../documents/documents.service.server";
 import type { CustomFieldsTableType } from "../settings";
 
 export async function assign(
@@ -163,7 +163,7 @@ export async function generateAndAttachSalesOrderPdf(args: {
   }
 
   // 3. Create the document DB record
-  const documentResult = await upsertDocument(serviceRole, {
+  const documentResult = await upsertDocument({
     path: documentFilePath,
     name: fileName,
     size: Math.round(file.byteLength / 1024),
@@ -220,13 +220,13 @@ export async function sendSalesOrderEmail(args: {
     seller,
     paymentTerms
   ] = await Promise.all([
-    getCompany(serviceRole, companyId),
-    getCustomerContact(serviceRole, customerContactId),
-    getSalesOrder(serviceRole, salesOrderId),
-    getSalesOrderLines(serviceRole, salesOrderId),
-    getSalesOrderCustomerDetails(serviceRole, salesOrderId),
+    getCompany(),
+    getCustomerContact(customerContactId),
+    getSalesOrder(salesOrderId),
+    getSalesOrderLines(salesOrderId),
+    getSalesOrderCustomerDetails(salesOrderId),
     getUser(serviceRole, userId),
-    getPaymentTermsList(serviceRole, companyId)
+    getPaymentTermsList()
   ]);
 
   if (!customer?.data?.contact) {

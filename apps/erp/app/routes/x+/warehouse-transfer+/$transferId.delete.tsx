@@ -3,18 +3,18 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { deleteWarehouseTransfer } from "~/modules/inventory";
+import { deleteWarehouseTransfer } from "~/modules/inventory/inventory.service.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "inventory"
   });
 
   const { transferId } = params;
   if (!transferId) throw new Response("Not found", { status: 404 });
 
-  const result = await deleteWarehouseTransfer(client, transferId);
+  const result = await deleteWarehouseTransfer(transferId);
 
   if (result.error) {
     throw redirect(

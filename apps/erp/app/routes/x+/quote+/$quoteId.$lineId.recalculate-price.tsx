@@ -3,14 +3,14 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
-import { upsertQuoteLinePrices } from "~/modules/sales";
+import { upsertQuoteLinePrices } from "~/modules/sales/sales.service.server";
 
 const numberArrayValidator = z.array(z.number());
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
 
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "sales"
   });
 
@@ -78,7 +78,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   const insertLinePrices = await upsertQuoteLinePrices(
-    client,
     quoteId,
     lineId,
     inserts

@@ -3,15 +3,15 @@ import type {
   ClientLoaderFunctionArgs,
   LoaderFunctionArgs
 } from "react-router";
-import { getProceduresList } from "~/modules/production";
+import { getProceduresList } from "~/modules/production/production.service.server";
 import { getCompanyId, proceduresQuery } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "production"
   });
 
-  return await getProceduresList(client, companyId);
+  return await getProceduresList();
 }
 
 export async function clientLoader({ serverLoader }: ClientLoaderFunctionArgs) {

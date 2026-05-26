@@ -8,10 +8,8 @@ import type {
   LoaderFunctionArgs
 } from "react-router";
 import { data, redirect, useNavigate } from "react-router";
-import {
-  supplierTypeValidator,
-  upsertSupplierType
-} from "~/modules/purchasing";
+import { supplierTypeValidator } from "~/modules/purchasing";
+import { upsertSupplierType } from "~/modules/purchasing/purchasing.service.server";
 import { SupplierTypeForm } from "~/modules/purchasing/ui/SupplierTypes";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
@@ -27,7 +25,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "purchasing"
   });
 
@@ -43,7 +41,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const insertSupplierType = await upsertSupplierType(client, {
+  const insertSupplierType = await upsertSupplierType({
     ...d,
     companyId,
     createdBy: userId,

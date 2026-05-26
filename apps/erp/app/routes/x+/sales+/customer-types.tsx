@@ -3,7 +3,7 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, useLoaderData } from "react-router";
-import { getCustomerTypes } from "~/modules/sales";
+import { getCustomerTypes } from "~/modules/sales/sales.service.server";
 import { CustomerTypesTable } from "~/modules/sales/ui/CustomerTypes";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -15,7 +15,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales",
     role: "employee"
   });
@@ -26,7 +26,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  return await getCustomerTypes(client, companyId, {
+  return await getCustomerTypes({
     search,
     limit,
     offset,

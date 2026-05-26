@@ -1,10 +1,10 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { insertTag } from "~/modules/shared";
+import { insertTag } from "~/modules/shared/shared.service.server";
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { companyId, userId } = await requirePermissions(request, {});
 
   const formData = await request.formData();
   const name = formData.get("name");
@@ -17,7 +17,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const tag = await insertTag(client, {
+  const tag = await insertTag({
     name,
     table,
     companyId,

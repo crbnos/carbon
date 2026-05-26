@@ -13,8 +13,9 @@ import { parseAcceptLanguage } from "intl-parse-accept-language";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { getPaymentTermsList } from "~/modules/accounting";
-import { upsertDocument } from "~/modules/documents";
+import { getPaymentTermsList } from "~/modules/accounting/accounting.service.server";
+import { upsertDocument } from "~/modules/documents/documents.service.server";
+import { purchaseOrderApprovalValidator } from "~/modules/purchasing";
 import {
   getPurchaseOrder,
   getPurchaseOrderDelivery,
@@ -23,22 +24,24 @@ import {
   getSupplier,
   getSupplierContact,
   getSupplierInteraction,
-  getSupplierInteractionDocuments,
-  purchaseOrderApprovalValidator
-} from "~/modules/purchasing";
+  getSupplierInteractionDocuments
+} from "~/modules/purchasing/purchasing.service.server";
 import {
   PurchaseOrderExplorer,
   PurchaseOrderHeader,
   PurchaseOrderProperties
 } from "~/modules/purchasing/ui/PurchaseOrder";
-import { getCompany, getCompanySettings } from "~/modules/settings";
+import {
+  getCompany,
+  getCompanySettings
+} from "~/modules/settings/settings.service.server";
 import {
   approveRequest,
   canApproveRequest,
   canCancelRequest,
   getLatestApprovalRequestForDocument,
   rejectRequest
-} from "~/modules/shared";
+} from "~/modules/shared/shared.service.server";
 import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/purchase-order+/$orderId[.]pdf";
 import { getDatabaseClient } from "~/services/database.server";
@@ -55,7 +58,7 @@ export const handle: Handle = {
 export async function action(args: ActionFunctionArgs) {
   const { request, params } = args;
   assertIsPost(request);
-  const { userId, companyId } = await requirePermissions(request, {
+  const { client, userId, companyId } = await requirePermissions(request, {
     update: "purchasing"
   });
 
@@ -82,7 +85,6 @@ export async function action(args: ActionFunctionArgs) {
 
   // Verify user can approve this request
   const approvalRequest = await getLatestApprovalRequestForDocument(
-    serviceRole,
     "purchaseOrder",
     orderId
   );
@@ -94,15 +96,11 @@ export async function action(args: ActionFunctionArgs) {
     );
   }
 
-  const canApproveResult = await canApproveRequest(
-    serviceRole,
-    {
-      amount: approvalRequest.data.amount,
-      documentType: approvalRequest.data.documentType,
-      companyId: approvalRequest.data.companyId
-    },
-    userId
-  );
+  const canApproveResult = await canApproveRequest({
+    amount: approvalRequest.data.amount,
+    documentType: approvalRequest.data.documentType,
+    companyId: approvalRequest.data.companyId
+  });
 
   if (!canApproveResult) {
     throw redirect(
@@ -118,8 +116,8 @@ export async function action(args: ActionFunctionArgs) {
   const db = getDatabaseClient();
   const result =
     decision === "Approved"
-      ? await approveRequest(db, approvalRequestId, userId)
-      : await rejectRequest(db, approvalRequestId, userId);
+      ? await approveRequest(db, approvalRequestId)
+      : await rejectRequest(db, approvalRequestId);
 
   if (result.error) {
     throw redirect(
@@ -155,7 +153,7 @@ export async function action(args: ActionFunctionArgs) {
 
   // If approved, handle post-approval tasks: PDF generation, document creation, email, price updates
   if (decision === "Approved") {
-    const purchaseOrder = await getPurchaseOrder(serviceRole, orderId);
+    const purchaseOrder = await getPurchaseOrder(orderId);
     if (purchaseOrder.data) {
       let fileName: string | undefined;
       let documentFilePath: string | undefined;
@@ -182,7 +180,7 @@ export async function action(args: ActionFunctionArgs) {
             });
 
           if (!documentFileUpload.error) {
-            await upsertDocument(serviceRole, {
+            await upsertDocument({
               path: documentFilePath,
               name: fileName,
               size: Math.round(file.byteLength / 1024),
@@ -221,12 +219,12 @@ export async function action(args: ActionFunctionArgs) {
             paymentTerms,
             buyer
           ] = await Promise.all([
-            getCompany(serviceRole, companyId),
-            getSupplierContact(serviceRole, supplierContact),
-            getPurchaseOrderLines(serviceRole, orderId),
-            getPurchaseOrderLocations(serviceRole, orderId),
-            getPaymentTermsList(serviceRole, companyId),
-            getUser(serviceRole, userId)
+            getCompany(),
+            getSupplierContact(supplierContact),
+            getPurchaseOrderLines(orderId),
+            getPurchaseOrderLocations(orderId),
+            getPaymentTermsList(),
+            getUser(client, userId)
           ]);
 
           const supplierEmail = supplier?.data?.contact?.email;
@@ -288,7 +286,7 @@ export async function action(args: ActionFunctionArgs) {
       }
 
       // Check if we should update prices on purchase order approval
-      const companySettings = await getCompanySettings(serviceRole, companyId);
+      const companySettings = await getCompanySettings();
       if (
         companySettings.data?.purchasePriceUpdateTiming ===
         "Purchase Order Finalize"
@@ -326,7 +324,7 @@ export async function action(args: ActionFunctionArgs) {
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     view: "purchasing",
     bypassRls: true
   });
@@ -335,9 +333,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!orderId) throw new Error("Could not find orderId");
 
   const [purchaseOrder, lines, purchaseOrderDelivery] = await Promise.all([
-    getPurchaseOrder(client, orderId),
-    getPurchaseOrderLines(client, orderId),
-    getPurchaseOrderDelivery(client, orderId)
+    getPurchaseOrder(orderId),
+    getPurchaseOrderLines(orderId),
+    getPurchaseOrderDelivery(orderId)
   ]);
 
   if (purchaseOrder.data?.companyId !== companyId) {
@@ -364,22 +362,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw redirect(path.to.purchaseOrders);
   }
 
-  const serviceRole = getCarbonServiceRole();
   const [supplier, interaction, approvalRequest, companySettings] =
     await Promise.all([
       purchaseOrder.data?.supplierId
-        ? getSupplier(client, purchaseOrder.data.supplierId)
+        ? getSupplier(purchaseOrder.data.supplierId)
         : null,
-      getSupplierInteraction(client, purchaseOrder.data.supplierInteractionId),
+      getSupplierInteraction(purchaseOrder.data.supplierInteractionId),
       // Only fetch approval request if status is "Needs Approval"
       purchaseOrder.data?.status === "Needs Approval"
-        ? getLatestApprovalRequestForDocument(
-            serviceRole,
-            "purchaseOrder",
-            orderId
-          )
+        ? getLatestApprovalRequestForDocument("purchaseOrder", orderId)
         : Promise.resolve({ data: null, error: null }),
-      getCompanySettings(serviceRole, companyId)
+      getCompanySettings()
     ]);
 
   const defaultCc = supplier?.data?.defaultCc?.length
@@ -400,15 +393,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const requestedBy = approvalRequest.data.requestedBy;
     const status = approvalRequest.data.status;
 
-    canApprove = await canApproveRequest(
-      serviceRole,
-      {
-        amount: approvalRequest.data.amount,
-        documentType: approvalRequest.data.documentType,
-        companyId: approvalRequest.data.companyId
-      },
-      userId
-    );
+    canApprove = await canApproveRequest({
+      amount: approvalRequest.data.amount,
+      documentType: approvalRequest.data.documentType,
+      companyId: approvalRequest.data.companyId
+    });
 
     // Check if user can reopen: must be requester OR approver
     const isRequester = canCancelRequest(
@@ -431,8 +420,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     purchaseOrderDelivery: purchaseOrderDelivery.data,
     lines: lines.data ?? [],
     files: getSupplierInteractionDocuments(
-      client,
-      companyId,
       purchaseOrder.data.supplierInteractionId!
     ),
     interaction: interaction?.data,

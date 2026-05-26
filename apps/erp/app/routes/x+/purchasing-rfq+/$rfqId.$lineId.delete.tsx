@@ -2,20 +2,20 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { type ActionFunctionArgs, redirect } from "react-router";
+import { isRfqLocked } from "~/modules/purchasing";
 import {
   deletePurchasingRFQLine,
-  getPurchasingRFQ,
-  isRfqLocked
-} from "~/modules/purchasing";
+  getPurchasingRFQ
+} from "~/modules/purchasing/purchasing.service.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "purchasing"
   });
 
@@ -27,7 +27,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error("lineId not found");
   }
 
-  const rfq = await getPurchasingRFQ(viewClient, rfqId);
+  const rfq = await getPurchasingRFQ(rfqId);
   await requireUnlocked({
     request,
     isLocked: isRfqLocked(rfq.data?.status),
@@ -35,7 +35,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked RFQ. Reopen it first."
   });
 
-  const deleteLine = await deletePurchasingRFQLine(client, lineId);
+  const deleteLine = await deletePurchasingRFQLine(lineId);
   if (deleteLine.error) {
     throw redirect(
       path.to.purchasingRfqLine(rfqId, lineId),

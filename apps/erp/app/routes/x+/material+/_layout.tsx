@@ -6,8 +6,8 @@ import {
   getMaterialFormsList,
   getMaterialSubstancesList,
   getUnitOfMeasuresList
-} from "~/modules/items";
-import { getLocationsList } from "~/modules/resources";
+} from "~/modules/items/items.service.server";
+import { getLocationsList } from "~/modules/resources/resources.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -22,15 +22,15 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts"
   });
 
   const [unitOfMeasures, locations, forms, substances] = await Promise.all([
-    getUnitOfMeasuresList(client, companyId),
-    getLocationsList(client, companyId),
-    getMaterialFormsList(client, companyId),
-    getMaterialSubstancesList(client, companyId)
+    getUnitOfMeasuresList(),
+    getLocationsList(),
+    getMaterialFormsList(),
+    getMaterialSubstancesList()
   ]);
 
   return {

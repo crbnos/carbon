@@ -5,7 +5,8 @@ import { validationError, validator } from "@carbon/form";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
-import { consumableValidator, upsertConsumable } from "~/modules/items";
+import { consumableValidator } from "~/modules/items";
+import { upsertConsumable } from "~/modules/items/items.service.server";
 import { ConsumableForm } from "~/modules/items/ui/Consumables";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
@@ -19,7 +20,7 @@ export const handle: Handle = {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "parts"
   });
 
@@ -32,7 +33,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const createConsumable = await upsertConsumable(client, {
+  const createConsumable = await upsertConsumable({
     ...validation.data,
     companyId,
     customFields: setCustomFields(formData),

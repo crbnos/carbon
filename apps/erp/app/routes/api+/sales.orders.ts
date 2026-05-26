@@ -1,11 +1,11 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getSalesOrdersList } from "~/modules/sales";
+import { getSalesOrdersList } from "~/modules/sales/sales.service.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
-  return await getSalesOrdersList(client, companyId);
+  return await getSalesOrdersList();
 }

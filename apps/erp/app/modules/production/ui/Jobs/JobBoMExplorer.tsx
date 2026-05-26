@@ -47,7 +47,7 @@ import { useIntegrations } from "~/hooks/useIntegrations";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import { generateBomIds } from "~/utils/bom";
 import { path } from "~/utils/path";
-import type { JobMethod } from "../../production.service";
+import type { JobMethod } from "../../production.service.server";
 
 type JobBoMExplorerProps = {
   method: FlatTree<JobMethod>;

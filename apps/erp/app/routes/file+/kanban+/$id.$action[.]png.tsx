@@ -2,11 +2,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { generateQRCodeBuffer } from "@carbon/documents/qr";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getKanban } from "~/modules/inventory/inventory.service";
+import { getKanban } from "~/modules/inventory/inventory.service.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "inventory"
   });
 
@@ -17,7 +17,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Error("Invalid kanban action");
   }
 
-  const kanban = await getKanban(client, id);
+  const kanban = await getKanban(id);
 
   if (kanban.error) {
     return data({ error: "Unauthorized" }, { status: 401 });

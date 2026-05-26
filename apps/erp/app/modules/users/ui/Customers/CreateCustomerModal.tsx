@@ -20,10 +20,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useFetcher, useNavigate } from "react-router";
 import { Customer, Submit } from "~/components/Form";
 import { useUrlParams } from "~/hooks";
-import type {
-  CustomerContact as CustomerContactType,
-  getCustomerContacts
-} from "~/modules/sales";
+import type { CustomerContact as CustomerContactType } from "~/modules/sales";
+import type { getCustomerContacts } from "~/modules/sales/sales.service.server";
 import { createCustomerAccountValidator } from "~/modules/users";
 import type { Result } from "~/types";
 import { path } from "~/utils/path";

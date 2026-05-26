@@ -5,7 +5,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import type { FlatTreeItem } from "~/components/TreeView";
 import { flattenTree } from "~/components/TreeView";
 import type { Method } from "~/modules/items";
-import { getMethodTree } from "~/modules/items";
+import { getMethodTree } from "~/modules/items/items.service.server";
 import type { BomOperation, WorkCenterRate } from "~/utils/bom";
 import {
   calculateMadePartCosts,
@@ -27,7 +27,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     return { data: [], error: null };
   }
 
-  const methodTree = await getMethodTree(client, id);
+  const methodTree = await getMethodTree(id);
   if (methodTree.error) {
     return { data: [], error: methodTree.error };
   }

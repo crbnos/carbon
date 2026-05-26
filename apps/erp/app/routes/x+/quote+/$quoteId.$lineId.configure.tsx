@@ -4,13 +4,13 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { getSupplierPriceBreaksForItems } from "~/modules/items";
-import { upsertQuoteLineMethod } from "~/modules/sales/sales.service";
-import { lookupBuyPriceFromMap } from "~/modules/shared";
+import { getSupplierPriceBreaksForItems } from "~/modules/items/items.service.server";
+import { upsertQuoteLineMethod } from "~/modules/sales/sales.service.server";
+import { lookupBuyPriceFromMap } from "~/modules/shared/shared.service.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { client, userId } = await requirePermissions(request, {
     update: "production",
     role: "employee"
   });
@@ -48,13 +48,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
 
     const serviceRole = await getCarbonServiceRole();
-    const upsertMethod = await upsertQuoteLineMethod(serviceRole, {
+    const upsertMethod = await upsertQuoteLineMethod({
       quoteId,
       quoteLineId: lineId,
       itemId: quoteLine.data.itemId,
-      configuration,
-      companyId,
-      userId
+      configuration
     });
 
     if (upsertMethod.error) {
@@ -74,10 +72,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const buyItemIds = [
       ...new Set((buyMaterials.data ?? []).map((m) => m.itemId))
     ];
-    const priceMap = await getSupplierPriceBreaksForItems(
-      serviceRole,
-      buyItemIds
-    );
+    const priceMap = await getSupplierPriceBreaksForItems(buyItemIds);
 
     for (const mat of buyMaterials.data ?? []) {
       const price = lookupBuyPriceFromMap(

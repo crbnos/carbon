@@ -4,12 +4,12 @@ import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { upsertQuoteOperationTool } from "~/modules/sales";
+import { upsertQuoteOperationTool } from "~/modules/sales/sales.service.server";
 import { operationToolValidator } from "~/modules/shared";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "sales"
   });
 
@@ -27,7 +27,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id: _id, ...d } = validation.data;
 
-  const update = await upsertQuoteOperationTool(client, {
+  const update = await upsertQuoteOperationTool({
     id,
     ...d,
     companyId,

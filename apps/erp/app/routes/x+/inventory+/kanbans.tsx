@@ -5,10 +5,10 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
-import { getKanbans } from "~/modules/inventory";
+import { getKanbans } from "~/modules/inventory/inventory.service.server";
 import KanbansTable from "~/modules/inventory/ui/Kanbans/KanbansTable";
-import { getLocationsList } from "~/modules/resources";
-import { getKanbanOutputSetting } from "~/modules/settings";
+import { getLocationsList } from "~/modules/resources/resources.service.server";
+import { getKanbanOutputSetting } from "~/modules/settings/settings.service.server";
 import { getUserDefaults } from "~/modules/users/users.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -51,7 +51,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await getLocationsList();
     if (locations.error || !locations.data?.length) {
       throw redirect(
         path.to.kanbans,
@@ -65,14 +65,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const [kanbans, kanbanOutput] = await Promise.all([
-    getKanbans(client, locationId, companyId, {
+    getKanbans(locationId, {
       search,
       limit,
       offset,
       sorts,
       filters
     }),
-    getKanbanOutputSetting(client, companyId)
+    getKanbanOutputSetting()
   ]);
 
   if (kanbans.error) {

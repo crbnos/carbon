@@ -8,20 +8,22 @@ import type { CompanyPermission } from "~/modules/users";
 import {
   EmployeeTypeForm,
   employeeTypePermissionsValidator,
-  employeeTypeValidator,
+  employeeTypeValidator
+} from "~/modules/users";
+import { makeEmptyPermissionsFromModules } from "~/modules/users/users.server";
+import {
   getModules,
   insertEmployeeType,
   upsertEmployeeTypePermissions
-} from "~/modules/users";
-import { makeEmptyPermissionsFromModules } from "~/modules/users/users.server";
+} from "~/modules/users/users.service.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "users"
   });
 
-  const modules = await getModules(client);
+  const modules = await getModules();
   if (modules.error || modules.data === null) {
     throw redirect(
       path.to.employeeTypes,
@@ -36,7 +38,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "users"
   });
 
@@ -66,9 +68,8 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const createEmployeeType = await insertEmployeeType(client, {
-    name,
-    companyId
+  const createEmployeeType = await insertEmployeeType({
+    name
   });
   if (createEmployeeType.error) {
     return data(
@@ -91,9 +92,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
   const insertEmployeeTypePermissions = await upsertEmployeeTypePermissions(
-    client,
     employeeTypeId,
-    companyId,
     permissions
   );
 

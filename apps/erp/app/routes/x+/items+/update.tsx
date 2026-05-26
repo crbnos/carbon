@@ -4,8 +4,8 @@ import { getMaterialDescription, getMaterialId } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import type { InventoryItemType } from "~/modules/items";
 
-import { cascadeItemTrackingType } from "~/modules/items/items.service";
-import { getCompanySettings } from "~/modules/settings";
+import { cascadeItemTrackingType } from "~/modules/items/items.service.server";
+import { getCompanySettings } from "~/modules/settings/settings.service.server";
 import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -110,7 +110,7 @@ export async function action({ request }: ActionFunctionArgs) {
     case "materialFormId":
     case "materialSubstanceId":
     case "materialTypeId":
-      const settings = await getCompanySettings(client, companyId);
+      const settings = await getCompanySettings();
 
       if (settings.data?.materialGeneratedIds) {
         let name = "";

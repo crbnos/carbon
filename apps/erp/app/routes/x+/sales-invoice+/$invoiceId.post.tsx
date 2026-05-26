@@ -7,16 +7,17 @@ import { trigger } from "@carbon/jobs";
 import { renderAsync } from "@react-email/components";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
 import type { ActionFunctionArgs } from "react-router";
-import { getPaymentTermsList } from "~/modules/accounting";
-import { upsertDocument } from "~/modules/documents";
+import { getPaymentTermsList } from "~/modules/accounting/accounting.service.server";
+import { upsertDocument } from "~/modules/documents/documents.service.server";
 import {
   getSalesInvoice,
   getSalesInvoiceCustomerDetails,
   getSalesInvoiceLines,
   getSalesInvoiceShipment
-} from "~/modules/invoicing";
-import { getCustomerContact, salesConfirmValidator } from "~/modules/sales";
-import { getCompany } from "~/modules/settings";
+} from "~/modules/invoicing/invoicing.service.server";
+import { salesConfirmValidator } from "~/modules/sales";
+import { getCustomerContact } from "~/modules/sales/sales.service.server";
+import { getCompany } from "~/modules/settings/settings.service.server";
 import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/sales-invoice+/$id[.]pdf";
 import { stripSpecialCharacters } from "~/utils/string";
@@ -98,7 +99,7 @@ export async function action(args: ActionFunctionArgs) {
     };
   }
 
-  const salesInvoice = await getSalesInvoice(serviceRole, invoiceId);
+  const salesInvoice = await getSalesInvoice(invoiceId);
   if (salesInvoice.error) {
     return {
       success: false,
@@ -155,7 +156,7 @@ export async function action(args: ActionFunctionArgs) {
       };
     }
 
-    const createDocument = await upsertDocument(serviceRole, {
+    const createDocument = await upsertDocument({
       path: documentFilePath,
       name: fileName,
       size: Math.round(file.byteLength / 1024),
@@ -214,14 +215,14 @@ export async function action(args: ActionFunctionArgs) {
           seller,
           paymentTerms
         ] = await Promise.all([
-          getCompany(serviceRole, companyId),
-          getCustomerContact(serviceRole, customerContact),
-          getSalesInvoice(serviceRole, invoiceId),
-          getSalesInvoiceLines(serviceRole, invoiceId),
-          getSalesInvoiceCustomerDetails(serviceRole, invoiceId),
-          getSalesInvoiceShipment(serviceRole, invoiceId),
-          getUser(serviceRole, userId),
-          getPaymentTermsList(serviceRole, companyId)
+          getCompany(),
+          getCustomerContact(customerContact),
+          getSalesInvoice(invoiceId),
+          getSalesInvoiceLines(invoiceId),
+          getSalesInvoiceCustomerDetails(invoiceId),
+          getSalesInvoiceShipment(invoiceId),
+          getUser(client, userId),
+          getPaymentTermsList()
         ]);
 
         if (!customer?.data?.contact) {

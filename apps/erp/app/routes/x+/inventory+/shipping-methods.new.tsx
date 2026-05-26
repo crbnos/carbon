@@ -11,9 +11,9 @@ import { data, redirect, useNavigate } from "react-router";
 import type { ShippingCarrier } from "~/modules/inventory";
 import {
   ShippingMethodForm,
-  shippingMethodValidator,
-  upsertShippingMethod
+  shippingMethodValidator
 } from "~/modules/inventory";
+import { upsertShippingMethod } from "~/modules/inventory/inventory.service.server";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 import { getCompanyId, shippingMethodsQuery } from "~/utils/react-query";
@@ -28,7 +28,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "inventory"
   });
 
@@ -46,7 +46,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...rest } = validation.data;
 
-  const insertShippingMethod = await upsertShippingMethod(client, {
+  const insertShippingMethod = await upsertShippingMethod({
     ...rest,
     companyId,
     createdBy: userId,

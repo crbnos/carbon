@@ -4,15 +4,13 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import {
-  trackedEntityExpiryValidator,
-  updateTrackedEntityExpiry
-} from "~/modules/inventory";
+import { trackedEntityExpiryValidator } from "~/modules/inventory";
+import { updateTrackedEntityExpiry } from "~/modules/inventory/inventory.service.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "inventory"
   });
 
@@ -24,12 +22,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { trackedEntityId, expirationDate, reason } = validation.data;
 
-  const result = await updateTrackedEntityExpiry(client, {
+  const result = await updateTrackedEntityExpiry({
     trackedEntityId,
     expirationDate:
       expirationDate && expirationDate.length > 0 ? expirationDate : null,
-    reason,
-    userId
+    reason
   });
 
   if (result.error) {

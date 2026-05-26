@@ -7,7 +7,7 @@ import {
   getFailureModesList,
   getLocationsList,
   getMaintenanceDispatchesByLocation
-} from "~/modules/resources";
+} from "~/modules/resources/resources.service.server";
 import MaintenanceDispatchesTable from "~/modules/resources/ui/Maintenance/MaintenanceDispatchesTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -19,7 +19,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources",
     role: "employee"
   });
@@ -32,7 +32,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const locations = await getLocationsList(client, companyId);
+  const locations = await getLocationsList();
   const locationsList = locations.data ?? [];
 
   // Default to first location if none specified
@@ -49,7 +49,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const [dispatches, failureModes] = await Promise.all([
-    getMaintenanceDispatchesByLocation(client, companyId, selectedLocationId, {
+    getMaintenanceDispatchesByLocation(selectedLocationId, {
       search,
       status,
       limit,
@@ -57,7 +57,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       sorts,
       filters
     }),
-    getFailureModesList(client, companyId)
+    getFailureModesList()
   ]);
 
   return {

@@ -8,7 +8,7 @@ import {
   getCompaniesInGroup,
   getJournalEntry,
   getJournalLineDimensions
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -18,20 +18,17 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      view: "accounting"
-    }
-  );
+  const { companyId, companyGroupId } = await requirePermissions(request, {
+    view: "accounting"
+  });
 
   const { journalEntryId } = params;
   if (!journalEntryId) throw new Error("Could not find journalEntryId");
 
   const [journalEntry, companies, dimensions] = await Promise.all([
-    getJournalEntry(client, journalEntryId),
-    getCompaniesInGroup(client, companyGroupId),
-    getActiveDimensionsWithValues(client, companyGroupId, companyId)
+    getJournalEntry(journalEntryId),
+    getCompaniesInGroup(companyGroupId),
+    getActiveDimensionsWithValues(companyGroupId)
   ]);
 
   if (journalEntry.error) {
@@ -49,7 +46,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const journalLineIds = (journalEntry.data.journalLine ?? []).map((l) => l.id);
-  const lineDimensions = await getJournalLineDimensions(client, journalLineIds);
+  const lineDimensions = await getJournalLineDimensions(journalLineIds);
 
   return {
     journalEntry: journalEntry.data,

@@ -10,7 +10,7 @@ import type {
   getHolidays,
   getPeople,
   getShifts
-} from "./people.service";
+} from "./people.service.server";
 
 export type Attribute = NonNullable<
   Awaited<ReturnType<typeof getAttribute>>["data"]

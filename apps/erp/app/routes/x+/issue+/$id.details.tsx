@@ -11,14 +11,13 @@ import { Await, redirect, useLoaderData, useParams } from "react-router";
 import { DeferredFiles, Documents } from "~/components";
 import { useRouteData } from "~/hooks";
 import type { IssueAssociationNode } from "~/modules/quality";
+import { isIssueLocked, issueValidator } from "~/modules/quality";
 import {
   getIssue,
   getIssueActionTasks,
   getIssueReviewers,
-  isIssueLocked,
-  issueValidator,
   upsertIssue
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service.server";
 import {
   ActionTasksList,
   AssociatedItemsList,
@@ -31,7 +30,7 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client } = await requirePermissions(request, {
     view: "quality",
     bypassRls: true
   });
@@ -51,24 +50,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     nonConformance: nonConformance.data,
-    actionTasks: getIssueActionTasks(client, id, companyId),
-    reviewers: getIssueReviewers(client, id, companyId)
+    actionTasks: getIssueActionTasks(id),
+    reviewers: getIssueReviewers(id)
   };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "quality"
   });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "quality"
   });
-  const issue = await getIssue(viewClient, id);
+  const issue = await getIssue(id);
   await requireUnlocked({
     request,
     isLocked: isIssueLocked(issue.data?.status),
@@ -92,7 +91,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error("Could not find issue id");
   }
 
-  const updateIssue = await upsertIssue(client, {
+  const updateIssue = await upsertIssue({
     ...validation.data,
     id: id,
     nonConformanceId: nonConformanceId,

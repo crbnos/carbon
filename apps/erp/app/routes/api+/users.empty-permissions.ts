@@ -3,16 +3,16 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getModules } from "~/modules/users";
 import { makeEmptyPermissionsFromModules } from "~/modules/users/users.server";
+import { getModules } from "~/modules/users/users.service.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "users",
     role: "employee"
   });
 
-  const modules = await getModules(client);
+  const modules = await getModules();
   if (modules.error || modules.data === null) {
     return data(
       {

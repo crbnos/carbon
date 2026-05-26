@@ -2,7 +2,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { flattenTree } from "~/components/TreeView";
 import type { JobOperation } from "~/modules/production";
-import { getJobMethodTree } from "~/modules/production";
+import { getJobMethodTree } from "~/modules/production/production.service.server";
 import type { BomOperation } from "~/utils/bom";
 import {
   calculateMadePartCosts,
@@ -64,7 +64,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     });
   }
 
-  const methodTree = await getJobMethodTree(client, id);
+  const methodTree = await getJobMethodTree(id);
   if (methodTree.error) {
     return new Response(headers, {
       headers: {
@@ -177,7 +177,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       node.data.itemReadableId
     },"${node.data.description?.replace(/"/g, '""')}",${
       node.data.quantity
-    },${total},${unitCost},${totalCost},,${node.data.methodType},${
+    },${total},${unitCost},${totalCost},${node.data.methodType},${
       node.data.itemType
     },${node.level},${node.data.version || ""}\n`;
 

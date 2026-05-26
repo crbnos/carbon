@@ -1,23 +1,22 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
 import { useUrlParams } from "~/hooks";
 import { ApprovalRuleForm } from "~/modules/settings";
+import { approvalRuleValidator } from "~/modules/shared";
 import {
-  approvalRuleValidator,
   getApprovalRuleById,
   getApprovalRules,
   upsertApprovalRule
-} from "~/modules/shared";
+} from "~/modules/shared/shared.service.server";
 
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "settings",
     role: "employee"
   });
@@ -25,7 +24,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Rule ID is required");
 
-  const rule = await getApprovalRuleById(client, id, companyId);
+  const rule = await getApprovalRuleById(id);
 
   if (rule.error) {
     throw redirect(
@@ -49,12 +48,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
 
-  const { companyId, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "settings",
     role: "employee"
   });
 
-  const serviceRole = getCarbonServiceRole();
   const { id } = params;
   if (!id) throw new Error("Rule ID is required");
 
@@ -66,7 +64,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Get existing rule to check permissions
-  const rules = await getApprovalRules(serviceRole, companyId);
+  const rules = await getApprovalRules();
   const existingRule = rules.data?.find((r) => r.id === id);
 
   if (!existingRule) {
@@ -92,7 +90,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
-  const result = await upsertApprovalRule(serviceRole, {
+  const result = await upsertApprovalRule({
     id,
     updatedBy: userId,
     documentType: validation.data.documentType,

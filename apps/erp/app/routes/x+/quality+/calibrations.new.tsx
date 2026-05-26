@@ -9,18 +9,18 @@ import { nanoid } from "nanoid";
 import { useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
+import { gaugeCalibrationRecordValidator } from "~/modules/quality";
 import {
-  gaugeCalibrationRecordValidator,
   getQualityFiles,
   upsertGaugeCalibrationRecord
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service.server";
 import GaugeCalibrationRecordForm from "~/modules/quality/ui/Calibrations/GaugeCalibrationRecordForm";
 
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "quality"
   });
 
@@ -32,7 +32,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return {
       id,
       gaugeId,
-      files: await getQualityFiles(client, id, companyId)
+      files: await getQualityFiles(id)
     };
   }
 
@@ -45,7 +45,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "quality"
   });
 
@@ -65,7 +65,7 @@ export async function action({ request }: ActionFunctionArgs) {
       ? "Fail"
       : "Pass";
 
-  const createGauge = await upsertGaugeCalibrationRecord(client, {
+  const createGauge = await upsertGaugeCalibrationRecord({
     ...d,
     inspectionStatus,
     companyId,

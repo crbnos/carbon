@@ -4,7 +4,7 @@ import { LuCirclePlus } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, useFetcher, useLoaderData } from "react-router";
 import { usePermissions } from "~/hooks";
-import { getJournalEntries } from "~/modules/accounting";
+import { getJournalEntries } from "~/modules/accounting/accounting.service.server";
 import { JournalEntriesTable } from "~/modules/accounting/ui/JournalEntries";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -16,7 +16,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "accounting",
     role: "employee"
   });
@@ -28,7 +28,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const entries = await getJournalEntries(client, companyId, {
+  const entries = await getJournalEntries({
     search,
     status,
     limit,

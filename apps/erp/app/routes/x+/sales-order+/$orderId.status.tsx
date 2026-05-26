@@ -3,12 +3,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { salesOrderStatusType, updateSalesOrderStatus } from "~/modules/sales";
+import { salesOrderStatusType } from "~/modules/sales";
+import { updateSalesOrderStatus } from "~/modules/sales/sales.service.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "sales"
   });
 
@@ -27,11 +28,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const update = await updateSalesOrderStatus(client, {
+  const update = await updateSalesOrderStatus({
     id,
     status,
-    assignee: ["Closed"].includes(status) ? null : undefined,
-    updatedBy: userId
+    assignee: ["Closed"].includes(status) ? null : undefined
   });
   if (update.error) {
     throw redirect(

@@ -1,17 +1,16 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
   deleteQuoteMaterial,
   recalculateQuoteLinePrices
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "sales"
   });
 
@@ -26,7 +25,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error("id not found");
   }
 
-  const deleteMaterial = await deleteQuoteMaterial(client, id);
+  const deleteMaterial = await deleteQuoteMaterial(id);
   if (deleteMaterial.error) {
     return data(
       {
@@ -39,8 +38,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const serviceRole = getCarbonServiceRole();
-  await recalculateQuoteLinePrices(serviceRole, quoteId, lineId, userId);
+  await recalculateQuoteLinePrices(quoteId, lineId);
 
   return {};
 }

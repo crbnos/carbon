@@ -18,11 +18,8 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { Company as CompanyType } from "~/modules/settings";
-import {
-  CompanyForm,
-  companyValidator,
-  updateCompany
-} from "~/modules/settings";
+import { CompanyForm, companyValidator } from "~/modules/settings";
+import { updateCompany } from "~/modules/settings/settings.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -33,7 +30,7 @@ export const handle: Handle = {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "settings"
   });
   const formData = await request.formData();
@@ -44,7 +41,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const update = await updateCompany(client, companyId, {
+  const update = await updateCompany({
     ...validation.data,
     updatedBy: userId
   });

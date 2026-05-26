@@ -14,18 +14,18 @@ import type {
   LoaderFunctionArgs
 } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
+import { customerLocationValidator } from "~/modules/sales";
 import {
-  customerLocationValidator,
   getCustomerLocation,
   updateCustomerLocation
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service.server";
 import { CustomerLocationForm } from "~/modules/sales/ui/Customer";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 import { customerLocationsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
@@ -33,7 +33,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!customerId) throw notFound("customerId not found");
   if (!customerLocationId) throw notFound("customerLocationId not found");
 
-  const location = await getCustomerLocation(client, customerLocationId);
+  const location = await getCustomerLocation(customerLocationId);
   if (location.error) {
     throw redirect(
       path.to.customerLocations(customerId),
@@ -51,7 +51,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "sales"
   });
 
@@ -74,7 +74,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (addressId === undefined)
     throw badRequest("addressId is undefined in form data");
 
-  const update = await updateCustomerLocation(client, {
+  const update = await updateCustomerLocation({
     addressId,
     name,
     address,

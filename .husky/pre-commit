@@ -18,8 +18,15 @@ if git diff --cached --name-only | grep -qE '\.(tsx?|jsx?)$|\.po$'; then
     git add packages/locale/locales/**/*.po
 fi
 
-# Regenerate MCP tools if any .service.ts file was modified
-if git diff --cached --name-only | grep -q '\.service\.ts$'; then
-    npx tsx scripts/generate-mcp.ts
-    git add apps/erp/app/routes/api+/mcp+/lib/tools/ apps/erp/app/routes/api+/mcp+/lib/server.ts apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json llm/cache/mcp-tools-reference.md
+# Regenerate MCP manifest if any service module file was modified.
+# Hook fails (does NOT auto-stage) if the manifest is now dirty — the
+# developer must review and stage explicitly.
+if git diff --cached --name-only | grep -q '\.service\.server\.ts$'; then
+  pnpm --filter erp mcp:manifest
+  if ! git diff --quiet -- apps/erp/app/services/mcp/mcp-tools.json; then
+    echo
+    echo "✖ MCP manifest is out of date."
+    echo "  Run 'pnpm --filter erp mcp:manifest' and stage apps/erp/app/services/mcp/mcp-tools.json."
+    exit 1
+  fi
 fi

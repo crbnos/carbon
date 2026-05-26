@@ -6,14 +6,14 @@ import { VStack } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
 import { useRouteData } from "~/hooks";
+import { itemPlanningValidator } from "~/modules/items";
 import {
   getItemPlanning,
-  itemPlanningValidator,
   upsertItemPlanning
-} from "~/modules/items";
+} from "~/modules/items/items.service.server";
 import { ItemPlanningForm } from "~/modules/items/ui/Item";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
-import { getLocationsList } from "~/modules/resources";
+import { getLocationsList } from "~/modules/resources/resources.service.server";
 import { getUserDefaults } from "~/modules/users/users.server";
 import type { ListItem } from "~/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -47,7 +47,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await getLocationsList();
     if (locations.error || !locations.data?.length) {
       throw redirect(
         path.to.tool(itemId),
@@ -60,12 +60,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let toolPlanning = await getItemPlanning(
-    client,
-    itemId,
-    companyId,
-    locationId
-  );
+  let toolPlanning = await getItemPlanning(itemId, locationId);
 
   if (toolPlanning.error || !toolPlanning.data) {
     throw redirect(
@@ -85,7 +80,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -99,7 +94,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateToolPlanning = await upsertItemPlanning(client, {
+  const updateToolPlanning = await upsertItemPlanning({
     ...validation.data,
     itemId,
     updatedBy: userId,

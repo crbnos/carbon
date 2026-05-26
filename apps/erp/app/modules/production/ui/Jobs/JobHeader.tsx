@@ -82,7 +82,7 @@ import {
 import { generateBomIds } from "~/utils/bom";
 import { path } from "~/utils/path";
 import { isJobLocked, jobCompleteValidator } from "../../production.models";
-import { getJobMethodTree } from "../../production.service";
+import type { getJobMethodTree } from "../../production.service.server";
 import type { Job } from "../../types";
 import JobStatus from "./JobStatus";
 
@@ -541,7 +541,9 @@ export function JobStartModal({
         .select("*")
         .eq("jobId", job.id!),
       carbon.from("jobOperation").select("*").eq("jobId", job.id!),
-      getJobMethodTree(carbon, job.id!)
+      fetch(path.to.api.jobMethodTree(job.id!)).then(
+        (r) => r.json() as Promise<Awaited<ReturnType<typeof getJobMethodTree>>>
+      )
     ]);
 
     // Check for existing purchase order lines for outside operations

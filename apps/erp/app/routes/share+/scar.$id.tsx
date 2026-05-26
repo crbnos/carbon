@@ -32,19 +32,23 @@ import {
 } from "react-router";
 import z from "zod";
 import { zfd } from "zod-form-data";
-import { getSupplier } from "~/modules/purchasing";
+import { getSupplier } from "~/modules/purchasing/purchasing.service.server";
 import type { IssueActionTask } from "~/modules/quality";
+import { nonConformanceTaskStatus } from "~/modules/quality";
 import {
   getIssueActionTasks,
   getIssueFromExternalLink,
-  nonConformanceTaskStatus,
   updateIssueTaskContent,
   updateIssueTaskStatus
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service.server";
 import { statusActions, TaskProgress } from "~/modules/quality/ui/Issue";
 import IssueStatus from "~/modules/quality/ui/Issue/IssueStatus";
-import { getCompany } from "~/modules/settings";
-import { getExternalLink } from "~/modules/shared";
+import { getCompany } from "~/modules/settings/settings.service.server";
+import { getExternalLink } from "~/modules/shared/shared.service.server";
+import {
+  runWithSystemClient,
+  runWithSystemContext
+} from "~/services/mcp/index.server";
 import { path } from "~/utils/path";
 import { ErrorMessage } from "./quote.$id";
 
@@ -66,46 +70,43 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     };
   }
 
+  // Public share page (no session). Resolve the external link and issue
+  // first (system client only) so we know the tenant companyId, then run
+  // the rest of the loader under a full system context so services reading
+  // `AuthContextHolder.get()` are satisfied.
   const serviceRole = getCarbonServiceRole();
-  const externalLink = await getExternalLink(serviceRole, id);
-  if (!externalLink.data || !externalLink.data?.documentId) {
+  const issue = await runWithSystemClient(serviceRole, async () => {
+    const externalLink = await getExternalLink(id);
+    if (!externalLink.data?.documentId) return null;
+    const result = await getIssueFromExternalLink(externalLink.data.documentId);
+    return result.data ?? null;
+  });
+
+  if (!issue) {
     return {
       state: IssueState.NotFound,
       data: null
     };
   }
 
-  const issue = await getIssueFromExternalLink(
-    serviceRole,
-    externalLink.data.documentId
-  );
-  if (!issue.data) {
+  const companyId = issue.nonConformance.companyId ?? "";
+  return runWithSystemContext({ companyId }, serviceRole, async () => {
+    const [company, supplier, actionTasks] = await Promise.all([
+      getCompany(issue.nonConformance.companyId ?? undefined),
+      getSupplier(issue.supplierId),
+      getIssueActionTasks(issue.nonConformanceId, issue.supplierId)
+    ]);
+
     return {
-      state: IssueState.NotFound,
-      data: null
+      state: IssueState.Valid,
+      data: {
+        issue: issue.nonConformance,
+        company: company.data,
+        supplier: supplier.data,
+        actionTasks: actionTasks.data
+      }
     };
-  }
-
-  const [company, supplier, actionTasks] = await Promise.all([
-    getCompany(serviceRole, externalLink.data.companyId),
-    getSupplier(serviceRole, issue.data.supplierId),
-    getIssueActionTasks(
-      serviceRole,
-      issue.data.nonConformanceId,
-      externalLink.data.companyId,
-      issue.data.supplierId
-    )
-  ]);
-
-  return {
-    state: IssueState.Valid,
-    data: {
-      issue: issue.data.nonConformance,
-      company: company.data,
-      supplier: supplier.data,
-      actionTasks: actionTasks.data
-    }
-  };
+  });
 }
 
 export const scarValidator = z.object({
@@ -132,98 +133,99 @@ export const scarValidator = z.object({
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const serviceRole = getCarbonServiceRole();
-
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const externalLink = await getExternalLink(serviceRole, id);
-  if (!externalLink.data || !externalLink.data?.documentId) {
+  const serviceRole = getCarbonServiceRole();
+  const issue = await runWithSystemClient(serviceRole, async () => {
+    const externalLink = await getExternalLink(id);
+    if (!externalLink.data?.documentId) return null;
+    const result = await getIssueFromExternalLink(externalLink.data.documentId);
+    return result.data ?? null;
+  });
+
+  if (!issue) {
     throw new Error("Could not find id");
   }
 
-  const issue = await getIssueFromExternalLink(
-    serviceRole,
-    externalLink.data.documentId
-  );
-  if (!issue.data) {
-    throw new Error("Could not find the issue");
-  }
-
-  if (issue.data.nonConformance.status === "Closed") {
+  if (issue.nonConformance.status === "Closed") {
     throw new Error("Issue has been closed already. Unable to make changes");
   }
-  const formData = await request.formData();
-  const validation = await validator(scarValidator).validate(formData);
 
-  if (validation.error) {
-    return validationError(validation.error);
-  }
+  const companyId = issue.nonConformance.companyId ?? "";
+  return runWithSystemContext({ companyId }, serviceRole, async () => {
+    const formData = await request.formData();
+    const validation = await validator(scarValidator).validate(formData);
 
-  const tasks = await getIssueActionTasks(
-    serviceRole,
-    issue.data.nonConformanceId,
-    externalLink.data.companyId,
-    issue.data.supplierId
-  );
-
-  const isTaskValid = tasks.data?.find((t) => t.id === validation.data.taskId);
-  if (!isTaskValid) {
-    throw new Error("Invalid task id");
-  }
-
-  if (validation.data.status) {
-    const statusUpdate = await updateIssueTaskStatus(serviceRole, {
-      id: validation.data.taskId,
-      status: validation.data.status,
-      type: validation.data.type
-    });
-
-    if (statusUpdate.error) {
-      return data(
-        {
-          success: false
-        },
-        await flash(
-          request,
-          error(statusUpdate.error, "Failed to update task status")
-        )
-      );
+    if (validation.error) {
+      return validationError(validation.error);
     }
 
-    return data(
-      {
-        success: true
-      },
-      await flash(request, success("Updated task status"))
+    const tasks = await getIssueActionTasks(
+      issue.nonConformanceId,
+      issue.supplierId
     );
-  }
 
-  if (validation.data.content) {
-    const contentUpdate = await updateIssueTaskContent(serviceRole, {
-      id: validation.data.taskId,
-      content: validation.data.content,
-      type: validation.data.type
-    });
+    const isTaskValid = tasks.data?.find(
+      (t) => t.id === validation.data.taskId
+    );
+    if (!isTaskValid) {
+      throw new Error("Invalid task id");
+    }
 
-    if (contentUpdate.error) {
+    if (validation.data.status) {
+      const statusUpdate = await updateIssueTaskStatus({
+        id: validation.data.taskId,
+        status: validation.data.status,
+        type: validation.data.type
+      });
+
+      if (statusUpdate.error) {
+        return data(
+          {
+            success: false
+          },
+          await flash(
+            request,
+            error(statusUpdate.error, "Failed to update task status")
+          )
+        );
+      }
+
       return data(
         {
-          success: false
+          success: true
         },
-        await flash(
-          request,
-          error(contentUpdate.error, "Failed to update content")
-        )
+        await flash(request, success("Updated task status"))
       );
     }
 
-    return { succes: true };
-  }
+    if (validation.data.content) {
+      const contentUpdate = await updateIssueTaskContent({
+        id: validation.data.taskId,
+        content: validation.data.content,
+        type: validation.data.type
+      });
 
-  return {
-    success: true
-  };
+      if (contentUpdate.error) {
+        return data(
+          {
+            success: false
+          },
+          await flash(
+            request,
+            error(contentUpdate.error, "Failed to update content")
+          )
+        );
+      }
+
+      return { succes: true };
+    }
+
+    return {
+      success: true
+    };
+  });
 }
 
 const Header = ({

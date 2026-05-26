@@ -4,14 +4,12 @@ import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  trainingQuestionValidator,
-  upsertTrainingQuestion
-} from "~/modules/resources";
+import { trainingQuestionValidator } from "~/modules/resources";
+import { upsertTrainingQuestion } from "~/modules/resources/resources.service.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "resources"
   });
 
@@ -47,7 +45,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  const update = await upsertTrainingQuestion(client, {
+  const update = await upsertTrainingQuestion({
     id: questionId,
     ...rest,
     options: options.length > 0 ? options : rest.options,

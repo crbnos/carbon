@@ -17,11 +17,13 @@ import type {
   SalesInvoiceShipment
 } from "~/modules/invoicing";
 import {
-  getSalesInvoice,
   isSalesInvoiceLocked,
-  salesInvoiceValidator,
-  upsertSalesInvoice
+  salesInvoiceValidator
 } from "~/modules/invoicing";
+import {
+  getSalesInvoice,
+  upsertSalesInvoice
+} from "~/modules/invoicing/invoicing.service.server";
 import type { SalesInvoiceShipmentFormRef } from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceShipmentForm";
 import SalesInvoiceShipmentForm from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceShipmentForm";
 import SalesInvoiceSummary from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceSummary";
@@ -35,14 +37,14 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "invoicing"
   });
 
   const { invoiceId } = params;
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
-  const invoice = await getSalesInvoice(client, invoiceId);
+  const invoice = await getSalesInvoice(invoiceId);
   if (invoice.error) {
     throw redirect(
       path.to.salesInvoices,
@@ -62,11 +64,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) throw new Error("Could not find invoiceId");
 
   // Check if SI is locked
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "invoicing"
   });
 
-  const invoice = await getSalesInvoice(viewClient, id);
+  const invoice = await getSalesInvoice(id);
   if (invoice.error) {
     throw redirect(
       path.to.salesInvoice(id),
@@ -81,7 +83,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked sales invoice. Reopen it first."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "invoicing"
   });
 
@@ -95,7 +97,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { invoiceId, ...d } = validation.data;
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
-  const updateSalesInvoice = await upsertSalesInvoice(client, {
+  const updateSalesInvoice = await upsertSalesInvoice({
     id,
     invoiceId,
     ...d,

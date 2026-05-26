@@ -4,11 +4,11 @@ import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 
-import { updateTrainingQuestionOrder } from "~/modules/resources";
+import { updateTrainingQuestionOrder } from "~/modules/resources/resources.service.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "resources"
   });
 
@@ -28,7 +28,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     })
   );
 
-  const updateSortOrders = await updateTrainingQuestionOrder(client, updates);
+  const updateSortOrders = await updateTrainingQuestionOrder(updates);
   if (updateSortOrders.some((update) => update.error))
     return data(
       {},

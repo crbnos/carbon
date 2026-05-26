@@ -62,5 +62,24 @@ export default defineConfig(({ isSsrBuild, mode }) => {
         ),
       },
     },
+    // Per-environment aliases. The `node:async_hooks` stub MUST be applied
+    // only to the client environment — the SSR environment runs on Node and
+    // needs the real module so `AsyncLocalStorage` actually carries context
+    // across awaits. Putting this in the top-level `resolve.alias` (or in a
+    // `!isSsrBuild` block) applies it to both environments in dev mode,
+    // which silently neuters server-side ALS — AuthClientScope.run becomes
+    // a no-op and `getStore()` always returns undefined.
+    environments: {
+      client: {
+        resolve: {
+          alias: {
+            "node:async_hooks": path.resolve(
+              __dirname,
+              "app/stubs/async_hooks.ts",
+            ),
+          },
+        },
+      },
+    },
   };
 });

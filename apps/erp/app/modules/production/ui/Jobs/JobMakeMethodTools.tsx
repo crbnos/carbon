@@ -49,11 +49,11 @@ import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
 import { Hidden, Item, Submit, useConfigurableItems } from "~/components/Form";
 import type { Tree } from "~/components/TreeView";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import {
-  type ConfigurationParameter,
-  type ConfigurationParameterGroup,
-  getConfigurationParameters
+import type {
+  ConfigurationParameter,
+  ConfigurationParameterGroup
 } from "~/modules/items";
+import { getConfigurationParameters } from "~/modules/items/items.client";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import MakeMethodVersionStatus from "~/modules/items/ui/Item/MakeMethodVersionStatus";
 import { QuoteLineMethodForm } from "~/modules/sales/ui/Quotes/QuoteLineMethodForm";
@@ -129,6 +129,9 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
     methodId && pathname === path.to.jobMakeMethod(jobId, methodId);
 
   const { carbon } = useCarbon();
+  const {
+    company: { id: companyId }
+  } = useUser();
 
   const configureSelectModal = useDisclosure();
   const configuratorModal = useDisclosure();
@@ -211,9 +214,6 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
     }
   };
 
-  const {
-    company: { id: companyId }
-  } = useUser();
   const [makeMethods, setMakeMethods] = useState<
     { label: JSX.Element; value: string }[]
   >([]);

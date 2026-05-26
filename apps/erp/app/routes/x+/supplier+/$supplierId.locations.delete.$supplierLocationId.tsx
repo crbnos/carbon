@@ -6,12 +6,12 @@ import type {
   ClientActionFunctionArgs
 } from "react-router";
 import { redirect } from "react-router";
-import { deleteSupplierLocation } from "~/modules/purchasing";
+import { deleteSupplierLocation } from "~/modules/purchasing/purchasing.service.server";
 import { path } from "~/utils/path";
 import { supplierLocationsQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "purchasing"
   });
 
@@ -27,7 +27,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const { error: deleteSupplierLocationError } = await deleteSupplierLocation(
-    client,
     supplierId,
     supplierLocationId
   );

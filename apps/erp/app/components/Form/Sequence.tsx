@@ -3,7 +3,7 @@ import { Select } from "@carbon/form";
 import { useMount } from "@carbon/react";
 import { useMemo } from "react";
 import { useFetcher } from "react-router";
-import type { getSequencesList } from "~/modules/settings";
+import type { getSequencesList } from "~/modules/settings/settings.service.server";
 import { path } from "~/utils/path";
 
 type SequenceSelectProps = Omit<SelectProps, "options"> & {

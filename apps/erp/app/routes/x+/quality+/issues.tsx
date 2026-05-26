@@ -5,7 +5,10 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
-import { getIssues, getIssueTypesList } from "~/modules/quality";
+import {
+  getIssues,
+  getIssueTypesList
+} from "~/modules/quality/quality.service.server";
 import IssuesTable from "~/modules/quality/ui/Issue/IssuesTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -17,7 +20,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "quality",
     role: "employee"
   });
@@ -29,14 +32,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [issues, nonConformanceTypes] = await Promise.all([
-    getIssues(client, companyId, {
+    getIssues({
       search,
       limit,
       offset,
       sorts,
       filters
     }),
-    getIssueTypesList(client, companyId)
+    getIssueTypesList()
   ]);
 
   if (issues.error) {

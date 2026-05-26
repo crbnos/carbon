@@ -3,10 +3,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { deleteTrainingQuestion } from "~/modules/resources";
+import { deleteTrainingQuestion } from "~/modules/resources/resources.service.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "resources"
   });
 
@@ -14,11 +14,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (!questionId) throw new Error("questionId is not found");
 
-  const deleteQuestion = await deleteTrainingQuestion(
-    client,
-    questionId,
-    companyId
-  );
+  const deleteQuestion = await deleteTrainingQuestion(questionId);
 
   if (deleteQuestion.error) {
     return data(

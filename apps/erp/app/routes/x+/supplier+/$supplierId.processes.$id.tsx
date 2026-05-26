@@ -9,10 +9,8 @@ import type {
 import { redirect, useNavigate, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { SupplierProcess } from "~/modules/purchasing";
-import {
-  supplierProcessValidator,
-  upsertSupplierProcess
-} from "~/modules/purchasing";
+import { supplierProcessValidator } from "~/modules/purchasing";
+import { upsertSupplierProcess } from "~/modules/purchasing/purchasing.service.server";
 import SupplierProcessForm from "~/modules/purchasing/ui/Supplier/SupplierProcessForm";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -20,7 +18,7 @@ import { supplierProcessesQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     create: "purchasing"
   });
 
@@ -40,7 +38,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id, ...d } = validation.data;
   if (!id) throw new Error("Could not find id");
 
-  const createSupplierProcess = await upsertSupplierProcess(client, {
+  const createSupplierProcess = await upsertSupplierProcess({
     id,
     ...d,
     updatedBy: userId,

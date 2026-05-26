@@ -16,7 +16,7 @@ import type {
   getTrackedEntities,
   getWarehouseTransferLines,
   getWarehouseTransfers
-} from "./inventory.service";
+} from "./inventory.service.server";
 
 export type BatchProperty = NonNullable<
   Awaited<ReturnType<typeof getBatchProperties>>["data"]

@@ -4,14 +4,15 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { holidayValidator, upsertHoliday } from "~/modules/people";
+import { holidayValidator } from "~/modules/people";
+import { upsertHoliday } from "~/modules/people/people.service.server";
 import { HolidayForm } from "~/modules/people/ui/Holidays";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "people"
   });
 
@@ -25,7 +26,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const createHoliday = await upsertHoliday(client, {
+  const createHoliday = await upsertHoliday({
     ...d,
     companyId,
     createdBy: userId,

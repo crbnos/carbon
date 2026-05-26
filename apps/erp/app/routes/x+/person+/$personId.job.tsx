@@ -4,24 +4,24 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useParams } from "react-router";
+import { employeeJobValidator } from "~/modules/people";
 import {
-  employeeJobValidator,
   getEmployeeJob,
   updateEmployeeJob
-} from "~/modules/people";
+} from "~/modules/people/people.service.server";
 import { PersonJob } from "~/modules/people/ui/Person";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "people"
   });
 
   const { personId } = params;
   if (!personId) throw new Error("Could not find personId");
 
-  const job = await getEmployeeJob(client, personId, companyId);
+  const job = await getEmployeeJob(personId);
   if (job.error) {
     throw redirect(
       path.to.people,
@@ -36,7 +36,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "people"
   });
   const { personId } = params;
@@ -49,7 +49,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateJob = await updateEmployeeJob(client, personId, {
+  const updateJob = await updateEmployeeJob(personId, {
     ...validation.data,
     companyId,
     updatedBy: userId,

@@ -3,17 +3,17 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
+import { isMaintenanceDispatchLocked } from "~/modules/resources";
 import {
   deleteMaintenanceDispatchEvent,
-  getMaintenanceDispatch,
-  isMaintenanceDispatchLocked
-} from "~/modules/resources";
+  getMaintenanceDispatch
+} from "~/modules/resources/resources.service.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "resources"
   });
 
@@ -21,10 +21,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!dispatchId) throw new Error("Could not find dispatchId");
   if (!eventId) throw new Error("Could not find eventId");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources"
   });
-  const dispatch = await getMaintenanceDispatch(viewClient, dispatchId);
+  const dispatch = await getMaintenanceDispatch(dispatchId);
   await requireUnlocked({
     request,
     isLocked: isMaintenanceDispatchLocked(dispatch.data?.status),
@@ -32,7 +32,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked dispatch. Reopen it first."
   });
 
-  const result = await deleteMaintenanceDispatchEvent(client, eventId);
+  const result = await deleteMaintenanceDispatchEvent(eventId);
 
   if (result.error) {
     throw redirect(

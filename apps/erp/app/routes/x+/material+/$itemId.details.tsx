@@ -9,7 +9,8 @@ import { redirect, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemFile, MaterialSummary } from "~/modules/items";
-import { materialValidator, upsertMaterial } from "~/modules/items";
+import { materialValidator } from "~/modules/items";
+import { upsertMaterial } from "~/modules/items/items.service.server";
 import {
   ItemDocuments,
   ItemNotes,
@@ -20,7 +21,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -34,7 +35,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateMaterial = await upsertMaterial(client, {
+  const updateMaterial = await upsertMaterial({
     ...validation.data,
     id: itemId,
     customFields: setCustomFields(formData),

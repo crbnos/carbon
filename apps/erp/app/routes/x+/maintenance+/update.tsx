@@ -1,9 +1,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  isMaintenanceDispatchLocked,
-  upsertMaintenanceDispatch
-} from "~/modules/resources";
+import { isMaintenanceDispatchLocked } from "~/modules/resources";
+import { upsertMaintenanceDispatch } from "~/modules/resources/resources.service.server";
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -78,10 +76,10 @@ export async function action({ request }: ActionFunctionArgs) {
   // Update each maintenance dispatch individually since upsertMaintenanceDispatch expects single records
   const results = await Promise.all(
     ids.map(async (id) => {
-      return await upsertMaintenanceDispatch(client, {
+      return await upsertMaintenanceDispatch({
         id: id as string,
         ...updateData
-      } as Parameters<typeof upsertMaintenanceDispatch>[1]);
+      } as Parameters<typeof upsertMaintenanceDispatch>[0]);
     })
   );
 

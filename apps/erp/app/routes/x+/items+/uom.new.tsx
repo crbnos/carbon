@@ -8,7 +8,8 @@ import type {
   LoaderFunctionArgs
 } from "react-router";
 import { data, redirect, useNavigate } from "react-router";
-import { unitOfMeasureValidator, upsertUnitOfMeasure } from "~/modules/items";
+import { unitOfMeasureValidator } from "~/modules/items";
+import { upsertUnitOfMeasure } from "~/modules/items/items.service.server";
 import { UnitOfMeasureForm } from "~/modules/items/ui/UnitOfMeasure";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
@@ -24,7 +25,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "parts"
   });
 
@@ -40,7 +41,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const insertUnitOfMeasure = await upsertUnitOfMeasure(client, {
+  const insertUnitOfMeasure = await upsertUnitOfMeasure({
     ...d,
     companyId,
     createdBy: userId,

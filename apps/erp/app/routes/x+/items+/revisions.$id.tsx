@@ -3,11 +3,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { revisionValidator } from "~/modules/items/items.models";
-import { updateRevision } from "~/modules/items/items.service";
+import { updateRevision } from "~/modules/items/items.service.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "parts"
   });
 
@@ -29,10 +29,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     };
   }
 
-  const result = await updateRevision(client, {
+  const result = await updateRevision({
     id: id,
-    revision: validation.data.revision,
-    updatedBy: userId
+    revision: validation.data.revision
   });
 
   if (result.error) {

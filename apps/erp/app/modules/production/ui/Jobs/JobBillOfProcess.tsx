@@ -153,7 +153,7 @@ import {
   jobOperationValidatorForReleasedJob,
   procedureSyncValidator
 } from "../../production.models";
-import { getProductionEventsPage } from "../../production.service";
+import type { getProductionEventsPage } from "../../production.service.server";
 import type { Job, JobOperation } from "../../types";
 import { JobOperationStatus, JobOperationTags } from "./JobOperationStatus";
 import { OperationDueDatePicker } from "./OperationDueDatePicker";
@@ -704,13 +704,11 @@ const JobBillOfProcess = ({
 
     setIsLoading(true);
 
-    const newProductionEvents = await getProductionEventsPage(
-      carbon!,
-      selectedItemId,
-      companyId,
-      false,
-      page + 1
-    );
+    const newProductionEvents = (await fetch(
+      path.to.api.jobOperationProductionEvents(selectedItemId, page + 1, false)
+    ).then((r) => r.json())) as Awaited<
+      ReturnType<typeof getProductionEventsPage>
+    >;
 
     if (newProductionEvents.data && newProductionEvents.data.length > 0) {
       setProductionEvents((prev) => [...prev, ...newProductionEvents.data]);
@@ -720,7 +718,7 @@ const JobBillOfProcess = ({
     }
 
     setIsLoading(false);
-  }, [isLoading, hasMore, carbon, selectedItemId, companyId, page]);
+  }, [isLoading, hasMore, selectedItemId, page]);
 
   const [tabChangeRerender, setTabChangeRerender] = useState<number>(1);
 

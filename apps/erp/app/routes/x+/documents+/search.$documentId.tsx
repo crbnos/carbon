@@ -4,23 +4,22 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
+import { DocumentForm, documentValidator } from "~/modules/documents";
 import {
-  DocumentForm,
-  documentValidator,
   getDocument,
   upsertDocument
-} from "~/modules/documents";
+} from "~/modules/documents/documents.service.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "documents"
   });
 
   const { documentId } = params;
   if (!documentId) throw notFound("documentId not found");
 
-  const document = await getDocument(client, documentId);
+  const document = await getDocument(documentId);
 
   if (document.error) {
     throw redirect(
@@ -36,7 +35,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "documents"
   });
 
@@ -51,7 +50,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, extension, ...document } = validation.data;
   if (!id) throw new Error("Could not find documentId");
 
-  const updateDocument = await upsertDocument(client, {
+  const updateDocument = await upsertDocument({
     id,
     ...document,
     name: `${document.name}.${extension}`,

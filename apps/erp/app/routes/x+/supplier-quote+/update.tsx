@@ -1,7 +1,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
-import { getCurrencyByCode } from "~/modules/accounting";
+import { getCurrencyByCode } from "~/modules/accounting/accounting.service.server";
 import { isSupplierQuoteLocked } from "~/modules/purchasing";
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
 
@@ -68,11 +68,7 @@ export async function action({ request }: ActionFunctionArgs) {
         })
         .in("id", ids as string[]);
     case "currencyCode":
-      const currency = await getCurrencyByCode(
-        client,
-        companyGroupId,
-        value as string
-      );
+      const currency = await getCurrencyByCode(companyGroupId, value as string);
       if (currency.data) {
         return await client
           .from("supplierQuote")

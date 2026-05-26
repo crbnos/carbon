@@ -3,11 +3,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { updateJobOperationDueDate } from "~/modules/production";
+import { updateJobOperationDueDate } from "~/modules/production/production.service.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "production"
   });
 
@@ -15,12 +15,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const id = formData.get("id") as string;
   const dueDate = formData.get("dueDate") as string | null;
 
-  const update = await updateJobOperationDueDate(
-    client,
-    id,
-    dueDate || null,
-    userId
-  );
+  const update = await updateJobOperationDueDate(id, dueDate || null, userId);
   if (update.error) {
     return data(
       {},

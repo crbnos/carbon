@@ -10,17 +10,19 @@ import type {
 import { data, redirect, useLoaderData, useNavigate } from "react-router";
 import type { ShippingCarrier } from "~/modules/inventory";
 import {
-  getShippingMethod,
   ShippingMethodForm,
-  shippingMethodValidator,
-  upsertShippingMethod
+  shippingMethodValidator
 } from "~/modules/inventory";
+import {
+  getShippingMethod,
+  upsertShippingMethod
+} from "~/modules/inventory/inventory.service.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 import { getCompanyId, shippingMethodsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "inventory",
     role: "employee"
   });
@@ -28,7 +30,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { shippingMethodId } = params;
   if (!shippingMethodId) throw notFound("shippingMethodId not found");
 
-  const shippingMethod = await getShippingMethod(client, shippingMethodId);
+  const shippingMethod = await getShippingMethod(shippingMethodId);
 
   return {
     shippingMethod: shippingMethod?.data ?? null
@@ -37,7 +39,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "inventory"
   });
 
@@ -53,7 +55,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, ...d } = validation.data;
   if (!id) throw new Error("id not found");
 
-  const updateShippingMethod = await upsertShippingMethod(client, {
+  const updateShippingMethod = await upsertShippingMethod({
     id,
     ...d,
     updatedBy: userId,

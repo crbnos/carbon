@@ -5,7 +5,8 @@ import { requirePlan } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useNavigate } from "react-router";
-import { upsertWebhook, webhookValidator } from "~/modules/settings";
+import { webhookValidator } from "~/modules/settings";
+import { upsertWebhook } from "~/modules/settings/settings.service.server";
 import { WebhookForm } from "~/modules/settings/ui/Webhooks";
 import { getParams, path } from "~/utils/path";
 
@@ -38,7 +39,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const createWebhook = await upsertWebhook(client, {
+  const createWebhook = await upsertWebhook({
     ...validation.data,
     companyId,
     createdBy: userId

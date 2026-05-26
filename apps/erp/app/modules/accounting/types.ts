@@ -10,7 +10,7 @@ import type {
   getJournalEntries,
   getJournalEntry,
   getPaymentTerms
-} from "./accounting.service";
+} from "./accounting.service.server";
 
 export type Account = NonNullable<
   Awaited<ReturnType<typeof getAccount>>["data"]

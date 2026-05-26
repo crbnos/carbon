@@ -48,13 +48,16 @@ import { useLocations } from "~/components/Form/Location";
 import { ActiveFilters, Filter } from "~/components/Table/components/Filter";
 import type { ColumnFilter } from "~/components/Table/components/Filter/types";
 import { useUrlParams } from "~/hooks";
-import { getJobsByDateRange, getUnscheduledJobs } from "~/modules/production";
+import {
+  getJobsByDateRange,
+  getUnscheduledJobs
+} from "~/modules/production/production.service.server";
 import type { Column, JobItem } from "~/modules/production/ui/Schedule";
 import type { DisplaySettings } from "~/modules/production/ui/Schedule/Kanban";
 import { DateKanban } from "~/modules/production/ui/Schedule/Kanban/DateKanban";
 import { ScheduleNavigation } from "~/modules/production/ui/Schedule/Kanban/ScheuleNavigation";
-import { getLocationsList } from "~/modules/resources";
-import { getTagsList } from "~/modules/shared";
+import { getLocationsList } from "~/modules/resources/resources.service.server";
+import { getTagsList } from "~/modules/shared/shared.service.server";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { usePeople } from "~/stores";
 import type { Handle } from "~/utils/handle";
@@ -133,7 +136,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await getLocationsList();
     if (locations.error || !locations.data?.length) {
       throw redirect(
         path.to.production,
@@ -174,9 +177,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const [jobs, unscheduledJobs, tags] = await Promise.all([
-    getJobsByDateRange(client, locationId ?? "", startDate, endDate),
-    getUnscheduledJobs(client, locationId ?? ""),
-    getTagsList(client, companyId, "job")
+    getJobsByDateRange(locationId ?? "", startDate, endDate),
+    getUnscheduledJobs(locationId ?? ""),
+    getTagsList("job")
   ]);
 
   if (jobs.error) {

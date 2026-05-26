@@ -4,7 +4,7 @@ import { useDisclosure, useMount } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
 import { usePermissions } from "~/hooks";
-import type { getMaterialFormsList } from "~/modules/items";
+import type { getMaterialFormsList } from "~/modules/items/items.service.server";
 import { MaterialShapeForm } from "~/modules/items/ui/MaterialShapes";
 import { path } from "~/utils/path";
 import { Enumerable } from "../Enumerable";

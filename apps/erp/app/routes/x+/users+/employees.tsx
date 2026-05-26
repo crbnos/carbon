@@ -5,12 +5,12 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
+import { EmployeesTable } from "~/modules/users";
 import {
-  EmployeesTable,
   getEmployees,
   getEmployeeTypes,
   getUnrevokedInviteEmails
-} from "~/modules/users";
+} from "~/modules/users/users.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -21,7 +21,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "users",
     role: "employee",
     bypassRls: true
@@ -35,9 +35,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [employees, employeeTypes, invites] = await Promise.all([
-    getEmployees(client, companyId, { search, limit, offset, sorts, filters }),
-    getEmployeeTypes(client, companyId),
-    getUnrevokedInviteEmails(client, companyId)
+    getEmployees({ search, limit, offset, sorts, filters }),
+    getEmployeeTypes(),
+    getUnrevokedInviteEmails()
   ]);
 
   if (employees.error) {

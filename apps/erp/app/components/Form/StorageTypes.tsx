@@ -3,7 +3,7 @@ import { CreatableMultiSelect } from "@carbon/form";
 import { useDisclosure, useMount } from "@carbon/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
-import type { getStorageTypesList } from "~/modules/inventory";
+import type { getStorageTypesList } from "~/modules/inventory/inventory.service.server";
 import StorageTypeForm from "~/modules/inventory/ui/StorageTypes/StorageTypeForm";
 import { path } from "~/utils/path";
 

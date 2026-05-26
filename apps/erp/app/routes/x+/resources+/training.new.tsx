@@ -4,11 +4,8 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useNavigate } from "react-router";
-import {
-  TrainingForm,
-  trainingValidator,
-  upsertTraining
-} from "~/modules/resources";
+import { TrainingForm, trainingValidator } from "~/modules/resources";
+import { upsertTraining } from "~/modules/resources/resources.service.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -21,7 +18,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "resources"
   });
   const formData = await request.formData();
@@ -51,7 +48,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const insertTraining = await upsertTraining(client, {
+  const insertTraining = await upsertTraining({
     ...d,
     content: contentJSON,
     companyId,

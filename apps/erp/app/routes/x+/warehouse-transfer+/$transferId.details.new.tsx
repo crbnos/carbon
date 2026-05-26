@@ -7,17 +7,19 @@ import type {
   WarehouseTransferLine
 } from "~/modules/inventory";
 import {
-  getWarehouseTransfer,
   isWarehouseTransferLocked,
-  upsertWarehouseTransferLine,
   warehouseTransferLineValidator
 } from "~/modules/inventory";
+import {
+  getWarehouseTransfer,
+  upsertWarehouseTransferLine
+} from "~/modules/inventory/inventory.service.server";
 import { WarehouseTransferLineForm } from "~/modules/inventory/ui/WarehouseTransfers";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "inventory"
   });
 
@@ -26,10 +28,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error("transferId not found");
   }
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "inventory"
   });
-  const transfer = await getWarehouseTransfer(viewClient, transferId);
+  const transfer = await getWarehouseTransfer(transferId);
   await requireUnlocked({
     request,
     isLocked: isWarehouseTransferLocked(transfer.data?.status),
@@ -52,15 +54,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const createWarehouseTransferLine = await upsertWarehouseTransferLine(
-    client,
-    {
-      ...d,
+  const createWarehouseTransferLine = await upsertWarehouseTransferLine({
+    ...d,
 
-      companyId: companyId,
-      createdBy: userId
-    }
-  );
+    companyId: companyId,
+    createdBy: userId
+  });
 
   if (createWarehouseTransferLine.error) {
     return {

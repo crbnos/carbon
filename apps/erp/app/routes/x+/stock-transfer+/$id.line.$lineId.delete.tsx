@@ -3,16 +3,16 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
+import { isStockTransferLocked } from "~/modules/inventory";
 import {
   deleteStockTransferLine,
-  getStockTransfer,
-  isStockTransferLocked
-} from "~/modules/inventory";
+  getStockTransfer
+} from "~/modules/inventory/inventory.service.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "inventory"
   });
 
@@ -21,10 +21,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) throw new Error("id is not found");
   if (!lineId) throw new Error("lineId is not found");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "inventory"
   });
-  const transfer = await getStockTransfer(viewClient, id);
+  const transfer = await getStockTransfer(id);
   await requireUnlocked({
     request,
     isLocked: isStockTransferLocked(transfer.data?.status),
@@ -32,7 +32,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked stock transfer. Reopen it first."
   });
 
-  const mutation = await deleteStockTransferLine(client, lineId);
+  const mutation = await deleteStockTransferLine(lineId);
   if (mutation.error) {
     return data(
       {

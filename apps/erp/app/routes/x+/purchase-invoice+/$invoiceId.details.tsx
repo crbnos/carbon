@@ -17,12 +17,14 @@ import type {
   PurchaseInvoiceLine
 } from "~/modules/invoicing";
 import {
-  getPurchaseInvoice,
   isPurchaseInvoiceLocked,
   PurchaseInvoiceSummary,
-  purchaseInvoiceValidator,
-  upsertPurchaseInvoice
+  purchaseInvoiceValidator
 } from "~/modules/invoicing";
+import {
+  getPurchaseInvoice,
+  upsertPurchaseInvoice
+} from "~/modules/invoicing/invoicing.service.server";
 import { PurchaseInvoiceDeliveryForm } from "~/modules/invoicing/ui/PurchaseInvoice";
 import type { PurchaseInvoiceDeliveryFormRef } from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceDeliveryForm";
 import type { SupplierInteraction } from "~/modules/purchasing";
@@ -35,14 +37,14 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "invoicing"
   });
 
   const { invoiceId } = params;
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
-  const invoice = await getPurchaseInvoice(client, invoiceId);
+  const invoice = await getPurchaseInvoice(invoiceId);
   if (invoice.error) {
     throw redirect(
       path.to.purchaseInvoices,
@@ -65,11 +67,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) throw new Error("Could not find invoiceId");
 
   // Check if PI is locked
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "invoicing"
   });
 
-  const purchaseInvoice = await getPurchaseInvoice(viewClient, id);
+  const purchaseInvoice = await getPurchaseInvoice(id);
   if (purchaseInvoice.error) {
     throw redirect(
       path.to.purchaseInvoice(id),
@@ -87,7 +89,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase invoice."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "invoicing"
   });
 
@@ -103,7 +105,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { invoiceId, ...d } = validation.data;
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
-  const updatePurchaseInvoice = await upsertPurchaseInvoice(client, {
+  const updatePurchaseInvoice = await upsertPurchaseInvoice({
     id,
     invoiceId,
     ...d,

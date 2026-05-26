@@ -1,11 +1,11 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getMaterialDimensionList } from "~/modules/items";
-import { getCompanySettings } from "~/modules/settings";
+import { getMaterialDimensionList } from "~/modules/items/items.service.server";
+import { getCompanySettings } from "~/modules/settings/settings.service.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts",
     role: "employee"
   });
@@ -14,12 +14,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     return data({ error: "Form ID is required" }, { status: 400 });
   }
 
-  const settings = await getCompanySettings(client, companyId);
+  const settings = await getCompanySettings();
 
   return await getMaterialDimensionList(
-    client,
     params.formId,
-    settings?.data?.useMetric ?? false,
-    companyId
+    settings?.data?.useMetric ?? false
   );
 }

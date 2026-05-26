@@ -4,10 +4,8 @@ import { useMount } from "@carbon/react";
 import { useMemo } from "react";
 import { useFetcher } from "react-router";
 import { useRouteData } from "~/hooks";
-import type {
-  getScrapReasonsList,
-  ScrapReason as ScrapReasonType
-} from "~/modules/production";
+import type { ScrapReason as ScrapReasonType } from "~/modules/production";
+import type { getScrapReasonsList } from "~/modules/production/production.service.server";
 import { path } from "~/utils/path";
 
 type ScrapReasonSelectProps = Omit<ComboboxProps, "options">;

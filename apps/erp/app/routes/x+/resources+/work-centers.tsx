@@ -5,12 +5,12 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
-import { getDepartmentsList } from "~/modules/people";
+import { getDepartmentsList } from "~/modules/people/people.service.server";
+import { WorkCentersTable } from "~/modules/resources";
 import {
   getLocationsList,
-  getWorkCenters,
-  WorkCentersTable
-} from "~/modules/resources";
+  getWorkCenters
+} from "~/modules/resources/resources.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -21,7 +21,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources",
     role: "employee",
     bypassRls: true
@@ -34,15 +34,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [workCenters, departments, locations] = await Promise.all([
-    getWorkCenters(client, companyId, {
+    getWorkCenters({
       search,
       limit,
       offset,
       sorts,
       filters
     }),
-    getDepartmentsList(client, companyId),
-    getLocationsList(client, companyId)
+    getDepartmentsList(),
+    getLocationsList()
   ]);
 
   if (workCenters.error) {

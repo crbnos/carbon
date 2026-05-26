@@ -9,17 +9,17 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
 import { useUrlParams, useUser } from "~/hooks";
+import { issueValidator } from "~/modules/quality";
 import {
   deleteIssue,
   getIssueTypesList,
   getIssueWorkflowsList,
   getRequiredActionsList,
-  issueValidator,
   upsertIssue
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service.server";
 import IssueForm from "~/modules/quality/ui/Issue/IssueForm";
-import { getNextSequence } from "~/modules/settings";
 import { getCompanyIntegrations } from "~/modules/settings/settings.server";
+import { getNextSequence } from "~/modules/settings/settings.service.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -30,14 +30,14 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "quality"
   });
 
   const [workflows, types, requiredActions] = await Promise.all([
-    getIssueWorkflowsList(client, companyId),
-    getIssueTypesList(client, companyId),
-    getRequiredActionsList(client, companyId)
+    getIssueWorkflowsList(),
+    getIssueTypesList(),
+    getRequiredActionsList()
   ]);
 
   return {
@@ -62,11 +62,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const nextSequence = await getNextSequence(
-    serviceRole,
-    "nonConformance",
-    companyId
-  );
+  const nextSequence = await getNextSequence("nonConformance");
   if (nextSequence.error) {
     throw redirect(
       path.to.newIssue,
@@ -80,7 +76,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...nonConformance } = validation.data;
 
-  const createIssue = await upsertIssue(serviceRole, {
+  const createIssue = await upsertIssue({
     ...nonConformance,
     nonConformanceId: nextSequence.data,
     companyId,
@@ -143,7 +139,7 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (tasks.error) {
-    await deleteIssue(serviceRole, ncrId);
+    await deleteIssue(ncrId);
     throw redirect(
       path.to.issue(ncrId!),
       await flash(request, error("Failed to create tasks"))

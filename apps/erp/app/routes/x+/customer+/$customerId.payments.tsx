@@ -4,23 +4,23 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
+import { customerPaymentValidator } from "~/modules/sales";
 import {
-  customerPaymentValidator,
   getCustomerPayment,
   updateCustomerPayment
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service.server";
 import { CustomerPaymentForm } from "~/modules/sales/ui/Customer";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
   const { customerId } = params;
   if (!customerId) throw new Error("Could not find customerId");
 
-  const customerPayment = await getCustomerPayment(client, customerId);
+  const customerPayment = await getCustomerPayment(customerId);
 
   if (customerPayment.error || !customerPayment.data) {
     throw redirect(
@@ -39,7 +39,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "sales"
   });
 
@@ -55,7 +55,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const update = await updateCustomerPayment(client, {
+  const update = await updateCustomerPayment({
     ...validation.data,
     customerId,
     updatedBy: userId

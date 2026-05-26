@@ -4,23 +4,23 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
+import { supplierShippingValidator } from "~/modules/purchasing";
 import {
   getSupplierShipping,
-  supplierShippingValidator,
   updateSupplierShipping
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service.server";
 import SupplierShippingForm from "~/modules/purchasing/ui/Supplier/SupplierShippingForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
 
   const { supplierId } = params;
   if (!supplierId) throw new Error("Could not find supplierId");
 
-  const supplierShipping = await getSupplierShipping(client, supplierId);
+  const supplierShipping = await getSupplierShipping(supplierId);
 
   if (supplierShipping.error || !supplierShipping.data) {
     throw redirect(
@@ -39,7 +39,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "purchasing"
   });
 
@@ -55,7 +55,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const update = await updateSupplierShipping(client, {
+  const update = await updateSupplierShipping({
     ...validation.data,
     supplierId,
     updatedBy: userId,

@@ -5,17 +5,17 @@ import { ResizablePanel, ResizablePanelGroup, VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
 import type { Document } from "~/modules/documents";
+import { DocumentsTable } from "~/modules/documents";
 import {
-  DocumentsTable,
   getDocumentExtensions,
   getDocumentLabels,
   getDocuments
-} from "~/modules/documents";
+} from "~/modules/documents/documents.service.server";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     view: "documents"
   });
 
@@ -33,7 +33,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [documents, labels, extensions] = await Promise.all([
-    getDocuments(client, companyId, {
+    getDocuments({
       search,
       favorite,
       recent,
@@ -44,8 +44,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       sorts,
       filters
     }),
-    getDocumentLabels(client, userId),
-    getDocumentExtensions(client)
+    getDocumentLabels(),
+    getDocumentExtensions()
   ]);
 
   if (documents.error) {

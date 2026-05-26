@@ -1,7 +1,7 @@
 import { tool } from "ai";
 import { LuSearch } from "react-icons/lu";
 import { z } from "zod";
-import { generateEmbedding } from "~/modules/shared/shared.service";
+import { generateEmbedding } from "~/modules/shared/shared.service.server";
 import type { ChatContext } from "../agents/shared/context";
 import type { ToolConfig } from "../agents/shared/tools";
 
@@ -96,7 +96,7 @@ export const getPartTool = tool({
         "[getPartTool] searching by embedding for description:",
         description
       );
-      const embedding = await generateEmbedding(context.client, description);
+      const embedding = await generateEmbedding(description);
       console.log(
         "[getPartTool] embedding generated, length:",
         embedding?.length

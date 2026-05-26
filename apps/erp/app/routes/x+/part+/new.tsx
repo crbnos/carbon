@@ -6,7 +6,8 @@ import { trigger } from "@carbon/jobs";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
-import { partValidator, upsertPart } from "~/modules/items";
+import { partValidator } from "~/modules/items";
+import { upsertPart } from "~/modules/items/items.service.server";
 import { PartForm } from "~/modules/items/ui/Parts";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
@@ -20,7 +21,7 @@ export const handle: Handle = {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "parts"
   });
 
@@ -33,7 +34,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const createPart = await upsertPart(client, {
+  const createPart = await upsertPart({
     ...validation.data,
     companyId,
     customFields: setCustomFields(formData),

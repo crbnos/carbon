@@ -39,7 +39,7 @@ import { ActiveFilters, Filter } from "~/components/Table/components/Filter";
 import type { ColumnFilter } from "~/components/Table/components/Filter/types";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { useUrlParams, useUser } from "~/hooks";
-import { getActiveJobOperationsByLocation } from "~/modules/production";
+import { getActiveJobOperationsByLocation } from "~/modules/production/production.service.server";
 import type { Column, OperationItem } from "~/modules/production/ui/Schedule";
 import type {
   DisplaySettings,
@@ -52,8 +52,8 @@ import {
   getLocationsList,
   getProcessesList,
   getWorkCentersByLocation
-} from "~/modules/resources";
-import { getTagsList } from "~/modules/shared";
+} from "~/modules/resources/resources.service.server";
+import { getTagsList } from "~/modules/shared/shared.service.server";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { usePeople } from "~/stores";
 import { makeDurations } from "~/utils/duration";
@@ -138,7 +138,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await getLocationsList();
     if (locations.error || !locations.data?.length) {
       throw redirect(
         path.to.inventory,
@@ -152,10 +152,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const [workCenters, processes, operations, tags] = await Promise.all([
-    getWorkCentersByLocation(client, locationId),
-    getProcessesList(client, companyId),
-    getActiveJobOperationsByLocation(client, locationId, selectedWorkCenterIds),
-    getTagsList(client, companyId, "operation")
+    getWorkCentersByLocation(locationId),
+    getProcessesList(),
+    getActiveJobOperationsByLocation(locationId, selectedWorkCenterIds),
+    getTagsList("operation")
   ]);
 
   const activeWorkCenters = new Set();

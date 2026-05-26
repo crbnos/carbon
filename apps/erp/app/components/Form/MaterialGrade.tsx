@@ -3,10 +3,8 @@ import { CreatableCombobox } from "@carbon/form";
 import { useDisclosure, useMount } from "@carbon/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
-import type {
-  getMaterialGradeList,
-  MaterialGrade as MaterialGradeType
-} from "~/modules/items";
+import type { MaterialGrade as MaterialGradeType } from "~/modules/items";
+import type { getMaterialGradeList } from "~/modules/items/items.service.server";
 import MaterialGradeForm from "~/modules/items/ui/MaterialGrades/MaterialGradeForm";
 import { path } from "~/utils/path";
 

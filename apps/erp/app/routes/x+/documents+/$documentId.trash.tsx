@@ -3,19 +3,19 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { moveDocumentToTrash } from "~/modules/documents";
+import { moveDocumentToTrash } from "~/modules/documents/documents.service.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "documents"
   });
 
   const { documentId } = params;
   if (!documentId) throw notFound("documentId not found");
 
-  const moveToTrash = await moveDocumentToTrash(client, documentId, userId);
+  const moveToTrash = await moveDocumentToTrash(documentId);
 
   if (moveToTrash.error) {
     throw redirect(

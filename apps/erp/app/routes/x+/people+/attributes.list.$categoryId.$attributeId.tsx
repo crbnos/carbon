@@ -5,12 +5,12 @@ import type { LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { AttributeDataType } from "~/modules/people";
-import { getAttribute } from "~/modules/people";
+import { getAttribute } from "~/modules/people/people.service.server";
 import { AttributeForm } from "~/modules/people/ui/Attributes";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "people",
     role: "employee"
   });
@@ -19,7 +19,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!attributeId) throw notFound("attributeId not found");
   if (!categoryId) throw notFound("categoryId not found");
 
-  const attribute = await getAttribute(client, attributeId);
+  const attribute = await getAttribute(attributeId);
   if (attribute.error) {
     throw redirect(
       path.to.attributeCategoryList(categoryId),

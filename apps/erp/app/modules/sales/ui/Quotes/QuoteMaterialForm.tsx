@@ -27,7 +27,7 @@ import {
   UnitOfMeasure
 } from "~/components/Form";
 import { usePermissions, useUrlParams } from "~/hooks";
-import { lookupBuyPrice as lookupBuyPriceAsync } from "~/modules/items";
+import { lookupBuyPrice as lookupBuyPriceAsync } from "~/modules/items/items.client";
 import type { MethodItemType, MethodType } from "~/modules/shared";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -95,6 +95,7 @@ const QuoteMaterialForm = ({
 
   const lookupBuyPrice = useCallback(
     async (itemId: string, qty: number, fallbackCost: number) => {
+      if (!carbon) return fallbackCost;
       return lookupBuyPriceAsync(carbon, itemId, qty, fallbackCost);
     },
     [carbon]

@@ -14,18 +14,18 @@ import type {
   LoaderFunctionArgs
 } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
+import { supplierLocationValidator } from "~/modules/purchasing";
 import {
   getSupplierLocation,
-  supplierLocationValidator,
   updateSupplierLocation
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service.server";
 import SupplierLocationForm from "~/modules/purchasing/ui/Supplier/SupplierLocationForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 import { supplierLocationsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
 
@@ -33,7 +33,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!supplierId) throw notFound("supplierId not found");
   if (!supplierLocationId) throw notFound("supplierLocationId not found");
 
-  const location = await getSupplierLocation(client, supplierLocationId);
+  const location = await getSupplierLocation(supplierLocationId);
   if (location.error) {
     throw redirect(
       path.to.supplierLocations(supplierId),
@@ -51,7 +51,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "purchasing"
   });
 
@@ -74,7 +74,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (addressId === undefined)
     throw badRequest("addressId is undefined in form data");
 
-  const update = await updateSupplierLocation(client, {
+  const update = await updateSupplierLocation({
     addressId,
     name,
     address,

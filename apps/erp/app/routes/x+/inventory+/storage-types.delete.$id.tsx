@@ -27,17 +27,17 @@ import {
   deleteStorageTypeWithCascade,
   getStorageType,
   getStorageTypeUsage
-} from "~/modules/inventory";
+} from "~/modules/inventory/inventory.service.server";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts"
   });
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const storageType = await getStorageType(client, id);
+  const storageType = await getStorageType(id);
   if (storageType.error) {
     throw redirect(
       path.to.storageTypes,
@@ -48,7 +48,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const usage = await getStorageTypeUsage(client, id, companyId);
+  const usage = await getStorageTypeUsage(id);
 
   return {
     storageType: storageType.data,
@@ -58,7 +58,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "parts"
   });
 
@@ -73,7 +73,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await request.formData();
   const cascade = formData.get("cascade") === "true";
 
-  const usage = await getStorageTypeUsage(client, id, companyId);
+  const usage = await getStorageTypeUsage(id);
   const usageCount = usage.count ?? 0;
 
   if (usageCount > 0 && !cascade) {
@@ -89,11 +89,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteTypeError } = await deleteStorageTypeWithCascade(
-    client,
-    id,
-    companyId
-  );
+  const { error: deleteTypeError } = await deleteStorageTypeWithCascade(id);
   if (deleteTypeError) {
     throw redirect(
       `${path.to.storageTypes}?${getParams(request)}`,

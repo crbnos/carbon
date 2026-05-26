@@ -4,10 +4,8 @@ import { useDisclosure, useMount } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
 import { useRouteData } from "~/hooks";
-import type {
-  getUnitOfMeasuresList,
-  UnitOfMeasureListItem
-} from "~/modules/items";
+import type { UnitOfMeasureListItem } from "~/modules/items";
+import type { getUnitOfMeasuresList } from "~/modules/items/items.service.server";
 import UnitOfMeasureForm from "~/modules/items/ui/UnitOfMeasure/UnitOfMeasureForm";
 import { path } from "~/utils/path";
 import { Enumerable } from "../Enumerable";

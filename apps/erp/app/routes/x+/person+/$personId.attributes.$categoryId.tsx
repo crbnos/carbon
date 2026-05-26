@@ -12,12 +12,12 @@ import {
 import { Trans } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
-import { getAttributeCategoryWithValues } from "~/modules/account";
+import { getAttributeCategoryWithValues } from "~/modules/account/account.service.server";
 import { UserAttributesForm } from "~/modules/account/ui/UserAttributes";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "people"
   });
 
@@ -25,12 +25,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!personId) throw new Error("Could not find personId");
   if (!categoryId) throw new Error("Could not find categoryId");
 
-  const category = await getAttributeCategoryWithValues(
-    client,
-    categoryId,
-    personId,
-    companyId
-  );
+  const category = await getAttributeCategoryWithValues(categoryId);
 
   if (category.error || !category.data) {
     throw redirect(

@@ -10,12 +10,12 @@ import { nanoid } from "nanoid";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import { z } from "zod";
-import { upsertPart } from "~/modules/items";
+import { upsertPart } from "~/modules/items/items.service.server";
 import {
   getQuote,
   upsertQuoteLine,
   upsertQuoteLineMethod
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service.server";
 import { path } from "~/utils/path";
 
 const quoteDragValidator = z.object({
@@ -50,7 +50,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const serviceRole = getCarbonServiceRole();
 
-  const quote = await getQuote(serviceRole, quoteId);
+  const quote = await getQuote(quoteId);
   if (quote.error || !quote.data) {
     throw redirect(
       path.to.quote(quoteId),
@@ -125,7 +125,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       createdBy: userId
     };
 
-    const part = await upsertPart(serviceRole, partData);
+    const part = await upsertPart(partData);
     if (part.error || !part.data?.id) {
       throw redirect(
         path.to.quote(quoteId),
@@ -151,10 +151,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       createdBy: userId
     };
 
-    const createQuotationLine = await upsertQuoteLine(
-      serviceRole,
-      quoteLineData
-    );
+    const createQuotationLine = await upsertQuoteLine(quoteLineData);
     if (createQuotationLine.error || !createQuotationLine.data) {
       throw redirect(
         path.to.quote(quoteId),
@@ -168,13 +165,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     targetLineId = createQuotationLine.data.id;
 
     // Create quote line method for Make items
-    const upsertMethod = await upsertQuoteLineMethod(serviceRole, {
+    const upsertMethod = await upsertQuoteLineMethod({
       quoteId,
       quoteLineId: targetLineId,
       itemId: partId ?? "",
-      configuration: undefined,
-      companyId,
-      userId
+      configuration: undefined
     });
 
     if (upsertMethod.error) {

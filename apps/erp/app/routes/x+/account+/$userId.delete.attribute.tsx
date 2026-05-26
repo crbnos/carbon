@@ -3,14 +3,14 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { deleteUserAttributeValue } from "~/modules/account";
-import { getAttribute } from "~/modules/people";
+import { deleteUserAttributeValue } from "~/modules/account/account.service.server";
+import { getAttribute } from "~/modules/people/people.service.server";
 import { getUserClaims } from "~/modules/users/users.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
 
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { companyId, userId } = await requirePermissions(request, {});
   const { userId: targetUserId } = params;
 
   if (!targetUserId) {
@@ -39,7 +39,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (!canUpdateAnyUser && userId === targetUserId) {
     // check if this is a self managed attribute
-    const attribute = await getAttribute(client, userAttributeId);
+    const attribute = await getAttribute(userAttributeId);
     if (attribute.error) {
       return data(
         null,
@@ -59,8 +59,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  const removeAttributeValue = await deleteUserAttributeValue(client, {
-    userId: targetUserId,
+  const removeAttributeValue = await deleteUserAttributeValue({
     userAttributeId: userAttributeId,
     userAttributeValueId: userAttributeValueId
   });

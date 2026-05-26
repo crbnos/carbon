@@ -71,10 +71,11 @@ import {
 } from "~/components";
 import { useUser } from "~/hooks/useUser";
 import type { ActiveProductionEvent } from "~/modules/production";
-import { getActiveProductionEvents, KPIs } from "~/modules/production";
+import { KPIs } from "~/modules/production";
+import { getActiveProductionEvents } from "~/modules/production/production.service.server";
 import { getDeadlineIcon } from "~/modules/production/ui/Jobs";
 import type { WorkCenter } from "~/modules/resources";
-import { getWorkCentersListWithBlockingStatus } from "~/modules/resources";
+import { getWorkCentersListWithBlockingStatus } from "~/modules/resources/resources.service.server";
 
 import type { loader as kpiLoader } from "~/routes/api+/production.kpi.$key";
 import { path } from "~/utils/path";
@@ -112,14 +113,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .select("id,status,assignee")
       .eq("companyId", companyId)
       .eq("assignee", userId),
-    getWorkCentersListWithBlockingStatus(client, companyId)
+    getWorkCentersListWithBlockingStatus()
   ]);
 
   return {
     activeJobs: activeJobs.data?.length ?? 0,
     assignedJobs: assignedJobs.data?.length ?? 0,
     workCenters: workCenters.data ?? [],
-    events: getActiveProductionEvents(client, companyId)
+    events: getActiveProductionEvents()
   };
 }
 

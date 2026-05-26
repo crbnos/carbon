@@ -27,11 +27,8 @@ import {
 } from "~/components/Form";
 import { useIntegrations } from "~/hooks/useIntegrations";
 import { path } from "~/utils/path";
+import { getQuoteLinePricesByQuoteId, getQuoteLines } from "../../sales.client";
 import { quoteFinalizeValidator } from "../../sales.models";
-import {
-  getQuoteLinePricesByQuoteId,
-  getQuoteLines
-} from "../../sales.service";
 import type {
   Quotation,
   QuotationLine,

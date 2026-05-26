@@ -9,7 +9,7 @@ import type {
 } from "react-router";
 import { data, redirect, useNavigate } from "react-router";
 import { procedureValidator } from "~/modules/production/production.models";
-import { upsertProcedure } from "~/modules/production/production.service";
+import { upsertProcedure } from "~/modules/production/production.service.server";
 import ProcedureForm from "~/modules/production/ui/Procedures/ProcedureForm";
 import { path } from "~/utils/path";
 import { getCompanyId, proceduresQuery } from "~/utils/react-query";
@@ -24,7 +24,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "production"
   });
   const formData = await request.formData();
@@ -54,7 +54,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const insertProcedure = await upsertProcedure(client, {
+  const insertProcedure = await upsertProcedure({
     ...d,
     content: contentJSON,
     companyId,

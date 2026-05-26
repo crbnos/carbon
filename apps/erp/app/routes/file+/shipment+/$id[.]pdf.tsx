@@ -5,29 +5,32 @@ import type { JSONContent } from "@carbon/react";
 import { getPreferenceHeaders } from "@carbon/react";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
-import { getPaymentTerm } from "~/modules/accounting";
+import { getPaymentTerm } from "~/modules/accounting/accounting.service.server";
 import {
   getShipment,
   getShipmentLinesWithDetails,
   getShipmentTracking,
   getShippingMethod
-} from "~/modules/inventory";
+} from "~/modules/inventory/inventory.service.server";
 import {
   getPurchaseOrder,
   getPurchaseOrderDelivery,
   getSupplierLocation
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service.server";
 import {
   getCustomerLocation,
   getSalesOrder,
   getSalesOrderShipment,
   getSalesTerms
-} from "~/modules/sales";
-import { getCompany, getCompanySettings } from "~/modules/settings";
-import { getBase64ImageFromSupabase } from "~/modules/shared";
+} from "~/modules/sales/sales.service.server";
+import {
+  getCompany,
+  getCompanySettings
+} from "~/modules/settings/settings.service.server";
+import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client } = await requirePermissions(request, {
     view: "inventory"
   });
 
@@ -36,10 +39,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [company, companySettings, shipment, shipmentLines] = await Promise.all(
     [
-      getCompany(client, companyId),
-      getCompanySettings(client, companyId),
-      getShipment(client, id),
-      getShipmentLinesWithDetails(client, id)
+      getCompany(),
+      getCompanySettings(),
+      getShipment(id),
+      getShipmentLinesWithDetails(id)
     ]
   );
 
@@ -56,7 +59,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
-  const terms = await getSalesTerms(serviceRole, companyId);
+  const terms = await getSalesTerms();
 
   if (terms.error) {
     console.error(terms.error);
@@ -77,8 +80,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   switch (shipment.data.sourceDocument) {
     case "Sales Order": {
       const [salesOrder, salesOrderShipment] = await Promise.all([
-        getSalesOrder(serviceRole, shipment.data.sourceDocumentId),
-        getSalesOrderShipment(serviceRole, shipment.data.sourceDocumentId)
+        getSalesOrder(shipment.data.sourceDocumentId),
+        getSalesOrderShipment(shipment.data.sourceDocumentId)
       ]);
 
       const [
@@ -93,18 +96,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           .select("*")
           .eq("id", salesOrder.data?.customerId ?? "")
           .single(),
-        getCustomerLocation(
-          serviceRole,
-          salesOrder.data?.customerLocationId ?? ""
-        ),
-        getPaymentTerm(serviceRole, salesOrder.data?.paymentTermId ?? ""),
+        getCustomerLocation(salesOrder.data?.customerLocationId ?? ""),
+        getPaymentTerm(salesOrder.data?.paymentTermId ?? ""),
         getShippingMethod(
-          serviceRole,
           shipment.data.shippingMethodId ??
             salesOrderShipment.data?.shippingMethodId ??
             ""
         ),
-        getShipmentTracking(serviceRole, shipment.data.id, companyId)
+        getShipmentTracking(shipment.data.id)
       ]);
 
       if (customer.error) {
@@ -131,12 +130,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
                   if (!path) {
                     return null;
                   }
-                  return getBase64ImageFromSupabase(serviceRole, path).then(
-                    (data) => ({
-                      id,
-                      data
-                    })
-                  );
+                  return getBase64ImageFromSupabase(path).then((data) => ({
+                    id,
+                    data
+                  }));
                 })
               )
             : []
@@ -215,15 +212,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           .select("*")
           .eq("id", salesInvoice.data?.customerId ?? "")
           .single(),
-        getCustomerLocation(serviceRole, salesInvoice.data?.locationId ?? ""),
-        getPaymentTerm(serviceRole, salesInvoice.data?.paymentTermId ?? ""),
+        getCustomerLocation(salesInvoice.data?.locationId ?? ""),
+        getPaymentTerm(salesInvoice.data?.paymentTermId ?? ""),
         getShippingMethod(
-          serviceRole,
           shipment.data.shippingMethodId ??
             salesInvoice.data?.salesInvoiceShipment?.shippingMethodId ??
             ""
         ),
-        getShipmentTracking(serviceRole, shipment.data.id, companyId)
+        getShipmentTracking(shipment.data.id)
       ]);
 
       if (customer.error) {
@@ -250,12 +246,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
                   if (!path) {
                     return null;
                   }
-                  return getBase64ImageFromSupabase(serviceRole, path).then(
-                    (data) => ({
-                      id,
-                      data
-                    })
-                  );
+                  return getBase64ImageFromSupabase(path).then((data) => ({
+                    id,
+                    data
+                  }));
                 })
               )
             : []
@@ -312,8 +306,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
     case "Purchase Order": {
       const [purchaseOrder, purchaseOrderDelivery] = await Promise.all([
-        getPurchaseOrder(client, shipment.data.sourceDocumentId),
-        getPurchaseOrderDelivery(client, shipment.data.sourceDocumentId)
+        getPurchaseOrder(shipment.data.sourceDocumentId),
+        getPurchaseOrderDelivery(shipment.data.sourceDocumentId)
       ]);
 
       const [
@@ -328,16 +322,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           .select("*")
           .eq("id", purchaseOrder.data?.supplierId ?? "")
           .single(),
-        getSupplierLocation(
-          client,
-          purchaseOrder.data?.supplierLocationId ?? ""
-        ),
-        getPaymentTerm(client, purchaseOrder.data?.paymentTermId ?? ""),
-        getShippingMethod(
-          client,
-          purchaseOrderDelivery.data?.shippingMethodId ?? ""
-        ),
-        getShipmentTracking(client, shipment.data.id, companyId)
+        getSupplierLocation(purchaseOrder.data?.supplierLocationId ?? ""),
+        getPaymentTerm(purchaseOrder.data?.paymentTermId ?? ""),
+        getShippingMethod(purchaseOrderDelivery.data?.shippingMethodId ?? ""),
+        getShipmentTracking(shipment.data.id)
       ]);
 
       if (supplier.error) {
@@ -364,12 +352,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
                   if (!path) {
                     return null;
                   }
-                  return getBase64ImageFromSupabase(client, path).then(
-                    (data) => ({
-                      id,
-                      data
-                    })
-                  );
+                  return getBase64ImageFromSupabase(path).then((data) => ({
+                    id,
+                    data
+                  }));
                 })
               )
             : []

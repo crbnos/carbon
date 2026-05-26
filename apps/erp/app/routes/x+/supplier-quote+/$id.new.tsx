@@ -1,16 +1,17 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
-  getSupplierQuote,
   isSupplierQuoteLocked,
-  supplierQuoteLineValidator,
-  upsertSupplierQuoteLine
+  supplierQuoteLineValidator
 } from "~/modules/purchasing";
+import {
+  getSupplierQuote,
+  upsertSupplierQuoteLine
+} from "~/modules/purchasing/purchasing.service.server";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
@@ -24,10 +25,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id: supplierQuoteId } = params;
   if (!supplierQuoteId) throw new Error("Could not find supplierQuoteId");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
-  const quote = await getSupplierQuote(viewClient, supplierQuoteId);
+  const quote = await getSupplierQuote(supplierQuoteId);
   await requireUnlocked({
     request,
     isLocked: isSupplierQuoteLocked(quote.data?.status),
@@ -47,8 +48,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const serviceRole = getCarbonServiceRole();
-  const createQuotationLine = await upsertSupplierQuoteLine(serviceRole, {
+  const createQuotationLine = await upsertSupplierQuoteLine({
     ...d,
     companyId,
     createdBy: userId,

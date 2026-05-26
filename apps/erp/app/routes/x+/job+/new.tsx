@@ -1,6 +1,5 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
@@ -9,16 +8,16 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { useUrlParams, useUser } from "~/hooks";
-import { getDefaultStorageUnitForJob } from "~/modules/inventory";
-import { getItemReplenishment } from "~/modules/items";
+import { getDefaultStorageUnitForJob } from "~/modules/inventory/inventory.service.server";
+import { getItemReplenishment } from "~/modules/items/items.service.server";
+import { jobValidator } from "~/modules/production";
 import {
   calculateJobPriority,
-  jobValidator,
   upsertJob,
   upsertJobMethod
-} from "~/modules/production";
+} from "~/modules/production/production.service.server";
 import { JobForm } from "~/modules/production/ui/Jobs";
-import { getNextSequence } from "~/modules/settings";
+import { getNextSequence } from "~/modules/settings/settings.service.server";
 import type { MethodItemType } from "~/modules/shared";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
@@ -32,7 +31,7 @@ export const handle: Handle = {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "production",
     role: "employee"
   });
@@ -50,9 +49,9 @@ export async function action({ request }: ActionFunctionArgs) {
   // Fetch manufacturing data for lead time and scrap percentage
   const [nextSequenceResult, manufacturing] = await Promise.all([
     useNextSequence
-      ? getNextSequence(client, "job", companyId)
+      ? getNextSequence("job")
       : Promise.resolve({ data: null, error: null }),
-    getItemReplenishment(client, validation.data.itemId, companyId)
+    getItemReplenishment(validation.data.itemId)
   ]);
 
   if (useNextSequence) {
@@ -96,21 +95,18 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const storageUnitId = await getDefaultStorageUnitForJob(
-    client,
     validation.data.itemId,
-    validation.data.locationId,
-    companyId
+    validation.data.locationId
   );
 
   // Calculate priority based on due date and deadline type
-  const priority = await calculateJobPriority(client, {
+  const priority = await calculateJobPriority({
     dueDate: d.dueDate ?? null,
     deadlineType: d.deadlineType,
-    companyId,
     locationId: validation.data.locationId
   });
 
-  const createJob = await upsertJob(client, {
+  const createJob = await upsertJob({
     ...d,
     jobId,
     configuration,
@@ -134,17 +130,11 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const upsertMethod = await upsertJobMethod(
-    getCarbonServiceRole(),
-    "itemToJob",
-    {
-      sourceId: d.itemId,
-      targetId: id,
-      companyId,
-      userId,
-      configuration
-    }
-  );
+  const upsertMethod = await upsertJobMethod("itemToJob", {
+    sourceId: d.itemId,
+    targetId: id,
+    configuration
+  });
 
   if (upsertMethod.error) {
     throw redirect(

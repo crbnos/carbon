@@ -6,12 +6,11 @@ import type { ActionFunctionArgs } from "react-router";
 import { redirect, useParams } from "react-router";
 import { useRouteData, useUser } from "~/hooks";
 import type { Customer, SalesOrder, SalesOrderLineType } from "~/modules/sales";
+import { isSalesOrderLocked, salesOrderLineValidator } from "~/modules/sales";
 import {
   getSalesOrder,
-  isSalesOrderLocked,
-  salesOrderLineValidator,
   upsertSalesOrderLine
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service.server";
 import { SalesOrderLineForm } from "~/modules/sales/ui/SalesOrder";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
@@ -22,11 +21,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
-  const salesOrder = await getSalesOrder(viewClient, orderId);
+  const salesOrder = await getSalesOrder(orderId);
   await requireUnlocked({
     request,
     isLocked: isSalesOrderLocked(salesOrder.data?.status),
@@ -34,7 +33,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot add lines to a locked sales order. Reopen it first."
   });
 
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "sales"
   });
 
@@ -62,7 +61,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     d.assetId = undefined;
   }
 
-  const createSalesOrderLine = await upsertSalesOrderLine(client, {
+  const createSalesOrderLine = await upsertSalesOrderLine({
     ...d,
     companyId,
     createdBy: userId,

@@ -1,13 +1,11 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  isRfqLocked,
-  upsertPurchasingRFQSuppliers
-} from "~/modules/purchasing";
+import { isRfqLocked } from "~/modules/purchasing";
+import { upsertPurchasingRFQSuppliers } from "~/modules/purchasing/purchasing.service.server";
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { client, userId } = await requirePermissions(request, {
     update: "purchasing"
   });
 
@@ -54,11 +52,8 @@ export async function action({ request }: ActionFunctionArgs) {
       // Apply to each RFQ
       for (const id of ids as string[]) {
         const result = await upsertPurchasingRFQSuppliers(
-          client,
           id as string,
-          supplierIds,
-          companyId,
-          userId
+          supplierIds
         );
         if (result.error) {
           return result;

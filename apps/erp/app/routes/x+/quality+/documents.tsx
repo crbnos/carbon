@@ -3,9 +3,9 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, useLoaderData } from "react-router";
-import { getQualityDocuments } from "~/modules/quality";
+import { getQualityDocuments } from "~/modules/quality/quality.service.server";
 import QualityDocumentsTable from "~/modules/quality/ui/Documents/QualityDocumentsTable";
-import { getTagsList } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared/shared.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -16,7 +16,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "quality",
     role: "employee"
   });
@@ -28,14 +28,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [qualityDocuments, tags] = await Promise.all([
-    getQualityDocuments(client, companyId, {
+    getQualityDocuments({
       search,
       limit,
       offset,
       sorts,
       filters
     }),
-    getTagsList(client, companyId, "qualityDocument")
+    getTagsList("qualityDocument")
   ]);
 
   return {

@@ -26,7 +26,6 @@ import { useNavigation, useParams } from "react-router";
 import { useUser } from "~/hooks";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
-import { getReceiptTracking } from "../../inventory.service";
 import type { ReceiptLine } from "../../types";
 
 const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
@@ -55,9 +54,7 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
   >([]);
 
   const { carbon } = useCarbon();
-  const {
-    company: { id: companyId }
-  } = useUser();
+  const { company } = useUser();
 
   const validateReceiptTracking = async () => {
     const errors: {
@@ -71,11 +68,11 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
       return;
     }
 
-    const receiptLineTracking = await getReceiptTracking(
-      carbon,
-      receiptId,
-      companyId
-    );
+    const receiptLineTracking = await carbon
+      .from("trackedEntity")
+      .select("*")
+      .eq("attributes ->> Receipt", receiptId)
+      .eq("companyId", company.id);
 
     const hasReceiptLines = routeData?.receiptLines.some(
       (line) => (line.receivedQuantity ?? 0) > 0

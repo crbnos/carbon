@@ -3,20 +3,20 @@ import { generateProductLabelZPL } from "@carbon/documents/zpl";
 import { labelSizes } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { getTrackedEntitiesByMakeMethodId } from "~/modules/inventory";
-import { getCompanySettings } from "~/modules/settings";
+import { getTrackedEntitiesByMakeMethodId } from "~/modules/inventory/inventory.service.server";
+import { getCompanySettings } from "~/modules/settings/settings.service.server";
 
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
   const [companySettings, trackedEntities] = await Promise.all([
-    getCompanySettings(client, companyId),
-    getTrackedEntitiesByMakeMethodId(client, id)
+    getCompanySettings(),
+    getTrackedEntitiesByMakeMethodId(id)
   ]);
 
   // Get the label size from query params or default to zebra2x1

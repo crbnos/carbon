@@ -6,8 +6,8 @@ import { Outlet } from "react-router";
 import { GroupedContentSidebar } from "~/components/Layout";
 import { CollapsibleSidebarProvider } from "~/components/Layout/Navigation";
 import { useInventorySubmodules } from "~/modules/inventory";
-import { getUnitOfMeasuresList } from "~/modules/items";
-import { getLocationsList } from "~/modules/resources";
+import { getUnitOfMeasuresList } from "~/modules/items/items.service.server";
+import { getLocationsList } from "~/modules/resources/resources.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -22,13 +22,13 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "inventory"
   });
 
   const [unitOfMeasures, locations] = await Promise.all([
-    getUnitOfMeasuresList(client, companyId),
-    getLocationsList(client, companyId)
+    getUnitOfMeasuresList(),
+    getLocationsList()
   ]);
 
   return {

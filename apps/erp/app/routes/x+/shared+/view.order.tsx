@@ -3,11 +3,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { updateSavedViewOrder } from "~/modules/shared/shared.service";
+import { updateSavedViewOrder } from "~/modules/shared/shared.service.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {});
+  const { userId } = await requirePermissions(request, {});
 
   const updatesRaw = (await request.formData()).get("updates") as string;
   if (!updatesRaw) {
@@ -25,7 +25,7 @@ export async function action({ request }: ActionFunctionArgs) {
       })
     );
 
-    const updateSortOrders = await updateSavedViewOrder(client, updates);
+    const updateSortOrders = await updateSavedViewOrder(updates);
 
     if (updateSortOrders.some((update) => update.error))
       return data(

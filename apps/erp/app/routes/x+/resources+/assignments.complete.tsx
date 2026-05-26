@@ -3,11 +3,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
-import { insertTrainingCompletion } from "~/modules/resources";
+import { insertTrainingCompletion } from "~/modules/resources/resources.service.server";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "resources",
     role: "employee"
   });
@@ -28,13 +28,11 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const result = await insertTrainingCompletion(client, {
+  const result = await insertTrainingCompletion({
     trainingAssignmentId: trainingAssignmentId.toString(),
     employeeId: employeeId.toString(),
     period: period?.toString() || null,
-    companyId,
-    completedBy: userId,
-    createdBy: userId
+    completedBy: userId
   });
 
   if (result.error) {

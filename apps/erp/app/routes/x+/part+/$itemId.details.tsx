@@ -16,6 +16,7 @@ import { Await, redirect, useLoaderData, useParams } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemFile, MakeMethod, PartSummary } from "~/modules/items";
+import { itemManufacturingValidator, partValidator } from "~/modules/items";
 import {
   getConfigurationParameters,
   getConfigurationRules,
@@ -24,11 +25,9 @@ import {
   getMakeMethods,
   getMethodMaterialsByMakeMethod,
   getMethodOperationsByMakeMethodId,
-  itemManufacturingValidator,
-  partValidator,
   upsertItemManufacturing,
   upsertPart
-} from "~/modules/items";
+} from "~/modules/items/items.service.server";
 import {
   BillOfMaterial,
   BillOfProcess,
@@ -40,13 +39,13 @@ import {
 import ItemManufacturingForm from "~/modules/items/ui/Item/ItemManufacturingForm";
 import { ConfigurationParametersForm } from "~/modules/items/ui/Parts";
 import type { MethodItemType, MethodType } from "~/modules/shared";
-import { getTagsList } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared/shared.service.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 import { configurableItemsQuery, getCompanyId } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts",
     bypassRls: true
   });
@@ -57,7 +56,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const requestedMethodId = url.searchParams.get("methodId");
 
-  const makeMethods = await getMakeMethods(client, itemId, companyId);
+  const makeMethods = await getMakeMethods(itemId);
   const makeMethod = requestedMethodId
     ? (makeMethods.data?.find((m) => m.id === requestedMethodId) ??
       makeMethods.data?.find((m) => m.status === "Active") ??
@@ -69,31 +68,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     return { methodData: null, tags: [] };
   }
 
-  const fullMethod = await getMakeMethodById(client, makeMethod.id, companyId);
+  const fullMethod = await getMakeMethodById(makeMethod.id);
   if (fullMethod.error || !fullMethod.data) {
     return { methodData: null, tags: [] };
   }
 
   const [methodMaterials, methodOperations, tags, partManufacturing] =
     await Promise.all([
-      getMethodMaterialsByMakeMethod(client, fullMethod.data.id),
-      getMethodOperationsByMakeMethodId(client, fullMethod.data.id),
-      getTagsList(client, companyId, "operation"),
-      getItemManufacturing(client, itemId, companyId)
+      getMethodMaterialsByMakeMethod(fullMethod.data.id),
+      getMethodOperationsByMakeMethodId(fullMethod.data.id),
+      getTagsList("operation"),
+      getItemManufacturing(itemId)
     ]);
 
   const configData = partManufacturing.data?.requiresConfiguration
     ? {
-        configurationParametersAndGroups: await getConfigurationParameters(
-          client,
-          itemId,
-          companyId
-        ),
-        configurationRules: await getConfigurationRules(
-          client,
-          itemId,
-          companyId
-        )
+        configurationParametersAndGroups:
+          await getConfigurationParameters(itemId),
+        configurationRules: await getConfigurationRules(itemId)
       }
     : {
         configurationParametersAndGroups: { groups: [], parameters: [] },
@@ -127,7 +119,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -147,7 +139,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       return validationError(validation.error);
     }
 
-    const updatePartManufacturing = await upsertItemManufacturing(client, {
+    const updatePartManufacturing = await upsertItemManufacturing({
       ...validation.data,
       requiresConfiguration: validation.data.requiresConfiguration ?? false,
       itemId,
@@ -179,7 +171,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updatePart = await upsertPart(client, {
+  const updatePart = await upsertPart({
     ...validation.data,
     id: itemId,
     customFields: setCustomFields(formData),

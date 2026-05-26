@@ -5,27 +5,29 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
-  getIssue,
-  insertIssueReviewer,
   isIssueLocked,
   nonConformanceReviewerValidator
 } from "~/modules/quality";
+import {
+  getIssue,
+  insertIssueReviewer
+} from "~/modules/quality/quality.service.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "quality"
   });
 
   const { id } = params;
   if (!id) throw new Error("Non-conformance ID is required");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "quality"
   });
-  const issue = await getIssue(viewClient, id);
+  const issue = await getIssue(id);
   await requireUnlocked({
     request,
     isLocked: isIssueLocked(issue.data?.status),
@@ -47,7 +49,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const updateCurrency = await insertIssueReviewer(client, {
+  const updateCurrency = await insertIssueReviewer({
     ...validation.data,
     nonConformanceId: id,
     companyId,

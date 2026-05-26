@@ -5,9 +5,9 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
-import { getTrackedEntities } from "~/modules/inventory";
+import { getTrackedEntities } from "~/modules/inventory/inventory.service.server";
 import TrackedEntitiesTable from "~/modules/inventory/ui/Traceability/TrackedEntitiesTable";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -18,7 +18,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client } = await requirePermissions(request, {
     view: "inventory",
     role: "employee"
   });
@@ -30,14 +30,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [trackedEntities, companySettings] = await Promise.all([
-    getTrackedEntities(client, companyId, {
+    getTrackedEntities({
       search,
       limit,
       offset,
       sorts,
       filters
     }),
-    getCompanySettings(client, companyId)
+    getCompanySettings()
   ]);
 
   if (trackedEntities.error) {

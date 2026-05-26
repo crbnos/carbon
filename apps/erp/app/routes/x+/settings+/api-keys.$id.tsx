@@ -7,7 +7,8 @@ import type { ActionFunctionArgs } from "react-router";
 import { data, redirect, useNavigate, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { ApiKey } from "~/modules/settings";
-import { ApiKeyForm, apiKeyValidator, upsertApiKey } from "~/modules/settings";
+import { ApiKeyForm, apiKeyValidator } from "~/modules/settings";
+import { upsertApiKey } from "~/modules/settings/settings.service.server";
 import { getParams, path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -39,7 +40,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Parse scopes from JSON string
   const scopes = scopesJson ? JSON.parse(scopesJson) : {};
 
-  const updateApiKey = await upsertApiKey(client, {
+  const updateApiKey = await upsertApiKey({
     id,
     ...d,
     scopes,

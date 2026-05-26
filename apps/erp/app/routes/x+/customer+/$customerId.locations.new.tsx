@@ -8,10 +8,8 @@ import type {
 } from "react-router";
 import { data, redirect, useNavigate, useParams } from "react-router";
 import { useUser } from "~/hooks";
-import {
-  customerLocationValidator,
-  insertCustomerLocation
-} from "~/modules/sales";
+import { customerLocationValidator } from "~/modules/sales";
+import { insertCustomerLocation } from "~/modules/sales/sales.service.server";
 import { CustomerLocationForm } from "~/modules/sales/ui/Customer";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -19,7 +17,7 @@ import { customerLocationsQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "sales"
   });
 
@@ -40,9 +38,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, addressId, name, ...address } = validation.data;
 
-  const createCustomerLocation = await insertCustomerLocation(client, {
+  const createCustomerLocation = await insertCustomerLocation({
     customerId,
-    companyId,
     name,
     address,
     customFields: setCustomFields(formData)

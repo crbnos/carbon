@@ -3,13 +3,13 @@ import type {
   ClientLoaderFunctionArgs,
   LoaderFunctionArgs
 } from "react-router";
-import { getWorkCentersList } from "~/modules/resources";
+import { getWorkCentersList } from "~/modules/resources/resources.service.server";
 import { getCompanyId, workCentersQuery } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
-  return await getWorkCentersList(client, companyId);
+  return await getWorkCentersList();
 }
 
 export async function clientLoader({ serverLoader }: ClientLoaderFunctionArgs) {

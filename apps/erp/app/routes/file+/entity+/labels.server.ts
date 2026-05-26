@@ -1,7 +1,7 @@
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getTrackedEntity } from "~/modules/inventory";
-import { getCompanySettings } from "~/modules/settings/settings.service";
+import { getTrackedEntity } from "~/modules/inventory/inventory.service.server";
+import { getCompanySettings } from "~/modules/settings/settings.service.server";
 
 export async function getEntityLabelData(
   client: SupabaseClient<Database>,
@@ -9,8 +9,8 @@ export async function getEntityLabelData(
   trackedEntityId: string
 ) {
   const [companySettings, trackedEntity] = await Promise.all([
-    getCompanySettings(client, companyId),
-    getTrackedEntity(client, trackedEntityId)
+    getCompanySettings(),
+    getTrackedEntity(trackedEntityId)
   ]);
 
   if (!trackedEntity.data) {

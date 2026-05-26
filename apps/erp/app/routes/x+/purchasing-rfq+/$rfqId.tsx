@@ -1,6 +1,5 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { type JSONContent, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
@@ -14,7 +13,7 @@ import {
   getPurchasingRFQLines,
   getPurchasingRFQSuppliersWithLinks,
   getSupplierInteractionDocuments
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service.server";
 import {
   PurchasingRFQExplorer,
   PurchasingRFQHeader,
@@ -29,20 +28,18 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
 
   const { rfqId } = params;
   if (!rfqId) throw new Error("Could not find rfqId");
 
-  const serviceRole = await getCarbonServiceRole();
-
   const [rfqSummary, lines, suppliers, linkedQuotes] = await Promise.all([
-    getPurchasingRFQ(serviceRole, rfqId),
-    getPurchasingRFQLines(serviceRole, rfqId),
-    getPurchasingRFQSuppliersWithLinks(serviceRole, rfqId),
-    getLinkedSupplierQuotes(serviceRole, rfqId)
+    getPurchasingRFQ(rfqId),
+    getPurchasingRFQLines(rfqId),
+    getPurchasingRFQSuppliersWithLinks(rfqId),
+    getLinkedSupplierQuotes(rfqId)
   ]);
 
   if (rfqSummary.error) {
@@ -103,7 +100,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       })) ?? [],
     linkedQuotes: supplierQuotes,
     // Use rfqId as the interaction ID for document storage
-    files: getSupplierInteractionDocuments(serviceRole, companyId, rfqId)
+    files: getSupplierInteractionDocuments(rfqId)
   };
 }
 

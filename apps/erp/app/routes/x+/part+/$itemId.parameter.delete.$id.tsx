@@ -1,18 +1,18 @@
 import { assertIsPost, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
-import { deleteConfigurationParameter } from "~/modules/items";
+import { deleteConfigurationParameter } from "~/modules/items/items.service.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "parts"
   });
 
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const remove = await deleteConfigurationParameter(client, id);
+  const remove = await deleteConfigurationParameter(id);
 
   if (remove.error) {
     return {

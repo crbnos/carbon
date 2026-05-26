@@ -4,7 +4,8 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useNavigate } from "react-router";
-import { createPricingRule, pricingRuleValidator } from "~/modules/sales";
+import { pricingRuleValidator } from "~/modules/sales";
+import { createPricingRule } from "~/modules/sales/sales.service.server";
 import PricingRuleForm from "~/modules/sales/ui/Pricing/PricingRuleForm";
 import { getParams, path } from "~/utils/path";
 
@@ -15,7 +16,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "sales"
   });
 
@@ -26,12 +27,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const result = await createPricingRule(
-    client,
-    companyId,
-    userId,
-    validation.data
-  );
+  const result = await createPricingRule(validation.data);
 
   if (result.error) {
     throw redirect(

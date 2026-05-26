@@ -8,10 +8,8 @@ import type {
   ClientActionFunctionArgs
 } from "react-router";
 import { data, redirect, useNavigate, useParams } from "react-router";
-import {
-  customerContactValidator,
-  insertCustomerContact
-} from "~/modules/sales";
+import { customerContactValidator } from "~/modules/sales";
+import { insertCustomerContact } from "~/modules/sales/sales.service.server";
 import { CustomerContactForm } from "~/modules/sales/ui/Customer";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -43,9 +41,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, contactId, customerLocationId, ...contact } = validation.data;
 
-  const createCustomerContact = await insertCustomerContact(client, {
+  const createCustomerContact = await insertCustomerContact({
     customerId,
-    companyId,
     contact,
     customerLocationId,
     customFields: setCustomFields(formData)

@@ -8,19 +8,19 @@ import type {
   LoaderFunctionArgs
 } from "react-router";
 import { data, redirect, useLoaderData } from "react-router";
+import { currencyValidator } from "~/modules/accounting";
 import {
-  currencyValidator,
   getCurrency,
   getExchangeRateHistory,
   upsertCurrency
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service.server";
 import { ExchangeRateForm } from "~/modules/accounting/ui/ExchangeRates";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 import { currenciesQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyGroupId } = await requirePermissions(request, {
+  const { companyGroupId } = await requirePermissions(request, {
     view: "accounting",
     role: "employee"
   });
@@ -28,10 +28,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { currencyId } = params;
   if (!currencyId) throw notFound("currencyId not found");
 
-  const currency = await getCurrency(client, currencyId);
+  const currency = await getCurrency(currencyId);
   const exchangeRateHistory =
     currency.data && currency.data.code
-      ? await getExchangeRateHistory(client, companyGroupId, currency.data.code)
+      ? await getExchangeRateHistory(companyGroupId, currency.data.code)
       : { data: [] };
 
   return {
@@ -42,7 +42,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyGroupId, userId } = await requirePermissions(request, {
+  const { companyGroupId, userId } = await requirePermissions(request, {
     update: "accounting"
   });
 
@@ -56,7 +56,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, ...d } = validation.data;
   if (!id) throw new Error("id not found");
 
-  const updateCurrency = await upsertCurrency(client, {
+  const updateCurrency = await upsertCurrency({
     id,
     ...d,
     companyGroupId,

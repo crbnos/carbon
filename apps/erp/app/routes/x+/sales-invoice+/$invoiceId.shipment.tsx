@@ -5,11 +5,13 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
-  getSalesInvoice,
   isSalesInvoiceLocked,
-  salesInvoiceShipmentValidator,
-  upsertSalesInvoiceShipment
+  salesInvoiceShipmentValidator
 } from "~/modules/invoicing";
+import {
+  getSalesInvoice,
+  upsertSalesInvoiceShipment
+} from "~/modules/invoicing/invoicing.service.server";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
@@ -21,11 +23,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
   // Check if SI is locked
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "invoicing"
   });
 
-  const invoice = await getSalesInvoice(viewClient, invoiceId);
+  const invoice = await getSalesInvoice(invoiceId);
   if (invoice.error) {
     throw redirect(
       path.to.salesInvoice(invoiceId),
@@ -40,7 +42,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked sales invoice. Reopen it first."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "invoicing"
   });
 
@@ -53,7 +55,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateSalesInvoiceShipment = await upsertSalesInvoiceShipment(client, {
+  const updateSalesInvoiceShipment = await upsertSalesInvoiceShipment({
     ...validation.data,
     id: invoiceId,
     updatedBy: userId,

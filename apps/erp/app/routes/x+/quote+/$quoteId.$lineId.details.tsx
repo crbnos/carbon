@@ -24,6 +24,7 @@ import type {
   QuotationPrice,
   QuoteMethod
 } from "~/modules/sales";
+import { isQuoteLocked, quoteLineValidator } from "~/modules/sales";
 import {
   calculatePricesForQuantities,
   getConfigurationParametersByQuoteLineId,
@@ -37,12 +38,10 @@ import {
   getQuoteOperationsByMethodId,
   getRelatedPricesForQuoteLine,
   getRootQuoteMakeMethod,
-  isQuoteLocked,
-  quoteLineValidator,
   resolvePurchaseToOrderPrices,
   resolveQuoteLinePrices,
   upsertQuoteLine
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service.server";
 import {
   OpportunityLineDocuments,
   OpportunityLineNotes
@@ -58,13 +57,14 @@ import {
 } from "~/modules/sales/ui/Quotes";
 import QuoteLinePricingHistory from "~/modules/sales/ui/Quotes/QuoteLinePricingHistory";
 import QuoteLineRiskRegister from "~/modules/sales/ui/Quotes/QuoteLineRiskRegister";
-import { getTagsList, type SupplierPriceMap } from "~/modules/shared";
+import type { SupplierPriceMap } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared/shared.service.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
@@ -72,12 +72,10 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   if (!quoteId) throw new Error("Could not find quoteId");
   if (!lineId) throw new Error("Could not find lineId");
 
-  const serviceRole = await getCarbonServiceRole();
-
   const [line, operations, prices] = await Promise.all([
-    getQuoteLine(serviceRole, lineId),
-    getQuoteOperationsByLine(serviceRole, lineId),
-    getQuoteLinePrices(serviceRole, lineId)
+    getQuoteLine(lineId),
+    getQuoteOperationsByLine(lineId),
+    getQuoteLinePrices(lineId)
   ]);
 
   if (line.error) {
@@ -89,15 +87,15 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
   const itemId = line.data.itemId!;
 
-  const rootMethod = await getRootQuoteMakeMethod(serviceRole, lineId);
+  const rootMethod = await getRootQuoteMakeMethod(lineId);
 
   const methodData = rootMethod.data
     ? await (async () => {
         const methodId = rootMethod.data.id;
         const [materials, methodOperations, tags] = await Promise.all([
-          getQuoteMaterialsByMethodId(serviceRole, methodId),
-          getQuoteOperationsByMethodId(serviceRole, methodId),
-          getTagsList(client, companyId, "operation")
+          getQuoteMaterialsByMethodId(methodId),
+          getQuoteOperationsByMethodId(methodId),
+          getTagsList("operation")
         ]);
 
         return {
@@ -121,12 +119,9 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
               workInstruction: o.workInstruction as JSONContent,
               tags: o.tags ?? []
             })) ?? [],
-          configurationParameters: getConfigurationParametersByQuoteLineId(
-            serviceRole,
-            lineId,
-            companyId
-          ),
-          model: getModelByQuoteLineId(serviceRole, lineId),
+          configurationParameters:
+            getConfigurationParametersByQuoteLineId(lineId),
+          model: getModelByQuoteLineId(lineId),
           tags: tags.data ?? [],
           rootMethodId: methodId
         };
@@ -136,21 +131,21 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   return {
     line: line.data,
     operations: operations?.data ?? [],
-    files: getOpportunityLineDocuments(serviceRole, companyId, lineId, itemId),
+    files: getOpportunityLineDocuments(lineId, itemId),
     pricesByQuantity: (prices?.data ?? []).reduce<
       Record<number, QuotationPrice>
     >((acc, price) => {
       acc[price.quantity] = price;
       return acc;
     }, {}),
-    relatedPrices: getRelatedPricesForQuoteLine(serviceRole, itemId, quoteId),
+    relatedPrices: getRelatedPricesForQuoteLine(itemId, quoteId),
     methodData
   };
 };
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     create: "sales"
   });
 
@@ -158,10 +153,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!quoteId) throw new Error("Could not find quoteId");
   if (!lineId) throw new Error("Could not find lineId");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
-  const quote = await getQuote(viewClient, quoteId);
+  const quote = await getQuote(quoteId);
   await requireUnlocked({
     request,
     isLocked: isQuoteLocked(quote.data?.status),
@@ -180,7 +175,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const updateQuotationLine = await upsertQuoteLine(client, {
+  const updateQuotationLine = await upsertQuoteLine({
     id: lineId,
     ...d,
     updatedBy: userId,
@@ -226,29 +221,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (addedQuantities.length > 0) {
       const priceResult =
         methodType === "Make to Order"
-          ? await calculatePricesForQuantities(
-              serviceRole,
-              quoteId,
-              lineId,
-              addedQuantities,
-              userId
-            )
+          ? await calculatePricesForQuantities(quoteId, lineId, addedQuantities)
           : methodType === "Pull from Inventory"
-            ? await resolveQuoteLinePrices(
-                serviceRole,
-                companyId,
-                quoteId,
-                lineId,
-                addedQuantities,
-                userId
-              )
+            ? await resolveQuoteLinePrices(quoteId, lineId, addedQuantities)
             : await resolvePurchaseToOrderPrices(
-                serviceRole,
-                companyId,
                 quoteId,
                 lineId,
-                addedQuantities,
-                userId
+                addedQuantities
               );
 
       if (priceResult?.error) {

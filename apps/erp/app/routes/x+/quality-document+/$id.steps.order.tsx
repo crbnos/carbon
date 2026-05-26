@@ -4,11 +4,11 @@ import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 
-import { updateQualityDocumentStepOrder } from "~/modules/quality";
+import { updateQualityDocumentStepOrder } from "~/modules/quality/quality.service.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "quality"
   });
 
@@ -28,10 +28,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     })
   );
 
-  const updateSortOrders = await updateQualityDocumentStepOrder(
-    client,
-    updates
-  );
+  const updateSortOrders = await updateQualityDocumentStepOrder(updates);
   if (updateSortOrders.some((update) => update.error))
     return data(
       {},

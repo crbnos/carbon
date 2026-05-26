@@ -5,18 +5,18 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData } from "react-router";
+import { productionEventValidator } from "~/modules/production";
 import {
   getJobOperations,
   getProductionEvent,
-  productionEventValidator,
   upsertProductionEvent
-} from "~/modules/production";
+} from "~/modules/production/production.service.server";
 import { ProductionEventForm } from "~/modules/production/ui/Jobs";
-import { getWorkCentersList } from "~/modules/resources";
+import { getWorkCentersList } from "~/modules/resources/resources.service.server";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "production"
   });
 
@@ -25,9 +25,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!jobId) throw notFound("jobId not found");
 
   const [jobOperations, workCenters, productionEvent] = await Promise.all([
-    getJobOperations(client, jobId),
-    getWorkCentersList(client, companyId),
-    getProductionEvent(client, id)
+    getJobOperations(jobId),
+    getWorkCentersList(),
+    getProductionEvent(id)
   ]);
 
   const operationOptions = jobOperations.data?.map((operation) => ({
@@ -47,7 +47,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "production"
   });
 
@@ -66,7 +66,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id, ...d } = validation.data;
   if (!id) throw new Error("id not found");
 
-  const update = await upsertProductionEvent(client, {
+  const update = await upsertProductionEvent({
     id,
     ...d,
     companyId,

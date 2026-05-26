@@ -13,17 +13,20 @@ import {
   getQuoteMakeMethod,
   getQuoteMaterialsByMethodId,
   getQuoteOperationsByMethodId
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service.server";
 import {
   QuoteBillOfMaterial,
   QuoteBillOfProcess,
   QuoteMakeMethodTools
 } from "~/modules/sales/ui/Quotes";
-import { getModelByItemId, getTagsList } from "~/modules/shared";
+import {
+  getModelByItemId,
+  getTagsList
+} from "~/modules/shared/shared.service.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
@@ -33,10 +36,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!methodId) throw new Error("Could not find methodId");
 
   const [makeMethod, materials, operations, tags] = await Promise.all([
-    getQuoteMakeMethod(client, methodId),
-    getQuoteMaterialsByMethodId(client, methodId),
-    getQuoteOperationsByMethodId(client, methodId),
-    getTagsList(client, companyId, "operation")
+    getQuoteMakeMethod(methodId),
+    getQuoteMaterialsByMethodId(methodId),
+    getQuoteOperationsByMethodId(methodId),
+    getTagsList("operation")
   ]);
 
   if (makeMethod.error) {
@@ -92,7 +95,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         tags: o.tags ?? []
       })) ?? [],
     tags: tags.data ?? [],
-    model: getModelByItemId(client, makeMethod.data.itemId!)
+    model: getModelByItemId(makeMethod.data.itemId!)
   };
 }
 

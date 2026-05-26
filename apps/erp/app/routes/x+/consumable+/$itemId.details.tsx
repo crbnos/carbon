@@ -9,7 +9,8 @@ import { redirect, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ConsumableSummary, ItemFile } from "~/modules/items";
-import { consumableValidator, upsertConsumable } from "~/modules/items";
+import { consumableValidator } from "~/modules/items";
+import { upsertConsumable } from "~/modules/items/items.service.server";
 import {
   ItemDocuments,
   ItemNotes,
@@ -21,7 +22,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -35,7 +36,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateConsumable = await upsertConsumable(client, {
+  const updateConsumable = await upsertConsumable({
     ...validation.data,
     id: itemId,
     customFields: setCustomFields(formData),

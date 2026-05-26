@@ -11,20 +11,20 @@ import {
   useSearchParams
 } from "react-router";
 import type { AccountClass, AccountIncomeBalance } from "~/modules/accounting";
+import { groupAccountValidator } from "~/modules/accounting";
 import {
   getGroupAccounts,
-  groupAccountValidator,
   upsertAccount
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service.server";
 import { GroupAccountForm } from "~/modules/accounting/ui/ChartOfAccounts";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyGroupId } = await requirePermissions(request, {
+  const { companyGroupId } = await requirePermissions(request, {
     create: "accounting"
   });
 
-  const groupAccounts = await getGroupAccounts(client, companyGroupId);
+  const groupAccounts = await getGroupAccounts(companyGroupId);
 
   return {
     groupAccounts: groupAccounts.data ?? []
@@ -33,7 +33,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyGroupId, userId } = await requirePermissions(request, {
+  const { companyGroupId, userId } = await requirePermissions(request, {
     create: "accounting"
   });
 
@@ -46,7 +46,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { id: _, ...d } = validation.data;
 
-  const insertAccount = await upsertAccount(client, {
+  const insertAccount = await upsertAccount({
     ...d,
     number: null,
     isGroup: true,

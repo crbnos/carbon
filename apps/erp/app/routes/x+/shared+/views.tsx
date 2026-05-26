@@ -7,11 +7,11 @@ import {
   savedViewValidator
 } from "~/modules/shared/shared.models";
 
-import { upsertSavedView } from "~/modules/shared/shared.service";
+import { upsertSavedView } from "~/modules/shared/shared.service.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
   const formData = await request.formData();
   const validation = await validator(savedViewValidator).validate(formData);
@@ -30,11 +30,9 @@ export async function action({ request }: ActionFunctionArgs) {
     const parsedState = JSON.parse(state);
     const validatedState = savedViewStateValidator.parse(parsedState);
 
-    const result = await upsertSavedView(client, {
+    const result = await upsertSavedView({
       ...d,
-      ...validatedState,
-      userId,
-      companyId
+      ...validatedState
     });
 
     if (result.error) {

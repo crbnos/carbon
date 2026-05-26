@@ -1,6 +1,5 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -10,14 +9,13 @@ import { Outlet, redirect, useLoaderData, useParams } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { PurchasingRFQ } from "~/modules/purchasing";
+import { isRfqLocked, purchasingRfqLineValidator } from "~/modules/purchasing";
 import {
   getPurchasingRFQ,
   getPurchasingRFQLine,
   getSupplierInteractionLineDocuments,
-  isRfqLocked,
-  purchasingRfqLineValidator,
   upsertPurchasingRFQLine
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service.server";
 import { PurchasingRFQLineForm } from "~/modules/purchasing/ui/PurchasingRfq";
 import {
   SupplierInteractionLineDocuments,
@@ -28,7 +26,7 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
 
@@ -36,9 +34,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   if (!rfqId) throw new Error("Could not find rfqId");
   if (!lineId) throw new Error("Could not find lineId");
 
-  const serviceRole = getCarbonServiceRole();
-
-  const line = await getPurchasingRFQLine(serviceRole, lineId);
+  const line = await getPurchasingRFQLine(lineId);
 
   if (line.error) {
     throw redirect(
@@ -49,16 +45,16 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
   return {
     line: line.data,
-    files: getSupplierInteractionLineDocuments(serviceRole, companyId, lineId)
+    files: getSupplierInteractionLineDocuments(lineId)
   };
 };
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "purchasing"
   });
 
@@ -66,7 +62,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!rfqId) throw new Error("Could not find rfqId");
   if (!lineId) throw new Error("Could not find lineId");
 
-  const rfq = await getPurchasingRFQ(viewClient, rfqId);
+  const rfq = await getPurchasingRFQ(rfqId);
   await requireUnlocked({
     request,
     isLocked: isRfqLocked(rfq.data?.status),
@@ -87,7 +83,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const updateLine = await upsertPurchasingRFQLine(client, {
+  const updateLine = await upsertPurchasingRFQLine({
     id: lineId,
     ...d,
     companyId,

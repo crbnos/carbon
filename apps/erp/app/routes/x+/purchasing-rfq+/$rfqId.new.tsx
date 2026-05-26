@@ -3,22 +3,21 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { type ActionFunctionArgs, redirect } from "react-router";
+import { isRfqLocked, purchasingRfqLineValidator } from "~/modules/purchasing";
 import {
   getPurchasingRFQ,
-  isRfqLocked,
-  purchasingRfqLineValidator,
   upsertPurchasingRFQLine
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service.server";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "purchasing"
   });
 
@@ -27,7 +26,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error("rfqId not found");
   }
 
-  const rfq = await getPurchasingRFQ(viewClient, rfqId);
+  const rfq = await getPurchasingRFQ(rfqId);
   await requireUnlocked({
     request,
     isLocked: isRfqLocked(rfq.data?.status),
@@ -47,7 +46,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const insertLine = await upsertPurchasingRFQLine(client, {
+  const insertLine = await upsertPurchasingRFQLine({
     ...d,
     companyId,
     createdBy: userId,

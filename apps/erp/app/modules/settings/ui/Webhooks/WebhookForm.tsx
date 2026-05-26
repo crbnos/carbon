@@ -25,7 +25,7 @@ import { Hidden, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import { webhookValidator } from "../../settings.models";
-import type { getWebhookTables } from "../../settings.service";
+import type { getWebhookTables } from "../../settings.service.server";
 
 type WebhookFormProps = {
   initialValues: z.infer<typeof webhookValidator>;

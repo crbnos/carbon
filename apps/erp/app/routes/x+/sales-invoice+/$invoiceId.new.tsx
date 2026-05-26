@@ -8,11 +8,13 @@ import { redirect, useParams } from "react-router";
 import { useUser } from "~/hooks";
 import type { SalesInvoice } from "~/modules/invoicing";
 import {
-  getSalesInvoice,
   isSalesInvoiceLocked,
-  salesInvoiceLineValidator,
-  upsertSalesInvoiceLine
+  salesInvoiceLineValidator
 } from "~/modules/invoicing";
+import {
+  getSalesInvoice,
+  upsertSalesInvoiceLine
+} from "~/modules/invoicing/invoicing.service.server";
 import SalesInvoiceLineForm from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm";
 import type { MethodItemType } from "~/modules/shared";
 import { setCustomFields } from "~/utils/form";
@@ -26,11 +28,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
   // Check if SI is locked
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "invoicing"
   });
 
-  const invoice = await getSalesInvoice(viewClient, invoiceId);
+  const invoice = await getSalesInvoice(invoiceId);
   if (invoice.error) {
     throw redirect(
       path.to.salesInvoiceDetails(invoiceId),
@@ -45,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked sales invoice. Reopen it first."
   });
 
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "invoicing"
   });
 
@@ -69,7 +71,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     d.assetId = undefined;
   }
 
-  const createSalesInvoiceLine = await upsertSalesInvoiceLine(client, {
+  const createSalesInvoiceLine = await upsertSalesInvoiceLine({
     ...d,
     companyId,
     createdBy: userId,

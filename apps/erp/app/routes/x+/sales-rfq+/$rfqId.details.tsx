@@ -11,12 +11,11 @@ import { redirect, useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { useRouteData } from "~/hooks";
 import type { Opportunity, SalesRFQ, SalesRFQLine } from "~/modules/sales";
+import { isSalesRfqLocked, salesRfqValidator } from "~/modules/sales";
 import {
   getSalesRFQ,
-  isSalesRfqLocked,
-  salesRfqValidator,
   upsertSalesRFQ
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service.server";
 import {
   OpportunityDocuments,
   OpportunityNotes,
@@ -27,14 +26,14 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
   const { rfqId } = params;
   if (!rfqId) throw new Error("Could not find rfqId");
 
-  const rfq = await getSalesRFQ(client, rfqId);
+  const rfq = await getSalesRFQ(rfqId);
   if (rfq.error) {
     throw redirect(
       path.to.salesRfqs,
@@ -54,11 +53,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { rfqId: id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
-  const rfq = await getSalesRFQ(viewClient, id);
+  const rfq = await getSalesRFQ(id);
   await requireUnlocked({
     request,
     isLocked: isSalesRfqLocked(rfq.data?.status),
@@ -66,7 +65,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked RFQ. Reopen it first."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "sales"
   });
 
@@ -80,7 +79,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { rfqId, ...d } = validation.data;
   if (!rfqId) throw new Error("Could not find rfqId");
 
-  const update = await upsertSalesRFQ(client, {
+  const update = await upsertSalesRFQ({
     id,
     rfqId,
     ...d,

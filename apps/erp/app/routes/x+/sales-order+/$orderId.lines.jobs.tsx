@@ -1,16 +1,15 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { convertSalesOrderLinesToJobs } from "~/modules/production/production.service";
-import { getSalesOrder } from "~/modules/sales";
+import { convertSalesOrderLinesToJobs } from "~/modules/production/production.service.server";
+import { getSalesOrder } from "~/modules/sales/sales.service.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "production"
   });
 
@@ -19,11 +18,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error("Invalid orderId");
   }
 
-  const { companyId, userId } = await requirePermissions(request, {
-    create: "production"
-  });
-
-  const salesOrder = await getSalesOrder(client, orderId);
+  const salesOrder = await getSalesOrder(orderId);
   if (salesOrder.error) {
     throw redirect(
       path.to.salesOrder(orderId),
@@ -31,12 +26,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const serviceRole = getCarbonServiceRole();
-
-  const convertedJobs = await convertSalesOrderLinesToJobs(serviceRole, {
-    orderId,
-    companyId,
-    userId
+  const convertedJobs = await convertSalesOrderLinesToJobs({
+    orderId
   });
 
   if (convertedJobs.error) {

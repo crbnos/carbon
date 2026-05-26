@@ -4,14 +4,15 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { shiftValidator, upsertShift } from "~/modules/people";
+import { shiftValidator } from "~/modules/people";
+import { upsertShift } from "~/modules/people/people.service.server";
 import { ShiftForm } from "~/modules/people/ui/Shifts";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "people"
   });
 
@@ -25,7 +26,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const createShift = await upsertShift(client, {
+  const createShift = await upsertShift({
     ...d,
     companyId,
     createdBy: userId,

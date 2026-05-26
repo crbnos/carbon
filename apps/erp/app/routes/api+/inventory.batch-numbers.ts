@@ -1,9 +1,9 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getBatchNumbersForItem } from "~/modules/inventory/inventory.service";
+import { getBatchNumbersForItem } from "~/modules/inventory/inventory.service.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
   const url = new URL(request.url);
   const itemId = url.searchParams.get("itemId");
@@ -14,8 +14,5 @@ export async function loader({ request }: LoaderFunctionArgs) {
     };
   }
 
-  return await getBatchNumbersForItem(client, {
-    companyId,
-    itemId
-  });
+  return await getBatchNumbersForItem({ itemId });
 }

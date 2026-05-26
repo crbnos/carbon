@@ -3,7 +3,7 @@ import { useMount } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useFetcher } from "react-router";
 import { Combobox } from "~/components/Form";
-import type { getCountries } from "~/modules/shared";
+import type { getCountries } from "~/modules/shared/shared.service.server";
 import { path } from "~/utils/path";
 
 type CountrySelectProps = Omit<ComboboxProps, "options">;

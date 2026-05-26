@@ -6,9 +6,9 @@ import { getLocalTimeZone, today } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
-import { getProductionProjections } from "~/modules/production";
+import { getProductionProjections } from "~/modules/production/production.service.server";
 import DemandProjectionsTable from "~/modules/production/ui/Projection/DemandProjectionTable";
-import { getLocationsList } from "~/modules/resources";
+import { getLocationsList } from "~/modules/resources/resources.service.server";
 import { getOrCreatePeriods } from "~/modules/shared/shared.server";
 import { getUserDefaults } from "~/modules/users/users.server";
 import type { Handle } from "~/utils/handle";
@@ -53,7 +53,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await getLocationsList();
     if (locations.error || !locations.data?.length) {
       throw redirect(
         path.to.inventory,
@@ -72,10 +72,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
 
   const projections = await getProductionProjections(
-    client,
     locationId,
     periods.map((p) => p.id),
-    companyId,
     {
       search,
       limit,

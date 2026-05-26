@@ -1,24 +1,22 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
+import { getJobMethodValidator } from "~/modules/production";
 import {
-  getJobMethodValidator,
   upsertMakeMethodFromJob,
   upsertMakeMethodFromJobMethod
-} from "~/modules/production";
+} from "~/modules/production/production.service.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { companyId, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "production"
   });
 
   const formData = await request.formData();
   const type = formData.get("type") as string;
 
-  const serviceRole = getCarbonServiceRole();
   const validation = await validator(getJobMethodValidator).validate(formData);
 
   if (validation.error) {
@@ -26,10 +24,8 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (type === "job") {
-    const jobMethod = await upsertMakeMethodFromJob(serviceRole, {
+    const jobMethod = await upsertMakeMethodFromJob({
       ...validation.data,
-      companyId,
-      userId,
       parts: {
         billOfMaterial: validation.data.billOfMaterial,
         billOfProcess: validation.data.billOfProcess,
@@ -46,10 +42,8 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (type === "method") {
-    const makeMethod = await upsertMakeMethodFromJobMethod(serviceRole, {
+    const makeMethod = await upsertMakeMethodFromJobMethod({
       ...validation.data,
-      companyId,
-      userId,
       parts: {
         billOfMaterial: validation.data.billOfMaterial,
         billOfProcess: validation.data.billOfProcess,

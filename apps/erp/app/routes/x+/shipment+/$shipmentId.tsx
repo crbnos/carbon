@@ -10,7 +10,7 @@ import {
   getShipmentLines,
   getShipmentRelatedItems,
   getShipmentTracking
-} from "~/modules/inventory";
+} from "~/modules/inventory/inventory.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -20,7 +20,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     view: "inventory"
   });
 
@@ -28,9 +28,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!shipmentId) throw new Error("Could not find shipmentId");
 
   const [shipment, shipmentLines, shipmentLineTracking] = await Promise.all([
-    getShipment(client, shipmentId),
-    getShipmentLines(client, shipmentId),
-    getShipmentTracking(client, shipmentId, companyId)
+    getShipment(shipmentId),
+    getShipmentLines(shipmentId),
+    getShipmentTracking(shipmentId)
   ]);
 
   if (shipment.error) {
@@ -90,7 +90,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     fixedAssetLines,
     shipmentLineTracking: shipmentLineTracking.data ?? [],
     relatedItems: getShipmentRelatedItems(
-      client,
       shipmentId,
       shipment.data?.sourceDocumentId ?? ""
     )

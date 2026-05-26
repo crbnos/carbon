@@ -5,7 +5,10 @@ import { getLocalTimeZone, today } from "@internationalized/date";
 import { useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
 import { useUser } from "~/hooks";
-import type { getGaugesList, getGaugeTypesList } from "~/modules/quality";
+import type {
+  getGaugesList,
+  getGaugeTypesList
+} from "~/modules/quality/quality.service.server";
 import GaugeForm from "~/modules/quality/ui/Gauge/GaugeForm";
 
 import { path } from "~/utils/path";

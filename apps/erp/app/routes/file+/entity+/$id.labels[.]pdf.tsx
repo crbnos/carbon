@@ -4,7 +4,7 @@ import { labelSizes } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { getCompany } from "~/modules/settings";
+import { getCompany } from "~/modules/settings/settings.service.server";
 import { path } from "~/utils/path";
 import { getEntityLabelData } from "./labels.server";
 
@@ -14,7 +14,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const company = await getCompany(client, companyId);
+  const company = await getCompany();
   if (company.error) {
     console.error(company.error);
     throw new Error("Failed to load company");

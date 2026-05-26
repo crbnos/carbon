@@ -5,11 +5,13 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
-  getPurchaseOrder,
   isPurchaseOrderLocked,
-  purchaseOrderDeliveryValidator,
-  upsertPurchaseOrderDelivery
+  purchaseOrderDeliveryValidator
 } from "~/modules/purchasing";
+import {
+  getPurchaseOrder,
+  upsertPurchaseOrderDelivery
+} from "~/modules/purchasing/purchasing.service.server";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
@@ -21,11 +23,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!orderId) throw new Error("Could not find orderId");
 
   // First check with view permission to get PO status
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
 
-  const purchaseOrder = await getPurchaseOrder(viewClient, orderId);
+  const purchaseOrder = await getPurchaseOrder(orderId);
   if (purchaseOrder.error) {
     throw redirect(
       path.to.purchaseOrderDetails(orderId),
@@ -43,7 +45,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase order."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "purchasing"
   });
 
@@ -56,15 +58,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updatePurchaseOrderDelivery = await upsertPurchaseOrderDelivery(
-    client,
-    {
-      ...validation.data,
-      id: orderId,
-      updatedBy: userId,
-      customFields: setCustomFields(formData)
-    }
-  );
+  const updatePurchaseOrderDelivery = await upsertPurchaseOrderDelivery({
+    ...validation.data,
+    id: orderId,
+    updatedBy: userId,
+    customFields: setCustomFields(formData)
+  });
   if (updatePurchaseOrderDelivery.error) {
     throw redirect(
       path.to.purchaseOrderDetails(orderId),

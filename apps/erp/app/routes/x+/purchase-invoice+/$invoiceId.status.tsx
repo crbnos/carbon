@@ -3,16 +3,16 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
+import { purchaseInvoiceStatusType } from "~/modules/invoicing/invoicing.models";
 import {
   getPurchaseInvoice,
   updatePurchaseInvoiceStatus
-} from "~/modules/invoicing";
-import { purchaseInvoiceStatusType } from "~/modules/invoicing/invoicing.models";
+} from "~/modules/invoicing/invoicing.service.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "invoicing"
   });
 
@@ -31,7 +31,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const invoice = await getPurchaseInvoice(client, id);
+  const invoice = await getPurchaseInvoice(id);
 
   if (invoice.error || !invoice.data) {
     throw redirect(
@@ -56,11 +56,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const update = await updatePurchaseInvoiceStatus(client, {
+  const update = await updatePurchaseInvoiceStatus({
     id,
     status,
-    assignee: !["Partially Paid"].includes(status) ? null : undefined,
-    updatedBy: userId
+    assignee: !["Partially Paid"].includes(status) ? null : undefined
   });
   if (update.error) {
     throw redirect(

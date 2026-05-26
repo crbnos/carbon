@@ -1,4 +1,8 @@
 import { CONTROLLED_ENVIRONMENT, error, getBrowserEnv } from "@carbon/auth";
+import {
+  authContextMiddleware,
+  clientScopeMiddleware
+} from "@carbon/auth/middleware/auth.server";
 import { flashClientMiddleware } from "@carbon/auth/middleware/flash.client";
 import {
   flashHeadersContext,
@@ -49,7 +53,15 @@ import type { Route } from "./+types/root";
 import "./polyfill";
 import { getTheme } from "./services/theme.server";
 
-export const middleware = [flashMiddleware];
+// clientScopeMiddleware opens the per-request AuthClientScope cell for all
+// routes. authContextMiddleware publishes identity into AuthContextHolder
+// when a session is present and no-ops otherwise — safe to run globally so
+// resource routes (api+/, file+/) without a layout still see identity.
+export const middleware = [
+  clientScopeMiddleware,
+  authContextMiddleware,
+  flashMiddleware
+];
 export const clientMiddleware = [flashClientMiddleware];
 
 export const links: LinksFunction = () => {

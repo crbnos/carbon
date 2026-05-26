@@ -4,8 +4,8 @@ import { useDisclosure, useMount } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
 import { usePermissions } from "~/hooks";
-import type { getShippingMethodsList } from "~/modules/inventory";
 import { ShippingMethodForm } from "~/modules/inventory";
+import type { getShippingMethodsList } from "~/modules/inventory/inventory.service.server";
 import { path } from "~/utils/path";
 
 type ShippingMethodSelectProps = Omit<ComboboxProps, "options">;

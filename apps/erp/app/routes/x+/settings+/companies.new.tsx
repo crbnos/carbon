@@ -14,14 +14,13 @@ import { getLocalTimeZone } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect, useNavigate } from "react-router";
 import { useUser } from "~/hooks";
-import { insertEmployeeJob } from "~/modules/people";
-import { upsertLocation } from "~/modules/resources";
+import { insertEmployeeJob } from "~/modules/people/people.service.server";
+import { upsertLocation } from "~/modules/resources/resources.service.server";
+import { SubsidiaryCompanyForm, subsidiaryValidator } from "~/modules/settings";
 import {
   insertCompany,
-  SubsidiaryCompanyForm,
-  seedCompany,
-  subsidiaryValidator
-} from "~/modules/settings";
+  seedCompany
+} from "~/modules/settings/settings.service.server";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -44,9 +43,9 @@ export async function action({ request }: ActionFunctionArgs) {
     ...locationData
   } = validation.data;
 
-  const client = getCarbonServiceRole();
+  const _client = getCarbonServiceRole();
 
-  const companyInsert = await insertCompany(client, {
+  const companyInsert = await insertCompany({
     ...locationData,
     baseCurrencyCode
   });
@@ -68,7 +67,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const seed = await seedCompany(client, companyId, userId, parentCompanyId);
+  const seed = await seedCompany(parentCompanyId);
   if (seed.error) {
     throw redirect(
       path.to.companies,
@@ -76,7 +75,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const locationInsert = await upsertLocation(client, {
+  const locationInsert = await upsertLocation({
     ...locationData,
     name: "Headquarters",
     companyId,
@@ -102,7 +101,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const job = await insertEmployeeJob(client, {
+  const job = await insertEmployeeJob({
     id: userId,
     companyId,
     locationId

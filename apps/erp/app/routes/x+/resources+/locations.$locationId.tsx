@@ -9,25 +9,24 @@ import type {
   LoaderFunctionArgs
 } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
+import { LocationForm, locationValidator } from "~/modules/resources";
 import {
   getLocation,
-  LocationForm,
-  locationValidator,
   upsertLocation
-} from "~/modules/resources";
+} from "~/modules/resources/resources.service.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 import { getCompanyId, locationsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources"
   });
 
   const { locationId } = params;
   if (!locationId) throw notFound("Location ID was not found");
 
-  const location = await getLocation(client, locationId);
+  const location = await getLocation(locationId);
 
   if (location.error) {
     throw redirect(
@@ -43,7 +42,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     create: "resources"
   });
 
@@ -57,7 +56,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, ...d } = validation.data;
   if (!id) throw notFound("Location ID was not found");
 
-  const createLocation = await upsertLocation(client, {
+  const createLocation = await upsertLocation({
     id,
     ...d,
     updatedBy: userId,

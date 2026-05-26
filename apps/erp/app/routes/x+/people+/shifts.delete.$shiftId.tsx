@@ -5,11 +5,11 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteShift, getShift } from "~/modules/people";
+import { deleteShift, getShift } from "~/modules/people/people.service.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "people",
     role: "employee"
   });
@@ -17,7 +17,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { shiftId } = params;
   if (!shiftId) throw notFound("shiftId not found");
 
-  const shift = await getShift(client, shiftId);
+  const shift = await getShift(shiftId);
   if (shift.error) {
     throw redirect(
       path.to.shifts,
@@ -31,7 +31,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "people"
   });
 
@@ -43,7 +43,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteShiftError } = await deleteShift(client, shiftId);
+  const { error: deleteShiftError } = await deleteShift(shiftId);
   if (deleteShiftError) {
     throw redirect(
       path.to.shifts,

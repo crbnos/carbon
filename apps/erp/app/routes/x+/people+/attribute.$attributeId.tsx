@@ -4,12 +4,13 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { attributeValidator, updateAttribute } from "~/modules/people";
+import { attributeValidator } from "~/modules/people";
+import { updateAttribute } from "~/modules/people/people.service.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "people"
   });
 
@@ -21,9 +22,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const update = await updateAttribute(client, {
-    ...validation.data,
-    updatedBy: userId
+  const update = await updateAttribute({
+    ...validation.data
   });
   if (update.error)
     redirect(

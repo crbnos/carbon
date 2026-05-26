@@ -1,8 +1,7 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { ActionFunctionArgs } from "react-router";
-import { runMRP } from "~/modules/production/production.service";
+import { runMRP } from "~/modules/production/production.service.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -10,15 +9,13 @@ export async function action({ request }: ActionFunctionArgs) {
   const url = new URL(request.url);
   const locationId = url.searchParams.get("location");
 
-  const { companyId, userId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     update: "inventory"
   });
 
-  const result = await runMRP(getCarbonServiceRole(), {
+  const result = await runMRP({
     type: locationId ? "location" : "company",
-    id: locationId ?? companyId,
-    companyId,
-    userId
+    id: locationId ?? companyId
   });
 
   return result;

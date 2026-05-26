@@ -17,14 +17,14 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { Company } from "~/modules/settings";
+import { CompanyLogoForm } from "~/modules/settings";
 import {
-  CompanyLogoForm,
   updateLogoDark,
   updateLogoDarkIcon,
   updateLogoLight,
   updateLogoLightIcon,
   updateLogoWatermark
-} from "~/modules/settings";
+} from "~/modules/settings/settings.service.server";
 import { maxSizeMB } from "~/modules/settings/ui/Company/CompanyLogoForm";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -45,7 +45,7 @@ const TARGET_UPDATERS = {
 type LogoTarget = keyof typeof TARGET_UPDATERS;
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "settings"
   });
 
@@ -57,11 +57,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return data({ error: "Invalid target" }, { status: 400 });
   }
 
-  const { error } = await TARGET_UPDATERS[target as LogoTarget](
-    client,
-    companyId,
-    logoPath
-  );
+  const { error } = await TARGET_UPDATERS[target as LogoTarget](logoPath);
   if (error) return data({ error: "Failed to update logo" }, { status: 500 });
 
   return { success: true };

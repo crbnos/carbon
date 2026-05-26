@@ -22,7 +22,7 @@ import type {
   getQualityDocuments,
   getRequiredActions,
   getRisks
-} from "./quality.service";
+} from "./quality.service.server";
 
 export type Gauge = NonNullable<
   Awaited<ReturnType<typeof getGauges>>["data"]

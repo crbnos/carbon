@@ -3,11 +3,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getCurrentSequence } from "~/modules/settings";
+import { getCurrentSequence } from "~/modules/settings/settings.service.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsDelete(request);
-  const { client, companyId } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -28,7 +28,7 @@ export async function action({ request }: ActionFunctionArgs) {
       )
     );
 
-  const verifyCurrent = await getCurrentSequence(client, table, companyId);
+  const verifyCurrent = await getCurrentSequence(table);
   if (verifyCurrent.error) {
     return data(
       verifyCurrent,

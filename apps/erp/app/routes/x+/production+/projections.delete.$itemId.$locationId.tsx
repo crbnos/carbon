@@ -4,13 +4,13 @@ import { flash } from "@carbon/auth/session.server";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
-import { deleteDemandProjections } from "~/modules/production/production.service";
+import { deleteDemandProjections } from "~/modules/production/production.service.server";
 import { getOrCreatePeriods } from "~/modules/shared/shared.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "production"
   });
 
@@ -32,10 +32,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Only delete projections for future periods (current week and beyond)
   const futurePeriodIds = periods.map((p) => p.id);
 
-  const result = await deleteDemandProjections(client, {
+  const result = await deleteDemandProjections({
     itemId,
     locationId,
-    companyId,
     futurePeriodIds
   });
 

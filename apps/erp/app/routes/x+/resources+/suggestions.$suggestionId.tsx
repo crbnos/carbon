@@ -3,16 +3,16 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
+import { SuggestionDetails } from "~/modules/resources";
 import {
   getSuggestion,
-  SuggestionDetails,
   updateSuggestionEmoji
-} from "~/modules/resources";
-import { getTagsList } from "~/modules/shared";
+} from "~/modules/resources/resources.service.server";
+import { getTagsList } from "~/modules/shared/shared.service.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources"
   });
 
@@ -20,8 +20,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!suggestionId) throw notFound("suggestionId was not found");
 
   const [suggestion, tags] = await Promise.all([
-    getSuggestion(client, suggestionId),
-    getTagsList(client, companyId, "suggestion")
+    getSuggestion(suggestionId),
+    getTagsList("suggestion")
   ]);
 
   if (suggestion.error) {
@@ -38,7 +38,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "resources"
   });
 
@@ -49,7 +49,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const emoji = formData.get("emoji")?.toString();
 
   if (emoji) {
-    const result = await updateSuggestionEmoji(client, suggestionId, emoji);
+    const result = await updateSuggestionEmoji(suggestionId, emoji);
     if (result.error) {
       throw redirect(
         path.to.suggestion(suggestionId),

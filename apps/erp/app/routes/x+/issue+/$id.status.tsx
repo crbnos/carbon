@@ -4,7 +4,8 @@ import { flash } from "@carbon/auth/session.server";
 import { notifyIssueStatusChanged } from "@carbon/ee/notifications";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { nonConformanceStatus, updateIssueStatus } from "~/modules/quality";
+import { nonConformanceStatus } from "~/modules/quality";
+import { updateIssueStatus } from "~/modules/quality/quality.service.server";
 import { getCompanyIntegrations } from "~/modules/settings/settings.server";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -29,12 +30,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const update = await updateIssueStatus(client, {
+  const update = await updateIssueStatus({
     id,
     status,
     assignee: ["Closed"].includes(status) ? null : undefined,
-    closeDate: ["Closed"].includes(status) ? new Date().toISOString() : null,
-    updatedBy: userId
+    closeDate: ["Closed"].includes(status) ? new Date().toISOString() : null
   });
   if (update.error) {
     throw redirect(

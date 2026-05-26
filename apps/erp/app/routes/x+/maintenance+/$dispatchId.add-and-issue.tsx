@@ -4,10 +4,8 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
-import {
-  getMaintenanceDispatch,
-  isMaintenanceDispatchLocked
-} from "~/modules/resources";
+import { isMaintenanceDispatchLocked } from "~/modules/resources";
+import { getMaintenanceDispatch } from "~/modules/resources/resources.service.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
@@ -39,10 +37,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources"
   });
-  const dispatch = await getMaintenanceDispatch(viewClient, dispatchId);
+  const dispatch = await getMaintenanceDispatch(dispatchId);
   await requireUnlocked({
     request,
     isLocked: isMaintenanceDispatchLocked(dispatch.data?.status),

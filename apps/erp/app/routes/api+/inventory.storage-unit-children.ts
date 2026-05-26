@@ -1,9 +1,9 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getStorageUnitChildren } from "~/modules/inventory";
+import { getStorageUnitChildren } from "~/modules/inventory/inventory.service.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, { view: "inventory" });
+  await requirePermissions(request, { view: "inventory" });
 
   const url = new URL(request.url);
   const parentId = url.searchParams.get("parentId");
@@ -12,7 +12,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return { data: [], error: null };
   }
 
-  const result = await getStorageUnitChildren(client, parentId);
+  const result = await getStorageUnitChildren(parentId);
 
   if (result.error) {
     return { data: [], error: result.error };

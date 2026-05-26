@@ -3,7 +3,8 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, useLoaderData } from "react-router";
-import { EmployeeTypesTable, getEmployeeTypes } from "~/modules/users";
+import { EmployeeTypesTable } from "~/modules/users";
+import { getEmployeeTypes } from "~/modules/users/users.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -14,7 +15,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "users",
     role: "employee"
   });
@@ -25,7 +26,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const employeeTypes = await getEmployeeTypes(client, companyId, {
+  const employeeTypes = await getEmployeeTypes({
     search,
     limit,
     offset,

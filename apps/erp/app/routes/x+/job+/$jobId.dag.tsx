@@ -9,7 +9,7 @@ import {
   getJob,
   getJobOperationDependencies,
   getJobOperations
-} from "~/modules/production";
+} from "~/modules/production/production.service.server";
 import { JobDag } from "~/modules/production/ui/Jobs";
 import { path } from "~/utils/path";
 
@@ -22,7 +22,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
 
-  const job = await getJob(client, jobId);
+  const job = await getJob(jobId);
   if (job.error) {
     throw redirect(
       path.to.jobs,
@@ -31,7 +31,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const [operations, dependencies] = await Promise.all([
-    getJobOperations(client, jobId),
+    getJobOperations(jobId),
     getJobOperationDependencies(client, jobId)
   ]);
 

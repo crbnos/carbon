@@ -1,17 +1,16 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
   deleteJobMaterial,
   recalculateJobOperationDependencies
-} from "~/modules/production";
+} from "~/modules/production/production.service.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "production"
   });
 
@@ -24,7 +23,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error("jobId not found");
   }
 
-  const deleteMaterial = await deleteJobMaterial(client, id);
+  const deleteMaterial = await deleteJobMaterial(id);
   if (deleteMaterial.error) {
     return data(
       {
@@ -37,14 +36,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const recalculateResult = await recalculateJobOperationDependencies(
-    getCarbonServiceRole(),
-    {
-      jobId,
-      companyId,
-      userId
-    }
-  );
+  const recalculateResult = await recalculateJobOperationDependencies({
+    jobId
+  });
 
   if (recalculateResult?.error) {
     return data(

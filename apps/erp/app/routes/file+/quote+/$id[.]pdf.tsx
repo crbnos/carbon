@@ -4,8 +4,11 @@ import type { JSONContent } from "@carbon/react";
 import { getPreferenceHeaders } from "@carbon/react";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
-import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
-import { getShippingMethodsList } from "~/modules/inventory";
+import {
+  getCurrencyByCode,
+  getPaymentTermsList
+} from "~/modules/accounting/accounting.service.server";
+import { getShippingMethodsList } from "~/modules/inventory/inventory.service.server";
 import {
   getQuote,
   getQuoteCustomerDetails,
@@ -14,21 +17,18 @@ import {
   getQuotePayment,
   getQuoteShipment,
   getSalesTerms
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service.server";
 import {
   getAccountsReceivableBillingAddress,
   getCompany,
   getCompanySettings
-} from "~/modules/settings";
-import { getBase64ImageFromSupabase } from "~/modules/shared";
+} from "~/modules/settings/settings.service.server";
+import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      view: "sales"
-    }
-  );
+  const { companyGroupId } = await requirePermissions(request, {
+    view: "sales"
+  });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
@@ -49,18 +49,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     terms,
     shippingMethods
   ] = await Promise.all([
-    getCompany(client, companyId),
-    getCompanySettings(client, companyId),
-    getAccountsReceivableBillingAddress(client, companyId),
-    getQuote(client, id),
-    getQuoteLines(client, id),
-    getQuoteLinePricesByQuoteId(client, id),
-    getQuoteCustomerDetails(client, id),
-    getQuotePayment(client, id),
-    getQuoteShipment(client, id),
-    getPaymentTermsList(client, companyId),
-    getSalesTerms(client, companyId),
-    getShippingMethodsList(client, companyId)
+    getCompany(),
+    getCompanySettings(),
+    getAccountsReceivableBillingAddress(),
+    getQuote(id),
+    getQuoteLines(id),
+    getQuoteLinePricesByQuoteId(id),
+    getQuoteCustomerDetails(id),
+    getQuotePayment(id),
+    getQuoteShipment(id),
+    getPaymentTermsList(),
+    getSalesTerms(),
+    getShippingMethodsList()
   ]);
 
   if (company.error) {
@@ -109,7 +109,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
               if (!path) {
                 return null;
               }
-              return getBase64ImageFromSupabase(client, path).then((data) => ({
+              return getBase64ImageFromSupabase(path).then((data) => ({
                 id,
                 data
               }));
@@ -127,7 +127,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   let exchangeRate = 1;
   if (quote.data?.currencyCode) {
     const currency = await getCurrencyByCode(
-      client,
       companyGroupId,
       quote.data.currencyCode
     );

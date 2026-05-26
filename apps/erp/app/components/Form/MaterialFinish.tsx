@@ -3,10 +3,8 @@ import { CreatableCombobox } from "@carbon/form";
 import { useDisclosure, useMount } from "@carbon/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
-import type {
-  getMaterialFinishList,
-  MaterialFinish as MaterialFinishType
-} from "~/modules/items";
+import type { MaterialFinish as MaterialFinishType } from "~/modules/items";
+import type { getMaterialFinishList } from "~/modules/items/items.service.server";
 import MaterialFinishForm from "~/modules/items/ui/MaterialFinishes/MaterialFinishForm";
 import { path } from "~/utils/path";
 

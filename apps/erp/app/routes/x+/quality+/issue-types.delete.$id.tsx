@@ -5,18 +5,21 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteIssueType, getIssueType } from "~/modules/quality";
+import {
+  deleteIssueType,
+  getIssueType
+} from "~/modules/quality/quality.service.server";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "quality",
     role: "employee"
   });
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const nonConformanceType = await getIssueType(client, id);
+  const nonConformanceType = await getIssueType(id);
   if (nonConformanceType.error) {
     throw redirect(
       `${path.to.issueTypes}?${getParams(request)}`,
@@ -31,7 +34,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "quality"
   });
 
@@ -43,7 +46,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteIssueTypeError } = await deleteIssueType(client, id);
+  const { error: deleteIssueTypeError } = await deleteIssueType(id);
   if (deleteIssueTypeError) {
     const errorMessage =
       deleteIssueTypeError.code === "23503"

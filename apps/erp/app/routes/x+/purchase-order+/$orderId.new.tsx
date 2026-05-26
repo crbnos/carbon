@@ -5,11 +5,13 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect, useParams } from "react-router";
 import {
-  getPurchaseOrder,
   isPurchaseOrderLocked,
-  purchaseOrderLineValidator,
-  upsertPurchaseOrderLine
+  purchaseOrderLineValidator
 } from "~/modules/purchasing";
+import {
+  getPurchaseOrder,
+  upsertPurchaseOrderLine
+} from "~/modules/purchasing/purchasing.service.server";
 import { PurchaseOrderLineForm } from "~/modules/purchasing/ui/PurchaseOrder";
 import type { MethodItemType } from "~/modules/shared";
 import { setCustomFields } from "~/utils/form";
@@ -23,11 +25,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!orderId) throw new Error("Could not find orderId");
 
   // First check with view permission to verify PO status
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
 
-  const purchaseOrder = await getPurchaseOrder(viewClient, orderId);
+  const purchaseOrder = await getPurchaseOrder(orderId);
   if (purchaseOrder.error) {
     throw redirect(
       path.to.purchaseOrderDetails(orderId),
@@ -45,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase order."
   });
 
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "purchasing"
   });
 
@@ -61,7 +63,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const createPurchaseOrderLine = await upsertPurchaseOrderLine(client, {
+  const createPurchaseOrderLine = await upsertPurchaseOrderLine({
     ...d,
     companyId,
     createdBy: userId,

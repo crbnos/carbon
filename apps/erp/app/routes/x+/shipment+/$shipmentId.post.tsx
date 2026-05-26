@@ -10,7 +10,7 @@ import {
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { upsertDocument } from "~/modules/documents";
+import { upsertDocument } from "~/modules/documents/documents.service.server";
 import { loader as pdfLoader } from "~/routes/file+/shipment+/$id[.]pdf";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";

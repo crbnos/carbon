@@ -14,18 +14,18 @@ import type {
   LoaderFunctionArgs
 } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
+import { supplierContactValidator } from "~/modules/purchasing";
 import {
   getSupplierContact,
-  supplierContactValidator,
   updateSupplierContact
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service.server";
 import SupplierContactForm from "~/modules/purchasing/ui/Supplier/SupplierContactForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 import { supplierContactsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
 
@@ -33,7 +33,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!supplierId) throw notFound("supplierId not found");
   if (!supplierContactId) throw notFound("supplierContactId not found");
 
-  const contact = await getSupplierContact(client, supplierContactId);
+  const contact = await getSupplierContact(supplierContactId);
   if (contact.error) {
     throw redirect(
       path.to.supplierContacts(supplierId),
@@ -51,7 +51,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "purchasing"
   });
 
@@ -76,7 +76,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (contactId === undefined)
     throw badRequest("contactId is undefined from form data");
 
-  const update = await updateSupplierContact(client, {
+  const update = await updateSupplierContact({
     contactId,
     contact,
     supplierLocationId,

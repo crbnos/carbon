@@ -9,7 +9,7 @@ import {
 } from "@carbon/ee/jira.server";
 import type { ActionFunction, LoaderFunction } from "react-router";
 import { data } from "react-router";
-import { getIssueAction } from "~/modules/quality/quality.service";
+import { getIssueAction } from "~/modules/quality/quality.service.server";
 
 const jira = getJiraClient();
 
@@ -36,7 +36,7 @@ export const action: ActionFunction = async ({ request }) => {
         }
 
         const [carbonIssue, issue, siteUrl] = await Promise.all([
-          getIssueAction(client, actionId),
+          getIssueAction(actionId),
           jira.getIssue(companyId, issueId),
           jira.getSiteUrl(companyId)
         ]);

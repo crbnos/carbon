@@ -1,6 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getStorageUnitDescendants } from "~/modules/inventory";
+import { getStorageUnitDescendants } from "~/modules/inventory/inventory.service.server";
 
 /**
  * Returns every storage unit in the subtree rooted at `id` (the unit itself
@@ -10,7 +10,7 @@ import { getStorageUnitDescendants } from "~/modules/inventory";
  * client-side gives a cleaner UX than a round-trip rejection.
  */
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, { view: "inventory" });
+  await requirePermissions(request, { view: "inventory" });
 
   const url = new URL(request.url);
   const id = url.searchParams.get("id");
@@ -19,7 +19,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return { data: [], error: null };
   }
 
-  const result = await getStorageUnitDescendants(client, id);
+  const result = await getStorageUnitDescendants(id);
 
   if (result.error) {
     return { data: [], error: result.error };

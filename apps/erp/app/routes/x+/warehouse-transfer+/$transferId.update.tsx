@@ -5,8 +5,8 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
-import { updateWarehouseTransferStatus } from "~/modules/inventory";
 import { warehouseTransferStatusType } from "~/modules/inventory/inventory.models";
+import { updateWarehouseTransferStatus } from "~/modules/inventory/inventory.service.server";
 
 const updateStatusValidator = z.object({
   status: z.enum(warehouseTransferStatusType)
@@ -14,7 +14,7 @@ const updateStatusValidator = z.object({
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "inventory"
   });
 
@@ -29,7 +29,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const result = await updateWarehouseTransferStatus(
-    client,
     transferId,
     validation.data.status,
     userId

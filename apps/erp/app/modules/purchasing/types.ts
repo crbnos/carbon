@@ -18,7 +18,7 @@ import type {
   getSupplierQuotes,
   getSuppliers,
   getSupplierTypes
-} from "./purchasing.service";
+} from "./purchasing.service.server";
 
 export type PurchaseOrderAttachment = FileObject; // TODO: remove
 

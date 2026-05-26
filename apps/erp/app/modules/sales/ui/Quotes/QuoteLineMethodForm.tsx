@@ -5,7 +5,7 @@ import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
 import { useFetcher } from "react-router";
 import { path } from "~/utils/path";
-import type { getQuoteLinesList } from "../../sales.service";
+import type { getQuoteLinesList } from "../../sales.service.server";
 
 export function QuoteLineMethodForm() {
   const { t } = useLingui();

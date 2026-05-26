@@ -1,14 +1,14 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getQuoteLinesList } from "~/modules/sales";
+import { getQuoteLinesList } from "~/modules/sales/sales.service.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
   const { id } = params;
   if (!id) return { data: [], error: null };
 
-  return await getQuoteLinesList(client, id);
+  return await getQuoteLinesList(id);
 }

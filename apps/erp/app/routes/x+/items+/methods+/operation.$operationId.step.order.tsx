@@ -3,12 +3,12 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { assertMethodOperationIsDraft } from "~/modules/items";
-import { updateMethodOperationStepOrder } from "~/modules/production";
+import { assertMethodOperationIsDraft } from "~/modules/items/items.service.server";
+import { updateMethodOperationStepOrder } from "~/modules/production/production.service.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -30,7 +30,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  await assertMethodOperationIsDraft(client, operationId);
+  await assertMethodOperationIsDraft(operationId);
 
   const updates = Object.entries(JSON.parse(updateMap)).map(
     ([id, sortOrderString]) => ({
@@ -40,10 +40,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     })
   );
 
-  const updateSortOrders = await updateMethodOperationStepOrder(
-    client,
-    updates
-  );
+  const updateSortOrders = await updateMethodOperationStepOrder(updates);
   if (updateSortOrders.some((update) => update.error))
     return data(
       {},

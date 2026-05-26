@@ -5,14 +5,14 @@ import { useMount, VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
 import { usePanels } from "~/components/Layout";
-import { getJobOperationStepRecords } from "~/modules/production";
+import { getJobOperationStepRecords } from "~/modules/production/production.service.server";
 import { JobOperationStepRecordsTable } from "~/modules/production/ui/Jobs";
 
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "production",
     role: "employee"
   });
@@ -27,7 +27,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const stepRecords = await getJobOperationStepRecords(client, jobId, {
+  const stepRecords = await getJobOperationStepRecords(jobId, {
     limit,
     offset,
     sorts,

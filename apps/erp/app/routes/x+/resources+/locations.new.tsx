@@ -9,18 +9,15 @@ import type {
 } from "react-router";
 import { redirect, useNavigate } from "react-router";
 import { useUser } from "~/hooks";
-import {
-  LocationForm,
-  locationValidator,
-  upsertLocation
-} from "~/modules/resources";
+import { LocationForm, locationValidator } from "~/modules/resources";
+import { upsertLocation } from "~/modules/resources/resources.service.server";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 import { getCompanyId, locationsQuery } from "~/utils/react-query";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "resources"
   });
 
@@ -36,7 +33,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const createLocation = await upsertLocation(client, {
+  const createLocation = await upsertLocation({
     ...d,
     companyId,
     createdBy: userId,

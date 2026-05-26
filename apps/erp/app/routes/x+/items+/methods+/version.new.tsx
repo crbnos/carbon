@@ -1,20 +1,19 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
+import { makeMethodVersionValidator } from "~/modules/items";
 import {
   copyMakeMethod,
-  makeMethodVersionValidator,
   upsertMakeMethodVersion
-} from "~/modules/items";
+} from "~/modules/items/items.service.server";
 import { getPathToMakeMethod } from "~/modules/items/ui/Methods/utils";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "parts"
   });
 
@@ -27,7 +26,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const insertMethodOperation = await upsertMakeMethodVersion(client, {
+  const insertMethodOperation = await upsertMakeMethodVersion({
     ...validation.data,
     companyId,
     createdBy: userId
@@ -60,7 +59,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // @ts-expect-error TS2345 - TODO: fix type
-  const copy = await copyMakeMethod(getCarbonServiceRole(), {
+  const copy = await copyMakeMethod({
     sourceId: validation.data.copyFromId,
     targetId: methodOperationId,
     companyId,

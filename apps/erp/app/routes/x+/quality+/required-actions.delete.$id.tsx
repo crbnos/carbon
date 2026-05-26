@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { deleteRequiredAction } from "~/modules/quality";
+import { deleteRequiredAction } from "~/modules/quality/quality.service.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -11,11 +11,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Required action ID is required");
 
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "quality"
   });
 
-  const deleteResult = await deleteRequiredAction(client, id);
+  const deleteResult = await deleteRequiredAction(id);
 
   if (deleteResult.error) {
     return redirect(

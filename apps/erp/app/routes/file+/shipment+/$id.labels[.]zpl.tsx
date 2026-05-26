@@ -4,8 +4,8 @@ import type { TrackedEntityAttributes } from "@carbon/utils";
 import { labelSizes } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { getShipmentTracking } from "~/modules/inventory/inventory.service";
-import { getCompanySettings } from "~/modules/settings/settings.service";
+import { getShipmentTracking } from "~/modules/inventory/inventory.service.server";
+import { getCompanySettings } from "~/modules/settings/settings.service.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -17,8 +17,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!id) throw new Error("Could not find id");
 
   const [companySettings, shipmentTracking] = await Promise.all([
-    getCompanySettings(client, companyId),
-    getShipmentTracking(client, id, companyId)
+    getCompanySettings(),
+    getShipmentTracking(id)
   ]);
 
   // Get the label size from query params or default to zebra2x1

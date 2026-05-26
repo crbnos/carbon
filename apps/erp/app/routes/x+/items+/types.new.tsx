@@ -8,7 +8,8 @@ import type {
   LoaderFunctionArgs
 } from "react-router";
 import { data, redirect, useNavigate } from "react-router";
-import { materialTypeValidator, upsertMaterialType } from "~/modules/items";
+import { materialTypeValidator } from "~/modules/items";
+import { upsertMaterialType } from "~/modules/items/items.service.server";
 import MaterialTypeForm from "~/modules/items/ui/MaterialTypes/MaterialTypeForm";
 
 import { getParams, path } from "~/utils/path";
@@ -24,7 +25,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     create: "parts"
   });
 
@@ -40,7 +41,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const insertMaterialType = await upsertMaterialType(client, {
+  const insertMaterialType = await upsertMaterialType({
     ...d,
     companyId
   });

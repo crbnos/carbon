@@ -3,11 +3,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { updateJobBatchNumber } from "~/modules/production/production.service";
+import { updateJobBatchNumber } from "~/modules/production/production.service.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "production",
     bypassRls: true
   });
@@ -20,7 +20,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const value = rawValue == null ? "" : String(rawValue).trim();
 
   const update = await updateJobBatchNumber(
-    client,
     trackedEntityId,
     value === "" ? null : value
   );

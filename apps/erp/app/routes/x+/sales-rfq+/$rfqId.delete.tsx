@@ -3,19 +3,19 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
-import { deleteSalesRFQ } from "~/modules/sales";
+import { deleteSalesRFQ } from "~/modules/sales/sales.service.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "sales"
   });
 
   const { rfqId } = params;
   if (!rfqId) throw new Error("Could not find rfqId");
 
-  const salesRfqDelete = await deleteSalesRFQ(client, rfqId);
+  const salesRfqDelete = await deleteSalesRFQ(rfqId);
 
   if (salesRfqDelete.error) {
     return data(

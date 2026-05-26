@@ -9,19 +9,22 @@ import type {
 } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteUnitOfMeasure, getUnitOfMeasure } from "~/modules/items";
+import {
+  deleteUnitOfMeasure,
+  getUnitOfMeasure
+} from "~/modules/items/items.service.server";
 import { getParams, path } from "~/utils/path";
 import { getCompanyId, uomsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts"
   });
 
   const { uomId } = params;
   if (!uomId) throw notFound("uomId not found");
 
-  const unitOfMeasure = await getUnitOfMeasure(client, uomId, companyId);
+  const unitOfMeasure = await getUnitOfMeasure(uomId);
   if (unitOfMeasure.error) {
     throw redirect(
       `${path.to.uoms}?${getParams(request)}`,
@@ -36,7 +39,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "parts"
   });
 
@@ -48,7 +51,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteTypeError } = await deleteUnitOfMeasure(client, uomId);
+  const { error: deleteTypeError } = await deleteUnitOfMeasure(uomId);
   if (deleteTypeError) {
     throw redirect(
       path.to.uoms,

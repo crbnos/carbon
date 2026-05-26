@@ -3,14 +3,14 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getServicesList } from "~/modules/items";
+import { getServicesList } from "~/modules/items/items.service.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts"
   });
 
-  const services = await getServicesList(client, companyId);
+  const services = await getServicesList();
   if (services.error) {
     return data(
       services,

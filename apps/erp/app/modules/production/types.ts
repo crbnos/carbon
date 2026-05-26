@@ -26,7 +26,7 @@ import type {
   getProductionProjections,
   getProductionQuantities,
   getScrapReasons
-} from "./production.service";
+} from "./production.service.server";
 
 export type ActiveProductionEvent = NonNullable<
   Awaited<ReturnType<typeof getActiveProductionEvents>>["data"]

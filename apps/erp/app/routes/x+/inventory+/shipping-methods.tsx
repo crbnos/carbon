@@ -5,8 +5,9 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
-import { getAccountsList } from "~/modules/accounting";
-import { getShippingMethods, ShippingMethodsTable } from "~/modules/inventory";
+import { getAccountsList } from "~/modules/accounting/accounting.service.server";
+import { ShippingMethodsTable } from "~/modules/inventory";
+import { getShippingMethods } from "~/modules/inventory/inventory.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -17,13 +18,10 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      view: "inventory",
-      role: "employee"
-    }
-  );
+  const { companyGroupId } = await requirePermissions(request, {
+    view: "inventory",
+    role: "employee"
+  });
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -32,14 +30,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [shippingMethods] = await Promise.all([
-    getShippingMethods(client, companyId, {
+    getShippingMethods({
       search,
       limit,
       offset,
       sorts,
       filters
     }),
-    getAccountsList(client, companyGroupId)
+    getAccountsList(companyGroupId)
   ]);
 
   if (shippingMethods.error) {
