@@ -2,14 +2,12 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  batchPropertyValidator,
-  upsertBatchProperty
-} from "~/modules/inventory";
+import { batchPropertyValidator } from "~/modules/inventory";
+import { upsertBatchProperty } from "~/modules/inventory/inventory.service.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "inventory"
   });
 
@@ -28,7 +26,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { listOptions, ...d } = validation.data;
 
-  const upsert = await upsertBatchProperty(client, {
+  const upsert = await upsertBatchProperty({
     ...d,
     listOptions: d.dataType === "list" ? listOptions : undefined,
     companyId,

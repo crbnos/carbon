@@ -1,17 +1,15 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { copyItem, copyMakeMethod, getMethodValidator } from "~/modules/items";
+import { getMethodValidator } from "~/modules/items";
+import { copyItem, copyMakeMethod } from "~/modules/items/items.service.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   const { companyId, userId } = await requirePermissions(request, {
     update: "parts"
   });
-
-  const serviceRole = getCarbonServiceRole();
 
   const validation = await validator(getMethodValidator).validate(
     await request.formData()
@@ -27,12 +25,12 @@ export async function action({ request }: ActionFunctionArgs) {
   const upsert =
     isMakeMethodId(validation.data.sourceId) ||
     isMakeMethodId(validation.data.targetId)
-      ? await copyMakeMethod(serviceRole, {
+      ? await copyMakeMethod({
           ...validation.data,
           companyId,
           userId
         })
-      : await copyItem(serviceRole, {
+      : await copyItem({
           ...validation.data,
           companyId,
           userId

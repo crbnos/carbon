@@ -1,16 +1,15 @@
 import { getAppUrl } from "@carbon/auth";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { tool } from "ai";
-import { getCurrencyByCode } from "~/modules/accounting/accounting.service";
-import { getEmployeeJob } from "~/modules/people/people.service";
+import { getCurrencyByCode } from "~/modules/accounting/accounting.service.server";
+import { getEmployeeJob } from "~/modules/people/people.service.server";
 import {
   deletePurchaseOrder,
   getSupplier as getSupplierById,
   getSupplierPayment,
   getSupplierShipping,
   insertSupplierInteraction
-} from "~/modules/purchasing/purchasing.service";
-import { getNextSequence } from "~/modules/settings";
+} from "~/modules/purchasing/purchasing.service.server";
+import { getNextSequence } from "~/modules/settings/settings.service.server";
 import { path } from "~/utils/path";
 import type { ChatContext } from "../agents/shared/context";
 import { createPurchaseOrderSchema } from "./create-purchase-order";
@@ -34,20 +33,12 @@ export const createPurchaseOrderTool = tool({
       supplierShipping,
       employeeJob
     ] = await Promise.all([
-      getNextSequence(
-        getCarbonServiceRole(),
-        "purchaseOrder",
-        context.companyId
-      ),
-      insertSupplierInteraction(
-        context.client,
-        context.companyId,
-        args.supplierId
-      ),
-      getSupplierById(context.client, args.supplierId),
-      getSupplierPayment(context.client, args.supplierId),
-      getSupplierShipping(context.client, args.supplierId),
-      getEmployeeJob(context.client, context.userId, context.companyId)
+      getNextSequence("purchaseOrder"),
+      insertSupplierInteraction(args.supplierId),
+      getSupplierById(args.supplierId),
+      getSupplierPayment(args.supplierId),
+      getSupplierShipping(args.supplierId),
+      getEmployeeJob(context.userId)
     ]);
 
     if (!supplierInteraction.data) {
@@ -93,7 +84,6 @@ export const createPurchaseOrderTool = tool({
 
     if (supplier.data?.currencyCode) {
       const currency = await getCurrencyByCode(
-        context.client,
         context.companyGroupId,
         supplier.data?.currencyCode ?? ""
       );
@@ -232,7 +222,7 @@ export const createPurchaseOrderTool = tool({
       };
     } catch (error) {
       if (purchaseOrderId) {
-        await deletePurchaseOrder(context.client, purchaseOrderId);
+        await deletePurchaseOrder(purchaseOrderId);
       }
       return {
         error: `Failed to create purchase order details: ${

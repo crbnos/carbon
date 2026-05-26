@@ -33,7 +33,7 @@ import type {
   getTools,
   getUnitOfMeasure,
   getUnitOfMeasuresList
-} from "./items.service";
+} from "./items.service.server";
 
 export type MaterialConfigurationData = {
   materialId?: string;

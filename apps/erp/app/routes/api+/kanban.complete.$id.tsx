@@ -4,8 +4,8 @@ import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
-import { getKanban } from "~/modules/inventory";
-import { getActiveJobOperationByJobId } from "~/modules/production";
+import { getKanban } from "~/modules/inventory/inventory.service.server";
+import { getActiveJobOperationByJobId } from "~/modules/production/production.service.server";
 import { path } from "~/utils/path";
 
 async function handleKanbanComplete({
@@ -17,7 +17,7 @@ async function handleKanbanComplete({
   companyId: string;
   id: string;
 }): Promise<{ data: string; error: null } | { data: null; error: string }> {
-  const kanban = await getKanban(client, id);
+  const kanban = await getKanban(id);
   if (kanban.error) {
     return {
       data: null,
@@ -32,11 +32,7 @@ async function handleKanbanComplete({
     };
   }
 
-  const operation = await getActiveJobOperationByJobId(
-    client,
-    kanban.data.jobId!,
-    companyId
-  );
+  const operation = await getActiveJobOperationByJobId(kanban.data.jobId!);
 
   if (!operation) {
     return {

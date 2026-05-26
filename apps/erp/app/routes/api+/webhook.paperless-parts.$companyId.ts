@@ -4,7 +4,8 @@ import crypto from "crypto";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
-import { getIntegration } from "~/modules/settings/settings.service";
+import { getIntegration } from "~/modules/settings/settings.service.server";
+import { runWithSystemContext } from "~/services/mcp/index.server";
 
 const integrationValidator = z.object({
   apiKey: z.string(),
@@ -43,70 +44,77 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return data({ success: false }, { status: 400 });
   }
 
-  const serviceRole = await getCarbonServiceRole();
-  const paperlessPartsIntegration = await getIntegration(
-    serviceRole,
-    "paperless-parts",
-    companyId
+  // Public webhook: no session/middleware identity. The URL companyId is the
+  // target tenant (not an actor) — pass it into the request-scoped context so
+  // service code reading `AuthContextHolder.get().companyId` is satisfied.
+  return runWithSystemContext(
+    { companyId },
+    getCarbonServiceRole(),
+    async () => {
+      const paperlessPartsIntegration = await getIntegration(
+        "paperless-parts",
+        companyId
+      );
+
+      if (paperlessPartsIntegration.error || !paperlessPartsIntegration.data) {
+        return data({ success: false }, { status: 400 });
+      }
+
+      try {
+        const { apiKey, secretKey } = integrationValidator.parse(
+          paperlessPartsIntegration.data.metadata
+        );
+
+        // The signature provided by Paperless Parts is computed using the Python json.dumps() function,
+        // which formats the JSON string with newlines and whitespace.
+        // We need to remove the newlines and whitespace to match the signature.
+        const payloadText = JSON.stringify(await request.json(), null, 1)
+          .replace(/^ +/gm, " ")
+          .replace(/\n/g, "")
+          .replace(/{ /g, "{")
+          .replace(/ }/g, "}")
+          .replace(/\[ /g, "[")
+          .replace(/ \]/g, "]");
+
+        const signatureHeader =
+          request.headers.get("paperless-parts-signature") ||
+          request.headers.get("Paperless-Parts-Signature");
+        if (!signatureHeader) {
+          return data({ success: false }, { status: 401 });
+        }
+
+        // Parse timestamp and signature from header
+        const [timestampPart, signaturePart] = signatureHeader.split(",");
+        const timestamp = Number(timestampPart.replace("t=", ""));
+        const signature = signaturePart.replace("v1=", "");
+
+        if (!timestamp || !signature) {
+          return data({ success: false }, { status: 401 });
+        }
+
+        const expectedSignature = createHmacSignature(
+          payloadText,
+          secretKey,
+          timestamp
+        );
+
+        if (signature !== expectedSignature) {
+          return data({ success: false }, { status: 401 });
+        }
+
+        const payload = JSON.parse(payloadText);
+        console.log("payload", payload);
+
+        await trigger("paperless-parts", {
+          apiKey,
+          companyId,
+          payload
+        });
+
+        return { success: true };
+      } catch (_err) {
+        return data({ success: false }, { status: 500 });
+      }
+    }
   );
-
-  if (paperlessPartsIntegration.error || !paperlessPartsIntegration.data) {
-    return data({ success: false }, { status: 400 });
-  }
-
-  try {
-    const { apiKey, secretKey } = integrationValidator.parse(
-      paperlessPartsIntegration.data.metadata
-    );
-
-    // The signature provided by Paperless Parts is computed using the Python json.dumps() function,
-    // which formats the JSON string with newlines and whitespace.
-    // We need to remove the newlines and whitespace to match the signature.
-    const payloadText = JSON.stringify(await request.json(), null, 1)
-      .replace(/^ +/gm, " ")
-      .replace(/\n/g, "")
-      .replace(/{ /g, "{")
-      .replace(/ }/g, "}")
-      .replace(/\[ /g, "[")
-      .replace(/ \]/g, "]");
-
-    const signatureHeader =
-      request.headers.get("paperless-parts-signature") ||
-      request.headers.get("Paperless-Parts-Signature");
-    if (!signatureHeader) {
-      return data({ success: false }, { status: 401 });
-    }
-
-    // Parse timestamp and signature from header
-    const [timestampPart, signaturePart] = signatureHeader.split(",");
-    const timestamp = Number(timestampPart.replace("t=", ""));
-    const signature = signaturePart.replace("v1=", "");
-
-    if (!timestamp || !signature) {
-      return data({ success: false }, { status: 401 });
-    }
-
-    const expectedSignature = createHmacSignature(
-      payloadText,
-      secretKey,
-      timestamp
-    );
-
-    if (signature !== expectedSignature) {
-      return data({ success: false }, { status: 401 });
-    }
-
-    const payload = JSON.parse(payloadText);
-    console.log("payload", payload);
-
-    await trigger("paperless-parts", {
-      apiKey,
-      companyId,
-      payload
-    });
-
-    return { success: true };
-  } catch (_err) {
-    return data({ success: false }, { status: 500 });
-  }
 }

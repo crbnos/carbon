@@ -5,17 +5,17 @@ import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
+import { supplierQuoteFinalizeValidator } from "~/modules/purchasing";
 import {
   getSupplierContact,
   getSupplierInteractionDocuments,
   getSupplierInteractionLineDocuments,
   getSupplierQuote,
   getSupplierQuoteLines,
-  sendSupplierQuote,
-  supplierQuoteFinalizeValidator
-} from "~/modules/purchasing";
-import { getCompany } from "~/modules/settings";
-import { upsertExternalLink } from "~/modules/shared";
+  sendSupplierQuote
+} from "~/modules/purchasing/purchasing.service.server";
+import { getCompany } from "~/modules/settings/settings.service.server";
+import { upsertExternalLink } from "~/modules/shared/shared.service.server";
 import { getUser } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
 
@@ -32,7 +32,7 @@ export async function action(args: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find supplier quote id");
 
-  const quote = await getSupplierQuote(client, id);
+  const quote = await getSupplierQuote(id);
   if (quote.error) {
     throw redirect(
       path.to.supplierQuote(id),
@@ -41,7 +41,7 @@ export async function action(args: ActionFunctionArgs) {
   }
 
   // Reuse existing external link or create one if it doesn't exist
-  const externalLink = await upsertExternalLink(client, {
+  const externalLink = await upsertExternalLink({
     id: quote.data.externalLinkId ?? undefined,
     documentType: "SupplierQuote",
     documentId: id,
@@ -61,7 +61,7 @@ export async function action(args: ActionFunctionArgs) {
 
   // Send keeps status as Draft
   try {
-    const send = await sendSupplierQuote(client, id, userId);
+    const send = await sendSupplierQuote(id);
     if (send.error) {
       throw redirect(
         path.to.supplierQuote(id),
@@ -96,9 +96,9 @@ export async function action(args: ActionFunctionArgs) {
 
         const [company, supplierContact, supplierQuote, user] =
           await Promise.all([
-            getCompany(client, companyId),
-            getSupplierContact(client, supplierContactId),
-            getSupplierQuote(client, id),
+            getCompany(),
+            getSupplierContact(supplierContactId),
+            getSupplierQuote(id),
             getUser(client, userId)
           ]);
 
@@ -114,11 +114,7 @@ export async function action(args: ActionFunctionArgs) {
         // Fetch top-level supplier interaction documents
         const interactionId = supplierQuote.data.supplierInteractionId;
         if (interactionId) {
-          const topDocs = await getSupplierInteractionDocuments(
-            client,
-            companyId,
-            interactionId
-          );
+          const topDocs = await getSupplierInteractionDocuments(interactionId);
 
           for (const doc of topDocs) {
             const storagePath = `${companyId}/supplier-interaction/${interactionId}/${doc.name}`;
@@ -136,13 +132,11 @@ export async function action(args: ActionFunctionArgs) {
         }
 
         // Fetch line-level supplier interaction documents
-        const lines = await getSupplierQuoteLines(client, id);
+        const lines = await getSupplierQuoteLines(id);
 
         if (lines.data) {
           for (const line of lines.data) {
             const docs = await getSupplierInteractionLineDocuments(
-              client,
-              companyId,
               line.id ?? ""
             );
 

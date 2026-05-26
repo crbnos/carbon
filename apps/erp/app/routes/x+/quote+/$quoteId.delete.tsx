@@ -3,19 +3,19 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
-import { deleteQuote } from "~/modules/sales";
+import { deleteQuote } from "~/modules/sales/sales.service.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "sales"
   });
 
   const { quoteId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
 
-  const quoteDelete = await deleteQuote(client, quoteId);
+  const quoteDelete = await deleteQuote(quoteId);
 
   if (quoteDelete.error) {
     return data(

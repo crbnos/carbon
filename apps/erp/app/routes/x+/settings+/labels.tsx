@@ -20,11 +20,11 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useFetcher, useLoaderData } from "react-router";
+import { productLabelSizeValidator } from "~/modules/settings";
 import {
   getCompanySettings,
-  productLabelSizeValidator,
   updateProductLabelSize
-} from "~/modules/settings";
+} from "~/modules/settings/settings.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 export const handle: Handle = {
@@ -33,11 +33,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "settings"
   });
 
-  const companySettings = await getCompanySettings(client, companyId);
+  const companySettings = await getCompanySettings();
   if (!companySettings.data)
     throw redirect(
       path.to.settings,
@@ -50,7 +50,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "settings"
   });
 
@@ -68,8 +68,6 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       const productLabelSize = await updateProductLabelSize(
-        client,
-        companyId,
         validation.data.productLabelSize
       );
       if (productLabelSize.error)

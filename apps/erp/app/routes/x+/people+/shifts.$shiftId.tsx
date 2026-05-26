@@ -4,20 +4,21 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
-import { getShift, shiftValidator, upsertShift } from "~/modules/people";
+import { shiftValidator } from "~/modules/people";
+import { getShift, upsertShift } from "~/modules/people/people.service.server";
 import { ShiftForm } from "~/modules/people/ui/Shifts";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "people"
   });
 
   const { shiftId } = params;
   if (!shiftId) throw notFound("Shift ID was not found");
 
-  const shift = await getShift(client, shiftId);
+  const shift = await getShift(shiftId);
 
   if (shift.error) {
     throw redirect(
@@ -33,7 +34,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     create: "people"
   });
 
@@ -47,7 +48,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, ...d } = validation.data;
   if (!id) throw new Error("Shift ID is required");
 
-  const createShift = await upsertShift(client, {
+  const createShift = await upsertShift({
     id,
     ...d,
     updatedBy: userId,

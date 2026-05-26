@@ -11,14 +11,13 @@ import { redirect, useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { useRouteData } from "~/hooks";
 import type { Opportunity, SalesOrder, SalesOrderLine } from "~/modules/sales";
+import { isSalesOrderLocked, salesOrderValidator } from "~/modules/sales";
 import {
   getSalesOrder,
   getSalesOrderPayment,
   getSalesOrderShipment,
-  isSalesOrderLocked,
-  salesOrderValidator,
   upsertSalesOrder
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service.server";
 import {
   OpportunityDocuments,
   OpportunityNotes,
@@ -35,7 +34,7 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
@@ -43,9 +42,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!orderId) throw new Error("Could not find orderId");
 
   const [order, payment, shipment] = await Promise.all([
-    getSalesOrder(client, orderId),
-    getSalesOrderPayment(client, orderId),
-    getSalesOrderShipment(client, orderId)
+    getSalesOrder(orderId),
+    getSalesOrderPayment(orderId),
+    getSalesOrderShipment(orderId)
   ]);
 
   if (order.error) {
@@ -82,14 +81,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
   const { orderId: id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const salesOrder = await getSalesOrder(viewClient, id);
+  const salesOrder = await getSalesOrder(id);
   if (salesOrder.error) {
     throw redirect(
       path.to.salesOrder(id),
@@ -107,7 +106,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked sales order. Reopen it first."
   });
 
-  const { client, companyGroupId, userId } = await requirePermissions(request, {
+  const { companyGroupId, userId } = await requirePermissions(request, {
     update: "sales"
   });
 
@@ -121,7 +120,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { salesOrderId, ...d } = validation.data;
   if (!salesOrderId) throw new Error("Could not find salesOrderId");
 
-  const update = await upsertSalesOrder(client, {
+  const update = await upsertSalesOrder({
     id,
     salesOrderId,
     ...d,

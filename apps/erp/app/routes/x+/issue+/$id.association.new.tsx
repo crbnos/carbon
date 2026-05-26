@@ -2,8 +2,9 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { getIssue, isIssueLocked } from "~/modules/quality";
+import { isIssueLocked } from "~/modules/quality";
 import { issueAssociationValidator } from "~/modules/quality/quality.models";
+import { getIssue } from "~/modules/quality/quality.service.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
@@ -16,10 +17,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id: nonConformanceId } = params;
   if (!nonConformanceId) throw new Error("Could not find id");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "quality"
   });
-  const issue = await getIssue(viewClient, nonConformanceId);
+  const issue = await getIssue(nonConformanceId);
   await requireUnlocked({
     request,
     isLocked: isIssueLocked(issue.data?.status),

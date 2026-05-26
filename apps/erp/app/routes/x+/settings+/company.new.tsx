@@ -8,13 +8,13 @@ import { redis } from "@carbon/kv";
 import { getLocalTimeZone } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { insertEmployeeJob } from "~/modules/people";
-import { upsertLocation } from "~/modules/resources";
+import { insertEmployeeJob } from "~/modules/people/people.service.server";
+import { upsertLocation } from "~/modules/resources/resources.service.server";
+import { companyValidator } from "~/modules/settings";
 import {
-  companyValidator,
   insertCompany,
   seedCompany
-} from "~/modules/settings";
+} from "~/modules/settings/settings.service.server";
 import { getPermissionCacheKey } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
 
@@ -31,7 +31,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const client = getCarbonServiceRole();
 
-  const companyInsert = await insertCompany(client, validation.data);
+  const companyInsert = await insertCompany(validation.data);
   if (companyInsert.error) {
     console.error(companyInsert.error);
     throw new Error("Fatal: failed to insert company");
@@ -42,7 +42,7 @@ export async function action({ request }: ActionFunctionArgs) {
     throw new Error("Fatal: failed to get company ID");
   }
 
-  const seed = await seedCompany(client, companyId, userId);
+  const seed = await seedCompany();
   if (seed.error) {
     console.error(seed.error);
     throw new Error("Fatal: failed to seed company");
@@ -51,7 +51,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // TODO: move all of this to transaction
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { baseCurrencyCode, ...locationData } = validation.data;
-  const locationInsert = await upsertLocation(client, {
+  const locationInsert = await upsertLocation({
     ...locationData,
     name: "Headquarters",
     companyId,
@@ -70,9 +70,8 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const [job] = await Promise.all([
-    insertEmployeeJob(client, {
+    insertEmployeeJob({
       id: userId,
-      companyId,
       locationId
     }),
     redis.del(getPermissionCacheKey(userId))

@@ -6,12 +6,12 @@ import { getSalesOrderStatus } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
 import type { ActionFunctionArgs } from "react-router";
-import { runMRP } from "~/modules/production/production.service";
+import { runMRP } from "~/modules/production/production.service.server";
+import { salesConfirmValidator } from "~/modules/sales";
 import {
   getSalesOrder,
-  getSalesOrderLines,
-  salesConfirmValidator
-} from "~/modules/sales";
+  getSalesOrderLines
+} from "~/modules/sales/sales.service.server";
 import {
   generateAndAttachSalesOrderPdf,
   sendSalesOrderEmail
@@ -39,7 +39,7 @@ export async function action(args: ActionFunctionArgs) {
 
     const serviceRole = getCarbonServiceRole();
 
-    const salesOrder = await getSalesOrder(serviceRole, orderId);
+    const salesOrder = await getSalesOrder(orderId);
     if (salesOrder.error) {
       return {
         success: false,
@@ -142,7 +142,7 @@ export async function action(args: ActionFunctionArgs) {
         };
     }
 
-    const orderLines = await getSalesOrderLines(serviceRole, orderId);
+    const orderLines = await getSalesOrderLines(orderId);
     const { status } = getSalesOrderStatus(orderLines.data || []);
 
     const confirm = await client
@@ -163,11 +163,9 @@ export async function action(args: ActionFunctionArgs) {
       };
     }
 
-    await runMRP(getCarbonServiceRole(), {
+    await runMRP({
       type: "salesOrder",
-      id: orderId,
-      companyId: companyId,
-      userId: userId
+      id: orderId
     });
 
     return {

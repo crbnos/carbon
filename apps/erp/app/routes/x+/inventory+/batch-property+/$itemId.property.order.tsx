@@ -2,14 +2,12 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  batchPropertyOrderValidator,
-  updateBatchPropertyOrder
-} from "~/modules/inventory";
+import { batchPropertyOrderValidator } from "~/modules/inventory";
+import { updateBatchPropertyOrder } from "~/modules/inventory/inventory.service.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "inventory"
   });
 
@@ -29,7 +27,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     };
   }
 
-  const upsert = await updateBatchPropertyOrder(client, {
+  const upsert = await updateBatchPropertyOrder({
     ...validation.data,
     updatedBy: userId
   });

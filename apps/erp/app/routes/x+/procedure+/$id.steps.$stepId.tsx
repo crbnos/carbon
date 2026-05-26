@@ -5,11 +5,11 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { procedureStepValidator } from "~/modules/production/production.models";
-import { upsertProcedureStep } from "~/modules/production/production.service";
+import { upsertProcedureStep } from "~/modules/production/production.service.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "production"
   });
 
@@ -27,7 +27,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const update = await upsertProcedureStep(client, {
+  const update = await upsertProcedureStep({
     id: stepId,
     ...validation.data,
     updatedBy: userId

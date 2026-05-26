@@ -8,8 +8,8 @@ import {
   getSupplierQuote,
   getSupplierQuoteLinePricesByQuoteId,
   getSupplierQuoteLines
-} from "~/modules/purchasing";
-import { upsertExternalLink } from "~/modules/shared";
+} from "~/modules/purchasing/purchasing.service.server";
+import { upsertExternalLink } from "~/modules/shared/shared.service.server";
 import { path } from "~/utils/path";
 
 export async function action(args: ActionFunctionArgs) {
@@ -25,7 +25,7 @@ export async function action(args: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find supplier quote id");
 
-  const quote = await getSupplierQuote(client, id);
+  const quote = await getSupplierQuote(id);
   if (quote.error) {
     throw redirect(
       path.to.supplierQuote(id),
@@ -34,7 +34,7 @@ export async function action(args: ActionFunctionArgs) {
   }
 
   // Reuse existing external link or create one if it doesn't exist
-  const externalLink = await upsertExternalLink(client, {
+  const externalLink = await upsertExternalLink({
     id: quote.data.externalLinkId ?? undefined,
     documentType: "SupplierQuote",
     documentId: id,
@@ -55,8 +55,8 @@ export async function action(args: ActionFunctionArgs) {
 
   // Validate that all quantities have price and lead time
   const [quoteLines, quoteLinePrices] = await Promise.all([
-    getSupplierQuoteLines(client, id),
-    getSupplierQuoteLinePricesByQuoteId(client, id)
+    getSupplierQuoteLines(id),
+    getSupplierQuoteLinePricesByQuoteId(id)
   ]);
 
   if (quoteLines.error) {
@@ -115,7 +115,7 @@ export async function action(args: ActionFunctionArgs) {
   // TODO: Add document creation for supplier quotes when PDF is available
 
   try {
-    const finalize = await finalizeSupplierQuote(client, id, userId);
+    const finalize = await finalizeSupplierQuote(id);
     if (finalize.error) {
       throw redirect(
         path.to.supplierQuote(id),

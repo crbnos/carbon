@@ -17,7 +17,7 @@ import {
   getJobOperationsByMethodId,
   getPartDocuments,
   getProductionDataByOperations
-} from "~/modules/production";
+} from "~/modules/production/production.service.server";
 import {
   JobBillOfMaterial,
   JobBillOfProcess,
@@ -25,11 +25,14 @@ import {
   JobEstimatesVsActuals
 } from "~/modules/production/ui/Jobs";
 import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
-import { getModelByItemId, getTagsList } from "~/modules/shared";
+import {
+  getModelByItemId,
+  getTagsList
+} from "~/modules/shared/shared.service.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "production",
     bypassRls: true
   });
@@ -39,11 +42,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!methodId) throw new Error("Could not find methodId");
 
   const [job, makeMethod, materials, operations, tags] = await Promise.all([
-    getJob(client, jobId),
-    getJobMakeMethodById(client, methodId, companyId),
-    getJobMaterialsByMethodId(client, methodId),
-    getJobOperationsByMethodId(client, methodId),
-    getTagsList(client, companyId, "operation")
+    getJob(jobId),
+    getJobMakeMethodById(methodId),
+    getJobMaterialsByMethodId(methodId),
+    getJobOperationsByMethodId(methodId),
+    getTagsList("operation")
   ]);
 
   if (job.error) {
@@ -105,11 +108,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       })) ?? [],
     makeMethod: makeMethod.data,
     productionData: getProductionDataByOperations(
-      client,
       operations?.data?.map((o) => o.id)
     ),
-    files: getPartDocuments(client, companyId, makeMethod.data),
-    model: getModelByItemId(client, makeMethod.data.itemId!),
+    files: getPartDocuments(makeMethod.data),
+    model: getModelByItemId(makeMethod.data.itemId!),
     tags: tags.data ?? []
   };
 }

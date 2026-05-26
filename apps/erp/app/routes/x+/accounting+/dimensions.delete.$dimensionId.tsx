@@ -4,17 +4,20 @@ import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteDimension, getDimension } from "~/modules/accounting";
+import {
+  deleteDimension,
+  getDimension
+} from "~/modules/accounting/accounting.service.server";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "accounting"
   });
   const { dimensionId } = params;
   if (!dimensionId) throw notFound("dimensionId not found");
 
-  const dimension = await getDimension(client, dimensionId);
+  const dimension = await getDimension(dimensionId);
   if (dimension.error) {
     throw redirect(
       `${path.to.dimensions}?${getParams(request)}`,
@@ -26,7 +29,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "accounting"
   });
 
@@ -38,7 +41,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteError } = await deleteDimension(client, dimensionId);
+  const { error: deleteError } = await deleteDimension(dimensionId);
   if (deleteError) {
     throw redirect(
       `${path.to.dimensions}?${getParams(request)}`,

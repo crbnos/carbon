@@ -4,7 +4,7 @@ import { useDisclosure, useMount } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
 import { useUser } from "~/hooks";
-import type { getWorkCentersList } from "~/modules/resources";
+import type { getWorkCentersList } from "~/modules/resources/resources.service.server";
 import WorkCenterForm from "~/modules/resources/ui/WorkCenters/WorkCenterForm";
 import { path } from "~/utils/path";
 

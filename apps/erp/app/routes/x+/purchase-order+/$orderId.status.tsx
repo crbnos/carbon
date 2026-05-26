@@ -4,13 +4,13 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { runMRP } from "~/modules/production";
+import { runMRP } from "~/modules/production/production.service.server";
 import {
   isPurchaseOrderLocked,
-  purchaseOrderStatusType,
-  updatePurchaseOrderStatus
+  purchaseOrderStatusType
 } from "~/modules/purchasing";
-import { canApproveRequest } from "~/modules/shared";
+import { updatePurchaseOrderStatus } from "~/modules/purchasing/purchasing.service.server";
+import { canApproveRequest } from "~/modules/shared/shared.service.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -52,7 +52,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const requiresDeletePermission =
     (status === "Draft" && isCurrentlyLocked) || status === "Closed";
 
-  const { client, userId, companyId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     ...(requiresDeletePermission
       ? { delete: "purchasing" }
       : { update: "purchasing" })
@@ -114,15 +114,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
         // This prevents non-approvers from bypassing the approval workflow
         const latestApproval = pendingApprovals.data[0]; // Get the latest pending request
         const isRequester = latestApproval.requestedBy === userId;
-        const isApprover = await canApproveRequest(
-          serviceRole,
-          {
-            amount: latestApproval.amount,
-            documentType: latestApproval.documentType,
-            companyId: latestApproval.companyId
-          },
-          userId
-        );
+        const isApprover = await canApproveRequest({
+          amount: latestApproval.amount,
+          documentType: latestApproval.documentType,
+          companyId: latestApproval.companyId
+        });
 
         if (!isRequester && !isApprover) {
           throw redirect(
@@ -154,11 +150,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  const update = await updatePurchaseOrderStatus(client, {
+  const update = await updatePurchaseOrderStatus({
     id,
     status,
-    assignee: ["Closed"].includes(status) ? null : undefined,
-    updatedBy: userId
+    assignee: ["Closed"].includes(status) ? null : undefined
   });
   if (update.error) {
     throw redirect(
@@ -171,11 +166,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (status === "Planned") {
-    await runMRP(serviceRole, {
+    await runMRP({
       type: "purchaseOrder",
-      id,
-      companyId,
-      userId
+      id
     });
   }
 

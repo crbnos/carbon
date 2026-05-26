@@ -4,22 +4,22 @@ import type { JSONContent } from "@carbon/react";
 import { getPreferenceHeaders } from "@carbon/react";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
-import { getPaymentTermsList } from "~/modules/accounting";
+import { getPaymentTermsList } from "~/modules/accounting/accounting.service.server";
 import {
   getPurchaseOrder,
   getPurchaseOrderLines,
   getPurchaseOrderLocations,
   getPurchasingTerms
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service.server";
 import {
   getAccountsPayableBillingAddress,
   getCompany,
   getCompanySettings
-} from "~/modules/settings";
-import { getBase64ImageFromSupabase } from "~/modules/shared";
+} from "~/modules/settings/settings.service.server";
+import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
 
@@ -36,14 +36,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     terms,
     paymentTerms
   ] = await Promise.all([
-    getCompany(client, companyId),
-    getCompanySettings(client, companyId),
-    getAccountsPayableBillingAddress(client, companyId),
-    getPurchaseOrder(client, orderId),
-    getPurchaseOrderLines(client, orderId),
-    getPurchaseOrderLocations(client, orderId),
-    getPurchasingTerms(client, companyId),
-    getPaymentTermsList(client, companyId)
+    getCompany(),
+    getCompanySettings(),
+    getAccountsPayableBillingAddress(),
+    getPurchaseOrder(orderId),
+    getPurchaseOrderLines(orderId),
+    getPurchaseOrderLocations(orderId),
+    getPurchasingTerms(),
+    getPaymentTermsList()
   ]);
 
   if (company.error) {
@@ -98,7 +98,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
               if (!path) {
                 return null;
               }
-              return getBase64ImageFromSupabase(client, path).then((data) => ({
+              return getBase64ImageFromSupabase(path).then((data) => ({
                 id,
                 data
               }));

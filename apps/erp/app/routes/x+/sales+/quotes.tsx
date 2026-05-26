@@ -5,7 +5,7 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
-import { getQuotes } from "~/modules/sales";
+import { getQuotes } from "~/modules/sales/sales.service.server";
 import { QuotesTable } from "~/modules/sales/ui/Quotes";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -17,7 +17,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales",
     bypassRls: true
   });
@@ -29,7 +29,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const quotes = await getQuotes(client, companyId, {
+  const quotes = await getQuotes({
     search,
     limit,
     offset,

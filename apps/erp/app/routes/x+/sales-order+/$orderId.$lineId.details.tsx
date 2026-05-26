@@ -1,6 +1,5 @@
 import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -17,22 +16,21 @@ import {
 } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
-import { getItemReplenishment } from "~/modules/items";
-import { getJobsBySalesOrderLine } from "~/modules/production";
+import { getItemReplenishment } from "~/modules/items/items.service.server";
+import { getJobsBySalesOrderLine } from "~/modules/production/production.service.server";
 import type {
   Opportunity,
   SalesOrder,
   SalesOrderLineType
 } from "~/modules/sales";
+import { isSalesOrderLocked, salesOrderLineValidator } from "~/modules/sales";
 import {
   getOpportunityLineDocuments,
   getSalesOrder,
   getSalesOrderLine,
   getSalesOrderLineShipments,
-  isSalesOrderLocked,
-  salesOrderLineValidator,
   upsertSalesOrderLine
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service.server";
 import {
   OpportunityLineDocuments,
   OpportunityLineNotes
@@ -47,7 +45,7 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales",
     bypassRls: true
   });
@@ -56,12 +54,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!orderId) throw notFound("orderId not found");
   if (!lineId) throw notFound("lineId not found");
 
-  const serviceRole = await getCarbonServiceRole();
-
   const [line, jobs, shipments] = await Promise.all([
-    getSalesOrderLine(serviceRole, lineId),
-    getJobsBySalesOrderLine(serviceRole, lineId),
-    getSalesOrderLineShipments(serviceRole, lineId)
+    getSalesOrderLine(lineId),
+    getJobsBySalesOrderLine(lineId),
+    getSalesOrderLineShipments(lineId)
   ]);
 
   if (line.error) {
@@ -77,9 +73,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     line: line?.data ?? null,
     itemReplenishment:
       itemId && line.data.methodType === "Make to Order"
-        ? getItemReplenishment(serviceRole, itemId, companyId)
+        ? getItemReplenishment(itemId)
         : Promise.resolve({ data: null }),
-    files: getOpportunityLineDocuments(serviceRole, companyId, lineId, itemId),
+    files: getOpportunityLineDocuments(lineId, itemId),
     jobs: jobs?.data ?? [],
     shipments: shipments?.data ?? []
   };
@@ -91,11 +87,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!orderId) throw new Error("Could not find orderId");
   if (!lineId) throw new Error("Could not find lineId");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
-  const salesOrder = await getSalesOrder(viewClient, orderId);
+  const salesOrder = await getSalesOrder(orderId);
   await requireUnlocked({
     request,
     isLocked: isSalesOrderLocked(salesOrder.data?.status),
@@ -103,7 +99,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked sales order. Reopen it first."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     create: "sales"
   });
 
@@ -131,7 +127,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     d.assetId = undefined;
   }
 
-  const updateSalesOrderLine = await upsertSalesOrderLine(client, {
+  const updateSalesOrderLine = await upsertSalesOrderLine({
     id: lineId,
     ...d,
     updatedBy: userId,

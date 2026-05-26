@@ -20,10 +20,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useFetcher, useNavigate } from "react-router";
 import { Submit, Supplier } from "~/components/Form";
 import { useUrlParams } from "~/hooks";
-import type {
-  getSupplierContacts,
-  SupplierContact as SupplierContactType
-} from "~/modules/purchasing";
+import type { SupplierContact as SupplierContactType } from "~/modules/purchasing";
+import type { getSupplierContacts } from "~/modules/purchasing/purchasing.service.server";
 import { createSupplierAccountValidator } from "~/modules/users";
 import type { Result } from "~/types";
 import { path } from "~/utils/path";

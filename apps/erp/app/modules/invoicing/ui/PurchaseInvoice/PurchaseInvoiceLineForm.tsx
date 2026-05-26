@@ -59,8 +59,9 @@ import {
 } from "~/hooks";
 import type { PurchaseInvoice } from "~/modules/invoicing";
 import { purchaseInvoiceLineValidator } from "~/modules/invoicing";
-import { getSupplierPartPriceBreaks } from "~/modules/items";
-import { type MethodItemType, resolveSupplierPrice } from "~/modules/shared";
+import type { getSupplierPartPriceBreaks } from "~/modules/items/items.service.server";
+import type { MethodItemType } from "~/modules/shared";
+import { resolveSupplierPrice } from "~/modules/shared/shared.client";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 
@@ -256,10 +257,11 @@ const PurchaseInvoiceLineForm = ({
         .maybeSingle();
 
       if (supplierPart?.data?.id) {
-        const breaks = await getSupplierPartPriceBreaks(
-          carbon,
-          supplierPart.data.id
-        );
+        const breaks = (await fetch(
+          path.to.api.supplierPartPriceBreaks(supplierPart.data.id)
+        ).then((r) => r.json())) as Awaited<
+          ReturnType<typeof getSupplierPartPriceBreaks>
+        >;
         setItemData((d) => ({ ...d, priceBreaks: breaks }));
       }
     })();
@@ -336,7 +338,11 @@ const PurchaseInvoiceLineForm = ({
           exchangeRate;
 
         const breaks = supplierPart?.data?.id
-          ? await getSupplierPartPriceBreaks(carbon, supplierPart.data.id)
+          ? ((await fetch(
+              path.to.api.supplierPartPriceBreaks(supplierPart.data.id)
+            ).then((r) => r.json())) as Awaited<
+              ReturnType<typeof getSupplierPartPriceBreaks>
+            >)
           : [];
         const resolvedPrice = resolveSupplierPrice(
           breaks,

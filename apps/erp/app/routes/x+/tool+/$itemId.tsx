@@ -37,12 +37,12 @@ import {
   getPickMethods,
   getSupplierParts,
   getTool
-} from "~/modules/items";
+} from "~/modules/items/items.service.server";
 import { BoMActions, BoMExplorer } from "~/modules/items/ui/Item";
 import type { UsedInNode } from "~/modules/items/ui/Item/UsedIn";
 import { UsedInSkeleton, UsedInTree } from "~/modules/items/ui/Item/UsedIn";
 import { ToolHeader, ToolProperties } from "~/modules/items/ui/Tools";
-import { getTagsList } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared/shared.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -53,7 +53,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts",
     bypassRls: true
   });
@@ -62,10 +62,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!itemId) throw new Error("Could not find itemId");
 
   const [toolSummary, supplierParts, pickMethods, tags] = await Promise.all([
-    getTool(client, itemId, companyId),
-    getSupplierParts(client, itemId, companyId),
-    getPickMethods(client, itemId, companyId),
-    getTagsList(client, companyId, "tool")
+    getTool(itemId),
+    getSupplierParts(itemId),
+    getPickMethods(itemId),
+    getTagsList("tool")
   ]);
 
   if (toolSummary.error) {
@@ -81,43 +81,37 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const requestedMethodId = url.searchParams.get("methodId");
 
-  const methodTree = getMakeMethods(client, itemId, companyId).then(
-    async (makeMethods) => {
-      const makeMethod = requestedMethodId
-        ? (makeMethods.data?.find((m) => m.id === requestedMethodId) ??
-          makeMethods.data?.find((m) => m.status === "Active") ??
-          makeMethods.data?.[0])
-        : (makeMethods.data?.find((m) => m.status === "Active") ??
-          makeMethods.data?.[0]);
-      if (!makeMethod) return null;
+  const methodTree = getMakeMethods(itemId).then(async (makeMethods) => {
+    const makeMethod = requestedMethodId
+      ? (makeMethods.data?.find((m) => m.id === requestedMethodId) ??
+        makeMethods.data?.find((m) => m.status === "Active") ??
+        makeMethods.data?.[0])
+      : (makeMethods.data?.find((m) => m.status === "Active") ??
+        makeMethods.data?.[0]);
+    if (!makeMethod) return null;
 
-      const fullMethod = await getMakeMethodById(
-        client,
-        makeMethod.id,
-        companyId
-      );
-      if (fullMethod.error || !fullMethod.data) return null;
+    const fullMethod = await getMakeMethodById(makeMethod.id);
+    if (fullMethod.error || !fullMethod.data) return null;
 
-      const tree = await getMethodTree(client, fullMethod.data.id);
-      if (tree.error) return null;
+    const tree = await getMethodTree(fullMethod.data.id);
+    if (tree.error) return null;
 
-      const methods = tree.data.length > 0 ? flattenTree(tree.data[0]) : [];
+    const methods = tree.data.length > 0 ? flattenTree(tree.data[0]) : [];
 
-      return {
-        makeMethod: fullMethod.data,
-        methods
-      };
-    }
-  );
+    return {
+      makeMethod: fullMethod.data,
+      methods
+    };
+  });
 
   return {
     toolSummary: toolSummary.data,
-    files: getItemFiles(client, itemId, companyId),
+    files: getItemFiles(itemId),
     supplierParts: supplierParts.data ?? [],
     pickMethods: pickMethods.data ?? [],
-    makeMethods: getMakeMethods(client, itemId, companyId),
+    makeMethods: getMakeMethods(itemId),
     tags: tags.data ?? [],
-    usedIn: getPartUsedIn(client, itemId, companyId),
+    usedIn: getPartUsedIn(itemId),
     methodTree
   };
 }

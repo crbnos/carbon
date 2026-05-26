@@ -3,19 +3,19 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
-import { deleteSupplierQuote } from "~/modules/purchasing";
+import { deleteSupplierQuote } from "~/modules/purchasing/purchasing.service.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "purchasing"
   });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const quoteDelete = await deleteSupplierQuote(client, id);
+  const quoteDelete = await deleteSupplierQuote(id);
 
   if (quoteDelete.error) {
     return data(

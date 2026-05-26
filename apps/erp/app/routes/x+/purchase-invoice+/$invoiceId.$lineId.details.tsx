@@ -10,14 +10,16 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import {
-  getPurchaseInvoice,
-  getPurchaseInvoiceLine,
   isPurchaseInvoiceLocked,
   PurchaseInvoiceLineForm,
-  purchaseInvoiceLineValidator,
-  upsertPurchaseInvoiceLine
+  purchaseInvoiceLineValidator
 } from "~/modules/invoicing";
-import { getSupplierInteractionLineDocuments } from "~/modules/purchasing";
+import {
+  getPurchaseInvoice,
+  getPurchaseInvoiceLine,
+  upsertPurchaseInvoiceLine
+} from "~/modules/invoicing/invoicing.service.server";
+import { getSupplierInteractionLineDocuments } from "~/modules/purchasing/purchasing.service.server";
 import {
   SupplierInteractionLineDocuments,
   SupplierInteractionLineNotes
@@ -28,7 +30,7 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "invoicing",
     role: "employee"
   });
@@ -37,8 +39,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!lineId) throw notFound("lineId not found");
 
   const [purchaseInvoiceLine, files] = await Promise.all([
-    getPurchaseInvoiceLine(client, lineId),
-    getSupplierInteractionLineDocuments(client, companyId, lineId)
+    getPurchaseInvoiceLine(lineId),
+    getSupplierInteractionLineDocuments(lineId)
   ]);
 
   return {
@@ -55,11 +57,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!lineId) throw new Error("Could not find lineId");
 
   // Check if PI is locked
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "invoicing"
   });
 
-  const purchaseInvoice = await getPurchaseInvoice(viewClient, invoiceId);
+  const purchaseInvoice = await getPurchaseInvoice(invoiceId);
   if (purchaseInvoice.error) {
     throw redirect(
       path.to.purchaseInvoiceLine(invoiceId, lineId),
@@ -77,7 +79,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase invoice."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     create: "invoicing"
   });
 
@@ -109,7 +111,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   //   d.assetId = undefined;
   // }
 
-  const updatePurchaseInvoiceLine = await upsertPurchaseInvoiceLine(client, {
+  const updatePurchaseInvoiceLine = await upsertPurchaseInvoiceLine({
     id: lineId,
     ...d,
     updatedBy: userId,

@@ -4,11 +4,14 @@ import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteCostCenter, getCostCenter } from "~/modules/accounting";
+import {
+  deleteCostCenter,
+  getCostCenter
+} from "~/modules/accounting/accounting.service.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "accounting",
     role: "employee"
   });
@@ -16,7 +19,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { costCenterId } = params;
   if (!costCenterId) throw notFound("costCenterId not found");
 
-  const costCenter = await getCostCenter(client, costCenterId);
+  const costCenter = await getCostCenter(costCenterId);
   if (costCenter.error) {
     throw redirect(
       path.to.costCenters,
@@ -30,7 +33,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "accounting"
   });
 
@@ -42,10 +45,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteCostCenterError } = await deleteCostCenter(
-    client,
-    costCenterId
-  );
+  const { error: deleteCostCenterError } = await deleteCostCenter(costCenterId);
   if (deleteCostCenterError) {
     throw redirect(
       path.to.costCenters,

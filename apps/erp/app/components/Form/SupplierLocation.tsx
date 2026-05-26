@@ -4,10 +4,8 @@ import { useDisclosure } from "@carbon/react";
 import { formatAddress } from "@carbon/utils";
 import { useEffect, useMemo, useRef } from "react";
 import { useFetcher } from "react-router";
-import type {
-  getSupplierLocations,
-  SupplierLocation as SupplierLocationType
-} from "~/modules/purchasing";
+import type { SupplierLocation as SupplierLocationType } from "~/modules/purchasing";
+import type { getSupplierLocations } from "~/modules/purchasing/purchasing.service.server";
 import { SupplierLocationForm } from "~/modules/purchasing/ui/Supplier";
 import { path } from "~/utils/path";
 

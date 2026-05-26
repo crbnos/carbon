@@ -5,19 +5,19 @@ import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
+import { itemUnitSalePriceValidator } from "~/modules/items";
 import {
   getItemCustomerParts,
   getItemUnitSalePrice,
-  itemUnitSalePriceValidator,
   upsertItemUnitSalePrice
-} from "~/modules/items";
+} from "~/modules/items/items.service.server";
 import { ItemSalePriceForm } from "~/modules/items/ui/Item";
 import CustomerParts from "~/modules/items/ui/Item/CustomerParts";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts",
     role: "employee"
   });
@@ -26,8 +26,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!itemId) throw new Error("Could not find itemId");
 
   const [partUnitSalePrice, customerParts] = await Promise.all([
-    getItemUnitSalePrice(client, itemId, companyId),
-    getItemCustomerParts(client, itemId, companyId)
+    getItemUnitSalePrice(itemId),
+    getItemCustomerParts(itemId)
   ]);
 
   if (partUnitSalePrice.error) {
@@ -49,7 +49,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -65,7 +65,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updatePartUnitSalePrice = await upsertItemUnitSalePrice(client, {
+  const updatePartUnitSalePrice = await upsertItemUnitSalePrice({
     ...validation.data,
     itemId,
     updatedBy: userId,

@@ -4,23 +4,22 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
+import { CompanyForm, subsidiaryValidator } from "~/modules/settings";
 import {
-  CompanyForm,
   getSubsidiary,
-  subsidiaryValidator,
   updateSubsidiary
-} from "~/modules/settings";
+} from "~/modules/settings/settings.service.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "settings"
   });
 
   const { id } = params;
   if (!id) throw notFound("Subsidiary not found");
 
-  const subsidiary = await getSubsidiary(client, id);
+  const subsidiary = await getSubsidiary(id);
   if (subsidiary.error) {
     throw redirect(
       path.to.companies,
@@ -33,7 +32,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "settings"
   });
 
@@ -47,7 +46,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const result = await updateSubsidiary(client, id, {
+  const result = await updateSubsidiary(id, {
     ...validation.data,
     updatedBy: userId
   });

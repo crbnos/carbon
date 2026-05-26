@@ -5,12 +5,12 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
-import { getCustomerTypes } from "~/modules/sales";
+import { getCustomerTypes } from "~/modules/sales/sales.service.server";
+import { CustomerAccountsTable } from "~/modules/users";
 import {
-  CustomerAccountsTable,
   getCustomers,
   getUnrevokedInviteEmails
-} from "~/modules/users";
+} from "~/modules/users/users.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -21,7 +21,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "users",
     bypassRls: true
   });
@@ -34,9 +34,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [customers, customerTypes, invites] = await Promise.all([
-    getCustomers(client, companyId, { search, limit, offset, sorts, filters }),
-    getCustomerTypes(client, companyId),
-    getUnrevokedInviteEmails(client, companyId)
+    getCustomers({ search, limit, offset, sorts, filters }),
+    getCustomerTypes(),
+    getUnrevokedInviteEmails()
   ]);
 
   if (customers.error) {

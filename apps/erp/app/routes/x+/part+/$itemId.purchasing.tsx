@@ -7,21 +7,21 @@ import { Suspense } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Await, redirect, useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { getBatchProperties } from "~/modules/inventory";
+import { getBatchProperties } from "~/modules/inventory/inventory.service.server";
 import BatchPropertiesConfig from "~/modules/inventory/ui/Batches/BatchPropertiesConfig";
 import type { SupplierPart } from "~/modules/items";
+import { itemPurchasingValidator } from "~/modules/items";
 import {
   getItemCostHistory,
   getItemReplenishment,
-  itemPurchasingValidator,
   upsertItemPurchasing
-} from "~/modules/items";
+} from "~/modules/items/items.service.server";
 import { ItemPurchasingForm, SupplierParts } from "~/modules/items/ui/Item";
 import { ItemCostHistoryChart } from "~/modules/items/ui/Item/ItemCostHistoryChart";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts"
   });
 
@@ -29,8 +29,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!itemId) throw new Error("Could not find itemId");
 
   const [partPurchasingResult, itemCostHistory] = await Promise.all([
-    getItemReplenishment(client, itemId, companyId),
-    getItemCostHistory(client, itemId, companyId)
+    getItemReplenishment(itemId),
+    getItemCostHistory(itemId)
   ]);
 
   if (partPurchasingResult.error) {
@@ -45,14 +45,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     partPurchasing: partPurchasingResult.data,
-    batchProperties: getBatchProperties(client, [itemId], companyId),
+    batchProperties: getBatchProperties([itemId]),
     itemCostHistory: itemCostHistory.data ?? []
   };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -68,7 +68,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updatePartPurchasing = await upsertItemPurchasing(client, {
+  const updatePartPurchasing = await upsertItemPurchasing({
     ...validation.data,
     itemId,
     updatedBy: userId

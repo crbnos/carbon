@@ -5,11 +5,11 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
+import { ContractorsTable } from "~/modules/resources";
 import {
-  ContractorsTable,
   getAbilitiesList,
   getContractors
-} from "~/modules/resources";
+} from "~/modules/resources/resources.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -20,7 +20,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources",
     role: "employee",
     bypassRls: true
@@ -33,14 +33,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [contractors, abilities] = await Promise.all([
-    getContractors(client, companyId, {
+    getContractors({
       search,
       limit,
       offset,
       sorts,
       filters
     }),
-    getAbilitiesList(client, companyId)
+    getAbilitiesList()
   ]);
 
   if (contractors.error) {

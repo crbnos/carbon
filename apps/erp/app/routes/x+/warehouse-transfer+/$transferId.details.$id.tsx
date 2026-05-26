@@ -13,13 +13,15 @@ import {
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
+  isWarehouseTransferLocked,
+  WarehouseTransferLineForm
+} from "~/modules/inventory";
+import {
   deleteWarehouseTransferLine,
   getWarehouseTransfer,
   getWarehouseTransferLine,
-  isWarehouseTransferLocked,
-  upsertWarehouseTransferLine,
-  WarehouseTransferLineForm
-} from "~/modules/inventory";
+  upsertWarehouseTransferLine
+} from "~/modules/inventory/inventory.service.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
@@ -48,7 +50,7 @@ const warehouseTransferLineActionValidator = z.discriminatedUnion("type", [
 ]);
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "inventory"
   });
 
@@ -56,11 +58,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!transferId) throw new Error("transferId not found");
   if (!id) throw new Error("id not found");
 
-  const warehouseTransferLine = await getWarehouseTransferLine(
-    client,
-    transferId,
-    id
-  );
+  const warehouseTransferLine = await getWarehouseTransferLine(transferId, id);
   if (warehouseTransferLine.error) {
     throw redirect(
       path.to.warehouseTransferDetails(transferId),
@@ -79,7 +77,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "inventory"
   });
 
@@ -87,10 +85,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!transferId) throw new Error("transferId not found");
   if (!id) throw new Error("id not found");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "inventory"
   });
-  const transfer = await getWarehouseTransfer(viewClient, transferId);
+  const transfer = await getWarehouseTransfer(transferId);
   await requireUnlocked({
     request,
     isLocked: isWarehouseTransferLocked(transfer.data?.status),
@@ -111,7 +109,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   switch (type) {
     case "update": {
-      const result = await upsertWarehouseTransferLine(client, {
+      const result = await upsertWarehouseTransferLine({
         id,
         ...d,
         transferId,
@@ -136,7 +134,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
 
     case "delete": {
-      const result = await deleteWarehouseTransferLine(client, id);
+      const result = await deleteWarehouseTransferLine(id);
 
       if (result.error) {
         return data(

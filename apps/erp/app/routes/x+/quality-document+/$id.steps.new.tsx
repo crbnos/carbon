@@ -5,11 +5,11 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { qualityDocumentStepValidator } from "~/modules/quality/quality.models";
-import { upsertQualityDocumentStep } from "~/modules/quality/quality.service";
+import { upsertQualityDocumentStep } from "~/modules/quality/quality.service.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "quality"
   });
 
@@ -30,7 +30,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...rest } = validation.data;
 
-  const create = await upsertQualityDocumentStep(client, {
+  const create = await upsertQualityDocumentStep({
     ...rest,
     companyId,
     createdBy: userId

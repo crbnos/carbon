@@ -8,7 +8,7 @@ import { redirect, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { useRouteData } from "~/hooks";
 import type { ApiKey } from "~/modules/settings";
-import { deleteApiKey } from "~/modules/settings";
+import { deleteApiKey } from "~/modules/settings/settings.service.server";
 import { getParams, path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -32,7 +32,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteApiKeyError } = await deleteApiKey(client, id);
+  const { error: deleteApiKeyError } = await deleteApiKey(id);
   if (deleteApiKeyError) {
     throw redirect(
       `${path.to.apiKeys}?${getParams(request)}`,

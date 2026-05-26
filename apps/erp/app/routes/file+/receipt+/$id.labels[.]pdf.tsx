@@ -5,13 +5,15 @@ import { labelSizes } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { getReceiptTracking } from "~/modules/inventory";
-import { getCompany } from "~/modules/settings";
-import { getCompanySettings } from "~/modules/settings/settings.service";
+import { getReceiptTracking } from "~/modules/inventory/inventory.service.server";
+import {
+  getCompany,
+  getCompanySettings
+} from "~/modules/settings/settings.service.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "inventory"
   });
 
@@ -19,9 +21,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!id) throw new Error("Could not find id");
 
   const [company, companySettings, receiptLineTracking] = await Promise.all([
-    getCompany(client, companyId),
-    getCompanySettings(client, companyId),
-    getReceiptTracking(client, id, companyId)
+    getCompany(),
+    getCompanySettings(),
+    getReceiptTracking(id)
   ]);
 
   if (company.error) {

@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getStockTransfer } from "~/modules/inventory";
+import { getStockTransfer } from "~/modules/inventory/inventory.service.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
@@ -16,10 +16,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "inventory"
   });
-  const transfer = await getStockTransfer(viewClient, id);
+  const transfer = await getStockTransfer(id);
   await requireUnlocked({
     request,
     isLocked: transfer.data?.status === "Completed",

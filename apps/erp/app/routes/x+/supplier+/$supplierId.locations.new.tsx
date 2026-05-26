@@ -8,10 +8,8 @@ import type {
 } from "react-router";
 import { data, redirect, useNavigate, useParams } from "react-router";
 import { useUser } from "~/hooks";
-import {
-  insertSupplierLocation,
-  supplierLocationValidator
-} from "~/modules/purchasing";
+import { supplierLocationValidator } from "~/modules/purchasing";
+import { insertSupplierLocation } from "~/modules/purchasing/purchasing.service.server";
 import SupplierLocationForm from "~/modules/purchasing/ui/Supplier/SupplierLocationForm";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -19,7 +17,7 @@ import { supplierLocationsQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "purchasing"
   });
 
@@ -40,9 +38,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, addressId, name, ...address } = validation.data;
 
-  const createSupplierLocation = await insertSupplierLocation(client, {
+  const createSupplierLocation = await insertSupplierLocation({
     supplierId,
-    companyId,
     name,
     address,
     customFields: setCustomFields(formData)

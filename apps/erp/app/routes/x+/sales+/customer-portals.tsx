@@ -5,7 +5,7 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, useLoaderData } from "react-router";
 import { CustomerPortalsTable } from "~/modules/sales/ui/CustomerPortals";
-import { getCustomerPortals } from "~/modules/shared";
+import { getCustomerPortals } from "~/modules/shared/shared.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -16,7 +16,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales",
     role: "employee"
   });
@@ -29,7 +29,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return {
     appUrl: getAppUrl(),
-    ...(await getCustomerPortals(client, companyId, {
+    ...(await getCustomerPortals({
       search,
       limit,
       offset,

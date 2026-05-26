@@ -9,16 +9,16 @@ import { issueWorkflowValidator } from "~/modules/quality/quality.models";
 import {
   getRequiredActionsList,
   upsertIssueWorkflow
-} from "~/modules/quality/quality.service";
+} from "~/modules/quality/quality.service.server";
 import IssueWorkflowForm from "~/modules/quality/ui/IssueWorkflows/IssueWorkflowForm";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "quality"
   });
 
-  const requiredActions = await getRequiredActionsList(client, companyId);
+  const requiredActions = await getRequiredActionsList();
 
   return {
     requiredActions: requiredActions.data ?? []
@@ -27,7 +27,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "quality"
   });
   const formData = await request.formData();
@@ -40,7 +40,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const insertIssueWorkflow = await upsertIssueWorkflow(client, {
+  const insertIssueWorkflow = await upsertIssueWorkflow({
     ...d,
     companyId,
     createdBy: userId

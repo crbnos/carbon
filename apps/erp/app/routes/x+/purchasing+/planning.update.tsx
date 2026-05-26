@@ -2,14 +2,14 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
-import { getCurrencyByCode } from "~/modules/accounting/accounting.service";
+import { getCurrencyByCode } from "~/modules/accounting/accounting.service.server";
+import { plannedOrderValidator } from "~/modules/purchasing";
 import {
-  plannedOrderValidator,
   updatePurchaseOrder,
   upsertPurchaseOrder,
   upsertPurchaseOrderLine
-} from "~/modules/purchasing";
-import { getNextSequence } from "~/modules/settings/settings.service";
+} from "~/modules/purchasing/purchasing.service.server";
+import { getNextSequence } from "~/modules/settings/settings.service.server";
 
 const itemsValidator = z
   .object({
@@ -245,11 +245,7 @@ export async function action({ request }: ActionFunctionArgs) {
           let createdNewPO = false;
 
           if (!purchaseOrderId) {
-            const nextSequence = await getNextSequence(
-              client,
-              "purchaseOrder",
-              companyId
-            );
+            const nextSequence = await getNextSequence("purchaseOrder");
             if (nextSequence.error) {
               const errorMsg = `Failed to generate purchase order sequence for supplier ${supplierId}: ${nextSequence.error.message}`;
               console.error(errorMsg);
@@ -268,7 +264,6 @@ export async function action({ request }: ActionFunctionArgs) {
             let exchangeRate = 1;
             if (supplier.currencyCode !== baseCurrencyCode) {
               const currency = await getCurrencyByCode(
-                client,
                 companyGroupId,
                 supplier.currencyCode ?? baseCurrencyCode
               );
@@ -286,7 +281,6 @@ export async function action({ request }: ActionFunctionArgs) {
             }
 
             const createPurchaseOrder = await upsertPurchaseOrder(
-              client,
               {
                 purchaseOrderId: purchaseOrderIdValue,
                 status: "Planned" as const,
@@ -396,30 +390,26 @@ export async function action({ request }: ActionFunctionArgs) {
             const description = itemOrders[0].order.description;
             const unitOfMeasureCode = itemOrders[0].order.unitOfMeasureCode;
 
-            const createPurchaseOrderLine = await upsertPurchaseOrderLine(
-              client,
-              {
-                purchaseOrderId: purchaseOrderId!,
-                itemId: itemId,
-                description: description,
-                purchaseOrderLineType: "Part",
-                purchaseQuantity: adjustedQuantity,
-                purchaseUnitOfMeasureCode:
-                  supplierPart?.supplierUnitOfMeasureCode ?? unitOfMeasureCode,
-                inventoryUnitOfMeasureCode: unitOfMeasureCode,
-                conversionFactor: supplierPart?.conversionFactor ?? 1,
-                supplierUnitPrice: supplierPart?.unitPrice ?? 0,
-                supplierTaxAmount:
-                  ((supplierPart?.unitPrice ?? 0) *
-                    (supplier.taxPercent ?? 0)) /
-                  100,
-                supplierShippingCost: 0,
-                requiredDate: earliestDueDate ?? undefined,
-                locationId,
-                companyId,
-                createdBy: userId
-              }
-            );
+            const createPurchaseOrderLine = await upsertPurchaseOrderLine({
+              purchaseOrderId: purchaseOrderId!,
+              itemId: itemId,
+              description: description,
+              purchaseOrderLineType: "Part",
+              purchaseQuantity: adjustedQuantity,
+              purchaseUnitOfMeasureCode:
+                supplierPart?.supplierUnitOfMeasureCode ?? unitOfMeasureCode,
+              inventoryUnitOfMeasureCode: unitOfMeasureCode,
+              conversionFactor: supplierPart?.conversionFactor ?? 1,
+              supplierUnitPrice: supplierPart?.unitPrice ?? 0,
+              supplierTaxAmount:
+                ((supplierPart?.unitPrice ?? 0) * (supplier.taxPercent ?? 0)) /
+                100,
+              supplierShippingCost: 0,
+              requiredDate: earliestDueDate ?? undefined,
+              locationId,
+              companyId,
+              createdBy: userId
+            });
 
             if (createPurchaseOrderLine.error) {
               const errorMsg = `Failed to create purchase order line for item ${itemId}: ${createPurchaseOrderLine.error.message}`;
@@ -457,10 +447,9 @@ export async function action({ request }: ActionFunctionArgs) {
 
           // Update PO status if we added to an existing PO
           if (!createdNewPO && purchaseOrderId) {
-            const updateResult = await updatePurchaseOrder(client, {
+            const updateResult = await updatePurchaseOrder({
               id: purchaseOrderId,
-              status: "Planned" as const,
-              updatedBy: userId
+              status: "Planned" as const
             });
 
             if (updateResult.error) {

@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { deleteTrainingAssignment } from "~/modules/resources";
+import { deleteTrainingAssignment } from "~/modules/resources/resources.service.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -11,7 +11,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "resources",
     role: "employee"
   });
@@ -24,7 +24,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const result = await deleteTrainingAssignment(client, assignmentId);
+  const result = await deleteTrainingAssignment(assignmentId);
 
   if (result.error) {
     throw redirect(

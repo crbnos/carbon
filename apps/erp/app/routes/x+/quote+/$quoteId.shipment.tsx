@@ -4,28 +4,27 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
+import { isQuoteLocked, quoteShipmentValidator } from "~/modules/sales";
 import {
   getQuote,
-  isQuoteLocked,
-  quoteShipmentValidator,
   upsertQuoteShipment
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "sales"
   });
 
   const { quoteId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
-  const quote = await getQuote(viewClient, quoteId);
+  const quote = await getQuote(quoteId);
   await requireUnlocked({
     request,
     isLocked: isQuoteLocked(quote.data?.status),
@@ -40,7 +39,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateQuoteShipment = await upsertQuoteShipment(client, {
+  const updateQuoteShipment = await upsertQuoteShipment({
     ...validation.data,
     id: quoteId,
     updatedBy: userId

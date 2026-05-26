@@ -8,10 +8,8 @@ import type {
   ClientActionFunctionArgs
 } from "react-router";
 import { data, redirect, useNavigate, useParams } from "react-router";
-import {
-  insertSupplierContact,
-  supplierContactValidator
-} from "~/modules/purchasing";
+import { supplierContactValidator } from "~/modules/purchasing";
+import { insertSupplierContact } from "~/modules/purchasing/purchasing.service.server";
 import SupplierContactForm from "~/modules/purchasing/ui/Supplier/SupplierContactForm";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -43,9 +41,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, contactId, supplierLocationId, ...contact } = validation.data;
 
-  const createSupplierContact = await insertSupplierContact(client, {
+  const createSupplierContact = await insertSupplierContact({
     supplierId,
-    companyId,
     contact,
     supplierLocationId,
     customFields: setCustomFields(formData)

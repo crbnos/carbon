@@ -8,7 +8,7 @@ import {
   getInboundInspection,
   getInboundInspectionLotTrackedEntities,
   getIssueTypesList
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service.server";
 import type {
   InboundInspectionRow,
   InboundInspectionSample,
@@ -16,11 +16,11 @@ import type {
   IssueTypeListItem
 } from "~/modules/quality/types";
 import InboundInspectionLotView from "~/modules/quality/ui/InboundInspections/InboundInspectionLotView";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     view: "quality",
     role: "employee"
   });
@@ -28,9 +28,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   invariant(id, "id is required");
 
   const [inspection, settings, issueTypes] = await Promise.all([
-    getInboundInspection(client, id),
-    getCompanySettings(client, companyId),
-    getIssueTypesList(client, companyId)
+    getInboundInspection(id),
+    getCompanySettings(),
+    getIssueTypesList()
   ]);
 
   if (inspection.error || !inspection.data) {
@@ -56,9 +56,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const lotEntities = await getInboundInspectionLotTrackedEntities(
-    client,
-    insp.receiptLineId,
-    companyId
+    insp.receiptLineId
   );
 
   return data({

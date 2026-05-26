@@ -1,20 +1,19 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { quoteOperationValidator } from "~/modules/sales";
 import {
-  quoteOperationValidator,
   recalculateQuoteLinePrices,
   upsertQuoteOperation
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service.server";
 import { setCustomFields } from "~/utils/form";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "sales"
   });
 
@@ -38,7 +37,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateQuoteOperation = await upsertQuoteOperation(client, {
+  const updateQuoteOperation = await upsertQuoteOperation({
     quoteId,
     quoteLineId: lineId,
     ...validation.data,
@@ -72,8 +71,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const serviceRole = getCarbonServiceRole();
-  await recalculateQuoteLinePrices(serviceRole, quoteId, lineId, userId);
+  await recalculateQuoteLinePrices(quoteId, lineId);
 
   return {
     id: quoteOperationId,

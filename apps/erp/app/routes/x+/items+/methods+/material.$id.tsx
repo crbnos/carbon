@@ -4,12 +4,13 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { methodMaterialValidator, upsertMethodMaterial } from "~/modules/items";
+import { methodMaterialValidator } from "~/modules/items";
+import { upsertMethodMaterial } from "~/modules/items/items.service.server";
 import { setCustomFields } from "~/utils/form";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "parts"
   });
 
@@ -27,7 +28,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateMethodMaterial = await upsertMethodMaterial(client, {
+  const updateMethodMaterial = await upsertMethodMaterial({
     ...validation.data,
     id: id,
     companyId,

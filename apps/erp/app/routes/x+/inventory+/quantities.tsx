@@ -11,14 +11,14 @@ import {
   getInventoryItems,
   getStorageTypesList,
   getStorageUnitsList
-} from "~/modules/inventory";
+} from "~/modules/inventory/inventory.service.server";
 import InventoryTable from "~/modules/inventory/ui/Inventory/InventoryTable";
 import {
   getMaterialFormsList,
   getMaterialSubstancesList
-} from "~/modules/items";
-import { getLocationsList } from "~/modules/resources";
-import { getTagsList } from "~/modules/shared";
+} from "~/modules/items/items.service.server";
+import { getLocationsList } from "~/modules/resources/resources.service.server";
+import { getTagsList } from "~/modules/shared/shared.service.server";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -41,7 +41,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
   if (storageUnitFilter?.value) {
     const ids = storageUnitFilter.value.split(",");
-    const expanded = await expandStorageUnitIdsWithDescendants(client, ids);
+    const expanded = await expandStorageUnitIdsWithDescendants(ids);
     storageUnitFilter.value = expanded.join(",");
   }
 
@@ -63,7 +63,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await getLocationsList();
     if (locations.error || !locations.data?.length) {
       throw redirect(
         path.to.inventory,
@@ -78,18 +78,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const [inventoryItems, forms, substances, tags, storageTypes, storageUnits] =
     await Promise.all([
-      getInventoryItems(client, locationId, companyId, {
+      getInventoryItems(locationId, {
         search,
         limit,
         offset,
         sorts,
         filters
       }),
-      getMaterialFormsList(client, companyId),
-      getMaterialSubstancesList(client, companyId),
-      getTagsList(client, companyId),
-      getStorageTypesList(client, companyId),
-      getStorageUnitsList(client, companyId)
+      getMaterialFormsList(),
+      getMaterialSubstancesList(),
+      getTagsList(),
+      getStorageTypesList(),
+      getStorageUnitsList()
     ]);
 
   if (inventoryItems.error) {

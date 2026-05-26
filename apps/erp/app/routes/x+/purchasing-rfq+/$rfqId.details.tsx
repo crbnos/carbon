@@ -10,12 +10,11 @@ import { redirect, useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import { useRouteData } from "~/hooks";
 import type { PurchasingRFQ, PurchasingRFQLine } from "~/modules/purchasing";
+import { isRfqLocked, purchasingRfqValidator } from "~/modules/purchasing";
 import {
   getPurchasingRFQ,
-  isRfqLocked,
-  purchasingRfqValidator,
   upsertPurchasingRFQ
-} from "~/modules/purchasing";
+} from "~/modules/purchasing/purchasing.service.server";
 import {
   SupplierInteractionDocuments,
   SupplierInteractionNotes
@@ -26,14 +25,14 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
 
   const { rfqId } = params;
   if (!rfqId) throw new Error("Could not find rfqId");
 
-  const rfq = await getPurchasingRFQ(client, rfqId);
+  const rfq = await getPurchasingRFQ(rfqId);
   if (rfq.error) {
     throw redirect(
       path.to.purchasingRfqs,
@@ -48,17 +47,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
-  const { client, companyId, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "purchasing"
   });
 
   const { rfqId: id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const rfq = await getPurchasingRFQ(viewClient, id);
+  const rfq = await getPurchasingRFQ(id);
   await requireUnlocked({
     request,
     isLocked: isRfqLocked(rfq.data?.status),
@@ -76,13 +75,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { rfqId, ...d } = validation.data;
   if (!rfqId) throw new Error("Could not find rfqId");
 
-  const update = await upsertPurchasingRFQ(client, {
+  const update = await upsertPurchasingRFQ({
     id,
     rfqId,
     ...d,
-    companyId,
-    customFields: setCustomFields(formData),
-    updatedBy: userId
+    customFields: setCustomFields(formData)
   });
   if (update.error) {
     throw redirect(

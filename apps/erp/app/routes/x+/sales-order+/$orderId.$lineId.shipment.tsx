@@ -4,7 +4,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { getSalesOrderLine } from "~/modules/sales";
+import { getSalesOrderLine } from "~/modules/sales/sales.service.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -20,7 +20,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   const serviceRole = getCarbonServiceRole();
-  const salesOrderLine = await getSalesOrderLine(serviceRole, lineId);
+  const salesOrderLine = await getSalesOrderLine(lineId);
 
   if (salesOrderLine.error) {
     throw redirect(

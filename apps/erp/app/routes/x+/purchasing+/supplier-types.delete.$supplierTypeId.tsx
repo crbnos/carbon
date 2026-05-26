@@ -9,19 +9,22 @@ import type {
 } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteSupplierType, getSupplierType } from "~/modules/purchasing";
+import {
+  deleteSupplierType,
+  getSupplierType
+} from "~/modules/purchasing/purchasing.service.server";
 import { getParams, path } from "~/utils/path";
 import { getCompanyId, supplierTypesQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing",
     role: "employee"
   });
   const { supplierTypeId } = params;
   if (!supplierTypeId) throw notFound("supplierTypeId not found");
 
-  const supplierType = await getSupplierType(client, supplierTypeId);
+  const supplierType = await getSupplierType(supplierTypeId);
   if (supplierType.error) {
     throw redirect(
       path.to.supplierTypes,
@@ -36,7 +39,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "purchasing"
   });
 
@@ -48,10 +51,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteTypeError } = await deleteSupplierType(
-    client,
-    supplierTypeId
-  );
+  const { error: deleteTypeError } = await deleteSupplierType(supplierTypeId);
   if (deleteTypeError) {
     throw redirect(
       `${path.to.supplierTypes}?${getParams(request)}`,

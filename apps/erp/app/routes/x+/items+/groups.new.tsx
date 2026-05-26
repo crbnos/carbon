@@ -8,10 +8,8 @@ import type {
   LoaderFunctionArgs
 } from "react-router";
 import { data, redirect, useNavigate } from "react-router";
-import {
-  itemPostingGroupValidator,
-  upsertItemPostingGroup
-} from "~/modules/items";
+import { itemPostingGroupValidator } from "~/modules/items";
+import { upsertItemPostingGroup } from "~/modules/items/items.service.server";
 import { ItemPostingGroupForm } from "~/modules/items/ui/ItemPostingGroups";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
@@ -27,7 +25,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "parts"
   });
 
@@ -45,7 +43,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...rest } = validation.data;
 
-  const insertItemPostingGroup = await upsertItemPostingGroup(client, {
+  const insertItemPostingGroup = await upsertItemPostingGroup({
     ...rest,
     companyId,
     createdBy: userId,

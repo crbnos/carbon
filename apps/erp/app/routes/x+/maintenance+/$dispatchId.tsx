@@ -14,7 +14,7 @@ import {
   getMaintenanceDispatchComments,
   getMaintenanceDispatchEvents,
   getMaintenanceDispatchItems
-} from "~/modules/resources";
+} from "~/modules/resources/resources.service.server";
 import { MaintenanceDispatchExplorer } from "~/modules/resources/ui/Maintenance/MaintenanceDispatchExplorer";
 import MaintenanceDispatchHeader from "~/modules/resources/ui/Maintenance/MaintenanceDispatchHeader";
 import {
@@ -32,7 +32,7 @@ export const handle: Handle = {
 };
 
 async function getMaintenanceDispatchFiles(
-  client: Parameters<typeof getMaintenanceDispatch>[0],
+  client: Awaited<ReturnType<typeof requirePermissions>>["client"],
   companyId: string,
   dispatchId: string
 ) {
@@ -51,11 +51,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!dispatchId) throw new Error("Could not find dispatchId");
 
   const [dispatch, events, items, comments, failureModes] = await Promise.all([
-    getMaintenanceDispatch(client, dispatchId),
-    getMaintenanceDispatchEvents(client, dispatchId),
-    getMaintenanceDispatchItems(client, dispatchId),
-    getMaintenanceDispatchComments(client, dispatchId),
-    getFailureModesList(client, companyId)
+    getMaintenanceDispatch(dispatchId),
+    getMaintenanceDispatchEvents(dispatchId),
+    getMaintenanceDispatchItems(dispatchId),
+    getMaintenanceDispatchComments(dispatchId),
+    getFailureModesList()
   ]);
 
   if (dispatch.error) {

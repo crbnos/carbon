@@ -3,8 +3,9 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
-import { getJobDocuments } from "~/modules/production/production.service";
+import { getJobDocuments } from "~/modules/production/production.service.server";
 import { getCompanyIntegration } from "~/modules/settings/settings.server";
+import { AuthClientScope } from "~/services/mcp/index.server";
 
 const integrationMetadataParser = z.object({
   processes: z.array(z.string())
@@ -12,6 +13,14 @@ const integrationMetadataParser = z.object({
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {});
+
+  // getJobDocuments is clientless and resolves its client from
+  // AuthClientScope. On main it was called with serviceRole (RLS-bypass)
+  // while the rest of this route used the request-scoped `client`. Pin the
+  // scope to serviceRole so getJobDocuments keeps that behavior;
+  // getCompanyIntegration / client.rpc below still use the explicit `client`.
+  const serviceRole = getCarbonServiceRole();
+  AuthClientScope.setFactory(() => serviceRole);
 
   const integration = await getCompanyIntegration(client, companyId, "radan");
   if (!integration) {
@@ -50,7 +59,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
     // Cache for job documents to avoid duplicate fetches
     const jobDocumentsCache = new Map();
-    const serviceRole = getCarbonServiceRole();
 
     // Enrich data with job documents
     const enrichedData = await Promise.all(
@@ -60,7 +68,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           if (jobDocumentsCache.has(item.jobId)) {
             documents = jobDocumentsCache.get(item.jobId);
           } else {
-            documents = await getJobDocuments(serviceRole, companyId, {
+            documents = await getJobDocuments({
               id: item.jobId,
               salesOrderLineId: item.salesOrderLineId,
               itemId: item.itemId

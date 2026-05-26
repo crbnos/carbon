@@ -9,7 +9,7 @@ import type { JournalEntry } from "~/modules/accounting";
 import {
   postJournalEntry,
   saveJournalEntryWithLines
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service.server";
 import { JournalEntryForm } from "~/modules/accounting/ui/JournalEntries";
 import type {
   DimensionWithValues,
@@ -19,10 +19,9 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId, companyId, companyGroupId } =
-    await requirePermissions(request, {
-      update: "accounting"
-    });
+  const { companyGroupId } = await requirePermissions(request, {
+    update: "accounting"
+  });
 
   const { journalEntryId } = params;
   if (!journalEntryId) throw new Error("Could not find journalEntryId");
@@ -76,13 +75,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  const saveResult = await saveJournalEntryWithLines(client, {
+  const saveResult = await saveJournalEntryWithLines({
     journalEntryId,
     postingDate,
     description,
-    updatedBy: userId,
     lines,
-    companyId,
     companyGroupId
   });
 
@@ -97,7 +94,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (intent === "post") {
-    const postResult = await postJournalEntry(client, journalEntryId, userId);
+    const postResult = await postJournalEntry(journalEntryId);
     if (postResult.error) {
       return data(
         {},

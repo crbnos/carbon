@@ -5,9 +5,9 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
-import { getStockTransfers } from "~/modules/inventory";
+import { getStockTransfers } from "~/modules/inventory/inventory.service.server";
 import StockTransfersTable from "~/modules/inventory/ui/StockTransfers/StockTransfersTable";
-import { getLocationsList } from "~/modules/resources";
+import { getLocationsList } from "~/modules/resources/resources.service.server";
 import { getUserDefaults } from "~/modules/users/users.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -47,7 +47,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await getLocationsList();
     if (locations.error || !locations.data?.length) {
       throw redirect(
         path.to.inventory,
@@ -60,7 +60,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  const stockTransfers = await getStockTransfers(client, companyId, {
+  const stockTransfers = await getStockTransfers({
     locationId,
     search,
     limit,

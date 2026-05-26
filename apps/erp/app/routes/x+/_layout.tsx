@@ -40,17 +40,17 @@ import { PrimaryNavigation, Topbar } from "~/components/Layout";
 import { TimeCardWarning } from "~/components/TimeCardWarning";
 import TrainingPanel from "~/components/TrainingPanel";
 import { useTrainingPanel } from "~/hooks/useTrainingPanel";
-import { getOpenClockEntry } from "~/modules/people";
+import { getOpenClockEntry } from "~/modules/people/people.service.server";
 import {
   getCompanies,
   getCompanyIntegrations,
   getCompanySettings
-} from "~/modules/settings";
+} from "~/modules/settings/settings.service.server";
 import { getCustomFieldsSchemas } from "~/modules/shared/shared.server";
 import {
   getSavedViews,
   isApprovalRequired
-} from "~/modules/shared/shared.service";
+} from "~/modules/shared/shared.service.server";
 import {
   getModulePreferences,
   getUser,
@@ -58,7 +58,15 @@ import {
   getUserDefaults,
   getUserGroups
 } from "~/modules/users/users.server";
+import {
+  AuthClientScope,
+  AuthContextHolder
+} from "~/services/mcp/index.server";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
+
+// authContextMiddleware is attached at root so every request opens the
+// AuthContextHolder scope when a session exists; no per-layout middleware
+// needed here.
 
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   currentUrl,
@@ -77,8 +85,10 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
   return defaultShouldRevalidate;
 };
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  const authSession = await requireAuthSession(request, { verify: true });
+async function loaderBody(
+  request: Request,
+  authSession: Awaited<ReturnType<typeof requireAuthSession>>
+) {
   const { accessToken, companyId, expiresAt, expiresIn, userId } = authSession;
 
   // Block ERP access when console mode is active on this terminal.
@@ -87,16 +97,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw redirect(getMESUrl());
   }
 
-  // const { computeRegion, proxyRegion } = parseVercelId(
-  //   request.headers.get("x-vercel-id")
-  // );
-
-  // console.log({
-  //   computeRegion,
-  //   proxyRegion,
-  // });
-
   const client = getCarbon(accessToken);
+  // This loader authenticates via requireAuthSession (not requirePermissions),
+  // so it owns its own AuthClientScope factory. The clientless service helpers
+  // called below (getCompanies, getCompanyIntegrations, getCompanySettings,
+  // getSavedViews) resolve their client from that scope.
+  AuthClientScope.setFactory(() => client);
 
   // Parallelize all requests
   const [
@@ -113,12 +119,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     auditLogEnabled,
     modulePreferences
   ] = await Promise.all([
-    getCompanies(client, userId),
+    getCompanies(),
     getStripeCustomerByCompanyId(companyId, userId),
     getCustomFieldsSchemas(client, { companyId }),
-    getCompanyIntegrations(client, companyId),
-    getCompanySettings(client, companyId),
-    getSavedViews(client, userId, companyId),
+    getCompanyIntegrations(),
+    getCompanySettings(),
+    getSavedViews(),
     getUser(client, userId),
     getUserClaims(userId, companyId),
     getUserGroups(client, userId),
@@ -175,11 +181,31 @@ export async function loader({ request }: LoaderFunctionArgs) {
     user: user.data,
     modulePreferences: modulePreferences.data ?? [],
     savedViews: savedViews.data ?? [],
-    supplierApprovalRequired: isApprovalRequired(client, "supplier", companyId),
+    supplierApprovalRequired: isApprovalRequired("supplier"),
     openClockEntry: companySettings.data?.timeCardEnabled
-      ? getOpenClockEntry(client, userId, companyId)
+      ? getOpenClockEntry(userId)
       : null
   });
+}
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  // Own the auth context for this loader regardless of whether
+  // `authContextMiddleware` already opened one — for protected layouts the
+  // session has just been verified here, so it is the authoritative source.
+  // `AuthContextHolder.run` is reentrant: an inner `run` shadows the outer
+  // scope only for code inside this callback, which is the desired behavior.
+  const authSession = await requireAuthSession(request, { verify: true });
+  return AuthContextHolder.run(
+    {
+      client: undefined,
+      userId: authSession.userId,
+      sessionUserId: authSession.userId,
+      email: authSession.email,
+      companyId: authSession.companyId,
+      companyGroupId: authSession.companyGroupId
+    },
+    () => loaderBody(request, authSession)
+  );
 }
 
 export default function AuthenticatedRoute() {

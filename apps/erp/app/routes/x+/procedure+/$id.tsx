@@ -18,11 +18,14 @@ import {
 } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { usePermissions, useUser } from "~/hooks";
-import { getProcedure, getProcedureVersions } from "~/modules/production";
+import {
+  getProcedure,
+  getProcedureVersions
+} from "~/modules/production/production.service.server";
 import ProcedureExplorer from "~/modules/production/ui/Procedures/ProcedureExplorer";
 import ProcedureHeader from "~/modules/production/ui/Procedures/ProcedureHeader";
 import ProcedureProperties from "~/modules/production/ui/Procedures/ProcedureProperties";
-import { getTagsList } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared/shared.service.server";
 import type { action } from "~/routes/x+/procedure+/update";
 import type { Handle } from "~/utils/handle";
 import { getPrivateUrl, path } from "~/utils/path";
@@ -34,7 +37,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "production",
     role: "employee",
     bypassRls: true
@@ -44,8 +47,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!id) throw new Error("Could not find id");
 
   const [procedure, tags] = await Promise.all([
-    getProcedure(client, id),
-    getTagsList(client, companyId, "procedure")
+    getProcedure(id),
+    getTagsList("procedure")
   ]);
 
   if (procedure.error) {
@@ -58,7 +61,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     procedure: procedure.data,
     tags: tags.data ?? [],
-    versions: getProcedureVersions(client, procedure.data, companyId)
+    versions: getProcedureVersions(procedure.data)
   };
 }
 

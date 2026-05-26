@@ -18,7 +18,7 @@ import type {
   getApprovalRequestsByDocument,
   getApprovalRuleByAmount,
   getNotes
-} from "./shared.service";
+} from "./shared.service.server";
 
 export type ApprovalFilters = {
   documentType?: ApprovalDocumentType | null;

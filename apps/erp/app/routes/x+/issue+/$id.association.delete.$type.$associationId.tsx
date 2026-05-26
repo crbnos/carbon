@@ -4,17 +4,19 @@ import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
-  deleteIssueAssociation,
-  getIssue,
   isIssueLocked,
   nonConformanceAssociationType
 } from "~/modules/quality";
+import {
+  deleteIssueAssociation,
+  getIssue
+} from "~/modules/quality/quality.service.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "quality"
   });
 
@@ -23,10 +25,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!type) throw new Error("Could not find type");
   if (!associationId) throw new Error("Could not find associationId");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "quality"
   });
-  const issue = await getIssue(viewClient, id);
+  const issue = await getIssue(id);
   await requireUnlocked({
     request,
     isLocked: isIssueLocked(issue.data?.status),
@@ -39,7 +41,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error(`Invalid type: ${type}`);
   }
 
-  const deletion = await deleteIssueAssociation(client, type, associationId);
+  const deletion = await deleteIssueAssociation(type, associationId);
 
   if (deletion.error) {
     throw redirect(

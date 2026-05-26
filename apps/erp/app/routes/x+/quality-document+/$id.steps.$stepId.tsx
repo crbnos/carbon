@@ -5,11 +5,11 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { qualityDocumentStepValidator } from "~/modules/quality/quality.models";
-import { upsertQualityDocumentStep } from "~/modules/quality/quality.service";
+import { upsertQualityDocumentStep } from "~/modules/quality/quality.service.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "quality"
   });
 
@@ -27,7 +27,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const update = await upsertQualityDocumentStep(client, {
+  const update = await upsertQualityDocumentStep({
     id: stepId,
     ...validation.data,
     updatedBy: userId

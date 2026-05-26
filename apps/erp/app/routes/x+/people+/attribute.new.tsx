@@ -4,12 +4,13 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
-import { attributeValidator, insertAttribute } from "~/modules/people";
+import { attributeValidator } from "~/modules/people";
+import { insertAttribute } from "~/modules/people/people.service.server";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "people"
   });
 
@@ -29,13 +30,12 @@ export async function action({ request }: ActionFunctionArgs) {
     canSelfManage
   } = validation.data;
 
-  const createAttribute = await insertAttribute(client, {
+  const createAttribute = await insertAttribute({
     name,
     attributeDataTypeId: Number(attributeDataTypeId),
     userAttributeCategoryId,
     listOptions,
-    canSelfManage,
-    createdBy: userId
+    canSelfManage
   });
   if (createAttribute.error) {
     return data(

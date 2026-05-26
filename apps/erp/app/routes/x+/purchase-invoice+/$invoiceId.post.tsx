@@ -1,7 +1,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { ActionFunctionArgs } from "react-router";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -60,7 +60,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     receiptIds = postPurchaseInvoice.data?.receiptIds;
 
     // Check if we should update prices on invoice post
-    const companySettings = await getCompanySettings(serviceRole, companyId);
+    const companySettings = await getCompanySettings();
     if (
       !companySettings.data?.purchasePriceUpdateTiming ||
       companySettings.data.purchasePriceUpdateTiming === "Purchase Invoice Post"

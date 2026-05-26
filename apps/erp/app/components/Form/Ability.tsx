@@ -3,7 +3,7 @@ import { Combobox } from "@carbon/form";
 import { useMount } from "@carbon/react";
 import { useMemo } from "react";
 import { useFetcher } from "react-router";
-import type { getAbilitiesList } from "~/modules/resources";
+import type { getAbilitiesList } from "~/modules/resources/resources.service.server";
 import { path } from "~/utils/path";
 
 type AbilitySelectProps = Omit<ComboboxProps, "options">;

@@ -1,6 +1,5 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -29,6 +28,7 @@ import {
 import { usePanels } from "~/components/Layout";
 import { usePermissions, useRealtime, useRouteData } from "~/hooks";
 import type { Job, JobPurchaseOrderLine } from "~/modules/production";
+import { isJobLocked, jobValidator } from "~/modules/production";
 import {
   getJob,
   getJobDocumentsWithItemId,
@@ -38,11 +38,9 @@ import {
   getJobPurchaseOrderLines,
   getProductionDataByOperations,
   getRootMakeMethod,
-  isJobLocked,
-  jobValidator,
   recalculateJobRequirements,
   upsertJob
-} from "~/modules/production";
+} from "~/modules/production/production.service.server";
 import {
   JobBillOfMaterial,
   JobBillOfProcess,
@@ -53,7 +51,7 @@ import {
 } from "~/modules/production/ui/Jobs";
 import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
 import PurchasingStatus from "~/modules/purchasing/ui/PurchaseOrder/PurchasingStatus";
-import { getTagsList } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared/shared.service.server";
 import { useItems } from "~/stores";
 import type { StorageItem } from "~/types";
 import { setCustomFields } from "~/utils/form";
@@ -61,7 +59,7 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "production",
     bypassRls: true
   });
@@ -69,7 +67,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
 
-  const job = await getJob(client, jobId);
+  const job = await getJob(jobId);
   if (job.error) {
     throw redirect(
       path.to.jobs,
@@ -77,11 +75,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const rootMethod = await getRootMakeMethod(client, jobId, companyId);
+  const rootMethod = await getRootMakeMethod(jobId);
   if (rootMethod.error) {
     return {
       notes: (job.data?.notes ?? {}) as JSONContent,
-      purchaseOrderLines: getJobPurchaseOrderLines(client, jobId),
+      purchaseOrderLines: getJobPurchaseOrderLines(jobId),
       materials: [],
       operations: [],
       makeMethod: null,
@@ -98,15 +96,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const methodId = rootMethod.data.id;
 
   const [materials, operations, tags, makeMethod] = await Promise.all([
-    getJobMaterialsByMethodId(client, methodId),
-    getJobOperationsByMethodId(client, methodId),
-    getTagsList(client, companyId, "operation"),
-    getJobMakeMethodById(client, methodId, companyId)
+    getJobMaterialsByMethodId(methodId),
+    getJobOperationsByMethodId(methodId),
+    getTagsList("operation"),
+    getJobMakeMethodById(methodId)
   ]);
 
   return {
     notes: (job.data?.notes ?? {}) as JSONContent,
-    purchaseOrderLines: getJobPurchaseOrderLines(client, jobId),
+    purchaseOrderLines: getJobPurchaseOrderLines(jobId),
     materials:
       materials?.data?.map((m) => ({
         ...m,
@@ -126,14 +124,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         workInstruction: o.workInstruction as JSONContent
       })) ?? [],
     makeMethod: makeMethod.data ?? null,
-    files: getJobDocumentsWithItemId(
-      client,
-      companyId,
-      job.data,
-      rootMethod.data.itemId
-    ),
+    files: getJobDocumentsWithItemId(job.data, rootMethod.data.itemId),
     productionData: getProductionDataByOperations(
-      client,
       operations?.data?.map((o) => o.id) ?? []
     ),
     tags: tags.data ?? []
@@ -142,17 +134,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "production"
   });
 
   const { jobId: id } = params;
   if (!id) throw new Error("Could not find jobId");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "production"
   });
-  const job = await getJob(viewClient, id);
+  const job = await getJob(id);
   await requireUnlocked({
     request,
     isLocked: isJobLocked(job.data?.status),
@@ -170,7 +162,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { jobId, ...d } = validation.data;
   if (!jobId) throw new Error("Could not find jobId in payload");
 
-  const updateJob = await upsertJob(client, {
+  const updateJob = await upsertJob({
     ...d,
     id: id,
     jobId,
@@ -184,10 +176,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const recalculate = await recalculateJobRequirements(getCarbonServiceRole(), {
-    id,
-    companyId,
-    userId
+  const recalculate = await recalculateJobRequirements({
+    id
   });
   if (recalculate.error) {
     throw redirect(

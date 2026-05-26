@@ -59,7 +59,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { CustomerAvatar, DateSelect, Empty, Hyperlink } from "~/components";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { KPIs } from "~/modules/sales/sales.models";
-import { getSalesDocumentsAssignedToMe } from "~/modules/sales/sales.service";
+import { getSalesDocumentsAssignedToMe } from "~/modules/sales/sales.service.server";
 import type { Quotation, SalesOrder, SalesRFQ } from "~/modules/sales/types";
 import QuoteStatus from "~/modules/sales/ui/Quotes/QuoteStatus";
 import { SalesStatus } from "~/modules/sales/ui/SalesOrder";
@@ -87,7 +87,7 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, userId, companyId } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "sales"
   });
 
@@ -122,7 +122,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     openSalesOrders: openSalesOrders,
     openQuotes: openQuotes,
     openRFQs: openRFQs,
-    assignedToMe: getSalesDocumentsAssignedToMe(client, userId, companyId)
+    assignedToMe: getSalesDocumentsAssignedToMe()
   };
 }
 

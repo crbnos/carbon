@@ -12,16 +12,16 @@ import {
   attributeNumericValidator,
   attributeSupplierValidator,
   attributeTextValidator,
-  attributeUserValidator,
-  upsertUserAttributeValue
+  attributeUserValidator
 } from "~/modules/account";
-import { getAttribute } from "~/modules/people";
+import { upsertUserAttributeValue } from "~/modules/account/account.service.server";
+import { getAttribute } from "~/modules/people/people.service.server";
 import { getUserClaims } from "~/modules/users/users.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
 
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { companyId, userId } = await requirePermissions(request, {});
   const { userId: targetUserId } = params;
 
   if (!targetUserId) {
@@ -47,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (!canUpdateAnyUser && userId === targetUserId) {
     // check if this is a self managed attribute
-    const attribute = await getAttribute(client, attributeId);
+    const attribute = await getAttribute(attributeId);
     if (attribute.error) {
       return data(
         null,
@@ -77,7 +77,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const upsertAttributeValue = await upsertUserAttributeValue(client, {
+  const upsertAttributeValue = await upsertUserAttributeValue({
     ...validation.data,
     userId: targetUserId,
     updatedBy: userId

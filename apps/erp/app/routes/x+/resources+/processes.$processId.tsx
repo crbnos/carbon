@@ -8,25 +8,24 @@ import type {
   LoaderFunctionArgs
 } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
+import { ProcessForm, processValidator } from "~/modules/resources";
 import {
   getProcess,
-  ProcessForm,
-  processValidator,
   upsertProcess
-} from "~/modules/resources";
+} from "~/modules/resources/resources.service.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 import { getCompanyId, processesQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources"
   });
 
   const { processId } = params;
   if (!processId) throw notFound("processId was not found");
 
-  const process = await getProcess(client, processId);
+  const process = await getProcess(processId);
 
   if (process.error) {
     throw redirect(
@@ -42,7 +41,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "resources"
   });
 
@@ -57,7 +56,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, ...d } = validation.data;
   if (!id) throw notFound("Process ID was not found");
 
-  const createProcess = await upsertProcess(client, {
+  const createProcess = await upsertProcess({
     id,
     ...d,
     companyId,

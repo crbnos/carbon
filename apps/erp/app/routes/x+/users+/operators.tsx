@@ -21,7 +21,7 @@ import { usePermissions, useUrlParams } from "~/hooks";
 import {
   getConsoleOperators,
   getEmployeeTypes
-} from "~/modules/users/users.service";
+} from "~/modules/users/users.service.server";
 import type { ListItem } from "~/types";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -33,7 +33,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "users",
     role: "employee",
     bypassRls: true
@@ -47,14 +47,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [operators, employeeTypes] = await Promise.all([
-    getConsoleOperators(client, companyId, {
+    getConsoleOperators({
       search,
       limit,
       offset,
       sorts,
       filters
     }),
-    getEmployeeTypes(client, companyId)
+    getEmployeeTypes()
   ]);
 
   if (operators.error) {

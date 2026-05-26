@@ -9,18 +9,21 @@ import type {
 } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deletePaymentTerm, getPaymentTerm } from "~/modules/accounting";
+import {
+  deletePaymentTerm,
+  getPaymentTerm
+} from "~/modules/accounting/accounting.service.server";
 import { getParams, path } from "~/utils/path";
 import { getCompanyId, paymentTermsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "accounting"
   });
   const { paymentTermId } = params;
   if (!paymentTermId) throw notFound("paymentTermId not found");
 
-  const paymentTerm = await getPaymentTerm(client, paymentTermId);
+  const paymentTerm = await getPaymentTerm(paymentTermId);
   if (paymentTerm.error) {
     throw redirect(
       `${path.to.paymentTerms}?${getParams(request)}`,
@@ -35,7 +38,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "accounting"
   });
 
@@ -47,10 +50,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteTypeError } = await deletePaymentTerm(
-    client,
-    paymentTermId
-  );
+  const { error: deleteTypeError } = await deletePaymentTerm(paymentTermId);
   if (deleteTypeError) {
     throw redirect(
       `${path.to.paymentTerms}?${getParams(request)}`,

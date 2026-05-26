@@ -2,7 +2,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
-import { updateIssueActionProcesses } from "~/modules/quality/quality.service";
+import { updateIssueActionProcesses } from "~/modules/quality/quality.service.server";
 
 const updateProcessesSchema = z.object({
   id: z.string(),
@@ -10,7 +10,7 @@ const updateProcessesSchema = z.object({
 });
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, userId, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "quality"
   });
 
@@ -26,11 +26,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { processIds = [] } = validated.data;
 
-  const updateProcesses = await updateIssueActionProcesses(client, {
+  const updateProcesses = await updateIssueActionProcesses({
     actionTaskId: id,
-    processIds,
-    companyId,
-    createdBy: userId
+    processIds
   });
 
   if (updateProcesses.error) {

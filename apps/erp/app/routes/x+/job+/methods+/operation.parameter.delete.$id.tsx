@@ -3,11 +3,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { deleteJobOperationParameter } from "~/modules/production";
+import { deleteJobOperationParameter } from "~/modules/production/production.service.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "production"
   });
 
@@ -16,10 +16,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error("id not found");
   }
 
-  const deleteOperationParameter = await deleteJobOperationParameter(
-    client,
-    id
-  );
+  const deleteOperationParameter = await deleteJobOperationParameter(id);
   if (deleteOperationParameter.error) {
     return data(
       {

@@ -59,13 +59,14 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
-import { getSupplierPartPriceBreaks } from "~/modules/items";
+import type { getSupplierPartPriceBreaks } from "~/modules/items/items.service.server";
 import type { PurchaseOrder, PurchaseOrderLine } from "~/modules/purchasing";
 import {
   isPurchaseOrderLocked,
   purchaseOrderLineValidator
 } from "~/modules/purchasing";
-import { type MethodItemType, resolveSupplierPrice } from "~/modules/shared";
+import type { MethodItemType } from "~/modules/shared";
+import { resolveSupplierPrice } from "~/modules/shared/shared.client";
 import type { action } from "~/routes/x+/purchase-order+/$orderId.$lineId.details";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -282,10 +283,11 @@ const PurchaseOrderLineForm = ({
         .maybeSingle();
 
       if (supplierPart?.data?.id) {
-        const breaks = await getSupplierPartPriceBreaks(
-          carbon,
-          supplierPart.data.id
-        );
+        const breaks = (await fetch(
+          path.to.api.supplierPartPriceBreaks(supplierPart.data.id)
+        ).then((r) => r.json())) as Awaited<
+          ReturnType<typeof getSupplierPartPriceBreaks>
+        >;
         setItemData((d) => ({ ...d, priceBreaks: breaks }));
       }
     })();
@@ -365,7 +367,11 @@ const PurchaseOrderLineForm = ({
           exchangeRate;
 
         const breaks = supplierPart?.data?.id
-          ? await getSupplierPartPriceBreaks(carbon, supplierPart.data.id)
+          ? ((await fetch(
+              path.to.api.supplierPartPriceBreaks(supplierPart.data.id)
+            ).then((r) => r.json())) as Awaited<
+              ReturnType<typeof getSupplierPartPriceBreaks>
+            >)
           : [];
         const resolvedPrice = resolveSupplierPrice(
           breaks,

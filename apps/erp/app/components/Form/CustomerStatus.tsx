@@ -6,10 +6,8 @@ import { useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
 import { Enumerable } from "~/components/Enumerable";
 import { useRouteData } from "~/hooks";
-import type {
-  CustomerStatus as CustomerStatusStatus,
-  getCustomerStatusesList
-} from "~/modules/sales";
+import type { CustomerStatus as CustomerStatusStatus } from "~/modules/sales";
+import type { getCustomerStatusesList } from "~/modules/sales/sales.service.server";
 import CustomerStatusForm from "~/modules/sales/ui/CustomerStatuses/CustomerStatusForm";
 import { path } from "~/utils/path";
 

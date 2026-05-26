@@ -5,7 +5,8 @@ import { validationError, validator } from "@carbon/form";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
-import { toolValidator, upsertTool } from "~/modules/items";
+import { toolValidator } from "~/modules/items";
+import { upsertTool } from "~/modules/items/items.service.server";
 import { ToolForm } from "~/modules/items/ui/Tools";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
@@ -19,7 +20,7 @@ export const handle: Handle = {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "parts"
   });
 
@@ -32,7 +33,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const createTool = await upsertTool(client, {
+  const createTool = await upsertTool({
     ...validation.data,
     companyId,
     customFields: setCustomFields(formData),

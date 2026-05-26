@@ -6,7 +6,8 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import { useSupplierApprovalRequired, useUser } from "~/hooks";
-import { supplierValidator, upsertSupplier } from "~/modules/purchasing";
+import { supplierValidator } from "~/modules/purchasing";
+import { upsertSupplier } from "~/modules/purchasing/purchasing.service.server";
 import SupplierForm from "~/modules/purchasing/ui/Supplier/SupplierForm";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
@@ -20,7 +21,7 @@ export const handle: Handle = {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "purchasing"
   });
 
@@ -36,7 +37,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const createSupplier = await upsertSupplier(client, {
+  const createSupplier = await upsertSupplier({
     ...d,
     companyId,
     createdBy: userId,

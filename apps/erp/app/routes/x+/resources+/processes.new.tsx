@@ -7,18 +7,15 @@ import type {
   ClientActionFunctionArgs
 } from "react-router";
 import { redirect, useNavigate } from "react-router";
-import {
-  ProcessForm,
-  processValidator,
-  upsertProcess
-} from "~/modules/resources";
+import { ProcessForm, processValidator } from "~/modules/resources";
+import { upsertProcess } from "~/modules/resources/resources.service.server";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 import { getCompanyId, processesQuery } from "~/utils/react-query";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "resources"
   });
 
@@ -34,7 +31,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const createProcess = await upsertProcess(client, {
+  const createProcess = await upsertProcess({
     ...d,
     companyId,
     createdBy: userId,

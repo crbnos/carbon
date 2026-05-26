@@ -1,12 +1,12 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "react-router";
-import { getShiftsList } from "~/modules/people";
+import { getShiftsList } from "~/modules/people/people.service.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const authorized = await requirePermissions(request, {});
+  const _authorized = await requirePermissions(request, {});
 
   const url = new URL(request.url);
   const location = url.searchParams.get("location");
 
-  return await getShiftsList(authorized.client, location);
+  return await getShiftsList(location);
 }

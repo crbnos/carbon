@@ -4,16 +4,14 @@ import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect, useNavigate } from "react-router";
-import {
-  requiredActionValidator,
-  upsertRequiredAction
-} from "~/modules/quality";
+import { requiredActionValidator } from "~/modules/quality";
+import { upsertRequiredAction } from "~/modules/quality/quality.service.server";
 import { RequiredActionForm } from "~/modules/quality/ui/RequiredActions";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "quality"
   });
 
@@ -28,7 +26,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { name, active } = validation.data;
 
-  const createResult = await upsertRequiredAction(client, {
+  const createResult = await upsertRequiredAction({
     name,
     active: active ?? true,
     companyId,

@@ -69,9 +69,10 @@ import {
   YAxis
 } from "recharts";
 import { DateSelect, Empty, Hyperlink } from "~/components";
-import { getIssueTypesList, QualityKPIs } from "~/modules/quality";
+import { QualityKPIs } from "~/modules/quality";
+import { getIssueTypesList } from "~/modules/quality/quality.service.server";
 import IssueStatus from "~/modules/quality/ui/Issue/IssueStatus";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service.server";
 import type { loader as kpiLoader } from "~/routes/api+/quality.kpi.$key";
 
 import type { Handle } from "~/utils/handle";
@@ -219,8 +220,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .select("id", { count: "exact", head: true })
       .eq("companyId", companyId)
       .in("status", ["Pending", "In Progress"]),
-    getIssueTypesList(client, companyId),
-    getCompanySettings(client, companyId),
+    getIssueTypesList(),
+    getCompanySettings(),
     client
       .from("issues")
       .select("id, nonConformanceId, name, status, priority, createdAt")

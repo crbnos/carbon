@@ -4,13 +4,14 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { createTimeCardEntry, timecardValidator } from "~/modules/people";
+import { timecardValidator } from "~/modules/people";
+import { createTimeCardEntry } from "~/modules/people/people.service.server";
 import { TimecardForm } from "~/modules/people/ui/Timecards";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "people"
   });
 
@@ -23,13 +24,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { id: _id, ...data } = validation.data;
 
-  const result = await createTimeCardEntry(client, {
+  const result = await createTimeCardEntry({
     employeeId: data.employeeId,
-    companyId,
     clockIn: data.clockIn,
     clockOut: data.clockOut || null,
-    note: data.note || null,
-    createdBy: userId
+    note: data.note || null
   });
 
   if (result.error) {

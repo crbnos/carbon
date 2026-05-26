@@ -8,16 +8,19 @@ import { getLocalTimeZone, now } from "@internationalized/date";
 import { renderAsync } from "@react-email/components";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { upsertDocument } from "~/modules/documents";
+import { upsertDocument } from "~/modules/documents/documents.service.server";
+import { quoteFinalizeValidator } from "~/modules/sales";
 import {
   finalizeQuote,
   getCustomer,
   getCustomerContact,
-  getQuote,
-  quoteFinalizeValidator
-} from "~/modules/sales";
-import { getCompany, getCompanySettings } from "~/modules/settings";
-import { upsertExternalLink } from "~/modules/shared";
+  getQuote
+} from "~/modules/sales/sales.service.server";
+import {
+  getCompany,
+  getCompanySettings
+} from "~/modules/settings/settings.service.server";
+import { upsertExternalLink } from "~/modules/shared/shared.service.server";
 import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/quote+/$id[.]pdf";
 import { path } from "~/utils/path";
@@ -40,7 +43,7 @@ export async function action(args: ActionFunctionArgs) {
   let fileName: string;
   let documentFilePath: string;
 
-  const quote = await getQuote(client, quoteId);
+  const quote = await getQuote(quoteId);
   if (quote.error) {
     throw redirect(
       path.to.quote(quoteId),
@@ -48,7 +51,7 @@ export async function action(args: ActionFunctionArgs) {
     );
   }
 
-  const externalLink = await upsertExternalLink(client, {
+  const externalLink = await upsertExternalLink({
     id: quote.data.externalLinkId ?? undefined, // TODO
     documentType: "Quote",
     documentId: quoteId,
@@ -97,7 +100,7 @@ export async function action(args: ActionFunctionArgs) {
       );
     }
 
-    const createDocument = await upsertDocument(client, {
+    const createDocument = await upsertDocument({
       path: documentFilePath,
       name: fileName,
       size: Math.round(file.byteLength / 1024),
@@ -119,7 +122,7 @@ export async function action(args: ActionFunctionArgs) {
       );
     }
 
-    const finalize = await finalizeQuote(client, quoteId, userId);
+    const finalize = await finalizeQuote(quoteId);
     if (finalize.error) {
       throw redirect(
         path.to.quote(quoteId),
@@ -154,10 +157,10 @@ export async function action(args: ActionFunctionArgs) {
 
         const [company, companySettings, customer, customerContact, user] =
           await Promise.all([
-            getCompany(client, companyId),
-            getCompanySettings(client, companyId),
-            getCustomer(client, quote.data.customerId!),
-            getCustomerContact(client, customerContactId),
+            getCompany(),
+            getCompanySettings(),
+            getCustomer(quote.data.customerId!),
+            getCustomerContact(customerContactId),
             getUser(client, userId)
           ]);
 

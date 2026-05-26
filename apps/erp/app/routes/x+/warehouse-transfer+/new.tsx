@@ -6,12 +6,10 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { useUser } from "~/hooks";
-import {
-  upsertWarehouseTransfer,
-  warehouseTransferValidator
-} from "~/modules/inventory";
+import { warehouseTransferValidator } from "~/modules/inventory";
+import { upsertWarehouseTransfer } from "~/modules/inventory/inventory.service.server";
 import { WarehouseTransferForm } from "~/modules/inventory/ui/WarehouseTransfers";
-import { getNextSequence } from "~/modules/settings";
+import { getNextSequence } from "~/modules/settings/settings.service.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -31,7 +29,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "inventory"
   });
 
@@ -48,11 +46,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const useNextSequence = !transferId;
 
   if (useNextSequence) {
-    const nextSequence = await getNextSequence(
-      client,
-      "warehouseTransfer",
-      companyId
-    );
+    const nextSequence = await getNextSequence("warehouseTransfer");
     if (nextSequence.error) {
       throw redirect(
         path.to.newWarehouseTransfer,
@@ -69,7 +63,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const createTransfer = await upsertWarehouseTransfer(client, {
+  const createTransfer = await upsertWarehouseTransfer({
     ...d,
     transferId,
     companyId,

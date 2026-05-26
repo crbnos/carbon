@@ -14,7 +14,7 @@ import {
   getLatestApprovalRequestForDocument,
   hasPendingApproval,
   isApprovalRequired
-} from "~/modules/shared";
+} from "~/modules/shared/shared.service.server";
 
 type DocRow = { id: string; status: string | null };
 
@@ -27,7 +27,6 @@ type DocRow = { id: string; status: string | null };
  */
 async function processToActive(
   client: SupabaseClient<Database>,
-  serviceRole: SupabaseClient<Database>,
   companyId: string,
   userId: string,
   docList: DocRow[],
@@ -40,22 +39,16 @@ async function processToActive(
   for (const doc of docList) {
     if (!canTransitionToActive(doc.status)) continue;
     const approvalRequired = await isApprovalRequired(
-      serviceRole,
       "qualityDocument",
-      companyId,
       undefined
     );
     if (!approvalRequired) continue;
-    const hasPending = await hasPendingApproval(
-      serviceRole,
-      "qualityDocument",
-      doc.id
-    );
+    const hasPending = await hasPendingApproval("qualityDocument", doc.id);
     if (hasPending) {
       idsToSkipActive.push(doc.id);
       continue;
     }
-    await createApprovalRequest(serviceRole, {
+    await createApprovalRequest({
       documentType: "qualityDocument",
       documentId: doc.id,
       companyId,
@@ -64,14 +57,9 @@ async function processToActive(
       amount: undefined
     });
 
-    const rule = await getApprovalRuleByAmount(
-      serviceRole,
-      "qualityDocument",
-      companyId,
-      undefined
-    );
+    const rule = await getApprovalRuleByAmount("qualityDocument", undefined);
     const approverIds = rule.data
-      ? await getApproverUserIdsForRule(serviceRole, rule.data)
+      ? await getApproverUserIdsForRule(rule.data)
       : [];
 
     if (approverIds.length > 0) {
@@ -132,7 +120,6 @@ async function cancelPendingApprovalsForArchiveOrDraft(
   const toCancel: { id: string }[] = [];
   for (const doc of docList) {
     const latest = await getLatestApprovalRequestForDocument(
-      serviceRole,
       "qualityDocument",
       doc.id
     );
@@ -140,15 +127,11 @@ async function cancelPendingApprovalsForArchiveOrDraft(
     if (!req || req.status !== "Pending") continue;
     if (!allowAnyUpdater) {
       const isRequester = req.requestedBy === userId;
-      const isApprover = await canApproveRequest(
-        serviceRole,
-        {
-          amount: req.amount,
-          documentType: req.documentType,
-          companyId: req.companyId
-        },
-        userId
-      );
+      const isApprover = await canApproveRequest({
+        amount: req.amount,
+        documentType: req.documentType,
+        companyId: req.companyId
+      });
       if (!isRequester && !isApprover) {
         return {
           message:
@@ -216,14 +199,7 @@ export async function action({ request }: ActionFunctionArgs) {
       const idList = ids as string[];
 
       if (statusValue === "Active") {
-        return processToActive(
-          client,
-          serviceRole,
-          companyId,
-          userId,
-          docList,
-          idList
-        );
+        return processToActive(client, companyId, userId, docList, idList);
       }
 
       if (statusValue === "Archived" || statusValue === "Draft") {

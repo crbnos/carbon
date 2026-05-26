@@ -3,16 +3,16 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { generateEliminations } from "~/modules/accounting";
+import { generateEliminations } from "~/modules/accounting/accounting.service.server";
 import { getParams, path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyGroupId, userId } = await requirePermissions(request, {
+  const { companyGroupId } = await requirePermissions(request, {
     create: "accounting"
   });
 
-  const result = await generateEliminations(client, companyGroupId, userId);
+  const result = await generateEliminations(companyGroupId);
 
   if (result.error) {
     throw redirect(

@@ -66,6 +66,9 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
   return defaultShouldRevalidate;
 };
 
+// authContextMiddleware is attached at root; opens AuthContextHolder when
+// a session exists. userMiddleware reads from that scope to resolve the
+// MES-specific location/console state.
 export const middleware: MiddlewareFunction[] = [userMiddleware];
 
 export async function loader({ request, context }: LoaderFunctionArgs) {

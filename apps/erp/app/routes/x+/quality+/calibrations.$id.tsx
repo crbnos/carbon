@@ -7,12 +7,12 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
 import type z from "zod";
 import type { calibrationAttempt } from "~/modules/quality";
+import { gaugeCalibrationRecordValidator } from "~/modules/quality";
 import {
-  gaugeCalibrationRecordValidator,
   getGaugeCalibrationRecord,
   getQualityFiles,
   upsertGaugeCalibrationRecord
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service.server";
 import GaugeCalibrationRecordForm from "~/modules/quality/ui/Calibrations/GaugeCalibrationRecordForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
@@ -23,7 +23,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "quality",
     bypassRls: true
   });
@@ -32,8 +32,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!id) throw new Error("Could not find id");
 
   const [record, files] = await Promise.all([
-    getGaugeCalibrationRecord(client, id),
-    getQualityFiles(client, id, companyId)
+    getGaugeCalibrationRecord(id),
+    getQualityFiles(id)
   ]);
 
   if (record.error) {
@@ -54,7 +54,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "quality"
   });
 
@@ -75,7 +75,7 @@ export async function action({ request }: ActionFunctionArgs) {
       ? "Fail"
       : "Pass";
 
-  const updateGauge = await upsertGaugeCalibrationRecord(client, {
+  const updateGauge = await upsertGaugeCalibrationRecord({
     id,
     ...d,
     inspectionStatus,

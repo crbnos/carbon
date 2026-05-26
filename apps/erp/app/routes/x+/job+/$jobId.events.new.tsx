@@ -5,26 +5,25 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData } from "react-router";
+import { isJobLocked, productionEventValidator } from "~/modules/production";
 import {
   getJob,
   getJobOperations,
-  isJobLocked,
-  productionEventValidator,
   upsertProductionEvent
-} from "~/modules/production";
+} from "~/modules/production/production.service.server";
 import { ProductionEventForm } from "~/modules/production/ui/Jobs";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "production"
   });
 
   const { jobId } = params;
   if (!jobId) throw notFound("jobId not found");
 
-  const jobOperations = await getJobOperations(client, jobId);
+  const jobOperations = await getJobOperations(jobId);
 
   const operationOptions =
     jobOperations.data?.map((operation) => ({
@@ -37,7 +36,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "production"
   });
 
@@ -46,10 +45,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw notFound("jobId not found");
   }
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "production"
   });
-  const job = await getJob(viewClient, jobId);
+  const job = await getJob(jobId);
   await requireUnlocked({
     request,
     isLocked: isJobLocked(job.data?.status),
@@ -71,7 +70,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const insert = await upsertProductionEvent(client, {
+  const insert = await upsertProductionEvent({
     ...d,
     companyId,
     createdBy: userId

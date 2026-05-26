@@ -2,7 +2,7 @@ import { getAppUrl } from "@carbon/auth";
 import { tool } from "ai";
 import { LuSearch } from "react-icons/lu";
 import { z } from "zod";
-import { generateEmbedding } from "~/modules/shared/shared.service";
+import { generateEmbedding } from "~/modules/shared/shared.service.server";
 import { path } from "~/utils/path";
 import type { ChatContext } from "../agents/shared/context";
 import type { ToolConfig } from "../agents/shared/tools";
@@ -74,7 +74,7 @@ export const getSupplierTool = tool({
     }
 
     if (description) {
-      const embedding = await generateEmbedding(context.client, description);
+      const embedding = await generateEmbedding(description);
 
       const search = await context.client.rpc("suppliers_search", {
         query_embedding: JSON.stringify(embedding),

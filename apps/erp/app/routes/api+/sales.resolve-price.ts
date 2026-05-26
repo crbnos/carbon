@@ -1,10 +1,11 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { priceResolutionInputValidator, resolvePrice } from "~/modules/sales";
+import { priceResolutionInputValidator } from "~/modules/sales";
+import { resolvePrice } from "~/modules/sales/sales.service.server";
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
@@ -17,7 +18,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const result = await resolvePrice(client, companyId, payload.data);
+  const result = await resolvePrice(payload.data);
 
   return data(result);
 }

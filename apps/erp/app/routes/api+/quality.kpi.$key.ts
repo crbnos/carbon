@@ -3,7 +3,7 @@ import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "react-router";
 import { QualityKPIs } from "~/modules/quality/quality.models";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service.server";
 
 // --- ISO Week Helpers ---
 
@@ -69,7 +69,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     case "weeklyTracking": {
       const [issuesResult, settingsResult] = await Promise.all([
         getIssuesQuery(client, { companyId, issueTypeId }),
-        getCompanySettings(client, companyId)
+        getCompanySettings()
       ]);
 
       const issues = issuesResult.data ?? [];

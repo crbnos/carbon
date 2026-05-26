@@ -7,9 +7,9 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
 import type { PurchasingPlanningItem } from "~/modules/purchasing";
-import { getPurchasingPlanning } from "~/modules/purchasing";
+import { getPurchasingPlanning } from "~/modules/purchasing/purchasing.service.server";
 import PurchasingPlanningTable from "~/modules/purchasing/ui/Planning/PurchasingPlanningTable";
-import { getLocationsList } from "~/modules/resources";
+import { getLocationsList } from "~/modules/resources/resources.service.server";
 import { getOrCreatePeriods } from "~/modules/shared/shared.server";
 import { getUserDefaults } from "~/modules/users/users.server";
 import type { Handle } from "~/utils/handle";
@@ -54,7 +54,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await getLocationsList();
     if (locations.error || !locations.data?.length) {
       throw redirect(
         path.to.purchasing,
@@ -73,9 +73,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
 
   const items = await getPurchasingPlanning(
-    client,
     locationId,
-    companyId,
     periods.map((p) => p.id),
     {
       search,

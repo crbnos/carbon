@@ -9,12 +9,15 @@ import type {
 } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteLocation, getLocation } from "~/modules/resources";
+import {
+  deleteLocation,
+  getLocation
+} from "~/modules/resources/resources.service.server";
 import { path } from "~/utils/path";
 import { getCompanyId, locationsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources",
     role: "employee"
   });
@@ -22,7 +25,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { locationId } = params;
   if (!locationId) throw notFound("locationId not found");
 
-  const location = await getLocation(client, locationId);
+  const location = await getLocation(locationId);
   if (location.error) {
     throw redirect(
       path.to.locations,
@@ -36,7 +39,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "resources"
   });
 
@@ -48,10 +51,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteLocationError } = await deleteLocation(
-    client,
-    locationId
-  );
+  const { error: deleteLocationError } = await deleteLocation(locationId);
   if (deleteLocationError) {
     throw redirect(
       path.to.locations,

@@ -48,7 +48,7 @@ import { useItems } from "~/stores";
 import { makeDurations } from "~/utils/duration";
 import { path } from "~/utils/path";
 import type { jobOperationValidator } from "../../production.models";
-import type { getJobMaterialsByMethodId } from "../../production.service";
+import type { getJobMaterialsByMethodId } from "../../production.service.server";
 import type {
   JobOperation,
   ProductionEvent,

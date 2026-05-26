@@ -5,8 +5,8 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
-import { getAccountsList } from "~/modules/accounting";
-import { getItemPostingGroups } from "~/modules/items";
+import { getAccountsList } from "~/modules/accounting/accounting.service.server";
+import { getItemPostingGroups } from "~/modules/items/items.service.server";
 import { ItemPostingGroupsTable } from "~/modules/items/ui/ItemPostingGroups";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -18,13 +18,10 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      view: "parts",
-      role: "employee"
-    }
-  );
+  const { companyGroupId } = await requirePermissions(request, {
+    view: "parts",
+    role: "employee"
+  });
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -33,14 +30,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [itemPostingGroups, accounts] = await Promise.all([
-    getItemPostingGroups(client, companyId, {
+    getItemPostingGroups({
       limit,
       offset,
       sorts,
       search,
       filters
     }),
-    getAccountsList(client, companyGroupId)
+    getAccountsList(companyGroupId)
   ]);
 
   if (itemPostingGroups.error) {

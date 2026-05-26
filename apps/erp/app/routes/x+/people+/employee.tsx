@@ -4,14 +4,17 @@ import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
-import { getAttributeCategories, getPeople } from "~/modules/people";
+import {
+  getAttributeCategories,
+  getPeople
+} from "~/modules/people/people.service.server";
 import { PeopleTable } from "~/modules/people/ui/People";
-import { getEmployeeTypes } from "~/modules/users";
+import { getEmployeeTypes } from "~/modules/users/users.service.server";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "people",
     role: "employee",
     bypassRls: true
@@ -25,9 +28,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [attributeCategories, employeeTypes, people] = await Promise.all([
-    getAttributeCategories(client, companyId),
-    getEmployeeTypes(client, companyId),
-    getPeople(client, companyId, { search, limit, offset, sorts, filters })
+    getAttributeCategories(),
+    getEmployeeTypes(),
+    getPeople({ search, limit, offset, sorts, filters })
   ]);
   if (attributeCategories.error) {
     throw redirect(

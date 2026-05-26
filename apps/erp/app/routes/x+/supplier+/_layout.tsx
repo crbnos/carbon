@@ -3,8 +3,8 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Outlet } from "react-router";
-import { getShippingTermsList } from "~/modules/inventory";
-import { getSupplierTypes } from "~/modules/purchasing";
+import { getShippingTermsList } from "~/modules/inventory/inventory.service.server";
+import { getSupplierTypes } from "~/modules/purchasing/purchasing.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -19,17 +19,14 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
 
   const [
     supplierTypes
     // shippingTerms,
-  ] = await Promise.all([
-    getSupplierTypes(client, companyId),
-    getShippingTermsList(client, companyId)
-  ]);
+  ] = await Promise.all([getSupplierTypes(), getShippingTermsList()]);
 
   return {
     supplierTypes: supplierTypes.data ?? []

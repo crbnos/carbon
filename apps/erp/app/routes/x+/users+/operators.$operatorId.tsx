@@ -20,7 +20,7 @@ import { redirect, useFetcher, useLoaderData, useNavigate } from "react-router";
 import { Input, Select, Submit } from "~/components/Form";
 import { convertOperatorValidator } from "~/modules/users/users.models";
 import { convertConsoleOperatorToUser } from "~/modules/users/users.server";
-import type { getEmployeeTypes } from "~/modules/users/users.service";
+import type { getEmployeeTypes } from "~/modules/users/users.service.server";
 import type { Result } from "~/types";
 import { path } from "~/utils/path";
 

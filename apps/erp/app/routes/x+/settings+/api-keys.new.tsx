@@ -7,7 +7,8 @@ import { nanoid } from "nanoid";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useNavigate } from "react-router";
 import { useRouteData } from "~/hooks";
-import { ApiKeyForm, apiKeyValidator, upsertApiKey } from "~/modules/settings";
+import { ApiKeyForm, apiKeyValidator } from "~/modules/settings";
+import { upsertApiKey } from "~/modules/settings/settings.service.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -50,7 +51,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const keyHash = hashApiKey(rawKey);
   const keyPreview = rawKey.slice(-5);
 
-  const insertApiKey = await upsertApiKey(client, {
+  const insertApiKey = await upsertApiKey({
     ...d,
     scopes,
     expiresAt: expiresAt || undefined,

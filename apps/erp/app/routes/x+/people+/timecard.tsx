@@ -5,9 +5,9 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
-import { getTimecardEntries } from "~/modules/people";
+import { getTimecardEntries } from "~/modules/people/people.service.server";
 import { TimecardsTable } from "~/modules/people/ui/Timecards";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -18,11 +18,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "people"
   });
 
-  const companySettings = await getCompanySettings(client, companyId);
+  const companySettings = await getCompanySettings();
   if (!companySettings.data?.timeCardEnabled) {
     throw redirect(
       path.to.people,
@@ -42,7 +42,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const entries = await getTimecardEntries(client, companyId, {
+  const entries = await getTimecardEntries({
     search,
     limit,
     offset,

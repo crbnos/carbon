@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { updateSalesInvoiceLineOrder } from "~/modules/invoicing";
+import { updateSalesInvoiceLineOrder } from "~/modules/invoicing/invoicing.service.server";
 import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {

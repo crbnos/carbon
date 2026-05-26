@@ -1,6 +1,5 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { destroyAuthSession } from "@carbon/auth/session.server";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
 import {
@@ -19,16 +18,14 @@ import { Link, redirect, useLoaderData } from "react-router";
 import type { z } from "zod";
 import { Hidden, Input, Submit } from "~/components/Form";
 import { useOnboarding } from "~/hooks";
-import {
-  onboardingUserValidator,
-  updatePublicAccount
-} from "~/modules/account";
+import { onboardingUserValidator } from "~/modules/account";
+import { updatePublicAccount } from "~/modules/account/account.service.server";
 import { getUser } from "~/modules/users/users.server";
 
 export async function loader({ request }: ActionFunctionArgs) {
-  const { userId } = await requirePermissions(request, {});
+  const { client, userId } = await requirePermissions(request, {});
 
-  const user = await getUser(getCarbonServiceRole(), userId);
+  const user = await getUser(client, userId);
   if (user.error || !user.data) {
     await destroyAuthSession(request);
   }
@@ -50,7 +47,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { firstName, lastName, next } = validation.data;
 
-  const updateAccount = await updatePublicAccount(getCarbonServiceRole(), {
+  const updateAccount = await updatePublicAccount({
     id: userId,
     firstName,
     lastName

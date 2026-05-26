@@ -15,8 +15,11 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useFetcher, useNavigate } from "react-router";
 import { Input, Location, Select, Submit } from "~/components/Form";
 import { useUser } from "~/hooks";
-import type { getEmployeeTypes, getInvitable } from "~/modules/users";
 import { createEmployeeValidator } from "~/modules/users";
+import type {
+  getEmployeeTypes,
+  getInvitable
+} from "~/modules/users/users.service.server";
 import type { Result } from "~/types";
 import { path } from "~/utils/path";
 

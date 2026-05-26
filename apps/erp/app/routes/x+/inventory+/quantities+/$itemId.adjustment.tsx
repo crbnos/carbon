@@ -10,15 +10,13 @@ import {
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import {
-  insertManualInventoryAdjustment,
-  inventoryAdjustmentValidator
-} from "~/modules/inventory";
+import { inventoryAdjustmentValidator } from "~/modules/inventory";
+import { insertManualInventoryAdjustment } from "~/modules/inventory/inventory.service.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "inventory"
   });
 
@@ -95,7 +93,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     };
   }
 
-  const itemLedger = await insertManualInventoryAdjustment(client, {
+  const itemLedger = await insertManualInventoryAdjustment({
     ...d,
     companyId,
     createdBy: userId

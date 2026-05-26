@@ -13,12 +13,12 @@ import { useCallback } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData, useNavigate } from "react-router";
 import { New } from "~/components";
-import { getCostCentersTree } from "~/modules/accounting";
+import { getCostCentersTree } from "~/modules/accounting/accounting.service.server";
 import {
   CostCentersListView,
   CostCentersTreeView
 } from "~/modules/accounting/ui/CostCenters";
-import { getApprovalRulesForApprover } from "~/modules/shared";
+import { getApprovalRulesForApprover } from "~/modules/shared/shared.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -28,14 +28,14 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "accounting",
     role: "employee"
   });
 
   const [costCenters, approvalRules] = await Promise.all([
-    getCostCentersTree(client, companyId),
-    getApprovalRulesForApprover(client, "purchaseOrder", companyId)
+    getCostCentersTree(),
+    getApprovalRulesForApprover("purchaseOrder")
   ]);
 
   if (costCenters.error) {

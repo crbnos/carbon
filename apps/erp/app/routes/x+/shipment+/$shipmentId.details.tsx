@@ -8,11 +8,11 @@ import type { ActionFunctionArgs } from "react-router";
 import { data, redirect, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { Shipment, ShipmentLine } from "~/modules/inventory";
+import { shipmentValidator } from "~/modules/inventory";
 import {
   getShipment,
-  shipmentValidator,
   upsertShipment
-} from "~/modules/inventory";
+} from "~/modules/inventory/inventory.service.server";
 import {
   ShipmentForm,
   ShipmentLines,
@@ -24,7 +24,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "inventory"
   });
 
@@ -38,7 +38,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, ...d } = validation.data;
   if (!id) throw new Error("id not found");
 
-  const currentShipment = await getShipment(client, id);
+  const currentShipment = await getShipment(id);
   if (currentShipment.error) {
     return data(
       {},
@@ -138,7 +138,7 @@ export async function action({ request }: ActionFunctionArgs) {
         throw new Error(`Unsupported source document: ${d.sourceDocument}`);
     }
   } else {
-    const updateShipment = await upsertShipment(client, {
+    const updateShipment = await upsertShipment({
       id,
       ...d,
       updatedBy: userId,

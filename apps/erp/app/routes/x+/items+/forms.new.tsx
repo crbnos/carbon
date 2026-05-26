@@ -4,7 +4,8 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useNavigate } from "react-router";
-import { materialFormValidator, upsertMaterialForm } from "~/modules/items";
+import { materialFormValidator } from "~/modules/items";
+import { upsertMaterialForm } from "~/modules/items/items.service.server";
 import { MaterialShapeForm } from "~/modules/items/ui/MaterialShapes";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
@@ -19,7 +20,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "parts"
   });
 
@@ -35,7 +36,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...rest } = validation.data;
 
-  const insertMaterialForm = await upsertMaterialForm(client, {
+  const insertMaterialForm = await upsertMaterialForm({
     ...rest,
     companyId,
     createdBy: userId,

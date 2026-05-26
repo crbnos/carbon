@@ -1,13 +1,12 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { trigger } from "@carbon/jobs";
 import type { ActionFunctionArgs } from "react-router";
+import { isJobLocked } from "~/modules/production";
 import {
   calculateJobPriority,
-  isJobLocked,
   recalculateJobRequirements,
   upsertJobMethod
-} from "~/modules/production";
+} from "~/modules/production/production.service.server";
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -36,8 +35,6 @@ export async function action({ request }: ActionFunctionArgs) {
     message: "Cannot modify a locked job. Reopen it first."
   });
   if (lockedError) return lockedError;
-
-  const serviceRole = await getCarbonServiceRole();
 
   if (field === "delete") {
     return await client
@@ -114,11 +111,9 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       for await (const id of ids) {
-        const upsertMethod = await upsertJobMethod(serviceRole, "itemToJob", {
+        const upsertMethod = await upsertJobMethod("itemToJob", {
           sourceId: value,
-          targetId: id as string,
-          companyId,
-          userId
+          targetId: id as string
         });
 
         if (upsertMethod.error) {
@@ -164,7 +159,7 @@ export async function action({ request }: ActionFunctionArgs) {
         }
 
         // Calculate new priority
-        const priority = await calculateJobPriority(client, {
+        const priority = await calculateJobPriority({
           jobId: id as string,
           dueDate: newDueDate,
           deadlineType: newDeadlineType as
@@ -172,7 +167,6 @@ export async function action({ request }: ActionFunctionArgs) {
             | "Hard Deadline"
             | "Soft Deadline"
             | "No Deadline",
-          companyId,
           locationId: currentJob.data.locationId
         });
 
@@ -226,10 +220,8 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       for await (const id of ids) {
-        const recalculate = await recalculateJobRequirements(serviceRole, {
-          id: id as string,
-          companyId,
-          userId
+        const recalculate = await recalculateJobRequirements({
+          id: id as string
         });
         if (recalculate.error) {
           console.error(recalculate.error);

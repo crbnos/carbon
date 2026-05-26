@@ -5,7 +5,7 @@ import { getLocalTimeZone } from "@internationalized/date";
 import { useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
 import { useUser } from "~/hooks";
-import type { getLocationsList } from "~/modules/resources";
+import type { getLocationsList } from "~/modules/resources/resources.service.server";
 import LocationForm from "~/modules/resources/ui/Locations/LocationForm";
 import { path } from "~/utils/path";
 import { Enumerable } from "../Enumerable";

@@ -11,19 +11,22 @@ import type {
 } from "react-router";
 import { Outlet, redirect } from "react-router";
 import { useTheme } from "~/hooks/useTheme";
-import { getLocationsList } from "~/modules/resources";
-import { getCompany } from "~/modules/settings";
+import { getLocationsList } from "~/modules/resources/resources.service.server";
+import { getCompany } from "~/modules/settings/settings.service.server";
 import { onboardingSequence, path } from "~/utils/path";
+
+// authContextMiddleware is attached at root; opens the AuthContextHolder
+// scope when a session exists. No per-layout middleware needed here.
 
 export const shouldRevalidate: ShouldRevalidateFunction = () => true;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { companyId, userId } = await requirePermissions(request, {});
 
   const [company, stripeCustomer, locations] = await Promise.all([
-    getCompany(client, companyId),
+    getCompany(),
     getStripeCustomerByCompanyId(companyId, userId),
-    getLocationsList(client, companyId)
+    getLocationsList()
   ]);
 
   const pathname = new URL(request.url).pathname;

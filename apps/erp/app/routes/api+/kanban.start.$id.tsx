@@ -7,8 +7,8 @@ import { Suspense } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData } from "react-router";
 import { Redirect } from "~/components/Redirect";
-import { getKanban } from "~/modules/inventory";
-import { getActiveJobOperationByJobId } from "~/modules/production";
+import { getKanban } from "~/modules/inventory/inventory.service.server";
+import { getActiveJobOperationByJobId } from "~/modules/production/production.service.server";
 import { path } from "~/utils/path";
 
 async function handleKanbanStart({
@@ -20,7 +20,7 @@ async function handleKanbanStart({
   companyId: string;
   id: string;
 }): Promise<{ data: string; error: null } | { data: null; error: string }> {
-  const kanban = await getKanban(client, id);
+  const kanban = await getKanban(id);
   if (kanban.error) {
     return {
       data: null,
@@ -35,11 +35,7 @@ async function handleKanbanStart({
     };
   }
 
-  const operation = await getActiveJobOperationByJobId(
-    client,
-    kanban.data.jobId!,
-    companyId
-  );
+  const operation = await getActiveJobOperationByJobId(kanban.data.jobId!);
 
   if (!operation) {
     return {

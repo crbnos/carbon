@@ -4,24 +4,24 @@ import type { JSONContent } from "@carbon/react";
 import { getPreferenceHeaders } from "@carbon/react";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
-import { getPaymentTermsList } from "~/modules/accounting";
-import { getShippingMethodsList } from "~/modules/inventory";
+import { getPaymentTermsList } from "~/modules/accounting/accounting.service.server";
+import { getShippingMethodsList } from "~/modules/inventory/inventory.service.server";
 import {
   getSalesInvoice,
   getSalesInvoiceCustomerDetails,
   getSalesInvoiceLines,
   getSalesInvoiceShipment
-} from "~/modules/invoicing";
-import { getSalesTerms } from "~/modules/sales";
+} from "~/modules/invoicing/invoicing.service.server";
+import { getSalesTerms } from "~/modules/sales/sales.service.server";
 import {
   getAccountsReceivableBillingAddress,
   getCompany,
   getCompanySettings
-} from "~/modules/settings";
-import { getBase64ImageFromSupabase } from "~/modules/shared";
+} from "~/modules/settings/settings.service.server";
+import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
@@ -40,16 +40,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     paymentTerms,
     shippingMethods
   ] = await Promise.all([
-    getCompany(client, companyId),
-    getCompanySettings(client, companyId),
-    getAccountsReceivableBillingAddress(client, companyId),
-    getSalesInvoice(client, id),
-    getSalesInvoiceLines(client, id),
-    getSalesInvoiceCustomerDetails(client, id),
-    getSalesInvoiceShipment(client, id),
-    getSalesTerms(client, companyId),
-    getPaymentTermsList(client, companyId),
-    getShippingMethodsList(client, companyId)
+    getCompany(),
+    getCompanySettings(),
+    getAccountsReceivableBillingAddress(),
+    getSalesInvoice(id),
+    getSalesInvoiceLines(id),
+    getSalesInvoiceCustomerDetails(id),
+    getSalesInvoiceShipment(id),
+    getSalesTerms(),
+    getPaymentTermsList(),
+    getShippingMethodsList()
   ]);
 
   if (company.error) {
@@ -109,7 +109,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
               if (!path) {
                 return null;
               }
-              return getBase64ImageFromSupabase(client, path).then((data) => ({
+              return getBase64ImageFromSupabase(path).then((data) => ({
                 id,
                 data
               }));

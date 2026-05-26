@@ -3,7 +3,7 @@ import { CreatableMultiSelect } from "@carbon/form";
 import { useDisclosure, useMount } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
-import type { getProcessesList } from "~/modules/resources";
+import type { getProcessesList } from "~/modules/resources/resources.service.server";
 import ProcessForm from "~/modules/resources/ui/Processes/ProcessForm";
 import { path } from "~/utils/path";
 

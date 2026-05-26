@@ -5,7 +5,7 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
-import { getMethodMaterials } from "~/modules/items";
+import { getMethodMaterials } from "~/modules/items/items.service.server";
 import { MethodMaterialsTable } from "~/modules/items/ui/Methods";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -17,7 +17,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "production",
     role: "employee"
   });
@@ -28,7 +28,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const materials = await getMethodMaterials(client, companyId, {
+  const materials = await getMethodMaterials({
     search,
     limit,
     offset,

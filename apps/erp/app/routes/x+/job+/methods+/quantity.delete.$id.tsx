@@ -3,19 +3,19 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { deleteProductionQuantity } from "~/modules/production";
+import { deleteProductionQuantity } from "~/modules/production/production.service.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "production"
   });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const deletion = await deleteProductionQuantity(client, id);
+  const deletion = await deleteProductionQuantity(id);
   if (deletion.error) {
     throw redirect(
       requestReferrer(request) ?? path.to.jobs,

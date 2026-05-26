@@ -1,6 +1,5 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
@@ -8,10 +7,11 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useNavigate } from "react-router";
 import { useRouteData, useUser } from "~/hooks";
 import type { GaugeType } from "~/modules/quality";
-import { gaugeValidator, upsertGauge } from "~/modules/quality";
+import { gaugeValidator } from "~/modules/quality";
+import { upsertGauge } from "~/modules/quality/quality.service.server";
 import GaugeForm from "~/modules/quality/ui/Gauge/GaugeForm";
 
-import { getNextSequence } from "~/modules/settings";
+import { getNextSequence } from "~/modules/settings/settings.service.server";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 
@@ -25,7 +25,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "quality"
   });
 
@@ -39,11 +39,7 @@ export async function action({ request }: ActionFunctionArgs) {
   let gaugeId = validation.data.gaugeId;
   const useNextSequence = !gaugeId;
   if (useNextSequence) {
-    const nextSequence = await getNextSequence(
-      getCarbonServiceRole(),
-      "gauge",
-      companyId
-    );
+    const nextSequence = await getNextSequence("gauge");
     if (nextSequence.error) {
       throw redirect(
         path.to.newGauge,
@@ -67,7 +63,7 @@ export async function action({ request }: ActionFunctionArgs) {
         : "Pending"
     : "Pending";
 
-  const createGauge = await upsertGauge(client, {
+  const createGauge = await upsertGauge({
     ...d,
     gaugeId,
     gaugeCalibrationStatus,

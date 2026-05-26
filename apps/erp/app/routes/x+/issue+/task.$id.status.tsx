@@ -6,7 +6,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 // @ts-expect-error TS2305 - TODO: fix type
 import type { IssueInvestigationTask } from "~/modules/quality";
-import { updateIssueTaskStatus } from "~/modules/quality";
+import { updateIssueTaskStatus } from "~/modules/quality/quality.service.server";
 import { getCompanyIntegrations } from "~/modules/settings/settings.server";
 import { path } from "~/utils/path";
 
@@ -32,12 +32,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     | "review";
   const assignee = formData.get("assignee") as string;
 
-  const update = await updateIssueTaskStatus(client, {
+  const update = await updateIssueTaskStatus({
     id,
     status,
     type,
-    assignee,
-    userId
+    assignee
   });
   if (update.error) {
     return data(

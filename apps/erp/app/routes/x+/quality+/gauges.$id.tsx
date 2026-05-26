@@ -1,6 +1,5 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
@@ -9,12 +8,12 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { GaugeType } from "~/modules/quality";
+import { gaugeValidator } from "~/modules/quality";
 import {
-  gaugeValidator,
   getGauge,
   getGaugeCalibrationRecordsByGaugeId,
   upsertGauge
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service.server";
 import GaugeForm from "~/modules/quality/ui/Gauge/GaugeForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
@@ -29,12 +28,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     view: "quality"
   });
 
-  const serviceRole = await getCarbonServiceRole();
-
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const gauge = await getGauge(serviceRole, id);
+  const gauge = await getGauge(id);
 
   if (gauge.error) {
     throw redirect(
@@ -49,13 +46,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     gauge: gauge.data,
-    records: getGaugeCalibrationRecordsByGaugeId(serviceRole, id)
+    records: getGaugeCalibrationRecordsByGaugeId(id)
   };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "quality"
   });
 
@@ -80,7 +77,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         : "Pending"
     : "Pending";
 
-  const update = await upsertGauge(client, {
+  const update = await upsertGauge({
     id,
     gaugeId,
     gaugeCalibrationStatus,

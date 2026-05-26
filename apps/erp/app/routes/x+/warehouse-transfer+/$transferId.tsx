@@ -7,7 +7,7 @@ import { Outlet, redirect, useParams } from "react-router";
 import {
   getWarehouseTransfer,
   getWarehouseTransferLines
-} from "~/modules/inventory";
+} from "~/modules/inventory/inventory.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -17,7 +17,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "inventory"
   });
 
@@ -25,8 +25,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!transferId) throw new Response("Not found", { status: 404 });
 
   const [warehouseTransfer, warehouseTransferLines] = await Promise.all([
-    getWarehouseTransfer(client, transferId),
-    getWarehouseTransferLines(client, transferId)
+    getWarehouseTransfer(transferId),
+    getWarehouseTransferLines(transferId)
   ]);
 
   if (warehouseTransfer.error) {

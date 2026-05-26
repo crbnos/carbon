@@ -1,6 +1,5 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   Heading,
@@ -14,7 +13,7 @@ import { useCallback } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData, useNavigate } from "react-router";
 import { New } from "~/components";
-import { getSubsidiaries } from "~/modules/settings";
+import { getSubsidiaries } from "~/modules/settings/settings.service.server";
 import {
   CompaniesListView,
   CompaniesTreeView
@@ -32,10 +31,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "settings"
   });
 
-  const companies = await getSubsidiaries(
-    getCarbonServiceRole(),
-    companyGroupId
-  );
+  const companies = await getSubsidiaries(companyGroupId);
 
   if (companies.error) {
     throw redirect(

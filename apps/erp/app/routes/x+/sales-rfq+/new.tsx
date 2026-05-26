@@ -8,9 +8,10 @@ import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { useUrlParams, useUser } from "~/hooks";
 import type { SalesRFQStatusType } from "~/modules/sales";
-import { salesRfqValidator, upsertSalesRFQ } from "~/modules/sales";
+import { salesRfqValidator } from "~/modules/sales";
+import { upsertSalesRFQ } from "~/modules/sales/sales.service.server";
 import { SalesRFQForm } from "~/modules/sales/ui/SalesRFQ";
-import { getNextSequence } from "~/modules/settings";
+import { getNextSequence } from "~/modules/settings/settings.service.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -22,7 +23,7 @@ export const handle: Handle = {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "sales"
   });
 
@@ -37,7 +38,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const useNextSequence = !rfqId;
 
   if (useNextSequence) {
-    const nextSequence = await getNextSequence(client, "salesRfq", companyId);
+    const nextSequence = await getNextSequence("salesRfq");
     if (nextSequence.error) {
       throw redirect(
         path.to.newSalesRFQ,
@@ -52,7 +53,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (!rfqId) throw new Error("rfqId is not defined");
 
-  const createSalesRFQ = await upsertSalesRFQ(client, {
+  const createSalesRFQ = await upsertSalesRFQ({
     ...validation.data,
     rfqId,
     companyId,

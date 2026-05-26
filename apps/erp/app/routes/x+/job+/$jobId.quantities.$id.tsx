@@ -4,17 +4,17 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData } from "react-router";
+import { productionQuantityValidator } from "~/modules/production";
 import {
   getJobOperations,
   getProductionQuantity,
-  productionQuantityValidator,
   upsertProductionQuantity
-} from "~/modules/production";
+} from "~/modules/production/production.service.server";
 import { ProductionQuantityForm } from "~/modules/production/ui/Jobs";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "production"
   });
 
@@ -23,8 +23,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!jobId) throw notFound("jobId not found");
 
   const [productionQuantity, jobOperations] = await Promise.all([
-    getProductionQuantity(client, id),
-    getJobOperations(client, jobId)
+    getProductionQuantity(id),
+    getJobOperations(jobId)
   ]);
 
   const operationOptions =
@@ -41,7 +41,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "accounting"
   });
 
@@ -65,7 +65,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     d.scrapReasonId = undefined;
   }
 
-  const update = await upsertProductionQuantity(client, {
+  const update = await upsertProductionQuantity({
     id,
     ...d,
     companyId,

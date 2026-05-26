@@ -4,17 +4,17 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { jobMaterialValidator } from "~/modules/production";
 import {
-  jobMaterialValidator,
   recalculateJobMakeMethodRequirements,
   recalculateJobOperationDependencies,
   upsertJobMaterial
-} from "~/modules/production";
+} from "~/modules/production/production.service.server";
 import { setCustomFields } from "~/utils/form";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "production",
     bypassRls: true
   });
@@ -35,7 +35,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateJobMaterial = await upsertJobMaterial(client, {
+  const updateJobMaterial = await upsertJobMaterial({
     jobId,
     ...validation.data,
     id: id,
@@ -70,19 +70,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (validation.data.methodType === "Make to Order") {
     const promises = [
-      recalculateJobMakeMethodRequirements(client, {
-        id: validation.data.jobMakeMethodId,
-        companyId,
-        userId
+      recalculateJobMakeMethodRequirements({
+        id: validation.data.jobMakeMethodId
       })
     ];
 
     if (validation.data.jobOperationId) {
       promises.push(
-        recalculateJobOperationDependencies(client, {
-          jobId,
-          companyId,
-          userId
+        recalculateJobOperationDependencies({
+          jobId
         })
       );
     }
@@ -116,14 +112,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
   } else {
-    const recalculateResult = await recalculateJobMakeMethodRequirements(
-      client,
-      {
-        id: validation.data.jobMakeMethodId,
-        companyId,
-        userId
-      }
-    );
+    const recalculateResult = await recalculateJobMakeMethodRequirements({
+      id: validation.data.jobMakeMethodId
+    });
 
     if (recalculateResult.error) {
       return data(

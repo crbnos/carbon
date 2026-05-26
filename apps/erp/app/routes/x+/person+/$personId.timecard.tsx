@@ -53,18 +53,20 @@ import {
 import { ConfirmDelete } from "~/components/Modals";
 import { useDateFormatter } from "~/hooks";
 import {
-  clockIn,
   clockInValidator,
-  clockOut,
   clockOutValidator,
-  deleteTimeCardEntry,
   deleteTimeCardEntryValidator,
-  getOpenClockEntry,
-  getTimeCardEntries,
-  updateTimeCardEntry,
   updateTimeCardEntryValidator
 } from "~/modules/people";
-import { getCompanySettings } from "~/modules/settings";
+import {
+  clockIn,
+  clockOut,
+  deleteTimeCardEntry,
+  getOpenClockEntry,
+  getTimeCardEntries,
+  updateTimeCardEntry
+} from "~/modules/people/people.service.server";
+import { getCompanySettings } from "~/modules/settings/settings.service.server";
 import { path } from "~/utils/path";
 
 function getWeekBounds(offset: number = 0) {
@@ -149,14 +151,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [entries, openEntry, companySettings, employeeShift] =
     await Promise.all([
-      getTimeCardEntries(client, {
+      getTimeCardEntries({
         employeeId: personId,
-        companyId,
         from,
         to
       }),
-      getOpenClockEntry(client, personId, companyId),
-      getCompanySettings(client, companyId),
+      getOpenClockEntry(personId),
+      getCompanySettings(),
       client
         .from("employeeJob")
         .select(
@@ -210,10 +211,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (validation.error) return data({}, { status: 400 });
 
     const employeeId = validation.data.employeeId || personId;
-    const result = await clockIn(client, {
-      employeeId,
-      companyId,
-      createdBy: userId
+    const result = await clockIn({
+      employeeId
     });
 
     if (result.error) {
@@ -230,10 +229,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (validation.error) return data({}, { status: 400 });
 
     const employeeId = validation.data.employeeId || personId;
-    const result = await clockOut(client, {
+    const result = await clockOut({
       employeeId,
-      companyId,
-      updatedBy: userId,
       note: validation.data.note
     });
 
@@ -252,12 +249,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
     if (validation.error) return data({}, { status: 400 });
 
-    const result = await updateTimeCardEntry(client, {
+    const result = await updateTimeCardEntry({
       entryId: validation.data.entryId,
       clockIn: validation.data.clockIn,
       clockOut: validation.data.clockOut || null,
-      note: validation.data.note || null,
-      updatedBy: userId
+      note: validation.data.note || null
     });
 
     if (result.error) {
@@ -275,7 +271,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
     if (validation.error) return data({}, { status: 400 });
 
-    const result = await deleteTimeCardEntry(client, validation.data.entryId);
+    const result = await deleteTimeCardEntry(validation.data.entryId);
     if (result.error) {
       return data(
         {},

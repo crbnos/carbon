@@ -66,7 +66,7 @@ import type {
 } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useRouteData, useUrlParams, useUser } from "~/hooks";
-import { lookupBuyPrice as lookupBuyPriceAsync } from "~/modules/items";
+import { lookupBuyPrice as lookupBuyPriceAsync } from "~/modules/items/items.client";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { MethodItemType, MethodType } from "~/modules/shared";
 import type { Item as ItemType } from "~/stores";

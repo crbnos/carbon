@@ -3,21 +3,18 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { updateDefaultRevision } from "~/modules/items/items.service";
+import { updateDefaultRevision } from "~/modules/items/items.service.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "parts"
   });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const update = await updateDefaultRevision(client, {
-    id: id,
-    updatedBy: userId
-  });
+  const update = await updateDefaultRevision({ id: id });
 
   if (update.error) {
     return data(

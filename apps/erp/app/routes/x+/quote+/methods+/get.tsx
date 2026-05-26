@@ -1,14 +1,13 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
+import { getMethodValidator } from "~/modules/sales";
 import {
   copyQuoteLine,
-  getMethodValidator,
   upsertQuoteLineMethod,
   upsertQuoteMaterialMakeMethod
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -23,7 +22,6 @@ export async function action({ request }: ActionFunctionArgs) {
     ? JSON.parse(configurationStr)
     : undefined;
 
-  const serviceRole = getCarbonServiceRole();
   if (type === "item") {
     const validation = await validator(getMethodValidator).validate(formData);
     if (validation.error) {
@@ -54,10 +52,7 @@ export async function action({ request }: ActionFunctionArgs) {
       lineMethodPayload.configuration = configuration;
     }
 
-    const lineMethod = await upsertQuoteLineMethod(
-      serviceRole,
-      lineMethodPayload
-    );
+    const lineMethod = await upsertQuoteLineMethod(lineMethodPayload);
 
     return {
       error: lineMethod.error ? "Failed to get quote line method" : null
@@ -70,7 +65,7 @@ export async function action({ request }: ActionFunctionArgs) {
       return validationError(validation.error);
     }
 
-    const copyLine = await copyQuoteLine(serviceRole, {
+    const copyLine = await copyQuoteLine({
       ...validation.data,
       companyId,
       userId
@@ -106,10 +101,7 @@ export async function action({ request }: ActionFunctionArgs) {
       makeMethodPayload.configuration = configuration;
     }
 
-    const makeMethod = await upsertQuoteMaterialMakeMethod(
-      serviceRole,
-      makeMethodPayload
-    );
+    const makeMethod = await upsertQuoteMaterialMakeMethod(makeMethodPayload);
 
     if (makeMethod.error) {
       return {

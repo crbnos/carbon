@@ -1,11 +1,11 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
-import { updateItemCost } from "~/modules/items";
+import { updateItemCost } from "~/modules/items/items.service.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "parts"
   });
 
@@ -15,10 +15,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const update = await updateItemCost(client, itemId, {
-    unitCost,
-    updatedBy: userId
-  });
+  const update = await updateItemCost(itemId, { unitCost });
   if (update.error) {
     console.error("Failed to update item cost", update.error);
     return {

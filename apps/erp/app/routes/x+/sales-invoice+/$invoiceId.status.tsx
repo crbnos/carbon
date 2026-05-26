@@ -3,13 +3,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { updateSalesInvoiceStatus } from "~/modules/invoicing";
 import { salesInvoiceStatusType } from "~/modules/invoicing/invoicing.models";
+import { updateSalesInvoiceStatus } from "~/modules/invoicing/invoicing.service.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "invoicing"
   });
 
@@ -28,11 +28,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const update = await updateSalesInvoiceStatus(client, {
+  const update = await updateSalesInvoiceStatus({
     id,
     status,
-    assignee: !["Partially Paid"].includes(status) ? null : undefined,
-    updatedBy: userId
+    assignee: !["Partially Paid"].includes(status) ? null : undefined
   });
 
   if (update.error) {

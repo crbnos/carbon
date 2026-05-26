@@ -4,12 +4,12 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { upsertJobOperationTool } from "~/modules/production";
+import { upsertJobOperationTool } from "~/modules/production/production.service.server";
 import { operationToolValidator } from "~/modules/shared";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "production"
   });
 
@@ -20,7 +20,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const insert = await upsertJobOperationTool(client, {
+  const insert = await upsertJobOperationTool({
     ...validation.data,
     companyId,
     createdBy: userId

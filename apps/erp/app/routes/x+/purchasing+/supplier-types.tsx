@@ -3,7 +3,7 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, useLoaderData } from "react-router";
-import { getSupplierTypes } from "~/modules/purchasing";
+import { getSupplierTypes } from "~/modules/purchasing/purchasing.service.server";
 import { SupplierTypesTable } from "~/modules/purchasing/ui/SupplierTypes";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -15,7 +15,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing",
     role: "employee"
   });
@@ -25,7 +25,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const search = searchParams.get("search");
   const { limit, offset, sorts } = getGenericQueryFilters(searchParams);
 
-  return await getSupplierTypes(client, companyId, {
+  return await getSupplierTypes({
     search,
     limit,
     offset,

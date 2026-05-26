@@ -6,7 +6,8 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import { useUser } from "~/hooks";
-import { customerValidator, upsertCustomer } from "~/modules/sales";
+import { customerValidator } from "~/modules/sales";
+import { upsertCustomer } from "~/modules/sales/sales.service.server";
 import { CustomerForm } from "~/modules/sales/ui/Customer";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
@@ -20,7 +21,7 @@ export const handle: Handle = {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "sales"
   });
 
@@ -36,7 +37,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...rest } = validation.data;
 
-  const createCustomer = await upsertCustomer(client, {
+  const createCustomer = await upsertCustomer({
     ...rest,
     companyId,
     customFields: setCustomFields(formData),

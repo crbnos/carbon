@@ -10,24 +10,24 @@ import { redirect, useLoaderData } from "react-router";
 import { useStorageUnits } from "~/components/Form/StorageUnit";
 import { useRouteData } from "~/hooks";
 import RuleAssignmentsList from "~/modules/customRules/ui/RuleAssignmentsList";
-import {
-  getTrackedEntityExpirations,
-  InventoryDetails
-} from "~/modules/inventory";
+import { InventoryDetails } from "~/modules/inventory";
+import { getTrackedEntityExpirations } from "~/modules/inventory/inventory.service.server";
 import type { ToolSummary, UnitOfMeasureListItem } from "~/modules/items";
+import {
+  pickMethodWithShelfLifeValidator,
+  type shelfLifeModes
+} from "~/modules/items";
 import {
   getBomHasShelfLifeManagedInput,
   getItemQuantities,
   getItemShelfLife,
   getItemStorageUnitQuantities,
   getPickMethod,
-  pickMethodWithShelfLifeValidator,
-  type shelfLifeModes,
   upsertPickMethod,
   upsertPickMethodWithShelfLife
-} from "~/modules/items";
+} from "~/modules/items/items.service.server";
 import { PickMethodForm } from "~/modules/items/ui/Item";
-import { getLocationsList } from "~/modules/resources";
+import { getLocationsList } from "~/modules/resources/resources.service.server";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { useItems } from "~/stores/items";
@@ -63,7 +63,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await getLocationsList();
     if (locations.error || !locations.data?.length) {
       throw redirect(
         path.to.tool(itemId),
@@ -76,12 +76,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let [toolInventory] = await Promise.all([
-    getPickMethod(client, itemId, companyId, locationId)
-  ]);
+  let [toolInventory] = await Promise.all([getPickMethod(itemId, locationId)]);
 
   if (toolInventory.error || !toolInventory.data) {
-    const insertPickMethod = await upsertPickMethod(client, {
+    const insertPickMethod = await upsertPickMethod({
       itemId,
       companyId,
       locationId,
@@ -99,7 +97,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       );
     }
 
-    toolInventory = await getPickMethod(client, itemId, companyId, locationId);
+    toolInventory = await getPickMethod(itemId, locationId);
     if (toolInventory.error || !toolInventory.data) {
       throw redirect(
         path.to.tool(itemId),
@@ -111,12 +109,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   }
 
-  const quantities = await getItemQuantities(
-    client,
-    itemId,
-    companyId,
-    locationId
-  );
+  const quantities = await getItemQuantities(itemId, locationId);
   if (quantities.error) {
     throw redirect(
       path.to.items,
@@ -125,9 +118,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const itemStorageUnitQuantities = await getItemStorageUnitQuantities(
-    client,
     itemId,
-    companyId,
     locationId
   );
   if (itemStorageUnitQuantities.error || !itemStorageUnitQuantities.data) {
@@ -151,9 +142,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     trackedEntityExpirations,
     rulesData
   ] = await Promise.all([
-    getItemShelfLife(client, itemId),
-    getBomHasShelfLifeManagedInput(client, itemId, companyId),
-    getTrackedEntityExpirations(client, trackedEntityIds),
+    getItemShelfLife(itemId),
+    getBomHasShelfLifeManagedInput(itemId),
+    getTrackedEntityExpirations(trackedEntityIds),
     getCustomRulesDataForTarget(client, {
       targetType: "item",
       targetId: itemId,

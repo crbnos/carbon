@@ -3,9 +3,12 @@ import { StockTransferPDF } from "@carbon/documents/pdf";
 import { getPreferenceHeaders } from "@carbon/react";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
-import { getStockTransfer, getStockTransferLines } from "~/modules/inventory";
-import { getCompany } from "~/modules/settings";
-import { getBase64ImageFromSupabase } from "~/modules/shared";
+import {
+  getStockTransfer,
+  getStockTransferLines
+} from "~/modules/inventory/inventory.service.server";
+import { getCompany } from "~/modules/settings/settings.service.server";
+import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -16,9 +19,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!id) throw new Error("Could not find id");
 
   const [company, stockTransfer, stockTransferLines] = await Promise.all([
-    getCompany(client, companyId),
-    getStockTransfer(client, id),
-    getStockTransferLines(client, id)
+    getCompany(),
+    getStockTransfer(id),
+    getStockTransferLines(id)
   ]);
 
   if (company.error) {
@@ -73,7 +76,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             if (!path) {
               return null;
             }
-            return getBase64ImageFromSupabase(client, path).then((data) => ({
+            return getBase64ImageFromSupabase(path).then((data) => ({
               id,
               data
             }));

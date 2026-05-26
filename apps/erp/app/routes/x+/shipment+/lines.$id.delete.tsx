@@ -1,18 +1,18 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
-import { deleteShipmentLine } from "~/modules/inventory";
+import { deleteShipmentLine } from "~/modules/inventory/inventory.service.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "inventory"
   });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const lineDelete = await deleteShipmentLine(client, id);
+  const lineDelete = await deleteShipmentLine(id);
 
   if (lineDelete.error) {
     return {

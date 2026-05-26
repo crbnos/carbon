@@ -6,7 +6,8 @@ import { useRouteData } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
 import type { MaterialSummary } from "~/modules/items";
-import { supplierPartValidator, upsertSupplierPart } from "~/modules/items";
+import { supplierPartValidator } from "~/modules/items";
+import { upsertSupplierPart } from "~/modules/items/items.service.server";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
@@ -58,7 +59,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId, companyId } = await requirePermissions(request, {
+  const { userId, companyId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -77,7 +78,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const updatedSupplierPart = await upsertSupplierPart(client, {
+  const updatedSupplierPart = await upsertSupplierPart({
     id: supplierPartId,
     ...d,
     updatedBy: userId,

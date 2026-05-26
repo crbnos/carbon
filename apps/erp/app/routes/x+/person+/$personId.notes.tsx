@@ -6,18 +6,18 @@ import { Trans } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useParams } from "react-router";
 import RichText from "~/components/RichText";
-import { getNotes } from "~/modules/shared";
+import { getNotes } from "~/modules/shared/shared.service.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "people"
   });
 
   const { personId } = params;
   if (!personId) throw new Error("Could not find personId");
 
-  const notes = await getNotes(client, personId);
+  const notes = await getNotes(personId);
   if (notes.error) {
     throw redirect(
       path.to.people,

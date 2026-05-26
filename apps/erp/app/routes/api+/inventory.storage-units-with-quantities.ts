@@ -3,12 +3,12 @@ import type {
   ClientLoaderFunctionArgs,
   LoaderFunctionArgs
 } from "react-router";
-import { getStorageUnitsListForLocation } from "~/modules/inventory";
-import { getItemStorageUnitQuantities } from "~/modules/items/items.service";
+import { getStorageUnitsListForLocation } from "~/modules/inventory/inventory.service.server";
+import { getItemStorageUnitQuantities } from "~/modules/items/items.service.server";
 import { getCompanyId, storageUnitsQuery } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts"
   });
 
@@ -26,8 +26,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // If itemId is provided, get storageUnits with quantities
   if (itemId) {
     const [shelvesResult, quantitiesResult] = await Promise.all([
-      getStorageUnitsListForLocation(client, companyId, locationId),
-      getItemStorageUnitQuantities(client, itemId, companyId, locationId)
+      getStorageUnitsListForLocation(locationId),
+      getItemStorageUnitQuantities(itemId, locationId)
     ]);
 
     if (shelvesResult.error || quantitiesResult.error) {
@@ -62,7 +62,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     };
   }
 
-  return await getStorageUnitsListForLocation(client, companyId, locationId);
+  return await getStorageUnitsListForLocation(locationId);
 }
 
 export async function clientLoader({

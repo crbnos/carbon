@@ -5,11 +5,8 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import {
-  ApiKeysTable,
-  ApiKeysUpgradeOverlay,
-  getApiKeys
-} from "~/modules/settings";
+import { ApiKeysTable, ApiKeysUpgradeOverlay } from "~/modules/settings";
+import { getApiKeys } from "~/modules/settings/settings.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -20,7 +17,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     update: "users"
   });
 
@@ -30,7 +27,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const apiKeys = await getApiKeys(client, companyId, {
+  const apiKeys = await getApiKeys({
     limit,
     offset,
     sorts,

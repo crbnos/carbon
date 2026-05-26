@@ -5,7 +5,7 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useNavigate } from "react-router";
 import { qualityDocumentValidator } from "~/modules/quality/quality.models";
-import { upsertQualityDocument } from "~/modules/quality/quality.service";
+import { upsertQualityDocument } from "~/modules/quality/quality.service.server";
 import QualityDocumentForm from "~/modules/quality/ui/Documents/QualityDocumentForm";
 import { path } from "~/utils/path";
 
@@ -19,7 +19,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "quality"
   });
   const formData = await request.formData();
@@ -51,7 +51,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const insertQualityDocument = await upsertQualityDocument(client, {
+  const insertQualityDocument = await upsertQualityDocument({
     ...d,
     content: contentJSON,
     companyId,

@@ -19,18 +19,21 @@ import {
   getMakeMethods,
   getMethodMaterialsByMakeMethod,
   getMethodOperationsByMakeMethodId
-} from "~/modules/items";
+} from "~/modules/items/items.service.server";
 import {
   BillOfMaterial,
   BillOfProcess,
   MakeMethodTools
 } from "~/modules/items/ui/Item";
 import type { MethodItemType, MethodType } from "~/modules/shared";
-import { getModelByItemId, getTagsList } from "~/modules/shared";
+import {
+  getModelByItemId,
+  getTagsList
+} from "~/modules/shared/shared.service.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts"
   });
 
@@ -45,11 +48,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     tags,
     partManufacturing
   ] = await Promise.all([
-    getMakeMethodById(client, makeMethodId, companyId),
-    getMethodMaterialsByMakeMethod(client, makeMethodId),
-    getMethodOperationsByMakeMethodId(client, makeMethodId),
-    getTagsList(client, companyId, "operation"),
-    getItemManufacturing(client, itemId, companyId)
+    getMakeMethodById(makeMethodId),
+    getMethodMaterialsByMakeMethod(makeMethodId),
+    getMethodOperationsByMakeMethodId(makeMethodId),
+    getTagsList("operation"),
+    getItemManufacturing(itemId)
   ]);
 
   if (makeMethod.error) {
@@ -83,16 +86,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const configData = partManufacturing.data?.requiresConfiguration
     ? {
-        configurationParametersAndGroups: await getConfigurationParameters(
-          client,
-          itemId,
-          companyId
-        ),
-        configurationRules: await getConfigurationRules(
-          client,
-          itemId,
-          companyId
-        )
+        configurationParametersAndGroups:
+          await getConfigurationParameters(itemId),
+        configurationRules: await getConfigurationRules(itemId)
       }
     : {
         configurationParametersAndGroups: { groups: [], parameters: [] },
@@ -125,8 +121,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       })) ?? [],
     partManufacturing: partManufacturing.data,
     ...configData,
-    model: getModelByItemId(client, makeMethod.data.itemId),
-    makeMethods: getMakeMethods(client, makeMethod.data.itemId, companyId),
+    model: getModelByItemId(makeMethod.data.itemId),
+    makeMethods: getMakeMethods(makeMethod.data.itemId),
     tags: tags.data ?? []
   };
 }

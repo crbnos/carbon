@@ -6,11 +6,13 @@ import { useRouteData } from "@carbon/react";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect, useNavigate, useParams } from "react-router";
 import {
-  getStockTransfer,
   isStockTransferLocked,
-  stockTransferLineValidator,
-  upsertStockTransferLine
+  stockTransferLineValidator
 } from "~/modules/inventory";
+import {
+  getStockTransfer,
+  upsertStockTransferLine
+} from "~/modules/inventory/inventory.service.server";
 import type {
   StockTransfer,
   StockTransferLine
@@ -22,7 +24,7 @@ import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     create: "inventory"
   });
 
@@ -30,10 +32,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) throw notFound("id not found");
   if (!lineId) throw notFound("lineId not found");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "inventory"
   });
-  const transfer = await getStockTransfer(viewClient, id);
+  const transfer = await getStockTransfer(id);
   await requireUnlocked({
     request,
     isLocked: isStockTransferLocked(transfer.data?.status),
@@ -53,7 +55,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id: _id, ...d } = validation.data;
 
-  const updateStockTransferLine = await upsertStockTransferLine(client, {
+  const updateStockTransferLine = await upsertStockTransferLine({
     id: lineId,
     ...d,
     updatedBy: userId

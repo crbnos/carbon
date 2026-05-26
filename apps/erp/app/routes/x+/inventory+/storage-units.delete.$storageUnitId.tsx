@@ -31,7 +31,7 @@ import {
   deleteStorageUnit,
   deleteStorageUnitCascade,
   getStorageUnit
-} from "~/modules/inventory";
+} from "~/modules/inventory/inventory.service.server";
 import { getParams, path } from "~/utils/path";
 import { getCompanyId } from "~/utils/react-query";
 
@@ -48,7 +48,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // build, so the cascade modal never triggered. Fetching rows and reading
   // `.data.length` is unambiguous and the direct-child list is tiny.
   const [storageUnit, children] = await Promise.all([
-    getStorageUnit(client, storageUnitId),
+    getStorageUnit(storageUnitId),
     client.from("storageUnit").select("id").eq("parentId", storageUnitId)
   ]);
 
@@ -68,7 +68,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "inventory"
   });
 
@@ -84,8 +84,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const cascade = formData.get("cascade") === "true";
 
   const deleteResult = cascade
-    ? await deleteStorageUnitCascade(client, storageUnitId)
-    : await deleteStorageUnit(client, storageUnitId);
+    ? await deleteStorageUnitCascade(storageUnitId)
+    : await deleteStorageUnit(storageUnitId);
 
   if (deleteResult.error) {
     throw redirect(

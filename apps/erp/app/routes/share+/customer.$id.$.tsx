@@ -2,8 +2,12 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { Ratelimit, redis } from "@carbon/kv";
 import { supportedModelTypes } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { getJobByOperationId } from "~/modules/production";
-import { getCustomerPortal } from "~/modules/shared/shared.service";
+import { getJobByOperationId } from "~/modules/production/production.service.server";
+import { getCustomerPortal } from "~/modules/shared/shared.service.server";
+import {
+  runWithSystemClient,
+  runWithSystemContext
+} from "~/services/mcp/index.server";
 
 const supportedFileTypes: Record<string, string> = {
   pdf: "application/pdf",
@@ -53,89 +57,98 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
     return new Response(null, { status: 429 });
   }
 
+  // Public share asset download (no session). Resolve the customer portal
+  // record first (system client only) so we know the tenant companyId, then
+  // run the rest of the loader under a full system context so services
+  // reading `AuthContextHolder.get()` are satisfied.
   const serviceRole = getCarbonServiceRole();
-  const customer = await getCustomerPortal(serviceRole, id);
+  const customer = await runWithSystemClient(serviceRole, () =>
+    getCustomerPortal(id)
+  );
 
-  if (customer.error) {
+  if (customer.error || !customer.data?.customerId) {
     console.error(customer.error);
     throw new Error("Customer not found");
   }
 
-  if (!customer.data.customerId) {
-    console.error(customer.error);
-    throw new Error("Customer not found");
-  }
+  return runWithSystemContext(
+    { companyId: customer.data.companyId },
+    serviceRole,
+    async () => {
+      let path = params["*"];
+      let bucket = "private"; // TODO: refactor to use companyId when we separate the storage buckets
 
-  let path = params["*"];
-  let bucket = "private"; // TODO: refactor to use companyId when we separate the storage buckets
+      if (!path) throw new Error("Path not found");
 
-  if (!path) throw new Error("Path not found");
+      path = decodeURIComponent(path);
 
-  path = decodeURIComponent(path);
+      const pathMatch = params["*"]?.match(/^([^/]+)\/job\/([^/]+)\/[^/]+$/);
+      const urlCompanyId = pathMatch?.[1];
+      const operationId = pathMatch?.[2];
 
-  const pathMatch = params["*"]?.match(/^([^/]+)\/job\/([^/]+)\/[^/]+$/);
-  const companyId = pathMatch?.[1];
-  const operationId = pathMatch?.[2];
+      const fileType = path.split(".").pop()?.toLowerCase();
 
-  const fileType = path.split(".").pop()?.toLowerCase();
+      if (urlCompanyId !== customer.data!.companyId) {
+        return new Response(null, { status: 403 });
+      }
 
-  if (companyId !== customer.data.companyId) {
-    return new Response(null, { status: 403 });
-  }
+      if (!operationId) {
+        return new Response(null, { status: 403 });
+      }
 
-  if (!operationId) {
-    return new Response(null, { status: 403 });
-  }
+      const job = await getJobByOperationId(operationId);
 
-  const job = await getJobByOperationId(serviceRole, operationId);
+      if (job.error) {
+        console.error(job.error);
+        return new Response(null, { status: 403 });
+      }
 
-  if (job.error) {
-    console.error(job.error);
-    return new Response(null, { status: 403 });
-  }
+      if (job.data.companyId !== customer.data!.companyId) {
+        return new Response(null, { status: 403 });
+      }
 
-  if (job.data.companyId !== customer.data.companyId) {
-    return new Response(null, { status: 403 });
-  }
+      if (job.data.customerId !== customer.data!.customerId) {
+        return new Response(null, { status: 403 });
+      }
 
-  if (job.data.customerId !== customer.data.customerId) {
-    return new Response(null, { status: 403 });
-  }
+      if (
+        !fileType ||
+        (!(fileType in supportedFileTypes) &&
+          !supportedModelTypes.includes(fileType))
+      )
+        throw new Error(`File type ${fileType} not supported`);
+      const contentType = supportedFileTypes[fileType];
 
-  if (
-    !fileType ||
-    (!(fileType in supportedFileTypes) &&
-      !supportedModelTypes.includes(fileType))
-  )
-    throw new Error(`File type ${fileType} not supported`);
-  const contentType = supportedFileTypes[fileType];
+      if (!path.includes(customer.data!.companyId)) {
+        return new Response(null, { status: 403 });
+      }
 
-  if (!path.includes(customer.data.companyId)) {
-    return new Response(null, { status: 403 });
-  }
+      async function downloadFile() {
+        const result = await serviceRole.storage
+          .from(bucket!)
+          .download(`${path}`);
+        if (result.error) {
+          console.error(result.error);
+          return null;
+        }
+        return result.data;
+      }
 
-  async function downloadFile() {
-    const result = await serviceRole.storage.from(bucket!).download(`${path}`);
-    if (result.error) {
-      console.error(result.error);
-      return null;
+      let fileData = await downloadFile();
+      if (!fileData) {
+        // Wait for a second and try again
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        fileData = await downloadFile();
+        if (!fileData) {
+          throw new Error("Failed to download file after retry");
+        }
+      }
+
+      const headers = new Headers({
+        "Content-Type": contentType,
+        "Cache-Control": "private, max-age=31536000, immutable"
+      });
+      return new Response(fileData, { status: 200, headers });
     }
-    return result.data;
-  }
-
-  let fileData = await downloadFile();
-  if (!fileData) {
-    // Wait for a second and try again
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    fileData = await downloadFile();
-    if (!fileData) {
-      throw new Error("Failed to download file after retry");
-    }
-  }
-
-  const headers = new Headers({
-    "Content-Type": contentType,
-    "Cache-Control": "private, max-age=31536000, immutable"
-  });
-  return new Response(fileData, { status: 200, headers });
+  );
 };

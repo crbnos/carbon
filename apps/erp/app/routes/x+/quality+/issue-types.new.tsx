@@ -4,7 +4,8 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useNavigate } from "react-router";
-import { issueTypeValidator, upsertIssueType } from "~/modules/quality";
+import { issueTypeValidator } from "~/modules/quality";
+import { upsertIssueType } from "~/modules/quality/quality.service.server";
 import IssueTypeForm from "~/modules/quality/ui/IssueTypes/IssueTypeForm";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path, requestReferrer } from "~/utils/path";
@@ -19,7 +20,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "quality"
   });
 
@@ -35,7 +36,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const insertIssueType = await upsertIssueType(client, {
+  const insertIssueType = await upsertIssueType({
     ...d,
     companyId,
     createdBy: userId,

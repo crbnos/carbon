@@ -4,10 +4,8 @@ import { Avatar, HStack, useDisclosure } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
-import type {
-  CustomerContact as CustomerContactType,
-  getCustomerContacts
-} from "~/modules/sales";
+import type { CustomerContact as CustomerContactType } from "~/modules/sales";
+import type { getCustomerContacts } from "~/modules/sales/sales.service.server";
 import CustomerContactForm from "~/modules/sales/ui/Customer/CustomerContactForm";
 import { path } from "~/utils/path";
 

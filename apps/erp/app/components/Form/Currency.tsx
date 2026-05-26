@@ -3,7 +3,7 @@ import { Combobox } from "@carbon/form";
 import { useMount } from "@carbon/react";
 import { useMemo } from "react";
 import { useFetcher } from "react-router";
-import type { getCurrenciesList } from "~/modules/accounting";
+import type { getCurrenciesList } from "~/modules/accounting/accounting.service.server";
 import { path } from "~/utils/path";
 
 type CurrencySelectProps = Omit<ComboboxProps, "options" | "inline"> & {

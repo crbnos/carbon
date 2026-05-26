@@ -5,11 +5,11 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteGroup, getGroup } from "~/modules/users";
+import { deleteGroup, getGroup } from "~/modules/users/users.service.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "users",
     role: "employee"
   });
@@ -17,7 +17,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { groupId } = params;
   if (!groupId) throw notFound("groupId not found");
 
-  const group = await getGroup(client, groupId);
+  const group = await getGroup(groupId);
   if (group.error) {
     throw redirect(
       path.to.groups,
@@ -29,7 +29,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "users"
   });
 
@@ -41,7 +41,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteGroupError } = await deleteGroup(client, groupId);
+  const { error: deleteGroupError } = await deleteGroup(groupId);
   if (deleteGroupError) {
     throw redirect(
       path.to.groups,

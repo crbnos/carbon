@@ -4,8 +4,9 @@ import { validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { NotificationEvent } from "@carbon/notifications";
 import type { ActionFunctionArgs } from "react-router";
-import { getCompany } from "~/modules/settings";
+import { getCompany } from "~/modules/settings/settings.service.server";
 import { suggestionValidator } from "~/modules/shared";
+import { AuthClientScope } from "~/services/mcp/index.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   const { userId, companyId } = await requirePermissions(request, {});
@@ -28,6 +29,10 @@ export async function action({ request }: ActionFunctionArgs) {
     userId: formUserId
   } = validation.data;
   const serviceRole = await getCarbonServiceRole();
+  // getCompany is clientless and resolves its client from AuthClientScope.
+  // On main it was called with serviceRole (this is a no-permission route);
+  // pin the scope to serviceRole to keep that RLS-bypass behavior.
+  AuthClientScope.setFactory(() => serviceRole);
 
   const insertSuggestion = await serviceRole
     .from("suggestion")
@@ -51,7 +56,7 @@ export async function action({ request }: ActionFunctionArgs) {
     };
   }
 
-  const company = await getCompany(serviceRole, companyId);
+  const company = await getCompany();
 
   if (!company.error && company.data?.suggestionNotificationGroup?.length) {
     try {

@@ -3,11 +3,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
+import { isSalesRfqLocked } from "~/modules/sales";
 import {
   deleteSalesRFQLine,
-  getSalesRFQ,
-  isSalesRfqLocked
-} from "~/modules/sales";
+  getSalesRFQ
+} from "~/modules/sales/sales.service.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
@@ -22,11 +22,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error("lineId not found");
   }
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
-  const rfq = await getSalesRFQ(viewClient, rfqId);
+  const rfq = await getSalesRFQ(rfqId);
   await requireUnlocked({
     request,
     isLocked: isSalesRfqLocked(rfq.data?.status),
@@ -34,11 +34,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked RFQ. Reopen it first."
   });
 
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "sales"
   });
 
-  const deleteLine = await deleteSalesRFQLine(client, lineId);
+  const deleteLine = await deleteSalesRFQLine(lineId);
   if (deleteLine.error) {
     throw redirect(
       path.to.quoteLine(rfqId, lineId),

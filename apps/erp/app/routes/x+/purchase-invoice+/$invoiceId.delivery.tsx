@@ -5,11 +5,13 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
-  getPurchaseInvoice,
   isPurchaseInvoiceLocked,
-  purchaseInvoiceDeliveryValidator,
-  upsertPurchaseInvoiceDelivery
+  purchaseInvoiceDeliveryValidator
 } from "~/modules/invoicing";
+import {
+  getPurchaseInvoice,
+  upsertPurchaseInvoiceDelivery
+} from "~/modules/invoicing/invoicing.service.server";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
@@ -21,11 +23,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
   // Check if PI is locked
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "invoicing"
   });
 
-  const purchaseInvoice = await getPurchaseInvoice(viewClient, invoiceId);
+  const purchaseInvoice = await getPurchaseInvoice(invoiceId);
   if (purchaseInvoice.error) {
     throw redirect(
       path.to.purchaseInvoice(invoiceId),
@@ -43,7 +45,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase invoice."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "invoicing"
   });
 
@@ -57,15 +59,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Note: Need to add upsertPurchaseInvoiceDelivery to invoicing.service.ts
-  const updatePurchaseInvoiceDelivery = await upsertPurchaseInvoiceDelivery(
-    client,
-    {
-      ...validation.data,
-      id: invoiceId,
-      updatedBy: userId,
-      customFields: setCustomFields(formData)
-    }
-  );
+  const updatePurchaseInvoiceDelivery = await upsertPurchaseInvoiceDelivery({
+    ...validation.data,
+    id: invoiceId,
+    updatedBy: userId,
+    customFields: setCustomFields(formData)
+  });
   if (updatePurchaseInvoiceDelivery.error) {
     throw redirect(
       path.to.purchaseInvoice(invoiceId),

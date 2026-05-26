@@ -5,17 +5,14 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { useUrlParams } from "~/hooks";
-import {
-  ContractorForm,
-  contractorValidator,
-  upsertContractor
-} from "~/modules/resources";
+import { ContractorForm, contractorValidator } from "~/modules/resources";
+import { upsertContractor } from "~/modules/resources/resources.service.server";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "resources"
   });
 
@@ -29,7 +26,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // @ts-expect-error TS2339 - TODO: fix type
   const { id, hoursPerWeek, abilities } = validation.data;
 
-  const createContractor = await upsertContractor(client, {
+  const createContractor = await upsertContractor({
     id,
     hoursPerWeek,
     abilities: abilities ?? [],

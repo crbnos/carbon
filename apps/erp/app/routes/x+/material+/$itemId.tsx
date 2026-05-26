@@ -21,14 +21,14 @@ import {
   getMaterialUsedIn,
   getPickMethods,
   getSupplierParts
-} from "~/modules/items";
+} from "~/modules/items/items.service.server";
 import type { UsedInNode } from "~/modules/items/ui/Item/UsedIn";
 import { UsedInSkeleton, UsedInTree } from "~/modules/items/ui/Item/UsedIn";
 import {
   MaterialHeader,
   MaterialProperties
 } from "~/modules/items/ui/Materials";
-import { getTagsList } from "~/modules/shared";
+import { getTagsList } from "~/modules/shared/shared.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -39,7 +39,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts",
     bypassRls: true
   });
@@ -49,10 +49,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [materialSummary, supplierParts, pickMethods, tags] = await Promise.all(
     [
-      getMaterial(client, itemId, companyId),
-      getSupplierParts(client, itemId, companyId),
-      getPickMethods(client, itemId, companyId),
-      getTagsList(client, companyId, "material")
+      getMaterial(itemId),
+      getSupplierParts(itemId),
+      getPickMethods(itemId),
+      getTagsList("material")
     ]
   );
 
@@ -68,12 +68,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     materialSummary: materialSummary.data,
-    files: getItemFiles(client, itemId, companyId),
+    files: getItemFiles(itemId),
     supplierParts: supplierParts.data ?? [],
     pickMethods: pickMethods.data ?? [],
-    makeMethods: getMakeMethods(client, itemId, companyId),
+    makeMethods: getMakeMethods(itemId),
     tags: tags.data ?? [],
-    usedIn: getMaterialUsedIn(client, itemId, companyId)
+    usedIn: getMaterialUsedIn(itemId)
   };
 }
 

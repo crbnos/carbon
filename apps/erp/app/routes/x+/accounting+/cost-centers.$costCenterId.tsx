@@ -4,24 +4,24 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
+import { costCenterValidator } from "~/modules/accounting";
 import {
-  costCenterValidator,
   getCostCenter,
   upsertCostCenter
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.service.server";
 import { CostCenterForm } from "~/modules/accounting/ui/CostCenters";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "accounting"
   });
 
   const { costCenterId } = params;
   if (!costCenterId) throw notFound("Cost Center ID was not found");
 
-  const costCenter = await getCostCenter(client, costCenterId);
+  const costCenter = await getCostCenter(costCenterId);
 
   if (costCenter.error) {
     throw redirect(
@@ -37,7 +37,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     create: "accounting"
   });
 
@@ -51,7 +51,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, ...d } = validation.data;
   if (!id) throw notFound("Cost Center ID was not found");
 
-  const updateCostCenter = await upsertCostCenter(client, {
+  const updateCostCenter = await upsertCostCenter({
     id,
     ...d,
     updatedBy: userId,

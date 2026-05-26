@@ -28,21 +28,32 @@ import {
   Submit
 } from "~/components/Form";
 import { useOnboarding } from "~/hooks";
-import { insertEmployeeJob } from "~/modules/people";
-import { getLocationsList, upsertLocation } from "~/modules/resources";
+import { insertEmployeeJob } from "~/modules/people/people.service.server";
+import {
+  getLocationsList,
+  upsertLocation
+} from "~/modules/resources/resources.service.server";
+import { onboardingCompanyValidator } from "~/modules/settings";
 import {
   getCompanies,
   getCompany,
   insertCompany,
-  onboardingCompanyValidator,
   seedCompany,
   updateCompany
-} from "~/modules/settings";
+} from "~/modules/settings/settings.service.server";
+import { AuthClientScope } from "~/services/mcp/index.server";
 
 export async function loader({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
-  const company = await getCompany(client, companyId ?? 1);
+  // During onboarding there are no userToCompany rows yet, so RLS would
+  // return nothing for the company table. getCompany is clientless and
+  // resolves its client from AuthClientScope; pin it to serviceRole to
+  // keep the RLS-bypass behavior this flow relied on before the refactor.
+  const serviceRole = getCarbonServiceRole();
+  AuthClientScope.setFactory(() => serviceRole);
+
+  const company = await getCompany();
 
   if (company.error || !company.data) {
     return {
@@ -55,7 +66,7 @@ export async function loader({ request }: ActionFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {});
+  const { userId } = await requirePermissions(request, {});
 
   // there are no entries in the userToCompany table which
   // dictates RLS for the company table
@@ -69,24 +80,30 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
+  // The clientless onboarding helpers (getCompanies, seedCompany,
+  // updateCompany, upsertLocation, insertCompany, insertEmployeeJob) resolve
+  // their client from AuthClientScope. Per the note above there are no
+  // userToCompany RLS rows yet, so pin the scope to serviceRole to keep the
+  // RLS-bypass behavior this flow relied on before the refactor.
+  AuthClientScope.setFactory(() => serviceRole);
 
   const { next, ...d } = validation.data;
 
   let companyId: string | undefined;
 
-  const companies = await getCompanies(client, userId);
+  const companies = await getCompanies();
   const company = companies?.data?.[0];
 
-  const locations = await getLocationsList(client, company?.id ?? "");
+  const locations = await getLocationsList();
   const location = locations?.data?.[0];
 
   if (company && location) {
     const [companyUpdate, locationUpdate] = await Promise.all([
-      updateCompany(serviceRole, company.id!, {
+      updateCompany({
         ...d,
         updatedBy: userId
       }),
-      upsertLocation(serviceRole, {
+      upsertLocation({
         ...location,
         ...d,
         timezone: getLocalTimeZone(),
@@ -103,9 +120,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   } else {
     if (!companyId) {
-      const [companyInsert] = await Promise.all([
-        insertCompany(serviceRole, d)
-      ]);
+      const [companyInsert] = await Promise.all([insertCompany(d)]);
       if (companyInsert.error) {
         console.error(companyInsert.error);
         throw new Error("Fatal: failed to insert company");
@@ -118,7 +133,7 @@ export async function action({ request }: ActionFunctionArgs) {
       throw new Error("Fatal: failed to get company ID");
     }
 
-    const seed = await seedCompany(serviceRole, companyId, userId);
+    const seed = await seedCompany(undefined, { companyId, userId });
     if (seed.error) {
       console.error(seed.error);
       throw new Error("Fatal: failed to seed company");
@@ -137,7 +152,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     // TODO: move all of this to transaction
     const [locationInsert] = await Promise.all([
-      upsertLocation(serviceRole, {
+      upsertLocation({
         ...locationData,
         name: "Headquarters",
         companyId,
@@ -157,9 +172,8 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     const [job] = await Promise.all([
-      insertEmployeeJob(serviceRole, {
+      insertEmployeeJob({
         id: userId,
-        companyId,
         locationId
       })
     ]);

@@ -5,12 +5,12 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
-import { getSupplierTypes } from "~/modules/purchasing";
+import { getSupplierTypes } from "~/modules/purchasing/purchasing.service.server";
+import { SupplierAccountsTable } from "~/modules/users";
 import {
   getSuppliers,
-  getUnrevokedInviteEmails,
-  SupplierAccountsTable
-} from "~/modules/users";
+  getUnrevokedInviteEmails
+} from "~/modules/users/users.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -21,7 +21,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "users",
     bypassRls: true
   });
@@ -34,15 +34,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [suppliers, supplierTypes, invites] = await Promise.all([
-    getSuppliers(client, companyId, {
+    getSuppliers({
       search,
       limit,
       offset,
       sorts,
       filters
     }),
-    getSupplierTypes(client, companyId),
-    getUnrevokedInviteEmails(client, companyId)
+    getSupplierTypes(),
+    getUnrevokedInviteEmails()
   ]);
   if (suppliers.error) {
     throw redirect(

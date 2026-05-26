@@ -4,7 +4,7 @@ import { useDisclosure, useMount } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
 import { useUser } from "~/hooks/useUser";
-import type { getCostCentersList } from "~/modules/accounting";
+import type { getCostCentersList } from "~/modules/accounting/accounting.service.server";
 import CostCenterForm from "~/modules/accounting/ui/CostCenters/CostCenterForm";
 import { path } from "~/utils/path";
 

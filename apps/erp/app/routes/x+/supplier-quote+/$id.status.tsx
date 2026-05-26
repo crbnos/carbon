@@ -3,15 +3,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import {
-  supplierQuoteStatusType,
-  updateSupplierQuoteStatus
-} from "~/modules/purchasing";
+import { supplierQuoteStatusType } from "~/modules/purchasing";
+import { updateSupplierQuoteStatus } from "~/modules/purchasing/purchasing.service.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "purchasing"
   });
 
@@ -30,11 +28,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const update = await updateSupplierQuoteStatus(client, {
+  const update = await updateSupplierQuoteStatus({
     id,
     status,
-    assignee: undefined,
-    updatedBy: userId
+    assignee: undefined
   });
   if (update.error) {
     throw redirect(

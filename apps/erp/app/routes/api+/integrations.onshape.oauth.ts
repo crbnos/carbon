@@ -5,7 +5,6 @@ import {
   VERCEL_URL
 } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { Onshape } from "@carbon/ee";
 import type { LoaderFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
@@ -18,7 +17,7 @@ export const config = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { userId, companyId } = await requirePermissions(request, {
+  const { client, userId, companyId } = await requirePermissions(request, {
     update: "settings"
   });
 
@@ -81,8 +80,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       );
     }
 
-    const serviceRole = getCarbonServiceRole();
-    const createdIntegration = await upsertCompanyIntegration(serviceRole, {
+    const createdIntegration = await upsertCompanyIntegration(client, {
       id: Onshape.id,
       active: true,
       metadata: {

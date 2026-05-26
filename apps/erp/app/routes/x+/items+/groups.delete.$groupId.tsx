@@ -9,18 +9,21 @@ import type {
 } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteItemPostingGroup, getItemPostingGroup } from "~/modules/items";
+import {
+  deleteItemPostingGroup,
+  getItemPostingGroup
+} from "~/modules/items/items.service.server";
 import { getParams, path } from "~/utils/path";
 import { getCompanyId, itemPostingGroupsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts"
   });
   const { groupId } = params;
   if (!groupId) throw notFound("groupId not found");
 
-  const itemPostingGroup = await getItemPostingGroup(client, groupId);
+  const itemPostingGroup = await getItemPostingGroup(groupId);
   if (itemPostingGroup.error) {
     throw redirect(
       path.to.itemPostingGroups,
@@ -35,7 +38,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "parts"
   });
 
@@ -47,10 +50,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteTypeError } = await deleteItemPostingGroup(
-    client,
-    groupId
-  );
+  const { error: deleteTypeError } = await deleteItemPostingGroup(groupId);
   if (deleteTypeError) {
     throw redirect(
       `${path.to.itemPostingGroups}?${getParams(request)}`,

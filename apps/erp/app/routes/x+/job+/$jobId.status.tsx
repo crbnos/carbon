@@ -4,12 +4,12 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
+import { jobStatus } from "~/modules/production";
 import {
-  jobStatus,
   recalculateJobRequirements,
   runMRP,
   updateJobStatus
-} from "~/modules/production";
+} from "~/modules/production/production.service.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -53,17 +53,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (["Planned", "Ready"].includes(status)) {
-    const serviceRole = getCarbonServiceRole();
-    await recalculateJobRequirements(serviceRole, {
-      id,
-      companyId,
-      userId
+    await recalculateJobRequirements({
+      id
     });
-    await runMRP(getCarbonServiceRole(), {
+    await runMRP({
       type: "job",
-      id,
-      companyId,
-      userId
+      id
     });
   }
 
@@ -119,11 +114,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  const update = await updateJobStatus(client, {
+  const update = await updateJobStatus({
     id,
     status,
-    assignee: ["Cancelled"].includes(status) ? null : undefined,
-    updatedBy: userId
+    assignee: ["Cancelled"].includes(status) ? null : undefined
   });
   if (update.error) {
     throw redirect(

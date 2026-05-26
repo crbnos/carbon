@@ -3,12 +3,12 @@ import type {
   ClientLoaderFunctionArgs,
   LoaderFunctionArgs
 } from "react-router";
-import { getCountries } from "~/modules/shared";
+import { getCountries } from "~/modules/shared/shared.service.server";
 import { countriesQuery } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {});
-  return await getCountries(client);
+  await requirePermissions(request, {});
+  return await getCountries();
 }
 
 export async function clientLoader({ serverLoader }: ClientLoaderFunctionArgs) {

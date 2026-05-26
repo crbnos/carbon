@@ -16,8 +16,8 @@ import {
   useSubmit
 } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { getCurrencyByCode } from "~/modules/accounting";
-import { getSupplierPriceBreaksForItems } from "~/modules/items";
+import { getCurrencyByCode } from "~/modules/accounting/accounting.service.server";
+import { getSupplierPriceBreaksForItems } from "~/modules/items/items.service.server";
 import type { SalesOrderLine } from "~/modules/sales";
 import {
   getCustomer,
@@ -30,14 +30,14 @@ import {
   getQuotePayment,
   getQuoteShipment,
   getSalesOrderLines
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service.server";
 import {
   QuoteExplorer,
   QuoteHeader,
   QuoteProperties
 } from "~/modules/sales/ui/Quotes";
 import { useOptimisticDocumentDrag } from "~/modules/sales/ui/Quotes/QuoteExplorer";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -48,18 +48,15 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      view: "sales",
-      bypassRls: true
-    }
-  );
+  const { companyId, companyGroupId } = await requirePermissions(request, {
+    view: "sales",
+    bypassRls: true
+  });
 
   const { quoteId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
 
-  const quote = await getQuote(client, quoteId);
+  const quote = await getQuote(quoteId);
 
   if (quote.error) {
     throw redirect(
@@ -83,15 +80,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     opportunityDocuments,
     companySettings
   ] = await Promise.all([
-    getCustomer(client, quote.data?.customerId ?? ""),
-    getQuoteShipment(client, quoteId),
-    getQuotePayment(client, quoteId),
-    getQuoteLines(client, quoteId),
-    getQuoteLinePricesByQuoteId(client, quoteId),
-    getOpportunity(client, quote.data?.opportunityId),
-    getQuoteMethodTrees(client, quoteId),
-    getOpportunityDocuments(client, companyId, quote.data?.opportunityId ?? ""),
-    getCompanySettings(client, companyId)
+    getCustomer(quote.data?.customerId ?? ""),
+    getQuoteShipment(quoteId),
+    getQuotePayment(quoteId),
+    getQuoteLines(quoteId),
+    getQuoteLinePricesByQuoteId(quoteId),
+    getOpportunity(quote.data?.opportunityId),
+    getQuoteMethodTrees(quoteId),
+    getOpportunityDocuments(quote.data?.opportunityId ?? ""),
+    getCompanySettings()
   ]);
 
   if (!opportunity.data) throw new Error("Failed to get opportunity record");
@@ -120,7 +117,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   let exchangeRate = 1;
   if (quote.data?.currencyCode) {
     const presentationCurrency = await getCurrencyByCode(
-      client,
       companyGroupId,
       quote.data.currencyCode
     );
@@ -135,7 +131,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     opportunity.data.salesOrders[0]?.id
   ) {
     salesOrderLines = await getSalesOrderLines(
-      client,
       opportunity.data.salesOrders[0]?.id
     );
   }
@@ -165,7 +160,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const supplierPriceMap = await getSupplierPriceBreaksForItems(
-    client,
     Array.from(buyItemIds)
   );
 

@@ -1,6 +1,9 @@
 import type { Database } from "@carbon/database";
 
-import type { getDocumentLabels, getDocuments } from "./documents.service";
+import type {
+  getDocumentLabels,
+  getDocuments
+} from "./documents.service.server";
 
 export type Document = NonNullable<
   Awaited<ReturnType<typeof getDocuments>>["data"]

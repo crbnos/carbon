@@ -5,7 +5,7 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
-import { getPurchasingRFQs } from "~/modules/purchasing";
+import { getPurchasingRFQs } from "~/modules/purchasing/purchasing.service.server";
 import { PurchasingRFQsTable } from "~/modules/purchasing/ui/PurchasingRfq";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -17,7 +17,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing",
     bypassRls: true
   });
@@ -29,7 +29,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const rfqs = await getPurchasingRFQs(client, companyId, {
+  const rfqs = await getPurchasingRFQs({
     search,
     limit,
     offset,

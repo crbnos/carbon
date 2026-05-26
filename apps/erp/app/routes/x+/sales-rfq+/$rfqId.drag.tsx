@@ -5,7 +5,8 @@ import { trigger } from "@carbon/jobs";
 import { nanoid } from "nanoid";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { salesRfqDragValidator, upsertSalesRFQLine } from "~/modules/sales";
+import { salesRfqDragValidator } from "~/modules/sales";
+import { upsertSalesRFQLine } from "~/modules/sales/sales.service.server";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -50,7 +51,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       unitOfMeasureCode: "EA",
       order: 1
     };
-    const insertLine = await upsertSalesRFQLine(client, {
+    const insertLine = await upsertSalesRFQLine({
       ...data,
       description: "",
       companyId,

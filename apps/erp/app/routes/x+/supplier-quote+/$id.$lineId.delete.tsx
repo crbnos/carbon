@@ -3,17 +3,17 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
+import { isSupplierQuoteLocked } from "~/modules/purchasing";
 import {
   deleteSupplierQuoteLine,
-  getSupplierQuote,
-  isSupplierQuoteLocked
-} from "~/modules/purchasing";
+  getSupplierQuote
+} from "~/modules/purchasing/purchasing.service.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "sales"
   });
 
@@ -21,10 +21,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) throw new Error("Could not find supplierQuoteId");
   if (!lineId) throw new Error("Could not find supplierQuoteLineId");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
-  const quote = await getSupplierQuote(viewClient, id);
+  const quote = await getSupplierQuote(id);
   await requireUnlocked({
     request,
     isLocked: isSupplierQuoteLocked(quote.data?.status),
@@ -32,7 +32,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked supplier quote. Reopen it first."
   });
 
-  const deleteLine = await deleteSupplierQuoteLine(client, lineId);
+  const deleteLine = await deleteSupplierQuoteLine(lineId);
 
   if (deleteLine.error) {
     return data(

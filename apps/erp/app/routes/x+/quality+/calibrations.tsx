@@ -6,9 +6,9 @@ import { Outlet, useLoaderData } from "react-router";
 import {
   getGaugeCalibrationRecords,
   getGaugeTypesList
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service.server";
 import GaugeCalibrationRecordsTable from "~/modules/quality/ui/Calibrations/GaugeCalibrationRecordsTable";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -19,7 +19,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "quality",
     role: "employee"
   });
@@ -32,15 +32,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const [gaugeCalibrationRecords, gaugeTypes, companySettings] =
     await Promise.all([
-      getGaugeCalibrationRecords(client, companyId, {
+      getGaugeCalibrationRecords({
         search,
         limit,
         offset,
         sorts,
         filters
       }),
-      getGaugeTypesList(client, companyId),
-      getCompanySettings(client, companyId)
+      getGaugeTypesList(),
+      getCompanySettings()
     ]);
 
   return {

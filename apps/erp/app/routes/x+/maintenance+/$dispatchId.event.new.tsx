@@ -3,27 +3,29 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import {
-  getMaintenanceDispatch,
   isMaintenanceDispatchLocked,
-  maintenanceDispatchEventValidator,
-  upsertMaintenanceDispatchEvent
+  maintenanceDispatchEventValidator
 } from "~/modules/resources";
+import {
+  getMaintenanceDispatch,
+  upsertMaintenanceDispatchEvent
+} from "~/modules/resources/resources.service.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "resources"
   });
 
   const { dispatchId } = params;
   if (!dispatchId) throw new Error("Could not find dispatchId");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources"
   });
-  const dispatch = await getMaintenanceDispatch(viewClient, dispatchId);
+  const dispatch = await getMaintenanceDispatch(dispatchId);
   await requireUnlocked({
     request,
     isLocked: isMaintenanceDispatchLocked(dispatch.data?.status),
@@ -46,7 +48,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { employeeId, workCenterId, startTime, endTime, notes } =
     validation.data;
 
-  const result = await upsertMaintenanceDispatchEvent(client, {
+  const result = await upsertMaintenanceDispatchEvent({
     maintenanceDispatchId: dispatchId,
     employeeId,
     workCenterId,

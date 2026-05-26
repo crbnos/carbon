@@ -7,7 +7,7 @@ import type {
   getPermissionsByEmployeeType,
   getSuppliers,
   getUsers
-} from "./users.service";
+} from "./users.service.server";
 
 export type Customer = NonNullable<
   Awaited<ReturnType<typeof getCustomers>>["data"]

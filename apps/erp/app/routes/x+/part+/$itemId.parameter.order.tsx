@@ -2,14 +2,12 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import {
-  configurationParameterOrderValidator,
-  updateConfigurationParameterOrder
-} from "~/modules/items";
+import { configurationParameterOrderValidator } from "~/modules/items";
+import { updateConfigurationParameterOrder } from "~/modules/items/items.service.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -29,7 +27,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     };
   }
 
-  const upsert = await updateConfigurationParameterOrder(client, {
+  const upsert = await updateConfigurationParameterOrder({
     ...validation.data,
     configurationParameterGroupId:
       validation.data.configurationParameterGroupId == "null"

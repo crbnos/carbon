@@ -7,8 +7,9 @@ import type { LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
 import InfiniteScroll from "~/components/InfiniteScroll";
 import type { ItemLedger } from "~/modules/inventory";
-import { getItemLedgerPage, InventoryActivity } from "~/modules/inventory";
-import { getLocationsList } from "~/modules/resources";
+import { InventoryActivity } from "~/modules/inventory";
+import { getItemLedgerPage } from "~/modules/inventory/inventory.service.server";
+import { getLocationsList } from "~/modules/resources/resources.service.server";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
 
@@ -40,7 +41,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   if (!locationId) {
-    const locations = await getLocationsList(client, companyId);
+    const locations = await getLocationsList();
     if (locations.error || !locations.data?.length) {
       throw redirect(
         path.to.inventory,
@@ -53,13 +54,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  const itemLedgerRecords = await getItemLedgerPage(
-    client,
-    itemId,
-    companyId,
-    locationId,
-    true
-  );
+  const itemLedgerRecords = await getItemLedgerPage(itemId, locationId, true);
   if (itemLedgerRecords.error || !itemLedgerRecords.data) {
     throw redirect(
       path.to.inventory,
@@ -79,10 +74,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function ItemInventoryActivityRoute() {
-  const { initialItemLedgers, itemId, companyId, locationId } =
+  const { initialItemLedgers, itemId, locationId } =
     useLoaderData<typeof loader>();
 
-  const { carbon } = useCarbon();
+  useCarbon();
 
   const [itemLedgers, setItemLedgers] =
     useState<ItemLedger[]>(initialItemLedgers);
@@ -96,9 +91,7 @@ export default function ItemInventoryActivityRoute() {
     setIsLoading(true);
 
     const newItemLedgers = await getItemLedgerPage(
-      carbon!,
       itemId,
-      companyId,
       locationId,
       true,
       page + 1
@@ -115,7 +108,7 @@ export default function ItemInventoryActivityRoute() {
     }
 
     setIsLoading(false);
-  }, [page, carbon, companyId, locationId, itemId, isLoading, hasMore]);
+  }, [page, locationId, itemId, isLoading, hasMore]);
 
   return (
     <>

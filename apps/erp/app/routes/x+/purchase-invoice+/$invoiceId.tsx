@@ -6,19 +6,19 @@ import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
+import { PurchaseInvoiceHeader } from "~/modules/invoicing";
 import {
   getPurchaseInvoice,
   getPurchaseInvoiceDelivery,
-  getPurchaseInvoiceLines,
-  PurchaseInvoiceHeader
-} from "~/modules/invoicing";
+  getPurchaseInvoiceLines
+} from "~/modules/invoicing/invoicing.service.server";
 import PurchaseInvoiceExplorer from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceExplorer";
 import PurchaseInvoiceProperties from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceProperties";
 import {
   getSupplier,
   getSupplierInteraction,
   getSupplierInteractionDocuments
-} from "~/modules/purchasing/purchasing.service";
+} from "~/modules/purchasing/purchasing.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -28,7 +28,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "invoicing"
   });
 
@@ -37,9 +37,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [purchaseInvoice, purchaseInvoiceLines, purchaseInvoiceDelivery] =
     await Promise.all([
-      getPurchaseInvoice(client, invoiceId),
-      getPurchaseInvoiceLines(client, invoiceId),
-      getPurchaseInvoiceDelivery(client, invoiceId)
+      getPurchaseInvoice(invoiceId),
+      getPurchaseInvoiceLines(invoiceId),
+      getPurchaseInvoiceDelivery(invoiceId)
     ]);
 
   if (purchaseInvoice.error) {
@@ -54,14 +54,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [supplier, interaction, files] = await Promise.all([
     purchaseInvoice.data?.supplierId
-      ? getSupplier(client, purchaseInvoice.data.supplierId)
+      ? getSupplier(purchaseInvoice.data.supplierId)
       : null,
-    getSupplierInteraction(client, purchaseInvoice.data.supplierInteractionId!),
-    getSupplierInteractionDocuments(
-      client,
-      companyId,
-      purchaseInvoice.data.supplierInteractionId!
-    )
+    getSupplierInteraction(purchaseInvoice.data.supplierInteractionId!),
+    getSupplierInteractionDocuments(purchaseInvoice.data.supplierInteractionId!)
   ]);
 
   return {

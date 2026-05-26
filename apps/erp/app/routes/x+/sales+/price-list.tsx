@@ -2,7 +2,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, useLoaderData } from "react-router";
-import { getBaseCatalog, resolvePriceList } from "~/modules/sales";
+import {
+  getBaseCatalog,
+  resolvePriceList
+} from "~/modules/sales/sales.service.server";
 import PriceListTable from "~/modules/sales/ui/Pricing/PriceOverridesTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -40,7 +43,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const hasScope = Boolean(customerId || customerTypeId);
   const listPromise = hasScope
-    ? resolvePriceList(client, companyId, {
+    ? resolvePriceList({
         customerId: customerId ?? undefined,
         customerTypeId: customerTypeId ?? undefined,
         quantity,
@@ -50,7 +53,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         sorts,
         filters
       })
-    : getBaseCatalog(client, companyId, {
+    : getBaseCatalog({
         search: search ?? undefined,
         limit,
         offset,

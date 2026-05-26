@@ -30,7 +30,7 @@ import type {
   getTrainingQuestions,
   getTrainings,
   getWorkCenters
-} from "./resources.service";
+} from "./resources.service.server";
 
 export type Ability = NonNullable<
   Awaited<ReturnType<typeof getAbility>>["data"]

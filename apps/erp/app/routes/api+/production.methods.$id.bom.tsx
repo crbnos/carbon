@@ -3,7 +3,7 @@ import type { Database } from "@carbon/database";
 import type { LoaderFunctionArgs } from "react-router";
 import type { FlatTreeItem } from "~/components/TreeView";
 import { flattenTree } from "~/components/TreeView";
-import { getJobMethodTree } from "~/modules/production";
+import { getJobMethodTree } from "~/modules/production/production.service.server";
 import type { JobMethod } from "~/modules/production/types";
 import type { BomOperation } from "~/utils/bom";
 import {
@@ -25,7 +25,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     return { data: [], error: null };
   }
 
-  const methodTree = await getJobMethodTree(client, id);
+  const methodTree = await getJobMethodTree(id);
   if (methodTree.error) {
     return { data: [], error: methodTree.error };
   }

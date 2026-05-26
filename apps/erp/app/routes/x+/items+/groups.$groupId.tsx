@@ -8,18 +8,18 @@ import type {
   LoaderFunctionArgs
 } from "react-router";
 import { data, redirect, useLoaderData, useNavigate } from "react-router";
+import { itemPostingGroupValidator } from "~/modules/items";
 import {
   getItemPostingGroup,
-  itemPostingGroupValidator,
   upsertItemPostingGroup
-} from "~/modules/items";
+} from "~/modules/items/items.service.server";
 import { ItemPostingGroupForm } from "~/modules/items/ui/ItemPostingGroups";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 import { getCompanyId, itemPostingGroupsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts",
     role: "employee"
   });
@@ -27,7 +27,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { groupId } = params;
   if (!groupId) throw notFound("groupId not found");
 
-  const itemPostingGroup = await getItemPostingGroup(client, groupId);
+  const itemPostingGroup = await getItemPostingGroup(groupId);
 
   return {
     itemPostingGroup: itemPostingGroup?.data ?? null
@@ -36,7 +36,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -52,7 +52,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateItemPostingGroup = await upsertItemPostingGroup(client, {
+  const updateItemPostingGroup = await upsertItemPostingGroup({
     id: groupId,
     ...validation.data,
     updatedBy: userId,

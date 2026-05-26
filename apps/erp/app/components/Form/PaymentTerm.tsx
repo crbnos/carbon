@@ -4,7 +4,7 @@ import { useDisclosure, useMount } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
 import { usePermissions } from "~/hooks";
-import type { getPaymentTermsList } from "~/modules/accounting";
+import type { getPaymentTermsList } from "~/modules/accounting/accounting.service.server";
 import PaymentTermForm from "~/modules/accounting/ui/PaymentTerms/PaymentTermForm";
 import { path } from "~/utils/path";
 

@@ -3,11 +3,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
-import { deleteGauge } from "~/modules/quality";
+import { deleteGauge } from "~/modules/quality/quality.service.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "quality"
   });
 
@@ -15,7 +15,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (!id) throw new Error("id is not found");
 
-  const mutation = await deleteGauge(client, id);
+  const mutation = await deleteGauge(id);
   if (mutation.error) {
     return data(
       {

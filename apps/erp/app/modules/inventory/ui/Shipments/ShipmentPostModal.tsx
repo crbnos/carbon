@@ -29,7 +29,6 @@ import { useSettings, useUser } from "~/hooks";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import type { ShipmentLine } from "../..";
-import { getShipmentTracking } from "../..";
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
@@ -59,9 +58,7 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
   >([]);
 
   const { carbon } = useCarbon();
-  const {
-    company: { id: companyId }
-  } = useUser();
+  const { company } = useUser();
   const settings = useSettings();
   const expiredPolicy: ExpiredEntityPolicy =
     (
@@ -97,11 +94,11 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
       return;
     }
 
-    const shipmentLineTracking = await getShipmentTracking(
-      carbon,
-      shipmentId,
-      companyId
-    );
+    const shipmentLineTracking = await carbon
+      .from("trackedEntity")
+      .select("*")
+      .eq("attributes ->> Shipment", shipmentId)
+      .eq("companyId", company.id);
 
     const hasShipmentLines = routeData?.shipmentLines.some(
       (line) => (line.shippedQuantity ?? 0) > 0

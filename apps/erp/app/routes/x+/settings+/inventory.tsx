@@ -36,13 +36,15 @@ import {
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useFetcher, useLoaderData } from "react-router";
 import {
-  getCompanySettings,
   kanbanOutputTypes,
   kanbanOutputValidator,
-  shelfLifeSettingsValidator,
+  shelfLifeSettingsValidator
+} from "~/modules/settings";
+import {
+  getCompanySettings,
   updateKanbanOutputSetting,
   updateShelfLifeSettings
-} from "~/modules/settings";
+} from "~/modules/settings/settings.service.server";
 
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -56,11 +58,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "settings"
   });
 
-  const companySettings = await getCompanySettings(client, companyId);
+  const companySettings = await getCompanySettings();
   if (!companySettings.data)
     throw redirect(
       path.to.settings,
@@ -73,7 +75,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "settings"
   });
 
@@ -91,8 +93,6 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       const kanbanOutputResult = await updateKanbanOutputSetting(
-        client,
-        companyId,
         kanbanOutputValidation.data.kanbanOutput
       );
       if (kanbanOutputResult.error)
@@ -112,7 +112,7 @@ export async function action({ request }: ActionFunctionArgs) {
         return { success: false, message: "Invalid form data" };
       }
 
-      const shelfLifeResult = await updateShelfLifeSettings(client, companyId, {
+      const shelfLifeResult = await updateShelfLifeSettings({
         nearExpiryWarningDays: shelfLifeValidation.data.nearExpiryWarningDays,
         defaultShelfLifeDays: shelfLifeValidation.data.defaultShelfLifeDays,
         calculatedInputScope: shelfLifeValidation.data.calculatedInputScope,

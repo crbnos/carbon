@@ -6,12 +6,12 @@ import type {
   ClientActionFunctionArgs
 } from "react-router";
 import { redirect } from "react-router";
-import { deleteCustomerLocation } from "~/modules/sales";
+import { deleteCustomerLocation } from "~/modules/sales/sales.service.server";
 import { path } from "~/utils/path";
 import { customerLocationsQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "sales"
   });
 
@@ -27,7 +27,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const { error: deleteCustomerLocationError } = await deleteCustomerLocation(
-    client,
     customerId,
     customerLocationId
   );

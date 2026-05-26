@@ -4,11 +4,11 @@ import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
+import { requiredActionValidator } from "~/modules/quality";
 import {
   getRequiredAction,
-  requiredActionValidator,
   upsertRequiredAction
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service.server";
 import { RequiredActionForm } from "~/modules/quality/ui/RequiredActions";
 
 import { path } from "~/utils/path";
@@ -17,12 +17,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Required action ID is required");
 
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "quality",
     role: "employee"
   });
 
-  const result = await getRequiredAction(client, id);
+  const result = await getRequiredAction(id);
   if (!result.data) {
     return redirect(
       path.to.requiredActions,
@@ -38,7 +38,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Required action ID is required");
 
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "quality"
   });
 
@@ -53,7 +53,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { name, active } = validation.data;
 
-  const updateResult = await upsertRequiredAction(client, {
+  const updateResult = await upsertRequiredAction({
     id,
     name,
     active: active ?? true,

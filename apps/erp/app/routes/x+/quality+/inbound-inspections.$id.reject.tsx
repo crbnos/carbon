@@ -8,15 +8,15 @@ import { FunctionRegion } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import invariant from "tiny-invariant";
+import { dispositionInboundInspection } from "~/modules/quality/quality.server";
 import {
   deleteIssue,
   getInboundInspection,
   getIssueTypesList,
   upsertIssue
-} from "~/modules/quality";
-import { dispositionInboundInspection } from "~/modules/quality/quality.server";
-import { getNextSequence } from "~/modules/settings";
+} from "~/modules/quality/quality.service.server";
 import { getCompanyIntegrations } from "~/modules/settings/settings.server";
+import { getNextSequence } from "~/modules/settings/settings.service.server";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
 
@@ -56,9 +56,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const serviceRole = await getCarbonServiceRole();
 
   const [inspection, userDefaults, issueTypes] = await Promise.all([
-    getInboundInspection(client, id),
+    getInboundInspection(id),
     getUserDefaults(client, userId, companyId),
-    getIssueTypesList(client, companyId)
+    getIssueTypesList()
   ]);
 
   if (inspection.error || !inspection.data) {
@@ -90,11 +90,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const nextSequence = await getNextSequence(
-    serviceRole,
-    "nonConformance",
-    companyId
-  );
+  const nextSequence = await getNextSequence("nonConformance");
   if (nextSequence.error || !nextSequence.data) {
     throw redirect(
       path.to.inboundInspection(id),
@@ -120,7 +116,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .filter(Boolean)
     .join(" ");
 
-  const createIssue = await upsertIssue(serviceRole, {
+  const createIssue = await upsertIssue({
     nonConformanceId: nextSequence.data,
     name: issueTitle,
     description: `Auto-created from inbound inspection ${inspectionReadableId}. Lot size ${insp.lotSize}, sample ${insp.sampleSize}, Ac ${insp.acceptanceNumber} / Re ${insp.rejectionNumber}. Supplier: ${supplierName}.`,
@@ -260,7 +256,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     region: FunctionRegion.UsEast1
   });
   if (tasks.error) {
-    await deleteIssue(serviceRole, ncrId);
+    await deleteIssue(ncrId);
     throw redirect(
       path.to.inboundInspection(id),
       await flash(

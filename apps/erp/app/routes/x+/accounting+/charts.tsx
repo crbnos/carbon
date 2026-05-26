@@ -7,7 +7,7 @@ import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
 import type { Chart } from "~/modules/accounting";
-import { getChartOfAccounts } from "~/modules/accounting";
+import { getChartOfAccounts } from "~/modules/accounting/accounting.service.server";
 import { ChartOfAccountsTree } from "~/modules/accounting/ui/ChartOfAccounts";
 import ChartOfAccountsTableFilters from "~/modules/accounting/ui/ChartOfAccounts/ChartOfAccountsTableFilters";
 import type { Handle } from "~/utils/handle";
@@ -19,7 +19,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyGroupId } = await requirePermissions(request, {
+  const { companyGroupId } = await requirePermissions(request, {
     view: "accounting",
     role: "employee",
     bypassRls: true
@@ -31,7 +31,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const startDate = searchParams.get("startDate") || null;
   const endDate = searchParams.get("endDate") || null;
 
-  const chartOfAccounts = await getChartOfAccounts(client, companyGroupId, {
+  const chartOfAccounts = await getChartOfAccounts(companyGroupId, {
     incomeBalance: null,
     startDate,
     endDate

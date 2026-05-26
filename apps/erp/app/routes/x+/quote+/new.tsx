@@ -8,9 +8,10 @@ import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { useUrlParams, useUser } from "~/hooks";
 import type { QuotationStatusType } from "~/modules/sales";
-import { quoteValidator, upsertQuote } from "~/modules/sales";
+import { quoteValidator } from "~/modules/sales";
+import { upsertQuote } from "~/modules/sales/sales.service.server";
 import { QuoteForm } from "~/modules/sales/ui/Quotes";
-import { getNextSequence } from "~/modules/settings";
+import { getNextSequence } from "~/modules/settings/settings.service.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -23,11 +24,13 @@ export const handle: Handle = {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
+  const { companyId, companyGroupId, userId } = await requirePermissions(
+    request,
+    {
       create: "sales",
       bypassRls: true
-    });
+    }
+  );
 
   const formData = await request.formData();
   const validation = await validator(quoteValidator).validate(formData);
@@ -40,7 +43,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const useNextSequence = !quoteId;
 
   if (useNextSequence) {
-    const nextSequence = await getNextSequence(client, "quote", companyId);
+    const nextSequence = await getNextSequence("quote");
     if (nextSequence.error) {
       throw redirect(
         path.to.newQuote,
@@ -55,7 +58,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (!quoteId) throw new Error("quoteId is not defined");
 
-  const createQuote = await upsertQuote(client, {
+  const createQuote = await upsertQuote({
     ...validation.data,
     quoteId,
     companyId,

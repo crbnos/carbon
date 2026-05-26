@@ -8,18 +8,18 @@ import type {
   LoaderFunctionArgs
 } from "react-router";
 import { data, redirect, useLoaderData, useNavigate } from "react-router";
+import { customerTypeValidator } from "~/modules/sales";
 import {
-  customerTypeValidator,
   getCustomerType,
   upsertCustomerType
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service.server";
 import { CustomerTypeForm } from "~/modules/sales/ui/CustomerTypes";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 import { customerTypesQuery, getCompanyId } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales",
     role: "employee"
   });
@@ -27,7 +27,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { customerTypeId } = params;
   if (!customerTypeId) throw notFound("customerTypeId not found");
 
-  const customerType = await getCustomerType(client, customerTypeId);
+  const customerType = await getCustomerType(customerTypeId);
 
   if (customerType?.data?.protected) {
     throw redirect(
@@ -43,7 +43,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "sales"
   });
 
@@ -57,7 +57,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, ...d } = validation.data;
   if (!id) throw new Error("id not found");
 
-  const updateCustomerType = await upsertCustomerType(client, {
+  const updateCustomerType = await upsertCustomerType({
     id,
     ...d,
     updatedBy: userId,

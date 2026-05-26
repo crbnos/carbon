@@ -6,11 +6,11 @@ import type {
   LoaderFunctionArgs
 } from "react-router";
 import { data } from "react-router";
-import { getSupplierLocations } from "~/modules/purchasing";
+import { getSupplierLocations } from "~/modules/purchasing/purchasing.service.server";
 import { supplierLocationsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const authorized = await requirePermissions(request, {
+  const _authorized = await requirePermissions(request, {
     view: "purchasing"
   });
 
@@ -21,7 +21,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       data: []
     };
 
-  const locations = await getSupplierLocations(authorized.client, supplierId);
+  const locations = await getSupplierLocations(supplierId);
   if (locations.error) {
     return data(
       locations,

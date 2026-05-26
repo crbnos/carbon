@@ -6,7 +6,8 @@ import { useRouteData } from "@carbon/react";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect, useNavigate, useParams } from "react-router";
 import type { ConsumableSummary } from "~/modules/items";
-import { supplierPartValidator, upsertSupplierPart } from "~/modules/items";
+import { supplierPartValidator } from "~/modules/items";
+import { upsertSupplierPart } from "~/modules/items/items.service.server";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -30,7 +31,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const createConsumableSupplier = await upsertSupplierPart(client, {
+  const createConsumableSupplier = await upsertSupplierPart({
     ...d,
     companyId,
     createdBy: userId,

@@ -3,7 +3,7 @@ import { CreatableCombobox } from "@carbon/form";
 import { useDisclosure, useMount } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
-import type { getDepartmentsList } from "~/modules/people";
+import type { getDepartmentsList } from "~/modules/people/people.service.server";
 import DepartmentForm from "~/modules/people/ui/Departments/DepartmentForm";
 import { path } from "~/utils/path";
 

@@ -5,13 +5,14 @@ import { trigger } from "@carbon/jobs";
 import { NotificationEvent } from "@carbon/notifications";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { salesRFQStatusType, updateSalesRFQStatus } from "~/modules/sales";
-import { getCompanySettings } from "~/modules/settings/settings.service";
+import { salesRFQStatusType } from "~/modules/sales";
+import { updateSalesRFQStatus } from "~/modules/sales/sales.service.server";
+import { getCompanySettings } from "~/modules/settings/settings.service.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     update: "sales"
   });
 
@@ -29,7 +30,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const companySettings = await getCompanySettings(client, companyId);
+  const companySettings = await getCompanySettings();
   if (
     status === "Ready for Quote" &&
     companySettings.data &&
@@ -57,12 +58,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  const update = await updateSalesRFQStatus(client, {
+  const update = await updateSalesRFQStatus({
     id,
     status,
     noQuoteReasonId,
-    assignee: status === "Closed" ? null : undefined,
-    updatedBy: userId
+    assignee: status === "Closed" ? null : undefined
   });
 
   if (update.error) {

@@ -7,12 +7,12 @@ import { data } from "react-router";
 import {
   assertMethodOperationIsDraft,
   upsertMethodOperationStep
-} from "~/modules/items";
+} from "~/modules/items/items.service.server";
 import { operationStepValidator } from "~/modules/shared";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "parts"
   });
 
@@ -23,9 +23,9 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  await assertMethodOperationIsDraft(client, validation.data.operationId);
+  await assertMethodOperationIsDraft(validation.data.operationId);
 
-  const insert = await upsertMethodOperationStep(client, {
+  const insert = await upsertMethodOperationStep({
     ...validation.data,
     companyId,
     createdBy: userId

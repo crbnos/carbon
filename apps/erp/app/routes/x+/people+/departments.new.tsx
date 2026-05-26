@@ -4,14 +4,15 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect, useNavigate, useSearchParams } from "react-router";
-import { departmentValidator, upsertDepartment } from "~/modules/people";
+import { departmentValidator } from "~/modules/people";
+import { upsertDepartment } from "~/modules/people/people.service.server";
 import { DepartmentForm } from "~/modules/people/ui/Departments";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "people"
   });
 
@@ -27,7 +28,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const createDepartment = await upsertDepartment(client, {
+  const createDepartment = await upsertDepartment({
     ...d,
     companyId,
     createdBy: userId,

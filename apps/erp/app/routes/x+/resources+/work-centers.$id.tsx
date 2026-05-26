@@ -8,18 +8,17 @@ import type {
   LoaderFunctionArgs
 } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
+import { WorkCenterForm, workCenterValidator } from "~/modules/resources";
 import {
   getWorkCenter,
-  upsertWorkCenter,
-  WorkCenterForm,
-  workCenterValidator
-} from "~/modules/resources";
+  upsertWorkCenter
+} from "~/modules/resources/resources.service.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 import { getCompanyId, workCentersQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources",
     role: "employee"
   });
@@ -27,7 +26,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw notFound("Invalid work center id");
 
-  const workCenter = await getWorkCenter(client, id);
+  const workCenter = await getWorkCenter(id);
   if (workCenter.error) {
     throw redirect(
       path.to.workCenters,
@@ -43,7 +42,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "resources"
   });
 
@@ -57,7 +56,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, ...d } = validation.data;
   if (!id) throw new Error("ID is was not found");
 
-  const updateWorkCenter = await upsertWorkCenter(client, {
+  const updateWorkCenter = await upsertWorkCenter({
     id,
     ...d,
     companyId,

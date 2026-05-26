@@ -2,7 +2,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, useLoaderData } from "react-router";
-import { getPricingRules } from "~/modules/sales";
+import { getPricingRules } from "~/modules/sales/sales.service.server";
 import PricingRulesTable from "~/modules/sales/ui/Pricing/PricingRulesTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -14,7 +14,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales",
     role: "employee"
   });
@@ -25,7 +25,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  return await getPricingRules(client, companyId, {
+  return await getPricingRules({
     search: search ?? undefined,
     limit,
     offset,

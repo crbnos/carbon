@@ -3,10 +3,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { getOutsideOperationsByJobId } from "~/modules/production";
+import { getOutsideOperationsByJobId } from "~/modules/production/production.service.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const authorized = await requirePermissions(request, {
+  const _authorized = await requirePermissions(request, {
     view: "production"
   });
 
@@ -17,11 +17,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       data: []
     };
 
-  const operations = await getOutsideOperationsByJobId(
-    authorized.client,
-    jobId,
-    authorized.companyId
-  );
+  const operations = await getOutsideOperationsByJobId(jobId);
   if (operations.error) {
     return data(
       operations,

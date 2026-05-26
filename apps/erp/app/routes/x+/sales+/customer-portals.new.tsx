@@ -6,7 +6,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useNavigate } from "react-router";
 import { customerPortalValidator } from "~/modules/sales";
 import CustomerPortalForm from "~/modules/sales/ui/CustomerPortals/CustomerPortalForm";
-import { upsertExternalLink } from "~/modules/shared";
+import { upsertExternalLink } from "~/modules/shared/shared.service.server";
 
 import { getParams, path, requestReferrer } from "~/utils/path";
 
@@ -20,7 +20,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     create: "sales"
   });
 
@@ -37,7 +37,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { customerId } = validation.data;
 
-  const insertCustomerPortal = await upsertExternalLink(client, {
+  const insertCustomerPortal = await upsertExternalLink({
     documentType: "Customer",
     documentId: customerId,
     customerId,

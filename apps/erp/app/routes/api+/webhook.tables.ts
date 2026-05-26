@@ -3,13 +3,13 @@ import type {
   ClientLoaderFunctionArgs,
   LoaderFunctionArgs
 } from "react-router";
-import { getWebhookTables } from "~/modules/settings/settings.service";
+import { getWebhookTables } from "~/modules/settings/settings.service.server";
 import { getCompanyId, webhookTablesQuery } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
-  return await getWebhookTables(client);
+  return await getWebhookTables();
 }
 
 export async function clientLoader({ serverLoader }: ClientLoaderFunctionArgs) {

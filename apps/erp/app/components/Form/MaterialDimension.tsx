@@ -3,10 +3,8 @@ import { CreatableCombobox } from "@carbon/form";
 import { useDisclosure, useMount } from "@carbon/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
-import type {
-  getMaterialDimensionList,
-  MaterialDimension as MaterialDimensionType
-} from "~/modules/items";
+import type { MaterialDimension as MaterialDimensionType } from "~/modules/items";
+import type { getMaterialDimensionList } from "~/modules/items/items.service.server";
 import MaterialDimensionForm from "~/modules/items/ui/MaterialDimensions/MaterialDimensionForm";
 import { path } from "~/utils/path";
 

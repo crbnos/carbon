@@ -5,11 +5,11 @@ import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { procedureParameterValidator } from "~/modules/production/production.models";
-import { upsertProcedureParameter } from "~/modules/production/production.service";
+import { upsertProcedureParameter } from "~/modules/production/production.service.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "production"
   });
 
@@ -33,7 +33,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...rest } = validation.data;
 
-  const create = await upsertProcedureParameter(client, {
+  const create = await upsertProcedureParameter({
     ...rest,
     companyId,
     createdBy: userId

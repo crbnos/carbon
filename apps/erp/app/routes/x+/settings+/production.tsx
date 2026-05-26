@@ -23,11 +23,11 @@ import { useCallback, useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useFetcher, useLoaderData } from "react-router";
 import { Users } from "~/components/Form";
+import { jobCompletedValidator } from "~/modules/settings";
 import {
   getCompanySettings,
-  jobCompletedValidator,
   updateJobTravelerWorkInstructions
-} from "~/modules/settings";
+} from "~/modules/settings/settings.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -37,11 +37,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "settings"
   });
 
-  const companySettings = await getCompanySettings(client, companyId);
+  const companySettings = await getCompanySettings();
 
   if (!companySettings.data)
     throw redirect(
@@ -88,11 +88,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (intent === "jobTraveler") {
     const enabled = formData.get("enabled") === "true";
-    const update = await updateJobTravelerWorkInstructions(
-      client,
-      companyId,
-      enabled
-    );
+    const update = await updateJobTravelerWorkInstructions(enabled);
 
     if (update.error) return { success: false, message: update.error.message };
 

@@ -3,7 +3,10 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, useLoaderData } from "react-router";
-import { getGauges, getGaugeTypesList } from "~/modules/quality";
+import {
+  getGauges,
+  getGaugeTypesList
+} from "~/modules/quality/quality.service.server";
 import GaugesTable from "~/modules/quality/ui/Gauge/GaugesTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -15,7 +18,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "quality",
     role: "employee"
   });
@@ -27,14 +30,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getGenericQueryFilters(searchParams);
 
   const [gauges, gaugeTypes] = await Promise.all([
-    getGauges(client, companyId, {
+    getGauges({
       search,
       limit,
       offset,
       sorts,
       filters
     }),
-    getGaugeTypesList(client, companyId)
+    getGaugeTypesList()
   ]);
 
   return {

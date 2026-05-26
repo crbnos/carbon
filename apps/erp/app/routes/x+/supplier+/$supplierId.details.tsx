@@ -6,14 +6,15 @@ import type { ActionFunctionArgs } from "react-router";
 import { data, redirect, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { SupplierDetail } from "~/modules/purchasing";
-import { supplierValidator, upsertSupplier } from "~/modules/purchasing";
+import { supplierValidator } from "~/modules/purchasing";
+import { upsertSupplier } from "~/modules/purchasing/purchasing.service.server";
 import SupplierForm from "~/modules/purchasing/ui/Supplier/SupplierForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     create: "purchasing"
   });
 
@@ -34,7 +35,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const update = await upsertSupplier(client, {
+  const update = await upsertSupplier({
     id,
     ...d,
     updatedBy: userId,

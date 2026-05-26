@@ -39,11 +39,9 @@ import {
 } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { StockTransfer, StockTransferLine } from "~/modules/inventory";
-import {
-  getStockTransfer,
-  stockTransferLineScanValidator
-} from "~/modules/inventory";
-import { getItemStorageUnitQuantities } from "~/modules/items";
+import { stockTransferLineScanValidator } from "~/modules/inventory";
+import { getStockTransfer } from "~/modules/inventory/inventory.service.server";
+import { getItemStorageUnitQuantities } from "~/modules/items/items.service.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
@@ -55,10 +53,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("id is not found");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "inventory"
   });
-  const transfer = await getStockTransfer(viewClient, id);
+  const transfer = await getStockTransfer(id);
   await requireUnlocked({
     request,
     isLocked: transfer.data?.status === "Completed",
@@ -85,7 +83,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const [stockTransferLine, itemStorageUnitQuantities] = await Promise.all([
     client.from("stockTransferLines").select("*").eq("id", lineId!).single(),
-    getItemStorageUnitQuantities(client, itemId, companyId, locationId)
+    getItemStorageUnitQuantities(itemId, locationId)
   ]);
 
   if (stockTransferLine.error || itemStorageUnitQuantities.error) {

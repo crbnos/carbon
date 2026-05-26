@@ -3,28 +3,28 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { getCurrencyByCode } from "~/modules/accounting";
+import { getCurrencyByCode } from "~/modules/accounting/accounting.service.server";
+import { isQuoteLocked } from "~/modules/sales";
 import {
   getQuote,
-  isQuoteLocked,
   updateQuoteExchangeRate
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyGroupId } = await requirePermissions(request, {
+  const { companyGroupId } = await requirePermissions(request, {
     create: "sales"
   });
 
   const { quoteId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
-  const quote = await getQuote(viewClient, quoteId);
+  const quote = await getQuote(quoteId);
   await requireUnlocked({
     request,
     isLocked: isQuoteLocked(quote.data?.status),
@@ -36,15 +36,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const currencyCode = formData.get("currencyCode") as string;
   if (!currencyCode) throw new Error("Could not find currencyCode");
 
-  const currency = await getCurrencyByCode(
-    client,
-    companyGroupId,
-    currencyCode
-  );
+  const currency = await getCurrencyByCode(companyGroupId, currencyCode);
   if (currency.error || !currency.data.exchangeRate)
     throw new Error("Could not find currency");
 
-  const update = await updateQuoteExchangeRate(client, {
+  const update = await updateQuoteExchangeRate({
     id: quoteId,
     exchangeRate: currency.data.exchangeRate
   });

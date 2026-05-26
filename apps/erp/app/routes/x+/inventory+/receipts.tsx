@@ -5,7 +5,8 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
-import { getReceipts, ReceiptsTable } from "~/modules/inventory";
+import { ReceiptsTable } from "~/modules/inventory";
+import { getReceipts } from "~/modules/inventory/inventory.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -16,7 +17,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "inventory"
   });
 
@@ -26,7 +27,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const receipts = await getReceipts(client, companyId, {
+  const receipts = await getReceipts({
     search,
     limit,
     offset,

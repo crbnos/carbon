@@ -2,15 +2,15 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { KanbanLabelPDF } from "@carbon/documents/pdf";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
-import { getCompany } from "~/modules/settings";
-import { getBase64ImageFromSupabase } from "~/modules/shared";
+import { getCompany } from "~/modules/settings/settings.service.server";
+import { getBase64ImageFromSupabase } from "~/modules/shared/shared.service.server";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client } = await requirePermissions(request, {
     view: "inventory"
   });
 
-  const company = await getCompany(client, companyId);
+  const company = await getCompany();
   if (company.error) {
     console.error(company.error);
     throw new Error("Failed to load company");
@@ -61,7 +61,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (Object.keys(thumbnailPaths).length > 0) {
     const thumbnailPromises = Object.entries(thumbnailPaths).map(
       async ([id, path]) => {
-        const base64 = await getBase64ImageFromSupabase(client, path);
+        const base64 = await getBase64ImageFromSupabase(path);
         return { id, data: base64 };
       }
     );

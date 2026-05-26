@@ -1,6 +1,5 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -11,14 +10,13 @@ import { Outlet, redirect, useLoaderData, useParams } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { SalesRFQ } from "~/modules/sales";
+import { isSalesRfqLocked, salesRfqLineValidator } from "~/modules/sales";
 import {
   getOpportunityLineDocuments,
   getSalesRFQ,
   getSalesRFQLine,
-  isSalesRfqLocked,
-  salesRfqLineValidator,
   upsertSalesRFQLine
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service.server";
 import {
   OpportunityLineDocuments,
   OpportunityLineNotes
@@ -29,7 +27,7 @@ import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
@@ -37,9 +35,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   if (!rfqId) throw new Error("Could not find rfqId");
   if (!lineId) throw new Error("Could not find lineId");
 
-  const serviceRole = await getCarbonServiceRole();
-
-  const line = await getSalesRFQLine(serviceRole, lineId);
+  const line = await getSalesRFQLine(lineId);
 
   if (line.error) {
     throw redirect(
@@ -52,7 +48,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
   return {
     line: line.data,
-    files: getOpportunityLineDocuments(serviceRole, companyId, lineId, itemId)
+    files: getOpportunityLineDocuments(lineId, itemId)
   };
 };
 
@@ -63,11 +59,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!rfqId) throw new Error("Could not find rfqId");
   if (!lineId) throw new Error("Could not find lineId");
 
-  const { client: viewClient } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "sales"
   });
 
-  const rfq = await getSalesRFQ(viewClient, rfqId);
+  const rfq = await getSalesRFQ(rfqId);
   await requireUnlocked({
     request,
     isLocked: isSalesRfqLocked(rfq.data?.status),
@@ -75,7 +71,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked RFQ. Reopen it first."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     create: "sales"
   });
 
@@ -90,7 +86,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const updateLine = await upsertSalesRFQLine(client, {
+  const updateLine = await upsertSalesRFQLine({
     id: lineId,
     ...d,
     updatedBy: userId,

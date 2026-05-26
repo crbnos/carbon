@@ -7,10 +7,8 @@ import type {
   ClientActionFunctionArgs
 } from "react-router";
 import { redirect, useNavigate, useParams } from "react-router";
-import {
-  supplierProcessValidator,
-  upsertSupplierProcess
-} from "~/modules/purchasing";
+import { supplierProcessValidator } from "~/modules/purchasing";
+import { upsertSupplierProcess } from "~/modules/purchasing/purchasing.service.server";
 import SupplierProcessForm from "~/modules/purchasing/ui/Supplier/SupplierProcessForm";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -18,7 +16,7 @@ import { supplierProcessesQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "purchasing"
   });
 
@@ -39,7 +37,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const createSupplierProcess = await upsertSupplierProcess(client, {
+  const createSupplierProcess = await upsertSupplierProcess({
     ...d,
     companyId,
     createdBy: userId,

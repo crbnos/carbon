@@ -39,12 +39,12 @@ import {
   useLoaderData,
   useRevalidator
 } from "react-router";
+import { accountProfileValidator } from "~/modules/account";
 import {
-  accountProfileValidator,
   getAccount,
   updateAvatar,
   updatePublicAccount
-} from "~/modules/account";
+} from "~/modules/account/account.service.server";
 import { ProfileForm } from "~/modules/account/ui/Profile";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -63,10 +63,10 @@ type Passkey = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {});
+  const { userId } = await requirePermissions(request, {});
   const serviceRole = getCarbonServiceRole();
   const [user, passkeysResult] = await Promise.all([
-    getAccount(client, userId),
+    getAccount(),
     (serviceRole as any)
       .from("passkeyCredential")
       .select("id, credentialName, createdAt, lastUsedAt, backedUp")
@@ -89,7 +89,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {});
+  const { userId } = await requirePermissions(request, {});
   const formData = await request.formData();
 
   if (formData.get("intent") === "about") {
@@ -103,7 +103,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const { firstName, lastName, about, phone } = validation.data;
 
-    const updateAccount = await updatePublicAccount(client, {
+    const updateAccount = await updatePublicAccount({
       id: userId,
       firstName,
       lastName,
@@ -125,7 +125,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (formData.get("intent") === "photo") {
     const photoPath = formData.get("path");
     if (photoPath === null || typeof photoPath === "string") {
-      const avatarUpdate = await updateAvatar(client, userId, photoPath);
+      const avatarUpdate = await updateAvatar(photoPath);
       if (avatarUpdate.error) {
         throw redirect(
           path.to.profile,

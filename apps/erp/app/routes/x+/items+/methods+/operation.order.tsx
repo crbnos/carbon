@@ -3,11 +3,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { updateOperationOrder } from "~/modules/items";
+import { updateOperationOrder } from "~/modules/items/items.service.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -27,7 +27,7 @@ export async function action({ request }: ActionFunctionArgs) {
     })
   );
 
-  const updateSortOrders = await updateOperationOrder(client, updates);
+  const updateSortOrders = await updateOperationOrder(updates);
   if (updateSortOrders.some((update) => update.error))
     return data(
       {},

@@ -5,12 +5,12 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { quoteMaterialValidator } from "~/modules/sales";
 import {
-  quoteMaterialValidator,
   recalculateQuoteLinePrices,
   upsertQuoteMaterial,
   upsertQuoteMaterialMakeMethod
-} from "~/modules/sales";
+} from "~/modules/sales/sales.service.server";
 import { setCustomFields } from "~/utils/form";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -35,7 +35,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
-  const insertQuoteMaterial = await upsertQuoteMaterial(serviceRole, {
+  const insertQuoteMaterial = await upsertQuoteMaterial({
     ...validation.data,
     quoteId,
     quoteLineId: lineId,
@@ -85,11 +85,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
         )
       );
     }
-    const makeMethod = await upsertQuoteMaterialMakeMethod(serviceRole, {
+    const makeMethod = await upsertQuoteMaterialMakeMethod({
       sourceId: validation.data.itemId,
-      targetId: materialMakeMethod.data?.quoteMaterialMakeMethodId!,
-      companyId,
-      userId
+      targetId: materialMakeMethod.data?.quoteMaterialMakeMethodId!
     });
 
     if (makeMethod.error) {
@@ -105,7 +103,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  await recalculateQuoteLinePrices(serviceRole, quoteId, lineId, userId);
+  await recalculateQuoteLinePrices(quoteId, lineId);
 
   return {
     id: quoteMaterialId,

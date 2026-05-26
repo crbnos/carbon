@@ -4,7 +4,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, useFetcher, useLoaderData } from "react-router";
 import { New } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
-import { getIntercompanyTransactions } from "~/modules/accounting";
+import { getIntercompanyTransactions } from "~/modules/accounting/accounting.service.server";
 import { IntercompanyTransactionTable } from "~/modules/accounting/ui/Intercompany";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -16,7 +16,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyGroupId } = await requirePermissions(request, {
+  const { companyGroupId } = await requirePermissions(request, {
     view: "accounting",
     role: "employee"
   });
@@ -27,17 +27,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const transactions = await getIntercompanyTransactions(
-    client,
-    companyGroupId,
-    {
-      status,
-      limit,
-      offset,
-      sorts,
-      filters
-    }
-  );
+  const transactions = await getIntercompanyTransactions(companyGroupId, {
+    status,
+    limit,
+    offset,
+    sorts,
+    filters
+  });
 
   return {
     data: transactions.data,

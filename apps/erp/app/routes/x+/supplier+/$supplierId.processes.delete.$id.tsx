@@ -10,12 +10,12 @@ import { redirect, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { useRouteData } from "~/hooks";
 import type { SupplierProcess } from "~/modules/purchasing";
-import { deleteSupplierProcess } from "~/modules/purchasing";
+import { deleteSupplierProcess } from "~/modules/purchasing/purchasing.service.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "purchasing"
   });
 
@@ -23,7 +23,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!supplierId) throw new Error("Could not find supplierId");
   if (!id) throw new Error("Could not find id");
 
-  const update = await deleteSupplierProcess(client, id);
+  const update = await deleteSupplierProcess(id);
 
   if (update.error) {
     throw redirect(

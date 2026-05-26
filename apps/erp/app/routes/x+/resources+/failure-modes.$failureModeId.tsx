@@ -4,16 +4,16 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData, useNavigate } from "react-router";
+import { failureModeValidator } from "~/modules/resources";
 import {
-  failureModeValidator,
   getFailureMode,
   upsertFailureMode
-} from "~/modules/resources";
+} from "~/modules/resources/resources.service.server";
 import FailureModeForm from "~/modules/resources/ui/FailureModes/FailureModeForm";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "resources",
     role: "employee"
   });
@@ -21,7 +21,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { failureModeId } = params;
   if (!failureModeId) throw notFound("failureModeId not found");
 
-  const failureMode = await getFailureMode(client, failureModeId);
+  const failureMode = await getFailureMode(failureModeId);
 
   if (failureMode.error) {
     throw redirect(
@@ -40,7 +40,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "resources"
   });
 
@@ -54,7 +54,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, ...d } = validation.data;
   if (!id) throw new Error("id not found");
 
-  const updateFailureMode = await upsertFailureMode(client, {
+  const updateFailureMode = await upsertFailureMode({
     id,
     ...d,
     updatedBy: userId

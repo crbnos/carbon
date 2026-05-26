@@ -7,11 +7,13 @@ import type { LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
 import type { Chart } from "~/modules/accounting";
 import {
-  getCompaniesInGroup,
   getConsolidatedBalances,
-  getFinancialStatementBalances,
   translateCompanyBalances
-} from "~/modules/accounting";
+} from "~/modules/accounting/accounting.server";
+import {
+  getCompaniesInGroup,
+  getFinancialStatementBalances
+} from "~/modules/accounting/accounting.service.server";
 import {
   FinancialStatementTree,
   ReportFilters
@@ -25,13 +27,10 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      view: "accounting",
-      role: "employee"
-    }
-  );
+  const { companyId, companyGroupId } = await requirePermissions(request, {
+    view: "accounting",
+    role: "employee"
+  });
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -40,7 +39,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const endDate = searchParams.get("endDate") || null;
   const showTranslated = searchParams.get("showTranslated") === "true";
 
-  const companies = await getCompaniesInGroup(client, companyGroupId);
+  const companies = await getCompaniesInGroup(companyGroupId);
   const companiesList = companies.data ?? [];
   const parentCompany = companiesList.find((c) => !c.parentCompanyId);
   const parentCurrency = parentCompany?.baseCurrencyCode ?? null;
@@ -56,7 +55,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (isMultiCompany && parentCurrency) {
     const periodEnd = endDate ?? new Date().toISOString().split("T")[0];
     const consolidated = await getConsolidatedBalances(
-      client,
       companyGroupId,
       selectedCompanyIds,
       parentCurrency,
@@ -85,7 +83,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // Single company
   const selectedCompanyId = selectedCompanyIds[0];
   const balances = await getFinancialStatementBalances(
-    client,
     companyGroupId,
     selectedCompanyId,
     { startDate, endDate }
@@ -114,7 +111,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (showTranslated && isForeignCurrency && parentCurrency) {
     const periodEnd = endDate ?? new Date().toISOString().split("T")[0];
     const translation = await translateCompanyBalances(
-      client,
       companyGroupId,
       selectedCompanyId!,
       parentCurrency,

@@ -5,22 +5,21 @@ import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteItemCustomerPart, getItemCustomerPart } from "~/modules/items";
+import {
+  deleteItemCustomerPart,
+  getItemCustomerPart
+} from "~/modules/items/items.service.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "parts"
   });
   const { itemId, customerPartToItemId } = params;
   if (!itemId) throw notFound("itemId not found");
   if (!customerPartToItemId) throw notFound("customerPartToItemId not found");
 
-  const customerPart = await getItemCustomerPart(
-    client,
-    customerPartToItemId,
-    companyId
-  );
+  const customerPart = await getItemCustomerPart(customerPartToItemId);
   if (customerPart.error) {
     throw redirect(
       path.to.partSales(itemId),
@@ -35,7 +34,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     delete: "parts"
   });
 
@@ -44,11 +43,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!customerPartToItemId)
     throw notFound("Could not find customerPartToItemId");
 
-  const { error: deleteTypeError } = await deleteItemCustomerPart(
-    client,
-    customerPartToItemId,
-    companyId
-  );
+  const { error: deleteTypeError } =
+    await deleteItemCustomerPart(customerPartToItemId);
   if (deleteTypeError) {
     throw redirect(
       path.to.partSales(itemId),

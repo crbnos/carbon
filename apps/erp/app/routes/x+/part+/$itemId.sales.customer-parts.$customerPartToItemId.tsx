@@ -4,17 +4,17 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
+import { customerPartValidator } from "~/modules/items";
 import {
-  customerPartValidator,
   getItem,
   getItemCustomerPart,
   upsertItemCustomerPart
-} from "~/modules/items";
+} from "~/modules/items/items.service.server";
 import CustomerPartForm from "~/modules/items/ui/Item/CustomerPartForm";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts",
     role: "employee"
   });
@@ -23,15 +23,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!customerPartToItemId)
     throw new Error("Could not find customerPartToItemId");
 
-  const customerPart = await getItemCustomerPart(
-    client,
-    customerPartToItemId,
-    companyId
-  );
+  const customerPart = await getItemCustomerPart(customerPartToItemId);
 
   if (!customerPart?.data) throw new Error("Could not find customer part");
 
-  const itemData = await getItem(client, customerPart.data.itemId);
+  const itemData = await getItem(customerPart.data.itemId);
   const readableId = itemData?.data?.readableIdWithRevision;
 
   return {
@@ -42,7 +38,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     create: "parts",
     role: "employee"
   });
@@ -62,7 +58,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...d } = validation.data;
 
-  const updatedCustomerPart = await upsertItemCustomerPart(client, {
+  const updatedCustomerPart = await upsertItemCustomerPart({
     id: customerPartToItemId,
     ...d
   });

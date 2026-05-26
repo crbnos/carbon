@@ -9,12 +9,10 @@ import { redirect } from "react-router";
 import { z } from "zod";
 import { useUrlParams, useUser } from "~/hooks";
 import type { PurchaseOrderStatus } from "~/modules/purchasing";
-import {
-  purchaseOrderValidator,
-  upsertPurchaseOrder
-} from "~/modules/purchasing";
+import { purchaseOrderValidator } from "~/modules/purchasing";
+import { upsertPurchaseOrder } from "~/modules/purchasing/purchasing.service.server";
 import { PurchaseOrderForm } from "~/modules/purchasing/ui/PurchaseOrder";
-import { getNextSequence } from "~/modules/settings";
+import { getNextSequence } from "~/modules/settings/settings.service.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -30,11 +28,13 @@ export const handle: Handle = {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
+  const { companyId, companyGroupId, userId } = await requirePermissions(
+    request,
+    {
       create: "purchasing",
       bypassRls: true
-    });
+    }
+  );
 
   const formData = await request.formData();
   const validation = await validator(newPurchaseOrderValidator).validate(
@@ -49,11 +49,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const useNextSequence = !purchaseOrderId;
 
   if (useNextSequence) {
-    const nextSequence = await getNextSequence(
-      client,
-      "purchaseOrder",
-      companyId
-    );
+    const nextSequence = await getNextSequence("purchaseOrder");
     if (nextSequence.error) {
       throw redirect(
         path.to.newPurchaseOrder,
@@ -68,7 +64,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (!purchaseOrderId) throw new Error("purchaseOrderId is not defined");
 
-  const createPurchaseOrder = await upsertPurchaseOrder(client, {
+  const createPurchaseOrder = await upsertPurchaseOrder({
     ...validation.data,
     purchaseOrderId,
     companyId,

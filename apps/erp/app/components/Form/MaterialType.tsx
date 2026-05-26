@@ -3,7 +3,7 @@ import { CreatableCombobox } from "@carbon/form";
 import { useDisclosure, useMount } from "@carbon/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
-import type { getMaterialTypeList } from "~/modules/items";
+import type { getMaterialTypeList } from "~/modules/items/items.service.server";
 import MaterialTypeForm from "~/modules/items/ui/MaterialTypes/MaterialTypeForm";
 import { path } from "~/utils/path";
 

@@ -5,9 +5,9 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
-import { getMaterialDimensions } from "~/modules/items";
+import { getMaterialDimensions } from "~/modules/items/items.service.server";
 import MaterialDimensionsTable from "~/modules/items/ui/MaterialDimensions/MaterialDimensionsTable";
-import { getCompanySettings } from "~/modules/settings/settings.service";
+import { getCompanySettings } from "~/modules/settings/settings.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -18,7 +18,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts",
     role: "employee"
   });
@@ -29,9 +29,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const settings = await getCompanySettings(client, companyId);
+  const settings = await getCompanySettings();
 
-  const materialDimensions = await getMaterialDimensions(client, companyId, {
+  const materialDimensions = await getMaterialDimensions({
     limit,
     offset,
     sorts,

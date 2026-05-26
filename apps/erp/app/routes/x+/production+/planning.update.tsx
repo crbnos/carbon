@@ -2,14 +2,14 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
-import { getDefaultStorageUnitForJob } from "~/modules/inventory";
+import { getDefaultStorageUnitForJob } from "~/modules/inventory/inventory.service.server";
+import { productionOrderValidator } from "~/modules/production";
 import {
-  productionOrderValidator,
   recalculateJobRequirements,
   upsertJob,
   upsertJobMethod
-} from "~/modules/production";
-import { getNextSequence } from "~/modules/settings/settings.service";
+} from "~/modules/production/production.service.server";
+import { getNextSequence } from "~/modules/settings/settings.service.server";
 
 const itemsValidator = z
   .object({
@@ -156,11 +156,7 @@ export async function action({ request }: ActionFunctionArgs) {
           for (const order of orders) {
             if (!order.existingId) {
               // Create new job
-              const nextSequence = await getNextSequence(
-                client,
-                "job",
-                companyId
-              );
+              const nextSequence = await getNextSequence("job");
               if (nextSequence.error) {
                 const errorMsg = `Failed to generate job sequence for item ${item.id}: ${nextSequence.error.message}`;
                 console.error(errorMsg);
@@ -177,10 +173,8 @@ export async function action({ request }: ActionFunctionArgs) {
               }
 
               const storageUnitId = await getDefaultStorageUnitForJob(
-                client,
                 item.id,
-                locationId,
-                companyId
+                locationId
               );
 
               // Calculate scrap quantity based on scrap percentage
@@ -191,7 +185,6 @@ export async function action({ request }: ActionFunctionArgs) {
                   : 0;
 
               const createJob = await upsertJob(
-                client,
                 {
                   itemId: item.id,
                   jobId,
@@ -224,11 +217,9 @@ export async function action({ request }: ActionFunctionArgs) {
                 continue;
               }
 
-              const upsertMethod = await upsertJobMethod(client, "itemToJob", {
+              const upsertMethod = await upsertJobMethod("itemToJob", {
                 sourceId: item.id,
-                targetId: id,
-                companyId,
-                userId
+                targetId: id
               });
 
               if (upsertMethod.error) {
@@ -342,10 +333,8 @@ export async function action({ request }: ActionFunctionArgs) {
         // Trigger recalculation for all jobs
         if (allJobIds.length > 0) {
           for (const jobId of allJobIds) {
-            await recalculateJobRequirements(client, {
-              id: jobId,
-              companyId,
-              userId
+            await recalculateJobRequirements({
+              id: jobId
             });
           }
         }

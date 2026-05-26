@@ -2,7 +2,7 @@ import type { SelectProps } from "@carbon/form";
 import { Select } from "@carbon/form";
 import { useEffect, useMemo } from "react";
 import { useFetcher } from "react-router";
-import type { getShiftsList } from "~/modules/people";
+import type { getShiftsList } from "~/modules/people/people.service.server";
 import { path } from "~/utils/path";
 
 type ShiftSelectProps = Omit<SelectProps, "options"> & {

@@ -29,7 +29,7 @@ import type {
   getSalesRFQLines,
   getSalesRFQs,
   priceSourceTypes
-} from "./sales.service";
+} from "./sales.service.server";
 
 // Pricing types
 export type MatchedRule = {

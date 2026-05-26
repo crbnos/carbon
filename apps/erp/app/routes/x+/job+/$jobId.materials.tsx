@@ -9,9 +9,9 @@ import { usePanels } from "~/components/Layout";
 import {
   getJob,
   getJobMaterialsWithQuantityOnHand
-} from "~/modules/production";
+} from "~/modules/production/production.service.server";
 import { JobMaterialsTable } from "~/modules/production/ui/Jobs";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service.server";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
@@ -30,7 +30,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const job = await getJob(client, jobId);
+  const job = await getJob(jobId);
   if (job.error) {
     throw redirect(
       path.to.jobs,
@@ -39,9 +39,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const materials = await getJobMaterialsWithQuantityOnHand(
-    client,
     jobId,
-    companyId,
     job.data.locationId ?? "",
     {
       search,
@@ -62,7 +60,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const settings = await getCompanySettings(client, companyId);
+  const settings = await getCompanySettings();
   const inventoryShelfLife = settings.data?.inventoryShelfLife as {
     nearExpiryWarningDays?: number | null;
   } | null;

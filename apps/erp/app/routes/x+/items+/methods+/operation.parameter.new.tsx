@@ -4,12 +4,12 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { upsertMethodOperationParameter } from "~/modules/items";
+import { upsertMethodOperationParameter } from "~/modules/items/items.service.server";
 import { operationParameterValidator } from "~/modules/shared";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "parts"
   });
 
@@ -22,7 +22,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const insert = await upsertMethodOperationParameter(client, {
+  const insert = await upsertMethodOperationParameter({
     ...validation.data,
     companyId,
     createdBy: userId

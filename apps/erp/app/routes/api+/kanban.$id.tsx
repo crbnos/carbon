@@ -11,20 +11,24 @@ import type { LoaderFunctionArgs } from "react-router";
 import { Await, useLoaderData } from "react-router";
 import { Redirect } from "~/components/Redirect";
 
-import { getDefaultStorageUnitForJob, getKanban } from "~/modules/inventory";
-import { getItemReplenishment } from "~/modules/items";
+import {
+  getDefaultStorageUnitForJob,
+  getKanban
+} from "~/modules/inventory/inventory.service.server";
+import { getItemReplenishment } from "~/modules/items/items.service.server";
 import {
   getActiveJobOperationByJobId,
   runMRP,
   updateKanbanJob,
   upsertJob,
   upsertJobMethod
-} from "~/modules/production";
+} from "~/modules/production/production.service.server";
 import {
   upsertPurchaseOrder,
   upsertPurchaseOrderLine
-} from "~/modules/purchasing";
-import { getNextSequence } from "~/modules/settings";
+} from "~/modules/purchasing/purchasing.service.server";
+import { getNextSequence } from "~/modules/settings/settings.service.server";
+import { AuthClientScope } from "~/services/mcp/index.server";
 import { path } from "~/utils/path";
 
 async function handleKanban({
@@ -40,7 +44,15 @@ async function handleKanban({
   userId: string;
   id: string;
 }): Promise<{ data: string; error: null } | { data: null; error: string }> {
-  const kanban = await getKanban(client, id);
+  // This is a no-permission system endpoint (kanban scan → job → MRP). The
+  // data-access helpers used here are now clientless and resolve their client
+  // from AuthClientScope. On main the privileged steps (upsertJobMethod,
+  // updateKanbanJob, runMRP) ran with serviceRole; pin the scope to
+  // serviceRole so they keep the RLS-bypass behavior this flow relied on.
+  const serviceRoleClient = getCarbonServiceRole();
+  AuthClientScope.setFactory(() => serviceRoleClient);
+
+  const kanban = await getKanban(id);
   if (
     kanban.data?.replenishmentSystem === "Make" &&
     kanban.data?.jobReadableId
@@ -75,13 +87,11 @@ async function handleKanban({
 
     const [nextSequence, manufacturing, defaultStorageUnit] = await Promise.all(
       [
-        getNextSequence(client, "job", companyId),
-        getItemReplenishment(client, kanban.data.itemId!, companyId),
+        getNextSequence("job"),
+        getItemReplenishment(kanban.data.itemId!),
         getDefaultStorageUnitForJob(
-          client,
           kanban.data.itemId!,
-          kanban.data.locationId!,
-          companyId
+          kanban.data.locationId!
         )
       ]
     );
@@ -112,7 +122,7 @@ async function handleKanban({
     const storageUnitId =
       kanban.data.storageUnitId || defaultStorageUnit || undefined;
 
-    const createdJob = await upsertJob(client, {
+    const createdJob = await upsertJob({
       jobId: jobReadableId,
       itemId: kanban.data.itemId!,
       quantity: kanban.data.quantity!,
@@ -139,18 +149,14 @@ async function handleKanban({
     const serviceRole = getCarbonServiceRole();
 
     const [upsertMethod, associateKanban] = await Promise.all([
-      upsertJobMethod(serviceRole, "itemToJob", {
+      upsertJobMethod("itemToJob", {
         sourceId: kanban.data.itemId!,
         targetId: id,
-        companyId,
-        userId,
         configuration: undefined
       }),
-      updateKanbanJob(serviceRole, {
+      updateKanbanJob({
         id: kanban.data.id!,
-        jobId: id,
-        companyId,
-        userId
+        jobId: id
       })
     ]);
 
@@ -170,11 +176,9 @@ async function handleKanban({
           companyId,
           userId
         }),
-        runMRP(serviceRole, {
+        runMRP({
           type: "job",
-          id,
-          companyId,
-          userId
+          id
         }),
         serviceRole.functions.invoke("schedule", {
           body: {
@@ -199,11 +203,7 @@ async function handleKanban({
     const jobId = id;
     let redirectUrl = path.to.job(jobId);
 
-    const operation = await getActiveJobOperationByJobId(
-      client,
-      jobId,
-      companyId
-    );
+    const operation = await getActiveJobOperationByJobId(jobId);
 
     if (operation && kanban.data.autoRelease) {
       let operationId = operation.id;
@@ -245,11 +245,7 @@ async function handleKanban({
     let purchaseOrderId = existingPurchaseOrder.data?.id;
 
     if (!purchaseOrderId) {
-      const nextSequence = await getNextSequence(
-        client,
-        "purchaseOrder",
-        companyId
-      );
+      const nextSequence = await getNextSequence("purchaseOrder");
       if (nextSequence.error) {
         console.error(nextSequence.error);
         return {
@@ -258,7 +254,7 @@ async function handleKanban({
         };
       }
 
-      const newPurchaseOrder = await upsertPurchaseOrder(client, {
+      const newPurchaseOrder = await upsertPurchaseOrder({
         purchaseOrderId: nextSequence.data!,
         supplierId: kanban.data.supplierId!,
         status: "Draft",
@@ -315,7 +311,7 @@ async function handleKanban({
       };
     }
 
-    const createPurchaseOrderLine = await upsertPurchaseOrderLine(client, {
+    const createPurchaseOrderLine = await upsertPurchaseOrderLine({
       purchaseOrderId: purchaseOrderId!,
       // @ts-expect-error
       purchaseOrderLineType: item.data?.type,

@@ -64,14 +64,16 @@ import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { ConfirmDelete } from "~/components/Modals";
 import { useRouteData } from "~/hooks";
 import type {
-  getBatchNumbersForItem,
-  getSerialNumbersForItem,
   ItemTracking,
   Shipment,
   ShipmentLine,
   ShipmentLineTracking
 } from "~/modules/inventory";
 import { splitValidator } from "~/modules/inventory";
+import type {
+  getBatchNumbersForItem,
+  getSerialNumbersForItem
+} from "~/modules/inventory/inventory.service.server";
 import type { action as shipmentLinesUpdateAction } from "~/routes/x+/shipment+/lines.update";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";

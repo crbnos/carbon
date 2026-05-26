@@ -1,5 +1,4 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   Badge,
   Button,
@@ -65,15 +64,13 @@ import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import type { PurchaseInvoice } from "~/modules/invoicing";
 import { PurchaseInvoicingStatus } from "~/modules/invoicing";
 import type { PurchaseOrder, SupplierQuote } from "~/modules/purchasing";
-import { getPurchasingDocumentsAssignedToMe } from "~/modules/purchasing";
 import { KPIs } from "~/modules/purchasing/purchasing.models";
+import { getPurchasingDocumentsAssignedToMe } from "~/modules/purchasing/purchasing.service.server";
 import { PurchasingStatus } from "~/modules/purchasing/ui/PurchaseOrder";
 import { SupplierStatusIndicator } from "~/modules/purchasing/ui/Supplier/SupplierStatusIndicator";
 import { SupplierQuoteStatus } from "~/modules/purchasing/ui/SupplierQuote";
-import {
-  type ApprovalRequest,
-  getPendingApprovalsForApprover
-} from "~/modules/shared";
+import type { ApprovalRequest } from "~/modules/shared";
+import { getPendingApprovalsForApprover } from "~/modules/shared/shared.service.server";
 
 import type { loader as kpiLoader } from "~/routes/api+/purchasing.kpi.$key";
 import { useSuppliers } from "~/stores/suppliers";
@@ -103,18 +100,12 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, userId, companyId } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "purchasing"
   });
 
-  const serviceRole = getCarbonServiceRole();
-
   // Get pending approval requests to find which POs the user can approve
-  const pendingApprovals = await getPendingApprovalsForApprover(
-    serviceRole,
-    userId,
-    companyId
-  );
+  const pendingApprovals = await getPendingApprovalsForApprover();
 
   // Extract purchase order IDs that need approval and user can approve
   const approvalPoIds =
@@ -187,11 +178,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       : { data: [], error: null }
   ]);
 
-  const assignedToMePromise = getPurchasingDocumentsAssignedToMe(
-    client,
-    userId,
-    companyId
-  );
+  const assignedToMePromise = getPurchasingDocumentsAssignedToMe();
 
   return {
     openPurchaseOrders: openPurchaseOrders,

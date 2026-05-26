@@ -5,25 +5,25 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData, useParams } from "react-router";
 import invariant from "tiny-invariant";
+import { itemSamplingPlanValidator } from "~/modules/quality";
 import {
   getItemSamplingPlan,
-  itemSamplingPlanValidator,
   upsertItemSamplingPlan
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service.server";
 import SamplingPlanForm from "~/modules/quality/ui/SamplingPlan/SamplingPlanForm";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "parts"
   });
   const { itemId } = params;
   invariant(itemId, "itemId is required");
 
   const [plan, settings] = await Promise.all([
-    getItemSamplingPlan(client, itemId, companyId),
-    getCompanySettings(client, companyId)
+    getItemSamplingPlan(itemId),
+    getCompanySettings()
   ]);
 
   return data({
@@ -37,7 +37,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "quality"
   });
   const { itemId } = params;
@@ -49,7 +49,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
   if (validation.error) return validationError(validation.error);
 
-  const result = await upsertItemSamplingPlan(client, {
+  const result = await upsertItemSamplingPlan({
     ...validation.data,
     companyId,
     updatedBy: userId

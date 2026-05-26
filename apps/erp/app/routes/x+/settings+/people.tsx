@@ -34,7 +34,7 @@ import {
   getCompanySettings,
   updateConsoleSetting,
   updateTimeCardSetting
-} from "~/modules/settings";
+} from "~/modules/settings/settings.service.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -44,11 +44,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "settings"
   });
 
-  const companySettings = await getCompanySettings(client, companyId);
+  const companySettings = await getCompanySettings();
 
   if (!companySettings.data)
     throw redirect(
@@ -71,18 +71,13 @@ export async function action({ request }: ActionFunctionArgs) {
   const enabled = formData.get("enabled") === "true";
 
   if (intent === "timeCard") {
-    const update = await updateTimeCardSetting(client, companyId, enabled);
+    const update = await updateTimeCardSetting(enabled);
     if (update.error) return { success: false, message: update.error.message };
     return { success: true, message: "Timecard settings updated" };
   }
 
   if (intent === "console") {
-    const update = await updateConsoleSetting(
-      client,
-      companyId,
-      enabled,
-      userId
-    );
+    const update = await updateConsoleSetting(enabled);
 
     if (update.error) return { success: false, message: update.error.message };
 

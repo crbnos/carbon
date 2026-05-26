@@ -4,11 +4,11 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { updateSupplierQuoteFavorite } from "~/modules/purchasing";
+import { updateSupplierQuoteFavorite } from "~/modules/purchasing/purchasing.service.server";
 import { favoriteSchema } from "~/types/validators";
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
 
@@ -21,10 +21,9 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { id, favorite } = validation.data;
 
-  const result = await updateSupplierQuoteFavorite(client, {
+  const result = await updateSupplierQuoteFavorite({
     id,
-    favorite: favorite === "favorite",
-    userId
+    favorite: favorite === "favorite"
   });
 
   if (result.error) {

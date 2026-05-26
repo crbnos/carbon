@@ -3,19 +3,19 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
-import { getSupplierProcessesBySupplier } from "~/modules/purchasing";
+import { getSupplierProcessesBySupplier } from "~/modules/purchasing/purchasing.service.server";
 import SupplierProcesses from "~/modules/purchasing/ui/Supplier/SupplierProcesses";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "purchasing"
   });
 
   const { supplierId } = params;
   if (!supplierId) throw new Error("Could not find supplierId");
 
-  const processes = await getSupplierProcessesBySupplier(client, supplierId);
+  const processes = await getSupplierProcessesBySupplier(supplierId);
 
   if (processes.error || !processes.data) {
     throw redirect(

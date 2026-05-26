@@ -4,17 +4,17 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData, useNavigate } from "react-router";
+import { issueTypeValidator } from "~/modules/quality";
 import {
   getIssueType,
-  issueTypeValidator,
   upsertIssueType
-} from "~/modules/quality";
+} from "~/modules/quality/quality.service.server";
 import IssueTypeForm from "~/modules/quality/ui/IssueTypes/IssueTypeForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  await requirePermissions(request, {
     view: "quality",
     role: "employee"
   });
@@ -22,7 +22,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const nonConformanceType = await getIssueType(client, id);
+  const nonConformanceType = await getIssueType(id);
 
   if (nonConformanceType.error) {
     throw redirect(
@@ -41,7 +41,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { userId } = await requirePermissions(request, {
     update: "quality"
   });
 
@@ -55,7 +55,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, ...d } = validation.data;
   if (!id) throw new Error("id not found");
 
-  const updateIssueType = await upsertIssueType(client, {
+  const updateIssueType = await upsertIssueType({
     id,
     ...d,
     customFields: setCustomFields(formData),

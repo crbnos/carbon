@@ -4,11 +4,12 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { insertNote, noteValidator } from "~/modules/shared";
+import { noteValidator } from "~/modules/shared";
+import { insertNote } from "~/modules/shared/shared.service.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
   const validation = await validator(noteValidator).validate(
     await request.formData()
@@ -19,11 +20,9 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const { documentId, note } = validation.data;
-  const createNote = await insertNote(client, {
+  const createNote = await insertNote({
     documentId,
-    note,
-    companyId,
-    createdBy: userId
+    note
   });
   if (createNote.error) {
     throw redirect(

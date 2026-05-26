@@ -4,12 +4,10 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useNavigate } from "react-router";
-import {
-  materialDimensionValidator,
-  upsertMaterialDimension
-} from "~/modules/items";
+import { materialDimensionValidator } from "~/modules/items";
+import { upsertMaterialDimension } from "~/modules/items/items.service.server";
 import MaterialDimensionForm from "~/modules/items/ui/MaterialDimensions/MaterialDimensionForm";
-import { getCompanySettings } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings/settings.service.server";
 
 import { getParams, path } from "~/utils/path";
 
@@ -23,7 +21,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     create: "parts"
   });
 
@@ -41,9 +39,9 @@ export async function action({ request }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, ...rest } = validation.data;
 
-  const settings = await getCompanySettings(client, companyId);
+  const settings = await getCompanySettings();
 
-  const insertMaterialDimension = await upsertMaterialDimension(client, {
+  const insertMaterialDimension = await upsertMaterialDimension({
     ...rest,
     companyId,
     isMetric: settings?.data?.useMetric ?? false
