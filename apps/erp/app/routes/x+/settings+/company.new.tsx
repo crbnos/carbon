@@ -72,6 +72,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const [job] = await Promise.all([
     insertEmployeeJob({
       id: userId,
+      companyId,
       locationId
     }),
     redis.del(getPermissionCacheKey(userId))

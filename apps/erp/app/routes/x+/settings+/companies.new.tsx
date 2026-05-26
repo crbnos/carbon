@@ -103,6 +103,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const job = await insertEmployeeJob({
     id: userId,
+    companyId,
     locationId
   });
 

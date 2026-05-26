@@ -579,9 +579,17 @@ export const insertEmployeeJob = mcpTool(
   {
     classification: "WRITE"
   },
-  async function insertEmployeeJob(job: { id: string; locationId?: string }) {
+  async function insertEmployeeJob(job: {
+    id: string;
+    locationId?: string;
+    companyId?: string;
+  }) {
     const client = getAuthClient<SupabaseClient<Database>>();
-    const { companyId } = AuthContextHolder.get();
+    // During onboarding the user has no `companyId` yet in their session so
+    // ALS resolves to an empty string. Accept an explicit `companyId` on the
+    // payload and fall back to the ambient one when omitted.
+    const { companyId: ambientCompanyId } = AuthContextHolder.get();
+    const companyId = job.companyId ?? ambientCompanyId;
     return client
       .from("employeeJob")
       .insert({ ...job, companyId })
