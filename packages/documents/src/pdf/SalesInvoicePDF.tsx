@@ -23,6 +23,7 @@ type SalesInvoiceLocations =
 interface SalesInvoicePDFProps extends PDF {
   salesInvoice: Database["public"]["Views"]["salesInvoices"]["Row"];
   salesInvoiceLines: Database["public"]["Views"]["salesInvoiceLines"]["Row"][];
+  salesOrderIds?: string[];
   salesInvoiceLocations: SalesInvoiceLocations;
   salesInvoiceShipment: Database["public"]["Tables"]["salesInvoiceShipment"]["Row"];
   accountsReceivableBillingAddress?: AccountsReceivableBillingAddress | null;
@@ -63,6 +64,7 @@ const SalesInvoicePDF = ({
   salesInvoiceShipment,
   salesInvoiceLines,
   salesInvoiceLocations,
+  salesOrderIds,
   terms,
   paymentTerms,
   shippingMethods,
@@ -215,6 +217,14 @@ const SalesInvoicePDF = ({
                 )}
                 {salesInvoice?.customerReference && (
                   <Text>Customer Ref: {salesInvoice.customerReference}</Text>
+                )}
+                {salesOrderIds && salesOrderIds.length > 0 && (
+                  <Text>
+                    {salesOrderIds.length > 1
+                      ? "Sales Orders: "
+                      : "Sales Order: "}
+                    {salesOrderIds.join(", ")}
+                  </Text>
                 )}
                 {paymentTerm && <Text>Payment Terms: {paymentTerm.name}</Text>}
                 {shippingMethod && <Text>Shipping: {shippingMethod.name}</Text>}

@@ -12,7 +12,7 @@ import {
   getSalesInvoiceLines,
   getSalesInvoiceShipment
 } from "~/modules/invoicing";
-import { getSalesTerms } from "~/modules/sales";
+import { getSalesOrdersByIds, getSalesTerms } from "~/modules/sales";
 import {
   getAccountsReceivableBillingAddress,
   getCompany,
@@ -124,6 +124,28 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       }, {}) ?? {};
   }
 
+  // Resolve the human-readable numbers of any sales orders linked to this
+  // invoice's lines. An invoice can be billed against more than one sales
+  // order, so we collect the distinct set.
+  const linkedSalesOrderIds = Array.from(
+    new Set(
+      (salesInvoiceLines.data ?? [])
+        .map((line) => line.salesOrderId)
+        .filter((salesOrderId): salesOrderId is string => Boolean(salesOrderId))
+    )
+  );
+
+  let salesOrderIds: string[] = [];
+  if (linkedSalesOrderIds.length > 0) {
+    const salesOrders = await getSalesOrdersByIds(client, linkedSalesOrderIds);
+    if (salesOrders.error) {
+      console.error(salesOrders.error);
+    }
+    salesOrderIds = Array.from(
+      new Set((salesOrders.data ?? []).map((order) => order.salesOrderId))
+    ).sort();
+  }
+
   const { locale } = getPreferenceHeaders(request);
 
   const stream = await renderToStream(
@@ -138,6 +160,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       }}
       salesInvoice={salesInvoice.data}
       salesInvoiceLines={salesInvoiceLines.data ?? []}
+      salesOrderIds={salesOrderIds}
       salesInvoiceLocations={salesInvoiceLocations.data}
       salesInvoiceShipment={salesInvoiceShipment.data}
       accountsReceivableBillingAddress={
