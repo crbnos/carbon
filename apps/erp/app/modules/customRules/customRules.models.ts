@@ -1,4 +1,6 @@
 import {
+  getFieldDef,
+  isFieldAvailableOnSurfaces,
   SURFACES_BY_TARGET_TYPE,
   TARGET_TYPES,
   TRANSACTION_SURFACES
@@ -59,7 +61,12 @@ export const customRuleValidator = z
     message: z.string().min(1, { message: "Message is required" }).max(500),
     severity: z.enum(customRuleSeverities),
     targetType: z.enum(TARGET_TYPES),
+    // Broadcast gate for storageUnit / workCenter rules. Item rules ignore this
+    // and use the filteredItem* fields instead (empty = all items).
     appliesToAll: zfd.checkbox(),
+    filteredItemTypes: zfd.repeatableOfType(z.string()).optional(),
+    filteredItemGroupIds: zfd.repeatableOfType(z.string()).optional(),
+    filteredItemMatchAll: zfd.checkbox(),
     active: zfd.checkbox(),
     surfaces: zfd
       .repeatableOfType(z.enum(TRANSACTION_SURFACES))
@@ -82,6 +89,20 @@ export const customRuleValidator = z
         });
       }
     }
+
+    // Reject conditions on a registry field whose context the evaluator won't
+    // populate for every selected surface (else it resolves undefined → false
+    // "X is required"). Unknown paths are left to runtime presence handling.
+    val.conditionAst.conditions.forEach((c, i) => {
+      const def = getFieldDef(c.field);
+      if (def && !isFieldAvailableOnSurfaces(def, val.surfaces)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["conditionAst", "conditions", i, "field"],
+          message: `"${def.label}" isn't available on the selected surface(s)`
+        });
+      }
+    });
   });
 
 /**

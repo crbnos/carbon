@@ -15,6 +15,10 @@ msgstr ""
 msgid " A supplier is a business or person who sells you parts or services."
 msgstr "Ein Lieferant ist ein Unternehmen oder eine Person, die dir Teile oder Dienstleistungen verkauft."
 
+#. placeholder {0}: fieldDef?.label ?? condition.field
+msgid "\"{0}\" isn't available on the selected surface(s). Pick another field."
+msgstr ""
+
 msgid "\"{storageUnitName}\" has {childCount} direct nested storage units. Deleting it will also delete them and anything underneath them. This cannot be undone."
 msgstr "„${storageUnitName}\" hat ${childCount} direkt verschachtelte Speichereinheiten. Das Löschen führt auch zum Löschen dieser und aller darunter liegenden Einheiten. Dies kann nicht rückgängig gemacht werden."
 
@@ -470,6 +474,9 @@ msgstr "Betragtyp"
 msgid "An item cannot be added to itself."
 msgstr "Ein Element kann nicht zu sich selbst hinzugefügt werden."
 
+msgid "AND"
+msgstr ""
+
 msgid "and {remaining} more"
 msgstr "und {remaining} weitere"
 
@@ -487,6 +494,12 @@ msgstr "Annotationstext ist erforderlich"
 
 msgid "Annotation updated"
 msgstr "Anmerkung aktualisiert"
+
+msgid "Any item group"
+msgstr ""
+
+msgid "Any item type"
+msgstr ""
 
 msgid "API and Webhooks"
 msgstr "API und Webhooks"
@@ -511,9 +524,6 @@ msgstr "Gilt für"
 
 msgid "Applies to all"
 msgstr "Gilt für alle"
-
-msgid "Applies to all items"
-msgstr "Gilt für alle Artikel"
 
 msgid "Applies to all storage units"
 msgstr "Gilt für alle Lagereinheiten"
@@ -1385,6 +1395,9 @@ msgstr "Spaltensichtbarkeit und -reihenfolge"
 
 msgid "Columns"
 msgstr "Spalten"
+
+msgid "Combine filters"
+msgstr ""
 
 msgid "Coming soon"
 msgstr "Demnächst verfügbar"
@@ -2966,6 +2979,9 @@ msgstr "Mitarbeitertypen"
 msgid "Employees"
 msgstr "Mitarbeiter"
 
+msgid "Empty = match every item"
+msgstr ""
+
 msgid "Empty work centers"
 msgstr "Leere Arbeitszentren"
 
@@ -4136,8 +4152,14 @@ msgstr "Artikel"
 msgid "Item {scannedItem} is not the same as the item {expectedItem}"
 msgstr "Artikel {scannedItem} ist nicht derselbe wie der Artikel {expectedItem}"
 
+msgid "Item filters"
+msgstr ""
+
 msgid "Item Group"
 msgstr "Artikelgruppe"
+
+msgid "Item groups"
+msgstr ""
 
 msgid "Item Groups"
 msgstr "Artikelgruppen"
@@ -4148,11 +4170,20 @@ msgstr "Artikel-ID"
 msgid "Item Master"
 msgstr "Artikelstamm"
 
+msgid "Item must match a selected type AND a selected group"
+msgstr ""
+
+msgid "Item must match a selected type OR a selected group"
+msgstr ""
+
 msgid "Item Scope"
 msgstr "Artikelbereich"
 
 msgid "Item Type"
 msgstr "Artikeltyp"
+
+msgid "Item types"
+msgstr ""
 
 msgid "items"
 msgstr "Artikel"
@@ -4573,8 +4604,14 @@ msgstr "Übereinstimmung"
 msgid "Match all"
 msgstr "Alle abgleichen"
 
+msgid "Match all (AND)"
+msgstr ""
+
 msgid "Match any"
 msgstr "Beliebige abgleichen"
+
+msgid "Match any (OR)"
+msgstr ""
 
 msgid "Match none"
 msgstr "Keine Übereinstimmung"
@@ -5503,6 +5540,9 @@ msgstr "Optionaler Kontext für diese Regel"
 
 msgid "Options"
 msgstr "Optionen"
+
+msgid "OR"
+msgstr ""
 
 msgid "Order"
 msgstr "Bestellung"

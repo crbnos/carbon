@@ -9,7 +9,7 @@ import {
   type Condition,
   type ConditionAst,
   FIELD_REGISTRY,
-  getFieldsForTargetType,
+  getFieldsForTargetTypeAndSurfaces,
   type MatchKind,
   type TargetType,
   type TransactionSurface
@@ -39,8 +39,13 @@ type RuleBuilderProps = {
   onConditionsChange?: (conditions: Condition[]) => void;
 };
 
-const emptyConditionFor = (targetType: TargetType | undefined): Condition => {
-  const pool = targetType ? getFieldsForTargetType(targetType) : FIELD_REGISTRY;
+const emptyConditionFor = (
+  targetType: TargetType | undefined,
+  surfaces: TransactionSurface[] | undefined
+): Condition => {
+  const pool = targetType
+    ? getFieldsForTargetTypeAndSurfaces(targetType, surfaces ?? [])
+    : FIELD_REGISTRY;
   return { field: pool[0]?.path ?? "", op: "eq", value: undefined };
 };
 
@@ -80,7 +85,7 @@ export default function RuleBuilder({
   const [conditions, setConditions] = useState<Condition[]>(
     initial?.conditions?.length
       ? initial.conditions
-      : [emptyConditionFor(targetType)]
+      : [emptyConditionFor(targetType, surfaces)]
   );
   const optionsByLoader = useValueOptions();
 
@@ -107,8 +112,8 @@ export default function RuleBuilder({
   }, []);
 
   const handleAdd = useCallback(() => {
-    setConditions((prev) => [...prev, emptyConditionFor(targetType)]);
-  }, [targetType]);
+    setConditions((prev) => [...prev, emptyConditionFor(targetType, surfaces)]);
+  }, [targetType, surfaces]);
 
   const ast: ConditionAst = { kind, conditions };
 

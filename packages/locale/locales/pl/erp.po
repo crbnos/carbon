@@ -15,6 +15,10 @@ msgstr ""
 msgid " A supplier is a business or person who sells you parts or services."
 msgstr "Dostawca to firma lub osoba, która sprzedaje Ci części lub usługi."
 
+#. placeholder {0}: fieldDef?.label ?? condition.field
+msgid "\"{0}\" isn't available on the selected surface(s). Pick another field."
+msgstr ""
+
 msgid "\"{storageUnitName}\" has {childCount} direct nested storage units. Deleting it will also delete them and anything underneath them. This cannot be undone."
 msgstr "„{storageUnitName}\" ma {childCount} bezpośrednio zagnieżdżonych jednostek magazynowych. Usunięcie go spowoduje również usunięcie ich i wszystkiego pod nimi. Tej operacji nie można cofnąć."
 
@@ -470,6 +474,9 @@ msgstr "Typ kwoty"
 msgid "An item cannot be added to itself."
 msgstr "Przedmiot nie może być dodany do siebie."
 
+msgid "AND"
+msgstr ""
+
 msgid "and {remaining} more"
 msgstr "i {remaining} więcej"
 
@@ -487,6 +494,12 @@ msgstr "Tekst adnotacji jest wymagany"
 
 msgid "Annotation updated"
 msgstr "Adnotacja zaktualizowana"
+
+msgid "Any item group"
+msgstr ""
+
+msgid "Any item type"
+msgstr ""
 
 msgid "API and Webhooks"
 msgstr "API i Webhooks"
@@ -511,9 +524,6 @@ msgstr "Dotyczy"
 
 msgid "Applies to all"
 msgstr "Dotyczy wszystkich"
-
-msgid "Applies to all items"
-msgstr "Dotyczy wszystkich pozycji"
 
 msgid "Applies to all storage units"
 msgstr "Dotyczy wszystkich jednostek magazynowych"
@@ -1385,6 +1395,9 @@ msgstr "Widoczność i kolejność kolumn"
 
 msgid "Columns"
 msgstr "Kolumny"
+
+msgid "Combine filters"
+msgstr ""
 
 msgid "Coming soon"
 msgstr "Wkrótce"
@@ -2966,6 +2979,9 @@ msgstr "Typy pracowników"
 msgid "Employees"
 msgstr "Pracownicy"
 
+msgid "Empty = match every item"
+msgstr ""
+
 msgid "Empty work centers"
 msgstr "Puste centra pracy"
 
@@ -4136,8 +4152,14 @@ msgstr "Przedmiot"
 msgid "Item {scannedItem} is not the same as the item {expectedItem}"
 msgstr "Pozycja {scannedItem} nie jest taka sama jak pozycja {expectedItem}"
 
+msgid "Item filters"
+msgstr ""
+
 msgid "Item Group"
 msgstr "Grupa Pozycji"
+
+msgid "Item groups"
+msgstr ""
 
 msgid "Item Groups"
 msgstr "Grupy Pozycji"
@@ -4148,11 +4170,20 @@ msgstr "ID Przedmiotu"
 msgid "Item Master"
 msgstr "Główny element"
 
+msgid "Item must match a selected type AND a selected group"
+msgstr ""
+
+msgid "Item must match a selected type OR a selected group"
+msgstr ""
+
 msgid "Item Scope"
 msgstr "Zakres Pozycji"
 
 msgid "Item Type"
 msgstr "Typ przedmiotu"
+
+msgid "Item types"
+msgstr ""
 
 msgid "items"
 msgstr "elementy"
@@ -4573,8 +4604,14 @@ msgstr "Dopasuj"
 msgid "Match all"
 msgstr "Dopasuj wszystkie"
 
+msgid "Match all (AND)"
+msgstr ""
+
 msgid "Match any"
 msgstr "Dopasuj dowolny"
+
+msgid "Match any (OR)"
+msgstr ""
 
 msgid "Match none"
 msgstr "Nie dopasuj żaden"
@@ -5503,6 +5540,9 @@ msgstr "Opcjonalny kontekst dla tej reguły"
 
 msgid "Options"
 msgstr "Opcje"
+
+msgid "OR"
+msgstr ""
 
 msgid "Order"
 msgstr "Zamówienie"

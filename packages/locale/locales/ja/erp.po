@@ -15,6 +15,10 @@ msgstr ""
 msgid " A supplier is a business or person who sells you parts or services."
 msgstr "サプライヤーは、あなたに部品またはサービスを販売する企業または個人です。"
 
+#. placeholder {0}: fieldDef?.label ?? condition.field
+msgid "\"{0}\" isn't available on the selected surface(s). Pick another field."
+msgstr ""
+
 msgid "\"{storageUnitName}\" has {childCount} direct nested storage units. Deleting it will also delete them and anything underneath them. This cannot be undone."
 msgstr "「{storageUnitName}」には{childCount}個の直下の階層化されたストレージユニットがあります。これを削除すると、それらとその下にあるすべてのものも削除されます。この操作は取り消せません。"
 
@@ -470,6 +474,9 @@ msgstr "金額タイプ"
 msgid "An item cannot be added to itself."
 msgstr "アイテムをそれ自体に追加することはできません。"
 
+msgid "AND"
+msgstr ""
+
 msgid "and {remaining} more"
 msgstr "そして{remaining}件以上"
 
@@ -487,6 +494,12 @@ msgstr "注釈テキストが必要です"
 
 msgid "Annotation updated"
 msgstr "注釈が更新されました"
+
+msgid "Any item group"
+msgstr ""
+
+msgid "Any item type"
+msgstr ""
 
 msgid "API and Webhooks"
 msgstr "APIとWebhooks"
@@ -511,9 +524,6 @@ msgstr "適用対象"
 
 msgid "Applies to all"
 msgstr "すべてに適用"
-
-msgid "Applies to all items"
-msgstr "すべてのアイテムに適用"
 
 msgid "Applies to all storage units"
 msgstr "すべての保管ユニットに適用"
@@ -1385,6 +1395,9 @@ msgstr "列の表示と順序"
 
 msgid "Columns"
 msgstr "列"
+
+msgid "Combine filters"
+msgstr ""
 
 msgid "Coming soon"
 msgstr "近日公開予定"
@@ -2966,6 +2979,9 @@ msgstr "従業員タイプ"
 msgid "Employees"
 msgstr "従業員"
 
+msgid "Empty = match every item"
+msgstr ""
+
 msgid "Empty work centers"
 msgstr "空の作業センター"
 
@@ -4136,8 +4152,14 @@ msgstr "アイテム"
 msgid "Item {scannedItem} is not the same as the item {expectedItem}"
 msgstr "アイテム {scannedItem} は、アイテム {expectedItem} と同じではありません"
 
+msgid "Item filters"
+msgstr ""
+
 msgid "Item Group"
 msgstr "品目グループ"
+
+msgid "Item groups"
+msgstr ""
 
 msgid "Item Groups"
 msgstr "アイテムグループ"
@@ -4148,11 +4170,20 @@ msgstr "アイテムID"
 msgid "Item Master"
 msgstr "アイテムマスター"
 
+msgid "Item must match a selected type AND a selected group"
+msgstr ""
+
+msgid "Item must match a selected type OR a selected group"
+msgstr ""
+
 msgid "Item Scope"
 msgstr "アイテムスコープ"
 
 msgid "Item Type"
 msgstr "アイテムタイプ"
+
+msgid "Item types"
+msgstr ""
 
 msgid "items"
 msgstr "アイテム"
@@ -4573,8 +4604,14 @@ msgstr "マッチ"
 msgid "Match all"
 msgstr "すべてに一致"
 
+msgid "Match all (AND)"
+msgstr ""
+
 msgid "Match any"
 msgstr "いずれかに一致"
+
+msgid "Match any (OR)"
+msgstr ""
 
 msgid "Match none"
 msgstr "いずれにも一致しない"
@@ -5503,6 +5540,9 @@ msgstr "このルールのオプションコンテキスト"
 
 msgid "Options"
 msgstr "オプション"
+
+msgid "OR"
+msgstr ""
 
 msgid "Order"
 msgstr "注文"

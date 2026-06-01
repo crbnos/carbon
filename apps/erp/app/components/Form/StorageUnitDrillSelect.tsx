@@ -286,7 +286,7 @@ export function StorageUnitDrillSelect({
           />
 
           {/* List */}
-          <ul role="list" className="max-h-[260px] overflow-y-auto py-1">
+          <ul className="max-h-[260px] overflow-y-auto py-1">
             {searchResults ? (
               searchResults.length === 0 ? (
                 <li className="px-3 py-6 text-center text-xs text-muted-foreground">

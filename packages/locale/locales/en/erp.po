@@ -15,6 +15,10 @@ msgstr ""
 msgid " A supplier is a business or person who sells you parts or services."
 msgstr " A supplier is a business or person who sells you parts or services."
 
+#. placeholder {0}: fieldDef?.label ?? condition.field
+msgid "\"{0}\" isn't available on the selected surface(s). Pick another field."
+msgstr "\"{0}\" isn't available on the selected surface(s). Pick another field."
+
 msgid "\"{storageUnitName}\" has {childCount} direct nested storage units. Deleting it will also delete them and anything underneath them. This cannot be undone."
 msgstr "\"{storageUnitName}\" has {childCount} direct nested storage units. Deleting it will also delete them and anything underneath them. This cannot be undone."
 
@@ -470,6 +474,9 @@ msgstr "Amount Type"
 msgid "An item cannot be added to itself."
 msgstr "An item cannot be added to itself."
 
+msgid "AND"
+msgstr "AND"
+
 msgid "and {remaining} more"
 msgstr "and {remaining} more"
 
@@ -487,6 +494,12 @@ msgstr "Annotation text is required"
 
 msgid "Annotation updated"
 msgstr "Annotation updated"
+
+msgid "Any item group"
+msgstr "Any item group"
+
+msgid "Any item type"
+msgstr "Any item type"
 
 msgid "API and Webhooks"
 msgstr "API and Webhooks"
@@ -511,9 +524,6 @@ msgstr "Applies to"
 
 msgid "Applies to all"
 msgstr "Applies to all"
-
-msgid "Applies to all items"
-msgstr "Applies to all items"
 
 msgid "Applies to all storage units"
 msgstr "Applies to all storage units"
@@ -1385,6 +1395,9 @@ msgstr "Column visibility and order"
 
 msgid "Columns"
 msgstr "Columns"
+
+msgid "Combine filters"
+msgstr "Combine filters"
 
 msgid "Coming soon"
 msgstr "Coming soon"
@@ -2966,6 +2979,9 @@ msgstr "Employee Types"
 msgid "Employees"
 msgstr "Employees"
 
+msgid "Empty = match every item"
+msgstr "Empty = match every item"
+
 msgid "Empty work centers"
 msgstr "Empty work centers"
 
@@ -4136,8 +4152,14 @@ msgstr "Item"
 msgid "Item {scannedItem} is not the same as the item {expectedItem}"
 msgstr "Item {scannedItem} is not the same as the item {expectedItem}"
 
+msgid "Item filters"
+msgstr "Item filters"
+
 msgid "Item Group"
 msgstr "Item Group"
+
+msgid "Item groups"
+msgstr "Item groups"
 
 msgid "Item Groups"
 msgstr "Item Groups"
@@ -4148,11 +4170,20 @@ msgstr "Item ID"
 msgid "Item Master"
 msgstr "Item Master"
 
+msgid "Item must match a selected type AND a selected group"
+msgstr "Item must match a selected type AND a selected group"
+
+msgid "Item must match a selected type OR a selected group"
+msgstr "Item must match a selected type OR a selected group"
+
 msgid "Item Scope"
 msgstr "Item Scope"
 
 msgid "Item Type"
 msgstr "Item Type"
+
+msgid "Item types"
+msgstr "Item types"
 
 msgid "items"
 msgstr "items"
@@ -4573,8 +4604,14 @@ msgstr "Match"
 msgid "Match all"
 msgstr "Match all"
 
+msgid "Match all (AND)"
+msgstr "Match all (AND)"
+
 msgid "Match any"
 msgstr "Match any"
+
+msgid "Match any (OR)"
+msgstr "Match any (OR)"
 
 msgid "Match none"
 msgstr "Match none"
@@ -5503,6 +5540,9 @@ msgstr "Optional context for this rule"
 
 msgid "Options"
 msgstr "Options"
+
+msgid "OR"
+msgstr "OR"
 
 msgid "Order"
 msgstr "Order"

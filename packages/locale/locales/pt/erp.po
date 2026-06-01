@@ -15,6 +15,10 @@ msgstr ""
 msgid " A supplier is a business or person who sells you parts or services."
 msgstr "Um fornecedor é uma empresa ou pessoa que vende peças ou serviços para você."
 
+#. placeholder {0}: fieldDef?.label ?? condition.field
+msgid "\"{0}\" isn't available on the selected surface(s). Pick another field."
+msgstr ""
+
 msgid "\"{storageUnitName}\" has {childCount} direct nested storage units. Deleting it will also delete them and anything underneath them. This cannot be undone."
 msgstr "\"{storageUnitName}\" tem {childCount} unidades de armazenamento aninhadas diretas. Deletá-la também excluirá essas unidades e tudo que está abaixo delas. Isso não pode ser desfeito."
 
@@ -470,6 +474,9 @@ msgstr "Tipo de Valor"
 msgid "An item cannot be added to itself."
 msgstr "Um item não pode ser adicionado a si mesmo."
 
+msgid "AND"
+msgstr ""
+
 msgid "and {remaining} more"
 msgstr "e {remaining} mais"
 
@@ -487,6 +494,12 @@ msgstr "O texto da anotação é obrigatório"
 
 msgid "Annotation updated"
 msgstr "Anotação atualizada"
+
+msgid "Any item group"
+msgstr ""
+
+msgid "Any item type"
+msgstr ""
 
 msgid "API and Webhooks"
 msgstr "API e Webhooks"
@@ -511,9 +524,6 @@ msgstr "Aplica-se a"
 
 msgid "Applies to all"
 msgstr "Aplica-se a todos"
-
-msgid "Applies to all items"
-msgstr "Aplica-se a todos os itens"
 
 msgid "Applies to all storage units"
 msgstr "Aplica-se a todas as unidades de armazenamento"
@@ -1385,6 +1395,9 @@ msgstr "Visibilidade e ordem das colunas"
 
 msgid "Columns"
 msgstr "Colunas"
+
+msgid "Combine filters"
+msgstr ""
 
 msgid "Coming soon"
 msgstr "Em breve"
@@ -2966,6 +2979,9 @@ msgstr "Tipos de Funcionários"
 msgid "Employees"
 msgstr "Funcionários"
 
+msgid "Empty = match every item"
+msgstr ""
+
 msgid "Empty work centers"
 msgstr "Centros de trabalho vazios"
 
@@ -4136,8 +4152,14 @@ msgstr "Item"
 msgid "Item {scannedItem} is not the same as the item {expectedItem}"
 msgstr "Item {scannedItem} não é o mesmo que o item {expectedItem}"
 
+msgid "Item filters"
+msgstr ""
+
 msgid "Item Group"
 msgstr "Grupo de Itens"
+
+msgid "Item groups"
+msgstr ""
 
 msgid "Item Groups"
 msgstr "Grupos de Itens"
@@ -4148,11 +4170,20 @@ msgstr "ID do Item"
 msgid "Item Master"
 msgstr "Mestre de Item"
 
+msgid "Item must match a selected type AND a selected group"
+msgstr ""
+
+msgid "Item must match a selected type OR a selected group"
+msgstr ""
+
 msgid "Item Scope"
 msgstr "Escopo do Item"
 
 msgid "Item Type"
 msgstr "Tipo de Item"
+
+msgid "Item types"
+msgstr ""
 
 msgid "items"
 msgstr "itens"
@@ -4573,8 +4604,14 @@ msgstr "Corresponder"
 msgid "Match all"
 msgstr "Corresponder a todos"
 
+msgid "Match all (AND)"
+msgstr ""
+
 msgid "Match any"
 msgstr "Corresponder a qualquer"
+
+msgid "Match any (OR)"
+msgstr ""
 
 msgid "Match none"
 msgstr "Não corresponder a nenhum"
@@ -5503,6 +5540,9 @@ msgstr "Contexto opcional para esta regra"
 
 msgid "Options"
 msgstr "Opções"
+
+msgid "OR"
+msgstr ""
 
 msgid "Order"
 msgstr "Pedido"

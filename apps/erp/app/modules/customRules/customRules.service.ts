@@ -15,7 +15,14 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 
-type CustomRuleInsert = {
+type CustomRuleFilters = {
+  appliesToAll: boolean;
+  filteredItemTypes?: string[];
+  filteredItemGroupIds?: string[];
+  filteredItemMatchAll?: boolean;
+};
+
+type CustomRuleInsert = CustomRuleFilters & {
   name: string;
   description?: string | null;
   message: string;
@@ -23,14 +30,13 @@ type CustomRuleInsert = {
   conditionAst: ConditionAst;
   surfaces: TransactionSurface[];
   targetType: TargetType;
-  appliesToAll: boolean;
   active: boolean;
   companyId: string;
   createdBy: string;
   customFields?: Json;
 };
 
-type CustomRuleUpdate = {
+type CustomRuleUpdate = CustomRuleFilters & {
   id: string;
   name: string;
   description?: string | null;
@@ -38,7 +44,6 @@ type CustomRuleUpdate = {
   severity: Severity;
   conditionAst: ConditionAst;
   surfaces: TransactionSurface[];
-  appliesToAll: boolean;
   active: boolean;
   updatedBy: string;
   customFields?: Json;

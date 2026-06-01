@@ -232,18 +232,19 @@ function StorageUnitValuePickerImpl({
 
   const byId = useMemo(() => {
     const m = new Map<string, StorageUnitTreeRow>();
-    tree.forEach((r) => m.set(r.id, r));
+    for (const r of tree) m.set(r.id, r);
     return m;
   }, [tree]);
 
   const childrenOf = useMemo(() => {
     const m = new Map<string | null, StorageUnitTreeRow[]>();
-    tree.forEach((r) => {
+    for (const r of tree) {
       const arr = m.get(r.parentId) ?? [];
       arr.push(r);
       m.set(r.parentId, arr);
-    });
-    m.forEach((arr) => arr.sort((a, b) => a.name.localeCompare(b.name)));
+    }
+    for (const arr of m.values())
+      arr.sort((a, b) => a.name.localeCompare(b.name));
     return m;
   }, [tree]);
 
@@ -379,7 +380,7 @@ function StorageUnitValuePickerImpl({
               collisionPadding={12}
               className="w-auto min-w-[200px] max-w-[320px] p-1"
             >
-              <ul role="list" className="max-h-[200px] overflow-y-auto">
+              <ul className="max-h-[200px] overflow-y-auto">
                 {locations.length === 0 && (
                   <li className="px-2 py-1.5 text-xs text-muted-foreground">
                     Loading…
@@ -444,7 +445,7 @@ function StorageUnitValuePickerImpl({
         />
 
         {/* List */}
-        <ul role="list" className="max-h-[260px] overflow-y-auto py-1">
+        <ul className="max-h-[260px] overflow-y-auto py-1">
           {searchResults ? (
             searchResults.length === 0 ? (
               <li className="px-3 py-6 text-center text-xs text-muted-foreground">

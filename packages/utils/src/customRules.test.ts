@@ -6,11 +6,19 @@ import {
   compileRule,
   compileWithCache,
   evaluateRules,
-  getFieldDef,
-  getFieldsForTargetType,
+  getFieldsForTargetTypeAndSurfaces,
   interpolateMessage,
-  type RuleContext
+  isFieldAvailableOnSurfaces,
+  itemRuleAppliesToItem,
+  type RuleContext,
+  SURFACE_CONTEXT_AVAILABILITY,
+  TRANSACTION_SURFACES
 } from "./customRules";
+import {
+  FIELD_REGISTRY,
+  getFieldDef,
+  getFieldsForTargetType
+} from "./field-registry";
 
 const ruleOf = (
   conditions: Array<{ field: string; op: string; value?: unknown }>,
@@ -551,5 +559,130 @@ describe("required-field pre-check", () => {
     const ctx: RuleContext = { storageUnit: { storageTypeId: "cold-id" } };
     const violations = evaluateRules([compiled], ctx, "inventoryAdjustment");
     expect(violations).toEqual([]);
+  });
+});
+
+describe("per-surface field availability", () => {
+  it("every surface has an availability entry", () => {
+    for (const s of TRANSACTION_SURFACES) {
+      expect(SURFACE_CONTEXT_AVAILABILITY[s]?.length ?? 0).toBeGreaterThan(0);
+    }
+  });
+
+  it("isFieldAvailableOnSurfaces defers to targetType when no surfaces given", () => {
+    const itemTypeDef = getFieldDef("item.type")!;
+    expect(isFieldAvailableOnSurfaces(itemTypeDef, [])).toBe(true);
+  });
+
+  it("storage fields are not offered on operation (workCenter) surfaces", () => {
+    const wcFields = getFieldsForTargetTypeAndSurfaces("workCenter", [
+      "operationStart"
+    ]);
+    expect(wcFields.some((f) => f.context === "storage")).toBe(false);
+    // transaction.quantity (shared) stays available everywhere.
+    expect(wcFields.some((f) => f.path === "transaction.quantity")).toBe(true);
+  });
+
+  it("item-surface fields stay offered for item rules", () => {
+    const itemFields = getFieldsForTargetTypeAndSurfaces("item", ["receipt"]);
+    expect(itemFields.some((f) => f.path === "item.type")).toBe(true);
+    expect(itemFields.some((f) => f.context === "storage")).toBe(true);
+  });
+
+  it("narrowed set is a subset of the targetType set", () => {
+    const all = getFieldsForTargetType("item");
+    const narrowed = getFieldsForTargetTypeAndSurfaces("item", ["receipt"]);
+    expect(narrowed.length).toBeLessThanOrEqual(all.length);
+    for (const f of narrowed) {
+      expect(all).toContain(f);
+    }
+  });
+
+  it("every registry field is offered on at least one surface of its targetType", () => {
+    for (const f of FIELD_REGISTRY) {
+      const someSurface = TRANSACTION_SURFACES.some((s) =>
+        SURFACE_CONTEXT_AVAILABILITY[s].includes(f.context)
+      );
+      expect(someSurface, `field "${f.path}" offered on no surface`).toBe(true);
+    }
+  });
+});
+
+describe("itemRuleAppliesToItem", () => {
+  const part = { type: "Part", itemPostingGroupId: "grp_a" };
+
+  it("empty filters → applies to all items", () => {
+    expect(itemRuleAppliesToItem(part, {})).toBe(true);
+    expect(
+      itemRuleAppliesToItem(part, {
+        filteredItemTypes: [],
+        filteredItemGroupIds: []
+      })
+    ).toBe(true);
+  });
+
+  it("single dimension (type) — OR and AND behave the same", () => {
+    expect(
+      itemRuleAppliesToItem(part, { filteredItemTypes: ["Part", "Material"] })
+    ).toBe(true);
+    expect(
+      itemRuleAppliesToItem(part, { filteredItemTypes: ["Material"] })
+    ).toBe(false);
+    expect(
+      itemRuleAppliesToItem(part, {
+        filteredItemTypes: ["Material"],
+        filteredItemMatchAll: true
+      })
+    ).toBe(false);
+  });
+
+  it("single dimension (group)", () => {
+    expect(
+      itemRuleAppliesToItem(part, { filteredItemGroupIds: ["grp_a"] })
+    ).toBe(true);
+    expect(
+      itemRuleAppliesToItem(part, { filteredItemGroupIds: ["grp_b"] })
+    ).toBe(false);
+  });
+
+  it("OR (default) — either dimension matches", () => {
+    expect(
+      itemRuleAppliesToItem(part, {
+        filteredItemTypes: ["Material"],
+        filteredItemGroupIds: ["grp_a"]
+      })
+    ).toBe(true);
+    expect(
+      itemRuleAppliesToItem(part, {
+        filteredItemTypes: ["Material"],
+        filteredItemGroupIds: ["grp_b"]
+      })
+    ).toBe(false);
+  });
+
+  it("AND — both dimensions must match", () => {
+    expect(
+      itemRuleAppliesToItem(part, {
+        filteredItemTypes: ["Part"],
+        filteredItemGroupIds: ["grp_a"],
+        filteredItemMatchAll: true
+      })
+    ).toBe(true);
+    expect(
+      itemRuleAppliesToItem(part, {
+        filteredItemTypes: ["Part"],
+        filteredItemGroupIds: ["grp_b"],
+        filteredItemMatchAll: true
+      })
+    ).toBe(false);
+  });
+
+  it("null/absent posting group never matches a group filter", () => {
+    expect(
+      itemRuleAppliesToItem(
+        { type: "Part", itemPostingGroupId: null },
+        { filteredItemGroupIds: ["grp_a"] }
+      )
+    ).toBe(false);
   });
 });

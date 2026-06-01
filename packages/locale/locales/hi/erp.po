@@ -15,6 +15,10 @@ msgstr ""
 msgid " A supplier is a business or person who sells you parts or services."
 msgstr "एक आपूर्तिकर्ता एक व्यवसाय या व्यक्ति है जो आपको पार्ट्स या सेवाएं बेचता है।"
 
+#. placeholder {0}: fieldDef?.label ?? condition.field
+msgid "\"{0}\" isn't available on the selected surface(s). Pick another field."
+msgstr ""
+
 msgid "\"{storageUnitName}\" has {childCount} direct nested storage units. Deleting it will also delete them and anything underneath them. This cannot be undone."
 msgstr "\"{storageUnitName}\" के {childCount} सीधे नेस्टेड स्टोरेज यूनिट हैं। इसे हटाने से वे और उनके अंदर की सभी चीजें भी हट जाएंगी। यह पूर्ववत नहीं किया जा सकता।"
 
@@ -470,6 +474,9 @@ msgstr "राशि प्रकार"
 msgid "An item cannot be added to itself."
 msgstr "एक आइटम को स्वयं में नहीं जोड़ा जा सकता।"
 
+msgid "AND"
+msgstr ""
+
 msgid "and {remaining} more"
 msgstr "और {remaining} अधिक"
 
@@ -487,6 +494,12 @@ msgstr "एनोटेशन टेक्स्ट आवश्यक है"
 
 msgid "Annotation updated"
 msgstr "एनोटेशन अपडेट किया गया"
+
+msgid "Any item group"
+msgstr ""
+
+msgid "Any item type"
+msgstr ""
 
 msgid "API and Webhooks"
 msgstr "API और Webhooks"
@@ -511,9 +524,6 @@ msgstr "लागू होता है"
 
 msgid "Applies to all"
 msgstr "सभी पर लागू होता है"
-
-msgid "Applies to all items"
-msgstr "सभी आइटम पर लागू होता है"
 
 msgid "Applies to all storage units"
 msgstr "सभी स्टोरेज यूनिट्स पर लागू होता है"
@@ -1385,6 +1395,9 @@ msgstr "कॉलम दृश्यता और क्रम"
 
 msgid "Columns"
 msgstr "कॉलम"
+
+msgid "Combine filters"
+msgstr ""
 
 msgid "Coming soon"
 msgstr "जल्द ही आ रहा है"
@@ -2966,6 +2979,9 @@ msgstr "कर्मचारी प्रकार"
 msgid "Employees"
 msgstr "कर्मचारी"
 
+msgid "Empty = match every item"
+msgstr ""
+
 msgid "Empty work centers"
 msgstr "खाली कार्य केंद्र"
 
@@ -4136,8 +4152,14 @@ msgstr "आइटम"
 msgid "Item {scannedItem} is not the same as the item {expectedItem}"
 msgstr "आइटम {scannedItem} आइटम {expectedItem} के समान नहीं है"
 
+msgid "Item filters"
+msgstr ""
+
 msgid "Item Group"
 msgstr "आइटम समूह"
+
+msgid "Item groups"
+msgstr ""
 
 msgid "Item Groups"
 msgstr "आइटम समूह"
@@ -4148,11 +4170,20 @@ msgstr "आइटम आईडी"
 msgid "Item Master"
 msgstr "आइटम मास्टर"
 
+msgid "Item must match a selected type AND a selected group"
+msgstr ""
+
+msgid "Item must match a selected type OR a selected group"
+msgstr ""
+
 msgid "Item Scope"
 msgstr "आइटम स्कोप"
 
 msgid "Item Type"
 msgstr "आइटम प्रकार"
+
+msgid "Item types"
+msgstr ""
 
 msgid "items"
 msgstr "आइटम"
@@ -4573,8 +4604,14 @@ msgstr "मेल खाएं"
 msgid "Match all"
 msgstr "सभी से मेल खाएं"
 
+msgid "Match all (AND)"
+msgstr ""
+
 msgid "Match any"
 msgstr "किसी भी को मिलाएं"
+
+msgid "Match any (OR)"
+msgstr ""
 
 msgid "Match none"
 msgstr "कोई भी मेल न खाएं"
@@ -5503,6 +5540,9 @@ msgstr "इस नियम के लिए वैकल्पिक संद�
 
 msgid "Options"
 msgstr "विकल्प"
+
+msgid "OR"
+msgstr ""
 
 msgid "Order"
 msgstr "आदेश"

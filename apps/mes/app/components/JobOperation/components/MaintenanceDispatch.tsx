@@ -105,8 +105,7 @@ export function MaintenanceDispatch({
     if (isOpen) {
       failureModeFetcher.load(path.to.api.failureModes);
     }
-    // biome-ignore lint/correctness/useExhaustiveDependencies: ignore
-  }, [isOpen]);
+  }, [isOpen, failureModeFetcher.load]);
 
   const handleClose = () => {
     setContent({});
@@ -121,7 +120,7 @@ export function MaintenanceDispatch({
       handleClose();
     }
     // biome-ignore lint/correctness/useExhaustiveDependencies: ignore
-  }, [fetcher.state, fetcher.data]);
+  }, [fetcher.state, fetcher.data, handleClose]);
 
   const onUploadImage = async (file: File) => {
     const fileType = file.name.split(".").pop();

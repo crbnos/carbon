@@ -7,13 +7,30 @@
 
 import type { Database } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
-import type {
-  CustomRuleRow,
-  Severity,
-  TargetType,
-  TransactionSurface
+import {
+  type CustomRuleRow,
+  type ItemRuleFilter,
+  itemRuleAppliesToItem,
+  type Severity,
+  type TargetType,
+  type TransactionSurface,
+  toItemRuleFilter
 } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { itemPostingGroupIdFromEmbed } from "./context";
+
+// Nullable filter columns appended to broadcast selects for item-target rules.
+const ITEM_RULE_FILTER_COLUMNS =
+  "filteredItemTypes, filteredItemGroupIds, filteredItemMatchAll";
+
+// Filter columns carried on broadcast item rules. PostgREST's typed-select
+// parser can't narrow our dynamically-built select string, so broadcast queries
+// type their rows explicitly via this shape rather than the generated Row type.
+type ItemFilterColumns = {
+  filteredItemTypes?: string[] | null;
+  filteredItemGroupIds?: string[] | null;
+  filteredItemMatchAll?: boolean | null;
+};
 
 const assignmentTableFor = (
   targetType: TargetType
@@ -60,12 +77,18 @@ type RuleRowSelect = Pick<
  * Loads active rules applicable to a set of targets of one targetType.
  *
  * `data` keys are targetIds (explicit-assignment rules only).
- * `broadcasts` carries rules with `appliesToAll = TRUE` — caller merges them
- * into every line, including lines that carry no targetId of this targetType.
+ * `broadcasts` carries rules that fire beyond explicit assignments — caller
+ * merges them into every line:
+ *   - item targets: EVERY active item rule broadcasts, then the caller gates it
+ *     per line via the rule's `filteredItem*` filters (see `broadcastFilters`);
+ *     empty filters = every item.
+ *   - storageUnit / workCenter targets: rules with `appliesToAll = TRUE` only.
  *
- * Two round-trips: explicit-assignments + appliesToAll-broadcast. Broadcast
- * fetch always runs, even when `targetIds` is empty, so a request with no
- * explicit target still sees broadcasts.
+ * `broadcastFilters` maps ruleId → item type/group filter (item targets only).
+ *
+ * Two round-trips: explicit-assignments + broadcast. Broadcast fetch always
+ * runs, even when `targetIds` is empty, so a request with no explicit target
+ * still sees broadcasts.
  */
 export async function getActiveRulesForTargets(
   client: SupabaseClient<Database>,
@@ -77,15 +100,31 @@ export async function getActiveRulesForTargets(
 ): Promise<{
   data: Map<string, CustomRuleRow[]>;
   broadcasts: CustomRuleRow[];
+  broadcastFilters: Map<string, ItemRuleFilter>;
   error: unknown;
 }> {
   const out = new Map<string, CustomRuleRow[]>();
+  const broadcastFilters = new Map<string, ItemRuleFilter>();
 
   const ruleCols =
     "id, targetType, severity, message, conditionAst, surfaces, updatedAt, active";
+  const isItem = args.targetType === "item";
+  // Item broadcasts carry their filters so the caller can gate per item.
+  // Annotated `string` so PostgREST yields generically-typed rows (the dynamic
+  // select string can't be statically parsed); rows are cast explicitly below.
+  const broadcastCols: string = isItem
+    ? `${ruleCols}, ${ITEM_RULE_FILTER_COLUMNS}`
+    : ruleCols;
 
   const table = assignmentTableFor(args.targetType);
   const idCol = targetIdColumnFor(args.targetType);
+
+  const broadcastBase = client
+    .from("customRule")
+    .select(broadcastCols)
+    .eq("companyId", args.companyId)
+    .eq("targetType", args.targetType)
+    .eq("active", true);
 
   const [explicit, broadcast] = await Promise.all([
     args.targetIds.length > 0
@@ -95,19 +134,24 @@ export async function getActiveRulesForTargets(
           .in(idCol, args.targetIds)
           .eq("companyId", args.companyId)
       : Promise.resolve({ data: [], error: null }),
-    client
-      .from("customRule")
-      .select(ruleCols)
-      .eq("companyId", args.companyId)
-      .eq("targetType", args.targetType)
-      .eq("appliesToAll", true)
-      .eq("active", true)
+    // Item rules all broadcast (filtered per item); non-item only when appliesToAll.
+    isItem ? broadcastBase : broadcastBase.eq("appliesToAll", true)
   ]);
 
   if (explicit.error)
-    return { data: out, broadcasts: [], error: explicit.error };
+    return {
+      data: out,
+      broadcasts: [],
+      broadcastFilters,
+      error: explicit.error
+    };
   if (broadcast.error)
-    return { data: out, broadcasts: [], error: broadcast.error };
+    return {
+      data: out,
+      broadcasts: [],
+      broadcastFilters,
+      error: broadcast.error
+    };
 
   for (const r of explicit.data ?? []) {
     const row = r as unknown as {
@@ -125,9 +169,18 @@ export async function getActiveRulesForTargets(
     else out.set(targetId, [node as CustomRuleRow]);
   }
 
-  const broadcasts = (broadcast.data ?? []) as unknown as CustomRuleRow[];
+  // `as unknown as` is required: a dynamic select string degrades PostgREST's
+  // row type to `GenericStringError`, which doesn't overlap our explicit shape.
+  const broadcasts = (broadcast.data ?? []) as unknown as (CustomRuleRow &
+    ItemFilterColumns)[];
 
-  return { data: out, broadcasts, error: null };
+  if (isItem) {
+    for (const row of broadcasts) {
+      broadcastFilters.set(row.id, toItemRuleFilter(row));
+    }
+  }
+
+  return { data: out, broadcasts, broadcastFilters, error: null };
 }
 
 /**
@@ -167,11 +220,27 @@ export async function getRuleAssignmentsForTarget(
   // Item / workCenter targets are flat — keep the simple direct query.
   const lookupIds = await resolveLookupIds(client, args);
 
-  // Broadcast (`appliesToAll`) rules govern every target of this targetType.
-  // Surface them alongside explicit + inherited rows so the drawer shows the
-  // full set the evaluator will fire (was previously hidden — drawer showed
-  // "0 assignments" while broadcasts still triggered).
-  const [res, broadcastsRes] = await Promise.all([
+  // Broadcast rules govern targets beyond explicit assignments. Surface them
+  // alongside explicit + inherited rows so the drawer shows the full set the
+  // evaluator will fire (was previously hidden — drawer showed "0 assignments"
+  // while broadcasts still triggered).
+  //   - item: EVERY active item rule broadcasts, gated per item by its
+  //     type/group filters (empty = all items) — mirrors the evaluator.
+  //   - storageUnit / workCenter: rules with `appliesToAll = TRUE`.
+  const isItem = args.targetType === "item";
+  const baseBroadcastCols =
+    "id, name, targetType, severity, message, active, surfaces, appliesToAll, createdAt";
+  // `string` so PostgREST yields generic rows; cast explicitly at the loop.
+  const broadcastCols: string = isItem
+    ? `${baseBroadcastCols}, ${ITEM_RULE_FILTER_COLUMNS}`
+    : baseBroadcastCols;
+  const broadcastBase = client
+    .from("customRule")
+    .select(broadcastCols)
+    .eq("companyId", args.companyId)
+    .eq("targetType", args.targetType);
+
+  const [res, broadcastsRes, itemCtxRes] = await Promise.all([
     (client as SupabaseClient<Database>)
       .from(table)
       .select(
@@ -179,18 +248,35 @@ export async function getRuleAssignmentsForTarget(
       )
       .in(idCol, lookupIds)
       .eq("companyId", args.companyId),
-    client
-      .from("customRule")
-      .select(
-        "id, name, targetType, severity, message, active, surfaces, appliesToAll, createdAt"
-      )
-      .eq("companyId", args.companyId)
-      .eq("targetType", args.targetType)
-      .eq("appliesToAll", true)
+    isItem ? broadcastBase : broadcastBase.eq("appliesToAll", true),
+    // Item type/group for this target so we can gate item broadcasts the same
+    // way the evaluator does.
+    isItem
+      ? client
+          .from("item")
+          .select("type, itemCost(itemPostingGroupId)")
+          .eq("id", args.targetId)
+          .eq("companyId", args.companyId)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null })
   ]);
 
   if (res.error) return { data: [], error: res.error };
   if (broadcastsRes.error) return { data: [], error: broadcastsRes.error };
+  if (itemCtxRes.error) return { data: [], error: itemCtxRes.error };
+
+  // Flatten itemPostingGroupId off the 1:1 itemCost embed for filter matching.
+  const itemCtx = (() => {
+    const row = itemCtxRes.data as {
+      type?: unknown;
+      itemCost?: unknown;
+    } | null;
+    if (!row) return null;
+    return {
+      type: row.type,
+      itemPostingGroupId: itemPostingGroupIdFromEmbed(row.itemCost)
+    };
+  })();
 
   // Resolve ancestor names in one extra query so the UI doesn't need to
   // re-fetch. Only the storageUnit case can yield non-self owner ids.
@@ -259,19 +345,35 @@ export async function getRuleAssignmentsForTarget(
   // or the rule's `appliesToAll` flag to render the "Applies to all" badge and
   // suppress unassign. Skip when already present as an explicit row (shouldn't
   // happen in practice — broadcast rules can't be assigned — but be defensive).
-  for (const b of (broadcastsRes.data ?? []) as Array<{
-    id: string;
-    name: string;
-    targetType: TargetType;
-    severity: Severity;
-    message: string;
-    active: boolean;
-    surfaces: TransactionSurface[];
-    appliesToAll: boolean;
-    createdAt: string | null;
-  }>) {
+  // `as unknown as`: dynamic select → PostgREST `GenericStringError` row type.
+  for (const b of (broadcastsRes.data ?? []) as unknown as Array<
+    {
+      id: string;
+      name: string;
+      targetType: TargetType;
+      severity: Severity;
+      message: string;
+      active: boolean;
+      surfaces: TransactionSurface[];
+      appliesToAll: boolean;
+      createdAt: string | null;
+    } & ItemFilterColumns
+  >) {
     if (b.active === false) continue;
     if (byRuleId.has(b.id)) continue;
+
+    // Item rules: only surface those whose filter matches this item. Label by
+    // reach so the drawer reads "All items" vs a filtered match.
+    let label = "Applies to all";
+    if (isItem) {
+      const filter = toItemRuleFilter(b);
+      if (itemCtx && !itemRuleAppliesToItem(itemCtx, filter)) continue;
+      const filterless =
+        (filter.filteredItemTypes?.length ?? 0) === 0 &&
+        (filter.filteredItemGroupIds?.length ?? 0) === 0;
+      label = filterless ? "All items" : "Matches item filters";
+    }
+
     byRuleId.set(b.id, {
       ownerId: "__all__",
       ruleId: b.id,
@@ -287,7 +389,7 @@ export async function getRuleAssignmentsForTarget(
         appliesToAll: b.appliesToAll
       },
       inheritedFromId: "__all__",
-      inheritedFromName: "Applies to all"
+      inheritedFromName: label
     });
   }
 

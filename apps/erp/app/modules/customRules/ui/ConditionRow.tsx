@@ -5,6 +5,7 @@ import {
   type FieldDef,
   getFieldDef,
   getFieldSurfaceNotes,
+  isFieldAvailableOnSurfaces,
   type Operator,
   SURFACES_BY_TARGET_TYPE,
   type TransactionSurface
@@ -72,6 +73,18 @@ function ConditionRowImpl({
     [condition.field]
   );
 
+  // A field selected before the surfaces changed may no longer be populated on
+  // the rule's current surfaces. Flag it so the author re-picks — mirrors the
+  // save-time validator gate (customRules.models.ts) client-side.
+  const fieldUnavailable = useMemo(
+    () =>
+      !!fieldDef &&
+      !!surfaces &&
+      surfaces.length > 0 &&
+      !isFieldAvailableOnSurfaces(fieldDef, surfaces),
+    [fieldDef, surfaces]
+  );
+
   const availableOps = useMemo<Operator[]>(
     () => (fieldDef ? availableOperators(fieldDef) : []),
     [fieldDef]
@@ -129,6 +142,7 @@ function ConditionRowImpl({
           <FieldCombobox
             value={condition.field}
             targetType={targetType}
+            surfaces={surfaces}
             onChange={(path) => {
               const nextDef = getFieldDef(path);
               const nextOps = nextDef ? availableOperators(nextDef) : [];
@@ -157,6 +171,12 @@ function ConditionRowImpl({
             onChange={(next) => onChange(index, { value: next })}
           />
         </div>
+
+        {fieldUnavailable && (
+          <p className="mt-2 text-xs font-medium leading-none text-destructive">
+            {t`"${fieldDef?.label ?? condition.field}" isn't available on the selected surface(s). Pick another field.`}
+          </p>
+        )}
 
         {surfaceNotes && (
           <details className="mt-2 group rounded-md border border-dashed border-border/70 bg-muted/30 px-2 py-1.5 text-xs text-muted-foreground">

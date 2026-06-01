@@ -6616,6 +6616,9 @@ export type Database = {
           createdBy: string
           customFields: Json | null
           description: string | null
+          filteredItemGroupIds: string[]
+          filteredItemMatchAll: boolean
+          filteredItemTypes: string[]
           id: string
           message: string
           name: string
@@ -6634,6 +6637,9 @@ export type Database = {
           createdBy: string
           customFields?: Json | null
           description?: string | null
+          filteredItemGroupIds?: string[]
+          filteredItemMatchAll?: boolean
+          filteredItemTypes?: string[]
           id?: string
           message: string
           name: string
@@ -6652,6 +6658,9 @@ export type Database = {
           createdBy?: string
           customFields?: Json | null
           description?: string | null
+          filteredItemGroupIds?: string[]
+          filteredItemMatchAll?: boolean
+          filteredItemTypes?: string[]
           id?: string
           message?: string
           name?: string

@@ -47,11 +47,39 @@ type RuleListItem = {
   severity: "error" | "warn";
   active: boolean;
   appliesToAll: boolean;
+  filteredItemTypes?: string[];
+  filteredItemGroupIds?: string[];
   surfaces?: TransactionSurface[];
   assignmentCount?: number;
   description?: string | null;
   message?: string;
 };
+
+// How a rule reaches its targets, for the badge + assignment display.
+// Item rules use type/group filters (empty = all items); other targets use the
+// appliesToAll broadcast flag.
+function ruleReach(rule: RuleListItem): {
+  broadcastLabel: string | null;
+  showAssignments: boolean;
+} {
+  if (rule.targetType === "item") {
+    const types = rule.filteredItemTypes ?? [];
+    const groups = rule.filteredItemGroupIds ?? [];
+    if (types.length === 0 && groups.length === 0) {
+      return { broadcastLabel: "All items", showAssignments: false };
+    }
+    const parts: string[] = [];
+    if (types.length)
+      parts.push(`${types.length} type${types.length > 1 ? "s" : ""}`);
+    if (groups.length)
+      parts.push(`${groups.length} group${groups.length > 1 ? "s" : ""}`);
+    return { broadcastLabel: parts.join(" · "), showAssignments: true };
+  }
+  return {
+    broadcastLabel: rule.appliesToAll ? "Applies to all" : null,
+    showAssignments: !rule.appliesToAll
+  };
+}
 
 type CustomRulesGroupsProps = {
   rules: RuleListItem[];
@@ -193,6 +221,7 @@ const CustomRuleCard = memo(({ rule }: { rule: RuleListItem }) => {
 
   const canEdit = permissions.can("update", "settings");
   const canDelete = permissions.can("delete", "settings");
+  const { broadcastLabel, showAssignments } = ruleReach(rule);
 
   const handleEdit = useCallback(() => {
     navigate(`${path.to.customRule(rule.id)}?${params.toString()}`);
@@ -218,8 +247,8 @@ const CustomRuleCard = memo(({ rule }: { rule: RuleListItem }) => {
                     ) : (
                       <Badge variant="yellow">Warn</Badge>
                     )}
-                    {rule.appliesToAll && (
-                      <Badge variant="outline">Applies to all</Badge>
+                    {broadcastLabel && (
+                      <Badge variant="outline">{broadcastLabel}</Badge>
                     )}
                   </div>
                   <Status
@@ -292,7 +321,7 @@ const CustomRuleCard = memo(({ rule }: { rule: RuleListItem }) => {
                       targetType={rule.targetType}
                     />
                   </div>
-                  {!rule.appliesToAll && (
+                  {showAssignments && (
                     <div className="flex flex-col gap-1">
                       <span className="text-xs uppercase tracking-wide font-medium text-muted-foreground">
                         Assignments

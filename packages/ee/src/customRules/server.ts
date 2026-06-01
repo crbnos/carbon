@@ -12,7 +12,8 @@ import {
   compileWithCache,
   evaluateRules,
   getFieldDef,
-  type RuleContext,
+  type ItemRuleFilter,
+  itemRuleAppliesToItem,
   type Severity,
   type TargetType,
   type TransactionSurface,
@@ -21,6 +22,14 @@ import {
 } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { companyHasPlan } from "../plan.server";
+import {
+  buildLineContext,
+  type ItemCtxRow,
+  itemPostingGroupIdFromEmbed,
+  type RuleLineInput,
+  type StorageUnitCtxRow,
+  type WorkCenterCtxRow
+} from "./context";
 import {
   getActiveRulesForTargets,
   getCustomRulesList,
@@ -131,10 +140,14 @@ async function loadCompiledRulesForTargets(
 ): Promise<{
   byTarget: Map<string, CompiledRule[]>;
   broadcasts: CompiledRule[];
+  broadcastFilters: Map<string, ItemRuleFilter>;
 }> {
   const byTarget = new Map<string, CompiledRule[]>();
 
-  const { data, broadcasts } = await getActiveRulesForTargets(client, args);
+  const { data, broadcasts, broadcastFilters } = await getActiveRulesForTargets(
+    client,
+    args
+  );
   for (const [targetId, rows] of data) {
     const compiled = new Array<CompiledRule>(rows.length);
     for (let i = 0; i < rows.length; i++) {
@@ -156,7 +169,7 @@ async function loadCompiledRulesForTargets(
     });
   }
 
-  return { byTarget, broadcasts: compiledBroadcasts };
+  return { byTarget, broadcasts: compiledBroadcasts, broadcastFilters };
 }
 
 // ---------------------------------------------------------------------------
@@ -262,30 +275,6 @@ async function buildConditionValueResolver(
 // Per-line evaluator — single entry point trigger handlers call
 // ---------------------------------------------------------------------------
 
-export type RuleLineInput = {
-  /** Diagnostic identifier — not used in eval. */
-  lineId: string;
-  /**
-   * Item the line operates on. Required when `targetType === "item"`.
-   * Available for context in storageUnit/workCenter passes too.
-   */
-  itemId?: string | null;
-  /** Storage unit being interacted with. */
-  storageUnitId?: string | null;
-  /** Work center being operated. Required when `targetType === "workCenter"`. */
-  workCenterId?: string | null;
-  /** Operation context for workCenter passes. */
-  operation?: {
-    id?: string | null;
-    itemId?: string | null;
-    quantity?: number | null;
-    workInstructionId?: string | null;
-  };
-  /** Quantity for `transaction.quantity` predicates. */
-  quantity: number;
-  locationId?: string | null;
-};
-
 export type EvaluateLinesForSurfaceArgs = {
   client: Client;
   companyId: string;
@@ -309,14 +298,6 @@ const EMPTY_RESULT: EvaluateLinesForSurfaceResult = {
   violations: [],
   ruleNames: {}
 };
-
-type ItemCtxRow = Record<string, unknown> & {
-  customFields?: Record<string, unknown>;
-};
-type StorageUnitCtxRow = Record<string, unknown> & {
-  locationId?: string | null;
-};
-type WorkCenterCtxRow = Record<string, unknown>;
 
 const lineTargetIdFor = (
   line: RuleLineInput,
@@ -356,9 +337,10 @@ export async function evaluateLinesForSurface({
     if (line.workCenterId) workCenterIds.add(line.workCenterId);
     if (line.operation?.itemId) itemIds.add(line.operation.itemId);
   }
-  // No early-return on empty targetIds — `appliesToAll` broadcasts must still
-  // fire against every line. Explicit-assignment lookup short-circuits inside
-  // `getActiveRulesForTargets` when targetIds is empty.
+  // No early-return on empty targetIds — broadcasts (all active item rules, or
+  // appliesToAll rules for non-item targets) must still fire against every line.
+  // Explicit-assignment lookup short-circuits inside `getActiveRulesForTargets`
+  // when targetIds is empty.
 
   // Walk the storage-unit tree for every line that carries a bin id. Two
   // inheritance behaviours hang off this fetch:
@@ -464,6 +446,7 @@ export async function evaluateLinesForSurface({
 
   const compiledByTarget = compiled.byTarget;
   const broadcastCompiled = compiled.broadcasts;
+  const broadcastFilters = compiled.broadcastFilters;
 
   // If neither explicit assignments nor broadcasts exist, nothing can fire.
   if (compiledByTarget.size === 0 && broadcastCompiled.length === 0)
@@ -473,17 +456,13 @@ export async function evaluateLinesForSurface({
   for (const it of itemsRes.data ?? []) {
     const row = it as unknown as Record<string, unknown>;
     const readable = row.readableId as string | undefined;
-    // `itemCost` embeds as an array (typed one-to-many even though it's 1:1).
-    // Flatten its `itemPostingGroupId` onto the item ctx; drop the nested obj.
+    // Flatten the 1:1 `itemCost` embed's posting group onto the item ctx; drop
+    // the nested object.
     const { itemCost, ...rest } = row;
-    const cost = Array.isArray(itemCost) ? itemCost[0] : itemCost;
-    const itemPostingGroupId =
-      (cost as { itemPostingGroupId?: string | null } | undefined)
-        ?.itemPostingGroupId ?? undefined;
     itemsById.set(row.id as string, {
       ...rest,
       id: readable ?? (row.id as string),
-      itemPostingGroupId
+      itemPostingGroupId: itemPostingGroupIdFromEmbed(itemCost) ?? undefined
     });
   }
 
@@ -557,8 +536,20 @@ export async function evaluateLinesForSurface({
       }
     }
 
+    // Item broadcasts are gated per item by the rule's type/group filters
+    // (empty filters = every item). A line with no itemId can't match an item
+    // rule. Non-item broadcasts (appliesToAll) fire on every line.
+    const itemForLine =
+      targetType === "item" && line.itemId
+        ? itemsById.get(line.itemId)
+        : undefined;
     for (const r of broadcastCompiled) {
       if (seen.has(r.id)) continue;
+      if (targetType === "item") {
+        if (!itemForLine) continue;
+        const filter: ItemRuleFilter = broadcastFilters.get(r.id) ?? {};
+        if (!itemRuleAppliesToItem(itemForLine, filter)) continue;
+      }
       seen.add(r.id);
       compiledForLine.push(r);
     }
@@ -566,36 +557,18 @@ export async function evaluateLinesForSurface({
     if (compiledForLine.length === 0) continue;
 
     // Fallback id-only ctx objects when the DB lookup misses the row (RLS,
-    // missing record, late insert). Keeps `{item.id}` / `{storageUnit.id}` /
-    // `{workCenter.id}` token interpolation working — the violation modal
-    // shouldn't render "—" just because the join didn't materialize.
-    const storageUnit = line.storageUnitId
-      ? (unitsById.get(line.storageUnitId) ?? { id: line.storageUnitId })
-      : undefined;
-
-    const ctx: RuleContext = {
-      item: line.itemId
-        ? (itemsById.get(line.itemId) ?? { id: line.itemId })
+    // missing record, late insert) are handled inside `buildLineContext` so the
+    // `{item.id}` / `{storageUnit.id}` / `{workCenter.id}` tokens still resolve.
+    const ctx = buildLineContext({
+      line,
+      surface,
+      userId,
+      item: line.itemId ? itemsById.get(line.itemId) : undefined,
+      storageUnit: line.storageUnitId
+        ? unitsById.get(line.storageUnitId)
         : undefined,
-      storageUnit,
-      workCenter: line.workCenterId
-        ? (wcById.get(line.workCenterId) ?? { id: line.workCenterId })
-        : undefined,
-      operation: line.operation
-        ? {
-            id: line.operation.id ?? undefined,
-            itemId: line.operation.itemId ?? undefined,
-            quantity: line.operation.quantity ?? undefined,
-            workInstructionId: line.operation.workInstructionId ?? undefined
-          }
-        : undefined,
-      transaction: {
-        kind: surface,
-        locationId: line.locationId ?? storageUnit?.locationId ?? null,
-        quantity: line.quantity,
-        userId
-      }
-    };
+      workCenter: line.workCenterId ? wcById.get(line.workCenterId) : undefined
+    });
 
     const ruleViolations = evaluateRules(compiledForLine, ctx, surface, {
       resolveConditionValue

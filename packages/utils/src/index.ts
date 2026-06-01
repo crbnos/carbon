@@ -9,6 +9,7 @@ export * from "./country";
 export * from "./customRules";
 export * from "./date";
 export * from "./duration";
+export * from "./field-registry";
 export * from "./file";
 export * from "./geo";
 export * from "./items";

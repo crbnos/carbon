@@ -41,16 +41,14 @@ export function QualityIssueModal({
     if (isOpen) {
       issueTypeFetcher.load(path.to.api.qualityIssueTypes);
     }
-    // biome-ignore lint/correctness/useExhaustiveDependencies: ignore
-  }, [isOpen]);
+  }, [isOpen, issueTypeFetcher.load]);
 
   useEffect(() => {
     if (fetcher.state === "idle" && fetcher.data?.success) {
       toast.success(t`Quality issue created`);
       onClose();
     }
-    // biome-ignore lint/correctness/useExhaustiveDependencies: ignore
-  }, [fetcher.state, fetcher.data]);
+  }, [fetcher.state, fetcher.data, onClose, t]);
 
   if (!isOpen) return null;
 

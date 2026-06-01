@@ -31,6 +31,7 @@ import {
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import { customRuleValidator } from "../customRules.models";
+import ItemFilterSelector from "./ItemFilterSelector";
 import MessageWithTokens from "./MessageWithTokens";
 import RuleBuilder from "./RuleBuilder";
 import SeveritySelect from "./SeveritySelect";
@@ -102,6 +103,9 @@ export default function CustomRuleForm({
     severity: initialValues.severity ?? "error",
     targetType,
     appliesToAll: initialValues.appliesToAll ?? false,
+    filteredItemTypes: initialValues.filteredItemTypes ?? [],
+    filteredItemGroupIds: initialValues.filteredItemGroupIds ?? [],
+    filteredItemMatchAll: initialValues.filteredItemMatchAll ?? false,
     active: initialValues.active ?? true,
     surfaces: defaultSurfaces
   };
@@ -148,17 +152,19 @@ export default function CustomRuleForm({
                   placeholder={t`Optional context for this rule`}
                 />
                 <SeveritySelect name="severity" />
-                <Boolean
-                  name="appliesToAll"
-                  label={
-                    targetType === "item"
-                      ? t`Applies to all items`
-                      : targetType === "storageUnit"
+                {targetType === "item" ? (
+                  <ItemFilterSelector />
+                ) : (
+                  <Boolean
+                    name="appliesToAll"
+                    label={
+                      targetType === "storageUnit"
                         ? t`Applies to all storage units`
                         : t`Applies to all work centers`
-                  }
-                  description={t`When on, this rule fires for every target of its type. Assignment rows are ignored but preserved.`}
-                />
+                    }
+                    description={t`When on, this rule fires for every target of its type. Assignment rows are ignored but preserved.`}
+                  />
+                )}
                 <SurfacesField
                   name="surfaces"
                   targetType={targetType}

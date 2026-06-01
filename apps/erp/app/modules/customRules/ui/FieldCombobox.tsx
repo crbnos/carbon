@@ -20,7 +20,8 @@ import {
   FIELD_REGISTRY,
   type FieldDef,
   getFieldDef,
-  getFieldsForTargetType
+  getFieldsForTargetTypeAndSurfaces,
+  type TransactionSurface
 } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
@@ -67,6 +68,12 @@ type FieldComboboxProps = {
   placeholder?: string;
   className?: string;
   targetType?: "item" | "storageUnit" | "workCenter";
+  /**
+   * Surfaces the rule subscribes to. Narrows the offered fields to those whose
+   * root context the evaluator populates on every selected surface, so authors
+   * can't pick a field that won't resolve at runtime.
+   */
+  surfaces?: TransactionSurface[];
 };
 
 export default function FieldCombobox({
@@ -74,7 +81,8 @@ export default function FieldCombobox({
   onChange,
   placeholder,
   className,
-  targetType
+  targetType,
+  surfaces
 }: FieldComboboxProps) {
   const { t } = useLingui();
   const [open, setOpen] = useState(false);
@@ -83,11 +91,11 @@ export default function FieldCombobox({
     const map = new Map<FieldDef["context"], FieldDef[]>();
     for (const ctx of CONTEXT_ORDER) map.set(ctx, []);
     const pool = targetType
-      ? getFieldsForTargetType(targetType)
+      ? getFieldsForTargetTypeAndSurfaces(targetType, surfaces ?? [])
       : FIELD_REGISTRY;
     for (const f of pool) map.get(f.context)!.push(f);
     return map;
-  }, [targetType]);
+  }, [targetType, surfaces]);
 
   const selected = useMemo(() => getFieldDef(value), [value]);
   const ctx = selected ? CONTEXT[selected.context] : undefined;

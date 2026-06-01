@@ -15,6 +15,10 @@ msgstr ""
 msgid " A supplier is a business or person who sells you parts or services."
 msgstr "供应商是向您销售零件或服务的企业或个人。"
 
+#. placeholder {0}: fieldDef?.label ?? condition.field
+msgid "\"{0}\" isn't available on the selected surface(s). Pick another field."
+msgstr ""
+
 msgid "\"{storageUnitName}\" has {childCount} direct nested storage units. Deleting it will also delete them and anything underneath them. This cannot be undone."
 msgstr "\"{storageUnitName}\"有{childCount}个直接嵌套的存储单元。删除它也会删除它们及其下面的所有内容。此操作无法撤销。"
 
@@ -470,6 +474,9 @@ msgstr "金额类型"
 msgid "An item cannot be added to itself."
 msgstr "一个项目不能添加到自身。"
 
+msgid "AND"
+msgstr ""
+
 msgid "and {remaining} more"
 msgstr "和 {remaining} 个更多"
 
@@ -487,6 +494,12 @@ msgstr "注释文本是必需的"
 
 msgid "Annotation updated"
 msgstr "注释已更新"
+
+msgid "Any item group"
+msgstr ""
+
+msgid "Any item type"
+msgstr ""
 
 msgid "API and Webhooks"
 msgstr "API 和 Webhooks"
@@ -511,9 +524,6 @@ msgstr "适用于"
 
 msgid "Applies to all"
 msgstr "适用于全部"
-
-msgid "Applies to all items"
-msgstr "适用于所有项目"
 
 msgid "Applies to all storage units"
 msgstr "适用于所有存储单位"
@@ -1385,6 +1395,9 @@ msgstr "列的可见性和顺序"
 
 msgid "Columns"
 msgstr "列"
+
+msgid "Combine filters"
+msgstr ""
 
 msgid "Coming soon"
 msgstr "即将推出"
@@ -2966,6 +2979,9 @@ msgstr "员工类型"
 msgid "Employees"
 msgstr "员工"
 
+msgid "Empty = match every item"
+msgstr ""
+
 msgid "Empty work centers"
 msgstr "空的工作中心"
 
@@ -4136,8 +4152,14 @@ msgstr "物品"
 msgid "Item {scannedItem} is not the same as the item {expectedItem}"
 msgstr "项目 {scannedItem} 与项目 {expectedItem} 不相同"
 
+msgid "Item filters"
+msgstr ""
+
 msgid "Item Group"
 msgstr "物品组"
+
+msgid "Item groups"
+msgstr ""
 
 msgid "Item Groups"
 msgstr "物品组"
@@ -4148,11 +4170,20 @@ msgstr "物品ID"
 msgid "Item Master"
 msgstr "物料主数据"
 
+msgid "Item must match a selected type AND a selected group"
+msgstr ""
+
+msgid "Item must match a selected type OR a selected group"
+msgstr ""
+
 msgid "Item Scope"
 msgstr "物品范围"
 
 msgid "Item Type"
 msgstr "物品类型"
+
+msgid "Item types"
+msgstr ""
 
 msgid "items"
 msgstr "项目"
@@ -4573,8 +4604,14 @@ msgstr "匹配"
 msgid "Match all"
 msgstr "全部匹配"
 
+msgid "Match all (AND)"
+msgstr ""
+
 msgid "Match any"
 msgstr "匹配任意"
+
+msgid "Match any (OR)"
+msgstr ""
 
 msgid "Match none"
 msgstr "不匹配任何条件"
@@ -5503,6 +5540,9 @@ msgstr "此规则的可选上下文"
 
 msgid "Options"
 msgstr "选项"
+
+msgid "OR"
+msgstr ""
 
 msgid "Order"
 msgstr "订单"
