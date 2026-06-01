@@ -195,12 +195,6 @@ msgstr "会計が有効です"
 msgid "Accounts"
 msgstr "アカウント"
 
-msgid "Accounts Payable Billing Address"
-msgstr "買掛金請求先住所"
-
-msgid "Accounts Receivable Billing Address"
-msgstr "売掛金請求先住所"
-
 msgid "Accumulation Period (Weeks)"
 msgstr "蓄積期間（週）"
 
@@ -1022,6 +1016,15 @@ msgstr "自動ジョブ開始"
 msgid "Auto-generated QR Code"
 msgstr "自動生成されたQRコード"
 
+msgid "Automatic Cost Updates"
+msgstr "自動コスト更新"
+
+msgid "Automatic Lead Time Updates"
+msgstr "自動リードタイム更新"
+
+msgid "Automatic Updates"
+msgstr "自動更新"
+
 msgid "Automatically release the job when the kanban is scanned"
 msgstr "カンバンがスキャンされたときに自動的にジョブをリリースします"
 
@@ -1268,6 +1271,9 @@ msgstr "カテゴリー名"
 
 msgid "CC"
 msgstr "CC"
+
+msgid "Centralized Billing Address"
+msgstr "一元化された請求先住所"
 
 msgid "Change"
 msgstr "変更"
@@ -1516,8 +1522,8 @@ msgstr "様々なトランザクションタイプに使用されるデフォル
 msgid "Configure the start months for your fiscal and tax years"
 msgstr "会計年度と税務年度の開始月を設定します"
 
-msgid "Configure when purchased item prices should be updated from supplier transactions."
-msgstr "仕入先取引から購入品目の価格をいつ更新するかを設定します。"
+msgid "Configure when purchased item costs should be updated from supplier transactions."
+msgstr "購入した品目のコストをサプライヤー取引から更新するタイミングを設定します。"
 
 msgid "Configure who should receive notifications when a supplier submits a quote."
 msgstr "サプライヤーが見積もりを送信したときに通知を受け取るべき人を設定します。"
@@ -2031,6 +2037,9 @@ msgstr "顧客詳細"
 
 msgid "Customer ID"
 msgstr "顧客ID"
+
+msgid "Customer ID cannot be changed after creation"
+msgstr "顧客IDは作成後に変更することはできません"
 
 msgid "Customer Invoice Number"
 msgstr "顧客請求書番号"
@@ -2612,6 +2621,9 @@ msgstr "CSVをダウンロード"
 msgid "Download PDF"
 msgstr "PDFをダウンロード"
 
+msgid "Download template"
+msgstr "テンプレートをダウンロード"
+
 msgid "Draft"
 msgstr "下書き"
 
@@ -3023,12 +3035,6 @@ msgstr "有効にして、原材料のIDと説明を生成します。"
 
 msgid "Enable to include work instructions on job traveler PDFs."
 msgstr "ジョブトラベラーPDFに作業指示を含めるには有効にしてください。"
-
-msgid "Enable to show part thumbnails on purchase order PDFs."
-msgstr "購買注文PDFに部品サムネイルを表示するには有効にしてください。"
-
-msgid "Enable to show part thumbnails on sales PDFs."
-msgstr "販売PDFに部品サムネイルを表示するには有効にしてください。"
 
 msgid "Enable to start tracking changes to your data."
 msgstr "データへの変更の追跡を開始するには有効にしてください。"
@@ -3819,6 +3825,9 @@ msgstr "列を非表示、ピン留め、並び替え"
 msgid "Higher priority wins ties and applies first for markups"
 msgstr "優先度が高いほど同点を制し、マークアップに最初に適用されます"
 
+msgid "Hints in the first row"
+msgstr "最初の行のヒント"
+
 msgid "History"
 msgstr "履歴"
 
@@ -3926,6 +3935,12 @@ msgstr "出荷に追加部品を含める"
 
 msgid "Include Inactive"
 msgstr "非アクティブを含める"
+
+msgid "Include Thumbnails on Purchasing Documents"
+msgstr "購買ドキュメントにサムネイルを含める"
+
+msgid "Include Thumbnails on Sales Documents"
+msgstr "販売ドキュメントにサムネイルを含める"
 
 msgid "Includes tax and shipping costs"
 msgstr "税金と送料を含みます"
@@ -4319,9 +4334,6 @@ msgstr "リードタイム（日数）"
 
 msgid "Lead Time (Days)"
 msgstr "リードタイム（日数）"
-
-msgid "Lead Time Updates"
-msgstr "リードタイム更新"
 
 msgid "Lead Time:"
 msgstr "リードタイム:"
@@ -4881,6 +4893,9 @@ msgstr "タイプ別NCR"
 
 msgid "Need by"
 msgstr "必要日"
+
+msgid "Need the right columns?"
+msgstr "正しい列が必要ですか？"
 
 msgid "Negative Adjustment"
 msgstr "負の調整"
@@ -5676,12 +5691,6 @@ msgstr "部品ID"
 msgid "Part is configured for manufacturing"
 msgstr "部品は製造用に構成されています"
 
-msgid "Part thumbnails are shown on purchase order PDFs."
-msgstr "部品のサムネイルが発注書PDFに表示されます。"
-
-msgid "Part thumbnails are shown on sales PDFs."
-msgstr "部品のサムネイルが販売PDFに表示されます。"
-
 msgid "Partial"
 msgstr "部分的"
 
@@ -5723,9 +5732,6 @@ msgstr "PDFページ"
 
 msgid "PDF Watermark"
 msgstr "PDF透かし"
-
-msgid "PDFs"
-msgstr "PDF"
 
 msgid "Pending"
 msgstr "保留中"
@@ -6093,9 +6099,6 @@ msgstr "購入注文"
 msgid "Purchase orders required"
 msgstr "購入注文が必要です"
 
-msgid "Purchase Price Updates"
-msgstr "購買価格の更新"
-
 msgid "Purchase Qty"
 msgstr "購入数量"
 
@@ -6243,6 +6246,9 @@ msgid "Quoted Date"
 msgstr "見積日"
 
 msgid "Quotes"
+msgstr "見積"
+
+msgid "Quoting"
 msgstr "見積"
 
 msgid "Rate Limit"
@@ -6645,6 +6651,12 @@ msgstr "役割"
 
 msgid "Role:"
 msgstr "役割:"
+
+msgid "Route all AP invoices to one address (e.g. corporate headquarters) instead of individual purchasers."
+msgstr "すべてのAP請求書を1つのアドレス（例：企業本社）にルーティングして、個別の購買担当者の代わりに使用します。"
+
+msgid "Route all AR invoices to one address (e.g. corporate headquarters) instead of individual locations."
+msgstr "すべてのAR請求書を1つのアドレス（例：企業本部）にルーティングして、個別の場所の代わりに使用します。"
 
 msgid "rows"
 msgstr "行"
@@ -7223,17 +7235,29 @@ msgstr "短い説明"
 msgid "Shortcuts"
 msgstr "ショートカット"
 
+msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
+msgstr "顧客リスト、顧客フォーム、ドロップダウンに読みやすい顧客IDカラムを表示します。顧客は内部的にはどちらの方法でも識別されます。"
+
+msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
+msgstr "サプライヤーリスト、サプライヤーフォーム、ドロップダウンに読みやすいサプライヤーID列を表示します。サプライヤーは内部的にはどちらの方法でも識別されます。"
+
+msgid "Show Customer IDs"
+msgstr "顧客IDを表示"
+
 msgid "Show Durations"
 msgstr "期間を表示"
 
 msgid "Show parent items"
 msgstr "親アイテムを表示"
 
-msgid "Show part thumbnails on purchase orders."
-msgstr "購買注文に部品のサムネイルを表示します。"
+msgid "Show part thumbnails on purchase order PDFs."
+msgstr "購買注文PDFに部品のサムネイルを表示します。"
 
-msgid "Show part thumbnails on quotes, sales orders, sales invoices, and shipments."
-msgstr "見積書、販売注文、販売請求書、および出荷に部品のサムネイルを表示します。"
+msgid "Show part thumbnails on quotes, sales orders, invoices, and shipments."
+msgstr "見積書、販売注文書、請求書、および出荷書にパーツサムネイルを表示します。"
+
+msgid "Show Supplier IDs"
+msgstr "仕入先IDを表示"
 
 msgid "Show sync options"
 msgstr "同期オプションを表示"
@@ -7565,6 +7589,9 @@ msgstr "仕入先連絡先"
 msgid "Supplier ID"
 msgstr "サプライヤーID"
 
+msgid "Supplier ID cannot be changed after creation"
+msgstr "サプライヤーIDは作成後に変更することはできません"
+
 msgid "Supplier Invoice Number"
 msgstr "仕入先請求書番号"
 
@@ -7749,12 +7776,6 @@ msgstr "計算方法の後、現金割引が利用可能になるまでの日数
 msgid "The amount of days after the calculation method that the payment is due"
 msgstr "計算方法の後の支払い期日までの日数"
 
-msgid "The billing address used on purchase orders and other purchasing documents."
-msgstr "購買注文およびその他の購買文書で使用される請求先住所。"
-
-msgid "The billing address used on quotes, sales orders, invoices, and other sales documents."
-msgstr "見積書、販売注文書、請求書、およびその他の販売文書で使用される請求先住所。"
-
 msgid "The date the customer expects to receive the goods"
 msgstr "顧客が商品を受け取ることを期待する日付"
 
@@ -7898,12 +7919,6 @@ msgstr "サムネイルが削除されました"
 
 msgid "Thumbnail uploaded"
 msgstr "サムネイルがアップロードされました"
-
-msgid "Thumbnails are included"
-msgstr "サムネイルが含まれています"
-
-msgid "Thumbnails are not included"
-msgstr "サムネイルは含まれていません"
 
 msgid "Thursday"
 msgstr "木曜日"
@@ -8220,6 +8235,9 @@ msgstr "UoM"
 msgid "Update"
 msgstr "更新"
 
+msgid "Update costs on"
+msgstr "コストを更新"
+
 msgid "Update Inventory"
 msgstr "在庫を更新"
 
@@ -8240,9 +8258,6 @@ msgstr "パスワードを更新"
 
 msgid "Update Permissions"
 msgstr "権限を更新"
-
-msgid "Update prices on"
-msgstr "価格を更新"
 
 msgid "Update Quantity"
 msgstr "数量を更新"

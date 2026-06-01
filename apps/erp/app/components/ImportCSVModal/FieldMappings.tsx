@@ -432,7 +432,14 @@ function EnumMappingStep({
       if (error) {
         toast.error(error.message);
       } else {
-        setOptions(data.map((item) => ({ label: item.name, value: item.id })));
+        // Use email as label when present (employees) so auto-match keys on
+        // email; falls back to name for lookups without an email column.
+        setOptions(
+          data.map((item) => ({
+            label: item.email ?? item.name,
+            value: item.id
+          }))
+        );
       }
     }
   }, [enumData, carbon, company.id]);
@@ -443,6 +450,25 @@ function EnumMappingStep({
       fetchOptions();
     }
   }, [enumData, carbon, company.id, fetchOptions]);
+
+  // Auto-match CSV values to options once when options become available.
+  // Ref guard prevents clobbering user edits on re-render.
+  const autoMatchedRef = useRef(false);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: one-shot effect
+  useEffect(() => {
+    if (autoMatchedRef.current) return;
+    if (options.length === 0 || uniqueValues.length === 0) return;
+
+    const lookup = new Map(
+      options.map((o) => [o.label.toLowerCase().trim(), o.value])
+    );
+    for (const csvValue of uniqueValues) {
+      if (mappings[csvValue]) continue;
+      const matched = lookup.get(csvValue.toLowerCase().trim());
+      if (matched) onEnumMappingChange(name, csvValue, matched);
+    }
+    autoMatchedRef.current = true;
+  }, [options, mappedColumn]);
 
   return (
     <div>

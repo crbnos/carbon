@@ -165,6 +165,7 @@ export default function EditPurchaseOrderLineRoute() {
     purchaseUnitOfMeasureCode: line?.purchaseUnitOfMeasureCode ?? "",
     requiredDate: line?.requiredDate ?? undefined,
     storageUnitId: line?.storageUnitId ?? "",
+    supplierPartId: line?.supplierPartId ?? "",
     supplierShippingCost: line?.supplierShippingCost ?? 0,
     supplierTaxAmount: line?.supplierTaxAmount ?? 0,
     supplierUnitPrice: line?.supplierUnitPrice ?? 0,

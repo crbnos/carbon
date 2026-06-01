@@ -85,6 +85,7 @@ export default function NewMaterialSupplierRoute() {
     unitPrice: 0,
     supplierUnitOfMeasureCode: "EA",
     minimumOrderQuantity: 1,
+    orderMultiple: 1,
     conversionFactor: 1
   };
 

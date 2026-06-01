@@ -195,12 +195,6 @@ msgstr "Accounting is enabled"
 msgid "Accounts"
 msgstr "Accounts"
 
-msgid "Accounts Payable Billing Address"
-msgstr "Accounts Payable Billing Address"
-
-msgid "Accounts Receivable Billing Address"
-msgstr "Accounts Receivable Billing Address"
-
 msgid "Accumulation Period (Weeks)"
 msgstr "Accumulation Period (Weeks)"
 
@@ -1022,6 +1016,15 @@ msgstr "Auto Start Job"
 msgid "Auto-generated QR Code"
 msgstr "Auto-generated QR Code"
 
+msgid "Automatic Cost Updates"
+msgstr "Automatic Cost Updates"
+
+msgid "Automatic Lead Time Updates"
+msgstr "Automatic Lead Time Updates"
+
+msgid "Automatic Updates"
+msgstr "Automatic Updates"
+
 msgid "Automatically release the job when the kanban is scanned"
 msgstr "Automatically release the job when the kanban is scanned"
 
@@ -1268,6 +1271,9 @@ msgstr "Category Name"
 
 msgid "CC"
 msgstr "CC"
+
+msgid "Centralized Billing Address"
+msgstr "Centralized Billing Address"
 
 msgid "Change"
 msgstr "Change"
@@ -1516,8 +1522,8 @@ msgstr "Configure the default accounts used for various transaction types across
 msgid "Configure the start months for your fiscal and tax years"
 msgstr "Configure the start months for your fiscal and tax years"
 
-msgid "Configure when purchased item prices should be updated from supplier transactions."
-msgstr "Configure when purchased item prices should be updated from supplier transactions."
+msgid "Configure when purchased item costs should be updated from supplier transactions."
+msgstr "Configure when purchased item costs should be updated from supplier transactions."
 
 msgid "Configure who should receive notifications when a supplier submits a quote."
 msgstr "Configure who should receive notifications when a supplier submits a quote."
@@ -2031,6 +2037,9 @@ msgstr "Customer Details"
 
 msgid "Customer ID"
 msgstr "Customer ID"
+
+msgid "Customer ID cannot be changed after creation"
+msgstr "Customer ID cannot be changed after creation"
 
 msgid "Customer Invoice Number"
 msgstr "Customer Invoice Number"
@@ -2612,6 +2621,9 @@ msgstr "Download CSV"
 msgid "Download PDF"
 msgstr "Download PDF"
 
+msgid "Download template"
+msgstr "Download template"
+
 msgid "Draft"
 msgstr "Draft"
 
@@ -3023,12 +3035,6 @@ msgstr "Enable to generate IDs and descriptions for raw materials."
 
 msgid "Enable to include work instructions on job traveler PDFs."
 msgstr "Enable to include work instructions on job traveler PDFs."
-
-msgid "Enable to show part thumbnails on purchase order PDFs."
-msgstr "Enable to show part thumbnails on purchase order PDFs."
-
-msgid "Enable to show part thumbnails on sales PDFs."
-msgstr "Enable to show part thumbnails on sales PDFs."
 
 msgid "Enable to start tracking changes to your data."
 msgstr "Enable to start tracking changes to your data."
@@ -3819,6 +3825,9 @@ msgstr "Hide, pin and reorder columns"
 msgid "Higher priority wins ties and applies first for markups"
 msgstr "Higher priority wins ties and applies first for markups"
 
+msgid "Hints in the first row"
+msgstr "Hints in the first row"
+
 msgid "History"
 msgstr "History"
 
@@ -3926,6 +3935,12 @@ msgstr "Include extra parts in shipment"
 
 msgid "Include Inactive"
 msgstr "Include Inactive"
+
+msgid "Include Thumbnails on Purchasing Documents"
+msgstr "Include Thumbnails on Purchasing Documents"
+
+msgid "Include Thumbnails on Sales Documents"
+msgstr "Include Thumbnails on Sales Documents"
 
 msgid "Includes tax and shipping costs"
 msgstr "Includes tax and shipping costs"
@@ -4319,9 +4334,6 @@ msgstr "Lead time (days)"
 
 msgid "Lead Time (Days)"
 msgstr "Lead Time (Days)"
-
-msgid "Lead Time Updates"
-msgstr "Lead Time Updates"
 
 msgid "Lead Time:"
 msgstr "Lead Time:"
@@ -4881,6 +4893,9 @@ msgstr "NCRs by Type"
 
 msgid "Need by"
 msgstr "Need by"
+
+msgid "Need the right columns?"
+msgstr "Need the right columns?"
 
 msgid "Negative Adjustment"
 msgstr "Negative Adjustment"
@@ -5676,12 +5691,6 @@ msgstr "Part ID"
 msgid "Part is configured for manufacturing"
 msgstr "Part is configured for manufacturing"
 
-msgid "Part thumbnails are shown on purchase order PDFs."
-msgstr "Part thumbnails are shown on purchase order PDFs."
-
-msgid "Part thumbnails are shown on sales PDFs."
-msgstr "Part thumbnails are shown on sales PDFs."
-
 msgid "Partial"
 msgstr "Partial"
 
@@ -5723,9 +5732,6 @@ msgstr "PDF pages"
 
 msgid "PDF Watermark"
 msgstr "PDF Watermark"
-
-msgid "PDFs"
-msgstr "PDFs"
 
 msgid "Pending"
 msgstr "Pending"
@@ -6093,9 +6099,6 @@ msgstr "Purchase Orders"
 msgid "Purchase orders required"
 msgstr "Purchase orders required"
 
-msgid "Purchase Price Updates"
-msgstr "Purchase Price Updates"
-
 msgid "Purchase Qty"
 msgstr "Purchase Qty"
 
@@ -6244,6 +6247,9 @@ msgstr "Quoted Date"
 
 msgid "Quotes"
 msgstr "Quotes"
+
+msgid "Quoting"
+msgstr "Quoting"
 
 msgid "Rate Limit"
 msgstr "Rate Limit"
@@ -6645,6 +6651,12 @@ msgstr "Role"
 
 msgid "Role:"
 msgstr "Role:"
+
+msgid "Route all AP invoices to one address (e.g. corporate headquarters) instead of individual purchasers."
+msgstr "Route all AP invoices to one address (e.g. corporate headquarters) instead of individual purchasers."
+
+msgid "Route all AR invoices to one address (e.g. corporate headquarters) instead of individual locations."
+msgstr "Route all AR invoices to one address (e.g. corporate headquarters) instead of individual locations."
 
 msgid "rows"
 msgstr "rows"
@@ -7223,17 +7235,29 @@ msgstr "Short Description"
 msgid "Shortcuts"
 msgstr "Shortcuts"
 
+msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
+msgstr "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
+
+msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
+msgstr "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
+
+msgid "Show Customer IDs"
+msgstr "Show Customer IDs"
+
 msgid "Show Durations"
 msgstr "Show Durations"
 
 msgid "Show parent items"
 msgstr "Show parent items"
 
-msgid "Show part thumbnails on purchase orders."
-msgstr "Show part thumbnails on purchase orders."
+msgid "Show part thumbnails on purchase order PDFs."
+msgstr "Show part thumbnails on purchase order PDFs."
 
-msgid "Show part thumbnails on quotes, sales orders, sales invoices, and shipments."
-msgstr "Show part thumbnails on quotes, sales orders, sales invoices, and shipments."
+msgid "Show part thumbnails on quotes, sales orders, invoices, and shipments."
+msgstr "Show part thumbnails on quotes, sales orders, invoices, and shipments."
+
+msgid "Show Supplier IDs"
+msgstr "Show Supplier IDs"
 
 msgid "Show sync options"
 msgstr "Show sync options"
@@ -7565,6 +7589,9 @@ msgstr "Supplier Contact"
 msgid "Supplier ID"
 msgstr "Supplier ID"
 
+msgid "Supplier ID cannot be changed after creation"
+msgstr "Supplier ID cannot be changed after creation"
+
 msgid "Supplier Invoice Number"
 msgstr "Supplier Invoice Number"
 
@@ -7749,12 +7776,6 @@ msgstr "The amount of days after the calculation method that the cash discount i
 msgid "The amount of days after the calculation method that the payment is due"
 msgstr "The amount of days after the calculation method that the payment is due"
 
-msgid "The billing address used on purchase orders and other purchasing documents."
-msgstr "The billing address used on purchase orders and other purchasing documents."
-
-msgid "The billing address used on quotes, sales orders, invoices, and other sales documents."
-msgstr "The billing address used on quotes, sales orders, invoices, and other sales documents."
-
 msgid "The date the customer expects to receive the goods"
 msgstr "The date the customer expects to receive the goods"
 
@@ -7898,12 +7919,6 @@ msgstr "Thumbnail removed"
 
 msgid "Thumbnail uploaded"
 msgstr "Thumbnail uploaded"
-
-msgid "Thumbnails are included"
-msgstr "Thumbnails are included"
-
-msgid "Thumbnails are not included"
-msgstr "Thumbnails are not included"
 
 msgid "Thursday"
 msgstr "Thursday"
@@ -8220,6 +8235,9 @@ msgstr "UoM"
 msgid "Update"
 msgstr "Update"
 
+msgid "Update costs on"
+msgstr "Update costs on"
+
 msgid "Update Inventory"
 msgstr "Update Inventory"
 
@@ -8240,9 +8258,6 @@ msgstr "Update Password"
 
 msgid "Update Permissions"
 msgstr "Update Permissions"
-
-msgid "Update prices on"
-msgstr "Update prices on"
 
 msgid "Update Quantity"
 msgstr "Update Quantity"

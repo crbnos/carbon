@@ -1,5 +1,6 @@
 import { useCarbon } from "@carbon/auth";
 import {
+  Button,
   cn,
   ModalBody,
   ModalDescription,
@@ -11,11 +12,12 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import Papa from "papaparse";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { flushSync } from "react-dom";
 import { useDropzone } from "react-dropzone";
+import { LuDownload, LuFileSpreadsheet } from "react-icons/lu";
 import { useUser } from "~/hooks/useUser";
-import type { importSchemas } from "~/modules/shared";
+import { fieldMappings, type importSchemas } from "~/modules/shared";
 import { useCsvContext } from "./useCsvContext";
 
 export const UploadCSV = ({ table }: { table: keyof typeof importSchemas }) => {
@@ -27,6 +29,44 @@ export const UploadCSV = ({ table }: { table: keyof typeof importSchemas }) => {
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const downloadTemplate = useCallback(() => {
+    const mapping = fieldMappings[table];
+    const fields = Object.values(mapping) as Array<{
+      label: string;
+      required?: boolean;
+      type: "string" | "boolean" | "enum" | "numeric";
+      enumData?: {
+        description?: string;
+        options?: readonly string[];
+        fetcher?: unknown;
+      };
+    }>;
+    const headers = fields.map((f) => f.label);
+    // Hint row: helps users see required-ness + valid values at a glance.
+    // It's a CSV data row (CSV has no comment syntax) — users overwrite it
+    // before re-uploading.
+    const hints = fields.map((f) => {
+      const prefix = f.required ? "REQUIRED" : "optional";
+      if (f.type === "enum" && f.enumData?.options) {
+        return `${prefix} — one of: ${f.enumData.options.join(" | ")}`;
+      }
+      if (f.type === "enum" && f.enumData?.fetcher) {
+        return `${prefix} — ${f.enumData.description ?? "see your configured options"}`;
+      }
+      if (f.type === "boolean") return `${prefix} — true | false`;
+      if (f.type === "numeric") return `${prefix} — number`;
+      return prefix;
+    });
+    const csv = Papa.unparse({ fields: headers, data: [hints] });
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${table}-template.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }, [table]);
 
   const processFile = async (file: File) => {
     if (!file) {
@@ -144,10 +184,33 @@ export const UploadCSV = ({ table }: { table: keyof typeof importSchemas }) => {
         </ModalDescription>
       </ModalHeader>
       <ModalBody>
+        <div className="mt-1 mb-4 flex items-center justify-between gap-4 rounded-md border bg-muted/40 px-4 py-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md border bg-background">
+              <LuFileSpreadsheet className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div className="flex min-w-0 flex-col">
+              <span className="text-sm font-medium">
+                <Trans>Need the right columns?</Trans>
+              </span>
+              <span className="text-xs text-muted-foreground">
+                <Trans>Hints in the first row</Trans>
+              </span>
+            </div>
+          </div>
+          <Button
+            variant="secondary"
+            size="md"
+            leftIcon={<LuDownload />}
+            onClick={downloadTemplate}
+          >
+            <Trans>Download template</Trans>
+          </Button>
+        </div>
         <div
           {...getRootProps()}
           className={cn(
-            "w-full border-2 border-dashed h-[200px] rounded-md mt-8 mb-8 flex items-center justify-center text-muted-foreground hover:border-primary hover:text-foreground cursor-pointer focus-visible:border-primary focus-visible:text-foreground hover:bg-primary/5 focus-visible:outline-none",
+            "w-full border-2 border-dashed h-[200px] rounded-md mb-8 flex items-center justify-center text-muted-foreground hover:border-primary hover:text-foreground cursor-pointer focus-visible:border-primary focus-visible:text-foreground hover:bg-primary/5 focus-visible:outline-none",
             isDragActive
               ? "border-primary text-foreground bg-primary/5"
               : "border-muted",

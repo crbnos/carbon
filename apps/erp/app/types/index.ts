@@ -27,6 +27,7 @@ export type FormActionData = Promise<ValidationErrorResponseData | Result>;
 export type ListItem = {
   id: string;
   name: string;
+  email?: string;
 };
 
 // Topbar notification shape. `payload` mirrors what notify.ts writes into

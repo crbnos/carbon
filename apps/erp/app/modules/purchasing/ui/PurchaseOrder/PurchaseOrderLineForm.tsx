@@ -119,6 +119,7 @@ const PurchaseOrderLineForm = ({
     purchaseUom: string;
     requiredDate: string | null;
     storageUnitId: string | null;
+    supplierPartId: string;
     supplierShippingCost: number;
     supplierTaxAmount: number;
     supplierUnitPrice: number;
@@ -135,6 +136,7 @@ const PurchaseOrderLineForm = ({
     priceBreaks: [],
     requiredDate: initialValues?.requiredDate ?? null,
     storageUnitId: initialValues.storageUnitId ?? "",
+    supplierPartId: initialValues.supplierPartId ?? "",
     supplierShippingCost: initialValues.supplierShippingCost ?? 0,
     supplierTaxAmount: initialValues.supplierTaxAmount ?? 0,
     supplierUnitPrice: initialValues.supplierUnitPrice ?? 0,
@@ -314,6 +316,7 @@ const PurchaseOrderLineForm = ({
       purchaseUom: "",
       requiredDate: null,
       storageUnitId: "",
+      supplierPartId: "",
       supplierShippingCost: 0,
       supplierTaxAmount: 0,
       supplierUnitPrice: 0,
@@ -395,6 +398,7 @@ const PurchaseOrderLineForm = ({
               ? null
               : today(getLocalTimeZone()).add({ days: leadTime }).toString(),
           storageUnitId: inventory.data?.defaultStorageUnitId ?? null,
+          supplierPartId: supplierPart?.data?.supplierPartId ?? "",
           supplierTaxAmount: 0,
           taxPercent: 0,
           priceBreaks: breaks,
@@ -586,6 +590,18 @@ const PurchaseOrderLineForm = ({
                           name="description"
                           value={itemData.description}
                           isOptional={false}
+                        />
+
+                        <InputControlled
+                          name="supplierPartId"
+                          label={t`Supplier Part Number`}
+                          value={itemData.supplierPartId}
+                          onChange={(value) =>
+                            setItemData((d) => ({
+                              ...d,
+                              supplierPartId: value
+                            }))
+                          }
                         />
 
                         {isOutsideProcessing && (

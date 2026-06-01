@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PR Review: Improve Bulk Imports</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2128;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --green-bg: rgba(63, 185, 80, 0.1);
+    --red: #f85149;
+    --red-bg: rgba(248, 81, 73, 0.1);
+    --yellow: #d29922;
+    --yellow-bg: rgba(210, 153, 34, 0.12);
+    --purple: #bc8cff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+  }
+  h1 { font-size: 1.75rem; margin-bottom: 0.25rem; }
+  h2 { font-size: 1.35rem; color: var(--accent); margin: 2.5rem 0 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+  h3 { font-size: 1.1rem; margin: 1.5rem 0 0.75rem; color: var(--text); }
+  p { margin-bottom: 0.75rem; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code { background: var(--surface2); padding: 0.15em 0.4em; border-radius: 4px; font-size: 0.9em; font-family: 'SF Mono', 'Fira Code', monospace; }
+  ul, ol { padding-left: 1.5rem; margin-bottom: 0.75rem; }
+  li { margin-bottom: 0.35rem; }
+
+  .hero {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .hero .subtitle { color: var(--text-muted); font-size: 1rem; margin-bottom: 1rem; }
+  .metrics {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+  }
+  .metric {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.5rem 0.85rem;
+    font-size: 0.85rem;
+  }
+  .metric strong { color: var(--accent); }
+
+  .callout {
+    border-left: 3px solid var(--yellow);
+    background: var(--yellow-bg);
+    padding: 0.75rem 1rem;
+    border-radius: 0 6px 6px 0;
+    margin: 1rem 0;
+    font-size: 0.92rem;
+  }
+  .callout.info {
+    border-color: var(--accent);
+    background: rgba(88, 166, 255, 0.08);
+  }
+  .callout.success {
+    border-color: var(--green);
+    background: var(--green-bg);
+  }
+
+  .diff {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin: 1rem 0;
+    overflow: hidden;
+  }
+  .diff-title {
+    background: var(--surface2);
+    padding: 0.5rem 1rem;
+    font-size: 0.82rem;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+  }
+  .diff pre {
+    padding: 0.75rem 1rem;
+    font-size: 0.82rem;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    overflow-x: auto;
+    line-height: 1.55;
+    margin: 0;
+  }
+  .del { color: var(--red); background: var(--red-bg); display: inline-block; width: 100%; }
+  .add { color: var(--green); background: var(--green-bg); display: inline-block; width: 100%; }
+  .ctx { color: var(--text-muted); }
+
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-wrap: wrap;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+  }
+  .flow-node {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.4rem 0.75rem;
+    white-space: nowrap;
+  }
+  .flow-node.new {
+    border-color: var(--green);
+    background: var(--green-bg);
+  }
+  .flow-arrow {
+    color: var(--text-muted);
+    padding: 0 0.4rem;
+    font-size: 0.8rem;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 0.88rem;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 0.45rem 0.75rem;
+    text-align: left;
+  }
+  th {
+    background: var(--surface2);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  td { background: var(--surface); }
+
+  .tag {
+    display: inline-block;
+    font-size: 0.75rem;
+    padding: 0.15em 0.5em;
+    border-radius: 12px;
+    font-weight: 500;
+  }
+  .tag-core { background: rgba(88, 166, 255, 0.15); color: var(--accent); }
+  .tag-plumbing { background: rgba(188, 140, 255, 0.15); color: var(--purple); }
+  .tag-unrelated { background: rgba(139, 148, 158, 0.15); color: var(--text-muted); }
+
+  .section-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 1rem 0;
+  }
+  .section-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+  }
+  .section-card h4 {
+    font-size: 0.9rem;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+  .section-card ul { padding-left: 1.2rem; font-size: 0.88rem; }
+
+  @media (max-width: 640px) {
+    .section-grid { grid-template-columns: 1fr; }
+    .metrics { gap: 0.75rem; }
+    body { padding: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================== HERO ==================== -->
+<div class="hero">
+  <h1>Improve Bulk Imports</h1>
+  <p class="subtitle">Make CSV imports smarter, more robust, and more complete &mdash; import supplier/customer details and item purchasing data in a single file.</p>
+  <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+    Branch: <code>feat/improve-bulk-imports</code> &rarr; <code>main</code>
+  </div>
+  <div class="metrics">
+    <div class="metric"><strong>178</strong> files changed</div>
+    <div class="metric"><strong>+12.5k</strong> / <strong>-1.9k</strong> lines</div>
+    <div class="metric"><strong>3</strong> core import files</div>
+    <div class="metric"><strong>5</strong> item types expanded</div>
+    <div class="metric"><strong>2</strong> partner types expanded</div>
+  </div>
+</div>
+
+<div class="callout">
+  <strong>Note:</strong> This branch includes several other merged features (rework flow, purchasing planning 2.0, MRP changes, approval rule fixes, etc.). This review focuses on the <strong>core bulk-import improvements</strong>. The unrelated changes are catalogued at the end.
+</div>
+
+<!-- ==================== PROBLEM ==================== -->
+<h2>1. Problem</h2>
+
+<p>Bulk CSV imports in Carbon were functional but limited:</p>
+
+<ul>
+  <li><strong>Shallow data:</strong> Importing items only set name and basic fields. Supplier-part links, lead times, and purchasing parameters required manual entry afterwards.</li>
+  <li><strong>Shallow partners:</strong> Importing customers or suppliers created the record but not their address, payment terms, shipping method, status, or type &mdash; all had to be set one-by-one.</li>
+  <li><strong>Fragile matching:</strong> Re-importing a CSV after deleting and recreating entities broke because orphan external-ID mappings pointed at deleted rows, causing FK violations.</li>
+  <li><strong>No template guidance:</strong> The download-template button produced a bare header row; users had to guess which columns were required and what values were valid.</li>
+  <li><strong>Manual enum mapping:</strong> Users had to manually map every CSV value (like employee emails) to system IDs, even when the values matched exactly.</li>
+  <li><strong>Malformed CSVs hard-failed:</strong> A single mismatched row width in the CSV (common in exports from other ERPs) aborted the entire import.</li>
+</ul>
+
+<!-- ==================== SYSTEM CONTEXT ==================== -->
+<h2>2. System Context</h2>
+
+<p>CSV imports flow through three layers:</p>
+
+<div class="flow">
+  <div class="flow-node">ImportCSVModal (UI)</div>
+  <div class="flow-arrow">&rarr;</div>
+  <div class="flow-node">imports.models.ts (schemas)</div>
+  <div class="flow-arrow">&rarr;</div>
+  <div class="flow-node">import-csv edge fn (server)</div>
+</div>
+
+<table>
+  <tr>
+    <th>Layer</th>
+    <th>File</th>
+    <th>Responsibility</th>
+  </tr>
+  <tr>
+    <td><strong>UI</strong></td>
+    <td><code>ImportCSVModal/*</code></td>
+    <td>File upload, column mapping, enum value mapping, submit</td>
+  </tr>
+  <tr>
+    <td><strong>Schema</strong></td>
+    <td><code>imports.models.ts</code></td>
+    <td>Defines which columns exist per entity type, their types, validation, and lookup fetchers</td>
+  </tr>
+  <tr>
+    <td><strong>Server</strong></td>
+    <td><code>import-csv/index.ts</code></td>
+    <td>Supabase edge function: parses CSV, resolves entity matching, upserts rows + side-tables in a transaction</td>
+  </tr>
+</table>
+
+<p>The schema layer is the <strong>single source of truth</strong> for both the UI (which columns to show, which need enum mapping) and the server (which fields to expect). Adding a new column to an import means adding it in the schema, then handling it in the server handler.</p>
+
+<!-- ==================== BEFORE / AFTER ==================== -->
+<h2>3. Before / After</h2>
+
+<h3>Item Import (part, material, tool, fixture, consumable)</h3>
+
+<div class="section-grid">
+  <div class="section-card">
+    <h4>Before</h4>
+    <ul>
+      <li>ID, Name, Short Description, Long Description</li>
+      <li>Item group, unit of measure, replenishment</li>
+      <li>No supplier linkage</li>
+      <li>No lead time</li>
+      <li>No purchasing parameters</li>
+    </ul>
+  </div>
+  <div class="section-card">
+    <h4>After</h4>
+    <ul>
+      <li>ID, Name, Description <em>(merged)</em></li>
+      <li>Item group, unit of measure, replenishment</li>
+      <li style="color: var(--green);">+ Supplier ID, Supplier Part ID</li>
+      <li style="color: var(--green);">+ Supplier UoM, Min Order Qty, Order Multiple</li>
+      <li style="color: var(--green);">+ Conversion Factor, Unit Price</li>
+      <li style="color: var(--green);">+ Lead Time (Days)</li>
+    </ul>
+  </div>
+</div>
+
+<h3>Customer Import</h3>
+
+<div class="section-grid">
+  <div class="section-card">
+    <h4>Before</h4>
+    <ul>
+      <li>Name, Tax ID, Account Manager</li>
+      <li>No address</li>
+      <li>No status/type</li>
+      <li>No payment terms</li>
+    </ul>
+  </div>
+  <div class="section-card">
+    <h4>After</h4>
+    <ul>
+      <li>Name, Tax ID, Account Manager</li>
+      <li style="color: var(--green);">+ Customer Status, Customer Type</li>
+      <li style="color: var(--green);">+ Address (7 fields: name through country)</li>
+      <li style="color: var(--green);">+ Payment Term</li>
+    </ul>
+  </div>
+</div>
+
+<h3>Supplier Import</h3>
+
+<div class="section-grid">
+  <div class="section-card">
+    <h4>Before</h4>
+    <ul>
+      <li>Name, Tax ID, Account Manager</li>
+      <li>No address, shipping, or payment</li>
+      <li>No status/type</li>
+    </ul>
+  </div>
+  <div class="section-card">
+    <h4>After</h4>
+    <ul>
+      <li>Name, Tax ID, Account Manager</li>
+      <li style="color: var(--green);">+ Supplier Status, Supplier Type</li>
+      <li style="color: var(--green);">+ Address (7 fields)</li>
+      <li style="color: var(--green);">+ Payment Term</li>
+      <li style="color: var(--green);">+ Shipping Method, Incoterm, Incoterm Location</li>
+    </ul>
+  </div>
+</div>
+
+<h3>Entity Matching (all types)</h3>
+
+<div class="section-grid">
+  <div class="section-card">
+    <h4>Before</h4>
+    <ul>
+      <li>Match only by CSV external ID</li>
+      <li>Orphan mappings cause FK errors</li>
+      <li>No within-CSV dedup</li>
+      <li>Empty strings written as <code>""</code></li>
+    </ul>
+  </div>
+  <div class="section-card">
+    <h4>After</h4>
+    <ul>
+      <li style="color: var(--green);">Two-tier: external ID &rarr; name fallback</li>
+      <li style="color: var(--green);">Orphan mappings cleaned before import</li>
+      <li style="color: var(--green);">In-CSV name dedup prevents constraint violations</li>
+      <li style="color: var(--green);">Empty strings &rarr; NULL</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ==================== ARCHITECTURE DIAGRAM ==================== -->
+<h2>4. Import Flow (After)</h2>
+
+<div style="background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; font-family: 'SF Mono', monospace; font-size: 0.8rem; line-height: 1.7; overflow-x: auto;">
+<pre style="margin:0;">
+CSV Upload
+    │
+    ▼
+┌──────────────────────────────────────────────────────┐
+│  Parse CSV                                           │
+│  ├─ std/csv with lazyQuotes: true                    │
+│  └─ fallback: parsePermissiveCsv() on row mismatch  │
+└──────────────────────────┬───────────────────────────┘
+                           │
+                           ▼
+┌──────────────────────────────────────────────────────┐
+│  Resolve Identity  (per row)                         │
+│  ├─ 1. externalIdMap  (CSV ID → entity ID)           │
+│  ├─ 2. nameMap        (entity name → entity ID)      │
+│  └─ 3. new insert     (no match)                     │
+└──────────────────────────┬───────────────────────────┘
+                           │
+                           ▼
+┌──────────────────────────────────────────────────────┐
+│  Transaction                                         │
+│  ├─ Upsert parent entity  (customer/supplier/item)   │
+│  ├─ Write extensions:                                │
+│  │   ├─ address + location  (partner types)          │
+│  │   ├─ payment / shipping  (partner types)          │
+│  │   ├─ supplierPart        (item types)             │
+│  │   ├─ itemReplenishment   (lead time)              │
+│  │   └─ itemPlanning        (order multiple)         │
+│  └─ Upsert CSV mappings    (for future re-imports)   │
+└──────────────────────────────────────────────────────┘
+</pre>
+</div>
+
+<!-- ==================== CODE WALKTHROUGH ==================== -->
+<h2>5. Code Walkthrough</h2>
+
+<h3>5.1 &mdash; Reusable Field Groups (Schema Layer)</h3>
+
+<p>Five new field-group constants are defined once and spread into every relevant import type, keeping the definitions DRY:</p>
+
+<div class="diff">
+  <div class="diff-title">apps/erp/app/modules/shared/imports.models.ts</div>
+  <pre>
+<span class="add">+ const supplierPartImportFields = {</span>
+<span class="add">+   supplierId: { label: "Supplier", type: "enum", required: false,</span>
+<span class="add">+     enumData: { fetcher: { table: "supplier", ... } } },</span>
+<span class="add">+   supplierPartId: { ... },</span>
+<span class="add">+   minimumOrderQuantity: { ... },</span>
+<span class="add">+   orderMultiple: { ... },</span>
+<span class="add">+   conversionFactor: { ... },</span>
+<span class="add">+   unitPrice: { ... },</span>
+<span class="add">+ };</span>
+<span class="add">+ const itemPurchasingImportFields = {</span>
+<span class="add">+   leadTime: { label: "Lead Time (Days)", type: "string" },</span>
+<span class="add">+ };</span>
+<span class="add">+ const partnerLocationImportFields = { /* 7 address fields */ };</span>
+<span class="add">+ const partnerPaymentImportFields  = { /* paymentTermId */ };</span>
+<span class="add">+ const supplierShippingImportFields = { /* shippingMethodId, incoterm, incotermLocation */ };</span>
+  </pre>
+</div>
+
+<p>Each item type (part, tool, fixture, consumable, material) spreads <code>...supplierPartImportFields</code> and <code>...itemPurchasingImportFields</code>. Customer spreads location + payment. Supplier spreads location + payment + shipping.</p>
+
+<h3>5.2 &mdash; Smart Template Download (UI)</h3>
+
+<p>The "Download Template" button was moved into the upload step and now generates a <strong>hint row</strong> beneath the headers, telling users what each column expects:</p>
+
+<div class="diff">
+  <div class="diff-title">apps/erp/app/components/ImportCSVModal/UploadCSV.tsx</div>
+  <pre>
+<span class="add">+ const hints = fields.map((f) => {</span>
+<span class="add">+   const prefix = f.required ? "REQUIRED" : "optional";</span>
+<span class="add">+   if (f.type === "enum" && f.enumData?.options) {</span>
+<span class="add">+     return `${prefix} — one of: ${f.enumData.options.join(" | ")}`;</span>
+<span class="add">+   }</span>
+<span class="add">+   if (f.type === "boolean") return `${prefix} — true | false`;</span>
+<span class="add">+   if (f.type === "numeric") return `${prefix} — number`;</span>
+<span class="add">+   return prefix;</span>
+<span class="add">+ });</span>
+<span class="add">+ const csv = Papa.unparse({ fields: headers, data: [hints] });</span>
+  </pre>
+</div>
+
+<p>A user downloading the "Parts" template now gets a CSV like:</p>
+<div style="background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem 1rem; font-family: monospace; font-size: 0.82rem; overflow-x: auto; margin: 0.75rem 0;">
+ID, Description, Item Group, ..., Supplier, Lead Time (Days)<br>
+REQUIRED, REQUIRED, optional — see your configured options, ..., optional, optional — number
+</div>
+
+<h3>5.3 &mdash; Auto-Match Enum Values (UI)</h3>
+
+<p>When the user reaches the enum-mapping step, the UI now auto-matches CSV values to system options by case-insensitive comparison. This eliminates tedious manual mapping when the CSV already uses correct names:</p>
+
+<div class="diff">
+  <div class="diff-title">apps/erp/app/components/ImportCSVModal/FieldMappings.tsx</div>
+  <pre>
+<span class="add">+ const autoMatchedRef = useRef(false);</span>
+<span class="add">+ useEffect(() => {</span>
+<span class="add">+   if (autoMatchedRef.current) return;</span>
+<span class="add">+   const lookup = new Map(</span>
+<span class="add">+     options.map((o) => [o.label.toLowerCase().trim(), o.value])</span>
+<span class="add">+   );</span>
+<span class="add">+   for (const csvValue of uniqueValues) {</span>
+<span class="add">+     if (mappings[csvValue]) continue;</span>
+<span class="add">+     const matched = lookup.get(csvValue.toLowerCase().trim());</span>
+<span class="add">+     if (matched) onEnumMappingChange(name, csvValue, matched);</span>
+<span class="add">+   }</span>
+<span class="add">+   autoMatchedRef.current = true;</span>
+<span class="add">+ }, [options, mappedColumn]);</span>
+  </pre>
+</div>
+
+<p>The <code>useRef</code> guard ensures auto-matching runs exactly once, so user edits aren't overwritten on re-render.</p>
+
+<h3>5.4 &mdash; Employee Email Matching</h3>
+
+<p>The <code>accountManagerId</code> fetcher on both customer and supplier now returns <code>email</code> from the DB. The enum label uses <code>item.email ?? item.name</code>, so CSV values containing employee emails match automatically via the auto-match logic above.</p>
+
+<h3>5.5 &mdash; Permissive CSV Parsing (Server)</h3>
+
+<p>Real-world CSV exports frequently have inconsistent row widths. The server now catches parse errors and retries with a tolerant parser:</p>
+
+<div class="diff">
+  <div class="diff-title">packages/database/supabase/functions/import-csv/index.ts</div>
+  <pre>
+<span class="add">+ function parsePermissiveCsv(text: string): string[][] {</span>
+<span class="add">+   // RFC-4180 tolerant: extra cells dropped, missing cells become ""</span>
+<span class="add">+   ...</span>
+<span class="add">+ }</span>
+<span class="ctx"> </span>
+<span class="ctx">  // Main parse path:</span>
+<span class="ctx">  try {</span>
+<span class="ctx">    rows = parse(text, { lazyQuotes: true });</span>
+<span class="ctx">  } catch {</span>
+<span class="add">+   rows = parsePermissiveCsv(text);</span>
+<span class="ctx">  }</span>
+  </pre>
+</div>
+
+<h3>5.6 &mdash; Two-Tier Entity Matching (Server)</h3>
+
+<p>The biggest robustness improvement. Previously, entities could only be matched by their CSV external ID. Now the server falls back to matching by name:</p>
+
+<div class="diff">
+  <div class="diff-title">packages/database/supabase/functions/import-csv/index.ts</div>
+  <pre>
+<span class="ctx"> // For each CSV row:</span>
+<span class="add">+ const existingId = externalIdMap[csvId] ?? nameMap.get(name.toLowerCase());</span>
+<span class="ctx"> </span>
+<span class="ctx"> if (existingId) {</span>
+<span class="ctx">   // UPDATE existing entity</span>
+<span class="ctx"> } else {</span>
+<span class="ctx">   // INSERT new entity</span>
+<span class="ctx"> }</span>
+  </pre>
+</div>
+
+<p>When a name-based match is used, a new CSV mapping is written so subsequent imports use the fast external-ID path.</p>
+
+<h3>5.7 &mdash; Orphan Mapping Cleanup (Server)</h3>
+
+<p>Before building the external-ID map, the server now validates that every mapped entity still exists in the database. Orphan mappings (from deleted entities) are filtered out, preventing FK violations on side-tables like <code>supplierTax</code>:</p>
+
+<div class="diff">
+  <div class="diff-title">packages/database/supabase/functions/import-csv/index.ts</div>
+  <pre>
+<span class="add">+ async function fetchLiveEntityIds(</span>
+<span class="add">+   entityType: CsvEntityType, ids: string[]</span>
+<span class="add">+ ): Promise&lt;Set&lt;string&gt;&gt; {</span>
+<span class="add">+   // Queries the actual entity table to verify IDs exist</span>
+<span class="add">+ }</span>
+<span class="ctx"> </span>
+<span class="ctx">  // In getCsvExternalIdMap:</span>
+<span class="add">+ const liveIds = await fetchLiveEntityIds(entityType, allEntityIds);</span>
+<span class="add">+ // Filter out mappings whose entity was deleted</span>
+  </pre>
+</div>
+
+<h3>5.8 &mdash; Side-Table Writes (Server)</h3>
+
+<p>The biggest functional addition. After the parent entity upsert, dedicated helpers write related records in the same transaction:</p>
+
+<table>
+  <tr>
+    <th>Entity Type</th>
+    <th>Side-Table</th>
+    <th>Helper Function</th>
+  </tr>
+  <tr>
+    <td>Supplier</td>
+    <td><code>address</code>, <code>supplierLocation</code>, <code>supplierPayment</code>, <code>supplierShipping</code></td>
+    <td><code>writeSupplierExtensions()</code></td>
+  </tr>
+  <tr>
+    <td>Customer</td>
+    <td><code>address</code>, <code>customerLocation</code>, <code>customerPayment</code></td>
+    <td><code>writeCustomerExtensions()</code></td>
+  </tr>
+  <tr>
+    <td>Item (all 5)</td>
+    <td><code>supplierPart</code></td>
+    <td><code>writeSupplierPartLinks()</code></td>
+  </tr>
+  <tr>
+    <td>Item (all 5)</td>
+    <td><code>itemReplenishment</code></td>
+    <td><code>writeItemPurchasingLeadTimes()</code></td>
+  </tr>
+  <tr>
+    <td>Item (all 5)</td>
+    <td><code>itemPlanning</code></td>
+    <td><code>writeItemPlanningOrderMultiples()</code></td>
+  </tr>
+</table>
+
+<p>All side-table writes use <strong>bulk preloading</strong> (e.g., <code>preloadPrimaryLocationAddressIds()</code>) to avoid N+1 queries inside the transaction loop.</p>
+
+<h3>5.9 &mdash; Empty String Nullification (Server)</h3>
+
+<p>A simple but important utility that converts empty CSV cells to <code>NULL</code> before database writes. Without this, empty strings would violate FK and enum constraints:</p>
+
+<div class="diff">
+  <div class="diff-title">packages/database/supabase/functions/import-csv/index.ts</div>
+  <pre>
+<span class="add">+ function nullifyEmptyStrings(obj: Record&lt;string, unknown&gt;) {</span>
+<span class="add">+   for (const [k, v] of Object.entries(obj)) {</span>
+<span class="add">+     if (v === "") obj[k] = undefined;</span>
+<span class="add">+   }</span>
+<span class="add">+   return obj;</span>
+<span class="add">+ }</span>
+  </pre>
+</div>
+
+<!-- ==================== TESTS / VERIFICATION ==================== -->
+<h2>6. Tests / Verification</h2>
+
+<div class="callout info">
+  <strong>Verification status:</strong> The import-csv edge function runs as a Supabase Edge Function (Deno). Changes to <code>imports.models.ts</code> are validated by the Zod schema at runtime during CSV upload. No dedicated unit tests were added in this PR for the import logic &mdash; the import flow is primarily tested through manual E2E verification.
+</div>
+
+<p><strong>Recommended verification commands:</strong></p>
+<div style="background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem 1rem; font-family: monospace; font-size: 0.82rem; margin: 0.75rem 0;">
+  # Type check the schema file<br>
+  pnpm tsc --noEmit apps/erp/app/modules/shared/imports.models.ts<br><br>
+  # Manual E2E: upload a CSV with supplier-part columns for a part import<br>
+  # Verify supplierPart, itemReplenishment, and itemPlanning rows are created<br><br>
+  # Manual E2E: upload a supplier CSV with address + payment + shipping columns<br>
+  # Verify address, supplierLocation, supplierPayment, supplierShipping rows are created<br><br>
+  # Manual E2E: delete a supplier, re-import the same CSV<br>
+  # Verify no FK violation &mdash; orphan mapping should be cleaned up<br><br>
+  # Manual E2E: upload a malformed CSV (inconsistent row widths)<br>
+  # Verify it falls back to permissive parsing and imports successfully
+</div>
+
+<!-- ==================== UNRELATED CHANGES ==================== -->
+<h2>7. Other Changes on This Branch</h2>
+
+<p>This branch includes several features merged from main or developed in parallel. They are <strong>not part of the bulk-import improvements</strong>:</p>
+
+<table>
+  <tr>
+    <th>Feature</th>
+    <th>Key Files</th>
+    <th style="width: 5rem;">Tag</th>
+  </tr>
+  <tr>
+    <td>Serial/batch rework flow</td>
+    <td><code>trigger-rework/</code>, <code>ReworkModal.tsx</code>, rework migration</td>
+    <td><span class="tag tag-unrelated">Unrelated</span></td>
+  </tr>
+  <tr>
+    <td>Purchasing Planning 2.0</td>
+    <td><code>purchasing.models.ts</code> (planned order fields), <code>planning.update.tsx</code></td>
+    <td><span class="tag tag-unrelated">Unrelated</span></td>
+  </tr>
+  <tr>
+    <td>MRP engine + demand forecast sources</td>
+    <td><code>mrp-engine.ts</code>, <code>demandForecastSource</code> queries, forecast UI</td>
+    <td><span class="tag tag-unrelated">Unrelated</span></td>
+  </tr>
+  <tr>
+    <td>Approval rule upper-bound removal</td>
+    <td><code>shared.models.ts</code>, <code>approval-rules.*.tsx</code></td>
+    <td><span class="tag tag-unrelated">Unrelated</span></td>
+  </tr>
+  <tr>
+    <td>Sales invoice PDF: sales order number</td>
+    <td><code>SalesInvoicePDF.tsx</code></td>
+    <td><span class="tag tag-unrelated">Unrelated</span></td>
+  </tr>
+  <tr>
+    <td>Negative adjustment on serial items</td>
+    <td><code>inventory.service.ts</code></td>
+    <td><span class="tag tag-unrelated">Unrelated</span></td>
+  </tr>
+  <tr>
+    <td>Supplier/customer readable ID</td>
+    <td>Migration <code>20260521*</code>, <code>readableId</code> in validators</td>
+    <td><span class="tag tag-plumbing">Import-adjacent</span></td>
+  </tr>
+  <tr>
+    <td>CI workflows (labeler, complexity, checks)</td>
+    <td><code>.github/workflows/*</code></td>
+    <td><span class="tag tag-unrelated">Unrelated</span></td>
+  </tr>
+  <tr>
+    <td>Claude skills + .gitignore</td>
+    <td><code>.claude/skills/*</code></td>
+    <td><span class="tag tag-unrelated">Unrelated</span></td>
+  </tr>
+  <tr>
+    <td>Locale translations (all languages)</td>
+    <td><code>packages/locale/locales/**/*.po</code></td>
+    <td><span class="tag tag-unrelated">Unrelated</span></td>
+  </tr>
+</table>
+
+<!-- ==================== REVIEWER TAKEAWAY ==================== -->
+<h2>8. Reviewer Takeaway</h2>
+
+<div class="callout success">
+  <strong>Mental model:</strong> This PR makes CSV imports a one-shot setup tool. Instead of importing bare entities and then manually configuring their details, users can now import complete records &mdash; items with their supplier and purchasing data, customers/suppliers with their addresses and payment terms &mdash; in a single CSV upload.
+</div>
+
+<p><strong>Focus your review on:</strong></p>
+<ol>
+  <li><strong><code>import-csv/index.ts</code></strong> &mdash; the side-table write helpers (<code>writeSupplierExtensions</code>, <code>writeSupplierPartLinks</code>, etc.). Verify they handle the insert-vs-update paths correctly, especially for address upserts.</li>
+  <li><strong>Two-tier matching logic</strong> &mdash; the external-ID-first, name-fallback pattern. Check that name-matched entities get their CSV mapping written so the next import is idempotent.</li>
+  <li><strong>Orphan mapping cleanup</strong> &mdash; <code>fetchLiveEntityIds</code> queries the entity table before using the mapping. Confirm the FK safety it provides.</li>
+  <li><strong><code>imports.models.ts</code></strong> &mdash; the reusable field groups. Verify the Zod schemas match the field mappings 1:1.</li>
+  <li><strong>Auto-match in <code>FieldMappings.tsx</code></strong> &mdash; the <code>useRef</code> guard for one-shot auto-matching. Confirm it doesn't clobber user edits.</li>
+</ol>
+
+<p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2rem; text-align: center;">
+  Generated for branch <code>feat/improve-bulk-imports</code> &bull; 2026-05-31
+</p>
+
+</body>
+</html>

@@ -748,6 +748,7 @@ export const supplierPartValidator = z.object({
   supplierPartId: z.string().optional(),
   supplierUnitOfMeasureCode: zfd.text(z.string().optional()),
   minimumOrderQuantity: zfd.numeric(z.number().min(0)),
+  orderMultiple: zfd.numeric(z.number().min(1)).optional(),
   conversionFactor: zfd.numeric(z.number().min(0)),
   unitPrice: zfd.numeric(z.number().min(0).optional())
 });

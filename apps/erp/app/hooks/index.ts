@@ -5,6 +5,7 @@ import {
   useUrlParams
 } from "@carbon/react";
 
+import { useCompanySettings } from "./useCompanySettings";
 import { useCurrencyFormatter } from "./useCurrencyFormatter";
 import { useDateFormatter } from "./useDateFormatter";
 import { useFlags } from "./useFlags";
@@ -25,6 +26,7 @@ import { useTrainingPanel } from "./useTrainingPanel";
 import { useUser } from "./useUser";
 
 export {
+  useCompanySettings,
   useCurrencyFormatter,
   useDateFormatter,
   useFlags,

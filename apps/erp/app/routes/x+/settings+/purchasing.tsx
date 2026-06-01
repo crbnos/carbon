@@ -56,6 +56,7 @@ import {
   updateLeadTimesOnReceiptSetting,
   updatePurchasePriceUpdateTimingSetting,
   updatePurchasingPdfThumbnails,
+  updateShowSupplierReadableIdSetting,
   updateSupplierQuoteNotificationSetting
 } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
@@ -190,6 +191,31 @@ export async function action({ request }: ActionFunctionArgs) {
       return {
         success: true,
         message: `Lead time updates on receipt ${updateLeadTimesOnReceipt ? "enabled" : "disabled"}`
+      };
+
+    case "showSupplierReadableIdToggle":
+      const showSupplierReadableId = formData.get("enabled") === "true";
+      const showSupplierReadableIdResult =
+        await updateShowSupplierReadableIdSetting(
+          client,
+          companyId,
+          showSupplierReadableId
+        );
+
+      if (showSupplierReadableIdResult.error) {
+        console.error(
+          "Failed to update supplier ID visibility setting:",
+          showSupplierReadableIdResult.error
+        );
+        return {
+          success: false,
+          message: showSupplierReadableIdResult.error.message
+        };
+      }
+
+      return {
+        success: true,
+        message: `Supplier IDs ${showSupplierReadableId ? "shown" : "hidden"}`
       };
 
     case "supplierQuoteNotification":
@@ -340,6 +366,20 @@ export default function PurchasingSettingsRoute() {
       .updateLeadTimesOnReceipt ?? false
   );
 
+  const [showSupplierReadableIdEnabled, setShowSupplierReadableIdEnabled] =
+    useState(companySettings.showSupplierReadableId ?? false);
+
+  const handleShowSupplierReadableIdToggle = useCallback(
+    (checked: boolean) => {
+      setShowSupplierReadableIdEnabled(checked);
+      toggleFetcher.submit(
+        { intent: "showSupplierReadableIdToggle", enabled: checked.toString() },
+        { method: "POST" }
+      );
+    },
+    [toggleFetcher]
+  );
+
   const handleApAddressToggle = useCallback(
     (checked: boolean) => {
       setApAddressEnabled(checked);
@@ -416,6 +456,10 @@ export default function PurchasingSettingsRoute() {
           <Trans>Purchasing</Trans>
         </Heading>
 
+        <p className="mt-4 text-xxs text-foreground/70 uppercase font-light tracking-wide">
+          <Trans>Documents</Trans>
+        </p>
+
         <Card>
           <HStack className="justify-between items-start">
             <CardHeader>
@@ -459,16 +503,59 @@ export default function PurchasingSettingsRoute() {
           files={(defaultAttachments ?? []) as any}
         />
         <Card>
+          <ValidatedForm
+            method="post"
+            validator={defaultSupplierCcValidator}
+            defaultValues={{
+              defaultSupplierCc: companySettings.defaultSupplierCc ?? []
+            }}
+            fetcher={fetcher}
+          >
+            <input type="hidden" name="intent" value="emails" />
+            <CardHeader>
+              <CardTitle>
+                <Trans>Emails</Trans>
+              </CardTitle>
+              <CardDescription>
+                <Trans>
+                  These email addresses will be automatically CC'd on all emails
+                  sent to suppliers (quotes, purchase orders, etc.).
+                </Trans>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-8 max-w-[400px]">
+                <EmailRecipients
+                  name="defaultSupplierCc"
+                  label={t`Default CC Recipients`}
+                />
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit
+                isDisabled={fetcher.state !== "idle"}
+                isLoading={
+                  fetcher.state !== "idle" &&
+                  fetcher.formData?.get("intent") === "defaultSupplierCc"
+                }
+              >
+                <Trans>Save</Trans>
+              </Submit>
+            </CardFooter>
+          </ValidatedForm>
+        </Card>
+
+        <Card>
           <CardHeader>
             <HStack className="justify-between items-center">
               <div>
                 <CardTitle>
-                  <Trans>Accounts Payable Billing Address</Trans>
+                  <Trans>Centralized Billing Address</Trans>
                 </CardTitle>
                 <CardDescription>
                   <Trans>
-                    The billing address used on purchase orders and other
-                    purchasing documents.
+                    Route all AP invoices to one address (e.g. corporate
+                    headquarters) instead of individual purchasers.
                   </Trans>
                 </CardDescription>
               </div>
@@ -540,6 +627,37 @@ export default function PurchasingSettingsRoute() {
         )}
 
         <Card>
+          <CardHeader>
+            <HStack className="justify-between items-center">
+              <div>
+                <CardTitle>
+                  <Trans>Include Thumbnails on Purchasing Documents</Trans>
+                </CardTitle>
+                <CardDescription>
+                  <Trans>Show part thumbnails on purchase order PDFs.</Trans>
+                </CardDescription>
+              </div>
+              <Switch
+                checked={
+                  companySettings.includeThumbnailsOnPurchasingPdfs ?? true
+                }
+                onCheckedChange={(checked) => {
+                  toggleFetcher.submit(
+                    { intent: "pdfs", enabled: String(checked) },
+                    { method: "POST" }
+                  );
+                }}
+                disabled={toggleFetcher.state !== "idle"}
+              />
+            </HStack>
+          </CardHeader>
+        </Card>
+
+        <p className="mt-4 text-xxs text-foreground/70 uppercase font-light tracking-wide">
+          <Trans>Automatic Updates</Trans>
+        </p>
+
+        <Card>
           <ValidatedForm
             method="post"
             validator={purchasePriceUpdateTimingValidator}
@@ -557,11 +675,11 @@ export default function PurchasingSettingsRoute() {
             />
             <CardHeader>
               <CardTitle>
-                <Trans>Purchase Price Updates</Trans>
+                <Trans>Automatic Cost Updates</Trans>
               </CardTitle>
               <CardDescription>
                 <Trans>
-                  Configure when purchased item prices should be updated from
+                  Configure when purchased item costs should be updated from
                   supplier transactions.
                 </Trans>
               </CardDescription>
@@ -570,7 +688,7 @@ export default function PurchasingSettingsRoute() {
               <div className="flex flex-col gap-8 max-w-[400px]">
                 <Select
                   name="purchasePriceUpdateTiming"
-                  label={t`Update prices on`}
+                  label={t`Update costs on`}
                   options={purchasePriceUpdateTimingTypes.map((type) => ({
                     label: type,
                     value: type
@@ -597,7 +715,7 @@ export default function PurchasingSettingsRoute() {
             <HStack className="justify-between items-center">
               <div>
                 <CardTitle>
-                  <Trans>Lead Time Updates</Trans>
+                  <Trans>Automatic Lead Time Updates</Trans>
                 </CardTitle>
                 <CardDescription>
                   <Trans>
@@ -613,6 +731,38 @@ export default function PurchasingSettingsRoute() {
             </HStack>
           </CardHeader>
         </Card>
+        <p className="mt-4 text-xxs text-foreground/70 uppercase font-light tracking-wide">
+          <Trans>Suppliers</Trans>
+        </p>
+
+        <Card>
+          <CardHeader>
+            <HStack className="justify-between items-center">
+              <div>
+                <CardTitle>
+                  <Trans>Show Supplier IDs</Trans>
+                </CardTitle>
+                <CardDescription>
+                  <Trans>
+                    Show a readable Supplier ID column on the supplier list,
+                    supplier forms, and dropdowns. Suppliers are still
+                    identified internally either way.
+                  </Trans>
+                </CardDescription>
+              </div>
+              <Switch
+                checked={showSupplierReadableIdEnabled}
+                onCheckedChange={handleShowSupplierReadableIdToggle}
+                disabled={toggleFetcher.state !== "idle"}
+              />
+            </HStack>
+          </CardHeader>
+        </Card>
+
+        <p className="mt-4 text-xxs text-foreground/70 uppercase font-light tracking-wide">
+          <Trans>Notifications</Trans>
+        </p>
+
         <Card>
           <ValidatedForm
             method="post"
@@ -666,94 +816,6 @@ export default function PurchasingSettingsRoute() {
               </Submit>
             </CardFooter>
           </ValidatedForm>
-        </Card>
-        <Card>
-          <ValidatedForm
-            method="post"
-            validator={defaultSupplierCcValidator}
-            defaultValues={{
-              defaultSupplierCc: companySettings.defaultSupplierCc ?? []
-            }}
-            fetcher={fetcher}
-          >
-            <input type="hidden" name="intent" value="emails" />
-            <CardHeader>
-              <CardTitle>
-                <Trans>Emails</Trans>
-              </CardTitle>
-              <CardDescription>
-                <Trans>
-                  These email addresses will be automatically CC'd on all emails
-                  sent to suppliers (quotes, purchase orders, etc.).
-                </Trans>
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col gap-8 max-w-[400px]">
-                <EmailRecipients
-                  name="defaultSupplierCc"
-                  label={t`Default CC Recipients`}
-                />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Submit
-                isDisabled={fetcher.state !== "idle"}
-                isLoading={
-                  fetcher.state !== "idle" &&
-                  fetcher.formData?.get("intent") === "defaultSupplierCc"
-                }
-              >
-                <Trans>Save</Trans>
-              </Submit>
-            </CardFooter>
-          </ValidatedForm>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <Trans>PDFs</Trans>
-            </CardTitle>
-            <CardDescription>
-              <Trans>Show part thumbnails on purchase orders.</Trans>
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <HStack className="justify-between items-center">
-              <VStack className="items-start" spacing={1}>
-                <span className="font-medium">
-                  {companySettings.includeThumbnailsOnPurchasingPdfs ? (
-                    <Trans>Thumbnails are included</Trans>
-                  ) : (
-                    <Trans>Thumbnails are not included</Trans>
-                  )}
-                </span>
-                <span className="text-sm text-muted-foreground">
-                  {companySettings.includeThumbnailsOnPurchasingPdfs ? (
-                    <Trans>
-                      Part thumbnails are shown on purchase order PDFs.
-                    </Trans>
-                  ) : (
-                    <Trans>
-                      Enable to show part thumbnails on purchase order PDFs.
-                    </Trans>
-                  )}
-                </span>
-              </VStack>
-              <Switch
-                checked={
-                  companySettings.includeThumbnailsOnPurchasingPdfs ?? true
-                }
-                onCheckedChange={(checked) => {
-                  toggleFetcher.submit(
-                    { intent: "pdfs", enabled: String(checked) },
-                    { method: "POST" }
-                  );
-                }}
-                disabled={toggleFetcher.state !== "idle"}
-              />
-            </HStack>
-          </CardContent>
         </Card>
       </VStack>
     </ScrollArea>

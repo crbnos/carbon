@@ -207,6 +207,11 @@ const SupplierPartForm = ({
                   label={t`Minimum Order Quantity`}
                   minValue={0}
                 />
+                <Number
+                  name="orderMultiple"
+                  label={t`Order Multiple`}
+                  minValue={1}
+                />
                 <CustomFormFields table="partSupplier" />
               </div>
               <PriceBreaks

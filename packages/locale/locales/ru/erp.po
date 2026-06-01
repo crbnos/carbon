@@ -195,12 +195,6 @@ msgstr "Бухгалтерский учет включен"
 msgid "Accounts"
 msgstr "Учетные записи"
 
-msgid "Accounts Payable Billing Address"
-msgstr "Адрес выставления счетов кредиторской задолженности"
-
-msgid "Accounts Receivable Billing Address"
-msgstr "Адрес выставления счетов дебиторской задолженности"
-
 msgid "Accumulation Period (Weeks)"
 msgstr "Период накопления (недели)"
 
@@ -1022,6 +1016,15 @@ msgstr "Автоматический запуск задания"
 msgid "Auto-generated QR Code"
 msgstr "Автоматически созданный QR-код"
 
+msgid "Automatic Cost Updates"
+msgstr "Автоматические обновления стоимости"
+
+msgid "Automatic Lead Time Updates"
+msgstr "Автоматические обновления времени поставки"
+
+msgid "Automatic Updates"
+msgstr "Автоматические обновления"
+
 msgid "Automatically release the job when the kanban is scanned"
 msgstr "Автоматически отпустить задание при сканировании канбана"
 
@@ -1268,6 +1271,9 @@ msgstr "Название категории"
 
 msgid "CC"
 msgstr "CC"
+
+msgid "Centralized Billing Address"
+msgstr "Централизованный адрес выставления счетов"
 
 msgid "Change"
 msgstr "Изменить"
@@ -1516,8 +1522,8 @@ msgstr "Настройте учетные записи по умолчанию, 
 msgid "Configure the start months for your fiscal and tax years"
 msgstr "Настройте месяцы начала вашего финансового и налогового годов"
 
-msgid "Configure when purchased item prices should be updated from supplier transactions."
-msgstr "Настройте, когда цены приобретаемых товаров должны обновляться на основе транзакций поставщика."
+msgid "Configure when purchased item costs should be updated from supplier transactions."
+msgstr "Настройте, когда стоимость приобретенных товаров должна обновляться на основе операций поставщика."
 
 msgid "Configure who should receive notifications when a supplier submits a quote."
 msgstr "Настройте, кто должен получать уведомления при отправке поставщиком предложения."
@@ -2031,6 +2037,9 @@ msgstr "Детали клиента"
 
 msgid "Customer ID"
 msgstr "ID клиента"
+
+msgid "Customer ID cannot be changed after creation"
+msgstr "ID клиента не может быть изменен после создания"
 
 msgid "Customer Invoice Number"
 msgstr "Номер счета клиента"
@@ -2612,6 +2621,9 @@ msgstr "Загрузить CSV"
 msgid "Download PDF"
 msgstr "Скачать PDF"
 
+msgid "Download template"
+msgstr "Скачать шаблон"
+
 msgid "Draft"
 msgstr "Черновик"
 
@@ -3023,12 +3035,6 @@ msgstr "Включите для создания идентификаторов 
 
 msgid "Enable to include work instructions on job traveler PDFs."
 msgstr "Включите, чтобы добавить рабочие инструкции в PDF-файлы маршрутных листов."
-
-msgid "Enable to show part thumbnails on purchase order PDFs."
-msgstr "Включите, чтобы показывать миниатюры деталей в PDF-файлах заказов на покупку."
-
-msgid "Enable to show part thumbnails on sales PDFs."
-msgstr "Включите, чтобы показывать миниатюры деталей в PDF-файлах продаж."
 
 msgid "Enable to start tracking changes to your data."
 msgstr "Включите, чтобы начать отслеживание изменений ваших данных."
@@ -3819,6 +3825,9 @@ msgstr "Скрывать, закреплять и переупорядочива
 msgid "Higher priority wins ties and applies first for markups"
 msgstr "Более высокий приоритет выигрывает при равенстве и применяется первым для наценок"
 
+msgid "Hints in the first row"
+msgstr "Подсказки в первой строке"
+
 msgid "History"
 msgstr "История"
 
@@ -3926,6 +3935,12 @@ msgstr "Включить дополнительные детали в отпра
 
 msgid "Include Inactive"
 msgstr "Включить неактивные"
+
+msgid "Include Thumbnails on Purchasing Documents"
+msgstr "Включить миниатюры в документы закупок"
+
+msgid "Include Thumbnails on Sales Documents"
+msgstr "Включить миниатюры в документы продаж"
 
 msgid "Includes tax and shipping costs"
 msgstr "Включает налоги и стоимость доставки"
@@ -4319,9 +4334,6 @@ msgstr "Время доставки (дни)"
 
 msgid "Lead Time (Days)"
 msgstr "Время выполнения (дни)"
-
-msgid "Lead Time Updates"
-msgstr "Обновления сроков поставки"
 
 msgid "Lead Time:"
 msgstr "Время доставки:"
@@ -4881,6 +4893,9 @@ msgstr "NCRs по типам"
 
 msgid "Need by"
 msgstr "Требуется к"
+
+msgid "Need the right columns?"
+msgstr "Нужны правильные столбцы?"
 
 msgid "Negative Adjustment"
 msgstr "Отрицательная корректировка"
@@ -5676,12 +5691,6 @@ msgstr "ID детали"
 msgid "Part is configured for manufacturing"
 msgstr "Деталь настроена для производства"
 
-msgid "Part thumbnails are shown on purchase order PDFs."
-msgstr "Миниатюры деталей отображаются в PDF-файлах заказов на покупку."
-
-msgid "Part thumbnails are shown on sales PDFs."
-msgstr "Миниатюры деталей отображаются в PDF-файлах продаж."
-
 msgid "Partial"
 msgstr "Частичный"
 
@@ -5723,9 +5732,6 @@ msgstr "Страницы PDF"
 
 msgid "PDF Watermark"
 msgstr "Водяной знак PDF"
-
-msgid "PDFs"
-msgstr "PDF-файлы"
 
 msgid "Pending"
 msgstr "Ожидание"
@@ -6093,9 +6099,6 @@ msgstr "Заказы на покупку"
 msgid "Purchase orders required"
 msgstr "Требуются заказы на покупку"
 
-msgid "Purchase Price Updates"
-msgstr "Обновления цены покупки"
-
 msgid "Purchase Qty"
 msgstr "Кол-во покупки"
 
@@ -6244,6 +6247,9 @@ msgstr "Дата предложения"
 
 msgid "Quotes"
 msgstr "Предложения"
+
+msgid "Quoting"
+msgstr "Котировка"
 
 msgid "Rate Limit"
 msgstr "Ограничение скорости"
@@ -6645,6 +6651,12 @@ msgstr "Роль"
 
 msgid "Role:"
 msgstr "Роль:"
+
+msgid "Route all AP invoices to one address (e.g. corporate headquarters) instead of individual purchasers."
+msgstr "Маршрутизируйте все счета-фактуры AP на один адрес (например, корпоративный офис) вместо отдельных закупщиков."
+
+msgid "Route all AR invoices to one address (e.g. corporate headquarters) instead of individual locations."
+msgstr "Маршрутизируйте все счета-фактуры AR на один адрес (например, корпоративный офис) вместо отдельных местоположений."
 
 msgid "rows"
 msgstr "строк"
@@ -7223,17 +7235,29 @@ msgstr "Краткое описание"
 msgid "Shortcuts"
 msgstr "Сочетания клавиш"
 
+msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
+msgstr "Показывать столбец с читаемым ID клиента в списке клиентов, формах клиентов и раскрывающихся списках. Клиенты по-прежнему идентифицируются внутри системы в любом случае."
+
+msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
+msgstr "Показать читаемый столбец ID поставщика в списке поставщиков, формах поставщиков и раскрывающихся списках. Поставщики по-прежнему идентифицируются внутри системы в любом случае."
+
+msgid "Show Customer IDs"
+msgstr "Показать ID клиентов"
+
 msgid "Show Durations"
 msgstr "Показать длительность"
 
 msgid "Show parent items"
 msgstr "Показать родительские элементы"
 
-msgid "Show part thumbnails on purchase orders."
-msgstr "Показывать миниатюры деталей в заказах на покупку."
+msgid "Show part thumbnails on purchase order PDFs."
+msgstr "Показывать миниатюры деталей в PDF-файлах заказов на покупку."
 
-msgid "Show part thumbnails on quotes, sales orders, sales invoices, and shipments."
-msgstr "Показывать миниатюры деталей на предложениях, заказах на продажу, счетах-фактурах продаж и отправках."
+msgid "Show part thumbnails on quotes, sales orders, invoices, and shipments."
+msgstr "Показывать миниатюры деталей на предложениях, заказах на продажу, счетах-фактурах и отправках."
+
+msgid "Show Supplier IDs"
+msgstr "Показать ID поставщиков"
 
 msgid "Show sync options"
 msgstr "Показать параметры синхронизации"
@@ -7565,6 +7589,9 @@ msgstr "Контакт поставщика"
 msgid "Supplier ID"
 msgstr "ID поставщика"
 
+msgid "Supplier ID cannot be changed after creation"
+msgstr "ID поставщика не может быть изменен после создания"
+
 msgid "Supplier Invoice Number"
 msgstr "Номер счета поставщика"
 
@@ -7749,12 +7776,6 @@ msgstr "Количество дней после метода расчета, в
 msgid "The amount of days after the calculation method that the payment is due"
 msgstr "Количество дней после метода расчета, в течение которых платеж должен быть произведен"
 
-msgid "The billing address used on purchase orders and other purchasing documents."
-msgstr "Адрес выставления счета, используемый в заказах на покупку и других документах закупок."
-
-msgid "The billing address used on quotes, sales orders, invoices, and other sales documents."
-msgstr "Адрес выставления счета, используемый в предложениях, заказах на продажу, счетах-фактурах и других документах продаж."
-
 msgid "The date the customer expects to receive the goods"
 msgstr "Дата, когда клиент ожидает получить товары"
 
@@ -7898,12 +7919,6 @@ msgstr "Миниатюра удалена"
 
 msgid "Thumbnail uploaded"
 msgstr "Миниатюра загружена"
-
-msgid "Thumbnails are included"
-msgstr "Миниатюры включены"
-
-msgid "Thumbnails are not included"
-msgstr "Миниатюры не включены"
 
 msgid "Thursday"
 msgstr "Четверг"
@@ -8220,6 +8235,9 @@ msgstr "УИ"
 msgid "Update"
 msgstr "Обновить"
 
+msgid "Update costs on"
+msgstr "Обновлять стоимость на"
+
 msgid "Update Inventory"
 msgstr "Обновить инвентарь"
 
@@ -8240,9 +8258,6 @@ msgstr "Обновить пароль"
 
 msgid "Update Permissions"
 msgstr "Обновить разрешения"
-
-msgid "Update prices on"
-msgstr "Обновлять цены на"
 
 msgid "Update Quantity"
 msgstr "Обновить количество"

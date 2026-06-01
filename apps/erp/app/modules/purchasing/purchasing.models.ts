@@ -228,6 +228,7 @@ export const purchaseOrderLineValidator = z
     purchaseUnitOfMeasureCode: zfd.text(z.string().optional()),
     requiredDate: zfd.text(z.string().optional()),
     storageUnitId: zfd.text(z.string().optional()),
+    supplierPartId: zfd.text(z.string().optional()),
     supplierShippingCost: zfd.numeric(z.number().optional()),
     supplierTaxAmount: zfd.numeric(z.number().optional()),
     supplierUnitPrice: zfd.numeric(z.number().optional())
@@ -325,6 +326,7 @@ export const selectedLinesValidator = z.record(z.string(), selectedLineSchema);
 
 export const supplierValidator = z.object({
   id: zfd.text(z.string().optional()),
+  readableId: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }),
   supplierStatus: z.preprocess(
     (val) => (val === "" ? undefined : val),
@@ -340,6 +342,7 @@ export const supplierValidator = z.object({
 
 export const supplierApprovalValidator = z.object({
   id: zfd.text(z.string().optional()),
+  readableId: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }),
   supplierStatus: z.enum(supplierStatusType, {
     errorMap: (issue, ctx) => ({

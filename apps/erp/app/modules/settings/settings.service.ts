@@ -1119,6 +1119,28 @@ export async function updateDefaultSupplierCc(
     .eq("id", companyId);
 }
 
+export async function updateShowSupplierReadableIdSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  showSupplierReadableId: boolean
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ showSupplierReadableId }))
+    .eq("id", companyId);
+}
+
+export async function updateShowCustomerReadableIdSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  showCustomerReadableId: boolean
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ showCustomerReadableId }))
+    .eq("id", companyId);
+}
+
 export async function upsertWebhook(
   client: SupabaseClient<Database>,
   webhook:

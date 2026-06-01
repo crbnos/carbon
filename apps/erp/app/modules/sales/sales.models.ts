@@ -64,6 +64,7 @@ export const customerLocationValidator = z.object({
 
 export const customerValidator = z.object({
   id: zfd.text(z.string().optional()),
+  readableId: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }),
   customerStatusId: zfd.text(z.string().optional()),
   customerTypeId: zfd.text(z.string().optional()),

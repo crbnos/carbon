@@ -195,12 +195,6 @@ msgstr "लेखांकन सक्षम है"
 msgid "Accounts"
 msgstr "खाते"
 
-msgid "Accounts Payable Billing Address"
-msgstr "खातों का भुगतान बिलिंग पता"
-
-msgid "Accounts Receivable Billing Address"
-msgstr "खाता प्राप्य बिलिंग पता"
-
 msgid "Accumulation Period (Weeks)"
 msgstr "संचय अवधि (सप्ताह)"
 
@@ -1022,6 +1016,15 @@ msgstr "ऑटो स्टार्ट जॉब"
 msgid "Auto-generated QR Code"
 msgstr "स्वचालित रूप से उत्पन्न QR कोड"
 
+msgid "Automatic Cost Updates"
+msgstr "स्वचालित लागत अपडेट"
+
+msgid "Automatic Lead Time Updates"
+msgstr "स्वचालित लीड टाइम अपडेट"
+
+msgid "Automatic Updates"
+msgstr "स्वचालित अपडेट"
+
 msgid "Automatically release the job when the kanban is scanned"
 msgstr "कनबन स्कैन किए जाने पर जॉब को स्वचालित रूप से रिलीज़ करें"
 
@@ -1268,6 +1271,9 @@ msgstr "श्रेणी का नाम"
 
 msgid "CC"
 msgstr "CC"
+
+msgid "Centralized Billing Address"
+msgstr "केंद्रीकृत बिलिंग पता"
 
 msgid "Change"
 msgstr "बदलें"
@@ -1516,8 +1522,8 @@ msgstr "विभिन्न लेनदेन प्रकारों के
 msgid "Configure the start months for your fiscal and tax years"
 msgstr "अपने वित्तीय और कर वर्षों के लिए शुरुआती महीनों को कॉन्फ़िगर करें"
 
-msgid "Configure when purchased item prices should be updated from supplier transactions."
-msgstr "खरीदी गई वस्तु की कीमतों को आपूर्तिकर्ता लेनदेन से कब अपडेट किया जाना चाहिए, इसे कॉन्फ़िगर करें।"
+msgid "Configure when purchased item costs should be updated from supplier transactions."
+msgstr "खरीदी गई वस्तु की लागत को आपूर्तिकर्ता लेनदेन से कब अपडेट किया जाना चाहिए, इसे कॉन्फ़िगर करें।"
 
 msgid "Configure who should receive notifications when a supplier submits a quote."
 msgstr "सप्लायर द्वारा कोट सबमिट करने पर कौन सूचनाएं प्राप्त करेगा, इसे कॉन्फ़िगर करें।"
@@ -2031,6 +2037,9 @@ msgstr "ग्राहक विवरण"
 
 msgid "Customer ID"
 msgstr "ग्राहक ID"
+
+msgid "Customer ID cannot be changed after creation"
+msgstr "ग्राहक ID निर्माण के बाद नहीं बदला जा सकता"
 
 msgid "Customer Invoice Number"
 msgstr "ग्राहक चालान संख्या"
@@ -2612,6 +2621,9 @@ msgstr "CSV डाउनलोड करें"
 msgid "Download PDF"
 msgstr "PDF डाउनलोड करें"
 
+msgid "Download template"
+msgstr "टेम्पलेट डाउनलोड करें"
+
 msgid "Draft"
 msgstr "ड्राफ्ट"
 
@@ -3023,12 +3035,6 @@ msgstr "कच्चे माल के लिए आईडी और विव
 
 msgid "Enable to include work instructions on job traveler PDFs."
 msgstr "जॉब ट्रैवलर PDFs पर कार्य निर्देश शामिल करने के लिए सक्षम करें।"
-
-msgid "Enable to show part thumbnails on purchase order PDFs."
-msgstr "क्रय आदेश PDFs पर भाग थंबनेल दिखाने के लिए सक्षम करें।"
-
-msgid "Enable to show part thumbnails on sales PDFs."
-msgstr "बिक्रय पीडीएफ पर भाग थंबनेल दिखाने के लिए सक्षम करें।"
 
 msgid "Enable to start tracking changes to your data."
 msgstr "अपने डेटा में परिवर्तन ट्रैक करना शुरू करने के लिए सक्षम करें।"
@@ -3819,6 +3825,9 @@ msgstr "कॉलम को छिपाएं, पिन करें और �
 msgid "Higher priority wins ties and applies first for markups"
 msgstr "उच्च प्राथमिकता टाई जीतती है और मार्कअप के लिए पहले लागू होती है"
 
+msgid "Hints in the first row"
+msgstr "पहली पंक्ति में संकेत"
+
 msgid "History"
 msgstr "इतिहास"
 
@@ -3926,6 +3935,12 @@ msgstr "शिपमेंट में अतिरिक्त पार्ट
 
 msgid "Include Inactive"
 msgstr "निष्क्रिय शामिल करें"
+
+msgid "Include Thumbnails on Purchasing Documents"
+msgstr "खरीद दस्तावेजों पर थंबनेल शामिल करें"
+
+msgid "Include Thumbnails on Sales Documents"
+msgstr "बिक्रय दस्तावेज़ों पर थंबनेल शामिल करें"
 
 msgid "Includes tax and shipping costs"
 msgstr "कर और शिपिंग लागत शामिल है"
@@ -4319,9 +4334,6 @@ msgstr "लीड समय (दिन)"
 
 msgid "Lead Time (Days)"
 msgstr "लीड टाइम (दिन)"
-
-msgid "Lead Time Updates"
-msgstr "लीड टाइम अपडेट"
 
 msgid "Lead Time:"
 msgstr "लीड समय:"
@@ -4881,6 +4893,9 @@ msgstr "प्रकार के अनुसार NCR"
 
 msgid "Need by"
 msgstr "आवश्यकता की तारीख"
+
+msgid "Need the right columns?"
+msgstr "क्या आपको सही कॉलम चाहिए?"
 
 msgid "Negative Adjustment"
 msgstr "नकारात्मक समायोजन"
@@ -5676,12 +5691,6 @@ msgstr "पार्ट आईडी"
 msgid "Part is configured for manufacturing"
 msgstr "भाग विनिर्माण के लिए कॉन्फ़िगर किया गया है"
 
-msgid "Part thumbnails are shown on purchase order PDFs."
-msgstr "खरीद आदेश पीडीएफ पर भाग थंबनेल दिखाए जाते हैं।"
-
-msgid "Part thumbnails are shown on sales PDFs."
-msgstr "भाग थंबनेल बिक्री पीडीएफ पर दिखाए जाते हैं।"
-
 msgid "Partial"
 msgstr "आंशिक"
 
@@ -5723,9 +5732,6 @@ msgstr "पीडीएफ पृष्ठ"
 
 msgid "PDF Watermark"
 msgstr "PDF वॉटरमार्क"
-
-msgid "PDFs"
-msgstr "PDFs"
 
 msgid "Pending"
 msgstr "लंबित"
@@ -6093,9 +6099,6 @@ msgstr "क्रय आदेश"
 msgid "Purchase orders required"
 msgstr "क्रय आदेश आवश्यक हैं"
 
-msgid "Purchase Price Updates"
-msgstr "क्रय मूल्य अपडेट"
-
 msgid "Purchase Qty"
 msgstr "खरीद मात्रा"
 
@@ -6243,6 +6246,9 @@ msgid "Quoted Date"
 msgstr "उद्धृत तारीख"
 
 msgid "Quotes"
+msgstr "उद्धरण"
+
+msgid "Quoting"
 msgstr "उद्धरण"
 
 msgid "Rate Limit"
@@ -6645,6 +6651,12 @@ msgstr "भूमिका"
 
 msgid "Role:"
 msgstr "भूमिका:"
+
+msgid "Route all AP invoices to one address (e.g. corporate headquarters) instead of individual purchasers."
+msgstr "सभी AP चालानों को एक पते पर भेजें (जैसे कॉर्पोरेट मुख्यालय) व्यक्तिगत खरीदारों के बजाय।"
+
+msgid "Route all AR invoices to one address (e.g. corporate headquarters) instead of individual locations."
+msgstr "सभी AR चालानों को एक पते पर भेजें (जैसे कॉर्पोरेट मुख्यालय) व्यक्तिगत स्थानों के बजाय।"
 
 msgid "rows"
 msgstr "पंक्तियाँ"
@@ -7223,17 +7235,29 @@ msgstr "संक्षिप्त विवरण"
 msgid "Shortcuts"
 msgstr "शॉर्टकट"
 
+msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
+msgstr "ग्राहक सूची, ग्राहक फॉर्म और ड्रॉपडाउन पर एक पठनीय ग्राहक आईडी कॉलम दिखाएं। ग्राहकों की पहचान आंतरिक रूप से किसी भी तरह से की जाती है।"
+
+msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
+msgstr "आपूर्तिकर्ता सूची, आपूर्तिकर्ता फॉर्म और ड्रॉपडाउन पर एक पठनीय आपूर्तिकर्ता ID कॉलम दिखाएं। आपूर्तिकर्ता अभी भी किसी भी तरह से आंतरिक रूप से पहचाने जाते हैं।"
+
+msgid "Show Customer IDs"
+msgstr "ग्राहक आईडी दिखाएं"
+
 msgid "Show Durations"
 msgstr "अवधि दिखाएं"
 
 msgid "Show parent items"
 msgstr "माता-पिता की वस्तुओं को दिखाएं"
 
-msgid "Show part thumbnails on purchase orders."
-msgstr "क्रय आदेशों पर भाग थंबनेल दिखाएं।"
+msgid "Show part thumbnails on purchase order PDFs."
+msgstr "खरीद आदेश पीडीएफ पर भाग थंबनेल दिखाएं।"
 
-msgid "Show part thumbnails on quotes, sales orders, sales invoices, and shipments."
-msgstr "उद्धरण, बिक्री आदेश, बिक्री चालान और शिपमेंट पर भाग थंबनेल दिखाएं।"
+msgid "Show part thumbnails on quotes, sales orders, invoices, and shipments."
+msgstr "उद्धरण, बिक्री आदेश, चालान और शिपमेंट पर भाग थंबनेल दिखाएं।"
+
+msgid "Show Supplier IDs"
+msgstr "आपूर्तिकर्ता आईडी दिखाएं"
 
 msgid "Show sync options"
 msgstr "सिंक विकल्प दिखाएं"
@@ -7565,6 +7589,9 @@ msgstr "आपूर्तिकर्ता संपर्क"
 msgid "Supplier ID"
 msgstr "आपूर्तिकर्ता ID"
 
+msgid "Supplier ID cannot be changed after creation"
+msgstr "आपूर्तिकर्ता ID निर्माण के बाद नहीं बदला जा सकता"
+
 msgid "Supplier Invoice Number"
 msgstr "आपूर्तिकर्ता चालान संख्या"
 
@@ -7749,12 +7776,6 @@ msgstr "गणना विधि के बाद के दिनों की
 msgid "The amount of days after the calculation method that the payment is due"
 msgstr "गणना विधि के बाद दिनों की संख्या जिसके बाद भुगतान देय है"
 
-msgid "The billing address used on purchase orders and other purchasing documents."
-msgstr "खरीद आदेशों और अन्य खरीद दस्तावेजों पर उपयोग किया जाने वाला बिलिंग पता।"
-
-msgid "The billing address used on quotes, sales orders, invoices, and other sales documents."
-msgstr "उद्धरण, बिक्री आदेश, चालान और अन्य बिक्री दस्तावेजों पर उपयोग किया जाने वाला बिलिंग पता।"
-
 msgid "The date the customer expects to receive the goods"
 msgstr "वह तारीख जिस दिन ग्राहक को सामान प्राप्त होने की उम्मीद है"
 
@@ -7898,12 +7919,6 @@ msgstr "थंबनेल हटाया गया"
 
 msgid "Thumbnail uploaded"
 msgstr "थंबनेल अपलोड किया गया"
-
-msgid "Thumbnails are included"
-msgstr "थंबनेल शामिल हैं"
-
-msgid "Thumbnails are not included"
-msgstr "थंबनेल शामिल नहीं हैं"
 
 msgid "Thursday"
 msgstr "गुरुवार"
@@ -8220,6 +8235,9 @@ msgstr "UoM"
 msgid "Update"
 msgstr "अपडेट करें"
 
+msgid "Update costs on"
+msgstr "लागत अपडेट करें"
+
 msgid "Update Inventory"
 msgstr "इन्वेंटरी अपडेट करें"
 
@@ -8240,9 +8258,6 @@ msgstr "पासवर्ड अपडेट करें"
 
 msgid "Update Permissions"
 msgstr "अनुमतियों को अपडेट करें"
-
-msgid "Update prices on"
-msgstr "कीमतें अपडेट करें"
 
 msgid "Update Quantity"
 msgstr "मात्रा अपडेट करें"

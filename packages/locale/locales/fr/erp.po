@@ -195,12 +195,6 @@ msgstr "La comptabilité est activée"
 msgid "Accounts"
 msgstr "Comptes"
 
-msgid "Accounts Payable Billing Address"
-msgstr "Adresse de facturation des comptes créditeurs"
-
-msgid "Accounts Receivable Billing Address"
-msgstr "Adresse de facturation des comptes clients"
-
 msgid "Accumulation Period (Weeks)"
 msgstr "Période d'accumulation (semaines)"
 
@@ -1022,6 +1016,15 @@ msgstr "Démarrage automatique du travail"
 msgid "Auto-generated QR Code"
 msgstr "Code QR généré automatiquement"
 
+msgid "Automatic Cost Updates"
+msgstr "Mises à jour automatiques des coûts"
+
+msgid "Automatic Lead Time Updates"
+msgstr "Mises à jour automatiques des délais d'approvisionnement"
+
+msgid "Automatic Updates"
+msgstr "Mises à jour automatiques"
+
 msgid "Automatically release the job when the kanban is scanned"
 msgstr "Libérer automatiquement la tâche lorsque le kanban est scanné"
 
@@ -1268,6 +1271,9 @@ msgstr "Nom de la catégorie"
 
 msgid "CC"
 msgstr "CC"
+
+msgid "Centralized Billing Address"
+msgstr "Adresse de facturation centralisée"
 
 msgid "Change"
 msgstr "Modifier"
@@ -1516,8 +1522,8 @@ msgstr "Configurez les comptes par défaut utilisés pour différents types de t
 msgid "Configure the start months for your fiscal and tax years"
 msgstr "Configurez les mois de début de vos exercices fiscaux et fiscaux"
 
-msgid "Configure when purchased item prices should be updated from supplier transactions."
-msgstr "Configurez quand les prix des articles achetés doivent être mis à jour à partir des transactions des fournisseurs."
+msgid "Configure when purchased item costs should be updated from supplier transactions."
+msgstr "Configurez quand les coûts des articles achetés doivent être mis à jour à partir des transactions des fournisseurs."
 
 msgid "Configure who should receive notifications when a supplier submits a quote."
 msgstr "Configurez qui doit recevoir des notifications lorsqu'un fournisseur soumet un devis."
@@ -2031,6 +2037,9 @@ msgstr "Détails du client"
 
 msgid "Customer ID"
 msgstr "ID Client"
+
+msgid "Customer ID cannot be changed after creation"
+msgstr "L'ID client ne peut pas être modifié après la création"
 
 msgid "Customer Invoice Number"
 msgstr "Numéro de facture client"
@@ -2612,6 +2621,9 @@ msgstr "Télécharger CSV"
 msgid "Download PDF"
 msgstr "Télécharger le PDF"
 
+msgid "Download template"
+msgstr "Télécharger le modèle"
+
 msgid "Draft"
 msgstr "Brouillon"
 
@@ -3023,12 +3035,6 @@ msgstr "Activez pour générer des identifiants et des descriptions pour les mat
 
 msgid "Enable to include work instructions on job traveler PDFs."
 msgstr "Activez cette option pour inclure les instructions de travail sur les PDF de bon de travail."
-
-msgid "Enable to show part thumbnails on purchase order PDFs."
-msgstr "Activez cette option pour afficher les vignettes des pièces sur les PDF des commandes d'achat."
-
-msgid "Enable to show part thumbnails on sales PDFs."
-msgstr "Activez cette option pour afficher les vignettes des pièces sur les PDF de vente."
 
 msgid "Enable to start tracking changes to your data."
 msgstr "Activez pour commencer à suivre les modifications de vos données."
@@ -3819,6 +3825,9 @@ msgstr "Masquer, épingler et réorganiser les colonnes"
 msgid "Higher priority wins ties and applies first for markups"
 msgstr "La priorité plus élevée gagne les égalités et s'applique en premier pour les majorations"
 
+msgid "Hints in the first row"
+msgstr "Indices dans la première ligne"
+
 msgid "History"
 msgstr "Historique"
 
@@ -3926,6 +3935,12 @@ msgstr "Inclure les pièces supplémentaires dans l'expédition"
 
 msgid "Include Inactive"
 msgstr "Inclure les inactifs"
+
+msgid "Include Thumbnails on Purchasing Documents"
+msgstr "Inclure les miniatures sur les documents d'achat"
+
+msgid "Include Thumbnails on Sales Documents"
+msgstr "Inclure les miniatures sur les documents commerciaux"
 
 msgid "Includes tax and shipping costs"
 msgstr "Inclut les taxes et les frais d'expédition"
@@ -4319,9 +4334,6 @@ msgstr "Délai de livraison (jours)"
 
 msgid "Lead Time (Days)"
 msgstr "Délai de livraison (jours)"
-
-msgid "Lead Time Updates"
-msgstr "Mises à jour des délais de livraison"
 
 msgid "Lead Time:"
 msgstr "Délai de livraison :"
@@ -4881,6 +4893,9 @@ msgstr "NCRs par type"
 
 msgid "Need by"
 msgstr "Requis le"
+
+msgid "Need the right columns?"
+msgstr "Besoin des bonnes colonnes ?"
 
 msgid "Negative Adjustment"
 msgstr "Ajustement Négatif"
@@ -5676,12 +5691,6 @@ msgstr "ID de pièce"
 msgid "Part is configured for manufacturing"
 msgstr "La pièce est configurée pour la fabrication"
 
-msgid "Part thumbnails are shown on purchase order PDFs."
-msgstr "Les miniatures des pièces sont affichées sur les PDF des commandes d'achat."
-
-msgid "Part thumbnails are shown on sales PDFs."
-msgstr "Les vignettes de pièces sont affichées sur les PDF de vente."
-
 msgid "Partial"
 msgstr "Partiel"
 
@@ -5723,9 +5732,6 @@ msgstr "Pages PDF"
 
 msgid "PDF Watermark"
 msgstr "Filigrane PDF"
-
-msgid "PDFs"
-msgstr "PDFs"
 
 msgid "Pending"
 msgstr "En attente"
@@ -6093,9 +6099,6 @@ msgstr "Bons de commande"
 msgid "Purchase orders required"
 msgstr "Bons de commande requis"
 
-msgid "Purchase Price Updates"
-msgstr "Mises à jour des prix d'achat"
-
 msgid "Purchase Qty"
 msgstr "Quantité d'achat"
 
@@ -6243,6 +6246,9 @@ msgid "Quoted Date"
 msgstr "Date de devis"
 
 msgid "Quotes"
+msgstr "Devis"
+
+msgid "Quoting"
 msgstr "Devis"
 
 msgid "Rate Limit"
@@ -6645,6 +6651,12 @@ msgstr "Rôle"
 
 msgid "Role:"
 msgstr "Rôle :"
+
+msgid "Route all AP invoices to one address (e.g. corporate headquarters) instead of individual purchasers."
+msgstr "Acheminez toutes les factures AP vers une seule adresse (p. ex. siège social) au lieu de les envoyer à des acheteurs individuels."
+
+msgid "Route all AR invoices to one address (e.g. corporate headquarters) instead of individual locations."
+msgstr "Acheminez toutes les factures AR vers une seule adresse (p. ex. siège social) au lieu de lieux individuels."
 
 msgid "rows"
 msgstr "lignes"
@@ -7223,17 +7235,29 @@ msgstr "Description courte"
 msgid "Shortcuts"
 msgstr "Raccourcis"
 
+msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
+msgstr "Afficher une colonne ID client lisible sur la liste des clients, les formulaires clients et les listes déroulantes. Les clients sont toujours identifiés en interne de toute façon."
+
+msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
+msgstr "Afficher une colonne ID Fournisseur lisible sur la liste des fournisseurs, les formulaires de fournisseur et les listes déroulantes. Les fournisseurs sont toujours identifiés en interne de toute façon."
+
+msgid "Show Customer IDs"
+msgstr "Afficher les ID clients"
+
 msgid "Show Durations"
 msgstr "Afficher les durées"
 
 msgid "Show parent items"
 msgstr "Afficher les éléments parents"
 
-msgid "Show part thumbnails on purchase orders."
-msgstr "Afficher les vignettes des pièces sur les bons de commande."
+msgid "Show part thumbnails on purchase order PDFs."
+msgstr "Afficher les vignettes des pièces sur les PDF des commandes d'achat."
 
-msgid "Show part thumbnails on quotes, sales orders, sales invoices, and shipments."
-msgstr "Afficher les vignettes des pièces sur les devis, les commandes de vente, les factures de vente et les expéditions."
+msgid "Show part thumbnails on quotes, sales orders, invoices, and shipments."
+msgstr "Afficher les vignettes des pièces sur les devis, les commandes de vente, les factures et les expéditions."
+
+msgid "Show Supplier IDs"
+msgstr "Afficher les ID fournisseur"
 
 msgid "Show sync options"
 msgstr "Afficher les options de synchronisation"
@@ -7565,6 +7589,9 @@ msgstr "Contact Fournisseur"
 msgid "Supplier ID"
 msgstr "ID Fournisseur"
 
+msgid "Supplier ID cannot be changed after creation"
+msgstr "L'ID fournisseur ne peut pas être modifié après la création"
+
 msgid "Supplier Invoice Number"
 msgstr "Numéro de facture fournisseur"
 
@@ -7749,12 +7776,6 @@ msgstr "Le nombre de jours après la méthode de calcul pendant lesquels la remi
 msgid "The amount of days after the calculation method that the payment is due"
 msgstr "Le nombre de jours après la méthode de calcul que le paiement est dû"
 
-msgid "The billing address used on purchase orders and other purchasing documents."
-msgstr "L'adresse de facturation utilisée sur les commandes d'achat et autres documents d'approvisionnement."
-
-msgid "The billing address used on quotes, sales orders, invoices, and other sales documents."
-msgstr "L'adresse de facturation utilisée sur les devis, les commandes de vente, les factures et autres documents de vente."
-
 msgid "The date the customer expects to receive the goods"
 msgstr "La date à laquelle le client s'attend à recevoir les marchandises"
 
@@ -7898,12 +7919,6 @@ msgstr "Miniature supprimée"
 
 msgid "Thumbnail uploaded"
 msgstr "Miniature téléchargée"
-
-msgid "Thumbnails are included"
-msgstr "Les miniatures sont incluses"
-
-msgid "Thumbnails are not included"
-msgstr "Les miniatures ne sont pas incluses"
 
 msgid "Thursday"
 msgstr "Jeudi"
@@ -8220,6 +8235,9 @@ msgstr "UoM"
 msgid "Update"
 msgstr "Mettre à jour"
 
+msgid "Update costs on"
+msgstr "Mettre à jour les coûts sur"
+
 msgid "Update Inventory"
 msgstr "Mettre à jour l'inventaire"
 
@@ -8240,9 +8258,6 @@ msgstr "Mettre à jour le mot de passe"
 
 msgid "Update Permissions"
 msgstr "Mettre à jour les autorisations"
-
-msgid "Update prices on"
-msgstr "Mettre à jour les prix sur"
 
 msgid "Update Quantity"
 msgstr "Mettre à jour la quantité"

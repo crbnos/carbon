@@ -92,6 +92,7 @@ export default function NewToolSupplierRoute() {
     unitPrice: 0,
     supplierUnitOfMeasureCode: "EA",
     minimumOrderQuantity: 1,
+    orderMultiple: 1,
     conversionFactor: 1
   };
 
