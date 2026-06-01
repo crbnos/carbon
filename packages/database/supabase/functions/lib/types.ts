@@ -3072,6 +3072,8 @@ export type Database = {
           salesJobCompletedNotificationGroup: string[]
           samplingStandard: Database["public"]["Enums"]["samplingStandard"]
           shelfLabelSize: string | null
+          showCustomerReadableId: boolean
+          showSupplierReadableId: boolean
           supplierQuoteNotificationGroup: string[]
           timeCardEnabled: boolean
           updateLeadTimesOnReceipt: boolean
@@ -3115,6 +3117,8 @@ export type Database = {
           salesJobCompletedNotificationGroup?: string[]
           samplingStandard?: Database["public"]["Enums"]["samplingStandard"]
           shelfLabelSize?: string | null
+          showCustomerReadableId?: boolean
+          showSupplierReadableId?: boolean
           supplierQuoteNotificationGroup?: string[]
           timeCardEnabled?: boolean
           updateLeadTimesOnReceipt?: boolean
@@ -3158,6 +3162,8 @@ export type Database = {
           salesJobCompletedNotificationGroup?: string[]
           samplingStandard?: Database["public"]["Enums"]["samplingStandard"]
           shelfLabelSize?: string | null
+          showCustomerReadableId?: boolean
+          showSupplierReadableId?: boolean
           supplierQuoteNotificationGroup?: string[]
           timeCardEnabled?: boolean
           updateLeadTimesOnReceipt?: boolean
@@ -4644,6 +4650,7 @@ export type Database = {
           logo: string | null
           name: string
           phone: string | null
+          readableId: string
           salesContactId: string | null
           tags: string[] | null
           taxPercent: number
@@ -4669,6 +4676,7 @@ export type Database = {
           logo?: string | null
           name: string
           phone?: string | null
+          readableId?: string
           salesContactId?: string | null
           tags?: string[] | null
           taxPercent?: number
@@ -4694,6 +4702,7 @@ export type Database = {
           logo?: string | null
           name?: string
           phone?: string | null
+          readableId?: string
           salesContactId?: string | null
           tags?: string[] | null
           taxPercent?: number
@@ -30121,6 +30130,7 @@ export type Database = {
           sortOrder: number
           storageUnitId: string | null
           supplierExtendedPrice: number | null
+          supplierPartId: string | null
           supplierShippingCost: number
           supplierTaxAmount: number
           supplierUnitPrice: number | null
@@ -30173,6 +30183,7 @@ export type Database = {
           sortOrder?: number
           storageUnitId?: string | null
           supplierExtendedPrice?: number | null
+          supplierPartId?: string | null
           supplierShippingCost?: number
           supplierTaxAmount?: number
           supplierUnitPrice?: number | null
@@ -30225,6 +30236,7 @@ export type Database = {
           sortOrder?: number
           storageUnitId?: string | null
           supplierExtendedPrice?: number | null
+          supplierPartId?: string | null
           supplierShippingCost?: number
           supplierTaxAmount?: number
           supplierUnitPrice?: number | null
@@ -41265,6 +41277,7 @@ export type Database = {
           name: string
           phone: string | null
           purchasingContactId: string | null
+          readableId: string
           supplierStatus:
             | Database["public"]["Enums"]["supplierStatusType"]
             | null
@@ -41292,6 +41305,7 @@ export type Database = {
           name: string
           phone?: string | null
           purchasingContactId?: string | null
+          readableId?: string
           supplierStatus?:
             | Database["public"]["Enums"]["supplierStatusType"]
             | null
@@ -41319,6 +41333,7 @@ export type Database = {
           name?: string
           phone?: string | null
           purchasingContactId?: string | null
+          readableId?: string
           supplierStatus?:
             | Database["public"]["Enums"]["supplierStatusType"]
             | null
@@ -42056,6 +42071,7 @@ export type Database = {
           id: string
           itemId: string
           minimumOrderQuantity: number | null
+          orderMultiple: number | null
           supplierId: string
           supplierPartId: string | null
           supplierUnitOfMeasureCode: string | null
@@ -42074,6 +42090,7 @@ export type Database = {
           id?: string
           itemId: string
           minimumOrderQuantity?: number | null
+          orderMultiple?: number | null
           supplierId: string
           supplierPartId?: string | null
           supplierUnitOfMeasureCode?: string | null
@@ -42092,6 +42109,7 @@ export type Database = {
           id?: string
           itemId?: string
           minimumOrderQuantity?: number | null
+          orderMultiple?: number | null
           supplierId?: string
           supplierPartId?: string | null
           supplierUnitOfMeasureCode?: string | null
@@ -49765,6 +49783,7 @@ export type Database = {
           name: string | null
           orderCount: number | null
           phone: string | null
+          readableId: string | null
           salesContactId: string | null
           status: string | null
           tags: string[] | null
@@ -54318,14 +54337,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -55486,6 +55505,7 @@ export type Database = {
           storageUnitId: string | null
           supplierExtendedPrice: number | null
           supplierPartId: string | null
+          supplierPartIdFromSupplier: string | null
           supplierShippingCost: number | null
           supplierTaxAmount: number | null
           supplierUnitPrice: number | null
@@ -55820,14 +55840,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -59253,6 +59273,13 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
+            columns: ["shipmentCountryCode"]
+            isOneToOne: false
+            referencedRelation: "country"
+            referencedColumns: ["alpha2"]
+          },
+          {
+            foreignKeyName: "address_countryCode_fkey"
             columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
@@ -59261,13 +59288,6 @@ export type Database = {
           {
             foreignKeyName: "address_countryCode_fkey"
             columns: ["invoiceCountryCode"]
-            isOneToOne: false
-            referencedRelation: "country"
-            referencedColumns: ["alpha2"]
-          },
-          {
-            foreignKeyName: "address_countryCode_fkey"
-            columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -59834,14 +59854,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -62127,6 +62147,7 @@ export type Database = {
           partCount: number | null
           phone: string | null
           purchasingContactId: string | null
+          readableId: string | null
           status: Database["public"]["Enums"]["supplierStatusType"] | null
           supplierTypeId: string | null
           tags: string[] | null
