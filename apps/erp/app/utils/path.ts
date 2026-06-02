@@ -1269,6 +1269,7 @@ export const path = {
       generatePath(`${x}/sales/no-quote-reasons/${id}`),
     notificationSettings: `${x}/account/notifications`,
     part: (id: string) => generatePath(`${x}/part/${id}`),
+    itemProperties: (id: string) => generatePath(`${x}/items/${id}/properties`),
     partCosting: (id: string) => generatePath(`${x}/part/${id}/costing`),
     partDetails: (id: string) => generatePath(`${x}/part/${id}/details`),
     partMake: (id: string, makeMethodId: string) =>

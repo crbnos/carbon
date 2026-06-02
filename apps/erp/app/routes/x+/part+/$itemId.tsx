@@ -38,7 +38,11 @@ import {
   getPickMethods,
   getSupplierParts
 } from "~/modules/items";
-import { BoMActions, BoMExplorer } from "~/modules/items/ui/Item";
+import {
+  BoMActions,
+  BoMExplorer,
+  SelectedItemProperties
+} from "~/modules/items/ui/Item";
 import type { UsedInNode } from "~/modules/items/ui/Item/UsedIn";
 import { UsedInSkeleton, UsedInTree } from "~/modules/items/ui/Item/UsedIn";
 import { PartHeader, PartProperties } from "~/modules/items/ui/Parts";
@@ -507,7 +511,19 @@ export default function PartRoute() {
                 <Outlet />
               </div>
             }
-            properties={<PartProperties key={itemId} />}
+            properties={
+              <Suspense fallback={<PartProperties key={itemId} />}>
+                <Await resolve={methodTree}>
+                  {(resolved) => (
+                    <SelectedItemProperties
+                      topLevelItemId={itemId}
+                      // @ts-ignore
+                      methods={resolved?.methods ?? []}
+                    />
+                  )}
+                </Await>
+              </Suspense>
+            }
           />
         </div>
       </div>
