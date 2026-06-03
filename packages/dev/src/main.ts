@@ -92,11 +92,11 @@ const main = defineCommand({
           type: "boolean",
           default: false,
           description:
-            "Escalate stale-migration repair via `supabase migration repair --status reverted`"
+            "Schema unreconcilable? Wipe the stack's volumes and re-provision from scratch (prompts to confirm)"
         }
       },
       run: ({ args }) =>
-        migrate({ regen: args.regen !== false, force: !!args.force })
+        args.force ? reset() : migrate({ regen: args.regen !== false })
     }),
     new: defineCommand({
       meta: { description: "Interactive: create a worktree on a fresh branch" },

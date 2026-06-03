@@ -12,7 +12,7 @@ import { getWorktreeRoot } from "../worktree.js";
 // `crbn up`). Bare `pnpm db:migrate` resolves dotenv relative to cwd and falls
 // through to the supabase CLI's linked-project path — `crbn migrate` removes
 // that footgun by always targeting the current worktree's DB.
-export async function migrate(opts: { regen?: boolean; force?: boolean } = {}) {
+export async function migrate(opts: { regen?: boolean } = {}) {
   const shouldRegen = opts.regen ?? true;
   intro("Carbon · dev migrate");
 
@@ -53,9 +53,7 @@ export async function migrate(opts: { regen?: boolean; force?: boolean } = {}) {
     {
       title: "Apply database migrations",
       task: async () => {
-        const r = await applyMigrations(root, portDb, {
-          force: opts.force ?? false
-        });
+        const r = await applyMigrations(root, portDb);
         applied = r.applied;
         return r.applied ? "migrations applied" : "schema already up to date";
       }
