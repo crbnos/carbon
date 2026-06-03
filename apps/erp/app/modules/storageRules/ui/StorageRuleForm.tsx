@@ -30,35 +30,35 @@ import {
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
-import { customRuleValidator } from "../customRules.models";
+import { storageRuleValidator } from "../storageRules.models";
 import ItemFilterSelector from "./ItemFilterSelector";
 import MessageWithTokens from "./MessageWithTokens";
 import RuleBuilder from "./RuleBuilder";
 import SeveritySelect from "./SeveritySelect";
 import SurfacesField from "./SurfacesField";
 
-type CustomRuleFormInitial = Partial<z.infer<typeof customRuleValidator>> & {
+type StorageRuleFormInitial = Partial<z.infer<typeof storageRuleValidator>> & {
   conditionAst?: ConditionAst;
 };
 
-type CustomRuleFormProps = {
-  initialValues: CustomRuleFormInitial;
+type StorageRuleFormProps = {
+  initialValues: StorageRuleFormInitial;
   open?: boolean;
   onClose: () => void;
 };
 
-export default function CustomRuleForm({
+export default function StorageRuleForm({
   initialValues,
   open = true,
   onClose
-}: CustomRuleFormProps) {
+}: StorageRuleFormProps) {
   const { t } = useLingui();
   const permissions = usePermissions();
 
   const isEditing = !!initialValues.id;
   const isDisabled = isEditing
-    ? !permissions.can("update", "settings")
-    : !permissions.can("create", "settings");
+    ? !permissions.can("update", "inventory")
+    : !permissions.can("create", "inventory");
 
   const conditionAstInitial: ConditionAst = (initialValues.conditionAst as
     | ConditionAst
@@ -77,7 +77,6 @@ export default function CustomRuleForm({
 
   const targetType = (initialValues.targetType ?? "item") as
     | "item"
-    | "storageUnit"
     | "workCenter";
 
   // Default new rules to all surfaces of the chosen targetType. Editing keeps
@@ -120,12 +119,12 @@ export default function CustomRuleForm({
       >
         <ModalDrawerContent size="lg">
           <ValidatedForm
-            validator={customRuleValidator}
+            validator={storageRuleValidator}
             method="post"
             action={
               isEditing
-                ? path.to.customRule(initialValues.id!)
-                : path.to.newCustomRule
+                ? path.to.storageRule(initialValues.id!)
+                : path.to.newStorageRule
             }
             defaultValues={defaults}
             className="flex flex-col h-full"
@@ -157,11 +156,7 @@ export default function CustomRuleForm({
                 ) : (
                   <Boolean
                     name="appliesToAll"
-                    label={
-                      targetType === "storageUnit"
-                        ? t`Applies to all storage units`
-                        : t`Applies to all work centers`
-                    }
+                    label={t`Applies to all work centers`}
                     description={t`When on, this rule fires for every target of its type. Assignment rows are ignored but preserved.`}
                   />
                 )}
@@ -182,7 +177,7 @@ export default function CustomRuleForm({
                   conditions={liveConditions}
                   targetType={targetType}
                 />
-                <CustomFormFields table="customRule" />
+                <CustomFormFields table="storageRule" />
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>

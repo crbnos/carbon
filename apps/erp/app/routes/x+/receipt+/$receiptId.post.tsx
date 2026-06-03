@@ -6,7 +6,7 @@ import {
   dedupeViolations,
   evaluateLinesForSurface,
   isBlocked
-} from "@carbon/ee/custom-rules.server";
+} from "@carbon/ee/storage-rules.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { path } from "~/utils/path";
@@ -71,18 +71,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
     Object.assign(allRuleNames, ruleNames);
   }
 
-  // Storage-unit pass — place side of the receipt. Same lines, different
-  // target. Transfers double-up via the warehouseTransfer surface.
-  const storageUnitSurfaces: ("place" | "warehouseTransfer")[] = ["place"];
+  // Place pass — the bin side of the receipt. Same lines, same item target;
+  // item rules own the `place` surface. Transfers double-up via the
+  // warehouseTransfer surface (dedupe collapses the overlap).
+  const placeSurfaces: ("place" | "warehouseTransfer")[] = ["place"];
   if (receiptForSurface?.sourceDocument === "Inbound Transfer") {
-    storageUnitSurfaces.push("warehouseTransfer");
+    placeSurfaces.push("warehouseTransfer");
   }
-  for (const surface of storageUnitSurfaces) {
+  for (const surface of placeSurfaces) {
     const { violations, ruleNames } = await evaluateLinesForSurface({
       client: serviceRole,
       companyId,
       userId,
-      targetType: "storageUnit",
+      targetType: "item",
       surface,
       lines: evalLines
     });

@@ -85,7 +85,7 @@ const SURFACE_META: Record<
 type SurfacesFieldProps = {
   name: string;
   label?: string;
-  targetType?: "item" | "storageUnit" | "workCenter";
+  targetType?: "item" | "workCenter";
   /**
    * Mirrors the live `value` to the parent so siblings (e.g. ConditionRow's
    * per-surface notes panel) can filter against the rule's actual surfaces

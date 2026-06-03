@@ -1,8 +1,12 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
-  __customRulesCacheSize,
-  __resetCustomRulesCache,
-  type CustomRuleRow,
+  FIELD_REGISTRY,
+  getFieldDef,
+  getFieldsForTargetType
+} from "./field-registry";
+import {
+  __resetStorageRulesCache,
+  __storageRulesCacheSize,
   compileRule,
   compileWithCache,
   evaluateRules,
@@ -11,19 +15,15 @@ import {
   isFieldAvailableOnSurfaces,
   itemRuleAppliesToItem,
   type RuleContext,
+  type StorageRuleRow,
   SURFACE_CONTEXT_AVAILABILITY,
   TRANSACTION_SURFACES
-} from "./customRules";
-import {
-  FIELD_REGISTRY,
-  getFieldDef,
-  getFieldsForTargetType
-} from "./field-registry";
+} from "./storageRules";
 
 const ruleOf = (
   conditions: Array<{ field: string; op: string; value?: unknown }>,
-  overrides: Partial<CustomRuleRow> = {}
-): CustomRuleRow => ({
+  overrides: Partial<StorageRuleRow> = {}
+): StorageRuleRow => ({
   id: overrides.id ?? "rule_1",
   targetType: overrides.targetType ?? "item",
   severity: overrides.severity ?? "error",
@@ -381,7 +381,7 @@ describe("evaluateRules", () => {
 });
 
 describe("compileWithCache", () => {
-  beforeEach(() => __resetCustomRulesCache());
+  beforeEach(() => __resetStorageRulesCache());
 
   it("returns same compiled instance on cache hit", () => {
     const row = ruleOf([{ field: "item.type", op: "eq", value: "Part" }]);
@@ -400,7 +400,7 @@ describe("compileWithCache", () => {
     const a = compileWithCache(row1);
     const b = compileWithCache(row2);
     expect(a).not.toBe(b);
-    expect(__customRulesCacheSize()).toBe(2);
+    expect(__storageRulesCacheSize()).toBe(2);
   });
 
   it("does not collide across targetTypes with identical content", () => {
@@ -431,7 +431,7 @@ describe("compileWithCache", () => {
         })
       );
     }
-    expect(__customRulesCacheSize()).toBeLessThanOrEqual(256);
+    expect(__storageRulesCacheSize()).toBeLessThanOrEqual(256);
   });
 });
 
@@ -476,18 +476,6 @@ describe("getFieldsForTargetType", () => {
     expect(paths).toContain("transaction.quantity");
     expect(paths).not.toContain("item.type");
     expect(paths.some((p) => p.startsWith("storageUnit."))).toBe(false);
-  });
-
-  it("storageUnit target sees storage + item fields (item ctx loads on every storageUnit-target surface)", () => {
-    const fields = getFieldsForTargetType("storageUnit");
-    const paths = fields.map((f) => f.path);
-    expect(paths).toContain("storageUnit.id");
-    expect(paths).toContain("storageUnit.storageTypeId");
-    expect(paths).toContain("storageUnit.locationId");
-    expect(paths).toContain("transaction.quantity");
-    expect(paths).toContain("item.type");
-    expect(paths).toContain("item.replenishmentSystem");
-    expect(paths).toContain("item.itemTrackingType");
   });
 });
 

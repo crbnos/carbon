@@ -13,10 +13,10 @@ import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
 import SurfaceChips from "./SurfaceChips";
 
-type CustomRuleRowView = {
+type StorageRuleRowView = {
   id: string;
   name: string;
-  targetType: "item" | "storageUnit" | "workCenter";
+  targetType: "item" | "workCenter";
   severity: "error" | "warn";
   active: boolean;
   appliesToAll: boolean;
@@ -29,22 +29,21 @@ type CustomRuleRowView = {
 };
 
 const TARGET_TYPE_LABELS = {
-  item: "Item",
-  storageUnit: "Storage unit",
+  item: "Storage",
   workCenter: "Work center"
 } as const;
 
-type CustomRulesTableProps = {
-  data: CustomRuleRowView[];
+type StorageRulesTableProps = {
+  data: StorageRuleRowView[];
   count: number;
 };
 
-const CustomRulesTable = memo(({ data, count }: CustomRulesTableProps) => {
+const StorageRulesTable = memo(({ data, count }: StorageRulesTableProps) => {
   const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
   const permissions = usePermissions();
-  const customColumns = useCustomColumns<CustomRuleRowView>("customRule");
+  const customColumns = useCustomColumns<StorageRuleRowView>("storageRule");
 
   const rows = useMemo(() => data, [data]);
 
@@ -55,7 +54,7 @@ const CustomRulesTable = memo(({ data, count }: CustomRulesTableProps) => {
         header: t`Name`,
         cell: ({ row }) => (
           <Hyperlink
-            to={`${path.to.customRule(row.original.id)}?${params.toString()}`}
+            to={`${path.to.storageRule(row.original.id)}?${params.toString()}`}
           >
             <Enumerable value={row.original.name} />
           </Hyperlink>
@@ -128,7 +127,7 @@ const CustomRulesTable = memo(({ data, count }: CustomRulesTableProps) => {
         <MenuItem
           disabled={!permissions.can("update", "settings")}
           onClick={() => {
-            navigate(`${path.to.customRule(row.id)}?${params.toString()}`);
+            navigate(`${path.to.storageRule(row.id)}?${params.toString()}`);
           }}
         >
           <MenuIcon icon={<LuPencil />} />
@@ -139,7 +138,7 @@ const CustomRulesTable = memo(({ data, count }: CustomRulesTableProps) => {
           destructive
           onClick={() => {
             navigate(
-              `${path.to.deleteCustomRule(row.id)}?${params.toString()}`
+              `${path.to.deleteStorageRule(row.id)}?${params.toString()}`
             );
           }}
         >
@@ -160,7 +159,7 @@ const CustomRulesTable = memo(({ data, count }: CustomRulesTableProps) => {
         permissions.can("create", "settings") && (
           <New
             label={t`Rule`}
-            to={`${path.to.newCustomRule}?${params.toString()}`}
+            to={`${path.to.newStorageRule}?${params.toString()}`}
           />
         )
       }
@@ -170,5 +169,5 @@ const CustomRulesTable = memo(({ data, count }: CustomRulesTableProps) => {
   );
 });
 
-CustomRulesTable.displayName = "CustomRulesTable";
-export default CustomRulesTable;
+StorageRulesTable.displayName = "StorageRulesTable";
+export default StorageRulesTable;

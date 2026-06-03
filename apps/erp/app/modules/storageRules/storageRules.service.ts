@@ -1,6 +1,6 @@
 // ERP-only admin CRUD for the Settings → Custom Rules page.
 // Cross-app queries (assignment loaders, list fetch for tab data, polymorphic
-// assign/unassign) live in `@carbon/ee/custom-rules`.
+// assign/unassign) live in `@carbon/ee/storage-rules`.
 
 import type { Database, Json } from "@carbon/database";
 import type {
@@ -15,14 +15,14 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 
-type CustomRuleFilters = {
+type StorageRuleFilters = {
   appliesToAll: boolean;
   filteredItemTypes?: string[];
   filteredItemGroupIds?: string[];
   filteredItemMatchAll?: boolean;
 };
 
-type CustomRuleInsert = CustomRuleFilters & {
+type StorageRuleInsert = StorageRuleFilters & {
   name: string;
   description?: string | null;
   message: string;
@@ -36,7 +36,7 @@ type CustomRuleInsert = CustomRuleFilters & {
   customFields?: Json;
 };
 
-type CustomRuleUpdate = CustomRuleFilters & {
+type StorageRuleUpdate = StorageRuleFilters & {
   id: string;
   name: string;
   description?: string | null;
@@ -49,7 +49,7 @@ type CustomRuleUpdate = CustomRuleFilters & {
   customFields?: Json;
 };
 
-export async function getCustomRules(
+export async function getStorageRules(
   client: SupabaseClient<Database>,
   companyId: string,
   args?: GenericQueryFilters & {
@@ -58,7 +58,7 @@ export async function getCustomRules(
   }
 ) {
   let query = client
-    .from("customRule")
+    .from("storageRule")
     .select("*", { count: "exact" })
     .eq("companyId", companyId);
 
@@ -75,26 +75,26 @@ export async function getCustomRules(
   return query;
 }
 
-export async function getCustomRule(
+export async function getStorageRule(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("customRule").select("*").eq("id", id).single();
+  return client.from("storageRule").select("*").eq("id", id).single();
 }
 
-export async function upsertCustomRule(
+export async function upsertStorageRule(
   client: SupabaseClient<Database>,
-  rule: CustomRuleInsert | CustomRuleUpdate
+  rule: StorageRuleInsert | StorageRuleUpdate
 ) {
   if ("createdBy" in rule) {
     return client
-      .from("customRule")
+      .from("storageRule")
       .insert({ ...rule, conditionAst: rule.conditionAst as unknown as Json })
       .select("id")
       .single();
   }
   return client
-    .from("customRule")
+    .from("storageRule")
     .update({
       ...sanitize(rule),
       conditionAst: rule.conditionAst as unknown as Json,
@@ -105,31 +105,25 @@ export async function upsertCustomRule(
     .single();
 }
 
-export async function deleteCustomRule(
+export async function deleteStorageRule(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("customRule").delete().eq("id", id);
+  return client.from("storageRule").delete().eq("id", id);
 }
 
 export async function getRuleAssignmentCounts(
   client: SupabaseClient<Database>,
   ruleIds: string[]
 ) {
-  // Counts span all three assignment tables. Each rule lives in exactly one
+  // Counts span both assignment tables. Each rule lives in exactly one
   // (rule.targetType drives the table); union of single-table counts is correct.
   if (ruleIds.length === 0) return { data: {}, error: null };
 
   const counts: Record<string, number> = {};
   const tables: Array<
-    | "customRuleItemAssignment"
-    | "customRuleStorageUnitAssignment"
-    | "customRuleWorkCenterAssignment"
-  > = [
-    "customRuleItemAssignment",
-    "customRuleStorageUnitAssignment",
-    "customRuleWorkCenterAssignment"
-  ];
+    "storageRuleItemAssignment" | "storageRuleWorkCenterAssignment"
+  > = ["storageRuleItemAssignment", "storageRuleWorkCenterAssignment"];
 
   const results = await Promise.all(
     tables.map((table) =>

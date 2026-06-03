@@ -1,5 +1,5 @@
-// Server-side custom-rules evaluator. Cross-app entry point — ERP
-// (item/storageUnit surfaces) and MES (workCenter surfaces) both call
+// Server-side storage-rules evaluator. Cross-app entry point — ERP
+// (item surfaces) and MES (workCenter surfaces) both call
 // `evaluateLinesForSurface`.
 //
 // All functions here are server-only. Never import from a client module.
@@ -32,8 +32,8 @@ import {
 } from "./context";
 import {
   getActiveRulesForTargets,
-  getCustomRulesList,
-  getRuleAssignmentsForTarget
+  getRuleAssignmentsForTarget,
+  getStorageRulesList
 } from "./service";
 
 type Client = SupabaseClient<Database>;
@@ -42,11 +42,11 @@ type Client = SupabaseClient<Database>;
 // Plan gate
 // ---------------------------------------------------------------------------
 
-export const isCustomRulesEnabledForCompany = (
+export const isStorageRulesEnabledForCompany = (
   client: Client,
   companyId: string
 ): Promise<boolean> =>
-  companyHasPlan(client, companyId, { feature: "CUSTOM_RULES" });
+  companyHasPlan(client, companyId, { feature: "STORAGE_RULES" });
 
 // ---------------------------------------------------------------------------
 // Block decision
@@ -96,13 +96,13 @@ type AssignedRuleNode = {
   appliesToAll: boolean;
 };
 
-export async function getCustomRulesDataForTarget(
+export async function getStorageRulesDataForTarget(
   client: Client,
   args: { targetType: TargetType; targetId: string; companyId: string }
 ) {
   const [assignmentsRes, libraryRes] = await Promise.all([
     getRuleAssignmentsForTarget(client, args),
-    getCustomRulesList(client, args.companyId, args.targetType)
+    getStorageRulesList(client, args.companyId, args.targetType)
   ]);
 
   // Forward inheritance metadata so the drawer can tag inherited rows.
@@ -113,7 +113,7 @@ export async function getCustomRulesDataForTarget(
     inheritedFromName: string | null;
   }[] = [];
   for (const row of assignmentsRes.data ?? []) {
-    const joined = row.customRule as
+    const joined = row.storageRule as
       | AssignedRuleNode
       | AssignedRuleNode[]
       | null;
@@ -280,9 +280,10 @@ export type EvaluateLinesForSurfaceArgs = {
   companyId: string;
   userId: string;
   /**
-   * Which targetType the call is evaluating. Surfaces that apply to multiple
-   * targetTypes (e.g. `stockTransfer`) require one call per targetType — the
-   * caller concatenates and `dedupeViolations`-es results.
+   * Which targetType the call is evaluating (`item` for ERP inventory
+   * surfaces, `workCenter` for MES). A caller running more than one surface
+   * (e.g. a receipt's `receipt` + `place` passes) concatenates and
+   * `dedupeViolations`-es the results.
    */
   targetType: TargetType;
   surface: TransactionSurface;
@@ -306,8 +307,6 @@ const lineTargetIdFor = (
   switch (targetType) {
     case "item":
       return line.itemId ?? null;
-    case "storageUnit":
-      return line.storageUnitId ?? null;
     case "workCenter":
       return line.workCenterId ?? null;
   }
@@ -322,7 +321,7 @@ export async function evaluateLinesForSurface({
   lines
 }: EvaluateLinesForSurfaceArgs): Promise<EvaluateLinesForSurfaceResult> {
   if (lines.length === 0) return EMPTY_RESULT;
-  if (!(await isCustomRulesEnabledForCompany(client, companyId)))
+  if (!(await isStorageRulesEnabledForCompany(client, companyId)))
     return EMPTY_RESULT;
 
   const targetIds = new Set<string>();
@@ -342,19 +341,14 @@ export async function evaluateLinesForSurface({
   // Explicit-assignment lookup short-circuits inside `getActiveRulesForTargets`
   // when targetIds is empty.
 
-  // Walk the storage-unit tree for every line that carries a bin id. Two
-  // inheritance behaviours hang off this fetch:
-  //   1. Rules assigned to a parent bin (e.g. "Grow Room") fire on every
-  //      descendant — expand the rule-assignment lookup set with each line
-  //      bin's ancestorPath.
-  //   2. Storage types cascade: a child bin implicitly carries every
-  //      `storageTypeIds` declared on itself OR any ancestor. The evaluator
-  //      unions them when populating `ctx.storageUnit.storageTypeId` below.
-  // One round-trip; selects `storageTypeIds` so the union doesn't need a
-  // second fetch.
+  // Walk the storage-unit tree for every line that carries a bin id so storage
+  // types cascade: a child bin implicitly carries every `storageTypeIds`
+  // declared on itself OR any ancestor. The evaluator unions them when
+  // populating `ctx.storageUnit.storageTypeId` below (item rules referencing
+  // `storageUnit.storageTypeId` on place/pick depend on this). One round-trip;
+  // selects `storageTypeIds` so the union doesn't need a second fetch.
   const ancestorsByBin = new Map<string, string[]>();
   const storageTypesByBin = new Map<string, string[]>();
-  let expandedTargetIds: string[] = Array.from(targetIds);
   if (storageUnitIds.size > 0) {
     const ids = Array.from(storageUnitIds);
     const ancestorsRes = await (client as Client)
@@ -363,7 +357,6 @@ export async function evaluateLinesForSurface({
       .in("id", ids)
       .eq("companyId", companyId);
 
-    const expanded = new Set<string>(ids);
     const ancestorIds = new Set<string>();
     for (const row of (ancestorsRes.data ?? []) as Array<{
       id: string;
@@ -376,10 +369,7 @@ export async function evaluateLinesForSurface({
           : [row.id];
       ancestorsByBin.set(row.id, chain);
       if (row.storageTypeIds) storageTypesByBin.set(row.id, row.storageTypeIds);
-      for (const a of chain) {
-        expanded.add(a);
-        ancestorIds.add(a);
-      }
+      for (const a of chain) ancestorIds.add(a);
     }
     for (const id of ids) {
       if (!ancestorsByBin.has(id)) ancestorsByBin.set(id, [id]);
@@ -404,12 +394,6 @@ export async function evaluateLinesForSurface({
         if (row.storageTypeIds)
           storageTypesByBin.set(row.id, row.storageTypeIds);
       }
-    }
-
-    // Only the storageUnit-target rule lookup uses the expanded set; item /
-    // workCenter rule queries still scope to their own target ids.
-    if (targetType === "storageUnit") {
-      expandedTargetIds = Array.from(expanded);
     }
   }
 
@@ -439,7 +423,7 @@ export async function evaluateLinesForSurface({
         : Promise.resolve({ data: [], error: null }),
       loadCompiledRulesForTargets(client, {
         targetType,
-        targetIds: expandedTargetIds,
+        targetIds: Array.from(targetIds),
         companyId
       })
     ]);
@@ -506,32 +490,19 @@ export async function evaluateLinesForSurface({
   for (const line of lines) {
     const targetId = lineTargetIdFor(line, targetType);
 
-    // Per-line compiled rule set: explicit assignments (target-keyed, with
-    // ancestor inheritance for storageUnit) + broadcasts. Lines without a
-    // targetId of this targetType still match broadcasts.
+    // Per-line compiled rule set: explicit assignments (target-keyed) +
+    // broadcasts. Lines without a targetId of this targetType still match
+    // broadcasts.
     const seen = new Set<string>();
     const compiledForLine: CompiledRule[] = [];
 
     if (targetId) {
-      if (targetType === "storageUnit") {
-        const chain = ancestorsByBin.get(targetId) ?? [targetId];
-        for (const ancestorId of chain) {
-          const rules = compiledByTarget.get(ancestorId);
-          if (!rules) continue;
-          for (const r of rules) {
-            if (seen.has(r.id)) continue;
-            seen.add(r.id);
-            compiledForLine.push(r);
-          }
-        }
-      } else {
-        const rules = compiledByTarget.get(targetId);
-        if (rules) {
-          for (const r of rules) {
-            if (seen.has(r.id)) continue;
-            seen.add(r.id);
-            compiledForLine.push(r);
-          }
+      const rules = compiledByTarget.get(targetId);
+      if (rules) {
+        for (const r of rules) {
+          if (seen.has(r.id)) continue;
+          seen.add(r.id);
+          compiledForLine.push(r);
         }
       }
     }
@@ -587,7 +558,7 @@ export async function evaluateLinesForSurface({
   for (let i = 0; i < deduped.length; i++) violatedIds.add(deduped[i]!.ruleId);
 
   const { data: namedRules } = await client
-    .from("customRule")
+    .from("storageRule")
     .select("id, name")
     .in("id", Array.from(violatedIds))
     .eq("companyId", companyId);

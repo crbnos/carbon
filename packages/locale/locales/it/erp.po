@@ -519,9 +519,6 @@ msgstr "Si applica a"
 msgid "Applies to all"
 msgstr "Si applica a tutti"
 
-msgid "Applies to all storage units"
-msgstr "Si applica a tutte le unità di stoccaggio"
-
 msgid "Applies to all work centers"
 msgstr "Si applica a tutti i centri di lavoro"
 
@@ -3972,9 +3969,6 @@ msgstr "Infrastruttura"
 msgid "Inherit From Materials"
 msgstr "Eredita dai Materiali"
 
-msgid "Inherited from"
-msgstr "Ereditato da"
-
 msgid "Insert rows"
 msgstr "Inserisci righe"
 
@@ -4567,9 +4561,6 @@ msgstr "Gestisci come la durata di conservazione viene tracciata, calcolata e ap
 
 msgid "Manage Ownership"
 msgstr "Gestisci Proprietà"
-
-msgid "Manage rules"
-msgstr "Gestisci regole"
 
 msgid "Manage Subscription"
 msgstr "Gestisci Abbonamento"
@@ -7481,6 +7472,9 @@ msgstr "Trasferimenti di Magazzino"
 msgid "Storage client not available"
 msgstr "Client di archiviazione non disponibile"
 
+msgid "Storage Rules"
+msgstr ""
+
 msgid "Storage Type"
 msgstr "Tipo di Archiviazione"
 
@@ -7489,9 +7483,6 @@ msgstr "Tipi di Archiviazione"
 
 msgid "Storage Unit"
 msgstr "Unità di Stoccaggio"
-
-msgid "Storage unit rules"
-msgstr "Regole unità di stoccaggio"
 
 msgid "Storage Units"
 msgstr "Unità di Stoccaggio"
@@ -8168,9 +8159,6 @@ msgstr "Le entità non campionate rimarranno In Sospeso in modo che tu possa con
 
 msgid "Unapproved Supplier"
 msgstr "Fornitore non approvato"
-
-msgid "Unassign from parent unit to remove"
-msgstr "Annulla assegnazione dall'unità padre per rimuovere"
 
 msgid "Unassign rule"
 msgstr "Annulla assegnazione regola"

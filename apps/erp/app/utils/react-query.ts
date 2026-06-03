@@ -149,21 +149,21 @@ export const uomsQuery = (companyId: string | null) => ({
   staleTime: RefreshRate.Medium
 });
 
-export const customRulesQuery = (
+export const storageRulesQuery = (
   companyId: string | null,
   targetType?: "item" | "storageUnit" | "workCenter" | null
 ) => ({
-  queryKey: ["customRules", targetType ?? "all", companyId ?? "null"],
+  queryKey: ["storageRules", targetType ?? "all", companyId ?? "null"],
   staleTime: RefreshRate.Low
 });
 
-export const customRuleAssignmentsQuery = (
+export const storageRuleAssignmentsQuery = (
   targetType: "item" | "storageUnit" | "workCenter",
   targetId: string,
   companyId: string | null
 ) => ({
   queryKey: [
-    "customRuleAssignments",
+    "storageRuleAssignments",
     targetType,
     targetId,
     companyId ?? "null"

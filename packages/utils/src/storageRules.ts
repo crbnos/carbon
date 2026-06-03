@@ -3,8 +3,8 @@
 // inventory adjustment, place, pick, operation start/finish, material
 // issue/receive) to enforce per-entity validation/guideline rules.
 //
-// Each rule binds to a single `TargetType` (`item`, `storageUnit`, or
-// `workCenter`). The field registry lives in `./field-registry`.
+// Each rule binds to a single `TargetType` (`item` or `workCenter`). The field
+// registry lives in `./field-registry`.
 
 import {
   type FieldContext,
@@ -28,9 +28,9 @@ export type Severity = "error" | "warn";
 /**
  * Which entity a rule applies to. Drives the field registry slice the
  * builder shows the author, and the assignment table the loader joins.
- * Mirrors the Postgres ENUM `customRuleTargetType`.
+ * Mirrors the Postgres ENUM `storageRuleTargetType`.
  */
-export const TARGET_TYPES = ["item", "storageUnit", "workCenter"] as const;
+export const TARGET_TYPES = ["item", "workCenter"] as const;
 export type TargetType = (typeof TARGET_TYPES)[number];
 
 /**
@@ -63,9 +63,9 @@ export type TransactionSurface = (typeof TRANSACTION_SURFACES)[number];
  * a rule's `surfaces` array against this map; the evaluator skips surfaces
  * a rule didn't subscribe to.
  *
- * Transfer surfaces (`stockTransfer`, `warehouseTransfer`) apply to both
- * `item` and `storageUnit` targets — the integration call sites pass each
- * targetType separately, the engine filters by surface intersection.
+ * Item rules own every inventory/storage surface — including `place`/`pick`
+ * (bin-level guards that used to live on the now-removed `storageUnit` target).
+ * They reference bin context via the `storageUnit.*` fields in the registry.
  */
 export const SURFACES_BY_TARGET_TYPE: Record<
   TargetType,
@@ -76,9 +76,10 @@ export const SURFACES_BY_TARGET_TYPE: Record<
     "shipment",
     "stockTransfer",
     "warehouseTransfer",
-    "inventoryAdjustment"
+    "inventoryAdjustment",
+    "place",
+    "pick"
   ],
-  storageUnit: ["place", "pick", "stockTransfer", "warehouseTransfer"],
   workCenter: [
     "operationStart",
     "operationFinish",
@@ -120,7 +121,7 @@ export type RuleContext = {
   transaction?: Record<string, unknown>;
 };
 
-export type CustomRuleRow = {
+export type StorageRuleRow = {
   id: string;
   targetType: TargetType;
   severity: Severity;
@@ -265,7 +266,7 @@ const defaultSurfacesFor = (
   targetType: TargetType
 ): readonly TransactionSurface[] => SURFACES_BY_TARGET_TYPE[targetType];
 
-export const compileRule = (row: CustomRuleRow): CompiledRule => ({
+export const compileRule = (row: StorageRuleRow): CompiledRule => ({
   id: row.id,
   targetType: row.targetType,
   severity: row.severity,
@@ -304,7 +305,7 @@ const fnv1a = (s: string): string => {
   return h.toString(36);
 };
 
-const cacheKey = (row: CustomRuleRow): string => {
+const cacheKey = (row: StorageRuleRow): string => {
   // Hash bits that drive compilation output, including targetType so two
   // rules with identical AST but different targets cannot collide.
   const contentHash = fnv1a(
@@ -313,7 +314,7 @@ const cacheKey = (row: CustomRuleRow): string => {
   return `${row.id}:${row.updatedAt ?? ""}:${contentHash}`;
 };
 
-export const compileWithCache = (row: CustomRuleRow): CompiledRule => {
+export const compileWithCache = (row: StorageRuleRow): CompiledRule => {
   const key = cacheKey(row);
   const hit = cache.get(key);
   if (hit) {
@@ -330,11 +331,11 @@ export const compileWithCache = (row: CustomRuleRow): CompiledRule => {
   return compiled;
 };
 
-export const __resetCustomRulesCache = (): void => {
+export const __resetStorageRulesCache = (): void => {
   cache.clear();
 };
 
-export const __customRulesCacheSize = (): number => cache.size;
+export const __storageRulesCacheSize = (): number => cache.size;
 
 // ---------------------------------------------------------------------------
 // Message interpolation
@@ -525,7 +526,7 @@ export const itemRuleAppliesToItem = (
     : (typeMatch ?? false) || (groupMatch ?? false);
 };
 
-/** Normalize a raw `customRule` row's nullable filter columns into a filter. */
+/** Normalize a raw `storageRule` row's nullable filter columns into a filter. */
 export const toItemRuleFilter = (row: {
   filteredItemTypes?: string[] | null;
   filteredItemGroupIds?: string[] | null;
@@ -551,7 +552,7 @@ export const toItemRuleFilter = (row: {
 // Note `"storage"` is the `FieldContext` value; it maps to the `storageUnit`
 // RuleContext root key.
 //
-// Locked by the anti-drift test in `packages/ee/src/customRules/server.test.ts`,
+// Locked by the anti-drift test in `packages/ee/src/storageRules/server.test.ts`,
 // which asserts the ctx `evaluateLinesForSurface` builds for each surface
 // populates exactly these contexts.
 export const SURFACE_CONTEXT_AVAILABILITY: Record<

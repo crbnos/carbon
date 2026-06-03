@@ -5,24 +5,27 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import { getCustomRules, getRuleAssignmentCounts } from "~/modules/customRules";
-import CustomRulesGroups from "~/modules/customRules/ui/CustomRulesGroups";
-import CustomRulesUpgradeOverlay from "~/modules/customRules/ui/CustomRulesUpgradeOverlay";
+import {
+  getRuleAssignmentCounts,
+  getStorageRules
+} from "~/modules/storageRules";
+import StorageRulesGroups from "~/modules/storageRules/ui/StorageRulesGroups";
+import StorageRulesUpgradeOverlay from "~/modules/storageRules/ui/StorageRulesUpgradeOverlay";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: msg`Custom Rules`,
-  to: path.to.customRules
+  breadcrumb: msg`Storage Rules`,
+  to: path.to.storageRules
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
-    view: "settings",
+    view: "inventory",
     role: "employee"
   });
 
-  const rules = await getCustomRules(client, companyId, {
+  const rules = await getStorageRules(client, companyId, {
     search: null,
     limit: 1000,
     offset: 0,
@@ -31,8 +34,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   if (rules.error) {
     throw redirect(
-      path.to.settings,
-      await flash(request, error(rules.error, "Failed to load custom rules"))
+      path.to.storageUnits,
+      await flash(request, error(rules.error, "Failed to load storage rules"))
     );
   }
 
@@ -48,17 +51,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return { rows };
 }
 
-export default function CustomRulesSettingsRoute() {
+export default function StorageRulesRoute() {
   const { rows } = useLoaderData<typeof loader>();
-  const { isGated } = usePlanGate({ feature: "CUSTOM_RULES" });
+  const { isGated } = usePlanGate({ feature: "STORAGE_RULES" });
 
   if (isGated) {
-    return <CustomRulesUpgradeOverlay />;
+    return <StorageRulesUpgradeOverlay />;
   }
 
   return (
     <>
-      <CustomRulesGroups rules={rows as never} />
+      <StorageRulesGroups rules={rows as never} />
       <Outlet />
     </>
   );

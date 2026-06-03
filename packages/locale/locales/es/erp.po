@@ -519,9 +519,6 @@ msgstr "Se aplica a"
 msgid "Applies to all"
 msgstr "Se aplica a todos"
 
-msgid "Applies to all storage units"
-msgstr "Se aplica a todas las unidades de almacenamiento"
-
 msgid "Applies to all work centers"
 msgstr "Se aplica a todos los centros de trabajo"
 
@@ -3972,9 +3969,6 @@ msgstr "Infraestructura"
 msgid "Inherit From Materials"
 msgstr "Heredar de Materiales"
 
-msgid "Inherited from"
-msgstr "Heredado de"
-
 msgid "Insert rows"
 msgstr "Insertar filas"
 
@@ -4567,9 +4561,6 @@ msgstr "Administra cómo se rastrea, calcula y aplica la vida útil en todo el i
 
 msgid "Manage Ownership"
 msgstr "Gestionar Propiedad"
-
-msgid "Manage rules"
-msgstr "Gestionar reglas"
 
 msgid "Manage Subscription"
 msgstr "Administrar Suscripción"
@@ -7481,6 +7472,9 @@ msgstr "Transferencias de Inventario"
 msgid "Storage client not available"
 msgstr "Cliente de almacenamiento no disponible"
 
+msgid "Storage Rules"
+msgstr ""
+
 msgid "Storage Type"
 msgstr "Tipo de Almacenamiento"
 
@@ -7489,9 +7483,6 @@ msgstr "Tipos de Almacenamiento"
 
 msgid "Storage Unit"
 msgstr "Unidad de Almacenamiento"
-
-msgid "Storage unit rules"
-msgstr "Reglas de unidad de almacenamiento"
 
 msgid "Storage Units"
 msgstr "Unidades de Almacenamiento"
@@ -8168,9 +8159,6 @@ msgstr "Las entidades no muestreadas permanecerán En Espera para que puedas seg
 
 msgid "Unapproved Supplier"
 msgstr "Proveedor No Aprobado"
-
-msgid "Unassign from parent unit to remove"
-msgstr "Desasignar de la unidad principal para eliminar"
 
 msgid "Unassign rule"
 msgstr "Desasignar regla"

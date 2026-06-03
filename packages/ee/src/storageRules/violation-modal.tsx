@@ -14,7 +14,7 @@ import { LuOctagonAlert, LuTriangleAlert } from "react-icons/lu";
 
 type RuleNameMap = Record<string, string>;
 
-type CustomRuleViolationModalProps = {
+type StorageRuleViolationModalProps = {
   violations: Violation[];
   ruleNames?: RuleNameMap;
   onCancel: () => void;
@@ -22,13 +22,13 @@ type CustomRuleViolationModalProps = {
   isSubmitting?: boolean;
 };
 
-export default function CustomRuleViolationModal({
+export default function StorageRuleViolationModal({
   violations,
   ruleNames,
   onCancel,
   onAcknowledge,
   isSubmitting
-}: CustomRuleViolationModalProps) {
+}: StorageRuleViolationModalProps) {
   const { errors, warns, hasError, onlyWarns } = useMemo(() => {
     const errs: Violation[] = [];
     const wrns: Violation[] = [];

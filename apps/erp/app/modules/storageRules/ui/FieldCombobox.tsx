@@ -67,7 +67,7 @@ type FieldComboboxProps = {
   onChange: (path: string) => void;
   placeholder?: string;
   className?: string;
-  targetType?: "item" | "storageUnit" | "workCenter";
+  targetType?: "item" | "workCenter";
   /**
    * Surfaces the rule subscribes to. Narrows the offered fields to those whose
    * root context the evaluator populates on every selected surface, so authors

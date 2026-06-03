@@ -519,9 +519,6 @@ msgstr "Gilt für"
 msgid "Applies to all"
 msgstr "Gilt für alle"
 
-msgid "Applies to all storage units"
-msgstr "Gilt für alle Lagereinheiten"
-
 msgid "Applies to all work centers"
 msgstr "Gilt für alle Arbeitszentren"
 
@@ -3972,9 +3969,6 @@ msgstr "Infrastruktur"
 msgid "Inherit From Materials"
 msgstr "Von Materialien erben"
 
-msgid "Inherited from"
-msgstr "Geerbt von"
-
 msgid "Insert rows"
 msgstr "Zeilen einfügen"
 
@@ -4567,9 +4561,6 @@ msgstr "Verwalten Sie, wie die Haltbarkeit in Ihrem Bestand verfolgt, berechnet 
 
 msgid "Manage Ownership"
 msgstr "Eigentümerschaft verwalten"
-
-msgid "Manage rules"
-msgstr "Regeln verwalten"
 
 msgid "Manage Subscription"
 msgstr "Abonnement verwalten"
@@ -7481,6 +7472,9 @@ msgstr "Bestandsübertragungen"
 msgid "Storage client not available"
 msgstr "Speicherclient nicht verfügbar"
 
+msgid "Storage Rules"
+msgstr ""
+
 msgid "Storage Type"
 msgstr "Lagertyp"
 
@@ -7489,9 +7483,6 @@ msgstr "Speichertypen"
 
 msgid "Storage Unit"
 msgstr "Lagereinheit"
-
-msgid "Storage unit rules"
-msgstr "Lagerverwaltungsregeln"
 
 msgid "Storage Units"
 msgstr "Lagereinheiten"
@@ -8168,9 +8159,6 @@ msgstr "Nicht beprobte Entitäten bleiben in Warteschleife, damit Sie weiterhin 
 
 msgid "Unapproved Supplier"
 msgstr "Nicht genehmigter Lieferant"
-
-msgid "Unassign from parent unit to remove"
-msgstr "Aus übergeordneter Einheit entfernen zum Löschen"
 
 msgid "Unassign rule"
 msgstr "Regel entfernen"

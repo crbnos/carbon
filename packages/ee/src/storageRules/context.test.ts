@@ -44,8 +44,7 @@ const WORKCENTER_ROW = { id: "wc_1", locationId: "loc_1", active: true };
 const ctxRootKeyFor = (context: FieldContext): string =>
   context === "storage" ? "storageUnit" : context;
 
-// targetTypes a surface belongs to (a surface can serve several, e.g.
-// stockTransfer → item + storageUnit).
+// targetTypes a surface belongs to (item surfaces vs workCenter surfaces).
 const targetTypesForSurface = (surface: TransactionSurface): TargetType[] =>
   TARGET_TYPES.filter((tt) => SURFACES_BY_TARGET_TYPE[tt].includes(surface));
 

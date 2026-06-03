@@ -5,7 +5,7 @@ import { flash } from "@carbon/auth/session.server";
 import {
   evaluateLinesForSurface,
   isBlocked
-} from "@carbon/ee/custom-rules.server";
+} from "@carbon/ee/storage-rules.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {

@@ -8,9 +8,9 @@ import {
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 
-export const customRuleSeverities = ["error", "warn"] as const;
+export const storageRuleSeverities = ["error", "warn"] as const;
 
-export const customRuleOperators = [
+export const storageRuleOperators = [
   "eq",
   "neq",
   "in",
@@ -21,7 +21,7 @@ export const customRuleOperators = [
   "lt"
 ] as const;
 
-const customRuleConditionValueSchema = z.union([
+const storageRuleConditionValueSchema = z.union([
   z.string(),
   z.number(),
   z.boolean(),
@@ -29,40 +29,40 @@ const customRuleConditionValueSchema = z.union([
   z.null()
 ]);
 
-const customRuleConditionSchema = z.object({
+const storageRuleConditionSchema = z.object({
   field: z.string().min(1, { message: "Field is required" }),
-  op: z.enum(customRuleOperators),
-  value: customRuleConditionValueSchema.optional()
+  op: z.enum(storageRuleOperators),
+  value: storageRuleConditionValueSchema.optional()
 });
 
-export const customRuleMatchKinds = ["all", "any", "none"] as const;
+export const storageRuleMatchKinds = ["all", "any", "none"] as const;
 
-export const customRuleConditionAstSchema = z.object({
-  kind: z.enum(customRuleMatchKinds),
+export const storageRuleConditionAstSchema = z.object({
+  kind: z.enum(storageRuleMatchKinds),
   conditions: z
-    .array(customRuleConditionSchema)
+    .array(storageRuleConditionSchema)
     .min(1, { message: "At least one condition is required" })
 });
 
-const customRuleConditionAstFormField = z.preprocess((raw) => {
+const storageRuleConditionAstFormField = z.preprocess((raw) => {
   if (typeof raw !== "string") return raw;
   try {
     return JSON.parse(raw);
   } catch {
     return raw;
   }
-}, customRuleConditionAstSchema);
+}, storageRuleConditionAstSchema);
 
-export const customRuleValidator = z
+export const storageRuleValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     name: z.string().min(1, { message: "Name is required" }).max(120),
     description: zfd.text(z.string().optional()),
     message: z.string().min(1, { message: "Message is required" }).max(500),
-    severity: z.enum(customRuleSeverities),
+    severity: z.enum(storageRuleSeverities),
     targetType: z.enum(TARGET_TYPES),
-    // Broadcast gate for storageUnit / workCenter rules. Item rules ignore this
-    // and use the filteredItem* fields instead (empty = all items).
+    // Broadcast gate for workCenter rules. Item rules ignore this and use the
+    // filteredItem* fields instead (empty = all items).
     appliesToAll: zfd.checkbox(),
     filteredItemTypes: zfd.repeatableOfType(z.string()).optional(),
     filteredItemGroupIds: zfd.repeatableOfType(z.string()).optional(),
@@ -73,7 +73,7 @@ export const customRuleValidator = z
       .refine((arr) => arr.length >= 1, {
         message: "Pick at least one surface"
       }),
-    conditionAst: customRuleConditionAstFormField
+    conditionAst: storageRuleConditionAstFormField
   })
   .superRefine((val, ctx) => {
     // Reject any surface that isn't valid for the chosen targetType. Schema
@@ -110,19 +110,14 @@ export const customRuleValidator = z
  * action which targetType is in play, then this validator picks the right
  * target-id key.
  */
-export const customRuleAssignmentValidator = (
-  targetType: "item" | "storageUnit" | "workCenter"
+export const storageRuleAssignmentValidator = (
+  targetType: "item" | "workCenter"
 ) => {
-  const idKey =
-    targetType === "item"
-      ? "itemId"
-      : targetType === "storageUnit"
-        ? "storageUnitId"
-        : "workCenterId";
+  const idKey = targetType === "item" ? "itemId" : "workCenterId";
   return z.object({
     [idKey]: z.string().min(1, { message: "Target ID is required" }),
     ruleId: z.string().min(1, { message: "Rule ID is required" })
   });
 };
 
-export const customRuleAcknowledgeValidator = zfd.checkbox();
+export const storageRuleAcknowledgeValidator = zfd.checkbox();

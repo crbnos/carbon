@@ -519,9 +519,6 @@ msgstr "Applies to"
 msgid "Applies to all"
 msgstr "Applies to all"
 
-msgid "Applies to all storage units"
-msgstr "Applies to all storage units"
-
 msgid "Applies to all work centers"
 msgstr "Applies to all work centers"
 
@@ -3972,9 +3969,6 @@ msgstr "Infrastructure"
 msgid "Inherit From Materials"
 msgstr "Inherit From Materials"
 
-msgid "Inherited from"
-msgstr "Inherited from"
-
 msgid "Insert rows"
 msgstr "Insert rows"
 
@@ -4567,9 +4561,6 @@ msgstr "Manage how shelf life is tracked, computed, and enforced across inventor
 
 msgid "Manage Ownership"
 msgstr "Manage Ownership"
-
-msgid "Manage rules"
-msgstr "Manage rules"
 
 msgid "Manage Subscription"
 msgstr "Manage Subscription"
@@ -7481,6 +7472,9 @@ msgstr "Stock Transfers"
 msgid "Storage client not available"
 msgstr "Storage client not available"
 
+msgid "Storage Rules"
+msgstr "Storage Rules"
+
 msgid "Storage Type"
 msgstr "Storage Type"
 
@@ -7489,9 +7483,6 @@ msgstr "Storage Types"
 
 msgid "Storage Unit"
 msgstr "Storage Unit"
-
-msgid "Storage unit rules"
-msgstr "Storage unit rules"
 
 msgid "Storage Units"
 msgstr "Storage Units"
@@ -8168,9 +8159,6 @@ msgstr "Un-sampled entities will remain On Hold so you can keep inspecting and d
 
 msgid "Unapproved Supplier"
 msgstr "Unapproved Supplier"
-
-msgid "Unassign from parent unit to remove"
-msgstr "Unassign from parent unit to remove"
 
 msgid "Unassign rule"
 msgstr "Unassign rule"

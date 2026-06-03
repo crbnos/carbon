@@ -8,10 +8,10 @@
 import type { Database } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import {
-  type CustomRuleRow,
   type ItemRuleFilter,
   itemRuleAppliesToItem,
   type Severity,
+  type StorageRuleRow,
   type TargetType,
   type TransactionSurface,
   toItemRuleFilter
@@ -34,35 +34,28 @@ type ItemFilterColumns = {
 
 const assignmentTableFor = (
   targetType: TargetType
-):
-  | "customRuleItemAssignment"
-  | "customRuleStorageUnitAssignment"
-  | "customRuleWorkCenterAssignment" => {
+): "storageRuleItemAssignment" | "storageRuleWorkCenterAssignment" => {
   switch (targetType) {
     case "item":
-      return "customRuleItemAssignment";
-    case "storageUnit":
-      return "customRuleStorageUnitAssignment";
+      return "storageRuleItemAssignment";
     case "workCenter":
-      return "customRuleWorkCenterAssignment";
+      return "storageRuleWorkCenterAssignment";
   }
 };
 
 const targetIdColumnFor = (
   targetType: TargetType
-): "itemId" | "storageUnitId" | "workCenterId" => {
+): "itemId" | "workCenterId" => {
   switch (targetType) {
     case "item":
       return "itemId";
-    case "storageUnit":
-      return "storageUnitId";
     case "workCenter":
       return "workCenterId";
   }
 };
 
 type RuleRowSelect = Pick<
-  CustomRuleRow,
+  StorageRuleRow,
   | "id"
   | "targetType"
   | "severity"
@@ -82,7 +75,7 @@ type RuleRowSelect = Pick<
  *   - item targets: EVERY active item rule broadcasts, then the caller gates it
  *     per line via the rule's `filteredItem*` filters (see `broadcastFilters`);
  *     empty filters = every item.
- *   - storageUnit / workCenter targets: rules with `appliesToAll = TRUE` only.
+ *   - workCenter targets: rules with `appliesToAll = TRUE` only.
  *
  * `broadcastFilters` maps ruleId → item type/group filter (item targets only).
  *
@@ -98,12 +91,12 @@ export async function getActiveRulesForTargets(
     companyId: string;
   }
 ): Promise<{
-  data: Map<string, CustomRuleRow[]>;
-  broadcasts: CustomRuleRow[];
+  data: Map<string, StorageRuleRow[]>;
+  broadcasts: StorageRuleRow[];
   broadcastFilters: Map<string, ItemRuleFilter>;
   error: unknown;
 }> {
-  const out = new Map<string, CustomRuleRow[]>();
+  const out = new Map<string, StorageRuleRow[]>();
   const broadcastFilters = new Map<string, ItemRuleFilter>();
 
   const ruleCols =
@@ -120,7 +113,7 @@ export async function getActiveRulesForTargets(
   const idCol = targetIdColumnFor(args.targetType);
 
   const broadcastBase = client
-    .from("customRule")
+    .from("storageRule")
     .select(broadcastCols)
     .eq("companyId", args.companyId)
     .eq("targetType", args.targetType)
@@ -130,7 +123,7 @@ export async function getActiveRulesForTargets(
     args.targetIds.length > 0
       ? (client as SupabaseClient<Database>)
           .from(table)
-          .select(`${idCol}, customRule:ruleId(${ruleCols})`)
+          .select(`${idCol}, storageRule:ruleId(${ruleCols})`)
           .in(idCol, args.targetIds)
           .eq("companyId", args.companyId)
       : Promise.resolve({ data: [], error: null }),
@@ -156,22 +149,22 @@ export async function getActiveRulesForTargets(
   for (const r of explicit.data ?? []) {
     const row = r as unknown as {
       [k: string]: unknown;
-      customRule: RuleRowSelect | RuleRowSelect[] | null;
+      storageRule: RuleRowSelect | RuleRowSelect[] | null;
     };
     const targetId = row[idCol] as string;
-    const node = Array.isArray(row.customRule)
-      ? row.customRule[0]
-      : row.customRule;
+    const node = Array.isArray(row.storageRule)
+      ? row.storageRule[0]
+      : row.storageRule;
     if (!node || node.active === false) continue;
     if (node.targetType !== args.targetType) continue;
     const bucket = out.get(targetId);
-    if (bucket) bucket.push(node as CustomRuleRow);
-    else out.set(targetId, [node as CustomRuleRow]);
+    if (bucket) bucket.push(node as StorageRuleRow);
+    else out.set(targetId, [node as StorageRuleRow]);
   }
 
   // `as unknown as` is required: a dynamic select string degrades PostgREST's
   // row type to `GenericStringError`, which doesn't overlap our explicit shape.
-  const broadcasts = (broadcast.data ?? []) as unknown as (CustomRuleRow &
+  const broadcasts = (broadcast.data ?? []) as unknown as (StorageRuleRow &
     ItemFilterColumns)[];
 
   if (isItem) {
@@ -184,17 +177,17 @@ export async function getActiveRulesForTargets(
 }
 
 /**
- * Loader-style row returned from `getRuleAssignmentsForTarget`. Adds
- * `inheritedFromId` / `inheritedFromName` so the UI can label rules that
- * came from an ancestor unit (storageUnit hierarchy only) and disable
- * unassign on those rows.
+ * Loader-style row returned from `getRuleAssignmentsForTarget`. Direct
+ * assignments leave `inheritedFromId` / `inheritedFromName` null; broadcast
+ * rules use the `__all__` sentinel so the UI can render an "Applies to all"
+ * badge and suppress unassign.
  */
 export type RuleAssignmentRow = {
   /** Owner of the assignment row (this target id, or an ancestor unit id). */
   ownerId: string;
   ruleId: string;
   createdAt: string | null;
-  customRule: {
+  storageRule: {
     id: string;
     name: string;
     targetType: TargetType;
@@ -216,9 +209,8 @@ export async function getRuleAssignmentsForTarget(
   const table = assignmentTableFor(args.targetType);
   const idCol = targetIdColumnFor(args.targetType);
 
-  // Storage units inherit assignments from every ancestor in the tree.
-  // Item / workCenter targets are flat — keep the simple direct query.
-  const lookupIds = await resolveLookupIds(client, args);
+  // Item / workCenter targets are flat — a direct query on the target id.
+  const lookupIds = [args.targetId];
 
   // Broadcast rules govern targets beyond explicit assignments. Surface them
   // alongside explicit + inherited rows so the drawer shows the full set the
@@ -226,7 +218,7 @@ export async function getRuleAssignmentsForTarget(
   // while broadcasts still triggered).
   //   - item: EVERY active item rule broadcasts, gated per item by its
   //     type/group filters (empty = all items) — mirrors the evaluator.
-  //   - storageUnit / workCenter: rules with `appliesToAll = TRUE`.
+  //   - workCenter: rules with `appliesToAll = TRUE`.
   const isItem = args.targetType === "item";
   const baseBroadcastCols =
     "id, name, targetType, severity, message, active, surfaces, appliesToAll, createdAt";
@@ -235,7 +227,7 @@ export async function getRuleAssignmentsForTarget(
     ? `${baseBroadcastCols}, ${ITEM_RULE_FILTER_COLUMNS}`
     : baseBroadcastCols;
   const broadcastBase = client
-    .from("customRule")
+    .from("storageRule")
     .select(broadcastCols)
     .eq("companyId", args.companyId)
     .eq("targetType", args.targetType);
@@ -244,7 +236,7 @@ export async function getRuleAssignmentsForTarget(
     (client as SupabaseClient<Database>)
       .from(table)
       .select(
-        `${idCol}, ruleId, createdAt, customRule:ruleId(id, name, targetType, severity, message, active, surfaces, appliesToAll)`
+        `${idCol}, ruleId, createdAt, storageRule:ruleId(id, name, targetType, severity, message, active, surfaces, appliesToAll)`
       )
       .in(idCol, lookupIds)
       .eq("companyId", args.companyId),
@@ -278,64 +270,33 @@ export async function getRuleAssignmentsForTarget(
     };
   })();
 
-  // Resolve ancestor names in one extra query so the UI doesn't need to
-  // re-fetch. Only the storageUnit case can yield non-self owner ids.
-  const inheritedOwnerIds = new Set<string>();
-  for (const r of res.data ?? []) {
-    const ownerId = (r as unknown as Record<string, unknown>)[idCol] as string;
-    if (ownerId && ownerId !== args.targetId) inheritedOwnerIds.add(ownerId);
-  }
-
-  const ancestorNameById = new Map<string, string>();
-  if (args.targetType === "storageUnit" && inheritedOwnerIds.size > 0) {
-    const namesRes = await client
-      .from("storageUnit")
-      .select("id, name")
-      .in("id", Array.from(inheritedOwnerIds))
-      .eq("companyId", args.companyId);
-    for (const row of (namesRes.data ?? []) as Array<{
-      id: string;
-      name: string;
-    }>) {
-      ancestorNameById.set(row.id, row.name);
-    }
-  }
-
-  // Dedupe: if the same rule is assigned to both self and an ancestor,
-  // keep the direct row (so unassign UI operates on what the user owns).
+  // Item / workCenter assignments are always direct (no inheritance), so every
+  // row's owner is the target itself.
   const byRuleId = new Map<string, RuleAssignmentRow>();
   for (const r of res.data ?? []) {
     const row = r as unknown as {
       [k: string]: unknown;
-      customRule:
-        | RuleAssignmentRow["customRule"]
-        | RuleAssignmentRow["customRule"][]
+      storageRule:
+        | RuleAssignmentRow["storageRule"]
+        | RuleAssignmentRow["storageRule"][]
         | null;
     };
     const ownerId = row[idCol] as string;
-    const node = Array.isArray(row.customRule)
-      ? row.customRule[0]
-      : row.customRule;
+    const node = Array.isArray(row.storageRule)
+      ? row.storageRule[0]
+      : row.storageRule;
     if (!node) continue;
-
-    const isDirect = ownerId === args.targetId;
-    const inheritedFromId = isDirect ? null : ownerId;
-    const inheritedFromName = inheritedFromId
-      ? (ancestorNameById.get(inheritedFromId) ?? null)
-      : null;
 
     const candidate: RuleAssignmentRow = {
       ownerId,
       ruleId: row.ruleId as string,
       createdAt: (row.createdAt as string | null) ?? null,
-      customRule: node,
-      inheritedFromId,
-      inheritedFromName
+      storageRule: node,
+      inheritedFromId: null,
+      inheritedFromName: null
     };
 
-    const existing = byRuleId.get(candidate.ruleId);
-    // Prefer direct over inherited when both exist for the same rule.
-    if (!existing || (existing.inheritedFromId && !candidate.inheritedFromId)) {
+    if (!byRuleId.has(candidate.ruleId)) {
       byRuleId.set(candidate.ruleId, candidate);
     }
   }
@@ -378,7 +339,7 @@ export async function getRuleAssignmentsForTarget(
       ownerId: "__all__",
       ruleId: b.id,
       createdAt: b.createdAt,
-      customRule: {
+      storageRule: {
         id: b.id,
         name: b.name,
         targetType: b.targetType,
@@ -396,33 +357,7 @@ export async function getRuleAssignmentsForTarget(
   return { data: Array.from(byRuleId.values()), error: null };
 }
 
-/**
- * Returns the set of unit ids to query assignments under. For storageUnit
- * targets this is the unit + every ancestor (so child drawer sees inherited
- * rules). For other targets it's just the target id.
- */
-async function resolveLookupIds(
-  client: SupabaseClient<Database>,
-  args: { targetType: TargetType; targetId: string; companyId: string }
-): Promise<string[]> {
-  if (args.targetType !== "storageUnit") return [args.targetId];
-
-  const { data } = await (client as SupabaseClient<Database>)
-    .from("storageUnits_recursive")
-    .select("ancestorPath")
-    .eq("id", args.targetId)
-    .eq("companyId", args.companyId)
-    .maybeSingle();
-
-  const row = data as { ancestorPath: string[] | null } | null;
-  const chain =
-    row?.ancestorPath && row.ancestorPath.length > 0
-      ? row.ancestorPath
-      : [args.targetId];
-  return chain;
-}
-
-export async function getCustomRulesList(
+export async function getStorageRulesList(
   client: SupabaseClient<Database>,
   companyId: string,
   targetType?: TargetType
@@ -437,7 +372,7 @@ export async function getCustomRulesList(
     surfaces: TransactionSurface[];
   }>(
     client,
-    "customRule",
+    "storageRule",
     "id, name, targetType, severity, active, appliesToAll, surfaces",
     (query) => {
       let q = query.eq("companyId", companyId).order("name");
@@ -447,7 +382,7 @@ export async function getCustomRulesList(
   );
 }
 
-export async function assignCustomRule(
+export async function assignStorageRule(
   client: SupabaseClient<Database>,
   args: {
     targetType: TargetType;
@@ -462,10 +397,10 @@ export async function assignCustomRule(
 
   // Preflight: rule must exist in this company and its targetType must match
   // the assignment table. Without this, callers could insert a storageUnit-rule
-  // id into customRuleItemAssignment; the evaluator filters defensively but
+  // id into storageRuleItemAssignment; the evaluator filters defensively but
   // the orphan row still inflates getRuleAssignmentCounts.
   const ruleRes = await client
-    .from("customRule")
+    .from("storageRule")
     .select("id, targetType")
     .eq("id", args.ruleId)
     .eq("companyId", args.companyId)
@@ -497,7 +432,7 @@ export async function assignCustomRule(
     .single();
 }
 
-export async function unassignCustomRule(
+export async function unassignStorageRule(
   client: SupabaseClient<Database>,
   args: { targetType: TargetType; targetId: string; ruleId: string }
 ) {

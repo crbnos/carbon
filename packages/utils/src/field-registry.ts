@@ -1,10 +1,10 @@
 // Field resolver registry — single source of truth for the rule-builder UI and
-// the evaluator's field paths. Split out of `customRules.ts` to keep that file
-// focused on evaluation/compilation. Depends on `customRules` only for the core
+// the evaluator's field paths. Split out of `storageRules.ts` to keep that file
+// focused on evaluation/compilation. Depends on `storageRules` only for the core
 // `Operator` / `TargetType` types (type-only — no runtime cycle).
 
 import type { Database } from "@carbon/database";
-import type { Operator, TargetType } from "./customRules";
+import type { Operator, TargetType } from "./storageRules";
 
 type Tables = Database["public"]["Tables"];
 
@@ -52,9 +52,7 @@ export type FieldDef = {
    * Which rule `targetType`(s) may reference this field.
    * - `"shared"`            → visible to every targetType (e.g. `transaction.*`)
    * - `TargetType`          → visible only to that one targetType
-   * - `readonly TargetType[]` → visible to each targetType in the list (e.g.
-   *   `["item", "storageUnit"]` for storage-unit fields that make sense on
-   *   both item-target and storageUnit-target rules)
+   * - `readonly TargetType[]` → visible to each targetType in the list
    */
   targetType: TargetType | "shared" | readonly TargetType[];
   valueOptionsLoader?: ValueOptionsLoader;
@@ -146,12 +144,12 @@ const fields = {
 // populated for a subset of surfaces are intentionally excluded — rule
 // authors should never write a predicate that silently no-ops on some surface.
 //
-// Cross-target fields (e.g. storageUnit.* visible to both item + storageUnit
-// rules) use the array form of `targetType`. For item-target surfaces the
-// storageUnit ctx may be undefined when `line.storageUnitId` is null
-// (inventoryAdjustment without a bin, warehouseTransfer with no destination
-// yet); we mark such fields `nullable: true` so `availableOperators` exposes
-// `isSet`/`isNotSet` and authors can guard explicitly.
+// The `storageUnit.*` fields belong to item-target rules (they own the
+// `place`/`pick` bin guards). The storageUnit ctx may be undefined when
+// `line.storageUnitId` is null (inventoryAdjustment without a bin,
+// warehouseTransfer with no destination yet); we mark such fields
+// `nullable: true` so `availableOperators` exposes `isSet`/`isNotSet` and
+// authors can guard explicitly.
 //
 // Dropped vs. earlier drafts (kept here as audit trail):
 //   - shelf.locationId         → `shelf` is not a RuleContext root key
@@ -163,10 +161,9 @@ const fields = {
 // `itemCost` row and flattens its `itemPostingGroupId` onto the item ctx, so
 // the value is guaranteed for every item-target surface (all carry an itemId).
 export const FIELD_REGISTRY: FieldDef[] = [
-  // ── Item context (item + storageUnit targets) ─────────────────────────────
-  // All storageUnit-target surfaces (place, pick, stockTransfer,
-  // warehouseTransfer) carry a `line.itemId`, so the evaluator loads item
-  // ctx and these fields resolve. Item DB columns are NOT NULL so no
+  // ── Item context (item target) ────────────────────────────────────────────
+  // Every item-target surface carries a `line.itemId`, so the evaluator loads
+  // item ctx and these fields resolve. Item DB columns are NOT NULL so no
   // nullable change.
   fields.database({
     table: "item",
@@ -176,7 +173,7 @@ export const FIELD_REGISTRY: FieldDef[] = [
     type: "enum",
     operators: ENUM_OPS,
     context: "item",
-    targetType: ["item", "storageUnit"],
+    targetType: "item",
     valueOptionsLoader: "itemTypes"
   }),
   fields.database({
@@ -187,7 +184,7 @@ export const FIELD_REGISTRY: FieldDef[] = [
     type: "enum",
     operators: ENUM_OPS,
     context: "item",
-    targetType: ["item", "storageUnit"],
+    targetType: "item",
     valueOptionsLoader: "replenishmentSystems"
   }),
   fields.database({
@@ -198,7 +195,7 @@ export const FIELD_REGISTRY: FieldDef[] = [
     type: "enum",
     operators: ENUM_OPS,
     context: "item",
-    targetType: ["item", "storageUnit"],
+    targetType: "item",
     valueOptionsLoader: "itemTrackingTypes"
   }),
   // Posting group lives on the 1:1 `itemCost` row, not `item`. The evaluator
@@ -212,14 +209,13 @@ export const FIELD_REGISTRY: FieldDef[] = [
     type: "id",
     operators: ID_OPS,
     context: "item",
-    targetType: ["item", "storageUnit"],
+    targetType: "item",
     valueOptionsLoader: "itemPostingGroups"
   }),
 
-  // ── StorageUnit context (item + storageUnit targets) ──────────────────────
-  // Always loaded by the evaluator for storageUnit-target rules; loaded when
-  // `line.storageUnitId` is set for item-target rules. `nullable: true` on
-  // every entry so item rules can guard with `isSet`/`isNotSet`.
+  // ── StorageUnit context (item target) ─────────────────────────────────────
+  // Loaded by the evaluator when `line.storageUnitId` is set. `nullable: true`
+  // on every entry so item rules can guard with `isSet`/`isNotSet`.
   fields.synthetic({
     path: "storageUnit.id",
     derivedFrom: "The bin chosen on this transaction line.",
@@ -232,7 +228,7 @@ export const FIELD_REGISTRY: FieldDef[] = [
     // multi-select UI that doesn't exist. Restrict to scalar ops.
     operators: SCALAR_OPS,
     context: "storage",
-    targetType: ["item", "storageUnit"]
+    targetType: "item"
   }),
   fields.synthetic({
     path: "storageUnit.storageTypeId",
@@ -242,7 +238,7 @@ export const FIELD_REGISTRY: FieldDef[] = [
     type: "id",
     operators: ID_OPS,
     context: "storage",
-    targetType: ["item", "storageUnit"],
+    targetType: "item",
     valueOptionsLoader: "storageTypes"
   }),
   // Useful for `appliesToAll` rules that want to scope by physical location —
@@ -259,7 +255,7 @@ export const FIELD_REGISTRY: FieldDef[] = [
     type: "id",
     operators: ID_OPS,
     context: "storage",
-    targetType: ["item", "storageUnit"],
+    targetType: "item",
     valueOptionsLoader: "locations"
   }),
 

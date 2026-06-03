@@ -1290,25 +1290,19 @@ export const path = {
     consumableRules: (id: string) =>
       generatePath(`${x}/consumable/${id}/rules`),
     toolRules: (id: string) => generatePath(`${x}/tool/${id}/rules`),
-    customRules: `${x}/settings/custom-rules`,
-    customRule: (id: string) =>
-      generatePath(`${x}/settings/custom-rules/${id}`),
-    newCustomRule: `${x}/settings/custom-rules/new`,
-    deleteCustomRule: (id: string) =>
-      generatePath(`${x}/settings/custom-rules/${id}/delete`),
-    customRuleAssignItem: (itemId: string) =>
+    storageRules: `${x}/inventory/storage-rules`,
+    storageRule: (id: string) =>
+      generatePath(`${x}/inventory/storage-rules/${id}`),
+    newStorageRule: `${x}/inventory/storage-rules/new`,
+    deleteStorageRule: (id: string) =>
+      generatePath(`${x}/inventory/storage-rules/${id}/delete`),
+    storageRuleAssignItem: (itemId: string) =>
       generatePath(`${x}/items/rules/assign/${itemId}`),
-    customRuleUnassignItem: (itemId: string, ruleId: string) =>
+    storageRuleUnassignItem: (itemId: string, ruleId: string) =>
       generatePath(`${x}/items/rules/unassign/${itemId}/${ruleId}`),
-    customRuleAssignStorageUnit: (id: string) =>
-      generatePath(`${x}/inventory/storage-units/rules/assign/${id}`),
-    customRuleUnassignStorageUnit: (id: string, ruleId: string) =>
-      generatePath(
-        `${x}/inventory/storage-units/rules/unassign/${id}/${ruleId}`
-      ),
-    customRuleAssignWorkCenter: (id: string) =>
+    storageRuleAssignWorkCenter: (id: string) =>
       generatePath(`${x}/resources/work-centers/rules/assign/${id}`),
-    customRuleUnassignWorkCenter: (id: string, ruleId: string) =>
+    storageRuleUnassignWorkCenter: (id: string, ruleId: string) =>
       generatePath(
         `${x}/resources/work-centers/rules/unassign/${id}/${ruleId}`
       ),
@@ -1645,8 +1639,6 @@ export const path = {
     sequences: `${x}/settings/sequences`,
     storageUnit: (id: string) =>
       generatePath(`${x}/inventory/storage-units/${id}`),
-    storageUnitRules: (id: string) =>
-      generatePath(`${x}/inventory/storage-units/${id}/rules`),
     storageUnits: `${x}/inventory/storage-units`,
     storageType: (id: string) =>
       generatePath(`${x}/inventory/storage-types/${id}`),

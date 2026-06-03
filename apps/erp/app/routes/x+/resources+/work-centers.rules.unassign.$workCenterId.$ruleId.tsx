@@ -7,9 +7,9 @@ import type {
   ClientActionFunctionArgs
 } from "react-router";
 import { redirect } from "react-router";
-import { unassignCustomRule } from "~/modules/customRules";
+import { unassignStorageRule } from "~/modules/storageRules";
 import { path } from "~/utils/path";
-import { customRuleAssignmentsQuery, getCompanyId } from "~/utils/react-query";
+import { getCompanyId, storageRuleAssignmentsQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -21,28 +21,28 @@ export async function action({ request, params }: ActionFunctionArgs) {
     request,
     client,
     companyId,
-    feature: "CUSTOM_RULES",
-    redirectTo: path.to.customRules
+    feature: "STORAGE_RULES",
+    redirectTo: path.to.storageRules
   });
 
   const { workCenterId, ruleId } = params;
   if (!workCenterId || !ruleId)
     throw new Error("workCenterId and ruleId required");
 
-  const result = await unassignCustomRule(client, {
+  const result = await unassignStorageRule(client, {
     targetType: "workCenter",
     targetId: workCenterId,
     ruleId
   });
   if (result.error) {
     throw redirect(
-      request.headers.get("Referer") ?? path.to.customRules,
+      request.headers.get("Referer") ?? path.to.storageRules,
       await flash(request, error(result.error, "Failed to unassign rule"))
     );
   }
 
   throw redirect(
-    request.headers.get("Referer") ?? path.to.customRules,
+    request.headers.get("Referer") ?? path.to.storageRules,
     await flash(request, success("Rule unassigned"))
   );
 }
@@ -54,7 +54,7 @@ export async function clientAction({
   const { workCenterId } = params;
   if (workCenterId) {
     window?.clientCache?.setQueryData(
-      customRuleAssignmentsQuery("workCenter", workCenterId, getCompanyId())
+      storageRuleAssignmentsQuery("workCenter", workCenterId, getCompanyId())
         .queryKey,
       null
     );

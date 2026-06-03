@@ -9,18 +9,18 @@ import type {
 } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteCustomRule, getCustomRule } from "~/modules/customRules";
+import { deleteStorageRule, getStorageRule } from "~/modules/storageRules";
 import { getParams, path } from "~/utils/path";
-import { customRulesQuery, getCompanyId } from "~/utils/react-query";
+import { getCompanyId, storageRulesQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, { delete: "settings" });
+  const { client } = await requirePermissions(request, { delete: "inventory" });
   const { id } = params;
   if (!id) throw notFound("id required");
-  const rule = await getCustomRule(client, id);
+  const rule = await getStorageRule(client, id);
   if (rule.error || !rule.data) {
     throw redirect(
-      path.to.customRules,
+      path.to.storageRules,
       await flash(request, error(rule.error, "Rule not found"))
     );
   }
@@ -30,52 +30,52 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId } = await requirePermissions(request, {
-    delete: "settings"
+    delete: "inventory"
   });
 
   await requirePlan({
     request,
     client,
     companyId,
-    feature: "CUSTOM_RULES",
-    redirectTo: path.to.customRules
+    feature: "STORAGE_RULES",
+    redirectTo: path.to.storageRules
   });
 
   const { id } = params;
   if (!id) throw new Error("id required");
 
-  const result = await deleteCustomRule(client, id);
+  const result = await deleteStorageRule(client, id);
   if (result.error) {
     throw redirect(
-      `${path.to.customRules}?${getParams(request)}`,
+      `${path.to.storageRules}?${getParams(request)}`,
       await flash(request, error(result.error, "Failed to delete rule"))
     );
   }
 
   throw redirect(
-    `${path.to.customRules}?${getParams(request)}`,
+    `${path.to.storageRules}?${getParams(request)}`,
     await flash(request, success("Rule deleted"))
   );
 }
 
 export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
   window?.clientCache?.setQueryData(
-    customRulesQuery(getCompanyId()).queryKey,
+    storageRulesQuery(getCompanyId()).queryKey,
     null
   );
   return await serverAction();
 }
 
-export default function DeleteCustomRuleRoute() {
+export default function DeleteStorageRuleRoute() {
   const { rule } = useLoaderData<typeof loader>();
   const { id } = (rule as { id: string }) ?? { id: "" };
   const navigate = useNavigate();
   return (
     <ConfirmDelete
-      action={path.to.deleteCustomRule(id)}
+      action={path.to.deleteStorageRule(id)}
       name={(rule as { name?: string })?.name ?? "this rule"}
       text="Are you sure you want to delete this rule? Assignments will also be removed."
-      onCancel={() => navigate(path.to.customRules)}
+      onCancel={() => navigate(path.to.storageRules)}
     />
   );
 }

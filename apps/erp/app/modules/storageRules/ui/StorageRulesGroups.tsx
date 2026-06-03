@@ -30,8 +30,7 @@ import {
   LuPackage,
   LuPencil,
   LuPlus,
-  LuTrash,
-  LuWarehouse
+  LuTrash
 } from "react-icons/lu";
 import { Link, useNavigate } from "react-router";
 import { Empty } from "~/components";
@@ -81,13 +80,12 @@ function ruleReach(rule: RuleListItem): {
   };
 }
 
-type CustomRulesGroupsProps = {
+type StorageRulesGroupsProps = {
   rules: RuleListItem[];
 };
 
 const TARGET_LABEL: Record<TargetType, string> = {
-  item: "Item",
-  storageUnit: "Storage unit",
+  item: "Storage",
   workCenter: "Work center"
 };
 
@@ -136,7 +134,7 @@ const RuleSectionCard = memo(
         ) : (
           <VStack spacing={3} className="items-stretch">
             {rules.map((r) => (
-              <CustomRuleCard key={r.id} rule={r} />
+              <StorageRuleCard key={r.id} rule={r} />
             ))}
           </VStack>
         )}
@@ -146,31 +144,26 @@ const RuleSectionCard = memo(
 );
 RuleSectionCard.displayName = "RuleSectionCard";
 
-const CustomRulesGroups = memo(({ rules }: CustomRulesGroupsProps) => {
+const StorageRulesGroups = memo(({ rules }: StorageRulesGroupsProps) => {
   const permissions = usePermissions();
-  const canCreate = permissions.can("create", "settings");
+  const canCreate = permissions.can("create", "inventory");
 
-  // Split by targetType. Item + storageUnit shown; workCenter hidden until
-  // entry point + MES modal ship.
-  const { itemRules, storageUnitRules } = useMemo(() => {
-    const itemRules: RuleListItem[] = [];
-    const storageUnitRules: RuleListItem[] = [];
-    for (const r of rules) {
-      if (r.targetType === "item") itemRules.push(r);
-      else if (r.targetType === "storageUnit") storageUnitRules.push(r);
-    }
-    return { itemRules, storageUnitRules };
-  }, [rules]);
+  // Only item (storage) rules are shown here; workCenter rules are managed via
+  // Resources and hidden until their entry point + MES modal ship.
+  const itemRules = useMemo(
+    () => rules.filter((r) => r.targetType === "item"),
+    [rules]
+  );
 
   return (
-    <ScrollArea className="w-full h-[calc(100dvh-49px)]">
+    <ScrollArea className="w-full h-[calc(100dvh-49px)] bg-card">
       <VStack
         spacing={4}
         className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
       >
         <div className="flex flex-col gap-1 w-full">
           <Heading size="h3" className="tracking-tight text-balance">
-            Custom Rules
+            Storage Rules
           </Heading>
           <p className="max-w-[72ch] text-sm text-muted-foreground text-pretty">
             Predicate-driven guards that fire on inventory transactions. Block
@@ -179,52 +172,34 @@ const CustomRulesGroups = memo(({ rules }: CustomRulesGroupsProps) => {
         </div>
 
         <RuleSectionCard
-          title="Item rules"
-          description="Fire on receipts, shipments, transfers and inventory adjustments. Target items."
+          title="Storage rules"
+          description="Fire on receipts, shipments, transfers, inventory adjustments and bin moves (place/pick)."
           icon={<LuPackage className="size-4 text-muted-foreground" />}
-          newRuleHref={`${path.to.newCustomRule}?targetType=item`}
-          newRuleLabel="Item Rule"
+          newRuleHref={`${path.to.newStorageRule}?targetType=item`}
+          newRuleLabel="Storage Rule"
           canCreate={canCreate}
           rules={itemRules}
         />
-
-        <RuleSectionCard
-          title="Storage unit rules"
-          description="Fire on place, pick and transfers. Target storage units."
-          icon={<LuWarehouse className="size-4 text-muted-foreground" />}
-          newRuleHref={`${path.to.newCustomRule}?targetType=storageUnit`}
-          newRuleLabel="Storage Unit Rule"
-          canCreate={canCreate}
-          rules={storageUnitRules}
-        />
-
-        {/*
-          Production rules card — hidden until work center rule wiring
-          (entry point on the work centers list, drawer/tab to manage
-          assignments, MES violation modal) ships. To restore: split
-          workCenter rules out of `rules` above and render a third
-          RuleSectionCard with `newRuleHref` pointing to targetType=workCenter.
-        */}
       </VStack>
     </ScrollArea>
   );
 });
 
-CustomRulesGroups.displayName = "CustomRulesGroups";
-export default CustomRulesGroups;
+StorageRulesGroups.displayName = "StorageRulesGroups";
+export default StorageRulesGroups;
 
-const CustomRuleCard = memo(({ rule }: { rule: RuleListItem }) => {
+const StorageRuleCard = memo(({ rule }: { rule: RuleListItem }) => {
   const [params] = useUrlParams();
   const navigate = useNavigate();
   const permissions = usePermissions();
   const deleteDisclosure = useDisclosure();
 
-  const canEdit = permissions.can("update", "settings");
-  const canDelete = permissions.can("delete", "settings");
+  const canEdit = permissions.can("update", "inventory");
+  const canDelete = permissions.can("delete", "inventory");
   const { broadcastLabel, showAssignments } = ruleReach(rule);
 
   const handleEdit = useCallback(() => {
-    navigate(`${path.to.customRule(rule.id)}?${params.toString()}`);
+    navigate(`${path.to.storageRule(rule.id)}?${params.toString()}`);
   }, [navigate, params, rule.id]);
 
   return (
@@ -338,7 +313,7 @@ const CustomRuleCard = memo(({ rule }: { rule: RuleListItem }) => {
         </Accordion>
       </Card>
       <ConfirmDelete
-        action={path.to.deleteCustomRule(rule.id)}
+        action={path.to.deleteStorageRule(rule.id)}
         isOpen={deleteDisclosure.isOpen}
         name={`${TARGET_LABEL[rule.targetType]} rule "${rule.name}"`}
         text="Are you sure you want to delete this custom rule? Assignments will also be removed."
@@ -349,4 +324,4 @@ const CustomRuleCard = memo(({ rule }: { rule: RuleListItem }) => {
   );
 });
 
-CustomRuleCard.displayName = "CustomRuleCard";
+StorageRuleCard.displayName = "StorageRuleCard";

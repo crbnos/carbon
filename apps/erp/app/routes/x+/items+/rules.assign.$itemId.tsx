@@ -7,9 +7,9 @@ import type {
   ClientActionFunctionArgs
 } from "react-router";
 import { redirect } from "react-router";
-import { assignCustomRule } from "~/modules/customRules";
+import { assignStorageRule } from "~/modules/storageRules";
 import { path } from "~/utils/path";
-import { customRuleAssignmentsQuery, getCompanyId } from "~/utils/react-query";
+import { getCompanyId, storageRuleAssignmentsQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -21,8 +21,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     request,
     client,
     companyId,
-    feature: "CUSTOM_RULES",
-    redirectTo: path.to.customRules
+    feature: "STORAGE_RULES",
+    redirectTo: path.to.storageRules
   });
 
   const { itemId } = params;
@@ -32,12 +32,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const ruleId = String(formData.get("ruleId") ?? "");
   if (!ruleId) {
     throw redirect(
-      request.headers.get("Referer") ?? path.to.customRules,
+      request.headers.get("Referer") ?? path.to.storageRules,
       await flash(request, error(null, "Rule id required"))
     );
   }
 
-  const result = await assignCustomRule(client, {
+  const result = await assignStorageRule(client, {
     targetType: "item",
     targetId: itemId,
     ruleId,
@@ -47,13 +47,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (result.error) {
     throw redirect(
-      request.headers.get("Referer") ?? path.to.customRules,
+      request.headers.get("Referer") ?? path.to.storageRules,
       await flash(request, error(result.error, "Failed to assign rule"))
     );
   }
 
   throw redirect(
-    request.headers.get("Referer") ?? path.to.customRules,
+    request.headers.get("Referer") ?? path.to.storageRules,
     await flash(request, success("Rule assigned"))
   );
 }
@@ -65,7 +65,7 @@ export async function clientAction({
   const { itemId } = params;
   if (itemId) {
     window?.clientCache?.setQueryData(
-      customRuleAssignmentsQuery("item", itemId, getCompanyId()).queryKey,
+      storageRuleAssignmentsQuery("item", itemId, getCompanyId()).queryKey,
       null
     );
   }

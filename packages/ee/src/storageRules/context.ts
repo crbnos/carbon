@@ -1,4 +1,4 @@
-// Pure RuleContext assembly for custom-rules evaluation. Deliberately
+// Pure RuleContext assembly for storage-rules evaluation. Deliberately
 // side-effect-free (no auth/env/DB imports) so the registry↔code-path contract
 // can be unit-tested without booting the server environment. `server.ts` owns
 // the DB I/O and calls `buildLineContext` with the rows it loaded.

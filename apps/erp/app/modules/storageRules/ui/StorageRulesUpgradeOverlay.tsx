@@ -11,7 +11,7 @@ import {
   UpgradeOverlayTitle,
   UpgradeOverlayUpgradeButton
 } from "~/components/UpgradeOverlay";
-import CustomRulesTable from "./CustomRulesTable";
+import StorageRulesTable from "./StorageRulesTable";
 
 const mockRules = [
   {
@@ -72,11 +72,11 @@ const mockRules = [
   }
 ];
 
-export default function CustomRulesUpgradeOverlay() {
+export default function StorageRulesUpgradeOverlay() {
   return (
     <UpgradeOverlay>
       <UpgradeOverlayPreview>
-        <CustomRulesTable data={mockRules as never} count={mockRules.length} />
+        <StorageRulesTable data={mockRules as never} count={mockRules.length} />
       </UpgradeOverlayPreview>
       <UpgradeOverlayCard>
         <UpgradeOverlayIcon>

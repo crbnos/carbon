@@ -519,9 +519,6 @@ msgstr "适用于"
 msgid "Applies to all"
 msgstr "适用于全部"
 
-msgid "Applies to all storage units"
-msgstr "适用于所有存储单位"
-
 msgid "Applies to all work centers"
 msgstr "适用于所有工作中心"
 
@@ -3972,9 +3969,6 @@ msgstr "基础设施"
 msgid "Inherit From Materials"
 msgstr "从材料继承"
 
-msgid "Inherited from"
-msgstr "继承自"
-
 msgid "Insert rows"
 msgstr "插入行"
 
@@ -4567,9 +4561,6 @@ msgstr "管理如何在整个库存中跟踪、计算和执行保质期。"
 
 msgid "Manage Ownership"
 msgstr "管理所有权"
-
-msgid "Manage rules"
-msgstr "管理规则"
 
 msgid "Manage Subscription"
 msgstr "管理订阅"
@@ -7481,6 +7472,9 @@ msgstr "库存转移"
 msgid "Storage client not available"
 msgstr "存储客户端不可用"
 
+msgid "Storage Rules"
+msgstr ""
+
 msgid "Storage Type"
 msgstr "存储类型"
 
@@ -7489,9 +7483,6 @@ msgstr "存储类型"
 
 msgid "Storage Unit"
 msgstr "存储单位"
-
-msgid "Storage unit rules"
-msgstr "存储单元规则"
 
 msgid "Storage Units"
 msgstr "存储单位"
@@ -8168,9 +8159,6 @@ msgstr "未采样的实体将保持\"待处理\"状态，以便您可以继续�
 
 msgid "Unapproved Supplier"
 msgstr "未批准的供应商"
-
-msgid "Unassign from parent unit to remove"
-msgstr "从父单位取消分配以移除"
 
 msgid "Unassign rule"
 msgstr "取消分配规则"

@@ -47,7 +47,7 @@ type ConditionRowProps = {
   onChange: (index: number, patch: Partial<Condition>) => void;
   onRemove: (index: number) => void;
   optionsByLoader: ValueOptionsByLoader;
-  targetType?: "item" | "storageUnit" | "workCenter";
+  targetType?: "item" | "workCenter";
   /**
    * Live list of surfaces the parent rule is configured for. When provided,
    * the per-surface notes panel filters to this set. Falls back to all
@@ -75,7 +75,7 @@ function ConditionRowImpl({
 
   // A field selected before the surfaces changed may no longer be populated on
   // the rule's current surfaces. Flag it so the author re-picks — mirrors the
-  // save-time validator gate (customRules.models.ts) client-side.
+  // save-time validator gate (storageRules.models.ts) client-side.
   const fieldUnavailable = useMemo(
     () =>
       !!fieldDef &&

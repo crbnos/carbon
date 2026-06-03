@@ -62,7 +62,7 @@ type LibraryRule = {
   active: boolean;
 };
 
-type TargetType = "item" | "storageUnit" | "workCenter";
+type TargetType = "item" | "workCenter";
 
 type RuleAssignmentsListProps = {
   targetType: TargetType;
@@ -84,11 +84,8 @@ const TARGET_COPY: Record<TargetType, { noun: string; surfaceBlurb: string }> =
   {
     item: {
       noun: "item",
-      surfaceBlurb: "receipts, shipments, transfers and inventory adjustments"
-    },
-    storageUnit: {
-      noun: "storage unit",
-      surfaceBlurb: "place, pick and transfers"
+      surfaceBlurb:
+        "receipts, shipments, transfers, inventory adjustments and bin moves"
     },
     workCenter: {
       noun: "work center",
@@ -97,20 +94,17 @@ const TARGET_COPY: Record<TargetType, { noun: string; surfaceBlurb: string }> =
   };
 
 const ASSIGN_PATH = {
-  item: path.to.customRuleAssignItem,
-  storageUnit: path.to.customRuleAssignStorageUnit,
-  workCenter: path.to.customRuleAssignWorkCenter
+  item: path.to.storageRuleAssignItem,
+  workCenter: path.to.storageRuleAssignWorkCenter
 };
 
 const UNASSIGN_PATH = {
-  item: path.to.customRuleUnassignItem,
-  storageUnit: path.to.customRuleUnassignStorageUnit,
-  workCenter: path.to.customRuleUnassignWorkCenter
+  item: path.to.storageRuleUnassignItem,
+  workCenter: path.to.storageRuleUnassignWorkCenter
 };
 
-const PERM_MODULE: Record<TargetType, "parts" | "inventory" | "resources"> = {
+const PERM_MODULE: Record<TargetType, "parts" | "resources"> = {
   item: "parts",
-  storageUnit: "inventory",
   workCenter: "resources"
 };
 
@@ -124,7 +118,7 @@ export default function RuleAssignmentsList({
   const { t } = useLingui();
   const permissions = usePermissions();
   const fetcher = useFetcher();
-  const { isGated } = usePlanGate({ feature: "CUSTOM_RULES" });
+  const { isGated } = usePlanGate({ feature: "STORAGE_RULES" });
   const module = PERM_MODULE[targetType];
   const canCreate = permissions.can("create", module);
   const canDelete = permissions.can("delete", module);
@@ -188,7 +182,7 @@ export default function RuleAssignmentsList({
             />
           )}
           <Button variant="primary" leftIcon={<LuPlus />} asChild>
-            <Link to={`${path.to.newCustomRule}?targetType=${targetType}`}>
+            <Link to={`${path.to.newStorageRule}?targetType=${targetType}`}>
               <Trans>Add rule</Trans>
             </Link>
           </Button>
@@ -269,13 +263,12 @@ export default function RuleAssignmentsList({
       <Tbody>
         {assignments.map((a) => {
           const isBroadcast = a.inheritedFromId === "__all__";
-          const isInherited = !!a.inheritedFromId && !isBroadcast;
-          const isLocked = isInherited || isBroadcast;
+          const isLocked = isBroadcast;
           return (
             <Tr key={a.ruleId}>
               <Td className="whitespace-nowrap">
                 <HStack className="gap-2 items-center flex-wrap">
-                  <Hyperlink to={path.to.customRule(a.ruleId)}>
+                  <Hyperlink to={path.to.storageRule(a.ruleId)}>
                     <HStack className="gap-2 items-center">
                       <LuShieldCheck className="text-muted-foreground shrink-0" />
                       <span>{a.rule.name}</span>
@@ -288,20 +281,6 @@ export default function RuleAssignmentsList({
                     >
                       <Trans>Applies to all</Trans>
                     </Badge>
-                  )}
-                  {isInherited && (
-                    <Link
-                      to={path.to.storageUnitRules(a.inheritedFromId!)}
-                      className="no-underline"
-                    >
-                      <Badge
-                        variant="outline"
-                        className="cursor-pointer text-[10px] uppercase tracking-wide"
-                      >
-                        <Trans>Inherited from</Trans>{" "}
-                        {a.inheritedFromName ?? "parent"}
-                      </Badge>
-                    </Link>
                   )}
                 </HStack>
               </Td>
@@ -351,16 +330,12 @@ export default function RuleAssignmentsList({
                     aria-label={
                       isBroadcast
                         ? t`Edit the rule to remove the "Applies to all" flag`
-                        : isInherited
-                          ? t`Unassign from parent unit to remove`
-                          : t`Unassign rule`
+                        : t`Unassign rule`
                     }
                     title={
                       isBroadcast
                         ? t`Edit the rule to remove the "Applies to all" flag`
-                        : isInherited
-                          ? t`Unassign from parent unit to remove`
-                          : undefined
+                        : undefined
                     }
                     variant="ghost"
                     size="sm"
@@ -438,7 +413,7 @@ function EmptyState({
                 size="sm"
                 leftIcon={<LuPlus />}
               >
-                <Link to={path.to.newCustomRule}>
+                <Link to={path.to.newStorageRule}>
                   <Trans>Create new rule</Trans>
                 </Link>
               </Button>
@@ -451,12 +426,12 @@ function EmptyState({
                 size="sm"
                 leftIcon={<LuLibrary />}
               >
-                <Link to={path.to.customRules}>
+                <Link to={path.to.storageRules}>
                   <Trans>Browse library</Trans>
                 </Link>
               </Button>
               <Button asChild size="sm" leftIcon={<LuPlus />}>
-                <Link to={path.to.newCustomRule}>
+                <Link to={path.to.newStorageRule}>
                   <Trans>Create new rule</Trans>
                 </Link>
               </Button>

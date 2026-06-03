@@ -519,9 +519,6 @@ msgstr "लागू होता है"
 msgid "Applies to all"
 msgstr "सभी पर लागू होता है"
 
-msgid "Applies to all storage units"
-msgstr "सभी स्टोरेज यूनिट्स पर लागू होता है"
-
 msgid "Applies to all work centers"
 msgstr "सभी कार्य केंद्रों पर लागू होता है"
 
@@ -3972,9 +3969,6 @@ msgstr "बुनियादी ढांचा"
 msgid "Inherit From Materials"
 msgstr "सामग्री से विरासत में प्राप्त करें"
 
-msgid "Inherited from"
-msgstr "से विरासत में मिला"
-
 msgid "Insert rows"
 msgstr "पंक्तियाँ सम्मिलित करें"
 
@@ -4567,9 +4561,6 @@ msgstr "शेल्फ लाइफ को कैसे ट्रैक कि�
 
 msgid "Manage Ownership"
 msgstr "स्वामित्व प्रबंधित करें"
-
-msgid "Manage rules"
-msgstr "नियमों का प्रबंधन करें"
 
 msgid "Manage Subscription"
 msgstr "सदस्यता प्रबंधित करें"
@@ -7481,6 +7472,9 @@ msgstr "स्टॉक ट्रांसफर"
 msgid "Storage client not available"
 msgstr "स्टोरेज क्लाइंट उपलब्ध नहीं है"
 
+msgid "Storage Rules"
+msgstr ""
+
 msgid "Storage Type"
 msgstr "स्टोरेज प्रकार"
 
@@ -7489,9 +7483,6 @@ msgstr "स्टोरेज प्रकार"
 
 msgid "Storage Unit"
 msgstr "भंडारण इकाई"
-
-msgid "Storage unit rules"
-msgstr "भंडारण इकाई नियम"
 
 msgid "Storage Units"
 msgstr "भंडारण इकाइयाँ"
@@ -8168,9 +8159,6 @@ msgstr "नमूना न लिए गए इकाइयां On Hold प�
 
 msgid "Unapproved Supplier"
 msgstr "अनुमोदित नहीं आपूर्तिकर्ता"
-
-msgid "Unassign from parent unit to remove"
-msgstr "माता-पिता इकाई से हटाने के लिए असाइन करें"
 
 msgid "Unassign rule"
 msgstr "नियम को अनअसाइन करें"

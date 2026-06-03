@@ -15,7 +15,6 @@ import {
   LuLayoutDashboard,
   LuNetwork,
   LuSheet,
-  LuShieldCheck,
   LuShoppingCart,
   LuSquareStack,
   LuUsers,
@@ -150,12 +149,6 @@ export default function useSettingsSubmodules() {
             to: path.to.approvalRules,
             role: "employee",
             icon: <LuCircleCheck />
-          },
-          {
-            name: t`Custom Rules`,
-            to: path.to.customRules,
-            role: "employee",
-            icon: <LuShieldCheck />
           },
           {
             name: t`Audit Logs`,

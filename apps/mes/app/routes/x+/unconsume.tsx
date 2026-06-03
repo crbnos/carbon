@@ -4,7 +4,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   evaluateLinesForSurface,
   isBlocked
-} from "@carbon/ee/custom-rules.server";
+} from "@carbon/ee/storage-rules.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { issueTrackedEntityValidator } from "~/services/models";

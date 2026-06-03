@@ -6,7 +6,7 @@ import {
   dedupeViolations,
   evaluateLinesForSurface,
   isBlocked
-} from "@carbon/ee/custom-rules.server";
+} from "@carbon/ee/storage-rules.server";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -75,17 +75,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
     Object.assign(allRuleNames, ruleNames);
   }
 
-  // Storage-unit pass — pick side of the shipment.
-  const storageUnitSurfaces: ("pick" | "warehouseTransfer")[] = ["pick"];
+  // Pick pass — the bin side of the shipment. Same lines, same item target;
+  // item rules own the `pick` surface. Transfers double-up via the
+  // warehouseTransfer surface (dedupe collapses the overlap).
+  const pickSurfaces: ("pick" | "warehouseTransfer")[] = ["pick"];
   if (shipmentForSurface?.sourceDocument === "Outbound Transfer") {
-    storageUnitSurfaces.push("warehouseTransfer");
+    pickSurfaces.push("warehouseTransfer");
   }
-  for (const surface of storageUnitSurfaces) {
+  for (const surface of pickSurfaces) {
     const { violations, ruleNames } = await evaluateLinesForSurface({
       client: serviceRole,
       companyId,
       userId,
-      targetType: "storageUnit",
+      targetType: "item",
       surface,
       lines: evalLines
     });

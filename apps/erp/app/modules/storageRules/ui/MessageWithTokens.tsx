@@ -46,7 +46,7 @@ type MessageWithTokensProps = {
    * Rule's targetType — scopes which fields appear in the token dropdown
    * so e.g. workCenter rules don't list `item.replenishmentSystem`.
    */
-  targetType?: "item" | "storageUnit" | "workCenter";
+  targetType?: "item" | "workCenter";
 };
 
 type TokenItem = { token: string; description: string };
@@ -102,7 +102,7 @@ const ORDERED_CTX: FieldDef["context"][] = ["storage", "transaction"];
 // reallocate the icon element (rendering-hoist-jsx).
 const BRACES_ICON = <LuBraces />;
 
-// Mirror of the runtime `TOKEN_RE` in packages/utils/src/customRules.ts so the
+// Mirror of the runtime `TOKEN_RE` in packages/utils/src/storageRules.ts so the
 // editor highlights exactly what `interpolateMessage` will substitute — no
 // false greens, no missed reds. Inlined rather than re-exported to avoid a
 // UI → runtime import cycle.
