@@ -170,7 +170,7 @@ export default function Invite() {
           {...fade}
           transition={{ duration: 1.2, ease: "easeInOut", delay: 1.5 }}
           size="h1"
-          className="m-0"
+          className="mb-4"
         >
           <Trans>Welcome to Carbon</Trans>
         </Heading>

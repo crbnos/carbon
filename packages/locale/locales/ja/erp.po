@@ -4062,6 +4062,9 @@ msgstr "在庫単位"
 msgid "Invite"
 msgstr "招待"
 
+msgid "Invited"
+msgstr ""
+
 msgid "Invoice"
 msgstr "請求書"
 

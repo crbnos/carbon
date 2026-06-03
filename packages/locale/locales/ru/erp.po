@@ -4062,6 +4062,9 @@ msgstr "Единица измерения запасов"
 msgid "Invite"
 msgstr "Пригласить"
 
+msgid "Invited"
+msgstr ""
+
 msgid "Invoice"
 msgstr "Счет"
 

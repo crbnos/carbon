@@ -4062,6 +4062,9 @@ msgstr "Bestandseinheit"
 msgid "Invite"
 msgstr "Einladen"
 
+msgid "Invited"
+msgstr ""
+
 msgid "Invoice"
 msgstr "Rechnung"
 

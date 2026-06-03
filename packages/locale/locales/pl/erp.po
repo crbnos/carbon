@@ -4062,6 +4062,9 @@ msgstr "Jednostka miary zapasów"
 msgid "Invite"
 msgstr "Zaproś"
 
+msgid "Invited"
+msgstr ""
+
 msgid "Invoice"
 msgstr "Faktura"
 

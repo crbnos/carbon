@@ -105,7 +105,9 @@ export function useCustomColumns<T extends { customFields: Json }>(
           case DataType.List:
             return isObject(item.row.original.customFields) &&
               field.id in item.row.original.customFields ? (
-              <Enumerable value={item.getValue<string>()} />
+              <Enumerable
+                value={item.row.original.customFields[field.id] as string}
+              />
             ) : null;
           case DataType.Numeric:
             return isObject(item.row.original.customFields) &&

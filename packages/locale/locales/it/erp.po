@@ -4062,6 +4062,9 @@ msgstr "Unità di Misura Inventario"
 msgid "Invite"
 msgstr "Invita"
 
+msgid "Invited"
+msgstr ""
+
 msgid "Invoice"
 msgstr "Fattura"
 
