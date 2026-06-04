@@ -6,7 +6,7 @@ import {
   dedupeViolations,
   evaluateLinesForSurface,
   isBlocked
-} from "@carbon/ee/custom-rules.server";
+} from "@carbon/ee/storage-rules.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -36,11 +36,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { ...d } = validation.data;
   const acknowledged = formData.get("acknowledged") === "true";
 
-  // Business rule evaluation. Item-target rules fire on
-  // `inventoryAdjustment` surface. Storage-unit-target rules fire on
-  // `place` when the adjustment lands stock in a bin (positive delta) and
-  // `pick` when it removes from a bin (negative delta) — so warehouse rules
-  // tied to those surfaces also kick in for manual adjustments.
+  // Business rule evaluation. Item rules fire on the `inventoryAdjustment`
+  // surface, and on `place` when the adjustment lands stock in a bin (positive
+  // delta) or `pick` when it removes from a bin (negative delta) — so bin-level
+  // rules tied to those surfaces also kick in for manual adjustments.
   const serviceRole = getCarbonServiceRole();
   const qty = Number(d.quantity ?? 0);
   const evalLine = [
@@ -66,22 +65,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const allRuleNames: Record<string, string> = { ...itemPass.ruleNames };
 
   if (d.storageUnitId) {
-    // Pick storage-unit surface from `adjustmentType` only. `quantity` is a
+    // Pick the bin surface from `adjustmentType` only. `quantity` is a
     // positive magnitude per `inventoryAdjustmentValidator` — sign-based
     // direction detection would misclassify `Negative Adjmt.` as `place`.
+    // Item rules own the `place`/`pick` surfaces.
     const isNegative = d.adjustmentType === "Negative Adjmt.";
-    const storageSurface: "place" | "pick" = isNegative ? "pick" : "place";
+    const binSurface: "place" | "pick" = isNegative ? "pick" : "place";
 
-    const storagePass = await evaluateLinesForSurface({
+    const binPass = await evaluateLinesForSurface({
       client: serviceRole,
       companyId,
       userId,
-      targetType: "storageUnit",
-      surface: storageSurface,
+      targetType: "item",
+      surface: binSurface,
       lines: evalLine
     });
-    allViolations.push(...storagePass.violations);
-    Object.assign(allRuleNames, storagePass.ruleNames);
+    allViolations.push(...binPass.violations);
+    Object.assign(allRuleNames, binPass.ruleNames);
   }
 
   const deduped = dedupeViolations(allViolations);

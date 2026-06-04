@@ -42,15 +42,31 @@ import type {
 } from "../../types";
 import { FileBadge, ItemDescription } from "../Item";
 
-const ToolProperties = () => {
+type ToolPropertiesProps = {
+  data?: {
+    itemId: string;
+    locations: ListItem[];
+    toolSummary: Tool;
+    files: Promise<ItemFile[]>;
+    supplierParts: SupplierPart[];
+    pickMethods: PickMethod[];
+    makeMethods: Promise<PostgrestResponse<MakeMethod>>;
+    tags: { name: string }[];
+  };
+};
+
+const ToolProperties = ({ data }: ToolPropertiesProps) => {
   const { t } = useLingui();
-  const { itemId } = useParams();
+  const params = useParams();
+  const itemId = data?.itemId ?? params.itemId;
   if (!itemId) throw new Error("itemId not found");
 
   const sharedToolsData = useRouteData<{ locations: ListItem[] }>(
     path.to.toolRoot
   );
-  const routeData = useRouteData<{
+  // When `data` is injected (subassembly context), this hook won't match a
+  // route and returns undefined — harmless, hooks must be called unconditionally.
+  const routeDataFromRoute = useRouteData<{
     toolSummary: Tool;
     files: Promise<ItemFile[]>;
     supplierParts: SupplierPart[];
@@ -58,8 +74,9 @@ const ToolProperties = () => {
     makeMethods: Promise<PostgrestResponse<MakeMethod>>;
     tags: { name: string }[];
   }>(path.to.tool(itemId));
+  const routeData = data ?? routeDataFromRoute;
 
-  const locations = sharedToolsData?.locations ?? [];
+  const locations = data?.locations ?? sharedToolsData?.locations ?? [];
   const supplierParts = routeData?.supplierParts ?? [];
   const pickMethods = routeData?.pickMethods ?? [];
 

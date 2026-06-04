@@ -123,44 +123,57 @@ export function explodeBom(input: BomExplosionInput): BomExplosionOutput {
   const llc = computeLowLevelCodes(bomByItem);
   const maxLevel = llc.size > 0 ? Math.max(...llc.values()) : 0;
 
+  const periodIndexById = new Map(periods.map((p, i) => [p.id, i]));
+
   for (let level = 0; level <= maxLevel; level++) {
-    const keysAtLevel: string[] = [];
+    // LLC layer: ensure every parent's netting is done before its children
+    // get demand added — otherwise we'd miss BOM-derived demand mid-walk.
+    const locItemsAtLevel = new Set<string>();
     for (const [key, qty] of grossDemand) {
       if (qty <= 0) continue;
-      const [, , itemId] = splitKey(key);
+      const [locationId, , itemId] = splitKey(key);
       if ((llc.get(itemId) ?? 0) === level) {
-        keysAtLevel.push(key);
+        locItemsAtLevel.add(`${locationId}|${itemId}`);
       }
     }
 
-    for (const key of keysAtLevel) {
-      const grossQty = grossDemand.get(key) ?? 0;
-      if (grossQty <= 0) continue;
+    for (const locItem of locItemsAtLevel) {
+      const sepIdx = locItem.indexOf("|");
+      const locationId = locItem.slice(0, sepIdx);
+      const itemId = locItem.slice(sepIdx + 1);
 
-      const [locationId, periodId, itemId] = splitKey(key);
       const effRepSys = effectiveReplenishment(
         replenishmentSystemByItem.get(itemId)
       );
-
       const invKey = `${locationId}-${itemId}`;
-      const onHand = onHandByLocationItem.get(invKey) ?? 0;
-      const productionSupply = jobSupply.get(key) ?? 0;
-      const netRequirement = Math.max(
-        0,
-        grossQty - Math.max(0, onHand) - productionSupply
-      );
+      // Running balance for this (location, item) across the planning
+      // horizon: starts at on-hand, +supply as each period passes,
+      // −demand as we hit it. Floored at 0 because any shortfall is
+      // converted into child demand below.
+      let running = onHandByLocationItem.get(invKey) ?? 0;
 
-      if (onHand > 0) {
-        onHandByLocationItem.set(invKey, Math.max(0, onHand - grossQty));
-      }
+      for (const period of periods) {
+        const periodKey = makeKey(locationId, period.id, itemId);
+        running += jobSupply.get(periodKey) ?? 0;
 
-      if (netRequirement > 0 && effRepSys === "Make") {
+        const grossQty = grossDemand.get(periodKey) ?? 0;
+        if (grossQty <= 0) continue;
+
+        const netRequirement = Math.max(0, grossQty - Math.max(0, running));
+        running = Math.max(0, running - grossQty);
+
+        // Buy items never explode — their shortfall surfaces directly in
+        // demandForecast / quantityToOrder via the caller.
+        if (netRequirement <= 0 || effRepSys !== "Make") continue;
+
         const children = bomByItem.get(itemId) ?? [];
         for (const child of children) {
           const childEffRepSys = effectiveReplenishment(
             replenishmentSystemByItem.get(child.itemId)
           );
 
+          // MTO + Make = "subjob will be auto-spawned at parent release";
+          // skip the forecast write to avoid double-counting once it exists.
           const isInlineProduction =
             child.methodType === "Make to Order" && childEffRepSys === "Make";
 
@@ -168,45 +181,48 @@ export function explodeBom(input: BomExplosionInput): BomExplosionOutput {
           const childLeadTimeDays = leadTimeByItem.get(child.itemId) ?? 7;
           const childLeadTimeWeeks = Math.ceil(childLeadTimeDays / 7);
 
-          const currentPeriodIndex = periods.findIndex(
-            (p) => p.id === periodId
-          );
+          // Pull the child demand earlier by lead time so the order/job
+          // arrives in time for the parent's period; floor at period[0].
+          const currentPeriodIndex = periodIndexById.get(period.id) ?? 0;
           const targetPeriodIndex = Math.max(
             0,
             currentPeriodIndex - childLeadTimeWeeks
           );
           const targetPeriod = periods[targetPeriodIndex];
+          if (!targetPeriod) continue;
 
-          if (targetPeriod) {
-            const childKey = makeKey(locationId, targetPeriod.id, child.itemId);
-            grossDemand.set(
+          const childKey = makeKey(locationId, targetPeriod.id, child.itemId);
+          grossDemand.set(
+            childKey,
+            (grossDemand.get(childKey) ?? 0) + childQty
+          );
+          if (!isInlineProduction) {
+            bomDerivedDemand.set(
               childKey,
-              (grossDemand.get(childKey) ?? 0) + childQty
+              (bomDerivedDemand.get(childKey) ?? 0) + childQty
             );
-            if (!isInlineProduction) {
-              bomDerivedDemand.set(
-                childKey,
-                (bomDerivedDemand.get(childKey) ?? 0) + childQty
-              );
-            }
+          }
 
-            const parentContributors = [
-              ...(demandContributors.get(key) ?? []),
-              ...(topLevelContributors.get(key) ?? []),
-            ];
-            if (parentContributors.length > 0) {
-              const childContributors = demandContributors.get(childKey) ?? [];
-              for (const pc of parentContributors) {
-                childContributors.push({
-                  ...pc,
-                  quantity: pc.quantity * child.quantity,
-                });
-              }
-              demandContributors.set(childKey, childContributors);
+          const parentContributors = [
+            ...(demandContributors.get(periodKey) ?? []),
+            ...(topLevelContributors.get(periodKey) ?? []),
+          ];
+          if (parentContributors.length > 0) {
+            const childContributors = demandContributors.get(childKey) ?? [];
+            for (const pc of parentContributors) {
+              childContributors.push({
+                ...pc,
+                quantity: pc.quantity * child.quantity,
+              });
             }
+            demandContributors.set(childKey, childContributors);
           }
         }
       }
+
+      // Persist the trailing balance so the next LLC layer (or a later
+      // call) sees the consumed/produced state of this item.
+      onHandByLocationItem.set(invKey, running);
     }
   }
 

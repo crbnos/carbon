@@ -1,7 +1,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getCustomRulesDataForTarget } from "@carbon/ee/custom-rules.server";
+import { getStorageRulesDataForTarget } from "@carbon/ee/storage-rules.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
 import { pluckUnique } from "@carbon/utils";
@@ -9,7 +9,6 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
 import { useStorageUnits } from "~/components/Form/StorageUnit";
 import { useRouteData } from "~/hooks";
-import RuleAssignmentsList from "~/modules/customRules/ui/RuleAssignmentsList";
 import {
   getTrackedEntityExpirations,
   InventoryDetails
@@ -28,6 +27,7 @@ import {
 } from "~/modules/items";
 import { PickMethodForm } from "~/modules/items/ui/Item";
 import { getLocationsList } from "~/modules/resources";
+import RuleAssignmentsList from "~/modules/storageRules/ui/RuleAssignmentsList";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { useItems } from "~/stores";
@@ -122,7 +122,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getItemStorageUnitQuantities(client, itemId, companyId, locationId),
     getItemShelfLife(client, itemId),
     getBomHasShelfLifeManagedInput(client, itemId, companyId),
-    getCustomRulesDataForTarget(client, {
+    getStorageRulesDataForTarget(client, {
       targetType: "item",
       targetId: itemId,
       companyId

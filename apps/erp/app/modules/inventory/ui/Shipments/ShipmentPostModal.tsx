@@ -1,5 +1,5 @@
 import { useCarbon } from "@carbon/auth";
-import { useCustomRuleViolations } from "@carbon/ee/custom-rules";
+import { useStorageRuleViolations } from "@carbon/ee/storage-rules";
 import {
   Alert,
   AlertDescription,
@@ -227,7 +227,7 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
     validateShipmentTracking();
   });
 
-  const ruleViolations = useCustomRuleViolations({
+  const ruleViolations = useStorageRuleViolations({
     action: path.to.shipmentPost(shipmentId),
     onSuccess: onClose
   });

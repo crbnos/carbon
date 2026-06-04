@@ -519,9 +519,6 @@ msgstr "S'applique à"
 msgid "Applies to all"
 msgstr "S'applique à tous"
 
-msgid "Applies to all storage units"
-msgstr "S'applique à toutes les unités de stockage"
-
 msgid "Applies to all work centers"
 msgstr "S'applique à tous les centres de travail"
 
@@ -2022,9 +2019,6 @@ msgstr "Champ personnalisé"
 
 msgid "Custom Fields"
 msgstr "Champs personnalisés"
-
-msgid "Custom Rules"
-msgstr "Règles personnalisées"
 
 msgid "Customer"
 msgstr "Client"
@@ -3972,9 +3966,6 @@ msgstr "Infrastructure"
 msgid "Inherit From Materials"
 msgstr "Hériter des matériaux"
 
-msgid "Inherited from"
-msgstr "Hérité de"
-
 msgid "Insert rows"
 msgstr "Insérer des lignes"
 
@@ -4570,9 +4561,6 @@ msgstr "Gérez le suivi, le calcul et l'application de la durée de conservation
 
 msgid "Manage Ownership"
 msgstr "Gérer la propriété"
-
-msgid "Manage rules"
-msgstr "Gérer les règles"
 
 msgid "Manage Subscription"
 msgstr "Gérer l'abonnement"
@@ -7484,6 +7472,9 @@ msgstr "Transferts de Stock"
 msgid "Storage client not available"
 msgstr "Client de stockage non disponible"
 
+msgid "Storage Rules"
+msgstr ""
+
 msgid "Storage Type"
 msgstr "Type de stockage"
 
@@ -7492,9 +7483,6 @@ msgstr "Types de stockage"
 
 msgid "Storage Unit"
 msgstr "Unité de stockage"
-
-msgid "Storage unit rules"
-msgstr "Règles d'unité de stockage"
 
 msgid "Storage Units"
 msgstr "Unités de stockage"
@@ -8171,9 +8159,6 @@ msgstr "Les entités non échantillonnées resteront En attente pour que vous pu
 
 msgid "Unapproved Supplier"
 msgstr "Fournisseur non approuvé"
-
-msgid "Unassign from parent unit to remove"
-msgstr "Désassigner de l'unité parent pour supprimer"
 
 msgid "Unassign rule"
 msgstr "Retirer la règle"

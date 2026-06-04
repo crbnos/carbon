@@ -32,6 +32,7 @@ import {
 import { KyselyDatabase } from "../lib/postgres/index.ts";
 import { importTypeScript } from "../lib/sandbox.ee.ts";
 import { getStorageUnitId } from "../lib/storage-units.ts";
+import { toTiptapDoc } from "../shared/tiptap.ts";
 import {
     getNextRevisionSequence,
     getNextSequence,
@@ -289,6 +290,7 @@ serve(async (req: Request) => {
                     .values(
                       methodOperationStep.map(({ id: _id, ...attribute }) => ({
                         ...attribute,
+                        description: toTiptapDoc(attribute.description),
                         operationId: operationId!,
                         companyId,
                         createdBy: userId,
@@ -758,6 +760,7 @@ serve(async (req: Request) => {
                         methodOperationStep.map(
                           async ({ id: _id, ...attribute }) => ({
                             ...attribute,
+                            description: toTiptapDoc(attribute.description),
                             operationId,
                             minValue: await getConfiguredValue({
                               id: operation.id,
@@ -1351,6 +1354,7 @@ serve(async (req: Request) => {
                           methodOperationStep.map(
                             ({ id: _id, ...attribute }) => ({
                               ...attribute,
+                              description: toTiptapDoc(attribute.description),
                               operationId,
                               companyId,
                               createdBy: userId,
@@ -1967,6 +1971,7 @@ serve(async (req: Request) => {
                         methodOperationStep.map(
                           async ({ id, ...attribute }) => ({
                             ...attribute,
+                            description: toTiptapDoc(attribute.description),
                             operationId,
                             minValue: await getConfiguredValue({
                               id: operation.id,
@@ -2477,6 +2482,7 @@ serve(async (req: Request) => {
                           methodOperationStep.map(
                             ({ id: _id, ...attribute }) => ({
                               ...attribute,
+                              description: toTiptapDoc(attribute.description),
                               operationId,
                               companyId,
                               createdBy: userId,
@@ -2866,6 +2872,7 @@ serve(async (req: Request) => {
                       .values(
                         jobOperationStep.map(({ id: _id, ...attribute }) => ({
                           ...attribute,
+                          description: toTiptapDoc(attribute.description),
                           operationId,
                           companyId,
                           createdBy: userId,
@@ -3169,7 +3176,7 @@ serve(async (req: Request) => {
                           operationId,
                           name: step.name,
                           type: step.type,
-                          description: step.description,
+                          description: toTiptapDoc(step.description),
                           required: step.required,
                           sortOrder: step.sortOrder,
                           unitOfMeasureCode: step.unitOfMeasureCode,
@@ -3357,6 +3364,7 @@ serve(async (req: Request) => {
                     .values(
                       methodOperationStep.map(({ id: _id, ...attribute }) => ({
                         ...attribute,
+                        description: toTiptapDoc(attribute.description),
                         operationId: operationId!,
                         companyId,
                         createdBy: userId,
@@ -3458,7 +3466,7 @@ serve(async (req: Request) => {
                   operationId: operationId,
                   name: attr.name,
                   type: attr.type,
-                  description: attr.description,
+                  description: toTiptapDoc(attr.description),
                   minValue: attr.minValue,
                   maxValue: attr.maxValue,
                   companyId,
@@ -3788,6 +3796,7 @@ serve(async (req: Request) => {
                       .values(
                         quoteOperationStep.map(({ id: _id, ...attribute }) => ({
                           ...attribute,
+                          description: toTiptapDoc(attribute.description),
                           operationId,
                           companyId,
                           createdBy: userId,
@@ -4087,6 +4096,7 @@ serve(async (req: Request) => {
                       .values(
                         quoteOperationStep.map(({ id: _id, ...attribute }) => ({
                           ...attribute,
+                          description: toTiptapDoc(attribute.description),
                           operationId,
                           companyId,
                           createdBy: userId,
@@ -4515,6 +4525,7 @@ serve(async (req: Request) => {
                       .values(
                         quoteOperationStep.map(({ id: _id, ...attribute }) => ({
                           ...attribute,
+                          description: toTiptapDoc(attribute.description),
                           operationId,
                           companyId,
                           createdBy: userId,
@@ -4816,6 +4827,7 @@ serve(async (req: Request) => {
                     .values(
                       quoteOperationStep.map(({ id: _id, ...attribute }) => ({
                         ...attribute,
+                        description: toTiptapDoc(attribute.description),
                         operationId,
                         companyId,
                         createdBy: userId,
@@ -5296,6 +5308,7 @@ serve(async (req: Request) => {
                       .values(
                         quoteOperationStep.map(({ id: _id, ...attribute }) => ({
                           ...attribute,
+                          description: toTiptapDoc(attribute.description),
                           operationId,
                           companyId,
                           createdBy: userId,
@@ -5456,6 +5469,7 @@ async function insertProcedureDataForJobOperation(
           } = attr;
           return {
             ...rest,
+            description: toTiptapDoc(rest.description),
             operationId,
             companyId,
             createdBy: userId,

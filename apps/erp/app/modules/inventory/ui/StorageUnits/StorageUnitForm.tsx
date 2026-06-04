@@ -12,8 +12,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { LuShieldCheck } from "react-icons/lu";
-import { Link, useFetcher } from "react-router";
+import { useFetcher } from "react-router";
 import type { z } from "zod";
 import {
   Hidden,
@@ -109,28 +108,13 @@ const StorageUnitForm = ({
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>
-              <HStack className="justify-between w-full">
-                {isEditing ? (
-                  <Button
-                    asChild
-                    variant="secondary"
-                    leftIcon={<LuShieldCheck />}
-                  >
-                    <Link to={path.to.storageUnitRules(initialValues.id!)}>
-                      <Trans>Manage rules</Trans>
-                    </Link>
-                  </Button>
-                ) : (
-                  <span />
-                )}
-                <HStack>
-                  <Submit isDisabled={isDisabled}>
-                    <Trans>Save</Trans>
-                  </Submit>
-                  <Button size="md" variant="solid" onClick={onClose}>
-                    <Trans>Cancel</Trans>
-                  </Button>
-                </HStack>
+              <HStack>
+                <Submit isDisabled={isDisabled}>
+                  <Trans>Save</Trans>
+                </Submit>
+                <Button size="md" variant="solid" onClick={onClose}>
+                  <Trans>Cancel</Trans>
+                </Button>
               </HStack>
             </ModalDrawerFooter>
           </ValidatedForm>

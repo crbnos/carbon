@@ -519,9 +519,6 @@ msgstr "適用対象"
 msgid "Applies to all"
 msgstr "すべてに適用"
 
-msgid "Applies to all storage units"
-msgstr "すべての保管ユニットに適用"
-
 msgid "Applies to all work centers"
 msgstr "すべてのワークセンターに適用"
 
@@ -2022,9 +2019,6 @@ msgstr "カスタムフィールド"
 
 msgid "Custom Fields"
 msgstr "カスタムフィールド"
-
-msgid "Custom Rules"
-msgstr "カスタムルール"
 
 msgid "Customer"
 msgstr "顧客"
@@ -3972,9 +3966,6 @@ msgstr "インフラストラクチャ"
 msgid "Inherit From Materials"
 msgstr "材料から継承"
 
-msgid "Inherited from"
-msgstr "継承元"
-
 msgid "Insert rows"
 msgstr "行を挿入"
 
@@ -4570,9 +4561,6 @@ msgstr "棚卸資産全体で賞味期限がどのように追跡、計算、お
 
 msgid "Manage Ownership"
 msgstr "所有権を管理"
-
-msgid "Manage rules"
-msgstr "ルールを管理"
 
 msgid "Manage Subscription"
 msgstr "サブスクリプションを管理"
@@ -7484,6 +7472,9 @@ msgstr "在庫移動"
 msgid "Storage client not available"
 msgstr "ストレージクライアントが利用できません"
 
+msgid "Storage Rules"
+msgstr ""
+
 msgid "Storage Type"
 msgstr "ストレージタイプ"
 
@@ -7492,9 +7483,6 @@ msgstr "ストレージタイプ"
 
 msgid "Storage Unit"
 msgstr "保管単位"
-
-msgid "Storage unit rules"
-msgstr "保管ユニットルール"
 
 msgid "Storage Units"
 msgstr "保管単位"
@@ -8171,9 +8159,6 @@ msgstr "未サンプリングされたエンティティは保留中のままに
 
 msgid "Unapproved Supplier"
 msgstr "未承認サプライヤー"
-
-msgid "Unassign from parent unit to remove"
-msgstr "親ユニットから割り当て解除して削除"
 
 msgid "Unassign rule"
 msgstr "ルールの割り当てを解除"

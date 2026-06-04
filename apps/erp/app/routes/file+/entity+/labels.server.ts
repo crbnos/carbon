@@ -17,10 +17,23 @@ export async function getEntityLabelData(
     return { error: "Tracked entity not found" };
   }
 
+  // sourceDocumentId is polymorphic (Receipt, Shipment, Job Material, etc.);
+  // it only equals item.id when sourceDocument === "Item". Prefer the dedicated
+  // itemId FK and fall back to sourceDocumentId only for Item-sourced entities.
+  const itemId =
+    trackedEntity.data.itemId ??
+    (trackedEntity.data.sourceDocument === "Item"
+      ? trackedEntity.data.sourceDocumentId
+      : null);
+
+  if (!itemId) {
+    return { error: "Item not found" };
+  }
+
   const item = await client
     .from("item")
     .select("readableId, revision")
-    .eq("id", trackedEntity.data.sourceDocumentId ?? "")
+    .eq("id", itemId)
     .single();
 
   if (!item.data) {

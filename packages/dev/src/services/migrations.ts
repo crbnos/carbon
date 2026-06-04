@@ -130,8 +130,7 @@ export async function applyBootstrapSql(root: string, port: number) {
 // `supabase_migrations.schema_migrations` as `postgres`.
 export async function applyMigrations(
   root: string,
-  dbPort: number,
-  opts: { force?: boolean } = {}
+  dbPort: number
 ): Promise<{ applied: boolean }> {
   const dbUrl = `postgresql://supabase_admin:postgres@localhost:${dbPort}/postgres`;
   const args = ["migration", "up", "--include-all", "--db-url", dbUrl];
@@ -145,18 +144,8 @@ export async function applyMigrations(
     const output = `${r.stderr ?? ""}\n${r.stdout ?? ""}`;
     // Auto-repair: DB has migration versions not present locally (stale from
     // another branch or incomplete volume wipe). Remove them and retry.
-    //
-    // Default path diffs local files vs schema_migrations and DELETEs the
-    // orphans. --force instead parses the version(s) supabase itself names in
-    // its error and runs `migration repair --status reverted` on them — this
-    // catches rows the readdir diff misses (e.g. a migration whose timestamp
-    // isn't supabase's required 14 digits, which the CLI ignores as a local
-    // file while our diff still counts it as present).
     if (/remote migration versions not found in local/i.test(output)) {
-      const repaired =
-        (opts.force ?? false)
-          ? await forceRepairMigrations(root, dbPort, output)
-          : await repairStaleMigrations(root, dbPort);
+      const repaired = await repairStaleMigrations(root, dbPort);
       if (repaired > 0) {
         log.warn(`repaired ${repaired} stale migration(s) — retrying`);
         const retry = await execa("supabase", args, {
@@ -226,49 +215,6 @@ async function repairStaleMigrations(
   );
 
   return stale.length;
-}
-
-// --force escalation. supabase's "remote migration versions not found in local"
-// error prints the exact recovery command it wants — e.g.
-// `supabase migration repair --status reverted 20260515`. Parse those
-// version(s) out and run that command verbatim (with --db-url), then let the
-// caller retry `migration up`. Unlike repairStaleMigrations this trusts
-// supabase's own view, so it repairs orphans the readdir diff can't see.
-async function forceRepairMigrations(
-  root: string,
-  dbPort: number,
-  supabaseOutput: string
-): Promise<number> {
-  const m = supabaseOutput.match(
-    /migration repair --status reverted ([0-9 ]+)/
-  );
-  const versions = m?.[1]?.trim().split(/\s+/).filter(Boolean) ?? [];
-  if (versions.length === 0) return 0;
-
-  const dbUrl = `postgresql://supabase_admin:postgres@localhost:${dbPort}/postgres`;
-  const cwd = join(root, "packages/database");
-  log.warn(
-    `--force: supabase migration repair --status reverted ${versions.join(" ")}`
-  );
-  const r = await execa(
-    "supabase",
-    [
-      "migration",
-      "repair",
-      "--status",
-      "reverted",
-      ...versions,
-      "--db-url",
-      dbUrl
-    ],
-    { cwd, reject: false, preferLocal: true }
-  );
-  if (r.exitCode !== 0) {
-    process.stderr.write(r.stderr?.toString() ?? "");
-    process.stdout.write(r.stdout?.toString() ?? "");
-    throw new Error(`supabase migration repair failed (exit ${r.exitCode})`);
-  }
-  return versions.length;
 }
 
 // ---------------------------------------------------------------------------

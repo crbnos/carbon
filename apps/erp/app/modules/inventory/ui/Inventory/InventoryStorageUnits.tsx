@@ -1,4 +1,4 @@
-import { useCustomRuleViolations } from "@carbon/ee/custom-rules";
+import { useStorageRuleViolations } from "@carbon/ee/storage-rules";
 import {
   DatePicker,
   Hidden,
@@ -91,7 +91,7 @@ const InventoryStorageUnits = ({
   const permissions = usePermissions();
   const { t } = useLingui();
   const adjustmentModal = useDisclosure();
-  const ruleViolations = useCustomRuleViolations({
+  const ruleViolations = useStorageRuleViolations({
     action: path.to.inventoryItemAdjustment(pickMethod.itemId),
     onSuccess: adjustmentModal.onClose
   });

@@ -411,6 +411,20 @@ serve(async (req: Request) => {
     // PHASE 5: Level-by-level BOM explosion with inventory netting
     // ──────────────────────────────────────────────────────────────
 
+    // Merge open-PO supply into the job-supply map for BOM netting. POs
+    // offset gross demand the same way production does, but they're tracked
+    // separately above because Phase 4's projection netting and the
+    // supplyActual output (later in this function) consume them differently.
+    const jobAndPoSupplyByLocationPeriodItem = new Map(
+      jobSupplyByLocationPeriodItem
+    );
+    for (const [key, qty] of poSupplyByLocationPeriodItem) {
+      jobAndPoSupplyByLocationPeriodItem.set(
+        key,
+        (jobAndPoSupplyByLocationPeriodItem.get(key) ?? 0) + qty
+      );
+    }
+
     const { bomDerivedDemand, demandContributors } = explodeBom({
       grossDemand,
       bomByItem,
@@ -418,7 +432,7 @@ serve(async (req: Request) => {
       leadTimeByItem,
       periods: periods.map((p) => ({ id: p.id ?? "" })),
       onHandByLocationItem: new Map(baseInventoryByLocationItem),
-      jobSupplyByLocationPeriodItem,
+      jobSupplyByLocationPeriodItem: jobAndPoSupplyByLocationPeriodItem,
       topLevelContributors,
     });
 

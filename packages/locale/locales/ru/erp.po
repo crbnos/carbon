@@ -519,9 +519,6 @@ msgstr "Применяется к"
 msgid "Applies to all"
 msgstr "Применяется ко всем"
 
-msgid "Applies to all storage units"
-msgstr "Применяется ко всем складским единицам"
-
 msgid "Applies to all work centers"
 msgstr "Применяется ко всем рабочим центрам"
 
@@ -2022,9 +2019,6 @@ msgstr "Пользовательское поле"
 
 msgid "Custom Fields"
 msgstr "Пользовательские поля"
-
-msgid "Custom Rules"
-msgstr "Пользовательские правила"
 
 msgid "Customer"
 msgstr "Клиент"
@@ -3972,9 +3966,6 @@ msgstr "Инфраструктура"
 msgid "Inherit From Materials"
 msgstr "Наследовать от материалов"
 
-msgid "Inherited from"
-msgstr "Унаследовано от"
-
 msgid "Insert rows"
 msgstr "Вставить строки"
 
@@ -4570,9 +4561,6 @@ msgstr "Управляйте отслеживанием, расчетом и п�
 
 msgid "Manage Ownership"
 msgstr "Управление правами собственности"
-
-msgid "Manage rules"
-msgstr "Управлять правилами"
 
 msgid "Manage Subscription"
 msgstr "Управление подпиской"
@@ -7484,6 +7472,9 @@ msgstr "Передачи запасов"
 msgid "Storage client not available"
 msgstr "Клиент хранилища недоступен"
 
+msgid "Storage Rules"
+msgstr ""
+
 msgid "Storage Type"
 msgstr "Тип хранилища"
 
@@ -7492,9 +7483,6 @@ msgstr "Типы хранилищ"
 
 msgid "Storage Unit"
 msgstr "Единица хранения"
-
-msgid "Storage unit rules"
-msgstr "Правила хранилища"
 
 msgid "Storage Units"
 msgstr "Единицы хранения"
@@ -8171,9 +8159,6 @@ msgstr "Необработанные сущности останутся в ст
 
 msgid "Unapproved Supplier"
 msgstr "Неодобренный поставщик"
-
-msgid "Unassign from parent unit to remove"
-msgstr "Отменить назначение из родительского подразделения для удаления"
 
 msgid "Unassign rule"
 msgstr "Отменить назначение правила"

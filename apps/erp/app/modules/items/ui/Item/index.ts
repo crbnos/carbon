@@ -13,6 +13,7 @@ import ItemRiskRegister from "./ItemRiskRegister";
 import ItemSalePriceForm from "./ItemSalePriceForm";
 import MakeMethodTools from "./MakeMethodTools";
 import PickMethodForm from "./PickMethodForm";
+import { SelectedItemProperties } from "./SelectedItemProperties";
 import SupplierPartForm from "./SupplierPartForm";
 import SupplierParts from "./SupplierParts";
 
@@ -33,6 +34,7 @@ export {
   ItemSalePriceForm,
   MakeMethodTools,
   PickMethodForm,
+  SelectedItemProperties,
   SupplierPartForm,
   SupplierParts
 };

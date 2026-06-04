@@ -3,10 +3,9 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import {
-  dedupeViolations,
   evaluateLinesForSurface,
   isBlocked
-} from "@carbon/ee/custom-rules.server";
+} from "@carbon/ee/storage-rules.server";
 import { validationError, validator } from "@carbon/form";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
@@ -70,7 +69,7 @@ export async function action({ request }: ActionFunctionArgs) {
     locationId
   }));
 
-  const itemPass = await evaluateLinesForSurface({
+  const { violations, ruleNames } = await evaluateLinesForSurface({
     client: serviceRole,
     companyId,
     userId,
@@ -78,26 +77,12 @@ export async function action({ request }: ActionFunctionArgs) {
     surface: "stockTransfer",
     lines: evalLines
   });
-  const storagePass = await evaluateLinesForSurface({
-    client: serviceRole,
-    companyId,
-    userId,
-    targetType: "storageUnit",
-    surface: "stockTransfer",
-    lines: evalLines
-  });
 
-  const combined = dedupeViolations([
-    ...itemPass.violations,
-    ...storagePass.violations
-  ]);
-  const ruleNames = { ...itemPass.ruleNames, ...storagePass.ruleNames };
-
-  if (combined.length > 0 && isBlocked(combined, acknowledged)) {
+  if (violations.length > 0 && isBlocked(violations, acknowledged)) {
     return {
       error: null,
       data: null,
-      violations: combined,
+      violations,
       ruleNames
     };
   }

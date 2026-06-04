@@ -11,6 +11,10 @@ import { redirect } from "react-router";
 import { getCompanies } from "~/modules/settings";
 import { path, requestReferrer } from "~/utils/path";
 
+export async function loader() {
+  throw redirect(path.to.authenticatedRoot);
+}
+
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, userId } = await requirePermissions(request, {});
 

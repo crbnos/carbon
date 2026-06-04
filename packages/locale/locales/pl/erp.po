@@ -519,9 +519,6 @@ msgstr "Dotyczy"
 msgid "Applies to all"
 msgstr "Dotyczy wszystkich"
 
-msgid "Applies to all storage units"
-msgstr "Dotyczy wszystkich jednostek magazynowych"
-
 msgid "Applies to all work centers"
 msgstr "Dotyczy wszystkich centrów pracy"
 
@@ -2022,9 +2019,6 @@ msgstr "Pole niestandardowe"
 
 msgid "Custom Fields"
 msgstr "Pola niestandardowe"
-
-msgid "Custom Rules"
-msgstr "Reguły niestandardowe"
 
 msgid "Customer"
 msgstr "Klient"
@@ -3972,9 +3966,6 @@ msgstr "Infrastruktura"
 msgid "Inherit From Materials"
 msgstr "Dziedzicz z Materiałów"
 
-msgid "Inherited from"
-msgstr "Odziedziczone z"
-
 msgid "Insert rows"
 msgstr "Wstaw wiersze"
 
@@ -4570,9 +4561,6 @@ msgstr "Zarządzaj sposobem śledzenia, obliczania i egzekwowania okresu przydat
 
 msgid "Manage Ownership"
 msgstr "Zarządzaj własnością"
-
-msgid "Manage rules"
-msgstr "Zarządzaj regułami"
 
 msgid "Manage Subscription"
 msgstr "Zarzadzaj subskrypcja"
@@ -7484,6 +7472,9 @@ msgstr "Transfery Zapasów"
 msgid "Storage client not available"
 msgstr "Klient magazynu niedostępny"
 
+msgid "Storage Rules"
+msgstr ""
+
 msgid "Storage Type"
 msgstr "Typ magazynu"
 
@@ -7492,9 +7483,6 @@ msgstr "Typy magazynowania"
 
 msgid "Storage Unit"
 msgstr "Jednostka magazynowa"
-
-msgid "Storage unit rules"
-msgstr "Reguły jednostki magazynowej"
 
 msgid "Storage Units"
 msgstr "Jednostki magazynowe"
@@ -8171,9 +8159,6 @@ msgstr "Nieprzetestowane jednostki pozostaną w stanie Wstrzymane, aby można by
 
 msgid "Unapproved Supplier"
 msgstr "Niezatwierdzony dostawca"
-
-msgid "Unassign from parent unit to remove"
-msgstr "Usuń przypisanie z jednostki nadrzędnej, aby usunąć"
 
 msgid "Unassign rule"
 msgstr "Usuń przypisanie reguły"
