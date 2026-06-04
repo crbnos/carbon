@@ -271,8 +271,7 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
                 <Input
                   name="name"
                   label={t`Short Description`}
-                  maxLength={40}
-                  helperText={t`Max 40 characters`}
+                  characterLimit={40}
                 />
 
                 <Select

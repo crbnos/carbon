@@ -2738,6 +2738,7 @@ export async function upsertConsumable(
       .insert({
         readableId: consumable.id,
         name: consumable.name,
+        description: consumable.description,
         type: "Consumable",
         replenishmentSystem: consumable.replenishmentSystem,
         defaultMethodType: consumable.defaultMethodType,
@@ -2879,6 +2880,7 @@ export async function upsertPart(
         readableId: part.id,
         revision: part.revision ?? "0",
         name: part.name,
+        description: part.description,
         type: "Part",
         replenishmentSystem: part.replenishmentSystem,
         defaultMethodType: part.defaultMethodType,
@@ -3510,6 +3512,7 @@ export async function upsertMaterial(
             .insert({
               readableId: material.id,
               name: material.name,
+              description: material.description,
               type: "Material",
               replenishmentSystem: material.replenishmentSystem,
               defaultMethodType: material.defaultMethodType,
@@ -3555,6 +3558,7 @@ export async function upsertMaterial(
         .insert({
           readableId: material.id,
           name: material.name,
+          description: material.description,
           type: "Material",
           replenishmentSystem: material.replenishmentSystem,
           defaultMethodType: material.defaultMethodType,
@@ -4075,6 +4079,7 @@ export async function upsertTool(
         readableId: tool.id,
         revision: tool.revision ?? "0",
         name: tool.name,
+        description: tool.description,
         type: "Tool",
         replenishmentSystem: tool.replenishmentSystem,
         defaultMethodType: tool.defaultMethodType,

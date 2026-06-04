@@ -27,6 +27,7 @@ type FormInputControlledProps = Omit<InputProps, "value" | "onChange"> & {
   isUppercase?: boolean;
   isRequired?: boolean;
   helperText?: string;
+  characterLimit?: number;
   prefix?: string;
   suffix?: string;
   inline?: boolean;
@@ -44,6 +45,7 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
       isOptional,
       isRequired,
       helperText,
+      characterLimit,
       prefix,
       suffix,
       value,
@@ -55,6 +57,7 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
       isDisabled: isDisabledProp,
       onBlur,
       onConfigure,
+      maxLength,
       ...rest
     },
     ref
@@ -145,6 +148,7 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
                 ...rest,
                 value: controlValue
               })}
+              maxLength={characterLimit ?? maxLength}
               onChange={handleChange}
               value={controlValue}
               isReadOnly={isReadOnly}
@@ -176,6 +180,7 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
               ...rest,
               value: controlValue
             })}
+            maxLength={characterLimit ?? maxLength}
             onChange={handleChange}
             value={controlValue}
             isReadOnly={isReadOnly}
@@ -192,6 +197,11 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
               }
             }}
           />
+        )}
+        {characterLimit && (
+          <FormHelperText>
+            {controlValue?.length ?? 0}/{characterLimit}
+          </FormHelperText>
         )}
         {helperText && <FormHelperText>{helperText}</FormHelperText>}
         {error && <FormErrorMessage>{error}</FormErrorMessage>}

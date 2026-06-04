@@ -147,8 +147,7 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
             <Input
               name="name"
               label={t`Short Description`}
-              maxLength={40}
-              helperText={t`Max 40 characters`}
+              characterLimit={40}
             />
             <Select
               name="itemTrackingType"

@@ -276,7 +276,7 @@ const PartProperties = () => {
                 name="name"
                 inline
                 size="sm"
-                maxLength={40}
+                characterLimit={40}
                 value={routeData?.partSummary?.name ?? ""}
                 onBlur={(e) => {
                   onUpdate("name", e.target.value ?? null);
