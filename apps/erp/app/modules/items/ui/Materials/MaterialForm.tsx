@@ -28,6 +28,7 @@ import {
   Number,
   Select,
   Submit,
+  TextArea,
   UnitOfMeasure
 } from "~/components/Form";
 import MaterialDimension from "~/components/Form/MaterialDimension";
@@ -63,9 +64,9 @@ const MaterialForm = ({
 }: MaterialFormProps) => {
   const { t } = useLingui();
   const [materialId, setMaterialId] = useState(initialValues.id ?? "");
-  const [description, setDescription] = useState(
-    initialValues.description ?? ""
-  );
+  // Holds the auto-generated material short description (persisted to `name`),
+  // composed from the selected substance/grade/shape/dimensions/finish/type.
+  const [generatedName, setGeneratedName] = useState(initialValues.name ?? "");
 
   const [properties, setProperties] = useState<{
     substance?: string;
@@ -91,7 +92,7 @@ const MaterialForm = ({
 
   useEffect(() => {
     setMaterialId(getMaterialId(properties));
-    setDescription(getMaterialDescription(properties));
+    setGeneratedName(getMaterialDescription(properties));
   }, [properties]);
 
   useEffect(() => {
@@ -172,7 +173,7 @@ const MaterialForm = ({
               {!useCustomId && (
                 <>
                   <Hidden name="id" value={materialId} />
-                  <Hidden name="name" value={description} />
+                  <Hidden name="name" value={generatedName} />
                 </>
               )}
               <div
@@ -201,9 +202,9 @@ const MaterialForm = ({
                     <InputControlled
                       name="name"
                       label={t`Short Description`}
-                      value={description}
+                      value={generatedName}
                       onChange={(value) => {
-                        setDescription(value ?? "");
+                        setGeneratedName(value ?? "");
                       }}
                     />
                   </>
@@ -325,6 +326,9 @@ const MaterialForm = ({
                 <ItemStorageFields />
 
                 <CustomFormFields table="material" tags={initialValues.tags} />
+              </div>
+              <div className="mt-4 w-full">
+                <TextArea name="description" label={t`Long Description`} />
               </div>
             </ModalCardBody>
             <ModalCardFooter>

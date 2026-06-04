@@ -4697,6 +4697,9 @@ msgstr "材料类型"
 msgid "Materials"
 msgstr "材料"
 
+msgid "Max 40 characters"
+msgstr ""
+
 msgid "Max Qty"
 msgstr "最大数量"
 

@@ -40,6 +40,7 @@ import {
   Number,
   Select,
   Submit,
+  TextArea,
   UnitOfMeasure
 } from "~/components/Form";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
@@ -274,7 +275,12 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                   isReadOnly={isEditing}
                 />
 
-                <Input name="name" label={t`Short Description`} />
+                <Input
+                  name="name"
+                  label={t`Short Description`}
+                  maxLength={40}
+                  helperText={t`Max 40 characters`}
+                />
 
                 <Select
                   name="replenishmentSystem"
@@ -334,6 +340,9 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                 <ItemStorageFields />
 
                 <CustomFormFields table="part" tags={initialValues.tags} />
+              </div>
+              <div className="mt-4 w-full">
+                <TextArea name="description" label={t`Long Description`} />
               </div>
               <VStack spacing={2} className="mt-4 w-full">
                 <label

@@ -3,6 +3,7 @@ import BillOfProcess from "./BillOfProcess";
 import BoMExplorer, { BoMActions } from "./BoMExplorer";
 import { FileBadge } from "./FileBadge";
 import ItemCostingForm from "./ItemCostingForm";
+import ItemDescription from "./ItemDescription";
 import ItemDocuments from "./ItemDocuments";
 import ItemForm from "./ItemForm";
 import ItemNotes from "./ItemNotes";
@@ -22,6 +23,7 @@ export {
   BoMExplorer,
   FileBadge,
   ItemCostingForm,
+  ItemDescription,
   ItemDocuments,
   ItemForm,
   ItemNotes,

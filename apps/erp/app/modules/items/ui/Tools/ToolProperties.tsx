@@ -40,7 +40,7 @@ import type {
   SupplierPart,
   Tool
 } from "../../types";
-import { FileBadge } from "../Item";
+import { FileBadge, ItemDescription } from "../Item";
 
 const ToolProperties = () => {
   const { t } = useLingui();
@@ -84,6 +84,7 @@ const ToolProperties = () => {
     (
       field:
         | "name"
+        | "description"
         | "replenishmentSystem"
         | "defaultMethodType"
         | "itemTrackingType"
@@ -264,6 +265,7 @@ const ToolProperties = () => {
                 name="name"
                 inline
                 size="sm"
+                maxLength={40}
                 value={routeData?.toolSummary?.name ?? ""}
                 onBlur={(e) => {
                   onUpdate("name", e.target.value ?? null);
@@ -453,6 +455,11 @@ const ToolProperties = () => {
           </Badge>
         )}
       </VStack>
+
+      <ItemDescription
+        value={routeData?.toolSummary?.description ?? ""}
+        onChange={(value) => onUpdate("description", value)}
+      />
 
       <VStack spacing={2}>
         <HStack className="w-full justify-between">

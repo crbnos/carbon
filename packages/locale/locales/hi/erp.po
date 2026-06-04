@@ -4697,6 +4697,9 @@ msgstr "सामग्री प्रकार"
 msgid "Materials"
 msgstr "सामग्री"
 
+msgid "Max 40 characters"
+msgstr ""
+
 msgid "Max Qty"
 msgstr "अधिकतम मात्रा"
 

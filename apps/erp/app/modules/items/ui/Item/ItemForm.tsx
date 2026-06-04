@@ -144,14 +144,17 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
               label={`${getLabel(type)} ID`}
             />
 
-            <Input name="name" label={t`Short Description`} />
+            <Input
+              name="name"
+              label={t`Short Description`}
+              maxLength={40}
+              helperText={t`Max 40 characters`}
+            />
             <Select
               name="itemTrackingType"
               label={t`Tracking Type`}
               options={itemTrackingTypeOptions}
             />
-
-            <TextArea name="description" label={t`Description`} />
 
             <Select
               name="replenishmentSystem"
@@ -181,6 +184,9 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
             />
 
             <Boolean name="active" label={t`Active`} />
+          </div>
+          <div className="mt-4 w-full">
+            <TextArea name="description" label={t`Long Description`} />
           </div>
         </CardContent>
         <CardFooter>

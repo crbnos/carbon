@@ -39,6 +39,7 @@ import {
   Number,
   Select,
   Submit,
+  TextArea,
   UnitOfMeasure
 } from "~/components/Form";
 import { ReplenishmentSystemIcon, TrackingTypeIcon } from "~/components/Icons";
@@ -267,7 +268,12 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
                   isReadOnly={isEditing}
                 />
 
-                <Input name="name" label={t`Short Description`} />
+                <Input
+                  name="name"
+                  label={t`Short Description`}
+                  maxLength={40}
+                  helperText={t`Max 40 characters`}
+                />
 
                 <Select
                   name="replenishmentSystem"
@@ -324,6 +330,9 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
                 <ItemStorageFields />
 
                 <CustomFormFields table="tool" tags={initialValues.tags} />
+              </div>
+              <div className="mt-4 w-full">
+                <TextArea name="description" label={t`Long Description`} />
               </div>
               <VStack spacing={2} className="mt-4 w-full">
                 <label

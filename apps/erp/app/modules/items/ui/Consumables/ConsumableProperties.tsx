@@ -35,7 +35,7 @@ import type {
   PickMethod,
   SupplierPart
 } from "../../types";
-import { FileBadge } from "../Item";
+import { FileBadge, ItemDescription } from "../Item";
 
 const ConsumableProperties = () => {
   const { t } = useLingui();
@@ -91,6 +91,7 @@ const ConsumableProperties = () => {
     (
       field:
         | "name"
+        | "description"
         | "replenishmentSystem"
         | "defaultMethodType"
         | "itemTrackingType"
@@ -254,6 +255,7 @@ const ConsumableProperties = () => {
                 name="name"
                 inline
                 size="sm"
+                maxLength={40}
                 value={routeData?.consumableSummary?.name ?? ""}
                 onBlur={(e) => {
                   onUpdate("name", e.target.value ?? null);
@@ -377,6 +379,11 @@ const ConsumableProperties = () => {
           value={routeData?.consumableSummary?.unitOfMeasure ?? null}
         />
       </VStack>
+
+      <ItemDescription
+        value={routeData?.consumableSummary?.description ?? ""}
+        onChange={(value) => onUpdate("description", value)}
+      />
 
       <VStack spacing={2}>
         <HStack className="w-full justify-between">

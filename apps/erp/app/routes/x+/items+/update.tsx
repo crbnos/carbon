@@ -57,6 +57,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
     case "defaultMethodType":
     case "name":
+    case "description":
     case "replenishmentSystem":
     case "unitOfMeasureCode":
       if (field === "replenishmentSystem" && value !== "Buy and Make") {
