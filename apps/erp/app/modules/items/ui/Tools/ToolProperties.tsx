@@ -64,6 +64,8 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
   const sharedToolsData = useRouteData<{ locations: ListItem[] }>(
     path.to.toolRoot
   );
+  // When `data` is injected (subassembly context), this hook won't match a
+  // route and returns undefined — harmless, hooks must be called unconditionally.
   const routeDataFromRoute = useRouteData<{
     toolSummary: Tool;
     files: Promise<ItemFile[]>;

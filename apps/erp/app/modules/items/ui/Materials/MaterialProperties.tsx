@@ -95,6 +95,8 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
   const sharedMaterialsData = useRouteData<{ locations: ListItem[] }>(
     path.to.materialRoot
   );
+  // When `data` is injected (subassembly context), this hook won't match a
+  // route and returns undefined — harmless, hooks must be called unconditionally.
   const routeDataFromRoute = useRouteData<{
     materialSummary: MaterialSummary;
     files: Promise<ItemFile[]>;

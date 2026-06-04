@@ -53,7 +53,10 @@ export function SelectedItemProperties({
   const makeMethodsPromise = useMemo(
     () =>
       Promise.resolve({
-        data: fetcher.data?.makeMethods ?? [],
+        data:
+          fetcher.data && "makeMethods" in fetcher.data
+            ? fetcher.data.makeMethods
+            : [],
         error: null
       } as unknown as PostgrestResponse<MakeMethod>),
     [fetcher.data]
@@ -87,8 +90,7 @@ export function SelectedItemProperties({
       return (
         <MaterialProperties
           key={d.itemId}
-          // biome-ignore lint/suspicious/noExplicitAny: summary is a discriminated RPC result
-          data={{ ...common, materialSummary: d.summary as any }}
+          data={{ ...common, materialSummary: d.summary }}
         />
       );
     case "Tool":
@@ -98,8 +100,7 @@ export function SelectedItemProperties({
           data={{
             ...common,
             makeMethods: makeMethodsPromise,
-            // biome-ignore lint/suspicious/noExplicitAny: summary is a discriminated RPC result
-            toolSummary: d.summary as any
+            toolSummary: d.summary
           }}
         />
       );
@@ -107,8 +108,7 @@ export function SelectedItemProperties({
       return (
         <ConsumableProperties
           key={d.itemId}
-          // biome-ignore lint/suspicious/noExplicitAny: summary is a discriminated RPC result
-          data={{ ...common, consumableSummary: d.summary as any }}
+          data={{ ...common, consumableSummary: d.summary }}
         />
       );
     default:
@@ -118,8 +118,7 @@ export function SelectedItemProperties({
           data={{
             ...common,
             makeMethods: makeMethodsPromise,
-            // biome-ignore lint/suspicious/noExplicitAny: summary is a discriminated RPC result
-            partSummary: d.summary as any
+            partSummary: d.summary
           }}
         />
       );

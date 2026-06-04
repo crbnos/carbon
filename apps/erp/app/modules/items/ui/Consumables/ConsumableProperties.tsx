@@ -72,6 +72,8 @@ const ConsumableProperties = ({ data }: ConsumablePropertiesProps) => {
   const sharedConsumablesData = useRouteData<{ locations: ListItem[] }>(
     path.to.consumableRoot
   );
+  // When `data` is injected (subassembly context), this hook won't match a
+  // route and returns undefined — harmless, hooks must be called unconditionally.
   const routeDataFromRoute = useRouteData<{
     consumableSummary: Consumable;
     files: Promise<ItemFile[]>;

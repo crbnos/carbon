@@ -75,6 +75,8 @@ const PartProperties = ({ data }: PartPropertiesProps) => {
   const sharedPartsData = useRouteData<{ locations: ListItem[] }>(
     path.to.partRoot
   );
+  // When `data` is injected (subassembly context), this hook won't match a
+  // route and returns undefined — harmless, hooks must be called unconditionally.
   const routeDataFromRoute = useRouteData<{
     partSummary: PartSummary;
     files: Promise<ItemFile[]>;

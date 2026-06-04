@@ -38,6 +38,7 @@ import {
   getPickMethods,
   getSupplierParts
 } from "~/modules/items";
+import type { Method } from "~/modules/items/types";
 import {
   BoMActions,
   BoMExplorer,
@@ -109,7 +110,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       const tree = await getMethodTree(client, fullMethod.data.id);
       if (tree.error) return null;
 
-      const methods = tree.data.length > 0 ? flattenTree(tree.data[0]) : [];
+      const methods =
+        tree.data.length > 0 ? flattenTree<Method>(tree.data[0]) : [];
 
       return {
         makeMethod: fullMethod.data,
@@ -210,7 +212,6 @@ export default function PartRoute() {
                                   <BoMExplorer
                                     itemType="Part"
                                     makeMethod={resolved.makeMethod}
-                                    // @ts-ignore
                                     methods={resolved.methods}
                                     methodId={resolved.makeMethod.id}
                                     filterText={filterText}
@@ -517,7 +518,6 @@ export default function PartRoute() {
                   {(resolved) => (
                     <SelectedItemProperties
                       topLevelItemId={itemId}
-                      // @ts-ignore
                       methods={resolved?.methods ?? []}
                     />
                   )}
