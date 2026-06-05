@@ -30,6 +30,7 @@ export type FieldType =
 export type ValueOptionsLoader =
   | "locations"
   | "storageTypes"
+  | "storageUnits"
   | "itemTypes"
   | "replenishmentSystems"
   | "itemTrackingTypes"
@@ -222,13 +223,16 @@ export const FIELD_REGISTRY: FieldDef[] = [
     nullable: true,
     label: "Storage unit",
     // `"storageUnit"` triggers the hierarchical drill-down picker in the
-    // rule-builder UI (Location → drilldown). No flat loader needed.
+    // rule-builder UI (Location → drilldown) — no flat options list. The
+    // loader is used only by the evaluator's `{condition[n].name}` resolver
+    // to map the stored bin UUID back to its display name in messages.
     type: "storageUnit",
     // Drill picker selects a single bin — `in`/`notIn` would require a
     // multi-select UI that doesn't exist. Restrict to scalar ops.
     operators: SCALAR_OPS,
     context: "storage",
-    targetType: "item"
+    targetType: "item",
+    valueOptionsLoader: "storageUnits"
   }),
   fields.synthetic({
     path: "storageUnit.storageTypeId",

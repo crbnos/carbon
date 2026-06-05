@@ -198,6 +198,13 @@ const LOADERS: Record<ValueOptionsLoader, LoaderFn | null> = {
       .eq("companyId", id);
     return (data ?? []) as { id: string; name: string }[];
   },
+  storageUnits: async (c, id) => {
+    const { data } = await c
+      .from("storageUnit")
+      .select("id, name")
+      .eq("companyId", id);
+    return (data ?? []) as { id: string; name: string }[];
+  },
   itemPostingGroups: async (c, id) => {
     const { data } = await c
       .from("itemPostingGroup")
@@ -221,7 +228,8 @@ async function buildConditionValueResolver(
   const byLoader = new Map<ValueOptionsLoader, Set<string>>();
   for (const cond of conditions) {
     const def = getFieldDef(cond.field);
-    if (!def?.valueOptionsLoader || def.type !== "id") continue;
+    if (!def?.valueOptionsLoader) continue;
+    if (def.type !== "id" && def.type !== "storageUnit") continue;
     if (LOADERS[def.valueOptionsLoader] === null) continue;
     if (cond.value == null) continue;
 
