@@ -10,7 +10,13 @@ import {
 } from "~/modules/items/items.models";
 
 export type ValueOption = { value: string; label: string };
-export type ValueOptionsByLoader = Record<ValueOptionsLoader, ValueOption[]>;
+// Partial: not every loader has a flat option list in the builder UI. The
+// `storageUnits` loader exists only for the server-side message resolver
+// ({condition[n].name} → bin name); the builder uses the hierarchical
+// StorageUnitValuePicker for that field, so no flat options are supplied here.
+export type ValueOptionsByLoader = Partial<
+  Record<ValueOptionsLoader, ValueOption[]>
+>;
 
 const enumOptions = (arr: readonly string[]): ValueOption[] =>
   arr.map((v) => ({ value: v, label: v }));
