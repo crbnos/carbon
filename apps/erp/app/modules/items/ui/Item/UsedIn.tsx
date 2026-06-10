@@ -140,7 +140,7 @@ export function UsedInTree({
   return (
     <VStack className="w-full p-2">
       {!hideSearch && (
-        <HStack className="w-full py">
+        <HStack className="w-full py-1 sticky top-0 z-10 bg-card -mt-2 pt-2 -mx-2 px-2">
           <InputGroup size="sm" className="flex grow">
             <InputLeftElement>
               <LuSearch className="h-4 w-4" />
