@@ -1062,6 +1062,9 @@ msgstr "Volver a trazabilidad"
 msgid "Backflush"
 msgstr "Retroceso"
 
+msgid "Backups"
+msgstr ""
+
 msgid "Balance Sheet"
 msgstr "Balance General"
 
@@ -5494,9 +5497,6 @@ msgstr "Notificación"
 
 msgid "Notifications"
 msgstr "Notificaciones"
-
-msgid "Now let's set up your company"
-msgstr "Ahora configuremos tu empresa"
 
 msgid "Number"
 msgstr "Número"

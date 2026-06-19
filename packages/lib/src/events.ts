@@ -64,6 +64,63 @@ export type Events = {
     };
   };
 
+  // Company template export — snapshot all company-scoped rows (and
+  // optionally storage files) into a gzipped artifact in the company bucket
+  "carbon/company-export": {
+    data: {
+      companyId: string;
+      userId: string;
+      label?: string;
+      includeStorage: "none" | "all";
+    };
+  };
+
+  // Company template import — two-phase: rows are inserted alongside an
+  // externalIntegrationMapping ledger (integration = 'company-template'),
+  // then the user finalizes (keeps) or reverts (deletes) the run
+  "carbon/company-import": {
+    data: {
+      companyId: string;
+      userId: string;
+      filePath: string;
+      mode: "preserve" | "reseed";
+      importRunId: string;
+      /** Delete the revert ledger as soon as the import commits (no pending
+       *  review step). Used by onboarding-from-template. */
+      autoFinalize?: boolean;
+    };
+  };
+
+  // Company template import revert — delete every row an import run inserted
+  // (via the externalIntegrationMapping ledger), then delete the ledger
+  "carbon/company-revert": {
+    data: {
+      companyId: string;
+      importRunId: string;
+    };
+  };
+
+  // Publish an existing company export artifact into the shared demo catalog
+  // (company-templates bucket + companyTemplate index). Internal-only.
+  "carbon/publish-demo": {
+    data: {
+      /** Source company the artifact was exported from. */
+      companyId: string;
+      userId: string;
+      /** Path of the artifact within the source company bucket (exports/…). */
+      artifactPath: string;
+      name: string;
+      description?: string;
+      industryId?: string;
+    };
+  };
+
+  // Re-export demo backups whose schemaVersion lags the live schema. Fired by
+  // the deploy pipeline post-migration; also runs on a daily cron.
+  "carbon/refresh-demo-catalog": {
+    data: Record<string, never>;
+  };
+
   // Permission updates
   "carbon/update-permissions": {
     data: {

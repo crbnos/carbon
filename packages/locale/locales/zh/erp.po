@@ -1062,6 +1062,9 @@ msgstr "返回可追溯性"
 msgid "Backflush"
 msgstr "反冲"
 
+msgid "Backups"
+msgstr ""
+
 msgid "Balance Sheet"
 msgstr "资产负债表"
 
@@ -5494,9 +5497,6 @@ msgstr "通知"
 
 msgid "Notifications"
 msgstr "通知"
-
-msgid "Now let's set up your company"
-msgstr "现在让我们设置您的公司"
 
 msgid "Number"
 msgstr "数字"

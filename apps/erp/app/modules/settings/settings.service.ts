@@ -743,13 +743,14 @@ export async function seedCompany(
   client: SupabaseClient<Database>,
   companyId: string,
   userId: string,
-  parentCompanyId?: string
+  opts?: { parentCompanyId?: string; identityOnly?: boolean }
 ) {
   return client.functions.invoke("seed-company", {
     body: {
       companyId,
       userId,
-      parentCompanyId
+      parentCompanyId: opts?.parentCompanyId,
+      identityOnly: opts?.identityOnly ?? false
     }
   });
 }

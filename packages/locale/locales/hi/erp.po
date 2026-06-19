@@ -1062,6 +1062,9 @@ msgstr "ट्रेसेबिलिटी पर वापस जाएं"
 msgid "Backflush"
 msgstr "बैकफ्लश"
 
+msgid "Backups"
+msgstr ""
+
 msgid "Balance Sheet"
 msgstr "बैलेंस शीट"
 
@@ -5494,9 +5497,6 @@ msgstr "सूचना"
 
 msgid "Notifications"
 msgstr "सूचनाएं"
-
-msgid "Now let's set up your company"
-msgstr "अब अपनी कंपनी सेट अप करते हैं"
 
 msgid "Number"
 msgstr "संख्या"

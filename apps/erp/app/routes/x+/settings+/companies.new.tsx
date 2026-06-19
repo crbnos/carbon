@@ -68,7 +68,9 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const seed = await seedCompany(client, companyId, userId, parentCompanyId);
+  const seed = await seedCompany(client, companyId, userId, {
+    parentCompanyId
+  });
   if (seed.error) {
     throw redirect(
       path.to.companies,

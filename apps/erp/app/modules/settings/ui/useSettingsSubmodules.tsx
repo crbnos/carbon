@@ -6,6 +6,7 @@ import {
   LuClipboardCheck,
   LuCreditCard,
   LuCrown,
+  LuDatabase,
   LuFactory,
   LuFileText,
   LuHistory,
@@ -74,6 +75,13 @@ export default function useSettingsSubmodules() {
             to: path.to.logos,
             role: "employee",
             icon: <LuImage />
+          },
+          {
+            name: t`Backups`,
+            to: path.to.backups,
+            role: "employee",
+            icon: <LuDatabase />,
+            requiresOwnership: true
           },
           {
             name: t`Printing`,

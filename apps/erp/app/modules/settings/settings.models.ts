@@ -65,9 +65,15 @@ export const apiKeyValidator = z.object({
   )
 });
 
-const company = {
+export const onboardingIndustryTypes = [
+  "robotics_oem",
+  "precision_manufacturing",
+  "automotive_precision",
+  "custom"
+] as const;
+
+const companyAddress = {
   name: z.string().min(1, { message: "Name is required" }),
-  taxId: zfd.text(z.string().optional()),
   addressLine1: z.string().min(1, { message: "Address is required" }),
   addressLine2: zfd.text(z.string().optional()),
   city: z.string().min(1, { message: "City is required" }),
@@ -75,17 +81,35 @@ const company = {
   postalCode: z.string().min(1, { message: "Postal Code is required" }),
   countryCode: z.string().min(1, { message: "Country is required" }),
   baseCurrencyCode: zfd.text(z.string()),
+  website: zfd.text(z.string().optional())
+};
+
+const company = {
+  ...companyAddress,
+  taxId: zfd.text(z.string().optional()),
   phone: zfd.text(z.string().optional()),
   fax: zfd.text(z.string().optional()),
   email: zfd.text(z.string().optional()),
-  website: zfd.text(z.string().optional()),
   vatNumber: zfd.text(z.string().optional()),
   eori: zfd.text(z.string().optional())
 };
 
 export const companyValidator = z.object(company);
+
+// The onboarding company step collects only the address; industry + demo
+// choice come from the dedicated industry step that follows.
+export const addressValidator = z.object({
+  ...companyAddress,
+  next: z.string().min(1, { message: "Next is required" })
+});
+
+// Onboarding-only: the industry + demo-data fields live on the company row but
+// are not part of the general company validator (kept off the settings forms).
 export const onboardingCompanyValidator = z.object({
   ...company,
+  industryId: z.enum(onboardingIndustryTypes).optional().default("custom"),
+  customIndustryDescription: z.string().optional(),
+  seedDemoData: zfd.checkbox(),
   next: z.string().min(1, { message: "Next is required" })
 });
 

@@ -1062,6 +1062,9 @@ msgstr "Wróć do śledzenia"
 msgid "Backflush"
 msgstr "Cofnięcie"
 
+msgid "Backups"
+msgstr ""
+
 msgid "Balance Sheet"
 msgstr "Bilans"
 
@@ -5494,9 +5497,6 @@ msgstr "Powiadomienie"
 
 msgid "Notifications"
 msgstr "Powiadomienia"
-
-msgid "Now let's set up your company"
-msgstr "Teraz skonfigurujmy Twoją firmę"
 
 msgid "Number"
 msgstr "Liczba"

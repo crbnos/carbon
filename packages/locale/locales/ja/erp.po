@@ -1062,6 +1062,9 @@ msgstr "トレーサビリティに戻る"
 msgid "Backflush"
 msgstr "バックフラッシュ"
 
+msgid "Backups"
+msgstr ""
+
 msgid "Balance Sheet"
 msgstr "貸借対照表"
 
@@ -5494,9 +5497,6 @@ msgstr "通知"
 
 msgid "Notifications"
 msgstr "通知"
-
-msgid "Now let's set up your company"
-msgstr "それでは、あなたの会社をセットアップしましょう"
 
 msgid "Number"
 msgstr "数字"

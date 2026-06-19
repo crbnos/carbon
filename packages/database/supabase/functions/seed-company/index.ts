@@ -31,13 +31,15 @@ serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
-  const { companyId: id, userId, parentCompanyId } = await req.json();
+  const { companyId: id, userId, parentCompanyId, identityOnly } =
+    await req.json();
 
   console.log({
     function: "seed-company",
     id,
     userId,
     parentCompanyId,
+    identityOnly: identityOnly === true,
   });
 
   try {
@@ -125,7 +127,10 @@ serve(async (req: Request) => {
         .values([{ userId, companyId, role: "employee" }])
         .execute();
 
-      // high-order groups
+      // high-order groups — identity infrastructure: the employeeType insert
+      // below fires a trigger that creates a membership row referencing these,
+      // so they must exist even in identity-only mode. (The onboarding import
+      // skips `group` so the template doesn't duplicate them.)
       await trx
         .insertInto("group")
         .values(
@@ -200,6 +205,11 @@ serve(async (req: Request) => {
         ])
         .execute();
 
+      // Reference + accounting data (customer statuses, UoMs, sequences,
+      // chart of accounts, …). Skipped in identity-only mode — a company
+      // template carries all of this, so onboarding-from-template seeds only
+      // the identity layer above and lets the import provide the rest.
+      if (!identityOnly) {
       // customer status
       await trx
         .insertInto("customerStatus")
@@ -357,6 +367,7 @@ serve(async (req: Request) => {
           }))
         )
         .execute();
+      } // end if (!identityOnly)
 
       const user = await client
         .from("userPermission")

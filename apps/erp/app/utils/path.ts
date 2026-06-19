@@ -576,6 +576,7 @@ export const path = {
     company: `${x}/settings/company`,
     companySwitch: (companyId: string) =>
       generatePath(`${x}/settings/company/switch/${companyId}`),
+    backups: `${x}/settings/backups`,
     companies: `${x}/settings/companies`,
     completeTrainingAssignment: (id: string) =>
       generatePath(`${share}/training/${id}`),
