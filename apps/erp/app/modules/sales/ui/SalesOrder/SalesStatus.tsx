@@ -31,7 +31,7 @@ export const SALES_STATUS_COLOR_MAP: Record<
   Confirmed: "blue",
   "Needs Approval": "yellow",
   "In Progress": "yellow",
-  Invoiced: "green",
+  Invoiced: "gray",
   Completed: "green"
 } as const;
 

@@ -13,7 +13,7 @@ export const JOB_STATUS_COLOR_MAP: Record<
   Draft: "gray",
   Planned: "yellow",
   Ready: "blue",
-  "In Progress": "blue",
+  "In Progress": "orange",
   Paused: "orange",
   "Due Today": "orange",
   Completed: "green",

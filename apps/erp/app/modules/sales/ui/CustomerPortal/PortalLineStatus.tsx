@@ -14,19 +14,6 @@ type StatusColor =
   | "red"
   | "purple";
 
-const PORTAL_SALES_OVERRIDES: Partial<
-  Record<Database["public"]["Enums"]["salesOrderStatus"], StatusColor>
-> = {
-  Invoiced: "gray",
-  "Needs Approval": "purple"
-};
-
-const PORTAL_JOB_OVERRIDES: Partial<
-  Record<Database["public"]["Enums"]["jobStatus"], StatusColor>
-> = {
-  "In Progress": "orange"
-};
-
 type LineStatusInput = {
   quantityOrdered: number;
   quantityShipped: number;
@@ -48,10 +35,7 @@ function getLineStatus({
     )
   ) {
     return {
-      color:
-        PORTAL_SALES_OVERRIDES[salesOrderStatus] ??
-        SALES_STATUS_COLOR_MAP[salesOrderStatus] ??
-        "gray",
+      color: SALES_STATUS_COLOR_MAP[salesOrderStatus] ?? "gray",
       label: salesOrderStatus
     };
   }
@@ -76,10 +60,7 @@ function getLineStatus({
   }
 
   return {
-    color:
-      PORTAL_JOB_OVERRIDES[jobStatus] ??
-      JOB_STATUS_COLOR_MAP[jobStatus] ??
-      "gray",
+    color: JOB_STATUS_COLOR_MAP[jobStatus] ?? "gray",
     label: jobStatus === "Ready" ? "Released" : jobStatus
   };
 }
