@@ -47,9 +47,7 @@ import {
   postTransactionFunction,
   printJobDeliverFunction,
   printJobFunction,
-  publishDemoFunction,
   recalculateFunction,
-  refreshDemoCatalogFunction,
   rescheduleJobFunction,
   updatePermissionsFunction,
   userAdminFunction
@@ -73,8 +71,6 @@ export const functions = [
   companyExportFunction,
   companyImportFunction,
   companyRevertFunction,
-  publishDemoFunction,
-  refreshDemoCatalogFunction,
   modelThumbnailFunction,
   updatePermissionsFunction,
   recalculateFunction,

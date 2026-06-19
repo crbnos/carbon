@@ -27,8 +27,8 @@ CREATE INDEX IF NOT EXISTS "company_industryId_idx" ON "company"("industryId");
 
 -- ─── 2. Demo / backup catalog ───────────────────────────────────────────────
 -- Not tenant-scoped — a published demo is available to every company during
--- onboarding. Writes happen only via the service-role `publish-demo` job
--- (internal-only); end users get read access to metadata.
+-- onboarding. Writes happen only via the service role (internal tooling);
+-- end users get read access to metadata.
 
 CREATE TABLE "companyTemplate" (
   "id"                TEXT PRIMARY KEY DEFAULT xid(),
@@ -50,7 +50,7 @@ CREATE TABLE "companyTemplate" (
 
 -- One canonical demo per industry: onboarding picks a demo by industry, so an
 -- industry maps to at most one published demo. Publishing again for the same
--- industry replaces it (see the publish-demo job's upsert). Partial so multiple
+-- industry replaces it (an upsert replaces the prior entry). Partial so multiple
 -- untagged (NULL industry) demos remain allowed. Also serves industry lookups.
 CREATE UNIQUE INDEX "companyTemplate_industryId_key"
   ON "companyTemplate" ("industryId")
@@ -64,12 +64,12 @@ CREATE POLICY "Authenticated users can view company templates"
   ON "companyTemplate" FOR SELECT
   USING (auth.role() = 'authenticated');
 
--- Writes are performed by the service role (the publish-demo job), which
--- bypasses RLS. No INSERT/UPDATE/DELETE policies are granted to end users.
+-- Writes are performed by the service role, which bypasses RLS. No
+-- INSERT/UPDATE/DELETE policies are granted to end users.
 
 -- Shared, env-agnostic, private bucket holding every published artifact. A
 -- per-company bucket can't back a catalog (onboarding runs outside the target
 -- company, and tenants can't read each other's buckets). Access is service-role
--- only: the publish job writes here, the consume step reads here.
+-- only: the service role writes here, the onboarding consume step reads here.
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('company-templates', 'company-templates', FALSE);

@@ -100,27 +100,6 @@ export type Events = {
     };
   };
 
-  // Publish an existing company export artifact into the shared demo catalog
-  // (company-templates bucket + companyTemplate index). Internal-only.
-  "carbon/publish-demo": {
-    data: {
-      /** Source company the artifact was exported from. */
-      companyId: string;
-      userId: string;
-      /** Path of the artifact within the source company bucket (exports/…). */
-      artifactPath: string;
-      name: string;
-      description?: string;
-      industryId?: string;
-    };
-  };
-
-  // Re-export demo backups whose schemaVersion lags the live schema. Fired by
-  // the deploy pipeline post-migration; also runs on a daily cron.
-  "carbon/refresh-demo-catalog": {
-    data: Record<string, never>;
-  };
-
   // Permission updates
   "carbon/update-permissions": {
     data: {
