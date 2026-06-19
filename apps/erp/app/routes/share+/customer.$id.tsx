@@ -159,32 +159,33 @@ export default function CustomerPortal() {
       {
         accessorKey: "customerReference",
         header: "PO/SO #",
+        size: 180,
         cell: ({ row }) => (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 min-w-0">
             {thumbnails[row.original.readableIdWithRevision!] ? (
               <img
                 alt={row.original.readableIdWithRevision!}
-                className="size-8 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
+                className="size-8 bg-gradient-to-bl from-muted to-muted/40 rounded-lg flex-shrink-0"
                 src={
                   thumbnails[row.original.readableIdWithRevision!] ?? undefined
                 }
               />
             ) : (
-              <div className="size-8 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-1">
+              <div className="size-8 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-1 flex-shrink-0">
                 <LuImage className="size-6 text-muted-foreground" />
               </div>
             )}
             {row.original.customerReference ? (
               <>
                 <LuShieldCheck className="text-emerald-500 flex-shrink-0" />
-                <span className="text-xs font-medium">
+                <span className="text-xs font-medium truncate">
                   {row.original.customerReference}
                 </span>
               </>
             ) : (
               <>
                 <LuShield className="flex-shrink-0" />
-                <span className="text-xs font-medium">
+                <span className="text-xs font-medium truncate">
                   {row.original.salesOrderId}
                 </span>
               </>
