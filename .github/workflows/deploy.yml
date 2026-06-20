@@ -40,9 +40,11 @@ jobs:
         env:
           AWS_REGION: ${{ secrets.AWS_REGION }}
         with:
-          build-args: NODE_OPTIONS=--max-old-space-size=4096
+          build-args: |
+            APP=${{ matrix.app }}
+            NODE_OPTIONS=--max-old-space-size=4096
           context: .
-          file: ./apps/${{ matrix.app }}/Dockerfile
+          file: ./Dockerfile
           push: true
           tags: |
             ${{ steps.login-ecr.outputs.registry }}/carbon/${{ matrix.app }}:latest
