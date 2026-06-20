@@ -103,8 +103,9 @@ flowIndex: 1          # order of the flow in the subnav (0 = first)
   real key** from `components/editorial/illustrations.tsx` (else it silently renders nothing). Valid keys:
   `flow-overview, order-split, bom-tree, demand-forecast, planning-engine, shopfloor-loop, eight-d,
   traceability-graph, method-types, kit-vs-subassembly, reorder-policy, outside-processing, mes-station,
-  issue-workflow, schedule-board, get-method, conversion-factor`. For anything without a fitting key, use
-  `<Screenshot>` instead — don't invent keys.
+  issue-workflow, schedule-board, get-method, conversion-factor, opportunity-thread, cash-cycle,
+  rfq-fanout, receive-bill-axes, wip-inflow, wip-to-cogs, depreciation-curve, asset-exit`. For anything
+  without a fitting key, use `<Screenshot>` instead — don't invent keys.
 - `<Screenshot label="Sales order dashboard" caption="…" ratio="wide|tall|square" />` — a standing **slot for
   a real Carbon capture**. Use it where the reader needs to see the actual UI (dashboard, a specific
   form/field, status, board, where-to-click) — not as decoration. Label the **real, current** screen + state

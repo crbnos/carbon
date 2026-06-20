@@ -7,10 +7,10 @@ An **invoice** records money owed. Carbon has two kinds that behave almost ident
 
 ## Where they come from
 
-A **sales invoice** is raised from a sales order, or from a **posted shipment** — billing on the order or billing on what actually shipped. A **purchase invoice** is raised from a purchase order, keeping the lines that still have something to bill. Either way the new invoice opens at **Draft**, fully editable, and links each line back to the order line it bills.
+A **sales invoice** is raised from a <Term id="sales-order">sales order</Term>, or from a **<Term id="shipment">posted shipment</Term>** — billing on the order or billing on what actually shipped. A **purchase invoice** is raised from a <Term id="purchase-order">purchase order</Term>, keeping the lines that still have something to bill. Either way the new invoice opens at **Draft**, fully editable, and links each line back to the order line it bills.
 
 <Callout type="note">
-A purchase invoice reconciles on the **purchase order line**, not on a receipt — there's no direct receipt link, and a receipt isn't even required to bill. Posting clears the goods-received-not-invoiced accrual against the shared order line and books any price difference to variance.
+A purchase invoice reconciles on the **purchase order line**, not on a <Term id="receipt">receipt</Term> — there's no direct receipt link, and a receipt isn't even required to bill. Posting clears the <Term id="gr-ir">goods-received-not-invoiced</Term> accrual against the shared order line and books any price difference to <Term id="purchase-price-variance">variance</Term>.
 </Callout>
 
 ## Status lifecycle
@@ -30,7 +30,7 @@ The posted state has a different name on each side — **Submitted** for sales, 
 
 ## Posting
 
-Posting an invoice writes its general-ledger entries — receivables against sales for a sale, payables against inventory or WIP for a purchase — but only when accounting is enabled for the company. Posting also bumps the invoiced quantity on each order line and stamps the posting date.
+<Term id="posting">Posting</Term> an invoice writes its general-ledger entries — receivables against sales for a sale, payables against inventory or WIP for a purchase — but only when accounting is enabled for the company. Posting also bumps the invoiced quantity on each order line and stamps the posting date.
 
 <Callout type="warn">
 Posting never marks an invoice **Paid** — it lands on **Submitted** or **Open**. Recording payment is a separate, deliberate step. A posted invoice can't be deleted either; to undo one you **void** it, which writes reversing entries rather than erasing history.

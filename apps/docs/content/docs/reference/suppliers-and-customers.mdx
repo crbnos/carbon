@@ -7,7 +7,7 @@ description: The parties you buy from and sell to — and the ways their records
 
 ## Suppliers
 
-A supplier lives in purchasing and anchors the buy side — purchase orders, supplier quotes, and bills all reference it. Its **status** is a fixed set: *Active*, *Inactive*, *Pending*, *Rejected*. A supplier links to the items you buy through **supplier parts**, each carrying the supplier's own part number, a minimum order quantity, and a conversion factor from their pack to your stock unit.
+A supplier lives in purchasing and anchors the buy side — <Term id="purchase-order">purchase orders</Term>, <Term id="supplier-quote">supplier quotes</Term>, and bills all reference it. Its **status** is a fixed set: *Active*, *Inactive*, *Pending*, *Rejected*. A supplier links to the items you buy through **supplier parts**, each carrying the supplier's own part number, a minimum order quantity, and a <Term>conversion factor</Term> from their pack to your stock unit.
 
 <Callout type="note">
 A supplier part has **no lead time** — purchasing lead time is set per item, not per supplier-part. The supplier part is about identity and pack size, not delivery time.
@@ -15,7 +15,7 @@ A supplier part has **no lead time** — purchasing lead time is set per item, n
 
 ## Customers
 
-A customer lives in sales and anchors the sell side — quotes, orders, and invoices reference it. Unlike supplier status, **customer status is a configurable list** you define, not a fixed enum. Customers don't have a supplier-part analog; pricing instead comes from **price overrides** and **pricing rules**, which can target a whole customer type and stack with quantity breaks.
+A customer lives in sales and anchors the sell side — <Term id="quote">quotes</Term>, orders, and <Term id="invoice">invoices</Term> reference it. Unlike supplier status, **customer status is a configurable list** you define, not a fixed enum. Customers don't have a supplier-part analog; pricing instead comes from **price overrides** and **pricing rules**, which can target a whole customer type and stack with quantity breaks.
 
 <Callout type="info">
 The asymmetry to remember: **supplier status is a fixed four-value set; customer status is a company-configurable lookup.** Their type catalogs (supplier type, customer type) are both user-defined.
@@ -23,7 +23,7 @@ The asymmetry to remember: **supplier status is a fixed four-value set; customer
 
 ## What they share
 
-Both records carry the same satellite shape: **contacts**, **locations/addresses**, and **payment, shipping, and tax** defaults. Payment terms, currency, and tax settings live on those satellites — not on the core record. Both also have a human-readable id (`SUP…` / `CUS…`) on top of their internal key, and both can expose an external **portal**: suppliers respond to RFQs through a digital-quote link; customers track their orders through a customer portal.
+Both records carry the same satellite shape: **contacts**, **locations/addresses**, and **payment, shipping, and tax** defaults. Payment terms, currency, and tax settings live on those satellites — not on the core record. Both also have a human-readable id (`SUP…` / `CUS…`) on top of their internal key, and both can expose an external **portal**: suppliers respond to <Term id="rfq">RFQs</Term> through a digital-quote link; customers track their orders through a customer portal.
 
 ## Related
 

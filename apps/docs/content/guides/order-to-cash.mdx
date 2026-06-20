@@ -8,7 +8,9 @@ flowName: Quote to cash
 flowIndex: 1
 ---
 
-You have a sales order sitting at **"To Ship and Invoice"**. Cash is four moves away: fulfill the lines, post a shipment, raise an invoice, record payment. None of them auto-chain — each is a discrete, posted step you take when the work is actually ready.
+You have a <Term>sales order</Term> sitting at **"To Ship and Invoice"**. Cash is four moves away: fulfill the lines, post a <Term>shipment</Term>, raise an invoice, record payment. None of them auto-chain — each is a discrete, posted step you take when the work is actually ready.
+
+<Figure illustration="cash-cycle" caption="Four posted moves carry a confirmed order to recorded cash — and none of them auto-chains." />
 
 ## The line stays open
 
@@ -16,11 +18,11 @@ A sales order line keeps score. It tracks `saleQuantity` against `quantitySent` 
 
 ## Three ways to fulfill a line
 
-The method type on each line decides where the goods come from:
+The <Term>method type</Term> on each line decides where the goods come from:
 
-- **Make to Order** raises a production job for the line — the [make-to-order tour](/guides/order) in full.
-- **Pull from Inventory** ships from stock you already hold — no job, just a pick.
-- **Purchase to Order** buys it in for this order; its **drop-ship** variant has the supplier ship straight to your customer, so the goods never touch your dock.
+- **<Term>Make to Order</Term>** raises a production <Term id="job">job</Term> for the line — the [make-to-order tour](/guides/order) in full.
+- **<Term>Pull from Inventory</Term>** ships from stock you already hold — no job, just a pick.
+- **<Term>Purchase to Order</Term>** buys it in for this order; its **<Term>drop-ship</Term>** variant has the supplier ship straight to your customer, so the goods never touch your dock.
 
 However a line is sourced, every fulfillment resolves to one of two kinds — from **inventory** or from a **job** — and that's what the shipment posts against.
 
@@ -32,10 +34,10 @@ The sales order list computes a display status: while a make-to-order line still
 
 Create a shipment against the order. One shipment table serves sales orders, purchase orders, and transfers alike, tagged here with a "Sales Order" source. It opens at **"Draft"**.
 
-Creating it changes nothing on hand — **posting** is the event that matters. Post the shipment and four things happen at once: the shipment moves to **"Posted"**, inventory drops via the item ledger, the line's `quantitySent` rises, and the order advances to **"To Invoice"** (or **"Completed"** once everything is both shipped and billed). `sentComplete` flips only when the cumulative shipped quantity reaches the ordered quantity, so partial and repeated shipments are first-class.
+Creating it changes nothing on hand — **<Term id="posting">posting</Term>** is the event that matters. Post the shipment and four things happen at once: the shipment moves to **"Posted"**, inventory drops via the item ledger, the line's `quantitySent` rises, and the order advances to **"To Invoice"** (or **"Completed"** once everything is both shipped and billed). `sentComplete` flips only when the cumulative shipped quantity reaches the ordered quantity, so partial and repeated shipments are first-class.
 
 <Callout tone="amber" badge="POSTING ≠ CREATING" title="Posting moves inventory and the order — and stops there.">
-A posted shipment decrements stock and advances the order, and if accounting is enabled it writes the COGS journal entries. What it does **not** do is create the invoice. Fulfillment and billing are deliberately separate steps.
+A posted shipment decrements stock and advances the order, and if accounting is enabled it writes the <Term id="cogs">COGS</Term> journal entries. What it does **not** do is create the invoice. Fulfillment and billing are deliberately separate steps.
 </Callout>
 
 <Screenshot label="Post shipment" caption="Posting the shipment: inventory moves, the line's sent quantity rises, the order advances." ratio="wide" />

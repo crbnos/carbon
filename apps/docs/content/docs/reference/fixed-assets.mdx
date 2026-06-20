@@ -3,7 +3,7 @@ title: Fixed assets
 description: Capital equipment on the books — acquired, depreciated, and retired.
 ---
 
-A **fixed asset** is a piece of capital equipment you capitalize and depreciate rather than expense — a press, a CNC, a forklift. It's an accounting record of value over time, distinct from the work center that represents the same machine on the floor. Every asset belongs to an **asset class**, which supplies the general-ledger accounts it posts to.
+A **fixed asset** is a piece of capital equipment you capitalize and depreciate rather than expense — a press, a CNC, a forklift. It's an accounting record of value over time, distinct from the <Term>work center</Term> that represents the same machine on the floor. Every asset belongs to an **<Term>asset class</Term>**, which supplies the general-ledger accounts it posts to.
 
 ## Lifecycle
 
@@ -19,7 +19,7 @@ A **fixed asset** is a piece of capital equipment you capitalize and depreciate 
 An asset comes onto the books two ways, both starting at **Draft**:
 
 - **Register** one you already own — supply its acquisition cost and depreciation start date, and it moves to **Active**. No money posts; you're recording something you have.
-- **Buy** one through purchasing — a purchase-order line of type *Fixed Asset* that, when the receipt posts, debits the asset account, **adds** the cost to the asset, and flips it to **Active**.
+- **Buy** one through purchasing — a <Term id="purchase-order">purchase-order</Term> line of type *Fixed Asset* that, when the receipt posts, debits the asset account, **adds** the cost to the asset, and flips it to **Active**.
 
 <Callout type="note">
 The purchase-receipt path activates the asset and posts its acquisition entry **only when accounting is enabled** for the company. Cost is added cumulatively, so an asset can accrue value across several receipts; with accounting off, the line is received but the asset is left in Draft.
@@ -27,9 +27,9 @@ The purchase-receipt path activates the asset and posts its acquisition entry **
 
 ## Depreciating
 
-Depreciation runs as a **monthly batch you trigger** — there's no background poster. You create a run for a period, Carbon pulls every Active asset and computes each charge, you review it as a draft, then post: debit depreciation expense, credit accumulated depreciation. Carbon keeps a separate **tax** book too, including MACRS, when tax depreciation is enabled. When an asset's net book value reaches its residual, posting flips it to **Fully Depreciated**.
+<Term id="depreciation">Depreciation</Term> runs as a **monthly batch you trigger** — there's no background poster. You create a run for a period, Carbon pulls every Active asset and computes each charge, you review it as a draft, then post: debit depreciation expense, credit accumulated depreciation. Carbon keeps a separate **tax** book too, including <Term>MACRS</Term>, when tax depreciation is enabled. When an asset's <Term id="net-book-value">net book value</Term> reaches its residual, posting flips it to **Fully Depreciated**.
 
-Book depreciation follows the asset's method — straight line, declining balance, or units of production.
+Book depreciation follows the asset's method — <Term id="straight-line">straight line</Term>, <Term id="declining-balance">declining balance</Term>, or units of production.
 
 ## Selling vs. disposing
 
@@ -43,7 +43,7 @@ An Active or Fully Depreciated asset leaves the books two different ways:
 | Money | Collected through the invoice, like any sale | Remaining book value booked as a loss |
 
 <Callout type="warn">
-Selling and disposing are **not** two names for one thing. Selling hands the asset to the normal quote-to-cash flow at book value and leaves it on the books; disposing retires it directly as a write-off. Disposal today is scrapping at a loss — there's no proceeds-based gain calculation wired up.
+Selling and disposing are **not** two names for one thing. Selling hands the asset to the normal quote-to-cash flow at book value and leaves it on the books; disposing retires it directly as a write-off. <Term id="disposal">Disposal</Term> today is scrapping at a loss — there's no proceeds-based gain calculation wired up.
 </Callout>
 
 <Callout type="info">

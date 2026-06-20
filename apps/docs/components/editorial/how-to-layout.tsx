@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { PageFeedback } from "@/components/api/page-feedback";
+import { NavScrollChevron } from "@/components/nav-scroll-chevron";
 import { ReadingProgress } from "@/components/reading-progress";
 import { chaptersInFlow, useGuide } from "./guide-context";
 import { SidebarNav } from "./sidebar-nav";
@@ -127,6 +128,7 @@ export function HowToLayout({ bodies }: { bodies: ReactNode[] }) {
             of stretching; scrolls internally only if it outgrows the viewport. */}
         <aside className="sticky top-[116px] hidden max-h-[calc(100dvh-116px)] w-[260px] shrink-0 self-start overflow-y-auto scrollbar-hidden-until-scroll nav-scroll-fade pb-[40px] pl-[50px] pr-[10px] pt-[40px] min-[1000px]:block">
           <SidebarNav chapters={chapters} active={active} onActiveChange={goTo} />
+          <NavScrollChevron />
         </aside>
 
         {/* Content — natural document flow. The window scrolls, so the footer only

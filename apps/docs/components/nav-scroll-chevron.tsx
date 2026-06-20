@@ -11,15 +11,23 @@ export function NavScrollChevron() {
   const [more, setMore] = useState(false);
 
   useEffect(() => {
-    const scroller = ref.current?.closest("aside");
-    if (!scroller) return;
+    const el = ref.current;
+    const scroller = el?.closest("aside");
+    if (!el || !scroller) return;
     const update = () => {
       setMore(scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight > 8);
     };
     update();
     scroller.addEventListener("scroll", update, { passive: true });
+    // Observe BOTH the scroller (viewport-height changes) AND the nav content above the
+    // chevron — a ResizeObserver on the fixed-height scroller never fires when only its
+    // inner content changes (the list reflowing as fonts load, or a section expanding),
+    // which would leave `more` stale and the chevron wrongly hidden.
     const ro = new ResizeObserver(update);
     ro.observe(scroller);
+    if (el.previousElementSibling) ro.observe(el.previousElementSibling);
+    // Late web-font reflow can grow the list after mount; recompute once fonts settle.
+    document.fonts?.ready.then(update).catch(() => {});
     return () => {
       scroller.removeEventListener("scroll", update);
       ro.disconnect();

@@ -8,12 +8,12 @@ flowName: Manufacturing accounting
 flowIndex: 3
 ---
 
-Job costing followed the money a job spends. The books also carry the machines that do the building — Carbon tracks those as **fixed assets**: a press, a CNC, a forklift, anything you capitalize and depreciate rather than expense. These last two chapters follow one asset from the day it lands on the books to the day it leaves them.
+Job costing followed the money a job spends. The books also carry the machines that do the building — Carbon tracks those as **<Term id="fixed-asset">fixed assets</Term>**: a press, a CNC, a forklift, anything you capitalize and <Term id="depreciation">depreciate</Term> rather than expense. These last two chapters follow one asset from the day it lands on the books to the day it leaves them.
 
-A fixed asset is an accounting record, not a production resource. It belongs to an **asset class**, which carries the general-ledger accounts every asset of that kind posts to — the asset account, accumulated depreciation, depreciation expense, and the accounts used when it's written off.
+A fixed asset is an accounting record, not a production resource. It belongs to an **<Term>asset class</Term>**, which carries the general-ledger accounts every asset of that kind posts to — the asset account, accumulated depreciation, depreciation expense, and the accounts used when it's written off.
 
 <Callout tone="amber" badge="ASSET ≠ WORK CENTER" title="A fixed asset is not the same record as a work center.">
-The machine you schedule production on is a work center; the machine you depreciate is a fixed asset. Carbon keeps these independent — there's no link between them — so the same physical press can be a work center on the floor and a fixed asset in the books without the two being wired together.
+The machine you schedule production on is a <Term>work center</Term>; the machine you depreciate is a fixed asset. Carbon keeps these independent — there's no link between them — so the same physical press can be a work center on the floor and a fixed asset in the books without the two being wired together.
 </Callout>
 
 ## Onto the books
@@ -34,16 +34,18 @@ The purchase-receipt path posts the acquisition entry and the Draft → Active f
 
 Once an asset is **"Active"**, it depreciates. Carbon runs depreciation as a **monthly batch you trigger** — there's no background job quietly posting in the night. You create a depreciation run for a period, Carbon pulls every active asset and computes each one's charge, and you review it as a **"Draft"** before posting.
 
-The book charge follows the asset's method — **straight line**, **declining balance**, or **units of production** — and posting the run debits depreciation expense and credits accumulated depreciation, period by period.
+The book charge follows the asset's method — **<Term>straight line</Term>**, **<Term>declining balance</Term>**, or **units of production** — and posting the run debits depreciation expense and credits accumulated depreciation, period by period.
+
+<Figure illustration="depreciation-curve" caption="Net book value falls from acquisition cost toward residual — straight line in equal steps, declining balance faster early." />
 
 <Callout tone="neutral" badge="DRAFT THEN POST" title="Depreciation is computed at run time, reviewed, then posted.">
-Each run's amounts are calculated when you create it and held as a draft, so you can check the period's charges before they hit the ledger. When an asset's net book value reaches its residual value, posting flips it to **"Fully Depreciated"** and it stops accruing.
+Each run's amounts are calculated when you create it and held as a draft, so you can check the period's charges before they hit the ledger. When an asset's <Term>net book value</Term> reaches its <Term>residual value</Term>, posting flips it to **"Fully Depreciated"** and it stops accruing.
 </Callout>
 
 <Screenshot label="Depreciation run" caption="A monthly run: every active asset's charge, computed and held as a draft for review before posting." ratio="wide" />
 
 ## Two books at once
 
-The depreciation you report on the books and the depreciation you claim for tax rarely match, so Carbon keeps both. Every asset runs a **book** schedule and a separate **tax** schedule, each free to use its own method — the tax side including full **MACRS** with the IRS property-class tables. The two accumulate independently against the same asset.
+The depreciation you report on the books and the depreciation you claim for tax rarely match, so Carbon keeps both. Every asset runs a **book** schedule and a separate **tax** schedule, each free to use its own method — the tax side including full **<Term>MACRS</Term>** with the IRS property-class tables. The two accumulate independently against the same asset.
 
 With tax depreciation enabled, posting a run can also book the **deferred tax** the gap between the two creates, so that timing difference shows up in the ledger as it happens rather than as a year-end surprise.

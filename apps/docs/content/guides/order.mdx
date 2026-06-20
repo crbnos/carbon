@@ -13,19 +13,19 @@ Carbon spans the office and the floor: ERP for orders, purchasing, and planning;
 
 ## The sales order
 
-Open the sales order dashboard. There's already an order on the books: 90 robots. But the customer doesn't want all 90 at once — they want 30 this week, 30 next week, and 30 the week after. That delivery schedule is going to shape everything downstream.
+Open the <Term>sales order</Term> dashboard. There's already an order on the books: 90 robots. But the customer doesn't want all 90 at once — they want 30 this week, 30 next week, and 30 the week after. That delivery schedule is going to shape everything downstream.
 
 An order line doesn't close the moment you ship part of it. Carbon holds the line open — its status reads "To Ship and Invoice" — until every unit has both shipped and been invoiced. That single fact is what lets one order be fulfilled in batches without losing track of what's left.
 
 <Screenshot label="Sales order dashboard" caption="The 90-unit robot order, with its three-week delivery schedule." ratio="wide" />
 
 <Callout tone="neutral" badge="UPSTREAM" title="The order often starts as a quote.">
-Carbon has a full Quote module with quantity-break pricing, so the 90-unit price could have been negotiated in [quote to cash](/guides/quote-to-cash) first. We'll pick the story up at the confirmed sales order, where the build truly begins.
+Carbon has a full <Term>Quote</Term> module with quantity-break pricing, so the 90-unit price could have been negotiated in [quote to cash](/guides/quote-to-cash) first. We'll pick the story up at the confirmed sales order, where the build truly begins.
 </Callout>
 
 ## Batch it into jobs
 
-You don't build 90 robots as one monolithic job. With a batch size of 30, Carbon splits the order into three jobs — one per delivery. Each can be scheduled, released, and shipped on its own timeline.
+You don't build 90 robots as one monolithic job. With a batch size of 30, Carbon splits the order into three <Term id="job">jobs</Term> — one per delivery. Each can be scheduled, released, and shipped on its own timeline.
 
 <Figure illustration="order-split" caption="One 90-unit order, batched into three 30-unit jobs across three weeks." />
 
@@ -37,13 +37,13 @@ Three jobs of 30 let you release week one now, keep weeks two and three in plann
 
 From the order, create the job. Carbon carries the part, quantity, and due date across automatically — the job inherits exactly what was sold, so the floor never works from a stale spec.
 
-It carries one more thing across, and it's the most important: the robot's manufacturing method — its full recipe of materials and operations. The job doesn't point at the part's master recipe, though. It gets its own copy.
+It carries one more thing across, and it's the most important: the robot's <Term id="method">manufacturing method</Term> — its full recipe of materials and operations. The job doesn't point at the part's master recipe, though. It gets its own copy.
 
 <Screenshot label="Create job from sales order" caption="Converting the first 30-unit batch into a production job." ratio="wide" />
 
 ## Get the method
 
-Pulling that recipe into the job is an explicit action in Carbon called Get Method. It clones the part's method — every material, every operation — into a job-specific method that belongs to this job alone.
+Pulling that recipe into the job is an explicit action in Carbon called <Term>Get Method</Term>. It clones the part's method — every material, every operation — into a job-specific method that belongs to this job alone.
 
 That copy is the whole point. Need a one-off substitution for this batch — a different fastener, an extra inspection step — you edit the job's method and the part master stays untouched. And when a change proves itself, you can push it back up to the part so every future job inherits it.
 

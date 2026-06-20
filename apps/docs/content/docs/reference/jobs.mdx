@@ -3,9 +3,9 @@ title: Jobs
 description: One run of production — a single item, a quantity to make, and its own copy of the method.
 ---
 
-A **job** is the unit of production work in Carbon. It pins down one item, how many to make, where, and by when — and carries its own copy of the manufacturing method (the materials and operations) so the floor always builds from a fixed recipe, even as the part master changes underneath it.
+A **job** is the unit of production work in Carbon. It pins down one item, how many to make, where, and by when — and carries its own copy of the <Term id="method">manufacturing method</Term> (the materials and operations) so the floor always builds from a fixed recipe, even as the part master changes underneath it.
 
-Everything on the shop floor hangs off a job: the schedule board places its operations, material is issued against it, time is logged to it, and cost accumulates into its work-in-process. A sales order line that's made to order becomes a job; planning turns a stock shortfall into one. It's the bridge between demand and the floor.
+Everything on the shop floor hangs off a job: the schedule board places its operations, material is <Term id="material-issue">issued</Term> against it, time is logged to it, and cost accumulates into its <Term id="wip">work-in-process</Term>. A <Term id="sales-order">sales order</Term> line that's made to order becomes a job; planning turns a stock shortfall into one. It's the bridge between demand and the floor.
 
 ## Fields
 
@@ -41,7 +41,7 @@ A **Completed**, **Closed**, or **Cancelled** job is locked — its method, quan
 
 ## Make to order vs. make to stock
 
-A job is identical whichever way it's raised — only its source differs. A **make-to-order** job links back to a sales order line; a **make-to-stock** job comes from planning with no order behind it. Either way the job completes into inventory first, and the sale (if any) ships from stock — the job never ships directly to a customer.
+A job is identical whichever way it's raised — only its source differs. A **<Term id="make-to-order">make-to-order</Term>** job links back to a sales order line; a **make-to-stock** job comes from <Term id="mrp">planning</Term> with no order behind it. Either way the job completes into inventory first, and the sale (if any) ships from stock — the job never ships directly to a customer.
 
 <Callout type="note">
 Releasing a job copies the part's method into a job-specific copy. Editing that copy never touches the part master, and updating the part never disturbs a job already in flight.

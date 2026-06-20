@@ -12,9 +12,11 @@ Every robot the shop builds is mostly parts it buys. RFQ to bill is the procurem
 
 We'll follow one purchased part from a blank request all the way to a posted supplier invoice.
 
+<Figure illustration="rfq-fanout" caption="One purchasing RFQ fans out to a supplier quote each; the winning bid converts to a purchase order." />
+
 ## One RFQ, many suppliers
 
-Start with a purchasing RFQ. Unlike a sales quote — which is one document for one customer — a purchasing RFQ is built to fan out: one request, the same lines, sent to several suppliers at once so you can compare what comes back. A fresh RFQ sits at **"Draft"**.
+Start with a <Term id="rfq">purchasing RFQ</Term>. Unlike a sales <Term>quote</Term> — which is one document for one customer — a purchasing RFQ is built to fan out: one request, the same lines, sent to several suppliers at once so you can compare what comes back. A fresh RFQ sits at **"Draft"**.
 
 When you finalize it, Carbon does the fan-out for you. It creates one **supplier quote** per supplier off the RFQ's lines, links each back to the request, and — if you want — emails the supplier a private link to respond. The RFQ moves to **"Requested"**; each new supplier quote opens at **"Draft"**.
 
@@ -38,7 +40,7 @@ The share link lives on each supplier quote, so every supplier responds in their
 
 ## Into a purchase order
 
-Convert the winning supplier quote and Carbon builds a purchase order from it — carrying the supplier, the lines, the negotiated pricing (converted through the line's conversion factor and exchange rate), and the same supplier-interaction thread. A PO can also be one of three kinds: a plain **"Purchase"**, a **"Return"**, or **"Outside Processing"** for sending parts out to a vendor for a step.
+Convert the winning supplier quote and Carbon builds a <Term>purchase order</Term> from it — carrying the supplier, the lines, the negotiated pricing (converted through the line's <Term>conversion factor</Term> and exchange rate), and the same supplier-interaction thread. A PO can also be one of three kinds: a plain **"Purchase"**, a **"Return"**, or **<Term id="outside-operation">"Outside Processing"</Term>** for sending parts out to a vendor for a step.
 
 A purchase order's status is never typed in by hand — Carbon computes it from the state of its lines. Finalize a fresh order and it lands at **"To Receive and Invoice"**: nothing has arrived, nothing has been billed. If the order's value crosses an approval threshold, it stops at **"Needs Approval"** until someone signs off.
 

@@ -4,6 +4,7 @@ import { ApiConfigProvider } from "@/components/api/config-context";
 import { Configurator } from "@/components/api/configurator";
 import { TableOfContents } from "@/components/api/toc";
 import { MainHeader } from "@/components/main-header";
+import { NavScrollChevron } from "@/components/nav-scroll-chevron";
 import { navTree } from "@/lib/api-data";
 
 export default function ApiReferenceLayout({
@@ -28,6 +29,7 @@ export default function ApiReferenceLayout({
           <aside className="sticky top-[64px] hidden h-[calc(100dvh-64px)] w-[280px] shrink-0 overflow-y-auto border-r border-[#E7E7E3] px-[20px] py-[28px] scrollbar-hidden-until-scroll nav-scroll-fade lg:block">
             <Configurator />
             <ApiNav tree={navTree} />
+            <NavScrollChevron />
           </aside>
           <main className="min-w-0 flex-1 px-[24px] pb-[140px] pt-[40px] lg:px-[56px]">
             {children}
