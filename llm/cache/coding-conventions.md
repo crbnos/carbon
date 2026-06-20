@@ -145,6 +145,11 @@ Fix/required pattern: add `onWheel={(e) => e.stopPropagation()}` and
 never reaches the scroll-lock listener. Any new popover-based dropdown with an
 internal scroll area used inside a drawer/dialog must follow this pattern.
 
+The list's scroll container should also carry
+`scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent` (tailwind
+scrollbar plugin) so a draggable scrollbar is visible even on platforms with
+overlay scrollbars (macOS). All four dropdowns now use these classes.
+
 ## Theme System
 
 Themes are defined in `packages/utils/src/themes.ts` with CSS variables for colors. The user's selected theme is stored in the database and accessed via the `useTheme()` hook in `apps/erp/app/hooks/useTheme.tsx`.
