@@ -129,6 +129,22 @@ const { client, companyId, userId } = await requirePermissions(request, {
 - Accessibility considerations (ARIA attributes)
 - Dark mode support via theme system
 
+### Popover dropdowns inside Drawers/Dialogs must stop wheel propagation
+
+`Combobox`, `CreatableCombobox`, `CreatableMultiSelect`, `MultiSelect`, and
+`ChoiceSelect` (all in `packages/react/src/`) render their options list in a
+`PopoverContent` portaled to `document.body`. The `Drawer` (`Drawer.tsx`) is a
+Radix Dialog, which uses `react-remove-scroll` to lock background scrolling.
+Because the popover is portaled outside the dialog subtree, the scroll-lock's
+document-level wheel listener intercepts wheel/touch events over the dropdown
+and the list's internal `overflow-auto` container cannot scroll (symptom: the
+dropdown shows only the first ~6 options and won't scroll).
+
+Fix/required pattern: add `onWheel={(e) => e.stopPropagation()}` and
+`onTouchMove={(e) => e.stopPropagation()}` to the `PopoverContent` so the event
+never reaches the scroll-lock listener. Any new popover-based dropdown with an
+internal scroll area used inside a drawer/dialog must follow this pattern.
+
 ## Theme System
 
 Themes are defined in `packages/utils/src/themes.ts` with CSS variables for colors. The user's selected theme is stored in the database and accessed via the `useTheme()` hook in `apps/erp/app/hooks/useTheme.tsx`.
