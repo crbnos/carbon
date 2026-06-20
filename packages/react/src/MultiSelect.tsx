@@ -186,6 +186,8 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
           </PopoverTrigger>
           <PopoverContent
             align="end"
+            onWheel={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
             className="min-w-[var(--radix-popover-trigger-width)] p-1"
           >
             <VirtualizedCommand
