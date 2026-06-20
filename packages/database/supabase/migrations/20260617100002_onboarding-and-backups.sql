@@ -3,20 +3,45 @@
 --   2. A system-level catalog of published company backups that onboarding can
 --      provision a new company from.
 
--- ─── 1. Onboarding fields on company ────────────────────────────────────────
+-- ─── 1. Industry catalog + onboarding fields on company ─────────────────────
+-- Industries are data, not an enum, so the demo-environment list can be curated
+-- (added / renamed) without a migration. Companies and templates FK to it by id;
+-- a NULL industryId means "custom" (free-text in customIndustryDescription).
 
-CREATE TYPE "onboardingIndustry" AS ENUM (
-  'robotics_oem',
-  'precision_manufacturing',
-  'automotive_precision',
-  'custom'
+CREATE TABLE "industry" (
+  "id"          TEXT PRIMARY KEY,
+  "name"        TEXT NOT NULL,
+  "description" TEXT,
+  "iconName"    TEXT,
+  "sortOrder"   INTEGER NOT NULL DEFAULT 0,
+  "active"      BOOLEAN NOT NULL DEFAULT TRUE,
+  "createdAt"   TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedAt"   TIMESTAMP WITH TIME ZONE
 );
+
+INSERT INTO "industry" ("id", "name", "description", "iconName", "sortOrder")
+VALUES
+  ('robotics_oem', 'Robotics OEM',
+   'Original Equipment Manufacturer building robots and automation systems',
+   'bot', 1),
+  ('precision_manufacturing', 'Precision Manufacturing',
+   'Contract manufacturer — CNC machining and sheet-metal fabrication',
+   'cog', 2),
+  ('automotive_precision', 'Motor Assembly',
+   'Manufacturer producing precision motor assemblies and components',
+   'wrench', 3);
+
+ALTER TABLE "industry" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Authenticated users can view industries"
+  ON "industry" FOR SELECT
+  USING (auth.role() = 'authenticated');
 
 ALTER TABLE "company" DROP CONSTRAINT IF EXISTS "company_industryId_fkey";
 ALTER TABLE "company" DROP COLUMN IF EXISTS "industryId";
 
 ALTER TABLE "company"
-  ADD COLUMN "industryId" "onboardingIndustry",
+  ADD COLUMN "industryId" TEXT REFERENCES "industry"("id") ON DELETE SET NULL,
   ADD COLUMN IF NOT EXISTS "customIndustryDescription" TEXT,
   ADD COLUMN IF NOT EXISTS "selectedModules" TEXT[],
   ADD COLUMN IF NOT EXISTS "featureRequests" TEXT,
@@ -34,7 +59,7 @@ CREATE TABLE "companyTemplate" (
   "id"                TEXT PRIMARY KEY DEFAULT xid(),
   "name"              TEXT NOT NULL,
   "description"       TEXT,
-  "industryId"        "onboardingIndustry",
+  "industryId"        TEXT REFERENCES "industry"("id") ON DELETE SET NULL,
   "sourceCompanyId"   TEXT REFERENCES "company"("id") ON DELETE SET NULL,
   "sourceCompanyName" TEXT,
   "artifactPath"      TEXT NOT NULL,

@@ -218,6 +218,14 @@ export async function getEmployeeCompanies(
   };
 }
 
+export async function getIndustries(client: SupabaseClient<Database>) {
+  return client
+    .from("industry")
+    .select("id, name, description, iconName")
+    .eq("active", true)
+    .order("sortOrder");
+}
+
 export async function getCompany(
   client: SupabaseClient<Database>,
   companyId: string

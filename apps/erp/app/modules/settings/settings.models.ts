@@ -65,13 +65,6 @@ export const apiKeyValidator = z.object({
   )
 });
 
-export const onboardingIndustryTypes = [
-  "robotics_oem",
-  "precision_manufacturing",
-  "automotive_precision",
-  "custom"
-] as const;
-
 const companyAddress = {
   name: z.string().min(1, { message: "Name is required" }),
   addressLine1: z.string().min(1, { message: "Address is required" }),
@@ -107,7 +100,7 @@ export const addressValidator = z.object({
 // are not part of the general company validator (kept off the settings forms).
 export const onboardingCompanyValidator = z.object({
   ...company,
-  industryId: z.enum(onboardingIndustryTypes).optional().default("custom"),
+  industryId: zfd.text(z.string().optional()),
   customIndustryDescription: z.string().optional(),
   seedDemoData: zfd.checkbox(),
   next: z.string().min(1, { message: "Next is required" })

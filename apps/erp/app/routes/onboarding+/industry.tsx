@@ -20,11 +20,12 @@ import {
 } from "@carbon/react";
 import { Edition } from "@carbon/utils";
 import { getLocalTimeZone } from "@internationalized/date";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import {
   LuBot,
   LuCog,
   LuDatabase,
+  LuFactory,
   LuFileX,
   LuUpload,
   LuWrench
@@ -44,13 +45,12 @@ import { getLocationsList, upsertLocation } from "~/modules/resources";
 import {
   getCompanies,
   getCompany,
+  getIndustries,
   insertCompany,
   onboardingCompanyValidator,
-  onboardingIndustryTypes,
   updateCompany
 } from "~/modules/settings";
 import {
-  canImportData,
   fetchDemoArtifact,
   provisionCompanyData
 } from "~/services/onboarding.server";
@@ -64,11 +64,7 @@ type DataChoice = "demo" | "import" | "none";
 
 const onboardingIndustryValidator = z
   .object({
-    industryId: z
-      .enum(onboardingIndustryTypes, {
-        errorMap: () => ({ message: "Please select an industry type" })
-      })
-      .optional(),
+    industryId: z.string().optional(),
     customIndustryDescription: z.string().optional(),
     dataChoice: z.enum(["demo", "import", "none"]).default("none"),
     next: z.string()
@@ -78,30 +74,13 @@ const onboardingIndustryValidator = z
     path: ["industryId"]
   });
 
-/** Industries offered on the onboarding demo step. */
-const DEMO_INDUSTRIES: ChoiceCardOption[] = [
-  {
-    value: "robotics_oem",
-    title: "Robotics OEM",
-    description:
-      "Original Equipment Manufacturer building robots and automation systems",
-    icon: <LuBot className="h-5 w-5" />
-  },
-  {
-    value: "precision_manufacturing",
-    title: "Precision Manufacturing",
-    description:
-      "Contract manufacturer — CNC machining and sheet-metal fabrication",
-    icon: <LuCog className="h-5 w-5" />
-  },
-  {
-    value: "automotive_precision",
-    title: "Motor Assembly",
-    description:
-      "Manufacturer producing precision motor assemblies and components",
-    icon: <LuWrench className="h-5 w-5" />
-  }
-];
+/** Industry icons live in code (JSX can't be stored in the DB); the `industry`
+ *  table carries an `iconName` that maps here. */
+const INDUSTRY_ICONS: Record<string, ReactNode> = {
+  bot: <LuBot className="h-5 w-5" />,
+  cog: <LuCog className="h-5 w-5" />,
+  wrench: <LuWrench className="h-5 w-5" />
+};
 
 /** Append the company data captured in the previous onboarding step. */
 function appendDraftCompany(
@@ -114,17 +93,17 @@ function appendDraftCompany(
 }
 
 export async function loader({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { client, companyId } = await requirePermissions(request, {});
 
   const company = await getCompany(client, companyId);
   const draft = await getOnboardingDraft(request);
-  const showImport = await canImportData(client, userId);
+  const industries = (await getIndustries(client)).data ?? [];
 
   if (company.error || !company.data) {
-    return { company: null, draft, showImport };
+    return { company: null, draft, industries };
   }
 
-  return { company: company.data, draft, showImport };
+  return { company: company.data, draft, industries };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -146,7 +125,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const { industryId, dataChoice } = industryValidation.data;
-  const finalIndustryId = industryId || "custom";
+  const finalIndustryId = industryId || null;
 
   // Carry forward the company data captured in the previous (company) step.
   if (draft?.company) appendDraftCompany(formData, draft.company);
@@ -160,7 +139,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const serviceRole = getCarbonServiceRole();
   const { next, ...d } = validation.data;
-  const companyData = { ...d, seedDemoData: dataChoice === "demo" };
+  const companyData = {
+    ...d,
+    industryId: d.industryId || null,
+    seedDemoData: dataChoice === "demo"
+  };
 
   let companyId: string | undefined;
 
@@ -216,15 +199,13 @@ export async function action({ request }: ActionFunctionArgs) {
       throw new Error("Fatal: failed to get company ID");
     }
 
-    // Demo and "restore from a backup" both resolve to a backup artifact (the
-    // import path is gated — re-checked here so a crafted post can't reach it);
+    // Demo and "restore from a backup" both resolve to a backup artifact;
     // "none" → a clean seed. provisionCompanyData imports the artifact or seeds.
     const artifactFile = formData.get("artifact");
     const artifact: Blob | null =
       dataChoice === "import" &&
       artifactFile instanceof File &&
-      artifactFile.size > 0 &&
-      (await canImportData(client, userId))
+      artifactFile.size > 0
         ? artifactFile
         : dataChoice === "demo"
           ? await fetchDemoArtifact(serviceRole, finalIndustryId)
@@ -301,7 +282,7 @@ export async function action({ request }: ActionFunctionArgs) {
 type Step = "demo-data-question" | "industry-selection" | "import-upload";
 
 export default function OnboardingIndustry() {
-  const { company, showImport } = useLoaderData<typeof loader>();
+  const { company, industries } = useLoaderData<typeof loader>();
   const { next, previous } = useOnboarding();
 
   // Determine initial step based on existing company data
@@ -320,11 +301,18 @@ export default function OnboardingIndustry() {
   );
 
   const initialValues = {
-    industryId: DEMO_INDUSTRIES.some((i) => i.value === company?.industryId)
+    industryId: industries.some((i) => i.id === company?.industryId)
       ? (company?.industryId ?? undefined)
       : undefined,
     customIndustryDescription: company?.customIndustryDescription ?? ""
   };
+
+  const industryOptions: ChoiceCardOption[] = industries.map((i) => ({
+    value: i.id,
+    title: i.name,
+    description: i.description ?? "",
+    icon: INDUSTRY_ICONS[i.iconName ?? ""] ?? <LuFactory className="h-5 w-5" />
+  }));
 
   const handleNext = () => {
     if (dataChoice === "demo") setStep("industry-selection");
@@ -340,16 +328,12 @@ export default function OnboardingIndustry() {
         "We'll add sample customers, suppliers, parts and quotes to explore Carbon",
       icon: <LuDatabase className="h-5 w-5" />
     },
-    ...(showImport
-      ? [
-          {
-            value: "import" as const,
-            title: "Restore from a backup",
-            description: "Set up from a Carbon backup of another company",
-            icon: <LuUpload className="h-5 w-5" />
-          }
-        ]
-      : []),
+    {
+      value: "import" as const,
+      title: "Restore from a backup",
+      description: "Set up from a Carbon backup of another company",
+      icon: <LuUpload className="h-5 w-5" />
+    },
     {
       value: "none",
       title: "I don't need data",
@@ -498,7 +482,7 @@ export default function OnboardingIndustry() {
                 direction="row"
                 value={selectedIndustryId}
                 onChange={setSelectedIndustryId}
-                options={DEMO_INDUSTRIES}
+                options={industryOptions}
               />
             </CardContent>
 

@@ -1,37 +1,17 @@
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
-import type { Database } from "@carbon/database";
 import { trigger } from "@carbon/jobs";
-import { isInternalEmail } from "@carbon/utils";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
-import { type onboardingIndustryTypes, seedCompany } from "~/modules/settings";
+import { seedCompany } from "~/modules/settings";
 
 type ServiceRole = ReturnType<typeof getCarbonServiceRole>;
-
-/**
- * "Bring your own data" (restore from a backup) is a power feature for local dev
- * + migrations. Available to Carbon-internal users and in any non-production
- * environment; re-checked in the action so it can't be reached by a crafted post.
- */
-export async function canImportData(
-  client: SupabaseClient<Database>,
-  userId: string
-): Promise<boolean> {
-  if (process.env.NODE_ENV !== "production") return true;
-  const user = await client
-    .from("user")
-    .select("email")
-    .eq("id", userId)
-    .single();
-  return isInternalEmail(user.data?.email);
-}
 
 /** Pull the most recent published demo for an industry from the catalog bucket,
  *  or null when none exists yet (caller falls back to a clean company). */
 export async function fetchDemoArtifact(
   serviceRole: ServiceRole,
-  industryId: (typeof onboardingIndustryTypes)[number]
+  industryId: string | null
 ): Promise<Blob | null> {
+  if (!industryId) return null;
   const template = await serviceRole
     .from("companyTemplate")
     .select("artifactPath")

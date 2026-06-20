@@ -17,6 +17,7 @@ import {
   ScrollArea,
   VStack
 } from "@carbon/react";
+import { convertKbToString } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -35,7 +36,6 @@ import {
   listCompanyTemplateExports,
   revertCompanyTemplateImport
 } from "~/modules/settings";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -79,26 +79,6 @@ async function requireOwner(
       )
     );
   }
-}
-
-async function flashError(request: Request, message: string) {
-  return data({}, await flash(request, error(null, message)));
-}
-
-/** Flash the edge function's real error message on failure, or a success. */
-async function flashResult(
-  request: Request,
-  result: { error: unknown },
-  successMessage: string,
-  failureMessage: string
-) {
-  if (result.error) {
-    return flashError(
-      request,
-      await getEdgeFunctionErrorMessage(result.error, failureMessage)
-    );
-  }
-  return data({}, await flash(request, success(successMessage)));
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -157,16 +137,23 @@ export async function action({ request }: ActionFunctionArgs) {
       if (validation.error) return validationError(validation.error);
 
       const { label, includeStorage } = validation.data;
-      return flashResult(
-        request,
-        await exportCompanyTemplate(client, {
-          companyId,
-          userId,
-          label: label || undefined,
-          includeStorage
-        }),
-        "Export started — it will appear below shortly",
-        "Failed to start export"
+      const result = await exportCompanyTemplate(client, {
+        companyId,
+        userId,
+        label: label || undefined,
+        includeStorage
+      });
+      if (result.error)
+        return data(
+          {},
+          await flash(request, error(result.error, "Failed to start export"))
+        );
+      return data(
+        {},
+        await flash(
+          request,
+          success("Export started — it will appear below shortly")
+        )
       );
     }
 
@@ -175,22 +162,35 @@ export async function action({ request }: ActionFunctionArgs) {
       if (validation.error) return validationError(validation.error);
 
       const { filePath, mode } = validation.data;
-      return flashResult(
-        request,
-        await importCompanyTemplate(client, {
-          companyId,
-          userId,
-          filePath,
-          mode
-        }),
-        "Import started — review the pending run below once it completes",
-        "Failed to start import"
+      const result = await importCompanyTemplate(client, {
+        companyId,
+        userId,
+        filePath,
+        mode
+      });
+      if (result.error)
+        return data(
+          {},
+          await flash(request, error(result.error, "Failed to start import"))
+        );
+      return data(
+        {},
+        await flash(
+          request,
+          success(
+            "Import started — review the pending run below once it completes"
+          )
+        )
       );
     }
 
     case "finalize": {
       const importRunId = String(formData.get("importRunId") ?? "");
-      if (!importRunId) return flashError(request, "Missing import run");
+      if (!importRunId)
+        return data(
+          {},
+          await flash(request, error(null, "Missing import run"))
+        );
 
       // Fan out thumbnail rendering for imported models before the ledger
       // (which we use to find them) is deleted by finalize.
@@ -205,57 +205,67 @@ export async function action({ request }: ActionFunctionArgs) {
         );
       }
 
-      return flashResult(
-        request,
-        await finalizeCompanyTemplateImport(client, {
-          companyId,
-          importRunId,
-          userId
-        }),
-        "Import finalized",
-        "Failed to finalize import"
-      );
+      const result = await finalizeCompanyTemplateImport(client, {
+        companyId,
+        importRunId,
+        userId
+      });
+      if (result.error)
+        return data(
+          {},
+          await flash(request, error(result.error, "Failed to finalize import"))
+        );
+      return data({}, await flash(request, success("Import finalized")));
     }
 
     case "revert": {
       const importRunId = String(formData.get("importRunId") ?? "");
-      if (!importRunId) return flashError(request, "Missing import run");
+      if (!importRunId)
+        return data(
+          {},
+          await flash(request, error(null, "Missing import run"))
+        );
 
-      return flashResult(
-        request,
-        await revertCompanyTemplateImport(client, {
-          companyId,
-          importRunId,
-          userId
-        }),
-        "Revert started — the pending run will clear shortly",
-        "Failed to revert import"
+      const result = await revertCompanyTemplateImport(client, {
+        companyId,
+        importRunId,
+        userId
+      });
+      if (result.error)
+        return data(
+          {},
+          await flash(request, error(result.error, "Failed to revert import"))
+        );
+      return data(
+        {},
+        await flash(
+          request,
+          success("Revert started — the pending run will clear shortly")
+        )
       );
     }
 
     case "delete": {
       const filePath = String(formData.get("filePath") ?? "");
-      if (!filePath.startsWith("exports/")) {
-        return flashError(request, "Invalid file path");
-      }
+      if (!filePath.startsWith("exports/"))
+        return data({}, await flash(request, error(null, "Invalid file path")));
 
-      return flashResult(
-        request,
-        await deleteCompanyTemplateExport(client, companyId, filePath),
-        "Export deleted",
-        "Failed to delete export"
+      const result = await deleteCompanyTemplateExport(
+        client,
+        companyId,
+        filePath
       );
+      if (result.error)
+        return data(
+          {},
+          await flash(request, error(result.error, "Failed to delete export"))
+        );
+      return data({}, await flash(request, success("Export deleted")));
     }
 
     default:
-      return flashError(request, "Unknown action");
+      return data({}, await flash(request, error(null, "Unknown action")));
   }
-}
-
-function formatSize(bytes: number) {
-  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  if (bytes >= 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${bytes} B`;
 }
 
 export default function BackupsRoute() {
@@ -430,7 +440,12 @@ export default function BackupsRoute() {
                         {file.createdAt
                           ? new Date(file.createdAt).toLocaleString()
                           : ""}
-                        {file.size ? <> · {formatSize(file.size)}</> : null}
+                        {file.size ? (
+                          <>
+                            {" · "}
+                            {convertKbToString(Math.round(file.size / 1024))}
+                          </>
+                        ) : null}
                       </span>
                     </VStack>
                     <HStack spacing={2}>
