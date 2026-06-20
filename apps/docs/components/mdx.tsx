@@ -7,6 +7,7 @@ import { MdxCodeBlock } from "@/components/api/mdx-code-block";
 import { Checklist, Check } from "@/components/checklist";
 // Editorial Callout/Card so the Reference matches the Guide (not Fumadocs defaults).
 import { Callout, Card, Cards, EnvVar, EnvVars, PlanBadge } from "@/components/editorial/reference-components";
+import { Term } from "@/components/editorial/term";
 import { FeatureCallout } from "@/components/feature-callout";
 import { Frame } from "@/components/frame";
 import { Eyebrow } from "@/components/prose";
@@ -35,6 +36,7 @@ export function getMDXComponents(components?: MDXComponents) {
     EnvVar,
     EnvVars,
     PlanBadge,
+    Term,
     Step,
     Steps,
     Tab,

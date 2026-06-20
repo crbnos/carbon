@@ -1,5 +1,6 @@
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { type IllustrationKey, illustrations } from "./illustrations";
+import { Term } from "./term";
 import { Zoomable } from "./zoomable";
 
 /* The editorial MDX component map. Guide chapters are authored as MDX and rendered
@@ -236,4 +237,5 @@ export const editorialMdxComponents = {
   Screenshot,
   Callout,
   Divider,
+  Term,
 };
