@@ -63,9 +63,17 @@ same opportunity, so you can enter the flow at whatever point a deal actually st
 
 ## Interlink at the seams
 
-Connect flows where they naturally touch: `[make-to-order tour](/guides/order)`,
-`[quote-to-cash](/guides/order-to-cash)`. Link the *noun*, inline — never "click here". A Guide links into
-Reference for fields; Reference links back to the Guide for the story.
+Two mechanisms, both every time you touch a page:
+
+- **Markdown links carry *navigation*.** Link the *noun*, inline — never "click here". A Guide links into
+  Reference for fields; Reference links back to the Guide for the story
+  (`[make-to-order tour](/guides/order)`, `[quote-to-cash](/guides/order-to-cash)`).
+- **`<Term>` carries *definitions*.** Wrap a term a reader hits cold (method type, replenishment system, WIP,
+  outside operation…) so a click glosses it in place. First occurrence per page only; definitions live in
+  `apps/docs/lib/glossary.ts`, grounded in source — add the entry before you use a new term.
+
+When you create or edit a page, end with an **enrichment pass**: gloss first-occurrence jargon with `<Term>`,
+add cross-links at the seams, top up the glossary. Internal linking compounds — make it a habit.
 
 ## Real page templates
 
@@ -131,6 +139,8 @@ forward** — cut anything that does none. Then the page as a whole:
 - Clear next step / link at the end?
 - Could a real example replace an abstract sentence? Replace it.
 - **Every status/name/transition checked against source?** (Rule 0.)
+- **Jargon glossed, seams linked?** First-use terms wrapped in `<Term>` (entry in `lib/glossary.ts`), cross-links added.
+- **Visuals show the real UI?** Each `<Screenshot>` marks a real, current Carbon screen (grounded label), placed where the reader needs to see it — not decoration.
 
 ## Tone calibration
 

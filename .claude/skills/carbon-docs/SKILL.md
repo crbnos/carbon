@@ -105,12 +105,18 @@ flowIndex: 1          # order of the flow in the subnav (0 = first)
   traceability-graph, method-types, kit-vs-subassembly, reorder-policy, outside-processing, mes-station,
   issue-workflow, schedule-board, get-method, conversion-factor`. For anything without a fitting key, use
   `<Screenshot>` instead — don't invent keys.
-- `<Screenshot label="Sales order dashboard" caption="…" ratio="wide|tall|square" />` — placeholder frame,
-  free-text label (no image asset needed). Default `ratio="wide"`.
+- `<Screenshot label="Sales order dashboard" caption="…" ratio="wide|tall|square" />` — a standing **slot for
+  a real Carbon capture**. Use it where the reader needs to see the actual UI (dashboard, a specific
+  form/field, status, board, where-to-click) — not as decoration. Label the **real, current** screen + state
+  precisely (verify it exists) so a real screenshot can drop straight in and the docs stay synced to the live
+  Carbon UI. Default `ratio="wide"`.
 - `<Callout tone="neutral|blue|green|amber" badge="WHY BATCH" title="…">body</Callout>` — the workhorse.
   Use it to carry the **Carbon-specific truth a generic description gets wrong**. Tones: blue = explanatory
   "why", green = good-to-know/outcome, amber = caution/contrast, neutral = definitional.
 - `<Divider />` — closes a chapter before its wrap-up line.
+- `<Term>make to order</Term>` — inline glossary term: dotted-underline; click/tap opens a popover with a
+  grounded one-line definition + an optional "Learn more" link. Same component on both surfaces; definitions
+  live in `apps/docs/lib/glossary.ts`. See "Interlinking & the glossary" below.
 
 Each `##` heading becomes a sidebar rail entry — so structure chapters as 3–5 `##` sections.
 
@@ -135,6 +141,8 @@ Each `##` heading becomes a sidebar rail entry — so structure chapters as 3–
     features = `packages/ee/src/plan.ts` (Business/Partner). **Don't** badge free ones (email, exchange-rates).
     The gate is **Cloud-only** — self-hosted isn't plan-gated; note that where it matters.
   - `<Steps>/<Step>`, `<Tabs>/<Tab>` (fumadocs-ui), markdown tables, and code fences (dark panel).
+  - `<Term id?>…</Term>` — inline glossary term (dotted underline → definition popover). The same component
+    as the Guide; see "Interlinking & the glossary" below.
 - Voice is more technical/scannable than the Guides — fields, constraints, tables — but still names the
   gotcha and links back to the Guide for the narrative.
 
@@ -153,6 +161,31 @@ Each `##` heading becomes a sidebar rail entry — so structure chapters as 3–
   page is filler. Landing/index pages are **"Overview"**, never "Introduction".
 - **Name things as they are now.** Use a feature's current name; never narrate rename/removal history
   ("formerly item rules", "storage units used to…"). When an old name and the code disagree, the code wins.
+
+## Interlinking & the glossary
+
+Two linking mechanisms — use **both**, deliberately, every time you touch a page. Internal linking compounds:
+a page that links out *and* glosses its jargon is worth more than the same prose in isolation.
+
+- **Markdown links carry navigation.** Link the *noun*, inline, at natural seams; never "click here". A Guide
+  links into Reference for fields; Reference links back to the Guide for the story
+  (`[make-to-order tour](/guides/order)`). Cross-surface and cross-flow links are expected, not optional.
+- **`<Term>` carries definitions.** Wrap a manufacturing/Carbon term a reader can hit cold (method type,
+  replenishment system, WIP, outside operation, kit/subassembly…) so a click gives the gloss without leaving
+  the page.
+  - `<Term>make to order</Term>` slugifies the text to find the entry; `<Term id="make-to-order">made</Term>`
+    when the display text differs from the slug.
+  - **First occurrence per page only** — not every instance. Underlining every "order" is noise.
+  - Definitions are a single source of truth: `apps/docs/lib/glossary.ts` (`slug → { term, definition, href? }`).
+    Add the entry there *before* you use a new term, and **ground the definition in source** (the prime
+    directive applies — exact enum values, real behavior). Omit `href` when there's no dedicated page yet (the
+    popover still shows the definition); the "Learn more" link auto-hides when it would point at the page
+    you're already on.
+  - Unknown slug → renders as plain text (never breaks prose) — a typo fails safe, not loud.
+
+**Enrichment pass.** Whenever you create or edit a page, finish with a linking pass: wrap first-occurrence
+jargon in `<Term>`, add markdown cross-links at the seams, and add any missing glossary entries. Cheapest way
+to raise the whole site's connectivity.
 
 ## Design / styling
 
@@ -196,6 +229,7 @@ Each `##` heading becomes a sidebar rail entry — so structure chapters as 3–
 ## Verification bar
 
 Never declare docs done without: the new content rendering (in the user's running dev server, or a clean
-`pnpm --filter docs build`), every internal link resolving, names matching real code, **no generic repeated
+`pnpm --filter docs build`), every internal link resolving, any new `<Term>` glossary entries grounded in
+source + their popovers rendering, names matching real code, **no generic repeated
 headings**, and a re-read that confirms each page says what matters / names the mistake / points onward. Then
 record progress (`llm/tasks/` + memory). **Don't kill or rebuild under the user's running dev server.**

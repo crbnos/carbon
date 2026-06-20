@@ -35,8 +35,17 @@ Placeholder frame for a real Carbon screen — no image asset required.
 <Screenshot label="Sales order dashboard" caption="The 90-unit robot order, with its three-week schedule." ratio="wide" />
 ```
 - `label: string` (required), `caption?: string`, `ratio?: "wide" | "tall" | "square"` (default `wide` = 16/9).
-- This is the default visual in new content — most new chapters lean on `<Screenshot>` + `<Callout>` and use
-  `<Figure>` only where a registry key genuinely fits.
+- The default *visual* in new content — chapters lean on `<Screenshot>` + `<Callout>`, with `<Figure>` only
+  where a registry key genuinely fits. But place each one where a real screen earns it, not as filler.
+- **A `<Screenshot>` is a standing slot for a *real* Carbon capture — treat it as one.** Use it where the
+  reader genuinely needs to see the actual UI (a dashboard, a specific form/field, a status badge, a board,
+  where-to-click). If the prose already carries the point, skip it.
+- **Label the real screen, grounded.** `label`/`caption` must name an actual, current Carbon screen + state —
+  verify it exists in the app, like any other claim. "Job operations tab — outside operation flagged for a
+  PO" beats "a screenshot of operations". A precise label lets a real capture drop straight in and keeps the
+  docs honest to the live UI.
+- Prefer a real-screen `<Screenshot>` over a conceptual `<Figure>` when the point is *what Carbon actually
+  looks like / where to click*; use `<Figure>` only when the point is a concept or relationship.
 
 ### `<Callout>` (Guide API — tone + badge)
 The workhorse. Carry the **Carbon-specific truth a generic description gets wrong**.
@@ -55,6 +64,21 @@ and billing are deliberately separate steps.
 
 ### `<Divider />`
 Hairline rule. Used once near the end of a chapter, before the wrap-up sentence.
+
+### `<Term>`
+Inline glossary term — dotted blue underline; click/tap opens a popover with a one-line definition and an
+optional "Learn more" link. The non-link affordance for jargon: links navigate (solid, blue text), terms
+define (dotted underline, ink text).
+```mdx
+Set the method type to <Term>purchase to order</Term> when the material is bought, not built.
+You <Term id="pull-from-inventory">pull it from stock</Term> when the parent is built.
+```
+- `id?: string` (explicit glossary slug), `children` (display text — slugified to the entry key when `id` is omitted).
+- Definitions live in `apps/docs/lib/glossary.ts` (`slug → { term, definition, href? }`). Add the entry there
+  first, grounded in source. Omit `href` → definition-only popover; the "Learn more" link auto-hides when it
+  would point at the current page. Unknown slug → renders plain text (fails safe).
+- **Same component on the Reference surface.** First occurrence per page only — see SKILL.md "Interlinking &
+  the glossary".
 
 **Rail:** every `##` heading becomes a sidebar entry. Structure a chapter as 3–5 `##` sections + a short
 intro; `###` is for sub-structure (not in the rail).
@@ -100,6 +124,11 @@ Field / parameter / option rows (hairline-divided).
 - **Code fences** render in the dark API-playground panel (`MdxCodeBlock`). Reference pages *may* use fences
   — but mind the shiki theme gotcha (SKILL.md).
 
+### `<Term>`
+Inline glossary term (dotted underline → definition popover) — **the same component as the Guide**; see the
+Guide-surface entry above for the API. Use it on Reference prose too: gloss the first occurrence of a term a
+reader hits cold, especially where the page names a concept it doesn't stop to define.
+
 ---
 
 ## Choosing a component
@@ -110,6 +139,7 @@ Field / parameter / option rows (hairline-divided).
 | Show a conceptual diagram | `<Figure>` (real key only) | — |
 | Flag a must-not-miss truth / gotcha | `<Callout tone badge title>` | `<Callout type>` |
 | Fan out to related pages | inline links | `<Cards>` |
+| Gloss a jargon term inline | `<Term>` | `<Term>` |
 | Document fields/params | (prose) | markdown table or `<EnvVars>` |
 | A short ordered procedure | (narrate it) | `<Steps>` |
 | Alternative paths | — | `<Tabs>` |
