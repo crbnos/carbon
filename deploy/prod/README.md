@@ -14,6 +14,25 @@ Files:
 The unified app image is built from the repo-root [`Dockerfile`](../../Dockerfile)
 via `--build-arg APP=erp|mes`.
 
+## Quick start (`deploy.sh`)
+
+`deploy/prod/deploy.sh` wraps everything below — env generation + ordered boot:
+
+```bash
+deploy/prod/deploy.sh init      # create .env.production (keys + random secrets)
+# edit .env.production: set the *_HOST/*_URL, ACME_EMAIL, RESEND_API_KEY, SMTP
+deploy/prod/deploy.sh up        # build + boot (postgres+storage → migrate → rest → apps)
+deploy/prod/deploy.sh status    # docker compose ps
+deploy/prod/deploy.sh logs caddy
+deploy/prod/deploy.sh migrate   # re-apply migrations after an update
+deploy/prod/deploy.sh down      # stop (add --volumes to wipe data)
+```
+
+`init` fills `SUPABASE_*` keys, `POSTGRES_PASSWORD`, `SESSION_SECRET`,
+`INNGEST_*`, and `SUPABASE_DB_URL` automatically; you only edit hostnames + the
+third-party secrets it warns about. The manual steps below are the same flow if
+you'd rather run compose yourself.
+
 ## Prerequisites
 
 - A host with Docker + Compose v2.
