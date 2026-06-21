@@ -2,19 +2,90 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { type ReactNode, useState } from "react";
+import {
+  type ReactNode,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+
+// useLayoutEffect warns during SSR; fall back to useEffect on the server.
+const useIsoLayoutEffect = typeof document !== "undefined" ? useLayoutEffect : useEffect;
+// ease-out: snappy start, gentle settle — the right curve for enter/exit (animations.dev).
+const EASE_OUT = "cubic-bezier(0.25, 0.46, 0.45, 0.94)";
+
+// Animates a nav group open/closed via the Web Animations API (height + opacity).
+// Stays mounted through the close animation, then unmounts; never animates on first
+// paint (so default-open groups don't slide in on load); honors reduced-motion.
+function Collapse({ open, children }: { open: boolean; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(open);
+  const prevOpen = useRef(open);
+  const current = useRef<Animation | null>(null);
+
+  // Mount immediately on open; unmount is deferred until the close animation finishes.
+  useEffect(() => {
+    if (open) setMounted(true);
+  }, [open]);
+
+  useIsoLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return; // closed + unmounted: nothing to animate yet
+    // Only animate a real open<->close transition. Equal values mean the initial
+    // commit (adopt final state, no slide-in on page load) or a benign mount re-run.
+    if (open === prevOpen.current) return;
+    prevOpen.current = open;
+    current.current?.cancel();
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (open) {
+      if (reduce) {
+        el.style.height = "auto";
+        return;
+      }
+      el.style.overflow = "hidden";
+      const anim = el.animate(
+        [{ height: "0px", opacity: 0 }, { height: `${el.scrollHeight}px`, opacity: 1 }],
+        { duration: 200, easing: EASE_OUT },
+      );
+      current.current = anim;
+      anim.onfinish = () => {
+        el.style.height = "auto"; // let nested expansions grow naturally
+        el.style.overflow = "visible"; // don't clip focus rings once settled
+      };
+    } else {
+      if (reduce) {
+        setMounted(false);
+        return;
+      }
+      el.style.overflow = "hidden";
+      const anim = el.animate(
+        [{ height: `${el.scrollHeight}px`, opacity: 1 }, { height: "0px", opacity: 0 }],
+        // fill:forwards holds the collapsed end state so there's no 1-frame snap back
+        // to full height between the animation finishing and React unmounting.
+        { duration: 170, easing: EASE_OUT, fill: "forwards" }, // exits ~20% faster than entrances
+      );
+      current.current = anim;
+      anim.onfinish = () => setMounted(false);
+    }
+  }, [open, mounted]);
+
+  if (!mounted) return null;
+  return <div ref={ref}>{children}</div>;
+}
 
 export type DocsNavNode = { label: string; url?: string; children?: DocsNavNode[] };
 
 const GS_ACTIVE = "bg-ed-brand/10 font-demi text-ed-brand-ink";
-const GS_IDLE = "text-ed-ink/80 hover:bg-ed-hairline/55 hover:text-ed-ink";
-const GS_LINK = "block rounded-md px-2 py-1 text-ed-14 leading-[135%] transition-colors";
+const GS_IDLE = "text-ed-ink/90 hover:bg-ed-hairline/55 hover:text-ed-ink";
+const GS_LINK = "block rounded-md px-2 py-1 text-ed-15 leading-[135%] transition-colors";
 // Top-level group label (Platform, Product reference, …) vs nested sub-group label
 // (the module groups inside Product reference) — one step quieter so the hierarchy reads.
 const GROUP_LABEL =
-  "font-mono text-ed-12 font-semibold uppercase tracking-[0.06em] text-ed-ink/60";
+  "font-mono text-ed-13 font-semibold uppercase tracking-[0.06em] text-ed-ink/75";
 const SUBGROUP_LABEL =
-  "font-mono text-ed-11 font-semibold uppercase tracking-[0.05em] text-ed-ink/50";
+  "font-mono text-ed-12 font-semibold uppercase tracking-[0.05em] text-ed-ink/68";
 
 function Chevron({ open }: { open: boolean }) {
   return (
@@ -71,7 +142,7 @@ export function DocsNav({ tree }: { tree: DocsNavNode[] }) {
             <span className={depth === 0 ? GROUP_LABEL : SUBGROUP_LABEL}>{node.label}</span>
           </button>
 
-          {open && (
+          <Collapse open={open}>
             <div className="mt-0.5 mb-0.5 ml-[13px] flex flex-col gap-0.5 border-l border-ed-warm-150 py-0.5 pl-2">
               {node.url && (
                 <Link
@@ -83,7 +154,7 @@ export function DocsNav({ tree }: { tree: DocsNavNode[] }) {
               )}
               {render(node.children, depth + 1, key)}
             </div>
-          )}
+          </Collapse>
         </div>
       );
     });
