@@ -42,15 +42,15 @@ export function GuideSubnav() {
             return (
               <span className="contents" key={flow.slug}>
                 <Divider />
-                <span className="group relative inline-flex items-center justify-center rounded-[4px] px-[5px] py-[2px]">
+                <span className="group relative inline-flex rounded-[7px]">
                   <span
                     aria-hidden="true"
-                    className={`pointer-events-none absolute inset-0 rounded-[4px] transition-opacity duration-200 ease-out ${
+                    className={`pointer-events-none absolute inset-0 rounded-[7px] transition-opacity duration-200 ease-out ${
                       isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                     } bg-[rgba(231,231,227,0.80)]`}
                   />
                   <a
-                    className="nav-link relative z-10 whitespace-nowrap px-[6px] text-[15px] font-[460] leading-[150%] tracking-[0.15px] text-ink-ui no-underline"
+                    className="nav-link relative z-10 flex items-center whitespace-nowrap px-[12px] py-[8px] text-[15px] font-[460] leading-[150%] tracking-[0.15px] text-ink-ui no-underline"
                     href={`/guides/${chapters[flow.firstIndex]?.slug ?? ""}`}
                     aria-current={isActive ? "page" : undefined}
                     onClick={(e) => {
