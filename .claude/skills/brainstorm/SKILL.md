@@ -1,6 +1,6 @@
 ---
 name: brainstorm
-description: Research-driven brainstorming for feature design. Use when designing a new feature, exploring approaches, or making design decisions. Automatically researches competitors before asking design questions. Triggers on "brainstorm", "design a feature", "how should we build X", or any request to explore approaches for a feature.
+description: Research-driven brainstorming and design for a feature. Use when designing a new feature, exploring approaches, or making design decisions. Automatically researches competitors before asking design questions, then hands off to /plan for implementation. Triggers on "brainstorm", "design", "design a feature", "plan a feature", "how should we build X", or any request to explore approaches for a feature.
 ---
 
 # Brainstorm: Research-Driven Design
@@ -112,7 +112,7 @@ Now brainstorm **with research in hand**.
 
 ### 4.1 Write Design Spec
 
-Save to `docs/specs/[feature-name]-design.md`:
+Save to `llm/research/[feature-name]-design.md`:
 
 ```markdown
 # [Feature] Design Specification
@@ -157,7 +157,7 @@ Present the spec and wait for explicit approval before proceeding.
 | Artifact | Location |
 |----------|----------|
 | Competitor research | `llm/research/[feature-slug].md` |
-| Design specification | `docs/specs/[feature-name]-design.md` |
+| Design specification | `llm/research/[feature-name]-design.md` |
 
 ## Next Step
 
