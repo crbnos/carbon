@@ -1,8 +1,22 @@
+import { existsSync } from "node:fs";
 import { log } from "@clack/prompts";
 import { execa } from "execa";
-import { COMPOSE_DEV_FILE } from "../constants.js";
+import { join } from "pathe";
+import { COMPOSE_DEV_FILE, COMPOSE_DEV_FILE_LEGACY } from "../constants.js";
 import { readLines } from "../helpers.js";
 import { projectName, SHARED_REDIS_PORT } from "../worktree.js";
+
+// Resolve the dev compose file for a given worktree root. Prefers the current
+// location, falls back to the pre-move root path so older checkouts still work.
+// Returns an absolute path (so `-f` is independent of cwd); the project dir is
+// pinned separately via `--project-directory .`.
+function composeFile(root: string): string {
+  const current = join(root, COMPOSE_DEV_FILE);
+  if (existsSync(current)) return current;
+  const legacy = join(root, COMPOSE_DEV_FILE_LEGACY);
+  if (existsSync(legacy)) return legacy;
+  return current; // neither present — surface the current-path error
+}
 
 // Shared redis runs as a single plain container (not a compose stack) — one per
 // host, reused across worktrees via per-worktree logical DB indexes.
@@ -31,7 +45,7 @@ export type Container = {
 export async function bootStack(root: string, slug: string) {
   await execStrict(
     "docker",
-    devArgs(slug, "--env-file", ".env.local", "up", "-d"),
+    devArgs(root, slug, "--env-file", ".env.local", "up", "-d"),
     root
   );
 }
@@ -45,7 +59,7 @@ export async function restartServices(
   services: string[]
 ) {
   if (services.length === 0) return;
-  await execa("docker", devArgs(slug, "restart", ...services), {
+  await execa("docker", devArgs(root, slug, "restart", ...services), {
     cwd: root,
     reject: false,
     stdio: "ignore"
@@ -63,7 +77,15 @@ export async function pullStack(
 ) {
   const proc = execa(
     "docker",
-    devArgs(slug, "--env-file", ".env.local", "--progress", "plain", "pull"),
+    devArgs(
+      root,
+      slug,
+      "--env-file",
+      ".env.local",
+      "--progress",
+      "plain",
+      "pull"
+    ),
     { cwd: root, reject: false, all: true }
   );
 
@@ -88,7 +110,7 @@ export async function devComposeImageRefs(
 ): Promise<string[] | null> {
   const r = await execa(
     "docker",
-    devArgs(slug, "--env-file", ".env.local", "config", "--images"),
+    devArgs(root, slug, "--env-file", ".env.local", "config", "--images"),
     { cwd: root, reject: false }
   );
   if (r.exitCode !== 0) return null;
@@ -119,7 +141,7 @@ export async function stopStack(
   slug: string,
   withVolumes: boolean
 ) {
-  const args = devArgs(slug, "--env-file", ".env.local", "down");
+  const args = devArgs(root, slug, "--env-file", ".env.local", "down");
   if (withVolumes) args.push("-v", "--remove-orphans");
   await execa("docker", args, { cwd: root, stdio: "ignore", reject: false });
 }
@@ -191,7 +213,7 @@ export async function destroyProjectVolumes(cwd: string, project: string) {
     [
       "compose",
       "-f",
-      COMPOSE_DEV_FILE,
+      composeFile(cwd),
       "--project-directory",
       ".",
       "--env-file",
@@ -216,7 +238,7 @@ export async function listContainers(
 ): Promise<Container[]> {
   const r = await execa(
     "docker",
-    devArgs(slug, "ps", "-a", "--format", "json"),
+    devArgs(root, slug, "ps", "-a", "--format", "json"),
     { cwd: root, reject: false }
   );
   if (r.exitCode !== 0 || !r.stdout?.trim()) return [];
@@ -277,7 +299,7 @@ export async function listComposeServices(
 ): Promise<string[]> {
   const r = await execa(
     "docker",
-    devArgs(slug, "--env-file", ".env.local", "config", "--services"),
+    devArgs(root, slug, "--env-file", ".env.local", "config", "--services"),
     { cwd: root, reject: false }
   );
   if (r.exitCode !== 0) return [];
@@ -298,7 +320,7 @@ export async function tailServiceLogs(
 ): Promise<string> {
   const r = await execa(
     "docker",
-    devArgs(slug, "logs", "--tail", String(lines), "--no-color", service),
+    devArgs(root, slug, "logs", "--tail", String(lines), "--no-color", service),
     { cwd: root, reject: false }
   );
   return ((r.stdout ?? "") + (r.stderr ?? "")).trim();
@@ -434,14 +456,14 @@ export async function flushDb(db: number) {
 // Private helpers
 // ---------------------------------------------------------------------------
 
-function devArgs(slug: string, ...rest: string[]): string[] {
+function devArgs(root: string, slug: string, ...rest: string[]): string[] {
   // --project-directory . pins the project dir to the cwd (repo root) so the
   // compose file's ./packages/... mounts resolve from root even though the file
   // now lives under packages/dev/docker/.
   return [
     "compose",
     "-f",
-    COMPOSE_DEV_FILE,
+    composeFile(root),
     "--project-directory",
     ".",
     "-p",

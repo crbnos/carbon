@@ -4,6 +4,10 @@
 // volume mounts still resolve from the root, not from this file's directory.
 export const COMPOSE_DEV_FILE = "packages/dev/docker/docker-compose.dev.yml";
 
+// Pre-move location. Older worktrees still have the file here; the CLI falls
+// back to it when COMPOSE_DEV_FILE is absent so existing checkouts keep working.
+export const COMPOSE_DEV_FILE_LEGACY = "docker-compose.dev.yml";
+
 /** Apps the CLI knows how to spawn through portless. */
 export const APP_CHOICES = [
   { value: "erp", label: "ERP", hint: "main app" },
