@@ -31,10 +31,10 @@ export function EditOnGitHub({
       href={githubEditUrl(path)}
       target="_blank"
       rel="noreferrer"
-      className={`inline-flex items-center gap-[7px] text-[13.5px] font-[500] no-underline transition-colors ${
+      className={`inline-flex items-center gap-[7px] text-ed-13 font-medium no-underline transition-colors ${
         variant === "editorial"
-          ? "text-ink-faint hover:text-[#262323]"
-          : "text-[rgba(38,35,35,0.6)] hover:text-[#1E84B0]"
+          ? "text-ink-faint hover:text-ed-ink"
+          : "text-ed-ink/60 hover:text-ed-brand-ink"
       }`}
     >
       <GitHubMark />

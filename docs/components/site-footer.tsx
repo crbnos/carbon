@@ -63,24 +63,24 @@ function SocialIcon({ label, href, path }: { label: string; href: string; path: 
 export function SiteFooter() {
   const year = new Date().getFullYear();
   return (
-    <footer className="w-full border-t border-white/10 bg-[#1A1816] text-white">
-      <div className="mx-auto w-full max-w-[1280px] px-[24px] py-[48px] md:px-[32px]">
-        <div className="flex flex-col justify-between gap-[40px] lg:flex-row">
+    <footer className="w-full border-t border-white/10 bg-ed-dark-bg text-white">
+      <div className="mx-auto w-full max-w-320 px-6 py-12 md:px-8">
+        <div className="flex flex-col justify-between gap-10 lg:flex-row">
           {/* Brand block */}
           <div className="flex flex-col gap-[18px]">
             <img src="/carbon-word-dark.svg" alt="Carbon" width={116} height={28} className="block" />
-            <div className="flex items-center gap-[16px]">
+            <div className="flex items-center gap-4">
               {SOCIAL.map((s) => (
                 <SocialIcon key={s.label} {...s} />
               ))}
             </div>
-            <div className="mt-[2px]">
-              <p className="m-0 text-[13px] text-white/60">System Status:</p>
+            <div className="mt-0.5">
+              <p className="m-0 text-ed-13 text-white/60">System Status:</p>
               <a
                 href="https://status.carbon.ms"
                 target="_blank"
                 rel="noreferrer noopener"
-                className="mt-[3px] inline-flex items-center gap-[7px] text-[14px] text-white/85 transition-colors hover:text-white"
+                className="mt-[3px] inline-flex items-center gap-[7px] text-ed-14 text-white/85 transition-colors hover:text-white"
               >
                 Operational
                 <span className="inline-block h-[7px] w-[7px] rounded-full bg-[#3FB950] shadow-[0_0_6px_rgba(63,185,80,0.7)]" />
@@ -89,17 +89,17 @@ export function SiteFooter() {
           </div>
 
           {/* Link columns */}
-          <div className="flex flex-1 flex-wrap gap-x-[56px] gap-y-[32px] lg:justify-center">
+          <div className="flex flex-1 flex-wrap gap-x-14 gap-y-8 lg:justify-center">
             {COLUMNS.map((col) => (
-              <nav key={col.heading} className="flex min-w-[120px] flex-col gap-[12px]">
-                <p className="m-0 text-[13px] font-medium text-white/60">{col.heading}</p>
+              <nav key={col.heading} className="flex min-w-30 flex-col gap-3">
+                <p className="m-0 text-ed-13 font-medium text-white/60">{col.heading}</p>
                 {col.links.map((link) => (
                   <a
                     key={link.label}
                     href={link.href}
                     target="_blank"
                     rel="noreferrer noopener"
-                    className="text-[14px] text-white/70 no-underline transition-colors hover:text-white"
+                    className="text-ed-14 text-white/70 no-underline transition-colors hover:text-white"
                   >
                     {link.label}
                   </a>
@@ -111,19 +111,19 @@ export function SiteFooter() {
           {/* ITAR badge — the shared lockup is dark-inked (made for light backgrounds), so its text
               would vanish on the dark footer. Sit it on a light chip to keep it legible. */}
           <div className="flex items-center">
-            <span className="inline-flex items-center rounded-[10px] bg-white px-[16px] py-[11px]">
+            <span className="inline-flex items-center rounded-[10px] bg-white px-4 py-[11px]">
               <img
                 src="https://carbon.ms/logos/itar.svg"
                 alt="ITAR Registered & Compliant"
-                className="block h-[36px] w-auto"
+                className="block h-9 w-auto"
               />
             </span>
           </div>
         </div>
 
         {/* Copyright */}
-        <div className="mt-[40px] border-t border-white/10 pt-[20px]">
-          <p className="m-0 text-[13px] text-white/60">
+        <div className="mt-10 border-t border-white/10 pt-5">
+          <p className="m-0 text-ed-13 text-white/60">
             © {year} Carbon Manufacturing Systems Corp. All rights reserved.
           </p>
         </div>

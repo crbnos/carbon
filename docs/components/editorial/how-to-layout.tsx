@@ -29,16 +29,16 @@ function ChapterCard({ dir, title, onSelect }: { dir: "prev" | "next"; title: st
     <button
       type="button"
       onClick={onSelect}
-      className={`group flex w-full items-center gap-[10px] rounded-[12px] border border-[#E7E7E3] bg-[rgba(251,251,248,0.6)] px-[16px] py-[12px] text-left shadow-[inset_0_1px_0_#fff] transition-colors hover:border-[#D9D9D3] hover:bg-[rgba(255,255,255,0.7)] ${
+      className={`group flex w-full items-center gap-2.5 rounded-xl border border-ed-hairline bg-ed-paper/60 px-4 py-3 text-left shadow-[inset_0_1px_0_#fff] transition-colors hover:border-ed-warm-400 hover:bg-white/70 ${
         next ? "flex-row-reverse text-right" : ""
       }`}
     >
       <FooterChevron dir={next ? "right" : "left"} />
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="font-[family-name:var(--font-mono)] text-[10.5px] font-[600] uppercase tracking-[0.08em] text-[rgba(38,35,35,0.72)]">
+        <span className="font-mono text-ed-10 font-semibold uppercase tracking-[0.08em] text-ed-ink/72">
           {next ? "Next" : "Previous"}
         </span>
-        <span className="truncate text-[15px] font-[560] text-ink-ui transition-colors group-hover:text-[#262323]">
+        <span className="truncate text-ed-15 font-semi text-ink-ui transition-colors group-hover:text-ed-ink">
           {title}
         </span>
       </span>
@@ -63,18 +63,18 @@ function MobileContextBar({ chapter, section }: { chapter: string; section?: str
     <button
       type="button"
       onClick={() => window.dispatchEvent(new CustomEvent("carbon:open-mobile-nav"))}
-      className="fixed inset-x-0 top-[64px] z-[55] flex h-[52px] items-center min-[1000px]:hidden"
+      className="fixed inset-x-0 top-16 z-[55] flex h-13 items-center min-[1000px]:hidden"
       style={{ background: "#F5F5F2", borderBottom: "1px solid #E8E7E6", boxShadow: "0 1px 0 0 #fff" }}
     >
       {/* sr-only prefix keeps the visible flow/title text in the accessible name (Label in Name). */}
       <span className="sr-only">Open contents: </span>
-      <span className="mx-auto flex w-full max-w-[1440px] items-center gap-[11px] px-[24px]">
+      <span className="mx-auto flex w-full max-w-360 items-center gap-[11px] px-6">
         <PanelIcon />
-        <span className="min-w-0 flex-1 truncate text-left text-[14px] font-[460] tracking-[0.15px] text-ink-ui">
+        <span className="min-w-0 flex-1 truncate text-left text-ed-14 font-book tracking-[0.15px] text-ink-ui">
           <span className={section ? "text-ink-faint" : undefined}>{chapter}</span>
           {section ? (
             <>
-              <span className="mx-[7px] text-[rgba(38,35,35,0.3)]">/</span>
+              <span className="mx-[7px] text-ed-ink/30">/</span>
               {section}
             </>
           ) : null}
@@ -122,12 +122,12 @@ export function HowToLayout({ bodies }: { bodies: ReactNode[] }) {
   const nextInFlow = flowChapters[posInFlow + 1];
 
   return (
-    <main className="min-h-screen bg-[#FBFBF9]" style={{ paddingTop: "116px" }}>
+    <main className="min-h-screen bg-ed-paper" style={{ paddingTop: "116px" }}>
       <MobileContextBar chapter={currentChapter.title} section={currentChapter.items[active.item]?.title} />
-      <div className="mx-auto flex w-full max-w-[1440px] px-[20px]">
+      <div className="mx-auto flex w-full max-w-360 px-5">
         {/* Sidebar (desktop) — sticky, self-start so it tracks the page scroll instead
             of stretching; scrolls internally only if it outgrows the viewport. */}
-        <aside className="sticky top-[116px] hidden max-h-[calc(100dvh-116px)] w-[260px] shrink-0 self-start overflow-y-auto scrollbar-hidden-until-scroll nav-scroll-fade pb-[40px] pl-[50px] pr-[10px] pt-[40px] min-[1000px]:block">
+        <aside className="sticky top-29 hidden max-h-[calc(100dvh-116px)] w-65 shrink-0 self-start overflow-y-auto scrollbar-hidden-until-scroll nav-scroll-fade pb-10 pl-[50px] pr-2.5 pt-10 min-[1000px]:block">
           <SidebarNav chapters={chapters} active={active} onActiveChange={goTo} />
           <NavScrollChevron />
         </aside>
@@ -135,11 +135,11 @@ export function HowToLayout({ bodies }: { bodies: ReactNode[] }) {
         {/* Content — natural document flow. The window scrolls, so the footer only
             appears once the reader reaches the true end of the chapter. The big left
             indent eases off at xl, where the right-rail TOC fills that space instead. */}
-        <div className="min-w-0 flex-1 pb-[80px] pt-[28px] min-[640px]:pl-[32px] min-[640px]:pb-[120px] min-[640px]:pt-[44px] min-[1000px]:pl-[130px] min-[1000px]:pr-[20px] xl:pl-[80px] xl:pr-[40px]">
-          <div className="max-w-[620px]">
-            <div className="flex flex-wrap items-center gap-[12px]">
+        <div className="min-w-0 flex-1 pb-20 pt-7 min-[640px]:pl-8 min-[640px]:pb-30 min-[640px]:pt-11 min-[1000px]:pl-[130px] min-[1000px]:pr-5 xl:pl-20 xl:pr-10">
+          <div className="max-w-155">
+            <div className="flex flex-wrap items-center gap-3">
               <span
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-[100px] px-[8px] py-[4px] font-[family-name:var(--font-mono)] text-[12px] font-medium leading-[16px] text-[rgba(38,35,35,0.72)]"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-full px-2 py-1 font-mono text-ed-12 font-medium leading-4 text-ed-ink/72"
                 style={{
                   background:
                     "linear-gradient(180deg, rgba(251, 251, 248, 0.50) 0%, rgba(251, 251, 248, 0.00) 100%)",
@@ -149,13 +149,13 @@ export function HowToLayout({ bodies }: { bodies: ReactNode[] }) {
               >
                 {currentChapter.label} — {currentChapter.slug.toUpperCase()}
               </span>
-              <span className="inline-flex items-center gap-[5px] font-[family-name:var(--font-mono)] text-[12px] leading-[16px] text-[rgba(38,35,35,0.42)]">
+              <span className="inline-flex items-center gap-[5px] font-mono text-ed-12 leading-4 text-ed-ink/42">
                 <ClockIcon />
                 {currentChapter.readingTime} min read
               </span>
             </div>
 
-            <h1 className="mt-[18px] text-[32px] font-normal leading-[112%] text-ink md:text-[40px]">
+            <h1 className="mt-[18px] text-ed-32 font-normal leading-[112%] text-ink md:text-ed-40">
               {currentChapter.title}
             </h1>
 
@@ -163,13 +163,13 @@ export function HowToLayout({ bodies }: { bodies: ReactNode[] }) {
             {bodies[active.chapter]}
 
             {/* Footer — feedback + edit link, then within-flow prev/next, matching the docs pages. */}
-            <footer className="mt-[64px] border-t border-[rgba(38,35,35,0.12)] pt-[26px]">
-              <div className="flex flex-wrap items-center justify-between gap-x-[24px] gap-y-[12px]">
+            <footer className="mt-16 border-t border-ed-ink/12 pt-[26px]">
+              <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
                 <PageFeedback key={active.chapter} variant="editorial" />
                 <EditOnGitHub path={currentChapter.editPath} variant="editorial" />
               </div>
               {(prevInFlow || nextInFlow) && (
-                <nav className="mt-[22px] grid grid-cols-1 gap-[12px] sm:grid-cols-2">
+                <nav className="mt-[22px] grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
                     {prevInFlow && (
                       <ChapterCard
@@ -196,7 +196,7 @@ export function HowToLayout({ bodies }: { bodies: ReactNode[] }) {
 
         {/* Right-rail reading-progress ruler (≥xl). Stretches with the row so the
             sticky ruler inside tracks scroll; the left sidebar keeps section nav. */}
-        <aside className="hidden w-[72px] shrink-0 justify-end pl-[16px] xl:flex">
+        <aside className="hidden w-18 shrink-0 justify-end pl-4 xl:flex">
           <ReadingProgress />
         </aside>
       </div>

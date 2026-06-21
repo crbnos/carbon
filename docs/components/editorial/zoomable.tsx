@@ -78,7 +78,7 @@ export function Zoomable({ children }: { children: ReactNode }) {
         {/* Accessible name; prefixing keeps any visible caption in the name (Label in Name). */}
         <span className="sr-only">Enlarge: </span>
         {children}
-        <span className="pointer-events-none absolute right-[14px] top-[14px] flex h-[28px] w-[28px] items-center justify-center rounded-[8px] border border-[#E7E7E3] bg-[#FBFBF8]/90 opacity-0 shadow-sm backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100">
+        <span className="pointer-events-none absolute right-3.5 top-3.5 flex h-7 w-7 items-center justify-center rounded-lg border border-ed-hairline bg-ed-paper/90 opacity-0 shadow-sm backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden>
             <path
               d="M6 2H2v4M10 2h4v4M6 14H2v-4M10 14h4v-4"
@@ -95,11 +95,11 @@ export function Zoomable({ children }: { children: ReactNode }) {
         open &&
         createPortal(
           <div
-            className="fixed inset-0 z-[300] flex items-center justify-center p-[20px] md:p-[56px]"
+            className="fixed inset-0 z-[300] flex items-center justify-center p-5 md:p-14"
             onClick={() => set(false)}
           >
             {/* Backdrop fades in/out via the root view transition (or instantly without VT). */}
-            <div aria-hidden className="absolute inset-0 bg-[rgba(38,35,35,0.55)] backdrop-blur-[3px]" />
+            <div aria-hidden className="absolute inset-0 bg-ed-ink/55 backdrop-blur-[3px]" />
             <div
               onClick={(e) => e.stopPropagation()}
               style={{ viewTransitionName: name }}

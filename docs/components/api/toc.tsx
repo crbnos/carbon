@@ -51,21 +51,21 @@ export function TableOfContents() {
   if (headings.length === 0) return null;
 
   return (
-    <nav className="sticky top-[88px] max-h-[calc(100dvh-120px)] overflow-y-auto scrollbar-hidden-until-scroll">
-      <p className="m-0 mb-[10px] font-[family-name:var(--font-mono)] text-[11px] font-medium uppercase tracking-[0.08em] text-[rgba(38,35,35,0.5)]">
+    <nav className="sticky top-22 max-h-[calc(100dvh-120px)] overflow-y-auto scrollbar-hidden-until-scroll">
+      <p className="m-0 mb-2.5 font-mono text-ed-11 font-medium uppercase tracking-[0.08em] text-ed-ink/50">
         On this page
       </p>
-      <ul className="m-0 list-none border-l border-[#E7E7E3] p-0">
+      <ul className="m-0 list-none border-l border-ed-hairline p-0">
         {headings.map((h) => (
           <li key={h.id}>
             <a
               href={`#${h.id}`}
-              className={`-ml-px block border-l py-[5px] text-[13.5px] leading-[140%] transition-colors ${
-                h.level === 3 ? "pl-[24px]" : "pl-[14px]"
+              className={`-ml-px block border-l py-[5px] text-ed-13 leading-[140%] transition-colors ${
+                h.level === 3 ? "pl-6" : "pl-3.5"
               } ${
                 active === h.id
-                  ? "border-[#1E84B0] text-[#1E84B0]"
-                  : "border-transparent text-[rgba(38,35,35,0.68)] hover:text-[#262323]"
+                  ? "border-ed-brand-ink text-ed-brand-ink"
+                  : "border-transparent text-ed-ink/68 hover:text-ed-ink"
               }`}
             >
               {h.text}

@@ -15,7 +15,7 @@ function Ticks({ className }: { className?: string }) {
     <div className={`flex h-full w-full flex-col items-end justify-between ${className ?? ""}`}>
       {Array.from({ length: TICKS }).map((_, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length decorative ruler
-        <span key={i} className="h-px w-[14px] rounded-full bg-current" />
+        <span key={i} className="h-px w-3.5 rounded-full bg-current" />
       ))}
     </div>
   );
@@ -34,9 +34,9 @@ export function ReadingProgress({ top = 116 }: { top?: number }) {
         {/* Base ruler (unread) */}
         <Ticks className="text-[#D8D9D6]" />
         {/* Brand overlay clipped to scroll depth; inner copy is full-height so ticks align */}
-        <div className="reading-progress-fill absolute inset-x-0 top-0 overflow-hidden text-[#00B0FF]">
+        <div className="reading-progress-fill absolute inset-x-0 top-0 overflow-hidden text-ed-brand">
           <div style={{ height: railHeight }}>
-            <Ticks className="text-[#00B0FF]" />
+            <Ticks className="text-ed-brand" />
           </div>
         </div>
       </div>

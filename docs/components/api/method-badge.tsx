@@ -1,14 +1,14 @@
 const TONE: Record<string, string> = {
-  GET: "text-[#3F9142] bg-[#E4F8DA] border-[#A8DB91]",
-  POST: "text-[#1E84B0] bg-[#DFF5FF] border-[#A9DAF3]",
-  PATCH: "text-[#9C7136] bg-[#FFF2D8] border-[#E6CFA3]",
-  DELETE: "text-[#B3261E] bg-[#FCE8E6] border-[#F2C0BC]",
+  GET: "text-ed-green-strong bg-ed-green-bg border-ed-green-border",
+  POST: "text-ed-brand-ink bg-ed-blue-bg border-ed-blue-border",
+  PATCH: "text-ed-amber-text bg-ed-amber-fill border-ed-amber-stroke",
+  DELETE: "text-ed-red bg-ed-red-bg border-ed-red-border",
 };
 
 export function MethodBadge({ method, className = "" }: { method: string; className?: string }) {
   return (
     <span
-      className={`inline-flex items-center rounded-[6px] border px-[7px] py-[2px] font-[family-name:var(--font-mono)] text-[11px] font-semibold leading-[14px] tracking-[0.04em] ${
+      className={`inline-flex items-center rounded-md border px-[7px] py-0.5 font-mono text-ed-11 font-semibold leading-3.5 tracking-[0.04em] ${
         TONE[method] || TONE.GET
       } ${className}`}
     >

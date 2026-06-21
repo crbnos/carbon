@@ -24,30 +24,30 @@ export function Glossary() {
   }
 
   return (
-    <div className="my-[28px]">
+    <div className="my-7">
       {[...groups.entries()].map(([letter, items]) => (
-        <section key={letter} className="mb-[28px]">
+        <section key={letter} className="mb-7">
           <h2
             id={`letter-${letter.toLowerCase()}`}
-            className="!mt-0 !mb-[6px] scroll-mt-[88px] !border-0 font-[family-name:var(--font-mono)] !text-[12px] !font-[600] uppercase tracking-[0.08em] !text-[rgba(38,35,35,0.4)]"
+            className="!mt-0 !mb-1.5 scroll-mt-22 !border-0 font-mono !text-ed-12 !font-semibold uppercase tracking-[0.08em] !text-ed-ink/40"
           >
             {letter}
           </h2>
-          <div className="divide-y divide-[#E7E7E3] border-y border-[#E7E7E3]">
+          <div className="divide-y divide-ed-hairline border-y border-ed-hairline">
             {items.map((entry) => (
-              <div key={entry.term} id={termSlug(entry.term)} className="scroll-mt-[88px] py-[15px]">
-                <div className="flex flex-wrap items-baseline justify-between gap-x-[12px] gap-y-[3px]">
-                  <span className="text-[15px] font-[560] text-[#262323]">{entry.term}</span>
+              <div key={entry.term} id={termSlug(entry.term)} className="scroll-mt-22 py-[15px]">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-[3px]">
+                  <span className="text-ed-15 font-semi text-ed-ink">{entry.term}</span>
                   {entry.href && (
                     <Link
                       href={entry.href}
-                      className="shrink-0 text-[12.5px] font-[500] text-[#1E84B0] no-underline hover:text-[#0C6E96]"
+                      className="shrink-0 text-ed-12 font-medium text-ed-brand-ink no-underline hover:text-ed-blue-text"
                     >
                       Learn more <span aria-hidden>→</span>
                     </Link>
                   )}
                 </div>
-                <p className="m-0 mt-[5px] text-[14px] leading-[155%] text-[rgba(38,35,35,0.66)]">
+                <p className="m-0 mt-[5px] text-ed-14 leading-[155%] text-ed-ink/66">
                   {entry.definition}
                 </p>
               </div>

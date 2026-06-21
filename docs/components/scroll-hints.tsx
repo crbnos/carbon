@@ -22,7 +22,7 @@ export function ScrollHints() {
       type="button"
       aria-label="Back to top"
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-      className={`fixed bottom-[22px] right-[22px] z-[60] flex h-[40px] w-[40px] items-center justify-center rounded-full border border-[#E7E7E3] bg-[rgba(251,251,248,0.92)] text-[rgba(38,35,35,0.55)] shadow-[0_6px_18px_-6px_rgba(0,0,0,0.25)] backdrop-blur transition-all duration-200 hover:-translate-y-px hover:border-[#D2D2CC] hover:text-[#262323] ${
+      className={`fixed bottom-[22px] right-[22px] z-[60] flex h-10 w-10 items-center justify-center rounded-full border border-ed-hairline bg-ed-paper/92 text-ed-ink/55 shadow-[0_6px_18px_-6px_rgba(0,0,0,0.25)] backdrop-blur transition-all duration-200 hover:-translate-y-px hover:border-ed-warm-500 hover:text-ed-ink ${
         scrolled ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-2 opacity-0"
       }`}
     >

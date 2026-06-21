@@ -6,10 +6,10 @@ import { useEffect, useRef, useState } from "react";
 import type { NavModule } from "@/lib/api-data";
 
 const METHOD_COLOR: Record<string, string> = {
-  GET: "text-[#3F9142]",
-  POST: "text-[#1E84B0]",
-  PATCH: "text-[#9C7136]",
-  DELETE: "text-[#B3261E]",
+  GET: "text-ed-green-strong",
+  POST: "text-ed-brand-ink",
+  PATCH: "text-ed-amber-text",
+  DELETE: "text-ed-red",
 };
 const METHOD_ABBR: Record<string, string> = {
   GET: "GET",
@@ -24,11 +24,11 @@ const REST_API = [
   { label: "Authentication", href: "/api-reference/authentication" },
 ];
 
-const GS_ACTIVE = "bg-[rgba(0,176,255,0.10)] font-[530] text-[#1E84B0]";
-const GS_IDLE = "text-[rgba(38,35,35,0.8)] hover:bg-[rgba(231,231,227,0.55)] hover:text-[#262323]";
+const GS_ACTIVE = "bg-ed-brand/10 font-demi text-ed-brand-ink";
+const GS_IDLE = "text-ed-ink/80 hover:bg-ed-hairline/55 hover:text-ed-ink";
 const SECTION_LABEL =
-  "m-0 mb-[3px] px-[8px] py-[6px] font-[family-name:var(--font-mono)] text-[12.5px] font-[600] uppercase tracking-[0.06em] text-[rgba(38,35,35,0.6)]";
-const GS_LINK = "block rounded-[6px] px-[8px] py-[3.5px] text-[14.5px] leading-[135%] transition-colors";
+  "m-0 mb-[3px] px-2 py-1.5 font-mono text-ed-12 font-semibold uppercase tracking-[0.06em] text-ed-ink/60";
+const GS_LINK = "block rounded-md px-2 py-[3.5px] text-ed-14 leading-[135%] transition-colors";
 
 function Chevron({ open }: { open: boolean }) {
   return (
@@ -82,8 +82,8 @@ export function ApiNav({ tree }: { tree: NavModule[] }) {
 
   return (
     <div>
-      <nav className="flex flex-col gap-[2px]">
-        <div className="mb-[10px]">
+      <nav className="flex flex-col gap-0.5">
+        <div className="mb-2.5">
           <p className={SECTION_LABEL}>REST API</p>
           {REST_API.map((item) => (
             <Link
@@ -111,21 +111,21 @@ export function ApiNav({ tree }: { tree: NavModule[] }) {
                     return next;
                   })
                 }
-                className="flex w-full items-center justify-between gap-[8px] rounded-[7px] px-[8px] py-[5px] transition-colors hover:bg-[rgba(231,231,227,0.5)]"
+                className="flex w-full items-center justify-between gap-2 rounded-[7px] px-2 py-[5px] transition-colors hover:bg-ed-hairline/50"
               >
                 <span className="flex items-center gap-[7px]">
                   <Chevron open={isOpen} />
-                  <span className="font-[family-name:var(--font-mono)] text-[12.5px] font-[600] uppercase tracking-[0.06em] text-[rgba(38,35,35,0.6)]">
+                  <span className="font-mono text-ed-12 font-semibold uppercase tracking-[0.06em] text-ed-ink/60">
                     {m.name}
                   </span>
                 </span>
-                <span className="font-[family-name:var(--font-mono)] text-[12px] tabular-nums text-[rgba(38,35,35,0.42)]">
+                <span className="font-mono text-ed-12 tabular-nums text-ed-ink/42">
                   {m.resources.length}
                 </span>
               </button>
 
               {isOpen && (
-                <ul className="mt-[2px] mb-[6px] ml-[13px] list-none border-l border-[#ECECE7] py-[2px] pl-[8px]">
+                <ul className="mt-0.5 mb-1.5 ml-[13px] list-none border-l border-ed-warm-150 py-0.5 pl-2">
                   {m.resources.map((r) => {
                     const isActive = activeModule === m.slug && activeResource === r.slug;
                     const href = `/api-reference/${m.slug}/${r.slug}`;
@@ -135,7 +135,7 @@ export function ApiNav({ tree }: { tree: NavModule[] }) {
                           ref={isActive ? activeRef : undefined}
                           href={href}
                           title={`${r.name} · ${r.kind}`}
-                          className={`flex items-center gap-[7px] rounded-[6px] px-[8px] py-[3.5px] text-[14.5px] leading-[135%] transition-colors ${
+                          className={`flex items-center gap-[7px] rounded-md px-2 py-[3.5px] text-ed-14 leading-[135%] transition-colors ${
                             isActive ? GS_ACTIVE : GS_IDLE
                           }`}
                         >
@@ -143,15 +143,15 @@ export function ApiNav({ tree }: { tree: NavModule[] }) {
                           <span className="truncate">{r.name}</span>
                         </Link>
                         {isActive && r.endpoints.length > 0 && (
-                          <ul className="m-0 mt-[2px] mb-[6px] list-none p-0">
+                          <ul className="m-0 mt-0.5 mb-1.5 list-none p-0">
                             {r.endpoints.map((e) => (
                               <li key={e.id}>
                                 <a
                                   href={`${href}#${e.id}`}
-                                  className="flex items-center gap-[9px] rounded-[6px] py-[3px] pr-[8px] pl-[12px] text-[13px] text-[rgba(38,35,35,0.66)] transition-colors hover:text-[#262323]"
+                                  className="flex items-center gap-[9px] rounded-md py-[3px] pr-2 pl-3 text-ed-13 text-ed-ink/66 transition-colors hover:text-ed-ink"
                                 >
                                   <span
-                                    className={`w-[30px] shrink-0 font-[family-name:var(--font-mono)] text-[10px] font-semibold tracking-[0.03em] ${
+                                    className={`w-[30px] shrink-0 font-mono text-ed-10 font-semibold tracking-[0.03em] ${
                                       METHOD_COLOR[e.method] || ""
                                     }`}
                                   >

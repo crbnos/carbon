@@ -42,11 +42,11 @@ export function FieldTable({
     isValidElement(c),
   );
   return (
-    <div className="my-[24px] overflow-hidden rounded-[12px] border border-ed-hairline bg-ed-paper">
-      <div className="flex items-center gap-[12px] border-b border-ed-hairline bg-ed-header px-[16px] py-[9px] font-[family-name:var(--font-mono)] text-[10.5px] font-[600] uppercase tracking-[0.07em] text-ed-ink-45">
+    <div className="my-6 overflow-hidden rounded-xl border border-ed-hairline bg-ed-paper">
+      <div className="flex items-center gap-3 border-b border-ed-hairline bg-ed-header px-4 py-[9px] font-mono text-ed-10 font-semibold uppercase tracking-[0.07em] text-ed-ink-45">
         <span>Field</span>
         <span className="ml-auto">Type</span>
-        <span className="w-[14px]" />
+        <span className="w-3.5" />
       </div>
       <div className="divide-y divide-ed-hairline">
         {rows.map((row, i) =>
@@ -72,30 +72,30 @@ export function Field({ name, type, required, defaultOpen = false, children }: F
         aria-expanded={open}
         aria-controls={hasBody ? panelId : undefined}
         onClick={() => hasBody && setOpen((o) => !o)}
-        className={`flex w-full items-center gap-[12px] px-[16px] py-[11px] text-left hover:bg-ed-row-hover ${
+        className={`flex w-full items-center gap-3 px-4 py-[11px] text-left hover:bg-ed-row-hover ${
           hasBody ? "cursor-pointer" : "cursor-default"
         }`}
       >
-        <span className="text-[14px] font-[550] tracking-[0.1px] text-ed-ink">{name}</span>
+        <span className="text-ed-14 font-semi tracking-[0.1px] text-ed-ink">{name}</span>
         {required && (
-          <span className="inline-flex items-center rounded-[5px] border border-ed-amber-stroke bg-ed-amber-fill px-[6px] py-[1px] text-[10px] font-medium tracking-[0.02em] text-ed-amber-text">
+          <span className="inline-flex items-center rounded-[5px] border border-ed-amber-stroke bg-ed-amber-fill px-1.5 py-px text-ed-10 font-medium tracking-[0.02em] text-ed-amber-text">
             required
           </span>
         )}
-        <span className="ml-auto font-[family-name:var(--font-mono)] text-[12.5px] text-ed-ink-45 whitespace-nowrap">
+        <span className="ml-auto font-mono text-ed-12 text-ed-ink-45 whitespace-nowrap">
           {type}
         </span>
         {hasBody ? (
           <span
             aria-hidden="true"
-            className={`w-[14px] text-center text-[18px] leading-none text-ed-brand-ink transition-transform duration-200 motion-reduce:transition-none ${
+            className={`w-3.5 text-center text-ed-18 leading-none text-ed-brand-ink transition-transform duration-200 motion-reduce:transition-none ${
               open ? "rotate-45" : ""
             }`}
           >
             +
           </span>
         ) : (
-          <span className="w-[14px]" />
+          <span className="w-3.5" />
         )}
       </button>
       {hasBody && (
@@ -108,7 +108,7 @@ export function Field({ name, type, required, defaultOpen = false, children }: F
             <div
               id={panelId}
               role="region"
-              className="border-t border-ed-hairline bg-ed-inset px-[16px] py-[12px] text-[13.5px] leading-[160%] text-ed-ink-66 [&>p]:m-0 [&>p]:text-[13.5px] [&>p]:leading-[160%] [&>p]:text-ed-ink-66 [&>p+p]:mt-[8px]"
+              className="border-t border-ed-hairline bg-ed-inset px-4 py-3 text-ed-13 leading-[160%] text-ed-ink-66 [&>p]:m-0 [&>p]:text-ed-13 [&>p]:leading-[160%] [&>p]:text-ed-ink-66 [&>p+p]:mt-2"
             >
               {children}
             </div>

@@ -79,19 +79,19 @@ function ModeCard({
     <button
       type="button"
       onClick={onClick}
-      className={`relative flex flex-col items-start gap-[2px] rounded-[10px] border px-[12px] py-[10px] text-left transition-colors ${
+      className={`relative flex flex-col items-start gap-0.5 rounded-[10px] border px-3 py-2.5 text-left transition-colors ${
         active
-          ? "border-[#00B0FF] bg-[rgba(0,176,255,0.07)]"
-          : "border-[#E3E3DF] bg-white hover:border-[#CFCFC9]"
+          ? "border-ed-brand bg-ed-brand/7"
+          : "border-ed-warm-300 bg-white hover:border-ed-warm-500"
       }`}
     >
-      <span className={`text-[13.5px] font-[560] ${active ? "text-[#1E84B0]" : "text-[#262323]"}`}>
+      <span className={`text-ed-13 font-semi ${active ? "text-ed-brand-ink" : "text-ed-ink"}`}>
         {title}
       </span>
-      <span className="font-[family-name:var(--font-mono)] text-[11.5px] text-[rgba(38,35,35,0.5)]">
+      <span className="font-mono text-ed-11 text-ed-ink/50">
         {sub}
       </span>
-      {active && <Check className="absolute right-[10px] top-[10px] text-[#1E84B0]" />}
+      {active && <Check className="absolute right-2.5 top-2.5 text-ed-brand-ink" />}
     </button>
   );
 }
@@ -145,22 +145,22 @@ export function Configurator() {
       <Dialog.Trigger asChild>
         <button
           type="button"
-          className="group mb-[14px] flex w-full items-center gap-[8px] rounded-[8px] border border-[#E3E3DF] bg-white px-[10px] py-[8px] text-left text-[rgba(38,35,35,0.58)] transition-colors hover:border-[#CFCFC9] data-[state=open]:border-[#CFCFC9]"
+          className="group mb-3.5 flex w-full items-center gap-2 rounded-lg border border-ed-warm-300 bg-white px-2.5 py-2 text-left text-ed-ink/58 transition-colors hover:border-ed-warm-500 data-[state=open]:border-ed-warm-500"
         >
           <ServerIcon />
-          <span className="min-w-0 flex-1 truncate font-[family-name:var(--font-mono)] text-[13px] text-[#262323]">
+          <span className="min-w-0 flex-1 truncate font-mono text-ed-13 text-ed-ink">
             {host}
           </span>
           {apiKey && (
             <span
               title="API key set"
-              className="inline-flex items-center gap-[3px] rounded-[5px] bg-[rgba(79,145,64,0.12)] px-[5px] py-[2px] text-[#4F9140]"
+              className="inline-flex items-center gap-[3px] rounded-[5px] bg-ed-green-text/12 px-[5px] py-0.5 text-ed-green-text"
             >
               <KeyIcon />
             </span>
           )}
           <svg
-            className="shrink-0 text-[rgba(38,35,35,0.48)] transition-transform group-data-[state=open]:rotate-180"
+            className="shrink-0 text-ed-ink/48 transition-transform group-data-[state=open]:rotate-180"
             width="11"
             height="11"
             viewBox="0 0 12 12"
@@ -172,19 +172,19 @@ export function Configurator() {
       </Dialog.Trigger>
 
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[100] bg-[rgba(38,35,35,0.32)] backdrop-blur-[2px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-        <Dialog.Content className="fixed left-1/2 top-[50%] z-[101] flex w-[calc(100vw-32px)] max-w-[440px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[14px] border border-[#E3E3DF] bg-[#FBFBF8] shadow-[0_24px_60px_-12px_rgba(38,35,35,0.28)] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95">
+        <Dialog.Overlay className="fixed inset-0 z-[100] bg-ed-ink/32 backdrop-blur-[2px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+        <Dialog.Content className="fixed left-1/2 top-[50%] z-[101] flex w-[calc(100vw-32px)] max-w-110 -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-[14px] border border-ed-warm-300 bg-ed-paper shadow-[0_24px_60px_-12px_rgba(38,35,35,0.28)] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95">
           {/* Header */}
-          <div className="flex items-start justify-between gap-[12px] border-b border-[#EAEAE6] px-[20px] py-[16px]">
+          <div className="flex items-start justify-between gap-3 border-b border-ed-warm-150 px-5 py-4">
             <div>
-              <Dialog.Title className="m-0 text-[16px] font-[560] text-ink">API configuration</Dialog.Title>
-              <Dialog.Description className="m-0 mt-[3px] text-[13px] leading-[150%] text-[rgba(38,35,35,0.6)]">
+              <Dialog.Title className="m-0 text-ed-16 font-semi text-ink">API configuration</Dialog.Title>
+              <Dialog.Description className="m-0 mt-[3px] text-ed-13 leading-normal text-ed-ink/60">
                 Tune the base URL and key used across the code samples.
               </Dialog.Description>
             </div>
             <Dialog.Close
               aria-label="Close"
-              className="-mr-[4px] -mt-[2px] shrink-0 rounded-[7px] p-[5px] text-[rgba(38,35,35,0.5)] transition-colors hover:bg-[rgba(231,231,227,0.7)] hover:text-[#262323]"
+              className="-mr-[4px] -mt-[2px] shrink-0 rounded-[7px] p-[5px] text-ed-ink/50 transition-colors hover:bg-ed-hairline/70 hover:text-ed-ink"
             >
               <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden>
                 <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
@@ -193,17 +193,17 @@ export function Configurator() {
           </div>
 
           {/* Body */}
-          <div className="flex flex-col gap-[18px] px-[20px] py-[18px]">
+          <div className="flex flex-col gap-[18px] px-5 py-[18px]">
             <section>
-              <p className="m-0 mb-[8px] font-[family-name:var(--font-mono)] text-[11px] font-[600] uppercase tracking-[0.07em] text-[rgba(38,35,35,0.5)]">
+              <p className="m-0 mb-2 font-mono text-ed-11 font-semibold uppercase tracking-[0.07em] text-ed-ink/50">
                 Environment
               </p>
-              <div className="grid grid-cols-2 gap-[8px]">
+              <div className="grid grid-cols-2 gap-2">
                 <ModeCard active={mode === "cloud"} onClick={() => setMode("cloud")} title="Carbon Cloud" sub="rest.carbon.ms" />
                 <ModeCard active={mode === "self"} onClick={() => setMode("self")} title="Self-hosted" sub="Your instance" />
               </div>
               {mode === "self" && (
-                <div className="mt-[8px]">
+                <div className="mt-2">
                   <input
                     value={url}
                     autoFocus
@@ -216,19 +216,19 @@ export function Configurator() {
                     }}
                     placeholder="https://api.your-domain.com"
                     aria-invalid={!!urlError}
-                    className={`w-full rounded-[8px] border bg-white px-[11px] py-[9px] font-[family-name:var(--font-mono)] text-[12.5px] text-[#262323] outline-none placeholder:text-[rgba(38,35,35,0.42)] ${
-                      urlError ? "border-[#E5484D] focus:border-[#E5484D]" : "border-[#E3E3DF] focus:border-[#00B0FF]"
+                    className={`w-full rounded-lg border bg-white px-[11px] py-[9px] font-mono text-ed-12 text-ed-ink outline-none placeholder:text-ed-ink/42 ${
+                      urlError ? "border-ed-red-bright focus:border-ed-red-bright" : "border-ed-warm-300 focus:border-ed-brand"
                     }`}
                   />
                   {urlError && (
-                    <p className="mt-[5px] text-[11.5px] leading-[1.3] text-[#E5484D]">{urlError}</p>
+                    <p className="mt-[5px] text-ed-11 leading-[1.3] text-ed-red-bright">{urlError}</p>
                   )}
                 </div>
               )}
             </section>
 
             <section>
-              <p className="m-0 mb-[8px] font-[family-name:var(--font-mono)] text-[11px] font-[600] uppercase tracking-[0.07em] text-[rgba(38,35,35,0.5)]">
+              <p className="m-0 mb-2 font-mono text-ed-11 font-semibold uppercase tracking-[0.07em] text-ed-ink/50">
                 API key
               </p>
               <div className="relative">
@@ -242,26 +242,26 @@ export function Configurator() {
                   placeholder="crbn_…"
                   autoComplete="off"
                   spellCheck={false}
-                  className="w-full rounded-[8px] border border-[#E3E3DF] bg-white py-[9px] pl-[11px] pr-[38px] font-[family-name:var(--font-mono)] text-[12.5px] text-[#262323] outline-none transition-colors placeholder:text-[rgba(38,35,35,0.42)] focus:border-[#00B0FF]"
+                  className="w-full rounded-lg border border-ed-warm-300 bg-white py-[9px] pl-[11px] pr-[38px] font-mono text-ed-12 text-ed-ink outline-none transition-colors placeholder:text-ed-ink/42 focus:border-ed-brand"
                 />
                 {key && (
                   <button
                     type="button"
                     aria-label={showKey ? "Hide key" : "Show key"}
                     onClick={() => setShowKey((s) => !s)}
-                    className="absolute right-[6px] top-1/2 -translate-y-1/2 rounded-[6px] p-[5px] text-[rgba(38,35,35,0.5)] transition-colors hover:bg-[rgba(231,231,227,0.7)] hover:text-[#262323]"
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-md p-[5px] text-ed-ink/50 transition-colors hover:bg-ed-hairline/70 hover:text-ed-ink"
                   >
                     <EyeIcon off={showKey} />
                   </button>
                 )}
               </div>
-              <p className="m-0 mt-[7px] text-[12px] leading-[150%] text-[rgba(38,35,35,0.55)]">
+              <p className="m-0 mt-[7px] text-ed-12 leading-normal text-ed-ink/55">
                 Stored in this browser only and dropped into the samples. Never sent to Carbon.{" "}
                 <a
                   href="https://app.carbon.ms/x/settings/api-keys"
                   target="_blank"
                   rel="noreferrer"
-                  className="text-[#1E84B0] no-underline hover:underline"
+                  className="text-ed-brand-ink no-underline hover:underline"
                 >
                   Create a key ↗
                 </a>
@@ -270,22 +270,22 @@ export function Configurator() {
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between gap-[10px] border-t border-[#EAEAE6] px-[20px] py-[14px]">
+          <div className="flex items-center justify-between gap-2.5 border-t border-ed-warm-150 px-5 py-3.5">
             <button
               type="button"
               onClick={reset}
-              className="rounded-[8px] px-[10px] py-[8px] text-[13px] font-[460] text-[rgba(38,35,35,0.6)] transition-colors hover:bg-[rgba(231,231,227,0.7)] hover:text-[#262323]"
+              className="rounded-lg px-2.5 py-2 text-ed-13 font-book text-ed-ink/60 transition-colors hover:bg-ed-hairline/70 hover:text-ed-ink"
             >
               Reset to defaults
             </button>
             <button
               type="button"
               onClick={save}
-              className="group relative inline-flex h-[38px] items-center justify-center rounded-[8px] px-[18px]"
+              className="group relative inline-flex h-[38px] items-center justify-center rounded-lg px-[18px]"
             >
-              <span aria-hidden className="pointer-events-none absolute inset-0 rounded-[8px] cta-btn-dark" />
-              <span aria-hidden className="pointer-events-none absolute inset-0 rounded-[8px] btn-dark-hover opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100" />
-              <span className="text-on-dark relative z-10 text-[13.5px] font-[460] tracking-[0.15px]">Save</span>
+              <span aria-hidden className="pointer-events-none absolute inset-0 rounded-lg cta-btn-dark" />
+              <span aria-hidden className="pointer-events-none absolute inset-0 rounded-lg btn-dark-hover opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100" />
+              <span className="text-on-dark relative z-10 text-ed-13 font-book tracking-[0.15px]">Save</span>
             </button>
           </div>
         </Dialog.Content>

@@ -42,7 +42,7 @@ function HamburgerIcon({ open }: { open: boolean }) {
     <span className="relative block h-[15px] w-[18px]" aria-hidden="true">
       <span
         className={`absolute left-0 h-[1.6px] w-full rounded-full bg-current transition-all duration-300 ease-out ${
-          open ? "top-1/2 -translate-y-1/2 rotate-45" : "top-[2px]"
+          open ? "top-1/2 -translate-y-1/2 rotate-45" : "top-0.5"
         }`}
       />
       <span
@@ -52,7 +52,7 @@ function HamburgerIcon({ open }: { open: boolean }) {
       />
       <span
         className={`absolute left-0 h-[1.6px] w-full rounded-full bg-current transition-all duration-300 ease-out ${
-          open ? "top-1/2 -translate-y-1/2 -rotate-45" : "bottom-[2px]"
+          open ? "top-1/2 -translate-y-1/2 -rotate-45" : "bottom-0.5"
         }`}
       />
     </span>
@@ -105,7 +105,7 @@ export function MobileNav({ active, children }: { active?: Active; children?: Re
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "Close menu" : "Open menu"}
         aria-expanded={open}
-        className="inline-flex h-[40px] w-[40px] items-center justify-center rounded-[8px] border border-[rgba(32,32,32,0.1)] bg-[#F5F5F2] text-ink-ui shadow-[0_1px_2px_0_rgba(0,0,0,0.04)] transition-colors hover:bg-[rgba(231,231,227,0.6)] lg:hidden"
+        className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-ed-ink/10 bg-ed-warm-100 text-ink-ui shadow-[0_1px_2px_0_rgba(0,0,0,0.04)] transition-colors hover:bg-ed-hairline/60 lg:hidden"
       >
         <HamburgerIcon open={open} />
       </button>
@@ -137,25 +137,25 @@ export function MobileNav({ active, children }: { active?: Active; children?: Re
           role="dialog"
           aria-modal="true"
           aria-label="Navigation"
-          className={`absolute bottom-0 left-0 top-[64px] flex w-[min(86vw,340px)] flex-col overflow-y-auto overscroll-contain border-r border-[#E7E7E3] bg-[#FBFBF9] shadow-[8px_0_40px_-12px_rgba(38,35,35,0.28)] transition-transform duration-300 ease-out scrollbar-hidden-until-scroll ${
+          className={`absolute bottom-0 left-0 top-16 flex w-[min(86vw,340px)] flex-col overflow-y-auto overscroll-contain border-r border-ed-hairline bg-ed-paper shadow-[8px_0_40px_-12px_rgba(38,35,35,0.28)] transition-transform duration-300 ease-out scrollbar-hidden-until-scroll ${
             open ? "translate-x-0" : "-translate-x-full"
           }`}
         >
-          <div className="flex flex-1 flex-col px-[20px] pb-[24px] pt-[22px]">
+          <div className="flex flex-1 flex-col px-5 pb-6 pt-[22px]">
             {/* Site-level nav */}
-            <p className="mb-[8px] px-[4px] font-[family-name:var(--font-mono)] text-[11.5px] font-[600] uppercase tracking-[0.08em] text-[rgba(38,35,35,0.5)]">
+            <p className="mb-2 px-1 font-mono text-ed-11 font-semibold uppercase tracking-[0.08em] text-ed-ink/50">
               Browse
             </p>
-            <nav className="flex flex-col gap-[2px]">
+            <nav className="flex flex-col gap-0.5">
               {NAV.map((item) => (
                 <Link
                   key={item.key}
                   href={item.href}
                   aria-current={active === item.key ? "page" : undefined}
-                  className={`rounded-[8px] px-[12px] py-[10px] text-[16px] leading-[140%] tracking-[0.15px] no-underline transition-colors ${
+                  className={`rounded-lg px-3 py-2.5 text-ed-16 leading-[140%] tracking-[0.15px] no-underline transition-colors ${
                     active === item.key
-                      ? "bg-[rgba(0,176,255,0.10)] font-[530] text-[#1E84B0]"
-                      : "font-[460] text-ink-ui hover:bg-[rgba(231,231,227,0.55)]"
+                      ? "bg-ed-brand/10 font-demi text-ed-brand-ink"
+                      : "font-book text-ink-ui hover:bg-ed-hairline/55"
                   }`}
                 >
                   {item.label}
@@ -166,17 +166,17 @@ export function MobileNav({ active, children }: { active?: Active; children?: Re
             {/* Section tree for the current surface, if any */}
             {children ? (
               <CloseCtx.Provider value={close}>
-                <div className="mt-[22px] border-t border-[#E7E7E3] pt-[22px]">{children}</div>
+                <div className="mt-[22px] border-t border-ed-hairline pt-[22px]">{children}</div>
               </CloseCtx.Provider>
             ) : null}
 
             {/* CTA pinned to the bottom of the panel */}
             <a
               href="https://app.carbon.ms"
-              className="group relative mt-[26px] inline-flex h-[44px] items-center justify-center rounded-[8px] no-underline"
+              className="group relative mt-[26px] inline-flex h-11 items-center justify-center rounded-lg no-underline"
             >
-              <span aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-[8px] cta-btn-dark" />
-              <span className="text-on-dark relative z-10 text-[15px] font-[460] tracking-[0.15px]">
+              <span aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-lg cta-btn-dark" />
+              <span className="text-on-dark relative z-10 text-ed-15 font-book tracking-[0.15px]">
                 Open Carbon
               </span>
             </a>

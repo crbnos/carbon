@@ -6,9 +6,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { ToolNavModule } from "@/lib/tools-data";
 
 const CLASS_DOT: Record<string, string> = {
-  READ: "bg-[#3F9142]",
-  WRITE: "bg-[#1E84B0]",
-  DESTRUCTIVE: "bg-[#B3261E]",
+  READ: "bg-ed-green-strong",
+  WRITE: "bg-ed-brand-ink",
+  DESTRUCTIVE: "bg-ed-red",
 };
 
 const MCP_LINKS = [
@@ -17,11 +17,11 @@ const MCP_LINKS = [
   { label: "Tools", href: "/mcp/tools" },
 ];
 
-const GS_ACTIVE = "bg-[rgba(0,176,255,0.10)] font-[530] text-[#1E84B0]";
-const GS_IDLE = "text-[rgba(38,35,35,0.8)] hover:bg-[rgba(231,231,227,0.55)] hover:text-[#262323]";
+const GS_ACTIVE = "bg-ed-brand/10 font-demi text-ed-brand-ink";
+const GS_IDLE = "text-ed-ink/80 hover:bg-ed-hairline/55 hover:text-ed-ink";
 const SECTION_LABEL =
-  "m-0 mb-[3px] px-[8px] py-[6px] font-[family-name:var(--font-mono)] text-[12.5px] font-[600] uppercase tracking-[0.06em] text-[rgba(38,35,35,0.6)]";
-const GS_LINK = "block rounded-[6px] px-[8px] py-[3.5px] text-[14.5px] leading-[135%] transition-colors";
+  "m-0 mb-[3px] px-2 py-1.5 font-mono text-ed-12 font-semibold uppercase tracking-[0.06em] text-ed-ink/60";
+const GS_LINK = "block rounded-md px-2 py-[3.5px] text-ed-14 leading-[135%] transition-colors";
 
 function Chevron({ open }: { open: boolean }) {
   return (
@@ -46,7 +46,7 @@ function toolLabel(name: string, moduleSlug: string): string {
 function ClassDot({ c }: { c: string }) {
   return (
     <span
-      className={`h-[6px] w-[6px] shrink-0 rounded-full ${CLASS_DOT[c] || "bg-[rgba(38,35,35,0.4)]"}`}
+      className={`h-1.5 w-1.5 shrink-0 rounded-full ${CLASS_DOT[c] || "bg-ed-ink/40"}`}
       aria-label={c}
     />
   );
@@ -75,8 +75,8 @@ export function McpNav({ tools }: { tools: ToolNavModule[] }) {
 
   return (
     <div>
-      <nav className="flex flex-col gap-[2px]">
-        <div className="mb-[10px]">
+      <nav className="flex flex-col gap-0.5">
+        <div className="mb-2.5">
           <p className={SECTION_LABEL}>Getting Started</p>
           {MCP_LINKS.map((item) => (
             <Link
@@ -104,21 +104,21 @@ export function McpNav({ tools }: { tools: ToolNavModule[] }) {
                     return next;
                   })
                 }
-                className="flex w-full items-center justify-between gap-[8px] rounded-[7px] px-[8px] py-[5px] transition-colors hover:bg-[rgba(231,231,227,0.5)]"
+                className="flex w-full items-center justify-between gap-2 rounded-[7px] px-2 py-[5px] transition-colors hover:bg-ed-hairline/50"
               >
                 <span className="flex items-center gap-[7px]">
                   <Chevron open={isOpen} />
-                  <span className="font-[family-name:var(--font-mono)] text-[12.5px] font-[600] uppercase tracking-[0.06em] text-[rgba(38,35,35,0.6)]">
+                  <span className="font-mono text-ed-12 font-semibold uppercase tracking-[0.06em] text-ed-ink/60">
                     {m.name}
                   </span>
                 </span>
-                <span className="font-[family-name:var(--font-mono)] text-[12px] tabular-nums text-[rgba(38,35,35,0.42)]">
+                <span className="font-mono text-ed-12 tabular-nums text-ed-ink/42">
                   {m.tools.length}
                 </span>
               </button>
 
               {isOpen && (
-                <ul className="mt-[2px] mb-[6px] ml-[13px] list-none border-l border-[#ECECE7] py-[2px] pl-[8px]">
+                <ul className="mt-0.5 mb-1.5 ml-[13px] list-none border-l border-ed-warm-150 py-0.5 pl-2">
                   {m.tools.map((t) => {
                     const isActive = activeTool === t.slug;
                     return (
@@ -127,12 +127,12 @@ export function McpNav({ tools }: { tools: ToolNavModule[] }) {
                           ref={isActive ? activeRef : undefined}
                           href={`/mcp/tools/${t.slug}`}
                           title={`${t.name} · ${t.classification}`}
-                          className={`flex items-center gap-[8px] rounded-[6px] px-[8px] py-[3.5px] leading-[135%] transition-colors ${
+                          className={`flex items-center gap-2 rounded-md px-2 py-[3.5px] leading-[135%] transition-colors ${
                             isActive ? GS_ACTIVE : GS_IDLE
                           }`}
                         >
                           <ClassDot c={t.classification} />
-                          <span className="truncate font-[family-name:var(--font-mono)] text-[13px]">
+                          <span className="truncate font-mono text-ed-13">
                             {toolLabel(t.name, m.slug)}
                           </span>
                         </Link>

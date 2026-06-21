@@ -22,16 +22,16 @@ function ImageGlyph() {
 }
 
 const badgeToneClasses: Record<string, string> = {
-  neutral: "border-[#DADAD5] bg-[#EFEFEB] text-[rgba(38,35,35,0.72)]",
-  blue: "border-[#A9DAF3] bg-[#DFF5FF] text-[#2A6A8A]",
-  green: "border-[#A8DB91] bg-[#E4F8DA] text-[#3F7A33]",
-  amber: "border-[#E6CFA3] bg-[#FFF2D8] text-[#835F20]",
+  neutral: "border-ed-warm-400 bg-ed-warm-150 text-ed-ink/72",
+  blue: "border-ed-blue-border bg-ed-blue-bg text-[#2A6A8A]",
+  green: "border-ed-green-border bg-ed-green-bg text-[#3F7A33]",
+  amber: "border-ed-amber-stroke bg-ed-amber-fill text-[#835F20]",
 };
 
 function Badge({ children, tone = "neutral" }: { children: ReactNode; tone?: string }) {
   return (
     <span
-      className={`inline-flex items-center rounded-[100px] border px-[10px] py-[4px] font-[family-name:var(--font-mono)] text-[11.5px] leading-[14px] tracking-[0.03em] ${badgeToneClasses[tone] || badgeToneClasses.neutral}`}
+      className={`inline-flex items-center rounded-full border px-2.5 py-1 font-mono text-ed-11 leading-3.5 tracking-[0.03em] ${badgeToneClasses[tone] || badgeToneClasses.neutral}`}
     >
       {children}
     </span>
@@ -41,14 +41,14 @@ function Badge({ children, tone = "neutral" }: { children: ReactNode; tone?: str
 export function Figure({ illustration, caption }: { illustration: IllustrationKey; caption?: string }) {
   const Illustration = illustrations[illustration];
   return (
-    <figure className="my-[40px]">
+    <figure className="my-10">
       <Zoomable>
-        <div className="rounded-[12px] border border-[#E7E7E3] bg-[#FBFBF8] px-[24px] py-[28px] shadow-[inset_0_1px_0_#fff]">
+        <div className="rounded-xl border border-ed-hairline bg-ed-paper px-6 py-7 shadow-[inset_0_1px_0_#fff]">
           {Illustration ? <Illustration /> : null}
         </div>
       </Zoomable>
       {caption && (
-        <figcaption className="mt-[12px] text-center text-[12px] text-ink-faint">{caption}</figcaption>
+        <figcaption className="mt-3 text-center text-ed-12 text-ink-faint">{caption}</figcaption>
       )}
     </figure>
   );
@@ -66,22 +66,22 @@ export function Screenshot({
   const aspect =
     ratio === "tall" ? "aspect-[3/4]" : ratio === "square" ? "aspect-square" : "aspect-[16/9]";
   return (
-    <figure className="my-[40px]">
+    <figure className="my-10">
       <Zoomable>
         <div
-          className={`relative w-full ${aspect} rounded-[12px] border border-dashed border-[#CCCBC4] bg-[#F1F1EC] overflow-hidden`}
+          className={`relative w-full ${aspect} rounded-xl border border-dashed border-ed-warm-500 bg-ed-header overflow-hidden`}
         >
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-[10px] px-6 text-center">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 px-6 text-center">
             <ImageGlyph />
-            <span className="font-[family-name:var(--font-mono)] text-[10px] tracking-[0.08em] uppercase text-[rgba(38,35,35,0.7)]">
+            <span className="font-mono text-ed-10 tracking-[0.08em] uppercase text-ed-ink/70">
               Carbon screenshot
             </span>
-            <span className="text-[14px] font-[500] text-[rgba(38,35,35,0.78)] max-w-[360px]">{label}</span>
+            <span className="text-ed-14 font-medium text-ed-ink/78 max-w-90">{label}</span>
           </div>
         </div>
       </Zoomable>
       {caption && (
-        <figcaption className="mt-[12px] text-center text-[12px] text-ink-faint">{caption}</figcaption>
+        <figcaption className="mt-3 text-center text-ed-12 text-ink-faint">{caption}</figcaption>
       )}
     </figure>
   );
@@ -99,13 +99,13 @@ export function Callout({
   children: ReactNode;
 }) {
   return (
-    <div className="my-[48px] callout-box p-[8px]">
-      <div className="w-full callout-box-inner px-[22px] py-[20px]">
+    <div className="my-12 callout-box p-2">
+      <div className="w-full callout-box-inner px-[22px] py-5">
         <Badge tone={tone}>{badge}</Badge>
-        <p className="m-0 mt-[10px] text-[18px] font-[530] leading-[140%] text-ink">{title}</p>
+        <p className="m-0 mt-2.5 text-ed-18 font-demi leading-[140%] text-ink">{title}</p>
         {/* div, not p: MDX already wraps the callout body in a paragraph, so a <p> here
             would nest <p><p>…</p></p> (invalid → hydration mismatch). */}
-        <div className="m-0 mt-[12px] text-[15px] font-[460] leading-[160%] tracking-[0.15px] text-[rgba(38,35,35,0.70)] [&>p]:m-0">
+        <div className="m-0 mt-3 text-ed-15 font-book leading-[160%] tracking-[0.15px] text-ed-ink/70 [&>p]:m-0">
           {children}
         </div>
       </div>
@@ -114,29 +114,29 @@ export function Callout({
 }
 
 export function Divider() {
-  return <hr className="my-[48px] border-none border-t border-[#E7E7E3]" />;
+  return <hr className="my-12 border-none border-t border-ed-hairline" />;
 }
 
 function Paragraph(props: ComponentPropsWithoutRef<"p">) {
   return (
     <p
       {...props}
-      className="m-0 mt-[20px] text-[0.97rem] font-normal leading-[1.72] tracking-[-0.32px] text-[rgba(38,35,35,0.78)]"
+      className="m-0 mt-5 text-ed-15 font-normal leading-[1.72] tracking-[-0.32px] text-ed-ink/78"
     />
   );
 }
 
 function UnorderedList(props: ComponentPropsWithoutRef<"ul">) {
-  return <ul {...props} className="m-0 mt-[20px] flex flex-col gap-[12px] list-none pl-0" />;
+  return <ul {...props} className="m-0 mt-5 flex flex-col gap-3 list-none pl-0" />;
 }
 
 function ListItem({ children, ...props }: ComponentPropsWithoutRef<"li">) {
   return (
     <li
       {...props}
-      className="flex gap-[12px] items-start text-[0.97rem] font-normal leading-[1.72] tracking-[-0.32px] text-[rgba(38,35,35,0.78)]"
+      className="flex gap-3 items-start text-ed-15 font-normal leading-[1.72] tracking-[-0.32px] text-ed-ink/78"
     >
-      <span className="mt-[8px] shrink-0 w-[8px] h-[8px] rounded-[24px] border-[1.5px] border-[rgba(190,190,190,0.50)] bg-[#F5F5F2] shadow-[0_1px_1px_0_#FFF,inset_0_0_0.357px_1.071px_#FFF,inset_0_0_0.357px_1.071px_rgba(255,255,255,0.35),inset_0_1.429px_0_0_#FFF]" />
+      <span className="mt-2 shrink-0 w-2 h-2 rounded-[24px] border-[1.5px] border-[rgba(190,190,190,0.50)] bg-ed-warm-100 shadow-[0_1px_1px_0_#FFF,inset_0_0_0.357px_1.071px_#FFF,inset_0_0_0.357px_1.071px_rgba(255,255,255,0.35),inset_0_1.429px_0_0_#FFF]" />
       <span className="flex-1">{children}</span>
     </li>
   );
@@ -149,7 +149,7 @@ function HeadingAnchor({ id }: { id: string }) {
     <a
       href={`#${id}`}
       aria-label="Link to this section"
-      className="ml-[12px] inline-flex items-center align-middle text-ink-faint no-underline opacity-0 transition-[opacity,color] duration-150 hover:text-[#1E84B0] group-hover:opacity-100"
+      className="ml-3 inline-flex items-center align-middle text-ink-faint no-underline opacity-0 transition-[opacity,color] duration-150 hover:text-ed-brand-ink group-hover:opacity-100"
     >
       <svg
         viewBox="0 0 24 24"
@@ -175,7 +175,7 @@ function Heading2({ id, children, ...props }: ComponentPropsWithoutRef<"h2">) {
     <h2
       {...props}
       id={id}
-      className="group scroll-mt-[120px] m-0 pt-[50px] text-[32px] md:text-[40px] font-normal leading-[115%] text-ink"
+      className="group scroll-mt-30 m-0 pt-[50px] text-ed-24 font-normal leading-[115%] text-ink"
     >
       {children}
       {id ? <HeadingAnchor id={id} /> : null}
@@ -188,7 +188,7 @@ function Heading3({ id, children, ...props }: ComponentPropsWithoutRef<"h3">) {
     <h3
       {...props}
       id={id}
-      className="group m-0 mt-[48px] scroll-mt-[120px] text-[24px] font-[530] leading-[140%] tracking-[0.24px] text-ink"
+      className="group m-0 mt-12 scroll-mt-30 text-ed-20 font-demi leading-[140%] tracking-[0.24px] text-ink"
     >
       {children}
       {id ? <HeadingAnchor id={id} /> : null}
@@ -197,14 +197,14 @@ function Heading3({ id, children, ...props }: ComponentPropsWithoutRef<"h3">) {
 }
 
 function Heading4(props: ComponentPropsWithoutRef<"h4">) {
-  return <h4 {...props} className="m-0 mt-[32px] text-[15px] font-[530] leading-[140%] tracking-[0.15px] text-ink" />;
+  return <h4 {...props} className="m-0 mt-8 text-ed-16 font-demi leading-[140%] tracking-[0.15px] text-ink" />;
 }
 
 function Blockquote(props: ComponentPropsWithoutRef<"blockquote">) {
   return (
     <blockquote
       {...props}
-      className="m-0 mt-[20px] pl-[16px] border-l-[2px] border-[#D5D5D3] text-[15px] font-[460] leading-[160%] tracking-[0.15px] text-ink-faint italic"
+      className="m-0 mt-5 pl-4 border-l-[2px] border-ed-warm-500 text-ed-15 font-book leading-[160%] tracking-[0.15px] text-ink-faint italic"
     />
   );
 }
@@ -215,7 +215,7 @@ function Anchor(props: ComponentPropsWithoutRef<"a">) {
   return (
     <a
       {...props}
-      className="text-[#17729B] underline decoration-[rgba(23,114,155,0.4)] underline-offset-[3px] transition-colors hover:decoration-[#17729B]"
+      className="text-ed-blue-deep underline decoration-ed-blue-deep/40 underline-offset-[3px] transition-colors hover:decoration-ed-blue-deep"
     />
   );
 }

@@ -68,7 +68,7 @@ export function Check({ children, _index = 0 }: { children: ReactNode; _index?: 
           )}
         </span>
         <span
-          className={`text-[15px] leading-relaxed ${
+          className={`text-ed-15 leading-relaxed ${
             done ? "text-muted-foreground line-through" : "text-foreground"
           }`}
         >

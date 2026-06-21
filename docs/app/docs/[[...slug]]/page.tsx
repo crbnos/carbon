@@ -44,7 +44,7 @@ export default async function Page(props: Params) {
   const MDX = page.data.body;
 
   return (
-    <article className="max-w-[760px]">
+    <article className="max-w-190">
       <Breadcrumb
         items={[
           { label: "Reference", href: page.slugs.length ? "/docs" : undefined },
@@ -53,12 +53,12 @@ export default async function Page(props: Params) {
             : [])
         ]}
       />
-      <div className="mt-[14px] flex flex-wrap items-center gap-x-[14px] gap-y-[8px]">
+      <div className="mt-3.5 flex flex-wrap items-center gap-x-3.5 gap-y-2">
         <h1 className="reference-title m-0">{page.data.title}</h1>
         {page.data.plan && <PlanBadge plan={page.data.plan} />}
       </div>
       {page.data.description && (
-        <p className="reference-desc m-0 mt-[12px]">{page.data.description}</p>
+        <p className="reference-desc m-0 mt-3">{page.data.description}</p>
       )}
       <div className="prose mt-[30px]">
         <MDX

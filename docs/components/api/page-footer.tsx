@@ -37,16 +37,16 @@ function Card({ dir, link }: { dir: "prev" | "next"; link: NavLink }) {
   return (
     <Link
       href={link.url}
-      className={`group flex items-center gap-[10px] rounded-[10px] border border-[#E7E7E3] bg-white px-[14px] py-[11px] no-underline transition-colors hover:border-[#D6D6D0] ${
+      className={`group flex items-center gap-2.5 rounded-[10px] border border-ed-hairline bg-white px-3.5 py-[11px] no-underline transition-colors hover:border-ed-warm-400 ${
         next ? "flex-row-reverse text-right" : ""
       }`}
     >
       <Chevron dir={next ? "right" : "left"} />
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="font-[family-name:var(--font-mono)] text-[10.5px] font-[600] uppercase tracking-[0.07em] text-[rgba(38,35,35,0.45)]">
+        <span className="font-mono text-ed-10 font-semibold uppercase tracking-[0.07em] text-ed-ink/45">
           {next ? "Next" : "Previous"}
         </span>
-        <span className="truncate text-[14px] font-[560] text-[#262323] group-hover:text-[#1E84B0]">
+        <span className="truncate text-ed-14 font-semi text-ed-ink group-hover:text-ed-brand-ink">
           {link.label}
         </span>
       </span>
@@ -65,13 +65,13 @@ export function ContentFooter({
   editPath?: string;
 }) {
   return (
-    <footer className="mt-[56px] border-t border-[#E7E7E3] pt-[24px]">
-      <div className="flex flex-wrap items-center justify-between gap-x-[24px] gap-y-[12px]">
+    <footer className="mt-14 border-t border-ed-hairline pt-6">
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
         <PageFeedback />
         {editPath && <EditOnGitHub path={editPath} />}
       </div>
       {(prev || next) && (
-        <nav className="mt-[22px] grid grid-cols-1 gap-[12px] sm:grid-cols-2">
+        <nav className="mt-[22px] grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>{prev && <Card dir="prev" link={prev} />}</div>
           <div>{next && <Card dir="next" link={next} />}</div>
         </nav>

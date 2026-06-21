@@ -111,6 +111,58 @@
   --color-ed-header: #f1f1ec; /* table header strip */
   --color-ed-inset: #f6f6f1; /* expanded row panel */
   --color-ed-row-hover: rgba(38, 35, 35, 0.025); /* row hover */
+
+  /* Long-tail editorial palette (Tier B). Warm-gray ramp consolidates a dozen
+   * near-identical border/surface grays into 5 stops; status + dark-surface +
+   * link families replace one-off hex literals. Light-only, like the set above. */
+  --color-ed-warm-100: #f5f5f2; /* warm-gray ramp: lightest surface … */
+  --color-ed-warm-150: #ecece7;
+  --color-ed-warm-300: #e3e3df;
+  --color-ed-warm-400: #dadad5;
+  --color-ed-warm-500: #d2d2cc; /* … darkest hairline */
+  --color-ed-text-faint: #c9c9c5; /* faint placeholder text */
+  --color-ed-text-muted: #9a9a96; /* muted secondary text */
+  --color-ed-graphite: #4b4b4a; /* mid-gray text (used with opacity) */
+  --color-ed-dark-bg: #1b1b1a; /* inverted/code surfaces */
+  --color-ed-dark-surface: #262624;
+  --color-ed-dark-line: #2a2a28;
+  --color-ed-dark-line-2: #3a3a38;
+  --color-ed-dark-line-3: #4a4a47;
+  --color-ed-green-bg: #e4f8da; /* success / diff-add */
+  --color-ed-green-border: #a8db91;
+  --color-ed-green-text: #4f9140;
+  --color-ed-green-strong: #3f9142;
+  --color-ed-red-bg: #fce8e6; /* error / diff-del */
+  --color-ed-red-border: #f2c0bc;
+  --color-ed-red: #b3261e;
+  --color-ed-red-bright: #e5484d;
+  --color-ed-blue-bg: #dff5ff; /* info / links (pairs with ed-brand) */
+  --color-ed-blue-bg-strong: #b2e7ff;
+  --color-ed-blue-border: #a9daf3;
+  --color-ed-blue-text: #0c6e96;
+  --color-ed-blue-mid: #3583a8;
+  --color-ed-blue-deep: #17729b;
+  --color-ed-brown: #a76451;
+
+  /* Editorial DM Sans weights between Tailwind's normal(400)/medium(500)/semibold(600). */
+  --font-weight-book: 460;
+  --font-weight-demi: 530;
+  --font-weight-semi: 560;
+
+  /* Editorial size ramp (font-size only, no line-height — pairs with explicit leading-*).
+   * Consolidated from a 0.5px-step sprawl into integer steps; named by px. */
+  --text-ed-10: 0.625rem;
+  --text-ed-11: 0.6875rem;
+  --text-ed-12: 0.75rem;
+  --text-ed-13: 0.8125rem;
+  --text-ed-14: 0.875rem;
+  --text-ed-15: 0.9375rem;
+  --text-ed-16: 1rem;
+  --text-ed-18: 1.125rem;
+  --text-ed-20: 1.25rem;
+  --text-ed-24: 1.5rem;
+  --text-ed-32: 2rem;
+  --text-ed-40: 2.5rem;
 }
 
 /* Map Fumadocs' own theme variables onto Carbon tokens — one palette everywhere */

@@ -12,7 +12,7 @@ function Brand({ path }: { path: string }) {
 
 function Tile({ glyph, tone }: { glyph: ReactNode; tone: string }) {
   return (
-    <span className={`flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[8px] ${tone}`}>
+    <span className={`flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-lg ${tone}`}>
       {glyph}
     </span>
   );
@@ -25,7 +25,7 @@ function Arrow() {
       height="13"
       viewBox="0 0 14 14"
       fill="none"
-      className="transition-transform group-hover:translate-x-[2px]"
+      className="transition-transform group-hover:translate-x-0.5"
     >
       <path
         d="M3 7h8M7.5 3.5L11 7l-3.5 3.5"
@@ -58,7 +58,7 @@ const CARDS = [
   },
   {
     glyph: <Brand path={siSwift.path} />,
-    tone: "bg-[#FCEAE2] text-[#E0431F]",
+    tone: "bg-ed-red-bg text-[#E0431F]",
     name: "Swift",
     desc: "The official supabase-swift SDK for iOS, macOS, and server-side Swift.",
     href: "https://supabase.com/docs/reference/swift/introduction",
@@ -76,19 +76,19 @@ const CARDS = [
 
 export function SdkCards() {
   return (
-    <div className="mt-[18px] grid grid-cols-1 gap-[14px] sm:grid-cols-2">
+    <div className="mt-[18px] grid grid-cols-1 gap-3.5 sm:grid-cols-2">
       {CARDS.map((c) => (
         <a
           key={c.name}
           href={c.href}
-          className="group rounded-[12px] border border-[#E7E7E3] bg-white p-[16px] no-underline transition-colors hover:border-[#D6D6D0]"
+          className="group rounded-xl border border-ed-hairline bg-white p-4 no-underline transition-colors hover:border-ed-warm-400"
         >
           <div className="flex items-center gap-[11px]">
             <Tile glyph={c.glyph} tone={c.tone} />
-            <span className="text-[15.5px] font-[560] text-[#262323]">{c.name}</span>
+            <span className="text-ed-15 font-semi text-ed-ink">{c.name}</span>
           </div>
-          <p className="m-0 mt-[10px] text-[14px] leading-[160%] text-[rgba(38,35,35,0.74)]">{c.desc}</p>
-          <span className="mt-[12px] inline-flex items-center gap-[5px] text-[13.5px] font-[500] text-[#1E84B0]">
+          <p className="m-0 mt-2.5 text-ed-14 leading-[160%] text-ed-ink/74">{c.desc}</p>
+          <span className="mt-3 inline-flex items-center gap-[5px] text-ed-13 font-medium text-ed-brand-ink">
             {c.cta} <Arrow />
           </span>
         </a>

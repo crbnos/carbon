@@ -39,7 +39,7 @@ export function getMDXComponents(components?: MDXComponents) {
     // ~330px, so wrap every table in a horizontal scroller — it keeps the rounded
     // frame and lets the table scroll instead of forcing the page to.
     table: ({ children, ...props }: ComponentProps<"table">) => (
-      <div className="-mx-[2px] my-[20px] overflow-x-auto overscroll-x-contain">
+      <div className="-mx-[2px] my-5 overflow-x-auto overscroll-x-contain">
         <table {...props} className="!my-0 min-w-full">
           {children}
         </table>
@@ -48,7 +48,7 @@ export function getMDXComponents(components?: MDXComponents) {
     // Markdown images zoom too, via the same shared lightbox the Guide figures use.
     img: ({ alt, ...props }: ComponentProps<"img">) => (
       <Zoomable>
-        <img {...props} alt={alt ?? ""} className="block w-full rounded-[12px] border border-ed-hairline" />
+        <img {...props} alt={alt ?? ""} className="block w-full rounded-xl border border-ed-hairline" />
       </Zoomable>
     ),
     Card,

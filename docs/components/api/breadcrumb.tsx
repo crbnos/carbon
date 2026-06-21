@@ -12,24 +12,24 @@ export function Breadcrumb({ items }: { items: Crumb[] }) {
   return (
     <nav
       aria-label="Breadcrumb"
-      className="flex flex-wrap items-center font-[family-name:var(--font-mono)] text-[12.5px] leading-[16px]"
+      className="flex flex-wrap items-center font-mono text-ed-12 leading-4"
     >
       {items.map((c, i) => (
         <Fragment key={`${c.label}-${i}`}>
           {i > 0 && (
-            <span aria-hidden="true" className="px-[7px] text-[rgba(38,35,35,0.3)]">
+            <span aria-hidden="true" className="px-[7px] text-ed-ink/30">
               /
             </span>
           )}
           {c.href ? (
             <Link
               href={c.href}
-              className="text-[rgba(38,35,35,0.5)] no-underline transition-colors hover:text-[#262323]"
+              className="text-ed-ink/50 no-underline transition-colors hover:text-ed-ink"
             >
               {c.label}
             </Link>
           ) : (
-            <span className="text-[rgba(38,35,35,0.72)]">{c.label}</span>
+            <span className="text-ed-ink/72">{c.label}</span>
           )}
         </Fragment>
       ))}

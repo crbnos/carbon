@@ -47,7 +47,7 @@ export function ChapterNav({
 
   return (
     <nav className="text-sm">
-      <p className="mb-6 max-w-[14rem] text-[13px] leading-snug text-muted-foreground">{title}</p>
+      <p className="mb-6 max-w-[14rem] text-ed-13 leading-snug text-muted-foreground">{title}</p>
 
       <ol className="space-y-7">
         {chapters.map((chapter, ci) => (

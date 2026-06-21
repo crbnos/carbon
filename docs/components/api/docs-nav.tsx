@@ -6,15 +6,15 @@ import { type ReactNode, useState } from "react";
 
 export type DocsNavNode = { label: string; url?: string; children?: DocsNavNode[] };
 
-const GS_ACTIVE = "bg-[rgba(0,176,255,0.10)] font-[530] text-[#1E84B0]";
-const GS_IDLE = "text-[rgba(38,35,35,0.8)] hover:bg-[rgba(231,231,227,0.55)] hover:text-[#262323]";
-const GS_LINK = "block rounded-[6px] px-[8px] py-[4px] text-[14.5px] leading-[135%] transition-colors";
+const GS_ACTIVE = "bg-ed-brand/10 font-demi text-ed-brand-ink";
+const GS_IDLE = "text-ed-ink/80 hover:bg-ed-hairline/55 hover:text-ed-ink";
+const GS_LINK = "block rounded-md px-2 py-1 text-ed-14 leading-[135%] transition-colors";
 // Top-level group label (Platform, Product reference, …) vs nested sub-group label
 // (the module groups inside Product reference) — one step quieter so the hierarchy reads.
 const GROUP_LABEL =
-  "font-[family-name:var(--font-mono)] text-[12.5px] font-[600] uppercase tracking-[0.06em] text-[rgba(38,35,35,0.6)]";
+  "font-mono text-ed-12 font-semibold uppercase tracking-[0.06em] text-ed-ink/60";
 const SUBGROUP_LABEL =
-  "font-[family-name:var(--font-mono)] text-[11px] font-[600] uppercase tracking-[0.05em] text-[rgba(38,35,35,0.5)]";
+  "font-mono text-ed-11 font-semibold uppercase tracking-[0.05em] text-ed-ink/50";
 
 function Chevron({ open }: { open: boolean }) {
   return (
@@ -60,19 +60,19 @@ export function DocsNav({ tree }: { tree: DocsNavNode[] }) {
 
       const open = override[key] ?? (depth === 0 || holdsActive(node));
       return (
-        <div key={key} className={depth === 0 ? "mt-[8px] first:mt-[2px]" : "mt-[4px] first:mt-0"}>
+        <div key={key} className={depth === 0 ? "mt-2 first:mt-0.5" : "mt-1 first:mt-0"}>
           <button
             type="button"
             aria-expanded={open}
             onClick={() => setOverride((p) => ({ ...p, [key]: !open }))}
-            className="flex w-full items-center gap-[7px] rounded-[7px] px-[8px] py-[5px] transition-colors hover:bg-[rgba(231,231,227,0.5)]"
+            className="flex w-full items-center gap-[7px] rounded-[7px] px-2 py-[5px] transition-colors hover:bg-ed-hairline/50"
           >
             <Chevron open={open} />
             <span className={depth === 0 ? GROUP_LABEL : SUBGROUP_LABEL}>{node.label}</span>
           </button>
 
           {open && (
-            <div className="mt-[2px] mb-[2px] ml-[13px] flex flex-col gap-[2px] border-l border-[#ECECE7] py-[2px] pl-[8px]">
+            <div className="mt-0.5 mb-0.5 ml-[13px] flex flex-col gap-0.5 border-l border-ed-warm-150 py-0.5 pl-2">
               {node.url && (
                 <Link
                   href={node.url}
@@ -88,5 +88,5 @@ export function DocsNav({ tree }: { tree: DocsNavNode[] }) {
       );
     });
 
-  return <nav className="flex flex-col gap-[2px]">{render(tree, 0, "")}</nav>;
+  return <nav className="flex flex-col gap-0.5">{render(tree, 0, "")}</nav>;
 }

@@ -113,12 +113,12 @@ const BADGE: Record<StatusColor, { cls: string; Icon: ComponentType<{ className?
   orange: { cls: "bg-orange-100 text-orange-800 border-orange-500/20", Icon: CircleAlert },
   red: { cls: "bg-red-100 text-red-800 border-red-500/20", Icon: CircleSlash },
   blue: { cls: "bg-blue-100 text-blue-800 border-blue-500/20", Icon: LoaderCircle },
-  gray: { cls: "bg-[#e3e2e080] text-[#32302c] border-transparent", Icon: CircleDashed },
+  gray: { cls: "bg-ed-warm-300/50 text-[#32302c] border-transparent", Icon: CircleDashed },
   purple: { cls: "bg-violet-100 text-violet-800 border-violet-500/20", Icon: Star },
 };
 
 const BADGE_BASE =
-  "inline-flex items-center gap-[5px] rounded-md border px-2 py-[4px] text-[11px] font-bold uppercase tracking-tight leading-none whitespace-nowrap";
+  "inline-flex items-center gap-[5px] rounded-md border px-2 py-1 text-ed-11 font-bold uppercase tracking-tight leading-none whitespace-nowrap";
 
 export function StatusFlow({
   children,
@@ -195,7 +195,7 @@ export function StatusFlow({
             : undefined
         }
       >
-        <Icon className="h-[12px] w-[12px] shrink-0" />
+        <Icon className="h-3 w-3 shrink-0" />
         {s.name}
       </button>
     );
@@ -207,18 +207,18 @@ export function StatusFlow({
   const SelIcon = BADGE[selColor].Icon;
 
   return (
-    <figure className="my-[36px] overflow-hidden rounded-[14px] border border-ed-hairline bg-ed-paper">
+    <figure className="my-9 overflow-hidden rounded-[14px] border border-ed-hairline bg-ed-paper">
       <div
         role="group"
         aria-label={ariaLabel}
         onKeyDown={onKeyDown}
-        className="flex flex-col gap-[12px] px-[18px] pt-[18px] pb-[16px]"
+        className="flex flex-col gap-3 px-[18px] pt-[18px] pb-4"
       >
-        <div className="flex flex-wrap items-center gap-x-[4px] gap-y-[10px]">
+        <div className="flex flex-wrap items-center gap-x-1 gap-y-2.5">
           {mainItems.map((s, j) => (
             <Fragment key={s.idx}>
               {j > 0 && (
-                <span aria-hidden="true" className="px-[2px] text-[14px] leading-none text-ed-ink-45">
+                <span aria-hidden="true" className="px-0.5 text-ed-14 leading-none text-ed-ink-45">
                   →
                 </span>
               )}
@@ -227,8 +227,8 @@ export function StatusFlow({
           ))}
         </div>
         {offItems.length > 0 && (
-          <div className="flex flex-wrap items-center gap-[8px]">
-            <span className="font-[family-name:var(--font-mono)] text-[9.5px] font-[600] uppercase tracking-[0.08em] text-ed-ink-45">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-mono text-ed-10 font-semibold uppercase tracking-[0.08em] text-ed-ink-45">
               Off-track
             </span>
             {offItems.map((s) => pill(s))}
@@ -240,10 +240,10 @@ export function StatusFlow({
       <div aria-live="polite" className="border-t border-ed-hairline bg-ed-inset px-[18px] py-[15px]">
         <div key={sel} className="animate-in fade-in-0 duration-200 motion-reduce:animate-none">
           <span className={`${BADGE_BASE} ${BADGE[selColor].cls}`}>
-            <SelIcon className="h-[12px] w-[12px] shrink-0" />
+            <SelIcon className="h-3 w-3 shrink-0" />
             {selected.name}
           </span>
-          <div className="mt-[10px] text-[13.5px] leading-[1.6] text-ed-ink-66 [&>p]:m-0 [&>p]:text-[13.5px] [&>p]:leading-[1.6]">
+          <div className="mt-2.5 text-ed-13 leading-[1.6] text-ed-ink-66 [&>p]:m-0 [&>p]:text-ed-13 [&>p]:leading-[1.6]">
             {selected.children}
           </div>
         </div>
