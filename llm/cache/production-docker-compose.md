@@ -12,6 +12,12 @@ Single-host self-hosted deployment, alternative to the SST/AWS path
 - `deploy/prod/postgres/01-roles.sh` — role bootstrap; `*.sh` (not `.sql`) so it reads
   `${POSTGRES_PASSWORD}` and sets it on supabase_admin/auth_admin/storage_admin/authenticator
 - `deploy/prod/README.md` — operator runbook
+- `deploy/prod/deploy.sh` — wrapper script. `init` generates `.env.production`
+  (Supabase key trio + random POSTGRES_PASSWORD/SESSION_SECRET/INNGEST keys +
+  inlined SUPABASE_DB_URL with ?sslmode=disable; idempotent, `--force` to
+  overwrite). `up` builds erp/mes then boots in order: `postgres storage
+  --wait` → `run --rm migrate` → data plane → `erp mes caddy`. Also
+  `migrate`/`down [--volumes]`/`status`/`logs`. Defensive bash, dep checks.
 - App image: shared root `Dockerfile` via `--build-arg APP=erp|mes`
 
 ## Shared single Dockerfile
