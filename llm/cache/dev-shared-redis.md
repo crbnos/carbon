@@ -17,7 +17,10 @@ boots it directly:
   (`REDIS_CONTAINER`, `REDIS_VOLUME`).
 
 The per-worktree Supabase + inngest stack is still a compose file
-(`docker-compose.dev.yml`, `COMPOSE_DEV_FILE`). Only redis was extracted.
+(`packages/dev/docker/docker-compose.dev.yml`, `COMPOSE_DEV_FILE`). Only redis
+was extracted. The CLI invokes it with `--project-directory .` (cwd = repo root)
+so the file's `./packages/...` mounts resolve from root despite the file living
+under `packages/dev/docker/`.
 
 Note: the old compose created volume `carbon-shared_redis-data`; the new path
 uses `carbon-redis-data`. Old volume is orphaned (harmless), dev redis is cache.
