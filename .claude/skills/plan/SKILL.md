@@ -29,7 +29,7 @@ If no spec exists, suggest running `/brainstorm` first.
 
 ## Step 1: Load the Design Spec
 
-Read the design spec from `docs/specs/[feature-name]-design.md`.
+Read the design spec from `.claude/scratch/research/[feature-name]-design.md`.
 
 Extract:
 - Data model changes
@@ -43,13 +43,13 @@ Extract:
 
 | Task Type | Reference | What It Covers |
 |-----------|-----------|----------------|
-| Database migrations | `llm/workflows/database-migration.md` | Multi-tenancy, RLS, id(), audit columns, indexes |
+| Database migrations | `.claude/rules/workflow-database-migration.md` | Multi-tenancy, RLS, id(), audit columns, indexes |
 | Forms & UI | `/forms` skill | ValidatedForm, zod validators, form components |
 | Database writes | `/database-transactions` skill | Kysely transactions, atomic operations |
 
 ### Migration Tasks Must Follow
 
-From `llm/workflows/database-migration.md`:
+From `.claude/rules/workflow-database-migration.md`:
 - Use `id()` for primary keys, not UUID
 - Include `companyId` with composite primary key `("id", "companyId")`
 - Add standard audit columns (createdBy, createdAt, updatedBy, updatedAt)
@@ -153,13 +153,13 @@ For each task, provide:
 
 ### 4.1 Save the Plan
 
-Save to `llm/tasks/[feature-name]-plan.md`:
+Save to `.claude/scratch/plans/[feature-name]-plan.md`:
 
 ```markdown
 # [Feature] Implementation Plan
 
 ## Overview
-- **Design Spec:** `docs/specs/[feature-name]-design.md`
+- **Design Spec:** `.claude/scratch/research/[feature-name]-design.md`
 - **Tasks:** N tasks, estimated M minutes
 - **Dependencies:** [diagram or list]
 
@@ -183,7 +183,7 @@ Before presenting:
 - [ ] All commands include expected output
 - [ ] Tasks follow TDD order
 - [ ] Dependencies are clear
-- [ ] Migration tasks follow `llm/workflows/database-migration.md`
+- [ ] Migration tasks follow `.claude/rules/workflow-database-migration.md`
 - [ ] Form tasks reference `/forms` skill patterns
 
 ### 4.3 Get Approval
@@ -194,7 +194,7 @@ Present the plan and wait for explicit approval.
 
 | Artifact | Location |
 |----------|----------|
-| Implementation plan | `llm/tasks/[feature-name]-plan.md` |
+| Implementation plan | `.claude/scratch/plans/[feature-name]-plan.md` |
 
 ## Next Step
 

@@ -1,6 +1,6 @@
 # Handoff Plan Template (Carbon)
 
-Every plan is written for an executor model that has **zero context**: it has not seen the advisor session, the audit, the other plans, `llm/cache/`, or any prior conversation. It may be a smaller/cheaper model. Assume it is competent at following explicit instructions and weak at filling gaps, recovering from ambiguity, or knowing when to stop.
+Every plan is written for an executor model that has **zero context**: it has not seen the advisor session, the audit, the other plans, `.claude/rules/`, or any prior conversation. It may be a smaller/cheaper model. Assume it is competent at following explicit instructions and weak at filling gaps, recovering from ambiguity, or knowing when to stop.
 
 Three properties make a plan executable by a weaker model:
 
@@ -8,13 +8,13 @@ Three properties make a plan executable by a weaker model:
 2. **Verification gates** — every step ends with a command and its expected result. The executor never has to *judge* whether it succeeded.
 3. **Hard boundaries and escape hatches** — explicit out-of-scope list, and "STOP and report" conditions instead of letting the model improvise when reality doesn't match the plan.
 
-File naming: `llm/plans/improve/NNN-short-slug.md`, numbered in recommended execution order.
+File naming: `.claude/scratch/plans/improve/NNN-short-slug.md`, numbered in recommended execution order.
 
 **Carbon command rules the plan must respect** (bake into every plan):
 - Typecheck is **scoped to one package**: `turbo run typecheck --filter=<pkg>`. NEVER a whole-repo typecheck (it OOMs).
 - Lint read-only: `pnpm exec biome lint <paths>`. Format only if the plan explicitly intends it: `pnpm exec biome format --write <paths>`.
 - Tests: `pnpm --filter <pkg> test` (vitest).
-- **The executor never runs database migrations/seeds/rebuilds** (`pnpm db:migrate`, `db:seed`, `db:types`, `crbn migrate`). If a plan adds a migration, the executor writes the SQL file per `llm/workflows/database-migration.md`; **the user applies it**. State this explicitly.
+- **The executor never runs database migrations/seeds/rebuilds** (`pnpm db:migrate`, `db:seed`, `db:types`, `crbn migrate`). If a plan adds a migration, the executor writes the SQL file per `.claude/rules/workflow-database-migration.md`; **the user applies it**. State this explicitly.
 
 ---
 
@@ -27,7 +27,7 @@ File naming: `llm/plans/improve/NNN-short-slug.md`, numbered in recommended exec
 > verification command and confirm the expected result before moving to the
 > next step. If anything in the "STOP conditions" section occurs, stop and
 > report — do not improvise. When done, update the status row for this plan
-> in `llm/plans/improve/README.md` — unless a reviewer dispatched you and told
+> in `.claude/scratch/plans/improve/README.md` — unless a reviewer dispatched you and told
 > you they maintain the index.
 >
 > **Drift check (run first)**: `git diff --stat <planned-at SHA>..HEAD -- <in-scope paths>`
@@ -40,7 +40,7 @@ File naming: `llm/plans/improve/NNN-short-slug.md`, numbered in recommended exec
 - **Priority**: P1 | P2 | P3
 - **Effort**: S | M | L
 - **Risk**: LOW | MED | HIGH
-- **Depends on**: llm/plans/improve/NNN-*.md (or "none")
+- **Depends on**: .claude/scratch/plans/improve/NNN-*.md (or "none")
 - **Category**: bug | security | perf | tests | tech-debt | migration | dx | docs | direction
 - **Planned at**: commit `<short SHA>`, <YYYY-MM-DD>
 - **Issue**: <GitHub issue URL — only when published via `--issues`; omit otherwise>
@@ -59,10 +59,10 @@ The facts the executor needs, inlined — never "as discussed" or "see the cache
 - Excerpts of the code as it exists today (short, with `file:line` markers),
   enough that the executor can confirm it's looking at the right thing.
 - The Carbon conventions that apply, **quoted inline** (the executor has not read
-  `llm/conventions/` or `llm/cache/`), with a pointer to one exemplar file:
+  `.claude/rules/conventions-*` or `.claude/rules/`), with a pointer to one exemplar file:
   "Service functions return `{ data, error }` and use Kysely transactions for
   multi-row writes — see `<exemplar>.service.ts` and match it."
-- Any schema/migration constraints inlined from `llm/workflows/database-migration.md`
+- Any schema/migration constraints inlined from `.claude/rules/workflow-database-migration.md`
   if the plan touches the database.
 
 ## Commands you will need
@@ -88,7 +88,7 @@ executor's environment. Skip the section otherwise.)
   "use the `forms` skill when adding the validator in step 2";
   "use the `database-transactions` skill for the atomic write in step 3".
 - Workflow docs worth reading first by path:
-  "`llm/workflows/database-migration.md` before writing the migration in step 4".
+  "`.claude/rules/workflow-database-migration.md` before writing the migration in step 4".
 
 ## Scope
 
@@ -141,7 +141,7 @@ Machine-checkable. ALL must hold:
 - [ ] `pnpm exec biome lint <in-scope paths>` reports no diagnostics
 - [ ] `grep -rn "<old pattern>" <in-scope dir>` returns no matches
 - [ ] No files outside the in-scope list are modified (`git status`)
-- [ ] `llm/plans/improve/README.md` status row updated
+- [ ] `.claude/scratch/plans/improve/README.md` status row updated
 
 ## STOP conditions
 
@@ -159,14 +159,14 @@ For the human/agent who owns this code after the change lands:
 
 - What future changes will interact with this.
 - What a reviewer should scrutinize in the PR.
-- Whether an `llm/cache/` doc should be updated **after this is committed** (note it;
-  do not update the cache as part of this plan — cache is for committed code only).
+- Whether a `.claude/rules/` doc should be updated **after this is committed** (note it;
+  do not update the rules as part of this plan — the rules are for committed code only).
 - Any follow-up explicitly deferred out of this plan (and why).
 ```
 
 ---
 
-## Index file: `llm/plans/improve/README.md`
+## Index file: `.claude/scratch/plans/improve/README.md`
 
 Written once by the advisor after all plans, updated by executors:
 
@@ -197,7 +197,7 @@ Status values: TODO | IN PROGRESS | DONE | BLOCKED (one-line reason) | REJECTED 
 
 ## Quality bar — check before finishing each plan
 
-- Could a model that has never seen this repo or `llm/cache/` execute this with only the plan file and the repo? If any step needs knowledge from the advisor session or the cache, inline it.
+- Could a model that has never seen this repo or `.claude/rules/` execute this with only the plan file and the repo? If any step needs knowledge from the advisor session or the rules, inline it.
 - Is every verification a command with an expected result, not a judgment ("make sure it works")?
 - Is every typecheck **scoped to a package** (never whole-repo)? Does no step run a DB migrate/seed/rebuild?
 - Does every step name exact files and symbols?

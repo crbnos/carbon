@@ -28,14 +28,14 @@ Orchestrates the full feature development lifecycle by composing smaller skills:
 Identify the domain and research competitors:
 - SAP (always)
 - Domain-specific best-in-class competitors
-- Save to `llm/research/[feature].md`
+- Save to `.claude/scratch/research/[feature].md`
 
 ### Phase 2: Brainstorm (`/brainstorm`)
 
 Design with research in hand:
 - Use competitor patterns to inform decisions
 - Document design choices with rationale
-- Save to `docs/specs/[feature]-design.md`
+- Save to `.claude/scratch/research/[feature]-design.md`
 - **Gate:** User approval required
 
 ### Phase 3: Plan (`/plan`)
@@ -43,7 +43,7 @@ Design with research in hand:
 Create implementation plan:
 - Break into 2-5 minute tasks
 - Complete code, no pseudocode
-- Save to `llm/tasks/[feature]-plan.md`
+- Save to `.claude/scratch/plans/[feature]-plan.md`
 - **Gate:** User approval required
 
 ### Phase 4: Execute (`/execute`)
@@ -69,7 +69,7 @@ Claude: I'm using the feature skill to orchestrate end-to-end development.
 
 Phase 1: Research
 [Invokes /research inventory lot tracking]
-[Saves to llm/research/lot-tracking.md]
+[Saves to .claude/scratch/research/lot-tracking.md]
 
 Phase 2: Brainstorm  
 [Invokes /brainstorm with research context]
@@ -94,9 +94,9 @@ Phase 5: Verify
 
 | Phase | Artifact | Location |
 |-------|----------|----------|
-| Research | Competitor analysis | `llm/research/[feature].md` |
-| Brainstorm | Design spec | `docs/specs/[feature]-design.md` |
-| Plan | Implementation plan | `llm/tasks/[feature]-plan.md` |
+| Research | Competitor analysis | `.claude/scratch/research/[feature].md` |
+| Brainstorm | Design spec | `.claude/scratch/research/[feature]-design.md` |
+| Plan | Implementation plan | `.claude/scratch/plans/[feature]-plan.md` |
 | Execute | Working code | Feature branch |
 | Verify | Test evidence | Screenshots/logs |
 

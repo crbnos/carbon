@@ -64,10 +64,7 @@ packages/database/supabase/seed.sql
 .superpowers
 
 # Agent scratch — local-only, never commit
-llm/tasks
-llm/plans
-llm/research
-llm/recommendations
+.claude/scratch/
 apps/*/portless.json
 packages/database/supabase/snippets/**
 .pr-review

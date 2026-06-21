@@ -57,7 +57,7 @@ Structure research as actionable patterns:
 
 ### Step 5: Save Output
 
-Save the research to `llm/research/[feature-slug].md` using the output format below.
+Save the research to `.claude/scratch/research/[feature-slug].md` using the output format below.
 
 ## Output Format
 
@@ -102,7 +102,7 @@ Based on the research:
 
 ## Example Research
 
-See `llm/tasks/accrual-accounting-research.md` for an example of well-structured competitor research covering NetSuite and SAP accounting patterns.
+See `.claude/scratch/tasks/accrual-accounting-research.md` for an example of well-structured competitor research covering NetSuite and SAP accounting patterns.
 
 ## When to Use
 

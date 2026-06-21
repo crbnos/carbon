@@ -31,7 +31,7 @@ or change docs **in that system, in its house style, grounded in real Carbon cod
 
 The **holy source of truth is the actual source code + the LATEST database migrations**
 (`packages/database/supabase/migrations/`, newest by timestamp) — NOT ERP/CMMS general knowledge, NOT
-`llm/cache/` alone (it is often stale).
+`.claude/rules/` alone (it is often stale).
 
 - **Verify before you write.** Every entity, status enum *value*, and transition named in docs must exist
   in real code. Confirm exact strings (`"To Ship and Invoice"`, `"Fully Depreciated"`), the actions that
@@ -232,4 +232,4 @@ Never declare docs done without: the new content rendering (in the user's runnin
 `pnpm --filter docs build`), every internal link resolving, any new `<Term>` glossary entries grounded in
 source + their popovers rendering, names matching real code, **no generic repeated
 headings**, and a re-read that confirms each page says what matters / names the mistake / points onward. Then
-record progress (`llm/tasks/` + memory). **Don't kill or rebuild under the user's running dev server.**
+record progress (`.claude/scratch/tasks/` + memory). **Don't kill or rebuild under the user's running dev server.**

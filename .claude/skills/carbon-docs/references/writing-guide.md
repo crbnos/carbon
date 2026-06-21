@@ -6,7 +6,7 @@ second-person — not the flat neutral tone most docs default to. But before any
 ## Rule 0 — ground every claim in source (non-negotiable)
 
 The holy source of truth is **the actual source code + the LATEST database migrations**, never ERP-generic
-knowledge, never `llm/cache/` alone. A confidently-wrong sentence is worse than no sentence.
+knowledge, never `.claude/rules/` alone. A confidently-wrong sentence is worse than no sentence.
 
 - **Verify before writing.** Every entity, **status enum value** (exact string), and **transition** must
   exist in real code. Dispatch a research subagent → get `file:line` refs → then write.

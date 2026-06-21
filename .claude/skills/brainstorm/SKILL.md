@@ -88,7 +88,7 @@ Structure findings as:
 2. **Unique Approaches** — Interesting variations
 3. **Answers to Questions** — Direct answers from Step 1.3
 
-Save to `llm/research/[feature-slug].md`.
+Save to `.claude/scratch/research/[feature-slug].md`.
 
 ## Step 3: Design With Data
 
@@ -112,7 +112,7 @@ Now brainstorm **with research in hand**.
 
 ### 4.1 Write Design Spec
 
-Save to `llm/research/[feature-name]-design.md`:
+Save to `.claude/scratch/research/[feature-name]-design.md`:
 
 ```markdown
 # [Feature] Design Specification
@@ -156,8 +156,8 @@ Present the spec and wait for explicit approval before proceeding.
 
 | Artifact | Location |
 |----------|----------|
-| Competitor research | `llm/research/[feature-slug].md` |
-| Design specification | `llm/research/[feature-name]-design.md` |
+| Competitor research | `.claude/scratch/research/[feature-slug].md` |
+| Design specification | `.claude/scratch/research/[feature-name]-design.md` |
 
 ## Next Step
 
