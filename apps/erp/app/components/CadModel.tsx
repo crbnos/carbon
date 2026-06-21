@@ -216,9 +216,9 @@ const CadModel = ({
                   </ModalHeader>
                   <ModalBody>
                     <p className="text-sm text-muted-foreground">
-                      Are you sure you want to delete this model? Continuing will
-                      remove both the preview image and the 3D file from this
-                      record. This action cannot be undone.
+                      Are you sure you want to delete this model? Continuing
+                      will remove both the preview image and the 3D file from
+                      this record. This action cannot be undone.
                     </p>
                   </ModalBody>
                   <ModalFooter>
