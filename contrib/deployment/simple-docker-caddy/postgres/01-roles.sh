@@ -2,10 +2,9 @@
 # Production role bootstrap for the self-hosted Supabase postgres.
 #
 # Runs once, during first-init of a fresh pgdata volume
-# (/docker-entrypoint-initdb.d). Unlike the dev init.sql — which hardcodes the
-# password 'postgres' — this is a *.sh script so it can read ${POSTGRES_PASSWORD}
-# from the environment and set every Supabase service role to it. Mirrors
-# packages/dev/docker/init.sql otherwise.
+# (/docker-entrypoint-initdb.d). A *.sh script (not *.sql) so it can read
+# ${POSTGRES_PASSWORD} from the environment and set every Supabase service role
+# to it. Mirrors packages/dev/docker/init.sql, which hardcodes 'postgres' for dev.
 set -euo pipefail
 
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL

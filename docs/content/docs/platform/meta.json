@@ -4,6 +4,7 @@
   "pages": [
     "architecture",
     "deployment",
+    "self-hosting",
     "environment-variables",
     "local-development"
   ]

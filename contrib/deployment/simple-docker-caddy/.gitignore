@@ -1,0 +1,9 @@
+# Local, filled-in config — never commit.
+.env
+
+# Any local secret material staged before `docker secret create`.
+secrets/
+*.secret
+
+# Local backups produced by scripts/backup.sh.
+backups/

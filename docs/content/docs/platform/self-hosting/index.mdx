@@ -1,0 +1,18 @@
+---
+title: Self-hosting
+description: Run the whole Carbon stack on your own infrastructure instead of the managed AWS cloud.
+---
+
+Carbon can run entirely on hardware you control — the ERP and MES apps plus everything they need: the Supabase data plane (Postgres, Auth, REST, Realtime, Storage, Edge Functions), Redis, and Inngest. This is the alternative to the managed [AWS deployment](/docs/platform/deployment).
+
+## Recipes
+
+<Cards>
+  <Card title="Docker with Caddy" href="/docs/platform/self-hosting/docker-caddy">
+    The whole stack on a single Linux VPS — a single-node Docker Swarm behind an automatic-HTTPS Caddy reverse proxy. The simplest way to self-host.
+  </Card>
+</Cards>
+
+<Callout type="info">
+Self-hosted Carbon is **not plan-gated** — the Business/Partner tiers only apply to Carbon Cloud. See [Environment variables](/docs/platform/environment-variables) for the full configuration surface.
+</Callout>

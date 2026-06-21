@@ -1,12 +1,14 @@
 #!/usr/bin/env node
-// Generate the Supabase self-host key trio for docker-compose.prod.yml.
+// Generate the Supabase self-host key trio for the Carbon Swarm stack.
 //
-//   SUPABASE_JWT_SECRET   — HMAC secret every Supabase service signs/verifies with
-//   SUPABASE_ANON_KEY     — JWT(role=anon)         signed with that secret
-//   SUPABASE_SERVICE_ROLE_KEY — JWT(role=service_role) signed with that secret
+//   SUPABASE_JWT_SECRET        — HMAC secret every Supabase service signs/verifies with
+//   SUPABASE_ANON_KEY          — JWT(role=anon)         signed with that secret
+//   SUPABASE_SERVICE_ROLE_KEY  — JWT(role=service_role) signed with that secret
 //
-// The anon/service_role keys MUST be signed with the printed JWT secret — paste
-// all three into .env.production together. Re-running mints a fresh set.
+// The anon/service_role keys MUST be signed with the printed JWT secret — the
+// three are a matched set. `deploy.sh init` consumes this output to create the
+// `jwt_secret`, `anon_key`, and `service_role_key` Docker secrets together.
+// Re-running mints a fresh, incompatible set.
 //
 // Usage: node scripts/gen-supabase-keys.mjs
 // Zero dependencies (Node built-in crypto only).

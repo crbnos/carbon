@@ -1,5 +1,5 @@
 ---
-description: SST + AWS ECS production deployment path (sst.config.ts, ECR-built Docker images, CI workspace fan-out). The managed/cloud alternative to the self-hosted docker-compose.prod stack.
+description: SST + AWS ECS production deployment path (sst.config.ts, ECR-built Docker images, CI workspace fan-out). The managed/cloud alternative to the self-hosted Swarm stack.
 paths:
   - "sst.config.ts"
   - "ci/**"
@@ -10,9 +10,9 @@ paths:
 # SST / AWS ECS Deployment (managed cloud path)
 
 SST is **still used** — it is the managed, multi-tenant cloud deployment path.
-The newer self-hosted `docker-compose.prod.yml` stack (see
-`production-docker-compose.md`) is a separate, alternative deployment, not a
-replacement. Both build from the same root `Dockerfile`.
+The self-hosted single-VPS Docker **Swarm** stack (see
+[contrib-deployment-swarm.md](contrib-deployment-swarm.md)) is a separate,
+alternative deployment, not a replacement. Both build from the same root `Dockerfile`.
 
 ## What SST deploys (`sst.config.ts`)
 - App `carbon`, `home: "aws"`, region from `process.env.AWS_REGION` (no hardcoded
@@ -77,8 +77,8 @@ Triggers on push to `main` touching `apps/erp/**`, `apps/mes/**`, `packages/**`
 ## Migrations are a separate CI step
 SST deploy does **not** run DB migrations. Migrations live in
 `ci/src/migrations.ts` (script `ci:migrations`), a separate workspace fan-out over
-the `workspaces` table. (The self-host path uses the `migrate` compose service
-instead — see `production-docker-compose.md`.)
+the `workspaces` table. (The self-host path runs migrations as an ephemeral Swarm
+job instead — see [contrib-deployment-swarm.md](contrib-deployment-swarm.md).)
 
 ## Env vars passed to the services (`sst.config.ts` `environment`)
 Both services get Supabase (`SUPABASE_URL`/`ANON_KEY`/`SERVICE_ROLE_KEY`/`JWT_SECRET`/
