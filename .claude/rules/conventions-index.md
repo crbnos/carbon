@@ -30,7 +30,7 @@ siblings in this directory — grep `.claude/rules/` by topic.
   `packages/*` (also `ci`, `examples/*`). Dep versions pinned via pnpm catalog.
 - **Framework**: React Router v7 (NOT Remix) for `apps/erp`, `apps/mes`,
   `apps/academy`, `apps/starter`. Flat routes via `remix-flat-routes`.
-  `apps/docs` is the exception — Next.js + Fumadocs + MDX.
+  `docs` is the exception — Next.js + Fumadocs + MDX.
 - **Database**: Supabase/Postgres with RLS; typed access via generated
   `@carbon/database` types + a Kysely client. Never hand-edit generated types.
 - **Background jobs**: Inngest (NOT Trigger.dev), via `@carbon/jobs`.

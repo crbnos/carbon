@@ -1,6 +1,6 @@
 # Component catalog (real, current)
 
-The MDX vocabulary, per surface. These are the components that **actually ship** in `apps/docs` — read the
+The MDX vocabulary, per surface. These are the components that **actually ship** in `docs` — read the
 live source if anything here looks off (`components/editorial/mdx.tsx`, `components/editorial/reference-components.tsx`,
 `components/mdx.tsx`, `components/editorial/illustrations.tsx`). The Guide and Reference surfaces have
 **different** component sets and even a **different `Callout` API** — don't mix them.
@@ -74,7 +74,7 @@ Set the method type to <Term>purchase to order</Term> when the material is bough
 You <Term id="pull-from-inventory">pull it from stock</Term> when the parent is built.
 ```
 - `id?: string` (explicit glossary slug), `children` (display text — slugified to the entry key when `id` is omitted).
-- Definitions live in `apps/docs/lib/glossary.ts` (`slug → { term, definition, href? }`). Add the entry there
+- Definitions live in `docs/lib/glossary.ts` (`slug → { term, definition, href? }`). Add the entry there
   first, grounded in source. Omit `href` → definition-only popover; the "Learn more" link auto-hides when it
   would point at the current page. Unknown slug → renders plain text (fails safe).
 - **Same component on the Reference surface.** First occurrence per page only — see SKILL.md "Interlinking &

@@ -1,7 +1,7 @@
 ---
 name: carbon-docs
 description: >-
-  Author, edit, or extend the Carbon documentation site at `apps/docs` (a built Fumadocs + Next.js
+  Author, edit, or extend the Carbon documentation site at `docs` (a built Fumadocs + Next.js
   app). Use whenever creating or changing reader-facing docs for Carbon: editorial Guide chapters,
   Reference/entity pages, the docs IA, or "document this feature" requests — anything destined for
   the docs site. Covers the grounded-in-source authoring workflow, the flow-based Guide architecture,
@@ -12,7 +12,7 @@ description: >-
 
 # Carbon Docs
 
-`apps/docs` is a **built, opinionated** documentation site — Fumadocs + Next.js (React 19), **light-only**,
+`docs` is a **built, opinionated** documentation site — Fumadocs + Next.js (React 19), **light-only**,
 warm-paper aesthetic. It is no longer scaffolded; it exists and ships content. This skill is how to add
 or change docs **in that system, in its house style, grounded in real Carbon code.**
 
@@ -65,7 +65,7 @@ Guide for the story. (Guide chapters were given 12 cross-flow links — interlin
 4. **Verify — against the user's running dev server, read-only.** They usually have `pnpm --filter docs dev`
    up. **Never** `pkill`/restart it, run `next build`, or `rm .next` under it — verify by fetching pages:
    ```bash
-   cd apps/docs
+   cd docs
    pnpm exec fumadocs-mdx                 # regen .source if a content/frontmatter change didn't HMR
    curl -sS -X GET http://localhost:3002/docs/<slug> | grep -o "your new heading"   # confirm it rendered
    ```
@@ -116,7 +116,7 @@ flowIndex: 1          # order of the flow in the subnav (0 = first)
 - `<Divider />` — closes a chapter before its wrap-up line.
 - `<Term>make to order</Term>` — inline glossary term: dotted-underline; click/tap opens a popover with a
   grounded one-line definition + an optional "Learn more" link. Same component on both surfaces; definitions
-  live in `apps/docs/lib/glossary.ts`. See "Interlinking & the glossary" below.
+  live in `docs/lib/glossary.ts`. See "Interlinking & the glossary" below.
 
 Each `##` heading becomes a sidebar rail entry — so structure chapters as 3–5 `##` sections.
 
@@ -176,7 +176,7 @@ a page that links out *and* glosses its jargon is worth more than the same prose
   - `<Term>make to order</Term>` slugifies the text to find the entry; `<Term id="make-to-order">made</Term>`
     when the display text differs from the slug.
   - **First occurrence per page only** — not every instance. Underlining every "order" is noise.
-  - Definitions are a single source of truth: `apps/docs/lib/glossary.ts` (`slug → { term, definition, href? }`).
+  - Definitions are a single source of truth: `docs/lib/glossary.ts` (`slug → { term, definition, href? }`).
     Add the entry there *before* you use a new term, and **ground the definition in source** (the prime
     directive applies — exact enum values, real behavior). Omit `href` when there's no dedicated page yet (the
     popover still shows the definition); the "Learn more" link auto-hides when it would point at the page
@@ -223,7 +223,7 @@ to raise the whole site's connectivity.
 
 > Note: `references/scaffold.md`, `references/brand-integration.md`, and `assets/templates/*` are
 > **scaffolding-era** (how the app was first stood up, with Geist/`@carbon/react`/signature-touch templates).
-> The app diverged from them. **The live components in `apps/docs/components/{editorial,api}/` are the source
+> The app diverged from them. **The live components in `docs/components/{editorial,api}/` are the source
 > of truth** — read those, not the templates, when in doubt.
 
 ## Verification bar

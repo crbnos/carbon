@@ -83,4 +83,4 @@ chapters with a strong opinionated paragraph; one accent (`#1E84B0`) for interac
 
 **Don't:** import `@carbon/react` or ERP theme tokens here; add a dark mode or a second accent/font; invent
 `bg-*`/`text-*` colors; add code fences to Guide chapters; reach for the legacy template components — the live
-components in `apps/docs/components/{editorial,api}/` are the source of truth.
+components in `docs/components/{editorial,api}/` are the source of truth.

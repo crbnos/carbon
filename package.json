@@ -21,7 +21,7 @@
     "vite-plugin-babel-macros": "catalog:"
   },
   "lint-staged": {
-    "(apps|packages)/**/*.{js,ts,jsx,tsx}": [
+    "(apps|packages|docs)/**/*.{js,ts,jsx,tsx}": [
       "biome check --write --no-errors-on-unmatched"
     ],
     "*.json": [
@@ -68,6 +68,7 @@
   "workspaces": [
     "apps/*",
     "ci",
+    "docs",
     "examples/*",
     "packages/*"
   ],

@@ -524,91 +524,6 @@ importers:
         specifier: 'catalog:'
         version: 7.2.0
 
-  apps/docs:
-    dependencies:
-      '@radix-ui/react-dialog':
-        specifier: 1.1.15
-        version: 1.1.15(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-      '@radix-ui/react-popover':
-        specifier: 1.1.15
-        version: 1.1.15(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-      fumadocs-core:
-        specifier: ^16
-        version: 16.10.3(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.20.0(react@19.2.6))(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react-router@7.15.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)(zod@4.3.6)
-      fumadocs-mdx:
-        specifier: ^15
-        version: 15.0.12(@types/mdast@4.0.4)(@types/mdx@2.0.14)(@types/react@19.2.14)(fumadocs-core@16.10.3(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.20.0(react@19.2.6))(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react-router@7.15.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)(zod@4.3.6))(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)(vite@8.0.10(@types/node@22.19.7)(esbuild@0.28.0)(jiti@2.7.0)(tsx@4.21.0)(yaml@2.8.3))
-      fumadocs-ui:
-        specifier: ^16
-        version: 16.10.3(@emotion/is-prop-valid@1.4.0)(@tailwindcss/oxide@4.3.1)(@types/mdx@2.0.14)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(fumadocs-core@16.10.3(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.20.0(react@19.2.6))(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react-router@7.15.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)(zod@4.3.6))(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(tailwindcss@4.3.0)
-      motion:
-        specifier: ^12
-        version: 12.38.0(@emotion/is-prop-valid@1.4.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-      next:
-        specifier: ^16
-        version: 16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-      non.geist:
-        specifier: 'catalog:'
-        version: 1.0.4
-      react:
-        specifier: ^19.2.0
-        version: 19.2.6
-      react-dom:
-        specifier: ^19.2.0
-        version: 19.2.6(react@19.2.6)
-      shiki:
-        specifier: ^4.2.0
-        version: 4.2.0
-      simple-icons:
-        specifier: ^16.23.0
-        version: 16.23.0
-      zod:
-        specifier: ^4
-        version: 4.3.6
-    devDependencies:
-      '@carbon/config':
-        specifier: workspace:*
-        version: link:../../packages/config
-      '@httptoolkit/httpsnippet':
-        specifier: ^3.0.2
-        version: 3.0.2(mkdirp@3.0.1)
-      '@tailwindcss/postcss':
-        specifier: ^4
-        version: 4.3.1
-      '@tailwindcss/typography':
-        specifier: 'catalog:'
-        version: 0.5.19(tailwindcss@4.3.0)
-      '@types/mdx':
-        specifier: ^2.0.14
-        version: 2.0.14
-      '@types/node':
-        specifier: ^22
-        version: 22.19.7
-      '@types/react':
-        specifier: ^19
-        version: 19.2.14
-      '@types/react-dom':
-        specifier: ^19
-        version: 19.2.3(@types/react@19.2.14)
-      rimraf:
-        specifier: 'catalog:'
-        version: 5.0.10
-      tailwind-scrollbar:
-        specifier: 'catalog:'
-        version: 4.0.2(react@19.2.6)(tailwindcss@4.3.0)
-      tailwind-scrollbar-hide:
-        specifier: 'catalog:'
-        version: 4.0.0(tailwindcss@4.3.0)
-      tailwindcss:
-        specifier: 'catalog:'
-        version: 4.3.0
-      tailwindcss-animate:
-        specifier: 'catalog:'
-        version: 1.0.7(tailwindcss@4.3.0)
-      typescript:
-        specifier: 'catalog:'
-        version: 5.8.3
-
   apps/erp:
     dependencies:
       '@ai-sdk-tools/agents':
@@ -1531,6 +1446,91 @@ importers:
         specifier: 'catalog:'
         version: 4.6.9
 
+  docs:
+    dependencies:
+      '@radix-ui/react-dialog':
+        specifier: 1.1.15
+        version: 1.1.15(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+      '@radix-ui/react-popover':
+        specifier: 1.1.15
+        version: 1.1.15(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+      fumadocs-core:
+        specifier: ^16
+        version: 16.10.3(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.20.0(react@19.2.6))(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react-router@7.15.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)(zod@4.4.3)
+      fumadocs-mdx:
+        specifier: ^15
+        version: 15.0.12(@types/mdast@4.0.4)(@types/mdx@2.0.14)(@types/react@19.2.14)(fumadocs-core@16.10.3(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.20.0(react@19.2.6))(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react-router@7.15.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)(zod@4.4.3))(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)(vite@8.0.10(@types/node@22.19.7)(esbuild@0.28.0)(jiti@2.7.0)(tsx@4.21.0)(yaml@2.8.3))
+      fumadocs-ui:
+        specifier: ^16
+        version: 16.10.3(@emotion/is-prop-valid@1.4.0)(@tailwindcss/oxide@4.3.1)(@types/mdx@2.0.14)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(fumadocs-core@16.10.3(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.20.0(react@19.2.6))(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react-router@7.15.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)(zod@4.4.3))(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(tailwindcss@4.3.0)
+      motion:
+        specifier: ^12
+        version: 12.38.0(@emotion/is-prop-valid@1.4.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+      next:
+        specifier: ^16
+        version: 16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+      non.geist:
+        specifier: 'catalog:'
+        version: 1.0.4
+      react:
+        specifier: ^19.2.0
+        version: 19.2.6
+      react-dom:
+        specifier: ^19.2.0
+        version: 19.2.6(react@19.2.6)
+      shiki:
+        specifier: ^4.2.0
+        version: 4.2.0
+      simple-icons:
+        specifier: ^16.23.0
+        version: 16.23.0
+      zod:
+        specifier: ^4
+        version: 4.4.3
+    devDependencies:
+      '@carbon/config':
+        specifier: workspace:*
+        version: link:../packages/config
+      '@httptoolkit/httpsnippet':
+        specifier: ^3.0.2
+        version: 3.0.2(mkdirp@3.0.1)
+      '@tailwindcss/postcss':
+        specifier: ^4
+        version: 4.3.1
+      '@tailwindcss/typography':
+        specifier: 'catalog:'
+        version: 0.5.19(tailwindcss@4.3.0)
+      '@types/mdx':
+        specifier: ^2.0.14
+        version: 2.0.14
+      '@types/node':
+        specifier: ^22
+        version: 22.19.7
+      '@types/react':
+        specifier: ^19
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19
+        version: 19.2.3(@types/react@19.2.14)
+      rimraf:
+        specifier: 'catalog:'
+        version: 5.0.10
+      tailwind-scrollbar:
+        specifier: 'catalog:'
+        version: 4.0.2(react@19.2.6)(tailwindcss@4.3.0)
+      tailwind-scrollbar-hide:
+        specifier: 'catalog:'
+        version: 4.0.0(tailwindcss@4.3.0)
+      tailwindcss:
+        specifier: 'catalog:'
+        version: 4.3.0
+      tailwindcss-animate:
+        specifier: 'catalog:'
+        version: 1.0.7(tailwindcss@4.3.0)
+      typescript:
+        specifier: 'catalog:'
+        version: 5.8.3
+
   examples/quote-configurator:
     dependencies:
       '@carbon/config':
@@ -2016,7 +2016,7 @@ importers:
         version: 18.3.1
       tsup:
         specifier: 'catalog:'
-        version: 8.5.1(jiti@1.21.7)(postcss@8.5.14)(tsx@4.21.0)(typescript@5.8.3)(yaml@2.8.3)
+        version: 8.5.1(jiti@1.21.7)(postcss@8.5.15)(tsx@4.21.0)(typescript@5.8.3)(yaml@2.8.3)
       typescript:
         specifier: 'catalog:'
         version: 5.8.3
@@ -11225,10 +11225,6 @@ packages:
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
-
-  js-yaml@4.1.1:
-    resolution: {integrity: sha512-qQKT4zQxXl8lLwBtHMWwaTcGfFOZviOJet3Oy/xmGk2gZH677CJM9EvtfdSkgWcATZhj/55JZ0rmy3myCT5lsA==}
-    hasBin: true
 
   js-yaml@4.2.0:
     resolution: {integrity: sha512-ePWsvanv0DWuDRsW8dnt+R4jQ31SCRCQ7hhNcPXZPsoBZiemuZNYGf7adZdqX2D86j6rvKp3RpCxVTSb8WQlOw==}
@@ -22382,7 +22378,7 @@ snapshots:
   cosmiconfig@8.3.6(typescript@5.8.3):
     dependencies:
       import-fresh: 3.3.1
-      js-yaml: 4.1.1
+      js-yaml: 4.2.0
       parse-json: 5.2.0
       path-type: 4.0.0
     optionalDependencies:
@@ -23416,7 +23412,7 @@ snapshots:
   fsevents@2.3.3:
     optional: true
 
-  fumadocs-core@16.10.3(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.20.0(react@19.2.6))(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react-router@7.15.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)(zod@4.3.6):
+  fumadocs-core@16.10.3(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.20.0(react@19.2.6))(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react-router@7.15.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)(zod@4.4.3):
     dependencies:
       '@orama/orama': 3.1.18
       estree-util-value-to-estree: 3.5.0
@@ -23446,18 +23442,18 @@ snapshots:
       react: 19.2.6
       react-dom: 19.2.6(react@19.2.6)
       react-router: 7.15.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-      zod: 4.3.6
+      zod: 4.4.3
     transitivePeerDependencies:
       - supports-color
 
-  fumadocs-mdx@15.0.12(@types/mdast@4.0.4)(@types/mdx@2.0.14)(@types/react@19.2.14)(fumadocs-core@16.10.3(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.20.0(react@19.2.6))(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react-router@7.15.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)(zod@4.3.6))(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)(vite@8.0.10(@types/node@22.19.7)(esbuild@0.28.0)(jiti@2.7.0)(tsx@4.21.0)(yaml@2.8.3)):
+  fumadocs-mdx@15.0.12(@types/mdast@4.0.4)(@types/mdx@2.0.14)(@types/react@19.2.14)(fumadocs-core@16.10.3(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.20.0(react@19.2.6))(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react-router@7.15.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)(zod@4.4.3))(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)(vite@8.0.10(@types/node@22.19.7)(esbuild@0.28.0)(jiti@2.7.0)(tsx@4.21.0)(yaml@2.8.3)):
     dependencies:
       '@mdx-js/mdx': 3.1.1
       '@standard-schema/spec': 1.1.0
       chokidar: 5.0.0
       esbuild: 0.28.0
       estree-util-value-to-estree: 3.5.0
-      fumadocs-core: 16.10.3(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.20.0(react@19.2.6))(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react-router@7.15.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)(zod@4.3.6)
+      fumadocs-core: 16.10.3(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.20.0(react@19.2.6))(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react-router@7.15.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)(zod@4.4.3)
       js-yaml: 4.2.0
       mdast-util-mdx: 3.0.0
       picocolors: 1.1.1
@@ -23479,7 +23475,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  fumadocs-ui@16.10.3(@emotion/is-prop-valid@1.4.0)(@tailwindcss/oxide@4.3.1)(@types/mdx@2.0.14)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(fumadocs-core@16.10.3(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.20.0(react@19.2.6))(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react-router@7.15.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)(zod@4.3.6))(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(tailwindcss@4.3.0):
+  fumadocs-ui@16.10.3(@emotion/is-prop-valid@1.4.0)(@tailwindcss/oxide@4.3.1)(@types/mdx@2.0.14)(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(fumadocs-core@16.10.3(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.20.0(react@19.2.6))(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react-router@7.15.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)(zod@4.4.3))(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(tailwindcss@4.3.0):
     dependencies:
       '@fuma-translate/react': 1.0.2(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@fumadocs/tailwind': 0.0.5(@tailwindcss/oxide@4.3.1)(tailwindcss@4.3.0)
@@ -23494,7 +23490,7 @@ snapshots:
       '@radix-ui/react-slot': 1.3.0(@types/react@19.2.14)(react@19.2.6)
       '@radix-ui/react-tabs': 1.1.15(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       class-variance-authority: 0.7.1
-      fumadocs-core: 16.10.3(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.20.0(react@19.2.6))(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react-router@7.15.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)(zod@4.3.6)
+      fumadocs-core: 16.10.3(@mdx-js/mdx@3.1.1)(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@1.20.0(react@19.2.6))(next@16.2.3(@babel/core@7.29.0)(@opentelemetry/api@1.9.0)(babel-plugin-macros@3.1.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react-dom@19.2.6(react@19.2.6))(react-router@7.15.1(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)(zod@4.4.3)
       lucide-react: 1.20.0(react@19.2.6)
       motion: 12.40.0(@emotion/is-prop-valid@1.4.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       next-themes: 0.4.6(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -24312,10 +24308,6 @@ snapshots:
   js-sha256@0.10.1: {}
 
   js-tokens@4.0.0: {}
-
-  js-yaml@4.1.1:
-    dependencies:
-      argparse: 2.0.1
 
   js-yaml@4.2.0:
     dependencies:
@@ -25680,24 +25672,24 @@ snapshots:
 
   possible-typed-array-names@1.1.0: {}
 
-  postcss-import@15.1.0(postcss@8.5.14):
+  postcss-import@15.1.0(postcss@8.5.15):
     dependencies:
-      postcss: 8.5.14
+      postcss: 8.5.15
       postcss-value-parser: 4.2.0
       read-cache: 1.0.0
       resolve: 1.22.11
 
-  postcss-js@4.1.0(postcss@8.5.14):
+  postcss-js@4.1.0(postcss@8.5.15):
     dependencies:
       camelcase-css: 2.0.1
-      postcss: 8.5.14
+      postcss: 8.5.15
 
-  postcss-load-config@6.0.1(jiti@1.21.7)(postcss@8.5.14)(tsx@4.21.0)(yaml@2.8.3):
+  postcss-load-config@6.0.1(jiti@1.21.7)(postcss@8.5.15)(tsx@4.21.0)(yaml@2.8.3):
     dependencies:
       lilconfig: 3.1.3
     optionalDependencies:
       jiti: 1.21.7
-      postcss: 8.5.14
+      postcss: 8.5.15
       tsx: 4.21.0
       yaml: 2.8.3
 
@@ -25710,9 +25702,9 @@ snapshots:
       tsx: 4.21.0
       yaml: 2.8.3
 
-  postcss-nested@6.2.0(postcss@8.5.14):
+  postcss-nested@6.2.0(postcss@8.5.15):
     dependencies:
-      postcss: 8.5.14
+      postcss: 8.5.15
       postcss-selector-parser: 6.1.2
 
   postcss-selector-parser@6.0.10:
@@ -25729,7 +25721,7 @@ snapshots:
 
   postcss@8.4.31:
     dependencies:
-      nanoid: 3.3.11
+      nanoid: 3.3.12
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
@@ -27262,7 +27254,7 @@ snapshots:
       lines-and-columns: 1.2.4
       mz: 2.7.0
       pirates: 4.0.7
-      tinyglobby: 0.2.16
+      tinyglobby: 0.2.17
       ts-interface-checker: 0.1.13
 
   supabase@2.89.0:
@@ -27336,11 +27328,11 @@ snapshots:
       normalize-path: 3.0.0
       object-hash: 3.0.0
       picocolors: 1.1.1
-      postcss: 8.5.14
-      postcss-import: 15.1.0(postcss@8.5.14)
-      postcss-js: 4.1.0(postcss@8.5.14)
-      postcss-load-config: 6.0.1(jiti@1.21.7)(postcss@8.5.14)(tsx@4.21.0)(yaml@2.8.3)
-      postcss-nested: 6.2.0(postcss@8.5.14)
+      postcss: 8.5.15
+      postcss-import: 15.1.0(postcss@8.5.15)
+      postcss-js: 4.1.0(postcss@8.5.15)
+      postcss-load-config: 6.0.1(jiti@1.21.7)(postcss@8.5.15)(tsx@4.21.0)(yaml@2.8.3)
+      postcss-nested: 6.2.0(postcss@8.5.15)
       postcss-selector-parser: 6.1.2
       resolve: 1.22.11
       sucrase: 3.35.1
@@ -27483,7 +27475,7 @@ snapshots:
 
   tsscmp@1.0.6: {}
 
-  tsup@8.5.1(jiti@1.21.7)(postcss@8.5.14)(tsx@4.21.0)(typescript@5.8.3)(yaml@2.8.3):
+  tsup@8.5.1(jiti@1.21.7)(postcss@8.5.15)(tsx@4.21.0)(typescript@5.8.3)(yaml@2.8.3):
     dependencies:
       bundle-require: 5.1.0(esbuild@0.27.7)
       cac: 6.7.14
@@ -27494,7 +27486,7 @@ snapshots:
       fix-dts-default-cjs-exports: 1.0.1
       joycon: 3.1.1
       picocolors: 1.1.1
-      postcss-load-config: 6.0.1(jiti@1.21.7)(postcss@8.5.14)(tsx@4.21.0)(yaml@2.8.3)
+      postcss-load-config: 6.0.1(jiti@1.21.7)(postcss@8.5.15)(tsx@4.21.0)(yaml@2.8.3)
       resolve-from: 5.0.0
       rollup: 4.60.1
       source-map: 0.7.6
@@ -27503,7 +27495,7 @@ snapshots:
       tinyglobby: 0.2.16
       tree-kill: 1.2.2
     optionalDependencies:
-      postcss: 8.5.14
+      postcss: 8.5.15
       typescript: 5.8.3
     transitivePeerDependencies:
       - jiti

@@ -1,6 +1,7 @@
 packages:
   - apps/*
   - ci
+  - docs
   - examples/*
   - packages/*
 

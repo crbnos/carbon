@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 import HTTPSnippet from "@httptoolkit/httpsnippet";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const SCHEMA = resolve(__dirname, "../../../packages/database/src/swagger-docs-schema.ts");
+const SCHEMA = resolve(__dirname, "../../packages/database/src/swagger-docs-schema.ts");
 const OUT = resolve(__dirname, "../lib/api-data.generated.ts");
 const BASE = "https://rest.carbon.ms";
 
@@ -360,7 +360,7 @@ if (other) console.log(`  (Other sample: ${other.resources.slice(0, 12).map((r) 
 console.log(`[api-docs] wrote ${OUT}`);
 
 // ── MCP tools catalog ─────────────────────────────────────────────────────────
-const TOOLS_SRC = resolve(__dirname, "../../../apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json");
+const TOOLS_SRC = resolve(__dirname, "../../apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json");
 const TOOLS_OUT = resolve(__dirname, "../lib/tools-data.generated.ts");
 const toolMeta = JSON.parse(readFileSync(TOOLS_SRC, "utf8"));
 const allTools = Array.isArray(toolMeta) ? toolMeta : toolMeta.tools;

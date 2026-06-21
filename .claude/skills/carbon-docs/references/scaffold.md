@@ -1,11 +1,11 @@
-# Phase 1 — Scaffold `apps/docs` (Next.js + Fumadocs)
+# Phase 1 — Scaffold `docs` (Next.js + Fumadocs)
 
-> **Historical — `apps/docs` already exists.** You will almost never re-run this; it's the record of how
+> **Historical — `docs` already exists.** You will almost never re-run this; it's the record of how
 > the app was first stood up (Next.js + Fumadocs, React 19 pinned, pnpm/Biome). For *authoring or editing*
 > docs, ignore this and start from `SKILL.md`. The decisions here are mostly still accurate, but the live
 > app is the source of truth — don't re-scaffold over it.
 
-Goal: a new app at `apps/docs` that builds with the monorepo's tooling and renders one Guide page and
+Goal: a new app at `docs` that builds with the monorepo's tooling and renders one Guide page and
 one Reference page. Get this thin slice working before doing anything else.
 
 > Carbon has no Next.js app yet — this is the first. That's intentional and already anticipated:
@@ -48,7 +48,7 @@ You can either run `pnpm create fumadocs-app` inside `apps/` and then reconcile 
 below, or hand-create the files. Either way the result must match this layout:
 
 ```
-apps/docs/
+docs/
 ├── package.json
 ├── tsconfig.json
 ├── next.config.mjs
@@ -186,7 +186,7 @@ export default withMDX(config);
 
 ## Step 7 — Wire into the monorepo
 
-- **Workspace:** nothing to do — `apps/*` in `pnpm-workspace.yaml` already includes `apps/docs`.
+- **Workspace:** `docs` is listed explicitly in `pnpm-workspace.yaml` (it lives at the repo root, outside `apps/*`).
   Run `pnpm install` from the root so workspace links resolve.
 - **Turbo:** nothing to add — the generic `dev` and `build` tasks run the app's scripts, and `.next/**`
   is already an output. Confirm with `pnpm --filter docs dev`.
@@ -209,6 +209,6 @@ Carbon palette in both light and dark mode. Only then move on.
 
 Carbon deploys via **SST** (`sst.config.ts` at root → AWS), with domains following `<app>.<infix>` and
 docs naturally mapping to `docs.carbon.ms`. Adding the docs app to SST (a Next component pointing at
-`apps/docs`, with the domain) is a deliberate follow-up step — don't block the first render on it.
+`docs`, with the domain) is a deliberate follow-up step — don't block the first render on it.
 Mirror how `erp`/`mes` are declared in `sst.config.ts`. Confirm with the user before touching
 deployment infra, since it's outward-facing.
