@@ -42,15 +42,11 @@ scripts/test-get-stripe-customer.ts
 packages/database/.env
 packages/database/supabase/seed.sql
 
-.vercel
 .env*.local
-
-.react-router
 
 # Rust
 **/target/
 **/*.rs.bk
-**/pkg/
 **/pkg/
 
 # C++ (cad-engine)

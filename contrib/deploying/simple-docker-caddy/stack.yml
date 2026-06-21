@@ -16,7 +16,7 @@
 
 x-shim: &shim
   type: bind
-  source: ${CARBON_REPO}/contrib/deployment/simple-docker-caddy/bin/secrets-entrypoint.sh
+  source: ${CARBON_REPO}/contrib/deploying/simple-docker-caddy/bin/secrets-entrypoint.sh
   target: /usr/local/bin/carbon-secrets-entrypoint.sh
   read_only: true
 
@@ -150,7 +150,7 @@ services:
       ACME_EMAIL: ${ACME_EMAIL}
     volumes:
       - type: bind
-        source: ${CARBON_REPO}/contrib/deployment/simple-docker-caddy/Caddyfile
+        source: ${CARBON_REPO}/contrib/deploying/simple-docker-caddy/Caddyfile
         target: /etc/caddy/Caddyfile
         read_only: true
       - caddy-data:/data
@@ -208,11 +208,11 @@ services:
       - pgdata:/var/lib/postgresql/data
       - pgconfig:/etc/postgresql-custom
       - type: bind
-        source: ${CARBON_REPO}/contrib/deployment/simple-docker-caddy/postgres/01-roles.sh
+        source: ${CARBON_REPO}/contrib/deploying/simple-docker-caddy/postgres/01-roles.sh
         target: /docker-entrypoint-initdb.d/zz-carbon-01-roles.sh
         read_only: true
       - type: bind
-        source: ${CARBON_REPO}/contrib/deployment/simple-docker-caddy/postgres/02-performance.sh
+        source: ${CARBON_REPO}/contrib/deploying/simple-docker-caddy/postgres/02-performance.sh
         target: /docker-entrypoint-initdb.d/zz-carbon-02-performance.sh
         read_only: true
     healthcheck:

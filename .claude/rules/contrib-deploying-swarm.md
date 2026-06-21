@@ -1,10 +1,10 @@
 ---
-description: Self-hosted single-VPS deployment — Docker Swarm + Caddy stack under contrib/deployment/simple-docker-caddy. Swarm secrets, full Supabase data plane, the alternative to the SST/AWS cloud path.
+description: Self-hosted single-VPS deployment — Docker Swarm + Caddy stack under contrib/deploying/simple-docker-caddy. Swarm secrets, full Supabase data plane, the alternative to the SST/AWS cloud path.
 paths:
-  - "contrib/deployment/**"
+  - "contrib/deploying/**"
 ---
 
-# Self-host: single-VPS Docker Swarm + Caddy (`contrib/deployment/simple-docker-caddy`)
+# Self-host: single-VPS Docker Swarm + Caddy (`contrib/deploying/simple-docker-caddy`)
 
 Self-host the whole stack (ERP + MES + full Supabase data plane + Redis + Inngest)
 on **one Linux VPS** as a single-node Docker **Swarm** (`docker stack deploy`),
@@ -15,7 +15,7 @@ Both build from the same root `Dockerfile` (`--build-arg APP=erp|mes`).
 This **replaced** the old `docker-compose.prod.yml` + `deploy/prod/` compose stack
 (deleted) and the root `scripts/gen-supabase-keys.mjs` (moved into the example).
 
-## Files (all under `contrib/deployment/simple-docker-caddy/`)
+## Files (all under `contrib/deploying/simple-docker-caddy/`)
 - `stack.yml` — the Swarm stack. NOT `docker compose up`-able: `build:`,
   `depends_on`, `profiles`, `restart:` are intentionally absent (Swarm ignores
   them). Uses `deploy:` (replicas/resources/update_config/restart_policy), top-level

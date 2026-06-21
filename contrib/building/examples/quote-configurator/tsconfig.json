@@ -3,8 +3,7 @@
     "env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    "app/modules/documents/documents.service.ts",
-    "../carbon/app/components/Breadcrumb.tsx"
+    "app/modules/documents/documents.service.ts"
   ],
   "compilerOptions": {
     "lib": ["dom", "dom.iterable", "ESNext"],

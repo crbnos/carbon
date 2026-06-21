@@ -5,7 +5,7 @@ description: Self-host the full Carbon stack on a single Linux VPS with a Docker
 
 Run all of Carbon on **one Linux VPS**: a single-node [Docker Swarm](https://docs.docker.com/engine/swarm/) running the ERP and MES apps, the full Supabase data plane, Redis, and Inngest, behind a [Caddy](https://caddyserver.com/docs/) reverse proxy that handles TLS for you. Secrets are real **Docker Swarm secrets**, and only ports **80/443** are exposed — everything else stays on a private overlay network.
 
-Everything for this recipe lives in [`contrib/deployment/simple-docker-caddy`](https://github.com/crbnos/carbon/tree/main/contrib/deployment/simple-docker-caddy). The `deploy.sh` script wraps the whole lifecycle.
+Everything for this recipe lives in [`contrib/deploying/simple-docker-caddy`](https://github.com/crbnos/carbon/tree/main/contrib/deploying/simple-docker-caddy). The `deploy.sh` script wraps the whole lifecycle.
 
 ## What runs
 
@@ -38,7 +38,7 @@ Everything for this recipe lives in [`contrib/deployment/simple-docker-caddy`](h
   Sets up a firewall (SSH + 80/443 only), fail2ban, swap, and automatic security updates.
 
   ```bash
-  cd /opt/carbon/contrib/deployment/simple-docker-caddy
+  cd /opt/carbon/contrib/deploying/simple-docker-caddy
   sudo ./scripts/harden.sh
   ```
   </Step>
