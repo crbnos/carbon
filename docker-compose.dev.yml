@@ -235,7 +235,8 @@ services:
     volumes:
       - ./packages/dev/docker/kong.yml:/home/kong/kong.yml:ro
 
-  # Redis is shared across worktrees — see root docker-compose.yml.
+  # Redis is shared across worktrees — booted directly as the `carbon-redis`
+  # container by the dev CLI (packages/dev/src/services/compose.ts), not here.
   # Each worktree gets its own logical DB index (0-15) via REDIS_URL.
 
   inngest:

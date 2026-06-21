@@ -1,8 +1,13 @@
 import { log } from "@clack/prompts";
 import { execa } from "execa";
-import { COMPOSE_DEV_FILE, COMPOSE_SHARED_FILE } from "../constants.js";
+import { COMPOSE_DEV_FILE } from "../constants.js";
 import { readLines } from "../helpers.js";
-import { projectName } from "../worktree.js";
+import { projectName, SHARED_REDIS_PORT } from "../worktree.js";
+
+// Shared redis runs as a single plain container (not a compose stack) — one per
+// host, reused across worktrees via per-worktree logical DB indexes.
+const REDIS_CONTAINER = "carbon-redis";
+const REDIS_VOLUME = "carbon-redis-data";
 
 type Publisher = { PublishedPort: number; TargetPort: number };
 
@@ -119,16 +124,60 @@ export async function stopStack(
   await execa("docker", args, { cwd: root, stdio: "ignore", reject: false });
 }
 
-// One redis per host; recover from stale `carbon-redis` leftovers.
-export async function bootSharedRedis(root: string) {
-  const args = ["compose", "-f", COMPOSE_SHARED_FILE, "up", "-d", "redis"];
-  let r = await execa("docker", args, { cwd: root, reject: false });
-  if (r.exitCode !== 0 && /already in use/i.test(r.stderr ?? "")) {
-    await execa("docker", ["rm", "-f", "carbon-redis"], {
+// One redis per host, run directly via `docker run` (no compose file).
+// Idempotent: reuse a running container, start a stopped one, otherwise create.
+export async function bootSharedRedis() {
+  const state = await execa(
+    "docker",
+    ["container", "inspect", "-f", "{{.State.Running}}", REDIS_CONTAINER],
+    { reject: false }
+  );
+  if (state.exitCode === 0) {
+    if (state.stdout.trim() === "true") return;
+    // Exists but stopped — try to start it; if that fails, recreate below.
+    const started = await execa("docker", ["start", REDIS_CONTAINER], {
       reject: false,
       stdio: "ignore"
     });
-    r = await execa("docker", args, { cwd: root, reject: false });
+    if (started.exitCode === 0) return;
+    await execa("docker", ["rm", "-f", REDIS_CONTAINER], {
+      reject: false,
+      stdio: "ignore"
+    });
+  }
+
+  const args = [
+    "run",
+    "-d",
+    "--name",
+    REDIS_CONTAINER,
+    "--restart",
+    "unless-stopped",
+    "-p",
+    `${SHARED_REDIS_PORT}:6379`,
+    "-v",
+    `${REDIS_VOLUME}:/data`,
+    "--health-cmd",
+    "redis-cli ping",
+    "--health-interval",
+    "5s",
+    "--health-timeout",
+    "3s",
+    "--health-retries",
+    "5",
+    "redis:7-alpine",
+    "redis-server",
+    "--appendonly",
+    "yes"
+  ];
+  // Recover from a stale container holding the name.
+  let r = await execa("docker", args, { reject: false });
+  if (r.exitCode !== 0 && /already in use/i.test(r.stderr ?? "")) {
+    await execa("docker", ["rm", "-f", REDIS_CONTAINER], {
+      reject: false,
+      stdio: "ignore"
+    });
+    r = await execa("docker", args, { reject: false });
   }
   if (r.exitCode !== 0) {
     process.stderr.write(r.stderr ?? "");
@@ -371,7 +420,7 @@ export async function listCarbonProjects(): Promise<string[]> {
 export async function flushDb(db: number) {
   const r = await execa(
     "docker",
-    ["exec", "carbon-redis", "redis-cli", "-n", String(db), "FLUSHDB"],
+    ["exec", REDIS_CONTAINER, "redis-cli", "-n", String(db), "FLUSHDB"],
     { reject: false, stdio: "ignore" }
   );
   if (r.exitCode !== 0) {

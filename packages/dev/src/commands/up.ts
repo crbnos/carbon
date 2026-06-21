@@ -269,7 +269,7 @@ async function provisionSlot(
     {
       title: "Boot shared redis",
       task: async () => {
-        await bootSharedRedis(root);
+        await bootSharedRedis();
         return `shared redis on :${SHARED_REDIS_PORT} (index ${ctx.redisDb})`;
       }
     }

@@ -1,6 +1,5 @@
 /** File names + paths used across the CLI. */
 export const COMPOSE_DEV_FILE = "docker-compose.dev.yml";
-export const COMPOSE_SHARED_FILE = "docker-compose.yml";
 
 /** Apps the CLI knows how to spawn through portless. */
 export const APP_CHOICES = [
