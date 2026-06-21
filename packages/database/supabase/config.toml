@@ -1,6 +1,7 @@
 # NOTE: For local dev, only `project_id` and `[functions.*]` sections are
 # authoritative. Runtime services (db/api/auth/storage/studio/inbucket/realtime)
-# are managed by docker-compose.dev.yml (see scripts/dev/cli.ts). The other
+# are managed by packages/dev/docker/docker-compose.dev.yml (via the crbn CLI,
+# packages/dev/src). The other
 # sections here are kept for `supabase functions deploy` and reference parity
 # with what `supabase start` used to provide.
 

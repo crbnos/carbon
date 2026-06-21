@@ -192,6 +192,8 @@ export async function destroyProjectVolumes(cwd: string, project: string) {
       "compose",
       "-f",
       COMPOSE_DEV_FILE,
+      "--project-directory",
+      ".",
       "--env-file",
       ".env.local",
       "-p",
@@ -433,7 +435,19 @@ export async function flushDb(db: number) {
 // ---------------------------------------------------------------------------
 
 function devArgs(slug: string, ...rest: string[]): string[] {
-  return ["compose", "-f", COMPOSE_DEV_FILE, "-p", projectName(slug), ...rest];
+  // --project-directory . pins the project dir to the cwd (repo root) so the
+  // compose file's ./packages/... mounts resolve from root even though the file
+  // now lives under packages/dev/docker/.
+  return [
+    "compose",
+    "-f",
+    COMPOSE_DEV_FILE,
+    "--project-directory",
+    ".",
+    "-p",
+    projectName(slug),
+    ...rest
+  ];
 }
 
 async function execStrict(cmd: string, args: string[], cwd: string) {

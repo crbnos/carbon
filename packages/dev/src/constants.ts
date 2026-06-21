@@ -1,5 +1,8 @@
 /** File names + paths used across the CLI. */
-export const COMPOSE_DEV_FILE = "docker-compose.dev.yml";
+// Relative to the repo root (the cwd the CLI runs docker from). Compose is
+// always invoked with `--project-directory .` so the file's `./packages/...`
+// volume mounts still resolve from the root, not from this file's directory.
+export const COMPOSE_DEV_FILE = "packages/dev/docker/docker-compose.dev.yml";
 
 /** Apps the CLI knows how to spawn through portless. */
 export const APP_CHOICES = [
