@@ -3,13 +3,13 @@ title: Methods & sourcing
 description: How Carbon decides whether each part is made, bought, or pulled from stock — and how a job gets its own copy of the recipe.
 ---
 
-A part's **manufacturing method** is its recipe: the **method materials** (its bill of materials) and the
-**method operations** (its routing). Every made part has one, and it's where the answer to "how is this
+A part's **manufacturing method** is its recipe: the **method materials** (its <Term id="bom">bill of materials</Term>) and the
+**method operations** (its <Term>routing</Term>). Every made part has one, and it's where the answer to "how is this
 built?" actually lives.
 
 ## Method type
 
-Every item carries a **method type** that routes it down one of three paths. You set it on the item; every
+Every item carries a **<Term>method type</Term>** that routes it down one of three paths. You set it on the item; every
 bill of materials that uses the item mirrors it.
 
 | Method type | What happens |
@@ -28,7 +28,7 @@ method that references the part — draft methods only; active and archived meth
 These are two different questions, and Carbon keeps them separate:
 
 - **Method type** answers *how does this part get into its parent?* — <Term>Make to Order</Term>, <Term>Purchase to Order</Term>, or <Term>Pull from Inventory</Term>.
-- **Replenishment system** answers *how is this part replenished overall, and which planning queue does it
+- **<Term>Replenishment system</Term>** answers *how is this part replenished overall, and which planning queue does it
   land in?* — `Buy`, `Make`, or `Buy and Make`.
 
 A part can be made for one parent and pulled from stock for another; the replenishment system is what
@@ -46,7 +46,7 @@ A **Make to Order** item inside a bill of materials is one of two things:
 
 ## Get Method
 
-When you create a job, Carbon runs **Get Method** — it copies the part's method into a job-specific copy.
+When you create a job, Carbon runs **<Term>Get Method</Term>** — it copies the part's method into a job-specific copy.
 The job edits that copy; the part master is never touched silently. Push a proven change back up and the
 next job inherits it.
 

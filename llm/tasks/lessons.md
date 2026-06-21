@@ -215,3 +215,16 @@ Patterns learned from corrections. Review at the start of each session.
 - The index builds at module load from `source.getPages()`; after renaming a content dir (`content/guide` →
   `content/guides`) or changing `defineDocs({ dir })`, run `pnpm exec fumadocs-mdx` to regenerate `.source`, and
   the search index only reflects it after the dev server rebuilds the route.
+
+## Docs interlinking / bulk multi-page work
+
+- **Verify coverage with a site-wide sweep before declaring a bulk task done.** During the `<Term>`
+  enrichment I twice called it "complete" prematurely — once while a concurrent session was still
+  writing, once having silently skipped `plan.mdx` and `ship.mdx`. The changed-files list is NOT a
+  coverage check. Run a deterministic sweep (count `<Term>` per `content/**/*.mdx`, list 0-term
+  pages) and confirm every page that *should* have terms does, before claiming done.
+- **`<Term>` plural display text needs an explicit `id`.** `<Term>quotes</Term>` slugifies to
+  `quotes`, not the key `quote`, so it renders as silent plain text (fails safe, easy to miss). Use
+  `<Term id="quote">quotes</Term>`. Catch these by slugifying every Term's inner text and diffing
+  against `glossary.ts` keys; the live dev server also reveals them (resolved Term = a
+  `decoration-dotted` button, unresolved = plain text).

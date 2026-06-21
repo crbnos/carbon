@@ -2,15 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 
 export type DocsNavNode = { label: string; url?: string; children?: DocsNavNode[] };
 
 const GS_ACTIVE = "bg-[rgba(0,176,255,0.10)] font-[530] text-[#1E84B0]";
 const GS_IDLE = "text-[rgba(38,35,35,0.8)] hover:bg-[rgba(231,231,227,0.55)] hover:text-[#262323]";
 const GS_LINK = "block rounded-[6px] px-[8px] py-[4px] text-[14.5px] leading-[135%] transition-colors";
-const SECTION_LABEL =
+// Top-level group label (Platform, Product reference, …) vs nested sub-group label
+// (the module groups inside Product reference) — one step quieter so the hierarchy reads.
+const GROUP_LABEL =
   "font-[family-name:var(--font-mono)] text-[12.5px] font-[600] uppercase tracking-[0.06em] text-[rgba(38,35,35,0.6)]";
+const SUBGROUP_LABEL =
+  "font-[family-name:var(--font-mono)] text-[11px] font-[600] uppercase tracking-[0.05em] text-[rgba(38,35,35,0.5)]";
 
 function Chevron({ open }: { open: boolean }) {
   return (
@@ -29,71 +33,60 @@ function Chevron({ open }: { open: boolean }) {
 
 export function DocsNav({ tree }: { tree: DocsNavNode[] }) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
+  // User toggles override the default open/closed; default is open at the top level and
+  // for any branch that holds the active page (so deep module groups stay collapsed until
+  // you're in them, but the current one is revealed on load).
+  const [override, setOverride] = useState<Record<string, boolean>>({});
 
   const isActive = (url?: string) => !!url && pathname === url;
+  const holdsActive = (node: DocsNavNode): boolean =>
+    isActive(node.url) || !!node.children?.some(holdsActive);
 
-  return (
-    <nav className="flex flex-col gap-[2px]">
-      {tree.map((node) => {
-        if (!node.children?.length) {
-          return (
-            <Link
-              key={node.label}
-              href={node.url ?? "#"}
-              className={`${GS_LINK} ${isActive(node.url) ? GS_ACTIVE : GS_IDLE}`}
-            >
-              {node.label}
-            </Link>
-          );
-        }
+  const render = (nodes: DocsNavNode[], depth: number, parentKey: string): ReactNode[] =>
+    nodes.map((node) => {
+      const key = `${parentKey}/${node.label}`;
 
-        const isOpen = !collapsed.has(node.label);
+      if (!node.children?.length) {
         return (
-          <div key={node.label} className="mt-[8px] first:mt-[2px]">
-            <button
-              type="button"
-              onClick={() =>
-                setCollapsed((prev) => {
-                  const next = new Set(prev);
-                  if (next.has(node.label)) next.delete(node.label);
-                  else next.add(node.label);
-                  return next;
-                })
-              }
-              className="flex w-full items-center gap-[7px] rounded-[7px] px-[8px] py-[5px] transition-colors hover:bg-[rgba(231,231,227,0.5)]"
-            >
-              <Chevron open={isOpen} />
-              <span className={SECTION_LABEL}>{node.label}</span>
-            </button>
-
-            {isOpen && (
-              <ul className="mt-[2px] mb-[2px] ml-[13px] list-none border-l border-[#ECECE7] py-[2px] pl-[8px]">
-                {node.url && (
-                  <li>
-                    <Link
-                      href={node.url}
-                      className={`${GS_LINK} ${isActive(node.url) ? GS_ACTIVE : GS_IDLE}`}
-                    >
-                      Overview
-                    </Link>
-                  </li>
-                )}
-                {node.children.map((child) => (
-                  <li key={child.label}>
-                    <Link
-                      href={child.url ?? "#"}
-                      className={`${GS_LINK} ${isActive(child.url) ? GS_ACTIVE : GS_IDLE}`}
-                    >
-                      {child.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          <Link
+            key={key}
+            href={node.url ?? "#"}
+            className={`${GS_LINK} ${isActive(node.url) ? GS_ACTIVE : GS_IDLE}`}
+          >
+            {node.label}
+          </Link>
         );
-      })}
-    </nav>
-  );
+      }
+
+      const open = override[key] ?? (depth === 0 || holdsActive(node));
+      return (
+        <div key={key} className={depth === 0 ? "mt-[8px] first:mt-[2px]" : "mt-[4px] first:mt-0"}>
+          <button
+            type="button"
+            aria-expanded={open}
+            onClick={() => setOverride((p) => ({ ...p, [key]: !open }))}
+            className="flex w-full items-center gap-[7px] rounded-[7px] px-[8px] py-[5px] transition-colors hover:bg-[rgba(231,231,227,0.5)]"
+          >
+            <Chevron open={open} />
+            <span className={depth === 0 ? GROUP_LABEL : SUBGROUP_LABEL}>{node.label}</span>
+          </button>
+
+          {open && (
+            <div className="mt-[2px] mb-[2px] ml-[13px] flex flex-col gap-[2px] border-l border-[#ECECE7] py-[2px] pl-[8px]">
+              {node.url && (
+                <Link
+                  href={node.url}
+                  className={`${GS_LINK} ${isActive(node.url) ? GS_ACTIVE : GS_IDLE}`}
+                >
+                  Overview
+                </Link>
+              )}
+              {render(node.children, depth + 1, key)}
+            </div>
+          )}
+        </div>
+      );
+    });
+
+  return <nav className="flex flex-col gap-[2px]">{render(tree, 0, "")}</nav>;
 }
