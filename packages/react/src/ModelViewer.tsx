@@ -358,7 +358,7 @@ export function ModelViewer({
             {onDelete && (
               <IconButton
                 aria-label="Delete model"
-                className="absolute bottom-2 left-2 z-10 text-muted-foreground hover:text-destructive-foreground hover:bg-destructive"
+                className="absolute bottom-2 right-2 z-10 text-muted-foreground hover:text-destructive-foreground hover:bg-destructive"
                 icon={<LuTrash2 />}
                 variant="ghost"
                 onClick={onDelete}
