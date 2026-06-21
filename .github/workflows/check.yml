@@ -28,6 +28,7 @@ jobs:
           path: |
             node_modules
             apps/*/node_modules
+            docs/node_modules
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
@@ -51,6 +52,7 @@ jobs:
           path: |
             node_modules
             apps/*/node_modules
+            docs/node_modules
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
@@ -73,6 +75,7 @@ jobs:
           path: |
             node_modules
             apps/*/node_modules
+            docs/node_modules
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
@@ -96,6 +99,7 @@ jobs:
           path: |
             node_modules
             apps/*/node_modules
+            docs/node_modules
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
@@ -118,6 +122,7 @@ jobs:
           path: |
             node_modules
             apps/*/node_modules
+            docs/node_modules
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
