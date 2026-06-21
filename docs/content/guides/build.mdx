@@ -11,24 +11,24 @@ Open the job you just released and look at what it actually takes to build a rob
 
 ## The bill of materials
 
-A robot's bill of materials (BoM) is a tree. The robot is built from an arm and a leg; each of those is built from a machined part and a motor. Carbon shows the whole structure at a glance, with every node carrying an icon for how it's obtained.
+A robot's <Term id="bom">bill of materials</Term> (BoM) is a tree. The robot is built from an arm and a leg; each of those is built from a machined part and a motor. Carbon shows the whole structure at a glance, with every node carrying an icon for how it's obtained.
 
 <Figure illustration="bom-tree" caption="The robot BoM — made parts in blue, bought parts in amber, every leaf pulled from stock." />
 
 ## Method types
 
-Every item in that tree carries a method type, and it's the single most load-bearing field in your whole catalog. There are three values, and each one routes the item down a completely different path:
+Every item in that tree carries a <Term>method type</Term>, and it's the single most load-bearing field in your whole catalog. There are three values, and each one routes the item down a completely different path:
 
 <Figure illustration="method-types" caption="One field, three values — Make to Order becomes a job, Purchase to Order a PO, Pull from Inventory a stock pull." />
 
-- Make to Order — you manufacture it. The arm part and leg part are machined in-house, so each becomes its own job with its own operations.
-- Purchase to Order — you purchase it. The motors come from a supplier, so they flow through [purchasing](/guides/rfq-to-po) as a purchase order, never touching the floor.
-- Pull from Inventory — you pull it from stock when the parent is built, whether you originally made it or bought it.
+- <Term>Make to Order</Term> — you manufacture it. The arm part and leg part are machined in-house, so each becomes its own <Term>job</Term> with its own operations.
+- <Term>Purchase to Order</Term> — you purchase it. The motors come from a supplier, so they flow through [purchasing](/guides/rfq-to-po) as a <Term>purchase order</Term>, never touching the floor.
+- <Term>Pull from Inventory</Term> — you pull it from stock when the parent is built, whether you originally made it or bought it.
 
-You don't tag this on each BoM line by hand. The method type lives on the item itself, and every BoM that uses that item mirrors it. Switch a part's method type once, and it cascades everywhere the part appears.
+You don't tag this on each BoM line by hand. The method type lives on [the item itself](/docs/reference/items), and every BoM that uses that item mirrors it. Switch a part's method type once, and it cascades everywhere the part appears.
 
 <Callout tone="blue" badge="TWO DIFFERENT QUESTIONS" title="Method type and replenishment system aren't the same axis.">
-Method type answers "how does this part get into its parent?" — Make to Order, Purchase to Order, or Pull from Inventory. The replenishment system — Buy, Make, or Buy and Make — answers "how is this part stocked overall, and which planning queue does it land in?" A part can be made for one parent and pulled from stock for another.
+Method type answers "how does this part get into its parent?" — Make to Order, Purchase to Order, or Pull from Inventory. The <Term>replenishment system</Term> — Buy, Make, or Buy and Make — answers "how is this part stocked overall, and which planning queue does it land in?" A part can be made for one parent and pulled from stock for another.
 </Callout>
 
 ## Kits & subassemblies
@@ -37,8 +37,8 @@ Because the arm and leg are Make to Order parts, they aren't just line items —
 
 <Figure illustration="kit-vs-subassembly" caption="Same arm, two treatments — a Subassembly builds as its own job; a Kit is issued straight into the parent." />
 
-- Subassembly — built as its own job, with its own routing and its own completion. You can release the left arm independently of the final robot, and Carbon keeps the hierarchy in sync.
-- Kit — not built separately at all. Its components are issued together straight into the parent job, as a set. There's no kit job and no kit operation — just the parts, grouped.
+- <Term>Subassembly</Term> — built as its own job, with its own <Term>routing</Term> and its own completion. You can release the left arm independently of the final robot, and Carbon keeps the hierarchy in sync.
+- <Term>Kit</Term> — not built separately at all. Its components are issued together straight into the parent job, as a set. There's no kit job and no kit operation — just the parts, grouped.
 
 Reach for a subassembly when the thing is genuinely manufactured and worth tracking on its own. Reach for a kit when a cluster of parts always goes in together and a separate build would just be ceremony.
 

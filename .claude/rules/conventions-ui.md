@@ -101,6 +101,34 @@ grids) come from `@carbon/react`. `Card` supports `isCollapsible`. It already
 applies `rounded-2xl` + layered shadow on the outer shell and `rounded-2xl` on
 `CardContent`, so don't re-add borders/radius — compose with the subcomponents.
 
+## Popovers inside Drawers / Dialogs
+
+`Combobox`, `CreatableCombobox`, `CreatableMultiSelect`, `MultiSelect`, and
+`ChoiceSelect` (all `packages/react/src/`) render their options in a
+`PopoverContent` portaled to `document.body`. `Drawer` (`Drawer.tsx`) is a Radix
+Dialog using `react-remove-scroll` to lock background scroll. Because the popover
+is portaled outside the dialog subtree, the scroll-lock's document-level wheel
+listener swallows wheel/touch events over the dropdown, so its internal
+`overflow-auto` list cannot scroll (symptom: only the first ~6 options show and it
+won't scroll).
+
+Required pattern — stop propagation on the `PopoverContent` so events never reach
+the scroll-lock listener, and give the scroll container a visible scrollbar:
+
+```typescript
+<PopoverContent
+  onWheel={(e) => e.stopPropagation()}
+  onTouchMove={(e) => e.stopPropagation()}
+>
+  <div className="overflow-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+    ...
+  </div>
+</PopoverContent>
+```
+
+Any new popover-based dropdown with an internal scroll area used inside a
+drawer/dialog must follow this.
+
 ## Polish Principles
 
 Apply these when building or reviewing UI. The verified examples below are live in
@@ -203,6 +231,7 @@ Tailwind v4 utilities (NOT `text-wrap-*`):
 | `text-wrap-balance` / `text-wrap-pretty` | `text-balance` / `text-pretty` (Tailwind v4) |
 | Tiny hit areas | Extend to ~40×40px |
 | Hard borders | Use layered shadows |
+| Dropdown inside a Drawer won't scroll (shows ~6 items) | `stopPropagation` on `PopoverContent` `onWheel`/`onTouchMove` |
 
 ## Review Checklist
 

@@ -6,10 +6,10 @@ description: Predicate guards that validate inventory transactions — block wit
 
 A **storage rule** is a guard that runs when an inventory transaction posts. It checks the line against a
 condition you define and, if the condition fails, either **blocks** the transaction or **warns** and lets the
-user acknowledge and continue. Rules attach to **items** or to **work centers**.
+user acknowledge and continue. Rules attach to **items** or to **<Term id="work-center">work centers</Term>**.
 
 For example, to keep batch chemicals out of ambient bins: target **items** in your chemicals group, fire on
-**receipt** and **place** (put-away), and require `storageUnit.storageTypeId` `eq` your cold-storage type —
+**<Term>receipt</Term>** and **place** (put-away), and require `storageUnit.storageTypeId` `eq` your cold-storage type —
 severity **error**, message `{item.id} must be stored in cold storage`. Receive that item into the wrong
 bin and the post is stopped with exactly that message.
 
@@ -35,7 +35,7 @@ don't.
 <Callout type="info">
 Aside from the `isSet` / `isNotSet` checks, a condition pointing at a field that has **no value** fails as a
 *"…is required"* violation — so the same rules double as presence checks (for instance, require a lot number
-before a shipment can post).
+before a <Term>shipment</Term> can post).
 </Callout>
 
 ## Operators

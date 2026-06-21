@@ -11,7 +11,7 @@ A **location** is a site or warehouse. Within one, stock sits in **storage units
 
 ## On hand is a ledger
 
-The **item ledger** is the source of truth. On-hand is the sum of its signed movements — receipts and outputs add, sales and consumption subtract, transfers move between places. A cached per-location quantity exists for quick reads, but the ledger is what's authoritative.
+The **<Term id="item-ledger">item ledger</Term>** is the source of truth. On-hand is the sum of its signed movements — <Term id="receipt">receipts</Term> and outputs add, sales and consumption subtract, transfers move between places. A cached per-location quantity exists for quick reads, but the ledger is what's authoritative.
 
 | Entry type | Effect |
 | --- | --- |
@@ -30,7 +30,7 @@ On hand can go **negative**. Shipping, issuing to a job, and picking all post th
 
 ## Movements
 
-Two kinds of transfer move stock. A **warehouse transfer** moves it between locations, and is carried out as a shipment out of one and a receipt into the other. A **stock transfer** moves it within a single location, between storage units. A manual **adjustment** writes straight to the ledger as a positive or negative entry — or a *Set Quantity* that books the difference to a target.
+Two kinds of transfer move stock. A **warehouse transfer** moves it between locations, and is carried out as a <Term id="shipment">shipment</Term> out of one and a receipt into the other. A **stock transfer** moves it within a single location, between storage units. A manual **adjustment** writes straight to the ledger as a positive or negative entry — or a *Set Quantity* that books the difference to a target.
 
 ## Value
 

@@ -10,9 +10,11 @@ flowIndex: 2
 
 The order is placed and sitting at **"To Receive and Invoice"**. Two things now happen on their own schedules: the goods show up, and the supplier's bill shows up. They rarely arrive together, and Carbon is built around that fact — receiving and invoicing are separate posted steps that reconcile against the order, not against each other directly.
 
+<Figure illustration="receive-bill-axes" caption="Received and invoiced are two independent axes on one purchase order line; the line closes only when both complete." />
+
 ## The line keeps score
 
-A purchase order line tracks `purchaseQuantity` against two independent counters: `quantityReceived` and `quantityInvoiced`. The amounts still owed — `quantityToReceive` and `quantityToInvoice` — are computed for you. A line carries two flags, `receivedComplete` and `invoicedComplete`, and only when both are true is that line done.
+A <Term>purchase order</Term> line tracks `purchaseQuantity` against two independent counters: `quantityReceived` and `quantityInvoiced`. The amounts still owed — `quantityToReceive` and `quantityToInvoice` — are computed for you. A line carries two flags, `receivedComplete` and `invoicedComplete`, and only when both are true is that line done.
 
 Those two flags are exactly what the order's status rolls up. Receive everything and the order drops to **"To Invoice"**; bill everything and it drops to **"To Receive"**; once a line is both received and invoiced, it's **"Completed"**. Receiving and billing move the same order along two separate axes.
 
@@ -20,21 +22,23 @@ Those two flags are exactly what the order's status rolls up. Receive everything
 
 Create a receipt from the order and Carbon pre-fills it from the outstanding lines, linking each receipt line back to its purchase order line. The receipt opens at **"Draft"** — and like a shipment, creating it changes nothing on hand.
 
-**Posting** is the event. Post the receipt and stock comes in through the item ledger as a *Purchase Receipt*, the order line's `quantityReceived` rises, `receivedComplete` flips once the full quantity is in, and the order advances. The receipt moves to **"Posted"**.
+**<Term id="posting">Posting</Term>** is the event. Post the receipt and stock comes in through the item ledger as a *Purchase Receipt*, the order line's `quantityReceived` rises, `receivedComplete` flips once the full quantity is in, and the order advances. The receipt moves to **"Posted"**.
 
 <Callout tone="amber" badge="INVENTORY vs LEDGER" title="Stock moves whether or not accounting is on.">
-Posting a receipt always updates inventory. The accounting entries — debit inventory or WIP, credit the goods-received-not-invoiced (GR/IR) clearing account — are written only when accounting is enabled for the company. Inventory and the general ledger advance on different switches.
+Posting a receipt always updates inventory. The accounting entries — debit inventory or <Term id="wip">WIP</Term>, credit the <Term id="gr-ir">goods-received-not-invoiced (GR/IR)</Term> clearing account — are written only when accounting is enabled for the company. Inventory and the general ledger advance on different switches.
 </Callout>
 
 <Callout tone="green" badge="QUALITY HANDOFF" title="Inspected parts land on hold, not on the shelf.">
-Receive an item flagged for inspection and its tracked units come in **"On Hold"**, with an inbound inspection opened at **"Pending"** — received, but quarantined until quality clears them for use.
+Receive an item flagged for inspection and its <Term id="tracked-entity">tracked units</Term> come in **"On Hold"**, with an inbound inspection opened at **"Pending"** — received, but quarantined until quality clears them for use.
 </Callout>
 
 <Screenshot label="Post receipt" caption="Posting the receipt: stock enters the item ledger, the line's received quantity rises, the order advances." ratio="wide" />
 
 ## Buy by the box, stock by the each
 
-Suppliers rarely sell in your stock unit. You might buy fasteners by the thousand-count box but stock and issue them as eaches. Every purchase order line carries a **conversion factor** between the two units, so the price and quantity you agree with the supplier stay in *their* terms while inventory moves in *yours*.
+Suppliers rarely sell in your stock unit. You might buy fasteners by the thousand-count box but stock and issue them as eaches. Every purchase order line carries a **<Term>conversion factor</Term>** between the two units, so the price and quantity you agree with the supplier stay in *their* terms while inventory moves in *yours*.
+
+<Figure illustration="conversion-factor" caption="Buy by the box, stock by the each — the line's conversion factor turns one purchased box into ten stocked units." />
 
 Posting the receipt does the translation: the quantity the supplier shipped is converted through the factor before it lands in stock, while the line's received count stays in the purchase unit. You reconcile against the supplier in the unit you ordered, and the floor pulls stock in the unit it builds with — neither side has to do the arithmetic in its head.
 

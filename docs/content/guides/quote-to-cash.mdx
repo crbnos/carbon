@@ -14,7 +14,9 @@ We'll follow one inquiry from a blank quote all the way to an order Carbon is re
 
 ## One opportunity, many documents
 
-In Carbon, a request for quote, a quote, and a sales order aren't a rigid chain — they're three documents that hang off a single **opportunity**. The opportunity holds a slot for each (`salesRfqId`, `quoteId`, `salesOrderId`), and any of them can be empty.
+In Carbon, a <Term id="rfq">request for quote</Term>, a <Term>quote</Term>, and a <Term>sales order</Term> aren't a rigid chain — they're three documents that hang off a single **<Term>opportunity</Term>**. The opportunity holds a slot for each (`salesRfqId`, `quoteId`, `salesOrderId`), and any of them can be empty.
+
+<Figure illustration="opportunity-thread" caption="Three documents — RFQ, quote, order — hang off one opportunity, and any slot can be empty." />
 
 That design has a practical consequence: none of the steps are mandatory. You can raise a sales order cold, quote without a formal RFQ, or carry one opportunity through all three. Carbon tracks the relationship through the opportunity, not through a foreign key that forces the sequence.
 

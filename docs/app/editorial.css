@@ -106,23 +106,12 @@ body {
   background: #26232326;
 }
 
-/* Scroll affordance for navigation sidebars — fade the list at its top/bottom edges
- * so it's clear there's more above / below. Applied only to nav scrollers. */
+/* Scroll affordance for navigation sidebars — fade only the top edge so it's clear
+ * there's more above. The bottom fade + "more below" chevron come from
+ * <NavScrollChevron>. Applied to every nav scroller (guides rail, api/mcp, reference). */
 .nav-scroll-fade {
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    transparent 0,
-    #000 22px,
-    #000 calc(100% - 26px),
-    transparent 100%
-  );
-  mask-image: linear-gradient(
-    to bottom,
-    transparent 0,
-    #000 22px,
-    #000 calc(100% - 26px),
-    transparent 100%
-  );
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 22px);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 22px);
 }
 
 /* View Transitions — smooth cross-fade when switching chapters (driven by

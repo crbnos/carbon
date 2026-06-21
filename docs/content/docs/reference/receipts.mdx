@@ -3,9 +3,9 @@ title: Receipts
 description: Goods coming in — receiving against a purchase order and posting to inventory.
 ---
 
-A **receipt** brings goods in. Like shipments, one receipt model serves several sources — most often a purchase order, but also inbound transfers — and posting is what turns a delivery into stock on hand.
+A **receipt** brings goods in. Like <Term id="shipment">shipments</Term>, one receipt model serves several sources — most often a <Term id="purchase-order">purchase order</Term>, but also inbound transfers — and <Term id="posting">posting</Term> is what turns a delivery into stock on hand.
 
-A receipt line soft-links back to the purchase order line it fulfills. Posting adds the quantity to inventory, raises the order line's received quantity, and advances the order — and, when accounting is enabled, debits inventory (or work-in-process, for outside processing) against a goods-received-not-invoiced accrual that the supplier invoice later clears.
+A receipt line soft-links back to the purchase order line it fulfills. Posting adds the quantity to inventory, raises the order line's received quantity, and advances the order — and, when accounting is enabled, debits inventory (or <Term id="wip">work-in-process</Term>, for outside processing) against a <Term id="gr-ir">goods-received-not-invoiced</Term> accrual that the supplier invoice later clears.
 
 ## Fields
 

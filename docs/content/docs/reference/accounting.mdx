@@ -3,7 +3,7 @@ title: Accounting & the ledger
 description: How operations become journal entries — accounts, periods, and the postings behind every flow.
 ---
 
-Carbon's flows all end the same way: shipping, receiving, finishing a job, depreciating an asset each post to the **general ledger**. This page covers the machinery they share.
+Carbon's flows all end the same way: shipping, receiving, finishing a job, depreciating an asset each post to the **<Term id="general-ledger">general ledger</Term>**. This page covers the machinery they share.
 
 ## Accounting is a switch
 
@@ -15,7 +15,7 @@ A shop can run operationally — receiving, building, shipping — before it kee
 
 ## The journal
 
-Every posting is a **journal** with balanced **journal lines** — debits positive, credits negative. The journal carries a **source type** naming what produced it; each line carries an account and can be tagged with dimensions. A journal is *Posted* (the normal state), *Draft*, or *Reversed* — voiding writes a reversing journal rather than deleting one.
+Every <Term id="posting">posting</Term> is a **<Term>journal</Term>** with balanced **journal lines** — debits positive, credits negative. The journal carries a **source type** naming what produced it; each line carries an account and can be tagged with dimensions. A journal is *Posted* (the normal state), *Draft*, or *Reversed* — voiding writes a reversing journal rather than deleting one.
 
 | Source type | Posted by |
 | --- | --- |
@@ -46,7 +46,7 @@ A journal line can be tagged with **dimensions** — location, department, cost 
 
 ## Periods
 
-Every posting lands in an **accounting period**. A period is a current-period pointer — *Active* or *Inactive* — created and activated on demand as you post. There's no hard period-close that blocks posting; the period simply follows the postings.
+Every posting lands in an **<Term id="accounting-period">accounting period</Term>**. A period is a current-period pointer — *Active* or *Inactive* — created and activated on demand as you post. There's no hard period-close that blocks posting; the period simply follows the postings.
 
 ## Related
 

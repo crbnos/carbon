@@ -3,11 +3,11 @@ title: Traceability
 description: Serial and batch tracking, and the genealogy that links what went into what.
 ---
 
-For items that need it, Carbon tracks individual units and lots as **tracked entities**, and records every consume-and-produce as it happens — so you can prove what went into a finished unit, and trace a suspect lot forward to everything it touched.
+For items that need it, Carbon tracks individual units and lots as **<Term id="tracked-entity">tracked entities</Term>**, and records every consume-and-produce as it happens — so you can prove what went into a finished unit, and trace a suspect lot forward to everything it touched.
 
 ## Tracked entities
 
-A **tracked entity** is a tracked quantity of an item. A **Serial** item gets one entity per unit (quantity 1); a **Batch** item gets one entity per lot. The serial or batch number, and where it came from, live on the entity's attributes. An entity carries a status as it moves:
+A **tracked entity** is a tracked quantity of an item. A **<Term id="serial">Serial</Term>** item gets one entity per unit (quantity 1); a **<Term id="batch">Batch</Term>** item gets one entity per lot. The serial or batch number, and where it came from, live on the entity's attributes. An entity carries a status as it moves:
 
 | Status | Meaning |
 | --- | --- |
@@ -23,7 +23,7 @@ Receiving a tracked item creates entities **On Hold**; posting the receipt relea
 
 ## Genealogy
 
-Every material event — consume, produce, split, ship — is recorded as an **activity** with **inputs** (what was consumed) and **outputs** (what was produced). Parent and child link through the activity, so the genealogy graph is built as work happens and walked later to trace a unit's ancestry or descendants. Consuming part of a batch records a **split**, linking the original lot to the consumed portion and the remainder.
+Every material event — consume, produce, split, ship — is recorded as an **activity** with **inputs** (what was consumed) and **outputs** (what was produced). Parent and child link through the activity, so the <Term>genealogy</Term> graph is built as work happens and walked later to trace a unit's ancestry or descendants. Consuming part of a batch records a **split**, linking the original lot to the consumed portion and the remainder.
 
 <Callout type="note">
 There are no separate serial-number or batch-number tables — one tracked-entity model represents both, and the number itself is an attribute. Genealogy isn't a stored parent pointer; it's reconstructed by walking the activity graph from a unit outward.

@@ -4,8 +4,8 @@ description: How Carbon stamps expiration dates on tracked stock — and blocks 
 ---
 
 **Shelf life** is how Carbon decides when a batch or serial of an item *expires*, and what happens when
-someone tries to use it after that. It only applies to **Serial-** or **Batch-tracked** items, because the
-expiration date lives on the physical lot — the **tracked entity** — not on the item master.
+someone tries to use it after that. It only applies to **<Term id="serial">Serial-</Term>** or **<Term id="batch">Batch-tracked</Term>** items, because the
+expiration date lives on the physical lot — the **<Term id="tracked-entity">tracked entity</Term>** — not on the item master.
 
 Three records work together: a **policy** per item (how expiry is decided), an **expiration date** per
 tracked entity (the actual date), and a **company-wide rule** for what to do with expired stock.
@@ -79,7 +79,7 @@ wherever stock is consumed or moved — material issues, stock transfers, and ma
 whether the action comes from the office or the floor.
 </Callout>
 
-Picking is **FEFO-aware**: available tracked entities are offered earliest-expiry-first, so the oldest stock
+Picking is **<Term id="fefo">FEFO</Term>-aware**: available tracked entities are offered earliest-expiry-first, so the oldest stock
 leaves first by default. A **near-expiry warning** highlights batches approaching their date in the tracked-entity
 lists; set its lead time (in days) in company settings — leaving it blank turns the warning badges off.
 

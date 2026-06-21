@@ -3,9 +3,9 @@ title: Work centers
 description: Where operations run — the stations and machines, their rates, and the processes they perform.
 ---
 
-A **work center** is a place on the floor where operations run — a station, a machine, a cell — tied to a location. It carries the rates used to cost and schedule work, and performs one or more **processes** (the capabilities, like *cut* or *weld*).
+A **work center** is a place on the floor where <Term id="operation">operations</Term> run — a station, a machine, a cell — tied to a location. It carries the rates used to cost and schedule work, and performs one or more **processes** (the capabilities, like *cut* or *weld*).
 
-Routing operations are scheduled onto work centers, and a work center's rates price the labor and machine time logged against it. It's the link between an operation in the abstract and a real place with a cost and a calendar.
+<Term id="routing">Routing</Term> operations are scheduled onto work centers, and a work center's rates price the labor and machine time logged against it. It's the link between an operation in the abstract and a real place with a cost and a calendar.
 
 ## Fields
 
@@ -21,7 +21,7 @@ Routing operations are scheduled onto work centers, and a work center's rates pr
 
 ## Processes
 
-A **process** is a capability a work center can perform; work centers and processes are many-to-many. A process is *Inside*, *Outside*, or both — **Outside** processes are subcontracted, and suppliers attach to them for outside-processing purchase orders.
+A **process** is a capability a work center can perform; work centers and processes are many-to-many. A process is *Inside*, *Outside*, or both — **<Term id="outside-operation">Outside</Term>** processes are subcontracted, and suppliers attach to them for outside-processing <Term id="purchase-order">purchase orders</Term>.
 
 <Callout type="note">
 A work center is **not** a fixed asset. The machine you schedule production on (a work center) and the machine you depreciate (a fixed asset) are independent records in Carbon — there's no link between them, even when they're the same physical machine.

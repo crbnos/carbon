@@ -287,6 +287,7 @@ const SalesRFQProperties = () => {
         <DatePicker
           name="rfqDate"
           label={t`RFQ Date`}
+          helperText={t`The date you received this RFQ from the customer. Defaults to today.`}
           inline
           onChange={(date) => {
             onUpdate("rfqDate", date);
@@ -305,7 +306,8 @@ const SalesRFQProperties = () => {
       >
         <DatePicker
           name="expirationDate"
-          label={t`Expiration Date`}
+          helperText={t`The deadline to send your quote to the customer.`}
+          label={t`Due Date`}
           inline
           onChange={(date) => {
             onUpdate("expirationDate", date);

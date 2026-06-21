@@ -15,7 +15,15 @@ export type IllustrationKey =
   | "issue-workflow"
   | "schedule-board"
   | "get-method"
-  | "conversion-factor";
+  | "conversion-factor"
+  | "opportunity-thread"
+  | "cash-cycle"
+  | "rfq-fanout"
+  | "receive-bill-axes"
+  | "wip-inflow"
+  | "wip-to-cogs"
+  | "depreciation-curve"
+  | "asset-exit";
 
 /* On-brand editorial illustrations — warm paper palette, DM Sans (inherited),
  * #00B0FF accent, made=blue / bought=amber tags matching the content badges.
@@ -754,6 +762,220 @@ function ConversionFactor() {
   );
 }
 
+function OpportunityThread() {
+  const docs = [
+    { x: 20, label: "Sales RFQ", sub: "salesRfqId", accent: false },
+    { x: 270, label: "Quote", sub: "quoteId", accent: false },
+    { x: 520, label: "Sales order", sub: "salesOrderId", accent: true },
+  ];
+  return (
+    <svg viewBox="0 0 720 200" className="w-full h-auto" role="img" aria-label="One opportunity threads RFQ, quote, and order">
+      {/* the three documents, left to right */}
+      <Arrow x1={200} y1={47} x2={268} y2={47} />
+      <Arrow x1={450} y1={47} x2={518} y2={47} />
+      {docs.map((d) => (
+        <Box key={d.label} x={d.x} y={20} w={180} h={54} label={d.label} sub={d.sub} accent={d.accent} />
+      ))}
+      {/* dashed connectors down to the opportunity that holds all three */}
+      <g stroke={LINE} strokeWidth={1.4} strokeDasharray="4 4" fill="none">
+        {[110, 360, 610].map((x) => (
+          <line key={x} x1={x} y1={74} x2={x} y2={130} />
+        ))}
+      </g>
+      <Box x={20} y={130} w={680} h={50} label="Opportunity" sub="one thread — any slot can be empty" />
+    </svg>
+  );
+}
+
+function CashCycle() {
+  const steps = [
+    { x: 10, w: 160, label: "Sales order", sub: "To Ship and Invoice", accent: true },
+    { x: 205, w: 150, label: "Shipment", sub: "Posted", accent: false },
+    { x: 390, w: 150, label: "Invoice", sub: "Submitted", accent: false },
+    { x: 575, w: 135, label: "Paid", sub: "datePaid set", accent: true },
+  ];
+  const gaps = [
+    { x: 170, label: "post" },
+    { x: 355, label: "bill" },
+    { x: 540, label: "pay" },
+  ];
+  return (
+    <svg viewBox="0 0 720 150" className="w-full h-auto" role="img" aria-label="Order to cash in four posted steps">
+      {gaps.map((g) => (
+        <g key={g.label}>
+          <text x={g.x + 17} y={42} textAnchor="middle" fontSize="11" fontWeight={600} fill={BRAND_INK} fontFamily="var(--font-mono)">
+            {g.label}
+          </text>
+          <Arrow x1={g.x} y1={78} x2={g.x + 33} y2={78} />
+        </g>
+      ))}
+      {steps.map((s) => (
+        <Box key={s.label} x={s.x} y={50} w={s.w} h={56} label={s.label} sub={s.sub} accent={s.accent} />
+      ))}
+      <text x={360} y={132} textAnchor="middle" fontSize="11.5" fill={INK_60}>
+        Each step is its own posted move — none auto-chains.
+      </text>
+    </svg>
+  );
+}
+
+function RfqFanout() {
+  const quotes = [
+    { y: 12, label: "Supplier A", sub: "$12.40 · 3 wk", win: false },
+    { y: 82, label: "Supplier B", sub: "$11.80 · 2 wk", win: true },
+    { y: 152, label: "Supplier C", sub: "$12.10 · 4 wk", win: false },
+  ];
+  return (
+    <svg viewBox="0 0 720 212" className="w-full h-auto" role="img" aria-label="One RFQ fans out to supplier quotes, then converts the winner to a PO">
+      <Box x={16} y={78} w={170} h={56} label="Purchasing RFQ" sub="one request" accent />
+      {/* fan out to one supplier quote each */}
+      <g stroke={LINE} strokeWidth={1.4} fill="none">
+        {quotes.map((q) => (
+          <path key={q.label} d={`M 186 106 C 250 106, 250 ${q.y + 24}, 300 ${q.y + 24}`} />
+        ))}
+      </g>
+      {quotes.map((q) => (
+        <g key={q.label}>
+          <Box x={300} y={q.y} w={200} h={48} label={q.label} sub={q.sub} accent={q.win} />
+          {q.win && <Tag x={444} y={q.y - 9} kind="made" label="chosen" />}
+        </g>
+      ))}
+      {/* winner converts to the order */}
+      <Arrow x1={500} y1={106} x2={556} y2={106} />
+      <Box x={558} y={78} w={150} h={56} label="Purchase order" sub="from winner" accent />
+    </svg>
+  );
+}
+
+function ReceiveBillAxes() {
+  const rows = [
+    { tag: "RECEIVE", y: 24, post: "Receipt posts", postSub: "→ quantityReceived", flag: "Received ✓", flagSub: "receivedComplete" },
+    { tag: "INVOICE", y: 128, post: "Bill posts", postSub: "→ quantityInvoiced", flag: "Invoiced ✓", flagSub: "invoicedComplete" },
+  ];
+  return (
+    <svg viewBox="0 0 720 200" className="w-full h-auto" role="img" aria-label="A purchase order line tracked on two independent axes, received and invoiced">
+      {rows.map((r) => (
+        <g key={r.tag}>
+          <text x={20} y={r.y - 6} fontSize="11" fontWeight={600} fill={INK_45} fontFamily="var(--font-mono)">
+            {r.tag}
+          </text>
+          <Box x={20} y={r.y} w={200} h={52} label={r.post} sub={r.postSub} />
+          <Arrow x1={220} y1={r.y + 26} x2={252} y2={r.y + 26} />
+          <Box x={254} y={r.y} w={190} h={52} label={r.flag} sub={r.flagSub} />
+        </g>
+      ))}
+      {/* both flags converge on the same line */}
+      <g stroke={INK_45} strokeWidth={1.4} fill="none">
+        <path d="M 444 50 C 500 50, 500 96, 538 100" />
+        <path d="M 444 154 C 500 154, 500 124, 538 120" />
+      </g>
+      <Box x={540} y={82} w={168} h={56} label="Line completed" sub="both flags true" accent />
+    </svg>
+  );
+}
+
+function WipInflow() {
+  return (
+    <svg viewBox="0 0 720 180" className="w-full h-auto" role="img" aria-label="Two streams feed a job's work in process">
+      <Box x={24} y={22} w={216} h={52} label="Material" sub="issued / backflushed" />
+      <Box x={24} y={106} w={216} h={52} label="Labor & machine" sub="production events" />
+      {/* both streams debit WIP */}
+      <Arrow x1={240} y1={48} x2={426} y2={80} />
+      <Arrow x1={240} y1={132} x2={426} y2={98} />
+      <text x={336} y={58} textAnchor="middle" fontSize="10.5" fill={INK_45}>
+        cost out of inventory
+      </text>
+      <text x={336} y={126} textAnchor="middle" fontSize="10.5" fill={INK_45}>
+        hours × work-center rate
+      </text>
+      <Box x={428} y={56} w={244} h={66} label="Work in process" sub="a GL account balance" accent />
+      <text x={550} y={140} textAnchor="middle" fontSize="11" fill={INK_60}>
+        cleared when the job finishes
+      </text>
+    </svg>
+  );
+}
+
+function WipToCogs() {
+  const main = [
+    { x: 16, label: "Work in process", sub: "job's balance", accent: true },
+    { x: 246, label: "Inventory", sub: "finished goods", accent: false },
+    { x: 466, label: "COGS", sub: "cost of goods sold", accent: false },
+  ];
+  return (
+    <svg viewBox="0 0 720 200" className="w-full h-auto" role="img" aria-label="WIP flows to inventory, then to COGS; residual sweeps to variance at close">
+      {/* finish → sell along the top */}
+      <text x={220} y={50} textAnchor="middle" fontSize="11" fontWeight={600} fill={BRAND_INK} fontFamily="var(--font-mono)">finish</text>
+      <Arrow x1={196} y1={63} x2={244} y2={63} />
+      <text x={440} y={50} textAnchor="middle" fontSize="11" fontWeight={600} fill={BRAND_INK} fontFamily="var(--font-mono)">sell</text>
+      <Arrow x1={416} y1={63} x2={464} y2={63} />
+      {main.map((m) => (
+        <Box key={m.label} x={m.x} y={34} w={m.x === 16 ? 180 : 170} h={58} label={m.label} sub={m.sub} accent={m.accent} />
+      ))}
+      {/* residual swept to variance at close */}
+      <g stroke={INK_45} strokeWidth={1.4} fill="none">
+        <line x1={106} y1={92} x2={106} y2={140} />
+        <path d="M 101 130 L 106 140 L 111 130" strokeLinecap="round" strokeLinejoin="round" />
+      </g>
+      <text x={118} y={120} fontSize="10.5" fill={INK_45} fontFamily="var(--font-mono)">close</text>
+      <Box x={16} y={140} w={230} h={52} label="Production Variance" sub="residual swept at close" />
+    </svg>
+  );
+}
+
+function DepreciationCurve() {
+  const x0 = 96;
+  const baseY = 200;
+  const xEnd = 600;
+  const costY = 44;
+  const residualY = 168;
+  return (
+    <svg viewBox="0 0 720 240" className="w-full h-auto" role="img" aria-label="Net book value declining from cost to residual value">
+      {/* axes */}
+      <line x1={x0} y1={28} x2={x0} y2={baseY} stroke={LINE} strokeWidth={1.4} />
+      <line x1={x0} y1={baseY} x2={664} y2={baseY} stroke={LINE} strokeWidth={1.4} />
+      {/* residual floor */}
+      <line x1={x0} y1={residualY} x2={xEnd} y2={residualY} stroke={INK_45} strokeWidth={1.2} strokeDasharray="5 4" />
+      <text x={xEnd + 6} y={residualY + 4} fontSize="11.5" fill={INK_60}>residual value</text>
+      {/* cost start */}
+      <circle cx={x0} cy={costY} r={3.6} fill={INK} />
+      <text x={x0 + 8} y={costY - 4} fontSize="11.5" fill={INK_60}>acquisition cost</text>
+      {/* straight line */}
+      <line x1={x0} y1={costY} x2={xEnd} y2={residualY} stroke={INK} strokeWidth={2} strokeLinecap="round" />
+      {/* declining balance */}
+      <path d={`M ${x0} ${costY} C 200 132, 360 164, ${xEnd} ${residualY}`} fill="none" stroke={BRAND} strokeWidth={2} strokeLinecap="round" />
+      {/* legend */}
+      <g>
+        <line x1={360} y1={44} x2={384} y2={44} stroke={INK} strokeWidth={2} />
+        <text x={392} y={48} fontSize="11.5" fill={INK_60}>Straight line</text>
+        <line x1={500} y1={44} x2={524} y2={44} stroke={BRAND} strokeWidth={2} />
+        <text x={532} y={48} fontSize="11.5" fill={INK_60}>Declining balance</text>
+      </g>
+      {/* axis labels */}
+      <text x={x0 - 8} y={36} textAnchor="end" fontSize="11" fill={INK_45} fontFamily="var(--font-mono)" transform={`rotate(-90 ${x0 - 8} 36)`}>book value</text>
+      <text x={x0 + 4} y={222} fontSize="11" fill={INK_45} fontFamily="var(--font-mono)">time →</text>
+    </svg>
+  );
+}
+
+function AssetExit() {
+  return (
+    <svg viewBox="0 0 720 210" className="w-full h-auto" role="img" aria-label="An asset leaves the books by sale or disposal">
+      <Box x={20} y={76} w={190} h={58} label="Asset" sub="Active / Fully Depreciated" accent />
+      {/* sell → sales order (money in) */}
+      <text x={252} y={60} textAnchor="middle" fontSize="11" fontWeight={600} fill={BRAND_INK} fontFamily="var(--font-mono)">Sell</text>
+      <Arrow x1={210} y1={92} x2={298} y2={56} />
+      <Box x={300} y={30} w={230} h={52} label="Sales order" sub="drafted at net book value" />
+      <Tag x={540} y={47} kind="made" label="money in" />
+      {/* dispose → write-off (no proceeds) */}
+      <text x={252} y={156} textAnchor="middle" fontSize="11" fontWeight={600} fill={INK_60} fontFamily="var(--font-mono)">Dispose</text>
+      <Arrow x1={210} y1={118} x2={298} y2={158} />
+      <Box x={300} y={140} w={230} h={52} label="Write-off" sub="remaining NBV → loss" />
+      <Tag x={540} y={157} kind="neutral" label="retire" />
+    </svg>
+  );
+}
+
 export const illustrations: Record<IllustrationKey, () => React.ReactElement> = {
   "flow-overview": FlowOverview,
   "order-split": OrderSplit,
@@ -772,4 +994,12 @@ export const illustrations: Record<IllustrationKey, () => React.ReactElement> = 
   "schedule-board": ScheduleBoard,
   "get-method": GetMethod,
   "conversion-factor": ConversionFactor,
+  "opportunity-thread": OpportunityThread,
+  "cash-cycle": CashCycle,
+  "rfq-fanout": RfqFanout,
+  "receive-bill-axes": ReceiveBillAxes,
+  "wip-inflow": WipInflow,
+  "wip-to-cogs": WipToCogs,
+  "depreciation-curve": DepreciationCurve,
+  "asset-exit": AssetExit,
 };

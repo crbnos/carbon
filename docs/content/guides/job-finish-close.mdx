@@ -8,11 +8,13 @@ flowName: Manufacturing accounting
 flowIndex: 3
 ---
 
-A job has been collecting cost in work-in-process. Three events turn that running balance into a settled set of books: the job **finishes** into inventory, the goods are **sold** out of inventory, and the job is **closed**. Each is a distinct posting, and the order matters.
+A <Term>job</Term> has been collecting cost in <Term id="wip">work-in-process</Term>. Three events turn that running balance into a settled set of books: the job **finishes** into inventory, the goods are **sold** out of inventory, and the job is **closed**. Each is a distinct posting, and the order matters.
+
+<Figure illustration="wip-to-cogs" caption="A job's WIP empties into inventory at finish, flows to COGS at the sale, and any residual sweeps to Production Variance at close." />
 
 ## Finish into inventory
 
-When the last operation is done, Carbon completes the job. It backflushes any material still owed, catches up any labor that hasn't posted yet, and then **receives the finished goods into inventory** — a debit to inventory, a credit to work-in-process, tagged *Job Receipt*. The job moves to **"Completed"**.
+When the last operation is done, Carbon completes the job. It <Term id="backflush">backflushes</Term> any material still owed, catches up any labor that hasn't posted yet, and then **receives the finished goods into inventory** — a debit to inventory, a credit to work-in-process, tagged *Job Receipt*. The job moves to **"Completed"**.
 
 The receipt is valued at the job's **actual accumulated WIP cost** — whatever really went in. Carbon does not receive finished goods at standard and book a variance; the finished unit's cost is simply the sum of what the job spent.
 
@@ -24,7 +26,7 @@ Completion moves the whole WIP balance into inventory one-for-one — equal debi
 
 ## Make-to-order still goes through stock
 
-It's tempting to think a make-to-order job ships straight to the customer. It doesn't. A make-to-order job is marked by its link to a sales order line, but its costing is **identical** to a stock job: it receives into inventory first, and the sales order then ships *from inventory*. The job and the shipment are separate postings.
+It's tempting to think a make-to-order job ships straight to the customer. It doesn't. A make-to-order job is marked by its link to a <Term>sales order</Term> line, but its costing is **identical** to a stock job: it receives into inventory first, and the sales order then ships *from inventory*. The job and the shipment are separate postings.
 
 <Callout tone="amber" badge="MTO = MTS, FOR COSTING" title="A make-to-order job receives to stock, then ships from stock.">
 There is no path that ships finished goods directly off a job. Whether a job was raised for stock or for a specific order, it completes into inventory the same way — which keeps cost in one place and makes the sale a clean, separate event.
@@ -32,7 +34,7 @@ There is no path that ships finished goods directly off a job. Whether a job was
 
 ## Sell it
 
-When the order ships, the cost of those goods comes **out of inventory**, not out of WIP. Posting the shipment reads the inventory cost layers, prices what left, and posts a debit to cost of goods sold and a credit to inventory, tagged *Sales Shipment*. This is the same shipment posting the [quote-to-cash flow](/guides/order-to-cash) covers — here we're just watching the cost side of it.
+When the order ships, the cost of those goods comes **out of inventory**, not out of WIP. Posting the <Term>shipment</Term> reads the inventory cost layers, prices what left, and posts a debit to <Term id="cogs">cost of goods sold</Term> and a credit to inventory, tagged *Sales Shipment*. This is the same shipment posting the [quote-to-cash flow](/guides/order-to-cash) covers — here we're just watching the cost side of it.
 
 By the time a unit is sold, its WIP is long gone — relieved at completion. COGS is always drawn from the inventory layer, so the sale's margin reflects the real landed cost of that specific stock.
 

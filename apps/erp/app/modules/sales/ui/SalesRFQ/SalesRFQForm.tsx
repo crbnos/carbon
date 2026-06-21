@@ -177,11 +177,13 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
               <DatePicker
                 name="rfqDate"
                 label={t`RFQ Date`}
+                helperText={t`The date you received this RFQ from the customer. Defaults to today.`}
                 isDisabled={isCustomer}
               />
               <DatePicker
                 name="expirationDate"
                 label={t`Due Date`}
+                helperText={t`The deadline to send your quote to the customer.`}
                 isDisabled={isCustomer}
               />
               <Location name="locationId" label={t`RFQ Location`} />

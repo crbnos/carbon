@@ -3,7 +3,7 @@ title: Quality
 description: Issues and corrective-action workflows, plus incoming inspection that gates received goods.
 ---
 
-Carbon's quality module turns on two things: **issues** you raise against a defect and drive to closure, and **inbound inspection** that holds received goods until they're checked. Both leave a trail back to the document that went wrong.
+Carbon's quality module turns on two things: **<Term id="nonconformance">issues</Term>** you raise against a defect and drive to closure, and **inbound inspection** that holds received goods until they're checked. Both leave a trail back to the document that went wrong.
 
 ## Issues
 
@@ -13,7 +13,7 @@ Issues open from several places: by hand, from the shop floor in MES, from Slack
 
 ### Workflows and actions
 
-An issue can run a configurable workflow — often an **8D**. The workflow attaches **required actions** and **approvals** as tasks; each task advances *Pending → In Progress → Completed* as the team works it. Adding a **Material Review Board** approval gates closing the issue: it can't close until a **disposition** is chosen for the affected material — *Return to Supplier*, *Rework*, *Scrap*, or *Use As Is*.
+An issue can run a configurable workflow — often an **<Term id="8d">8D</Term>**. The workflow attaches **required actions** and **approvals** as tasks; each task advances *Pending → In Progress → Completed* as the team works it. Adding a **Material Review Board** approval gates closing the issue: it can't close until a **disposition** is chosen for the affected material — *Return to Supplier*, *<Term>Rework</Term>*, *<Term>Scrap</Term>*, or *Use As Is*.
 
 <Callout type="note">
 There's no dedicated supplier scorecard in Carbon — **supplier quality is a derived metric**, counted from the issues linked to each supplier. The data comes from the issues themselves, not a separate record.

@@ -8,13 +8,15 @@ flowName: Manufacturing accounting
 flowIndex: 3
 ---
 
-Eventually an asset leaves the books. There are two ways out, and Carbon treats them as genuinely different actions — handled by different teams, with different effects. You **sell** an asset to a buyer, or you **dispose** of it when it's done. Both start from an asset that's **"Active"** or **"Fully Depreciated"**.
+Eventually an asset leaves the books. There are two ways out, and Carbon treats them as genuinely different actions — handled by different teams, with different effects. You **sell** an asset to a buyer, or you **<Term id="disposal">dispose</Term>** of it when it's done. Both start from an asset that's **"Active"** or **"Fully Depreciated"**.
 
-The number that anchors both is **net book value** — what the asset is still worth on the books: its acquisition cost minus the depreciation accumulated against it.
+The number that anchors both is **<Term>net book value</Term>** — what the asset is still worth on the books: its acquisition cost minus the <Term id="depreciation">depreciation</Term> accumulated against it.
+
+<Figure illustration="asset-exit" caption="Two ways an asset leaves the books — sold through a sales order at net book value, or disposed as a write-off." />
 
 ## Sell it
 
-Selling a piece of equipment is a sales act, so it lives with the sales team. The **Sell** action drafts a real **sales order** with a single **"Fixed Asset"** line pointed at the asset, priced at its **net book value**. From there it's the ordinary quote-to-cash flow — ship it, invoice it, collect — with the order line carrying a link back to the asset it came from.
+Selling a piece of equipment is a sales act, so it lives with the sales team. The **Sell** action drafts a real **<Term>sales order</Term>** with a single **"Fixed Asset"** line pointed at the asset, priced at its **net book value**. From there it's the ordinary quote-to-cash flow — ship it, invoice it, collect — with the order line carrying a link back to the asset it came from.
 
 <Callout tone="blue" badge="SEEDS A SALES ORDER" title="Selling an asset hands it to quote-to-cash at book value.">
 The Sell action doesn't invent a separate sale mechanism — it creates a normal sales order, lined up at net book value, that ships and invoices like any other. The fixed-asset line just remembers which asset was sold.
