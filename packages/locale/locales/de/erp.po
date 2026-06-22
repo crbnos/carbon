@@ -1068,6 +1068,9 @@ msgstr "Bilanz"
 msgid "Balloon"
 msgstr "Ballon"
 
+msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
+msgstr ""
+
 msgid "Base Currency"
 msgstr "Basiswährung"
 
@@ -1097,6 +1100,9 @@ msgstr "Chargengröße"
 
 msgid "Batch Tracking"
 msgstr "Chargenverfolgung"
+
+msgid "Below safety stock"
+msgstr ""
 
 msgid "Beta"
 msgstr "Beta"
@@ -1583,6 +1589,12 @@ msgstr "Import bestätigen"
 
 msgid "Confirm Password"
 msgstr "Passwort bestätigen"
+
+msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
+msgstr ""
+
+msgid "Confirmed outgoing stock — sales orders & job materials (bars below zero)."
+msgstr ""
 
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Verbinden Sie Carbon mit Ihren Buchhaltungs-, Projektmanagement- und CAD-Tools und vielem mehr."
@@ -3911,6 +3923,9 @@ msgstr "Wie der aufgelöste Preis berechnet wurde."
 msgid "How this price was calculated"
 msgstr "Wie dieser Preis berechnet wurde"
 
+msgid "How to read this chart"
+msgstr ""
+
 msgid "Humidity"
 msgstr "Luftfeuchtigkeit"
 
@@ -5417,6 +5432,9 @@ msgstr "Keine Sortierungen auf diese Ansicht angewendet"
 msgid "No stock"
 msgstr "Kein Bestand"
 
+msgid "No stockout projected in the next 48 weeks"
+msgstr ""
+
 msgid "No suppliers yet"
 msgstr "Noch keine Lieferanten"
 
@@ -5912,6 +5930,9 @@ msgstr "Plan"
 msgid "Plan Type"
 msgstr "Plantyp"
 
+msgid "Planned"
+msgstr ""
+
 msgid "Planned End"
 msgstr "Geplantes Ende"
 
@@ -6163,8 +6184,28 @@ msgstr "Fortschritt"
 msgid "Project"
 msgstr "Projekt"
 
+msgid "Projected demand exploded from BOMs and forecasts."
+msgstr ""
+
+msgid "Projected inventory"
+msgstr ""
+
+msgid "Projected on hand"
+msgstr ""
+
 msgid "Projected stock"
 msgstr "Geplanter Bestand"
+
+#. placeholder {0}: formatWeek(stockoutDate)
+msgid "Projected stockout the week of {0}"
+msgstr ""
+
+#. placeholder {0}: formatWeek(belowSafetyDate)
+msgid "Projected to drop below safety stock the week of {0}"
+msgstr ""
+
+msgid "Projected to stay above safety stock"
+msgstr ""
 
 msgid "Projection"
 msgstr "Projektion"
@@ -6809,6 +6850,9 @@ msgstr "Regeln"
 msgid "Run Test"
 msgstr "Test ausführen"
 
+msgid "Running inventory after each week's supply and demand — the line."
+msgstr ""
+
 msgid "Running Total"
 msgstr "Laufender Gesamtbetrag"
 
@@ -6817,6 +6861,10 @@ msgstr "Sicherheitsbestand"
 
 msgid "Safety Stock"
 msgstr "Sicherheitsbestand"
+
+#. placeholder {0}: numberFormatter.format(safetyStockValue)
+msgid "Safety stock ({0})"
+msgstr ""
 
 msgid "Safety Stock:"
 msgstr "Sicherheitsbestand:"
@@ -7618,6 +7666,9 @@ msgstr "Bestandsübertragungs-Assistent"
 msgid "Stock Transfers"
 msgstr "Bestandsübertragungen"
 
+msgid "Stockout"
+msgstr ""
+
 msgid "Storage client not available"
 msgstr "Speicherclient nicht verfügbar"
 
@@ -7695,6 +7746,9 @@ msgstr "Neue Revision erfolgreich erstellt"
 
 msgid "Suffix"
 msgstr "Suffix"
+
+msgid "Suggested orders you haven't placed yet."
+msgstr ""
 
 msgid "Suggestion"
 msgstr "Vorschlag"
@@ -7924,6 +7978,9 @@ msgstr "Die Anzahl der Tage nach der Berechnungsmethode, für die der Skonto ver
 
 msgid "The amount of days after the calculation method that the payment is due"
 msgstr "Die Anzahl der Tage nach der Berechnungsmethode, bis die Zahlung fällig ist"
+
+msgid "The dashed threshold you don't want inventory to fall below."
+msgstr ""
 
 msgid "The date the customer expects to receive the goods"
 msgstr "Das Datum, an dem der Kunde die Waren erhalten soll"
@@ -8813,6 +8870,10 @@ msgstr "Website"
 
 msgid "Wednesday"
 msgstr "Mittwoch"
+
+#. placeholder {0}: dateFormatter.format(parseDate(d.startDate).toDate(getLocalTimeZone()))
+msgid "Week of {0}"
+msgstr ""
 
 msgid "Weeks Open"
 msgstr "Wochen offen"

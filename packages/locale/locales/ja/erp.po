@@ -1068,6 +1068,9 @@ msgstr "貸借対照表"
 msgid "Balloon"
 msgstr "バルーン"
 
+msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
+msgstr ""
+
 msgid "Base Currency"
 msgstr "基本通貨"
 
@@ -1097,6 +1100,9 @@ msgstr "バッチサイズ"
 
 msgid "Batch Tracking"
 msgstr "バッチ追跡"
+
+msgid "Below safety stock"
+msgstr ""
 
 msgid "Beta"
 msgstr "ベータ"
@@ -1583,6 +1589,12 @@ msgstr "インポートを確認"
 
 msgid "Confirm Password"
 msgstr "パスワードを確認"
+
+msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
+msgstr ""
+
+msgid "Confirmed outgoing stock — sales orders & job materials (bars below zero)."
+msgstr ""
 
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Carbonを会計、プロジェクト管理、CADツールなど、さまざまなツールに接続できます。"
@@ -3911,6 +3923,9 @@ msgstr "解決された価格がどのように計算されたかを示します
 msgid "How this price was calculated"
 msgstr "この価格がどのように計算されたか"
 
+msgid "How to read this chart"
+msgstr ""
+
 msgid "Humidity"
 msgstr "湿度"
 
@@ -5417,6 +5432,9 @@ msgstr "このビューに適用されたソートはありません"
 msgid "No stock"
 msgstr "在庫なし"
 
+msgid "No stockout projected in the next 48 weeks"
+msgstr ""
+
 msgid "No suppliers yet"
 msgstr "まだサプライヤーがありません"
 
@@ -5912,6 +5930,9 @@ msgstr "計画"
 msgid "Plan Type"
 msgstr "計画タイプ"
 
+msgid "Planned"
+msgstr ""
+
 msgid "Planned End"
 msgstr "計画終了"
 
@@ -6163,8 +6184,28 @@ msgstr "進捗"
 msgid "Project"
 msgstr "プロジェクト"
 
+msgid "Projected demand exploded from BOMs and forecasts."
+msgstr ""
+
+msgid "Projected inventory"
+msgstr ""
+
+msgid "Projected on hand"
+msgstr ""
+
 msgid "Projected stock"
 msgstr "予測在庫"
+
+#. placeholder {0}: formatWeek(stockoutDate)
+msgid "Projected stockout the week of {0}"
+msgstr ""
+
+#. placeholder {0}: formatWeek(belowSafetyDate)
+msgid "Projected to drop below safety stock the week of {0}"
+msgstr ""
+
+msgid "Projected to stay above safety stock"
+msgstr ""
 
 msgid "Projection"
 msgstr "予測"
@@ -6809,6 +6850,9 @@ msgstr "ルール"
 msgid "Run Test"
 msgstr "テストを実行"
 
+msgid "Running inventory after each week's supply and demand — the line."
+msgstr ""
+
 msgid "Running Total"
 msgstr "実行中の合計"
 
@@ -6817,6 +6861,10 @@ msgstr "安全在庫"
 
 msgid "Safety Stock"
 msgstr "安全在庫"
+
+#. placeholder {0}: numberFormatter.format(safetyStockValue)
+msgid "Safety stock ({0})"
+msgstr ""
 
 msgid "Safety Stock:"
 msgstr "安全在庫:"
@@ -7618,6 +7666,9 @@ msgstr "在庫転送ウィザード"
 msgid "Stock Transfers"
 msgstr "在庫移動"
 
+msgid "Stockout"
+msgstr ""
+
 msgid "Storage client not available"
 msgstr "ストレージクライアントが利用できません"
 
@@ -7695,6 +7746,9 @@ msgstr "新しいリビジョンが正常に作成されました"
 
 msgid "Suffix"
 msgstr "サフィックス"
+
+msgid "Suggested orders you haven't placed yet."
+msgstr ""
 
 msgid "Suggestion"
 msgstr "提案"
@@ -7924,6 +7978,9 @@ msgstr "計算方法の後、現金割引が利用可能になるまでの日数
 
 msgid "The amount of days after the calculation method that the payment is due"
 msgstr "計算方法の後の支払い期日までの日数"
+
+msgid "The dashed threshold you don't want inventory to fall below."
+msgstr ""
 
 msgid "The date the customer expects to receive the goods"
 msgstr "顧客が商品を受け取ることを期待する日付"
@@ -8813,6 +8870,10 @@ msgstr "ウェブサイト"
 
 msgid "Wednesday"
 msgstr "水曜日"
+
+#. placeholder {0}: dateFormatter.format(parseDate(d.startDate).toDate(getLocalTimeZone()))
+msgid "Week of {0}"
+msgstr ""
 
 msgid "Weeks Open"
 msgstr "開いている週数"
