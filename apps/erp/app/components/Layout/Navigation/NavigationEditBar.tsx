@@ -1,5 +1,5 @@
 import { Button, cn } from "@carbon/react";
-import { Trans } from "@lingui/macro";
+import { Trans } from "@lingui/react/macro";
 
 type NavigationEditBarProps = {
   isSaving: boolean;

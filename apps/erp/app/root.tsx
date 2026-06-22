@@ -18,6 +18,7 @@ import {
 } from "@carbon/react";
 import type { Theme } from "@carbon/utils";
 import { getPreferenceHeaders, modeValidator, themes } from "@carbon/utils";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { I18nProvider } from "@react-aria/i18n";
 import { QueryClient } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/react";
@@ -36,7 +37,8 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-  useLoaderData
+  useLoaderData,
+  useRouteLoaderData
 } from "react-router";
 import SonnerStyle from "sonner/dist/styles.css?url";
 import { loadLinguiCatalogForRequest } from "~/services/lingui.server";
@@ -298,40 +300,33 @@ export default function App() {
   );
 }
 
-function getErrorBoundaryTranslations() {
-  let locale = "en";
-  if (typeof document !== "undefined") {
-    const match = document.cookie.match(/locale=([^;]+)/);
-    if (match) {
-      locale = match[1].split("-")[0].toLowerCase();
-    }
-  }
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  // The ErrorBoundary renders in place of <App />, so it is outside the
+  // LocaleProvider mounted there. Re-establish it from the root loader data
+  // (falling back to defaults if the loader itself threw) so the boundary can
+  // use the same lingui catalog as the rest of the app.
+  const rootLoaderData = useRouteLoaderData<typeof loader>("root");
 
-  if (locale === "tr") {
-    return {
-      title: "Hata!",
-      heading: "Bir şeyler yanlış gitti",
-      backHome: "Ana Sayfaya Dön"
-    };
-  }
-  return {
-    title: "Error!",
-    heading: "Something went wrong",
-    backHome: "Back Home"
-  };
+  return (
+    <LocaleProvider
+      locale={rootLoaderData?.preferences?.locale}
+      catalog={rootLoaderData?.linguiCatalog}
+    >
+      <ErrorBoundaryContent error={error} />
+    </LocaleProvider>
+  );
 }
 
-export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+function ErrorBoundaryContent({ error }: { error: unknown }) {
+  const { t } = useLingui();
   const message = isRouteErrorResponse(error)
     ? (error.data.message ?? error.data)
     : error instanceof Error
       ? error.message
       : String(error);
 
-  const t = getErrorBoundaryTranslations();
-
   return (
-    <Document title={t.title}>
+    <Document title={t`Error!`}>
       <div className="light">
         <div className="flex flex-col w-full h-screen items-center justify-center space-y-4 ">
           <img
@@ -344,10 +339,12 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
             alt="Carbon Logo"
             className="max-w-[60px] hidden dark:block"
           />
-          <Heading size="h1">{t.heading}</Heading>
+          <Heading size="h1">
+            <Trans>Something went wrong</Trans>
+          </Heading>
           <p className="text-muted-foreground max-w-2xl">{message}</p>
           <Button onClick={() => (window.location.href = "/")}>
-            {t.backHome}
+            <Trans>Back Home</Trans>
           </Button>
         </div>
       </div>

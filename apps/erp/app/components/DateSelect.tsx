@@ -86,7 +86,7 @@ const DateSelect = forwardRef<HTMLDivElement, DateSelectProps>(
           }}
           className="hidden md:inline-flex gap-0 rounded-full border border-border bg-muted p-0.5 shadow-sm"
         >
-          {options.map((option) => (
+          {resolvedOptions.map((option) => (
             <ToggleGroupItem
               key={option.value}
               value={option.value}

@@ -1080,6 +1080,9 @@ msgstr "Jours moy. pour fermer"
 msgid "Back"
 msgstr "Retour"
 
+msgid "Back Home"
+msgstr ""
+
 msgid "Back to traceability"
 msgstr "Retour à la traçabilité"
 
@@ -3229,6 +3232,9 @@ msgstr "Erreur lors de la suppression du modèle de la ligne de commande client"
 
 msgid "Error validating serial number"
 msgstr "Erreur lors de la validation du numéro de série"
+
+msgid "Error!"
+msgstr ""
 
 msgid "Escalation"
 msgstr "Escalade"
@@ -7499,6 +7505,9 @@ msgstr "Ignorer la maintenance programmée lors des jours fériés de l'entrepri
 
 msgid "Skipped"
 msgstr "Ignoré"
+
+msgid "Something went wrong"
+msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "Quelque chose s'est mal passé. Veuillez réessayer."

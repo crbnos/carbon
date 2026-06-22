@@ -1080,6 +1080,9 @@ msgstr "平均关闭天数"
 msgid "Back"
 msgstr "返回"
 
+msgid "Back Home"
+msgstr ""
+
 msgid "Back to traceability"
 msgstr "返回可追溯性"
 
@@ -3229,6 +3232,9 @@ msgstr "从销售订单行中删除模型时出错"
 
 msgid "Error validating serial number"
 msgstr "验证序列号时出错"
+
+msgid "Error!"
+msgstr ""
 
 msgid "Escalation"
 msgstr "升级"
@@ -7499,6 +7505,9 @@ msgstr "跳过公司假期的计划维护"
 
 msgid "Skipped"
 msgstr "已跳过"
+
+msgid "Something went wrong"
+msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "出现问题。请重试。"

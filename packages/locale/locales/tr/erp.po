@@ -1080,6 +1080,9 @@ msgstr "Kapatma Ortalama Günler"
 msgid "Back"
 msgstr "Geri"
 
+msgid "Back Home"
+msgstr "Ana Sayfaya Dön"
+
 msgid "Back to traceability"
 msgstr "İzlenebilirliğe geri dön"
 
@@ -3229,6 +3232,9 @@ msgstr "Satır satış siparişinden model kaldırma hatası"
 
 msgid "Error validating serial number"
 msgstr "Seri numarası doğrulama hatası"
+
+msgid "Error!"
+msgstr "Hata!"
 
 msgid "Escalation"
 msgstr "Yükseltme"
@@ -7499,6 +7505,9 @@ msgstr "Şirket tatillerinde planlanmış bakımı atla"
 
 msgid "Skipped"
 msgstr "Atlanmış"
+
+msgid "Something went wrong"
+msgstr "Bir şeyler yanlış gitti"
 
 msgid "Something went wrong. Please try again."
 msgstr "Bir şeyler ters gitti. Lütfen tekrar deneyin."

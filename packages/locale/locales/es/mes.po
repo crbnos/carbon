@@ -105,6 +105,9 @@ msgstr "Error de autenticación"
 msgid "available"
 msgstr "disponible"
 
+msgid "Back Home"
+msgstr ""
+
 msgid "Batch"
 msgstr "Lote"
 
@@ -324,6 +327,9 @@ msgstr "Ingrese el PIN para {0}"
 
 msgid "Error"
 msgstr "Error"
+
+msgid "Error!"
+msgstr ""
 
 msgid "Estimated"
 msgstr "Estimado"
@@ -959,6 +965,9 @@ msgstr "Conectado como {stationName}"
 
 msgid "Size"
 msgstr "Tamaño"
+
+msgid "Something went wrong"
+msgstr ""
 
 msgid "Source"
 msgstr "Origen"

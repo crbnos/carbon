@@ -105,6 +105,9 @@ msgstr "प्रमाणीकरण त्रुटि"
 msgid "available"
 msgstr "उपलब्ध"
 
+msgid "Back Home"
+msgstr ""
+
 msgid "Batch"
 msgstr "बैच"
 
@@ -324,6 +327,9 @@ msgstr "{0} के लिए PIN दर्ज करें"
 
 msgid "Error"
 msgstr "त्रुटि"
+
+msgid "Error!"
+msgstr ""
 
 msgid "Estimated"
 msgstr "अनुमानित"
@@ -959,6 +965,9 @@ msgstr "के रूप में साइन इन किया गया {s
 
 msgid "Size"
 msgstr "आकार"
+
+msgid "Something went wrong"
+msgstr ""
 
 msgid "Source"
 msgstr "स्रोत"

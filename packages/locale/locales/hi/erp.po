@@ -1080,6 +1080,9 @@ msgstr "बंद करने के लिए औसत दिन"
 msgid "Back"
 msgstr "वापस"
 
+msgid "Back Home"
+msgstr ""
+
 msgid "Back to traceability"
 msgstr "ट्रेसेबिलिटी पर वापस जाएं"
 
@@ -3229,6 +3232,9 @@ msgstr "बिक्रय आदेश लाइन से मॉडल हट�
 
 msgid "Error validating serial number"
 msgstr "सीरियल नंबर को मान्य करने में त्रुटि"
+
+msgid "Error!"
+msgstr ""
 
 msgid "Escalation"
 msgstr "संवर्धन"
@@ -7499,6 +7505,9 @@ msgstr "कंपनी की छुट्टियों पर निर्�
 
 msgid "Skipped"
 msgstr "छोड़ा गया"
+
+msgid "Something went wrong"
+msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "कुछ गलत हो गया। कृपया पुनः प्रयास करें।"

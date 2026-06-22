@@ -1080,6 +1080,9 @@ msgstr "Días promedio para cerrar"
 msgid "Back"
 msgstr "Atrás"
 
+msgid "Back Home"
+msgstr ""
+
 msgid "Back to traceability"
 msgstr "Volver a trazabilidad"
 
@@ -3229,6 +3232,9 @@ msgstr "Error al eliminar el modelo de la línea de orden de venta"
 
 msgid "Error validating serial number"
 msgstr "Error validando número de serie"
+
+msgid "Error!"
+msgstr ""
 
 msgid "Escalation"
 msgstr "Escalada"
@@ -7499,6 +7505,9 @@ msgstr "Omitir mantenimiento programado en días festivos de la empresa"
 
 msgid "Skipped"
 msgstr "Omitido"
+
+msgid "Something went wrong"
+msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "Algo salió mal. Por favor, inténtalo de nuevo."

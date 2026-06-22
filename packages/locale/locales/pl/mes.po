@@ -105,6 +105,9 @@ msgstr "Błąd uwierzytelniania"
 msgid "available"
 msgstr "dostępne"
 
+msgid "Back Home"
+msgstr ""
+
 msgid "Batch"
 msgstr "Partia"
 
@@ -324,6 +327,9 @@ msgstr "Wprowadź PIN dla {0}"
 
 msgid "Error"
 msgstr "Błąd"
+
+msgid "Error!"
+msgstr ""
 
 msgid "Estimated"
 msgstr "Szacowane"
@@ -959,6 +965,9 @@ msgstr "Zalogowany jako {stationName}"
 
 msgid "Size"
 msgstr "Rozmiar"
+
+msgid "Something went wrong"
+msgstr ""
 
 msgid "Source"
 msgstr "Źródło"

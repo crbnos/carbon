@@ -105,6 +105,9 @@ msgstr "Authentifizierungsfehler"
 msgid "available"
 msgstr "verfügbar"
 
+msgid "Back Home"
+msgstr ""
+
 msgid "Batch"
 msgstr "Charge"
 
@@ -324,6 +327,9 @@ msgstr "PIN für {0} eingeben"
 
 msgid "Error"
 msgstr "Fehler"
+
+msgid "Error!"
+msgstr ""
 
 msgid "Estimated"
 msgstr "Soll"
@@ -959,6 +965,9 @@ msgstr "Angemeldet als {stationName}"
 
 msgid "Size"
 msgstr "Größe"
+
+msgid "Something went wrong"
+msgstr ""
 
 msgid "Source"
 msgstr "Quelle"

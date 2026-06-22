@@ -1080,6 +1080,9 @@ msgstr "Durchschn. Tage bis Abschluss"
 msgid "Back"
 msgstr "Zurück"
 
+msgid "Back Home"
+msgstr ""
+
 msgid "Back to traceability"
 msgstr "Zurück zur Rückverfolgbarkeit"
 
@@ -3229,6 +3232,9 @@ msgstr "Fehler beim Entfernen des Modells aus der Bestellzeile"
 
 msgid "Error validating serial number"
 msgstr "Fehler beim Validieren der Seriennummer"
+
+msgid "Error!"
+msgstr ""
 
 msgid "Escalation"
 msgstr "Eskalation"
@@ -7499,6 +7505,9 @@ msgstr "Geplante Wartung an Betriebsfeiertagen überspringen"
 
 msgid "Skipped"
 msgstr "Übersprungen"
+
+msgid "Something went wrong"
+msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "Etwas ist schief gelaufen. Bitte versuchen Sie es erneut."

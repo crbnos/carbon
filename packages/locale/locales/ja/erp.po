@@ -1080,6 +1080,9 @@ msgstr "平均クローズ日数"
 msgid "Back"
 msgstr "戻る"
 
+msgid "Back Home"
+msgstr ""
+
 msgid "Back to traceability"
 msgstr "トレーサビリティに戻る"
 
@@ -3229,6 +3232,9 @@ msgstr "販売注文行からモデルを削除するエラー"
 
 msgid "Error validating serial number"
 msgstr "シリアル番号の検証エラー"
+
+msgid "Error!"
+msgstr ""
 
 msgid "Escalation"
 msgstr "エスカレーション"
@@ -7499,6 +7505,9 @@ msgstr "会社の祝日に予定されたメンテナンスをスキップする
 
 msgid "Skipped"
 msgstr "スキップ"
+
+msgid "Something went wrong"
+msgstr ""
 
 msgid "Something went wrong. Please try again."
 msgstr "何か問題が発生しました。もう一度お試しください。"
