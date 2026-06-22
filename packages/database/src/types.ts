@@ -2432,7 +2432,7 @@ export type Database = {
           fax: string | null
           featureRequests: string | null
           id: string
-          industryId: Database["public"]["Enums"]["onboardingIndustry"] | null
+          industryId: string | null
           isEliminationEntity: boolean
           logoDark: string | null
           logoDarkIcon: string | null
@@ -2469,7 +2469,7 @@ export type Database = {
           fax?: string | null
           featureRequests?: string | null
           id?: string
-          industryId?: Database["public"]["Enums"]["onboardingIndustry"] | null
+          industryId?: string | null
           isEliminationEntity?: boolean
           logoDark?: string | null
           logoDarkIcon?: string | null
@@ -2506,7 +2506,7 @@ export type Database = {
           fax?: string | null
           featureRequests?: string | null
           id?: string
-          industryId?: Database["public"]["Enums"]["onboardingIndustry"] | null
+          industryId?: string | null
           isEliminationEntity?: boolean
           logoDark?: string | null
           logoDarkIcon?: string | null
@@ -2575,6 +2575,13 @@ export type Database = {
             columns: ["companyGroupId"]
             isOneToOne: false
             referencedRelation: "companyGroup"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_industryId_fkey"
+            columns: ["industryId"]
+            isOneToOne: false
+            referencedRelation: "industry"
             referencedColumns: ["id"]
           },
           {
@@ -3217,7 +3224,7 @@ export type Database = {
           description: string | null
           id: string
           includesStorage: boolean
-          industryId: Database["public"]["Enums"]["onboardingIndustry"] | null
+          industryId: string | null
           isPublic: boolean
           name: string
           rowCount: number | null
@@ -3234,7 +3241,7 @@ export type Database = {
           description?: string | null
           id?: string
           includesStorage?: boolean
-          industryId?: Database["public"]["Enums"]["onboardingIndustry"] | null
+          industryId?: string | null
           isPublic?: boolean
           name: string
           rowCount?: number | null
@@ -3251,7 +3258,7 @@ export type Database = {
           description?: string | null
           id?: string
           includesStorage?: boolean
-          industryId?: Database["public"]["Enums"]["onboardingIndustry"] | null
+          industryId?: string | null
           isPublic?: boolean
           name?: string
           rowCount?: number | null
@@ -3296,6 +3303,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "companyTemplate_industryId_fkey"
+            columns: ["industryId"]
+            isOneToOne: false
+            referencedRelation: "industry"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "companyTemplate_sourceCompanyId_fkey"
@@ -12491,6 +12505,39 @@ export type Database = {
             referencedColumns: ["userId"]
           },
         ]
+      }
+      industry: {
+        Row: {
+          active: boolean
+          createdAt: string
+          description: string | null
+          iconName: string | null
+          id: string
+          name: string
+          sortOrder: number
+          updatedAt: string | null
+        }
+        Insert: {
+          active?: boolean
+          createdAt?: string
+          description?: string | null
+          iconName?: string | null
+          id: string
+          name: string
+          sortOrder?: number
+          updatedAt?: string | null
+        }
+        Update: {
+          active?: boolean
+          createdAt?: string
+          description?: string | null
+          iconName?: string | null
+          id?: string
+          name?: string
+          sortOrder?: number
+          updatedAt?: string | null
+        }
+        Relationships: []
       }
       inspectionDocument: {
         Row: {
@@ -39395,7 +39442,7 @@ export type Database = {
           },
         ]
       }
-      searchIndex_d8ql04sem0h03nah7n00: {
+      searchIndex_d8rau2oqm0h031eqpl1g: {
         Row: {
           createdAt: string
           description: string | null
@@ -57188,14 +57235,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -60621,13 +60668,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["shipmentCountryCode"]
-            isOneToOne: false
-            referencedRelation: "country"
-            referencedColumns: ["alpha2"]
-          },
-          {
-            foreignKeyName: "address_countryCode_fkey"
             columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
@@ -60636,6 +60676,13 @@ export type Database = {
           {
             foreignKeyName: "address_countryCode_fkey"
             columns: ["customerCountryCode"]
+            isOneToOne: false
+            referencedRelation: "country"
+            referencedColumns: ["alpha2"]
+          },
+          {
+            foreignKeyName: "address_countryCode_fkey"
+            columns: ["shipmentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -67111,11 +67158,6 @@ export type Database = {
         | "Completed"
         | "Skipped"
       oeeImpact: "Down" | "Planned" | "Impact" | "No Impact"
-      onboardingIndustry:
-        | "robotics_oem"
-        | "precision_manufacturing"
-        | "automotive_precision"
-        | "custom"
       operationType: "Inside" | "Outside"
       payableLineType:
         | "Comment"
@@ -68422,12 +68464,6 @@ export const Constants = {
         "Skipped",
       ],
       oeeImpact: ["Down", "Planned", "Impact", "No Impact"],
-      onboardingIndustry: [
-        "robotics_oem",
-        "precision_manufacturing",
-        "automotive_precision",
-        "custom",
-      ],
       operationType: ["Inside", "Outside"],
       payableLineType: [
         "Comment",
