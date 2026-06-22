@@ -8,7 +8,7 @@ if [ ! -f "$(dirname "$0")/_/husky.sh" ]; then
 fi
 . "$(dirname "$0")/_/husky.sh"
 
-pnpx lint-staged
+pnpm exec lint-staged
 
 # Compile lingui translations if any relevant files were modified
 if git diff --cached --name-only | grep -qE '\.(tsx?|jsx?)$|\.po$'; then

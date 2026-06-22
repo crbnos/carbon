@@ -24,6 +24,7 @@ import {
   Thead,
   Tr
 } from "@carbon/react";
+import type { ChartConfig } from "@carbon/react/Chart";
 import {
   ChartContainer,
   ChartLegend,
@@ -242,26 +243,27 @@ export default function QualityDashboard() {
   const { locale } = useLocale();
 
   const localizedChartConfig = useMemo(
-    () => ({
-      Critical: { label: t`Critical`, color: "hsl(var(--destructive))" },
-      High: { label: t`High`, color: "hsl(var(--chart-5))" },
-      Medium: { label: t`Medium`, color: "hsl(var(--chart-1))" },
-      Low: { label: t`Low`, color: "hsl(var(--success))" },
-      Registered: { label: t`Registered`, color: "hsl(var(--chart-5))" },
-      "In Progress": { label: t`In Progress`, color: "hsl(var(--chart-1))" },
-      Closed: { label: t`Closed`, color: "hsl(var(--success))" },
-      opened: { label: t`Opened`, color: "hsl(var(--chart-5))" },
-      closed: { label: t`Closed`, color: "hsl(var(--success))" },
-      target: { label: t`Target`, color: "hsl(var(--destructive))" },
-      count: { label: t`Count` },
-      cumulative: { label: t`Cumulative %`, color: "hsl(var(--chart-5))" },
-      Internal: { label: t`Internal`, color: "hsl(var(--chart-1))" },
-      External: { label: t`External`, color: "hsl(var(--chart-5))" },
-      "0-4 weeks": { label: t`0-4 weeks`, color: "hsl(var(--success))" },
-      "5-8 weeks": { label: t`5-8 weeks`, color: "hsl(var(--chart-4))" },
-      "9-12 weeks": { label: t`9-12 weeks`, color: "hsl(var(--chart-5))" },
-      "13+ weeks": { label: t`13+ weeks`, color: "hsl(var(--destructive))" }
-    }),
+    () =>
+      ({
+        Critical: { label: t`Critical`, color: "hsl(var(--destructive))" },
+        High: { label: t`High`, color: "hsl(var(--chart-5))" },
+        Medium: { label: t`Medium`, color: "hsl(var(--chart-1))" },
+        Low: { label: t`Low`, color: "hsl(var(--success))" },
+        Registered: { label: t`Registered`, color: "hsl(var(--chart-5))" },
+        "In Progress": { label: t`In Progress`, color: "hsl(var(--chart-1))" },
+        Closed: { label: t`Closed`, color: "hsl(var(--success))" },
+        opened: { label: t`Opened`, color: "hsl(var(--chart-5))" },
+        closed: { label: t`Closed`, color: "hsl(var(--success))" },
+        target: { label: t`Target`, color: "hsl(var(--destructive))" },
+        count: { label: t`Count` },
+        cumulative: { label: t`Cumulative %`, color: "hsl(var(--chart-5))" },
+        Internal: { label: t`Internal`, color: "hsl(var(--chart-1))" },
+        External: { label: t`External`, color: "hsl(var(--chart-5))" },
+        "0-4 weeks": { label: t`0-4 weeks`, color: "hsl(var(--success))" },
+        "5-8 weeks": { label: t`5-8 weeks`, color: "hsl(var(--chart-4))" },
+        "9-12 weeks": { label: t`9-12 weeks`, color: "hsl(var(--chart-5))" },
+        "13+ weeks": { label: t`13+ weeks`, color: "hsl(var(--destructive))" }
+      }) satisfies ChartConfig,
     [t]
   );
 
