@@ -88,8 +88,20 @@ msgstr "<0>update</0> позволяет обновлять строки. <1>upd
 msgid "<0>update</0> will also return the replaced values for UPDATE."
 msgstr "<0>update</0> также вернёт заменённые значения для UPDATE."
 
+msgid "0-4 weeks"
+msgstr ""
+
 msgid "1 day"
 msgstr "1 день"
+
+msgid "13+ weeks"
+msgstr ""
+
+msgid "1Y"
+msgstr ""
+
+msgid "30D"
+msgstr ""
 
 msgid "3D Model"
 msgstr "3D модель"
@@ -97,8 +109,20 @@ msgstr "3D модель"
 msgid "5 User Minimum"
 msgstr "Минимум 5 пользователей"
 
+msgid "5-8 weeks"
+msgstr ""
+
 msgid "5MB file limit"
 msgstr "Лимит файла 5МБ"
+
+msgid "7D"
+msgstr ""
+
+msgid "9-12 weeks"
+msgstr ""
+
+msgid "90D"
+msgstr ""
 
 msgid "A consumable is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Расходный материал — это физический предмет, используемый для изготовления детали, которая может использоваться в нескольких заданиях"
@@ -1056,6 +1080,9 @@ msgstr "Среднее количество дней до закрытия"
 msgid "Back"
 msgstr "Назад"
 
+msgid "Back Home"
+msgstr ""
+
 msgid "Back to traceability"
 msgstr "Вернуться к отслеживанию"
 
@@ -1399,6 +1426,9 @@ msgstr "Закрыть"
 
 msgid "Close Date"
 msgstr "Дата закрытия"
+
+msgid "Closed"
+msgstr ""
 
 msgid "Closed Date"
 msgstr "Дата закрытия"
@@ -1840,6 +1870,9 @@ msgstr "Не удалось подготовить изображение рег
 msgid "Couldn't load documents"
 msgstr "Не удалось загрузить документы"
 
+msgid "Count"
+msgstr ""
+
 msgid "Country"
 msgstr "Страна"
 
@@ -2025,11 +2058,17 @@ msgstr "Рабочий центр создан"
 msgid "Creating part..."
 msgstr "Создание детали..."
 
+msgid "Critical"
+msgstr ""
+
 msgid "CSV column"
 msgstr "Столбец CSV"
 
 msgid "CSV file must have at least 2 rows."
 msgstr "CSV файл должен содержать минимум 2 строки."
+
+msgid "Cumulative %"
+msgstr ""
 
 msgid "Currency"
 msgstr "Валюта"
@@ -2135,6 +2174,9 @@ msgstr "Типы клиентов"
 
 msgid "Customers"
 msgstr "Клиенты"
+
+msgid "Customize"
+msgstr ""
 
 msgid "Customize the layout of your PDF documents — reorder sections, hide what you don't need, and add your own blocks."
 msgstr "Настройте макет ваших PDF-документов — переупорядочивайте разделы, скрывайте ненужное и добавляйте собственные блоки."
@@ -3191,6 +3233,9 @@ msgstr "Ошибка при удалении модели из строки за
 msgid "Error validating serial number"
 msgstr "Ошибка при проверке серийного номера"
 
+msgid "Error!"
+msgstr ""
+
 msgid "Escalation"
 msgstr "Эскалация"
 
@@ -3869,6 +3914,9 @@ msgstr "Справка"
 msgid "Hide, pin and reorder columns"
 msgstr "Скрывать, закреплять и переупорядочивать столбцы"
 
+msgid "High"
+msgstr ""
+
 msgid "Higher priority wins ties and applies first for markups"
 msgstr "Более высокий приоритет выигрывает при равенстве и применяется первым для наценок"
 
@@ -4535,6 +4583,9 @@ msgstr "Размер партии"
 msgid "Lot Size:"
 msgstr "Размер партии:"
 
+msgid "Low"
+msgstr ""
+
 msgid "Machine"
 msgstr "Машина"
 
@@ -4773,6 +4824,9 @@ msgstr "Стандарт измерения"
 
 msgid "Media Size"
 msgstr "Размер носителя"
+
+msgid "Medium"
+msgstr ""
 
 msgid "Members"
 msgstr "Участники"
@@ -5590,6 +5644,9 @@ msgstr "Открытые запланированные"
 
 msgid "Open task details"
 msgstr "Открыть детали задачи"
+
+msgid "Opened"
+msgstr ""
 
 msgid "Operation"
 msgstr "Операция"
@@ -6486,6 +6543,9 @@ msgstr "Обновить"
 
 msgid "Refresh exchange rate"
 msgstr "Обновить курс обмена"
+
+msgid "Registered"
+msgstr ""
 
 msgid "Reject"
 msgstr "Отклонить"
@@ -7446,6 +7506,9 @@ msgstr "Пропускать запланированное техническо
 msgid "Skipped"
 msgstr "Пропущено"
 
+msgid "Something went wrong"
+msgstr ""
+
 msgid "Something went wrong. Please try again."
 msgstr "Что-то пошло не так. Пожалуйста, попробуйте еще раз."
 
@@ -7932,10 +7995,10 @@ msgid "The date the item is required on-site to cover the period's projected dem
 msgstr "Дата, когда товар должен быть доставлен на объект для покрытия прогнозируемого спроса за период."
 
 msgid "The date you received this RFQ from the customer. Defaults to today."
-msgstr ""
+msgstr "Дата получения этого запроса на коммерческое предложение от клиента. По умолчанию — сегодняшняя дата."
 
 msgid "The deadline to send your quote to the customer."
-msgstr ""
+msgstr "Крайний срок отправки коммерческого предложения клиенту."
 
 msgid "The endpoint that receives a POST request with the updated data when the table is updated"
 msgstr "Конечная точка, которая получает POST-запрос с обновленными данными при обновлении таблицы"

@@ -32,8 +32,8 @@ All PDF components are barrel-exported from `pdf/index.ts`.
 ## Shared chrome & components (`pdf/components/`)
 
 - **`Template.tsx`** — the page shell every full-page doc wraps. Renders
-  `<Document><Page size="A4">` with body padding, registers **Inter** statically,
-  picks a safe `fontFamily` (falls back to Helvetica if unregistered), and mounts
+  `<Document><Page size="A4">` with body padding, resolves the body font via
+  `getSafeFontFamily` (falls back to Helvetica if unregistered), and mounts
   the fixed `<Footer>` + repeating `headerContent`. Props include `title`, `meta`,
   `theme`, `showFooter`, `showPageNumbers`, `pageNumberFormat`, `fontFamily`. It
   wraps children in `DocStyleProvider` so blocks read the themed `tw`.
@@ -93,14 +93,41 @@ dependency.
 Hand-built labels call these directly in JSX setup (e.g. `KanbanLabelPDF` color-codes
 the QR by action). Block-driven labels generate inside the trackingLabel blocks.
 
-## Fonts (`pdf/fonts.ts`)
+## Fonts (`pdf/fonts.ts` + `pdf/fonts.data.ts`)
 
-`Template` registers **Inter** statically. Helvetica / Times-Roman / Courier are PDF
-built-ins (no registration). Any Google font picked in the editor must be registered
-**before render** via `await ensureFont(family)` in the route — it fetches the CSS2
-stylesheet with a legacy User-Agent (Google serves TTF, since react-pdf can't do
-WOFF2), parses one TTF per weight, and is idempotent + best-effort (failure leaves
-the font unregistered and `Template` falls back to a safe face).
+Every offered family is **bundled into the package** as base64 **woff** data URIs and
+registered **in-process — no network at render**. (Earlier the Google families were
+fetched from Google's CSS2 endpoint at render time; that failed intermittently on
+Vercel and crashed with `Font family not registered: <font>`.) Helvetica /
+Times-Roman / Courier are PDF built-ins (no registration).
+
+- **Format is woff, NOT woff2.** react-pdf [only supports TTF/WOFF](https://react-pdf.org/fonts),
+  and this fontkit's woff2/brotli decoder corrupts shared state when many woff2 fonts
+  are decoded in one process (react-pdf preloads **every** registered font) →
+  `Offset is outside the bounds of the DataView` at embed. woff (zlib) is stateless.
+  Also avoid OpenType **variable** fonts — react-pdf can't subset them (PDF 2.0).
+- `pdf/fonts.data.ts` — **generated, gitignored** `BUNDLED_FONTS` (base64 woff,
+  ~720 KiB). Produced by `scripts/generate-fonts.mjs` from the `@fontsource/*`
+  devDeps (static, numeric-weight instances — NOT the variable packages). The
+  `@carbon/documents` **`build`** script is the single entry point; it runs:
+  - on the **root `postinstall`** (`pnpm --filter @carbon/documents build`) — so the
+    file exists after any `pnpm install`, including for `typecheck` (which has no
+    `^build` dep, so install is the hook there);
+  - as the turbo **`@carbon/documents#build`** task (outputs the file, cache-restored
+    on hits) — so app builds get it via `^build`.
+
+  Same pattern as the gitignored Lingui `.mjs`. Run `pnpm --filter @carbon/documents
+  build` manually to refresh after changing the family list.
+- `registerDocumentFonts()` — idempotent, synchronous; registers every bundled
+  family (including the default, Inter) from local woff. No network. If the data is
+  empty (generator never ran), every family degrades to Helvetica via
+  `getSafeFontFamily` — no crash.
+- `ensureFont(family)` — back-compat async wrapper (routes still `await` it); just
+  calls `registerDocumentFonts()`. The `family` arg is ignored (all registered up front).
+- `getSafeFontFamily(family)` — returns the family if built-in/registered, else
+  `"Helvetica"`. **Every render path must route the settings font through this**
+  (both `Template` and the hand-built `file+/job+/$jobId.traveler[.]pdf.tsx` route)
+  so an unregistered family can never throw.
 
 ## Serving — the file route (`apps/*/app/routes/file+/<doc>+/$id[.]pdf.tsx`)
 

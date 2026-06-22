@@ -1,5 +1,5 @@
 import { Footer } from "./components";
-import { ensureFont } from "./fonts";
+import { ensureFont, getSafeFontFamily, registerDocumentFonts } from "./fonts";
 import IssuePDF from "./IssuePDF";
 import { SAMPLE_ISSUE } from "./issue.samples";
 import JobTravelerPDF, { JobTravelerPageContent } from "./JobTravelerPDF";
@@ -21,6 +21,7 @@ export {
   DOCUMENT_PDFS,
   ensureFont,
   Footer,
+  getSafeFontFamily,
   IssuePDF,
   JobTravelerPageContent,
   JobTravelerPDF,
@@ -29,6 +30,7 @@ export {
   ProductLabelPDF,
   PurchaseOrderPDF,
   QuotePDF,
+  registerDocumentFonts,
   SalesInvoicePDF,
   SAMPLE_ISSUE,
   SAMPLE_JOB_TRAVELER,

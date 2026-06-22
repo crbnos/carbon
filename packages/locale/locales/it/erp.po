@@ -88,8 +88,20 @@ msgstr "<0>update</0> ti consente di aggiornare le righe. <1>update</1> corrispo
 msgid "<0>update</0> will also return the replaced values for UPDATE."
 msgstr "<0>update</0> restituirà anche i valori sostituiti per UPDATE."
 
+msgid "0-4 weeks"
+msgstr ""
+
 msgid "1 day"
 msgstr "1 giorno"
+
+msgid "13+ weeks"
+msgstr ""
+
+msgid "1Y"
+msgstr ""
+
+msgid "30D"
+msgstr ""
 
 msgid "3D Model"
 msgstr "Modello 3D"
@@ -97,8 +109,20 @@ msgstr "Modello 3D"
 msgid "5 User Minimum"
 msgstr "Minimo 5 Utenti"
 
+msgid "5-8 weeks"
+msgstr ""
+
 msgid "5MB file limit"
 msgstr "Limite di file 5MB"
+
+msgid "7D"
+msgstr ""
+
+msgid "9-12 weeks"
+msgstr ""
+
+msgid "90D"
+msgstr ""
 
 msgid "A consumable is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Un consumabile è un articolo fisico utilizzato per realizzare una parte che può essere utilizzata in più lavori"
@@ -1056,6 +1080,9 @@ msgstr "Giorni medi per chiudere"
 msgid "Back"
 msgstr "Indietro"
 
+msgid "Back Home"
+msgstr ""
+
 msgid "Back to traceability"
 msgstr "Torna alla tracciabilità"
 
@@ -1399,6 +1426,9 @@ msgstr "Chiudi"
 
 msgid "Close Date"
 msgstr "Data di chiusura"
+
+msgid "Closed"
+msgstr ""
 
 msgid "Closed Date"
 msgstr "Data di chiusura"
@@ -1840,6 +1870,9 @@ msgstr "Impossibile preparare l'immagine della regione per l'analisi"
 msgid "Couldn't load documents"
 msgstr "Impossibile caricare i documenti"
 
+msgid "Count"
+msgstr ""
+
 msgid "Country"
 msgstr "Paese"
 
@@ -2025,11 +2058,17 @@ msgstr "Centro di lavoro creato"
 msgid "Creating part..."
 msgstr "Creazione parte in corso..."
 
+msgid "Critical"
+msgstr ""
+
 msgid "CSV column"
 msgstr "Colonna CSV"
 
 msgid "CSV file must have at least 2 rows."
 msgstr "Il file CSV deve avere almeno 2 righe."
+
+msgid "Cumulative %"
+msgstr ""
 
 msgid "Currency"
 msgstr "Valuta"
@@ -2135,6 +2174,9 @@ msgstr "Tipi di Cliente"
 
 msgid "Customers"
 msgstr "Clienti"
+
+msgid "Customize"
+msgstr ""
 
 msgid "Customize the layout of your PDF documents — reorder sections, hide what you don't need, and add your own blocks."
 msgstr "Personalizza il layout dei tuoi documenti PDF — riordina le sezioni, nascondi quello che non ti serve e aggiungi i tuoi blocchi."
@@ -3191,6 +3233,9 @@ msgstr "Errore nella rimozione del modello dalla riga dell'ordine di vendita"
 msgid "Error validating serial number"
 msgstr "Errore durante la convalida del numero di serie"
 
+msgid "Error!"
+msgstr ""
+
 msgid "Escalation"
 msgstr "Escalation"
 
@@ -3869,6 +3914,9 @@ msgstr "Aiuto"
 msgid "Hide, pin and reorder columns"
 msgstr "Nascondi, fissa e riordina le colonne"
 
+msgid "High"
+msgstr ""
+
 msgid "Higher priority wins ties and applies first for markups"
 msgstr "La priorità più alta vince i pareggi e si applica per prima per i ricarichi"
 
@@ -4535,6 +4583,9 @@ msgstr "Dimensione Lotto"
 msgid "Lot Size:"
 msgstr "Dimensione lotto:"
 
+msgid "Low"
+msgstr ""
+
 msgid "Machine"
 msgstr "Macchina"
 
@@ -4773,6 +4824,9 @@ msgstr "Standard di Misurazione"
 
 msgid "Media Size"
 msgstr "Dimensione supporto"
+
+msgid "Medium"
+msgstr ""
 
 msgid "Members"
 msgstr "Membri"
@@ -5590,6 +5644,9 @@ msgstr "Programmato Aperto"
 
 msgid "Open task details"
 msgstr "Apri dettagli attività"
+
+msgid "Opened"
+msgstr ""
 
 msgid "Operation"
 msgstr "Operazione"
@@ -6486,6 +6543,9 @@ msgstr "Aggiorna"
 
 msgid "Refresh exchange rate"
 msgstr "Aggiorna tasso di cambio"
+
+msgid "Registered"
+msgstr ""
 
 msgid "Reject"
 msgstr "Rifiuta"
@@ -7446,6 +7506,9 @@ msgstr "Salta la manutenzione programmata durante le festività aziendali"
 msgid "Skipped"
 msgstr "Saltato"
 
+msgid "Something went wrong"
+msgstr ""
+
 msgid "Something went wrong. Please try again."
 msgstr "Qualcosa è andato storto. Riprova."
 
@@ -7932,10 +7995,10 @@ msgid "The date the item is required on-site to cover the period's projected dem
 msgstr "La data in cui l'articolo è richiesto in loco per coprire la domanda prevista del periodo."
 
 msgid "The date you received this RFQ from the customer. Defaults to today."
-msgstr ""
+msgstr "La data in cui hai ricevuto questa RFQ dal cliente. Per impostazione predefinita è oggi."
 
 msgid "The deadline to send your quote to the customer."
-msgstr ""
+msgstr "Il termine per inviare il preventivo al cliente."
 
 msgid "The endpoint that receives a POST request with the updated data when the table is updated"
 msgstr "L'endpoint che riceve una richiesta POST con i dati aggiornati quando la tabella viene aggiornata"

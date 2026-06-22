@@ -88,8 +88,20 @@ msgstr "<0>update</0> lets you update rows. <1>update</1> will match all rows by
 msgid "<0>update</0> will also return the replaced values for UPDATE."
 msgstr "<0>update</0> will also return the replaced values for UPDATE."
 
+msgid "0-4 weeks"
+msgstr "0-4 weeks"
+
 msgid "1 day"
 msgstr "1 day"
+
+msgid "13+ weeks"
+msgstr "13+ weeks"
+
+msgid "1Y"
+msgstr "1Y"
+
+msgid "30D"
+msgstr "30D"
 
 msgid "3D Model"
 msgstr "3D Model"
@@ -97,8 +109,20 @@ msgstr "3D Model"
 msgid "5 User Minimum"
 msgstr "5 User Minimum"
 
+msgid "5-8 weeks"
+msgstr "5-8 weeks"
+
 msgid "5MB file limit"
 msgstr "5MB file limit"
+
+msgid "7D"
+msgstr "7D"
+
+msgid "9-12 weeks"
+msgstr "9-12 weeks"
+
+msgid "90D"
+msgstr "90D"
 
 msgid "A consumable is a physical item used to make a part that can be used across multiple jobs"
 msgstr "A consumable is a physical item used to make a part that can be used across multiple jobs"
@@ -1056,6 +1080,9 @@ msgstr "Avg Days to Close"
 msgid "Back"
 msgstr "Back"
 
+msgid "Back Home"
+msgstr "Back Home"
+
 msgid "Back to traceability"
 msgstr "Back to traceability"
 
@@ -1399,6 +1426,9 @@ msgstr "Close"
 
 msgid "Close Date"
 msgstr "Close Date"
+
+msgid "Closed"
+msgstr "Closed"
 
 msgid "Closed Date"
 msgstr "Closed Date"
@@ -1840,6 +1870,9 @@ msgstr "Could not prepare region image for analysis"
 msgid "Couldn't load documents"
 msgstr "Couldn't load documents"
 
+msgid "Count"
+msgstr "Count"
+
 msgid "Country"
 msgstr "Country"
 
@@ -2025,11 +2058,17 @@ msgstr "Created work center"
 msgid "Creating part..."
 msgstr "Creating part..."
 
+msgid "Critical"
+msgstr "Critical"
+
 msgid "CSV column"
 msgstr "CSV column"
 
 msgid "CSV file must have at least 2 rows."
 msgstr "CSV file must have at least 2 rows."
+
+msgid "Cumulative %"
+msgstr "Cumulative %"
 
 msgid "Currency"
 msgstr "Currency"
@@ -2135,6 +2174,9 @@ msgstr "Customer Types"
 
 msgid "Customers"
 msgstr "Customers"
+
+msgid "Customize"
+msgstr "Customize"
 
 msgid "Customize the layout of your PDF documents — reorder sections, hide what you don't need, and add your own blocks."
 msgstr "Customize the layout of your PDF documents — reorder sections, hide what you don't need, and add your own blocks."
@@ -3191,6 +3233,9 @@ msgstr "Error removing model from sales order line"
 msgid "Error validating serial number"
 msgstr "Error validating serial number"
 
+msgid "Error!"
+msgstr "Error!"
+
 msgid "Escalation"
 msgstr "Escalation"
 
@@ -3869,6 +3914,9 @@ msgstr "Help"
 msgid "Hide, pin and reorder columns"
 msgstr "Hide, pin and reorder columns"
 
+msgid "High"
+msgstr "High"
+
 msgid "Higher priority wins ties and applies first for markups"
 msgstr "Higher priority wins ties and applies first for markups"
 
@@ -4535,6 +4583,9 @@ msgstr "Lot Size"
 msgid "Lot Size:"
 msgstr "Lot Size:"
 
+msgid "Low"
+msgstr "Low"
+
 msgid "Machine"
 msgstr "Machine"
 
@@ -4773,6 +4824,9 @@ msgstr "Measurement Standard"
 
 msgid "Media Size"
 msgstr "Media Size"
+
+msgid "Medium"
+msgstr "Medium"
 
 msgid "Members"
 msgstr "Members"
@@ -5590,6 +5644,9 @@ msgstr "Open Scheduled"
 
 msgid "Open task details"
 msgstr "Open task details"
+
+msgid "Opened"
+msgstr "Opened"
 
 msgid "Operation"
 msgstr "Operation"
@@ -6486,6 +6543,9 @@ msgstr "Refresh"
 
 msgid "Refresh exchange rate"
 msgstr "Refresh exchange rate"
+
+msgid "Registered"
+msgstr "Registered"
 
 msgid "Reject"
 msgstr "Reject"
@@ -7445,6 +7505,9 @@ msgstr "Skip scheduled maintenance on company holidays"
 
 msgid "Skipped"
 msgstr "Skipped"
+
+msgid "Something went wrong"
+msgstr "Something went wrong"
 
 msgid "Something went wrong. Please try again."
 msgstr "Something went wrong. Please try again."

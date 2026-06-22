@@ -4,7 +4,7 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: @lingui/cli\n"
-"Language: es\n"
+"Language: tr\n"
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "PO-Revision-Date: \n"
@@ -15,1099 +15,1099 @@ msgstr ""
 #. placeholder {0}: attribute.name
 #. placeholder {1}: activeStep + 1
 msgid "{0} - Set {1}"
-msgstr "{0} - Conjunto {1}"
+msgstr "{0} - Ayarla {1}"
 
 #. placeholder {0}: employeeIds.length
 msgid "{0} Active"
-msgstr "{0} Activos"
+msgstr "{0} Aktif"
 
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
 #. placeholder {1}: operation.targetQuantity
 msgid "{0} of {1}"
-msgstr "{0} de {1}"
+msgstr "{0} adet {1}"
 
 #. placeholder {0}: attributes.filter((a) => a.jobOperationStepRecord.some( (r) => r.index === activeStep ) ).length
 #. placeholder {1}: attributes.length
 msgid "{0} of {1} complete"
-msgstr "{0} de {1} completados"
+msgstr "{0} adet / {1} adet tamamlandı"
 
 #. placeholder {0}: attributes.filter((a) => a.jobOperationStepRecord.some( (r) => r.index === activeStep ) ).length
 #. placeholder {1}: attributes.length
 msgid "{0} of {1} completed"
-msgstr "{0} de {1} completados"
+msgstr "{0} adet tamamlandı"
 
 #. placeholder {0}: item.quantityScrapped
 msgid "{0} Scrapped"
-msgstr "{0} Descartados"
+msgstr "{0} Hurdaya Çıkarılmış"
 
 msgid "About"
-msgstr "Acerca de"
+msgstr "Hakkında"
 
 msgid "Account Settings"
-msgstr "Configuración de cuenta"
+msgstr "Hesap Ayarları"
 
 msgid "Active"
-msgstr "Activo"
+msgstr "Aktif"
 
 msgid "Actual"
-msgstr "Real"
+msgstr "Gerçek"
 
 msgid "Add"
-msgstr "Agregar"
+msgstr "Ekle"
 
 msgid "Add & Issue"
-msgstr "Agregar y emitir"
+msgstr "Ekle ve Çıkış Yap"
 
 msgid "Add a printer in the printing settings to print labels directly."
-msgstr "Añade una impresora en la configuración de impresión para imprimir etiquetas directamente."
+msgstr "Etiketleri doğrudan yazdırmak için yazdırma ayarlarında bir yazıcı ekleyin."
 
 msgid "Add Inventory"
-msgstr "Agregar inventario"
+msgstr "Envantere Ekle"
 
 msgid "Add Spare Part"
-msgstr "Agregar repuesto"
+msgstr "Yedek Parça Ekle"
 
 msgid "All"
-msgstr "Todos"
+msgstr "Tümü"
 
 msgid "Are you sure you want to delete this step?"
-msgstr "¿Está seguro de que desea eliminar este paso?"
+msgstr "Bu adımı silmek istediğinizden emin misiniz?"
 
 msgid "Are you sure you want to delete this timecard? This cannot be undone."
-msgstr "¿Está seguro de que desea eliminar esta tarjeta de tiempo? Esta acción no se puede deshacer."
+msgstr "Bu zaman kartını silmek istediğinizden emin misiniz? Bu geri alınamaz."
 
 msgid "Are you sure you want to end all production events? This will end all active operations without completing or finishing them."
-msgstr "¿Está seguro de que desea finalizar todos los eventos de producción? Esto terminará todas las operaciones activas sin completarlas ni finalizarlas."
+msgstr "Tüm üretim etkinliklerini sonlandırmak istediğinizden emin misiniz? Bu, tüm aktif operasyonları tamamlamadan veya bitirmeden sonlandıracaktır."
 
 msgid "Are you sure you want to finish this operation? This will end all active production events for this operation."
-msgstr "¿Está seguro de que desea finalizar esta operación? Esto terminará todos los eventos de producción activos para esta operación."
+msgstr "Bu işlemi bitirmek istediğinizden emin misiniz? Bu, bu işlem için tüm aktif üretim olaylarını sonlandıracaktır."
 
 msgid "Are you sure you want to leave this page?"
-msgstr "¿Estás seguro de que quieres salir de esta página?"
+msgstr "Bu sayfadan ayrılmak istediğinizden emin misiniz?"
 
 msgid "Assigned"
-msgstr "Asignado"
+msgstr "Atanmış"
 
 msgid "Assigned to Me"
-msgstr "Asignado a mí"
+msgstr "Bana Atananlar"
 
 msgid "Assignee"
-msgstr "Responsable"
+msgstr "Atanan"
 
 msgid "Attach File"
-msgstr "Adjuntar archivo"
+msgstr "Dosya Ekle"
 
 msgid "Authentication Error"
-msgstr "Error de autenticación"
+msgstr "Kimlik Doğrulama Hatası"
 
 msgid "available"
-msgstr "disponible"
+msgstr "mevcut"
 
 msgid "Back Home"
-msgstr ""
+msgstr "Ana Sayfaya Dön"
 
 msgid "Batch"
-msgstr "Lote"
+msgstr "Parti"
 
 msgid "Batch is not available"
-msgstr "El lote no está disponible"
+msgstr "Parti bulunamadı"
 
 #. placeholder {0}: index + 1
 msgid "Batch Number {0}"
-msgstr "Número de lote {0}"
+msgstr "Lot Numarası {0}"
 
 msgid "Batch number is required"
-msgstr "El número de lote es obligatorio"
+msgstr "Lot numarası zorunludur"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
-msgstr "Bloqueado por {0}"
+msgstr "Engelli edildi: {0}"
 
 msgid "Blocking"
-msgstr "Bloqueando"
+msgstr "Bloklayıcı"
 
 msgid "But don't worry. You can use the forgot password flow to request a new magic link."
-msgstr "Pero no te preocupes. Puedes usar el flujo de contraseña olvidada para solicitar un nuevo enlace mágico."
+msgstr "Ama endişelenmeyin. Yeni bir sihirli bağlantı talep etmek için şifremi unuttum akışını kullanabilirsiniz."
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
-msgstr "Al iniciar sesión, acepta los <0>Términos de servicio</0> y la <1>Política de privacidad.</1>"
+msgstr "Oturum açarak <0>Hizmet Şartları</0> ve <1>Gizlilik Politikası</1>'na katılıyorsunuz."
 
 msgid "Cancel"
-msgstr "Cancelar"
+msgstr "İptal"
 
 msgid "Cancelled"
-msgstr "Cancelado"
+msgstr "İptal edildi"
 
 msgid "Carbon Logo"
-msgstr "Logotipo de Carbon"
+msgstr "Carbon Logosu"
 
 msgid "Cards"
-msgstr "Tarjetas"
+msgstr "Kartlar"
 
 msgid "Chat"
-msgstr "Chat"
+msgstr "Sohbet"
 
 msgid "Check your email"
-msgstr "Revise su correo electrónico"
+msgstr "E-postanızı kontrol edin"
 
 msgid "Clear"
-msgstr "Limpiar"
+msgstr "Temizle"
 
 msgid "Clear Filters"
-msgstr "Limpiar filtros"
+msgstr "Filtreleri Temizle"
 
 msgid "Clear Search"
-msgstr "Limpiar búsqueda"
+msgstr "Aramayı Temizle"
 
 msgid "Clock In"
-msgstr "Registrar entrada"
+msgstr "Giriş Yap"
 
 msgid "Clock Out"
-msgstr "Registrar salida"
+msgstr "Çıkış Yap"
 
 #. placeholder {0}: formatTime(openEntry.clockIn, locale)
 msgid "Clocked in since {0}"
-msgstr "Registrado desde {0}"
+msgstr "Giriş yapıldı: {0}"
 
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
 #. placeholder {2}: columnOrder.length
 msgid "Column {0} was dropped into position {1} of {2}"
-msgstr "La columna {0} se colocó en la posición {1} de {2}"
+msgstr "Sütun {0} konumu {1}'ye bırakıldı, toplam {2} sütundan biri."
 
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: over.data.current.column.title
 #. placeholder {2}: overIndex + 1
 #. placeholder {3}: columnOrder.length
 msgid "Column {0} was moved over {1} at position {2} of {3}"
-msgstr "La columna {0} se movió sobre {1} en la posición {2} de {3}"
+msgstr "Sütun {0}, {2} pozisyonunda {3} üzerindeki yerini aldı"
 
 #. placeholder {0}: column.title
 msgid "Column: {0}"
-msgstr "Columna: {0}"
+msgstr "Sütun: {0}"
 
 msgid "Columns"
-msgstr "Columnas"
+msgstr "Sütunlar"
 
 msgid "Company"
-msgstr "Empresa"
+msgstr "Şirket"
 
 msgid "Complete"
-msgstr "Completar"
+msgstr "Tamamla"
 
 msgid "Complete All"
-msgstr "Completar todo"
+msgstr "Tümünü Tamamla"
 
 msgid "Completed"
-msgstr "Completado"
+msgstr "Tamamlandı"
 
 msgid "Console"
-msgstr "Consola"
+msgstr "Konsol"
 
 msgid "Console Mode"
-msgstr "Modo consola"
+msgstr "Konsol Modu"
 
 msgid "Consumed expired"
-msgstr "Consumido vencido"
+msgstr "Tüketilmiş süre dolmuş"
 
 #. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
 #. placeholder {0}: search.trim() === "" ? label : search
 msgid "Create {0}"
-msgstr "Crear {0}"
+msgstr "{0} Oluştur"
 
 msgid "Create Issue"
-msgstr "Crear Problema"
+msgstr "Sorun Oluştur"
 
 msgid "Create Quality Issue"
-msgstr "Crear Problema de Calidad"
+msgstr "Kalite Sorunu Oluştur"
 
 msgid "Create Rework"
-msgstr "Crear Reelaboración"
+msgstr "İşlemi Yeniden Oluştur"
 
 msgid "Customer"
-msgstr "Cliente"
+msgstr "Müşteri"
 
 msgid "Dark Mode"
-msgstr "Modo oscuro"
+msgstr "Karanlık Mod"
 
 msgid "Date"
-msgstr "Fecha"
+msgstr "Tarih"
 
 msgid "Deadline"
-msgstr "Fecha límite"
+msgstr "Son Teslim Tarihi"
 
 msgid "Default"
-msgstr "Predeterminado"
+msgstr "Varsayılan"
 
 msgid "Default Storage Unit"
-msgstr "Unidad de Almacenamiento Predeterminada"
+msgstr "Varsayılan Depolama Birimi"
 
 msgid "Delete"
-msgstr "Eliminar"
+msgstr "Sil"
 
 msgid "Delete Step"
-msgstr "Eliminar paso"
+msgstr "Adımı Sil"
 
 #. placeholder {0}: new Date(deletingEntry.clockIn).toLocaleString(locale)
 msgid "Delete Timecard ({0})"
-msgstr "Eliminar tarjeta de tiempo ({0})"
+msgstr "Zaman Kartını Sil ({0})"
 
 msgid "Describe the problem..."
-msgstr "Describe el problema..."
+msgstr "Sorunu açıklayın..."
 
 msgid "Describe what needs to be reworked..."
-msgstr "Describe qué necesita ser retrabajado..."
+msgstr "Yeniden işlenmesi gerekeni açıklayın..."
 
 msgid "Description"
-msgstr "Descripción"
+msgstr "Açıklama"
 
 msgid "Details"
-msgstr "Detalles"
+msgstr "Detaylar"
 
 msgid "Dispatch not found"
-msgstr "Despacho no encontrado"
+msgstr "Görevlendirme bulunamadı"
 
 msgid "Display"
-msgstr "Visualización"
+msgstr "Görüntüleme"
 
 msgid "Down"
-msgstr "Fuera de servicio"
+msgstr "Düşük"
 
 msgid "Download"
-msgstr "Descargar"
+msgstr "İndir"
 
 msgid "Download Labels"
-msgstr "Descargar Etiquetas"
+msgstr "Etiketleri İndir"
 
 msgid "Draft"
-msgstr "Borrador"
+msgstr "Taslak"
 
 msgid "Drag and drop a file here, or click to select a file"
-msgstr "Arrastre y suelte un archivo aquí, o haga clic para seleccionar un archivo"
+msgstr "Dosyayı buraya sürükleyip bırakın veya bir dosya seçmek için tıklayın"
 
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
-msgstr "Se canceló el arrastre de {0}."
+msgstr "Taşıma {0} iptal edildi."
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
 msgid "Due {0}"
-msgstr "Vence {0}"
+msgstr "Süresi dolacak {0}"
 
 msgid "Due Date"
-msgstr "Fecha de vencimiento"
+msgstr "Son Kullanma Tarihi"
 
 msgid "Duplicate batch number"
-msgstr "Número de lote duplicado"
+msgstr "Tekrarlanan parti numarası"
 
 msgid "Duplicate serial number"
-msgstr "Número de serie duplicado"
+msgstr "Tekrarlanan seri numarası"
 
 msgid "Duration"
-msgstr "Duración"
+msgstr "Süre"
 
 msgid "Edit"
-msgstr "Editar"
+msgstr "Düzenle"
 
 msgid "Email Address"
-msgstr "Correo electrónico"
+msgstr "E-posta Adresi"
 
 msgid "Empty work centers"
-msgstr "Centros de trabajo vacíos"
+msgstr "Boş iş merkezleri"
 
 msgid "End Operations"
-msgstr "Finalizar operaciones"
+msgstr "Operasyonları Sonlandır"
 
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
-msgstr "Ingrese el PIN para {0}"
+msgstr "PIN'i {0} için girin"
 
 msgid "Error"
-msgstr "Error"
+msgstr "Hata"
 
 msgid "Error!"
-msgstr ""
+msgstr "Hata!"
 
 msgid "Estimated"
-msgstr "Estimado"
+msgstr "Tahmini"
 
 msgid "Expired"
-msgstr "Vencido"
+msgstr "Süresi Dolmuş"
 
 msgid "Expired {date}"
-msgstr "Vencido {date}"
+msgstr "Süresi Dolmuş {date}"
 
 msgid "Expires {date}"
-msgstr "Vence {date}"
+msgstr "Son kullanma tarihi {date}'de"
 
 msgid "Expiring first"
-msgstr "Vencimiento próximo"
+msgstr "İlk süresi dolacak"
 
 msgid "Failed to complete inventory adjustment"
-msgstr "Error al completar el ajuste de inventario"
+msgstr "Envanter ayarlaması tamamlanamadı"
 
 msgid "Failed to end operations"
-msgstr "Error al finalizar las operaciones"
+msgstr "İşlemler sonlandırılamadı"
 
 msgid "Failed to fetch active operations"
-msgstr "Error al obtener las operaciones activas"
+msgstr "Aktif operasyonlar alınamadı"
 
 msgid "Failed to fetch storageUnits"
-msgstr "Error al obtener unidades de almacenamiento"
+msgstr "Depolama birimlerini almak başarısız oldu"
 
 #. placeholder {0}: fileUpload.name
 msgid "Failed to upload file: {0}"
-msgstr "Error al subir el archivo: {0}"
+msgstr "Dosyayı yüklemede başarısız oldu: {0}"
 
 msgid "Failed to upload image"
-msgstr "Error al subir la imagen"
+msgstr "Görsel yüklenemedi"
 
 msgid "Feedback"
-msgstr "Comentarios"
+msgstr "Geri bildirim"
 
 msgid "File size exceeds 10MB limit"
-msgstr "El tamaño del archivo excede el límite de 10MB"
+msgstr "Dosya boyutu 10MB sınırını aşıyor"
 
 msgid "Files"
-msgstr "Archivos"
+msgstr "Dosyalar"
 
 msgid "Files related to the job and the opportunity line."
-msgstr "Archivos relacionados con el trabajo y la línea de oportunidad."
+msgstr "İş ve fırsat hattıyla ilgili dosyalar."
 
 msgid "Filter"
-msgstr "Filtrar"
+msgstr "Filtrele"
 
 msgid "Finish"
-msgstr "Finalizar"
+msgstr "Bitir"
 
 #. placeholder {0}: operation.itemReadableId
 msgid "Finish {0}"
-msgstr "Finalizar {0}"
+msgstr "Bitir {0}"
 
 msgid "Finish Anyways"
-msgstr "Finalizar de todas formas"
+msgstr "Yine de Bitir"
 
 msgid "Forgot to Clock Out?"
-msgstr "¿Olvidó registrar la salida?"
+msgstr "Çıkış yapmayı unuttunuz mu?"
 
 msgid "Go back to operation"
-msgstr "Volver a la operación"
+msgstr "İşleme geri dön"
 
 msgid "Have a technical issue? Contact <0>Carbon Support.</0>"
-msgstr "¿Tiene un problema técnico? Contacte al <0>Soporte de Carbon.</0>"
+msgstr "Teknik bir sorun mu var? <0>Carbon Desteği</0> ile iletişime geçin."
 
 msgid "How many were actually picked?"
-msgstr "¿Cuántos se recogieron realmente?"
+msgstr "Gerçekte kaç tane alındı?"
 
 msgid "I understand and want to complete without issuing"
-msgstr "Entiendo y deseo completar sin emitir"
+msgstr "Anladığımı ve çıkarmadan tamamlamak istediğimi anlıyorum"
 
 msgid "I'm Still Working"
-msgstr "Sigo trabajando"
+msgstr "Hala Çalışıyorum"
 
 msgid "Ideas, suggestions or problems with this page?"
-msgstr "¿Ideas, sugerencias o problemas con esta página?"
+msgstr "Bu sayfa hakkında fikirleriniz, önerileriniz veya sorunlarınız mı var?"
 
 msgid "Ideas, suggestions or problems?"
-msgstr "¿Ideas, sugerencias o problemas?"
+msgstr "Fikirler, öneriler veya sorunlar?"
 
 msgid "Impact"
-msgstr "Impacto"
+msgstr "Etki"
 
 msgid "Imperial"
-msgstr "Imperial"
+msgstr "İmparatorluk"
 
 msgid "In Progress"
-msgstr "En progreso"
+msgstr "Devam Ediyor"
 
 msgid "Insufficient quantity"
-msgstr "Cantidad insuficiente"
+msgstr "Yetersiz miktar"
 
 msgid "Inventory adjustment completed"
-msgstr "Ajuste de inventario completado"
+msgstr "Stok ayarlaması tamamlandı"
 
 msgid "Inventory Adjustments"
-msgstr "Ajustes de inventario"
+msgstr "Stok Ayarlamaları"
 
 msgid "is"
-msgstr "es"
+msgstr "eşittir"
 
 msgid "is any of"
-msgstr "es cualquiera de"
+msgstr "herhangi biri"
 
 msgid "Issue"
-msgstr "Emitir"
+msgstr "Çıkart"
 
 msgid "Issue Material"
-msgstr "Emitir material"
+msgstr "Malzeme Çıkart"
 
 msgid "Issue Type"
-msgstr "Tipo de Problema"
+msgstr "Sorun Türü"
 
 msgid "Item"
-msgstr "Artículo"
+msgstr "Ürün"
 
 msgid "Item Master"
-msgstr "Maestro de artículos"
+msgstr "Ürün Ana Veri"
 
 msgid "Job"
-msgstr "Trabajo"
+msgstr "İş Emri"
 
 msgid "Job Details"
-msgstr "Detalles del trabajo"
+msgstr "İş Detayları"
 
 msgid "Job Traveler"
-msgstr "Viajero de trabajo"
+msgstr "İş Seyir Belgesi"
 
 msgid "Jobs"
-msgstr "Trabajos"
+msgstr "İşler"
 
 msgid "Kit"
-msgstr "Kit"
+msgstr "Set"
 
 msgid "Labor"
-msgstr "Mano de obra"
+msgstr "İşgücü"
 
 msgid "Leave this page"
-msgstr "Salir de esta página"
+msgstr "Bu sayfadan ayrıl"
 
 msgid "Let's build something"
-msgstr "Construyamos algo"
+msgstr "Bir şeyler inşa edelim"
 
 msgid "lines"
-msgstr "líneas"
+msgstr "satırlar"
 
 msgid "Loading item details..."
-msgstr "Cargando detalles del artículo..."
+msgstr "Ürün detayları yükleniyor..."
 
 msgid "Loading..."
-msgstr "Cargando..."
+msgstr "Yükleniyor..."
 
 msgid "Location"
-msgstr "Ubicación"
+msgstr "Konum"
 
 msgid "Log Completed"
-msgstr "Registrar completados"
+msgstr "Tamamlandı Olarak Kaydet"
 
 #. placeholder {0}: operation.itemReadableId
 msgid "Log completed for {0}"
-msgstr "Registrar completados para {0}"
+msgstr "Log completed for {0}"
 
 msgid "Log Rework"
-msgstr "Registrar retrabajo"
+msgstr "Yeniden İşlem Kaydet"
 
 #. placeholder {0}: operation.itemReadableId
 msgid "Log rework for {0}"
-msgstr "Registrar retrabajo para {0}"
+msgstr "Rework için kayıt yap {0}"
 
 msgid "Log Scrap"
-msgstr "Registrar desperdicio"
+msgstr "Hurdayı Kaydet"
 
 #. placeholder {0}: operation.itemReadableId
 msgid "Log scrap for {0}"
-msgstr "Registrar desperdicio para {0}"
+msgstr "Hata için kayıt yap {0}"
 
 msgid "Login"
-msgstr "Iniciar sesión"
+msgstr "Giriş Yap"
 
 msgid "Machine"
-msgstr "Máquina"
+msgstr "Makine"
 
 msgid "Maintenance"
-msgstr "Mantenimiento"
+msgstr "Bakım"
 
 msgid "Maintenance Completed"
-msgstr "Mantenimiento completado"
+msgstr "Bakım Tamamlandı"
 
 msgid "Manually add items to inventory"
-msgstr "Agregar artículos al inventario manualmente"
+msgstr "Envantere öğeler eklemek için manuel olarak"
 
 msgid "Manually remove items from inventory"
-msgstr "Eliminar artículos del inventario manualmente"
+msgstr "Envanterden öğeleri manuel olarak çıkarın"
 
 msgid "Mark Short"
-msgstr "Marcar como faltante"
+msgstr "Kısa Teslim Et"
 
 msgid "matches"
-msgstr "coincide con"
+msgstr "eşleşir"
 
 msgid "Materials"
-msgstr "Materiales"
+msgstr "Malzemeler"
 
 msgid "Maximum number of records reached"
-msgstr "Se alcanzó el número máximo de registros"
+msgstr "Maksimum kayıt sayısına ulaşıldı"
 
 msgid "Metric"
-msgstr "Métrico"
+msgstr "Metrik"
 
 msgid "Model"
-msgstr "Modelo"
+msgstr "Model"
 
 msgid "More Actions"
-msgstr "Más acciones"
+msgstr "Daha Fazla İşlem"
 
 msgid "More options"
-msgstr "Más opciones"
+msgstr "Daha fazla seçenek"
 
 #. placeholder {0}: column.title
 msgid "Move column: {0}"
-msgstr "Mover columna: {0}"
+msgstr "Sütunu taşı: {0}"
 
 msgid "Must be < {maxValue} {unitOfMeasureCode}"
-msgstr "Debe ser < {maxValue} {unitOfMeasureCode}"
+msgstr "Küçük olmalı < {maxValue} {unitOfMeasureCode}"
 
 msgid "Must be > {minValue} {unitOfMeasureCode}"
-msgstr "Debe ser > {minValue} {unitOfMeasureCode}"
+msgstr "Küçük olmalı > {minValue} {unitOfMeasureCode}"
 
 msgid "Must be between {minValue} and {maxValue} {unitOfMeasureCode}"
-msgstr "Debe estar entre {minValue} y {maxValue} {unitOfMeasureCode}"
+msgstr "Aralması gereken değer {minValue} ile {maxValue} arasındadır"
 
 msgid "My Hours"
-msgstr "Mis horas"
+msgstr "Saatlik Çalışmalarım"
 
 msgid "Name"
-msgstr "Nombre"
+msgstr "Adı"
 
 msgid "New"
-msgstr "Nuevo"
+msgstr "Yeni"
 
 msgid "New Record"
-msgstr "Nuevo registro"
+msgstr "Yeni Kayıt"
 
 msgid "Newest first"
-msgstr "Más reciente primero"
+msgstr "En yeniden önce"
 
 msgid "Next"
-msgstr "Siguiente"
+msgstr "Sonraki"
 
 msgid "No active maintenance dispatches"
-msgstr "No hay despachos de mantenimiento activos"
+msgstr "Aktif bakım sevkıyatı bulunmamaktadır"
 
 msgid "No active operations"
-msgstr "No hay operaciones activas"
+msgstr "Aktif işlem yok"
 
 msgid "No assigned operations"
-msgstr "No hay operaciones asignadas"
+msgstr "Atanmış operasyon yok"
 
 msgid "No available filters"
-msgstr "No hay filtros disponibles"
+msgstr "Kullanılabilir filtre yok"
 
 msgid "No available serial numbers found"
-msgstr "No se encontraron números de serie disponibles"
+msgstr "Kullanılabilir seri numarası bulunamadı"
 
 msgid "No available tracked entities found"
-msgstr "No se encontraron entidades rastreadas disponibles"
+msgstr "Kullanılabilir izlenen varlık bulunamadı"
 
 msgid "No dispatches assigned to you"
-msgstr "No hay despachos asignados a usted"
+msgstr "Sizeplanlar size atanmadı"
 
 msgid "No files"
-msgstr "Sin archivos"
+msgstr "Dosya yok"
 
 msgid "No Impact"
-msgstr "Sin impacto"
+msgstr "Etki Yok"
 
 msgid "No maintenance scheduled for today"
-msgstr "No hay mantenimiento programado para hoy"
+msgstr "Bugün planlanmış bakım yok"
 
 msgid "No materials"
-msgstr "Sin materiales"
+msgstr "Malzeme yok"
 
 msgid "No open jobs"
-msgstr "Sin trabajos abiertos"
+msgstr "Açık iş yok"
 
 msgid "No operators"
-msgstr "Sin operadores"
+msgstr "Operatör bulunamadı"
 
 msgid "No option found."
-msgstr "No se encontró ninguna opción."
+msgstr "Hiç seçenek bulunamadı."
 
 msgid "No options found."
-msgstr "No se encontraron opciones."
+msgstr "Seçenek bulunamadı."
 
 msgid "No picking lists assigned"
-msgstr "Sin listas de picking asignadas"
+msgstr "Atanmış toplama listesi yok"
 
 msgid "No printer configured"
-msgstr "Sin impresora configurada"
+msgstr "Yazıcı yapılandırılmadı"
 
 msgid "No recent operations"
-msgstr "No hay operaciones recientes"
+msgstr "Son yakın işlemler yok"
 
 msgid "No results"
-msgstr "Sin resultados"
+msgstr "Sonuç bulunamadı"
 
 msgid "No results exist"
-msgstr "No existen resultados"
+msgstr "Sonuç bulunamadı"
 
 msgid "No results found"
-msgstr "No se encontraron resultados"
+msgstr "Sonuç bulunamadı"
 
 msgid "No scheduled time"
-msgstr "Sin tiempo programado"
+msgstr "Planlanmış zaman yok"
 
 msgid "No serial numbers"
-msgstr "Sin números de serie"
+msgstr "Seri numarası yok"
 
 msgid "No serial numbers found"
-msgstr "No se encontraron números de serie"
+msgstr "Seri numarası bulunamadı"
 
 msgid "No spare parts added yet"
-msgstr "Aún no se han agregado repuestos"
+msgstr "Henüz yedek parça eklenmedi"
 
 msgid "No stock"
-msgstr "Sin stock"
+msgstr "Stok yok"
 
 msgid "No time entries for this week"
-msgstr "No hay registros de tiempo para esta semana"
+msgstr "Bu hafta için zaman girişi yok"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
-msgstr "No hay stock de almacén registrado para este artículo. Aún puedes recogerlo — el disponible se volverá negativo hasta que se reconcilie el recuento."
+msgstr "Bu ürün için depoda kayıtlı stok bulunmamaktadır. Sayım yeniden yapılana kadar eldeki stok negatif olabilir, ancak yine de alabilirsiniz."
 
 msgid "No work centers are blocked"
-msgstr "No hay centros de trabajo bloqueados"
+msgstr "Bloke edilmiş iş merkezi yok"
 
 msgid "No work centers exist"
-msgstr "No existen centros de trabajo"
+msgstr "Çalışma merkezi bulunmamaktadır"
 
 msgid "Notes"
-msgstr "Notas"
+msgstr "Notlar"
 
 msgid "OEE Impact"
-msgstr "Impacto OEE"
+msgstr "OEE Etkisi"
 
 msgid "OEM Required"
-msgstr "Requiere OEM"
+msgstr "Üretici Tarafından Gerekiyor"
 
 msgid "Oldest first"
-msgstr "Más antiguo primero"
+msgstr "En eski önce"
 
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
-msgstr "Solo {0} disponibles"
+msgstr "Yalnızca {0} adet mevcut"
 
 msgid "Oops. You shouldn't see this page. Eventually it will be a landing page."
-msgstr "Ups. No debería ver esta página. Eventualmente será una página de inicio."
+msgstr "Üzgünüz. Bu sayfayı görmemelisiniz. Sonunda bir açılış sayfası olacak."
 
 msgid "Open"
-msgstr "Abierto"
+msgstr "Açık"
 
 msgid "Open Jobs"
-msgstr "Trabajos Abiertos"
+msgstr "Açık İşler"
 
 msgid "Operations"
-msgstr "Operaciones"
+msgstr "Operasyonlar"
 
 msgid "Operations ended"
-msgstr "Operaciones finalizadas"
+msgstr "İşlemler sonlandırıldı"
 
 msgid "Operator Performed"
-msgstr "Realizado por operador"
+msgstr "Operatör Tarafından Yapıldı"
 
 msgid "Optional"
-msgstr "Opcional"
+msgstr "İsteğe bağlı"
 
 msgid "Parameters"
-msgstr "Parámetros"
+msgstr "Parametreler"
 
 msgid "Part"
-msgstr "Pieza"
+msgstr "Parça"
 
 msgid "Passed Inspection"
-msgstr "Inspección aprobada"
+msgstr "Kontrolden Geçti"
 
 msgid "Pause"
-msgstr "Pausar"
+msgstr "Duraklat"
 
 msgid "Pick"
-msgstr "Recoger"
+msgstr "Topla"
 
 msgid "Pick tracked item"
-msgstr "Seleccionar artículo rastreado"
+msgstr "Takip edilen öğeyi seç"
 
 msgid "Picked"
-msgstr "Recogido"
+msgstr "Alındı"
 
 msgid "Picked quantity"
-msgstr "Cantidad recogida"
+msgstr "Alınan miktar"
 
 #. placeholder {0}: startColumn?.title
 #. placeholder {1}: startIndex + 1
 #. placeholder {2}: columnOrder.length
 msgid "Picked up Column {0} at position: {1} of {2}"
-msgstr "Se tomó la columna {0} en la posición: {1} de {2}"
+msgstr "Sütun {0} alındı, konumu: {1} / {2}"
 
 msgid "Picking"
-msgstr "Picking"
+msgstr "Seçim"
 
 msgid "Pin Out"
-msgstr "Cerrar sesión con PIN"
+msgstr "Çıkış Yap"
 
 msgid "Planned"
-msgstr "Planificado"
+msgstr "Planlı"
 
 msgid "Please record all steps for this operation before closing."
-msgstr "Por favor registre todos los pasos de esta operación antes de cerrar."
+msgstr "Bu işlemi kapatmadan önce tüm adımları kaydetmeniz gerekmektedir."
 
 msgid "Please select an item"
-msgstr "Por favor seleccione un artículo"
+msgstr "Lütfen bir ürün seçin"
 
 msgid "Prev"
-msgstr "Anterior"
+msgstr "Önceki"
 
 msgid "Preventive"
-msgstr "Preventivo"
+msgstr "Önleyici"
 
 msgid "Print"
-msgstr "Imprimir"
+msgstr "Yazdır"
 
 msgid "Printer Settings"
-msgstr "Configuración de impresora"
+msgstr "Yazıcı Ayarları"
 
 msgid "Priority"
-msgstr "Prioridad"
+msgstr "Öncelik"
 
 msgid "Procedure"
-msgstr "Procedimiento"
+msgstr "Prosedür"
 
 msgid "Process"
-msgstr "Proceso"
+msgstr "Süreç"
 
 msgid "Process Parameters"
-msgstr "Parámetros del proceso"
+msgstr "İşlem Parametreleri"
 
 msgid "Processes"
-msgstr "Procesos"
+msgstr "Süreçler"
 
 msgid "Progress"
-msgstr "Progreso"
+msgstr "İlerleme"
 
 msgid "Quality Issue"
-msgstr "Problema de Calidad"
+msgstr "Kalite Sorunu"
 
 msgid "Quality issue created"
-msgstr "Problema de calidad creado"
+msgstr "Kalite sorunu oluşturuldu"
 
 msgid "Quantity"
-msgstr "Cantidad"
+msgstr "Miktar"
 
 msgid "Quantity must be greater than 0"
-msgstr "La cantidad debe ser mayor que 0"
+msgstr "Miktar 0'dan büyük olmalıdır"
 
 msgid "Reason for rework"
-msgstr "Motivo del reproceso"
+msgstr "Yeniden işleme nedeni"
 
 msgid "Recent"
-msgstr "Recientes"
+msgstr "Son"
 
 msgid "Record"
-msgstr "Registrar"
+msgstr "Kaydet"
 
 #. placeholder {0}: activeStep + 1
 msgid "Record {0}"
-msgstr "Registro {0}"
+msgstr "Kayıt {0}"
 
 msgid "Remove"
-msgstr "Eliminar"
+msgstr "Kaldır"
 
 msgid "Remove filter"
-msgstr "Eliminar filtro"
+msgstr "Filtreyi kaldır"
 
 msgid "Remove Inventory"
-msgstr "Eliminar inventario"
+msgstr "Stoktan Çıkar"
 
 msgid "Remove part"
-msgstr "Eliminar pieza"
+msgstr "Parçayı kaldır"
 
 msgid "Rework"
-msgstr "Reelaboración"
+msgstr "Revizyon"
 
 msgid "Rework created successfully"
-msgstr "Rework creado exitosamente"
+msgstr "Yeniden işleme başarıyla oluşturuldu"
 
 msgid "Sales Order"
-msgstr "Orden de venta"
+msgstr "Satış Siparişi"
 
 msgid "Save"
-msgstr "Guardar"
+msgstr "Kaydet"
 
 msgid "Scan"
-msgstr "Escanear"
+msgstr "Tarama"
 
 msgid "Scan or enter serial number"
-msgstr "Escanee o ingrese el número de serie"
+msgstr "Seri numarası tarayın veya girin"
 
 msgid "Scan or enter tracking number"
-msgstr "Escanear o ingresar número de seguimiento"
+msgstr "Takip numarasını tarayın veya girin"
 
 msgid "Scan or search serial number..."
-msgstr "Escanear o buscar número de serie..."
+msgstr "Seri numaras tarayın veya arayın..."
 
 msgid "Schedule"
-msgstr "Programación"
+msgstr "Planlama"
 
 msgid "Scrap"
-msgstr "Descartar"
+msgstr "Hurda"
 
 msgid "Scrap Reason"
-msgstr "Motivo de desperdicio"
+msgstr "Hurda Nedeni"
 
 msgid "Scrapped"
-msgstr "Descartado"
+msgstr "Hurdaya Ayrılan"
 
 msgid "Search"
-msgstr "Buscar"
+msgstr "Ara"
 
 msgid "Search by job or item ID"
-msgstr "Buscar por ID de trabajo o artículo"
+msgstr "İş veya ürün kimliği ile ara"
 
 msgid "Search operators..."
-msgstr "Buscar operadores..."
+msgstr "Operatörleri ara..."
 
 msgid "Search..."
-msgstr "Buscar..."
+msgstr "Ara..."
 
 msgid "Select"
-msgstr "Seleccionar"
+msgstr "Seç"
 
 msgid "Select a completion quantity"
-msgstr "Seleccione una cantidad de completado"
+msgstr "Bir tamamlama miktarı seçin"
 
 msgid "Select a rework quantity"
-msgstr "Seleccione una cantidad de retrabajo"
+msgstr "Bir yeniden işleme miktarı seçin"
 
 msgid "Select a scrap quantity and reason"
-msgstr "Seleccione una cantidad de desperdicio y un motivo"
+msgstr "Bir hurda miktarı ve nedeni seçin"
 
 msgid "Select a serial number to continue with this operation"
-msgstr "Seleccione un número de serie para continuar con esta operación"
+msgstr "Bu işlemle devam etmek için bir seri numarası seçin"
 
 msgid "Select an item and specify the quantity to issue"
-msgstr "Seleccione un artículo y especifique la cantidad a emitir"
+msgstr "Bir parça seçin ve çıkarılacak miktarı belirtin"
 
 msgid "Select an item..."
-msgstr "Seleccione un artículo..."
+msgstr "Bir ürün seçin..."
 
 #. placeholder {0}: index + 1
 msgid "Select Batch {0}"
-msgstr "Seleccionar lote {0}"
+msgstr "Seçilecek Parti {0}"
 
 msgid "Select Printer"
-msgstr "Seleccionar Impresora"
+msgstr "Yazıcı Seç"
 
 #. placeholder {0}: index + 1
 msgid "Select Serial {0}"
-msgstr "Seleccionar serie {0}"
+msgstr "Seri Seç{0}"
 
 msgid "Select Serial Number"
-msgstr "Seleccionar número de serie"
+msgstr "Seri Numarası Seçin"
 
 msgid "Select the operation to go back to. All operations from that point to the current operation will be redone."
-msgstr "Selecciona la operación a la que volver. Todas las operaciones desde ese punto hasta la operación actual se repetirán."
+msgstr "Geri dönülecek işlemi seçin. O noktadan mevcut işleme kadar olan tüm işlemler yeniden yapılacaktır."
 
 msgid "Send"
-msgstr "Enviar"
+msgstr "Gönder"
 
 msgid "Serial"
-msgstr "Serie"
+msgstr "Seri"
 
 #. placeholder {0}: index + 1
 msgid "Serial Number {0}"
-msgstr "Número de serie {0}"
+msgstr "Seri Numarası {0}"
 
 msgid "Serial number is not available"
-msgstr "El número de serie no está disponible"
+msgstr "Seri numarası mevcut değil"
 
 msgid "Serial number is required"
-msgstr "El número de serie es obligatorio"
+msgstr "Seri numarası gereklidir"
 
 msgid "Serial numbers"
-msgstr "Números de serie"
+msgstr "Seri numaraları"
 
 msgid "Serial Numbers"
-msgstr "Números de serie"
+msgstr "Seri Numaraları"
 
 msgid "Set Clock Out"
-msgstr "Establecer salida"
+msgstr "Çıkış Yap"
 
 msgid "Set clock-out time"
-msgstr "Establecer hora de salida"
+msgstr "Çıkış zamanını ayarla"
 
 msgid "Setup"
-msgstr "Preparación"
+msgstr "Kurulum"
 
 msgid "Short"
-msgstr "Faltante"
+msgstr "Azalt"
 
 msgid "Short pick {itemName}"
-msgstr "Picking corto {itemName}"
+msgstr "Kısmi toplama {itemName}"
 
 msgid "Sign in with Email"
-msgstr "Iniciar sesión con correo electrónico"
+msgstr "E-posta ile Giriş Yap"
 
 msgid "Sign in with Google"
-msgstr "Iniciar sesión con Google"
+msgstr "Google ile giriş yap"
 
 msgid "Sign in with Outlook"
-msgstr "Iniciar sesión con Outlook"
+msgstr "Outlook ile giriş yap"
 
 msgid "Sign in with Passkey"
-msgstr "Iniciar sesión con Passkey"
+msgstr "Passkey ile Giriş Yap"
 
 msgid "Sign Out"
-msgstr "Cerrar sesión"
+msgstr "Oturumu Kapat"
 
 msgid "Signed in as {stationName}"
-msgstr "Conectado como {stationName}"
+msgstr "Oturum açıldı olarak {stationName}"
 
 msgid "Size"
-msgstr "Tamaño"
+msgstr "Boyut"
 
 msgid "Something went wrong"
-msgstr ""
+msgstr "Bir şeyler yanlış gitti"
 
 msgid "Source"
-msgstr "Origen"
+msgstr "Kaynak"
 
 msgid "Spare Parts"
-msgstr "Repuestos"
+msgstr "Yedek Parçalar"
 
 msgid "Spare Parts Used"
-msgstr "Repuestos utilizados"
+msgstr "Kullanılan Yedek Parçalar"
 
 msgid "Start"
-msgstr "Iniciar"
+msgstr "Başlat"
 
 msgid "Station User"
-msgstr "Usuario de estación"
+msgstr "İstasyon Kullanıcısı"
 
 msgid "Station: {stationName}"
-msgstr "Estación: {stationName}"
+msgstr "İstasyon: {stationName}"
 
 msgid "Status"
-msgstr "Estado"
+msgstr "Durum"
 
 msgid "Statuses"
-msgstr "Estados"
+msgstr "Durumlar"
 
 msgid "Stay on this page"
-msgstr "Quedarse en esta página"
+msgstr "Bu sayfada kal"
 
 msgid "Steps"
-msgstr "Pasos"
+msgstr "Adımlar"
 
 msgid "Steps are missing"
-msgstr "Faltan pasos"
+msgstr "Adımlar eksik"
 
 msgid "Storage Unit"
-msgstr "Unidad de Almacenamiento"
+msgstr "Depolama Birimi"
 
 msgid "Submit anonymously"
-msgstr "Enviar de forma anónima"
+msgstr "Anonim olarak gönder"
 
 msgid "Suggestion"
-msgstr "Sugerencia"
+msgstr "Öneri"
 
 msgid "Support Required"
-msgstr "Requiere soporte"
+msgstr "Destek Gerekli"
 
 msgid "Switch Operator"
-msgstr "Cambiar operador"
+msgstr "Operatörü Değiştir"
 
 msgid "Tag"
-msgstr "Etiqueta"
+msgstr "Etiket"
 
 #. placeholder {0}: operation.operationQuantity
 msgid "The completed quantity for this operation is less than the required quantity of {0}."
-msgstr "La cantidad completada para esta operación es menor que la cantidad requerida de {0}."
+msgstr "Bu işlem için tamamlanan miktar, gerekli miktar olan {0}'dan azdır."
 
 msgid "There are serial or batch tracked materials on the bill of material that have not been fully issued. Completing without issuing may result in incorrect traceability records."
-msgstr "Hay materiales con seguimiento de serie o lote en la lista de materiales que no se han emitido completamente. Completar sin emitir puede generar registros de trazabilidad incorrectos."
+msgstr "Malzeme listesindeki seri veya parti takipli malzemeler tam olarak verilmemiş. Vermeden tamamlamak, yanlış izlenebilirlik kayıtlarına neden olabilir."
 
 msgid "This lot is expired and can't be picked."
-msgstr "Este lote ha expirado y no se puede seleccionar."
+msgstr "Bu parti süresi dolmuş ve alınamaz."
 
 msgid "Thumbnail"
-msgstr "Miniatura"
+msgstr "Küçük Resim"
 
 msgid "Time Entries"
-msgstr "Registros de tiempo"
+msgstr "Zaman Girişleri"
 
 #. placeholder {0}: formatDuration(totalDuration)
 msgid "Time Worked: {0}"
-msgstr "Tiempo trabajado: {0}"
+msgstr "Çalışma Süresi: {0}"
 
 msgid "Today"
-msgstr "Hoy"
+msgstr "Bugün"
 
 msgid "Tools"
-msgstr "Herramientas"
+msgstr "Araçlar"
 
 msgid "Total Quantity"
-msgstr "Cantidad total"
+msgstr "Toplam Miktar"
 
 #. placeholder {0}: formatDuration(totalDuration)
 msgid "Total time: {0}"
-msgstr "Tiempo total: {0}"
+msgstr "Toplam süre: {0}"
 
 #. placeholder {0}: formatTotalHours(entries)
 msgid "Total: {0}"
-msgstr "Total: {0}"
+msgstr "Toplam: {0}"
 
 msgid "Tracking"
-msgstr "Seguimiento"
+msgstr "Takip"
 
 msgid "Type a message..."
-msgstr "Escriba un mensaje..."
+msgstr "Bir mesaj yaz..."
 
 msgid "Unissued serial/batch materials"
-msgstr "Materiales de serie/lote no emitidos"
+msgstr "Yayımlanmamış seri/parti malzemeleri"
 
 msgid "Unknown"
-msgstr "Desconocido"
+msgstr "Bilinmiyor"
 
 msgid "Unpick"
-msgstr "Descoger"
+msgstr "Çıkart"
 
 #. placeholder {0}: pickedLots[0].trackedEntity.readableId
 msgid "Unpick {0}"
-msgstr "Descartar {0}"
+msgstr "Çıkart {0}"
 
 msgid "Unsaved changes"
-msgstr "Cambios no guardados"
+msgstr "Kaydedilmemiş değişiklikler"
 
 msgid "Update"
-msgstr "Actualizar"
+msgstr "Güncelle"
 
 msgid "Updated successfully"
-msgstr "Actualizado correctamente"
+msgstr "Başarıyla güncellendi"
 
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
-msgstr "Subido: {0}"
+msgstr "Yüklendi: {0}"
 
 #. placeholder {0}: fileUpload.name
 msgid "Uploading {0}"
-msgstr "Subiendo {0}"
+msgstr "Yükleniyor {0}"
 
 msgid "View maintenance dispatch"
-msgstr "Ver despacho de mantenimiento"
+msgstr "Bakım sevkıyatını görüntüle"
 
 msgid "We've sent you a magic link to sign in to your account."
-msgstr "Le hemos enviado un enlace mágico para iniciar sesión en su cuenta."
+msgstr "Hesabınıza giriş yapmak için size bir sihirli bağlantı gönderdik."
 
 msgid "WIP"
-msgstr "WIP"
+msgstr "Yarı Mamul"
 
 msgid "Work Center"
-msgstr "Centro de trabajo"
+msgstr "İş Merkezi"
 
 #. placeholder {0}: new Date(openClockEntry.clockIn).toLocaleString(locale)
 msgid "You clocked in at {0}. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "Registró su entrada a las {0}. Puede editar su hora de salida a continuación o confirmar que sigue trabajando."
+msgstr "Saat {0} giriş yaptınız. Aşağıdan çıkış saatinizi düzenleyebilir veya hala çalıştığınızı onaylayabilirsiniz."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
-msgstr "Ha estado registrado durante {hoursElapsed} horas. ¿Olvidó registrar la salida?"
+msgstr "Ne kadar süredir giriş yaptınız? Çıkış yapmayı unuttunuz mu?"

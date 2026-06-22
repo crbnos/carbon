@@ -130,48 +130,6 @@ function percentageFormatter(
   return `${value} (${pct}%)`;
 }
 
-const qualityChartConfig = {
-  Critical: { label: "Critical", color: "hsl(var(--destructive))" },
-  High: { label: "High", color: "hsl(var(--chart-5))" },
-  Medium: { label: "Medium", color: "hsl(var(--chart-1))" },
-  Low: { label: "Low", color: "hsl(var(--success))" },
-  Registered: { label: "Registered", color: "hsl(var(--chart-5))" },
-  "In Progress": { label: "In Progress", color: "hsl(var(--chart-1))" },
-  Closed: { label: "Closed", color: "hsl(var(--success))" },
-  opened: { label: "Opened", color: "hsl(var(--chart-5))" },
-  closed: { label: "Closed", color: "hsl(var(--success))" },
-  target: { label: "Target", color: "hsl(var(--destructive))" },
-  count: { label: "Count" },
-  cumulative: { label: "Cumulative %", color: "hsl(var(--chart-5))" },
-  Internal: { label: "Internal", color: "hsl(var(--chart-1))" },
-  External: { label: "External", color: "hsl(var(--chart-5))" },
-  "0-4 weeks": { label: "0-4 weeks", color: "hsl(var(--success))" },
-  "5-8 weeks": { label: "5-8 weeks", color: "hsl(var(--chart-4))" },
-  "9-12 weeks": { label: "9-12 weeks", color: "hsl(var(--chart-5))" },
-  "13+ weeks": { label: "13+ weeks", color: "hsl(var(--destructive))" }
-} satisfies ChartConfig;
-
-const weeklyLegendPayload = [
-  {
-    value: "Opened",
-    dataKey: "opened",
-    type: "square" as const,
-    color: qualityChartConfig.opened.color
-  },
-  {
-    value: "Closed",
-    dataKey: "closed",
-    type: "square" as const,
-    color: qualityChartConfig.closed.color
-  },
-  {
-    value: "Target",
-    dataKey: "target",
-    type: "line" as const,
-    color: "hsl(var(--destructive))"
-  }
-];
-
 function formatWeekLabel(weekKey: string, locale?: string): string {
   const match = weekKey.match(/^(\d{4})-W(\d{2})$/);
   if (!match) return weekKey;
@@ -283,6 +241,55 @@ export default function QualityDashboard() {
 
   const { t } = useLingui();
   const { locale } = useLocale();
+
+  const localizedChartConfig = useMemo(
+    () =>
+      ({
+        Critical: { label: t`Critical`, color: "hsl(var(--destructive))" },
+        High: { label: t`High`, color: "hsl(var(--chart-5))" },
+        Medium: { label: t`Medium`, color: "hsl(var(--chart-1))" },
+        Low: { label: t`Low`, color: "hsl(var(--success))" },
+        Registered: { label: t`Registered`, color: "hsl(var(--chart-5))" },
+        "In Progress": { label: t`In Progress`, color: "hsl(var(--chart-1))" },
+        Closed: { label: t`Closed`, color: "hsl(var(--success))" },
+        opened: { label: t`Opened`, color: "hsl(var(--chart-5))" },
+        closed: { label: t`Closed`, color: "hsl(var(--success))" },
+        target: { label: t`Target`, color: "hsl(var(--destructive))" },
+        count: { label: t`Count` },
+        cumulative: { label: t`Cumulative %`, color: "hsl(var(--chart-5))" },
+        Internal: { label: t`Internal`, color: "hsl(var(--chart-1))" },
+        External: { label: t`External`, color: "hsl(var(--chart-5))" },
+        "0-4 weeks": { label: t`0-4 weeks`, color: "hsl(var(--success))" },
+        "5-8 weeks": { label: t`5-8 weeks`, color: "hsl(var(--chart-4))" },
+        "9-12 weeks": { label: t`9-12 weeks`, color: "hsl(var(--chart-5))" },
+        "13+ weeks": { label: t`13+ weeks`, color: "hsl(var(--destructive))" }
+      }) satisfies ChartConfig,
+    [t]
+  );
+
+  const weeklyLegendPayload = useMemo(
+    () => [
+      {
+        value: t`Opened`,
+        dataKey: "opened",
+        type: "square" as const,
+        color: localizedChartConfig.opened.color
+      },
+      {
+        value: t`Closed`,
+        dataKey: "closed",
+        type: "square" as const,
+        color: localizedChartConfig.closed.color
+      },
+      {
+        value: t`Target`,
+        dataKey: "target",
+        type: "line" as const,
+        color: localizedChartConfig.target.color
+      }
+    ],
+    [t, localizedChartConfig]
+  );
   const [selectedChart, setSelectedChart] = useState("weeklyTracking");
   const [interval, setInterval] = useState("month");
   const [issueTypeId, setIssueTypeId] = useState("all");
@@ -541,7 +548,7 @@ export default function QualityDashboard() {
           <div className="h-[30dvw] md:h-[23dvw] min-h-[300px]">
             {selectedChart === "weeklyTracking" && (
               <ChartContainer
-                config={qualityChartConfig}
+                config={localizedChartConfig}
                 className="w-full h-full"
               >
                 <ComposedChart data={chartData}>
@@ -571,7 +578,7 @@ export default function QualityDashboard() {
                       stroke="hsl(var(--destructive))"
                       strokeDasharray="3 3"
                       label={{
-                        value: "Target",
+                        value: t`Target`,
                         position: "insideTopLeft",
                         fill: "hsl(var(--destructive))",
                         fontSize: 12
@@ -598,7 +605,7 @@ export default function QualityDashboard() {
 
             {selectedChart === "statusDistribution" && (
               <ChartContainer
-                config={qualityChartConfig}
+                config={localizedChartConfig}
                 className="w-full h-full"
               >
                 <PieChart>
@@ -655,7 +662,7 @@ export default function QualityDashboard() {
 
             {selectedChart === "paretoByType" && (
               <ChartContainer
-                config={qualityChartConfig}
+                config={localizedChartConfig}
                 className="w-full h-full"
               >
                 <ComposedChart data={chartData}>
@@ -695,7 +702,7 @@ export default function QualityDashboard() {
 
             {selectedChart === "ncrsByType" && (
               <ChartContainer
-                config={qualityChartConfig}
+                config={localizedChartConfig}
                 className="w-full h-full"
               >
                 <BarChart data={chartData}>
@@ -750,7 +757,7 @@ export default function QualityDashboard() {
 
             {selectedChart === "sourceAnalysis" && (
               <ChartContainer
-                config={qualityChartConfig}
+                config={localizedChartConfig}
                 className="w-full h-full"
               >
                 <BarChart data={chartData} layout="vertical">
@@ -793,7 +800,7 @@ export default function QualityDashboard() {
 
             {selectedChart === "supplierQuality" && (
               <ChartContainer
-                config={qualityChartConfig}
+                config={localizedChartConfig}
                 className="w-full h-full"
               >
                 {(chartData as any[]).length > 0 ? (
@@ -831,7 +838,7 @@ export default function QualityDashboard() {
 
             {selectedChart === "weeksOpen" && (
               <ChartContainer
-                config={qualityChartConfig}
+                config={localizedChartConfig}
                 className="w-full h-full"
               >
                 <BarChart data={chartData}>

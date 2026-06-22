@@ -13,6 +13,10 @@
         "!.next/cache/**"
       ]
     },
+    "@carbon/documents#build": {
+      "inputs": ["scripts/generate-fonts.mjs", "package.json"],
+      "outputs": ["src/pdf/fonts.data.ts"]
+    },
     "//#lingui:compile": {
       "inputs": [
         "lingui.config.js",

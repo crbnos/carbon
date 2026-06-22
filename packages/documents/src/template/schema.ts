@@ -303,17 +303,13 @@ export const themeSchema = z.object({
   text: z.string().regex(HEX_COLOR).default(DEFAULT_THEME.text)
 });
 
-/**
- * Document body fonts. "Inter" is registered in Template; the rest are the
- * react-pdf built-in PDF standard fonts (no registration needed).
- */
+// Body fonts offered in the editor. Helvetica/Times/Courier are PDF built-ins; the
+// rest are bundled (see pdf/fonts.ts).
 export const DOCUMENT_FONTS = [
-  // Inter is registered in Template; Helvetica/Times/Courier are PDF built-ins.
   { value: "Inter", label: "Inter", kind: "Sans" },
   { value: "Helvetica", label: "Helvetica", kind: "Sans" },
   { value: "Times-Roman", label: "Times", kind: "Serif" },
   { value: "Courier", label: "Courier", kind: "Mono" },
-  // Google fonts — registered on demand at render (see pdf/fonts.ts).
   { value: "Roboto", label: "Roboto", kind: "Sans" },
   { value: "Open Sans", label: "Open Sans", kind: "Sans" },
   { value: "Lato", label: "Lato", kind: "Sans" },

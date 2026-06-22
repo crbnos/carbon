@@ -11,6 +11,7 @@ import {
   SortableContext,
   verticalListSortingStrategy
 } from "@dnd-kit/sortable";
+import { Trans } from "@lingui/react/macro";
 import type { AnchorHTMLAttributes } from "react";
 import { forwardRef, memo, useEffect } from "react";
 import { LuSettings2 } from "react-icons/lu";
@@ -170,7 +171,7 @@ const PrimaryNavigation = () => {
                     "opacity-0 group-data-[state=expanded]:opacity-100"
                   )}
                 >
-                  Customize
+                  <Trans>Customize</Trans>
                 </span>
               </button>
             )}

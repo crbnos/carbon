@@ -70,7 +70,7 @@ Two patterns: the shared `redis` client (caching / TTL state) and the
 
 ## Prod (for contrast)
 
-The self-hosted Swarm stack (`contrib/deploying/simple-docker-caddy/stack.yml`,
+The self-hosted Swarm stack (`contrib/deploying/simple-docker-caddy/docker-compose.prod.yml`,
 see [contrib-deployment-swarm.md](contrib-deployment-swarm.md)) runs a real `redis`
 service (`redis:7-alpine`, `redis-server --appendonly yes`, no published host port
 — reachable internally at `redis:6379`); the apps set `REDIS_URL=redis://redis:6379`.
