@@ -1,8 +1,11 @@
 import "server-only";
 import type { AdvancedIndex } from "fumadocs-core/search/server";
 import { apiModules } from "@/lib/api-data";
+import { glossaryEntries, termSlug } from "@/lib/glossary";
 import { guideSource, source } from "@/lib/source";
 import { toolModules } from "@/lib/tools-data";
+
+const GLOSSARY_URL = "/docs/glossary";
 
 /* One Orama index over all four doc surfaces. Each entry is `tag`ged so the single
  * /api/search endpoint can be filtered per surface (the header's All/Guide/Reference/
@@ -104,9 +107,34 @@ function resourceIndexes(): AdvancedIndex[] {
   );
 }
 
+/* The Glossary page renders its terms through the <Glossary> React component, so the
+ * MDX pipeline's structuredData captures only the page intro. Build the term index by
+ * hand from lib/glossary.ts: every term becomes a heading (id = its row anchor, so a hit
+ * deep-links to the term) and its definition the content. */
+function glossaryIndex(page: IndexablePage): AdvancedIndex {
+  const entries = glossaryEntries();
+  return {
+    id: page.url,
+    url: page.url,
+    title: page.data.title ?? "Glossary",
+    description: page.data.description,
+    tag: "docs",
+    breadcrumbs: ["Glossary"],
+    structuredData: {
+      headings: entries.map((e) => ({ id: termSlug(e.term), content: e.term })),
+      contents: entries.map((e) => ({ heading: termSlug(e.term), content: e.definition })),
+    },
+  };
+}
+
 export function buildSearchIndexes(): AdvancedIndex[] {
+  const docsPages = source.getPages() as IndexablePage[];
+  const glossaryPage = docsPages.find((p) => p.url === GLOSSARY_URL);
+  const otherDocs = docsPages.filter((p) => p.url !== GLOSSARY_URL);
+
   return [
-    ...mdxIndexes(source.getPages(), "docs", "Reference"),
+    ...mdxIndexes(otherDocs, "docs", "Reference"),
+    ...(glossaryPage ? [glossaryIndex(glossaryPage)] : []),
     ...mdxIndexes(guideSource.getPages(), "guide", "Guide"),
     ...resourceIndexes(),
     ...toolIndexes(),

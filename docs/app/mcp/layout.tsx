@@ -9,7 +9,7 @@ import { toolsNavTree } from "@/lib/tools-data";
 
 export default function McpLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen w-full bg-[#FBFBF9]">
+    <div className="min-h-screen w-full bg-ed-paper">
       <MainHeader
         active="mcp"
         mobileNav={
@@ -21,16 +21,16 @@ export default function McpLayout({ children }: { children: ReactNode }) {
       />
 
       <ApiConfigProvider>
-        <div className="mx-auto flex w-full max-w-[1480px] pt-[64px]">
-          <aside className="sticky top-[64px] hidden h-[calc(100dvh-64px)] w-[280px] shrink-0 overflow-y-auto border-r border-[#E7E7E3] px-[20px] py-[28px] scrollbar-hidden-until-scroll nav-scroll-fade lg:block">
+        <div className="mx-auto flex w-full max-w-370 pt-16">
+          <aside className="sticky top-16 hidden h-[calc(100dvh-64px)] w-70 shrink-0 overflow-y-auto border-r border-ed-hairline px-5 py-7 scrollbar-hidden-until-scroll nav-scroll-fade lg:block">
             <Configurator />
             <McpNav tools={toolsNavTree} />
             <NavScrollChevron />
           </aside>
-          <main className="min-w-0 flex-1 px-[24px] pb-[140px] pt-[40px] lg:px-[56px]">
+          <main className="min-w-0 flex-1 px-6 pb-35 pt-10 lg:px-14">
             {children}
           </main>
-          <aside className="hidden w-[232px] shrink-0 px-[28px] pt-[40px] xl:block">
+          <aside className="hidden w-58 shrink-0 px-7 pt-10 xl:block">
             <TableOfContents />
           </aside>
         </div>

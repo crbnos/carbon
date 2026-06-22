@@ -1,6 +1,8 @@
 import type { Database } from "@carbon/database";
 import { Status } from "@carbon/react";
-import { hasIncompleteJobs } from "@carbon/utils";
+import { hasIncompleteJobs, SALES_STATUS_COLOR_MAP } from "@carbon/utils";
+
+export { SALES_STATUS_COLOR_MAP } from "@carbon/utils";
 
 type SalesOrderStatusProps = {
   status?: Database["public"]["Enums"]["salesOrderStatus"] | null;
@@ -17,23 +19,6 @@ type SalesOrderStatusProps = {
   }>;
   disableTooltip?: boolean;
 };
-
-export const SALES_STATUS_COLOR_MAP: Record<
-  Database["public"]["Enums"]["salesOrderStatus"],
-  "gray" | "yellow" | "orange" | "blue" | "green" | "red"
-> = {
-  Draft: "gray",
-  Cancelled: "red",
-  Closed: "red",
-  "To Ship and Invoice": "orange",
-  "To Ship": "orange",
-  "To Invoice": "blue",
-  Confirmed: "blue",
-  "Needs Approval": "yellow",
-  "In Progress": "yellow",
-  Invoiced: "gray",
-  Completed: "green"
-} as const;
 
 const SalesStatus = ({
   status,

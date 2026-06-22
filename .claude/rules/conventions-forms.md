@@ -21,7 +21,7 @@ Real reference examples (current code):
   `payment-terms.$paymentTermId.tsx` (edit).
 - `apps/erp/app/modules/resources/ui/WorkCenters/WorkCenterForm.tsx` +
   `apps/erp/app/routes/x+/resources+/work-centers.new.tsx`.
-- `apps/erp/app/modules/storageRules/ui/StorageRuleForm.tsx` (uses `.superRefine`,
+- `apps/erp/app/modules/storage-rules/ui/StorageRuleForm.tsx` (uses `.superRefine`,
   `zfd.checkbox`, `zfd.repeatableOfType`).
 
 ## File Locations

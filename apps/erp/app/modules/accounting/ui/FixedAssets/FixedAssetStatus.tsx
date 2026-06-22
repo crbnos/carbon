@@ -1,4 +1,5 @@
 import { Status } from "@carbon/react";
+import { FIXED_ASSET_STATUS_COLOR_MAP } from "@carbon/utils";
 import type { fixedAssetStatuses } from "../../accounting.models";
 
 type FixedAssetStatusProps = {
@@ -6,18 +7,11 @@ type FixedAssetStatusProps = {
 };
 
 const FixedAssetStatus = ({ status }: FixedAssetStatusProps) => {
-  switch (status) {
-    case "Draft":
-      return <Status color="gray">{status}</Status>;
-    case "Active":
-      return <Status color="green">{status}</Status>;
-    case "Fully Depreciated":
-      return <Status color="yellow">{status}</Status>;
-    case "Disposed":
-      return <Status color="red">{status}</Status>;
-    default:
-      return null;
-  }
+  if (!status) return null;
+  const color = FIXED_ASSET_STATUS_COLOR_MAP[status];
+  if (!color) return null;
+
+  return <Status color={color}>{status}</Status>;
 };
 
 export default FixedAssetStatus;

@@ -70,10 +70,11 @@ Two patterns: the shared `redis` client (caching / TTL state) and the
 
 ## Prod (for contrast)
 
-`docker-compose.prod.yml` defines a real `redis` service (`redis:7-alpine`,
-`profiles: ["data"]`, no published host port — reachable internally at
-`redis:6379`). `.env.production.example` sets `REDIS_URL=redis://redis:6379`;
-managed deployments override with an external URL.
+The self-hosted Swarm stack (`contrib/deploying/simple-docker-caddy/stack.yml`,
+see [contrib-deployment-swarm.md](contrib-deployment-swarm.md)) runs a real `redis`
+service (`redis:7-alpine`, `redis-server --appendonly yes`, no published host port
+— reachable internally at `redis:6379`); the apps set `REDIS_URL=redis://redis:6379`.
+Managed/cloud deployments override `REDIS_URL` with an external URL.
 
 ## Gotchas
 

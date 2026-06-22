@@ -40,6 +40,20 @@ export default defineConfig({
     // vars, which the editorial code panel resolves to a color in reference.css.
     rehypeCodeOptions: {
       themes: { light: "github-dark-default", dark: "github-dark-default" },
+      // Stamp the language onto the <pre> so the CodeBlock can show it as the header
+      // label (Shiki strips the language otherwise). Fumadocs prepends our transformers
+      // to its own (icon/meta), so this composes — it doesn't replace them.
+      transformers: [
+        {
+          name: "carbon:data-language",
+          pre(node) {
+            const lang = this.options.lang;
+            if (lang && lang !== "text" && lang !== "plaintext") {
+              node.properties["data-language"] = lang;
+            }
+          },
+        },
+      ],
     },
   },
 });

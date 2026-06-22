@@ -136,11 +136,45 @@ Each `##` heading becomes a sidebar rail entry — so structure chapters as 3–
     (`info/note`→NOTE/blue, `warn/warning/error`→HEADS UP/amber, `success/tip`→GOOD TO KNOW/green). Note this
     is a **different Callout API** than the Guides one (type vs tone+badge).
   - `<Cards><Card title href icon?>…</Card></Cards>` — link-card grid (cross-surface navigation).
-  - `<EnvVars><EnvVar name type? default? required?>…</EnvVar></EnvVars>` — field/parameter rows.
-  - `<PlanBadge plan="Business" />` — flags a paid-tier feature. Whole-page gate → set `plan: Business` in
-    frontmatter (renders inline with the page title); section gate → drop `<PlanBadge>` in-body. Gated
-    features = `packages/ee/src/plan.ts` (Business/Partner). **Don't** badge free ones (email, exchange-rates).
-    The gate is **Cloud-only** — self-hosted isn't plan-gated; note that where it matters.
+  - `<EnvVars><EnvVar name type? default? required?>…</EnvVar></EnvVars>` — field/parameter rows. The env-var
+    page uses these; for an entity's **field reference** prefer `<FieldTable>` (below).
+  - `<FieldTable><Field name type? required?>desc</Field></FieldTable>`
+    (`components/editorial/field-table.tsx`) — the accordion field/parameter reference, the warm-paper take on
+    Fumadocs' TypeTable. Use it for a `| Field | Type | Description |`-shaped table (item/job/line fields,
+    routing, work-center, reorder/shelf-life policy fields, integration settings). `type` = the type token
+    (omit when the table has no type column); `required` only when the source marks it so; the child is the
+    description as **MDX** (so inline `` `code` ``, *italics*, `<Term>` render — that's why it's children, not a
+    `type={{}}` prop). Registered in **both** `mdx.tsx` and `editorial/mdx.tsx`.
+  - `<StatusFlow><Status name accent? branch? terminal?>meaning</Status></StatusFlow>`
+    (`components/editorial/status-flow.tsx`) — an **interactive** lifecycle widget (selectable pills → a detail
+    `Callout` showing the meaning) that replaces a linear `| Status | Meaning |` table. Children in source
+    (lifecycle) order; meanings are MDX. Flags: `accent` = the single pivotal milestone (≤1, optional);
+    `branch` = a temporary returnable hold (Paused, On Hold, Needs Approval); `terminal` = an off-path exit
+    (Cancelled, Voided, Lost, Expired). Use it ONLY for a **linear** lifecycle — a 2-axis comparison matrix
+    (e.g. invoices sales-vs-purchase) or a small enum list stays a markdown table.
+  - `<PlanBadge plan="Business" />` — flags a paid feature. Whole-page gate → set `plan: Business` in
+    frontmatter; renders a small **"Paid"** pill inline with the page title (label is fixed to "Paid"; the
+    `plan` value only feeds the hover tooltip + the banner copy). Section gate → drop `<PlanBadge>` in-body.
+    Gated features = `packages/ee/src/plan.ts`. **Don't** badge free ones (email, exchange-rates).
+  - **Plan-gated pages also get a full-width announcement bar** (`components/plan-banner-bar.tsx`,
+    `PlanBannerBar`) rendered by the docs **layout** (`app/docs/[[...slug]]/layout` builds a url→plan map from
+    `plan` frontmatter and passes it in) — sticky under the header, spanning the content area. Adding
+    `plan: Business` frontmatter is all it takes; the badge and the bar both light up. Don't hand-place a
+    banner in MDX.
+  - **Licensing model — get this right, it's been wrong before.** See `docs/content/docs/platform/licensing.mdx`
+    (the canonical page). Editions (`packages/utils/src/types.ts` `enum Edition`): **Community** (self-host,
+    AGPLv3 open core), **Enterprise** (self-host + commercial license), **Cloud** (managed). EE features =
+    code under `packages/ee` or any `.ee` file → require a commercial license per the repo `LICENSE`.
+    - **Carbon Cloud = the hosted SaaS at https://app.carbon.ms** — NOT the `/docs/platform/...` deployment
+      docs. Self-hosting recipes (Docker with Caddy, AWS with SST) live under
+      `docs/content/docs/platform/self-hosting/`.
+    - **Cloud plans = Starter and Business only.** `Plan` enum also has `Partner`, but Partner is
+      **internal-only — never mention it in reader-facing docs.** Don't write "Business and Partner plans".
+    - **Never write "self-hosted isn't plan-gated."** The *runtime* gate is Cloud-only
+      (`packages/ee/src/plan.server.ts` returns early when `CarbonEdition !== Edition.Cloud`), but the
+      *license* still governs: self-hosting runs in **community mode**; Enterprise/EE features need a
+      commercial license. Frame it as a license boundary, not a technical lockout — features aren't
+      "disabled" in Community.
   - `<Steps>/<Step>`, `<Tabs>/<Tab>` (fumadocs-ui), markdown tables, and code fences (dark panel).
   - `<Term id?>…</Term>` — inline glossary term (dotted underline → definition popover). The same component
     as the Guide; see "Interlinking & the glossary" below.
@@ -152,6 +186,24 @@ Each `##` heading becomes a sidebar rail entry — so structure chapters as 3–
 - **Second person, concrete, narrative.** Anchor in the running example (the 90-unit humanoid-robot order).
   "Open the sales order dashboard." / "You don't build 90 robots as one monolithic job."
 - **Quote real status names exactly**, in quotes: `**"To Ship and Invoice"**`, `**"Posted"**`, `**"Open"**`.
+  Status strings live on a specific entity — confirm whether a value belongs to the *header* or the *line*
+  (e.g. `"To Ship and Invoice"`/`"To Invoice"` are `salesOrderStatus`, NOT the `salesOrderLineStatus` enum
+  `Ordered/In Progress/Completed`) before you attribute it, and state the transition fully (an order at
+  `"To Ship and Invoice"` flips to `"To Invoice"` once everything has shipped but isn't billed — don't imply
+  it sits at one value until fully closed).
+- **Go easy on em-dashes.** Stacked, they read as a tic — at most one per paragraph, and never a dash-pair
+  parenthetical in an opening sentence. Default to a period or comma; reach for the dash only when it truly
+  beats both. ("Too many em-dashes" is the single most common copy note from review.) Applies to `caption=`
+  and `title=` strings too, not just body prose.
+- **Keep the running example's nouns and numbers exact.** It's the *sales order* (don't drift to a bare
+  "order" when instructing the reader) and it's *90 units* (not "a robot"). Once you name the entity and the
+  quantity, stay consistent every time — drift is what makes a tour feel sloppy.
+- **Ground every "where to click."** When you tell the reader to act in the UI, copy the real button / modal /
+  field labels from the JSX (in quotes) and confirm the capability exists *on that exact path*. A feature
+  that lives elsewhere is not the same as one on the screen you're describing — "Carbon splits the order into
+  three jobs" was wrong: the sales-order line's **"Make to Order"** → **"Convert Line to Job"** dialog makes
+  **one** job per click (the N-jobs-of-M split is a separate bulk-jobs flow). Verify the action, not just the
+  concept.
 - **Callouts carry the counterintuitive truth** — the thing people get wrong. Title is a claim, body is the
   why. ("Quotes are optional — the opportunity is the thread.")
 - **Explain the why, name the mistake, point to the next step.** If a paragraph does none of those, cut it.
@@ -171,6 +223,11 @@ a page that links out *and* glosses its jargon is worth more than the same prose
 - **Markdown links carry navigation.** Link the *noun*, inline, at natural seams; never "click here". A Guide
   links into Reference for fields; Reference links back to the Guide for the story
   (`[make-to-order tour](/guides/order)`). Cross-surface and cross-flow links are expected, not optional.
+  **But link only when the destination's title echoes your anchor text.** A hard jump whose landing page has
+  a different H1 disorients the reader — linking the phrase "quote to cash" to a chapter titled *From quote
+  to order* got flagged as confusing. When the anchor is a *concept* (a flow name, a category) rather than a
+  page literally called that, gloss it as a `<Term>` (definition popover + optional "Learn more" via `href`)
+  instead of a bare link — the reader gets the meaning in place and can still navigate if they choose.
 - **`<Term>` carries definitions.** Wrap a manufacturing/Carbon term a reader can hit cold (method type,
   replenishment system, WIP, outside operation, kit/subassembly…) so a click gives the gloss without leaving
   the page.
@@ -200,6 +257,16 @@ to raise the whole site's connectivity.
 
 ## Gotchas (hard-won)
 
+- **Frontmatter is YAML — never leave an unquoted colon in a value.** A `title:`/`description:` value
+  containing `: ` (colon-space) is parsed as a nested mapping and throws
+  `YAMLException: bad indentation of a mapping entry`. Either quote the whole value
+  (`description: "How it works: the short version."`) or reword to drop the colon (a comma/period is usually
+  the better fix). **One bad frontmatter 500s the *entire* site, not just that page** — fumadocs loads the
+  whole source collection at module load, so the symptom is every page (guides included) returning 500 with
+  the offending `.mdx` path in the stack. This bites hardest during an em-dash sweep: replacing a
+  `description:` em-dash with a colon silently breaks YAML. **`pnpm exec fumadocs-mdx` regen does NOT catch
+  it** (it passes) — the only reliable check is fetching a page (any page) and seeing 200 vs 500. When you
+  delegate prose edits to subagents, tell them explicitly: in frontmatter, never introduce an unquoted colon.
 - **Shiki theme** (`source.config.ts` → `rehypeCodeOptions.themes`): set **both** `light` and `dark` to the
   same `"github-dark-default"`. A single `theme` (or a missing `github-light`) breaks the build for any
   `content/docs` file with a code fence (`ShikiError: Theme github-light not found`). Guides have no fences,

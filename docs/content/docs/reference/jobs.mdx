@@ -9,39 +9,39 @@ Everything on the shop floor hangs off a job: the schedule board places its oper
 
 ## Fields
 
-| Field | Type | Description |
-| --- | --- | --- |
-| Item | reference | What's being made. The job copies this item's method on release. |
-| Quantity | number | Good units to produce. |
-| Scrap quantity | number | Units expected lost; `production quantity` = quantity + scrap. |
-| Quantity complete | number | Good units finished so far. |
-| Location | reference | The site the job runs at and receives into. |
-| Due date | date | When it's needed; paired with a deadline type that tells the scheduler how hard the date is. |
-| Source | reference | The sales order line or quote line it was raised for, if any. |
-| Assignee | reference | The person responsible for the job. |
+<FieldTable>
+  <Field name="Item" type="reference">What's being made. The job copies this item's method on release.</Field>
+  <Field name="Quantity" type="number">Good units to produce.</Field>
+  <Field name="Scrap quantity" type="number">Units expected lost; `production quantity` = quantity + scrap.</Field>
+  <Field name="Quantity complete" type="number">Good units finished so far.</Field>
+  <Field name="Location" type="reference">The site the job runs at and receives into.</Field>
+  <Field name="Due date" type="date">When it's needed; paired with a deadline type that tells the scheduler how hard the date is.</Field>
+  <Field name="Source" type="reference">The sales order line or quote line it was raised for, if any.</Field>
+  <Field name="Assignee" type="reference">The person responsible for the job.</Field>
+</FieldTable>
 
 ## Status lifecycle
 
 A job's status drives what you can do with it and what the floor sees.
 
-| Status | Meaning |
-| --- | --- |
-| Draft | Created and editable; not yet planned or scheduled. |
-| Planned | Demand is visible to planning, but no work is on the board yet. |
-| Ready | Released — operations are scheduled and material requirements raised. |
-| In Progress | The first production event has been logged against it. |
-| Paused | Work is temporarily halted. |
-| Completed | Every operation is done; finished goods have been received into inventory. |
-| Closed | The books are settled — any residual work-in-process is swept to variance. |
-| Cancelled | Abandoned before completion. |
+<StatusFlow entity="job">
+  <Status name="Draft">Created and editable; not yet planned or scheduled.</Status>
+  <Status name="Planned">Demand is visible to planning, but no work is on the board yet.</Status>
+  <Status name="Ready" accent>Released: operations are scheduled and material requirements raised.</Status>
+  <Status name="In Progress">The first production event has been logged against it.</Status>
+  <Status name="Paused" branch>Work is temporarily halted.</Status>
+  <Status name="Completed">Every operation is done; finished goods have been received into inventory.</Status>
+  <Status name="Closed">The books are settled. Any residual work-in-process is swept to variance.</Status>
+  <Status name="Cancelled" terminal>Abandoned before completion.</Status>
+</StatusFlow>
 
 <Callout type="info">
-A **Completed**, **Closed**, or **Cancelled** job is locked — its method, quantity, and dates can no longer be edited. Closing is what makes a job's work-in-process provably zero.
+A **Completed**, **Closed**, or **Cancelled** job is locked. Its method, quantity, and dates can no longer be edited. Closing is what makes a job's work-in-process provably zero.
 </Callout>
 
 ## Make to order vs. make to stock
 
-A job is identical whichever way it's raised — only its source differs. A **<Term id="make-to-order">make-to-order</Term>** job links back to a sales order line; a **make-to-stock** job comes from <Term id="mrp">planning</Term> with no order behind it. Either way the job completes into inventory first, and the sale (if any) ships from stock — the job never ships directly to a customer.
+A job is identical whichever way it's raised. Only its source differs. A **<Term id="make-to-order">make-to-order</Term>** job links back to a sales order line; a **make-to-stock** job comes from <Term id="mrp">planning</Term> with no order behind it. Either way the job completes into inventory first, and the sale (if any) ships from stock — the job never ships directly to a customer.
 
 <Callout type="note">
 Releasing a job copies the part's method into a job-specific copy. Editing that copy never touches the part master, and updating the part never disturbs a job already in flight.

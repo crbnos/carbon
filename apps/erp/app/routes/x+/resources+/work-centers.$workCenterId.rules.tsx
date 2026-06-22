@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getStorageRulesDataForTarget } from "@carbon/ee/storage-rules.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import RuleAssignmentsList from "~/modules/storageRules/ui/RuleAssignmentsList";
+import RuleAssignmentsList from "~/modules/storage-rules/ui/RuleAssignmentsList";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

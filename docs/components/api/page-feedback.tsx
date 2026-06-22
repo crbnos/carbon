@@ -6,10 +6,10 @@ import { useState } from "react";
 const DISCUSSIONS_URL = "https://github.com/crbnos/carbon/discussions/new?category=q-a";
 
 const PILL_BASE =
-  "inline-flex items-center gap-[6px] rounded-[8px] px-[12px] py-[6px] text-[13.5px] font-[500] no-underline transition-colors";
+  "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-ed-13 font-medium no-underline transition-colors";
 // `docs` — white card on paper; `editorial` — warm glass pill for the Guide surface.
-const PILL_DOCS = `${PILL_BASE} border border-[#E3E3DF] bg-white text-[rgba(38,35,35,0.8)] hover:border-[#CFCFC9] hover:text-[#262323]`;
-const PILL_EDITORIAL = `${PILL_BASE} glass-pill text-ink-ui hover:text-[#262323]`;
+const PILL_DOCS = `${PILL_BASE} border border-ed-warm-300 bg-white text-ed-ink/80 hover:border-ed-warm-500 hover:text-ed-ink`;
+const PILL_EDITORIAL = `${PILL_BASE} glass-pill text-ink-ui hover:text-ed-ink`;
 
 function ThumbUp() {
   return (
@@ -44,18 +44,18 @@ export function PageFeedback({ variant = "docs" }: { variant?: "docs" | "editori
 
   if (thanked) {
     return (
-      <p className={`m-0 text-[14px] ${editorial ? "text-ink-faint" : "text-[rgba(38,35,35,0.66)]"}`}>
+      <p className={`m-0 text-ed-14 ${editorial ? "text-ink-faint" : "text-ed-ink/66"}`}>
         Thanks for your feedback!
       </p>
     );
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-x-[14px] gap-y-[10px]">
-      <span className={`text-[14px] font-[560] ${editorial ? "text-ink-ui" : "text-[#262323]"}`}>
+    <div className="flex flex-wrap items-center gap-x-3.5 gap-y-2.5">
+      <span className={`text-ed-14 font-semi ${editorial ? "text-ink-ui" : "text-ed-ink"}`}>
         Was this page helpful?
       </span>
-      <div className="flex items-center gap-[8px]">
+      <div className="flex items-center gap-2">
         <button type="button" onClick={() => setThanked(true)} className={pill}>
           <ThumbUp /> Yes
         </button>

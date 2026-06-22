@@ -70,7 +70,7 @@
     "apps/*",
     "ci",
     "docs",
-    "examples/*",
+    "contrib/building/examples/*",
     "packages/*"
   ],
   "packageManager": "pnpm@10.33.4",
@@ -103,6 +103,7 @@
       "core-js",
       "esbuild",
       "protobufjs",
+      "sharp",
       "supabase"
     ],
     "patchedDependencies": {

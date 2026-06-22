@@ -6,8 +6,8 @@ import { useApiConfig } from "./config-context";
 export function BaseUrl({ path }: { path: string }) {
   const { base } = useApiConfig();
   return (
-    <div className="mt-[18px] mb-[32px] flex w-fit items-center gap-[10px] rounded-[8px] border border-[#E7E7E3] bg-white px-[12px] py-[8px] font-[family-name:var(--font-mono)] text-[13.5px] text-[rgba(38,35,35,0.8)]">
-      <span className="text-[rgba(38,35,35,0.5)]">Base</span>
+    <div className="mt-[18px] mb-8 flex w-fit items-center gap-2.5 rounded-lg border border-ed-hairline bg-white px-3 py-2 font-mono text-ed-13 text-ed-ink/80">
+      <span className="text-ed-ink/50">Base</span>
       {base}
       {path}
     </div>

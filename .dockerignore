@@ -1,9 +1,79 @@
+# Docker build-context excludes. Docker only reads the root .dockerignore (nested
+# ones are ignored), so everything that should stay out of the image lives here.
+# Merged + deduplicated from .gitignore plus Docker-specific entries.
 
-# sst
+# VCS / CI / project meta
+.git
+.github
+.husky
+
+# Dependencies & build output
+node_modules
+.turbo
+.cache
+dist
+dist-ssr
+build
+public/build
+public/dist
+server/dist
+.output
+.next
+.source
+.react-router
+.vercel
+.trigger
 .sst
-llm
+*.tsbuildinfo
+api/index.js*
+api/_assets*
+vite.config.ts.timestamp*
+
+# Generated (rebuilt during the image build)
+packages/locale/locales/**/*.mjs
+docs/lib/api-data.generated.ts
+docs/lib/tools-data.generated.ts
+
+# Env / secrets — never bake into an image
+.env
+.envrc
+.env.local
+.env*.local
+.env.dev
+.env.development.local
+.env.test.local
+.env.prod
+.env.production
+.env.production.local
+packages/database/.env
+packages/database/supabase/seed.sql
+**/secrets/
+*.secret
+
+# Editor / tooling / agent scratch
 .vscode
-.claude
 .cursor
-examples
+.windsurf
+.idea
+.claude
+.claude-flow
+.superpowers
+.carbon-worktree
+.mcp.json
+opencode.json
+.pr-review
+
+# Rust / C++ (cad-engine) build artifacts
+**/target/
+**/*.rs.bk
+**/pkg/
+**/build/
+
+# Not needed inside the image
 docs
+contrib
+llm
+
+# OS / logs
+.DS_Store
+*.log

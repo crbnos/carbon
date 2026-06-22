@@ -37,15 +37,15 @@ function Row({
 }) {
   return (
     <div
-      className="grid border-t border-[#E3E3DF] first:border-t-0"
+      className="grid border-t border-ed-warm-300 first:border-t-0"
       style={{ gridTemplateColumns: cols }}
     >
       {cells.map((c, i) => (
         <div
           key={i}
-          className={`px-[12px] py-[9px] text-[14px] leading-[150%] ${
-            head ? "font-[560] text-[#262323]" : "text-[rgba(38,35,35,0.82)]"
-          } ${i > 0 ? "border-l border-[#E3E3DF]" : ""}`}
+          className={`px-3 py-[9px] text-ed-14 leading-normal ${
+            head ? "font-semi text-ed-ink" : "text-ed-ink/82"
+          } ${i > 0 ? "border-l border-ed-warm-300" : ""}`}
         >
           {c}
         </div>
@@ -56,7 +56,7 @@ function Row({
 
 function Table({ children }: { children: ReactNode }) {
   return (
-    <div className="my-[18px] overflow-hidden rounded-[10px] border border-[#E3E3DF]">
+    <div className="my-[18px] overflow-hidden rounded-[10px] border border-ed-warm-300">
       {children}
     </div>
   );

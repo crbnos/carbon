@@ -1,4 +1,5 @@
 import { Status } from "@carbon/react";
+import { SALES_RFQ_STATUS_COLOR_MAP } from "@carbon/utils";
 import type { salesRFQStatusType } from "../../sales.models";
 
 type SalesRFQStatusProps = {
@@ -6,18 +7,12 @@ type SalesRFQStatusProps = {
 };
 
 const SalesRFQStatus = ({ status }: SalesRFQStatusProps) => {
-  switch (status) {
-    case "Draft":
-      return <Status color="gray">{status}</Status>;
-    case "Ready for Quote":
-      return <Status color="green">{status}</Status>;
-    case "Quoted":
-      return <Status color="blue">{status}</Status>;
-    case "Closed":
-      return <Status color="red">{status}</Status>;
-    default:
-      return null;
-  }
+  if (!status) return null;
+
+  const color = SALES_RFQ_STATUS_COLOR_MAP[status];
+  if (!color) return null;
+
+  return <Status color={color}>{status}</Status>;
 };
 
 export default SalesRFQStatus;

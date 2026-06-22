@@ -1,0 +1,36 @@
+---
+title: AWS with SST
+description: "Deploy the Carbon stack to your own AWS account with SST: ECS Fargate, ECR, and a WAF."
+---
+
+One of the [self-hosting](/docs/platform/self-hosting) recipes: deploy Carbon to **AWS** with **SST**. The two apps, ERP and MES, run as containers on **ECS Fargate** behind load balancers, defined in `sst.config.ts` (app `carbon`, home `aws`). For a single-box setup instead, see [Docker with Caddy](/docs/platform/self-hosting/docker-caddy).
+
+<Callout type="tip" title="Don't want to run any of this?">
+[Carbon Cloud](https://app.carbon.ms) is the hosted edition. We run the whole stack for you, with scaling, backups, upgrades, and uptime handled. Sign up and you're in: no servers to provision, no Supabase to run, no infrastructure to babysit. Self-host only if you specifically need Carbon on your own hardware.
+</Callout>
+
+## What gets provisioned
+
+| Resource | Details |
+| --- | --- |
+| VPC + ECS cluster | `CarbonVpc2` and `CarbonCluster`. |
+| `CarbonERPService` | 2 vCPU / 4 GB · port 3000 · health check `/health` · autoscaling 1–10 tasks on CPU and memory. |
+| `CarbonMESService` | The same shape, for the MES. |
+| WAF web ACL | `AppAlbWebAcl`: a 1000 requests/IP rate-limit rule plus the AWS managed common rule set. |
+
+Container images are pulled from **ECR** (`carbon/erp` and `carbon/mes`), built and pushed by CI. SST does not build them.
+
+## Prerequisites
+
+| Requirement | Details |
+| --- | --- |
+| AWS account | With `AWS_REGION` and `AWS_ACCOUNT_ID`. |
+| ECR images | Pre-built and tagged with `IMAGE_TAG`. |
+| TLS certificates | `CERT_ARN_ERP` and `CERT_ARN_MES`; optionally custom domains `URL_ERP` and `URL_MES`. |
+| Supabase instance | Provisioned out of band, not by SST. Supplies `SUPABASE_URL`, `SUPABASE_DB_URL`, the keys, and `SUPABASE_JWT_SECRET`. |
+
+<Callout type="warn">
+The WAF web ACL must be **manually associated** with the application load balancer after the first deploy. SST creates it but does not attach it.
+</Callout>
+
+See [Environment variables](/docs/platform/self-hosting/environment-variables) for the full configuration surface, the [Docker with Caddy](/docs/platform/self-hosting/docker-caddy) recipe for a single VPS, or [Local development](/docs/building/local-development) to run Carbon locally with the `crbn` CLI.

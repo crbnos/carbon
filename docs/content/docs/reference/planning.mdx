@@ -3,7 +3,7 @@ title: Planning (MRP)
 description: How demand turns into suggested jobs and purchase orders — and where that ends and scheduling begins.
 ---
 
-Planning answers one question: *what should we make or buy, and how much?* Carbon's <Term>MRP</Term> looks at everything you owe and everything you have coming, and turns the gap into suggested orders — which you choose to act on.
+Planning answers one question: *what should we make or buy, and how much?* Carbon's <Term>MRP</Term> looks at everything you owe and everything you have coming, and turns the gap into suggested orders that you choose to act on.
 
 Without planning you'd reorder by hand. MRP nets demand against supply across the whole <Term id="bom">bill of materials</Term>, so a shortfall on a top-level robot surfaces as the right quantity of every component, offset for its <Term>lead time</Term> — before you're caught short.
 
@@ -11,8 +11,8 @@ Without planning you'd reorder by hand. MRP nets demand against supply across th
 
 Planning runs in two distinct passes, and conflating them is the usual mistake:
 
-1. **MRP — explode and net.** The engine explodes demand through bills of material, nets it against on-hand plus open jobs and purchase orders, and writes period-bucketed demand and supply forecasts. It does **not** apply <Term id="reorder-point">reorder points</Term> and does **not** create orders.
-2. **Planning views — suggest a quantity.** The production and purchasing planning pages read those forecasts, project running stock week by week, and apply each item's **<Term id="reordering-policy">reorder policy</Term>** to propose a quantity to order.
+1. **MRP, explode and net.** The engine explodes demand through bills of material, nets it against on-hand plus open jobs and purchase orders, and writes period-bucketed demand and supply forecasts. It does **not** apply <Term id="reorder-point">reorder points</Term> and does **not** create orders.
+2. **Planning views, suggest a quantity.** The production and purchasing planning pages read those forecasts, project running stock week by week, and apply each item's **<Term id="reordering-policy">reorder policy</Term>** to propose a quantity to order.
 
 <Callout type="note">
 MRP **suggests, it never auto-orders.** The engine only writes forecasts; turning a suggestion into a real job or PO is an explicit action you take on the planning page.
@@ -30,7 +30,7 @@ MRP **suggests, it never auto-orders.** The engine only writes forecasts; turnin
 
 ## Reorder policy
 
-Each item, per location, carries a **reordering policy** that decides how a suggestion is sized — *Manual Reorder* (suggests nothing), *Demand-Based Reorder* (the default), *Fixed Reorder Quantity*, or *Maximum Quantity* — tuned by reorder point, order quantity, accumulation period, and min/max/multiple rounding. See [Reordering](/docs/reference/reordering) for the parameters in full.
+Each item, per location, carries a **reordering policy** that decides how a suggestion is sized: *Manual Reorder* (suggests nothing), *Demand-Based Reorder* (the default), *Fixed Reorder Quantity*, or *Maximum Quantity*. Each is tuned by reorder point, order quantity, accumulation period, and min/max/multiple rounding. See [Reordering](/docs/reference/reordering) for the parameters in full.
 
 ## From suggestion to order
 

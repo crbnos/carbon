@@ -22,7 +22,7 @@ function CopyButton({ text }: { text: string }) {
         setCopied(true);
         setTimeout(() => setCopied(false), 1400);
       }}
-      className="absolute top-[10px] right-[10px] z-10 rounded-[6px] border border-[#3A3A38] bg-[#262624] px-[8px] py-[3px] font-[family-name:var(--font-mono)] text-[11px] text-[#C9C9C5] transition-colors hover:border-[#4A4A47] hover:text-white"
+      className="absolute top-2.5 right-2.5 z-10 rounded-md border border-ed-dark-line-2 bg-ed-dark-surface px-2 py-[3px] font-mono text-ed-11 text-ed-text-faint transition-colors hover:border-ed-dark-line-3 hover:text-white"
     >
       {copied ? "Copied" : "Copy"}
     </button>
@@ -44,10 +44,10 @@ function LangSelect({
         aria-label="Code language"
         value={value}
         onChange={(e) => onChange(e.target.value as keyof ApiSamples)}
-        className="cursor-pointer appearance-none rounded-[6px] border border-[#3A3A38] bg-[#262624] py-[4px] pl-[10px] pr-[26px] font-[family-name:var(--font-mono)] text-[12px] text-[#C9C9C5] transition-colors hover:border-[#4A4A47] hover:text-white focus:border-[#4A4A47] focus:outline-none"
+        className="cursor-pointer appearance-none rounded-md border border-ed-dark-line-2 bg-ed-dark-surface py-1 pl-2.5 pr-[26px] font-mono text-ed-12 text-ed-text-faint transition-colors hover:border-ed-dark-line-3 hover:text-white focus:border-ed-dark-line-3 focus:outline-none"
       >
         {LANGS.map((l) => (
-          <option key={l.key} value={l.key} className="bg-[#1B1B1A] text-[#C9C9C5]">
+          <option key={l.key} value={l.key} className="bg-ed-dark-bg text-ed-text-faint">
             {l.label}
           </option>
         ))}
@@ -74,7 +74,7 @@ function LangSelect({
 
 function Panel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="overflow-hidden rounded-[12px] border border-[#2A2A28] bg-[#1B1B1A] shadow-[0_1px_2px_rgba(0,0,0,0.06)]">
+    <div className="overflow-hidden rounded-xl border border-ed-dark-line bg-ed-dark-bg shadow-[0_1px_2px_rgba(0,0,0,0.06)]">
       {children}
     </div>
   );
@@ -99,12 +99,12 @@ export function CodePanel({
   const { base, apiKey } = useApiConfig();
 
   return (
-    <div className="sticky top-[88px] flex flex-col gap-[16px]">
+    <div className="sticky top-22 flex flex-col gap-4">
       <Panel>
-        <div className="flex h-[44px] items-center justify-between gap-[8px] border-b border-[#2A2A28] pr-[8px] pl-[14px]">
-          <div className="flex min-w-0 items-center gap-[8px]">
+        <div className="flex h-11 items-center justify-between gap-2 border-b border-ed-dark-line pr-2 pl-3.5">
+          <div className="flex min-w-0 items-center gap-2">
             <MethodBadge method={method} />
-            <span className="truncate font-[family-name:var(--font-mono)] text-[12px] text-[#9A9A96]">
+            <span className="truncate font-mono text-ed-12 text-ed-text-muted">
               {applyBase(fullPath, base)}
             </span>
           </div>
@@ -124,8 +124,8 @@ export function CodePanel({
 
       {response ? (
         <Panel>
-          <div className="flex h-[40px] items-center border-b border-[#2A2A28] px-[14px]">
-            <span className="font-[family-name:var(--font-mono)] text-[12px] tracking-[0.04em] text-[#9A9A96]">
+          <div className="flex h-10 items-center border-b border-ed-dark-line px-3.5">
+            <span className="font-mono text-ed-12 tracking-[0.04em] text-ed-text-muted">
               Response
             </span>
           </div>
@@ -136,7 +136,7 @@ export function CodePanel({
           />
         </Panel>
       ) : (
-        <div className="rounded-[10px] border border-[#E7E7E3] bg-[#FBFBF8] px-[14px] py-[12px] font-[family-name:var(--font-mono)] text-[13px] text-[rgba(38,35,35,0.63)]">
+        <div className="rounded-[10px] border border-ed-hairline bg-ed-paper px-3.5 py-3 font-mono text-ed-13 text-ed-ink/63">
           204 No Content
         </div>
       )}

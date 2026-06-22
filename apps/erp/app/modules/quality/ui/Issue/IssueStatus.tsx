@@ -1,21 +1,17 @@
 import type { Database } from "@carbon/database";
 import { Status } from "@carbon/react";
+import { ISSUE_STATUS_COLOR_MAP } from "@carbon/utils";
 
 type IssueStatusProps = {
   status?: Database["public"]["Enums"]["nonConformanceStatus"] | null;
 };
 
 const IssueStatus = ({ status }: IssueStatusProps) => {
-  switch (status) {
-    case "Registered":
-      return <Status color="gray">{status}</Status>;
-    case "In Progress":
-      return <Status color="blue">{status}</Status>;
-    case "Closed":
-      return <Status color="green">{status}</Status>;
-    default:
-      return null;
-  }
+  if (!status) return null;
+  const color = ISSUE_STATUS_COLOR_MAP[status];
+  if (!color) return null;
+
+  return <Status color={color}>{status}</Status>;
 };
 
 export default IssueStatus;

@@ -66,6 +66,13 @@ modules/{module}/
 `apps/erp/app/modules/sales/index.ts`). Import from the module root
 (`~/modules/sales`), not deep files.
 
+**Folder names are kebab-case.** Multi-word directories use hyphens, not
+camelCase — `modules/storage-rules`, `packages/ee/src/storage-rules` (not
+`storageRules`). This applies to all directories (modules, package subdirs,
+`ui/` groupings). React components inside still use PascalCase filenames
+(`StorageRuleForm.tsx`); the `{module}.*.ts` service/model file prefixes mirror
+their folder name.
+
 MES is lighter: services live under `apps/mes/app/services/`, components under
 `apps/mes/app/components/`.
 

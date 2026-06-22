@@ -1,6 +1,6 @@
 ---
 title: Methods & sourcing
-description: How Carbon decides whether each part is made, bought, or pulled from stock — and how a job gets its own copy of the recipe.
+description: How Carbon decides whether each part is made, bought, or pulled from stock, and how a job gets its own copy of the recipe.
 ---
 
 A part's **manufacturing method** is its recipe: the **method materials** (its bill of materials) and the
@@ -14,8 +14,8 @@ bill of materials that uses the item mirrors it.
 
 | Method type | What happens |
 | --- | --- |
-| Make to Order | Manufactured in-house — becomes its own job with a routing. |
-| Purchase to Order | Purchased — flows through purchasing as a purchase order. |
+| Make to Order | Manufactured in-house. Becomes its own job with a routing. |
+| Purchase to Order | Purchased. Flows through purchasing as a purchase order. |
 | Pull from Inventory | Pulled from stock when its parent is built. |
 
 <Callout type="info">
@@ -27,9 +27,9 @@ method that references the part — draft methods only; active and archived meth
 
 These are two different questions, and Carbon keeps them separate:
 
-- **Method type** answers *how does this part get into its parent?* — <Term>Make to Order</Term>, <Term>Purchase to Order</Term>, or <Term>Pull from Inventory</Term>.
+- **Method type** answers *how does this part get into its parent?* <Term>Make to Order</Term>, <Term>Purchase to Order</Term>, or <Term>Pull from Inventory</Term>.
 - **Replenishment system** answers *how is this part replenished overall, and which planning queue does it
-  land in?* — `Buy`, `Make`, or `Buy and Make`.
+  land in?* `Buy`, `Make`, or `Buy and Make`.
 
 A part can be made for one parent and pulled from stock for another; the replenishment system is what
 planning reads to decide between a job and a purchase order.
@@ -46,12 +46,12 @@ A **Make to Order** item inside a bill of materials is one of two things:
 
 ## Get Method
 
-When you create a job, Carbon runs **Get Method** — it copies the part's method into a job-specific copy.
+When you create a job, Carbon runs **Get Method**. It copies the part's method into a job-specific copy.
 The job edits that copy; the part master is never touched silently. Push a proven change back up and the
 next job inherits it.
 
 <Callout type="info">
-Methods are versioned — **Draft**, **Active**, or **Archived**. Only a Draft is editable; an Active method
+Methods are versioned: **Draft**, **Active**, or **Archived**. Only a Draft is editable; an Active method
 is frozen so jobs already running against it don't shift mid-build.
 </Callout>
 

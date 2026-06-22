@@ -23,7 +23,7 @@ export function GuideMobileNav() {
     <div className="flex flex-col gap-[30px]">
       {flows.map((flow) => (
         <div key={flow.slug}>
-          <p className="mb-[16px] px-[4px] font-[family-name:var(--font-mono)] text-[11.5px] font-[600] uppercase tracking-[0.08em] text-[rgba(38,35,35,0.5)]">
+          <p className="mb-4 px-1 font-mono text-ed-11 font-semibold uppercase tracking-[0.08em] text-ed-ink/50">
             {flow.name}
           </p>
           <div className="flex flex-col gap-[26px]">
@@ -32,16 +32,16 @@ export function GuideMobileNav() {
                 <button
                   type="button"
                   onClick={() => select(index, 0)}
-                  className="flex w-full items-baseline gap-[8px] border-none bg-transparent px-[4px] text-left"
+                  className="flex w-full items-baseline gap-2 border-none bg-transparent px-1 text-left"
                 >
-                  <span className="font-[family-name:var(--font-mono)] text-[11px] font-[500] leading-[140%] text-ink-faint">
+                  <span className="font-mono text-ed-11 font-medium leading-[140%] text-ink-faint">
                     {chapter.label}
                   </span>
-                  <span className="text-[15px] font-[530] leading-[140%] tracking-[0.15px] text-[rgba(32,32,32,0.82)]">
+                  <span className="text-ed-15 font-demi leading-[140%] tracking-[0.15px] text-ed-ink/82">
                     {chapter.title}
                   </span>
                 </button>
-                <div className="mt-[14px] flex flex-col gap-[12px] pl-[4px]">
+                <div className="mt-3.5 flex flex-col gap-3 pl-1">
                   {chapter.items.map((item, itemIdx) => {
                     const isActive = active.chapter === index && active.item === itemIdx;
                     return (
@@ -49,18 +49,18 @@ export function GuideMobileNav() {
                         key={item.id}
                         type="button"
                         onClick={() => select(index, itemIdx)}
-                        className="flex cursor-pointer items-center gap-[14px] border-none bg-transparent p-0 text-left"
+                        className="flex cursor-pointer items-center gap-3.5 border-none bg-transparent p-0 text-left"
                       >
                         <span
-                          className={`h-[8px] w-[8px] shrink-0 rounded-[5.5px] transition-all duration-200 ${
+                          className={`h-2 w-2 shrink-0 rounded-[5.5px] transition-all duration-200 ${
                             isActive
-                              ? "bg-[#B2E7FF] shadow-[0_1px_1px_0_rgba(0,126,183,0.70),inset_0_0.5px_0.2px_0_#FFF,0_0_0_3px_#96DEFF]"
-                              : "bg-[#F3F3F0] shadow-[0_1px_1px_0_rgba(0,0,0,0.25),0_0_0_3px_rgba(213,213,211,0.50),inset_0_0.5px_0.2px_0_#FFF]"
+                              ? "bg-ed-blue-bg-strong shadow-[0_1px_1px_0_rgba(0,126,183,0.70),inset_0_0.5px_0.2px_0_#FFF,0_0_0_3px_#96DEFF]"
+                              : "bg-ed-warm-100 shadow-[0_1px_1px_0_rgba(0,0,0,0.25),0_0_0_3px_rgba(213,213,211,0.50),inset_0_0.5px_0.2px_0_#FFF]"
                           }`}
                         />
                         <span
-                          className={`text-[14.5px] font-[460] leading-[140%] tracking-[0.15px] transition-colors ${
-                            isActive ? "text-[#262323]" : "text-[rgba(75,75,74,0.82)]"
+                          className={`text-ed-14 font-book leading-[140%] tracking-[0.15px] transition-colors ${
+                            isActive ? "text-ed-ink" : "text-ed-graphite/82"
                           }`}
                         >
                           {item.title}

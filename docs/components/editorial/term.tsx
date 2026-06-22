@@ -14,7 +14,6 @@
  */
 import * as Popover from "@radix-ui/react-popover";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { glossary } from "@/lib/glossary";
 
@@ -27,23 +26,17 @@ function slugify(text: string) {
 }
 
 export function Term({ id, children }: { id?: string; children: ReactNode }) {
-  const pathname = usePathname();
   const key = id ?? (typeof children === "string" ? slugify(children) : "");
   const entry = glossary[key];
 
   if (!entry) return <>{children}</>;
-
-  // Hide "Learn more" when it points at the page you're already on — a link back to
-  // here is noise. Compare path only (ignore hash + trailing slash).
-  const hrefPath = entry.href?.split("#")[0].replace(/\/$/, "");
-  const showLearnMore = !!hrefPath && hrefPath !== (pathname ?? "").replace(/\/$/, "");
 
   return (
     <Popover.Root>
       <Popover.Trigger asChild>
         <button
           type="button"
-          className="inline cursor-help appearance-none border-0 bg-transparent p-0 m-0 [font:inherit] text-inherit align-baseline underline decoration-dotted decoration-[#1E84B0] decoration-[1.5px] underline-offset-[3.5px] transition-colors hover:decoration-[#0C6E96] focus:outline-none focus-visible:outline-none focus-visible:rounded-[2px] focus-visible:ring-2 focus-visible:ring-[#00B0FF]/50"
+          className="inline cursor-help appearance-none border-0 bg-transparent p-0 m-0 [font:inherit] text-inherit align-baseline underline decoration-dotted decoration-ed-brand-ink decoration-[1.5px] underline-offset-[3.5px] transition-colors hover:decoration-ed-blue-text focus:outline-none focus-visible:outline-none focus-visible:rounded-[2px] focus-visible:ring-2 focus-visible:ring-ed-brand/50"
         >
           {children}
         </button>
@@ -54,21 +47,23 @@ export function Term({ id, children }: { id?: string; children: ReactNode }) {
           align="start"
           sideOffset={8}
           collisionPadding={16}
-          className="z-50 w-[300px] max-w-[calc(100vw-32px)] rounded-[10px] border border-[#E3E3DF] bg-white px-[15px] py-[14px] shadow-[0_4px_20px_rgba(38,35,35,0.10)]"
+          className="z-50 w-75 max-w-[calc(100vw-32px)] rounded-[10px] border border-ed-warm-300 bg-white px-[15px] py-3.5 shadow-[0_4px_20px_rgba(38,35,35,0.10)]"
         >
-          <div className="text-[13px] font-[500] text-[#262323]">{entry.term}</div>
-          <div className="mt-[5px] text-[13px] leading-[1.55] text-[rgba(38,35,35,0.72)]">
+          <div className="text-ed-13 font-medium text-ed-ink">{entry.term}</div>
+          <div className="mt-[5px] text-ed-13 leading-[1.55] text-ed-ink/72">
             {entry.definition}
           </div>
-          {showLearnMore && (
-            <div className="mt-[11px] border-t border-[#EFEFEB] pt-[10px]">
-              <Link
-                href={entry.href}
-                className="inline-flex items-center gap-[4px] text-[13px] font-[500] text-[#1E84B0] no-underline hover:text-[#0C6E96]"
-              >
-                Learn more
-                <span aria-hidden>→</span>
-              </Link>
+          {entry.href && (
+            <div className="mt-[11px] border-t border-ed-warm-150 pt-2.5">
+              <Popover.Close asChild>
+                <Link
+                  href={entry.href}
+                  className="inline-flex items-center gap-1 text-ed-13 font-medium text-ed-brand-ink no-underline hover:text-ed-blue-text"
+                >
+                  Learn more
+                  <span aria-hidden>→</span>
+                </Link>
+              </Popover.Close>
             </div>
           )}
           <Popover.Arrow width={12} height={6} className="fill-white" />

@@ -26,9 +26,9 @@ export async function generateMetadata(props: Params): Promise<Metadata> {
 }
 
 const BADGE: Record<ToolClass, string> = {
-  READ: "bg-[#E4F8DA] text-[#3F9142] border-[#A8DB91]",
-  WRITE: "bg-[#DFF5FF] text-[#1E84B0] border-[#A9DAF3]",
-  DESTRUCTIVE: "bg-[#FCE8E6] text-[#B3261E] border-[#F2C0BC]"
+  READ: "bg-ed-green-bg text-ed-green-strong border-ed-green-border",
+  WRITE: "bg-ed-blue-bg text-ed-brand-ink border-ed-blue-border",
+  DESTRUCTIVE: "bg-ed-red-bg text-ed-red border-ed-red-border"
 };
 
 type JsonProp = {
@@ -60,30 +60,30 @@ function Parameters({ schema }: { schema: unknown }) {
   if (names.length === 0) return <P>This tool takes no arguments.</P>;
 
   return (
-    <div className="mt-[10px] divide-y divide-[#E7E7E3] border-t border-[#E7E7E3]">
+    <div className="mt-2.5 divide-y divide-ed-hairline border-t border-ed-hairline">
       {names.map((name) => {
         const p = props[name];
         return (
           <div key={name} className="py-[13px]">
-            <div className="flex flex-wrap items-center gap-[8px]">
-              <code className="font-[family-name:var(--font-mono)] text-[13.5px] text-[#262323]">
+            <div className="flex flex-wrap items-center gap-2">
+              <code className="font-mono text-ed-13 text-ed-ink">
                 {name}
               </code>
-              <span className="font-[family-name:var(--font-mono)] text-[12px] text-[rgba(38,35,35,0.54)]">
+              <span className="font-mono text-ed-12 text-ed-ink/54">
                 {propType(p)}
               </span>
               {required.has(name) ? (
-                <span className="text-[11px] font-medium text-[#9C7136]">
+                <span className="text-ed-11 font-medium text-ed-amber-text">
                   required
                 </span>
               ) : (
-                <span className="text-[11px] font-medium text-[rgba(38,35,35,0.48)]">
+                <span className="text-ed-11 font-medium text-ed-ink/48">
                   optional
                 </span>
               )}
             </div>
             {p.description && (
-              <p className="m-0 mt-[6px] text-[14.5px] leading-[150%] text-[rgba(38,35,35,0.74)]">
+              <p className="m-0 mt-1.5 text-ed-14 leading-normal text-ed-ink/74">
                 {p.description}
               </p>
             )}
@@ -145,12 +145,12 @@ export default async function ToolPage(props: Params) {
       <Breadcrumb
         items={[{ label: "MCP", href: "/mcp" }, { label: mod.name }]}
       />
-      <div className="mt-[8px] flex flex-wrap items-center gap-[12px]">
-        <h1 className="m-0 break-all font-[family-name:var(--font-mono)] text-[25px] font-[560] leading-[120%] text-[#262323]">
+      <div className="mt-2 flex flex-wrap items-center gap-3">
+        <h1 className="m-0 break-all font-mono text-ed-24 font-semi leading-[120%] text-ed-ink">
           {t.name}
         </h1>
         <span
-          className={`inline-flex shrink-0 items-center rounded-[6px] border px-[8px] py-[2px] font-[family-name:var(--font-mono)] text-[11px] font-semibold ${BADGE[t.classification]}`}
+          className={`inline-flex shrink-0 items-center rounded-md border px-2 py-0.5 font-mono text-ed-11 font-semibold ${BADGE[t.classification]}`}
         >
           {t.classification}
         </span>

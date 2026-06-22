@@ -19,19 +19,19 @@ export async function EndpointSection({ endpoint, base }: { endpoint: ApiEndpoin
   return (
     <section
       id={endpoint.id}
-      className="grid scroll-mt-[88px] grid-cols-1 gap-x-[56px] gap-y-[24px] border-t border-[#E7E7E3] py-[44px] lg:grid-cols-2"
+      className="grid scroll-mt-22 grid-cols-1 gap-x-14 gap-y-6 border-t border-ed-hairline py-11 lg:grid-cols-2"
     >
       <div className="min-w-0">
-        <div className="flex items-center gap-[10px]">
+        <div className="flex items-center gap-2.5">
           <MethodBadge method={endpoint.method} />
-          <code className="font-[family-name:var(--font-mono)] text-[13.5px] text-[rgba(38,35,35,0.63)]">
+          <code className="font-mono text-ed-13 text-ed-ink/63">
             {endpoint.path}
           </code>
         </div>
-        <h2 className="m-0 mt-[14px] text-[24px] font-[560] leading-[130%] text-[#262323]">
+        <h2 className="m-0 mt-3.5 text-ed-24 font-semi leading-[130%] text-ed-ink">
           {endpoint.title}
         </h2>
-        <p className="m-0 mt-[10px] text-[15.5px] leading-[160%] text-[rgba(38,35,35,0.8)]">
+        <p className="m-0 mt-2.5 text-ed-15 leading-[160%] text-ed-ink/80">
           {endpoint.description}
         </p>
         <Fields title="Query parameters" query={endpoint.query} />

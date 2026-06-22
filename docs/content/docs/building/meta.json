@@ -1,5 +1,5 @@
 {
   "title": "Building",
   "defaultOpen": true,
-  "pages": ["webhooks"]
+  "pages": ["webhooks", "local-development"]
 }

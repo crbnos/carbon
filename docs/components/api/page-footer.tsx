@@ -1,6 +1,7 @@
 import { findNeighbour } from "fumadocs-core/page-tree";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { EditOnGitHub } from "@/components/edit-on-github";
 import { source } from "@/lib/source";
 import { PageFeedback } from "./page-feedback";
 
@@ -36,16 +37,16 @@ function Card({ dir, link }: { dir: "prev" | "next"; link: NavLink }) {
   return (
     <Link
       href={link.url}
-      className={`group flex items-center gap-[10px] rounded-[10px] border border-[#E7E7E3] bg-white px-[14px] py-[11px] no-underline transition-colors hover:border-[#D6D6D0] ${
+      className={`group flex items-center gap-2.5 rounded-[10px] border border-ed-hairline bg-white px-3.5 py-[11px] no-underline transition-colors hover:border-ed-warm-400 ${
         next ? "flex-row-reverse text-right" : ""
       }`}
     >
       <Chevron dir={next ? "right" : "left"} />
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="font-[family-name:var(--font-mono)] text-[10.5px] font-[600] uppercase tracking-[0.07em] text-[rgba(38,35,35,0.45)]">
+        <span className="font-mono text-ed-10 font-semibold uppercase tracking-[0.07em] text-ed-ink/45">
           {next ? "Next" : "Previous"}
         </span>
-        <span className="truncate text-[14px] font-[560] text-[#262323] group-hover:text-[#1E84B0]">
+        <span className="truncate text-ed-14 font-semi text-ed-ink group-hover:text-ed-brand-ink">
           {link.label}
         </span>
       </span>
@@ -53,13 +54,24 @@ function Card({ dir, link }: { dir: "prev" | "next"; link: NavLink }) {
   );
 }
 
-/** Page footer: feedback prompt, then optional prev / next cards. */
-export function ContentFooter({ prev, next }: { prev?: NavLink; next?: NavLink }) {
+/** Page footer: feedback prompt + edit link, then optional prev / next cards. */
+export function ContentFooter({
+  prev,
+  next,
+  editPath,
+}: {
+  prev?: NavLink;
+  next?: NavLink;
+  editPath?: string;
+}) {
   return (
-    <footer className="mt-[56px] border-t border-[#E7E7E3] pt-[24px]">
-      <PageFeedback />
+    <footer className="mt-14 border-t border-ed-hairline pt-6">
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+        <PageFeedback />
+        {editPath && <EditOnGitHub path={editPath} />}
+      </div>
       {(prev || next) && (
-        <nav className="mt-[22px] grid grid-cols-1 gap-[12px] sm:grid-cols-2">
+        <nav className="mt-[22px] grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>{prev && <Card dir="prev" link={prev} />}</div>
           <div>{next && <Card dir="next" link={next} />}</div>
         </nav>
@@ -69,12 +81,13 @@ export function ContentFooter({ prev, next }: { prev?: NavLink; next?: NavLink }
 }
 
 /** ContentFooter with prev/next derived from the Fumadocs page tree (Reference pages). */
-export function DocsFooter({ url }: { url: string }) {
+export function DocsFooter({ url, editPath }: { url: string; editPath?: string }) {
   const { previous, next } = findNeighbour(source.getPageTree(), url);
   return (
     <ContentFooter
       prev={previous ? { label: text(previous.name), url: previous.url } : undefined}
       next={next ? { label: text(next.name), url: next.url } : undefined}
+      editPath={editPath}
     />
   );
 }

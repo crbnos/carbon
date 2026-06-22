@@ -37,6 +37,8 @@ export type GuideChapter = {
   flowName: string;
   flowIndex: number;
   readingTime: number;
+  /** Repo-relative path to the chapter's source MDX, for the "Edit on GitHub" link. */
+  editPath: string;
   items: GuideItem[];
 };
 

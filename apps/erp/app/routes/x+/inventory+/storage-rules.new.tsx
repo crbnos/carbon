@@ -13,8 +13,8 @@ import { redirect, useLoaderData, useNavigate } from "react-router";
 import {
   storageRuleValidator,
   upsertStorageRule
-} from "~/modules/storageRules";
-import StorageRuleForm from "~/modules/storageRules/ui/StorageRuleForm";
+} from "~/modules/storage-rules";
+import StorageRuleForm from "~/modules/storage-rules/ui/StorageRuleForm";
 import { getParams, path } from "~/utils/path";
 import { getCompanyId, storageRulesQuery } from "~/utils/react-query";
 

@@ -1,25 +1,17 @@
 import type { Database } from "@carbon/database";
 import { Status } from "@carbon/react";
+import { RISK_STATUS_COLOR_MAP } from "@carbon/utils";
 
 type RiskStatusProps = {
   status?: Database["public"]["Enums"]["riskStatus"] | null;
 };
 
 const RiskStatus = ({ status }: RiskStatusProps) => {
-  switch (status) {
-    case "Accepted":
-      return <Status color="green">{status}</Status>;
-    case "In Review":
-      return <Status color="blue">{status}</Status>;
-    case "Mitigating":
-      return <Status color="orange">{status}</Status>;
-    case "Closed":
-      return <Status color="red">{status}</Status>;
-    case "Open":
-      return <Status color="gray">{status}</Status>;
-    default:
-      return null;
-  }
+  if (!status) return null;
+  const color = RISK_STATUS_COLOR_MAP[status];
+  if (!color) return null;
+
+  return <Status color={color}>{status}</Status>;
 };
 
 export default RiskStatus;

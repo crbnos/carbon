@@ -7,19 +7,19 @@ A **routing** is the recipe the shop floor follows to make a part: the ordered l
 the <Term>work center</Term> each one runs on. It's what turns "we have an order" into "here's exactly what happens,
 in what order, where."
 
-Without a routing, a <Term id="job">job</Term> can't be scheduled or costed — there's nothing to place on the board and
+Without a routing, a <Term id="job">job</Term> can't be scheduled or costed. There's nothing to place on the board and
 nothing to estimate run time from. The routing is the bridge between *what* you're making (the item) and
 *how* it gets made (the schedule).
 
 ## Fields
 
-| Field | Type | Description |
-| --- | --- | --- |
-| Operation | text | The step performed, in sequence (e.g. *Cut*, *Weld*, *Inspect*). |
-| Work center | reference | Where the operation runs; supplies the rates used for scheduling. |
-| Setup time | minutes | Fixed time to prepare the operation, independent of quantity. |
-| Run time | minutes/unit | Time per unit produced. |
-| Sequence | number | Order of operations; lower runs first. |
+<FieldTable>
+  <Field name="Operation" type="text">The step performed, in sequence (e.g. *Cut*, *Weld*, *Inspect*).</Field>
+  <Field name="Work center" type="reference">Where the operation runs; supplies the rates used for scheduling.</Field>
+  <Field name="Setup time" type="minutes">Fixed time to prepare the operation, independent of quantity.</Field>
+  <Field name="Run time" type="minutes/unit">Time per unit produced.</Field>
+  <Field name="Sequence" type="number">Order of operations; lower runs first.</Field>
+</FieldTable>
 
 ## Per-revision routings
 
@@ -35,7 +35,7 @@ operation exists.
 
 <Cards>
   <Card title="Run the floor" href="/guides/floor">
-    See routings in context — how a job inherits one and turns it into a schedule.
+    See routings in context: how a job inherits one and turns it into a schedule.
   </Card>
   <Card title="Methods & sourcing" href="/docs/reference/methods">
     Where a routing's operations live alongside the part's materials.

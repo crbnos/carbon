@@ -93,6 +93,7 @@ export default async function GuidePage(props: Params) {
     flowName: p.data.flowName,
     flowIndex: p.data.flowIndex,
     readingTime: readingMinutes(p.data.structuredData),
+    editPath: `docs/content/guides/${p.path}`,
     items: p.data.toc
       .filter((t) => t.depth === 2)
       .map((t) => ({

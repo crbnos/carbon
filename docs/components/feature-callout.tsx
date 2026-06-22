@@ -42,7 +42,7 @@ export function FeatureCallout({
               </Link>
             )}
           </div>
-          <div className="text-[15px] leading-relaxed text-foreground [&>p]:m-0">{children}</div>
+          <div className="text-ed-15 leading-relaxed text-foreground [&>p]:m-0">{children}</div>
         </div>
 
         {aside && (

@@ -1,30 +1,17 @@
 import type { Database } from "@carbon/database";
 import { Status } from "@carbon/react";
+import { SALES_INVOICE_STATUS_COLOR_MAP } from "@carbon/utils";
 
 type SalesInvoicingStatusProps = {
   status?: Database["public"]["Enums"]["salesInvoiceStatus"] | null;
 };
 
 const SalesInvoicingStatus = ({ status }: SalesInvoicingStatusProps) => {
-  switch (status) {
-    case "Draft":
-    case "Return":
-      return <Status color="gray">{status}</Status>;
-    case "Submitted":
-      return <Status color="blue">{status}</Status>;
-    case "Pending":
-    case "Partially Paid":
-      return <Status color="yellow">{status}</Status>;
-    case "Voided":
-      return <Status color="red">{status}</Status>;
-    case "Overdue":
-      return <Status color="orange">{status}</Status>;
-    case "Credit Note Issued":
-    case "Paid":
-      return <Status color="green">{status}</Status>;
-    default:
-      return null;
-  }
+  if (!status) return null;
+  const color = SALES_INVOICE_STATUS_COLOR_MAP[status];
+  if (!color) return null;
+
+  return <Status color={color}>{status}</Status>;
 };
 
 export default SalesInvoicingStatus;

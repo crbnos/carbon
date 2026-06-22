@@ -1,10 +1,5 @@
 {
   "title": "Platform",
   "defaultOpen": true,
-  "pages": [
-    "architecture",
-    "deployment",
-    "environment-variables",
-    "local-development"
-  ]
+  "pages": ["architecture", "self-hosting", "licensing"]
 }

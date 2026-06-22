@@ -9,8 +9,20 @@ already lives in. Both connectors are aimed at **quality (<Term id="nonconforman
 
 ## Linear
 
-Authenticate with a **Linear API key** (it begins with `lin_api`). Once connected, Carbon syncs issues to
-Linear, keeping each Carbon issue matched to the same Linear issue.
+Authenticate with a **Linear API key** (it begins with `lin_api`).
+
+<Steps>
+  <Step>
+  ### Paste your Linear API key
+
+  Provide your Linear API key. Carbon checks the `lin_api` prefix.
+  </Step>
+  <Step>
+  ### Issues sync
+
+  Once connected, Carbon syncs issues to Linear, keeping each Carbon issue matched to the same Linear issue.
+  </Step>
+</Steps>
 
 | Setting | What it controls |
 | --- | --- |
@@ -18,12 +30,24 @@ Linear, keeping each Carbon issue matched to the same Linear issue.
 
 ## Jira
 
-Connect over **OAuth** — there are no fields to fill in beyond authorizing Carbon. Once connected, you can
-link a quality issue to a Jira issue.
+Connect over **OAuth**. There are no fields to fill in beyond authorizing Carbon.
+
+<Steps>
+  <Step>
+  ### Authorize over OAuth
+
+  Authorize Carbon in Jira. There are no fields to fill in.
+  </Step>
+  <Step>
+  ### Link a quality issue
+
+  Once connected, you can link a quality issue to a Jira issue.
+  </Step>
+</Steps>
 
 <Callout type="warn">
 Jira only appears when its OAuth client is configured server-side (`JIRA_CLIENT_ID`) — see
-[Environment variables](/docs/platform/environment-variables).
+[Environment variables](/docs/platform/self-hosting/environment-variables).
 </Callout>
 
 ## Related

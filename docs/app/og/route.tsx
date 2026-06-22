@@ -37,7 +37,7 @@ export async function GET(request: Request) {
     loadDmSans(400, glyphs)
   ]);
 
-  const titleSize = title.length > 70 ? 48 : title.length > 44 ? 56 : 66;
+  const titleSize = title.length > 70 ? 54 : title.length > 44 ? 62 : 74;
 
   return new ImageResponse(
     <div
@@ -49,7 +49,7 @@ export async function GET(request: Request) {
         width: "100%",
         height: "100%",
         padding: "76px 80px",
-        background: "#FBFBF9",
+        background: "#FFFFFF",
         fontFamily: "DM Sans"
       }}
     >
@@ -84,7 +84,7 @@ export async function GET(request: Request) {
 
       {/* Brand lockup */}
       <div style={{ display: "flex", alignItems: "center" }}>
-        <svg width={28} height={32} viewBox="0 0 424 480" fill="none">
+        <svg width={44} height={50} viewBox="0 0 424 480" fill="none">
           <path
             fillRule="evenodd"
             clipRule="evenodd"
@@ -94,8 +94,8 @@ export async function GET(request: Request) {
         </svg>
         <div
           style={{
-            marginLeft: 14,
-            fontSize: 28,
+            marginLeft: 18,
+            fontSize: 40,
             fontWeight: 600,
             color: "#262323"
           }}
@@ -108,7 +108,7 @@ export async function GET(request: Request) {
       <div style={{ display: "flex", flexDirection: "column" }}>
         <div
           style={{
-            fontSize: 21,
+            fontSize: 24,
             fontWeight: 600,
             letterSpacing: 4,
             color: "#1E84B0"
@@ -139,7 +139,7 @@ export async function GET(request: Request) {
         }}
       >
         <div
-          style={{ fontSize: 22, fontWeight: 400, color: "rgba(38,35,35,0.5)" }}
+          style={{ fontSize: 25, fontWeight: 400, color: "rgba(38,35,35,0.5)" }}
         >
           carbon.ms
         </div>

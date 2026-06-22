@@ -119,6 +119,26 @@
   color: var(--shiki-light);
 }
 
+/* Fenced code → Fumadocs CodeBlock (`pre` override in components/mdx.tsx), restyled to
+ * the warm-paper dark panel. Shiki tokens are tuned for a dark bg, so we use a warm
+ * near-black (matching the old API panel) and tint the header + copy chrome through the
+ * fd-* tokens the component already reads. */
+figure.ed-codeblock {
+  margin-block: 18px;
+  background-color: #1b1b1a;
+  border-color: #2a2a28;
+  border-radius: 12px;
+  --color-fd-muted-foreground: #9a9a96;
+  --color-fd-border: #2a2a28;
+  --color-fd-accent-foreground: #ffffff;
+}
+/* The header's language label → a quiet mono tag. */
+figure.ed-codeblock figcaption {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.03em;
+}
+
 /* ── Tables → rounded warm frame, cream header, hairline rows ───────────────── */
 .prose :where(table):not(:where([class~="not-prose"] *)) {
   border: 1px solid #e7e7e3;

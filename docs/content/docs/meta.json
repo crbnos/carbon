@@ -1,3 +1,10 @@
 {
-  "pages": ["index", "platform", "reference", "integrations", "building"]
+  "pages": [
+    "index",
+    "glossary",
+    "platform",
+    "reference",
+    "building",
+    "integrations"
+  ]
 }

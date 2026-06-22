@@ -47,10 +47,10 @@ const SURFACES = [
 ] as const;
 
 const surfaceToneClasses: Record<string, string> = {
-  guide: "border-[#A9DAF3] bg-[#DFF5FF] text-[#3583A8]",
-  api: "border-[#A8DB91] bg-[#E4F8DA] text-[#4F9140]",
-  mcp: "border-[#E6CFA3] bg-[#FFF2D8] text-[#9C7136]",
-  docs: "border-[#DADAD5] bg-[#EFEFEB] text-[rgba(38,35,35,0.6)]",
+  guide: "border-ed-blue-border bg-ed-blue-bg text-ed-blue-mid",
+  api: "border-ed-green-border bg-ed-green-bg text-ed-green-text",
+  mcp: "border-ed-amber-stroke bg-ed-amber-fill text-ed-amber-text",
+  docs: "border-ed-warm-400 bg-ed-warm-150 text-ed-ink/60",
 };
 
 // Which surface a result belongs to is read back off its URL — the flat result list
@@ -145,27 +145,27 @@ export function SearchCommand() {
         <button
           type="button"
           aria-label="Search docs"
-          className="group inline-flex h-[38px] items-center gap-[8px] rounded-[8px] border border-[rgba(32,32,32,0.1)] bg-[#F5F5F2] pl-[10px] pr-[8px] text-ink-faint shadow-[0_1px_2px_0_rgba(0,0,0,0.04)] transition-colors hover:text-ink-ui sm:w-[260px] sm:justify-between"
+          className="group inline-flex h-[38px] items-center gap-2 rounded-lg border border-ed-ink/10 bg-ed-warm-100 pl-2.5 pr-2 text-ink-faint shadow-[0_1px_2px_0_rgba(0,0,0,0.04)] transition-colors hover:text-ink-ui sm:w-65 sm:justify-between"
         >
-          <span className="flex items-center gap-[8px]">
+          <span className="flex items-center gap-2">
             <SearchGlyph />
-            <span className="hidden text-[14px] font-[460] tracking-[0.15px] sm:inline">Search</span>
+            <span className="hidden text-ed-14 font-book tracking-[0.15px] sm:inline">Search</span>
           </span>
-          <kbd className="hidden items-center rounded-[5px] border border-[#DEDEDA] bg-[#FBFBF8] px-[5px] py-[1px] font-[family-name:var(--font-mono)] text-[11px] leading-[16px] text-[rgba(38,35,35,0.5)] sm:inline-flex">
+          <kbd className="hidden items-center rounded-[5px] border border-ed-warm-300 bg-ed-paper px-[5px] py-px font-mono text-ed-11 leading-4 text-ed-ink/50 sm:inline-flex">
             {modKey}K
           </kbd>
         </button>
       </Dialog.Trigger>
 
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-[100] bg-[rgba(38,35,35,0.32)] backdrop-blur-[2px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+        <Dialog.Overlay className="fixed inset-0 z-[100] bg-ed-ink/32 backdrop-blur-[2px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
         <Dialog.Content
           onOpenAutoFocus={(e) => {
             // Focus the input, not Radix's default first-focusable.
             e.preventDefault();
             (e.currentTarget as HTMLElement).querySelector<HTMLInputElement>("input")?.focus();
           }}
-          className="fixed left-1/2 top-[11vh] z-[101] flex max-h-[72vh] w-[calc(100vw-32px)] max-w-[600px] -translate-x-1/2 flex-col overflow-hidden rounded-[14px] border border-[#E3E3DF] bg-[#FBFBF8] shadow-[0_24px_60px_-12px_rgba(38,35,35,0.28)] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
+          className="fixed left-1/2 top-[11vh] z-[101] flex max-h-[72vh] w-[calc(100vw-32px)] max-w-150 -translate-x-1/2 flex-col overflow-hidden rounded-[14px] border border-ed-warm-300 bg-ed-paper shadow-[0_24px_60px_-12px_rgba(38,35,35,0.28)] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95"
         >
           <Dialog.Title className="sr-only">Search Carbon docs</Dialog.Title>
           <Dialog.Description className="sr-only">
@@ -173,24 +173,24 @@ export function SearchCommand() {
           </Dialog.Description>
 
           {/* Search field */}
-          <div className="flex h-[56px] shrink-0 items-center gap-[12px] border-b border-[#EAEAE6] px-[18px]">
-            <SearchGlyph className="shrink-0 text-[rgba(38,35,35,0.4)]" />
+          <div className="flex h-14 shrink-0 items-center gap-3 border-b border-ed-warm-150 px-[18px]">
+            <SearchGlyph className="shrink-0 text-ed-ink/40" />
             <input
               value={value}
               onChange={(e) => onChange(e.target.value)}
               onKeyDown={onInputKey}
               placeholder="Search docs, API resources, MCP tools…"
-              className="h-full flex-1 border-0 bg-transparent text-[16px] leading-[150%] text-ink outline-none placeholder:text-[rgba(38,35,35,0.42)]"
+              className="h-full flex-1 border-0 bg-transparent text-ed-16 leading-normal text-ink outline-none placeholder:text-ed-ink/42"
               spellCheck={false}
               autoComplete="off"
             />
-            <kbd className="shrink-0 rounded-[5px] border border-[#DEDEDA] bg-[#F5F5F2] px-[6px] py-[2px] font-[family-name:var(--font-mono)] text-[11px] text-[rgba(38,35,35,0.5)]">
+            <kbd className="shrink-0 rounded-[5px] border border-ed-warm-300 bg-ed-warm-100 px-1.5 py-0.5 font-mono text-ed-11 text-ed-ink/50">
               esc
             </kbd>
           </div>
 
           {/* Surface filter pills */}
-          <div className="flex shrink-0 items-center gap-[6px] border-b border-[#EAEAE6] px-[14px] py-[9px]">
+          <div className="flex shrink-0 items-center gap-1.5 border-b border-ed-warm-150 px-3.5 py-[9px]">
             {SURFACES.map((s) => {
               const on = tag === s.tag;
               return (
@@ -198,10 +198,10 @@ export function SearchCommand() {
                   key={s.key}
                   type="button"
                   onClick={() => setTag(s.tag)}
-                  className={`rounded-[100px] px-[11px] py-[4px] text-[12.5px] font-[460] leading-[16px] transition-colors ${
+                  className={`rounded-full px-[11px] py-1 text-ed-12 font-book leading-4 transition-colors ${
                     on
-                      ? "bg-[#262323] text-[#F5F5F2]"
-                      : "text-ink-faint hover:bg-[rgba(231,231,227,0.7)] hover:text-ink-ui"
+                      ? "bg-ed-ink text-ed-warm-100"
+                      : "text-ink-faint hover:bg-ed-hairline/70 hover:text-ink-ui"
                   }`}
                 >
                   {s.label}
@@ -211,7 +211,7 @@ export function SearchCommand() {
           </div>
 
           {/* Results */}
-          <div ref={listRef} className="scrollbar-hidden-until-scroll min-h-[120px] flex-1 overflow-y-auto p-[8px]">
+          <div ref={listRef} className="scrollbar-hidden-until-scroll min-h-30 flex-1 overflow-y-auto p-2">
             {!ready ? (
               <Hint />
             ) : query.isLoading && results.length === 0 ? (
@@ -235,7 +235,7 @@ export function SearchCommand() {
           </div>
 
           {/* Footer */}
-          <div className="flex h-[40px] shrink-0 items-center gap-[16px] border-t border-[#EAEAE6] px-[16px] text-[12px] text-[rgba(38,35,35,0.5)]">
+          <div className="flex h-10 shrink-0 items-center gap-4 border-t border-ed-warm-150 px-4 text-ed-12 text-ed-ink/50">
             <FooterKey k="↑↓" label="navigate" />
             <FooterKey k="↵" label="open" />
             <FooterKey k="esc" label="close" />
@@ -269,29 +269,29 @@ function ResultRow({
       data-row={index}
       onMouseMove={onHover}
       onClick={onClick}
-      className={`flex w-full items-center gap-[12px] rounded-[8px] px-[12px] text-left transition-colors ${
-        isPage ? "mt-[6px] py-[10px] first:mt-0" : "py-[7px] pl-[34px]"
-      } ${active ? "bg-[rgba(231,231,227,0.75)]" : ""}`}
+      className={`flex w-full items-center gap-3 rounded-lg px-3 text-left transition-colors ${
+        isPage ? "mt-1.5 py-2.5 first:mt-0" : "py-[7px] pl-[34px]"
+      } ${active ? "bg-ed-hairline/75" : ""}`}
     >
       {!isPage && (
-        <span className="shrink-0 text-[rgba(38,35,35,0.32)]" aria-hidden>
+        <span className="shrink-0 text-ed-ink/32" aria-hidden>
           ↳
         </span>
       )}
       <span
         className={`min-w-0 flex-1 truncate ${
           isPage
-            ? "text-[14.5px] font-[530] text-ink"
+            ? "text-ed-14 font-demi text-ink"
             : result.type === "heading"
-              ? "text-[13.5px] font-[460] text-[rgba(38,35,35,0.82)]"
-              : "text-[13px] font-[440] text-[rgba(38,35,35,0.62)]"
+              ? "text-ed-13 font-book text-ed-ink/82"
+              : "text-ed-13 font-book text-ed-ink/62"
         }`}
       >
         <Highlighted content={result.content} />
       </span>
       {isPage && (
         <span
-          className={`shrink-0 rounded-[100px] border px-[7px] py-[2px] font-[family-name:var(--font-mono)] text-[10px] leading-[12px] ${surfaceToneClasses[surface.key]}`}
+          className={`shrink-0 rounded-full border px-[7px] py-0.5 font-mono text-ed-10 leading-3 ${surfaceToneClasses[surface.key]}`}
         >
           {surface.label}
         </span>
@@ -319,7 +319,7 @@ function Highlighted({ content }: { content: string }) {
         const text = clean(part);
         if (!text) return null;
         return marked ? (
-          <mark key={i} className="bg-transparent font-[600] text-[#A76451]">
+          <mark key={i} className="bg-transparent font-semibold text-ed-brown">
             {text}
           </mark>
         ) : (
@@ -332,9 +332,9 @@ function Highlighted({ content }: { content: string }) {
 
 function Hint() {
   return (
-    <div className="flex flex-col items-center justify-center gap-[8px] px-6 py-[40px] text-center">
-      <SearchGlyph className="text-[rgba(38,35,35,0.28)]" />
-      <p className="m-0 text-[14px] leading-[150%] text-[rgba(38,35,35,0.55)]">
+    <div className="flex flex-col items-center justify-center gap-2 px-6 py-10 text-center">
+      <SearchGlyph className="text-ed-ink/28" />
+      <p className="m-0 text-ed-14 leading-normal text-ed-ink/55">
         Search the guide, reference, API resources, and MCP tools.
       </p>
     </div>
@@ -343,7 +343,7 @@ function Hint() {
 
 function Status({ children }: { children: React.ReactNode }) {
   return (
-    <div className="px-[12px] py-[36px] text-center text-[14px] leading-[150%] text-[rgba(38,35,35,0.55)]">
+    <div className="px-3 py-9 text-center text-ed-14 leading-normal text-ed-ink/55">
       {children}
     </div>
   );
@@ -351,8 +351,8 @@ function Status({ children }: { children: React.ReactNode }) {
 
 function FooterKey({ k, label }: { k: string; label: string }) {
   return (
-    <span className="inline-flex items-center gap-[6px]">
-      <kbd className="inline-flex items-center rounded-[5px] border border-[#DEDEDA] bg-[#F5F5F2] px-[5px] py-[1px] font-[family-name:var(--font-mono)] text-[11px] leading-[14px]">
+    <span className="inline-flex items-center gap-1.5">
+      <kbd className="inline-flex items-center rounded-[5px] border border-ed-warm-300 bg-ed-warm-100 px-[5px] py-px font-mono text-ed-11 leading-3.5">
         {k}
       </kbd>
       {label}

@@ -68,7 +68,7 @@ const FAQ: FaqEntry[] = [
   },
   {
     q: "Is MCP available on my plan?",
-    a: "On Carbon Cloud, API and MCP access is a Business-plan feature — Starter keys are rejected with 403. Self-hosted instances aren't gated."
+    a: "On Carbon Cloud, API and MCP access is a Business-plan feature — Starter keys are rejected with 403. Self-hosted, it's part of the Enterprise feature set and requires a commercial license. See Licensing for the full picture."
   },
   {
     q: "Is there a rate limit?",
@@ -126,13 +126,13 @@ export default async function McpPage() {
 
       <H2 id="ask">What you can ask</H2>
       <P>Once connected, ask in natural language:</P>
-      <ul className="m-0 mt-[12px] flex list-none flex-col gap-[8px] p-0">
+      <ul className="m-0 mt-3 flex list-none flex-col gap-2 p-0">
         {PROMPTS.map((p) => (
           <li
             key={p}
-            className="flex gap-[10px] text-[15px] leading-[160%] text-[rgba(38,35,35,0.82)]"
+            className="flex gap-2.5 text-ed-15 leading-[160%] text-ed-ink/82"
           >
-            <span className="mt-[9px] h-[5px] w-[5px] shrink-0 rounded-full bg-[rgba(38,35,35,0.4)]" />
+            <span className="mt-[9px] h-[5px] w-[5px] shrink-0 rounded-full bg-ed-ink/40" />
             <span>{p}</span>
           </li>
         ))}

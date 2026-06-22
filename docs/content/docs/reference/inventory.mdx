@@ -3,15 +3,15 @@ title: Inventory & locations
 description: Where stock lives, how on-hand is tracked, and how it moves.
 ---
 
-Stock in Carbon lives at a **location** and, within it, in a **storage unit**. What's actually on hand is derived from a ledger of movements — not a single editable number — so every quantity has a trail behind it.
+Stock in Carbon lives at a **location** and, within it, in a **storage unit**. What's actually on hand is derived from a ledger of movements, not a single editable number, so every quantity has a trail behind it.
 
 ## Locations and storage units
 
-A **location** is a site or warehouse. Within one, stock sits in **storage units** — bins and shelves that can nest (aisle › shelf › bin) and be typed (cold, hazardous, returns). A storage unit attached to a work center is a **lineside** bin, used to stage material at the point of use; everything else is a warehouse bin.
+A **location** is a site or warehouse. Within one, stock sits in **storage units**: bins and shelves that can nest (aisle › shelf › bin) and be typed (cold, hazardous, returns). A storage unit attached to a work center is a **lineside** bin, used to stage material at the point of use; everything else is a warehouse bin.
 
 ## On hand is a ledger
 
-The **<Term id="item-ledger">item ledger</Term>** is the source of truth. On-hand is the sum of its signed movements — <Term id="receipt">receipts</Term> and outputs add, sales and consumption subtract, transfers move between places. A cached per-location quantity exists for quick reads, but the ledger is what's authoritative.
+The **<Term id="item-ledger">item ledger</Term>** is the source of truth. On-hand is the sum of its signed movements: <Term id="receipt">receipts</Term> and outputs add, sales and consumption subtract, transfers move between places. A cached per-location quantity exists for quick reads, but the ledger is what's authoritative.
 
 | Entry type | Effect |
 | --- | --- |
@@ -21,11 +21,11 @@ The **<Term id="item-ledger">item ledger</Term>** is the source of truth. On-han
 | Transfer | Movement between locations or storage units. |
 
 <Callout type="note">
-Read on-hand from the **ledger**, not the cached quantity table — the ledger is the truth, and it's status-aware (it can separate what's on hold or rejected from what's truly available).
+Read on-hand from the **ledger**, not the cached quantity table. The ledger is the truth, and it's status-aware (it can separate what's on hold or rejected from what's truly available).
 </Callout>
 
 <Callout type="warn">
-On hand can go **negative**. Shipping, issuing to a job, and picking all post their movements without first checking availability — Carbon would rather let the work proceed and reconcile later than block the floor. Only manual negative adjustments are guarded against overdraw.
+On hand can go **negative**. Shipping, issuing to a job, and picking all post their movements without first checking availability. Carbon would rather let the work proceed and reconcile later than block the floor. Only manual negative adjustments are guarded against overdraw.
 </Callout>
 
 ## Movements

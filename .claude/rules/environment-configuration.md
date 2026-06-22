@@ -42,8 +42,9 @@ keys listed in `getBrowserEnv()` are exposed client-side.
   "Do not edit by hand". Holds per-worktree ports, portless `*.dev` URLs,
   dev Supabase keys, Redis/Inngest dev settings, `DEV_BYPASS_EMAIL`. Vite /
   React Router auto-load it on top of `.env`, with `.env.local` overriding.
-- `.env.production.example` — template for the prod docker-compose env
-  (copy to `.env.production`, used with `docker-compose.prod.yml`).
+- Self-hosting? The Swarm stack does **not** use a prod `.env` for secrets — it
+  uses Docker Swarm secrets + non-secret `contrib/deploying/simple-docker-caddy/.env`.
+  See [contrib-deployment-swarm.md](contrib-deployment-swarm.md).
 - `scripts/setup-env-files.ts` symlinks the root `.env` (and `.env.local` if
   present) into `apps/*` and packages `database`, `jobs`, `kv`.
 

@@ -1,6 +1,6 @@
 ---
 title: Reordering policy
-description: How each part decides when and how much to replenish — the policy and the numbers that drive planning.
+description: "How each part decides when and how much to replenish: the policy and the numbers that drive planning."
 ---
 
 Every part carries a **reordering policy** that tells planning how to replenish it. The policy decides
@@ -10,21 +10,21 @@ Every part carries a **reordering policy** that tells planning how to replenish 
 
 | Policy | Triggers when | Orders |
 | --- | --- | --- |
-| Manual Reorder | never automatically | nothing — you order by hand |
+| Manual Reorder | never automatically | nothing: you order by hand |
 | Demand-Based Reorder | demand appears | exactly what demand needs, grouped by the demand accumulation period |
 | Fixed Reorder Quantity | on-hand falls to the reorder point | a fixed reorder quantity |
 | Maximum Quantity | on-hand falls to the reorder point | enough to reach the maximum inventory quantity |
 
 ## Fields
 
-| Field | Applies to | Description |
-| --- | --- | --- |
-| Reorder point | Fixed Reorder Quantity, Maximum Quantity | On-hand level that triggers a new order. |
-| Reorder quantity | Fixed Reorder Quantity | Fixed amount to order each time. |
-| Maximum inventory quantity | Maximum Quantity | Level to top stock back up to. |
-| Minimum / maximum order quantity | all | Clamp each suggested order into an orderable range. |
-| Lot size | all | Round an order up to a multiple. |
-| Demand accumulation period | Demand-Based Reorder | Window that groups demand into a single order. |
+<FieldTable>
+  <Field name="Reorder point">On-hand level that triggers a new order. *(applies to: Fixed Reorder Quantity, Maximum Quantity)*</Field>
+  <Field name="Reorder quantity">Fixed amount to order each time. *(applies to: Fixed Reorder Quantity)*</Field>
+  <Field name="Maximum inventory quantity">Level to top stock back up to. *(applies to: Maximum Quantity)*</Field>
+  <Field name="Minimum / maximum order quantity">Clamp each suggested order into an orderable range. *(applies to: all)*</Field>
+  <Field name="Lot size">Round an order up to a multiple. *(applies to: all)*</Field>
+  <Field name="Demand accumulation period">Window that groups demand into a single order. *(applies to: Demand-Based Reorder)*</Field>
+</FieldTable>
 
 <Callout type="info">
 Policies are set per part, and planning can run per location — so the same part can use demand-based

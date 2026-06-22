@@ -4,6 +4,7 @@ import { RootProvider } from "fumadocs-ui/provider/next";
 import type { Metadata, Viewport } from "next";
 import { DM_Sans, Fira_Code } from "next/font/google";
 import type { ReactNode } from "react";
+import { ScrollToTop } from "@/components/scroll-to-top";
 import { SiteFooter } from "@/components/site-footer";
 import { ogImage, SEO, SITE } from "@/lib/seo";
 
@@ -160,6 +161,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         />
       </head>
       <body className="flex min-h-screen flex-col antialiased">
+        <ScrollToTop />
         {/* Light-only — the editorial design is a warm paper theme, no dark mode */}
         <RootProvider theme={{ enabled: false }}>{children}</RootProvider>
         <SiteFooter />

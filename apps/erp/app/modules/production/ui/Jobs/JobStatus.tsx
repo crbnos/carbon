@@ -1,26 +1,13 @@
 import { Status } from "@carbon/react";
+import { JOB_STATUS_COLOR_MAP } from "@carbon/utils";
 import type { jobStatus } from "../../production.models";
+
+export { JOB_STATUS_COLOR_MAP } from "@carbon/utils";
 
 type JobStatusProps = {
   status?: (typeof jobStatus)[number] | null;
   className?: string;
 };
-
-export const JOB_STATUS_COLOR_MAP: Record<
-  (typeof jobStatus)[number],
-  "gray" | "yellow" | "blue" | "orange" | "green" | "red"
-> = {
-  Draft: "gray",
-  Planned: "yellow",
-  Ready: "blue",
-  "In Progress": "orange",
-  Paused: "orange",
-  "Due Today": "orange",
-  Completed: "green",
-  Closed: "gray",
-  Overdue: "red",
-  Cancelled: "red"
-} as const;
 
 function JobStatus({ status, className }: JobStatusProps) {
   if (!status) return null;
