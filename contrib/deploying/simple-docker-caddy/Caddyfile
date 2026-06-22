@@ -1,6 +1,6 @@
 # Carbon — production reverse proxy (Caddy v2). Automatic HTTPS via Let's Encrypt.
 # Hostnames + ACME email are read from the container environment ({$VAR}), set in
-# the `caddy` service in stack.yml. https://caddyserver.com/docs/caddyfile
+# the `caddy` service in docker-compose.prod.yml. https://caddyserver.com/docs/caddyfile
 #
 # DNS A/AAAA records for each host must point at this VPS and :80/:443 must be
 # reachable for the ACME challenge.

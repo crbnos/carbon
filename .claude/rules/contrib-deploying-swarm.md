@@ -16,7 +16,7 @@ This **replaced** the old `docker-compose.prod.yml` + `deploy/prod/` compose sta
 (deleted) and the root `scripts/gen-supabase-keys.mjs` (moved into the example).
 
 ## Files (all under `contrib/deploying/simple-docker-caddy/`)
-- `stack.yml` — the Swarm stack. NOT `docker compose up`-able: `build:`,
+- `docker-compose.prod.yml` — the Swarm stack. NOT `docker compose up`-able: `build:`,
   `depends_on`, `profiles`, `restart:` are intentionally absent (Swarm ignores
   them). Uses `deploy:` (replicas/resources/update_config/restart_policy), top-level
   `secrets: external: true`, an `attachable` overlay `internal`, YAML anchors
@@ -75,5 +75,5 @@ ERP crashes on boot with an empty RESEND key).
   resolves images from the registry.
 
 ## Verify after editing
-`docker stack config -c stack.yml` (with `.env` sourced) must parse with no leftover
+`docker stack config -c docker-compose.prod.yml` (with `.env` sourced) must parse with no leftover
 `${...}` and the `__SECRET__` placeholders intact (resolved at runtime by the shim).

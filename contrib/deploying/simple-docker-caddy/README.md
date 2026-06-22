@@ -22,7 +22,7 @@ $EDITOR .env                # hosts, URLs, ACME email, SMTP
 
 | File | Purpose |
 |---|---|
-| `stack.yml` | The Swarm stack (all services, secrets, volumes, overlay network). |
+| `docker-compose.prod.yml` | The Swarm stack (all services, secrets, volumes, overlay network). |
 | `deploy.sh` | Lifecycle: `init` / `build` / `deploy` / `up` / `migrate` / `secret` / `status` / `logs` / `down`. |
 | `Caddyfile` | Reverse proxy: erp/mes/api + security headers; optional Studio behind basic-auth. |
 | `bin/secrets-entrypoint.sh` | Injects Swarm secrets into env (`__SECRET__` placeholders) for each service. |

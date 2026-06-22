@@ -26,7 +26,7 @@ msgstr "{0} Aktif"
 #. placeholder {1}: operation.operationQuantity
 #. placeholder {1}: operation.targetQuantity
 msgid "{0} of {1}"
-msgstr "{} adet {}"
+msgstr "{0} adet {1}"
 
 #. placeholder {0}: attributes.filter((a) => a.jobOperationStepRecord.some( (r) => r.index === activeStep ) ).length
 #. placeholder {1}: attributes.length
@@ -88,7 +88,7 @@ msgid "Are you sure you want to leave this page?"
 msgstr "Bu sayfadan ayrılmak istediğinizden emin misiniz?"
 
 msgid "Assigned"
-msgstr "Atananmış"
+msgstr "Atanmış"
 
 msgid "Assigned to Me"
 msgstr "Bana Atananlar"
@@ -215,7 +215,7 @@ msgstr "Tüketilmiş süre dolmuş"
 #. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
 #. placeholder {0}: search.trim() === "" ? label : search
 msgid "Create {0}"
-msgstr "{} Oluştur"
+msgstr "{0} Oluştur"
 
 msgid "Create Issue"
 msgstr "Sorun Oluştur"
@@ -590,7 +590,7 @@ msgid "No active operations"
 msgstr "Aktif işlem yok"
 
 msgid "No assigned operations"
-msgstr "Atan atanmış operasyon yok"
+msgstr "Atanmış operasyon yok"
 
 msgid "No available filters"
 msgstr "Kullanılabilir filtre yok"
@@ -629,7 +629,7 @@ msgid "No options found."
 msgstr "Seçenek bulunamadı."
 
 msgid "No picking lists assigned"
-msgstr "Atanama toplama listesi yok"
+msgstr "Atanmış toplama listesi yok"
 
 msgid "No printer configured"
 msgstr "Yazıcı yapılandırılmadı"
@@ -841,7 +841,7 @@ msgid "Scan or enter serial number"
 msgstr "Seri numarası tarayın veya girin"
 
 msgid "Scan or enter tracking number"
-msgstr "Barkod okutish yoki kuzatuv raqamini kiriting"
+msgstr "Takip numarasını tarayın veya girin"
 
 msgid "Scan or search serial number..."
 msgstr "Seri numaras tarayın veya arayın..."

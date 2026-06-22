@@ -4,7 +4,7 @@
 # Runs once on first-init of a fresh pgdata volume. Settings are written with
 # ALTER SYSTEM (-> postgresql.auto.conf) and take effect when the entrypoint
 # restarts Postgres at the end of initialization. Sizing knobs come from the
-# CARBON_PG_* env (set in stack.yml from PG_* in .env); tune them to your VPS.
+# CARBON_PG_* env (set in docker-compose.prod.yml from PG_* in .env); tune them to your VPS.
 #
 # Guidance (Supabase Postgres best practices):
 #   - max_connections: keep modest (100-200). The app pools client-side and a
@@ -13,7 +13,7 @@
 #   - effective_cache_size ~= 50-75% of RAM (a planner hint, not an allocation)
 #   - work_mem * max_connections should stay under ~25% of RAM
 #   - pg_stat_statements: top-N slow/frequent query visibility (preloaded via the
-#     shared_preload_libraries server flag in stack.yml's postgres command).
+#     shared_preload_libraries server flag in docker-compose.prod.yml's postgres command).
 set -euo pipefail
 
 MAX_CONNECTIONS="${CARBON_PG_MAX_CONNECTIONS:-100}"
@@ -34,7 +34,7 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-E
   ALTER SYSTEM SET effective_io_concurrency = '200';
 
   -- Query visibility. pg_stat_statements is preloaded via the postgres command
-  -- flag (shared_preload_libraries) in stack.yml.
+  -- flag (shared_preload_libraries) in docker-compose.prod.yml.
   ALTER SYSTEM SET track_io_timing          = 'on';
   ALTER SYSTEM SET pg_stat_statements.track = 'all';
   CREATE EXTENSION IF NOT EXISTS pg_stat_statements;

@@ -55,7 +55,7 @@ msgid "{0} values missing"
 msgstr "{0} değeri eksik"
 
 msgid "{maxSizeMB}MB limit"
-msgstr "{}MB sınırı"
+msgstr "{maxSizeMB}MB sınırı"
 
 msgid "{name} deleted"
 msgstr "{name} silindi"
@@ -611,7 +611,7 @@ msgstr "Bu kalibratörü etkinleştirmek istediğinizden emin misiniz?."
 
 #. placeholder {0}: routeData?.rfqSummary ?.rfqId!
 msgid "Are you sure you want to cancel {0}? This will also cancel all related supplier quotes."
-msgstr "{}'yi iptal etmek istediğinizden emin misiniz? Bu aynı zamanda tüm ilgili tedarikçi tekliflerini de iptal edecektir."
+msgstr "{0}'yi iptal etmek istediğinizden emin misiniz? Bu aynı zamanda tüm ilgili tedarikçi tekliflerini de iptal edecektir."
 
 msgid "Are you sure you want to cancel this job? It will no longer be available on the shop floor."
 msgstr "Bu işi iptal etmek istediğinizden emin misiniz? Artık atölyede kullanılamayacak."
@@ -633,7 +633,7 @@ msgstr "Bu satış emri için iş oluşturmak istediğinizden emin misiniz? Bu, 
 
 #. placeholder {0}: routeData?.supplier?.name
 msgid "Are you sure you want to deactivate {0}?"
-msgstr "{}'yi devre dışı bırakmak istediğinizden emin misiniz?"
+msgstr "{0}'yi devre dışı bırakmak istediğinizden emin misiniz?"
 
 #. placeholder {0}: selectedCategory?.name
 msgid "Are you sure you want to deactivate the {0} attribute category?"
@@ -641,10 +641,10 @@ msgstr "Bu {0} nitelik kategorisini devre dışı bırakmak istediğinizden emin
 
 #. placeholder {0}: selectedAttribute?.name
 msgid "Are you sure you want to deactivate the {0} attribute?"
-msgstr "{} özelliğini devre dışı bırakmak istediğinizden emin misiniz?"
+msgstr "{0} özelliğini devre dışı bırakmak istediğinizden emin misiniz?"
 
 msgid "Are you sure you want to deactivate the {label} configuration rule?"
-msgstr "{} yapılandırma kuralını devre dışı bırakmak istediğinizden emin misiniz?"
+msgstr "{label} yapılandırma kuralını devre dışı bırakmak istediğinizden emin misiniz?"
 
 msgid "Are you sure you want to deactivate the process: {name}? It will no longer appear in dropdowns."
 msgstr "İş sürecini devre dışı bırakmak istediğinizden emin misiniz: {name}? Artık açılır menülerde görünmeyecektir."
@@ -664,7 +664,7 @@ msgstr "Bu işlemden {0}'ı silmek istediğinizden emin misiniz? Bu geri alınam
 
 #. placeholder {0}: selectedGroup.name
 msgid "Are you sure you want to delete {0}?"
-msgstr "{} öğesini silmek istediğinizden emin misiniz?"
+msgstr "{0} öğesini silmek istediğinizden emin misiniz?"
 
 #. placeholder {0}: pickingList.pickingListId
 #. placeholder {0}: routeData?.consumableSummary?.readableIdWithRevision
@@ -674,7 +674,7 @@ msgstr "Emin misiniz ki {0}'ı silmek istiyorsunuz? Bu geri alınamaz."
 
 #. placeholder {0}: selectedCustomField?.name
 msgid "Are you sure you want to delete the {0} field?"
-msgstr "{} alanını silmek istediğinizden emin misiniz?"
+msgstr "{0} alanını silmek istediğinizden emin misiniz?"
 
 #. placeholder {0}: parameter.label
 msgid "Are you sure you want to delete the {0} parameter? This will not update any formulas that are using this parameter."
@@ -700,10 +700,10 @@ msgstr "Yükleniciyi silmek istediğinizden emin misiniz: {name}? Bu geri alına
 
 #. placeholder {0}: customerPart?.customer?.name ?? ""
 msgid "Are you sure you want to delete the customer part for {0}? This cannot be undone."
-msgstr "{} için müşteri parçasını silmek istediğinizden emin misiniz? Bu geri alınamaz."
+msgstr "{0} için müşteri parçasını silmek istediğinizden emin misiniz? Bu geri alınamaz."
 
 msgid "Are you sure you want to delete the customer portal for: {customerName}? This cannot be undone."
-msgstr "{} için müşteri portalını silmek istediğinizden emin misiniz? Bu geri alınamaz."
+msgstr "{customerName} için müşteri portalını silmek istediğinizden emin misiniz? Bu geri alınamaz."
 
 #. placeholder {0}: customerStatus.name
 msgid "Are you sure you want to delete the customer status: {0}? This cannot be undone."
@@ -904,7 +904,7 @@ msgstr "Bu sayfadan ayrılmak istediğinizden emin misiniz?"
 #. placeholder {0}: selectedPurchaseInvoice.invoiceId!
 #. placeholder {0}: selectedSalesInvoice.invoiceId!
 msgid "Are you sure you want to permanently delete {0}?"
-msgstr "{} öğesini kalıcı olarak silmek istediğinizden emin misiniz?"
+msgstr "{0} öğesini kalıcı olarak silmek istediğinizden emin misiniz?"
 
 msgid "Are you sure you want to permanently delete the supplier process?"
 msgstr "Tedarikçi sürecini kalıcı olarak silmek istediğinizden emin misiniz?"
@@ -973,13 +973,13 @@ msgid "Assign printers to locations. Shipping, receiving, and work centers inher
 msgstr "Yazıcıları konumlara atayın. Sevkiyat, kabul ve iş merkezleri, geçersiz kılınmadıkça konum varsayılanını miras alır."
 
 msgid "Assign To"
-msgstr "Atanayın"
+msgstr "Ata"
 
 msgid "Assign to Groups"
 msgstr "Gruplara Ata"
 
 msgid "Assigned"
-msgstr "Atananmış"
+msgstr "Atanmış"
 
 msgid "Assigned to Me"
 msgstr "Bana Atananlar"
@@ -1560,7 +1560,7 @@ msgid "Configure"
 msgstr "Yapılandır"
 
 msgid "Configure {label}"
-msgstr "{} yapılandır"
+msgstr "{label} yapılandır"
 
 msgid "Configure defaults for the quality dashboard."
 msgstr "Kalite panosu için varsayılan ayarları yapılandırın."
@@ -1882,11 +1882,11 @@ msgstr "Oluştur"
 #. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
 #. placeholder {0}: search.trim() === "" ? label : search
 msgid "Create {0}"
-msgstr "{} Oluştur"
+msgstr "{0} Oluştur"
 
 #. placeholder {0}: unmatchedValues.length
 msgid "Create {0} values"
-msgstr "{} değerleri oluştur"
+msgstr "{0} değerleri oluştur"
 
 msgid "Create a new kanban card for scan-based replenishment."
 msgstr "Tarama tabanlı ikmal için yeni bir kanban kartı oluştur."
@@ -2249,7 +2249,7 @@ msgid "Deactivate {0}"
 msgstr "Devre Dışı Bırak {0}"
 
 msgid "Deactivate {name}"
-msgstr "{} sürecini devre dışı bırak"
+msgstr "{name} sürecini devre dışı bırak"
 
 msgid "Deactivate Account"
 msgstr "Hesabı Devre Dışı Bırak"
@@ -2327,7 +2327,7 @@ msgid "Delete"
 msgstr "Sil"
 
 msgid "Delete {name}"
-msgstr "{} siĺkle"
+msgstr "{name} sil"
 
 msgid "Delete {storageUnitName}"
 msgstr "Delete {storageUnitName}"
@@ -2471,7 +2471,7 @@ msgid "Delete receipt line"
 msgstr "Fiş hattını sil"
 
 msgid "Delete RFQ"
-msgstr "RFQ Silindir"
+msgstr "RFQ'yu Sil"
 
 msgid "Delete Risk"
 msgstr "Riski Sil"
@@ -2552,7 +2552,7 @@ msgid "Delete Warehouse Transfer"
 msgstr "Depo Transferini Sil"
 
 msgid "Delete Webhook"
-msgstr "Webhook Silindirini Sil"
+msgstr "Webhook'u Sil"
 
 msgid "Delivery Date"
 msgstr "Teslimat Tarihi"
@@ -2633,7 +2633,7 @@ msgid "Discount"
 msgstr "İskonto"
 
 msgid "Discount Days after {selectedCalculationMethod}"
-msgstr "{} sonrası İskonto Günleri"
+msgstr "{selectedCalculationMethod} sonrası İskonto Günleri"
 
 msgid "Discount Percent"
 msgstr "İskonto Yüzdesi"
@@ -3189,13 +3189,13 @@ msgid "Error fetching supplier data"
 msgstr "Tedarikçi verileri alınırken hata oluştu"
 
 msgid "Error loading assigned dispatches"
-msgstr "Atan atan görevlendirmeleri yüklenirken hata oluştu"
+msgstr "Atanan görevlendirmeler yüklenirken hata oluştu"
 
 msgid "Error loading assigned documents"
 msgstr "Atanan belgeleri yüklenirken hata oluştu"
 
 msgid "Error loading assigned issues"
-msgstr "Atan atan sorunlar yüklenirken hata oluştu"
+msgstr "Atanan sorunlar yüklenirken hata oluştu"
 
 msgid "Error loading job tree."
 msgstr "İş ağacını yüklerken hata."
@@ -4560,7 +4560,7 @@ msgstr "Logolar"
 
 #. placeholder {0}: auditConfig.retentionDays
 msgid "Logs older than {0} days are automatically archived."
-msgstr "{} günlerden eski günlükler otomatik olarak arşivlenir."
+msgstr "{0} günden eski günlükler otomatik olarak arşivlenir."
 
 msgid "Long Description"
 msgstr "Uzun Açıklama"
@@ -4972,7 +4972,7 @@ msgstr "Çöp Sepetine Taşı"
 #. placeholder {0}: file.name
 #. placeholder {1}: targetBucket === "parts" ? "Parts" : "Opportunity"
 msgid "Moved {0} to {1} bucket"
-msgstr "{} dosyası {} klasörüne taşındı"
+msgstr "{0} dosyası {1} klasörüne taşındı"
 
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP otomatik olarak her 3 saatte bir çalışır, ancak buradan manuel olarak çalıştırabilirsiniz."
@@ -5370,7 +5370,7 @@ msgid "No grouped notifications"
 msgstr "Gruplanmış bildirim yok"
 
 msgid "No groups assigned"
-msgstr "Atanama grup atanmadı"
+msgstr "Atanmış grup yok"
 
 msgid "No image"
 msgstr "Resim yok"
@@ -5460,7 +5460,7 @@ msgid "No results found"
 msgstr "Sonuç bulunamadı"
 
 msgid "No rules assigned"
-msgstr "Atananan kural atanmadı"
+msgstr "Atanmış kural yok"
 
 msgid "No samples inspected yet."
 msgstr "Henüz örnek incelenmedi."
@@ -5913,7 +5913,7 @@ msgid "Photo uploaded successfully"
 msgstr "Fotoğraf başarıyla yüklendi"
 
 msgid "Physical printers available for assignment."
-msgstr "Atanama için kullanılabilecek fiziksel yazıcılar."
+msgstr "Atama için kullanılabilecek fiziksel yazıcılar."
 
 msgid "Pick"
 msgstr "Topla"
@@ -6139,7 +6139,7 @@ msgstr "Yazdır"
 
 #. placeholder {0}: selectedIds.size
 msgid "Print {0} Labels"
-msgstr "{} Etiket Yazdır"
+msgstr "{0} Etiket Yazdır"
 
 msgid "Print Jobs"
 msgstr "Yazdırma İşleri"
@@ -6497,7 +6497,7 @@ msgstr "Teslim Al"
 
 #. placeholder {0}: job.jobId
 msgid "Receive {0} to Inventory"
-msgstr "{}'yi Envantere Al"
+msgstr "{0}'yi Envantere Al"
 
 msgid "Receive to Inventory"
 msgstr "Envantere Al"
@@ -6976,7 +6976,7 @@ msgid "Scan or enter tracked entity ID, serial, or batch"
 msgstr "Barkod veya izlenen varlık kimliği, seri numarası veya parti girin"
 
 msgid "Scan or enter tracking number"
-msgstr "Barkod okutish yoki kuzatuv raqamini kiriting"
+msgstr "Takip numarasını tarayın veya girin"
 
 msgid "Scan or search..."
 msgstr "Tarama veya arayın..."
@@ -7598,7 +7598,7 @@ msgstr "Başlat"
 
 #. placeholder {0}: plan.stripeTrialPeriodDays
 msgid "Start {0} Day Free Trial"
-msgstr "{} Gün Ücretsiz Deneme Başlat"
+msgstr "{0} Gün Ücretsiz Deneme Başlat"
 
 msgid "Start adding parts to your stock transfer"
 msgstr "Parçaları stok transferinize eklemeye başlayın"
@@ -8394,7 +8394,7 @@ msgid "Unassign rule"
 msgstr "Kuralı kaldır"
 
 msgid "Unassigned"
-msgstr "Atanamayan"
+msgstr "Atanmamış"
 
 msgid "Unballoon"
 msgstr "Balonu Kaldır"
@@ -8677,7 +8677,7 @@ msgid "View All"
 msgstr "Tümünü Gör"
 
 msgid "View Assigned Jobs"
-msgstr "Atananan Görevleri Görüntüle"
+msgstr "Atanan Görevleri Görüntüle"
 
 msgid "View Attachment"
 msgstr "Ek Dosya Görüntüle"

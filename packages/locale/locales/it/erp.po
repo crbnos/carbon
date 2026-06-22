@@ -7995,10 +7995,10 @@ msgid "The date the item is required on-site to cover the period's projected dem
 msgstr "La data in cui l'articolo è richiesto in loco per coprire la domanda prevista del periodo."
 
 msgid "The date you received this RFQ from the customer. Defaults to today."
-msgstr "Tarihi müşteriden aldığınız RFQ'dur. Varsayılan olarak bugün ayarlanır."
+msgstr "La data in cui hai ricevuto questa RFQ dal cliente. Per impostazione predefinita è oggi."
 
 msgid "The deadline to send your quote to the customer."
-msgstr "Müşteriye teklif gönderme son tarihi."
+msgstr "Il termine per inviare il preventivo al cliente."
 
 msgid "The endpoint that receives a POST request with the updated data when the table is updated"
 msgstr "L'endpoint che riceve una richiesta POST con i dati aggiornati quando la tabella viene aggiornata"
