@@ -1,4 +1,11 @@
-import { ValidatedForm } from "@carbon/form";
+import {
+  Hidden,
+  Input,
+  Number,
+  Submit,
+  TextArea,
+  ValidatedForm
+} from "@carbon/form";
 import {
   Button,
   HStack,
@@ -17,19 +24,11 @@ import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect } from "react";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
-import {
-  // Ability,
-  CustomFormFields,
-  Department,
-  Hidden,
-  Input,
-  Location,
-  Number,
-  Processes,
-  StandardFactor,
-  Submit,
-  TextArea
-} from "~/components/Form";
+import CustomFormFields from "~/components/Form/CustomFormFields";
+import Department from "~/components/Form/Department";
+import Location from "~/components/Form/Location";
+import Processes from "~/components/Form/Processes";
+import StandardFactor from "~/components/Form/StandardFactor";
 import { usePermissions, useUser } from "~/hooks";
 import { workCenterValidator } from "~/modules/resources";
 import { path } from "~/utils/path";

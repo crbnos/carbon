@@ -10,6 +10,7 @@
     "csv-parse": "5.6.0",
     "execa": "^8.0.1",
     "husky": "8.0.3",
+    "linguito": "^0.5.2",
     "lint-staged": "16.4.0",
     "npm-run-all": "catalog:",
     "rimraf": "catalog:",
@@ -60,7 +61,7 @@
     "prepare": "pnpm exec husky install",
     "test": "turbo run test",
     "tool:new": "tsx scripts/create-tool.ts",
-    "translate": "pnpm run lingui:extract && pnpx linguito translate --llm && pnpm lingui:clean",
+    "translate": "pnpm run lingui:extract && pnpm exec linguito translate --llm && pnpm lingui:clean",
     "agent:new": "tsx scripts/create-agent.ts",
     "typecheck": "turbo run typecheck --filter='*'",
     "typegen": "turbo run typegen"

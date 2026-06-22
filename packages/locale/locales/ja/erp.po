@@ -88,8 +88,20 @@ msgstr "<0>update</0>を使用すると行を更新できます。<1>update</1>�
 msgid "<0>update</0> will also return the replaced values for UPDATE."
 msgstr "<0>update</0>は、UPDATEの置き換えられた値も返します。"
 
+msgid "0-4 weeks"
+msgstr ""
+
 msgid "1 day"
 msgstr "1日"
+
+msgid "13+ weeks"
+msgstr ""
+
+msgid "1Y"
+msgstr ""
+
+msgid "30D"
+msgstr ""
 
 msgid "3D Model"
 msgstr "3Dモデル"
@@ -97,8 +109,20 @@ msgstr "3Dモデル"
 msgid "5 User Minimum"
 msgstr "5ユーザー最小"
 
+msgid "5-8 weeks"
+msgstr ""
+
 msgid "5MB file limit"
 msgstr "5MBファイル制限"
+
+msgid "7D"
+msgstr ""
+
+msgid "9-12 weeks"
+msgstr ""
+
+msgid "90D"
+msgstr ""
 
 msgid "A consumable is a physical item used to make a part that can be used across multiple jobs"
 msgstr "消耗品は、複数のジョブで使用できるパーツを作成するために使用される物理的なアイテムです"
@@ -1400,6 +1424,9 @@ msgstr "閉じる"
 msgid "Close Date"
 msgstr "終了日"
 
+msgid "Closed"
+msgstr ""
+
 msgid "Closed Date"
 msgstr "終了日"
 
@@ -1840,6 +1867,9 @@ msgstr "分析用の領域画像を準備できませんでした"
 msgid "Couldn't load documents"
 msgstr "ドキュメントを読み込めませんでした"
 
+msgid "Count"
+msgstr ""
+
 msgid "Country"
 msgstr "国"
 
@@ -2025,11 +2055,17 @@ msgstr "ワークセンターを作成しました"
 msgid "Creating part..."
 msgstr "パーツを作成中..."
 
+msgid "Critical"
+msgstr ""
+
 msgid "CSV column"
 msgstr "CSVカラム"
 
 msgid "CSV file must have at least 2 rows."
 msgstr "CSVファイルは最低2行必要です。"
+
+msgid "Cumulative %"
+msgstr ""
 
 msgid "Currency"
 msgstr "通貨"
@@ -2135,6 +2171,9 @@ msgstr "顧客タイプ"
 
 msgid "Customers"
 msgstr "顧客"
+
+msgid "Customize"
+msgstr ""
 
 msgid "Customize the layout of your PDF documents — reorder sections, hide what you don't need, and add your own blocks."
 msgstr "PDFドキュメントのレイアウトをカスタマイズ — セクションを並べ替え、不要な部分を非表示にし、独自のブロックを追加できます。"
@@ -3869,6 +3908,9 @@ msgstr "ヘルプ"
 msgid "Hide, pin and reorder columns"
 msgstr "列を非表示、ピン留め、並び替え"
 
+msgid "High"
+msgstr ""
+
 msgid "Higher priority wins ties and applies first for markups"
 msgstr "優先度が高いほど同点を制し、マークアップに最初に適用されます"
 
@@ -4535,6 +4577,9 @@ msgstr "ロットサイズ"
 msgid "Lot Size:"
 msgstr "ロットサイズ:"
 
+msgid "Low"
+msgstr ""
+
 msgid "Machine"
 msgstr "機械"
 
@@ -4773,6 +4818,9 @@ msgstr "測定標準"
 
 msgid "Media Size"
 msgstr "メディアサイズ"
+
+msgid "Medium"
+msgstr ""
 
 msgid "Members"
 msgstr "メンバー"
@@ -5590,6 +5638,9 @@ msgstr "スケジュール済みを開く"
 
 msgid "Open task details"
 msgstr "タスク詳細を開く"
+
+msgid "Opened"
+msgstr ""
 
 msgid "Operation"
 msgstr "操作"
@@ -6486,6 +6537,9 @@ msgstr "更新"
 
 msgid "Refresh exchange rate"
 msgstr "為替レートを更新"
+
+msgid "Registered"
+msgstr ""
 
 msgid "Reject"
 msgstr "却下"
@@ -7932,10 +7986,10 @@ msgid "The date the item is required on-site to cover the period's projected dem
 msgstr "その期間の予想需要をカバーするために、アイテムがオンサイトで必要とされる日付。"
 
 msgid "The date you received this RFQ from the customer. Defaults to today."
-msgstr ""
+msgstr "このRFQを顧客から受け取った日付。デフォルトは今日の日付です。"
 
 msgid "The deadline to send your quote to the customer."
-msgstr ""
+msgstr "顧客に見積もりを提出する期限。"
 
 msgid "The endpoint that receives a POST request with the updated data when the table is updated"
 msgstr "テーブルが更新されたときに、更新されたデータを含むPOSTリクエストを受け取るエンドポイント"

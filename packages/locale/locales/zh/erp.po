@@ -88,8 +88,20 @@ msgstr "<0>update</0>让您更新行。<1>update</1>默认将匹配所有行。�
 msgid "<0>update</0> will also return the replaced values for UPDATE."
 msgstr "<0>update</0>也会返回UPDATE的替换值。"
 
+msgid "0-4 weeks"
+msgstr ""
+
 msgid "1 day"
 msgstr "1 天"
+
+msgid "13+ weeks"
+msgstr ""
+
+msgid "1Y"
+msgstr ""
+
+msgid "30D"
+msgstr ""
 
 msgid "3D Model"
 msgstr "3D 模型"
@@ -97,8 +109,20 @@ msgstr "3D 模型"
 msgid "5 User Minimum"
 msgstr "5 个用户最少"
 
+msgid "5-8 weeks"
+msgstr ""
+
 msgid "5MB file limit"
 msgstr "5MB 文件大小限制"
+
+msgid "7D"
+msgstr ""
+
+msgid "9-12 weeks"
+msgstr ""
+
+msgid "90D"
+msgstr ""
 
 msgid "A consumable is a physical item used to make a part that can be used across multiple jobs"
 msgstr "消耗品是用于制造零件的物理项目，可以在多个工作中使用"
@@ -1400,6 +1424,9 @@ msgstr "关闭"
 msgid "Close Date"
 msgstr "关闭日期"
 
+msgid "Closed"
+msgstr ""
+
 msgid "Closed Date"
 msgstr "关闭日期"
 
@@ -1840,6 +1867,9 @@ msgstr "无法准备区域图像以进行分析"
 msgid "Couldn't load documents"
 msgstr "无法加载文档"
 
+msgid "Count"
+msgstr ""
+
 msgid "Country"
 msgstr "国家"
 
@@ -2025,11 +2055,17 @@ msgstr "已创建工作中心"
 msgid "Creating part..."
 msgstr "正在创建零件..."
 
+msgid "Critical"
+msgstr ""
+
 msgid "CSV column"
 msgstr "CSV 列"
 
 msgid "CSV file must have at least 2 rows."
 msgstr "CSV 文件必须至少有 2 行。"
+
+msgid "Cumulative %"
+msgstr ""
 
 msgid "Currency"
 msgstr "货币"
@@ -2135,6 +2171,9 @@ msgstr "客户类型"
 
 msgid "Customers"
 msgstr "客户"
+
+msgid "Customize"
+msgstr ""
 
 msgid "Customize the layout of your PDF documents — reorder sections, hide what you don't need, and add your own blocks."
 msgstr "自定义您的 PDF 文档布局 — 重新排列部分、隐藏不需要的内容，并添加您自己的块。"
@@ -3869,6 +3908,9 @@ msgstr "帮助"
 msgid "Hide, pin and reorder columns"
 msgstr "隐藏、固定和重新排序列"
 
+msgid "High"
+msgstr ""
+
 msgid "Higher priority wins ties and applies first for markups"
 msgstr "更高的优先级在平局时获胜，并首先应用于加价"
 
@@ -4535,6 +4577,9 @@ msgstr "批量大小"
 msgid "Lot Size:"
 msgstr "批量大小："
 
+msgid "Low"
+msgstr ""
+
 msgid "Machine"
 msgstr "机器"
 
@@ -4773,6 +4818,9 @@ msgstr "测量标准"
 
 msgid "Media Size"
 msgstr "媒体尺寸"
+
+msgid "Medium"
+msgstr ""
 
 msgid "Members"
 msgstr "成员"
@@ -5590,6 +5638,9 @@ msgstr "开放计划"
 
 msgid "Open task details"
 msgstr "打开任务详情"
+
+msgid "Opened"
+msgstr ""
 
 msgid "Operation"
 msgstr "操作"
@@ -6486,6 +6537,9 @@ msgstr "刷新"
 
 msgid "Refresh exchange rate"
 msgstr "刷新汇率"
+
+msgid "Registered"
+msgstr ""
 
 msgid "Reject"
 msgstr "拒绝"
@@ -7932,10 +7986,10 @@ msgid "The date the item is required on-site to cover the period's projected dem
 msgstr "该项目需要在现场到达的日期，以满足该期间的预计需求。"
 
 msgid "The date you received this RFQ from the customer. Defaults to today."
-msgstr ""
+msgstr "您收到此询价单（RFQ）的日期。默认为今天。"
 
 msgid "The deadline to send your quote to the customer."
-msgstr ""
+msgstr "向客户发送报价的截止日期。"
 
 msgid "The endpoint that receives a POST request with the updated data when the table is updated"
 msgstr "接收表格更新时包含更新数据的POST请求的端点"

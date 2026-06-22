@@ -266,6 +266,29 @@ export default function App() {
   );
 }
 
+function getErrorBoundaryTranslations() {
+  let locale = "en";
+  if (typeof document !== "undefined") {
+    const match = document.cookie.match(/locale=([^;]+)/);
+    if (match) {
+      locale = match[1].split("-")[0].toLowerCase();
+    }
+  }
+
+  if (locale === "tr") {
+    return {
+      title: "Hata!",
+      heading: "Bir şeyler yanlış gitti",
+      backHome: "Ana Sayfaya Dön"
+    };
+  }
+  return {
+    title: "Error!",
+    heading: "Something went wrong",
+    backHome: "Back Home"
+  };
+}
+
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   const message = isRouteErrorResponse(error)
     ? (error.data.message ?? error.data)
@@ -273,8 +296,10 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
       ? error.message
       : String(error);
 
+  const t = getErrorBoundaryTranslations();
+
   return (
-    <Document title="Error!">
+    <Document title={t.title}>
       <div className="light">
         <div className="flex flex-col w-full h-screen  items-center justify-center space-y-4 ">
           <img
@@ -287,10 +312,10 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
             alt="Carbon Logo"
             className="max-w-[60px] hidden dark:block"
           />
-          <Heading size="h1">Something went wrong</Heading>
+          <Heading size="h1">{t.heading}</Heading>
           <p className="text-muted-foreground max-w-2xl">{message}</p>
           <Button onClick={() => (window.location.href = "/")}>
-            Back Home
+            {t.backHome}
           </Button>
         </div>
       </div>

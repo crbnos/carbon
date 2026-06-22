@@ -88,8 +88,20 @@ msgstr "<0>update</0> आपको पंक्तियों को अपड�
 msgid "<0>update</0> will also return the replaced values for UPDATE."
 msgstr "<0>update</0> UPDATE के लिए प्रतिस्थापित मानों को भी वापस करेगा।"
 
+msgid "0-4 weeks"
+msgstr ""
+
 msgid "1 day"
 msgstr "1 दिन"
+
+msgid "13+ weeks"
+msgstr ""
+
+msgid "1Y"
+msgstr ""
+
+msgid "30D"
+msgstr ""
 
 msgid "3D Model"
 msgstr "3D मॉडल"
@@ -97,8 +109,20 @@ msgstr "3D मॉडल"
 msgid "5 User Minimum"
 msgstr "5 उपयोगकर्ता न्यूनतम"
 
+msgid "5-8 weeks"
+msgstr ""
+
 msgid "5MB file limit"
 msgstr "5MB फ़ाइल सीमा"
+
+msgid "7D"
+msgstr ""
+
+msgid "9-12 weeks"
+msgstr ""
+
+msgid "90D"
+msgstr ""
 
 msgid "A consumable is a physical item used to make a part that can be used across multiple jobs"
 msgstr "एक उपभोग्य एक भौतिक वस्तु है जिसका उपयोग एक भाग बनाने के लिए किया जाता है जिसे कई नौकरियों में उपयोग किया जा सकता है"
@@ -1400,6 +1424,9 @@ msgstr "बंद करें"
 msgid "Close Date"
 msgstr "बंद करने की तारीख"
 
+msgid "Closed"
+msgstr ""
+
 msgid "Closed Date"
 msgstr "बंद तारीख"
 
@@ -1840,6 +1867,9 @@ msgstr "विश्लेषण के लिए क्षेत्र छव�
 msgid "Couldn't load documents"
 msgstr "दस्तावेज़ लोड नहीं हो सके"
 
+msgid "Count"
+msgstr ""
+
 msgid "Country"
 msgstr "देश"
 
@@ -2025,11 +2055,17 @@ msgstr "कार्य केंद्र बनाया गया"
 msgid "Creating part..."
 msgstr "भाग बनाया जा रहा है..."
 
+msgid "Critical"
+msgstr ""
+
 msgid "CSV column"
 msgstr "CSV कॉलम"
 
 msgid "CSV file must have at least 2 rows."
 msgstr "CSV फ़ाइल में कम से कम 2 पंक्तियाँ होनी चाहिए।"
+
+msgid "Cumulative %"
+msgstr ""
 
 msgid "Currency"
 msgstr "मुद्रा"
@@ -2135,6 +2171,9 @@ msgstr "ग्राहक प्रकार"
 
 msgid "Customers"
 msgstr "ग्राहक"
+
+msgid "Customize"
+msgstr ""
 
 msgid "Customize the layout of your PDF documents — reorder sections, hide what you don't need, and add your own blocks."
 msgstr "अपने PDF दस्तावेज़ों के लेआउट को कस्टमाइज़ करें — अनुभागों को पुनः व्यवस्थित करें, जो आपको आवश्यकता नहीं है उसे छिपाएं, और अपने स्वयं के ब्लॉक जोड़ें।"
@@ -3869,6 +3908,9 @@ msgstr "मदद"
 msgid "Hide, pin and reorder columns"
 msgstr "कॉलम को छिपाएं, पिन करें और पुनः क्रमित करें"
 
+msgid "High"
+msgstr ""
+
 msgid "Higher priority wins ties and applies first for markups"
 msgstr "उच्च प्राथमिकता टाई जीतती है और मार्कअप के लिए पहले लागू होती है"
 
@@ -4535,6 +4577,9 @@ msgstr "लॉट आकार"
 msgid "Lot Size:"
 msgstr "लॉट साइज:"
 
+msgid "Low"
+msgstr ""
+
 msgid "Machine"
 msgstr "मशीन"
 
@@ -4773,6 +4818,9 @@ msgstr "मापन मानक"
 
 msgid "Media Size"
 msgstr "मीडिया आकार"
+
+msgid "Medium"
+msgstr ""
 
 msgid "Members"
 msgstr "सदस्य"
@@ -5590,6 +5638,9 @@ msgstr "खुली अनुसूचित"
 
 msgid "Open task details"
 msgstr "कार्य विवरण खोलें"
+
+msgid "Opened"
+msgstr ""
 
 msgid "Operation"
 msgstr "ऑपरेशन"
@@ -6486,6 +6537,9 @@ msgstr "ताज़ा करें"
 
 msgid "Refresh exchange rate"
 msgstr "विनिमय दर को ताज़ा करें"
+
+msgid "Registered"
+msgstr ""
 
 msgid "Reject"
 msgstr "अस्वीकार करें"
@@ -7932,10 +7986,10 @@ msgid "The date the item is required on-site to cover the period's projected dem
 msgstr "वह तारीख जिस दिन आइटम साइट पर आवश्यक है ताकि अवधि की अनुमानित मांग को पूरा किया जा सके।"
 
 msgid "The date you received this RFQ from the customer. Defaults to today."
-msgstr ""
+msgstr "वह तारीख जब आपको ग्राहक से यह आरएफक्यू प्राप्त हुआ था। डिफ़ॉल्ट रूप से आज की तारीख होगी।"
 
 msgid "The deadline to send your quote to the customer."
-msgstr ""
+msgstr "ग्राहक को अपना उद्धरण भेजने की समय सीमा।"
 
 msgid "The endpoint that receives a POST request with the updated data when the table is updated"
 msgstr "वह एंडपॉइंट जो तालिका अपडेट होने पर अपडेट किए गए डेटा के साथ POST अनुरोध प्राप्त करता है"
