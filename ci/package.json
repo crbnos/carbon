@@ -13,6 +13,7 @@
     "ci:migrations": "tsx src/migrations.ts",
     "ci:deploy": "tsx src/deploy.ts",
     "ci:jobs": "tsx src/jobs.ts",
+    "ci:refresh-demo-catalog": "tsx src/refresh-demo-catalog.ts",
     "test": "echo \"no tests\""
   },
   "devDependencies": {

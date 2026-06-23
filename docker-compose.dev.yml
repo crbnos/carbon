@@ -204,6 +204,13 @@ services:
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
       SUPABASE_DB_URL: postgresql://postgres:postgres@postgres:5432/postgres
       VERIFY_JWT: "false"
+      # Backups edge fns (export/import/revert) send Inngest events. The edge
+      # runtime is a separate env from the ERP app, so without these its
+      # inngest.send() defaults to Inngest Cloud → 401. Point it at the local
+      # dev server via the compose-network alias (NOT localhost — that's the
+      # edge container itself).
+      INNGEST_DEV: "1"
+      INNGEST_BASE_URL: http://inngest:8288
     volumes:
       - ./packages/database/supabase/functions:/home/deno/functions:ro
       - ./packages/database/src:/home/src:ro

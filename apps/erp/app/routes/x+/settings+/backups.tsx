@@ -4,7 +4,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
-import { batchTrigger } from "@carbon/jobs";
+import { batchTrigger, trigger } from "@carbon/jobs";
 import {
   Button,
   Card,
@@ -17,7 +17,7 @@ import {
   ScrollArea,
   VStack
 } from "@carbon/react";
-import { convertKbToString } from "@carbon/utils";
+import { convertKbToString, isInternalEmail } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -32,10 +32,12 @@ import {
   getCompanyTemplateImportedModels,
   getCompanyTemplateImportRuns,
   getCompanyTemplateSignedUrl,
+  getIndustries,
   importCompanyTemplate,
   listCompanyTemplateExports,
   revertCompanyTemplateImport
 } from "~/modules/settings";
+import { getUser } from "~/modules/users/users.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -54,6 +56,15 @@ const importValidator = z.object({
   intent: z.literal("import"),
   filePath: z.string().min(1, { message: "Select an export to import" }),
   mode: z.enum(["reseed", "preserve"])
+});
+
+// Internal-only: publish this company as the reusable demo for an industry.
+const publishValidator = z.object({
+  intent: z.literal("publish"),
+  name: z.string().min(1, { message: "Name is required" }),
+  description: z.string().optional(),
+  industryId: z.string().optional(),
+  includeStorage: z.enum(["none", "all"])
 });
 
 async function requireOwner(
@@ -88,10 +99,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
   await requireOwner(request, client, companyGroupId, userId);
 
-  const [exportsList, importRuns] = await Promise.all([
+  const [exportsList, importRuns, user, industries] = await Promise.all([
     listCompanyTemplateExports(client, companyId),
-    getCompanyTemplateImportRuns(client, companyId)
+    getCompanyTemplateImportRuns(client, companyId),
+    getUser(client, userId),
+    getIndustries(client)
   ]);
+  const isInternal = isInternalEmail(user.data?.email);
 
   const files = await Promise.all(
     (exportsList.data ?? [])
@@ -116,7 +130,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return {
     companyId,
     files,
-    importRuns: importRuns.data ?? []
+    importRuns: importRuns.data ?? [],
+    isInternal,
+    industries: industries.data ?? []
   };
 }
 
@@ -263,13 +279,41 @@ export async function action({ request }: ActionFunctionArgs) {
       return data({}, await flash(request, success("Export deleted")));
     }
 
+    case "publish": {
+      // Internal-only on top of the owner gate already enforced above.
+      const user = await getUser(client, userId);
+      if (!isInternalEmail(user.data?.email))
+        return data({}, await flash(request, error(null, "Not authorized")));
+
+      const validation = await validator(publishValidator).validate(formData);
+      if (validation.error) return validationError(validation.error);
+
+      const { name, description, industryId, includeStorage } = validation.data;
+      trigger("publish-demo", {
+        companyId,
+        userId,
+        name,
+        description: description || undefined,
+        industryId: industryId || undefined,
+        includeStorage
+      });
+      return data(
+        {},
+        await flash(
+          request,
+          success("Publishing demo — it will appear in the catalog shortly")
+        )
+      );
+    }
+
     default:
       return data({}, await flash(request, error(null, "Unknown action")));
   }
 }
 
 export default function BackupsRoute() {
-  const { companyId, files, importRuns } = useLoaderData<typeof loader>();
+  const { companyId, files, importRuns, isInternal, industries } =
+    useLoaderData<typeof loader>();
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-49px)]">
@@ -309,6 +353,55 @@ export default function BackupsRoute() {
             </ValidatedForm>
           </CardContent>
         </Card>
+
+        {isInternal && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Publish to demo catalog</CardTitle>
+              <CardDescription>
+                Internal only. Publish this company as the reusable demo for an
+                industry — new companies onboard from it, and it's re-exported
+                automatically after each migration.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ValidatedForm
+                method="post"
+                validator={publishValidator}
+                defaultValues={{
+                  name: "",
+                  description: "",
+                  industryId: "",
+                  includeStorage: "none"
+                }}
+                className="w-full"
+              >
+                <Hidden name="intent" value="publish" />
+                <VStack spacing={4} className="max-w-md">
+                  <Input name="name" label="Name" />
+                  <Input name="description" label="Description (optional)" />
+                  <Select
+                    name="industryId"
+                    label="Industry"
+                    options={industries.map((i) => ({
+                      value: i.id,
+                      label: i.name
+                    }))}
+                  />
+                  <Select
+                    name="includeStorage"
+                    label="Files"
+                    options={[
+                      { value: "none", label: "Data only" },
+                      { value: "all", label: "Data + uploaded files" }
+                    ]}
+                  />
+                  <Submit>Publish demo</Submit>
+                </VStack>
+              </ValidatedForm>
+            </CardContent>
+          </Card>
+        )}
 
         {importRuns.length > 0 && (
           <Card>

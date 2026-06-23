@@ -9,7 +9,7 @@ Covers: company export / import / revert (Backups), onboarding data-choice (demo
   ```
 - **Stack health**: export/import/revert run as Inngest jobs via edge functions. They need:
   - edge-runtime NOT CPU-saturated (`docker logs … edge-runtime` shows no "CPU time hard limit") — transient after rebuild, clears on its own.
-  - edge↔Inngest event key in sync — if `docker logs … edge-runtime` shows `Inngest API Error: 401 Event key not found`, **restart the dev stack** so the key re-syncs. (This currently blocks the async jobs.)
+  - edge→Inngest wired up — the edge-runtime container needs `INNGEST_DEV=1` + `INNGEST_BASE_URL=http://inngest:8288` in `docker-compose.dev.yml`'s `edge-runtime` service. Without it, edge fns 401 ("Event key not found") because their `inngest.send()` defaults to Inngest Cloud. (Fixed 2026-06-22 — see [[reference_edge_inngest_401]].)
 - Use the `.dev` hostname (`ERP_URL`), not `localhost:<port>` — auth cookies/redirects are bound to the hostname.
 
 ---
@@ -56,6 +56,6 @@ Route: `/onboarding/industry` (needs an **un-onboarded** user — the `test` use
 - **No publish-demo in the UI** — the Backups page has export/import/finalize/revert/delete only; no "publish to catalog" control (the publish-demo + refresh-demo-catalog jobs were removed entirely).
 - Demo-catalog copy: "Snapshot all of this company's data… Credentials, integration tokens and webhooks are never included."
 
-## Live-verified this run
-PASS: login, owner-gate (page loads for owner / redirects for non-owner), "Backups" terminology, export form submit.
-BLOCKED (environment, not code): export/import/revert **jobs** — edge→Inngest `401 Event key not found` (+ earlier transient edge CPU saturation). Re-run A1–A8 after a dev-stack restart re-syncs the Inngest key.
+## Live-verified (2026-06-22, after the edge→Inngest fix)
+PASS: login, owner-gate, "Backups" terminology, **export** (job runs end-to-end → `*.carbon.json.gz` artifacts written, listed in UI with working signed Download URLs), **import pipeline** (no 401; reseed correctly rejected the already-seeded company → ledger=0, no pending run).
+NOT YET RUN: a *successful* import → finalize/revert (needs a fresh company — the onboarding path, or a second empty company), and the version-guard tamper test (section B).

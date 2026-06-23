@@ -47,7 +47,9 @@ import {
   postTransactionFunction,
   printJobDeliverFunction,
   printJobFunction,
+  publishDemoFunction,
   recalculateFunction,
+  refreshDemoCatalogFunction,
   rescheduleJobFunction,
   updatePermissionsFunction,
   userAdminFunction
@@ -80,6 +82,8 @@ export const functions = [
   onboardFunction,
   printJobFunction,
   printJobDeliverFunction,
+  publishDemoFunction,
+  refreshDemoCatalogFunction,
   // Scheduled
   cleanupFunction,
   dispatchFunction,

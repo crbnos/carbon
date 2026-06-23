@@ -442,4 +442,22 @@ export type Events = {
       };
     };
   };
+
+  // Demo catalog refresh — re-export every catalogued demo from its source
+  // company after a migration. No payload; the job walks companyTemplate.
+  "carbon/refresh-demo-catalog": {
+    data: Record<string, never>;
+  };
+
+  // Publish a source company into the demo catalog (internal tooling).
+  "carbon/publish-demo": {
+    data: {
+      companyId: string;
+      userId: string;
+      industryId?: string;
+      includeStorage: "none" | "all";
+      name: string;
+      description?: string;
+    };
+  };
 };

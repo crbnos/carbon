@@ -39,3 +39,11 @@ jobs:
 
       - name: Run migrations
         run: pnpm --filter ci ci:migrations
+
+      # After migrations land, fan a refresh event out to every workspace's
+      # Inngest env (per-workspace keys come from the workspaces table) so each
+      # re-exports its demo catalog from its source companies — onboarding then
+      # always provisions from a current-schema backup. Uses the job-level
+      # SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY (same as the migrations step).
+      - name: Refresh demo catalog
+        run: pnpm --filter ci ci:refresh-demo-catalog
