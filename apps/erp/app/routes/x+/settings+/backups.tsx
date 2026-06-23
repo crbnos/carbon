@@ -25,17 +25,17 @@ import { data, Form, redirect, useLoaderData } from "react-router";
 import { z } from "zod";
 import { Hidden, Input, Select, Submit } from "~/components/Form";
 import {
-  ArtifactUpload,
-  deleteCompanyTemplateExport,
-  exportCompanyTemplate,
-  finalizeCompanyTemplateImport,
-  getCompanyTemplateImportedModels,
-  getCompanyTemplateImportRuns,
-  getCompanyTemplateSignedUrl,
+  BackupUpload,
+  deleteCompanyBackupExport,
+  exportCompanyBackup,
+  finalizeCompanyBackupImport,
+  getCompanyBackupImportedModels,
+  getCompanyBackupImportRuns,
+  getCompanyBackupSignedUrl,
   getIndustries,
-  importCompanyTemplate,
-  listCompanyTemplateExports,
-  revertCompanyTemplateImport
+  importCompanyBackup,
+  listCompanyBackupExports,
+  revertCompanyBackupImport
 } from "~/modules/settings";
 import { getUser } from "~/modules/users/users.server";
 import type { Handle } from "~/utils/handle";
@@ -98,8 +98,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   await requireOwner(request, client, companyGroupId, userId);
 
   const [exportsList, importRuns, user, industries] = await Promise.all([
-    listCompanyTemplateExports(client, companyId),
-    getCompanyTemplateImportRuns(client, companyId),
+    listCompanyBackupExports(client, companyId),
+    getCompanyBackupImportRuns(client, companyId),
     getUser(client, userId),
     getIndustries(client)
   ]);
@@ -110,7 +110,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .filter((f) => f.id !== null)
       .map(async (f) => {
         const filePath = `exports/${f.name}`;
-        const signed = await getCompanyTemplateSignedUrl(
+        const signed = await getCompanyBackupSignedUrl(
           client,
           companyId,
           filePath
@@ -151,7 +151,7 @@ export async function action({ request }: ActionFunctionArgs) {
       if (validation.error) return validationError(validation.error);
 
       const { label, includeStorage } = validation.data;
-      const result = await exportCompanyTemplate(client, {
+      const result = await exportCompanyBackup(client, {
         companyId,
         userId,
         label: label || undefined,
@@ -176,7 +176,7 @@ export async function action({ request }: ActionFunctionArgs) {
       if (validation.error) return validationError(validation.error);
 
       const { filePath, mode } = validation.data;
-      const result = await importCompanyTemplate(client, {
+      const result = await importCompanyBackup(client, {
         companyId,
         userId,
         filePath,
@@ -208,7 +208,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
       // Fan out thumbnail rendering for imported models before the ledger
       // (which we use to find them) is deleted by finalize.
-      const models = await getCompanyTemplateImportedModels(client, {
+      const models = await getCompanyBackupImportedModels(client, {
         companyId,
         importRunId
       });
@@ -219,7 +219,7 @@ export async function action({ request }: ActionFunctionArgs) {
         );
       }
 
-      const result = await finalizeCompanyTemplateImport(client, {
+      const result = await finalizeCompanyBackupImport(client, {
         companyId,
         importRunId,
         userId
@@ -240,7 +240,7 @@ export async function action({ request }: ActionFunctionArgs) {
           await flash(request, error(null, "Missing import run"))
         );
 
-      const result = await revertCompanyTemplateImport(client, {
+      const result = await revertCompanyBackupImport(client, {
         companyId,
         importRunId,
         userId
@@ -264,7 +264,7 @@ export async function action({ request }: ActionFunctionArgs) {
       if (!filePath.startsWith("exports/"))
         return data({}, await flash(request, error(null, "Invalid file path")));
 
-      const result = await deleteCompanyTemplateExport(
+      const result = await deleteCompanyBackupExport(
         client,
         companyId,
         filePath
@@ -461,7 +461,7 @@ export default function BackupsRoute() {
           </CardHeader>
           <CardContent>
             <VStack spacing={4} className="max-w-md">
-              <ArtifactUpload companyId={companyId} />
+              <BackupUpload companyId={companyId} />
               {files.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   No backups yet — upload one above to restore.

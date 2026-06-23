@@ -1,11 +1,11 @@
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-// Company template export/import. Edge functions are thin auth boundaries;
+// Company backup export/import. Edge functions are thin auth boundaries;
 // the heavy lifting runs in the carbon/company-export and
 // carbon/company-import inngest jobs (packages/jobs).
 
-export async function exportCompanyTemplate(
+export async function exportCompanyBackup(
   client: SupabaseClient<Database>,
   args: {
     companyId: string;
@@ -17,7 +17,7 @@ export async function exportCompanyTemplate(
   return client.functions.invoke("export-company", { body: args });
 }
 
-export async function importCompanyTemplate(
+export async function importCompanyBackup(
   client: SupabaseClient<Database>,
   args: {
     companyId: string;
@@ -31,21 +31,21 @@ export async function importCompanyTemplate(
   });
 }
 
-export async function finalizeCompanyTemplateImport(
+export async function finalizeCompanyBackupImport(
   client: SupabaseClient<Database>,
   args: { companyId: string; importRunId: string; userId: string }
 ) {
   return client.functions.invoke("finalize-import", { body: args });
 }
 
-export async function revertCompanyTemplateImport(
+export async function revertCompanyBackupImport(
   client: SupabaseClient<Database>,
   args: { companyId: string; importRunId: string; userId: string }
 ) {
   return client.functions.invoke("revert-import", { body: args });
 }
 
-export async function listCompanyTemplateExports(
+export async function listCompanyBackupExports(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
@@ -55,7 +55,7 @@ export async function listCompanyTemplateExports(
   });
 }
 
-export async function getCompanyTemplateSignedUrl(
+export async function getCompanyBackupSignedUrl(
   client: SupabaseClient<Database>,
   companyId: string,
   filePath: string
@@ -63,7 +63,7 @@ export async function getCompanyTemplateSignedUrl(
   return client.storage.from(companyId).createSignedUrl(filePath, 60 * 60);
 }
 
-export async function deleteCompanyTemplateExport(
+export async function deleteCompanyBackupExport(
   client: SupabaseClient<Database>,
   companyId: string,
   filePath: string
@@ -76,14 +76,14 @@ export async function deleteCompanyTemplateExport(
  * thumbnail rendered. Used to fan out `model-thumbnail` jobs when an import
  * is finalized so the imported models get previews.
  */
-export async function getCompanyTemplateImportedModels(
+export async function getCompanyBackupImportedModels(
   client: SupabaseClient<Database>,
   args: { companyId: string; importRunId: string }
 ) {
   const mappings = await client
     .from("externalIntegrationMapping")
     .select("entityId")
-    .eq("integration", "company-template")
+    .eq("integration", "company-backup")
     .eq("entityType", "modelUpload")
     .eq("companyId", args.companyId)
     .filter("metadata->>importRunId", "eq", args.importRunId);
@@ -102,17 +102,17 @@ export async function getCompanyTemplateImportedModels(
 }
 
 /**
- * Pending company template import runs, derived from the revert ledger.
+ * Pending company backup import runs, derived from the revert ledger.
  * Rows exist between import-company and finalize/revert.
  */
-export async function getCompanyTemplateImportRuns(
+export async function getCompanyBackupImportRuns(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
   const mappings = await client
     .from("externalIntegrationMapping")
     .select("metadata, createdAt")
-    .eq("integration", "company-template")
+    .eq("integration", "company-backup")
     .eq("companyId", companyId)
     .order("createdAt", { ascending: true })
     .limit(10000);

@@ -64,8 +64,8 @@ export type Events = {
     };
   };
 
-  // Company template export — snapshot all company-scoped rows (and
-  // optionally storage files) into a gzipped artifact in the company bucket
+  // Company backup export — snapshot all company-scoped rows (and
+  // optionally storage files) into a gzipped backup in the company bucket
   "carbon/company-export": {
     data: {
       companyId: string;
@@ -75,8 +75,8 @@ export type Events = {
     };
   };
 
-  // Company template import — two-phase: rows are inserted alongside an
-  // externalIntegrationMapping ledger (integration = 'company-template'),
+  // Company backup import — two-phase: rows are inserted alongside an
+  // externalIntegrationMapping ledger (integration = 'company-backup'),
   // then the user finalizes (keeps) or reverts (deletes) the run
   "carbon/company-import": {
     data: {
@@ -444,7 +444,7 @@ export type Events = {
   };
 
   // Demo catalog refresh — re-export every catalogued demo from its source
-  // company after a migration. No payload; the job walks companyTemplate.
+  // company after a migration. No payload; the job walks the industry catalog.
   "carbon/refresh-demo-catalog": {
     data: Record<string, never>;
   };

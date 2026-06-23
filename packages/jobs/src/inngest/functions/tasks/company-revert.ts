@@ -2,11 +2,11 @@ import { chunkArray } from "@carbon/utils";
 import { sql } from "kysely";
 import { inngest } from "../../client";
 import {
+  BACKUP_INTEGRATION,
   canSetReplicationRole,
   getCompanyTableCatalog,
-  getJobDatabaseClient,
-  TEMPLATE_INTEGRATION
-} from "./company-template";
+  getJobDatabaseClient
+} from "./company-backup";
 
 const DELETE_CHUNK_SIZE = 500;
 
@@ -37,7 +37,7 @@ export const companyRevertFunction = inngest.createFunction(
       const ledger = await sql<{ entityType: string; entityId: string }>`
         SELECT ${sql.id("entityType")}, ${sql.id("entityId")}
         FROM ${sql.id("externalIntegrationMapping")}
-        WHERE ${sql.id("integration")} = ${TEMPLATE_INTEGRATION}
+        WHERE ${sql.id("integration")} = ${BACKUP_INTEGRATION}
           AND ${sql.id("companyId")} = ${companyId}
           AND metadata->>'importRunId' = ${importRunId}
       `.execute(db);
@@ -115,7 +115,7 @@ export const companyRevertFunction = inngest.createFunction(
 
         await sql`
           DELETE FROM ${sql.id("externalIntegrationMapping")}
-          WHERE ${sql.id("integration")} = ${TEMPLATE_INTEGRATION}
+          WHERE ${sql.id("integration")} = ${BACKUP_INTEGRATION}
             AND ${sql.id("companyId")} = ${companyId}
             AND metadata->>'importRunId' = ${importRunId}
         `.execute(trx);

@@ -51,7 +51,7 @@ import {
   updateCompany
 } from "~/modules/settings";
 import {
-  fetchDemoArtifact,
+  fetchDemoBackup,
   provisionCompanyData
 } from "~/services/onboarding.server";
 import {
@@ -199,19 +199,19 @@ export async function action({ request }: ActionFunctionArgs) {
       throw new Error("Fatal: failed to get company ID");
     }
 
-    // Demo and "restore from a backup" both resolve to a backup artifact;
-    // "none" → a clean seed. provisionCompanyData imports the artifact or seeds.
-    const artifactFile = formData.get("artifact");
-    const artifact: Blob | null =
+    // Demo and "restore from a backup" both resolve to a backup file;
+    // "none" → a clean seed. provisionCompanyData imports the backup or seeds.
+    const backupFile = formData.get("backup");
+    const backup: Blob | null =
       dataChoice === "import" &&
-      artifactFile instanceof File &&
-      artifactFile.size > 0
-        ? artifactFile
+      backupFile instanceof File &&
+      backupFile.size > 0
+        ? backupFile
         : dataChoice === "demo"
-          ? await fetchDemoArtifact(serviceRole, finalIndustryId)
+          ? await fetchDemoBackup(serviceRole, finalIndustryId)
           : null;
 
-    await provisionCompanyData(serviceRole, { companyId, userId, artifact });
+    await provisionCompanyData(serviceRole, { companyId, userId, backup });
 
     if (CarbonEdition === Edition.Cloud) {
       trigger("onboard", {
@@ -380,7 +380,7 @@ export default function OnboardingIndustry() {
               )}
               <input
                 type="file"
-                name="artifact"
+                name="backup"
                 accept=".gz,application/gzip"
                 className="sr-only"
                 onChange={(e) => setImportFile(e.target.files?.[0] ?? null)}

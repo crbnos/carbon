@@ -4,7 +4,7 @@ import {
   getUserIdFromRequest,
   jsonResponse,
   requireCompanyOwner
-} from "../lib/company-template.ts";
+} from "../lib/company-backup.ts";
 import { corsHeaders } from "../lib/headers.ts";
 import { sendInngestEvent } from "../lib/inngest.ts";
 import { requirePermissions } from "../lib/supabase.ts";

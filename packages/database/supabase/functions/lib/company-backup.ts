@@ -1,7 +1,7 @@
 import type { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types.ts";
 
-export const TEMPLATE_INTEGRATION = "company-template";
+export const BACKUP_INTEGRATION = "company-backup";
 export const EXPORTS_PREFIX = "exports";
 
 type Client = ReturnType<typeof createClient<Database>>;

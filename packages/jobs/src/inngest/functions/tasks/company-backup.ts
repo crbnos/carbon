@@ -6,22 +6,22 @@ import {
 import { type Kysely, PostgresDriver, sql } from "kysely";
 
 /**
- * Shared core for company template export/import.
+ * Shared core for company backup export/import.
  *
  * The table catalog is derived from the live database schema
  * (information_schema + pg_constraint) rather than a hand-maintained list,
  * so new company-scoped tables are picked up automatically.
  */
 
-export const ARTIFACT_KIND = "carbon-company-template";
-export const ARTIFACT_VERSION = 1;
-export const TEMPLATE_INTEGRATION = "company-template";
+export const BACKUP_KIND = "carbon-company-backup";
+export const BACKUP_VERSION = 1;
+export const BACKUP_INTEGRATION = "company-backup";
 export const EXPORTS_PREFIX = "exports";
 /** Shared, env-agnostic bucket backing the demo catalog. */
-export const TEMPLATES_BUCKET = "company-templates";
+export const DEMO_BUCKET = "company-demos";
 
 /**
- * Tables whose contents must never travel in an artifact — credentials,
+ * Tables whose contents must never travel in a backup — credentials,
  * integration tokens and webhook targets stay with the source company.
  */
 export const SECRET_TABLES = [
@@ -95,8 +95,8 @@ export type Catalog = {
 };
 
 export type Manifest = {
-  kind: typeof ARTIFACT_KIND;
-  version: typeof ARTIFACT_VERSION;
+  kind: typeof BACKUP_KIND;
+  version: typeof BACKUP_VERSION;
   schemaVersion: string;
   sourceCompanyId: string;
   sourceCompanyGroupId: string | null;
@@ -110,7 +110,7 @@ export type Manifest = {
   excludedTables: string[];
 };
 
-export type Artifact = {
+export type CompanyBackup = {
   manifest: Manifest;
   data: Record<string, Record<string, unknown>[]>;
   /** path within the company bucket -> base64 contents */
@@ -280,14 +280,14 @@ export async function getCompanyTableCatalog(
  */
 export function assertBackupImportable(
   catalog: Catalog,
-  artifact: Artifact
+  backup: CompanyBackup
 ): { ok: true } | { ok: false; reason: string } {
-  const { manifest } = artifact;
+  const { manifest } = backup;
 
-  if (manifest.version !== ARTIFACT_VERSION) {
+  if (manifest.version !== BACKUP_VERSION) {
     return {
       ok: false,
-      reason: `its format (generation ${manifest.version}) is no longer supported (current is ${ARTIFACT_VERSION})`
+      reason: `its format (generation ${manifest.version}) is no longer supported (current is ${BACKUP_VERSION})`
     };
   }
 
@@ -295,8 +295,8 @@ export function assertBackupImportable(
   // together; defaults without accounts came from a groupless company and would
   // leave a dangling FK (the export-side guard now prevents producing these).
   if (
-    (artifact.data.accountDefault?.length ?? 0) > 0 &&
-    (artifact.data.account?.length ?? 0) === 0
+    (backup.data.accountDefault?.length ?? 0) > 0 &&
+    (backup.data.account?.length ?? 0) === 0
   ) {
     return {
       ok: false,
@@ -378,7 +378,7 @@ export function topologicalSort(tables: TableInfo[]): TableInfo[] {
   return sorted;
 }
 
-/** Convert a pg-returned value into a JSON-safe artifact value. */
+/** Convert a pg-returned value into a JSON-safe backup value. */
 export function encodeValue(value: unknown, col: ColumnInfo): unknown {
   if (value === null || value === undefined) return null;
   if (col.udtName === "bytea" && Buffer.isBuffer(value)) {
@@ -389,7 +389,7 @@ export function encodeValue(value: unknown, col: ColumnInfo): unknown {
 }
 
 /**
- * Convert an artifact value into a parameter node-pg can bind for this
+ * Convert a backup value into a parameter node-pg can bind for this
  * column. Strings pass through untyped so Postgres coerces them into
  * enums/timestamps/numerics by column type; json(b) values are stringified
  * so JS arrays inside jsonb are not mistaken for Postgres arrays.

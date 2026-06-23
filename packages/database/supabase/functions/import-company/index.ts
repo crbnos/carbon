@@ -1,22 +1,22 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import {
+  BACKUP_INTEGRATION,
   EXPORTS_PREFIX,
-  TEMPLATE_INTEGRATION,
   errorResponse,
   jsonResponse,
   requireCompanyOwner
-} from "../lib/company-template.ts";
+} from "../lib/company-backup.ts";
 import { corsHeaders } from "../lib/headers.ts";
 import { sendInngestEvent } from "../lib/inngest.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 
 /**
- * Thin auth boundary for company template imports. Validates the caller,
- * the artifact and that no other import run is pending, then hands the
+ * Thin auth boundary for company backup imports. Validates the caller,
+ * the backup and that no other import run is pending, then hands the
  * heavy lifting to the `carbon/company-import` inngest job.
  *
  * The import is two-phase: the job inserts rows alongside an
- * `externalIntegrationMapping` ledger (integration = 'company-template');
+ * `externalIntegrationMapping` ledger (integration = 'company-backup');
  * the run is then committed via `finalize-import` or undone via
  * `revert-import`.
  */
@@ -48,7 +48,7 @@ serve(async (req: Request) => {
       .createSignedUrl(filePath, 60);
     if (file.error) {
       return errorResponse(
-        new Error(`Artifact not found: ${filePath}`),
+        new Error(`Backup not found: ${filePath}`),
         404,
         corsHeaders
       );
@@ -57,7 +57,7 @@ serve(async (req: Request) => {
     const pending = await client
       .from("externalIntegrationMapping")
       .select("id", { count: "exact", head: true })
-      .eq("integration", TEMPLATE_INTEGRATION)
+      .eq("integration", BACKUP_INTEGRATION)
       .eq("companyId", companyId);
     if ((pending.count ?? 0) > 0) {
       return errorResponse(
@@ -69,7 +69,7 @@ serve(async (req: Request) => {
       );
     }
 
-    // Reseed populates a brand-new company from a template; it can't layer
+    // Reseed populates a brand-new company from a backup; it can't layer
     // onto a company that's already been set up (the seeded singletons and
     // reference data would collide). `accountDefault` is the canonical
     // "this company is configured" marker, written by seed-company.
@@ -82,7 +82,7 @@ serve(async (req: Request) => {
         return errorResponse(
           new Error(
             "Reseed requires a freshly created company. This company has " +
-              "already been set up — create a new company to import a template, " +
+              "already been set up — create a new company to import a backup, " +
               "or use preserve mode to restore into the source company."
           ),
           409,

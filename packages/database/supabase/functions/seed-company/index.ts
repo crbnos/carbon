@@ -207,7 +207,7 @@ serve(async (req: Request) => {
 
       // Reference + accounting data (customer statuses, UoMs, sequences,
       // chart of accounts, …). Skipped in identity-only mode — a company
-      // template carries all of this, so onboarding-from-template seeds only
+      // backup carries all of this, so onboarding-from-a-backup seeds only
       // the identity layer above and lets the import provide the rest.
       if (!identityOnly) {
       // customer status

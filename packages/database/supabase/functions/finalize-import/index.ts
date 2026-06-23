@@ -1,11 +1,11 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import {
-  TEMPLATE_INTEGRATION,
+  BACKUP_INTEGRATION,
   errorResponse,
   getUserIdFromRequest,
   jsonResponse,
   requireCompanyOwner
-} from "../lib/company-template.ts";
+} from "../lib/company-backup.ts";
 import { corsHeaders } from "../lib/headers.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 
@@ -36,7 +36,7 @@ serve(async (req: Request) => {
     const deleted = await client
       .from("externalIntegrationMapping")
       .delete({ count: "exact" })
-      .eq("integration", TEMPLATE_INTEGRATION)
+      .eq("integration", BACKUP_INTEGRATION)
       .eq("companyId", companyId)
       .filter("metadata->>importRunId", "eq", importRunId);
     if (deleted.error) throw new Error(deleted.error.message);

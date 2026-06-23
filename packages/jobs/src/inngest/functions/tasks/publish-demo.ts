@@ -1,13 +1,13 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { nanoid } from "nanoid";
 import { inngest } from "../../client";
-import { buildCompanyArtifact } from "./company-export";
-import { getJobDatabaseClient, TEMPLATES_BUCKET } from "./company-template";
+import { DEMO_BUCKET, getJobDatabaseClient } from "./company-backup";
+import { buildCompanyBackup } from "./company-export";
 
 /**
  * Publish a source company as an industry's demo (internal tooling). Builds a
- * fresh artifact from the source company, writes it into the shared
- * `company-templates` bucket, and stamps the demo onto the `industry` row —
+ * fresh backup from the source company, writes it into the shared
+ * `company-demos` bucket, and stamps the demo onto the `industry` row —
  * reusing the existing path on re-publish so no orphan gzip is left.
  *
  * `industry.sourceCompanyId` is set to the source company so the
@@ -27,7 +27,7 @@ export const publishDemoFunction = inngest.createFunction(
       const client = getCarbonServiceRole();
       const db = getJobDatabaseClient(1);
 
-      const { compressed, manifest, rows } = await buildCompanyArtifact(
+      const { compressed, manifest, rows } = await buildCompanyBackup(
         client,
         db,
         {
@@ -38,19 +38,19 @@ export const publishDemoFunction = inngest.createFunction(
         }
       );
 
-      // Reuse this industry's existing artifact path on re-publish so the bucket
+      // Reuse this industry's existing backup path on re-publish so the bucket
       // object is overwritten in place (no orphan gzip).
       const industry = await client
         .from("industry")
-        .select("artifactPath")
+        .select("backupPath")
         .eq("id", industryId)
         .maybeSingle();
 
-      const artifactPath =
-        industry.data?.artifactPath ?? `${nanoid()}.carbon.json.gz`;
+      const backupPath =
+        industry.data?.backupPath ?? `${nanoid()}.carbon.json.gz`;
       const upload = await client.storage
-        .from(TEMPLATES_BUCKET)
-        .upload(artifactPath, compressed, {
+        .from(DEMO_BUCKET)
+        .upload(backupPath, compressed, {
           contentType: "application/gzip",
           upsert: true
         });
@@ -61,7 +61,7 @@ export const publishDemoFunction = inngest.createFunction(
         .update({
           sourceCompanyId: companyId,
           sourceCompanyName: manifest.sourceCompanyName,
-          artifactPath,
+          backupPath,
           schemaVersion: manifest.schemaVersion,
           includesStorage: (includeStorage ?? "none") === "all",
           rowCount: rows,
@@ -73,12 +73,12 @@ export const publishDemoFunction = inngest.createFunction(
       console.log("Demo published", {
         industryId,
         sourceCompanyId: companyId,
-        artifactPath,
+        backupPath,
         rows,
         schemaVersion: manifest.schemaVersion
       });
 
-      return { artifactPath, rows, schemaVersion: manifest.schemaVersion };
+      return { backupPath, rows, schemaVersion: manifest.schemaVersion };
     });
   }
 );

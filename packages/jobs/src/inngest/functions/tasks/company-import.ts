@@ -4,19 +4,19 @@ import { chunkArray } from "@carbon/utils";
 import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import { inngest } from "../../client";
-import type { Artifact, ColumnInfo, TableInfo } from "./company-template";
+import type { ColumnInfo, CompanyBackup, TableInfo } from "./company-backup";
 import {
-  ARTIFACT_KIND,
   assertBackupImportable,
+  BACKUP_INTEGRATION,
+  BACKUP_KIND,
   bindValue,
   canSetReplicationRole,
   filterUnpopulated,
   getCompanyTableCatalog,
   getJobDatabaseClient,
   RESEED_SKIPPED_TABLES,
-  SECRET_TABLES,
-  TEMPLATE_INTEGRATION
-} from "./company-template";
+  SECRET_TABLES
+} from "./company-backup";
 
 const INSERT_CHUNK_SIZE = 200;
 
@@ -49,7 +49,7 @@ export const companyImportFunction = inngest.createFunction(
       const existing = await client
         .from("externalIntegrationMapping")
         .select("id", { count: "exact", head: true })
-        .eq("integration", TEMPLATE_INTEGRATION)
+        .eq("integration", BACKUP_INTEGRATION)
         .eq("companyId", companyId)
         .filter("metadata->>importRunId", "eq", importRunId);
       if ((existing.count ?? 0) > 0) {
@@ -64,20 +64,20 @@ export const companyImportFunction = inngest.createFunction(
         );
       }
 
-      const artifact = JSON.parse(
+      const backup = JSON.parse(
         gunzipSync(Buffer.from(await download.data.arrayBuffer())).toString()
-      ) as Artifact;
+      ) as CompanyBackup;
 
-      if (artifact.manifest?.kind !== ARTIFACT_KIND) {
-        throw new Error("File is not a Carbon company template artifact");
+      if (backup.manifest?.kind !== BACKUP_KIND) {
+        throw new Error("File is not a Carbon company backup");
       }
       if (
         mode === "preserve" &&
-        artifact.manifest.sourceCompanyId !== companyId
+        backup.manifest.sourceCompanyId !== companyId
       ) {
         throw new Error(
           "Preserve mode requires importing into the same company the artifact " +
-            `was exported from (${artifact.manifest.sourceCompanyId}). ` +
+            `was exported from (${backup.manifest.sourceCompanyId}). ` +
             "Use reseed mode to import into a different company."
         );
       }
@@ -109,7 +109,7 @@ export const companyImportFunction = inngest.createFunction(
       const targetGroupId = targetCompany.data?.companyGroupId ?? null;
 
       const catalog = await getCompanyTableCatalog(db);
-      const compatibility = assertBackupImportable(catalog, artifact);
+      const compatibility = assertBackupImportable(catalog, backup);
       if (!compatibility.ok) {
         throw new Error(
           `This backup can't be restored: ${compatibility.reason}.`
@@ -120,11 +120,11 @@ export const companyImportFunction = inngest.createFunction(
         ...SECRET_TABLES,
         ...(mode === "reseed" ? RESEED_SKIPPED_TABLES : [])
       ]);
-      const artifactColumns = new Map(
-        artifact.manifest.tables.map((t) => [t.name, new Set(t.columns)])
+      const backupColumns = new Map(
+        backup.manifest.tables.map((t) => [t.name, new Set(t.columns)])
       );
       const candidateTables = catalog.tables.filter(
-        (t) => !skipped.has(t.name) && (artifact.data[t.name]?.length ?? 0) > 0
+        (t) => !skipped.has(t.name) && (backup.data[t.name]?.length ?? 0) > 0
       );
 
       // Reseed is additive into a fresh company: never touch a table the
@@ -151,7 +151,7 @@ export const companyImportFunction = inngest.createFunction(
         for (const table of importTables) {
           if (!table.hasId) continue;
           const map = new Map<string, string>();
-          for (const row of artifact.data[table.name]!) {
+          for (const row of backup.data[table.name]!) {
             if (typeof row.id === "string") map.set(row.id, nanoid());
           }
           idMaps.set(table.name, map);
@@ -170,7 +170,7 @@ export const companyImportFunction = inngest.createFunction(
         );
       }
 
-      const sourceCompanyId = artifact.manifest.sourceCompanyId;
+      const sourceCompanyId = backup.manifest.sourceCompanyId;
       let scrubCounter = 0;
 
       // What happens to a column depends only on its metadata and the mode,
@@ -250,16 +250,16 @@ export const companyImportFunction = inngest.createFunction(
         const ledger: LedgerRow[] = [];
 
         for (const table of importTables) {
-          const artifactCols =
-            artifactColumns.get(table.name) ??
-            new Set(Object.keys(artifact.data[table.name]![0] ?? {}));
+          const backupCols =
+            backupColumns.get(table.name) ??
+            new Set(Object.keys(backup.data[table.name]![0] ?? {}));
           const columns = table.columns.filter(
-            (c) => !c.isGenerated && artifactCols.has(c.name)
+            (c) => !c.isGenerated && backupCols.has(c.name)
           );
           if (columns.length === 0) continue;
 
           const transforms = buildColumnTransforms(table, columns);
-          const originalRows = artifact.data[table.name]!;
+          const originalRows = backup.data[table.name]!;
           let rows = originalRows.map((row) => {
             const out: Record<string, unknown> = {};
             columns.forEach((col, i) => {
@@ -339,7 +339,7 @@ export const companyImportFunction = inngest.createFunction(
             VALUES ${sql.join(
               batch.map(
                 (l) =>
-                  sql`(${l.entityType}, ${l.entityId}, ${TEMPLATE_INTEGRATION},
+                  sql`(${l.entityType}, ${l.entityId}, ${BACKUP_INTEGRATION},
                       ${l.externalId}, ${JSON.stringify({ importRunId })},
                       ${companyId}, ${userId})`
               )
@@ -351,8 +351,8 @@ export const companyImportFunction = inngest.createFunction(
       // Storage files travel outside the transaction — failures here leave
       // the imported rows intact and are surfaced as warnings.
       let storageUploaded = 0;
-      if (artifact.storage) {
-        for (const [path, base64] of Object.entries(artifact.storage)) {
+      if (backup.storage) {
+        for (const [path, base64] of Object.entries(backup.storage)) {
           const upload = await client.storage
             .from(companyId)
             .upload(path, Buffer.from(base64, "base64"), { upsert: false });
@@ -367,12 +367,12 @@ export const companyImportFunction = inngest.createFunction(
         }
       }
 
-      // Onboarding-from-template commits immediately — no human review — so
+      // Onboarding-from-a-backup commits immediately — no human review — so
       // drop the revert ledger and skip the pending state.
       if (autoFinalize) {
         await sql`
           DELETE FROM ${sql.id("externalIntegrationMapping")}
-          WHERE ${sql.id("integration")} = ${TEMPLATE_INTEGRATION}
+          WHERE ${sql.id("integration")} = ${BACKUP_INTEGRATION}
             AND ${sql.id("companyId")} = ${companyId}
             AND metadata->>'importRunId' = ${importRunId}
         `.execute(db);

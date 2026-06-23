@@ -1,7 +1,7 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { inngest } from "../../client";
-import { buildCompanyArtifact } from "./company-export";
-import { getJobDatabaseClient, TEMPLATES_BUCKET } from "./company-template";
+import { DEMO_BUCKET, getJobDatabaseClient } from "./company-backup";
+import { buildCompanyBackup } from "./company-export";
 
 /**
  * Re-export every industry's demo from its persistent source company after a
@@ -23,28 +23,28 @@ export const refreshDemoCatalogFunction = inngest.createFunction(
 
       const { data: rows } = await client
         .from("industry")
-        .select("id, sourceCompanyId, includesStorage, artifactPath")
+        .select("id, sourceCompanyId, includesStorage, backupPath")
         .not("sourceCompanyId", "is", null);
 
       let refreshed = 0;
       const failures: Array<{ id: string; error: string }> = [];
 
       for (const row of rows ?? []) {
-        if (!row.sourceCompanyId || !row.artifactPath) continue;
+        if (!row.sourceCompanyId || !row.backupPath) continue;
         try {
           const {
             compressed,
             manifest,
             rows: rowCount
-          } = await buildCompanyArtifact(client, db, {
+          } = await buildCompanyBackup(client, db, {
             companyId: row.sourceCompanyId,
             userId: "system",
             includeStorage: row.includesStorage ? "all" : "none"
           });
 
           const upload = await client.storage
-            .from(TEMPLATES_BUCKET)
-            .upload(row.artifactPath, compressed, {
+            .from(DEMO_BUCKET)
+            .upload(row.backupPath, compressed, {
               contentType: "application/gzip",
               upsert: true
             });

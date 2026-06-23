@@ -3,15 +3,15 @@ import {
   errorResponse,
   jsonResponse,
   requireCompanyOwner
-} from "../lib/company-template.ts";
+} from "../lib/company-backup.ts";
 import { corsHeaders } from "../lib/headers.ts";
 import { sendInngestEvent } from "../lib/inngest.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 
 /**
- * Thin auth boundary for company template exports. Validates the caller is
+ * Thin auth boundary for company backup exports. Validates the caller is
  * the company owner, then hands the heavy lifting to the
- * `carbon/company-export` inngest job. The artifact lands in the company's
+ * `carbon/company-export` inngest job. The backup lands in the company's
  * bucket under `exports/`.
  */
 serve(async (req: Request) => {

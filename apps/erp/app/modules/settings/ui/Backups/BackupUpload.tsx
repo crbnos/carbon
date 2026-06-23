@@ -5,13 +5,13 @@ import { useState } from "react";
 import { useRevalidator } from "react-router";
 
 /**
- * Uploads a `.carbon.json.gz` artifact straight into the company bucket
+ * Uploads a `.carbon.json.gz` backup straight into the company bucket
  * under `exports/`, then revalidates so it appears in the import picker.
  * This is the "upload an environment" entry point — it lets an owner import
- * an artifact exported from a different company (or the registry), not just
+ * a backup exported from a different company (or the registry), not just
  * round-trip their own exports.
  */
-export function ArtifactUpload({ companyId }: { companyId: string }) {
+export function BackupUpload({ companyId }: { companyId: string }) {
   const { carbon } = useCarbon();
   const revalidator = useRevalidator();
   const [uploading, setUploading] = useState(false);
@@ -24,7 +24,7 @@ export function ArtifactUpload({ companyId }: { companyId: string }) {
       return;
     }
     if (!file.name.endsWith(".gz")) {
-      toast.error("Select a .carbon.json.gz artifact");
+      toast.error("Select a .carbon.json.gz backup");
       return;
     }
 
@@ -39,7 +39,7 @@ export function ArtifactUpload({ companyId }: { companyId: string }) {
       toast.error(`Failed to upload: ${error.message}`);
       return;
     }
-    toast.success("Artifact uploaded — pick it below to import");
+    toast.success("Backup uploaded — pick it below to import");
     revalidator.revalidate();
   };
 
@@ -50,7 +50,7 @@ export function ArtifactUpload({ companyId }: { companyId: string }) {
       isDisabled={uploading}
       onChange={onFileChange}
     >
-      {uploading ? "Uploading…" : "Upload artifact"}
+      {uploading ? "Uploading…" : "Upload backup"}
     </FileUpload>
   );
 }

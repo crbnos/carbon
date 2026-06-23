@@ -2,17 +2,17 @@ import { gzipSync } from "node:zlib";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { sql } from "kysely";
 import { inngest } from "../../client";
-import type { Artifact, Manifest } from "./company-template";
+import type { CompanyBackup, Manifest } from "./company-backup";
 import {
-  ARTIFACT_KIND,
-  ARTIFACT_VERSION,
+  BACKUP_INTEGRATION,
+  BACKUP_KIND,
+  BACKUP_VERSION,
   EXPORTS_PREFIX,
   encodeValue,
   getCompanyTableCatalog,
   getJobDatabaseClient,
-  SECRET_TABLES,
-  TEMPLATE_INTEGRATION
-} from "./company-template";
+  SECRET_TABLES
+} from "./company-backup";
 
 /** Per-file and total caps for embedded storage files (base64 inflates ~33%). */
 const MAX_STORAGE_FILE_BYTES = 25 * 1024 * 1024;
@@ -23,11 +23,11 @@ type JobDatabase = ReturnType<typeof getJobDatabaseClient>;
 
 /**
  * Build a gzipped company backup (data + optional storage files). Shared by the
- * export job (writes the artifact to the company's own bucket) and the
+ * export job (writes the backup to the company's own bucket) and the
  * demo-catalog refresh (writes to the shared bucket) so the export logic lives
  * in exactly one place.
  */
-export async function buildCompanyArtifact(
+export async function buildCompanyBackup(
   client: ServiceRole,
   db: JobDatabase,
   opts: {
@@ -62,7 +62,7 @@ export async function buildCompanyArtifact(
   const catalog = await getCompanyTableCatalog(db);
   const secretTables = new Set(SECRET_TABLES);
 
-  const data: Artifact["data"] = {};
+  const data: CompanyBackup["data"] = {};
   const tableManifest: Manifest["tables"] = [];
   const excludedTables: string[] = [];
 
@@ -81,7 +81,7 @@ export async function buildCompanyArtifact(
     // a prior import's revert ledger must never travel in an artifact
     const ledgerFilter =
       table.name === "externalIntegrationMapping"
-        ? sql` AND ${sql.id("integration")} != ${TEMPLATE_INTEGRATION}`
+        ? sql` AND ${sql.id("integration")} != ${BACKUP_INTEGRATION}`
         : sql``;
     const result = await sql<Record<string, unknown>>`
       SELECT ${sql.join(columns.map((c) => sql.id(c.name)))}
@@ -151,8 +151,8 @@ export async function buildCompanyArtifact(
   }
 
   const manifest: Manifest = {
-    kind: ARTIFACT_KIND,
-    version: ARTIFACT_VERSION,
+    kind: BACKUP_KIND,
+    version: BACKUP_VERSION,
     schemaVersion: catalog.schemaVersion,
     sourceCompanyId: companyId,
     sourceCompanyGroupId: companyGroupId,
@@ -166,8 +166,8 @@ export async function buildCompanyArtifact(
     excludedTables
   };
 
-  const artifact: Artifact = { manifest, data, storage: storageFiles };
-  const compressed = gzipSync(Buffer.from(JSON.stringify(artifact)));
+  const backup: CompanyBackup = { manifest, data, storage: storageFiles };
+  const compressed = gzipSync(Buffer.from(JSON.stringify(backup)));
   const rows = tableManifest.reduce((sum, t) => sum + t.rows, 0);
   return { compressed, manifest, rows };
 }
@@ -186,7 +186,7 @@ export const companyExportFunction = inngest.createFunction(
       const client = getCarbonServiceRole();
       const db = getJobDatabaseClient(1);
 
-      const { compressed, manifest, rows } = await buildCompanyArtifact(
+      const { compressed, manifest, rows } = await buildCompanyBackup(
         client,
         db,
         { companyId, userId, label, includeStorage }
