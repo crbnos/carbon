@@ -1,0 +1,47 @@
+---
+title: CAD
+plan: Business
+description: Sync CAD data from Onshape into Carbon.
+---
+
+## Onshape
+
+Connect to **Onshape** over **OAuth** to bring CAD data into Carbon. No keys to paste.
+
+<Steps>
+  <Step>
+  ### Authorize over OAuth
+
+  Start the connection and Carbon opens an Onshape popup.
+  </Step>
+  <Step>
+  ### Approve read access
+
+  Approve read access to your Onshape documents in the popup.
+  </Step>
+  <Step>
+  ### Tokens stored
+
+  Carbon stores the connection, the access and refresh tokens, and can then pull from your Onshape documents.
+  </Step>
+</Steps>
+
+| Setting | What it controls |
+| --- | --- |
+| Connection | Established by OAuth — no keys to paste. Carbon stores the access and refresh tokens for you. |
+
+<Callout type="warn">
+Onshape only appears when its OAuth client is configured server-side (`ONSHAPE_CLIENT_ID`) — see
+[Environment variables](/docs/platform/self-hosting/environment-variables).
+</Callout>
+
+## Related
+
+<Cards>
+  <Card title="Items" href="/docs/reference/items">
+    The part records CAD data attaches to.
+  </Card>
+  <Card title="Methods & sourcing" href="/docs/reference/methods">
+    How a part's bill of materials is built up.
+  </Card>
+</Cards>

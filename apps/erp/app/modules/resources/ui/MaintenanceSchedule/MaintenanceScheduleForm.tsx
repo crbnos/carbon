@@ -164,7 +164,11 @@ const MaintenanceScheduleForm = ({
               <Hidden name="type" value={type} />
               <VStack spacing={4}>
                 <Input name="name" label={t`Schedule Name`} />
-                <WorkCenter name="workCenterId" label={t`Work Center`} />
+                <WorkCenter
+                  name="workCenterId"
+                  label={t`Work Center`}
+                  termId="work-center"
+                />
                 <Location name="locationId" label={t`Location`} />
                 <Select
                   name="frequency"

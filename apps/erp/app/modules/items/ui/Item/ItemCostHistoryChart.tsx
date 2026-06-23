@@ -37,7 +37,6 @@ import { today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useDateFormatter } from "@react-aria/i18n";
 import { useMemo } from "react";
-import { CSVLink } from "react-csv";
 import {
   LuChartLine,
   LuEllipsisVertical,
@@ -49,6 +48,7 @@ import {
 import { Link } from "react-router";
 import { Bar, CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import { SupplierAvatar } from "~/components";
+import { CSVLink } from "~/components/CSVLink";
 import { useCurrencyFormatter } from "~/hooks";
 import type { ItemCostHistory } from "~/modules/items";
 import { useSuppliers } from "~/stores";

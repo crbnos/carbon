@@ -185,6 +185,8 @@ const CreatableMultiSelect = forwardRef<
           </PopoverTrigger>
           <PopoverContent
             align="end"
+            onWheel={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
             className="min-w-[var(--radix-popover-trigger-width)] max-w-[min(560px,calc(100vw-2rem))] p-1"
             style={{
               width: dropdownContentWidthCh
@@ -296,7 +298,7 @@ function VirtualizedCommand({
       />
       <div
         ref={parentRef}
-        className="overflow-auto pt-1"
+        className="overflow-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent pt-1"
         style={{
           height: `${Math.min(filteredOptions.length, 6) * itemHeight + 4}px`
         }}

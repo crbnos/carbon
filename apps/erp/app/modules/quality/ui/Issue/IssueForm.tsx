@@ -131,6 +131,7 @@ const IssueForm = ({
               <Select
                 name="nonConformanceTypeId"
                 label={t`Issue Type`}
+                termId="nonconformance"
                 options={nonConformanceTypes.map((type) => ({
                   label: type.name,
                   value: type.id

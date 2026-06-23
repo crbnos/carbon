@@ -9,6 +9,7 @@ import {
   ToggleGroup,
   ToggleGroupItem
 } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import type { DateRange } from "@react-types/datepicker";
 import { forwardRef, useMemo } from "react";
 import { LuCalendar } from "react-icons/lu";
@@ -28,19 +29,12 @@ interface DateSelectProps {
   className?: string;
 }
 
-const defaultOptions: DateSelectOption[] = [
-  { value: "week", label: "7D" },
-  { value: "month", label: "30D" },
-  { value: "quarter", label: "90D" },
-  { value: "year", label: "1Y" }
-];
-
 const DateSelect = forwardRef<HTMLDivElement, DateSelectProps>(
   (
     {
       value,
       onValueChange,
-      options = defaultOptions,
+      options,
       showCustom = true,
       dateRange,
       onDateRangeChange,
@@ -48,10 +42,21 @@ const DateSelect = forwardRef<HTMLDivElement, DateSelectProps>(
     },
     ref
   ) => {
+    const { t } = useLingui();
+    const resolvedOptions = useMemo(() => {
+      if (options) return options;
+      return [
+        { value: "week", label: t`7D` },
+        { value: "month", label: t`30D` },
+        { value: "quarter", label: t`90D` },
+        { value: "year", label: t`1Y` }
+      ];
+    }, [options, t]);
+
     const allOptions = useMemo(() => {
-      if (!showCustom) return options;
-      return [...options, { value: "custom", label: "Custom" }];
-    }, [options, showCustom]);
+      if (!showCustom) return resolvedOptions;
+      return [...resolvedOptions, { value: "custom", label: t`Custom` }];
+    }, [resolvedOptions, showCustom, t]);
 
     return (
       <div
@@ -81,7 +86,7 @@ const DateSelect = forwardRef<HTMLDivElement, DateSelectProps>(
           }}
           className="hidden md:inline-flex gap-0 rounded-full border border-border bg-muted p-0.5 shadow-sm"
         >
-          {options.map((option) => (
+          {resolvedOptions.map((option) => (
             <ToggleGroupItem
               key={option.value}
               value={option.value}

@@ -75,6 +75,7 @@ export function EditExpiryModal({
               <DatePicker
                 name="expirationDate"
                 label={t`New expiration date`}
+                termId="shelf-life"
                 helperText={t`Pick a date or leave blank to clear it.`}
               />
               <TextArea

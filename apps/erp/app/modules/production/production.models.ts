@@ -699,7 +699,7 @@ export const jobMaterialValidator = baseMaterialValidator
 
 export const jobMaterialValidatorForReleasedJob = baseMaterialValidator
   .extend({
-    jobOperationId: zfd.text(z.string().optional())
+    jobOperationId: z.string().min(1, { message: "Operation is required" })
   })
   .refine(
     (data) => {

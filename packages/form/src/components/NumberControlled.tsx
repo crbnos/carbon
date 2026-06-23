@@ -1,4 +1,5 @@
 import { useFormContext } from "@carbon/form";
+import type { TermId } from "@carbon/glossary";
 import type { NumberFieldProps } from "@carbon/react";
 import {
   FormControl,
@@ -7,6 +8,7 @@ import {
   FormLabel,
   HStack,
   IconButton,
+  LabelWithHelp,
   NumberDecrementStepper,
   NumberField,
   NumberIncrementStepper,
@@ -29,6 +31,7 @@ import { useFormStateContext } from "../internal/formStateContext";
 type FormNumberProps = NumberFieldProps & {
   name: string;
   label?: ReactNode;
+  termId?: TermId;
   size?: "sm" | "md" | "lg";
   isOptional?: boolean;
   isRequired?: boolean;
@@ -45,6 +48,7 @@ const Number = forwardRef<HTMLInputElement, FormNumberProps>(
     {
       name,
       label,
+      termId,
       size,
       isConfigured,
       isOptional,
@@ -132,7 +136,7 @@ const Number = forwardRef<HTMLInputElement, FormNumberProps>(
             isConfigured={isConfigured}
             onConfigure={onConfigure}
           >
-            {label}
+            <LabelWithHelp termId={termId}>{label}</LabelWithHelp>
           </FormLabel>
         )}
         <NumberField

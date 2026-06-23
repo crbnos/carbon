@@ -39,7 +39,6 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useDateFormatter, useNumberFormatter } from "@react-aria/i18n";
 import type { DateRange } from "@react-types/datepicker";
 import { Suspense, useEffect, useMemo, useState } from "react";
-import { CSVLink } from "react-csv";
 import {
   LuArrowUpRight,
   LuCalendarClock,
@@ -55,6 +54,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { Await, Link, useFetcher, useLoaderData } from "react-router";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { DateSelect, Empty, Hyperlink } from "~/components";
+import { CSVLink } from "~/components/CSVLink";
 import { useWorkCenters } from "~/components/Form/WorkCenters";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import type { maintenanceSource } from "~/modules/resources/resources.models";

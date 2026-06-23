@@ -1,0 +1,41 @@
+---
+title: Sell or dispose
+description: "Two ways an asset leaves the books: sold to a buyer, or scrapped."
+label: "(IV)"
+index: 3
+flow: manufacturing-accounting
+flowName: Manufacturing accounting
+flowIndex: 3
+---
+
+Eventually an asset leaves the books. There are two ways out, and Carbon treats them as genuinely different actions, handled by different teams, with different effects. You **sell** an asset to a buyer, or you **<Term id="disposal">dispose</Term>** of it when it's done. Both start from an asset that's **"Active"** or **"Fully Depreciated"**.
+
+The number that anchors both is **<Term>net book value</Term>**, what the asset is still worth on the books: its acquisition cost minus the <Term id="depreciation">depreciation</Term> accumulated against it.
+
+<Figure illustration="asset-exit" caption="Two ways an asset leaves the books: sold through a sales order at net book value, or disposed as a write-off." />
+
+## Sell it
+
+Selling a piece of equipment is a sales act, so it lives with the sales team. The **Sell** action drafts a real **<Term>sales order</Term>** with a single **"Fixed Asset"** line pointed at the asset, priced at its **net book value**. From there it's the ordinary quote-to-cash flow (ship it, invoice it, collect), with the order line carrying a link back to the asset it came from.
+
+<Callout tone="blue" badge="SEEDS A SALES ORDER" title="Selling an asset hands it to quote-to-cash at book value.">
+The Sell action doesn't invent a separate sale mechanism. It creates a normal sales order, lined up at net book value, that ships and invoices like any other. The fixed-asset line just remembers which asset was sold.
+</Callout>
+
+<Screenshot label="Sell fixed asset" caption="The Sell action drafts a sales order for the asset at its net book value." ratio="wide" />
+
+## Dispose it
+
+When an asset is retired rather than sold, you **dispose** of it, an accounting action. Carbon posts the disposal as a write-off: it clears the accumulated depreciation, removes the asset at its full acquisition cost, and books the remaining **net book value** as a loss. The asset moves to **"Disposed"**.
+
+<Callout tone="amber" badge="DISPOSAL IS A WRITE-OFF" title="Disposing scraps the asset and books its remaining value as a loss.">
+The disposal entry reverses the asset off the books (debit accumulated depreciation, debit the write-off account for whatever book value remains, credit the asset account for its cost) and records that remaining value as a loss. It's a retirement, not a sale: no proceeds are collected on this path.
+</Callout>
+
+<Callout tone="green" badge="SELL vs DISPOSE" title="They're separate exits, not two names for one thing.">
+Selling drafts a sales order and leaves the accounting to the invoice; disposing posts the write-off directly and marks the asset **"Disposed"**. One is a sales action at book value, the other an accounting action that retires the asset — choose by whether money is coming in or the asset is simply going away.
+</Callout>
+
+<Divider />
+
+That's the asset lifecycle end to end: capitalized onto the books through a register or a purchase receipt, written down month by month through depreciation runs, and finally either sold at book value through quote-to-cash or disposed of as a write-off, the financial half-life of every machine on the floor.

@@ -5,6 +5,7 @@ import {
   Badge,
   BarProgress,
   Button,
+  Checkbox,
   HStack,
   Label,
   Modal,
@@ -58,6 +59,7 @@ export type InboundInspectionLotViewProps = {
   receiptReadableId: string | null;
   receiverId: string | null;
   itemName: string;
+  itemTrackingType: string | null;
   supplierName: string | null;
   samples: InboundInspectionSample[];
   lotEntities: InspectionTrackedEntity[];
@@ -72,6 +74,7 @@ export default function InboundInspectionLotView({
   receiptReadableId,
   receiverId,
   itemName,
+  itemTrackingType,
   supplierName,
   samples,
   lotEntities,
@@ -85,6 +88,11 @@ export default function InboundInspectionLotView({
   const permissions = usePermissions();
   const canUpdate = permissions.can("update", "quality");
   const [items] = useItems();
+
+  // Serial parts are inspected by scanning a discrete tracked entity. Batch /
+  // inventory / non-inventory parts record pass/fail for each sampled item
+  // without a tracked entity.
+  const isSerial = itemTrackingType === "Serial";
 
   const scannerDisclosure = useDisclosure();
   const rejectConfirmDisclosure = useDisclosure();
@@ -266,14 +274,16 @@ export default function InboundInspectionLotView({
                         </td>
                       </tr>
                     )}
-                    {samples.map((s) => {
+                    {samples.map((s, idx) => {
                       const readable = s.trackedEntity?.readableId ?? null;
                       return (
                         <tr key={s.id} className="border-t">
                           <td className="px-3 py-2">
                             <div className="flex flex-col">
                               <span className="font-mono text-sm">
-                                {readable ?? s.trackedEntityId}
+                                {readable ??
+                                  s.trackedEntityId ??
+                                  t`Sample ${idx + 1}`}
                               </span>
                               {readable && (
                                 <span className="text-xs text-muted-foreground">
@@ -355,7 +365,12 @@ export default function InboundInspectionLotView({
       {scannerDisclosure.isOpen && (
         <ScanInspectionSample
           inspectionId={inspection.id}
+          isSerial={isSerial}
           remaining={remaining}
+          inspected={inspected}
+          sampleSize={inspection.sampleSize}
+          fails={fails}
+          acceptanceNumber={inspection.acceptanceNumber}
           onClose={scannerDisclosure.onClose}
         />
       )}
@@ -364,7 +379,11 @@ export default function InboundInspectionLotView({
         <Confirm
           action={acceptUrl}
           title={t`Accept lot?`}
-          text={t`${lotEntities.length - inspected} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected.`}
+          text={
+            isSerial
+              ? t`${lotEntities.length - inspected} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected.`
+              : t`The lot will be marked Passed. ${fails} sampled failure(s) are recorded for your records.`
+          }
           confirmText={t`Accept Lot`}
           onCancel={acceptConfirmDisclosure.onClose}
           onSubmit={acceptConfirmDisclosure.onClose}
@@ -375,7 +394,11 @@ export default function InboundInspectionLotView({
         <Confirm
           action={partialUrl}
           title={t`Mark lot as partial?`}
-          text={t`Un-sampled entities will remain On Hold so you can keep inspecting and disposition later. Sampled outcomes are preserved.`}
+          text={
+            isSerial
+              ? t`Un-sampled entities will remain On Hold so you can keep inspecting and disposition later. Sampled outcomes are preserved.`
+              : t`The lot stays open so you can keep inspecting and disposition later. Sampled outcomes are preserved.`
+          }
           confirmText={t`Mark Partial`}
           onCancel={partialConfirmDisclosure.onClose}
           onSubmit={partialConfirmDisclosure.onClose}
@@ -386,7 +409,11 @@ export default function InboundInspectionLotView({
         <RejectLotModal
           action={rejectUrl}
           issueTypes={issueTypes}
-          summary={t`Statistical acceptance failed, so the entire lot is considered non-conforming (ISO 9001:2015 §8.7). All ${lotEntities.length} entities — ${passes} sampled pass(es), ${fails} failure(s), and ${Math.max(0, lotEntities.length - inspected)} un-inspected — will be marked Rejected. An NCR will be opened automatically for MRB disposition.`}
+          summary={
+            isSerial
+              ? t`Statistical acceptance failed, so the entire lot is considered non-conforming (ISO 9001:2015 §8.7). All ${lotEntities.length} entities — ${passes} sampled pass(es), ${fails} failure(s), and ${Math.max(0, lotEntities.length - inspected)} un-inspected — will be marked Rejected.`
+              : t`Statistical acceptance failed, so the entire lot of ${inspection.lotSize} is considered non-conforming (ISO 9001:2015 §8.7) — ${passes} sampled pass(es) and ${fails} failure(s).`
+          }
           onCancel={rejectConfirmDisclosure.onClose}
           onSubmit={rejectConfirmDisclosure.onClose}
         />
@@ -411,6 +438,7 @@ function RejectLotModal({
   const { t } = useLingui();
   const fetcher = useFetcher<{}>();
   const submitted = useRef(false);
+  const [createNcr, setCreateNcr] = useState(true);
   const [issueTypeId, setIssueTypeId] = useState<string>(
     issueTypes[0]?.id ?? ""
   );
@@ -441,38 +469,48 @@ function RejectLotModal({
         <ModalBody>
           <VStack spacing={4}>
             <p className="text-sm text-muted-foreground">{summary}</p>
-            {hasIssueTypes ? (
-              <div className="flex flex-col gap-2 w-full">
-                <Label htmlFor="nonConformanceTypeId">
-                  <Trans>Issue Type</Trans>
-                </Label>
-                <Select value={issueTypeId} onValueChange={setIssueTypeId}>
-                  <SelectTrigger id="nonConformanceTypeId">
-                    <SelectValue placeholder={t`Select an issue type`} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {issueTypes.map((type) => (
-                      <SelectItem key={type.id} value={type.id}>
-                        {type.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            ) : (
-              <Alert variant="warning">
-                <LuTriangleAlert className="size-4" />
-                <AlertTitle>
-                  <Trans>No issue types configured</Trans>
-                </AlertTitle>
-                <AlertDescription>
-                  <Trans>
-                    The lot will still be rejected, but an NCR cannot be
-                    auto-created until at least one Issue Type is configured.
-                  </Trans>
-                </AlertDescription>
-              </Alert>
-            )}
+            <label className="flex items-center gap-2 w-full cursor-pointer">
+              <Checkbox
+                isChecked={createNcr}
+                onCheckedChange={(checked) => setCreateNcr(!!checked)}
+              />
+              <span className="text-sm font-medium">
+                <Trans>Open an NCR for MRB disposition</Trans>
+              </span>
+            </label>
+            {createNcr &&
+              (hasIssueTypes ? (
+                <div className="flex flex-col gap-2 w-full">
+                  <Label htmlFor="nonConformanceTypeId">
+                    <Trans>Issue Type</Trans>
+                  </Label>
+                  <Select value={issueTypeId} onValueChange={setIssueTypeId}>
+                    <SelectTrigger id="nonConformanceTypeId">
+                      <SelectValue placeholder={t`Select an issue type`} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {issueTypes.map((type) => (
+                        <SelectItem key={type.id} value={type.id}>
+                          {type.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <Alert variant="warning">
+                  <LuTriangleAlert className="size-4" />
+                  <AlertTitle>
+                    <Trans>No issue types configured</Trans>
+                  </AlertTitle>
+                  <AlertDescription>
+                    <Trans>
+                      The lot will still be rejected, but an NCR cannot be
+                      created until at least one Issue Type is configured.
+                    </Trans>
+                  </AlertDescription>
+                </Alert>
+              ))}
           </VStack>
         </ModalBody>
         <ModalFooter>
@@ -486,15 +524,21 @@ function RejectLotModal({
           >
             <input
               type="hidden"
+              name="createNcr"
+              value={createNcr ? "true" : "false"}
+            />
+            <input
+              type="hidden"
               name="nonConformanceTypeId"
-              value={issueTypeId}
+              value={createNcr ? issueTypeId : ""}
             />
             <Button
               variant="destructive"
               type="submit"
               isLoading={fetcher.state !== "idle"}
               isDisabled={
-                fetcher.state !== "idle" || (hasIssueTypes && !issueTypeId)
+                fetcher.state !== "idle" ||
+                (createNcr && hasIssueTypes && !issueTypeId)
               }
             >
               <Trans>Reject Lot</Trans>

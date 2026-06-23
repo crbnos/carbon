@@ -1,0 +1,116 @@
+---
+title: Environment variables
+description: Every variable that configures a Carbon instance, grouped by concern. The source of truth is packages/env.
+---
+
+Carbon reads its configuration from environment variables. The registry lives in `packages/env`;
+`.env.example` is the template; infrastructure-only variables are read by `sst.config.ts`. A minimal
+instance needs the Supabase connection, a session secret, and Redis. Everything else activates features
+as you need them.
+
+## Core
+
+Platform-wide behavior and edition.
+
+<EnvVars>
+<EnvVar name="CARBON_EDITION" type="enum">One of `community`, `cloud`, `enterprise`, or `test`. Gates edition-specific features.</EnvVar>
+<EnvVar name="CONTROLLED_ENVIRONMENT" type="boolean">Enables ITAR / controlled-environment restrictions.</EnvVar>
+<EnvVar name="AUTH_PROVIDERS" type="enum[]">Allowed sign-in methods: `email`, `google`, `azure`, `passkey`.</EnvVar>
+<EnvVar name="DOMAIN" type="string">Base domain the apps are served from.</EnvVar>
+<EnvVar name="ERP_URL" type="url">Public URL of the ERP app.</EnvVar>
+<EnvVar name="MES_URL" type="url">Public URL of the MES app.</EnvVar>
+<EnvVar name="DEFAULT_LANGUAGE" type="string">Default UI language.</EnvVar>
+<EnvVar name="RATE_LIMIT" type="number">Requests per window allowed against the API.</EnvVar>
+</EnvVars>
+
+## Database — Supabase
+
+Carbon's single Postgres database. All five are required.
+
+<EnvVars>
+<EnvVar name="SUPABASE_URL" type="url" required>Supabase project URL.</EnvVar>
+<EnvVar name="SUPABASE_ANON_KEY" type="string" required>Public anon key, browser-safe.</EnvVar>
+<EnvVar name="SUPABASE_SERVICE_ROLE_KEY" type="string" required>Service-role key, server only, never exposed to the client.</EnvVar>
+<EnvVar name="SUPABASE_DB_URL" type="url" required>Direct Postgres connection string.</EnvVar>
+<EnvVar name="SUPABASE_JWT_SECRET" type="string" required>Secret used to sign and verify session JWTs.</EnvVar>
+</EnvVars>
+
+## Auth & sessions
+
+<EnvVars>
+<EnvVar name="SESSION_SECRET" type="string" required>Signs the session cookie.</EnvVar>
+<EnvVar name="SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID" type="string">Google OAuth client id, when `google` is in `AUTH_PROVIDERS`.</EnvVar>
+<EnvVar name="SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET" type="string">Google OAuth client secret.</EnvVar>
+<EnvVar name="SUPABASE_AUTH_EXTERNAL_AZURE_CLIENT_ID" type="string">Azure OAuth client id, when `azure` is enabled.</EnvVar>
+<EnvVar name="SUPABASE_AUTH_EXTERNAL_AZURE_CLIENT_SECRET" type="string">Azure OAuth client secret.</EnvVar>
+<EnvVar name="DEV_BYPASS_EMAIL" type="string">Local only. Sign in as this email without a magic link.</EnvVar>
+</EnvVars>
+
+Sign-in bot protection uses Cloudflare Turnstile: `CLOUDFLARE_TURNSTILE_SITE_KEY` and
+`CLOUDFLARE_TURNSTILE_SECRET_KEY`.
+
+## Jobs & cache
+
+<EnvVars>
+<EnvVar name="REDIS_URL" type="url" required>Redis connection (ioredis URL) for the permission cache and queues.</EnvVar>
+<EnvVar name="INNGEST_SIGNING_KEY" type="string">Signs requests to the Inngest jobs runner.</EnvVar>
+<EnvVar name="INNGEST_EVENT_KEY" type="string">Key for sending events to Inngest.</EnvVar>
+<EnvVar name="INNGEST_BASE_URL" type="url">Override the Inngest endpoint (self-hosted or dev).</EnvVar>
+</EnvVars>
+
+## Email & billing
+
+<EnvVars>
+<EnvVar name="RESEND_API_KEY" type="string">Resend API key for transactional email.</EnvVar>
+<EnvVar name="RESEND_DOMAIN" type="string">Verified sending domain.</EnvVar>
+<EnvVar name="STRIPE_SECRET_KEY" type="string">Stripe secret key, Cloud / Enterprise billing.</EnvVar>
+<EnvVar name="STRIPE_WEBHOOK_SECRET" type="string">Verifies inbound Stripe webhooks.</EnvVar>
+</EnvVars>
+
+## AI & analytics
+
+<EnvVars>
+<EnvVar name="OPENAI_API_KEY" type="string">Powers AI features (embeddings, assist).</EnvVar>
+<EnvVar name="ANTHROPIC_API_KEY" type="string">Anthropic key for Claude-backed features.</EnvVar>
+<EnvVar name="POSTHOG_API_HOST" type="url">PostHog host for product analytics.</EnvVar>
+<EnvVar name="POSTHOG_PROJECT_PUBLIC_KEY" type="string">PostHog project key.</EnvVar>
+</EnvVars>
+
+## Integrations
+
+OAuth credentials for each connector, all optional, set only the ones you use.
+
+<EnvVars>
+<EnvVar name="XERO_CLIENT_ID" type="string">Xero OAuth client id.</EnvVar>
+<EnvVar name="XERO_CLIENT_SECRET" type="string">Xero OAuth client secret.</EnvVar>
+<EnvVar name="XERO_WEBHOOK_SECRET" type="string">Verifies inbound Xero webhooks.</EnvVar>
+<EnvVar name="QUICKBOOKS_CLIENT_ID" type="string">QuickBooks OAuth client id.</EnvVar>
+<EnvVar name="QUICKBOOKS_CLIENT_SECRET" type="string">QuickBooks OAuth client secret.</EnvVar>
+<EnvVar name="JIRA_CLIENT_ID" type="string">Jira OAuth client id.</EnvVar>
+<EnvVar name="JIRA_CLIENT_SECRET" type="string">Jira OAuth client secret.</EnvVar>
+<EnvVar name="SLACK_CLIENT_ID" type="string">Slack OAuth client id.</EnvVar>
+<EnvVar name="SLACK_CLIENT_SECRET" type="string">Slack OAuth client secret.</EnvVar>
+<EnvVar name="ONSHAPE_CLIENT_ID" type="string">Onshape OAuth client id.</EnvVar>
+<EnvVar name="ONSHAPE_CLIENT_SECRET" type="string">Onshape OAuth client secret.</EnvVar>
+<EnvVar name="EXCHANGE_RATES_API_KEY" type="string">Currency exchange-rate feed.</EnvVar>
+<EnvVar name="GOOGLE_PLACES_API_KEY" type="string">Address autocomplete.</EnvVar>
+</EnvVars>
+
+## Infrastructure — SST
+
+Read by `sst.config.ts` at deploy time, not by the app.
+
+<EnvVars>
+<EnvVar name="AWS_REGION" type="string" required>Region to deploy into.</EnvVar>
+<EnvVar name="AWS_ACCOUNT_ID" type="string" required>Target AWS account.</EnvVar>
+<EnvVar name="IMAGE_TAG" type="string" required>ECR image tag to deploy.</EnvVar>
+<EnvVar name="CERT_ARN_ERP" type="string">ACM certificate ARN for the ERP domain.</EnvVar>
+<EnvVar name="CERT_ARN_MES" type="string">ACM certificate ARN for the MES domain.</EnvVar>
+<EnvVar name="URL_ERP" type="url">Custom ERP domain, overrides the default.</EnvVar>
+<EnvVar name="URL_MES" type="url">Custom MES domain, overrides the default.</EnvVar>
+</EnvVars>
+
+<Callout type="warn">
+Older notes list `TRIGGER_*` (Trigger.dev) and `UPSTASH_REDIS_*` variables. Those are gone. Jobs run on
+Inngest and the cache uses a plain `REDIS_URL`.
+</Callout>

@@ -26,6 +26,7 @@ import { useNavigation, useParams } from "react-router";
 import { useUser } from "~/hooks";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
+import { reconcileReceiptLineSerials } from "../../inventory.models";
 import { getReceiptTracking } from "../../inventory.service";
 import type { ReceiptLine } from "../../types";
 
@@ -112,21 +113,35 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
       }
 
       if (line.requiresSerialTracking) {
-        if (line.receivedQuantity === 0) return;
-        const trackedEntities = receiptLineTracking.data?.filter((tracking) => {
-          const attributes = tracking.attributes as TrackedEntityAttributes;
-          return attributes["Receipt Line"] === line.id;
-        });
+        const receivedQuantity = line.receivedQuantity ?? 0;
+        if (receivedQuantity === 0) return;
 
-        const quantityWithSerial = trackedEntities?.reduce((acc, tracking) => {
-          const serialNumber = tracking.readableId;
-          return acc + (serialNumber ? 1 : 0);
-        }, 0);
+        // post-receipt consumes one serial per index in [0, receivedQuantity);
+        // extra or duplicate entities are ignored at post time. Validate that
+        // every required index has a serial via the same reconciliation the
+        // post route uses, rather than comparing a raw count.
+        const entities = (receiptLineTracking.data ?? [])
+          .filter((tracking) => {
+            const attributes = tracking.attributes as TrackedEntityAttributes;
+            return attributes["Receipt Line"] === line.id;
+          })
+          .map((tracking) => ({
+            id: tracking.id,
+            index: (tracking.attributes as TrackedEntityAttributes)[
+              "Receipt Line Index"
+            ],
+            hasSerial: !!tracking.readableId
+          }));
 
-        if (quantityWithSerial !== line.receivedQuantity) {
+        const { missingIndexes } = reconcileReceiptLineSerials(
+          entities,
+          receivedQuantity
+        );
+
+        if (missingIndexes.length > 0) {
           errors.push({
             itemReadableId: getItemReadableId(items, line.itemId) ?? null,
-            receivedQuantity: line.receivedQuantity ?? 0,
+            receivedQuantity,
             receivedQuantityError: "Serial numbers are missing"
           });
         }

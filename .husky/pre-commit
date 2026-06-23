@@ -3,12 +3,12 @@
 # prepare script. Without this guard the hook crashes with a cryptic
 # ".husky/_/husky.sh: No such file or directory". Skip hooks gracefully instead.
 if [ ! -f "$(dirname "$0")/_/husky.sh" ]; then
-  echo "⚠ husky not initialized — run 'pnpm install'. Skipping git hooks."
-  exit 0
+    echo "⚠ husky not initialized — run 'pnpm install'. Skipping git hooks."
+    exit 0
 fi
 . "$(dirname "$0")/_/husky.sh"
 
-npx lint-staged
+pnpm exec lint-staged
 
 # Compile lingui translations if any relevant files were modified
 if git diff --cached --name-only | grep -qE '\.(tsx?|jsx?)$|\.po$'; then
@@ -28,5 +28,5 @@ fi
 # Regenerate MCP tools if any .service.ts file was modified
 if git diff --cached --name-only | grep -q '\.service\.ts$'; then
     npx tsx scripts/generate-mcp.ts
-    git add apps/erp/app/routes/api+/mcp+/lib/server.ts apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json llm/cache/mcp-tools-reference.md
+    git add apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json
 fi

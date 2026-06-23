@@ -1,12 +1,21 @@
 import { useCarbon } from "@carbon/auth";
 import {
+  Button,
   CardHeader,
   CardTitle,
   ClientOnly,
   cn,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
+  ModalTitle,
   ModelViewer,
   Spinner,
   toast,
+  useDisclosure,
   useMode
 } from "@carbon/react";
 import {
@@ -18,7 +27,7 @@ import { nanoid } from "nanoid";
 import { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { LuCloudUpload } from "react-icons/lu";
-import { useFetcher } from "react-router";
+import { useFetcher, useRevalidator } from "react-router";
 import { useUser } from "~/hooks";
 import { getPrivateUrl, path } from "~/utils/path";
 
@@ -53,9 +62,71 @@ const CadModel = ({
   } = useUser();
   const mode = useMode();
   const { carbon } = useCarbon();
+  const revalidator = useRevalidator();
 
   const fetcher = useFetcher<{}>();
   const [file, setFile] = useState<File | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const deleteModal = useDisclosure();
+
+  const onDelete = async () => {
+    if (!carbon) {
+      toast.error("Failed to initialize carbon client");
+      return;
+    }
+
+    setIsDeleting(true);
+
+    let result;
+    if (metadata?.itemId) {
+      result = await carbon
+        .from("item")
+        .update({ modelUploadId: null })
+        .eq("id", metadata.itemId);
+    } else if (metadata?.salesRfqLineId) {
+      result = await carbon
+        .from("salesRfqLine")
+        .update({ modelUploadId: null })
+        .eq("id", metadata.salesRfqLineId);
+    } else if (metadata?.quoteLineId) {
+      result = await carbon
+        .from("quoteLine")
+        .update({ modelUploadId: null })
+        .eq("id", metadata.quoteLineId);
+    } else if (metadata?.salesOrderLineId) {
+      result = await carbon
+        .from("salesOrderLine")
+        .update({ modelUploadId: null })
+        .eq("id", metadata.salesOrderLineId);
+    } else if (metadata?.jobId) {
+      result = await carbon
+        .from("job")
+        .update({ modelUploadId: null })
+        .eq("id", metadata.jobId);
+    }
+
+    setIsDeleting(false);
+
+    if (result?.error) {
+      toast.error("Failed to delete model");
+      return;
+    }
+
+    setFile(null);
+    deleteModal.onClose();
+    toast.success("Model deleted");
+    revalidator.revalidate();
+  };
+
+  const canDelete =
+    !isReadOnly &&
+    !!(
+      metadata?.itemId ||
+      metadata?.salesRfqLineId ||
+      metadata?.quoteLineId ||
+      metadata?.salesOrderLineId ||
+      metadata?.jobId
+    );
 
   const onFileChange = async (file: File | null) => {
     const modelId = nanoid();
@@ -122,13 +193,55 @@ const CadModel = ({
     >
       {() => {
         return file || modelPath ? (
-          <ModelViewer
-            key={modelPath}
-            file={file}
-            url={modelPath ? getPrivateUrl(modelPath) : null}
-            mode={mode}
-            className={viewerClassName}
-          />
+          <>
+            <ModelViewer
+              key={modelPath}
+              file={file}
+              url={modelPath ? getPrivateUrl(modelPath) : null}
+              mode={mode}
+              className={viewerClassName}
+              onDelete={canDelete ? deleteModal.onOpen : undefined}
+            />
+            {deleteModal.isOpen && (
+              <Modal
+                open
+                onOpenChange={(open) => {
+                  if (!open) deleteModal.onClose();
+                }}
+              >
+                <ModalOverlay />
+                <ModalContent>
+                  <ModalHeader>
+                    <ModalTitle>Delete 3D model</ModalTitle>
+                  </ModalHeader>
+                  <ModalBody>
+                    <p className="text-sm text-muted-foreground">
+                      Are you sure you want to delete this 3D file and image?
+                      Continuing will remove both the preview image and the 3D
+                      file from this record. This action cannot be undone.
+                    </p>
+                  </ModalBody>
+                  <ModalFooter>
+                    <Button
+                      variant="secondary"
+                      onClick={deleteModal.onClose}
+                      isDisabled={isDeleting}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={onDelete}
+                      isLoading={isDeleting}
+                      isDisabled={isDeleting}
+                    >
+                      Delete
+                    </Button>
+                  </ModalFooter>
+                </ModalContent>
+              </Modal>
+            )}
+          </>
         ) : (
           <CadModelUpload
             className={uploadClassName}

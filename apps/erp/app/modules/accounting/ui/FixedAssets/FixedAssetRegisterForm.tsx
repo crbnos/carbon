@@ -64,6 +64,7 @@ const FixedAssetRegisterForm = ({ onClose }: FixedAssetRegisterFormProps) => {
                 <Number
                   name="accumulatedDepreciation"
                   label="Accumulated Depreciation"
+                  termId="depreciation"
                   minValue={0}
                   formatOptions={{
                     style: "currency",
@@ -73,6 +74,7 @@ const FixedAssetRegisterForm = ({ onClose }: FixedAssetRegisterFormProps) => {
                 <DatePicker
                   name="depreciationStartDate"
                   label="Depreciation Start Date"
+                  termId="depreciation"
                 />
               </VStack>
             </ModalDrawerBody>

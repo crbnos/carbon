@@ -364,6 +364,7 @@ const WarehouseTransferForm = ({
                     <DatePicker
                       name="expectedReceiptDate"
                       label={t`Expected Receipt Date`}
+                      termId="receipt"
                     />
                   </>
                 )}

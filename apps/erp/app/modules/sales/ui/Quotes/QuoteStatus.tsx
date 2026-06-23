@@ -1,4 +1,5 @@
 import { Status } from "@carbon/react";
+import { QUOTE_STATUS_COLOR_MAP } from "@carbon/utils";
 import type { quoteStatusType } from "../../sales.models";
 
 type QuoteStatusProps = {
@@ -6,22 +7,12 @@ type QuoteStatusProps = {
 };
 
 const QuoteStatus = ({ status }: QuoteStatusProps) => {
-  switch (status) {
-    case "Draft":
-      return <Status color="gray">{status}</Status>;
-    case "Sent":
-      return <Status color="blue">{status}</Status>;
-    case "Ordered":
-    case "Partial":
-      return <Status color="green">{status}</Status>;
-    case "Cancelled":
-    case "Expired":
-      return <Status color="red">{status}</Status>;
-    case "Lost":
-      return <Status color="orange">{status}</Status>;
-    default:
-      return null;
-  }
+  if (!status) return null;
+
+  const color = QUOTE_STATUS_COLOR_MAP[status];
+  if (!color) return null;
+
+  return <Status color={color}>{status}</Status>;
 };
 
 export default QuoteStatus;

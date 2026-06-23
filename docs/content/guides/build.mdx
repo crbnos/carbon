@@ -1,0 +1,57 @@
+---
+title: Inside the build
+description: How each robot part is made or bought.
+label: "(II)"
+index: 1
+---
+
+Open the job you just released and look at what it actually takes to build a robot. This is where the product structure you set up in PLM meets the reality of the floor.
+
+> PLM specifies the parts. The method adds the clarity: how each part is obtained, and whether it's built, bought, or pulled from the shelf.
+
+## The bill of materials
+
+A robot's <Term id="bom">bill of materials</Term> (BoM) is a tree. The robot is built from an arm and a leg; each of those is built from a machined part and a motor. Carbon shows the whole structure at a glance, with every node carrying an icon for how it's obtained.
+
+<Figure illustration="bom-tree" caption="The robot BoM: made parts in blue, bought parts in amber, every leaf pulled from stock." />
+
+## Method types
+
+Every item in that tree carries a <Term>method type</Term>, and it's the single most load-bearing field in your whole catalog. There are three values, and each one routes the item down a completely different path:
+
+<Figure illustration="method-types" caption="One field, three values: Make to Order becomes a job, Purchase to Order a PO, Pull from Inventory a stock pull." />
+
+- <Term>Make to Order</Term>: you manufacture it. The arm part and leg part are machined in-house, so each becomes its own <Term>job</Term> with its own operations.
+- <Term>Purchase to Order</Term>: you purchase it. The motors come from a supplier, so they flow through [purchasing](/guides/rfq-to-po) as a <Term>purchase order</Term>, never touching the floor.
+- <Term>Pull from Inventory</Term>: you pull it from stock when the parent is built, whether you originally made it or bought it.
+
+You don't tag this on each BoM line by hand. The method type lives on [the item itself](/docs/reference/items), and every BoM that uses that item mirrors it. Switch a part's method type once, and it cascades everywhere the part appears.
+
+<Callout tone="blue" badge="TWO DIFFERENT QUESTIONS" title="Method type and replenishment system aren't the same axis.">
+Method type answers "how does this part get into its parent?": Make to Order, Purchase to Order, or Pull from Inventory. The <Term>replenishment system</Term>, Buy, Make, or Buy and Make, answers "how is this part stocked overall, and which planning queue does it land in?" A part can be made for one parent and pulled from stock for another.
+</Callout>
+
+## Kits & subassemblies
+
+Because the arm and leg are Make to Order parts, they aren't just line items — they're built things. But Carbon gives a made item in a BoM two flavors, and the choice changes how the floor handles it:
+
+<Figure illustration="kit-vs-subassembly" caption="Same arm, two treatments: a Subassembly builds as its own job; a Kit is issued straight into the parent." />
+
+- <Term>Subassembly</Term>: built as its own job, with its own <Term>routing</Term> and its own completion. You can release the left arm independently of the final robot, and Carbon keeps the hierarchy in sync.
+- <Term>Kit</Term>: not built separately at all. Its components are issued together straight into the parent job, as a set. There's no kit job and no kit operation — just the parts, grouped.
+
+Reach for a subassembly when the thing is genuinely manufactured and worth tracking on its own. Reach for a kit when a cluster of parts always goes in together and a separate build would just be ceremony.
+
+<Screenshot label="BoM — Subassembly / Kit toggle" caption="Switching the arm between a tracked Subassembly and an issued-together Kit." ratio="wide" />
+
+## Methods on the job
+
+Back on the job, you're looking at that working copy of the method from the last chapter, and you can drill the whole way down. The robot's method lists the arm and leg; open the arm and you're in the arm's method, its machined part set to Make to Order and its motor set to Purchase to Order. The tree is as deep as the product.
+
+Methods are versioned, which is what keeps a busy shop sane. A method is Draft, Active, or Archived, and only a Draft can be edited. An Active method is frozen, the jobs running against it won't shift under anyone's feet, so you revise by publishing a new version, not by editing a live one.
+
+<Callout tone="amber" badge="FROZEN WHEN ACTIVE" title="Live work builds against a version that can't change mid-stream.">
+Draft is the workbench; Active is the published, locked recipe; Archived is history. Changes flow forward into the next version and the next job — never backward into a build that's already moving.
+</Callout>
+
+<Screenshot label="Job method explorer" caption="The robot job's method expanded: arm and leg subassemblies, each with its own materials and operations." ratio="wide" />

@@ -65,6 +65,7 @@ const ItemCostingForm = ({ initialValues }: ItemCostingFormProps) => {
             <Select
               name="costingMethod"
               label={t`Costing Method`}
+              termId="costing-method"
               options={itemCostingMethods.map((method) => ({
                 label: method,
                 value: method

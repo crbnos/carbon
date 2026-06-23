@@ -84,6 +84,7 @@ type HeaderProps<T> = {
   withPagination: boolean;
   withSearch: boolean;
   withSelectableRows: boolean;
+  sort?: ReactNode;
 };
 
 const TableHeader = <T extends object>({
@@ -109,7 +110,8 @@ const TableHeader = <T extends object>({
   withPagination,
   withSavedView,
   withSearch,
-  withSelectableRows
+  withSelectableRows,
+  sort
 }: HeaderProps<T>) => {
   const { t, i18n } = useLingui();
   const [params, setParams] = useUrlParams();
@@ -299,7 +301,11 @@ const TableHeader = <T extends object>({
           {!!filters?.length && <Filter filters={filters} />}
         </HStack>
         <HStack>
-          <Sort columnAccessors={columnAccessors} />
+          {sort === undefined ? (
+            <Sort columnAccessors={columnAccessors} />
+          ) : (
+            sort
+          )}
 
           <Columns
             columnOrder={columnOrder}

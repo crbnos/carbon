@@ -23,6 +23,7 @@ import {
   Heading,
   HStack,
   SidebarTrigger,
+  Skeleton,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -31,7 +32,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import {
   LuCheck,
   LuChevronDown,
@@ -42,11 +43,13 @@ import {
   LuUndo2
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { useFetcher, useLoaderData } from "react-router";
+import { Await, useFetcher, useLoaderData } from "react-router";
 import { Enumerable } from "~/components/Enumerable";
 import ItemThumbnail from "~/components/ItemThumbnail";
 import { PickingListStatus } from "~/components/PickingListStatus";
 import { ShortPickModal } from "~/components/ShortPickModal";
+import type { PickingListRecommendation } from "~/services/inventory.service";
+import { getPickingListRecommendations } from "~/services/inventory.service";
 import { isPickingListLocked } from "~/services/models";
 import { getPickingListForExecution } from "~/services/picking.service";
 import { useItems } from "~/stores";
@@ -63,7 +66,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return {
-    pickingList: result.data
+    pickingList: result.data,
+    // Deferred (not awaited): recommended serial/batch lots per line, streamed in
+    // after the list paints so the at-a-glance subtext never blocks first render.
+    recommendations: getPickingListRecommendations(client, pickingListId)
   };
 }
 
@@ -82,8 +88,12 @@ interface Kit {
   lines: Line[];
 }
 
+type RecommendationsPromise = Promise<
+  Record<string, PickingListRecommendation[]>
+>;
+
 export default function PickingExecutionRoute() {
-  const { pickingList } = useLoaderData<typeof loader>();
+  const { pickingList, recommendations } = useLoaderData<typeof loader>();
 
   const lines = pickingList.lines ?? [];
   const isLocked = isPickingListLocked(pickingList.status);
@@ -144,6 +154,7 @@ export default function PickingExecutionRoute() {
                 kit={kit}
                 pickingListId={pickingList.id}
                 isLocked={isLocked}
+                recommendations={recommendations}
               />
             ))}
           </VStack>
@@ -184,7 +195,7 @@ function PickingListControls({
     <HStack spacing={2}>
       {status === "Draft" && (
         <Button
-          size="lg"
+          size="md"
           leftIcon={<LuPlay />}
           isLoading={isSubmitting}
           isDisabled={isSubmitting}
@@ -196,12 +207,13 @@ function PickingListControls({
       {status === "In Progress" && (
         <Button
           size="md"
+          variant="secondary"
           leftIcon={<LuCheck />}
           isLoading={isSubmitting}
           isDisabled={isSubmitting}
           onClick={() => setStatus("Completed")}
         >
-          <Trans>Complete</Trans>
+          <Trans>Finish</Trans>
         </Button>
       )}
     </HStack>
@@ -219,11 +231,13 @@ function isLineResolved(line: Line) {
 function PickingKitCard({
   kit,
   pickingListId,
-  isLocked
+  isLocked,
+  recommendations
 }: {
   kit: Kit;
   pickingListId: string;
   isLocked: boolean;
+  recommendations: RecommendationsPromise;
 }) {
   const totalToPick = kit.lines.reduce(
     (sum, l) => sum + Number(l.quantityToPick ?? 0),
@@ -260,6 +274,7 @@ function PickingKitCard({
               pickingListId={pickingListId}
               isLast={index === kit.lines.length - 1}
               isLocked={isLocked}
+              recommendations={recommendations}
             />
           ))}
         </div>
@@ -272,12 +287,14 @@ function PickLineItem({
   line,
   pickingListId,
   isLast,
-  isLocked
+  isLocked,
+  recommendations
 }: {
   line: Line;
   pickingListId: string;
   isLast: boolean;
   isLocked: boolean;
+  recommendations: RecommendationsPromise;
 }) {
   const [items] = useItems();
   const fetcher = useFetcher<{ success: boolean; message?: string }>();
@@ -365,29 +382,65 @@ function PickLineItem({
     });
   };
 
+  const quantityBadge = isTracked ? (
+    <Badge
+      className={cn(
+        "text-white text-base tabular-nums",
+        isFullyPicked
+          ? "bg-emerald-600"
+          : quantityPicked > 0
+            ? "bg-orange-500"
+            : "bg-red-600"
+      )}
+    >
+      {quantityPicked}/{quantityToPick}
+    </Badge>
+  ) : (
+    <Count
+      count={isShort ? quantityPicked : quantityToPick}
+      className={cn(
+        "text-white text-base tabular-nums",
+        isFullyPicked
+          ? "bg-emerald-600"
+          : isShort
+            ? "bg-orange-500"
+            : "bg-red-600"
+      )}
+    />
+  );
+
   return (
     <div
       className={cn(
-        "flex items-center justify-between gap-6 p-4 border-b transition-opacity duration-150",
+        "flex flex-col gap-4 p-4 border-b transition-opacity duration-150",
+        "sm:flex-row sm:items-center sm:justify-between sm:gap-6",
         isLast && "border-none",
-        isResolved && "opacity-50 hover:opacity-100"
+        isResolved && "opacity-60 hover:opacity-100"
       )}
     >
-      <HStack spacing={4} className="min-w-0 flex-1">
-        <ItemThumbnail
-          size="lg"
-          thumbnailPath={null}
-          type={(item?.type as "Part") ?? "Part"}
-        />
-        <VStack spacing={0} className="min-w-0">
-          <p className="text-sm font-medium truncate">{itemName}</p>
-          <p className="text-xs text-muted-foreground truncate">
-            {item?.readableIdWithRevision ?? lineItem?.readableId}
-          </p>
-        </VStack>
-      </HStack>
+      {/* Identity — item, part number, suggested lots, and (mobile) the count */}
+      <div className="flex items-start justify-between gap-4 min-w-0 sm:flex-1">
+        <HStack spacing={4} className="min-w-0">
+          <ItemThumbnail
+            size="xl"
+            thumbnailPath={null}
+            type={(item?.type as "Part") ?? "Part"}
+          />
+          <VStack spacing={1} className="min-w-0">
+            <p className="truncate text-base font-medium">{itemName}</p>
+            <p className="truncate font-mono text-sm text-muted-foreground">
+              {item?.readableIdWithRevision ?? lineItem?.readableId}
+            </p>
+            {isTracked && !isFullyPicked && (
+              <RecommendedLots resolve={recommendations} lineId={line.id} />
+            )}
+          </VStack>
+        </HStack>
+        <div className="shrink-0 sm:hidden">{quantityBadge}</div>
+      </div>
 
-      <HStack spacing={6} className="shrink-0">
+      {/* Controls — source, count (desktop), and pick actions */}
+      <div className="flex items-center justify-end gap-3 sm:gap-6 sm:shrink-0">
         {source ? (
           <div className="text-base font-medium whitespace-nowrap">
             {source}
@@ -412,32 +465,7 @@ function PickLineItem({
             </TooltipContent>
           </Tooltip>
         ) : null}
-        {isTracked ? (
-          <Badge
-            className={cn(
-              "text-white text-base tabular-nums",
-              isFullyPicked
-                ? "bg-emerald-600"
-                : quantityPicked > 0
-                  ? "bg-orange-500"
-                  : "bg-red-600"
-            )}
-          >
-            {quantityPicked}/{quantityToPick}
-          </Badge>
-        ) : (
-          <Count
-            count={isShort ? quantityPicked : quantityToPick}
-            className={cn(
-              "text-white text-base tabular-nums",
-              isFullyPicked
-                ? "bg-emerald-600"
-                : isShort
-                  ? "bg-orange-500"
-                  : "bg-red-600"
-            )}
-          />
-        )}
+        <div className="hidden sm:block">{quantityBadge}</div>
         {isLocked ? (
           isCancelled ? (
             <Badge variant="red">
@@ -449,7 +477,7 @@ function PickLineItem({
             <Trans>Cancelled</Trans>
           </Badge>
         ) : isTracked ? (
-          <HStack spacing={1}>
+          <HStack spacing={1} className="flex-1 justify-end sm:flex-none">
             {pickedLots.length === 1 ? (
               <Button
                 size="lg"
@@ -457,6 +485,7 @@ function PickLineItem({
                 leftIcon={<LuUndo2 />}
                 onClick={() => unpickTracked(pickedLots[0].trackedEntityId)}
                 isDisabled={isSubmitting}
+                className="flex-1 sm:flex-none"
               >
                 {pickedLots[0].trackedEntity?.readableId ? (
                   <Trans>Unpick {pickedLots[0].trackedEntity.readableId}</Trans>
@@ -473,6 +502,7 @@ function PickLineItem({
                     leftIcon={<LuUndo2 />}
                     rightIcon={<LuChevronDown />}
                     isDisabled={isSubmitting}
+                    className="flex-1 sm:flex-none"
                   >
                     <Trans>Unpick</Trans>
                   </Button>
@@ -497,6 +527,7 @@ function PickLineItem({
                 leftIcon={<LuQrCode />}
                 onClick={openPicker}
                 isDisabled={isSubmitting}
+                className="flex-1 sm:flex-none"
               >
                 <Trans>Scan</Trans>
               </Button>
@@ -510,16 +541,18 @@ function PickLineItem({
             onClick={() => pick(0)}
             isLoading={isSubmitting}
             isDisabled={isSubmitting}
+            className="flex-1 sm:flex-none"
           >
             <Trans>Unpick</Trans>
           </Button>
         ) : (
-          <HStack spacing={1}>
+          <HStack spacing={1} className="flex-1 justify-end sm:flex-none">
             <Button
               size="lg"
               variant="secondary"
               onClick={() => setShortOpen(true)}
               isDisabled={isSubmitting}
+              className="flex-1 sm:flex-none"
             >
               <Trans>Short</Trans>
             </Button>
@@ -529,12 +562,13 @@ function PickLineItem({
               onClick={() => pick(quantityToPick)}
               isLoading={isSubmitting}
               isDisabled={isSubmitting}
+              className="flex-1 sm:flex-none"
             >
               <Trans>Pick</Trans>
             </Button>
           </HStack>
         )}
-      </HStack>
+      </div>
 
       {shortOpen && (
         <ShortPickModal
@@ -569,5 +603,42 @@ function PickLineItem({
         />
       )}
     </div>
+  );
+}
+
+/**
+ * At-a-glance recommended serial/batch numbers for a tracked line, streamed in
+ * from the deferred list-wide recommendations so the row paints immediately.
+ * Rendered as large, touch-readable monospace chips, no label — the chips
+ * speak for themselves.
+ */
+function RecommendedLots({
+  resolve,
+  lineId
+}: {
+  resolve: RecommendationsPromise;
+  lineId: string;
+}) {
+  return (
+    <Suspense fallback={<Skeleton className="mt-2 h-8 w-44 rounded-md" />}>
+      <Await resolve={resolve} errorElement={null}>
+        {(byLine) => {
+          const lots = byLine?.[lineId] ?? [];
+          if (lots.length === 0) return null;
+          return (
+            <div className="mt-2 flex min-w-0 flex-wrap items-center gap-2 text-base">
+              {lots.map((lot) => (
+                <span
+                  key={lot.trackedEntityId}
+                  className="max-w-full truncate rounded-md border border-border bg-background px-3 py-1 font-mono tabular-nums text-foreground shadow-sm"
+                >
+                  {lot.readableId ?? lot.trackedEntityId}
+                </span>
+              ))}
+            </div>
+          );
+        }}
+      </Await>
+    </Suspense>
   );
 }

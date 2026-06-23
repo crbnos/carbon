@@ -1,0 +1,50 @@
+{
+  "name": "docs",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "node scripts/generate-api-docs.mjs && next dev -p 3002",
+    "build": "node scripts/generate-api-docs.mjs && fumadocs-mdx && next build",
+    "start": "next start -p 3002",
+    "generate:api": "node scripts/generate-api-docs.mjs",
+    "postinstall": "fumadocs-mdx",
+    "clean": "rimraf .cache .turbo .next .source node_modules",
+    "lint": "biome lint --write .",
+    "format": "biome format --write .",
+    "check": "biome check --write .",
+    "typecheck": "node scripts/generate-api-docs.mjs && fumadocs-mdx && tsc --noEmit"
+  },
+  "dependencies": {
+    "@carbon/glossary": "workspace:*",
+    "@carbon/utils": "workspace:*",
+    "@radix-ui/react-dialog": "1.1.15",
+    "@radix-ui/react-popover": "1.1.15",
+    "motion": "^12",
+    "fumadocs-core": "^16",
+    "fumadocs-mdx": "^15",
+    "fumadocs-ui": "^16",
+    "next": "^16",
+    "non.geist": "catalog:",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "shiki": "^4.2.0",
+    "simple-icons": "^16.23.0",
+    "zod": "^4"
+  },
+  "devDependencies": {
+    "@carbon/config": "workspace:*",
+    "@httptoolkit/httpsnippet": "^3.0.2",
+    "@tailwindcss/postcss": "^4",
+    "@tailwindcss/typography": "catalog:",
+    "@types/mdx": "^2.0.14",
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "rimraf": "catalog:",
+    "tailwind-scrollbar": "catalog:",
+    "tailwind-scrollbar-hide": "catalog:",
+    "tailwindcss": "catalog:",
+    "tailwindcss-animate": "catalog:",
+    "typescript": "catalog:"
+  }
+}

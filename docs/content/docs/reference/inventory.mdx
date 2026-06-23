@@ -1,0 +1,48 @@
+---
+title: Inventory & locations
+description: Where stock lives, how on-hand is tracked, and how it moves.
+---
+
+Stock in Carbon lives at a **location** and, within it, in a **storage unit**. What's actually on hand is derived from a ledger of movements, not a single editable number, so every quantity has a trail behind it.
+
+## Locations and storage units
+
+A **location** is a site or warehouse. Within one, stock sits in **storage units**: bins and shelves that can nest (aisle › shelf › bin) and be typed (cold, hazardous, returns). A storage unit attached to a work center is a **lineside** bin, used to stage material at the point of use; everything else is a warehouse bin.
+
+## On hand is a ledger
+
+The **<Term id="item-ledger">item ledger</Term>** is the source of truth. On-hand is the sum of its signed movements: <Term id="receipt">receipts</Term> and outputs add, sales and consumption subtract, transfers move between places. A cached per-location quantity exists for quick reads, but the ledger is what's authoritative.
+
+| Entry type | Effect |
+| --- | --- |
+| Purchase / Output | Goods received or produced into stock. |
+| Sale / Consumption | Goods shipped or issued to a job. |
+| Positive / Negative Adjustment | Manual corrections. |
+| Transfer | Movement between locations or storage units. |
+
+<Callout type="note">
+Read on-hand from the **ledger**, not the cached quantity table. The ledger is the truth, and it's status-aware (it can separate what's on hold or rejected from what's truly available).
+</Callout>
+
+<Callout type="warn">
+On hand can go **negative**. Shipping, issuing to a job, and picking all post their movements without first checking availability. Carbon would rather let the work proceed and reconcile later than block the floor. Only manual negative adjustments are guarded against overdraw.
+</Callout>
+
+## Movements
+
+Two kinds of transfer move stock. A **warehouse transfer** moves it between locations, and is carried out as a <Term id="shipment">shipment</Term> out of one and a receipt into the other. A **stock transfer** moves it within a single location, between storage units. A manual **adjustment** writes straight to the ledger as a positive or negative entry — or a *Set Quantity* that books the difference to a target.
+
+## Value
+
+Inventory value is on-hand quantity times the item's unit cost, summed per item and location.
+
+## Related
+
+<Cards>
+  <Card title="Items" href="/docs/reference/items">
+    The tracking type that decides how an item's stock is counted.
+  </Card>
+  <Card title="Receipts" href="/docs/reference/receipts">
+    How goods enter inventory in the first place.
+  </Card>
+</Cards>

@@ -366,6 +366,7 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
                       <Item
                         name="sourceId"
                         label={t`Source Method`}
+                        termId="method"
                         type={(routeData?.job.itemType ?? "Part") as "Part"}
                         blacklist={configurableItemIds}
                         includeInactive={includeInactive === true}
@@ -471,6 +472,7 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
                   <Item
                     name="itemId"
                     label={t`Target Method`}
+                    termId="method"
                     type={(routeData?.job?.itemType ?? "Part") as "Part"}
                     blacklist={configurableItemIds}
                     locationId={routeData?.job?.locationId ?? undefined}

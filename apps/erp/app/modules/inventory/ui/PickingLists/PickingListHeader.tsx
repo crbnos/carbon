@@ -152,7 +152,7 @@ const PickingListHeader = () => {
             <Button
               type="button"
               leftIcon={<LuCircleCheck />}
-              variant={status === "In Progress" ? "primary" : "secondary"}
+              variant="secondary"
               isDisabled={
                 status !== "In Progress" ||
                 statusFetcher.state !== "idle" ||
@@ -164,7 +164,7 @@ const PickingListHeader = () => {
               }
               onClick={() => submitStatus("Completed")}
             >
-              <Trans>Complete</Trans>
+              <Trans>Finish</Trans>
             </Button>
             <Button
               type="button"

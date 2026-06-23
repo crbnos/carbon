@@ -106,6 +106,7 @@ const AssetClassForm = ({
                 <Select
                   name="depreciationMethod"
                   label="Depreciation Method"
+                  termId="depreciation"
                   options={depreciationMethods.map((m) => ({
                     label: m,
                     value: m
@@ -119,6 +120,7 @@ const AssetClassForm = ({
                 <Number
                   name="residualValuePercent"
                   label="Residual Value %"
+                  termId="residual-value"
                   minValue={0}
                   maxValue={100}
                 />
@@ -130,11 +132,13 @@ const AssetClassForm = ({
                 <Account
                   name="accumulatedDepreciationAccountId"
                   label="Accumulated Depreciation Account"
+                  termId="depreciation"
                   classes={["Asset"]}
                 />
                 <Account
                   name="depreciationExpenseAccountId"
                   label="Depreciation Expense Account"
+                  termId="depreciation"
                   classes={["Expense"]}
                 />
                 <Account
@@ -150,6 +154,7 @@ const AssetClassForm = ({
                 <Account
                   name="disposalAccountId"
                   label="Disposal Account"
+                  termId="disposal"
                   classes={["Revenue", "Expense"]}
                 />
 
@@ -163,6 +168,7 @@ const AssetClassForm = ({
                     <Select
                       name="taxDepreciationMethod"
                       label="Tax Method"
+                      termId="depreciation"
                       placeholder="Same as Book"
                       isOptional
                       options={taxDepreciationMethods.map((m) => ({
@@ -177,6 +183,7 @@ const AssetClassForm = ({
                         <Select
                           name="macrsPropertyClass"
                           label="Recovery Period"
+                          termId="macrs"
                           options={macrsPropertyClasses.map((c) => ({
                             label: `${c}-Year Property`,
                             value: c
@@ -185,6 +192,7 @@ const AssetClassForm = ({
                         <Select
                           name="macrsConvention"
                           label="Convention"
+                          termId="macrs"
                           options={macrsConventions.map((c) => ({
                             label: c,
                             value: c
@@ -193,6 +201,7 @@ const AssetClassForm = ({
                         <Number
                           name="bonusDepreciationPercent"
                           label="Bonus Depreciation %"
+                          termId="depreciation"
                           minValue={0}
                           maxValue={100}
                         />
@@ -210,6 +219,7 @@ const AssetClassForm = ({
                         <Number
                           name="taxResidualValuePercent"
                           label="Tax Residual Value %"
+                          termId="residual-value"
                           minValue={0}
                           maxValue={100}
                         />

@@ -85,6 +85,7 @@ const ItemPlanningForm = ({
             <SelectForm
               name="reorderingPolicy"
               label={t`Reordering Policy`}
+              termId="reordering-policy"
               options={itemReorderingPolicies.map((policy) => ({
                 label: <ItemReorderPolicy reorderingPolicy={policy} />,
                 value: policy
@@ -99,6 +100,7 @@ const ItemPlanningForm = ({
                 <Number
                   name="reorderPoint"
                   label={t`Reorder Point`}
+                  termId="reorder-point"
                   minValue={0}
                 />
                 <Number
@@ -128,6 +130,7 @@ const ItemPlanningForm = ({
                 <Number
                   name="reorderPoint"
                   label={t`Reorder Point`}
+                  termId="reorder-point"
                   minValue={0}
                 />
                 <Number

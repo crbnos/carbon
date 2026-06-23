@@ -10,6 +10,7 @@
     "csv-parse": "5.6.0",
     "execa": "^8.0.1",
     "husky": "8.0.3",
+    "linguito": "^0.5.2",
     "lint-staged": "16.4.0",
     "npm-run-all": "catalog:",
     "rimraf": "catalog:",
@@ -21,7 +22,7 @@
     "vite-plugin-babel-macros": "catalog:"
   },
   "lint-staged": {
-    "(apps|packages)/**/*.{js,ts,jsx,tsx}": [
+    "(apps|packages|docs)/**/*.{js,ts,jsx,tsx}": [
       "biome check --write --no-errors-on-unmatched"
     ],
     "*.json": [
@@ -33,6 +34,7 @@
     "build": "turbo run build",
     "build:erp": "turbo run build --filter=erp",
     "build:mes": "turbo run build --filter=mes",
+    "build:docs": "turbo run build --filter=docs",
     "ci:migrations": "pnpm --filter ci ci:migrations",
     "ci:deploy": "pnpm --filter ci ci:deploy",
     "clean": "turbo run clean && rimraf ./node_modules && rimraf ./pnpm-lock.yaml",
@@ -56,10 +58,11 @@
     "lingui:compile": "lingui compile --namespace es",
     "lingui:extract": "lingui extract --clean",
     "lingui:clean": "node ./scripts/strip-po-headers.mjs",
+    "postinstall": "pnpm --filter @carbon/documents build",
     "prepare": "pnpm exec husky install",
     "test": "turbo run test",
     "tool:new": "tsx scripts/create-tool.ts",
-    "translate": "pnpm run lingui:extract && pnpx linguito translate --llm && pnpm lingui:clean",
+    "translate": "pnpm run lingui:extract && pnpm exec linguito translate --llm && pnpm lingui:clean",
     "agent:new": "tsx scripts/create-agent.ts",
     "typecheck": "turbo run typecheck --filter='*'",
     "typegen": "turbo run typegen"
@@ -67,7 +70,8 @@
   "workspaces": [
     "apps/*",
     "ci",
-    "examples/*",
+    "docs",
+    "contrib/building/examples/*",
     "packages/*"
   ],
   "packageManager": "pnpm@10.33.4",
@@ -100,6 +104,7 @@
       "core-js",
       "esbuild",
       "protobufjs",
+      "sharp",
       "supabase"
     ],
     "patchedDependencies": {

@@ -221,6 +221,7 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
                   value={selectedReplenishmentSystem}
                   name="replenishmentSystem"
                   label={t`Replenishment System`}
+                  termId="replenishment-system"
                   onChange={(value) => {
                     if (value) {
                       setSelectedReplenishmentSystem(value.value);

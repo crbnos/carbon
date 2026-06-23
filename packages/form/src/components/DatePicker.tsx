@@ -1,9 +1,11 @@
 import { useFormContext } from "@carbon/form";
+import type { TermId } from "@carbon/glossary";
 import {
   DatePicker as DatePickerBase,
   FormControl,
   FormErrorMessage,
-  FormLabel
+  FormLabel,
+  LabelWithHelp
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import type { CalendarDate } from "@internationalized/date";
@@ -17,6 +19,7 @@ import { useFormStateContext } from "../internal/formStateContext";
 type DatePickerProps = {
   name: string;
   label?: string;
+  termId?: TermId;
   isDisabled?: boolean;
   isRequired?: boolean;
   minValue?: CalendarDate;
@@ -30,6 +33,7 @@ type DatePickerProps = {
 const DatePicker = ({
   name,
   label,
+  termId,
   isDisabled: isDisabledProp = false,
   isRequired,
   minValue,
@@ -98,7 +102,7 @@ const DatePicker = ({
           htmlFor={name}
           isOptional={isRequired ? false : (fieldIsOptional ?? false)}
         >
-          {label}
+          <LabelWithHelp termId={termId}>{label}</LabelWithHelp>
         </FormLabel>
       )}
       <input type="hidden" name={name} value={utcValue} />

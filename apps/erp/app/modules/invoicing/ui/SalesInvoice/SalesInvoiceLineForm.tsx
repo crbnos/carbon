@@ -530,6 +530,7 @@ const SalesInvoiceLineForm = ({
                             <SelectControlled
                               name="methodType"
                               label={t`Method`}
+                              termId="method-type"
                               options={
                                 methodType.map((m) => ({
                                   label: (
@@ -778,6 +779,7 @@ const SalesInvoiceLineForm = ({
                         <Combobox
                           name="assetId"
                           label={t`Fixed Asset`}
+                          termId="fixed-asset"
                           isOptional={false}
                           options={assetOptions}
                           value={assetData.assetId}

@@ -13,7 +13,7 @@
       "!**/mcp*/lib/server.ts",
       "**/*.json",
       "!**/mcp*/lib/tool-metadata.json",
-      "examples/**/*"
+      "contrib/building/examples/**/*"
     ]
   },
   "formatter": { "enabled": true, "indentStyle": "space", "indentWidth": 2 },

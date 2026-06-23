@@ -1,4 +1,5 @@
 import { Status } from "@carbon/react";
+import { PURCHASE_INVOICE_STATUS_COLOR_MAP } from "@carbon/utils";
 import type { purchaseInvoiceStatusType } from "~/modules/invoicing";
 
 type PurchaseInvoicingStatusProps = {
@@ -6,25 +7,11 @@ type PurchaseInvoicingStatusProps = {
 };
 
 const PurchaseInvoicingStatus = ({ status }: PurchaseInvoicingStatusProps) => {
-  switch (status) {
-    case "Draft":
-      // case "Return":
-      return <Status color="gray">{status}</Status>;
-    case "Open":
-      return <Status color="blue">{status}</Status>;
-    case "Pending":
-    case "Partially Paid":
-      return <Status color="orange">{status}</Status>;
-    case "Overdue":
-      return <Status color="red">{status}</Status>;
-    case "Voided":
-      return <Status color="red">{status}</Status>;
-    case "Debit Note Issued":
-    case "Paid":
-      return <Status color="green">{status}</Status>;
-    default:
-      return null;
-  }
+  if (!status) return null;
+  const color = PURCHASE_INVOICE_STATUS_COLOR_MAP[status];
+  if (!color) return null;
+
+  return <Status color={color}>{status}</Status>;
 };
 
 export default PurchaseInvoicingStatus;

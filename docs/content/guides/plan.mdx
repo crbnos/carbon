@@ -1,0 +1,59 @@
+---
+title: Plan ahead
+description: Orders and forecast become jobs and POs.
+label: "(III)"
+index: 2
+---
+
+Creating that first <Term>job</Term> created demand. Carbon now knows it needs arm parts, motors, and machine time. But your <Term id="sales-order">sales orders</Term> only show part of the picture. The pipeline says more robots are coming, even though no order exists yet.
+
+Planning on confirmed orders alone means you're always reacting. Carbon lets you plan on what you expect, too — and lets each part decide for itself how aggressively to replenish.
+
+## Demand forecasting
+
+Under Production, open Projections and enter what you expect to need in the coming weeks. Here, the pipeline points to 50 robots in week four and 70 in week five, real demand with no order behind it yet. <Term id="demand-forecast">Forecasting</Term> puts it into the plan anyway.
+
+<Figure illustration="demand-forecast" caption="Confirmed orders (weeks 1–3) plus forecasted demand (weeks 4–5), the full picture Carbon plans against." />
+
+<Screenshot label="Production → Projections" caption="Entering projected weekly quantities for the robot from the sales pipeline." ratio="wide" />
+
+## Reordering policy
+
+Not every part should wait for demand to pull it. A fast-moving fastener wants a standing buffer; a custom casting wants to be ordered only when a job needs it. Each part carries a <Term>reordering policy</Term> that tells planning exactly which behavior to use:
+
+- Manual Reorder: planning stays hands-off. You decide when to order. Good for the parts a human should always eyeball.
+- Demand-Based Reorder: order just what demand needs, when it needs it, grouped into a demand accumulation period so a week of small pulls becomes one sensible order.
+- Fixed Reorder Quantity: when on-hand falls to the <Term>reorder point</Term>, order a fixed reorder quantity. Predictable, supplier-friendly batch sizes.
+- Maximum Quantity: when on-hand falls to the reorder point, top back up to the maximum inventory quantity. Classic min/max for shelf stock.
+
+<Figure illustration="reorder-policy" caption="Reorder point in action: on-hand falls to the trigger, and an order tops it back up." />
+
+<Callout tone="blue" badge="BUY OR MAKE" title="The policy decides how much; the replenishment system decides what kind of order.">
+A part set to Buy turns a replenishment into a <Term id="purchase-order">purchase order</Term>; set to Make, it turns into a job. Lot size and minimum / maximum order quantities round the raw number into something you can actually order or build.
+</Callout>
+
+<Screenshot label="Part: Planning tab" caption="A part's reordering policy, reorder point, and lot size that drive every suggestion." ratio="wide" />
+
+## Into jobs & POs
+
+Now Carbon turns the whole picture (orders, forecast, and each part's policy) into the work that fulfills it. It nets demand against what you already have (on-hand stock plus open jobs and purchase orders) and proposes the difference: [production planning](/docs/reference/planning) suggests the jobs to build, purchasing planning suggests the purchase orders to raise.
+
+<Figure illustration="planning-engine" caption="Demand in, plan out: production planning suggests jobs, purchasing planning suggests POs." />
+
+Purchasing planning applies <Term id="conversion-factor">conversion factors</Term> as it goes, so a robot's worth of demand becomes the right quantity in the units you actually buy. Nothing is committed until you confirm a suggestion. That's the moment a proposed line becomes a real job or a real PO.
+
+<Callout tone="neutral" badge="BY LOCATION" title="Demand and planning can differ by location.">
+Run different plans for different sites, and let each part replenish the way that site needs: full demand-driven planning in one, simple min/max for high-runners in another.
+</Callout>
+
+<Screenshot label="Planning table" caption="Suggested jobs and purchase orders, ready to confirm." ratio="wide" />
+
+## Receiving
+
+When a purchase order arrives, you receive it. A <Term>receipt</Term> starts as a Draft against the PO, auto-fills its lines from what was ordered, and validates the quantities; <Term id="posting">posting</Term> it turns the goods into on-hand stock on a shelf.
+
+For a <Term id="batch">batch-tracked</Term> part like the motors, Carbon captures the lot right on the receipt line, and a conversion factor converts what you bought into what you stock, so a box of ten motors becomes ten units on the shelf. Months later, you can answer exactly which lot of motors went into which robots.
+
+<Figure illustration="conversion-factor" caption="A conversion factor reconciles units: one purchased box of ten lands as ten stocked Each." />
+
+<Screenshot label="Receiving a purchase order" caption="Receiving a batch-tracked motor shipment against its PO, lot captured on the line." ratio="wide" />

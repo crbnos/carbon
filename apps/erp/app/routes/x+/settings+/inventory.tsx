@@ -299,6 +299,7 @@ function ShelfLifeNumbers() {
         minValue={0}
         maxValue={365}
         helperText={t`Items inside this window get a yellow badge.`}
+        termId="shelf-life"
       />
       <Number
         name="defaultShelfLifeDays"
@@ -306,6 +307,7 @@ function ShelfLifeNumbers() {
         minValue={1}
         maxValue={365}
         helperText={t`Pre-filled for a new item when expiry is Fixed Duration.`}
+        termId="shelf-life"
       />
     </div>
   );

@@ -1,28 +1,13 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import type { Database } from "@carbon/database";
-import {
-  Avatar,
-  cn,
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-  Separator,
-  Status
-} from "@carbon/react";
+import { companyHasPlan } from "@carbon/ee/plan.server";
+import { Avatar } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { useLocale, useNumberFormatter } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
-import {
-  LuBookMarked,
-  LuImage,
-  LuPaperclip,
-  LuShield,
-  LuShieldCheck
-} from "react-icons/lu";
+import { LuBookMarked, LuImage, LuShield, LuShieldCheck } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useParams } from "react-router";
-import { z } from "zod";
+import { useLoaderData } from "react-router";
 import {
   BreadcrumbItem,
   BreadcrumbLink,
@@ -30,15 +15,18 @@ import {
   MethodIcon,
   Table
 } from "~/components";
-import {
-  getJobOperationAttachments,
-  jobOperationStatus
-} from "~/modules/production";
-import { JobStatus } from "~/modules/production/ui/Jobs";
+import { getJobOperationAttachments } from "~/modules/production";
+import { salesOrderStatusType } from "~/modules/sales/sales.models";
 import { getExternalSalesOrderLines } from "~/modules/sales/sales.service";
+import {
+  JobOperationProgress,
+  jobOperationValidator,
+  PortalLineStatus,
+  PortalSort,
+  type SortableColumn
+} from "~/modules/sales/ui/CustomerPortal";
 import { SalesStatus } from "~/modules/sales/ui/SalesOrder";
 import { getCompany } from "~/modules/settings/settings.service";
-import { operationTypes } from "~/modules/shared";
 import {
   getBase64ImageFromSupabase,
   getCustomerPortal
@@ -49,18 +37,6 @@ import { getGenericQueryFilters } from "~/utils/query";
 export const meta = () => {
   return [{ title: "Customer Portal" }];
 };
-
-const jobOperationValidator = z
-  .object({
-    id: z.string(),
-    status: z.enum(jobOperationStatus),
-    description: z.string(),
-    order: z.number(),
-    operationType: z.enum(operationTypes),
-    operationQuantity: z.number(),
-    quantityComplete: z.number()
-  })
-  .array();
 
 const defaultColumnPinning = {
   left: ["customerReference"]
@@ -83,6 +59,13 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   if (!customer.data.customerId) {
     console.error(customer.error);
     throw new Error("Customer not found");
+  }
+
+  const hasPlan = await companyHasPlan(serviceRole, customer.data.companyId, {
+    feature: "CUSTOMER_PORTALS"
+  });
+  if (!hasPlan) {
+    throw new Response("Not found", { status: 404 });
   }
 
   const url = new URL(request.url);
@@ -176,30 +159,35 @@ export default function CustomerPortal() {
       {
         accessorKey: "customerReference",
         header: "PO/SO #",
+        size: 180,
         cell: ({ row }) => (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 min-w-0">
             {thumbnails[row.original.readableIdWithRevision!] ? (
               <img
                 alt={row.original.readableIdWithRevision!}
-                className="size-8 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
+                className="size-8 bg-gradient-to-bl from-muted to-muted/40 rounded-lg flex-shrink-0"
                 src={
                   thumbnails[row.original.readableIdWithRevision!] ?? undefined
                 }
               />
             ) : (
-              <div className="size-8 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-1">
+              <div className="size-8 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-1 flex-shrink-0">
                 <LuImage className="size-6 text-muted-foreground" />
               </div>
             )}
             {row.original.customerReference ? (
               <>
                 <LuShieldCheck className="text-emerald-500 flex-shrink-0" />
-                <span>{row.original.customerReference}</span>
+                <span className="text-xs font-medium truncate">
+                  {row.original.customerReference}
+                </span>
               </>
             ) : (
               <>
                 <LuShield className="flex-shrink-0" />
-                <span>{row.original.salesOrderId}</span>
+                <span className="text-xs font-medium truncate">
+                  {row.original.salesOrderId}
+                </span>
               </>
             )}
           </div>
@@ -208,16 +196,16 @@ export default function CustomerPortal() {
           icon: <LuBookMarked />
         }
       },
-
       {
-        id: "status",
+        accessorKey: "salesOrderStatus",
         header: "Status",
+        enableSorting: false,
         cell: ({ row }) => {
           const jobOperations = jobOperationValidator.safeParse(
             row.original.jobOperations
           );
           return (
-            <SalesOrderLineStatus
+            <PortalLineStatus
               quantityOrdered={row.original.saleQuantity}
               quantityShipped={row.original.quantitySent}
               jobStatus={row.original.jobStatus}
@@ -225,6 +213,16 @@ export default function CustomerPortal() {
               salesOrderStatus={row.original.salesOrderStatus}
             />
           );
+        },
+        meta: {
+          filter: {
+            type: "static",
+            options: salesOrderStatusType.map((status) => ({
+              value: status,
+              label: <SalesStatus status={status} disableTooltip />
+            }))
+          },
+          pluralHeader: "Statuses"
         }
       },
       {
@@ -329,8 +327,7 @@ export default function CustomerPortal() {
 
           return (
             <JobOperationProgress
-              quantityShipped={row.original.jobQuantityShipped ?? 0}
-              quantityComplete={row.original.jobQuantityComplete ?? 0}
+              customerId={customer.id}
               jobOperations={jobOperations.data}
               jobOperationAttachments={jobOperationAttachments}
             />
@@ -338,11 +335,24 @@ export default function CustomerPortal() {
         }
       }
     ];
-  }, [formatter, thumbnails, jobOperationAttachments, locale]);
+  }, [formatter, thumbnails, jobOperationAttachments, locale, customer.id]);
+
+  const sortableColumns = useMemo<SortableColumn[]>(
+    () =>
+      columns.flatMap((c) =>
+        "accessorKey" in c &&
+        typeof c.accessorKey === "string" &&
+        typeof c.header === "string" &&
+        c.enableSorting !== false
+          ? [{ value: c.accessorKey, label: c.header }]
+          : []
+      ),
+    [columns]
+  );
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-background">
-      <div className="flex justify-between items-center py-3 px-4 bg-background border-b w-ful">
+      <div className="flex justify-between items-center py-3 px-4 bg-background border-b w-full">
         <Breadcrumbs>
           <BreadcrumbItem>
             <BreadcrumbLink to="#">{company?.name}</BreadcrumbLink>
@@ -363,139 +373,9 @@ export default function CustomerPortal() {
           count={count ?? 0}
           compact
           defaultColumnPinning={defaultColumnPinning}
+          sort={<PortalSort columns={sortableColumns} />}
         />
       </div>
-    </div>
-  );
-}
-
-function SalesOrderLineStatus({
-  quantityOrdered,
-  quantityShipped,
-  jobStatus,
-  jobOperations,
-  salesOrderStatus
-}: {
-  quantityOrdered: number;
-  quantityShipped: number;
-  jobStatus: Database["public"]["Enums"]["jobStatus"];
-  jobOperations: z.infer<typeof jobOperationValidator>;
-  salesOrderStatus: Database["public"]["Enums"]["salesOrderStatus"];
-}) {
-  if (
-    ["Draft", "Needs Approval", "Completed", "Cancelled", "Invoiced"].includes(
-      salesOrderStatus
-    )
-  ) {
-    return <SalesStatus status={salesOrderStatus} />;
-  }
-
-  if (quantityOrdered === quantityShipped) {
-    return <Status color="blue">Shipped</Status>;
-  }
-
-  if (quantityShipped > 0) {
-    return <Status color="orange">Partially Shipped</Status>;
-  }
-
-  if (!jobStatus || ["Draft", "Ready", "Planned"].includes(jobStatus)) {
-    return <Status color="yellow">Planned</Status>;
-  }
-
-  if (
-    ["In Progress", "Paused"].includes(jobStatus) ||
-    jobOperations?.some((operation) =>
-      ["In Progress", "Done"].includes(operation.status)
-    )
-  ) {
-    return <Status color="green">In Progress</Status>;
-  }
-
-  return <JobStatus status={jobStatus} />;
-}
-
-function JobOperationProgress({
-  quantityShipped,
-  quantityComplete,
-  jobOperations,
-  jobOperationAttachments
-}: {
-  quantityShipped: number;
-  quantityComplete: number;
-  jobOperations: z.infer<typeof jobOperationValidator>;
-  jobOperationAttachments: Record<string, string[]>;
-}) {
-  const { id } = useParams();
-  if (!id) {
-    throw new Error("Customer ID is required");
-  }
-
-  const isComplete = quantityShipped > 0 || quantityComplete > 0;
-
-  return (
-    <div className="flex items-center gap-0">
-      {jobOperations
-        .sort((a, b) => a.order - b.order)
-        .map((operation, index) => {
-          const isFirst = index === 0;
-          const isLast = index === jobOperations.length - 1;
-          const operationId = operation.id;
-          const attachments = jobOperationAttachments[operationId];
-
-          return (
-            <div
-              key={index}
-              className={cn(
-                `
-              flex items-center gap-1 max-w-[140px]
-              uppercase font-bold text-[11px] truncate tracking-tight whitespace-nowrap
-              px-2 py-1
-              border border-border
-              transition-colors`,
-                operation.status === "Done" || isComplete
-                  ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-400"
-                  : operation.status === "In Progress"
-                    ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300"
-                    : "",
-                isFirst ? "rounded-l-full" : "-ml-px",
-                isLast ? "rounded-r-full" : ""
-              )}
-            >
-              {operation.description}
-              {Array.isArray(attachments) && attachments.length > 0 && (
-                <HoverCard openDelay={0}>
-                  <HoverCardTrigger>
-                    <LuPaperclip className="size-3 text-muted-foreground" />
-                  </HoverCardTrigger>
-                  <HoverCardContent
-                    align="end"
-                    className="flex flex-col items-end gap-1 text-xs overflow-hidden max-w-96"
-                  >
-                    <div className="w-full text-left text-xs font-normal tracking-normal flex items-center gap-1">
-                      <LuPaperclip className="size-3 text-muted-foreground" />
-                      <span>Attachments</span>
-                    </div>
-                    <Separator className="my-1" />
-                    {attachments.map((attachment) => {
-                      const fileName = attachment.split("/").pop();
-                      return (
-                        <div key={attachment}>
-                          <a
-                            href={path.to.externalCustomerFile(id, attachment)}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            {fileName}
-                          </a>
-                        </div>
-                      );
-                    })}
-                  </HoverCardContent>
-                </HoverCard>
-              )}
-            </div>
-          );
-        })}
     </div>
   );
 }

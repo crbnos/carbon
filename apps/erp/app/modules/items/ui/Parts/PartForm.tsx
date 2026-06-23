@@ -284,6 +284,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                 <Select
                   name="replenishmentSystem"
                   label={t`Replenishment System`}
+                  termId="replenishment-system"
                   options={itemReplenishmentSystemOptions}
                   onChange={(newValue) => {
                     setReplenishmentSystem(newValue?.value ?? "Buy");
@@ -297,11 +298,13 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                 <Select
                   name="itemTrackingType"
                   label={t`Tracking Type`}
+                  termId="tracked-entity"
                   options={itemTrackingTypeOptions}
                 />
                 <DefaultMethodType
                   name="defaultMethodType"
                   label={t`Default Method Type`}
+                  termId="method-type"
                   replenishmentSystem={replenishmentSystem}
                   value={defaultMethodType}
                   onChange={(newValue) =>

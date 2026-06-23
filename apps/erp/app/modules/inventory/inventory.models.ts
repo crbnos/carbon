@@ -269,6 +269,56 @@ export function isWarehouseTransferLocked(
   return status !== null && status !== undefined && status !== "Draft";
 }
 
+export type ReceiptSerialEntity = {
+  id: string;
+  index: number | undefined;
+  hasSerial: boolean;
+  createdAt?: string | null;
+};
+
+/**
+ * Posting a serial-tracked receipt line consumes exactly one serial per index
+ * in [0, receivedQuantity). Reducing the received quantity (orphaned indices
+ * >= received) or editing a serial value (a duplicate at the same index) leaves
+ * stale tracked entities behind. This is the single source of truth for both
+ * sides of that invariant, so the post-time validation and the pre-post cleanup
+ * can never disagree on which serials count:
+ *   - `missingIndexes`  — required indices with no serial yet (post validation)
+ *   - `surplusEntityIds` — orphan/duplicate entities to delete before posting,
+ *     keeping the earliest-created entity for each in-range index.
+ */
+export function reconcileReceiptLineSerials(
+  entities: ReceiptSerialEntity[],
+  receivedQuantity: number
+): { missingIndexes: number[]; surplusEntityIds: string[] } {
+  const received = Math.max(0, receivedQuantity);
+
+  const serializedIndexes = new Set(
+    entities.filter((e) => e.hasSerial).map((e) => e.index)
+  );
+  const missingIndexes = Array.from(
+    { length: received },
+    (_, index) => index
+  ).filter((index) => !serializedIndexes.has(index));
+
+  const keptIndexes = new Set<number>();
+  const surplusEntityIds: string[] = [];
+  const ordered = [...entities].sort((a, b) =>
+    (a.createdAt ?? "").localeCompare(b.createdAt ?? "")
+  );
+  for (const entity of ordered) {
+    const index = entity.index;
+    const inRange = typeof index === "number" && index >= 0 && index < received;
+    if (inRange && !keptIndexes.has(index)) {
+      keptIndexes.add(index);
+    } else {
+      surplusEntityIds.push(entity.id);
+    }
+  }
+
+  return { missingIndexes, surplusEntityIds };
+}
+
 export const warehouseTransferValidator = z
   .object({
     id: zfd.text(z.string().optional()),

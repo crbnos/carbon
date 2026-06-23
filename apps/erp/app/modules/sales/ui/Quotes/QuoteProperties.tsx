@@ -349,6 +349,7 @@ const QuoteProperties = () => {
               onUpdate("locationId", value.value);
             }
           }}
+          termId="quote"
         />
       </ValidatedForm>
 

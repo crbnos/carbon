@@ -1,4 +1,5 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { companyHasPlan } from "@carbon/ee/plan.server";
 import { Ratelimit, redis } from "@carbon/kv";
 import { supportedModelTypes } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
@@ -64,6 +65,13 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
   if (!customer.data.customerId) {
     console.error(customer.error);
     throw new Error("Customer not found");
+  }
+
+  const hasPlan = await companyHasPlan(serviceRole, customer.data.companyId, {
+    feature: "CUSTOMER_PORTALS"
+  });
+  if (!hasPlan) {
+    return new Response(null, { status: 403 });
   }
 
   let path = params["*"];

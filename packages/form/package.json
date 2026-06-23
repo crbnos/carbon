@@ -25,6 +25,7 @@
     "vitest": "catalog:"
   },
   "dependencies": {
+    "@carbon/glossary": "workspace:*",
     "@internationalized/date": "catalog:",
     "@react-aria/i18n": "catalog:",
     "cookie": "catalog:",

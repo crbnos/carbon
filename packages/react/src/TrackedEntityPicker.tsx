@@ -160,6 +160,17 @@ export function TrackedEntityPicker({
   const [order, setOrder] = useState<TrackedEntityPickOrder>(defaultOrder);
   const [scan, setScan] = useState("");
 
+  // Hosts open the picker and fetch its data in parallel, so `defaultOrder`
+  // arrives a render after mount (undefined -> the item's configured order).
+  // Re-sync the selection when it changes so the stored pick order wins over
+  // the "Default" fallback. A subsequent user override sticks because
+  // `defaultOrder` is then stable.
+  const [appliedDefaultOrder, setAppliedDefaultOrder] = useState(defaultOrder);
+  if (defaultOrder !== appliedDefaultOrder) {
+    setAppliedDefaultOrder(defaultOrder);
+    setOrder(defaultOrder);
+  }
+
   const orderOptions = usePickOrderOptions();
 
   const ordered = useMemo(

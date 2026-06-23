@@ -199,6 +199,7 @@ const SupplierPartForm = ({
                 <ConversionFactor
                   name="conversionFactor"
                   label={t`Conversion Factor`}
+                  termId="conversion-factor"
                   inventoryCode={unitOfMeasureCode ?? undefined}
                   purchasingCode={purchaseUnitOfMeasure}
                 />

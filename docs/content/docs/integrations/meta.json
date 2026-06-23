@@ -1,0 +1,12 @@
+{
+  "title": "Integrations",
+  "defaultOpen": true,
+  "pages": [
+    "accounting",
+    "project-management",
+    "cad",
+    "estimating",
+    "email",
+    "assistant"
+  ]
+}

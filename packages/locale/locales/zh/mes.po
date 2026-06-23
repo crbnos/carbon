@@ -105,6 +105,9 @@ msgstr "认证错误"
 msgid "available"
 msgstr "可用"
 
+msgid "Back Home"
+msgstr ""
+
 msgid "Batch"
 msgstr "批次"
 
@@ -324,6 +327,9 @@ msgstr "输入 {0} 的 PIN 码"
 
 msgid "Error"
 msgstr "错误"
+
+msgid "Error!"
+msgstr ""
 
 msgid "Estimated"
 msgstr "估计"
@@ -722,6 +728,9 @@ msgstr "拣选"
 msgid "Pick tracked item"
 msgstr "拣选追踪项目"
 
+msgid "Picked"
+msgstr "已拣选"
+
 msgid "Picked quantity"
 msgstr "已拣选数量"
 
@@ -956,6 +965,9 @@ msgstr "已登录为 {stationName}"
 
 msgid "Size"
 msgstr "大小"
+
+msgid "Something went wrong"
+msgstr ""
 
 msgid "Source"
 msgstr "来源"

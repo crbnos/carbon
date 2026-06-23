@@ -1,0 +1,301 @@
+/* ───────────────────────────────────────────────────────────────────────────
+ * Editorial skin for the Reference (Fumadocs /docs) — make it read like the Guide:
+ * warm paper, DM Sans, IBM Plex Mono warm-pill code, custom dot bullets, editorial
+ * tables/cards/callouts, and a calmer brand-accented sidebar + TOC. The Fumadocs
+ * `--fd-*` tokens are already mapped to the warm palette in global.css; this layers
+ * the editorial *feel* on top. Content rules are scoped to `.prose` (Reference only);
+ * chrome rules to the `#nd-*` layout ids — neither touches the Guide surface.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+/* ── Title + description (Fumadocs <DocsTitle>/<DocsDescription>) ───────────── */
+.reference-title {
+  font-family: var(--font-sans);
+  font-size: clamp(2rem, 4vw, 2.5rem) !important;
+  line-height: 1.12 !important;
+  letter-spacing: -0.005em;
+  font-weight: 530 !important;
+  color: #262323;
+}
+.reference-desc {
+  font-size: 1.0625rem !important;
+  line-height: 1.6;
+  color: rgba(38, 35, 35, 0.62) !important;
+}
+
+/* ── Body headings ─────────────────────────────────────────────────────────── */
+.prose :where(h2):not(:where([class~="not-prose"] *)) {
+  font-family: var(--font-sans);
+  font-size: 1.5rem;
+  font-weight: 560;
+  letter-spacing: 0.005em;
+  color: #262323;
+  margin-top: 3rem;
+}
+.prose :where(h3):not(:where([class~="not-prose"] *)) {
+  font-size: 1.125rem;
+  font-weight: 560;
+  color: #262323;
+}
+
+/* ── Body text ─────────────────────────────────────────────────────────────── */
+.prose :where(p, li):not(:where([class~="not-prose"] *)) {
+  font-size: 0.97rem;
+  line-height: 1.72;
+  color: rgba(38, 35, 35, 0.78);
+}
+
+/* ── Custom dot bullets (matches the Guide's list style) ───────────────────── */
+.prose :where(ul):not(:where([class~="not-prose"] *)) {
+  list-style: none;
+  padding-left: 0;
+}
+.prose :where(ul) > li {
+  position: relative;
+  padding-left: 22px;
+}
+.prose :where(ul) > li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 8px;
+  height: 8px;
+  border-radius: 24px;
+  border: 1.5px solid rgba(190, 190, 190, 0.5);
+  background: #f5f5f2;
+  box-shadow: 0 1px 1px 0 #fff, inset 0 0 0.357px 1.071px #fff, inset 0 1.429px 0 0 #fff;
+}
+.prose :where(ul) > li::marker {
+  content: none;
+}
+
+/* ── Inline code → a calm, low-contrast chip. Dense technical prose can have a
+ * dozen identifiers per line; a solid dark fill turns that into a ransom note, so
+ * inline stays quiet (ink on a whisper tint) while code blocks carry the dark. ── */
+.prose :not(pre) > code {
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  font-weight: 450;
+  color: #2b2825;
+  background: rgba(38, 35, 35, 0.055);
+  border: 1px solid rgba(38, 35, 35, 0.08);
+  border-radius: 5px;
+  padding: 0.08em 0.36em;
+  white-space: nowrap;
+}
+.prose :not(pre) > code::before,
+.prose :not(pre) > code::after {
+  content: none !important;
+}
+
+/* Fenced code → our dark API-playground panel. The MDX `pre` is overridden by
+ * <MdxCodeBlock>, which wraps the shiki output in `pre.mdx-shiki`; the token
+ * colors come from github-dark-default-default spans, the panel chrome from the wrapper. */
+.prose pre.mdx-shiki {
+  margin: 0 !important;
+  padding: 11px 16px !important;
+  padding-right: 64px !important;
+  background: transparent !important;
+  font-family: var(--font-mono) !important;
+  font-size: 12.5px !important;
+  line-height: 1.55 !important;
+  scrollbar-width: none;
+}
+.prose pre.mdx-shiki::-webkit-scrollbar {
+  display: none;
+}
+.prose pre.mdx-shiki code {
+  font-family: inherit !important;
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+/* Dual-theme shiki tags each token with --shiki-light/--shiki-dark CSS vars instead
+ * of a direct color (this is our own panel, not a fumadocs CodeBlock). Resolve the
+ * var to the actual color so tokens aren't invisible on the dark panel. */
+.prose pre.mdx-shiki code,
+.prose pre.mdx-shiki code span {
+  color: var(--shiki-light);
+}
+
+/* Fenced code → Fumadocs CodeBlock (`pre` override in components/mdx.tsx), restyled to
+ * the warm-paper dark panel. Shiki tokens are tuned for a dark bg, so we use a warm
+ * near-black (matching the old API panel) and tint the header + copy chrome through the
+ * fd-* tokens the component already reads. */
+figure.ed-codeblock {
+  margin-block: 18px;
+  background-color: #1b1b1a;
+  border-color: #2a2a28;
+  border-radius: 12px;
+  --color-fd-muted-foreground: #9a9a96;
+  --color-fd-border: #2a2a28;
+  --color-fd-accent-foreground: #ffffff;
+}
+/* The header's language label → a quiet mono tag. */
+figure.ed-codeblock figcaption {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: 0.03em;
+}
+
+/* ── Tables → rounded warm frame, cream header, hairline rows ───────────────── */
+.prose :where(table):not(:where([class~="not-prose"] *)) {
+  border: 1px solid #e7e7e3;
+  border-radius: 12px;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  font-size: 0.92rem;
+  box-shadow: inset 0 1px 0 #fff;
+}
+.prose thead {
+  background: #fbfbf8;
+}
+.prose th {
+  text-align: left;
+  font-weight: 560;
+  color: #262323;
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid #e7e7e3;
+}
+.prose td {
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid #efefeb;
+  color: rgba(38, 35, 35, 0.78);
+}
+.prose tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* ── Blockquote + rule ─────────────────────────────────────────────────────── */
+.prose :where(blockquote):not(:where([class~="not-prose"] *)) {
+  border-left: 2px solid #d5d5d3;
+  padding-left: 16px;
+  font-style: italic;
+  font-weight: 460;
+  color: rgba(38, 35, 35, 0.62);
+}
+.prose blockquote p:first-of-type::before,
+.prose blockquote p:last-of-type::after {
+  content: none;
+}
+.prose :where(hr):not(:where([class~="not-prose"] *)) {
+  border: none;
+  border-top: 1px solid #e7e7e3;
+  margin: 48px 0;
+}
+
+/* ── Links — ink, hairline underline that warms on hover ───────────────────── */
+.prose :where(a):not(:where([class~="not-prose"] *)) {
+  color: #262323;
+  text-decoration: none;
+  font-weight: inherit;
+}
+.prose :where(p, li) a {
+  text-decoration: underline;
+  text-decoration-color: #d5d5d3;
+  text-underline-offset: 2px;
+}
+.prose :where(p, li) a:hover {
+  text-decoration-color: #262323;
+}
+
+/* ═══ Chrome ════════════════════════════════════════════════════════════════ */
+
+#nd-sidebar,
+#nd-subnav,
+#nd-toc {
+  font-family: var(--font-sans);
+}
+
+/* MainHeader is fixed at 64px. Reserve that height via Fumadocs' own variable so the
+ * content padding, sidebar, and TOC all sit cleanly below the header. */
+#nd-docs-layout {
+  --fd-header-height: 64px;
+}
+#nd-sidebar {
+  top: 64px !important;
+  height: calc(100dvh - 64px) !important;
+}
+#nd-toc {
+  top: 64px !important;
+}
+/* The content column starts behind the fixed 64px header (Fumadocs only pads it
+ * 56px). Clear the header and leave a comfortable gap above the title. */
+#nd-page {
+  padding-top: 88px !important;
+}
+
+/* With nav: {} the sidebar wordmark is gone, leaving an orphaned "Collapse Sidebar"
+ * toggle in an empty top row. Hide that row so search sits at the very top — the
+ * conductor-style clean header. (Search is a separate row, unaffected.) */
+#nd-sidebar :has(> button[aria-label="Collapse Sidebar"]) {
+  display: none !important;
+}
+
+/* Sidebar: hairline divider + brand-accented active item */
+#nd-sidebar {
+  border-inline-end: 1px solid #e8e7e6;
+}
+#nd-sidebar a[data-active="true"] {
+  color: #1e84b0 !important;
+  background: rgba(0, 176, 255, 0.08) !important;
+}
+#nd-sidebar a[data-active="true"]::before {
+  background: #00b0ff !important;
+}
+
+/* "Open Carbon" → dark CTA pill, mirroring the Guide header */
+#nd-sidebar a[href^="https://app.carbon.ms"],
+#nd-subnav a[href^="https://app.carbon.ms"] {
+  justify-content: center;
+  margin: 4px 8px;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #3a3835 0%, #262323 100%);
+  color: rgba(255, 255, 255, 0.92) !important;
+  font-weight: 500;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.45), inset 0 0 0 0.5px rgba(255, 255, 255, 0.08),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+}
+#nd-sidebar a[href^="https://app.carbon.ms"]:hover,
+#nd-subnav a[href^="https://app.carbon.ms"]:hover {
+  background: linear-gradient(180deg, #4a4845 0%, #363333 100%);
+  color: #fff !important;
+}
+
+/* Sidebar wordmark — match the Guide logo weight */
+#nd-sidebar a[href="/"] span,
+#nd-subnav a[href="/"] span {
+  font-weight: 580;
+  letter-spacing: 0.16px;
+  color: #262323;
+}
+
+/* Table of contents: mono eyebrow heading + brand-accented active line */
+#nd-toc [data-toc] > p,
+#nd-toc h3 {
+  font-family: var(--font-mono) !important;
+  font-size: 10px !important;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(38, 35, 35, 0.42) !important;
+}
+#nd-toc a {
+  color: rgba(38, 35, 35, 0.55);
+  transition: color 150ms ease;
+}
+#nd-toc a:hover {
+  color: #262323;
+}
+#nd-toc a[data-active="true"] {
+  color: #1e84b0 !important;
+}
+
+/* Nav sidebar scroll affordance — fade the top edge so items dissolve under it as the
+ * list scrolls up. (The bottom fade + chevron come from <NavScrollChevron>; only the
+ * top is masked so the chevron at the bottom stays crisp.) */
+.nav-scroll-fade {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 24px);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 24px);
+}

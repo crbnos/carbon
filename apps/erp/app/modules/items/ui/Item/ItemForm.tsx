@@ -152,12 +152,14 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
             <Select
               name="itemTrackingType"
               label={t`Tracking Type`}
+              termId="tracked-entity"
               options={itemTrackingTypeOptions}
             />
 
             <Select
               name="replenishmentSystem"
               label={t`Replenishment System`}
+              termId="replenishment-system"
               options={itemReplenishmentSystemOptions}
               onChange={(newValue) => {
                 setReplenishmentSystem(newValue?.value ?? "Buy");
@@ -171,6 +173,7 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
             <DefaultMethodType
               name="defaultMethodType"
               label={t`Default Method Type`}
+              termId="method-type"
               replenishmentSystem={replenishmentSystem}
               value={defaultMethodType}
               onChange={(newValue) =>

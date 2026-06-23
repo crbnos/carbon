@@ -11,6 +11,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
 import { sanitize } from "~/utils/supabase";
+import { getPickedQuantitiesByJobMaterial } from "./inventory.service";
 import type {
   documentTypes,
   nonScrapQuantityValidator,
@@ -499,16 +500,35 @@ export async function getJobMaterialsByOperationId(
         ] === materialId && expiredConsumedIds.has(input.id)
     );
 
+  // How much of each material has already been picked (staged at lineside) across any
+  // non-cancelled picking-list line. Picking is optional, so this is additive overlay
+  // data — materials with no picking activity have no entry and render unchanged.
+  const materialIds = Array.from(
+    new Set(
+      (materials.data ?? []).map((m) => m.id).filter((id): id is string => !!id)
+    )
+  );
+  const pickedByMaterial = await getPickedQuantitiesByJobMaterial(
+    client,
+    materialIds
+  );
+  const pickedFor = (materialId: string | null) =>
+    (materialId ? pickedByMaterial[materialId] : undefined) ?? {
+      quantityPicked: 0,
+      quantityToPick: 0
+    };
+
   if (requiresSerialTracking) {
     return {
       materials:
         materials.data?.map((material) => {
           const hasExpiredConsumed = consumedExpiredFor(material.id);
+          const picked = pickedFor(material.id);
           if (
             !material.requiresSerialTracking &&
             !material.requiresBatchTracking
           )
-            return { ...material, hasExpiredConsumed };
+            return { ...material, hasExpiredConsumed, ...picked };
           const issuedForTrackedParent =
             trackedInputs.data
               ?.filter(
@@ -524,7 +544,8 @@ export async function getJobMaterialsByOperationId(
           return {
             ...material,
             quantityIssued: issuedForTrackedParent,
-            hasExpiredConsumed
+            hasExpiredConsumed,
+            ...picked
           };
         }) ?? [],
       trackedInputs: trackedInputs.data ?? []
@@ -533,7 +554,8 @@ export async function getJobMaterialsByOperationId(
     return {
       materials: (materials.data ?? []).map((material) => ({
         ...material,
-        hasExpiredConsumed: consumedExpiredFor(material.id)
+        hasExpiredConsumed: consumedExpiredFor(material.id),
+        ...pickedFor(material.id)
       })),
       trackedInputs: trackedInputs.data ?? []
     };

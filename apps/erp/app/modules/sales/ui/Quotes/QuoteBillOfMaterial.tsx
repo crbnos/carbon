@@ -695,6 +695,8 @@ function MaterialForm({
     kit: boolean;
     storageUnitId?: string;
     quoteOperationId?: string;
+    requiresBatchTracking: boolean;
+    requiresSerialTracking: boolean;
     itemReplenishmentSystem: string;
   }>({
     itemId: item.data.itemId ?? "",
@@ -706,6 +708,8 @@ function MaterialForm({
     kit: item.data.kit ?? false,
     storageUnitId: item.data.storageUnitId,
     quoteOperationId: item.data.quoteOperationId,
+    requiresBatchTracking: item.data.item?.itemTrackingType === "Batch",
+    requiresSerialTracking: item.data.item?.itemTrackingType === "Serial",
     itemReplenishmentSystem: item.data.item?.replenishmentSystem ?? "Buy"
   });
 
@@ -720,6 +724,8 @@ function MaterialForm({
       description: "",
       unitOfMeasureCode: "EA",
       kit: false,
+      requiresBatchTracking: false,
+      requiresSerialTracking: false,
       itemReplenishmentSystem: "Buy"
     });
   };
@@ -814,6 +820,9 @@ function MaterialForm({
   const backflushDisclosure = useDisclosure();
   const locationId = routeData?.quote?.locationId ?? undefined;
   const storageUnits = useStorageUnits(locationId);
+
+  const isTracked =
+    itemData.requiresBatchTracking || itemData.requiresSerialTracking;
 
   return (
     <ValidatedForm
@@ -972,6 +981,7 @@ function MaterialForm({
               }));
             }}
             replenishmentSystem={itemData.itemReplenishmentSystem}
+            termId="method-type"
           />
           <StorageUnit
             name="storageUnitId"
@@ -989,7 +999,7 @@ function MaterialForm({
           <HStack>
             <LuGitPullRequestCreateArrow />
             <Label>
-              <Trans>Backflush</Trans>
+              {isTracked ? <Trans>Operation</Trans> : <Trans>Backflush</Trans>}
             </Label>
           </HStack>
           <HStack>
@@ -1007,8 +1017,8 @@ function MaterialForm({
               icon={<LuChevronRight />}
               aria-label={
                 backflushDisclosure.isOpen
-                  ? "Collapse Backflush"
-                  : "Expand Backflush"
+                  ? "Collapse Operation"
+                  : "Expand Operation"
               }
               variant="ghost"
               size="md"
@@ -1041,6 +1051,7 @@ function MaterialForm({
                 quoteOperationId: newValue?.value as string
               }));
             }}
+            termId="operation"
           />
         </div>
       </div>

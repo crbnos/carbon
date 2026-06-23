@@ -219,7 +219,8 @@ const SupplierQuoteLineForm = ({
                 <HStack
                   className={cn(
                     "w-full justify-between items-start",
-                    type === "modal" && "pr-16"
+                    type === "modal" && "pr-16",
+                    type !== "modal" && isEditing && "pr-6"
                   )}
                 >
                   <ModalCardHeader className="flex flex-1">
@@ -404,6 +405,7 @@ const SupplierQuoteLineForm = ({
                           <CostCenter
                             name="costCenterId"
                             label={t`Cost Center`}
+                            termId="cost-center"
                             isOptional
                           />
                           <DatePicker

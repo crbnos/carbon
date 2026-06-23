@@ -1,0 +1,335 @@
+/* Carbon docs — Tailwind v4 + Geist + Carbon tokens + Fumadocs UI.
+ * See .claude/skills/carbon-docs/references/brand-integration.md for the why. */
+
+@import "tailwindcss";
+
+/* Carbon's token → utility mapping (@theme inline) + @plugins */
+@import "@carbon/config/tailwind/theme.css";
+
+/* Fumadocs UI base + a neutral preset we override with Carbon tokens below */
+@import "fumadocs-ui/css/neutral.css";
+@import "fumadocs-ui/css/preset.css";
+
+/* Scan the docs app's own files for utility classes */
+@source "../";
+
+/* Swap the site typeface to DM Sans / Fira Code (matches the editorial Guide), self-hosted
+ * via next/font (see app/layout.tsx). This overrides Carbon theme.css's Geist font utilities
+ * site-wide. The --font-dm-sans / --font-fira-code vars are set on <html> by next/font. */
+@theme {
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-fira-code), ui-monospace, monospace;
+}
+
+/* Raw token values for the default "Modern" (zinc) theme, baked in because a
+ * Next app has no React Router root route to inject them at runtime. */
+:root {
+  /* Warm paper editorial palette — matches the Guide (#F5F5F2 paper, #262323 ink). */
+  --background: 60 11% 95%;
+  --foreground: 0 4% 14%;
+  --card: 60 33% 98%;
+  --card-foreground: 0 4% 14%;
+  --popover: 60 20% 99%;
+  --popover-foreground: 0 4% 14%;
+  --active: 60 8% 90%;
+  --active-foreground: 0 4% 14%;
+  --primary: 0 4% 14%;
+  --primary-foreground: 60 11% 96%;
+  --secondary: 60 9% 93%;
+  --secondary-foreground: 0 4% 14%;
+  --muted: 60 9% 93%;
+  --muted-foreground: 24 4% 44%;
+  --accent: 60 8% 90%;
+  --accent-foreground: 0 4% 14%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 60 8% 90%;
+  --input: 60 8% 90%;
+  --ring: 0 4% 30%;
+  --success: 142 60% 40%;
+  --success-foreground: 0 0% 98%;
+  --radius: 0.5rem;
+
+  /* Editorial highlight accent — the clone's #00B0FF blue */
+  --brand: 199 100% 50%;
+}
+
+.dark {
+  --background: 0 0% 0%;
+  --foreground: 0 0% 93%;
+  --card: 0 0% 4%;
+  --card-foreground: 0 0% 93%;
+  --popover: 0 0% 7%;
+  --popover-foreground: 0 0% 93%;
+  --active: 0 0% 10%;
+  --active-foreground: 0 0% 100%;
+  --primary: 0 0% 100%;
+  --primary-foreground: 0 0% 0%;
+  --secondary: 0 0% 7%;
+  --secondary-foreground: 0 0% 93%;
+  --muted: 0 0% 15%;
+  --muted-foreground: 0 0% 63%;
+  --accent: 0 0% 10%;
+  --accent-foreground: 0 0% 93%;
+  --destructive: 0 100% 64%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 15%;
+  --input: 0 0% 15%;
+  --ring: 0 0% 35%;
+  --success: 152 72% 53%;
+  --success-foreground: 0 0% 0%;
+
+  --brand: 213 94% 68%;
+}
+
+/* Expose --brand as Tailwind color utilities (text-brand, bg-brand, bg-brand/10) */
+@theme inline {
+  --color-brand: hsl(var(--brand));
+}
+
+/* Editorial warm-paper palette as Tailwind theme tokens — single source of truth for the
+ * hand-built editorial components (FieldTable, StatusFlow). Defining them in @theme both
+ * generates utilities (text-ed-ink, bg-ed-paper, border-ed-hairline, fill-ed-*, …) and
+ * exposes them as CSS variables (var(--color-ed-*)) for inline SVG styles. They mirror the
+ * exact hex the components were hardcoded with — a zero-drift swap, tweakable in one place.
+ * Light-only surface by design. */
+@theme {
+  --color-ed-ink: #262323;
+  --color-ed-ink-78: rgba(38, 35, 35, 0.78);
+  --color-ed-ink-66: rgba(38, 35, 35, 0.66);
+  --color-ed-ink-60: rgba(38, 35, 35, 0.6);
+  --color-ed-ink-45: rgba(38, 35, 35, 0.45);
+  --color-ed-hairline: #e7e7e3;
+  --color-ed-paper: #fbfbf8;
+  --color-ed-svg-line: #d8d7d2;
+  --color-ed-brand: #00b0ff;
+  --color-ed-brand-ink: #1e84b0;
+  --color-ed-accent-fill: #eaf8ff;
+  --color-ed-amber-fill: #fff2d8;
+  --color-ed-amber-stroke: #e6cfa3;
+  --color-ed-amber-text: #9c7136;
+  --color-ed-header: #f1f1ec; /* table header strip */
+  --color-ed-inset: #f6f6f1; /* expanded row panel */
+  --color-ed-row-hover: rgba(38, 35, 35, 0.025); /* row hover */
+
+  /* Long-tail editorial palette (Tier B). Warm-gray ramp consolidates a dozen
+   * near-identical border/surface grays into 5 stops; status + dark-surface +
+   * link families replace one-off hex literals. Light-only, like the set above. */
+  --color-ed-warm-100: #f5f5f2; /* warm-gray ramp: lightest surface … */
+  --color-ed-warm-150: #ecece7;
+  --color-ed-warm-300: #e3e3df;
+  --color-ed-warm-400: #dadad5;
+  --color-ed-warm-500: #d2d2cc; /* … darkest hairline */
+  --color-ed-text-faint: #c9c9c5; /* faint placeholder text */
+  --color-ed-text-muted: #9a9a96; /* muted secondary text */
+  --color-ed-graphite: #4b4b4a; /* mid-gray text (used with opacity) */
+  --color-ed-dark-bg: #1b1b1a; /* inverted/code surfaces */
+  --color-ed-dark-surface: #262624;
+  --color-ed-dark-line: #2a2a28;
+  --color-ed-dark-line-2: #3a3a38;
+  --color-ed-dark-line-3: #4a4a47;
+  --color-ed-green-bg: #e4f8da; /* success / diff-add */
+  --color-ed-green-border: #a8db91;
+  --color-ed-green-text: #4f9140;
+  --color-ed-green-strong: #3f9142;
+  --color-ed-red-bg: #fce8e6; /* error / diff-del */
+  --color-ed-red-border: #f2c0bc;
+  --color-ed-red: #b3261e;
+  --color-ed-red-bright: #e5484d;
+  --color-ed-blue-bg: #dff5ff; /* info / links (pairs with ed-brand) */
+  --color-ed-blue-bg-strong: #b2e7ff;
+  --color-ed-blue-border: #a9daf3;
+  --color-ed-blue-text: #0c6e96;
+  --color-ed-blue-mid: #3583a8;
+  --color-ed-blue-deep: #17729b;
+  --color-ed-brown: #a76451;
+
+  /* Editorial DM Sans weights between Tailwind's normal(400)/medium(500)/semibold(600). */
+  --font-weight-book: 460;
+  --font-weight-demi: 530;
+  --font-weight-semi: 560;
+
+  /* Editorial size ramp (font-size only, no line-height — pairs with explicit leading-*).
+   * Consolidated from a 0.5px-step sprawl into integer steps; named by px. */
+  --text-ed-10: 0.625rem;
+  --text-ed-11: 0.6875rem;
+  --text-ed-12: 0.75rem;
+  --text-ed-13: 0.8125rem;
+  --text-ed-14: 0.875rem;
+  --text-ed-15: 0.9375rem;
+  --text-ed-16: 1rem;
+  --text-ed-18: 1.125rem;
+  --text-ed-20: 1.25rem;
+  --text-ed-24: 1.5rem;
+  --text-ed-32: 2rem;
+  --text-ed-40: 2.5rem;
+}
+
+/* Map Fumadocs' own theme variables onto Carbon tokens — one palette everywhere */
+:root,
+.dark {
+  --color-fd-background: hsl(var(--background));
+  --color-fd-foreground: hsl(var(--foreground));
+  --color-fd-muted: hsl(var(--muted));
+  --color-fd-muted-foreground: hsl(var(--muted-foreground));
+  --color-fd-popover: hsl(var(--popover));
+  --color-fd-popover-foreground: hsl(var(--popover-foreground));
+  --color-fd-card: hsl(var(--card));
+  --color-fd-card-foreground: hsl(var(--card-foreground));
+  --color-fd-border: hsl(var(--border));
+  --color-fd-primary: hsl(var(--primary));
+  --color-fd-primary-foreground: hsl(var(--primary-foreground));
+  --color-fd-secondary: hsl(var(--secondary));
+  --color-fd-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-fd-accent: hsl(var(--accent));
+  --color-fd-accent-foreground: hsl(var(--accent-foreground));
+  --color-fd-ring: hsl(var(--ring));
+}
+
+/* Carbon's theme.css pulls in @tailwindcss/typography, whose `.prose` rules
+ * collide with Fumadocs' content (also `.prose`) and apply fixed grays that
+ * don't adapt to dark mode. Point Typography's color vars at Carbon tokens so
+ * prose text is theme-aware (near-white on dark, near-black on light). */
+.prose {
+  --tw-prose-body: hsl(var(--foreground));
+  --tw-prose-headings: hsl(var(--foreground));
+  --tw-prose-lead: hsl(var(--muted-foreground));
+  --tw-prose-links: hsl(var(--primary));
+  --tw-prose-bold: hsl(var(--foreground));
+  --tw-prose-counters: hsl(var(--muted-foreground));
+  --tw-prose-bullets: hsl(var(--border));
+  --tw-prose-hr: hsl(var(--border));
+  --tw-prose-quotes: hsl(var(--foreground));
+  --tw-prose-quote-borders: hsl(var(--border));
+  --tw-prose-captions: hsl(var(--muted-foreground));
+  --tw-prose-code: hsl(var(--foreground));
+  --tw-prose-pre-code: hsl(var(--foreground));
+  --tw-prose-pre-bg: hsl(var(--muted));
+  --tw-prose-th-borders: hsl(var(--border));
+  --tw-prose-td-borders: hsl(var(--border));
+  font-family: var(--font-sans);
+}
+
+/* Kill Tailwind Typography's default underlines. Heading anchors never underline;
+ * body links underline only on hover. (This was the "underlines everywhere" issue.) */
+.prose a {
+  text-decoration: none;
+  font-weight: inherit;
+}
+.prose p a:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose :where(h1, h2, h3, h4, h5, h6) a {
+  color: inherit;
+}
+
+@layer base {
+  /* Anchor + reader scrolls glide; the reduced-motion block below forces this back to
+   * `auto`, so motion-sensitive users get an instant jump without any JS branch. */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: var(--font-sans);
+    letter-spacing: var(--tracking-normal);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Editorial reading rhythm for the Guide surface (.guide-prose on the article) */
+  .guide-prose p,
+  .guide-prose li {
+    font-size: 1.0625rem;
+    line-height: 1.75;
+  }
+  .guide-prose h1 {
+    font-size: clamp(2.25rem, 5vw, 2.75rem);
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    font-weight: 600;
+  }
+  .guide-prose h2 {
+    margin-top: 3rem;
+    font-size: 1.5rem;
+    letter-spacing: -0.02em;
+    font-weight: 600;
+  }
+
+  table {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Site-wide focus ring. Single brand-accent style on every focusable element,
+   * shown only for keyboard navigation (:focus-visible) — never on mouse/touch
+   * click. `outline` (not box-shadow) follows each element's own shape and can't
+   * be clipped by overflow. Components with their own focus-visible ring still
+   * win via specificity; this is the consistent default for everything else. */
+  :focus-visible {
+    outline: 2px solid hsl(var(--brand));
+    outline-offset: 2px;
+  }
+  /* Belt-and-suspenders: suppress the UA outline on pointer focus, including any
+   * third-party rule that targets plain :focus. */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+}
+
+/* Honor reduced-motion globally: near-instant transitions/animations everywhere,
+ * including third-party (Radix, Fumadocs). Individual components (View Transitions,
+ * scroll-reveal, the lightbox) also opt out in their own code; this is the backstop. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Scroll-driven reveal + reading-progress — CSS-only, replacing the motion library.
+ * Content is in the SSR HTML and visible by default (never blocks LCP); these are
+ * pure enhancements where scroll-timeline is supported, and off under reduced-motion.
+ * `.reading-progress-fill` defaults to height:0 so unsupported browsers show no fill. */
+.reading-progress-fill {
+  height: 0;
+}
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .scroll-reveal {
+      animation: scroll-reveal-in linear both;
+      animation-timeline: view();
+      animation-range: entry 2% entry 36%;
+    }
+  }
+  @supports (animation-timeline: scroll()) {
+    .reading-progress-fill {
+      animation: reading-progress-fill linear both;
+      animation-timeline: scroll(root block);
+    }
+  }
+}
+@keyframes scroll-reveal-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes reading-progress-fill {
+  from {
+    height: 0%;
+  }
+  to {
+    height: 100%;
+  }
+}

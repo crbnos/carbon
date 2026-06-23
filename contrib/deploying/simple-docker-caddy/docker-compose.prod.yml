@@ -1,0 +1,612 @@
+###############################################################################
+# Carbon — single-VPS Docker Swarm stack (ERP + MES + Supabase + Redis + Inngest)
+# behind an auto-HTTPS Caddy reverse proxy.
+#
+#   Deploy with `./deploy.sh up` (see README.md). Do NOT `docker compose up` this
+#   file — it is a Swarm stack (`docker stack deploy`). `build:`, `depends_on`,
+#   `profiles:` and `restart:` are intentionally absent: Swarm ignores them.
+#
+# Config files are bind-mounted from the repo checkout ($CARBON_REPO) — this
+# example is single-node and expects the Carbon repo present on the host (it also
+# builds the app images from it). Sensitive values come from Docker Swarm secrets,
+# injected into env via bin/secrets-entrypoint.sh (the `__SECRET__` placeholders).
+#
+# Only `caddy` publishes ports (80/443). Everything else stays on the overlay.
+###############################################################################
+
+x-shim: &shim
+  type: bind
+  source: ${CARBON_REPO}/contrib/deploying/simple-docker-caddy/bin/secrets-entrypoint.sh
+  target: /usr/local/bin/carbon-secrets-entrypoint.sh
+  read_only: true
+
+x-restart: &restart
+  restart_policy:
+    condition: any
+    delay: 5s
+    max_attempts: 0
+
+x-app-deploy: &app-deploy
+  replicas: 1
+  restart_policy:
+    condition: any
+    delay: 5s
+  update_config:
+    parallelism: 1
+    delay: 10s
+    order: start-first
+    failure_action: rollback
+  rollback_config:
+    parallelism: 1
+    order: stop-first
+  resources:
+    limits:
+      memory: 2048M
+    reservations:
+      memory: 512M
+
+services:
+  # ─────────────────────────────── Apps ──────────────────────────────────────
+  erp:
+    image: ${CARBON_IMAGE_ERP:-carbon/erp:latest}
+    entrypoint: ["/usr/local/bin/carbon-secrets-entrypoint.sh"]
+    command: ["pnpm", "run", "start"]
+    networks: [internal]
+    secrets:
+      - postgres_password
+      - jwt_secret
+      - anon_key
+      - service_role_key
+      - session_secret
+      - inngest_signing_key
+      - inngest_event_key
+      - resend_api_key
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      CARBON_EDITION: ${CARBON_EDITION:-community}
+      AUTH_PROVIDERS: ${AUTH_PROVIDERS:-email,google,azure}
+      DOMAIN: ${DOMAIN}
+      ERP_URL: ${ERP_URL}
+      MES_URL: ${MES_URL}
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_ANON_KEY: __ANON_KEY__
+      SUPABASE_SERVICE_ROLE_KEY: __SERVICE_ROLE_KEY__
+      SUPABASE_JWT_SECRET: __JWT_SECRET__
+      SUPABASE_DB_URL: postgresql://postgres:__POSTGRES_PASSWORD__@postgres:5432/postgres?sslmode=disable
+      REDIS_URL: redis://redis:6379
+      SESSION_SECRET: __SESSION_SECRET__
+      INNGEST_SIGNING_KEY: __INNGEST_SIGNING_KEY__
+      INNGEST_EVENT_KEY: __INNGEST_EVENT_KEY__
+      RESEND_API_KEY: __RESEND_API_KEY__
+      RESEND_DOMAIN: ${RESEND_DOMAIN:-}
+    volumes:
+      - *shim
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 6s
+      retries: 5
+      start_period: 40s
+    deploy: *app-deploy
+
+  mes:
+    image: ${CARBON_IMAGE_MES:-carbon/mes:latest}
+    entrypoint: ["/usr/local/bin/carbon-secrets-entrypoint.sh"]
+    command: ["pnpm", "run", "start"]
+    networks: [internal]
+    secrets:
+      - postgres_password
+      - jwt_secret
+      - anon_key
+      - service_role_key
+      - session_secret
+      - inngest_signing_key
+      - inngest_event_key
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      CARBON_EDITION: ${CARBON_EDITION:-community}
+      AUTH_PROVIDERS: ${AUTH_PROVIDERS:-email,google,azure}
+      DOMAIN: ${DOMAIN}
+      ERP_URL: ${ERP_URL}
+      MES_URL: ${MES_URL}
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_ANON_KEY: __ANON_KEY__
+      SUPABASE_SERVICE_ROLE_KEY: __SERVICE_ROLE_KEY__
+      SUPABASE_JWT_SECRET: __JWT_SECRET__
+      SUPABASE_DB_URL: postgresql://postgres:__POSTGRES_PASSWORD__@postgres:5432/postgres?sslmode=disable
+      REDIS_URL: redis://redis:6379
+      SESSION_SECRET: __SESSION_SECRET__
+      INNGEST_SIGNING_KEY: __INNGEST_SIGNING_KEY__
+      INNGEST_EVENT_KEY: __INNGEST_EVENT_KEY__
+    volumes:
+      - *shim
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 6s
+      retries: 5
+      start_period: 40s
+    deploy: *app-deploy
+
+  caddy:
+    image: caddy:2-alpine
+    networks: [internal]
+    # mode: host (NOT ingress): caddy binds :80/:443 directly on the host NIC. The
+    # Swarm ingress mesh (IPVS) needs seconds to converge after a (re)start, but
+    # caddy fires ACME immediately — so with ingress the Let's Encrypt validator hits
+    # :80 before it routes and gets "connection refused", failing every cert. host
+    # mode makes the port live the instant caddy starts. Single-node, single-replica,
+    # so there is no multi-node routing to lose.
+    ports:
+      - target: 80
+        published: 80
+        mode: host
+      - target: 443
+        published: 443
+        mode: host
+      - target: 443
+        published: 443
+        protocol: udp
+        mode: host
+    environment:
+      ERP_HOST: ${ERP_HOST}
+      MES_HOST: ${MES_HOST}
+      SUPABASE_HOST: ${SUPABASE_HOST}
+      STUDIO_HOST: ${STUDIO_HOST:-}
+      ACME_EMAIL: ${ACME_EMAIL}
+    volumes:
+      - type: bind
+        source: ${CARBON_REPO}/contrib/deploying/simple-docker-caddy/Caddyfile
+        target: /etc/caddy/Caddyfile
+        read_only: true
+      - caddy-data:/data
+      - caddy-config:/config
+    healthcheck:
+      # 127.0.0.1, NOT localhost: /etc/hosts resolves localhost to ::1 (IPv6) but
+      # caddy's admin API listens on 127.0.0.1 only, and busybox wget won't fall
+      # back — using localhost makes this check always fail and flaps caddy.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:2019/config/"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    deploy:
+      <<: *restart
+      replicas: 1
+      # stop-first: with host-mode ports a new task can't bind :80/:443 while the old
+      # one still holds them, so the default start-first rollout would deadlock. Brief
+      # ingress blip on redeploy is acceptable for a single-node proxy.
+      update_config:
+        order: stop-first
+      resources:
+        limits:
+          memory: 256M
+
+  # ──────────────────────────── Data plane ───────────────────────────────────
+  postgres:
+    image: supabase/postgres:15.14.1.112
+    entrypoint: ["/usr/local/bin/carbon-secrets-entrypoint.sh"]
+    # Image's own entrypoint+cmd. Do NOT override shared_preload_libraries here:
+    # the image's postgresql.conf already preloads the full set Carbon needs
+    # (pg_stat_statements, pg_net, pg_cron, pgsodium, supabase_vault, …). Passing
+    # -c shared_preload_libraries=… would REPLACE that list and break extensions
+    # (e.g. the webhooks migration's `CREATE EXTENSION pg_net`).
+    command:
+      - docker-entrypoint.sh
+      - postgres
+      - -c
+      - config_file=/etc/postgresql/postgresql.conf
+    networks:
+      internal:
+        aliases: [db]
+    secrets:
+      - postgres_password
+      - jwt_secret
+    environment:
+      POSTGRES_HOST: /var/run/postgresql
+      POSTGRES_PORT: "5432"
+      PGPORT: "5432"
+      POSTGRES_DB: postgres
+      PGDATABASE: postgres
+      POSTGRES_PASSWORD: __POSTGRES_PASSWORD__
+      PGPASSWORD: __POSTGRES_PASSWORD__
+      JWT_SECRET: __JWT_SECRET__
+      JWT_EXP: "3600"
+      # Performance knobs consumed by 02-performance.sh (ALTER SYSTEM) on first init.
+      CARBON_PG_MAX_CONNECTIONS: ${PG_MAX_CONNECTIONS:-100}
+      CARBON_PG_SHARED_BUFFERS: ${PG_SHARED_BUFFERS:-512MB}
+      CARBON_PG_EFFECTIVE_CACHE_SIZE: ${PG_EFFECTIVE_CACHE_SIZE:-1536MB}
+      CARBON_PG_WORK_MEM: ${PG_WORK_MEM:-8MB}
+      CARBON_PG_MAINTENANCE_WORK_MEM: ${PG_MAINTENANCE_WORK_MEM:-128MB}
+    volumes:
+      - *shim
+      - pgdata:/var/lib/postgresql/data
+      - pgconfig:/etc/postgresql-custom
+      - type: bind
+        source: ${CARBON_REPO}/contrib/deploying/simple-docker-caddy/postgres/01-roles.sh
+        target: /docker-entrypoint-initdb.d/zz-carbon-01-roles.sh
+        read_only: true
+      - type: bind
+        source: ${CARBON_REPO}/contrib/deploying/simple-docker-caddy/postgres/02-performance.sh
+        target: /docker-entrypoint-initdb.d/zz-carbon-02-performance.sh
+        read_only: true
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-h", "127.0.0.1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    deploy:
+      <<: *restart
+      replicas: 1
+      resources:
+        limits:
+          memory: ${PG_MEMORY_LIMIT:-2048M}
+        reservations:
+          memory: 512M
+
+  gotrue:
+    image: supabase/gotrue:v2.189.0
+    entrypoint: ["/usr/local/bin/carbon-secrets-entrypoint.sh"]
+    command: ["auth"]
+    networks: [internal]
+    secrets:
+      - postgres_password
+      - jwt_secret
+      - smtp_password
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: "9999"
+      API_EXTERNAL_URL: ${SUPABASE_URL}
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:__POSTGRES_PASSWORD__@postgres:5432/postgres
+      GOTRUE_SITE_URL: ${ERP_URL}
+      GOTRUE_URI_ALLOW_LIST: ${ERP_URL},${MES_URL}
+      GOTRUE_DISABLE_SIGNUP: ${GOTRUE_DISABLE_SIGNUP:-true}
+      GOTRUE_JWT_SECRET: __JWT_SECRET__
+      GOTRUE_JWT_EXP: "3600"
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      GOTRUE_MAILER_AUTOCONFIRM: "false"
+      GOTRUE_SMTP_HOST: ${GOTRUE_SMTP_HOST:-}
+      GOTRUE_SMTP_PORT: ${GOTRUE_SMTP_PORT:-587}
+      GOTRUE_SMTP_USER: ${GOTRUE_SMTP_USER:-}
+      GOTRUE_SMTP_PASS: __SMTP_PASSWORD__
+      GOTRUE_SMTP_ADMIN_EMAIL: ${GOTRUE_SMTP_ADMIN_EMAIL:-}
+      GOTRUE_SMTP_SENDER_NAME: ${GOTRUE_SMTP_SENDER_NAME:-Carbon}
+      GOTRUE_EXTERNAL_GOOGLE_ENABLED: ${GOOGLE_AUTH_ENABLED:-false}
+      GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID: ${SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID:-}
+      GOTRUE_EXTERNAL_GOOGLE_SECRET: ${SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET:-}
+      GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI: ${SUPABASE_AUTH_EXTERNAL_GOOGLE_REDIRECT_URI:-}
+      GOTRUE_EXTERNAL_AZURE_ENABLED: ${AZURE_AUTH_ENABLED:-false}
+      GOTRUE_EXTERNAL_AZURE_CLIENT_ID: ${SUPABASE_AUTH_EXTERNAL_AZURE_CLIENT_ID:-}
+      GOTRUE_EXTERNAL_AZURE_SECRET: ${SUPABASE_AUTH_EXTERNAL_AZURE_CLIENT_SECRET:-}
+      GOTRUE_EXTERNAL_AZURE_REDIRECT_URI: ${SUPABASE_AUTH_EXTERNAL_AZURE_REDIRECT_URI:-}
+      GOTRUE_MAILER_TEMPLATES_MAGIC_LINK: ${ERP_URL}/templates/magic-link.html
+      GOTRUE_MAILER_TEMPLATES_INVITE: ${ERP_URL}/templates/invite.html
+    volumes:
+      - *shim
+    deploy:
+      <<: *restart
+      replicas: 1
+      resources:
+        limits:
+          memory: 256M
+
+  postgrest:
+    image: postgrest/postgrest:v13.0.8
+    # PostgREST's image is FROM scratch (no shell), so it can't run the
+    # secrets-entrypoint shim the other services use. Instead it reads each value
+    # straight from its secret file via PostgREST's native @file syntax.
+    networks: [internal]
+    secrets:
+      - postgrest_db_uri
+      - jwt_secret
+    environment:
+      PGRST_DB_URI: "@/run/secrets/postgrest_db_uri"
+      PGRST_DB_SCHEMAS: public,storage,graphql_public
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_JWT_SECRET: "@/run/secrets/jwt_secret"
+      PGRST_DB_USE_LEGACY_GUCS: "false"
+      PGRST_APP_SETTINGS_JWT_SECRET: "@/run/secrets/jwt_secret"
+      PGRST_APP_SETTINGS_JWT_EXP: "3600"
+    deploy:
+      <<: *restart
+      replicas: 1
+      resources:
+        limits:
+          memory: 512M
+
+  realtime:
+    image: supabase/realtime:v2.89.0
+    entrypoint: ["/usr/local/bin/carbon-secrets-entrypoint.sh"]
+    command: ["/usr/bin/tini", "-s", "-g", "--", "/app/run.sh", "/app/bin/server"]
+    networks:
+      internal:
+        aliases: [realtime-dev]
+    secrets:
+      - postgres_password
+      - jwt_secret
+    environment:
+      PORT: "4000"
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: supabase_admin
+      DB_PASSWORD: __POSTGRES_PASSWORD__
+      DB_NAME: postgres
+      DB_AFTER_CONNECT_QUERY: "SET search_path TO _realtime"
+      DB_ENC_KEY: ${REALTIME_DB_ENC_KEY:-supabaserealtime}
+      API_JWT_SECRET: __JWT_SECRET__
+      METRICS_JWT_SECRET: __JWT_SECRET__
+      SECRET_KEY_BASE: ${REALTIME_SECRET_KEY_BASE:-UpNVntn3cDxHJpq99YMc1T1AQgQpc8kfYTuRgBiYa15BLrx8etQoXz3gZv1/u2oq}
+      APP_NAME: realtime
+      ERL_AFLAGS: -proto_dist inet_tcp
+      DNS_NODES: "''"
+      RLIMIT_NOFILE: "10000"
+      SEED_SELF_HOST: "true"
+      RUN_JANITOR: "true"
+      DISABLE_HEALTHCHECK_LOGGING: "true"
+    volumes:
+      - *shim
+    deploy:
+      <<: *restart
+      replicas: 1
+      resources:
+        limits:
+          memory: 512M
+
+  storage:
+    image: supabase/storage-api:v1.58.4
+    entrypoint: ["/usr/local/bin/carbon-secrets-entrypoint.sh"]
+    command: ["docker-entrypoint.sh", "node", "dist/start/server.js"]
+    networks: [internal]
+    secrets:
+      - postgres_password
+      - jwt_secret
+      - anon_key
+      - service_role_key
+    environment:
+      ANON_KEY: __ANON_KEY__
+      SERVICE_KEY: __SERVICE_ROLE_KEY__
+      POSTGREST_URL: http://postgrest:3000
+      PGRST_JWT_SECRET: __JWT_SECRET__
+      DATABASE_URL: postgres://supabase_storage_admin:__POSTGRES_PASSWORD__@postgres:5432/postgres
+      FILE_SIZE_LIMIT: "52428800"
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      TENANT_ID: stub
+      REGION: stub
+      GLOBAL_S3_BUCKET: stub
+      ENABLE_IMAGE_TRANSFORMATION: "false"
+    volumes:
+      - *shim
+      - storage:/var/lib/storage
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:5000/status').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    deploy:
+      <<: *restart
+      replicas: 1
+      resources:
+        limits:
+          memory: 512M
+
+  meta:
+    image: supabase/postgres-meta:v0.96.5
+    entrypoint: ["/usr/local/bin/carbon-secrets-entrypoint.sh"]
+    command: ["docker-entrypoint.sh", "node", "dist/server/server.js"]
+    networks: [internal]
+    secrets:
+      - postgres_password
+    environment:
+      PG_META_PORT: "8080"
+      PG_META_DB_HOST: postgres
+      PG_META_DB_PORT: "5432"
+      PG_META_DB_NAME: postgres
+      PG_META_DB_USER: supabase_admin
+      PG_META_DB_PASSWORD: __POSTGRES_PASSWORD__
+    volumes:
+      - *shim
+    deploy:
+      <<: *restart
+      replicas: 1
+      resources:
+        limits:
+          memory: 256M
+
+  studio:
+    image: supabase/studio:2026.04.28-sha-89d08a2
+    entrypoint: ["/usr/local/bin/carbon-secrets-entrypoint.sh"]
+    command: ["docker-entrypoint.sh", "node", "apps/studio/server.js"]
+    networks: [internal]
+    secrets:
+      - postgres_password
+      - anon_key
+      - service_role_key
+    environment:
+      # Next.js standalone binds to $HOSTNAME, which Docker sets to the container ID
+      # (→ the overlay IP only). Force 0.0.0.0 so it also listens on 127.0.0.1 for the
+      # healthcheck and on the service VIP for kong/caddy.
+      HOSTNAME: 0.0.0.0
+      STUDIO_PG_META_URL: http://meta:8080
+      POSTGRES_PASSWORD: __POSTGRES_PASSWORD__
+      DEFAULT_ORGANIZATION_NAME: Carbon
+      DEFAULT_PROJECT_NAME: Carbon
+      SUPABASE_URL: http://kong:8000
+      SUPABASE_PUBLIC_URL: ${SUPABASE_URL}
+      SUPABASE_ANON_KEY: __ANON_KEY__
+      SUPABASE_SERVICE_KEY: __SERVICE_ROLE_KEY__
+    volumes:
+      - *shim
+    # The image's built-in healthcheck demands HTTP 200 from /api/platform/profile
+    # with no start_period, which SIGKILLs a studio that is in fact serving. Override
+    # with a lenient check (server answers at all) on 127.0.0.1 + a boot grace period.
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/platform/profile').then(()=>process.exit(0)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    # Internal admin UI. Not published. Reach it via the optional studio.* route
+    # in the Caddyfile (behind basic_auth) or an SSH tunnel — never expose openly.
+    deploy:
+      <<: *restart
+      replicas: ${STUDIO_REPLICAS:-1}
+      resources:
+        limits:
+          memory: 512M
+
+  edge-runtime:
+    image: supabase/edge-runtime:v1.74.0
+    entrypoint: ["/usr/local/bin/carbon-secrets-entrypoint.sh"]
+    command: ["edge-runtime", "start", "--main-service", "/home/deno/main"]
+    networks: [internal]
+    secrets:
+      - postgres_password
+      - jwt_secret
+      - anon_key
+      - service_role_key
+    environment:
+      JWT_SECRET: __JWT_SECRET__
+      SUPABASE_URL: http://kong:8000
+      SUPABASE_ANON_KEY: __ANON_KEY__
+      SUPABASE_SERVICE_ROLE_KEY: __SERVICE_ROLE_KEY__
+      SUPABASE_DB_URL: postgresql://postgres:__POSTGRES_PASSWORD__@postgres:5432/postgres
+      VERIFY_JWT: ${EDGE_VERIFY_JWT:-false}
+    volumes:
+      - *shim
+      - type: bind
+        source: ${CARBON_REPO}/packages/database/supabase/functions
+        target: /home/deno/functions
+        read_only: true
+      - type: bind
+        source: ${CARBON_REPO}/packages/database/src
+        target: /home/src
+        read_only: true
+      - type: bind
+        source: ${CARBON_REPO}/packages/dev/docker/edge-main
+        target: /home/deno/main
+        read_only: true
+    deploy:
+      <<: *restart
+      replicas: 1
+      resources:
+        limits:
+          memory: 512M
+
+  kong:
+    image: kong:2.8.1
+    networks: [internal]
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: /home/kong/kong.yml
+      KONG_DNS_ORDER: LAST,A,CNAME
+      KONG_PLUGINS: request-transformer,cors,key-auth,acl,basic-auth
+    volumes:
+      - type: bind
+        source: ${CARBON_REPO}/packages/dev/docker/kong.yml
+        target: /home/kong/kong.yml
+        read_only: true
+    healthcheck:
+      test: ["CMD", "kong", "health"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    deploy:
+      <<: *restart
+      replicas: 1
+      resources:
+        limits:
+          memory: 512M
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    networks: [internal]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    deploy:
+      <<: *restart
+      replicas: 1
+      resources:
+        limits:
+          memory: 512M
+
+  inngest:
+    image: inngest/inngest:v1.19.4
+    entrypoint: ["/usr/local/bin/carbon-secrets-entrypoint.sh"]
+    command:
+      - inngest
+      - start
+      - --sqlite-dir
+      - /data
+      - --sdk-url
+      - http://erp:3000/api/inngest
+      - --sdk-url
+      - http://mes:3000/api/inngest
+    networks: [internal]
+    secrets:
+      - inngest_signing_key
+      - inngest_event_key
+    environment:
+      INNGEST_EVENT_KEY: __INNGEST_EVENT_KEY__
+      INNGEST_SIGNING_KEY: __INNGEST_SIGNING_KEY__
+    volumes:
+      - *shim
+      - inngest:/data
+    deploy:
+      <<: *restart
+      replicas: 1
+      resources:
+        limits:
+          memory: 512M
+
+networks:
+  internal:
+    driver: overlay
+    attachable: true
+
+volumes:
+  pgdata:
+  pgconfig:
+  storage:
+  inngest:
+  redis-data:
+  caddy-data:
+  caddy-config:
+
+secrets:
+  postgres_password:
+    external: true
+  postgrest_db_uri:
+    external: true
+  jwt_secret:
+    external: true
+  anon_key:
+    external: true
+  service_role_key:
+    external: true
+  session_secret:
+    external: true
+  inngest_signing_key:
+    external: true
+  inngest_event_key:
+    external: true
+  resend_api_key:
+    external: true
+  smtp_password:
+    external: true

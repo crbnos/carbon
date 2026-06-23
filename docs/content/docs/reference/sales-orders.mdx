@@ -1,0 +1,49 @@
+---
+title: Sales orders
+description: "A confirmed customer commitment: what to ship and invoice, tracked line by line."
+---
+
+A **sales order** is a confirmed commitment to deliver items to a customer. It may begin as a <Term>quote</Term>, or be entered directly; either way it's the document the rest of fulfillment keys off: <Term id="shipment">shipments</Term>, <Term id="invoice">invoices</Term>, and any make-to-order jobs all trace back to its lines.
+
+The order line is where fulfillment is scored. Each line tracks how much was sold against how much has shipped and how much has been invoiced, and it stays open until both are complete, which is what lets one order be delivered and billed in batches without losing the remainder.
+
+## Line fields
+
+<FieldTable>
+  <Field name="Item" type="reference">What's being sold.</Field>
+  <Field name="Sale quantity" type="number">Ordered quantity.</Field>
+  <Field name="Quantity sent" type="number">Shipped so far; `quantity to send` is the remainder.</Field>
+  <Field name="Quantity invoiced" type="number">Billed so far; `quantity to invoice` is the remainder.</Field>
+  <Field name="Unit price" type="number">Price per unit, net of discounts.</Field>
+  <Field name="Method" type="enum">How the line is fulfilled: *Make to Order*, *Pull from Inventory*, or *Purchase to Order*.</Field>
+</FieldTable>
+
+## Status
+
+The stored status reflects what's outstanding, and the order list shows a computed **display status** on top of it.
+
+<StatusFlow entity="salesOrder">
+  <Status name="Draft">Being built; not yet committed.</Status>
+  <Status name="Needs Approval" branch>Held for sign-off (amount-gated).</Status>
+  <Status name="To Ship and Invoice" accent>Confirmed; nothing shipped or billed yet.</Status>
+  <Status name="To Ship">Fully invoiced, still owes shipment.</Status>
+  <Status name="To Invoice">Fully shipped, still owes invoice.</Status>
+  <Status name="Completed">Every line shipped and invoiced.</Status>
+  <Status name="Closed" terminal>Ended early.</Status>
+  <Status name="Cancelled" terminal>Abandoned.</Status>
+</StatusFlow>
+
+<Callout type="note">
+The order list can read **In Progress** even while the stored status is *To Ship and Invoice* — that's the display status reflecting a <Term id="make-to-order">make-to-order</Term> line whose jobs aren't finished yet. The stored status still drives the flow.
+</Callout>
+
+## Related
+
+<Cards>
+  <Card title="Quote to cash" href="/guides/quote-to-cash">
+    How a quote becomes a sales order, then ships and invoices.
+  </Card>
+  <Card title="Jobs" href="/docs/reference/jobs">
+    A make-to-order line becomes a job that builds the item.
+  </Card>
+</Cards>

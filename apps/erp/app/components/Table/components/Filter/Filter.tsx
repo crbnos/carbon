@@ -93,33 +93,47 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
       [filters, translate]
     );
 
+    const availableFilters = useMemo(
+      () => columnFilters.filter((column) => !hasFilterKey(column.value)),
+      [columnFilters, hasFilterKey]
+    );
+
     // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
+    const activate = useCallback((filter: ColumnFilter) => {
+      setInput("");
+      setActiveFilter(filter);
+      if (filter.filter.type === "static") {
+        setActiveOptions(filter.filter.options);
+      } else if (filter.filter.type === "fetcher") {
+        setLoading(true);
+        fetcher.load(filter.filter.endpoint);
+      } else if (filter.filter.type === "custom") {
+        setActiveOptions([]);
+      }
+    }, []);
+
     const updateActiveOptions = useCallback(
       (value: string) => {
         const accessorKey = value.split(":")?.[1] ?? "";
-
         const filter = filters.find(
           (f) => f.accessorKey.toLowerCase() === accessorKey.toLowerCase()
         );
-
         if (!filter)
           throw new Error(`Filter not found for accessorKey: ${accessorKey}`);
-
-        setInput("");
-        setActiveFilter(filter ?? null);
-
-        if (filter?.filter.type === "static") {
-          setActiveOptions(filter.filter.options);
-        } else if (filter?.filter.type === "fetcher") {
-          setLoading(true);
-          fetcher.load(filter.filter.endpoint);
-        } else if (filter?.filter.type === "custom") {
-          setActiveOptions([]);
-        }
+        activate(filter);
       },
-
-      [filters]
+      [filters, activate]
     );
+
+    // Skip the one-item column picker when only one filter is available.
+    useEffect(() => {
+      if (!open || activeFilter !== null) return;
+      if (availableFilters.length !== 1) return;
+      const filter = filters.find(
+        (f) => f.accessorKey === availableFilters[0].value
+      );
+      if (filter) activate(filter);
+    }, [open, activeFilter, availableFilters, filters, activate]);
 
     return hasFilters && !open && trigger !== "icon" ? (
       <HStack>
@@ -201,22 +215,20 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
               </CommandEmpty>
               {activeFilter === null ? (
                 <CommandGroup>
-                  {columnFilters
-                    .filter((column) => !hasFilterKey(column.value))
-                    .map((option) => (
-                      <CommandItem
-                        key={option.value}
-                        value={`${option.label}:${option.value}`.replace(
-                          /"/g,
-                          '\\"'
-                        )}
-                        onSelect={updateActiveOptions}
-                        className="flex items-center gap-2"
-                      >
-                        {option.icon}
-                        {option.label}
-                      </CommandItem>
-                    ))}
+                  {availableFilters.map((option) => (
+                    <CommandItem
+                      key={option.value}
+                      value={`${option.label}:${option.value}`.replace(
+                        /"/g,
+                        '\\"'
+                      )}
+                      onSelect={updateActiveOptions}
+                      className="flex items-center gap-2"
+                    >
+                      {option.icon}
+                      {option.label}
+                    </CommandItem>
+                  ))}
                 </CommandGroup>
               ) : (
                 <div className="max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
@@ -243,17 +255,15 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
                           }}
                         >
                           <HStack spacing={2}>
-                            <Checkbox id={option.value} isChecked={isChecked} />
-                            <label htmlFor={option.value}>
-                              <VStack spacing={0}>
-                                <span>{option.label}</span>
-                                {option.helperText && (
-                                  <p className="text-xs text-muted-foreground truncate">
-                                    {translate(option.helperText)}
-                                  </p>
-                                )}
-                              </VStack>
-                            </label>
+                            <Checkbox isChecked={isChecked} tabIndex={-1} />
+                            <VStack spacing={0}>
+                              <span>{option.label}</span>
+                              {option.helperText && (
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {translate(option.helperText)}
+                                </p>
+                              )}
+                            </VStack>
                           </HStack>
                         </CommandItem>
                       );

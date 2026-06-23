@@ -1,6 +1,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { requirePlan } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useNavigate } from "react-router";
@@ -22,6 +23,14 @@ export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId } = await requirePermissions(request, {
     create: "sales"
+  });
+
+  await requirePlan({
+    request,
+    client,
+    companyId,
+    feature: "CUSTOMER_PORTALS",
+    redirectTo: path.to.customerPortals
   });
 
   const formData = await request.formData();

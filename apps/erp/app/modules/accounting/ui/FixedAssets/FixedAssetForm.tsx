@@ -134,6 +134,7 @@ const FixedAssetForm = ({ initialValues, onClose }: FixedAssetFormProps) => {
                 <AssetClass
                   name="fixedAssetClassId"
                   label="Asset Class"
+                  termId="asset-class"
                   value={assetData.fixedAssetClassId}
                   onChange={onAssetClassChange}
                 />
@@ -142,6 +143,7 @@ const FixedAssetForm = ({ initialValues, onClose }: FixedAssetFormProps) => {
                 <SelectControlled
                   name="depreciationMethod"
                   label="Depreciation Method"
+                  termId="depreciation"
                   options={depreciationMethods.map((m) => ({
                     label: m,
                     value: m
@@ -167,6 +169,7 @@ const FixedAssetForm = ({ initialValues, onClose }: FixedAssetFormProps) => {
                 <NumberControlled
                   name="residualValuePercent"
                   label="Residual Value %"
+                  termId="residual-value"
                   minValue={0}
                   maxValue={100}
                   value={assetData.residualValuePercent}
@@ -191,6 +194,7 @@ const FixedAssetForm = ({ initialValues, onClose }: FixedAssetFormProps) => {
                     <SelectControlled
                       name="taxDepreciationMethod"
                       label="Tax Depreciation Method"
+                      termId="depreciation"
                       placeholder="None"
                       options={taxDepreciationMethods.map((m) => ({
                         label: m,
@@ -214,6 +218,7 @@ const FixedAssetForm = ({ initialValues, onClose }: FixedAssetFormProps) => {
                       <SelectControlled
                         name="macrsPropertyClass"
                         label="MACRS Property Class"
+                        termId="macrs"
                         isOptional={false}
                         options={macrsPropertyClasses.map((c) => ({
                           label: `${c}-Year`,
@@ -231,6 +236,7 @@ const FixedAssetForm = ({ initialValues, onClose }: FixedAssetFormProps) => {
                       <SelectControlled
                         name="macrsConvention"
                         label="MACRS Convention"
+                        termId="macrs"
                         isOptional={false}
                         options={macrsConventions.map((c) => ({
                           label: c,
@@ -248,6 +254,7 @@ const FixedAssetForm = ({ initialValues, onClose }: FixedAssetFormProps) => {
                       <NumberControlled
                         name="bonusDepreciationPercent"
                         label="Bonus Depreciation %"
+                        termId="depreciation"
                         minValue={0}
                         maxValue={100}
                         value={assetData.bonusDepreciationPercent}
@@ -282,6 +289,7 @@ const FixedAssetForm = ({ initialValues, onClose }: FixedAssetFormProps) => {
                       <NumberControlled
                         name="taxResidualValuePercent"
                         label="Tax Residual Value %"
+                        termId="residual-value"
                         minValue={0}
                         maxValue={100}
                         value={assetData.taxResidualValuePercent}

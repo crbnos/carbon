@@ -10,7 +10,7 @@ import { Button } from "./Button";
 // ─── Highlighter Setup ───────────────────────────────────────────────────────
 
 const highlighter = await createHighlighterCore({
-  themes: [import("@shikijs/themes/night-owl")],
+  themes: [import("@shikijs/themes/github-dark-default")],
   langs: [
     import("@shikijs/langs/bash"),
     import("@shikijs/langs/javascript"),
@@ -64,7 +64,7 @@ const CodeBlock = ({
       <ShikiHighlighter
         highlighter={highlighter}
         language={language}
-        theme={"night-owl"}
+        theme={"github-dark-default"}
         showLanguage={false}
         addDefaultStyles={true}
         className="codeBlock"

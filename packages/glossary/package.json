@@ -1,0 +1,24 @@
+{
+  "name": "@carbon/glossary",
+  "private": true,
+  "version": "0.0.0",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "clean": "rimraf .turbo node_modules dist",
+    "dev": "tsup src/index.ts --format esm,cjs --watch --dts",
+    "lint": "biome lint --write ",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsgo --noEmit"
+  },
+  "devDependencies": {
+    "@carbon/config": "workspace:*",
+    "rimraf": "catalog:",
+    "tsup": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

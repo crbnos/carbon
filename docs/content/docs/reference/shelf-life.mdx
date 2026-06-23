@@ -1,0 +1,125 @@
+---
+title: Shelf life
+description: How Carbon stamps expiration dates on tracked stock, and blocks consuming it once expired.
+---
+
+**Shelf life** is how Carbon decides when a batch or serial of an item *expires*, and what happens when
+someone tries to use it after that. It only applies to **<Term id="serial">Serial-</Term>** or **<Term id="batch">Batch-tracked</Term>** items, because the
+expiration date lives on the physical lot, the **<Term id="tracked-entity">tracked entity</Term>**, not on the item master.
+
+Three records work together: a **policy** per item (how expiry is decided), an **expiration date** per
+tracked entity (the actual date), and a **company-wide rule** for what to do with expired stock.
+
+Say a batch of adhesive is received under a **180-day** policy: Carbon stamps that lot to expire about six
+months out. Try to issue it to a job on day 200 and the issue is **blocked**. Expired stock can't flow into
+a build unless someone with permission overrides it.
+
+## How a date gets set: the three modes
+
+An item's shelf-life policy has one **mode**, and the mode decides how the expiration date is computed:
+
+| Mode | The date is… | Applies to |
+| --- | --- | --- |
+| Fixed Duration | a start event **+ a number of days** | Make or Buy items |
+| Calculated | the **earliest expiry of the components** consumed to make it | Make items |
+| Set on Receipt | **typed in by the operator** at receipt. Nothing is computed | Buy items |
+
+<Callout type="warn">
+Shelf life is **not** a single "days" field on the item. Only **Fixed Duration** is a day count.
+*Calculated* inherits the soonest expiry of its inputs, and *Set on Receipt* captures the supplier's
+printed date by hand. A "received date + N days" mental model is wrong for two of the three modes.
+</Callout>
+
+## When the clock starts
+
+For **Fixed Duration**, the start event depends on how the item is sourced:
+
+- **Made** items start at a **job operation** finishing (or starting) — optionally gated to a specific
+  **trigger process** (say, *Pasteurise* or *Packaging*), with **Before** or **After** timing. Sub-assemblies
+  stamp their own batches from their own operations.
+- **Bought** items start from the **receipt's posting date**, not "today", plus the configured days.
+
+**Calculated** items take the minimum expiration date across the tracked components they consume, so a build
+can never outlive its shortest-dated ingredient. Whether that minimum spans **every** dated input or only
+inputs that themselves carry a shelf-life policy is the company's *calculated input scope*: `AllInputs`
+(the default) or `ManagedInputsOnly`.
+
+## Policy fields
+
+The policy lives on the item's pick method:
+
+<FieldTable>
+  <Field name="Mode">*Fixed Duration*, *Calculated*, or *Set on Receipt*. *(applies to: all)*</Field>
+  <Field name="Days">The shelf-life length added to the start event. *(applies to: Fixed Duration)*</Field>
+  <Field name="Trigger process">The operation that starts the clock; blank means any operation. *(applies to: Fixed Duration (made))*</Field>
+  <Field name="Timing">Whether the clock starts **Before** or **After** that process. *(applies to: Fixed Duration (made))*</Field>
+  <Field name="Calculate from BOM">Also cap the date at the earliest expiry of the consumed components. *(applies to: Fixed Duration)*</Field>
+</FieldTable>
+
+<Callout type="note">
+The expiration date is only ever written once, where it was blank. Carbon never silently overwrites a date a
+batch already carries. A manual override is available, but it requires a **reason**, which is kept on the
+entity's history.
+</Callout>
+
+## What happens to expired stock
+
+A company-wide **expired-entity policy** governs every material issue and stock transfer:
+
+| Policy | Effect when stock is past its date |
+| --- | --- |
+| Warn | Allowed, with a warning. |
+| Block | Rejected. *(default)* |
+| BlockWithOverride | Rejected unless the user supplies an override reason. |
+
+<Callout type="warn">
+Expiry is **enforced, not cosmetic.** The default policy is **Block**. Consuming or transferring an expired
+batch is rejected outright, with the error *"Cannot consume expired tracked entit(y/ies)"*. The check runs
+wherever stock is consumed or moved (material issues, stock transfers, and maintenance work), so it holds
+whether the action comes from the office or the floor.
+</Callout>
+
+Picking is **<Term id="fefo">FEFO</Term>-aware**: available tracked entities are offered earliest-expiry-first, so the oldest stock
+leaves first by default. A **near-expiry warning** highlights batches approaching their date in the tracked-entity
+lists; set its lead time (in days) in company settings. Leaving it blank turns the warning badges off.
+
+## Company settings
+
+Set company-wide in **Settings → Inventory**:
+
+<FieldTable>
+  <Field name="Expired-entity policy">*Warn*, *Block*, or *BlockWithOverride* for issues and transfers.</Field>
+  <Field name="Near-expiry warning (days)">Lead time for the amber "expiring soon" badges; blank disables them.</Field>
+  <Field name="Default shelf-life days">Fallback length when a policy needs a default.</Field>
+  <Field name="Calculated input scope">`AllInputs` or `ManagedInputsOnly` for *Calculated* mode.</Field>
+</FieldTable>
+
+## Where you set it
+
+| Setting | Where |
+| --- | --- |
+| The per-item policy (mode, days, trigger process, timing) | On the item's **pick method** (item ↔ location), under its shelf-life fields. |
+| The expired-entity policy, near-expiry days, default days | **Settings → Inventory**, in the shelf-life section. |
+| A one-off date correction | The expiry-edit action on a tracked entity (reason required). |
+
+<Callout type="info">
+Setting a shelf-life policy is only allowed on **Serial** or **Batch** items. Fungible *Inventory* and
+*Non-Inventory* items have no tracked entity to carry a date, so the option doesn't apply.
+</Callout>
+
+## Related
+
+<Cards>
+  <Card title="Traceability" href="/docs/reference/traceability">
+    Expiration lives on the tracked entity — the same lot/serial record traceability follows.
+  </Card>
+  <Card title="Inventory" href="/docs/reference/inventory">
+    Where the expired-entity policy and near-expiry warning are configured.
+  </Card>
+  <Card title="Items" href="/docs/reference/items">
+    Only Serial- and Batch-tracked items can carry a shelf-life policy.
+  </Card>
+  <Card title="Storage rules" href="/docs/reference/storage-rules">
+    The other inventory guard: validate transactions instead of dating stock.
+  </Card>
+</Cards>

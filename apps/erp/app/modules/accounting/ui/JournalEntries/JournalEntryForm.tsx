@@ -283,6 +283,7 @@ const JournalEntryForm = ({
                 <DatePicker
                   name="postingDate"
                   label="Posting Date"
+                  termId="posting"
                   isDisabled={isDisabled}
                 />
               </div>

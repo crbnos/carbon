@@ -112,6 +112,7 @@ const QuoteShipmentForm = forwardRef<
               label={t`Shipment Location`}
               isReadOnly={isCustomer}
               isClearable
+              termId="shipment"
             />
             <ShippingMethod
               name="shippingMethodId"

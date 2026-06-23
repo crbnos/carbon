@@ -1,3 +1,4 @@
+import type { TermId } from "@carbon/glossary";
 import type { InputProps } from "@carbon/react";
 import {
   Button,
@@ -7,6 +8,7 @@ import {
   HStack,
   IconButton,
   Input as InputBase,
+  LabelWithHelp,
   VStack
 } from "@carbon/react";
 import { forwardRef, useRef } from "react";
@@ -19,6 +21,7 @@ import { useFieldArray } from "../internal/state/fieldArray";
 type FormArrayProps = InputProps & {
   name: string;
   label?: string;
+  termId?: TermId;
   isRequired?: boolean;
 };
 
@@ -27,6 +30,7 @@ const Array = forwardRef<HTMLInputElement, FormArrayProps>(
     {
       name,
       label,
+      termId,
       isRequired,
       isDisabled: isDisabledProp,
       isReadOnly: isReadOnlyProp,
@@ -55,7 +59,7 @@ const Array = forwardRef<HTMLInputElement, FormArrayProps>(
       <FormControl isInvalid={!!error} isRequired={isRequired}>
         {label && (
           <FormLabel htmlFor={`${name}`} isOptional={resolvedIsOptional}>
-            {label}
+            <LabelWithHelp termId={termId}>{label}</LabelWithHelp>
           </FormLabel>
         )}
         <VStack className="mb-4" ref={listRef}>

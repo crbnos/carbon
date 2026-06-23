@@ -100,10 +100,12 @@ const CostCenterForm = ({
                 <CostCenter
                   name="parentCostCenterId"
                   label="Parent Cost Center"
+                  termId="parent-cost-center"
                 />
                 <Employee
                   name="ownerId"
                   label="Owner"
+                  termId="cost-center-owner"
                   isOptional={!approvalsActive}
                 />
                 <CustomFormFields table="costCenter" />

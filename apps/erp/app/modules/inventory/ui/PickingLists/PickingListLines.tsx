@@ -20,6 +20,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   HStack,
+  Skeleton,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -28,7 +29,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import {
   LuChevronDown,
   LuCirclePlus,
@@ -36,7 +37,7 @@ import {
   LuTriangleAlert,
   LuUndo2
 } from "react-icons/lu";
-import { useFetcher } from "react-router";
+import { Await, useFetcher } from "react-router";
 import { Empty, ItemThumbnail } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions } from "~/hooks";
@@ -45,7 +46,8 @@ import { path } from "~/utils/path";
 import { isPickingListLocked } from "../../inventory.models";
 import type {
   getPickingList,
-  getPickingListLines
+  getPickingListLines,
+  PickingListRecommendation
 } from "../../inventory.service";
 import { ShortPickModal } from "./ShortPickModal";
 
@@ -57,10 +59,15 @@ type PickingListLineData = NonNullable<
   Awaited<ReturnType<typeof getPickingListLines>>["data"]
 >;
 
+type RecommendationsPromise = Promise<
+  Record<string, PickingListRecommendation[]>
+>;
+
 type PickingListLinesProps = {
   pickingListLines: PickingListLineData;
   pickingListId: string;
   pickingList: PickingListData;
+  recommendations: RecommendationsPromise;
 };
 
 // A "kit" is the box a kitter fills for one job operation. Parts must not be
@@ -77,7 +84,8 @@ type Kit = {
 const PickingListLines = ({
   pickingListLines,
   pickingListId,
-  pickingList
+  pickingList,
+  recommendations
 }: PickingListLinesProps) => {
   const isLocked = isPickingListLocked(pickingList?.status);
   const kits = useMemo(() => {
@@ -127,6 +135,7 @@ const PickingListLines = ({
           kit={kit}
           pickingListId={pickingListId}
           isLocked={isLocked}
+          recommendations={recommendations}
         />
       ))}
     </VStack>
@@ -136,11 +145,13 @@ const PickingListLines = ({
 function PickingKitCard({
   kit,
   pickingListId,
-  isLocked
+  isLocked,
+  recommendations
 }: {
   kit: Kit;
   pickingListId: string;
   isLocked: boolean;
+  recommendations: RecommendationsPromise;
 }) {
   const totalToPick = kit.lines.reduce(
     (sum, l) => sum + Number(l.quantityToPick ?? 0),
@@ -177,6 +188,7 @@ function PickingKitCard({
               pickingListId={pickingListId}
               isLast={index === kit.lines.length - 1}
               isLocked={isLocked}
+              recommendations={recommendations}
             />
           ))}
         </div>
@@ -189,12 +201,14 @@ function PickingListLineItem({
   line,
   pickingListId,
   isLast,
-  isLocked
+  isLocked,
+  recommendations
 }: {
   line: PickingListLineData[number];
   pickingListId: string;
   isLast: boolean;
   isLocked: boolean;
+  recommendations: RecommendationsPromise;
 }) {
   const permissions = usePermissions();
   const { t } = useLingui();
@@ -292,22 +306,32 @@ function PickingListLineItem({
   return (
     <div
       className={cn(
-        "flex items-center justify-between gap-6 p-4 border-b transition-opacity duration-150",
-        isLast && "border-none",
-        isResolved && "opacity-50 hover:opacity-100"
+        "group flex items-center justify-between gap-6 p-4 border-b",
+        isLast && "border-none"
       )}
     >
-      <HStack spacing={4} className="min-w-0 flex-1">
+      <HStack
+        spacing={4}
+        className={cn(
+          "min-w-0 flex-1 transition-opacity duration-150",
+          isResolved && "opacity-50 group-hover:opacity-100"
+        )}
+      >
         <ItemThumbnail
-          size="md"
+          size="xl"
           thumbnailPath={null}
           type={(item?.type as "Part") ?? "Part"}
         />
         <VStack spacing={0} className="min-w-0">
-          <p className="text-sm font-medium truncate">{itemName}</p>
-          <p className="text-xs text-muted-foreground truncate">
+          <p className="truncate text-base font-medium sm:text-sm">
+            {itemName}
+          </p>
+          <p className="truncate font-mono text-sm text-muted-foreground sm:text-xs">
             {item?.readableIdWithRevision ?? line.item?.readableId}
           </p>
+          {isTracked && !isPicked && (
+            <RecommendedLots resolve={recommendations} lineId={line.id} />
+          )}
         </VStack>
       </HStack>
 
@@ -338,28 +362,16 @@ function PickingListLineItem({
         ) : null}
         {isTracked ? (
           <Badge
-            className={cn(
-              "text-white text-base tabular-nums",
-              isPicked
-                ? "bg-emerald-600"
-                : quantityPicked > 0
-                  ? "bg-orange-500"
-                  : "bg-red-600"
-            )}
+            variant={isPicked ? "green" : quantityPicked > 0 ? "orange" : "red"}
+            className="text-base tabular-nums"
           >
             {quantityPicked}/{quantityToPick}
           </Badge>
         ) : (
           <Count
             count={isShort ? quantityPicked : quantityToPick}
-            className={cn(
-              "text-white text-base tabular-nums",
-              isPicked
-                ? "bg-emerald-600"
-                : isShort
-                  ? "bg-orange-500"
-                  : "bg-red-600"
-            )}
+            variant={isPicked ? "green" : isShort ? "orange" : "red"}
+            className="text-base tabular-nums"
           />
         )}
         {isLocked ? null : isTracked ? (
@@ -480,6 +492,44 @@ function PickingListLineItem({
         />
       )}
     </div>
+  );
+}
+
+/**
+ * At-a-glance recommended serial/batch numbers for a tracked line, streamed in
+ * from the deferred list-wide recommendations so the row paints immediately.
+ * Rendered as readable monospace chips, no label — the chips speak for themselves.
+ */
+function RecommendedLots({
+  resolve,
+  lineId
+}: {
+  resolve: RecommendationsPromise;
+  lineId: string;
+}) {
+  return (
+    <Suspense
+      fallback={<Skeleton className="mt-2 h-6 w-36 rounded-md sm:h-5" />}
+    >
+      <Await resolve={resolve} errorElement={null}>
+        {(byLine) => {
+          const lots = byLine?.[lineId] ?? [];
+          if (lots.length === 0) return null;
+          return (
+            <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1.5 text-base sm:text-sm">
+              {lots.map((lot) => (
+                <span
+                  key={lot.trackedEntityId}
+                  className="max-w-full truncate rounded-md border border-border bg-muted px-2 py-0.5 font-mono tabular-nums text-foreground"
+                >
+                  {lot.readableId ?? lot.trackedEntityId}
+                </span>
+              ))}
+            </div>
+          );
+        }}
+      </Await>
+    </Suspense>
   );
 }
 

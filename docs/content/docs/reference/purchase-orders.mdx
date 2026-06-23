@@ -1,0 +1,52 @@
+---
+title: Purchase orders
+description: "A commitment to a supplier: what to receive, and what you'll be billed for."
+---
+
+A **purchase order** is a commitment to buy from a supplier. It may come from comparing <Term id="supplier-quote">supplier quotes</Term> or be raised directly, and it's the document <Term id="receipt">receipts</Term> and <Term id="invoice">supplier invoices</Term> reconcile against.
+
+Like a <Term id="sales-order">sales order</Term> in reverse, a purchase order line keeps two independent counters: how much has been received, and how much has been invoiced. It only closes when both are satisfied. Receiving and billing advance the same order along separate axes.
+
+## Line fields
+
+<FieldTable>
+  <Field name="Item" type="reference">What's being bought.</Field>
+  <Field name="Purchase quantity" type="number">Ordered quantity.</Field>
+  <Field name="Quantity received" type="number">Received so far; `quantity to receive` is the remainder.</Field>
+  <Field name="Quantity invoiced" type="number">Billed so far; `quantity to invoice` is the remainder.</Field>
+  <Field name="Conversion factor" type="number">Converts the supplier's purchase unit to the stock unit.</Field>
+</FieldTable>
+
+## Types
+
+A purchase order is one of three kinds: a plain **Purchase**, a **Return** to the supplier, or **<Term id="outside-operation">Outside Processing</Term>** — sending parts out to a vendor for a production step, where the line links to a job operation.
+
+## Status
+
+The status is computed from the state of its lines, never set by hand.
+
+<StatusFlow entity="purchaseOrder">
+  <Status name="Draft">Being built.</Status>
+  <Status name="Planned" branch>Suggested by planning.</Status>
+  <Status name="Needs Approval" branch>Held for sign-off (amount-gated); rejection lands on *Rejected*.</Status>
+  <Status name="To Receive and Invoice" accent>Confirmed; nothing received or billed yet.</Status>
+  <Status name="To Receive">Fully invoiced, still owes receipt.</Status>
+  <Status name="To Invoice">Fully received, still owes invoice.</Status>
+  <Status name="Completed">Fully received and invoiced.</Status>
+  <Status name="Closed" terminal>Ended.</Status>
+  <Status name="Rejected" terminal>Sign-off was declined.</Status>
+</StatusFlow>
+
+## Related
+
+<Cards>
+  <Card title="RFQ to bill" href="/guides/rfq-to-po">
+    Shop suppliers, place the order, receive and bill against it.
+  </Card>
+  <Card title="Receipts" href="/docs/reference/receipts">
+    How goods are received against a purchase order.
+  </Card>
+  <Card title="Approvals" href="/docs/reference/approvals">
+    Orders at or above a set amount wait for sign-off before they can be sent.
+  </Card>
+</Cards>

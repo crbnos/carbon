@@ -1,3 +1,4 @@
+import type { TermId } from "@carbon/glossary";
 import type { InputProps } from "@carbon/react";
 import {
   Button,
@@ -12,6 +13,7 @@ import {
   FormErrorMessage,
   FormLabel,
   Input,
+  LabelWithHelp,
   Popover,
   PopoverContent,
   PopoverTrigger
@@ -33,6 +35,7 @@ const PhoneInputComponent = ReactPhoneInput.default;
 type PhoneInputProps = InputProps & {
   name: string;
   label?: string;
+  termId?: TermId;
   isRequired?: boolean;
 } & Omit<InputHTMLAttributes<HTMLInputElement>, "onChange" | "value"> &
   Omit<ReactPhoneInput.Props<typeof ReactPhoneInput.default>, "onChange"> & {
@@ -43,7 +46,7 @@ type PhoneInputProps = InputProps & {
 const PhoneInput: ForwardRefExoticComponent<PhoneInputProps> = forwardRef<
   ElementRef<typeof ReactPhoneInput.default>,
   PhoneInputProps
->(({ name, label, isRequired, className, ...props }, ref) => {
+>(({ name, label, termId, isRequired, className, ...props }, ref) => {
   const { getInputProps, error, isOptional: fieldIsOptional } = useField(name);
   const [value, setValue] = useControlField<string>(name);
   const formState = useFormStateContext();
@@ -61,7 +64,7 @@ const PhoneInput: ForwardRefExoticComponent<PhoneInputProps> = forwardRef<
     <FormControl isInvalid={!!error} isRequired={isRequired}>
       {label && (
         <FormLabel htmlFor={name} isOptional={resolvedIsOptional}>
-          {label}
+          <LabelWithHelp termId={termId}>{label}</LabelWithHelp>
         </FormLabel>
       )}
       <PhoneInputComponent

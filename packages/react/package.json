@@ -3,6 +3,7 @@
   "dependencies": {
     "@carbon/database": "workspace:*",
     "@carbon/env": "workspace:*",
+    "@carbon/glossary": "workspace:*",
     "@carbon/tiptap": "workspace:*",
     "@nanostores/react": "catalog:",
     "@carbon/utils": "workspace:*",

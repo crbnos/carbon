@@ -31,7 +31,7 @@ If no plan exists, suggest running `/plan` first.
 
 ### 1.1 Load the Plan
 
-Read `llm/tasks/[feature-name]-plan.md`.
+Read `.claude/scratch/plans/[feature-name]-plan.md`.
 
 ### 1.2 Critical Review
 
@@ -45,7 +45,7 @@ If concerns exist, raise them before proceeding.
 
 ### 1.3 Create Progress Tracker
 
-Track progress in `llm/tasks/todo.md`:
+Track progress in `.claude/scratch/tasks/todo.md`:
 
 ```markdown
 ## [Feature] Implementation
@@ -61,12 +61,12 @@ When executing tasks, load the appropriate Carbon skill for guidance:
 
 | Task Type | Skill/Workflow | Load When |
 |-----------|----------------|-----------|
-| Database migrations | `llm/workflows/database-migration.md` | Creating tables, columns, RLS |
+| Database migrations | `.claude/rules/workflow-database-migration.md` | Creating tables, columns, RLS |
 | Forms & validators | `/forms` skill | Building UI forms |
 | Multi-row writes | `/database-transactions` skill | Bulk updates, atomic operations |
 | UI polish | `/make-interfaces-feel-better` skill | Animations, shadows, typography |
 
-**For migrations:** Read `llm/workflows/database-migration.md` before writing SQL to ensure:
+**For migrations:** Read `.claude/rules/workflow-database-migration.md` before writing SQL to ensure:
 - `id()` function for primary keys
 - `companyId` with composite primary key
 - Standardized RLS policies (SELECT, INSERT, UPDATE, DELETE)
@@ -80,7 +80,7 @@ For each task:
 
 ### 2.1 Mark In Progress
 
-Update `llm/tasks/todo.md`:
+Update `.claude/scratch/tasks/todo.md`:
 ```markdown
 - [x] Task 1: Create migration ✓
 - [ ] Task 2: Add types (in progress)
@@ -190,7 +190,7 @@ Use the Agent tool with clear context for each subagent.
 | Artifact | Location |
 |----------|----------|
 | Working code | Feature branch |
-| Progress tracker | `llm/tasks/todo.md` |
+| Progress tracker | `.claude/scratch/tasks/todo.md` |
 | Commits | Git history |
 
 ## Next Steps

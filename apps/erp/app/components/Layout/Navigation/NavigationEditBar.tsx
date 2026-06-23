@@ -1,4 +1,5 @@
 import { Button, cn } from "@carbon/react";
+import { Trans } from "@lingui/react/macro";
 
 type NavigationEditBarProps = {
   isSaving: boolean;
@@ -28,7 +29,7 @@ export function NavigationEditBar({
         disabled={isSaving}
         className="flex-1 h-8 text-xs"
       >
-        Cancel
+        <Trans>Cancel</Trans>
       </Button>
       <Button
         size="sm"
@@ -37,7 +38,7 @@ export function NavigationEditBar({
         disabled={!isDirty || isSaving}
         className="flex-1 h-8 text-xs"
       >
-        {isSaving ? "Saving..." : "Save"}
+        {isSaving ? <Trans>Saving...</Trans> : <Trans>Save</Trans>}
       </Button>
     </div>
   );

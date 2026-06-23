@@ -139,7 +139,11 @@ const ProcessForm = ({
                       label={t`Default Unit`}
                       value={initialValues.defaultStandardFactor}
                     />
-                    <WorkCenters name="workCenters" label={t`Work Centers`} />
+                    <WorkCenters
+                      name="workCenters"
+                      label={t`Work Centers`}
+                      termId="work-center"
+                    />
                   </>
                 )}
                 {processType !== "Inside" && (

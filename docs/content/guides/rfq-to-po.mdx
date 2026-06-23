@@ -1,0 +1,61 @@
+---
+title: From RFQ to PO
+description: Shop one item to many suppliers, then turn the winning quote into an order.
+label: "(I)"
+index: 0
+flow: rfq-to-bill
+flowName: RFQ to bill
+flowIndex: 2
+---
+
+Every robot the shop builds is mostly parts it buys. RFQ to bill is the procurement side of the house, the mirror image of quote to cash, run from the buyer's chair. You ask suppliers for a price, you place an order, the goods arrive, and a supplier bill lands that you reconcile against what you actually ordered and received.
+
+We'll follow one purchased part from a blank request all the way to a posted supplier invoice.
+
+<Figure illustration="rfq-fanout" caption="One purchasing RFQ fans out to a supplier quote each; the winning bid converts to a purchase order." />
+
+## One RFQ, many suppliers
+
+Start with a <Term id="rfq">purchasing RFQ</Term>. Unlike a sales <Term>quote</Term>, which is one document for one customer, a purchasing RFQ is built to fan out: one request, the same lines, sent to several suppliers at once so you can compare what comes back. A fresh RFQ sits at **"Draft"**.
+
+When you finalize it, Carbon does the fan-out for you. It creates one **supplier quote** per supplier off the RFQ's lines, links each back to the request, and, if you want, emails the supplier a private link to respond. The RFQ moves to **"Requested"**; each new supplier quote opens at **"Draft"**.
+
+<Callout tone="neutral" badge="LOOSELY COUPLED" title="RFQ and supplier quote are both optional.">
+You can start at the purchase order and skip the shopping-around entirely. When you do use them, the RFQ, the supplier quotes, and the eventual PO are tied together by junction records, not a rigid chain, so one request can spread across many suppliers and many orders.
+</Callout>
+
+<Screenshot label="Purchasing RFQ — supplier comparison" caption="One request, the same lines, fanned out to several suppliers to compare." ratio="wide" />
+
+## Suppliers quote back
+
+Each supplier quote carries a private share link. The supplier opens it, no login, and enters their pricing, including quantity breaks and lead times. Submitting moves their quote to **"Active"** and writes the prices back into Carbon; declining moves it to **"Declined"**.
+
+It's the same digital-quote machinery as the sales side, pointed the other way: there, customers accept your price; here, suppliers send you theirs.
+
+<Callout tone="blue" badge="SUPPLIER PORTAL" title="The portal hangs off the quote, not the request.">
+The share link lives on each supplier quote, so every supplier responds in their own document. You see the bids side by side and pick the one to turn into an order.
+</Callout>
+
+<Screenshot label="Supplier quote portal" caption="The supplier's view: enter unit price, quantity breaks, and lead time, then submit." ratio="wide" />
+
+## Into a purchase order
+
+Convert the winning supplier quote and Carbon builds a <Term>purchase order</Term> from it — carrying the supplier, the lines, the negotiated pricing (converted through the line's <Term>conversion factor</Term> and exchange rate), and the same supplier-interaction thread. A PO can also be one of three kinds: a plain **"Purchase"**, a **"Return"**, or **<Term id="outside-operation">"Outside Processing"</Term>** for sending parts out to a vendor for a step.
+
+A purchase order's status is never typed in by hand. Carbon computes it from the state of its lines. Finalize a fresh order and it lands at **"To Receive and Invoice"**: nothing has arrived, nothing has been billed. If the order's value crosses an approval threshold, it stops at **"Needs Approval"** until someone signs off.
+
+<Callout tone="amber" badge="STATUS IS COMPUTED" title="A PO's status is derived from its lines, every time.">
+Each line tracks whether it's fully received and fully invoiced. The order rolls those up: "To Receive and Invoice" → "To Receive" or "To Invoice" → "Completed", so the header always reflects what's actually outstanding, never a stale label.
+</Callout>
+
+<Screenshot label="Purchase order" caption="The order converted from the chosen supplier quote, sitting at 'To Receive and Invoice'." ratio="wide" />
+
+## Send work out, too
+
+Not every purchase order buys a part — some buy a *step*. When an operation on one of your own jobs goes to an outside vendor (plating, heat-treat, anodizing), you raise a purchase order of type **"Outside Processing"**, tied to that job's operation rather than to a stock item.
+
+It receives differently, too. Posting an outside-processing receipt adds nothing to a shelf; instead it advances the job operation and posts the vendor's charge straight into the job's [work-in-process](/guides/job-costing). The subcontracted step lands in the same cost balance as the operations you ran in-house.
+
+<Callout tone="blue" badge="OUTSIDE PROCESSING" title="A PO can buy an operation, not just an item.">
+Outside-processing orders bridge purchasing and the floor: the vendor performs a step on your part, and receiving the PO both moves the [make-to-order](/guides/order) job's operation forward and charges its cost to WIP. Purchasing, production, and accounting meet on one document.
+</Callout>

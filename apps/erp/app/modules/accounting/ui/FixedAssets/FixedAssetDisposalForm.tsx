@@ -65,7 +65,11 @@ const FixedAssetDisposalForm = ({
                 <p className="text-sm text-muted-foreground">
                   This will write off the remaining book value of the asset.
                 </p>
-                <DatePicker name="disposalDate" label="Disposal Date" />
+                <DatePicker
+                  name="disposalDate"
+                  label="Disposal Date"
+                  termId="disposal"
+                />
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>

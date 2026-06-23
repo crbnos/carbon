@@ -1,0 +1,9 @@
+.next
+.source
+node_modules
+*.tsbuildinfo
+next-env.d.ts
+
+# generated at build by scripts/generate-api-docs.mjs
+lib/api-data.generated.ts
+lib/tools-data.generated.ts

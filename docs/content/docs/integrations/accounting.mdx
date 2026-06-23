@@ -1,0 +1,65 @@
+---
+title: Accounting
+description: Post invoices to Xero and keep currency exchange rates current automatically.
+---
+
+Two accounting integrations: **Xero** mirrors your <Term id="invoice">invoices</Term> into an external ledger, and **Exchange Rates**
+keeps multi-currency math honest. Exchange Rates is available on every plan; Xero is an Enterprise
+(Business-plan) integration.
+
+## Xero
+
+<PlanBadge plan="Business" className="my-[8px]" />
+
+Connect over **OAuth**, then choose what Carbon and Xero share. Once connected, Carbon posts **sales and
+purchase invoices** to Xero and keeps the two ledgers aligned.
+
+<Steps>
+  <Step>
+  ### Connect over OAuth
+
+  No keys to paste. Authorizing stores the connection.
+  </Step>
+  <Step>
+  ### Choose what's shared
+
+  Set backfill, the per-entity source of truth, and the default account mapping (below).
+  </Step>
+  <Step>
+  ### Run the initial sync
+
+  A **Run Initial Sync** action kicks off the first backfill on demand. After that, changes flow continuously, matched to the same Xero record each time so a Carbon customer or invoice never duplicates.
+  </Step>
+</Steps>
+
+<FieldTable>
+  <Field name="Backfill">Whether to seed Xero with your existing **customers**, **vendors**, and **items** on first connect.</Field>
+  <Field name="Source of truth">Per entity (customer, vendor, item, invoice, bill): whether **Carbon** or the **accounting system** wins on conflict.</Field>
+  <Field name="Account mapping">The default **sales** and **purchase** account codes, picked from your Xero chart of accounts.</Field>
+</FieldTable>
+
+<Callout type="warn">
+Xero only appears when its OAuth client is configured server-side (`XERO_CLIENT_ID`). Without it the
+integration is hidden — see [Environment variables](/docs/platform/self-hosting/environment-variables).
+</Callout>
+
+## Exchange rates
+
+Turn it on and it runs — no fields to configure. Carbon refreshes currency **exchange rates daily** so
+foreign-currency documents convert against current rates. Exchange Rates is available on **every plan**.
+
+<Callout type="info">
+On Carbon Cloud the rates come from **exchangeratesapi.io** by default, fetched against a **EUR** base and
+then converted into each company's base currency, so every currency you trade in stays aligned.
+</Callout>
+
+## Related
+
+<Cards>
+  <Card title="Accounting reference" href="/docs/reference/accounting">
+    How Carbon posts to the ledger — what Xero mirrors.
+  </Card>
+  <Card title="Invoices" href="/docs/reference/invoices">
+    The sales and purchase invoices that sync to Xero.
+  </Card>
+</Cards>

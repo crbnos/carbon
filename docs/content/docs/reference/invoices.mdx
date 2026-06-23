@@ -1,0 +1,55 @@
+---
+title: Invoices
+description: The billing documents — what you charge customers, and what suppliers charge you.
+---
+
+An **invoice** records money owed. Carbon has two kinds that behave almost identically: a **sales invoice** is what you bill a customer, and a **purchase invoice** is the bill a supplier sends you. Both are drawn from an upstream document, both post to the ledger, and in both, payment is a state on the invoice rather than a separate record.
+
+## Where they come from
+
+A **sales invoice** is raised from a <Term id="sales-order">sales order</Term>, or from a **<Term id="shipment">posted shipment</Term>**: billing on the order or billing on what actually shipped. A **purchase invoice** is raised from a <Term id="purchase-order">purchase order</Term>, keeping the lines that still have something to bill. Either way the new invoice opens at **Draft**, fully editable, and links each line back to the order line it bills.
+
+<Callout type="note">
+A purchase invoice reconciles on the **purchase order line**, not on a <Term id="receipt">receipt</Term>. There's no direct receipt link, and a receipt isn't even required to bill. Posting clears the <Term id="gr-ir">goods-received-not-invoiced</Term> accrual against the shared order line and books any price difference to <Term id="purchase-price-variance">variance</Term>.
+</Callout>
+
+## Status lifecycle
+
+Both start at **Draft** and lock the moment they leave it — numbers that have entered the books can't be edited in place.
+
+| | Sales invoice | Purchase invoice |
+| --- | --- | --- |
+| Drafting | Draft, Pending | Draft, Pending |
+| Posted | **Submitted** | **Open** |
+| Paying | Partially Paid → Paid | Partially Paid → Paid |
+| Reversed | Voided | Voided |
+| Credit | Credit Note Issued | Debit Note Issued, Return |
+| Past due | Overdue | Overdue |
+
+The posted state has a different name on each side, **Submitted** for sales and **Open** for purchase, but means the same thing: posted to the ledger, awaiting payment. **Overdue** isn't set by hand; it's computed when an unpaid invoice passes its due date.
+
+## Posting
+
+<Term id="posting">Posting</Term> an invoice writes its general-ledger entries, but only when accounting is enabled for the company: receivables against sales for a sale, payables against inventory or WIP for a purchase. Posting also bumps the invoiced quantity on each order line and stamps the posting date.
+
+<Callout type="warn">
+Posting never marks an invoice **Paid** — it lands on **Submitted** or **Open**. Recording payment is a separate, deliberate step. A posted invoice can't be deleted either; to undo one you **void** it, which writes reversing entries rather than erasing history.
+</Callout>
+
+## Payment
+
+Payment in Carbon is **field-based**: an invoice carries its own status, paid date, and balance. There's no separate payment transaction. Marking an invoice **Paid** stamps the date and settles the balance. That keeps the whole money story on one record, from draft through posted to paid.
+
+## Related
+
+<Cards>
+  <Card title="Sales orders" href="/docs/reference/sales-orders">
+    The order a sales invoice bills against.
+  </Card>
+  <Card title="Purchase orders" href="/docs/reference/purchase-orders">
+    The order a purchase invoice reconciles to, line by line.
+  </Card>
+  <Card title="Accounting" href="/docs/reference/accounting">
+    Where a posted invoice's ledger entries land.
+  </Card>
+</Cards>

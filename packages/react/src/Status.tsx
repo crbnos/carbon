@@ -15,6 +15,7 @@ import { cn } from "./utils/cn";
 type StatusProps = ComponentProps<"div"> & {
   color?: "green" | "orange" | "red" | "yellow" | "blue" | "gray" | "purple";
   tooltip?: ReactNode;
+  disableTooltip?: boolean;
 };
 
 const getStatusIcon = (color: string) => {
@@ -41,25 +42,28 @@ const Status = ({
   color = "gray",
   children,
   tooltip,
+  disableTooltip,
   className,
   ...props
 }: StatusProps) => {
-  const tooltipContent = tooltip ?? children;
+  const badge = (
+    <Badge
+      variant={color}
+      className={cn("inline-flex items-center gap-1", className)}
+      {...props}
+    >
+      {getStatusIcon(color)}
+      {children}
+    </Badge>
+  );
+
+  if (disableTooltip) return badge;
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
-        <Badge
-          variant={color}
-          className={cn("inline-flex items-center gap-1", className)}
-          {...props}
-        >
-          {getStatusIcon(color)}
-          {children}
-        </Badge>
-      </TooltipTrigger>
+      <TooltipTrigger asChild>{badge}</TooltipTrigger>
       <TooltipContent>
-        <span>{tooltipContent}</span>
+        <span>{tooltip ?? children}</span>
       </TooltipContent>
     </Tooltip>
   );

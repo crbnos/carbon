@@ -1,0 +1,7 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ITAR Registered & Compliant">
+  <circle cx="32" cy="32" r="30.25" stroke="#E6E6E6" stroke-width="1.5"/>
+  <circle cx="32" cy="32" r="25" stroke="#E6E6E6" stroke-width="0.75" opacity="0.45"/>
+  <path d="M32 9.5l1.6 3.05 3.4.55-2.45 2.4.57 3.4L32 21.25l-3.04 1.6.57-3.4-2.45-2.4 3.4-.55L32 9.5z" fill="#E6E6E6" opacity="0.9"/>
+  <text x="32" y="37" text-anchor="middle" font-family="DM Sans, Arial, sans-serif" font-size="13.5" font-weight="700" letter-spacing="0.5" fill="#E6E6E6">ITAR</text>
+  <text x="32" y="48" text-anchor="middle" font-family="DM Sans, Arial, sans-serif" font-size="5" font-weight="600" letter-spacing="1.4" fill="#E6E6E6" opacity="0.7">COMPLIANT</text>
+</svg>

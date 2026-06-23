@@ -152,6 +152,7 @@ const PurchaseOrderDeliveryForm = forwardRef<
               <Boolean
                 name="dropShipment"
                 label={t`Drop Shipment`}
+                termId="drop-ship"
                 bordered
                 onChange={setDropShip}
               />

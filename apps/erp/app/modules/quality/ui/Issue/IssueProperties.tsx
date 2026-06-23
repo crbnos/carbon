@@ -291,6 +291,7 @@ const IssueProperties = () => {
           }))}
           isReadOnly={disableStructureUpdate}
           label={t`Issue Type`}
+          termId="nonconformance"
           name="nonConformanceTypeId"
           inline={(value, options) => {
             return (

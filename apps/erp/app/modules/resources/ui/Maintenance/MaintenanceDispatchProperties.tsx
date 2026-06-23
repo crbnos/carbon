@@ -253,6 +253,7 @@ const MaintenanceDispatchProperties = () => {
           isReadOnly={isLocked || !permissions.can("update", "resources")}
           label={t`Work Center`}
           name="workCenterId"
+          termId="work-center"
           inline
           isClearable
           onChange={(value) => {

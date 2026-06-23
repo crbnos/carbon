@@ -1,6 +1,12 @@
 /** File names + paths used across the CLI. */
-export const COMPOSE_DEV_FILE = "docker-compose.dev.yml";
-export const COMPOSE_SHARED_FILE = "docker-compose.yml";
+// Relative to the repo root (the cwd the CLI runs docker from). Compose is
+// always invoked with `--project-directory .` so the file's `./packages/...`
+// volume mounts still resolve from the root, not from this file's directory.
+export const COMPOSE_DEV_FILE = "packages/dev/docker/docker-compose.dev.yml";
+
+// Pre-move location. Older worktrees still have the file here; the CLI falls
+// back to it when COMPOSE_DEV_FILE is absent so existing checkouts keep working.
+export const COMPOSE_DEV_FILE_LEGACY = "docker-compose.dev.yml";
 
 /** Apps the CLI knows how to spawn through portless. */
 export const APP_CHOICES = [

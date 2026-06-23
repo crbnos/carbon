@@ -4,7 +4,11 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, useLoaderData } from "react-router";
-import { CustomerPortalsTable } from "~/modules/sales/ui/CustomerPortals";
+import { usePlanGate } from "~/hooks/usePlanGate";
+import {
+  CustomerPortalsTable,
+  CustomerPortalsUpgradeOverlay
+} from "~/modules/sales/ui/CustomerPortals";
 import { getCustomerPortals } from "~/modules/shared";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -41,6 +45,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function CustomerPortalsRoute() {
   const { appUrl, data, count } = useLoaderData<typeof loader>();
+  const { isGated } = usePlanGate({ feature: "CUSTOMER_PORTALS" });
+
+  if (isGated) {
+    return <CustomerPortalsUpgradeOverlay />;
+  }
 
   return (
     <VStack spacing={0} className="h-full">

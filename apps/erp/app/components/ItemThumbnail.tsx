@@ -8,7 +8,7 @@ import { MethodItemTypeIcon } from "./Icons";
 interface ItemThumbnailProps {
   thumbnailPath?: string | null;
   type?: MethodItemType;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
 }
 
 const itemVariants = cva(
@@ -18,7 +18,8 @@ const itemVariants = cva(
       size: {
         sm: "w-8 h-8",
         md: "w-10 h-10",
-        lg: "w-11 h-11 bg-gradient-to-bl from-muted to-muted/40"
+        lg: "w-11 h-11 bg-gradient-to-bl from-muted to-muted/40",
+        xl: "w-16 h-16 bg-gradient-to-bl from-muted to-muted/40"
       },
       withPadding: {
         true: "",
@@ -40,6 +41,11 @@ const itemVariants = cva(
         withPadding: true,
         size: "lg",
         class: "p-2"
+      },
+      {
+        withPadding: true,
+        size: "xl",
+        class: "p-2.5"
       }
     ],
     defaultVariants: {
@@ -54,7 +60,8 @@ const iconVariants = cva("text-[#AAAAAA] dark:text-[#444]", {
     size: {
       sm: "w-4 h-4",
       md: "w-5 h-5",
-      lg: "w-6 h-6"
+      lg: "w-6 h-6",
+      xl: "w-11 h-11"
     }
   },
   defaultVariants: {

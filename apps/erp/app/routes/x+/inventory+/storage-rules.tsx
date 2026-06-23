@@ -8,9 +8,9 @@ import { usePlanGate } from "~/hooks/usePlanGate";
 import {
   getRuleAssignmentCounts,
   getStorageRules
-} from "~/modules/storageRules";
-import StorageRulesGroups from "~/modules/storageRules/ui/StorageRulesGroups";
-import StorageRulesUpgradeOverlay from "~/modules/storageRules/ui/StorageRulesUpgradeOverlay";
+} from "~/modules/storage-rules";
+import StorageRulesGroups from "~/modules/storage-rules/ui/StorageRulesGroups";
+import StorageRulesUpgradeOverlay from "~/modules/storage-rules/ui/StorageRulesUpgradeOverlay";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

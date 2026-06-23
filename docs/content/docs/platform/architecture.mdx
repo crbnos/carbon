@@ -1,0 +1,70 @@
+---
+title: Architecture
+description: "How Carbon is built: the apps, packages, database, event system, background jobs, and auth behind a deployment."
+---
+
+Carbon is a TypeScript monorepo: a handful of apps over a shared set of packages, backed by a single
+Postgres database.
+
+## Apps
+
+| App | Stack | What it is |
+| --- | --- | --- |
+| `erp` | React Router 7 + Vite | The ERP: orders, purchasing, planning, accounting. Also hosts the API, the MCP server, and the OAuth endpoints. |
+| `mes` | React Router 7 + Vite | The Manufacturing Execution System: shop-floor job execution. |
+| `academy` | React Router 7 + Vite | Hosts training video lessons. |
+| `docs` | Next.js (Fumadocs) | This documentation site. |
+
+## Packages
+
+Shared libraries live in `packages/`, including `database` (Supabase schema + generated types), `react`
+(the UI component library), `jobs` (background jobs), `auth`, `ee` (enterprise edition + integrations),
+`stripe`, `kv` (Redis), `documents`, `printing`, `locale`, and `dev` (the `crbn` CLI).
+
+## The stack
+
+- **Framework:** React Router 7 for the apps; Next.js for these docs.
+- **Monorepo:** pnpm workspaces + Turborepo.
+- **Tooling:** Vite, Biome (lint + format), tsup, strict TypeScript.
+
+## Database
+
+Carbon runs on **Supabase / PostgreSQL**. Multi-tenancy is enforced in the database: every row is scoped
+to a company, and **Row Level Security** policies gate access. Types are generated from the schema. Local
+development runs Supabase in Docker.
+
+<Callout type="note">
+Carbon is multi-company. One deployment can host many companies; isolation is enforced by RLS, not by
+application code.
+</Callout>
+
+## Events & background jobs
+
+- **Event system:** Postgres triggers enqueue change events into a PGMQ queue; an **Inngest** cron drains
+  the queue and routes each event to its handlers (webhook, workflow, sync, search).
+- **Background jobs:** run on **Inngest** (`packages/jobs`): MRP, scheduling, exchange-rate updates,
+  integration syncs, and notifications. App code fires jobs with `trigger()` / `batchTrigger()`.
+- **Edge functions:** transactional work runs as **Supabase edge functions** (Deno): posting receipts,
+  shipments, and invoices; running MRP; importing CSV; issuing and picking material.
+
+<Callout type="warn">
+Older notes attribute jobs and events to Trigger.dev. That migration is done. Jobs and the event queue
+run on **Inngest**; edge functions run on **Supabase / Deno**.
+</Callout>
+
+## Authentication
+
+Carbon uses **Supabase Auth** with HTTP-only cookie sessions and Redis-cached permissions (role- and
+attribute-based). Sign-in is by magic link or Google. Programmatic access uses **API keys** (a `carbon-key`
+header), and a full **OAuth 2.0 server** backs the Claude remote connector.
+
+## Related
+
+<Cards>
+  <Card title="Self-hosting" href="/docs/platform/self-hosting">
+    Run the apps on your own infrastructure: Docker on a VPS, or AWS with SST.
+  </Card>
+  <Card title="Environment variables" href="/docs/platform/self-hosting/environment-variables">
+    The full configuration surface.
+  </Card>
+</Cards>

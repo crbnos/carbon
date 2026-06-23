@@ -1,0 +1,41 @@
+---
+title: Receipts
+description: "Goods coming in: receiving against a purchase order and posting to inventory."
+---
+
+A **receipt** brings goods in. Like <Term id="shipment">shipments</Term>, one receipt model serves several sources: most often a <Term id="purchase-order">purchase order</Term>, but also inbound transfers. <Term id="posting">Posting</Term> is what turns a delivery into stock on hand.
+
+A receipt line soft-links back to the purchase order line it fulfills. Posting adds the quantity to inventory, raises the order line's received quantity, and advances the order. When accounting is enabled, it also debits inventory (or <Term id="wip">work-in-process</Term>, for outside processing) against a <Term id="gr-ir">goods-received-not-invoiced</Term> accrual that the supplier invoice later clears.
+
+## Fields
+
+<FieldTable>
+  <Field name="Source document" type="reference">The purchase order (or transfer) being received.</Field>
+  <Field name="Received quantity" type="number">Units on this receipt, per line.</Field>
+  <Field name="Conversion factor" type="number">Converts the supplier's purchase unit to the stock unit.</Field>
+  <Field name="Location" type="reference">Where the goods land.</Field>
+</FieldTable>
+
+## Status
+
+<StatusFlow entity="receipt">
+  <Status name="Draft">Being prepared; nothing posted.</Status>
+  <Status name="Pending" branch>Queued to post.</Status>
+  <Status name="Posted" accent>Inventory increased and the order advanced.</Status>
+  <Status name="Voided" terminal>Reversed after posting.</Status>
+</StatusFlow>
+
+<Callout type="info">
+Receive an item flagged for inspection and its units land **On Hold**, with an inbound inspection opened at *Pending* — they don't become available stock until the inspection clears.
+</Callout>
+
+## Related
+
+<Cards>
+  <Card title="Receive, match, bill" href="/guides/receive-and-bill">
+    Posting a receipt in the RFQ-to-bill flow.
+  </Card>
+  <Card title="Purchase orders" href="/docs/reference/purchase-orders">
+    The document a receipt advances.
+  </Card>
+</Cards>

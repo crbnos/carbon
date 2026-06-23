@@ -172,6 +172,7 @@ import {
 } from "./InputOTP";
 import { Kbd } from "./Kbd";
 import { Label } from "./Label";
+import { LabelWithHelp } from "./LabelWithHelp";
 import { Loading } from "./Loading";
 import { LoadingBars } from "./LoadingBars";
 import {
@@ -474,6 +475,7 @@ export {
   InputRightElement,
   Kbd,
   Label,
+  LabelWithHelp,
   Loading,
   LoadingBars,
   Menu,

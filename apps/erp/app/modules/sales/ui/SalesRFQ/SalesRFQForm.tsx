@@ -156,7 +156,11 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
                 label={t`Customer`}
                 onChange={onCustomerChange}
               />
-              <Input name="customerReference" label={t`Customer RFQ`} />
+              <Input
+                name="customerReference"
+                label={t`Customer RFQ`}
+                termId="rfq"
+              />
               <CustomerContact
                 name="customerContactId"
                 label={t`Purchasing Contact`}
@@ -177,14 +181,21 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
               <DatePicker
                 name="rfqDate"
                 label={t`RFQ Date`}
+                helperText={t`The date you received this RFQ from the customer. Defaults to today.`}
                 isDisabled={isCustomer}
+                termId="rfq"
               />
               <DatePicker
                 name="expirationDate"
                 label={t`Due Date`}
+                helperText={t`The deadline to send your quote to the customer.`}
                 isDisabled={isCustomer}
               />
-              <Location name="locationId" label={t`RFQ Location`} />
+              <Location
+                name="locationId"
+                label={t`RFQ Location`}
+                termId="rfq"
+              />
               <Employee name="salesPersonId" label={t`Sales Person`} />
               <CustomFormFields table="salesRfq" />
             </div>

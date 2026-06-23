@@ -1,10 +1,10 @@
 // Field resolver registry — single source of truth for the rule-builder UI and
-// the evaluator's field paths. Split out of `storageRules.ts` to keep that file
-// focused on evaluation/compilation. Depends on `storageRules` only for the core
+// the evaluator's field paths. Split out of `storage-rules.ts` to keep that file
+// focused on evaluation/compilation. Depends on `storage-rules` only for the core
 // `Operator` / `TargetType` types (type-only — no runtime cycle).
 
 import type { Database } from "@carbon/database";
-import type { Operator, TargetType } from "./storageRules";
+import type { Operator, TargetType } from "./storage-rules";
 
 type Tables = Database["public"]["Tables"];
 

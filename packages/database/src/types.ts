@@ -2426,13 +2426,10 @@ export type Database = {
           companyGroupId: string | null
           countryCode: string | null
           createdAt: string
-          customIndustryDescription: string | null
           email: string | null
           eori: string | null
           fax: string | null
-          featureRequests: string | null
           id: string
-          industryId: string | null
           isEliminationEntity: boolean
           logoDark: string | null
           logoDarkIcon: string | null
@@ -2443,8 +2440,6 @@ export type Database = {
           parentCompanyId: string | null
           phone: string | null
           postalCode: string | null
-          seedDemoData: boolean
-          selectedModules: string[] | null
           slackChannel: string | null
           stateProvince: string | null
           suggestionNotificationGroup: string[]
@@ -2463,13 +2458,10 @@ export type Database = {
           companyGroupId?: string | null
           countryCode?: string | null
           createdAt?: string
-          customIndustryDescription?: string | null
           email?: string | null
           eori?: string | null
           fax?: string | null
-          featureRequests?: string | null
           id?: string
-          industryId?: string | null
           isEliminationEntity?: boolean
           logoDark?: string | null
           logoDarkIcon?: string | null
@@ -2480,8 +2472,6 @@ export type Database = {
           parentCompanyId?: string | null
           phone?: string | null
           postalCode?: string | null
-          seedDemoData?: boolean
-          selectedModules?: string[] | null
           slackChannel?: string | null
           stateProvince?: string | null
           suggestionNotificationGroup?: string[]
@@ -2500,13 +2490,10 @@ export type Database = {
           companyGroupId?: string | null
           countryCode?: string | null
           createdAt?: string
-          customIndustryDescription?: string | null
           email?: string | null
           eori?: string | null
           fax?: string | null
-          featureRequests?: string | null
           id?: string
-          industryId?: string | null
           isEliminationEntity?: boolean
           logoDark?: string | null
           logoDarkIcon?: string | null
@@ -2517,8 +2504,6 @@ export type Database = {
           parentCompanyId?: string | null
           phone?: string | null
           postalCode?: string | null
-          seedDemoData?: boolean
-          selectedModules?: string[] | null
           slackChannel?: string | null
           stateProvince?: string | null
           suggestionNotificationGroup?: string[]
@@ -2575,13 +2560,6 @@ export type Database = {
             columns: ["companyGroupId"]
             isOneToOne: false
             referencedRelation: "companyGroup"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "company_industryId_fkey"
-            columns: ["industryId"]
-            isOneToOne: false
-            referencedRelation: "industry"
             referencedColumns: ["id"]
           },
           {
@@ -3213,166 +3191,6 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
-          },
-        ]
-      }
-      companyTemplate: {
-        Row: {
-          artifactPath: string
-          createdAt: string
-          createdBy: string
-          description: string | null
-          id: string
-          includesStorage: boolean
-          industryId: string | null
-          isPublic: boolean
-          name: string
-          rowCount: number | null
-          schemaVersion: string
-          sourceCompanyId: string | null
-          sourceCompanyName: string | null
-          updatedAt: string | null
-          updatedBy: string | null
-        }
-        Insert: {
-          artifactPath: string
-          createdAt?: string
-          createdBy: string
-          description?: string | null
-          id?: string
-          includesStorage?: boolean
-          industryId?: string | null
-          isPublic?: boolean
-          name: string
-          rowCount?: number | null
-          schemaVersion: string
-          sourceCompanyId?: string | null
-          sourceCompanyName?: string | null
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Update: {
-          artifactPath?: string
-          createdAt?: string
-          createdBy?: string
-          description?: string | null
-          id?: string
-          includesStorage?: boolean
-          industryId?: string | null
-          isPublic?: boolean
-          name?: string
-          rowCount?: number | null
-          schemaVersion?: string
-          sourceCompanyId?: string | null
-          sourceCompanyName?: string | null
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "companyTemplate_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "companyTemplate_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "companyTemplate_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "companyTemplate_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "companyTemplate_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "companyTemplate_industryId_fkey"
-            columns: ["industryId"]
-            isOneToOne: false
-            referencedRelation: "industry"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "companyTemplate_sourceCompanyId_fkey"
-            columns: ["sourceCompanyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "companyTemplate_sourceCompanyId_fkey"
-            columns: ["sourceCompanyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "companyTemplate_sourceCompanyId_fkey"
-            columns: ["sourceCompanyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "companyTemplate_sourceCompanyId_fkey"
-            columns: ["sourceCompanyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "companyTemplate_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "companyTemplate_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "companyTemplate_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "companyTemplate_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "companyTemplate_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
           },
         ]
       }
@@ -12324,7 +12142,7 @@ export type Database = {
           inspectedBy: string | null
           notes: string | null
           status: Database["public"]["Enums"]["inboundInspectionSampleStatus"]
-          trackedEntityId: string
+          trackedEntityId: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -12338,7 +12156,7 @@ export type Database = {
           inspectedBy?: string | null
           notes?: string | null
           status?: Database["public"]["Enums"]["inboundInspectionSampleStatus"]
-          trackedEntityId: string
+          trackedEntityId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -12352,7 +12170,7 @@ export type Database = {
           inspectedBy?: string | null
           notes?: string | null
           status?: Database["public"]["Enums"]["inboundInspectionSampleStatus"]
-          trackedEntityId?: string
+          trackedEntityId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -12465,7 +12283,7 @@ export type Database = {
           {
             foreignKeyName: "inboundInspectionSample_trackedEntityId_fkey"
             columns: ["trackedEntityId"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "trackedEntity"
             referencedColumns: ["id"]
           },
@@ -12505,39 +12323,6 @@ export type Database = {
             referencedColumns: ["userId"]
           },
         ]
-      }
-      industry: {
-        Row: {
-          active: boolean
-          createdAt: string
-          description: string | null
-          iconName: string | null
-          id: string
-          name: string
-          sortOrder: number
-          updatedAt: string | null
-        }
-        Insert: {
-          active?: boolean
-          createdAt?: string
-          description?: string | null
-          iconName?: string | null
-          id: string
-          name: string
-          sortOrder?: number
-          updatedAt?: string | null
-        }
-        Update: {
-          active?: boolean
-          createdAt?: string
-          description?: string | null
-          iconName?: string | null
-          id?: string
-          name?: string
-          sortOrder?: number
-          updatedAt?: string | null
-        }
-        Relationships: []
       }
       inspectionDocument: {
         Row: {
@@ -31739,7 +31524,7 @@ export type Database = {
           employeeId: string | null
           expirationDate: string | null
           id: string
-          internalNotes: string | null
+          internalNotes: Json | null
           locationId: string | null
           notes: Json | null
           revisionId: number
@@ -31758,7 +31543,7 @@ export type Database = {
           employeeId?: string | null
           expirationDate?: string | null
           id?: string
-          internalNotes?: string | null
+          internalNotes?: Json | null
           locationId?: string | null
           notes?: Json | null
           revisionId?: number
@@ -31777,7 +31562,7 @@ export type Database = {
           employeeId?: string | null
           expirationDate?: string | null
           id?: string
-          internalNotes?: string | null
+          internalNotes?: Json | null
           locationId?: string | null
           notes?: Json | null
           revisionId?: number
@@ -39442,7 +39227,49 @@ export type Database = {
           },
         ]
       }
-      searchIndex_d8rau2oqm0h031eqpl1g: {
+      searchIndex_d8lth5d460h02afg19og: {
+        Row: {
+          createdAt: string
+          description: string | null
+          entityId: string
+          entityType: string
+          id: number
+          link: string
+          metadata: Json | null
+          searchVector: unknown
+          tags: string[] | null
+          title: string
+          updatedAt: string | null
+        }
+        Insert: {
+          createdAt?: string
+          description?: string | null
+          entityId: string
+          entityType: string
+          id?: number
+          link: string
+          metadata?: Json | null
+          searchVector?: unknown
+          tags?: string[] | null
+          title: string
+          updatedAt?: string | null
+        }
+        Update: {
+          createdAt?: string
+          description?: string | null
+          entityId?: string
+          entityType?: string
+          id?: number
+          link?: string
+          metadata?: Json | null
+          searchVector?: unknown
+          tags?: string[] | null
+          title?: string
+          updatedAt?: string | null
+        }
+        Relationships: []
+      }
+      searchIndex_M3T8GH5QxJoQYRZ3nQzQMQ: {
         Row: {
           createdAt: string
           description: string | null
@@ -55567,14 +55394,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -57832,7 +57659,7 @@ export type Database = {
           expirationDate: string | null
           favorite: boolean | null
           id: string | null
-          internalNotes: string | null
+          internalNotes: Json | null
           locationId: string | null
           locationName: string | null
           notes: Json | null
@@ -60668,14 +60495,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -61249,14 +61076,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -65693,6 +65520,19 @@ export type Database = {
           pickingListLineId: string
         }[]
       }
+      get_picking_list_tracked_available: {
+        Args: { p_picking_list_id: string }
+        Returns: {
+          availableQuantity: number
+          createdAt: string
+          expirationDate: string
+          itemId: string
+          readableId: string
+          storageUnitId: string
+          storageUnitName: string
+          trackedEntityId: string
+        }[]
+      }
       get_picking_schedule: {
         Args: { p_company_id: string; p_location_id: string; p_search?: string }
         Returns: {
@@ -67000,6 +66840,7 @@ export type Database = {
         | "Purchase Order"
         | "Maintenance Consumption"
         | "Non-Conformance"
+        | "Inbound Inspection"
       itemLedgerType:
         | "Purchase"
         | "Sale"
@@ -68289,6 +68130,7 @@ export const Constants = {
         "Purchase Order",
         "Maintenance Consumption",
         "Non-Conformance",
+        "Inbound Inspection",
       ],
       itemLedgerType: [
         "Purchase",

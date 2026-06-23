@@ -1,6 +1,7 @@
 import * as OV from "online-3d-viewer";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocale } from "react-aria-components";
+import { LuTrash2 } from "react-icons/lu";
 // @ts-ignore -- three has no declaration file in this context
 import * as THREE from "three";
 import { useMount } from "./hooks";
@@ -22,6 +23,7 @@ export function ModelViewer({
   className,
   withProperties = true,
   onDataUrl,
+  onDelete,
   resetZoomButton = true
 }: {
   file: File | null;
@@ -30,6 +32,7 @@ export function ModelViewer({
   color?: `#${string}`;
   withProperties?: boolean;
   onDataUrl?: (dataUrl: string) => void;
+  onDelete?: () => void;
   resetZoomButton?: boolean;
   className?: string;
 }) {
@@ -352,6 +355,15 @@ export function ModelViewer({
               </button>
             )}
             <pre id="model-viewer-canvas" aria-hidden className="sr-only" />
+            {onDelete && (
+              <IconButton
+                aria-label="Delete model"
+                className="absolute bottom-2 right-2 z-10 text-muted-foreground hover:text-destructive-foreground hover:bg-destructive"
+                icon={<LuTrash2 />}
+                variant="ghost"
+                onClick={onDelete}
+              />
+            )}
             {resetZoomButton && (
               <IconButton
                 aria-label="Reset zoom"

@@ -71,25 +71,22 @@ msgid "+{0} more"
 msgstr "+{0} 件以上"
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
+msgstr "<0>サプライヤー部品を追加</0>このアイテムの優先サプライヤーを設定します。"
+
+msgid "0-4 weeks"
 msgstr ""
-
-msgid "<0>delete</0> lets you delete rows. <1>delete</1> will match all rows by default, so remember to specify your filters!"
-msgstr "<0>delete</0>を使用すると行を削除できます。<1>delete</1>はデフォルトではすべての行にマッチするため、フィルターを指定することを忘れないでください。"
-
-msgid "<0>insert</0> lets you insert into your tables. You can also insert in bulk and do UPSERT."
-msgstr "<0>insert</0>を使用すると、テーブルにデータを挿入できます。一括挿入やUPSERTも実行できます。"
-
-msgid "<0>insert</0> will also return the replaced values for UPSERT."
-msgstr "<0>insert</0>はUPSERTの置き換えられた値も返します。"
-
-msgid "<0>update</0> lets you update rows. <1>update</1> will match all rows by default. You can update specific rows using horizontal filters, e.g. <2>eq</2>, <3>lt</3>, and <4>is</4>."
-msgstr "<0>update</0>を使用すると行を更新できます。<1>update</1>はデフォルトではすべての行にマッチします。水平フィルターを使用して特定の行を更新できます。例えば<2>eq</2>、<3>lt</3>、および<4>is</4>です。"
-
-msgid "<0>update</0> will also return the replaced values for UPDATE."
-msgstr "<0>update</0>は、UPDATEの置き換えられた値も返します。"
 
 msgid "1 day"
 msgstr "1日"
+
+msgid "13+ weeks"
+msgstr ""
+
+msgid "1Y"
+msgstr ""
+
+msgid "30D"
+msgstr ""
 
 msgid "3D Model"
 msgstr "3Dモデル"
@@ -97,8 +94,20 @@ msgstr "3Dモデル"
 msgid "5 User Minimum"
 msgstr "5ユーザー最小"
 
+msgid "5-8 weeks"
+msgstr ""
+
 msgid "5MB file limit"
 msgstr "5MBファイル制限"
+
+msgid "7D"
+msgstr ""
+
+msgid "9-12 weeks"
+msgstr ""
+
+msgid "90D"
+msgstr ""
 
 msgid "A consumable is a physical item used to make a part that can be used across multiple jobs"
 msgstr "消耗品は、複数のジョブで使用できるパーツを作成するために使用される物理的なアイテムです"
@@ -1056,6 +1065,9 @@ msgstr "平均クローズ日数"
 msgid "Back"
 msgstr "戻る"
 
+msgid "Back Home"
+msgstr ""
+
 msgid "Back to traceability"
 msgstr "トレーサビリティに戻る"
 
@@ -1070,6 +1082,9 @@ msgstr "貸借対照表"
 
 msgid "Balloon"
 msgstr "バルーン"
+
+msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
+msgstr ""
 
 msgid "Base Currency"
 msgstr "基本通貨"
@@ -1100,6 +1115,9 @@ msgstr "バッチサイズ"
 
 msgid "Batch Tracking"
 msgstr "バッチ追跡"
+
+msgid "Below safety stock"
+msgstr ""
 
 msgid "Beta"
 msgstr "ベータ"
@@ -1403,6 +1421,9 @@ msgstr "閉じる"
 msgid "Close Date"
 msgstr "終了日"
 
+msgid "Closed"
+msgstr ""
+
 msgid "Closed Date"
 msgstr "終了日"
 
@@ -1435,9 +1456,6 @@ msgstr "段取りを折りたたむ"
 
 msgid "Collapse subtree"
 msgstr "サブツリーを折りたたむ"
-
-msgid "Column"
-msgstr "カラム"
 
 msgid "Column visibility and order"
 msgstr "列の表示と順序"
@@ -1586,6 +1604,12 @@ msgstr "インポートを確認"
 
 msgid "Confirm Password"
 msgstr "パスワードを確認"
+
+msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
+msgstr ""
+
+msgid "Confirmed outgoing stock — sales orders & job materials (bars below zero)."
+msgstr ""
 
 msgid "Connect Carbon to your accounting, project management, and CAD tools and much more."
 msgstr "Carbonを会計、プロジェクト管理、CADツールなど、さまざまなツールに接続できます。"
@@ -1843,6 +1867,9 @@ msgstr "分析用の領域画像を準備できませんでした"
 msgid "Couldn't load documents"
 msgstr "ドキュメントを読み込めませんでした"
 
+msgid "Count"
+msgstr ""
+
 msgid "Country"
 msgstr "国"
 
@@ -2028,11 +2055,17 @@ msgstr "ワークセンターを作成しました"
 msgid "Creating part..."
 msgstr "パーツを作成中..."
 
+msgid "Critical"
+msgstr ""
+
 msgid "CSV column"
 msgstr "CSVカラム"
 
 msgid "CSV file must have at least 2 rows."
 msgstr "CSVファイルは最低2行必要です。"
+
+msgid "Cumulative %"
+msgstr ""
 
 msgid "Currency"
 msgstr "通貨"
@@ -2138,6 +2171,9 @@ msgstr "顧客タイプ"
 
 msgid "Customers"
 msgstr "顧客"
+
+msgid "Customize"
+msgstr ""
 
 msgid "Customize the layout of your PDF documents — reorder sections, hide what you don't need, and add your own blocks."
 msgstr "PDFドキュメントのレイアウトをカスタマイズ — セクションを並べ替え、不要な部分を非表示にし、独自のブロックを追加できます。"
@@ -2259,9 +2295,6 @@ msgstr "デフォルト方法"
 
 msgid "Default Method Type"
 msgstr "デフォルトメソッドタイプ"
-
-msgid "Default order when picking serial or batch lots of this item. Pickers can still override it."
-msgstr "このアイテムのシリアルまたはバッチロットをピッキングする際のデフォルト順序。ピッカーはそれでも上書きできます。"
 
 msgid "Default Permissions"
 msgstr "デフォルト権限"
@@ -2439,9 +2472,6 @@ msgstr "RFQを削除"
 
 msgid "Delete Risk"
 msgstr "リスクを削除"
-
-msgid "Delete rows"
-msgstr "行を削除"
 
 msgid "Delete Rule"
 msgstr "ルールを削除"
@@ -3197,6 +3227,9 @@ msgstr "販売注文行からモデルを削除するエラー"
 msgid "Error validating serial number"
 msgstr "シリアル番号の検証エラー"
 
+msgid "Error!"
+msgstr ""
+
 msgid "Escalation"
 msgstr "エスカレーション"
 
@@ -3709,9 +3742,6 @@ msgstr "ここに添付されたファイルは、このサプライヤーに送
 msgid "Filter"
 msgstr "フィルター"
 
-msgid "Filtering"
-msgstr "フィルタリング"
-
 msgid "Finalize"
 msgstr "確定"
 
@@ -3875,6 +3905,9 @@ msgstr "ヘルプ"
 msgid "Hide, pin and reorder columns"
 msgstr "列を非表示、ピン留め、並び替え"
 
+msgid "High"
+msgstr ""
+
 msgid "Higher priority wins ties and applies first for markups"
 msgstr "優先度が高いほど同点を制し、マークアップに最初に適用されます"
 
@@ -3916,6 +3949,9 @@ msgstr "解決された価格がどのように計算されたかを示します
 
 msgid "How this price was calculated"
 msgstr "この価格がどのように計算されたか"
+
+msgid "How to read this chart"
+msgstr ""
 
 msgid "Humidity"
 msgstr "湿度"
@@ -4024,9 +4060,6 @@ msgstr "材料から継承"
 
 msgid "Inherited from parent"
 msgstr "親から継承"
-
-msgid "Insert rows"
-msgstr "行を挿入"
 
 msgid "Insert token"
 msgstr "トークンを挿入"
@@ -4388,9 +4421,6 @@ msgstr "リードタイム（日数）"
 msgid "Lead Time:"
 msgstr "リードタイム:"
 
-msgid "Learn more"
-msgstr "詳細を見る"
-
 msgid "Leave any related receipts untouched"
 msgstr "関連するすべての領収書はそのままにしておく"
 
@@ -4540,6 +4570,9 @@ msgstr "ロットサイズ"
 
 msgid "Lot Size:"
 msgstr "ロットサイズ:"
+
+msgid "Low"
+msgstr ""
 
 msgid "Machine"
 msgstr "機械"
@@ -4779,6 +4812,9 @@ msgstr "測定標準"
 
 msgid "Media Size"
 msgstr "メディアサイズ"
+
+msgid "Medium"
+msgstr ""
 
 msgid "Members"
 msgstr "メンバー"
@@ -5423,8 +5459,11 @@ msgstr "このビューに適用されたソートはありません"
 msgid "No stock"
 msgstr "在庫なし"
 
-msgid "No suppliers yet"
+msgid "No stockout projected in the next 48 weeks"
 msgstr ""
+
+msgid "No suppliers yet"
+msgstr "まだサプライヤーがありません"
 
 msgid "No time entries for this week"
 msgstr "今週のタイムエントリがありません"
@@ -5549,6 +5588,9 @@ msgstr "開く"
 msgid "Open Actions"
 msgstr "オープンアクション"
 
+msgid "Open an NCR for MRB disposition"
+msgstr "MRB処分のためにNCRを開く"
+
 msgid "Open Audit Log"
 msgstr "監査ログを開く"
 
@@ -5590,6 +5632,9 @@ msgstr "スケジュール済みを開く"
 
 msgid "Open task details"
 msgstr "タスク詳細を開く"
+
+msgid "Opened"
+msgstr ""
 
 msgid "Operation"
 msgstr "操作"
@@ -5912,6 +5957,9 @@ msgstr "計画"
 msgid "Plan Type"
 msgstr "計画タイプ"
 
+msgid "Planned"
+msgstr ""
+
 msgid "Planned End"
 msgstr "計画終了"
 
@@ -6163,8 +6211,28 @@ msgstr "進捗"
 msgid "Project"
 msgstr "プロジェクト"
 
+msgid "Projected demand exploded from BOMs and forecasts."
+msgstr ""
+
+msgid "Projected inventory"
+msgstr ""
+
+msgid "Projected on hand"
+msgstr ""
+
 msgid "Projected stock"
 msgstr "予測在庫"
+
+#. placeholder {0}: formatWeek(stockoutDate)
+msgid "Projected stockout the week of {0}"
+msgstr ""
+
+#. placeholder {0}: formatWeek(belowSafetyDate)
+msgid "Projected to drop below safety stock the week of {0}"
+msgstr ""
+
+msgid "Projected to stay above safety stock"
+msgstr ""
 
 msgid "Projection"
 msgstr "予測"
@@ -6390,9 +6458,6 @@ msgstr "レート制限"
 msgid "Reactivate"
 msgstr "再度有効化"
 
-msgid "Read rows"
-msgstr "行を読む"
-
 msgid "Ready for Quote"
 msgstr "見積もり準備完了"
 
@@ -6469,6 +6534,9 @@ msgstr "記録"
 msgid "Record deleted"
 msgstr "レコード削除済み"
 
+msgid "Record the inspection result for this sample."
+msgstr "このサンプルの検査結果を記録してください。"
+
 msgid "Records"
 msgstr "記録"
 
@@ -6483,6 +6551,9 @@ msgstr "更新"
 
 msgid "Refresh exchange rate"
 msgstr "為替レートを更新"
+
+msgid "Registered"
+msgstr ""
 
 msgid "Reject"
 msgstr "却下"
@@ -6806,6 +6877,9 @@ msgstr "ルール"
 msgid "Run Test"
 msgstr "テストを実行"
 
+msgid "Running inventory after each week's supply and demand — the line."
+msgstr ""
+
 msgid "Running Total"
 msgstr "実行中の合計"
 
@@ -6814,6 +6888,10 @@ msgstr "安全在庫"
 
 msgid "Safety Stock"
 msgstr "安全在庫"
+
+#. placeholder {0}: numberFormatter.format(safetyStockValue)
+msgid "Safety stock ({0})"
+msgstr ""
 
 msgid "Safety Stock:"
 msgstr "安全在庫:"
@@ -6868,6 +6946,10 @@ msgstr "売上収益"
 
 msgid "Sample"
 msgstr "サンプル"
+
+#. placeholder {0}: idx + 1
+msgid "Sample {0}"
+msgstr "サンプル {0}"
 
 msgid "Sample Size"
 msgstr "サンプルサイズ"
@@ -7259,6 +7341,9 @@ msgstr "形状"
 msgid "Share"
 msgstr "共有"
 
+msgid "Share a branded portal link so customers can track their orders and documents."
+msgstr "ブランド化されたポータルリンクを共有して、顧客が注文と書類を追跡できるようにします。"
+
 msgid "Share Link"
 msgstr "リンクを共有"
 
@@ -7436,6 +7521,9 @@ msgstr "会社の祝日に予定されたメンテナンスをスキップする
 msgid "Skipped"
 msgstr "スキップ"
 
+msgid "Something went wrong"
+msgstr ""
+
 msgid "Something went wrong. Please try again."
 msgstr "何か問題が発生しました。もう一度お試しください。"
 
@@ -7565,8 +7653,12 @@ msgstr "都道府県"
 
 #. placeholder {0}: lotEntities.length
 #. placeholder {1}: Math.max(0, lotEntities.length - inspected)
-msgid "Statistical acceptance failed, so the entire lot is considered non-conforming (ISO 9001:2015 §8.7). All {0} entities — {passes} sampled pass(es), {fails} failure(s), and {1} un-inspected — will be marked Rejected. An NCR will be opened automatically for MRB disposition."
-msgstr "統計的受け入れに失敗したため、ロット全体が不適合と見なされます（ISO 9001:2015 §8.7）。すべての{0}個のエンティティ — {passes}個のサンプル合格品、{fails}個の不良品、および{1}個の未検査品 — は「却下」とマークされます。NCRは自動的にMRB処置のために開かれます。"
+msgid "Statistical acceptance failed, so the entire lot is considered non-conforming (ISO 9001:2015 §8.7). All {0} entities — {passes} sampled pass(es), {fails} failure(s), and {1} un-inspected — will be marked Rejected."
+msgstr "統計的受け入れに失敗したため、ロット全体が不適合と見なされます(ISO 9001:2015 §8.7)。すべての{0}個のエンティティ — {passes}個のサンプル合格、{fails}個の不合格、および{1}個の未検査 — は却下とマークされます。"
+
+#. placeholder {0}: inspection.lotSize
+msgid "Statistical acceptance failed, so the entire lot of {0} is considered non-conforming (ISO 9001:2015 §8.7) — {passes} sampled pass(es) and {fails} failure(s)."
+msgstr "統計的受け入れに失敗したため、{0}の全ロットは不適合と見なされます(ISO 9001:2015 §8.7) — {passes}件のサンプル合格と{fails}件の不合格です。"
 
 msgid "Status"
 msgstr "ステータス"
@@ -7603,6 +7695,9 @@ msgstr "在庫転送ウィザード"
 
 msgid "Stock Transfers"
 msgstr "在庫移動"
+
+msgid "Stockout"
+msgstr ""
 
 msgid "Storage client not available"
 msgstr "ストレージクライアントが利用できません"
@@ -7655,9 +7750,6 @@ msgstr "検査を送信"
 msgid "Submitted By"
 msgstr "提出者"
 
-msgid "Subscribe to changes"
-msgstr "変更を購読"
-
 msgid "Substance"
 msgstr "物質"
 
@@ -7682,6 +7774,9 @@ msgstr "新しいリビジョンが正常に作成されました"
 msgid "Suffix"
 msgstr "サフィックス"
 
+msgid "Suggested orders you haven't placed yet."
+msgstr ""
+
 msgid "Suggestion"
 msgstr "提案"
 
@@ -7693,12 +7788,6 @@ msgstr "提案"
 
 msgid "Sunday"
 msgstr "日曜日"
-
-msgid "Supabase provides a wide range of filters."
-msgstr "Supabaseは幅広いフィルター機能を提供しています。"
-
-msgid "Supabase provides realtime functionality and broadcasts database changes to authorized users depending on Row Level Security (RLS) policies."
-msgstr "Supabaseはリアルタイム機能を提供し、行レベルセキュリティ(RLS)ポリシーに基づいて、認可されたユーザーにデータベースの変更をブロードキャストします。"
 
 msgid "Supplier"
 msgstr "サプライヤー"
@@ -7911,11 +8000,20 @@ msgstr "計算方法の後、現金割引が利用可能になるまでの日数
 msgid "The amount of days after the calculation method that the payment is due"
 msgstr "計算方法の後の支払い期日までの日数"
 
+msgid "The dashed threshold you don't want inventory to fall below."
+msgstr ""
+
 msgid "The date the customer expects to receive the goods"
 msgstr "顧客が商品を受け取ることを期待する日付"
 
 msgid "The date the item is required on-site to cover the period's projected demand."
 msgstr "その期間の予想需要をカバーするために、アイテムがオンサイトで必要とされる日付。"
+
+msgid "The date you received this RFQ from the customer. Defaults to today."
+msgstr "このRFQを顧客から受け取った日付。デフォルトは今日の日付です。"
+
+msgid "The deadline to send your quote to the customer."
+msgstr "顧客に見積もりを提出する期限。"
 
 msgid "The endpoint that receives a POST request with the updated data when the table is updated"
 msgstr "テーブルが更新されたときに、更新されたデータを含むPOSTリクエストを受け取るエンドポイント"
@@ -7929,8 +8027,14 @@ msgstr "以下の行項目は価格またはリードタイムが不足してい
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "このPOを発注して、サプライヤーのリードタイムを考慮した上で、必要日までに到着するための最遅発注日です。"
 
-msgid "The lot will still be rejected, but an NCR cannot be auto-created until at least one Issue Type is configured."
-msgstr "ロットは引き続き却下されますが、少なくとも1つの問題タイプが設定されるまでNCRは自動作成できません。"
+msgid "The lot stays open so you can keep inspecting and disposition later. Sampled outcomes are preserved."
+msgstr "ロットは開いたままなので、検査を続けて後で処分できます。サンプリングされた結果は保持されます。"
+
+msgid "The lot will be marked Passed. {fails} sampled failure(s) are recorded for your records."
+msgstr "ロットは合格とマークされます。{fails}件のサンプル不良が記録されます。"
+
+msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
+msgstr "ロットは引き続き却下されますが、少なくとも1つの問題タイプが設定されるまでNCRを作成することはできません。"
 
 msgid "The new version number of the method"
 msgstr "メソッドの新しいバージョン番号"
@@ -8084,9 +8188,6 @@ msgstr "タイトル"
 
 msgid "To Location"
 msgstr "到着地"
-
-msgid "To read rows in <0>{resourceId}</0>, use the <1>select</1> method."
-msgstr "<0>{resourceId}</0>内の行を読み取るには、<1>select</1>メソッドを使用します。"
 
 msgid "To Receive"
 msgstr "受け取り予定"
@@ -8403,9 +8504,6 @@ msgstr "権限を更新"
 
 msgid "Update Quantity"
 msgstr "数量を更新"
-
-msgid "Update rows"
-msgstr "行を更新"
 
 msgid "Update Rule"
 msgstr "ルールを更新"
@@ -8787,6 +8885,10 @@ msgstr "ウェブサイト"
 
 msgid "Wednesday"
 msgstr "水曜日"
+
+#. placeholder {0}: dateFormatter.format(parseDate(d.startDate).toDate(getLocalTimeZone()))
+msgid "Week of {0}"
+msgstr ""
 
 msgid "Weeks Open"
 msgstr "開いている週数"

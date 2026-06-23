@@ -1,5 +1,6 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
+import type { TrackedEntityAttributes } from "@carbon/utils";
 import { getLocalTimeZone, now, today } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
@@ -26,7 +27,10 @@ import type {
   storageUnitValidator,
   warehouseTransferValidator
 } from "./inventory.models";
-import { isPickingListLocked } from "./inventory.models";
+import {
+  isPickingListLocked,
+  reconcileReceiptLineSerials
+} from "./inventory.models";
 
 export async function deleteBatchProperty(
   client: SupabaseClient<Database>,
@@ -469,6 +473,65 @@ export async function getReceiptLineTracking(
     .select("*")
     .eq("attributes ->> Receipt Line", receiptLineId)
     .eq("companyId", companyId);
+}
+
+/**
+ * Deletes stale serial tracked entities for a receipt's serial-tracked lines
+ * before posting. Post-receipt flips one serial per index in
+ * [0, receivedQuantity) to Available; orphaned (reduced quantity) or duplicate
+ * (edited serial) entities would otherwise become phantom Available serials.
+ * The keep/delete decision is owned by `reconcileReceiptLineSerials` so it
+ * stays in lockstep with the post-time validation in ReceiptPostModal.
+ */
+export async function reconcileReceiptSerialEntities(
+  client: SupabaseClient<Database>,
+  args: {
+    receiptId: string;
+    companyId: string;
+    lines: {
+      id: string;
+      receivedQuantity: number | null;
+      requiresSerialTracking?: boolean | null;
+    }[];
+  }
+) {
+  const serialLines = args.lines.filter((line) => line.requiresSerialTracking);
+  if (serialLines.length === 0) return;
+
+  const { data: serialEntities } = await client
+    .from("trackedEntity")
+    .select("id, attributes, createdAt, readableId")
+    .eq("attributes ->> Receipt", args.receiptId)
+    .eq("companyId", args.companyId);
+
+  const idsToDelete = serialLines.flatMap((line) => {
+    const entities = (serialEntities ?? [])
+      .filter(
+        (e) =>
+          (e.attributes as TrackedEntityAttributes)?.["Receipt Line"] ===
+          line.id
+      )
+      .map((e) => ({
+        id: e.id,
+        index: (e.attributes as TrackedEntityAttributes)?.[
+          "Receipt Line Index"
+        ],
+        hasSerial: !!e.readableId,
+        createdAt: e.createdAt
+      }));
+    return reconcileReceiptLineSerials(
+      entities,
+      Number(line.receivedQuantity ?? 0)
+    ).surplusEntityIds;
+  });
+
+  if (idsToDelete.length > 0) {
+    await client
+      .from("trackedEntity")
+      .delete()
+      .in("id", idsToDelete)
+      .eq("companyId", args.companyId);
+  }
 }
 
 export async function getReceiptFiles(
@@ -2316,6 +2379,86 @@ export async function getPickingListAvailability(
     );
   }
   return map;
+}
+
+export type PickingListRecommendation = {
+  trackedEntityId: string;
+  readableId: string | null;
+};
+
+/**
+ * The recommended tracked entities (serial/batch lots) for each tracked picking
+ * line, in pick order — surfaced as at-a-glance subtext before the picker opens.
+ * One batched RPC fetches every available lot for every item on the list; we then
+ * greedily assign distinct lots to lines in pick order so the same serial is never
+ * recommended to two lines, and a batch lot is split across lines by remaining qty.
+ * Returns a map of pickingListLineId → recommended lots (empty/partial if short).
+ */
+export async function getPickingListRecommendations(
+  client: SupabaseClient<Database>,
+  pickingListId: string
+): Promise<Record<string, PickingListRecommendation[]>> {
+  const [linesResult, availableResult] = await Promise.all([
+    client
+      .from("pickingListLine")
+      .select(
+        "id, itemId, quantityToPick, quantityPicked, status, item(itemTrackingType)"
+      )
+      .eq("pickingListId", pickingListId)
+      .order("jobOperationId")
+      .order("itemId"),
+    client.rpc("get_picking_list_tracked_available", {
+      p_picking_list_id: pickingListId
+    })
+  ]);
+
+  const recommendations: Record<string, PickingListRecommendation[]> = {};
+  if (linesResult.error || availableResult.error) return recommendations;
+
+  // Ordered, mutable pool of available lots per item (the RPC already orders each
+  // item's rows by its configured pick method).
+  const poolByItem = new Map<
+    string,
+    Array<{ trackedEntityId: string; readableId: string | null; qty: number }>
+  >();
+  for (const row of availableResult.data ?? []) {
+    const list = poolByItem.get(row.itemId) ?? [];
+    list.push({
+      trackedEntityId: row.trackedEntityId,
+      readableId: row.readableId,
+      qty: Number(row.availableQuantity ?? 0)
+    });
+    poolByItem.set(row.itemId, list);
+  }
+
+  for (const line of linesResult.data ?? []) {
+    const trackingType = (line.item as { itemTrackingType?: string } | null)
+      ?.itemTrackingType;
+    if (trackingType !== "Serial" && trackingType !== "Batch") continue;
+
+    let remaining =
+      Number(line.quantityToPick ?? 0) - Number(line.quantityPicked ?? 0);
+    if (remaining <= 0) continue;
+
+    const pool = poolByItem.get(line.itemId);
+    if (!pool?.length) continue;
+
+    const picks: PickingListRecommendation[] = [];
+    while (remaining > 0 && pool.length > 0) {
+      const lot = pool[0];
+      picks.push({
+        trackedEntityId: lot.trackedEntityId,
+        readableId: lot.readableId
+      });
+      const take = Math.min(lot.qty, remaining);
+      remaining -= take;
+      lot.qty -= take;
+      if (lot.qty <= 0) pool.shift();
+    }
+    recommendations[line.id] = picks;
+  }
+
+  return recommendations;
 }
 
 export async function getPickingListLine(

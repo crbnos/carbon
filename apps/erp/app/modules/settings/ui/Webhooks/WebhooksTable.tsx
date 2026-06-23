@@ -42,7 +42,7 @@ import {
   LuTrash,
   LuUser
 } from "react-icons/lu";
-import { Link, Outlet, useNavigate } from "react-router";
+import { Outlet, useNavigate } from "react-router";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import {
   useDateFormatter,
@@ -98,15 +98,17 @@ const WebhooksTable = memo(({ data, count }: WebhooksTableProps) => {
         header: t`Table`,
         cell: ({ row }) => (
           <div className="flex flex-col gap-1 justify-start items-start pb-1">
-            <Hyperlink
-              className="flex flex-row gap-1 items-center"
-              to={path.to.apiTable("js", row.original.table)}
+            <a
+              className="flex flex-row gap-1 items-center text-foreground hover:underline"
+              href={path.to.apiDocs}
+              target="_blank"
+              rel="noreferrer"
             >
               <LuTable2 className="size-4" />
               <span className="text-sm font-medium">
                 {`public.${row.original.table}`}
               </span>
-            </Hyperlink>
+            </a>
             <HStack>
               {row.original.onInsert && <Badge variant="green">Insert</Badge>}
               {row.original.onUpdate && <Badge variant="blue">Update</Badge>}
@@ -369,14 +371,14 @@ function WebhookDocs({ open, onClose }: WebhookDocsProps) {
                 <Separator />
                 <div>
                   <Button leftIcon={<LuFileText />} variant="link" asChild>
-                    <Link to={path.to.apiTable("js", activeTable)}>
+                    <a href={path.to.apiDocs} target="_blank" rel="noreferrer">
                       {
                         webhookTables.find(
                           (table) => table.value === activeTable
                         )?.label
                       }{" "}
                       Table Schema
-                    </Link>
+                    </a>
                   </Button>
                 </div>
               </div>
@@ -400,14 +402,14 @@ function WebhookDocs({ open, onClose }: WebhookDocsProps) {
                 <Separator />
                 <div>
                   <Button leftIcon={<LuFileText />} variant="link" asChild>
-                    <Link to={path.to.apiTable("js", activeTable)}>
+                    <a href={path.to.apiDocs} target="_blank" rel="noreferrer">
                       {
                         webhookTables.find(
                           (table) => table.value === activeTable
                         )?.label
                       }{" "}
                       Table Schema
-                    </Link>
+                    </a>
                   </Button>
                 </div>
               </div>
@@ -427,14 +429,14 @@ function WebhookDocs({ open, onClose }: WebhookDocsProps) {
                 <Separator />
                 <div>
                   <Button leftIcon={<LuFileText />} variant="link" asChild>
-                    <Link to={path.to.apiTable("js", activeTable)}>
+                    <a href={path.to.apiDocs} target="_blank" rel="noreferrer">
                       {
                         webhookTables.find(
                           (table) => table.value === activeTable
                         )?.label
                       }{" "}
                       Table Schema
-                    </Link>
+                    </a>
                   </Button>
                 </div>
               </div>

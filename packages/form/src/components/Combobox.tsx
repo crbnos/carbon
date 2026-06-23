@@ -1,10 +1,12 @@
+import type { TermId } from "@carbon/glossary";
 import type { ComboboxProps as ComboboxBaseProps } from "@carbon/react";
 import {
   Combobox as ComboboxBase,
   FormControl,
   FormErrorMessage,
   FormHelperText,
-  FormLabel
+  FormLabel,
+  LabelWithHelp
 } from "@carbon/react";
 import { useEffect } from "react";
 import { flushSync } from "react-dom";
@@ -14,6 +16,7 @@ import { useFormStateContext } from "../internal/formStateContext";
 export type ComboboxProps = Omit<ComboboxBaseProps, "onChange"> & {
   name: string;
   label?: string;
+  termId?: TermId;
   isLoading?: boolean;
   isOptional?: boolean;
   isRequired?: boolean;
@@ -34,6 +37,7 @@ export type ComboboxProps = Omit<ComboboxBaseProps, "onChange"> & {
 const Combobox = ({
   name,
   label,
+  termId,
   isLoading = false,
   isOptional,
   isRequired,
@@ -65,7 +69,7 @@ const Combobox = ({
     <FormControl isInvalid={!!error} isRequired={isRequired}>
       {label && (
         <FormLabel htmlFor={name} isOptional={resolvedIsOptional}>
-          {label}
+          <LabelWithHelp termId={termId}>{label}</LabelWithHelp>
         </FormLabel>
       )}
       <input

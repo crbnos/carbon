@@ -58,11 +58,16 @@ const ItemManufacturingForm = ({
             <Number
               name="scrapPercentage"
               label={t`Scrap Percent`}
+              termId="scrap"
               formatOptions={{
                 style: "percent"
               }}
             />
-            <Number name="leadTime" label={t`Lead Time (Days)`} />
+            <Number
+              name="leadTime"
+              label={t`Lead Time (Days)`}
+              termId="lead-time"
+            />
             {/* <Boolean
               name="manufacturingBlocked"
               label={t`Manufacturing Blocked`}

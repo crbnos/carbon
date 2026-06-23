@@ -1,0 +1,60 @@
+# Carbon — production reverse proxy (Caddy v2). Automatic HTTPS via Let's Encrypt.
+# Hostnames + ACME email are read from the container environment ({$VAR}), set in
+# the `caddy` service in docker-compose.prod.yml. https://caddyserver.com/docs/caddyfile
+#
+# DNS A/AAAA records for each host must point at this VPS and :80/:443 must be
+# reachable for the ACME challenge.
+
+{
+	email {$ACME_EMAIL}
+	# Trust the Swarm ingress network so client IPs in logs/rate-limits are real.
+	servers {
+		trusted_proxies static private_ranges
+	}
+}
+
+# Reusable hardening + compression for every site.
+(common) {
+	encode zstd gzip
+	header {
+		# HSTS (1 year). Remove if you serve sub-domains without HTTPS.
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# Caddy sets its own; don't leak the version.
+		-Server
+	}
+}
+
+# ─────────────────────────────── ERP ────────────────────────────────────────
+{$ERP_HOST} {
+	import common
+	reverse_proxy erp:3000
+}
+
+# ─────────────────────────────── MES ────────────────────────────────────────
+{$MES_HOST} {
+	import common
+	reverse_proxy mes:3000
+}
+
+# ─────────── Supabase API gateway (kong): auth, REST, storage, realtime, fns ──
+# Realtime uses WebSockets — Caddy's reverse_proxy upgrades them transparently.
+{$SUPABASE_HOST} {
+	import common
+	reverse_proxy kong:8000
+}
+
+# ───────────────────── Supabase Studio (DB admin UI) — OPTIONAL ──────────────
+# Studio has no auth of its own. Keep it OFF by default; reach the database via
+# `ssh` + `docker exec ... psql`. If you must expose it, set STUDIO_HOST in .env,
+# generate a bcrypt hash with `docker run --rm caddy:2-alpine caddy hash-password`,
+# paste it below, and uncomment this block. Prefer also restricting by source IP.
+#
+# {$STUDIO_HOST} {
+# 	import common
+# 	basic_auth {
+# 		admin <PASTE_BCRYPT_HASH_HERE>
+# 	}
+# 	reverse_proxy studio:3000
+# }

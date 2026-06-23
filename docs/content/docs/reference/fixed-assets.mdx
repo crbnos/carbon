@@ -1,0 +1,65 @@
+---
+title: Fixed assets
+description: "Capital equipment on the books: acquired, depreciated, and retired."
+---
+
+A **fixed asset** is a piece of capital equipment you capitalize and depreciate rather than expense: a press, a CNC, a forklift. It's an accounting record of value over time, distinct from the <Term>work center</Term> that represents the same machine on the floor. Every asset belongs to an **<Term>asset class</Term>**, which supplies the general-ledger accounts it posts to.
+
+## Lifecycle
+
+<StatusFlow entity="fixedAsset">
+  <Status name="Draft">Created, not yet on the books.</Status>
+  <Status name="Active" accent>Capitalized and depreciating.</Status>
+  <Status name="Fully Depreciated">Written down to its residual value; no longer accruing.</Status>
+  <Status name="Disposed" terminal>Retired or sold off the books.</Status>
+</StatusFlow>
+
+## Acquiring
+
+An asset comes onto the books two ways, both starting at **Draft**:
+
+- **Register** one you already own: supply its acquisition cost and depreciation start date, and it moves to **Active**. No money posts; you're recording something you have.
+- **Buy** one through purchasing: a <Term id="purchase-order">purchase-order</Term> line of type *Fixed Asset* that, when the receipt posts, debits the asset account, **adds** the cost to the asset, and flips it to **Active**.
+
+<Callout type="note">
+The purchase-receipt path activates the asset and posts its acquisition entry **only when accounting is enabled** for the company. Cost is added cumulatively, so an asset can accrue value across several receipts; with accounting off, the line is received but the asset is left in Draft.
+</Callout>
+
+## Depreciating
+
+<Term id="depreciation">Depreciation</Term> runs as a **monthly batch you trigger**. There's no background poster. You create a run for a period, Carbon pulls every Active asset and computes each charge, you review it as a draft, then post: debit depreciation expense, credit accumulated depreciation. Carbon keeps a separate **tax** book too, including <Term>MACRS</Term>, when tax depreciation is enabled. When an asset's <Term id="net-book-value">net book value</Term> reaches its residual, posting flips it to **Fully Depreciated**.
+
+Book depreciation follows the asset's method: <Term id="straight-line">straight line</Term>, <Term id="declining-balance">declining balance</Term>, or units of production.
+
+## Selling vs. disposing
+
+An Active or Fully Depreciated asset leaves the books two different ways:
+
+| | Sell | Dispose |
+| --- | --- | --- |
+| Who | A sales action | An accounting action |
+| What happens | Drafts a **sales order** for the asset at its net book value | Posts a **write-off**: clears accumulated depreciation, removes the asset at cost |
+| Asset status | Unchanged (stays Active) | **Disposed** |
+| Money | Collected through the invoice, like any sale | Remaining book value booked as a loss |
+
+<Callout type="warn">
+Selling and disposing are **not** two names for one thing. Selling hands the asset to the normal quote-to-cash flow at book value and leaves it on the books; disposing retires it directly as a write-off. <Term id="disposal">Disposal</Term> today is scrapping at a loss. There's no proceeds-based gain calculation wired up.
+</Callout>
+
+<Callout type="info">
+A fixed asset is **not** the same record as a work center. The machine you schedule production on and the machine you depreciate are tracked independently. Carbon keeps no link between them.
+</Callout>
+
+## Related
+
+<Cards>
+  <Card title="Manufacturing accounting" href="/guides/fixed-assets-acquire">
+    The narrative: putting a machine on the books and writing it down.
+  </Card>
+  <Card title="Accounting" href="/docs/reference/accounting">
+    Where an asset's acquisition, depreciation, and disposal entries land.
+  </Card>
+  <Card title="Work centers" href="/docs/reference/work-centers">
+    The same machine as a production resource — a separate record.
+  </Card>
+</Cards>

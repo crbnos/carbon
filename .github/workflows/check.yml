@@ -28,11 +28,12 @@ jobs:
           path: |
             node_modules
             apps/*/node_modules
+            docs/node_modules
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
-      - if: steps.node-modules-cache.outputs.cache-hit != 'true'
-        run: pnpm install --frozen-lockfile
+      # Always install so the postinstall generates the gitignored font data.
+      - run: pnpm install --frozen-lockfile
 
   lint:
     name: Lint
@@ -47,12 +48,17 @@ jobs:
           cache: pnpm
 
       - uses: actions/cache@v4
+        id: node-modules-cache
         with:
           path: |
             node_modules
             apps/*/node_modules
+            docs/node_modules
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
+
+      # Always install so the postinstall generates the gitignored font data.
+      - run: pnpm install --frozen-lockfile
 
       - run: pnpm exec biome check
 
@@ -69,12 +75,17 @@ jobs:
           cache: pnpm
 
       - uses: actions/cache@v4
+        id: node-modules-cache
         with:
           path: |
             node_modules
             apps/*/node_modules
+            docs/node_modules
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
+
+      # Always install so the postinstall generates the gitignored font data.
+      - run: pnpm install --frozen-lockfile
 
       - run: pnpm run typegen
       - run: pnpm run typecheck
@@ -92,12 +103,17 @@ jobs:
           cache: pnpm
 
       - uses: actions/cache@v4
+        id: node-modules-cache
         with:
           path: |
             node_modules
             apps/*/node_modules
+            docs/node_modules
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
+
+      # Always install so the postinstall generates the gitignored font data.
+      - run: pnpm install --frozen-lockfile
 
       - run: pnpm run lingui:check
 
@@ -114,12 +130,17 @@ jobs:
           cache: pnpm
 
       - uses: actions/cache@v4
+        id: node-modules-cache
         with:
           path: |
             node_modules
             apps/*/node_modules
+            docs/node_modules
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
+
+      # Always install so the postinstall generates the gitignored font data.
+      - run: pnpm install --frozen-lockfile
 
       - run: pnpm test
 

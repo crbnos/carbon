@@ -1,19 +1,21 @@
 import type { Database } from "@carbon/database";
 import { Status } from "@carbon/react";
+import {
+  GAUGE_CALIBRATION_STATUS_COLOR_MAP,
+  GAUGE_ROLE_COLOR_MAP,
+  GAUGE_STATUS_COLOR_MAP
+} from "@carbon/utils";
 
 type GaugeStatusProps = {
   status?: Database["public"]["Enums"]["gaugeStatus"] | null;
 };
 
 const GaugeStatus = ({ status }: GaugeStatusProps) => {
-  switch (status) {
-    case "Active":
-      return <Status color="gray">{status}</Status>;
-    case "Inactive":
-      return <Status color="red">{status}</Status>;
-    default:
-      return null;
-  }
+  if (!status) return null;
+  const color = GAUGE_STATUS_COLOR_MAP[status];
+  if (!color) return null;
+
+  return <Status color={color}>{status}</Status>;
 };
 
 type GaugeCalibrationStatusProps = {
@@ -21,16 +23,11 @@ type GaugeCalibrationStatusProps = {
 };
 
 const GaugeCalibrationStatus = ({ status }: GaugeCalibrationStatusProps) => {
-  switch (status) {
-    case "Pending":
-      return <Status color="orange">{status}</Status>;
-    case "In-Calibration":
-      return <Status color="green">{status}</Status>;
-    case "Out-of-Calibration":
-      return <Status color="red">{status}</Status>;
-    default:
-      return null;
-  }
+  if (!status) return null;
+  const color = GAUGE_CALIBRATION_STATUS_COLOR_MAP[status];
+  if (!color) return null;
+
+  return <Status color={color}>{status}</Status>;
 };
 
 type GaugeRoleProps = {
@@ -38,14 +35,11 @@ type GaugeRoleProps = {
 };
 
 const GaugeRole = ({ role }: GaugeRoleProps) => {
-  switch (role) {
-    case "Master":
-      return <Status color="blue">{role}</Status>;
-    case "Standard":
-      return <Status color="gray">{role}</Status>;
-    default:
-      return null;
-  }
+  if (!role) return null;
+  const color = GAUGE_ROLE_COLOR_MAP[role];
+  if (!color) return null;
+
+  return <Status color={color}>{role}</Status>;
 };
 
 export { GaugeCalibrationStatus, GaugeRole, GaugeStatus };

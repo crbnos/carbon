@@ -32,7 +32,8 @@ type ActiveFiltersProps = {
 };
 
 const ActiveFilters = ({ filters }: ActiveFiltersProps) => {
-  const { urlFiltersParams } = useFilters();
+  const { urlFiltersParams, hasFilterKey } = useFilters();
+  const hasMoreToApply = filters.some((f) => !hasFilterKey(f.accessorKey));
   return (
     <HStack spacing={2}>
       {urlFiltersParams.map((f) => {
@@ -49,7 +50,7 @@ const ActiveFilters = ({ filters }: ActiveFiltersProps) => {
           />
         );
       })}
-      {urlFiltersParams.length > 0 && (
+      {urlFiltersParams.length > 0 && hasMoreToApply && (
         <Filter filters={filters} trigger="icon" />
       )}
     </HStack>
@@ -230,12 +231,12 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
                       }}
                     >
                       <HStack spacing={2}>
-                        <Checkbox id={option.value} isChecked={isChecked} />
-                        <label htmlFor={option.value}>
+                        <Checkbox isChecked={isChecked} tabIndex={-1} />
+                        <span>
                           {typeof option.label === "string"
                             ? translate(option.label)
                             : option.label}
-                        </label>
+                        </span>
                       </HStack>
                     </CommandItem>
                   );

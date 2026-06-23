@@ -119,10 +119,10 @@ const AvatarMenu = () => {
           <DropdownMenuSeparator />
 
           <DropdownMenuItem asChild>
-            <Link to={path.to.apiIntroduction}>
+            <a href={path.to.apiDocs} target="_blank" rel="noreferrer">
               <DropdownMenuIcon icon={<LuFileText />} />
               <Trans>API Documentation</Trans>
-            </Link>
+            </a>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={(e) => e.preventDefault()}>

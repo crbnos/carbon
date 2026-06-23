@@ -8,7 +8,6 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuCircleHelp, LuFiles } from "react-icons/lu";
-import { Link } from "react-router";
 import { path } from "~/utils/path";
 
 const HelpMenu = () => {
@@ -25,10 +24,10 @@ const HelpMenu = () => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
         <DropdownMenuItem asChild>
-          <Link to={path.to.apiIntroduction}>
+          <a href={path.to.apiDocs} target="_blank" rel="noreferrer">
             <DropdownMenuIcon icon={<LuFiles />} />
             <Trans>API Docs</Trans>
-          </Link>
+          </a>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

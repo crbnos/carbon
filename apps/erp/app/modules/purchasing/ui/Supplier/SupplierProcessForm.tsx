@@ -127,6 +127,7 @@ const SupplierProcessForm = ({
                 <Number
                   name="leadTime"
                   label={t`Standard Lead Time`}
+                  termId="lead-time"
                   minValue={0}
                 />
 

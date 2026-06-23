@@ -3,6 +3,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   ensureFont,
   Footer,
+  getSafeFontFamily,
   JobTravelerPageContent
 } from "@carbon/documents/pdf";
 import {
@@ -19,7 +20,6 @@ import {
 } from "@carbon/utils";
 import {
   Document,
-  Font,
   Page,
   renderToStream,
   StyleSheet
@@ -186,35 +186,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     : undefined;
   const showFooter = resolved.footerSectionId !== null;
 
-  // Register fonts (same as Template component)
-  Font.register({
-    family: "Inter",
-    fonts: [
-      {
-        src: "https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfMZhrib2Bg-4.ttf"
-      },
-      {
-        src: "https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuOKfMZhrib2Bg-4.ttf",
-        fontWeight: 300
-      },
-      {
-        src: "https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuI6fMZhrib2Bg-4.ttf",
-        fontWeight: 500
-      },
-      {
-        src: "https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuFuYMZhrib2Bg-4.ttf",
-        fontWeight: 700
-      },
-      {
-        src: "https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuBWYMZhrib2Bg-4.ttf",
-        fontWeight: 900
-      }
-    ]
-  });
-
   const styles = StyleSheet.create({
     body: {
-      fontFamily: resolved.settings.fontFamily,
+      fontFamily: getSafeFontFamily(resolved.settings.fontFamily),
       padding: "20px 40px 50px 40px",
       color: "#000000",
       backgroundColor: "#FFFFFF"

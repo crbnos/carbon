@@ -7,7 +7,8 @@ import { Outlet, redirect, useParams } from "react-router";
 import {
   getPickingList,
   getPickingListAvailability,
-  getPickingListLines
+  getPickingListLines,
+  getPickingListRecommendations
 } from "~/modules/inventory";
 import { PickingListHeader } from "~/modules/inventory/ui/PickingLists";
 import type { Handle } from "~/utils/handle";
@@ -57,7 +58,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     pickingListLines: (pickingListLines.data ?? []).map((line) => ({
       ...line,
       availableQuantity: availability.get(line.id) ?? 0
-    }))
+    })),
+    // Deferred (not awaited): recommended serial/batch lots per line, streamed in
+    // after the list paints so the at-a-glance subtext never blocks first render.
+    recommendations: getPickingListRecommendations(client, pickingListId)
   };
 }
 

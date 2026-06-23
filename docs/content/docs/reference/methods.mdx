@@ -1,0 +1,67 @@
+---
+title: Methods & sourcing
+description: How Carbon decides whether each part is made, bought, or pulled from stock, and how a job gets its own copy of the recipe.
+---
+
+A part's **manufacturing method** is its recipe: the **method materials** (its bill of materials) and the
+**method operations** (its routing). Every made part has one, and it's where the answer to "how is this
+built?" actually lives.
+
+## Method type
+
+Every item carries a **method type** that routes it down one of three paths. You set it on the item; every
+bill of materials that uses the item mirrors it.
+
+| Method type | What happens |
+| --- | --- |
+| Make to Order | Manufactured in-house. Becomes its own job with a routing. |
+| Purchase to Order | Purchased. Flows through purchasing as a purchase order. |
+| Pull from Inventory | Pulled from stock when its parent is built. |
+
+<Callout type="info">
+The method type lives on the **item**, not on each BoM line. Change it once and it cascades to every
+method that references the part — draft methods only; active and archived methods stay frozen.
+</Callout>
+
+## Method type vs replenishment system
+
+These are two different questions, and Carbon keeps them separate:
+
+- **Method type** answers *how does this part get into its parent?* <Term>Make to Order</Term>, <Term>Purchase to Order</Term>, or <Term>Pull from Inventory</Term>.
+- **Replenishment system** answers *how is this part replenished overall, and which planning queue does it
+  land in?* `Buy`, `Make`, or `Buy and Make`.
+
+A part can be made for one parent and pulled from stock for another; the replenishment system is what
+planning reads to decide between a job and a purchase order.
+
+## Kit or subassembly
+
+A **Make to Order** item inside a bill of materials is one of two things:
+
+| | Subassembly | Kit |
+| --- | --- | --- |
+| Built as | its own job + routing | nothing separate |
+| Components | consumed by the subassembly job | issued together into the parent job |
+| Use when | the thing is genuinely manufactured | a group of parts always goes in as a set |
+
+## Get Method
+
+When you create a job, Carbon runs **Get Method**. It copies the part's method into a job-specific copy.
+The job edits that copy; the part master is never touched silently. Push a proven change back up and the
+next job inherits it.
+
+<Callout type="info">
+Methods are versioned: **Draft**, **Active**, or **Archived**. Only a Draft is editable; an Active method
+is frozen so jobs already running against it don't shift mid-build.
+</Callout>
+
+## Related
+
+<Cards>
+  <Card title="Inside the build" href="/guides/build">
+    See method types, kits, and Get Method in the story of a robot build.
+  </Card>
+  <Card title="Reordering policy" href="/docs/reference/reordering">
+    How the replenishment system pairs with a part's reordering policy.
+  </Card>
+</Cards>

@@ -154,6 +154,8 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
           </PopoverTrigger>
           <PopoverContent
             align="start"
+            onWheel={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
             className="min-w-[var(--radix-popover-trigger-width)] max-w-[min(560px,calc(100vw-2rem))] p-1"
             style={{
               width: dropdownContentWidthCh

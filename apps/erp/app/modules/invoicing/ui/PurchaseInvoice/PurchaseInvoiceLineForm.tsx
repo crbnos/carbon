@@ -794,6 +794,7 @@ const PurchaseInvoiceLineForm = ({
                             <CostCenter
                               name="costCenterId"
                               label={t`Cost Center`}
+                              termId="cost-center"
                               isOptional
                             />
                           </>
@@ -802,6 +803,7 @@ const PurchaseInvoiceLineForm = ({
                             <Combobox
                               name="assetId"
                               label={t`Fixed Asset`}
+                              termId="fixed-asset"
                               isOptional={false}
                               options={assetOptions}
                               value={indirectData.assetId}

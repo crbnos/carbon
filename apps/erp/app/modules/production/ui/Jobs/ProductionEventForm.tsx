@@ -91,12 +91,14 @@ const ProductionEventForm = ({
               <Select
                 name="jobOperationId"
                 label={t`Operation`}
+                termId="operation"
                 options={operationOptions ?? []}
               />
               <Employee name="employeeId" label={t`Employee`} />
               <WorkCenter
                 name="workCenterId"
                 label={t`Work Center`}
+                termId="work-center"
                 processId={initialValues.jobOperationId}
               />
               <Select

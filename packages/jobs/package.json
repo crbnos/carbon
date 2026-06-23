@@ -25,6 +25,7 @@
     "nanoid": "catalog:",
     "nodemailer": "6.10.1",
     "react": "catalog:",
+    "react-dom": "catalog:",
     "react-pdf": "catalog:",
     "resend": "3.5.0",
     "sst": "catalog:",

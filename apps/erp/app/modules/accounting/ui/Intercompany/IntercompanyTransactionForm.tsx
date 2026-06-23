@@ -80,7 +80,12 @@ const IntercompanyTransactionForm = ({
                 <Input name="description" label="Description" />
                 <Account name="debitAccountId" label="Debit Account" />
                 <Account name="creditAccountId" label="Credit Account" />
-                <Input name="postingDate" label="Posting Date" type="date" />
+                <Input
+                  name="postingDate"
+                  label="Posting Date"
+                  termId="posting"
+                  type="date"
+                />
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>

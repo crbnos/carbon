@@ -240,6 +240,7 @@ const QuoteMaterialForm = ({
                   value: o.id!,
                   label: o.description
                 }))}
+                termId="operation"
               />
 
               <DefaultMethodType
@@ -247,6 +248,7 @@ const QuoteMaterialForm = ({
                 label={t`Method Type`}
                 value={itemData.methodType}
                 replenishmentSystem={itemData.itemReplenishmentSystem}
+                termId="method-type"
               />
               <NumberControlled
                 name="quantity"

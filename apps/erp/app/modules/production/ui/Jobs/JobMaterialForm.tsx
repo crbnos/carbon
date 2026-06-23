@@ -201,6 +201,7 @@ const JobMaterialForm = ({
               <Select
                 name="jobOperationId"
                 label={t`Operation`}
+                termId="operation"
                 isClearable
                 options={operations.map((o) => ({
                   value: o.id!,
@@ -211,6 +212,7 @@ const JobMaterialForm = ({
               <DefaultMethodType
                 name="methodType"
                 label={t`Method Type`}
+                termId="method-type"
                 value={itemData.methodType}
                 replenishmentSystem={itemData.itemReplenishmentSystem}
               />

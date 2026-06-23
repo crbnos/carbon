@@ -13,7 +13,7 @@ import {
   LuTrash,
   LuUser
 } from "react-icons/lu";
-import { Link, Outlet, useNavigate } from "react-router";
+import { Outlet, useNavigate } from "react-router";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { useDateFormatter, usePermissions, useUrlParams } from "~/hooks";
 import type { ApiKey } from "~/modules/settings";
@@ -205,9 +205,9 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
               />
             )}
             <Button leftIcon={<LuCode />} variant="secondary" asChild>
-              <Link to={path.to.apiIntroduction}>
+              <a href={path.to.apiDocs} target="_blank" rel="noreferrer">
                 <Trans>API Docs</Trans>
-              </Link>
+              </a>
             </Button>
           </HStack>
         }

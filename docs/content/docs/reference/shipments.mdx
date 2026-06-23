@@ -1,0 +1,40 @@
+---
+title: Shipments
+description: Goods going out — one posting model serving sales orders, returns, and transfers.
+---
+
+A **shipment** moves goods out the door. One shipment model serves several source documents: a <Term id="sales-order">sales order</Term>, a purchase return, an outbound transfer. Each is tagged by what it came from, so the same posting logic handles them all.
+
+Creating a shipment changes nothing on hand. **<Term id="posting">Posting</Term>** it is the event that matters: it relieves inventory, advances the source document, and, when accounting is enabled, books the cost of what left. A shipment can be partial, so an order can go out in several.
+
+## Fields
+
+<FieldTable>
+  <Field name="Source document" type="reference">The order, return, or transfer being shipped.</Field>
+  <Field name="Shipped quantity" type="number">Units on this shipment, per line.</Field>
+  <Field name="Fulfillment" type="enum">Where a line is sourced: *Inventory* (from stock) or *Job* (from a production job).</Field>
+</FieldTable>
+
+## Status
+
+<StatusFlow entity="shipment">
+  <Status name="Draft">Being prepared; nothing posted.</Status>
+  <Status name="Pending" branch>Queued to post.</Status>
+  <Status name="Posted" accent>Inventory relieved and the source document advanced.</Status>
+  <Status name="Voided" terminal>Reversed after posting.</Status>
+</StatusFlow>
+
+<Callout type="info">
+Posting decrements inventory and bumps the source line's sent quantity; a sales order line's *sent complete* flag flips only once the cumulative shipped quantity reaches the ordered quantity. Posting a shipment does **not** create the <Term id="invoice">invoice</Term> — billing is a separate step.
+</Callout>
+
+## Related
+
+<Cards>
+  <Card title="Ship, invoice, get paid" href="/guides/order-to-cash">
+    Posting a shipment in the quote-to-cash flow.
+  </Card>
+  <Card title="Sales orders" href="/docs/reference/sales-orders">
+    The document a sales shipment advances.
+  </Card>
+</Cards>

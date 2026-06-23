@@ -41,7 +41,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const insp = inspection.data as InboundInspectionRow & {
-    item: { readableId: string | null; name: string; type: string } | null;
+    item: {
+      readableId: string | null;
+      name: string;
+      type: string;
+      itemTrackingType: string | null;
+    } | null;
     receipt: {
       receiptId: string;
       supplierId: string | null;
@@ -66,6 +71,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     receiptReadableId: insp.receipt?.receiptId ?? null,
     receiverId: insp.receipt?.createdBy ?? null,
     itemName: insp.item?.name ?? "",
+    itemTrackingType: insp.item?.itemTrackingType ?? null,
     supplierName: insp.supplier?.name ?? null,
     samples: insp.inboundInspectionSample ?? [],
     lotEntities: (lotEntities.data ?? []) as InspectionTrackedEntity[],
@@ -82,6 +88,7 @@ export default function InboundInspectionRoute() {
     receiptReadableId,
     receiverId,
     itemName,
+    itemTrackingType,
     supplierName,
     samples,
     lotEntities,
@@ -96,6 +103,7 @@ export default function InboundInspectionRoute() {
       receiptReadableId={receiptReadableId}
       receiverId={receiverId}
       itemName={itemName}
+      itemTrackingType={itemTrackingType}
       supplierName={supplierName}
       samples={samples as InboundInspectionSample[]}
       lotEntities={lotEntities as InspectionTrackedEntity[]}

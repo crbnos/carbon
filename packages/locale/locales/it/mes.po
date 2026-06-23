@@ -105,6 +105,9 @@ msgstr "Errore di Autenticazione"
 msgid "available"
 msgstr "disponibile"
 
+msgid "Back Home"
+msgstr ""
+
 msgid "Batch"
 msgstr "Lotto"
 
@@ -324,6 +327,9 @@ msgstr "Inserisci il PIN per {0}"
 
 msgid "Error"
 msgstr "Errore"
+
+msgid "Error!"
+msgstr ""
 
 msgid "Estimated"
 msgstr "Stimato"
@@ -722,6 +728,9 @@ msgstr "Preleva"
 msgid "Pick tracked item"
 msgstr "Seleziona articolo tracciato"
 
+msgid "Picked"
+msgstr "Prelevato"
+
 msgid "Picked quantity"
 msgstr "Quantità prelevata"
 
@@ -956,6 +965,9 @@ msgstr "Connesso come {stationName}"
 
 msgid "Size"
 msgstr "Dimensione"
+
+msgid "Something went wrong"
+msgstr ""
 
 msgid "Source"
 msgstr "Origine"

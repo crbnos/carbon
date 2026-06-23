@@ -1,0 +1,91 @@
+---
+title: Approvals
+description: Route purchase orders, quality documents, and suppliers for sign-off before they take effect, with amount-tiered approval rules.
+---
+
+An **approval** holds a document in a pending state until someone authorized signs off. Carbon decides
+whether a document needs approval, and who may grant it, from per-company **approval rules**. A rule
+exists per document type; for <Term id="purchase-order">purchase orders</Term> it can also carry an amount tier, so a small order goes
+through untouched while a large one waits for the right person.
+
+Say you set a purchase-order rule at **$25,000** with the purchasing managers as approvers: a $4,000 order
+finalizes straight to **"To Receive"**, but a $40,000 order lands in **"Needs Approval"** and can't move
+until a manager approves it.
+
+## What can be approved
+
+Three document types support approval, each with its own pending status:
+
+| Document | Pending status | Approved → | Rejected → | Amount-tiered? |
+| --- | --- | --- | --- | --- |
+| Purchase order | "Needs Approval" | recomputed (e.g. "To Receive") | "Rejected" | Yes, the order total |
+| Quality document | "Draft" | "Active" | stays "Draft" | No |
+| Supplier | "Pending" | "Active" | "Rejected" | No |
+
+<Callout type="info">
+Only **purchase orders** use the amount threshold. Quality documents and suppliers match a single rule (its
+minimum is 0), so for them approval is simply on or off.
+</Callout>
+
+## Approval rules
+
+Rules live under **Settings → Approval Rules**, grouped by document type. Each rule:
+
+<FieldTable>
+  <Field name="Minimum amount">The tier floor: approval applies at or above this, up to the next rule's minimum. (Purchase orders only.)</Field>
+  <Field name="Who can approve">Groups **and/or** individual users eligible to decide.</Field>
+  <Field name="Default approver">A named fallback approver for the tier.</Field>
+  <Field name="Enabled">Whether the rule is live.</Field>
+</FieldTable>
+
+For purchase orders, several rules form **amount tiers**. Each band runs from its minimum up to the next
+rule's minimum, and the top tier is "over $X". An order matches the single highest tier its total clears.
+
+<Callout type="note">
+There's **no global "require approval" switch.** A document type needs approval only while an **enabled**
+rule exists for it. Disable or delete the rule and those documents finalize directly.
+</Callout>
+
+## Who can approve
+
+A user may decide a request if they're the tier's **default approver**, are listed directly under **who can
+approve**, or belong to one of the groups listed there. Authority is otherwise governed by ordinary module
+permissions: purchase-order and supplier decisions need purchasing access, quality decisions need quality
+access; editing rules needs settings access.
+
+<Callout type="warn">
+Approval authority flows **upward only.** Someone assigned to the $25k tier can approve a $4k order, but a
+$4k-tier approver cannot approve a $250k one. Higher tiers cover everything beneath them; lower tiers don't
+reach up.
+</Callout>
+
+## The decision
+
+The pending document shows **Approve** and **Reject** on its header, each opening a confirm dialog with an
+optional note. Approving runs the document's transition in one step; rejecting moves it to its rejected
+state (a quality document simply stays in **"Draft"**). The person who raised the request can also **cancel**
+it while it's still pending.
+
+Carbon notifies the resolved approvers when a request is raised, and the requester when it's decided, over
+**email, Slack, and in-app**. For purchase orders, approvers of lower tiers are also notified so they can see
+spend that cleared above their level.
+
+<Callout type="warn">
+Approval is **single-step, not a chain.** One matching rule is selected and **one** approver's decision
+finalizes the document. There are no sequential stages, parallel sign-offs, quorums, or delegation. The
+amount tiers choose *which rule applies*, not a series of steps a request walks through.
+</Callout>
+
+## Related
+
+<Cards>
+  <Card title="Purchase orders" href="/docs/reference/purchase-orders">
+    The one document whose approval is gated by an amount — the order total.
+  </Card>
+  <Card title="Quality" href="/docs/reference/quality">
+    Quality documents move from Draft to Active on approval.
+  </Card>
+  <Card title="Suppliers & customers" href="/docs/reference/suppliers-and-customers">
+    A new supplier can be held at Pending until approved.
+  </Card>
+</Cards>

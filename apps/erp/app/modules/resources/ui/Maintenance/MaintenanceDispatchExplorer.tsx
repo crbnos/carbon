@@ -448,7 +448,11 @@ function NewTimecardModal({
             <Hidden name="maintenanceDispatchId" value={dispatchId} />
             <VStack spacing={4}>
               <Employee name="employeeId" label={t`Employee`} />
-              <WorkCenter name="workCenterId" label={t`Work Center`} />
+              <WorkCenter
+                name="workCenterId"
+                label={t`Work Center`}
+                termId="work-center"
+              />
               <DateTimePicker name="startTime" label={t`Start Time`} />
               <DateTimePicker name="endTime" label={t`End Time`} />
               <TextArea name="notes" label={t`Notes`} />
@@ -519,7 +523,11 @@ function EditTimecardModal({
             <Hidden name="maintenanceDispatchId" value={dispatchId} />
             <VStack spacing={4}>
               <Employee name="employeeId" label={t`Employee`} />
-              <WorkCenter name="workCenterId" label={t`Work Center`} />
+              <WorkCenter
+                name="workCenterId"
+                label={t`Work Center`}
+                termId="work-center"
+              />
               <DateTimePicker name="startTime" label={t`Start Time`} />
               <DateTimePicker name="endTime" label={t`End Time`} />
               <TextArea name="notes" label={t`Notes`} />

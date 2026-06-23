@@ -105,6 +105,9 @@ msgstr "Ошибка аутентификации"
 msgid "available"
 msgstr "доступно"
 
+msgid "Back Home"
+msgstr ""
+
 msgid "Batch"
 msgstr "Партия"
 
@@ -324,6 +327,9 @@ msgstr "Введите PIN для {0}"
 
 msgid "Error"
 msgstr "Ошибка"
+
+msgid "Error!"
+msgstr ""
 
 msgid "Estimated"
 msgstr "План"
@@ -722,6 +728,9 @@ msgstr "Выбрать"
 msgid "Pick tracked item"
 msgstr "Выбрать отслеживаемый товар"
 
+msgid "Picked"
+msgstr "Подобрано"
+
 msgid "Picked quantity"
 msgstr "Выбранное количество"
 
@@ -956,6 +965,9 @@ msgstr "Вход выполнен как {stationName}"
 
 msgid "Size"
 msgstr "Размер"
+
+msgid "Something went wrong"
+msgstr ""
 
 msgid "Source"
 msgstr "Источник"

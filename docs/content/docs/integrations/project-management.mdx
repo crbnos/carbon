@@ -1,0 +1,59 @@
+---
+title: Project management
+plan: Business
+description: Link Carbon quality issues to Linear or Jira so engineering tracks them in their own tool.
+---
+
+When a quality problem needs engineering's attention, Carbon can push it into the issue tracker your team
+already lives in. Both connectors are aimed at **quality (<Term id="nonconformance">nonconformance</Term>) issues**.
+
+## Linear
+
+Authenticate with a **Linear API key** (it begins with `lin_api`).
+
+<Steps>
+  <Step>
+  ### Paste your Linear API key
+
+  Provide your Linear API key. Carbon checks the `lin_api` prefix.
+  </Step>
+  <Step>
+  ### Issues sync
+
+  Once connected, Carbon syncs issues to Linear, keeping each Carbon issue matched to the same Linear issue.
+  </Step>
+</Steps>
+
+| Setting | What it controls |
+| --- | --- |
+| API key | Your Linear API key — Carbon checks the `lin_api` prefix. |
+
+## Jira
+
+Connect over **OAuth**. There are no fields to fill in beyond authorizing Carbon.
+
+<Steps>
+  <Step>
+  ### Authorize over OAuth
+
+  Authorize Carbon in Jira. There are no fields to fill in.
+  </Step>
+  <Step>
+  ### Link a quality issue
+
+  Once connected, you can link a quality issue to a Jira issue.
+  </Step>
+</Steps>
+
+<Callout type="warn">
+Jira only appears when its OAuth client is configured server-side (`JIRA_CLIENT_ID`) — see
+[Environment variables](/docs/platform/self-hosting/environment-variables).
+</Callout>
+
+## Related
+
+<Cards>
+  <Card title="Quality" href="/docs/reference/quality">
+    The nonconformance issues these integrations push to engineering.
+  </Card>
+</Cards>

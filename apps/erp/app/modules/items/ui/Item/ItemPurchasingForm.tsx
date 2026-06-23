@@ -98,7 +98,11 @@ const ItemPurchasingForm = ({
                 </div>
               }
             />
-            <Number name="leadTime" label={t`Lead Time (Days)`} />
+            <Number
+              name="leadTime"
+              label={t`Lead Time (Days)`}
+              termId="lead-time"
+            />
             <UnitOfMeasure
               name="purchasingUnitOfMeasureCode"
               label={t`Purchasing Unit of Measure`}

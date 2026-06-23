@@ -82,6 +82,7 @@ const ProductionQuantityForm = ({
                 <Select
                   name="jobOperationId"
                   label={t`Operation`}
+                  termId="operation"
                   options={operationOptions ?? []}
                 />
               )}
@@ -100,7 +101,11 @@ const ProductionQuantityForm = ({
                 }
               />
               {type === "Scrap" && (
-                <ScrapReason name="scrapReasonId" label={t`Scrap Reason`} />
+                <ScrapReason
+                  name="scrapReasonId"
+                  label={t`Scrap Reason`}
+                  termId="scrap"
+                />
               )}
               <TextArea name="notes" label={t`Notes`} />
             </VStack>

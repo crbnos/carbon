@@ -11,6 +11,7 @@ import { trigger } from "@carbon/jobs";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
+import { reconcileReceiptSerialEntities } from "~/modules/inventory";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -31,7 +32,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { data: lines } = await serviceRole
     .from("receiptLine")
     .select(
-      "id, itemId, storageUnitId, receivedQuantity, locationId, receiptId"
+      "id, itemId, storageUnitId, receivedQuantity, locationId, receiptId, requiresSerialTracking"
     )
     .eq("receiptId", receiptId)
     .eq("companyId", companyId);
@@ -102,6 +103,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
       ruleNames: allRuleNames
     };
   }
+
+  // Serial-tracked lines can accumulate stale tracked entities (reduced
+  // quantity leaves orphans, edited serials leave duplicates) that would
+  // otherwise be flipped to Available as phantom serials. Clear them before
+  // posting.
+  await reconcileReceiptSerialEntities(serviceRole, {
+    receiptId,
+    companyId,
+    lines: lines ?? []
+  });
 
   const setPendingState = await client
     .from("receipt")

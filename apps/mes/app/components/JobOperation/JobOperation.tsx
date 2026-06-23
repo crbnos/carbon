@@ -77,6 +77,7 @@ import {
   LuGitPullRequest,
   LuHammer,
   LuHardHat,
+  LuPackageCheck,
   LuQrCode,
   LuSquareUser,
   LuTimer,
@@ -176,6 +177,34 @@ type JobOperationProps = {
     }>
   >;
 };
+
+/**
+ * Additive overlay badge showing how much of a material has been picked (staged at
+ * lineside). Picking is optional, so this renders nothing unless something has actually
+ * been picked — orange while partial, green once the full requirement is staged.
+ */
+function PickedBadge({
+  quantityPicked,
+  quantityToPick
+}: {
+  quantityPicked?: number | null;
+  quantityToPick?: number | null;
+}) {
+  const picked = Number(quantityPicked ?? 0);
+  if (picked <= 0) return null;
+  const toPick = Number(quantityToPick ?? 0);
+  const isFullyPicked = toPick > 0 && picked >= toPick;
+  return (
+    <Badge
+      variant={isFullyPicked ? "green" : "orange"}
+      className="gap-1 shrink-0"
+      title="Quantity picked to lineside"
+    >
+      <LuPackageCheck className="size-3" />
+      {isFullyPicked ? <Trans>Picked</Trans> : `${picked}/${toPick}`}
+    </Badge>
+  );
+}
 
 export const JobOperation = ({
   events,
@@ -1084,6 +1113,26 @@ export const JobOperation = ({
                                                 <Trans>Consumed expired</Trans>
                                               </Badge>
                                             )}
+                                            <PickedBadge
+                                              quantityPicked={
+                                                (
+                                                  material as {
+                                                    quantityPicked?:
+                                                      | number
+                                                      | null;
+                                                  }
+                                                ).quantityPicked
+                                              }
+                                              quantityToPick={
+                                                (
+                                                  material as {
+                                                    quantityToPick?:
+                                                      | number
+                                                      | null;
+                                                  }
+                                                ).quantityToPick
+                                              }
+                                            />
                                           </HStack>
                                         </Td>
                                         <Td className="hidden lg:table-cell">
@@ -1248,6 +1297,26 @@ export const JobOperation = ({
                                                       />
                                                     </Badge>
                                                   ) : null}
+                                                  <PickedBadge
+                                                    quantityPicked={
+                                                      (
+                                                        kittedChild as {
+                                                          quantityPicked?:
+                                                            | number
+                                                            | null;
+                                                        }
+                                                      ).quantityPicked
+                                                    }
+                                                    quantityToPick={
+                                                      (
+                                                        kittedChild as {
+                                                          quantityToPick?:
+                                                            | number
+                                                            | null;
+                                                        }
+                                                      ).quantityToPick
+                                                    }
+                                                  />
                                                 </HStack>
                                               </Td>
                                               <Td className="lg:table-cell hidden">

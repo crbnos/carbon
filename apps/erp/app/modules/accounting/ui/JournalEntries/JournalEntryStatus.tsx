@@ -1,4 +1,5 @@
 import { Status } from "@carbon/react";
+import { JOURNAL_ENTRY_STATUS_COLOR_MAP } from "@carbon/utils";
 import type { journalEntryStatuses } from "../../accounting.models";
 
 type JournalEntryStatusProps = {
@@ -6,16 +7,11 @@ type JournalEntryStatusProps = {
 };
 
 const JournalEntryStatus = ({ status }: JournalEntryStatusProps) => {
-  switch (status) {
-    case "Draft":
-      return <Status color="gray">{status}</Status>;
-    case "Posted":
-      return <Status color="green">{status}</Status>;
-    case "Reversed":
-      return <Status color="red">{status}</Status>;
-    default:
-      return null;
-  }
+  if (!status) return null;
+  const color = JOURNAL_ENTRY_STATUS_COLOR_MAP[status];
+  if (!color) return null;
+
+  return <Status color={color}>{status}</Status>;
 };
 
 export default JournalEntryStatus;

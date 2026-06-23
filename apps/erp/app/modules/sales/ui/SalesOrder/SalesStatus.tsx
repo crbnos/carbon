@@ -1,6 +1,8 @@
 import type { Database } from "@carbon/database";
 import { Status } from "@carbon/react";
-import { hasIncompleteJobs } from "@carbon/utils";
+import { hasIncompleteJobs, SALES_STATUS_COLOR_MAP } from "@carbon/utils";
+
+export { SALES_STATUS_COLOR_MAP } from "@carbon/utils";
 
 type SalesOrderStatusProps = {
   status?: Database["public"]["Enums"]["salesOrderStatus"] | null;
@@ -15,26 +17,15 @@ type SalesOrderStatusProps = {
     methodType: "Purchase to Order" | "Make to Order" | "Pull from Inventory";
     saleQuantity: number;
   }>;
+  disableTooltip?: boolean;
 };
 
-const STATUS_COLOR_MAP: Record<
-  Database["public"]["Enums"]["salesOrderStatus"],
-  "gray" | "yellow" | "orange" | "blue" | "green" | "red"
-> = {
-  Draft: "gray",
-  Cancelled: "red",
-  Closed: "red",
-  "To Ship and Invoice": "orange",
-  "To Ship": "orange",
-  "To Invoice": "blue",
-  Confirmed: "blue",
-  "Needs Approval": "yellow",
-  "In Progress": "yellow",
-  Invoiced: "green",
-  Completed: "green"
-} as const;
-
-const SalesStatus = ({ status, jobs, lines }: SalesOrderStatusProps) => {
+const SalesStatus = ({
+  status,
+  jobs,
+  lines,
+  disableTooltip
+}: SalesOrderStatusProps) => {
   if (!status) return null;
 
   // Check if the order has incomplete jobs
@@ -45,16 +36,20 @@ const SalesStatus = ({ status, jobs, lines }: SalesOrderStatusProps) => {
 
   if (isManufacturing && !(status === "Closed" || status === "Cancelled")) {
     return (
-      <Status color="yellow" tooltip={status}>
+      <Status color="yellow" tooltip={status} disableTooltip={disableTooltip}>
         In Progress
       </Status>
     );
   }
 
-  const color = STATUS_COLOR_MAP[status];
+  const color = SALES_STATUS_COLOR_MAP[status];
   if (!color) return null;
 
-  return <Status color={color}>{status}</Status>;
+  return (
+    <Status color={color} disableTooltip={disableTooltip}>
+      {status}
+    </Status>
+  );
 };
 
 export default SalesStatus;

@@ -24,7 +24,6 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Suspense, useEffect, useMemo, useState } from "react";
-import { CSVLink } from "react-csv";
 import {
   LuCheckCheck,
   LuChevronDown,
@@ -44,6 +43,7 @@ import {
 import type { FetcherWithComponents } from "react-router";
 import { Await, Link, useFetcher, useParams } from "react-router";
 import { useAuditLog } from "~/components/AuditLog";
+import { CSVLink } from "~/components/CSVLink";
 import { CustomerContact, EmailRecipients } from "~/components/Form";
 import { usePanels } from "~/components/Layout";
 import Confirm from "~/components/Modals/Confirm/Confirm";

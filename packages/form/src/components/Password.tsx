@@ -1,3 +1,4 @@
+import type { TermId } from "@carbon/glossary";
 import type { InputProps } from "@carbon/react";
 import {
   FormControl,
@@ -6,7 +7,8 @@ import {
   IconButton,
   Input,
   InputGroup,
-  InputRightElement
+  InputRightElement,
+  LabelWithHelp
 } from "@carbon/react";
 import { forwardRef, useState } from "react";
 import { BiHide, BiShowAlt } from "react-icons/bi";
@@ -16,11 +18,12 @@ import { useFormStateContext } from "../internal/formStateContext";
 type FormPasswordProps = InputProps & {
   name: string;
   label?: string;
+  termId?: TermId;
   isRequired?: boolean;
 };
 
 const Password = forwardRef<HTMLInputElement, FormPasswordProps>(
-  ({ name, label, isRequired, ...rest }, ref) => {
+  ({ name, label, termId, isRequired, ...rest }, ref) => {
     const {
       getInputProps,
       error,
@@ -36,7 +39,7 @@ const Password = forwardRef<HTMLInputElement, FormPasswordProps>(
       <FormControl isInvalid={!!error} isRequired={isRequired}>
         {label && (
           <FormLabel htmlFor={name} isOptional={resolvedIsOptional}>
-            {label}
+            <LabelWithHelp termId={termId}>{label}</LabelWithHelp>
           </FormLabel>
         )}
         <InputGroup>

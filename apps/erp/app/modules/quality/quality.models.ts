@@ -757,7 +757,9 @@ export const inboundInspectionValidator = z.object({
 
 export const inboundInspectionSampleValidator = z.object({
   inspectionId: z.string().min(1, { message: "Inspection is required" }),
-  trackedEntityId: z.string().min(1, { message: "Tracked entity is required" }),
+  // Optional: serial parts scan a discrete tracked entity; batch / inventory /
+  // non-inventory parts record pass/fail without one.
+  trackedEntityId: zfd.text(z.string().optional()),
   status: z.enum(["Passed", "Failed"], {
     errorMap: () => ({ message: "Status is required" })
   }),

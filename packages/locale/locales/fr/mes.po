@@ -105,6 +105,9 @@ msgstr "Erreur d'authentification"
 msgid "available"
 msgstr "disponible"
 
+msgid "Back Home"
+msgstr ""
+
 msgid "Batch"
 msgstr "Lot"
 
@@ -324,6 +327,9 @@ msgstr "Saisir le NIP pour {0}"
 
 msgid "Error"
 msgstr "Erreur"
+
+msgid "Error!"
+msgstr ""
 
 msgid "Estimated"
 msgstr "Estimé"
@@ -722,6 +728,9 @@ msgstr "Prélever"
 msgid "Pick tracked item"
 msgstr "Sélectionner un article suivi"
 
+msgid "Picked"
+msgstr "Prélevé"
+
 msgid "Picked quantity"
 msgstr "Quantité prélevée"
 
@@ -956,6 +965,9 @@ msgstr "Connecté en tant que {stationName}"
 
 msgid "Size"
 msgstr "Taille"
+
+msgid "Something went wrong"
+msgstr ""
 
 msgid "Source"
 msgstr "Source"

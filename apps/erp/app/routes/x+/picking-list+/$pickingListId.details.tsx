@@ -1,7 +1,11 @@
 import type { JSONContent } from "@carbon/react";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { getPickingList, getPickingListLines } from "~/modules/inventory";
+import type {
+  getPickingList,
+  getPickingListLines,
+  PickingListRecommendation
+} from "~/modules/inventory";
 import {
   PickingListLines,
   PickingListNotes
@@ -23,6 +27,7 @@ export default function PickingListDetailsRoute() {
   const routeData = useRouteData<{
     pickingList: PickingListData;
     pickingListLines: PickingListLineData;
+    recommendations: Promise<Record<string, PickingListRecommendation[]>>;
   }>(path.to.pickingList(pickingListId));
 
   if (!routeData?.pickingList)
@@ -34,6 +39,7 @@ export default function PickingListDetailsRoute() {
         pickingListLines={routeData.pickingListLines}
         pickingListId={pickingListId}
         pickingList={routeData.pickingList}
+        recommendations={routeData.recommendations}
       />
       <PickingListNotes
         id={pickingListId}

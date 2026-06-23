@@ -1,7 +1,9 @@
+import type { TermId } from "@carbon/glossary";
 import {
   FormControl,
   FormErrorMessage,
   FormLabel,
+  LabelWithHelp,
   TimePicker as TimePickerBase
 } from "@carbon/react";
 import type {
@@ -17,13 +19,14 @@ import { useFormStateContext } from "../internal/formStateContext";
 type TimePickerProps = {
   name: string;
   label?: string;
+  termId?: TermId;
   minValue?: TimeValue;
   maxValue?: TimeValue;
   onChange?: (time: TimeValue) => void;
 };
 type TimeValue = Time | CalendarDateTime | ZonedDateTime;
 
-const TimePicker = ({ name, label, onChange }: TimePickerProps) => {
+const TimePicker = ({ name, label, termId, onChange }: TimePickerProps) => {
   const formState = useFormStateContext();
   const isDisabled = formState.isDisabled || formState.isReadOnly;
   const {
@@ -46,7 +49,7 @@ const TimePicker = ({ name, label, onChange }: TimePickerProps) => {
     <FormControl isInvalid={!!error}>
       {label && (
         <FormLabel htmlFor={name} isOptional={fieldIsOptional ?? false}>
-          {label}
+          <LabelWithHelp termId={termId}>{label}</LabelWithHelp>
         </FormLabel>
       )}
       <input type="hidden" name={name} value={time?.toString()} />

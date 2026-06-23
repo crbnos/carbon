@@ -184,7 +184,11 @@ const MaintenanceDispatchForm = ({
                   label: <MaintenanceSeverity severity={severity} />
                 }))}
               />
-              <WorkCenter name="workCenterId" label={t`Work Center`} />
+              <WorkCenter
+                name="workCenterId"
+                label={t`Work Center`}
+                termId="work-center"
+              />
               <Location name="locationId" label={t`Location`} />
               <Select
                 name="oeeImpact"

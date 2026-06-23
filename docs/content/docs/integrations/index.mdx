@@ -1,0 +1,79 @@
+---
+title: Integrations
+description: Connect Carbon to your accounting, CAD, project-management, estimating, and messaging tools.
+---
+
+Carbon ships a set of first-party **integrations** to third-party apps. Each one is enabled per company
+under **Settings → Integrations**, where you flip it on and supply its credentials or settings.
+
+Integrations are an **Enterprise** capability. On [Carbon Cloud](https://app.carbon.ms) they're included
+with the **Business** plan; self-hosted, they require a commercial (Enterprise) license —
+see [Licensing](/docs/platform/licensing). **Email** and **Exchange Rates** are the exceptions, available on
+every edition and plan.
+
+## How a connection works
+
+An integration has two parts: a system-wide **definition** and a per-company **activation**.
+
+- The **definition** describes the fields that integration needs: API keys, OAuth tokens, mapping options.
+- The **activation** is a `companyIntegration` record: an `active` flag plus a `metadata` object holding
+  your credentials and settings. Carbon validates that metadata against the definition, so an integration
+  can't be switched on with incomplete configuration.
+
+Connections are established one of three ways, depending on the app:
+
+| Style | Apps | How |
+| --- | --- | --- |
+| Provider settings | Email | Pick a provider and fill in its fields. |
+| API key | Linear, Paperless Parts, Exchange Rates | Paste a key (and any options). |
+| OAuth | Xero, Jira, Onshape, Slack | Authorize Carbon with the provider; tokens are stored for you. |
+
+<Callout type="note">
+Disconnecting an integration sets `active = false` but **keeps your stored credentials**. Reconnecting
+doesn't make you re-enter them. To remove credentials entirely, clear the integration's settings before you
+disconnect.
+</Callout>
+
+## What's available depends on your deployment
+
+<Callout type="warn">
+Which integrations even appear depends on how Carbon is deployed. The OAuth connectors, **Xero**, **Jira**,
+and **Onshape**, only show up when their OAuth client is configured server-side (see
+[Environment variables](/docs/platform/self-hosting/environment-variables)), and **Slack** is hidden in controlled (ITAR)
+environments. So the same Carbon build can offer a different set of integrations depending on its
+configuration.
+</Callout>
+
+## Browse by category
+
+<Cards>
+  <Card title="Accounting" href="/docs/integrations/accounting">
+    Xero and automatic currency exchange rates.
+  </Card>
+  <Card title="Project management" href="/docs/integrations/project-management">
+    Push quality issues to Linear or Jira.
+  </Card>
+  <Card title="CAD" href="/docs/integrations/cad">
+    Sync CAD data from Onshape.
+  </Card>
+  <Card title="Estimating & quoting" href="/docs/integrations/estimating">
+    Pull quotes and BOMs from Paperless Parts.
+  </Card>
+  <Card title="Email" href="/docs/integrations/email">
+    Send outbound email through Resend or your own SMTP server.
+  </Card>
+  <Card title="Assistant" href="/docs/integrations/assistant">
+    Bring the Carbon Assistant into Slack.
+  </Card>
+</Cards>
+
+## Related
+
+<Cards>
+  <Card title="Webhooks" href="/docs/building/webhooks">
+    Push record changes to your own endpoints instead of a packaged integration.
+  </Card>
+  <Card title="Environment variables" href="/docs/platform/self-hosting/environment-variables">
+    The server-side credentials that gate the OAuth integrations.
+  </Card>
+</Cards>

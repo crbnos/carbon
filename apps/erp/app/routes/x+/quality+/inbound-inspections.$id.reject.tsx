@@ -31,6 +31,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await request.formData();
   const selectedIssueTypeId =
     (formData.get("nonConformanceTypeId") as string | null)?.trim() || null;
+  // NCR creation is optional — the inspector can reject the lot without opening
+  // one (default is to open one, preserving prior behavior).
+  const createNcr =
+    ((formData.get("createNcr") as string | null) ?? "true") !== "false";
 
   // 1. Cascade reject — mark every tracked entity in the lot as Rejected
   //    and flip the lot's status to Failed (ISO 9001:2015 §8.7).
@@ -47,6 +51,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
         request,
         error(dispositionResult.error, "Failed to reject lot")
       )
+    );
+  }
+
+  // If the inspector opted out of an NCR, we're done — the lot is rejected.
+  if (!createNcr) {
+    throw redirect(
+      path.to.inboundInspection(id),
+      await flash(request, success("Lot rejected"))
     );
   }
 

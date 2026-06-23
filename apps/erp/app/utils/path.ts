@@ -519,10 +519,8 @@ export const path = {
       generatePath(`${x}/quality/gauges/activate/${id}`),
     attribute: (id: string) => generatePath(`${x}/people/attribute/${id}`),
     attributes: `${x}/people/attributes`,
-    apiIntroduction: `/docs/api/js/intro`,
-    apiIntro: (lang: string) => generatePath(`/docs/api/${lang}/intro/`),
-    apiTable: (lang: string, table: string) =>
-      generatePath(`/docs/api/${lang}/table/${table}`),
+    apiDocs: "https://docs.carbon.ms/api-reference",
+    mcpDocs: "https://docs.carbon.ms/mcp",
     apiKey: (id: string) => generatePath(`${x}/settings/api-keys/${id}`),
     apiKeys: `${x}/settings/api-keys`,
     attributeCategory: (id: string) =>

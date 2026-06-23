@@ -289,12 +289,14 @@ const MaterialForm = ({
                 <Select
                   name="itemTrackingType"
                   label={t`Tracking Type`}
+                  termId="tracked-entity"
                   options={itemTrackingTypeOptions}
                 />
 
                 <DefaultMethodType
                   name="defaultMethodType"
                   label={t`Default Method Type`}
+                  termId="method-type"
                   replenishmentSystem="Buy"
                   value={defaultMethodType}
                   onChange={(newValue) =>

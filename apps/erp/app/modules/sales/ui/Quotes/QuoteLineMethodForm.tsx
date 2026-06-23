@@ -71,6 +71,7 @@ export function QuoteLineMethodForm() {
               setQuoteLine(null);
             }
           }}
+          termId="quote"
         />
         <SelectControlled
           name="quoteLineId"

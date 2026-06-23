@@ -103,6 +103,7 @@ interface TableProps<T extends object> {
   withSearch?: boolean;
   withSelectableRows?: boolean;
   withSimpleSorting?: boolean;
+  sort?: ReactNode;
   getRowId?: (originalRow: T, index: number) => string;
   rowSelection?: RowSelectionState;
   onRowSelectionChange?: OnChangeFn<RowSelectionState>;
@@ -241,6 +242,7 @@ const Table = <T extends object>({
   withSearch = true,
   withSelectableRows = false,
   withSimpleSorting = true,
+  sort,
   getRowId,
   rowSelection: controlledRowSelection,
   onRowSelectionChange,
@@ -888,6 +890,7 @@ const Table = <T extends object>({
         withSavedView={withSavedView}
         withSearch={withSearch}
         withSelectableRows={withSelectableRows}
+        sort={sort}
       />
 
       <div
@@ -1002,7 +1005,7 @@ const Table = <T extends object>({
                             (sortable ? (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <div className="flex justify-start items-center gap-2">
+                                  <div className="group flex justify-start items-center gap-2">
                                     {header.column.columnDef.meta?.icon}
                                     {typeof header.column.columnDef.header ===
                                     "string"
@@ -1013,7 +1016,7 @@ const Table = <T extends object>({
                                           header.column.columnDef.header,
                                           header.getContext()
                                         )}
-                                    <span>
+                                    <span className="inline-flex items-center">
                                       {sorted ? (
                                         sorted === -1 ? (
                                           <LuArrowDown
@@ -1026,7 +1029,12 @@ const Table = <T extends object>({
                                             className="text-primary"
                                           />
                                         )
-                                      ) : null}
+                                      ) : (
+                                        <LuArrowUpDown
+                                          aria-hidden="true"
+                                          className="text-muted-foreground/50 opacity-0 transition-opacity group-hover:opacity-100"
+                                        />
+                                      )}
                                     </span>
                                   </div>
                                 </DropdownMenuTrigger>

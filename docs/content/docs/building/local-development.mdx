@@ -1,0 +1,97 @@
+---
+title: Local development
+description: Run the full Carbon stack locally with the crbn CLI, in isolated per-worktree environments.
+---
+
+Carbon is a **pnpm + Turborepo** monorepo, the ERP and MES apps plus their shared packages. Local development runs on the **`crbn` CLI** (in `packages/dev`), a per-worktree environment manager: every git worktree gets its own compose stack (Postgres, Kong, Supabase, Inngest, and Inbucket for mail) with its own ports, Redis database, and JWT credentials. So you can work several branches at once without their stacks colliding.
+
+## Setup
+
+<Steps>
+  <Step>
+  ### Add `crbn` to your `PATH`
+
+  Source the setup script. It installs a small shell wrapper:
+
+  ```bash
+  source ./setup.sh
+  ```
+  </Step>
+  <Step>
+  ### Bring up the stack
+
+  From any worktree, boot the compose stack and the ERP and MES dev servers:
+
+  ```bash
+  crbn up
+  ```
+
+  This generates a `.env.local` with per-worktree ports, local Supabase keys, `REDIS_URL`, Inngest dev settings, and `DEV_BYPASS_EMAIL` so you can sign in without a magic link.
+  </Step>
+  <Step>
+  ### Reach the apps
+
+  Open the apps at their portless `.dev` URLs or at `localhost:<port>`.
+  </Step>
+</Steps>
+
+<Callout type="warn">
+`DEV_BYPASS_EMAIL` is local-only. It signs you in as that email with no magic link. Never set it in a deployed environment.
+</Callout>
+
+### Stack commands
+
+| Command | What it does |
+| --- | --- |
+| `crbn up` | Boot the compose stack and apps. |
+| `crbn up --no-portless` | Localhost mode: fixed ports (API `54321`, ERP `3000`, MES `3001`). |
+| `crbn up --no-apps` | Services only: Postgres, Kong, Supabase, Inngest, mail. |
+| `crbn up --no-migrate` | Skip database migrations on boot. |
+| `crbn up --no-regen` | Skip type and Swagger regeneration. |
+| `crbn up --borrow` | Reuse another worktree's already-running containers. |
+| `crbn up --pull` | Force `docker compose pull` even if images exist locally. |
+| `crbn down` | Stop the stack (volumes preserved). |
+| `crbn reset` | Wipe volumes and flush the Redis db, then boot again. |
+| `crbn migrate` | Apply database migrations against the running stack. |
+| `crbn status` | Show port assignments and container health. |
+
+<Callout type="note">
+`pnpm dev` is shorthand for `crbn up --no-portless`: localhost mode on fixed ports.
+</Callout>
+
+## Worktrees
+
+Each branch gets an isolated worktree and stack, so several can run side by side.
+
+| Command | What it does |
+| --- | --- |
+| `crbn checkout <branch>` | Switch into a branch's worktree, creating it if missing (auto-fetches from origin). |
+| `crbn checkout -b <branch>` | Create a new branch and worktree from `--base` (default HEAD). |
+| `crbn checkout <pr-number>` | Fetch a PR's head into a `pr-<num>` branch and worktree. |
+| `crbn checkout main` | Return to the main checkout (never a separate worktree). |
+| `crbn new [branch]` | Create a worktree interactively. |
+| `crbn list` | List all worktrees with their stack status. |
+| `crbn remove` | Multi-select worktrees to tear down; add `--prune` to delete the branch too. |
+
+## Portless vs localhost
+
+By default `crbn up` uses **portless** to serve a TLS `.dev` URL per app (for example `erp.<branch>.dev`), giving each worktree stable, shareable hostnames. Pass `--no-portless`, or set `CARBON_PORTLESS=0`, for **localhost** mode on fixed ports:
+
+| Service | Port |
+| --- | --- |
+| Supabase API (Kong) | `54321` |
+| ERP | `3000` |
+| MES | `3001` |
+
+## Sync files from main
+
+A fresh worktree doesn't carry your gitignored local files. Pull them across from the main checkout:
+
+| Command | What it does |
+| --- | --- |
+| `crbn copy <file…>` | Copy specific file(s) from the main checkout into this worktree. |
+| `crbn env sync` | Copy the files listed in `package.json` under `crbn.copy`. |
+
+## Configuration
+
+Your local settings live in the generated `.env.local`. See [Environment variables](/docs/platform/self-hosting/environment-variables) for the full configuration surface, and [Self-hosting](/docs/platform/self-hosting) to run Carbon on your own infrastructure.

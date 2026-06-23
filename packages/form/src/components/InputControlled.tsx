@@ -1,4 +1,5 @@
 import { useFormContext } from "@carbon/form";
+import type { TermId } from "@carbon/glossary";
 import type { InputProps } from "@carbon/react";
 import {
   FormControl,
@@ -11,6 +12,7 @@ import {
   InputGroup,
   InputLeftAddon,
   InputRightAddon,
+  LabelWithHelp,
   VStack
 } from "@carbon/react";
 import type { ChangeEvent, ReactNode } from "react";
@@ -22,6 +24,7 @@ import { useFormStateContext } from "../internal/formStateContext";
 type FormInputControlledProps = Omit<InputProps, "value" | "onChange"> & {
   name: string;
   label?: ReactNode;
+  termId?: TermId;
   isConfigured?: boolean;
   isOptional?: boolean;
   isUppercase?: boolean;
@@ -41,6 +44,7 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
     {
       name,
       label,
+      termId,
       isConfigured,
       isOptional,
       isRequired,
@@ -128,7 +132,7 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
             isConfigured={isConfigured}
             onConfigure={onConfigure}
           >
-            {label}
+            <LabelWithHelp termId={termId}>{label}</LabelWithHelp>
           </FormLabel>
         )}
         {prefix || suffix ? (

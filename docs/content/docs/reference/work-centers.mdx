@@ -1,0 +1,47 @@
+---
+title: Work centers
+description: Where operations run — the stations and machines, their rates, and the processes they perform.
+---
+
+A **work center** is a place on the floor where <Term id="operation">operations</Term> run, tied to a location: a station, a machine, a cell. It carries the rates used to cost and schedule work, and performs one or more **processes** (the capabilities, like *cut* or *weld*).
+
+<Term id="routing">Routing</Term> operations are scheduled onto work centers, and a work center's rates price the labor and machine time logged against it. It's the link between an operation in the abstract and a real place with a cost and a calendar.
+
+## Fields
+
+<FieldTable>
+  <Field name="Name" type="text">Unique within its location.</Field>
+  <Field name="Location" type="reference">The site it belongs to.</Field>
+  <Field name="Labor rate" type="rate">Cost per labor hour.</Field>
+  <Field name="Machine rate" type="rate">Cost per machine hour.</Field>
+  <Field name="Overhead rate" type="rate">Cost per hour of overhead.</Field>
+  <Field name="Default standard factor" type="enum">How time is expressed (e.g. *Minutes/Piece*).</Field>
+  <Field name="Required ability" type="reference">A skill an operator must hold to run it.</Field>
+</FieldTable>
+
+## Processes
+
+A **process** is a capability a work center can perform; work centers and processes are many-to-many. A process is *Inside*, *Outside*, or both. **<Term id="outside-operation">Outside</Term>** processes are subcontracted, and suppliers attach to them for outside-processing <Term id="purchase-order">purchase orders</Term>.
+
+<Callout type="note">
+A work center is **not** a fixed asset. The machine you schedule production on (a work center) and the machine you depreciate (a fixed asset) are independent records in Carbon. There's no link between them, even when they're the same physical machine.
+</Callout>
+
+## Rates: estimate vs actual
+
+Rates exist at two layers. When an operation picks a work center, that work center's rates are **copied onto the operation** as a snapshot. That's what drives the cost *estimate*. The **actual** labor and machine cost posted to the ledger reads the work center's *live* rate at the time the production event was logged. The two can diverge if a rate changes after an operation is planned.
+
+## Capacity
+
+Work centers have no fixed capacity field. Load is derived from the durations of the operations scheduled onto them. Shifts in Carbon are an employee-and-location concept and aren't bound to work centers. A work center can also be temporarily **blocked** by an in-progress maintenance task that takes it down.
+
+## Related
+
+<Cards>
+  <Card title="Routings" href="/docs/reference/routings">
+    The operations that get scheduled onto work centers.
+  </Card>
+  <Card title="Manufacturing accounting" href="/guides/job-costing">
+    How a work center's rates become a job's labor and machine cost.
+  </Card>
+</Cards>
