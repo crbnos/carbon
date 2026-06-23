@@ -5,14 +5,13 @@ import { buildCompanyArtifact } from "./company-export";
 import { getJobDatabaseClient, TEMPLATES_BUCKET } from "./company-template";
 
 /**
- * Publish a source company into the demo catalog (internal tooling). Builds a
+ * Publish a source company as an industry's demo (internal tooling). Builds a
  * fresh artifact from the source company, writes it into the shared
- * `company-templates` bucket, and upserts the `companyTemplate` row — keyed
- * one-per-industry, so re-publishing an industry replaces its demo in place
- * (reusing the existing path, leaving no orphan gzip).
+ * `company-templates` bucket, and stamps the demo onto the `industry` row —
+ * reusing the existing path on re-publish so no orphan gzip is left.
  *
- * `sourceCompanyId` is set to the source company so the `refresh-demo-catalog`
- * job can re-export it after future migrations.
+ * `industry.sourceCompanyId` is set to the source company so the
+ * `refresh-demo-catalog` job can re-export it after future migrations.
  */
 export const publishDemoFunction = inngest.createFunction(
   {
@@ -22,8 +21,7 @@ export const publishDemoFunction = inngest.createFunction(
   },
   { event: "carbon/publish-demo" },
   async ({ event, step }) => {
-    const { companyId, userId, industryId, includeStorage, name, description } =
-      event.data;
+    const { companyId, userId, industryId, includeStorage } = event.data;
 
     return await step.run("publish-demo", async () => {
       const client = getCarbonServiceRole();
@@ -40,18 +38,16 @@ export const publishDemoFunction = inngest.createFunction(
         }
       );
 
-      // One canonical demo per industry — replace the existing one in place
-      // (reuse its path so no orphan gzip is left). Untagged demos insert fresh.
-      const existing = industryId
-        ? await client
-            .from("companyTemplate")
-            .select("id, artifactPath")
-            .eq("industryId", industryId)
-            .maybeSingle()
-        : { data: null };
+      // Reuse this industry's existing artifact path on re-publish so the bucket
+      // object is overwritten in place (no orphan gzip).
+      const industry = await client
+        .from("industry")
+        .select("artifactPath")
+        .eq("id", industryId)
+        .maybeSingle();
 
       const artifactPath =
-        existing.data?.artifactPath ?? `${nanoid()}.carbon.json.gz`;
+        industry.data?.artifactPath ?? `${nanoid()}.carbon.json.gz`;
       const upload = await client.storage
         .from(TEMPLATES_BUCKET)
         .upload(artifactPath, compressed, {
@@ -60,47 +56,29 @@ export const publishDemoFunction = inngest.createFunction(
         });
       if (upload.error) throw new Error(upload.error.message);
 
-      const row = {
-        name,
-        description: description ?? null,
-        industryId: industryId ?? null,
-        sourceCompanyId: companyId,
-        sourceCompanyName: manifest.sourceCompanyName,
-        artifactPath,
-        schemaVersion: manifest.schemaVersion,
-        includesStorage: (includeStorage ?? "none") === "all",
-        rowCount: rows,
-        isPublic: true
-      };
-
-      const result = existing.data
-        ? await client
-            .from("companyTemplate")
-            .update({
-              ...row,
-              updatedBy: userId,
-              updatedAt: new Date().toISOString()
-            })
-            .eq("id", existing.data.id)
-        : await client
-            .from("companyTemplate")
-            .insert({ ...row, createdBy: userId });
-      if (result.error) throw new Error(result.error.message);
+      const update = await client
+        .from("industry")
+        .update({
+          sourceCompanyId: companyId,
+          sourceCompanyName: manifest.sourceCompanyName,
+          artifactPath,
+          schemaVersion: manifest.schemaVersion,
+          includesStorage: (includeStorage ?? "none") === "all",
+          rowCount: rows,
+          updatedAt: new Date().toISOString()
+        })
+        .eq("id", industryId);
+      if (update.error) throw new Error(update.error.message);
 
       console.log("Demo published", {
+        industryId,
         sourceCompanyId: companyId,
         artifactPath,
         rows,
-        schemaVersion: manifest.schemaVersion,
-        replaced: Boolean(existing.data)
+        schemaVersion: manifest.schemaVersion
       });
 
-      return {
-        artifactPath,
-        rows,
-        schemaVersion: manifest.schemaVersion,
-        replaced: Boolean(existing.data)
-      };
+      return { artifactPath, rows, schemaVersion: manifest.schemaVersion };
     });
   }
 );

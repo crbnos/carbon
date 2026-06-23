@@ -449,15 +449,13 @@ export type Events = {
     data: Record<string, never>;
   };
 
-  // Publish a source company into the demo catalog (internal tooling).
+  // Publish a source company as an industry's demo (internal tooling).
   "carbon/publish-demo": {
     data: {
       companyId: string;
       userId: string;
-      industryId?: string;
+      industryId: string;
       includeStorage: "none" | "all";
-      name: string;
-      description?: string;
     };
   };
 };

@@ -61,9 +61,7 @@ const importValidator = z.object({
 // Internal-only: publish this company as the reusable demo for an industry.
 const publishValidator = z.object({
   intent: z.literal("publish"),
-  name: z.string().min(1, { message: "Name is required" }),
-  description: z.string().optional(),
-  industryId: z.string().optional(),
+  industryId: z.string().min(1, { message: "Industry is required" }),
   includeStorage: z.enum(["none", "all"])
 });
 
@@ -288,13 +286,11 @@ export async function action({ request }: ActionFunctionArgs) {
       const validation = await validator(publishValidator).validate(formData);
       if (validation.error) return validationError(validation.error);
 
-      const { name, description, industryId, includeStorage } = validation.data;
+      const { industryId, includeStorage } = validation.data;
       trigger("publish-demo", {
         companyId,
         userId,
-        name,
-        description: description || undefined,
-        industryId: industryId || undefined,
+        industryId,
         includeStorage
       });
       return data(
@@ -369,8 +365,6 @@ export default function BackupsRoute() {
                 method="post"
                 validator={publishValidator}
                 defaultValues={{
-                  name: "",
-                  description: "",
                   industryId: "",
                   includeStorage: "none"
                 }}
@@ -378,8 +372,6 @@ export default function BackupsRoute() {
               >
                 <Hidden name="intent" value="publish" />
                 <VStack spacing={4} className="max-w-md">
-                  <Input name="name" label="Name" />
-                  <Input name="description" label="Description (optional)" />
                   <Select
                     name="industryId"
                     label="Industry"

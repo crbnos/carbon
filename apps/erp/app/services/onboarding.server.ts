@@ -12,18 +12,16 @@ export async function fetchDemoArtifact(
   industryId: string | null
 ): Promise<Blob | null> {
   if (!industryId) return null;
-  const template = await serviceRole
-    .from("companyTemplate")
+  const industry = await serviceRole
+    .from("industry")
     .select("artifactPath")
-    .eq("industryId", industryId)
-    .order("createdAt", { ascending: false })
-    .limit(1)
+    .eq("id", industryId)
     .maybeSingle();
-  if (!template.data) return null;
+  if (!industry.data?.artifactPath) return null;
 
   const download = await serviceRole.storage
     .from("company-templates")
-    .download(template.data.artifactPath);
+    .download(industry.data.artifactPath);
   return download.data ?? null;
 }
 

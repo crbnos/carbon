@@ -4,10 +4,10 @@ import { buildCompanyArtifact } from "./company-export";
 import { getJobDatabaseClient, TEMPLATES_BUCKET } from "./company-template";
 
 /**
- * Re-export every catalogued demo from its persistent source company after a
+ * Re-export every industry's demo from its persistent source company after a
  * migration, overwriting the gzip in place so onboarding always serves a
  * current-schema backup. Fired by the deploy pipeline right after migrations
- * apply (no payload — it walks the whole companyTemplate catalog).
+ * apply (no payload — it walks the industry catalog).
  *
  * Per-source failures are non-fatal: the old gzip is left untouched (still
  * valid for additive migrations) and the run continues, so one broken source
@@ -22,15 +22,15 @@ export const refreshDemoCatalogFunction = inngest.createFunction(
       const db = getJobDatabaseClient(1);
 
       const { data: rows } = await client
-        .from("companyTemplate")
-        .select("id, sourceCompanyId, createdBy, includesStorage, artifactPath")
+        .from("industry")
+        .select("id, sourceCompanyId, includesStorage, artifactPath")
         .not("sourceCompanyId", "is", null);
 
       let refreshed = 0;
       const failures: Array<{ id: string; error: string }> = [];
 
       for (const row of rows ?? []) {
-        if (!row.sourceCompanyId) continue;
+        if (!row.sourceCompanyId || !row.artifactPath) continue;
         try {
           const {
             compressed,
@@ -38,7 +38,7 @@ export const refreshDemoCatalogFunction = inngest.createFunction(
             rows: rowCount
           } = await buildCompanyArtifact(client, db, {
             companyId: row.sourceCompanyId,
-            userId: row.createdBy,
+            userId: "system",
             includeStorage: row.includesStorage ? "all" : "none"
           });
 
@@ -51,7 +51,7 @@ export const refreshDemoCatalogFunction = inngest.createFunction(
           if (upload.error) throw new Error(upload.error.message);
 
           const update = await client
-            .from("companyTemplate")
+            .from("industry")
             .update({
               schemaVersion: manifest.schemaVersion,
               rowCount,
