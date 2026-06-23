@@ -8,6 +8,7 @@ import {
   FormLabel,
   LabelWithHelp
 } from "@carbon/react";
+import type { ReactNode } from "react";
 import { forwardRef, useEffect } from "react";
 
 import { flushSync } from "react-dom";
@@ -27,6 +28,7 @@ export type CreatableComboboxProps = Omit<
   isConfigured?: boolean;
   isOptional?: boolean;
   isRequired?: boolean;
+  emptyMessage?: ReactNode;
   inline?: (
     value: string,
     options: { value: string; label: string | JSX.Element; helper?: string }[]
@@ -49,6 +51,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
       isConfigured = false,
       isOptional,
       isRequired,
+      emptyMessage,
       onConfigure,
       ...props
     },
@@ -117,6 +120,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
           isClearable={isClearable ?? (resolvedIsOptional && !isReadOnly)}
           isReadOnly={isReadOnly}
           label={label}
+          emptyMessage={emptyMessage}
           className="w-full"
           onChange={(newValue) => {
             flushSync(() => {

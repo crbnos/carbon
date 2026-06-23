@@ -3,6 +3,7 @@ import { useCarbon } from "@carbon/auth";
 import { Combobox, ValidatedForm } from "@carbon/form";
 import {
   Badge,
+  Select as CarbonSelect,
   CardAction,
   cn,
   DropdownMenu,
@@ -24,6 +25,10 @@ import {
   ModalCardHeader,
   ModalCardProvider,
   ModalCardTitle,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Tabs,
   TabsContent,
   TabsList,
@@ -57,7 +62,6 @@ import {
   Location,
   Number,
   NumberControlled,
-  SelectControlled,
   StorageUnit,
   Submit
 } from "~/components/Form";
@@ -115,6 +119,7 @@ const SalesOrderLineForm = ({
   const isEditable = !isLocked;
 
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
+  const [items] = useItems();
 
   const [lineType, setLineType] = useState(initialValues.salesOrderLineType);
   const [locationId, setLocationId] = useState(initialValues.locationId ?? "");
@@ -231,6 +236,12 @@ const SalesOrderLineForm = ({
   const onTypeChange = (t: SalesOrderLineType) => {
     // @ts-ignore
     setLineType(t);
+    // Clear itemData only when the new filter excludes the currently selected
+    // item — otherwise a stale itemId of the old type would post with the new
+    // salesOrderLineType. "Item" is the "All Items" filter, always compatible.
+    if (!itemData.itemId || t === ("Item" as SalesOrderLineType)) return;
+    const currentType = items.find((i) => i.id === itemData.itemId)?.type;
+    if (currentType && currentType === t) return;
     setItemData({
       itemId: "",
       description: "",
@@ -380,7 +391,6 @@ const SalesOrderLineForm = ({
   const costsDisclosure = useDisclosure();
   const assetCostsDisclosure = useDisclosure();
   const deleteDisclosure = useDisclosure();
-  const [items] = useItems();
 
   return (
     <>
@@ -516,6 +526,10 @@ const SalesOrderLineForm = ({
                 <ModalCardBody>
                   <Hidden name="id" />
                   <Hidden name="salesOrderId" />
+                  {/* Lives outside TabsContent so the value survives Item↔Asset
+                      tab toggles — TabsContent unmounts inactive children, and
+                      useControlField's unregister cleanup resets the field. */}
+                  <Hidden name="methodType" value={itemData.methodType ?? ""} />
 
                   <TabsContent value="item">
                     {!isEditing && (
@@ -572,29 +586,39 @@ const SalesOrderLineForm = ({
 
                         {lineType !== "Comment" && (
                           <>
-                            <SelectControlled
-                              name="methodType"
-                              label={t`Method`}
-                              options={
-                                methodType.map((m) => ({
-                                  label: (
-                                    <span className="flex items-center gap-2">
-                                      <MethodIcon type={m} />
-                                      {m}
-                                    </span>
-                                  ),
-                                  value: m
-                                })) ?? []
-                              }
-                              value={itemData.methodType}
-                              onChange={(newValue) => {
-                                if (newValue)
+                            <FormControl>
+                              <FormLabel htmlFor="methodTypePicker">
+                                {t`Method`}
+                              </FormLabel>
+                              <CarbonSelect
+                                value={itemData.methodType || undefined}
+                                onValueChange={(v) =>
                                   setItemData((d) => ({
                                     ...d,
-                                    methodType: newValue?.value
-                                  }));
-                              }}
-                            />
+                                    methodType: v
+                                  }))
+                                }
+                              >
+                                <SelectTrigger
+                                  id="methodTypePicker"
+                                  className="w-full"
+                                >
+                                  <SelectValue
+                                    placeholder={t`Select method...`}
+                                  />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {methodType.map((m) => (
+                                    <SelectItem key={m} value={m}>
+                                      <span className="flex items-center gap-2">
+                                        <MethodIcon type={m} />
+                                        {m}
+                                      </span>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </CarbonSelect>
+                            </FormControl>
                             <NumberControlled
                               name="saleQuantity"
                               label={t`Quantity`}

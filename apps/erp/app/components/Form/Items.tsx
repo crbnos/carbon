@@ -20,6 +20,7 @@ import type { MethodItemType } from "~/modules/shared";
 import { methodItemType } from "~/modules/shared";
 import { useItems } from "~/stores";
 import { MethodItemTypeIcon } from "../Icons";
+import { useEmptyState } from "./emptyStates";
 
 type ItemsSelectProps = Omit<CreatableMultiSelectProps, "options">;
 
@@ -64,6 +65,13 @@ const Items = (props: ItemsSelectProps) => {
     triggerRef.current?.click();
   };
 
+  const storeEmptyMessage = useEmptyState("item", {
+    onCreate: () => selectTypeModal.onOpen()
+  });
+  // Suppress when the store has inactive items but no active ones (filter
+  // narrowed to zero) — see Item.tsx for the same pattern.
+  const emptyMessage = items.length === 0 ? storeEmptyMessage : undefined;
+
   return (
     <>
       <CreatableMultiSelect
@@ -72,6 +80,7 @@ const Items = (props: ItemsSelectProps) => {
         {...props}
         label={props?.label ?? "Items"}
         createLabel={t`Item`}
+        emptyMessage={emptyMessage}
         onCreateOption={(value) => {
           setCreated(value);
           selectTypeModal.onOpen();

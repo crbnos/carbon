@@ -7,6 +7,7 @@ import type { getItemPostingGroupsList } from "~/modules/items";
 import ItemPostingGroupForm from "~/modules/items/ui/ItemPostingGroups/ItemPostingGroupForm";
 import { path } from "~/utils/path";
 import { Enumerable } from "../Enumerable";
+import { useEmptyState } from "./emptyStates";
 
 type ItemPostingGroupSelectProps = Omit<
   CreatableComboboxProps,
@@ -30,6 +31,10 @@ const ItemPostingGroup = (props: ItemPostingGroupSelectProps) => {
 
   const options = useItemPostingGroups();
 
+  const emptyMessage = useEmptyState("itemPostingGroup", {
+    onCreate: () => newItemPostingGroupModal.onOpen()
+  });
+
   return (
     <>
       <CreatableCombobox
@@ -40,6 +45,7 @@ const ItemPostingGroup = (props: ItemPostingGroupSelectProps) => {
             label: <Enumerable value={o.label} />
           })) ?? []
         }
+        emptyMessage={emptyMessage}
         {...props}
         inline={props.inline ? ItemPostingGroupPreview : undefined}
         label={props?.label ?? "Posting Group"}

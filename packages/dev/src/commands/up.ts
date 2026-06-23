@@ -1,6 +1,6 @@
 import { box, intro, log, outro, progress, tasks } from "@clack/prompts";
 import { config as loadDotenv } from "dotenv";
-import { execa } from "execa";
+import { type ExecaChildProcess, execa } from "execa";
 import { join } from "pathe";
 import type { AppId } from "../constants.js";
 import { renderEnv, syncAppPortlessConfigs, writeEnv } from "../env.js";
@@ -19,6 +19,7 @@ import {
   bootStack,
   type Container,
   devComposeImageRefs,
+  ensureDockerRunning,
   listComposeServices,
   listContainers,
   pullStack,
@@ -108,6 +109,22 @@ export async function up(opts: UpOpts = {}) {
       : process.env.CARBON_PORTLESS !== "0";
 
   intro("Carbon · dev up");
+  // Fail fast with a clear message instead of a cryptic daemon error deep in
+  // the boot (after prompts + sudo).
+  await ensureDockerRunning();
+
+  // During the long pre-apps phase (image pulls, migrations, sudo prompts) a
+  // Ctrl+C would otherwise kill crbn and orphan half-booted containers. Tear
+  // them down on interrupt; detached once apps take over teardown (below).
+  let stripeChild: ExecaChildProcess | undefined;
+  let interrupted = false;
+  const detachEarly = onShutdown(() => {
+    if (interrupted) return;
+    interrupted = true;
+    process.stderr.write("\ninterrupted — stopping partial stack…\n");
+    killStripe(stripeChild);
+    void down({ silent: true }).finally(() => process.exit(130));
+  });
 
   if (portless) {
     await ensurePortlessInstalled();
@@ -159,7 +176,7 @@ export async function up(opts: UpOpts = {}) {
   }
 
   if (process.env.CARBON_EDITION === "cloud") {
-    spawnStripeListener(root);
+    stripeChild = spawnStripeListener(root);
     log.info("stripe listener spawned (CARBON_EDITION=cloud)");
   }
 
@@ -172,12 +189,38 @@ export async function up(opts: UpOpts = {}) {
     `Carbon dev — ${slug}`
   );
 
+  // Startup done — hand teardown ownership to the app supervisor (or, for
+  // services-only, to a later manual `crbn down`).
+  detachEarly();
+
   if (selectedApps.length === 0) {
+    // Services-only: the stack stays up after crbn exits, so let the stripe
+    // listener outlive us too (apps mode kills it on teardown instead).
+    stripeChild?.unref();
     outro("services up (run `crbn down` to stop)");
     return;
   }
   outro("apps starting (Ctrl+C to stop)");
-  await runAppsThenTeardown(root, selectedApps, ctx.ports, portless);
+  await runAppsThenTeardown(
+    root,
+    selectedApps,
+    ctx.ports,
+    portless,
+    stripeChild
+  );
+}
+
+// Kill the detached stripe listener's whole process group (apps-mode teardown).
+function killStripe(child?: ExecaChildProcess) {
+  if (!child?.pid) return;
+  try {
+    process.kill(-child.pid, "SIGTERM");
+  } catch {
+    try {
+      child.kill("SIGTERM");
+      // biome-ignore lint/suspicious/noEmptyBlockStatements: best-effort kill
+    } catch {}
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -434,12 +477,14 @@ async function setupPortless(ctx: Ctx, _selectedApps: AppId[]) {
     {
       title: "Register service aliases",
       task: async () => {
-        const count = await registerAliases(
+        const { registered, total } = await registerAliases(
           ctx.root,
           ctx.branchPrefix,
           ctx.ports
         );
-        return `${count} aliases registered`;
+        return registered === total
+          ? `${registered} aliases registered`
+          : `${registered}/${total} aliases registered (${total - registered} failed)`;
       }
     }
   ]);
@@ -472,7 +517,8 @@ async function runAppsThenTeardown(
   root: string,
   selectedApps: AppId[],
   ports: PortMap,
-  portless: boolean
+  portless: boolean,
+  stripeChild?: ExecaChildProcess
 ) {
   await spawnApps({ root, apps: selectedApps, ports, portless });
 
@@ -483,6 +529,8 @@ async function runAppsThenTeardown(
     process.stderr.write("\nfinishing teardown — please wait\n");
   });
   try {
+    // Kill the stripe listener too — it's detached and would otherwise survive.
+    killStripe(stripeChild);
     // silent: post-SIGINT stdin raw-mode triggers EIO in clack's spinner.
     await down({ silent: true });
   } finally {

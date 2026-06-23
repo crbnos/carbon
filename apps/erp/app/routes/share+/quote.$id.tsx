@@ -45,7 +45,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import {
   LuChevronRight,
-  LuCircleX,
   LuCreditCard,
   LuImage,
   LuTruck,
@@ -468,9 +467,6 @@ const LineItems = ({
                 locale={locale}
                 selectedLine={selectedLines[line.id!]}
                 setSelectedLines={setSelectedLines}
-                onDeselect={(lineId) =>
-                  setOpenItems((prev) => prev.filter((item) => item !== lineId))
-                }
               />
             </motion.div>
           </motion.div>
@@ -490,7 +486,6 @@ type LinePricingOptionsProps = {
   formatter: Intl.NumberFormat;
   selectedLine: SelectedLine;
   setSelectedLines: Dispatch<SetStateAction<Record<string, SelectedLine>>>;
-  onDeselect?: (lineId: string) => void;
 };
 
 const LinePricingOptions = ({
@@ -502,14 +497,11 @@ const LinePricingOptions = ({
   locale,
   formatter,
   selectedLine,
-  setSelectedLines,
-  onDeselect
+  setSelectedLines
 }: LinePricingOptionsProps) => {
   const percentFormatter = usePercentFormatter();
-  const { quote, salesOrderLines } = useLoaderData<typeof loader>().data!;
+  const { quote } = useLoaderData<typeof loader>().data!;
 
-  const hasSalesOrder =
-    Array.isArray(salesOrderLines) && salesOrderLines.length > 0;
   const [selectedValue, setSelectedValue] = useState<string | null>(
     selectedLine?.quantity?.toString() ?? null
   );
@@ -907,26 +899,6 @@ const LinePricingOptions = ({
             </Tbody>
           </Table>
         </div>
-      )}
-      {selectedLine.quantity !== 0 && !hasSalesOrder && (
-        <HStack spacing={2} className="w-full justify-end items-center">
-          <Button
-            variant="secondary"
-            leftIcon={<LuCircleX />}
-            onClick={() => {
-              setSelectedValue("0");
-              setSelectedLines((prev) => ({
-                ...prev,
-                [line.id!]: deselectedLine
-              }));
-              if (line.id) {
-                onDeselect?.(line.id);
-              }
-            }}
-          >
-            <Trans>Remove</Trans>
-          </Button>
-        </HStack>
       )}
     </VStack>
   );

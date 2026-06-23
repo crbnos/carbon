@@ -9,6 +9,7 @@ import type { getGaugesList, getGaugeTypesList } from "~/modules/quality";
 import GaugeForm from "~/modules/quality/ui/Gauge/GaugeForm";
 
 import { path } from "~/utils/path";
+import { useEmptyState } from "./emptyStates";
 
 type GaugeSelectProps = Omit<ComboboxProps, "options">;
 
@@ -20,6 +21,10 @@ const Gauge = (props: GaugeSelectProps) => {
   const { options, gaugeTypes } = useGauges();
   const { defaults } = useUser();
 
+  const emptyMessage = useEmptyState("gauge", {
+    onCreate: () => newGaugeModal.onOpen()
+  });
+
   return (
     <>
       <CreatableCombobox
@@ -27,6 +32,7 @@ const Gauge = (props: GaugeSelectProps) => {
         options={options}
         {...props}
         label={props?.label ?? "Gauge"}
+        emptyMessage={emptyMessage}
         onCreateOption={(option) => {
           newGaugeModal.onOpen();
           setCreated(option);

@@ -6,6 +6,7 @@ import { useFetcher } from "react-router";
 import type { getProcessesList } from "~/modules/resources";
 import ProcessForm from "~/modules/resources/ui/Processes/ProcessForm";
 import { path } from "~/utils/path";
+import { useEmptyState } from "./emptyStates";
 
 type ProcessSelectProps = Omit<CreatableMultiSelectProps, "options">;
 
@@ -16,6 +17,10 @@ const Processes = (props: ProcessSelectProps) => {
 
   const options = useProcesses();
 
+  const emptyMessage = useEmptyState("process", {
+    onCreate: () => newProcessModal.onOpen()
+  });
+
   return (
     <>
       <CreatableMultiSelect
@@ -23,6 +28,7 @@ const Processes = (props: ProcessSelectProps) => {
         options={options}
         {...props}
         label={props?.label ?? "Work Center"}
+        emptyMessage={emptyMessage}
         onCreateOption={(option) => {
           newProcessModal.onOpen();
           setCreated(option);

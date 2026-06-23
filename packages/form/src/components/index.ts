@@ -12,6 +12,10 @@ import type { CreatableMultiSelectProps } from "./CreatableMultiSelect";
 import CreatableMultiSelect from "./CreatableMultiSelect";
 import DatePicker from "./DatePicker";
 import DateTimePicker from "./DateTimePicker";
+import type { FieldEmptyStateProps } from "./FieldEmptyState";
+import FieldEmptyState, {
+  fieldEmptyStateLinkClassName
+} from "./FieldEmptyState";
 import Hidden from "./Hidden";
 import Input from "./Input";
 import InputControlled from "./InputControlled";
@@ -44,6 +48,8 @@ export {
   DatePicker,
   DateTimePicker,
   DefaultDisabledSubmit,
+  FieldEmptyState,
+  fieldEmptyStateLinkClassName,
   Hidden,
   Input,
   InputControlled,
@@ -68,6 +74,7 @@ export type {
   ComboboxProps,
   CreatableComboboxProps,
   CreatableMultiSelectProps,
+  FieldEmptyStateProps,
   MultiSelectProps,
   SelectProps
 };

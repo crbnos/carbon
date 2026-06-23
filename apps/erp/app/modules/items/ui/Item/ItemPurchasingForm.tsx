@@ -1,4 +1,9 @@
-import { Select, ValidatedForm } from "@carbon/form";
+import {
+  FieldEmptyState,
+  fieldEmptyStateLinkClassName,
+  Select,
+  ValidatedForm
+} from "@carbon/form";
 import {
   Card,
   CardContent,
@@ -80,22 +85,17 @@ const ItemPurchasingForm = ({
               label={t`Preferred Supplier`}
               options={allowedSuppliersOptions}
               emptyMessage={
-                <div className="flex flex-col items-center justify-center py-5 px-4 text-center">
-                  <p className="text-sm font-medium text-foreground mb-1">
-                    <Trans>No suppliers yet</Trans>
-                  </p>
-                  <p className="text-xs text-muted-foreground max-w-[240px] leading-relaxed">
+                <FieldEmptyState
+                  title={<Trans>No suppliers yet</Trans>}
+                  description={
                     <Trans>
-                      <Link
-                        to="new"
-                        className="text-primary font-medium underline decoration-dashed underline-offset-4 hover:decoration-solid"
-                      >
+                      <Link to="new" className={fieldEmptyStateLinkClassName}>
                         Add a supplier part
                       </Link>{" "}
                       for this item to set a preferred supplier.
                     </Trans>
-                  </p>
-                </div>
+                  }
+                />
               }
             />
             <Number

@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { usePeople } from "~/stores";
 import Avatar from "../Avatar";
 import EmployeeAvatar from "../EmployeeAvatar";
+import { useEmptyState } from "./emptyStates";
 
 type EmployeeSelectProps = Omit<
   ComboboxProps,
@@ -50,10 +51,13 @@ const Employee = ({ type, inline, ...props }: EmployeeSelectProps) => {
     return base;
   }, [type, people, t]);
 
+  const emptyMessage = useEmptyState("employee");
+
   return (
     <>
       <Combobox
         options={options}
+        emptyMessage={emptyMessage}
         {...props}
         inline={inline ? EmployeePreview : undefined}
         label={props?.label ?? t`Employee`}

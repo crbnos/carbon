@@ -53,6 +53,7 @@ const Select = ({
   isLoading,
   options,
   onConfigure,
+  emptyMessage,
   ...props
 }: SelectProps) => {
   const { getInputProps, error, isOptional: fieldIsOptional } = useField(name);
@@ -109,6 +110,7 @@ const Select = ({
         isDisabled={isDisabled}
         isReadOnly={isReadOnly}
         isLoading={isLoading}
+        emptyMessage={isLoading ? undefined : emptyMessage}
         className="w-full"
       />
 

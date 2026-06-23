@@ -6,6 +6,7 @@ import { useFetcher } from "react-router";
 import type { getProceduresList } from "~/modules/production/production.service";
 import ProcedureStatus from "~/modules/production/ui/Procedures/ProcedureStatus";
 import { path } from "~/utils/path";
+import { useEmptyState } from "./emptyStates";
 
 type ProcedureSelectProps = Omit<ComboboxProps, "options"> & {
   processId?: string;
@@ -18,12 +19,15 @@ const Procedure = (props: ProcedureSelectProps) => {
     processId: props?.processId
   });
 
+  const emptyMessage = useEmptyState("procedure");
+
   return (
     <>
       <Combobox
         options={options}
         isOptional={props?.isOptional ?? true}
         isLoading={loading}
+        emptyMessage={emptyMessage}
         {...props}
         label={props?.label ?? "Procedure"}
       />

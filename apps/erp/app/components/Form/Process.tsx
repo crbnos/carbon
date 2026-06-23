@@ -7,6 +7,7 @@ import type { getProcessesList } from "~/modules/resources";
 import ProcessForm from "~/modules/resources/ui/Processes/ProcessForm";
 import { path } from "~/utils/path";
 import { Enumerable } from "../Enumerable";
+import { useEmptyState } from "./emptyStates";
 
 type ProcessSelectProps = Omit<ComboboxProps, "options" | "inline"> & {
   isConfigured?: boolean;
@@ -40,6 +41,10 @@ const Process = ({
   const fetched = useProcesses();
   const sourceOptions = optionsOverride ?? fetched;
 
+  const emptyMessage = useEmptyState("process", {
+    onCreate: () => newProcessModal.onOpen()
+  });
+
   return (
     <>
       <CreatableCombobox
@@ -48,6 +53,7 @@ const Process = ({
           value: o.value,
           label: <Enumerable value={o.label} />
         }))}
+        emptyMessage={emptyMessage}
         {...props}
         inline={props.inline ? ProcessPreview : undefined}
         label={props?.label ?? "Work Center"}

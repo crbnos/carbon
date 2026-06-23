@@ -7,6 +7,7 @@ import { Enumerable } from "~/components/Enumerable";
 import type { getCustomerTypesList } from "~/modules/sales";
 import { CustomerTypeForm } from "~/modules/sales/ui/CustomerTypes";
 import { path } from "~/utils/path";
+import { useEmptyState } from "./emptyStates";
 
 type CustomerTypeSelectProps = Omit<ComboboxProps, "options"> & {
   exclude?: string[];
@@ -19,6 +20,10 @@ const CustomerType = (props: CustomerTypeSelectProps) => {
 
   const options = useCustomerTypes();
 
+  const emptyMessage = useEmptyState("customerType", {
+    onCreate: () => newCustomerTypeModal.onOpen()
+  });
+
   return (
     <>
       <CreatableCombobox
@@ -30,6 +35,7 @@ const CustomerType = (props: CustomerTypeSelectProps) => {
           value: o.value,
           label: <Enumerable value={o.label} />
         }))}
+        emptyMessage={emptyMessage}
         {...props}
         label={props?.label ?? "CustomerType"}
         onCreateOption={(option) => {

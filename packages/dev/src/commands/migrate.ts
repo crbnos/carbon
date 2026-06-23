@@ -26,7 +26,10 @@ export async function migrate(opts: { regen?: boolean } = {}) {
     process.exit(1);
   }
 
-  loadDotenv({ path: envLocal, override: false });
+  // .env.local is the worktree's source of truth for PORT_DB — override any
+  // stale value already in the shell env, or migrate would target the wrong DB.
+  // (mirrors `up.ts` provisionSlot, which also loads .env.local with override.)
+  loadDotenv({ path: envLocal, override: true });
   loadDotenv({ path: join(root, ".env"), override: false });
 
   let portDb: number;

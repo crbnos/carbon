@@ -6,6 +6,7 @@ import { useFetcher } from "react-router";
 import type { getDepartmentsList } from "~/modules/people";
 import DepartmentForm from "~/modules/people/ui/Departments/DepartmentForm";
 import { path } from "~/utils/path";
+import { useEmptyState } from "./emptyStates";
 
 type DepartmentSelectProps = Omit<ComboboxProps, "options">;
 
@@ -16,11 +17,16 @@ const Department = (props: DepartmentSelectProps) => {
 
   const options = useDepartments();
 
+  const emptyMessage = useEmptyState("department", {
+    onCreate: () => newDepartmentModal.onOpen()
+  });
+
   return (
     <>
       <CreatableCombobox
         ref={triggerRef}
         options={options}
+        emptyMessage={emptyMessage}
         {...props}
         label={props?.label ?? "Department"}
         onCreateOption={(option) => {

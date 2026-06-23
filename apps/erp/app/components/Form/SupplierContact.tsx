@@ -10,6 +10,7 @@ import type {
 } from "~/modules/purchasing";
 import { SupplierContactForm } from "~/modules/purchasing/ui/Supplier";
 import { path } from "~/utils/path";
+import { useEmptyState } from "./emptyStates";
 
 type SupplierContactSelectProps = Omit<
   ComboboxProps,
@@ -80,6 +81,11 @@ const SupplierContact = (props: SupplierContactSelectProps) => {
     props.onChange?.(contact ?? null);
   };
 
+  const emptyMessage = useEmptyState(
+    "supplierContact",
+    props.supplier ? { onCreate: () => newContactModal.onOpen() } : undefined
+  );
+
   return (
     <>
       <CreatableCombobox
@@ -89,6 +95,7 @@ const SupplierContact = (props: SupplierContactSelectProps) => {
         placeholder={t`Select Contact`}
         inline={props.inline ? SupplierContactPreview : undefined}
         label={props?.label ?? t`Supplier Contact`}
+        emptyMessage={emptyMessage}
         onChange={onChange}
         onCreateOption={(option) => {
           newContactModal.onOpen();

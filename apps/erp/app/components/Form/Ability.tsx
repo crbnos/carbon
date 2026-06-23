@@ -5,14 +5,22 @@ import { useMemo } from "react";
 import { useFetcher } from "react-router";
 import type { getAbilitiesList } from "~/modules/resources";
 import { path } from "~/utils/path";
+import { useEmptyState } from "./emptyStates";
 
 type AbilitySelectProps = Omit<ComboboxProps, "options">;
 
 const Ability = (props: AbilitySelectProps) => {
   const options = useAbilities();
 
+  const emptyMessage = useEmptyState("ability");
+
   return (
-    <Combobox options={options} {...props} label={props?.label ?? "Ability"} />
+    <Combobox
+      options={options}
+      emptyMessage={emptyMessage}
+      {...props}
+      label={props?.label ?? "Ability"}
+    />
   );
 };
 

@@ -1,6 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import type { ComponentPropsWithoutRef } from "react";
+import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import { forwardRef, useId, useMemo, useRef, useState } from "react";
 import { FaRegSquare, FaSquareCheck } from "react-icons/fa6";
 import { LuCirclePlus, LuSettings2, LuX } from "react-icons/lu";
@@ -35,6 +35,7 @@ export type MultiSelectProps = Omit<
   isReadOnly?: boolean;
   isClearable?: boolean;
   placeholder?: string;
+  emptyMessage?: ReactNode;
   onChange: (selected: string[]) => void;
   itemHeight?: number;
   maxPreview?: number;
@@ -55,6 +56,7 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
       isReadOnly,
       isClearable,
       placeholder,
+      emptyMessage,
       onChange,
       className,
       itemHeight = 40,
@@ -190,15 +192,19 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
             onTouchMove={(e) => e.stopPropagation()}
             className="min-w-[var(--radix-popover-trigger-width)] p-1"
           >
-            <VirtualizedCommand
-              options={options}
-              value={value}
-              onChange={onChange}
-              itemHeight={itemHeight}
-              setOpen={setOpen}
-              search={search}
-              setSearch={setSearch}
-            />
+            {emptyMessage && options.length === 0 ? (
+              emptyMessage
+            ) : (
+              <VirtualizedCommand
+                options={options}
+                value={value}
+                onChange={onChange}
+                itemHeight={itemHeight}
+                setOpen={setOpen}
+                search={search}
+                setSearch={setSearch}
+              />
+            )}
           </PopoverContent>
         </Popover>
         {isClearable && !isReadOnly && value.length > 0 && (

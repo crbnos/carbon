@@ -7,6 +7,7 @@ import { useUser } from "~/hooks/useUser";
 import type { getCostCentersList } from "~/modules/accounting";
 import CostCenterForm from "~/modules/accounting/ui/CostCenters/CostCenterForm";
 import { path } from "~/utils/path";
+import { useEmptyState } from "./emptyStates";
 
 type CostCenterSelectProps = Omit<ComboboxProps, "options">;
 
@@ -19,11 +20,16 @@ const CostCenter = (props: CostCenterSelectProps) => {
 
   const options = useCostCenters();
 
+  const emptyMessage = useEmptyState("costCenter", {
+    onCreate: () => newCostCenterModal.onOpen()
+  });
+
   return (
     <>
       <CreatableCombobox
         ref={triggerRef}
         options={options}
+        emptyMessage={emptyMessage}
         {...props}
         label={props?.label ?? "Cost Center"}
         onCreateOption={(option) => {

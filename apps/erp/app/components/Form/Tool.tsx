@@ -14,6 +14,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import ToolForm from "~/modules/items/ui/Tools/ToolForm";
 
 import { useTools } from "~/stores";
+import { useEmptyState } from "./emptyStates";
 
 type ToolSelectProps = Omit<ComboboxProps, "options" | "type" | "inline"> & {
   disabledTools?: string[];
@@ -71,6 +72,10 @@ const Tool = ({ name, label, helperText, ...props }: ToolSelectProps) => {
     }
   };
 
+  const emptyMessage = useEmptyState("tool", {
+    onCreate: () => newToolsModal.onOpen()
+  });
+
   return (
     <>
       <FormControl isInvalid={!!error} className="w-full">
@@ -90,6 +95,7 @@ const Tool = ({ name, label, helperText, ...props }: ToolSelectProps) => {
             className={cn("flex-grow min-w-0")}
             ref={triggerRef}
             options={options}
+            emptyMessage={emptyMessage}
             {...props}
             inline={props.inline ? ToolPreview : undefined}
             inlineAddLabel="Add Tool"

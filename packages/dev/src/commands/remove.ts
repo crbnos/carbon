@@ -22,7 +22,13 @@ import {
   pruneStaleRoutes,
   unregisterAliases
 } from "../services/portless.js";
-import { getSlot, listSlugs, projectName, removeSlot } from "../worktree.js";
+import {
+  getSlot,
+  listSlugs,
+  projectName,
+  removeSlot,
+  slugForWorktreePath
+} from "../worktree.js";
 
 export async function removeWorktreeCmd(opts?: { prune?: boolean }) {
   const pruneBranches = opts?.prune === true;
@@ -59,7 +65,7 @@ export async function removeWorktreeCmd(opts?: { prune?: boolean }) {
   // Build context once (isDirty, slug, etc.) — reused for warnings + removal.
   const jobs = await Promise.all(
     targets.map(async (target) => {
-      const slug = slugForPath(target.path, registry);
+      const slug = slugForWorktreePath(target.path, registry);
       return {
         target,
         dirty: await isDirty(target.path),
@@ -77,10 +83,16 @@ export async function removeWorktreeCmd(opts?: { prune?: boolean }) {
 
     const warnings: string[] = [];
     if (dirty)
-      warnings.push(`${pc.yellow("⚠")} uncommitted changes in worktree`);
+      warnings.push(
+        `${pc.yellow("⚠")} uncommitted changes will be LOST (force remove)`
+      );
     if (slug)
       warnings.push(
         `${pc.yellow("⚠")} stack ${projectLabel} will be destroyed (volumes wiped)`
+      );
+    if (pruneBranches && target.branch)
+      warnings.push(
+        `${pc.yellow("⚠")} branch '${target.branch}' will be force-deleted (git branch -D, even if unmerged)`
       );
     if (warnings.length)
       log.warn(`${target.branch ?? target.path}\n${warnings.join("\n")}`);
@@ -162,14 +174,4 @@ export async function removeWorktreeCmd(opts?: { prune?: boolean }) {
   }
 
   outro(failed.length ? `done with ${failed.length} error(s)` : "done");
-}
-
-function slugForPath(
-  path: string,
-  registry: ReturnType<typeof listSlugs>
-): string | null {
-  for (const [slug, entry] of Object.entries(registry)) {
-    if (entry.worktreeRoot === path) return slug;
-  }
-  return null;
 }

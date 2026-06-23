@@ -9,6 +9,7 @@ import type {
 } from "~/modules/items";
 import MaterialGradeForm from "~/modules/items/ui/MaterialGrades/MaterialGradeForm";
 import { path } from "~/utils/path";
+import { useEmptyState } from "./emptyStates";
 
 type MaterialGradeSelectProps = Omit<
   ComboboxProps,
@@ -68,6 +69,11 @@ const MaterialGrade = (props: MaterialGradeSelectProps) => {
     props.onChange?.(grade as MaterialGradeType | null);
   };
 
+  const emptyMessage = useEmptyState(
+    "materialGrade",
+    props.substanceId ? { onCreate: () => newGradeModal.onOpen() } : undefined
+  );
+
   return (
     <>
       <CreatableCombobox
@@ -78,6 +84,7 @@ const MaterialGrade = (props: MaterialGradeSelectProps) => {
         inline={props?.inline ? MaterialGradePreview : undefined}
         isOptional={props?.isOptional ?? true}
         label={props?.label ?? "Grade"}
+        emptyMessage={emptyMessage}
         onChange={onChange}
         onCreateOption={(option) => {
           newGradeModal.onOpen();

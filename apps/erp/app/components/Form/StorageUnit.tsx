@@ -22,6 +22,7 @@ import type { getStorageUnitsList } from "~/modules/inventory";
 import StorageUnitForm from "~/modules/inventory/ui/StorageUnits/StorageUnitForm";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
+import { useEmptyState } from "./emptyStates";
 
 // ---------------------------------------------------------------------------
 // Data hooks (shared)
@@ -215,7 +216,7 @@ function useNewStorageUnitModal(locationId?: string | null) {
     modal.onOpen();
   };
 
-  return { triggerRef, onCreateOption, node };
+  return { triggerRef, onCreateOption, onOpen: modal.onOpen, node };
 }
 
 const storageUnitPreview = (
@@ -278,9 +279,14 @@ function StorageUnit({
   onChange
 }: StorageUnitProps) {
   const options = useStorageUnitLeafOptions(locationId, itemId);
-  const { triggerRef, onCreateOption, node } =
+  const { triggerRef, onCreateOption, onOpen, node } =
     useNewStorageUnitModal(locationId);
   const readOnly = isReadOnly || disabled;
+
+  const emptyMessage = useEmptyState(
+    "storageUnit",
+    allowCreate && locationId ? { onCreate: onOpen } : undefined
+  );
 
   if (name) {
     return (
@@ -298,6 +304,7 @@ function StorageUnit({
           className={className}
           onClick={onClick}
           inline={inline ? storageUnitPreview : undefined}
+          emptyMessage={emptyMessage}
           onCreateOption={allowCreate ? onCreateOption : undefined}
           onChange={(option) =>
             onChange?.(
@@ -325,6 +332,7 @@ function StorageUnit({
         placeholder={placeholder}
         className={className}
         onClick={onClick}
+        emptyMessage={emptyMessage}
         onCreateOption={allowCreate ? onCreateOption : undefined}
         onChange={(selected) =>
           onChange?.(selected ? toListItem(selected, options) : null)

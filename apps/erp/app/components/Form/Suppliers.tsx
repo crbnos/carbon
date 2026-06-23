@@ -4,6 +4,7 @@ import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { SupplierForm } from "~/modules/purchasing/ui/Supplier";
 import { useSuppliers } from "~/stores";
+import { useEmptyState } from "./emptyStates";
 
 type SupplierSelectProps = Omit<CreatableMultiSelectProps, "options"> & {
   processId?: string;
@@ -25,6 +26,10 @@ const Suppliers = (props: SupplierSelectProps) => {
     );
   }, [suppliers]);
 
+  const emptyMessage = useEmptyState("supplier", {
+    onCreate: () => newSupplierModal.onOpen()
+  });
+
   return (
     <>
       <CreatableMultiSelect
@@ -32,6 +37,7 @@ const Suppliers = (props: SupplierSelectProps) => {
         options={options}
         {...props}
         label={props?.label ?? "Work Center"}
+        emptyMessage={emptyMessage}
         onCreateOption={(option) => {
           newSupplierModal.onOpen();
           setCreated(option);

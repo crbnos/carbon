@@ -7,6 +7,7 @@ import { usePermissions } from "~/hooks";
 import type { getShippingMethodsList } from "~/modules/inventory";
 import { ShippingMethodForm } from "~/modules/inventory";
 import { path } from "~/utils/path";
+import { useEmptyState } from "./emptyStates";
 
 type ShippingMethodSelectProps = Omit<ComboboxProps, "options">;
 
@@ -18,11 +19,16 @@ const ShippingMethod = (props: ShippingMethodSelectProps) => {
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
 
+  const emptyMessage = useEmptyState("shippingMethod", {
+    onCreate: () => newShippingMethodModal.onOpen()
+  });
+
   return permissions.can("create", "inventory") ? (
     <>
       <CreatableCombobox
         ref={triggerRef}
         options={options}
+        emptyMessage={emptyMessage}
         {...props}
         label={props?.label ?? "Shipping Method"}
         onCreateOption={(option) => {
@@ -48,6 +54,7 @@ const ShippingMethod = (props: ShippingMethodSelectProps) => {
   ) : (
     <Combobox
       options={options}
+      emptyMessage={emptyMessage}
       {...props}
       label={props?.label ?? "Shipping Method"}
     />

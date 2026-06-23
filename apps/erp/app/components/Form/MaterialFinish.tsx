@@ -9,6 +9,7 @@ import type {
 } from "~/modules/items";
 import MaterialFinishForm from "~/modules/items/ui/MaterialFinishes/MaterialFinishForm";
 import { path } from "~/utils/path";
+import { useEmptyState } from "./emptyStates";
 
 type MaterialFinishSelectProps = Omit<
   ComboboxProps,
@@ -72,6 +73,11 @@ const MaterialFinish = (props: MaterialFinishSelectProps) => {
     props.onChange?.(finish as MaterialFinishType | null);
   };
 
+  const emptyMessage = useEmptyState(
+    "materialFinish",
+    props.substanceId ? { onCreate: () => newFinishModal.onOpen() } : undefined
+  );
+
   return (
     <>
       <CreatableCombobox
@@ -82,6 +88,7 @@ const MaterialFinish = (props: MaterialFinishSelectProps) => {
         inline={props?.inline ? MaterialFinishPreview : undefined}
         isOptional={props?.isOptional ?? true}
         label={props?.label ?? "Finish"}
+        emptyMessage={emptyMessage}
         onChange={onChange}
         onCreateOption={(option) => {
           newFinishModal.onOpen();

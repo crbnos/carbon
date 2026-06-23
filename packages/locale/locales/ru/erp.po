@@ -71,7 +71,7 @@ msgid "+{0} more"
 msgstr "+{0} ещё"
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
-msgstr "<0>Добавить поставщика</0> для этого товара, чтобы установить предпочтительного поставщика."
+msgstr ""
 
 msgid "0-4 weeks"
 msgstr ""
@@ -169,8 +169,14 @@ msgstr "Инструмент — это физический предмет, и�
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "Пользователь записывает дату истечения срока для каждой партии или серийного номера при получении товара. Используйте, когда поставщики отправляют партии с разными датами истечения срока."
 
+msgid "abilities"
+msgstr ""
+
 msgid "Abilities"
 msgstr "Способности"
+
+msgid "ability"
+msgstr ""
 
 msgid "About"
 msgstr "О программе"
@@ -198,6 +204,9 @@ msgstr "Параметры учетной записи"
 
 msgid "Account Type"
 msgstr "Тип счета"
+
+msgid "accounting"
+msgstr ""
 
 msgid "Accounting"
 msgstr "Бухгалтерия"
@@ -405,6 +414,10 @@ msgstr "Добавить табель учета рабочего времени
 
 msgid "Add to stock for future use"
 msgstr "Добавить в запас для будущего использования"
+
+#. placeholder {0}: copy.noun
+msgid "Add your first {0}"
+msgstr ""
 
 msgid "Add-On"
 msgstr "Дополнительно"
@@ -942,11 +955,22 @@ msgstr "Как владелец компании, вы можете переда
 msgid "Ascending"
 msgstr "По возрастанию"
 
+#. placeholder {0}: copy.moduleLabel
+#. placeholder {1}: copy.noun
+msgid "Ask an admin with {0} permission to add the first {1}."
+msgstr ""
+
 msgid "Assembly:"
 msgstr "Сборка:"
 
 msgid "Asset"
 msgstr "Актив"
+
+msgid "asset class"
+msgstr ""
+
+msgid "asset classes"
+msgstr ""
 
 msgid "Asset Classes"
 msgstr "Классы активов"
@@ -1638,6 +1662,9 @@ msgstr "Режим консоли включен"
 msgid "Console Operator"
 msgstr "Оператор консоли"
 
+msgid "consumable"
+msgstr ""
+
 msgid "Consumable"
 msgstr "Расходный материал"
 
@@ -1647,17 +1674,26 @@ msgstr "Детали расходного материала"
 msgid "Consumable ID"
 msgstr "ID расходного материала"
 
+msgid "consumables"
+msgstr ""
+
 msgid "Consumables"
 msgstr "Расходные материалы"
 
 msgid "Consumed"
 msgstr "Потреблено"
 
+msgid "contact"
+msgstr ""
+
 msgid "Contact"
 msgstr "Контакт"
 
 msgid "Contact (optional)"
 msgstr "Контакт (опционально)"
+
+msgid "contacts"
+msgstr ""
 
 msgid "Contacts"
 msgstr "Контакты"
@@ -1833,8 +1869,14 @@ msgstr "Правильный ответ"
 msgid "Correct Answers"
 msgstr "Правильные ответы"
 
+msgid "cost center"
+msgstr ""
+
 msgid "Cost Center"
 msgstr "Центр затрат"
+
+msgid "cost centers"
+msgstr ""
 
 msgid "Cost Centers"
 msgstr "Центры затрат"
@@ -2094,6 +2136,9 @@ msgstr "Пользовательское поле"
 msgid "Custom Fields"
 msgstr "Пользовательские поля"
 
+msgid "customer"
+msgstr ""
+
 msgid "Customer"
 msgstr "Клиент"
 
@@ -2157,17 +2202,32 @@ msgstr "RFQ клиента"
 msgid "Customer Scope"
 msgstr "Область применения клиента"
 
+msgid "customer status"
+msgstr ""
+
 msgid "Customer Status"
 msgstr "Статус клиента"
+
+msgid "customer statuses"
+msgstr ""
 
 msgid "Customer Statuses"
 msgstr "Статусы клиентов"
 
+msgid "customer type"
+msgstr ""
+
 msgid "Customer Type"
 msgstr "Тип клиента"
 
+msgid "customer types"
+msgstr ""
+
 msgid "Customer Types"
 msgstr "Типы клиентов"
+
+msgid "customers"
+msgstr ""
 
 msgid "Customers"
 msgstr "Клиенты"
@@ -2572,11 +2632,17 @@ msgstr "Прогнозы спроса"
 msgid "Demand-Based"
 msgstr "На основе спроса"
 
+msgid "department"
+msgstr ""
+
 msgid "Department"
 msgstr "Отдел"
 
 msgid "Department Name"
 msgstr "Название отдела"
+
+msgid "departments"
+msgstr ""
 
 msgid "Departments"
 msgstr "Отделы"
@@ -2608,8 +2674,14 @@ msgstr "Цифровая котировка"
 msgid "Digital Quotes"
 msgstr "Цифровые предложения"
 
+msgid "dimension"
+msgstr ""
+
 msgid "Dimension"
 msgstr "Размер"
+
+msgid "dimensions"
+msgstr ""
 
 msgid "Dimensions"
 msgstr "Размеры"
@@ -3053,6 +3125,9 @@ msgstr "Письма"
 msgid "Emoji"
 msgstr "Эмодзи"
 
+msgid "employee"
+msgstr ""
+
 msgid "Employee"
 msgstr "Сотрудник"
 
@@ -3064,6 +3139,9 @@ msgstr "Тип сотрудника"
 
 msgid "Employee Types"
 msgstr "Типы сотрудников"
+
+msgid "employees"
+msgstr ""
 
 msgid "Employees"
 msgstr "Сотрудники"
@@ -3745,11 +3823,17 @@ msgstr "Фильтр"
 msgid "Finalize"
 msgstr "Завершить"
 
+msgid "finish"
+msgstr ""
+
 msgid "Finish"
 msgstr "Отделка"
 
 msgid "Finish To"
 msgstr "Завершить в"
+
+msgid "finishes"
+msgstr ""
 
 msgid "Finishes"
 msgstr "Отделки"
@@ -3818,6 +3902,9 @@ msgstr "Из хранилища"
 msgid "Fully trained for"
 msgstr "Полностью обучен для"
 
+msgid "gauge"
+msgstr ""
+
 msgid "Gauge"
 msgstr "Манометр"
 
@@ -3835,6 +3922,9 @@ msgstr "Тип датчика"
 
 msgid "Gauge Types"
 msgstr "Типы датчиков"
+
+msgid "gauges"
+msgstr ""
 
 msgid "Gauges"
 msgstr "Датчики"
@@ -3881,8 +3971,14 @@ msgstr "Доброе утро, {0}"
 msgid "Google Places API key not configured"
 msgstr "Ключ API Google Places не настроен"
 
+msgid "grade"
+msgstr ""
+
 msgid "Grade"
 msgstr "Сорт"
+
+msgid "grades"
+msgstr ""
 
 msgid "Grades"
 msgstr "Сорта"
@@ -4124,6 +4220,9 @@ msgstr "инв"
 msgid "Invalid Invite"
 msgstr "Недействительное приглашение"
 
+msgid "inventory"
+msgstr ""
+
 msgid "Inventory"
 msgstr "Инвентарь"
 
@@ -4259,8 +4358,14 @@ msgstr "Товар {scannedItem} не совпадает с товаром {expe
 msgid "Item filters"
 msgstr "Фильтры товаров"
 
+msgid "item group"
+msgstr ""
+
 msgid "Item Group"
 msgstr "Группа товаров"
+
+msgid "item groups"
+msgstr ""
 
 msgid "Item groups"
 msgstr "Группы товаров"
@@ -4519,11 +4624,17 @@ msgstr "Загрузка..."
 msgid "Loading…"
 msgstr "Загрузка…"
 
+msgid "location"
+msgstr ""
+
 msgid "Location"
 msgstr "Местоположение"
 
 msgid "Location Name"
 msgstr "Название местоположения"
+
+msgid "locations"
+msgstr ""
 
 msgid "Locations"
 msgstr "Местоположения"
@@ -4720,6 +4831,9 @@ msgstr "совпадает"
 msgid "Matching Pairs"
 msgstr "Парные соответствия"
 
+msgid "material"
+msgstr ""
+
 msgid "Material"
 msgstr "Материал"
 
@@ -4768,11 +4882,20 @@ msgstr "Материальное вещество"
 msgid "Material Substances"
 msgstr "Материальные вещества"
 
+msgid "material type"
+msgstr ""
+
 msgid "Material Type"
 msgstr "Тип материала"
 
+msgid "material types"
+msgstr ""
+
 msgid "Material Types"
 msgstr "Типы материалов"
+
+msgid "materials"
+msgstr ""
 
 msgid "Materials"
 msgstr "Материалы"
@@ -5259,6 +5382,10 @@ msgstr "Нет"
 #. placeholder {0}: node.name.toLowerCase()
 msgid "No {0} found"
 msgstr "Не найдено {0}"
+
+#. placeholder {0}: copy.pluralNoun
+msgid "No {0} yet"
+msgstr ""
 
 msgid "No abilities added"
 msgstr "Нет добавленных навыков"
@@ -5804,6 +5931,9 @@ msgstr "Родительское хранилище"
 msgid "Pareto by Type"
 msgstr "Парето по типам"
 
+msgid "part"
+msgstr ""
+
 msgid "Part"
 msgstr "Деталь"
 
@@ -5825,6 +5955,9 @@ msgstr "Партнер"
 msgid "Partners"
 msgstr "Партнеры"
 
+msgid "parts"
+msgstr ""
+
 msgid "Parts"
 msgstr "Детали"
 
@@ -5840,8 +5973,14 @@ msgstr "Платеж"
 msgid "Payment Method"
 msgstr "Способ оплаты"
 
+msgid "payment term"
+msgstr ""
+
 msgid "Payment Term"
 msgstr "Условие платежа"
+
+msgid "payment terms"
+msgstr ""
 
 msgid "Payment Terms"
 msgstr "Условия платежа"
@@ -5866,6 +6005,9 @@ msgstr "Водяной знак PDF"
 
 msgid "Pending"
 msgstr "Ожидание"
+
+msgid "people"
+msgstr ""
 
 msgid "People"
 msgstr "Люди"
@@ -6166,11 +6308,20 @@ msgstr "Политика конфиденциальности"
 msgid "Private"
 msgstr "Приватный"
 
+msgid "procedure"
+msgstr ""
+
 msgid "Procedure"
 msgstr "Процедура"
 
+msgid "procedures"
+msgstr ""
+
 msgid "Procedures"
 msgstr "Процедуры"
+
+msgid "process"
+msgstr ""
 
 msgid "Process"
 msgstr "Процесс"
@@ -6181,8 +6332,14 @@ msgstr "Название процесса"
 msgid "Process Type"
 msgstr "Тип процесса"
 
+msgid "processes"
+msgstr ""
+
 msgid "Processes"
 msgstr "Процессы"
+
+msgid "production"
+msgstr ""
 
 msgid "Production"
 msgstr "Производство"
@@ -6318,6 +6475,9 @@ msgstr "Единица покупки:"
 msgid "Purchased"
 msgstr "Закупленный"
 
+msgid "purchasing"
+msgstr ""
+
 msgid "Purchasing"
 msgstr "Закупки"
 
@@ -6354,6 +6514,9 @@ msgstr "Кол-во переработано"
 
 msgid "Qty. Scrapped"
 msgstr "Кол-во брака"
+
+msgid "quality"
+msgstr ""
 
 msgid "Quality"
 msgstr "Качество"
@@ -6756,6 +6919,9 @@ msgstr "Разрешите эти проблемы перед завершени
 msgid "Resolved Price"
 msgstr "Разрешённая цена"
 
+msgid "resources"
+msgstr ""
+
 msgid "Resources"
 msgstr "Ресурсы"
 
@@ -6899,6 +7065,9 @@ msgstr "Страховой запас:"
 msgid "Sale Price"
 msgstr "Цена продажи"
 
+msgid "sales"
+msgstr ""
+
 msgid "Sales"
 msgstr "Продажи"
 
@@ -7038,8 +7207,14 @@ msgstr "Количество брака"
 msgid "Scrap Quantity Per Job"
 msgstr "Количество брака на задание"
 
+msgid "scrap reason"
+msgstr ""
+
 msgid "Scrap Reason"
 msgstr "Причина брака"
+
+msgid "scrap reasons"
+msgstr ""
 
 msgid "Scrap Reasons"
 msgstr "Причины брака"
@@ -7189,6 +7364,9 @@ msgstr "Выберите тип элемента"
 msgid "Select items"
 msgstr "Выберите товары"
 
+msgid "Select method..."
+msgstr ""
+
 msgid "Select Printer"
 msgstr "Выберите принтер"
 
@@ -7283,6 +7461,12 @@ msgstr "Отслеживание по серийным номерам"
 msgid "Serial/Batch #"
 msgstr "Серийный номер/Партия №"
 
+msgid "service"
+msgstr ""
+
+msgid "services"
+msgstr ""
+
 msgid "Set Clock Out"
 msgstr "Установить время выхода"
 
@@ -7332,8 +7516,14 @@ msgstr "Серьезности"
 msgid "Severity"
 msgstr "Серьезность"
 
+msgid "shape"
+msgstr ""
+
 msgid "Shape"
 msgstr "Форма"
+
+msgid "shapes"
+msgstr ""
 
 msgid "Shapes"
 msgstr "Формы"
@@ -7368,11 +7558,17 @@ msgstr "Срок годности"
 msgid "Shelf-Life History"
 msgstr "История сроков годности"
 
+msgid "shift"
+msgstr ""
+
 msgid "Shift"
 msgstr "Смена"
 
 msgid "Shift Name"
 msgstr "Название смены"
+
+msgid "shifts"
+msgstr ""
 
 msgid "Shifts"
 msgstr "Смены"
@@ -7425,8 +7621,14 @@ msgstr "Клиент доставки"
 msgid "Shipping Location"
 msgstr "Место доставки"
 
+msgid "shipping method"
+msgstr ""
+
 msgid "Shipping Method"
 msgstr "Способ доставки"
+
+msgid "shipping methods"
+msgstr ""
 
 msgid "Shipping Methods"
 msgstr "Методы доставки"
@@ -7520,6 +7722,9 @@ msgstr "Пропускать запланированное техническо
 
 msgid "Skipped"
 msgstr "Пропущено"
+
+msgid "so you can assign it here."
+msgstr ""
 
 msgid "Something went wrong"
 msgstr ""
@@ -7705,14 +7910,26 @@ msgstr "Клиент хранилища недоступен"
 msgid "Storage Rules"
 msgstr "Правила хранения"
 
+msgid "storage type"
+msgstr ""
+
 msgid "Storage Type"
 msgstr "Тип хранилища"
+
+msgid "storage types"
+msgstr ""
 
 msgid "Storage Types"
 msgstr "Типы хранилищ"
 
+msgid "storage unit"
+msgstr ""
+
 msgid "Storage Unit"
 msgstr "Единица хранения"
+
+msgid "storage units"
+msgstr ""
 
 msgid "Storage Units"
 msgstr "Единицы хранения"
@@ -7750,8 +7967,14 @@ msgstr "Отправить проверку"
 msgid "Submitted By"
 msgstr "Отправлено"
 
+msgid "substance"
+msgstr ""
+
 msgid "Substance"
 msgstr "Вещество"
+
+msgid "substances"
+msgstr ""
 
 msgid "Substances"
 msgstr "Вещества"
@@ -7788,6 +8011,9 @@ msgstr "Предложения"
 
 msgid "Sunday"
 msgstr "Воскресенье"
+
+msgid "supplier"
+msgstr ""
 
 msgid "Supplier"
 msgstr "Поставщик"
@@ -7828,6 +8054,12 @@ msgstr "Номер детали поставщика"
 msgid "Supplier Parts"
 msgstr "Детали поставщика"
 
+msgid "supplier process"
+msgstr ""
+
+msgid "supplier processes"
+msgstr ""
+
 msgid "Supplier Processes"
 msgstr "Процессы поставщика"
 
@@ -7858,8 +8090,14 @@ msgstr "Ссылка поставщика"
 msgid "Supplier Status"
 msgstr "Статус поставщика"
 
+msgid "supplier type"
+msgstr ""
+
 msgid "Supplier Type"
 msgstr "Тип поставщика"
+
+msgid "supplier types"
+msgstr ""
 
 msgid "Supplier Types"
 msgstr "Типы поставщиков"
@@ -7872,6 +8110,9 @@ msgstr "Поставщик обновлен"
 
 msgid "Supplier:"
 msgstr "Поставщик:"
+
+msgid "suppliers"
+msgstr ""
 
 msgid "Suppliers"
 msgstr "Поставщики"
@@ -8243,6 +8484,9 @@ msgstr "Допуск+"
 msgid "Tolerance (+/-)"
 msgstr "Допуск (+/-)"
 
+msgid "tool"
+msgstr ""
+
 msgid "Tool"
 msgstr "Инструмент"
 
@@ -8251,6 +8495,9 @@ msgstr "Детали инструмента"
 
 msgid "Tool ID"
 msgstr "ID инструмента"
+
+msgid "tools"
+msgstr ""
 
 msgid "Tools"
 msgstr "Инструменты"
@@ -8423,6 +8670,9 @@ msgstr "Единица"
 msgid "Unit Cost"
 msgstr "Стоимость единицы"
 
+msgid "unit of measure"
+msgstr ""
+
 msgid "Unit of Measure"
 msgstr "Единица измерения"
 
@@ -8440,6 +8690,9 @@ msgstr "Цена продажи за единицу"
 
 msgid "Units"
 msgstr "Единицы"
+
+msgid "units of measure"
+msgstr ""
 
 msgid "Unknown"
 msgstr "Неизвестно"
@@ -8624,6 +8877,9 @@ msgstr "Используется для категоризации товаро�
 
 msgid "User"
 msgstr "Пользователь"
+
+msgid "users"
+msgstr ""
 
 msgid "Users"
 msgstr "Пользователи"
@@ -8968,11 +9224,17 @@ msgstr "Логотип в тёмном режиме"
 msgid "Wordmark Light Mode"
 msgstr "Логотип светлого режима"
 
+msgid "work center"
+msgstr ""
+
 msgid "Work Center"
 msgstr "Рабочий центр"
 
 msgid "Work Center Utilization"
 msgstr "Использование рабочего центра"
+
+msgid "work centers"
+msgstr ""
 
 msgid "Work Centers"
 msgstr "Рабочие центры"

@@ -3,6 +3,7 @@ import { Combobox } from "@carbon/form";
 import { useMemo } from "react";
 import type { ServiceType } from "~/modules/items";
 import { useServices } from "~/stores";
+import { useEmptyState } from "./emptyStates";
 
 type ServiceSelectProps = Omit<ComboboxProps, "options"> & {
   serviceType?: ServiceType;
@@ -20,8 +21,15 @@ const Service = ({ serviceType, ...props }: ServiceSelectProps) => {
     [services]
   );
 
+  const emptyMessage = useEmptyState("service");
+
   return (
-    <Combobox options={options} {...props} label={props?.label ?? "Service"} />
+    <Combobox
+      options={options}
+      emptyMessage={emptyMessage}
+      {...props}
+      label={props?.label ?? "Service"}
+    />
   );
 };
 

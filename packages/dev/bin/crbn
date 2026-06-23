@@ -24,7 +24,9 @@ if command -v node >/dev/null 2>&1; then
   node_ver="$(node -v)"
   node_major="${node_ver#v}"
   node_major="${node_major%%.*}"
-  if [[ "$node_major" -lt 22 ]]; then
+  # Guard non-numeric majors (nightly/RC builds) so the arithmetic test below
+  # doesn't abort with a cryptic "unbound variable" under `set -u`.
+  if ! [[ "$node_major" =~ ^[0-9]+$ ]] || (( node_major < 22 )); then
     printf '\033[1;31m✗\033[0m crbn requires Node.js 22+ (found %s)\n' "$node_ver" >&2
     exit 1
   fi
@@ -406,6 +408,10 @@ crbn — Carbon dev CLI
     crbn copy <file...>             Copy file(s) from main checkout.
     crbn env sync                   Sync package.json#crbn.copy from main.
 
+  Misc:
+    crbn --version                  Print crbn commit + node version.
+    crbn --help                     Show this help.
+
 USAGE
 }
 
@@ -419,6 +425,10 @@ cmd="${1:-}"
 case "$cmd" in
   ""|help|-h|--help)
     print_help
+    ;;
+  -v|--version)
+    sha="$(cd "$(repo_root 2>/dev/null)" 2>/dev/null && git rev-parse --short HEAD 2>/dev/null || true)"
+    printf 'crbn (carbon dev cli) — commit %s, node %s\n' "${sha:-unknown}" "$(node -v)"
     ;;
   checkout)
     cmd_checkout "$@"

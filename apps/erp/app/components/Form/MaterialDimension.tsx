@@ -9,6 +9,7 @@ import type {
 } from "~/modules/items";
 import MaterialDimensionForm from "~/modules/items/ui/MaterialDimensions/MaterialDimensionForm";
 import { path } from "~/utils/path";
+import { useEmptyState } from "./emptyStates";
 
 type MaterialDimensionSelectProps = Omit<
   ComboboxProps,
@@ -72,6 +73,11 @@ const MaterialDimension = (props: MaterialDimensionSelectProps) => {
     props.onChange?.(dimension as MaterialDimensionType | null);
   };
 
+  const emptyMessage = useEmptyState(
+    "materialDimension",
+    props.formId ? { onCreate: () => newDimensionModal.onOpen() } : undefined
+  );
+
   return (
     <>
       <CreatableCombobox
@@ -82,6 +88,7 @@ const MaterialDimension = (props: MaterialDimensionSelectProps) => {
         inline={props?.inline ? MaterialDimensionPreview : undefined}
         isOptional={props?.isOptional ?? true}
         label={props?.label ?? "Dimensions"}
+        emptyMessage={emptyMessage}
         onChange={onChange}
         onCreateOption={(option) => {
           newDimensionModal.onOpen();

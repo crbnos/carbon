@@ -2,8 +2,7 @@ import { getLocalTimeZone, today } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { address, contact } from "~/types/validators";
-import { taxExemptionReasons } from "../sales/sales.models";
-import { incoterms, methodItemType } from "../shared";
+import { incoterms, methodItemType, taxExemptionReasons } from "../shared";
 
 export const KPIs = [
   {

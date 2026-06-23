@@ -158,6 +158,19 @@ export const sourcingType = [
   "Ship from Inventory"
 ] as const;
 
+export const taxExemptionReasons = [
+  "Resale",
+  "Government",
+  "Nonprofit",
+  "Agriculture",
+  "Industrial",
+  "Export",
+  "Medical",
+  "Educational",
+  "Religious",
+  "Other"
+] as const;
+
 export const validMethodTypesByReplenishment: Record<
   string,
   readonly (typeof methodType)[number][]

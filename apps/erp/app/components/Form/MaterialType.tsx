@@ -6,6 +6,7 @@ import { useFetcher } from "react-router";
 import type { getMaterialTypeList } from "~/modules/items";
 import MaterialTypeForm from "~/modules/items/ui/MaterialTypes/MaterialTypeForm";
 import { path } from "~/utils/path";
+import { useEmptyState } from "./emptyStates";
 
 type MaterialTypeSelectProps = Omit<
   ComboboxProps,
@@ -49,11 +50,16 @@ const MaterialType = (props: MaterialTypeSelectProps) => {
     props.onChange?.(materialType);
   };
 
+  const emptyMessage = useEmptyState("materialType", {
+    onCreate: () => newTypeModal.onOpen()
+  });
+
   return (
     <>
       <CreatableCombobox
         ref={triggerRef}
         options={options}
+        emptyMessage={emptyMessage}
         {...props}
         disabled={props.disabled || !props.substanceId || !props.formId}
         inline={props?.inline ? MaterialTypePreview : undefined}

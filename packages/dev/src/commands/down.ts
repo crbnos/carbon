@@ -4,7 +4,12 @@ import { syncAppPortlessConfigs } from "../env.js";
 import { currentBranch } from "../git.js";
 import { stopStack } from "../services/compose.js";
 import { branchToPrefix, unregisterAliases } from "../services/portless.js";
-import { getWorktreeRoot, projectName, resolveSlug } from "../worktree.js";
+import {
+  ensureSlugAvailable,
+  getWorktreeRoot,
+  projectName,
+  resolveSlug
+} from "../worktree.js";
 
 // silent: post-SIGINT path. clack tasks/spinner would EIO via setRawMode on
 // the freshly-interrupted stdin; fall back to plain printf progress.
@@ -12,6 +17,10 @@ export async function down(opts: { silent?: boolean } = {}) {
   const root = await getWorktreeRoot();
   const slug = resolveSlug(root);
   const project = projectName(slug);
+
+  // Refuse to tear down a stack that another worktree owns (same slug, different
+  // path). Passes for our own stack and when nothing is running.
+  await ensureSlugAvailable(slug, root);
 
   if (opts.silent) {
     return runPlain(root, slug, project);

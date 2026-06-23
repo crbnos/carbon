@@ -71,7 +71,7 @@ msgid "+{0} more"
 msgstr "+{0} 件以上"
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
-msgstr "<0>サプライヤー部品を追加</0>このアイテムの優先サプライヤーを設定します。"
+msgstr ""
 
 msgid "0-4 weeks"
 msgstr ""
@@ -169,8 +169,14 @@ msgstr "ツールは、複数のジョブで使用できるパーツを作成す
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "ユーザーが商品を受け取る際に、各バッチまたはシリアルの有効期限を記録します。サプライヤーが異なる有効期限のロットを出荷する場合に使用します。"
 
+msgid "abilities"
+msgstr ""
+
 msgid "Abilities"
 msgstr "能力"
+
+msgid "ability"
+msgstr ""
 
 msgid "About"
 msgstr "について"
@@ -198,6 +204,9 @@ msgstr "アカウント設定"
 
 msgid "Account Type"
 msgstr "勘定科目タイプ"
+
+msgid "accounting"
+msgstr ""
 
 msgid "Accounting"
 msgstr "会計"
@@ -405,6 +414,10 @@ msgstr "タイムカードを追加"
 
 msgid "Add to stock for future use"
 msgstr "将来の使用のためにストックに追加"
+
+#. placeholder {0}: copy.noun
+msgid "Add your first {0}"
+msgstr ""
 
 msgid "Add-On"
 msgstr "アドオン"
@@ -942,11 +955,22 @@ msgstr "会社のオーナーとして、別の従業員に所有権を譲渡で
 msgid "Ascending"
 msgstr "昇順"
 
+#. placeholder {0}: copy.moduleLabel
+#. placeholder {1}: copy.noun
+msgid "Ask an admin with {0} permission to add the first {1}."
+msgstr ""
+
 msgid "Assembly:"
 msgstr "アセンブリ:"
 
 msgid "Asset"
 msgstr "資産"
+
+msgid "asset class"
+msgstr ""
+
+msgid "asset classes"
+msgstr ""
 
 msgid "Asset Classes"
 msgstr "資産クラス"
@@ -1638,6 +1662,9 @@ msgstr "コンソールモードが有効です"
 msgid "Console Operator"
 msgstr "コンソールオペレーター"
 
+msgid "consumable"
+msgstr ""
+
 msgid "Consumable"
 msgstr "消耗品"
 
@@ -1647,17 +1674,26 @@ msgstr "消耗品の詳細"
 msgid "Consumable ID"
 msgstr "消耗品ID"
 
+msgid "consumables"
+msgstr ""
+
 msgid "Consumables"
 msgstr "消耗品"
 
 msgid "Consumed"
 msgstr "消費済み"
 
+msgid "contact"
+msgstr ""
+
 msgid "Contact"
 msgstr "連絡先"
 
 msgid "Contact (optional)"
 msgstr "連絡先（オプション）"
+
+msgid "contacts"
+msgstr ""
 
 msgid "Contacts"
 msgstr "連絡先"
@@ -1833,8 +1869,14 @@ msgstr "正解"
 msgid "Correct Answers"
 msgstr "正解"
 
+msgid "cost center"
+msgstr ""
+
 msgid "Cost Center"
 msgstr "コストセンター"
+
+msgid "cost centers"
+msgstr ""
 
 msgid "Cost Centers"
 msgstr "コストセンター"
@@ -2094,6 +2136,9 @@ msgstr "カスタムフィールド"
 msgid "Custom Fields"
 msgstr "カスタムフィールド"
 
+msgid "customer"
+msgstr ""
+
 msgid "Customer"
 msgstr "顧客"
 
@@ -2157,17 +2202,32 @@ msgstr "顧客RFQ"
 msgid "Customer Scope"
 msgstr "顧客スコープ"
 
+msgid "customer status"
+msgstr ""
+
 msgid "Customer Status"
 msgstr "顧客ステータス"
+
+msgid "customer statuses"
+msgstr ""
 
 msgid "Customer Statuses"
 msgstr "顧客ステータス"
 
+msgid "customer type"
+msgstr ""
+
 msgid "Customer Type"
 msgstr "顧客タイプ"
 
+msgid "customer types"
+msgstr ""
+
 msgid "Customer Types"
 msgstr "顧客タイプ"
+
+msgid "customers"
+msgstr ""
 
 msgid "Customers"
 msgstr "顧客"
@@ -2572,11 +2632,17 @@ msgstr "需要予測"
 msgid "Demand-Based"
 msgstr "需要ベース"
 
+msgid "department"
+msgstr ""
+
 msgid "Department"
 msgstr "部門"
 
 msgid "Department Name"
 msgstr "部門名"
+
+msgid "departments"
+msgstr ""
 
 msgid "Departments"
 msgstr "部門"
@@ -2608,8 +2674,14 @@ msgstr "デジタル見積"
 msgid "Digital Quotes"
 msgstr "デジタル見積"
 
+msgid "dimension"
+msgstr ""
+
 msgid "Dimension"
 msgstr "寸法"
+
+msgid "dimensions"
+msgstr ""
 
 msgid "Dimensions"
 msgstr "寸法"
@@ -3053,6 +3125,9 @@ msgstr "メール"
 msgid "Emoji"
 msgstr "絵文字"
 
+msgid "employee"
+msgstr ""
+
 msgid "Employee"
 msgstr "従業員"
 
@@ -3064,6 +3139,9 @@ msgstr "従業員タイプ"
 
 msgid "Employee Types"
 msgstr "従業員タイプ"
+
+msgid "employees"
+msgstr ""
 
 msgid "Employees"
 msgstr "従業員"
@@ -3745,11 +3823,17 @@ msgstr "フィルター"
 msgid "Finalize"
 msgstr "確定"
 
+msgid "finish"
+msgstr ""
+
 msgid "Finish"
 msgstr "仕上げ"
 
 msgid "Finish To"
 msgstr "完成先"
+
+msgid "finishes"
+msgstr ""
 
 msgid "Finishes"
 msgstr "仕上げ"
@@ -3818,6 +3902,9 @@ msgstr "保管場所から"
 msgid "Fully trained for"
 msgstr "完全に訓練済み"
 
+msgid "gauge"
+msgstr ""
+
 msgid "Gauge"
 msgstr "ゲージ"
 
@@ -3835,6 +3922,9 @@ msgstr "ゲージタイプ"
 
 msgid "Gauge Types"
 msgstr "ゲージタイプ"
+
+msgid "gauges"
+msgstr ""
 
 msgid "Gauges"
 msgstr "ゲージ"
@@ -3881,8 +3971,14 @@ msgstr "おはようございます、{0}"
 msgid "Google Places API key not configured"
 msgstr "Google Places APIキーが設定されていません"
 
+msgid "grade"
+msgstr ""
+
 msgid "Grade"
 msgstr "等級"
+
+msgid "grades"
+msgstr ""
 
 msgid "Grades"
 msgstr "等級"
@@ -4124,6 +4220,9 @@ msgstr "在庫"
 msgid "Invalid Invite"
 msgstr "無効な招待"
 
+msgid "inventory"
+msgstr ""
+
 msgid "Inventory"
 msgstr "在庫"
 
@@ -4259,8 +4358,14 @@ msgstr "アイテム {scannedItem} は、アイテム {expectedItem} と同じ�
 msgid "Item filters"
 msgstr "アイテムフィルター"
 
+msgid "item group"
+msgstr ""
+
 msgid "Item Group"
 msgstr "品目グループ"
+
+msgid "item groups"
+msgstr ""
 
 msgid "Item groups"
 msgstr "アイテムグループ"
@@ -4519,11 +4624,17 @@ msgstr "読み込み中..."
 msgid "Loading…"
 msgstr "読み込み中…"
 
+msgid "location"
+msgstr ""
+
 msgid "Location"
 msgstr "ロケーション"
 
 msgid "Location Name"
 msgstr "ロケーション名"
+
+msgid "locations"
+msgstr ""
 
 msgid "Locations"
 msgstr "ロケーション"
@@ -4720,6 +4831,9 @@ msgstr "一致する"
 msgid "Matching Pairs"
 msgstr "マッチングペア"
 
+msgid "material"
+msgstr ""
+
 msgid "Material"
 msgstr "材料"
 
@@ -4768,11 +4882,20 @@ msgstr "材料物質"
 msgid "Material Substances"
 msgstr "材料物質"
 
+msgid "material type"
+msgstr ""
+
 msgid "Material Type"
 msgstr "材料タイプ"
 
+msgid "material types"
+msgstr ""
+
 msgid "Material Types"
 msgstr "材料タイプ"
+
+msgid "materials"
+msgstr ""
 
 msgid "Materials"
 msgstr "材料"
@@ -5259,6 +5382,10 @@ msgstr "いいえ"
 #. placeholder {0}: node.name.toLowerCase()
 msgid "No {0} found"
 msgstr "{0}が見つかりません"
+
+#. placeholder {0}: copy.pluralNoun
+msgid "No {0} yet"
+msgstr ""
 
 msgid "No abilities added"
 msgstr "能力が追加されていません"
@@ -5804,6 +5931,9 @@ msgstr "親保管ユニット"
 msgid "Pareto by Type"
 msgstr "タイプ別パレート"
 
+msgid "part"
+msgstr ""
+
 msgid "Part"
 msgstr "部品"
 
@@ -5825,6 +5955,9 @@ msgstr "パートナー"
 msgid "Partners"
 msgstr "パートナー"
 
+msgid "parts"
+msgstr ""
+
 msgid "Parts"
 msgstr "部品"
 
@@ -5840,8 +5973,14 @@ msgstr "支払い"
 msgid "Payment Method"
 msgstr "支払い方法"
 
+msgid "payment term"
+msgstr ""
+
 msgid "Payment Term"
 msgstr "支払条件"
+
+msgid "payment terms"
+msgstr ""
 
 msgid "Payment Terms"
 msgstr "支払条件"
@@ -5866,6 +6005,9 @@ msgstr "PDF透かし"
 
 msgid "Pending"
 msgstr "保留中"
+
+msgid "people"
+msgstr ""
 
 msgid "People"
 msgstr "人"
@@ -6166,11 +6308,20 @@ msgstr "プライバシーポリシー"
 msgid "Private"
 msgstr "プライベート"
 
+msgid "procedure"
+msgstr ""
+
 msgid "Procedure"
 msgstr "手順"
 
+msgid "procedures"
+msgstr ""
+
 msgid "Procedures"
 msgstr "手順"
+
+msgid "process"
+msgstr ""
 
 msgid "Process"
 msgstr "プロセス"
@@ -6181,8 +6332,14 @@ msgstr "プロセス名"
 msgid "Process Type"
 msgstr "プロセスタイプ"
 
+msgid "processes"
+msgstr ""
+
 msgid "Processes"
 msgstr "プロセス"
+
+msgid "production"
+msgstr ""
 
 msgid "Production"
 msgstr "生産"
@@ -6318,6 +6475,9 @@ msgstr "購入単位:"
 msgid "Purchased"
 msgstr "購入済み"
 
+msgid "purchasing"
+msgstr ""
+
 msgid "Purchasing"
 msgstr "購買"
 
@@ -6354,6 +6514,9 @@ msgstr "数量。再加工"
 
 msgid "Qty. Scrapped"
 msgstr "数量。スクラップ"
+
+msgid "quality"
+msgstr ""
 
 msgid "Quality"
 msgstr "品質"
@@ -6756,6 +6919,9 @@ msgstr "NCRを完了する前にこれらを解決してください。すべて
 msgid "Resolved Price"
 msgstr "解決済み価格"
 
+msgid "resources"
+msgstr ""
+
 msgid "Resources"
 msgstr "リソース"
 
@@ -6899,6 +7065,9 @@ msgstr "安全在庫:"
 msgid "Sale Price"
 msgstr "販売価格"
 
+msgid "sales"
+msgstr ""
+
 msgid "Sales"
 msgstr "営業"
 
@@ -7038,8 +7207,14 @@ msgstr "スクラップ数量"
 msgid "Scrap Quantity Per Job"
 msgstr "ジョブあたりのスクラップ数量"
 
+msgid "scrap reason"
+msgstr ""
+
 msgid "Scrap Reason"
 msgstr "スクラップ理由"
+
+msgid "scrap reasons"
+msgstr ""
 
 msgid "Scrap Reasons"
 msgstr "スクラップ理由"
@@ -7189,6 +7364,9 @@ msgstr "アイテムタイプを選択"
 msgid "Select items"
 msgstr "アイテムを選択"
 
+msgid "Select method..."
+msgstr ""
+
 msgid "Select Printer"
 msgstr "プリンターを選択"
 
@@ -7283,6 +7461,12 @@ msgstr "シリアル追跡"
 msgid "Serial/Batch #"
 msgstr "シリアル/バッチ #"
 
+msgid "service"
+msgstr ""
+
+msgid "services"
+msgstr ""
+
 msgid "Set Clock Out"
 msgstr "クロックアウトを設定"
 
@@ -7332,8 +7516,14 @@ msgstr "重大度"
 msgid "Severity"
 msgstr "重大度"
 
+msgid "shape"
+msgstr ""
+
 msgid "Shape"
 msgstr "形状"
+
+msgid "shapes"
+msgstr ""
 
 msgid "Shapes"
 msgstr "形状"
@@ -7368,11 +7558,17 @@ msgstr "棚卸し寿命"
 msgid "Shelf-Life History"
 msgstr "賞味期限履歴"
 
+msgid "shift"
+msgstr ""
+
 msgid "Shift"
 msgstr "シフト"
 
 msgid "Shift Name"
 msgstr "シフト名"
+
+msgid "shifts"
+msgstr ""
 
 msgid "Shifts"
 msgstr "シフト"
@@ -7425,8 +7621,14 @@ msgstr "配送顧客"
 msgid "Shipping Location"
 msgstr "配送場所"
 
+msgid "shipping method"
+msgstr ""
+
 msgid "Shipping Method"
 msgstr "配送方法"
+
+msgid "shipping methods"
+msgstr ""
 
 msgid "Shipping Methods"
 msgstr "配送方法"
@@ -7520,6 +7722,9 @@ msgstr "会社の祝日に予定されたメンテナンスをスキップする
 
 msgid "Skipped"
 msgstr "スキップ"
+
+msgid "so you can assign it here."
+msgstr ""
 
 msgid "Something went wrong"
 msgstr ""
@@ -7705,14 +7910,26 @@ msgstr "ストレージクライアントが利用できません"
 msgid "Storage Rules"
 msgstr "保管ルール"
 
+msgid "storage type"
+msgstr ""
+
 msgid "Storage Type"
 msgstr "ストレージタイプ"
+
+msgid "storage types"
+msgstr ""
 
 msgid "Storage Types"
 msgstr "ストレージタイプ"
 
+msgid "storage unit"
+msgstr ""
+
 msgid "Storage Unit"
 msgstr "保管単位"
+
+msgid "storage units"
+msgstr ""
 
 msgid "Storage Units"
 msgstr "保管単位"
@@ -7750,8 +7967,14 @@ msgstr "検査を送信"
 msgid "Submitted By"
 msgstr "提出者"
 
+msgid "substance"
+msgstr ""
+
 msgid "Substance"
 msgstr "物質"
+
+msgid "substances"
+msgstr ""
 
 msgid "Substances"
 msgstr "物質"
@@ -7788,6 +8011,9 @@ msgstr "提案"
 
 msgid "Sunday"
 msgstr "日曜日"
+
+msgid "supplier"
+msgstr ""
 
 msgid "Supplier"
 msgstr "サプライヤー"
@@ -7828,6 +8054,12 @@ msgstr "仕入先部品番号"
 msgid "Supplier Parts"
 msgstr "サプライヤー部品"
 
+msgid "supplier process"
+msgstr ""
+
+msgid "supplier processes"
+msgstr ""
+
 msgid "Supplier Processes"
 msgstr "サプライヤープロセス"
 
@@ -7858,8 +8090,14 @@ msgstr "仕入先参照"
 msgid "Supplier Status"
 msgstr "仕入先ステータス"
 
+msgid "supplier type"
+msgstr ""
+
 msgid "Supplier Type"
 msgstr "仕入先タイプ"
+
+msgid "supplier types"
+msgstr ""
 
 msgid "Supplier Types"
 msgstr "サプライヤータイプ"
@@ -7872,6 +8110,9 @@ msgstr "サプライヤーが更新されました"
 
 msgid "Supplier:"
 msgstr "サプライヤー:"
+
+msgid "suppliers"
+msgstr ""
 
 msgid "Suppliers"
 msgstr "サプライヤー"
@@ -8243,6 +8484,9 @@ msgstr "許容差+"
 msgid "Tolerance (+/-)"
 msgstr "許容範囲 (+/-)"
 
+msgid "tool"
+msgstr ""
+
 msgid "Tool"
 msgstr "工具"
 
@@ -8251,6 +8495,9 @@ msgstr "ツール詳細"
 
 msgid "Tool ID"
 msgstr "ツールID"
+
+msgid "tools"
+msgstr ""
 
 msgid "Tools"
 msgstr "ツール"
@@ -8423,6 +8670,9 @@ msgstr "単位"
 msgid "Unit Cost"
 msgstr "単価"
 
+msgid "unit of measure"
+msgstr ""
+
 msgid "Unit of Measure"
 msgstr "測定単位"
 
@@ -8440,6 +8690,9 @@ msgstr "単価販売価格"
 
 msgid "Units"
 msgstr "単位"
+
+msgid "units of measure"
+msgstr ""
 
 msgid "Unknown"
 msgstr "不明"
@@ -8624,6 +8877,9 @@ msgstr "レポートと分析のためにアイテムを分類するために使
 
 msgid "User"
 msgstr "ユーザー"
+
+msgid "users"
+msgstr ""
 
 msgid "Users"
 msgstr "ユーザー"
@@ -8968,11 +9224,17 @@ msgstr "ワードマーク ダークモード"
 msgid "Wordmark Light Mode"
 msgstr "ワードマーク ライトモード"
 
+msgid "work center"
+msgstr ""
+
 msgid "Work Center"
 msgstr "ワークセンター"
 
 msgid "Work Center Utilization"
 msgstr "ワークセンター稼働率"
+
+msgid "work centers"
+msgstr ""
 
 msgid "Work Centers"
 msgstr "作業センター"

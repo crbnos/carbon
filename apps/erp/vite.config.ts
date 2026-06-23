@@ -39,9 +39,6 @@ export default defineConfig(({ isSsrBuild, mode }) => {
       port: 3000,
       strictPort: true,
       allowedHosts: [".ngrok-free.app", ".ngrok-free.dev", ".dev", ".localhost"],
-      watch: {
-        awaitWriteFinish: { stabilityThreshold: 250 },
-      },
     },
     plugins: [
       tailwindcss(),

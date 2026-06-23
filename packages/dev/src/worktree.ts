@@ -186,6 +186,20 @@ export function listSlugs(): Registry {
   return readRegistry();
 }
 
+// Find the slug whose registry entry points at `worktreeRoot`. Uses canonical
+// path comparison (resolves symlinks / trailing slashes) like `resolveSlot` —
+// a raw `===` misses worktrees under symlinked parents (e.g. macOS /var, /tmp),
+// so `crbn remove`/`list` wouldn't find the slug and would leak the stack/ports.
+export function slugForWorktreePath(
+  worktreeRoot: string,
+  registry: Registry = readRegistry()
+): string | null {
+  for (const [slug, entry] of Object.entries(registry)) {
+    if (sameWorktreePath(entry.worktreeRoot, worktreeRoot)) return slug;
+  }
+  return null;
+}
+
 export function removeSlot(slug: string) {
   const registry = readRegistry();
   if (!(slug in registry)) return;

@@ -48,13 +48,21 @@ export async function waitForPort(
  * Invoke `onLine` once per line from `stream`. Backed by node's native
  * `readline.createInterface`, which buffers in C++ and avoids the per-chunk
  * `buf += chunk.toString(); split('\n')` allocations we used to do by hand.
+ *
+ * Returns a disposer — call it (e.g. on child exit) to close the interface and
+ * drop its listeners. Long-lived, restarting children (the app supervisor)
+ * would otherwise leak a readline interface per respawn. A stream `error`
+ * (child killed mid-read) closes the interface instead of going uncaught.
  */
 export function readLines(
   stream: NodeJS.ReadableStream,
   onLine: (line: string) => void
-): void {
+): () => void {
   const rl = createInterface({ input: stream, crlfDelay: Infinity });
   rl.on("line", onLine);
+  const close = () => rl.close();
+  stream.on("error", close);
+  return close;
 }
 
 // ---------------------------------------------------------------------------

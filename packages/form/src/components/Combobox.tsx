@@ -8,6 +8,7 @@ import {
   FormLabel,
   LabelWithHelp
 } from "@carbon/react";
+import type { ReactNode } from "react";
 import { useEffect } from "react";
 import { flushSync } from "react-dom";
 import { useControlField, useField } from "../hooks";
@@ -21,6 +22,7 @@ export type ComboboxProps = Omit<ComboboxBaseProps, "onChange"> & {
   isOptional?: boolean;
   isRequired?: boolean;
   helperText?: string;
+  emptyMessage?: ReactNode;
   onChange?: (
     newValue: { value: string; label: string | React.ReactNode } | null
   ) => void;
@@ -42,6 +44,7 @@ const Combobox = ({
   isOptional,
   isRequired,
   helperText,
+  emptyMessage,
   ...props
 }: ComboboxProps) => {
   const { getInputProps, error, isOptional: fieldIsOptional } = useField(name);
@@ -93,6 +96,7 @@ const Combobox = ({
         isClearable={resolvedIsOptional && !isReadOnly}
         isReadOnly={isReadOnly}
         isLoading={isLoading}
+        emptyMessage={isLoading ? undefined : emptyMessage}
         className="w-full"
       />
       {error ? (

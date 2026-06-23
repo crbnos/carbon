@@ -19,7 +19,7 @@ import { FileDropzone } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { Boolean, Hidden, Input, Select, Submit } from "~/components/Form";
 import { usePermissions, useUser } from "~/hooks";
-import { taxExemptionReasons } from "~/modules/sales/sales.models";
+import { taxExemptionReasons } from "~/modules/shared";
 import { supplierTaxValidator } from "../../purchasing.models";
 
 type SupplierTaxFormProps = {

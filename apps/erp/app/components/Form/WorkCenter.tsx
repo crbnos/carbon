@@ -8,6 +8,7 @@ import { useUser } from "~/hooks";
 import type { getWorkCentersList } from "~/modules/resources";
 import WorkCenterForm from "~/modules/resources/ui/WorkCenters/WorkCenterForm";
 import { path } from "~/utils/path";
+import { useEmptyState } from "./emptyStates";
 
 type WorkCenterSelectProps = Omit<ComboboxProps, "options" | "inline"> & {
   autoSelectSingleOption?: boolean;
@@ -37,6 +38,10 @@ const WorkCenter = (props: WorkCenterSelectProps) => {
     locationId: props?.locationId
   });
 
+  const emptyMessage = useEmptyState("workCenter", {
+    onCreate: () => newWorkCenterModal.onOpen()
+  });
+
   return (
     <>
       <CreatableCombobox
@@ -51,6 +56,7 @@ const WorkCenter = (props: WorkCenterSelectProps) => {
           value: o.value,
           label: <Enumerable value={o.label} />
         }))}
+        emptyMessage={emptyMessage}
         {...props}
         inline={props.inline ? WorkCenterPreview : undefined}
         label={props?.label ?? "Work Center"}

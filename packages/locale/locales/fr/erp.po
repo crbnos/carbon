@@ -71,7 +71,7 @@ msgid "+{0} more"
 msgstr "+{0} de plus"
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
-msgstr "<0>Ajouter une pièce fournisseur</0> pour cet article afin de définir un fournisseur préféré."
+msgstr ""
 
 msgid "0-4 weeks"
 msgstr ""
@@ -169,8 +169,14 @@ msgstr "Un outil est un article physique utilisé pour fabriquer une pièce qui 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "Un utilisateur enregistre la date d'expiration sur chaque lot ou numéro de série à la réception des marchandises. À utiliser lorsque les fournisseurs expédient des lots avec des dates d'expiration différentes."
 
+msgid "abilities"
+msgstr ""
+
 msgid "Abilities"
 msgstr "Compétences"
+
+msgid "ability"
+msgstr ""
 
 msgid "About"
 msgstr "À propos"
@@ -198,6 +204,9 @@ msgstr "Paramètres du compte"
 
 msgid "Account Type"
 msgstr "Type de compte"
+
+msgid "accounting"
+msgstr ""
 
 msgid "Accounting"
 msgstr "Comptabilité"
@@ -405,6 +414,10 @@ msgstr "Ajouter une feuille de temps"
 
 msgid "Add to stock for future use"
 msgstr "Ajouter au stock pour utilisation future"
+
+#. placeholder {0}: copy.noun
+msgid "Add your first {0}"
+msgstr ""
 
 msgid "Add-On"
 msgstr "Supplément"
@@ -942,11 +955,22 @@ msgstr "En tant que propriétaire de l'entreprise, vous pouvez transférer la pr
 msgid "Ascending"
 msgstr "Croissant"
 
+#. placeholder {0}: copy.moduleLabel
+#. placeholder {1}: copy.noun
+msgid "Ask an admin with {0} permission to add the first {1}."
+msgstr ""
+
 msgid "Assembly:"
 msgstr "Assemblage :"
 
 msgid "Asset"
 msgstr "Actif"
+
+msgid "asset class"
+msgstr ""
+
+msgid "asset classes"
+msgstr ""
 
 msgid "Asset Classes"
 msgstr "Classes d'actifs"
@@ -1638,6 +1662,9 @@ msgstr "Le mode console est activé"
 msgid "Console Operator"
 msgstr "Opérateur Console"
 
+msgid "consumable"
+msgstr ""
+
 msgid "Consumable"
 msgstr "Consommable"
 
@@ -1647,17 +1674,26 @@ msgstr "Détails du consommable"
 msgid "Consumable ID"
 msgstr "ID Consommable"
 
+msgid "consumables"
+msgstr ""
+
 msgid "Consumables"
 msgstr "Consommables"
 
 msgid "Consumed"
 msgstr "Consommé"
 
+msgid "contact"
+msgstr ""
+
 msgid "Contact"
 msgstr "Contact"
 
 msgid "Contact (optional)"
 msgstr "Contact (facultatif)"
+
+msgid "contacts"
+msgstr ""
 
 msgid "Contacts"
 msgstr "Contacts"
@@ -1833,8 +1869,14 @@ msgstr "Réponse correcte"
 msgid "Correct Answers"
 msgstr "Réponses correctes"
 
+msgid "cost center"
+msgstr ""
+
 msgid "Cost Center"
 msgstr "Centre de coûts"
+
+msgid "cost centers"
+msgstr ""
 
 msgid "Cost Centers"
 msgstr "Centres de coûts"
@@ -2094,6 +2136,9 @@ msgstr "Champ personnalisé"
 msgid "Custom Fields"
 msgstr "Champs personnalisés"
 
+msgid "customer"
+msgstr ""
+
 msgid "Customer"
 msgstr "Client"
 
@@ -2157,17 +2202,32 @@ msgstr "RFQ Client"
 msgid "Customer Scope"
 msgstr "Portée client"
 
+msgid "customer status"
+msgstr ""
+
 msgid "Customer Status"
 msgstr "Statut du client"
+
+msgid "customer statuses"
+msgstr ""
 
 msgid "Customer Statuses"
 msgstr "Statuts client"
 
+msgid "customer type"
+msgstr ""
+
 msgid "Customer Type"
 msgstr "Type de client"
 
+msgid "customer types"
+msgstr ""
+
 msgid "Customer Types"
 msgstr "Types de clients"
+
+msgid "customers"
+msgstr ""
 
 msgid "Customers"
 msgstr "Clients"
@@ -2572,11 +2632,17 @@ msgstr "Projections de la demande"
 msgid "Demand-Based"
 msgstr "Basée sur la demande"
 
+msgid "department"
+msgstr ""
+
 msgid "Department"
 msgstr "Département"
 
 msgid "Department Name"
 msgstr "Nom du département"
+
+msgid "departments"
+msgstr ""
 
 msgid "Departments"
 msgstr "Départements"
@@ -2608,8 +2674,14 @@ msgstr "Devis Numérique"
 msgid "Digital Quotes"
 msgstr "Devis numériques"
 
+msgid "dimension"
+msgstr ""
+
 msgid "Dimension"
 msgstr "Dimension"
+
+msgid "dimensions"
+msgstr ""
 
 msgid "Dimensions"
 msgstr "Dimensions"
@@ -3053,6 +3125,9 @@ msgstr "E-mails"
 msgid "Emoji"
 msgstr "Emoji"
 
+msgid "employee"
+msgstr ""
+
 msgid "Employee"
 msgstr "Employé"
 
@@ -3064,6 +3139,9 @@ msgstr "Type d'employé"
 
 msgid "Employee Types"
 msgstr "Types d'employés"
+
+msgid "employees"
+msgstr ""
 
 msgid "Employees"
 msgstr "Employés"
@@ -3745,11 +3823,17 @@ msgstr "Filtre"
 msgid "Finalize"
 msgstr "Finaliser"
 
+msgid "finish"
+msgstr ""
+
 msgid "Finish"
 msgstr "Finition"
 
 msgid "Finish To"
 msgstr "Terminer vers"
+
+msgid "finishes"
+msgstr ""
 
 msgid "Finishes"
 msgstr "Finitions"
@@ -3818,6 +3902,9 @@ msgstr "Unité de stockage source"
 msgid "Fully trained for"
 msgstr "Entièrement formé pour"
 
+msgid "gauge"
+msgstr ""
+
 msgid "Gauge"
 msgstr "Jauge"
 
@@ -3835,6 +3922,9 @@ msgstr "Type de jauge"
 
 msgid "Gauge Types"
 msgstr "Types de jauge"
+
+msgid "gauges"
+msgstr ""
 
 msgid "Gauges"
 msgstr "Jauges"
@@ -3881,8 +3971,14 @@ msgstr "Bonjour, {0}"
 msgid "Google Places API key not configured"
 msgstr "Clé API Google Places non configurée"
 
+msgid "grade"
+msgstr ""
+
 msgid "Grade"
 msgstr "Qualité"
+
+msgid "grades"
+msgstr ""
 
 msgid "Grades"
 msgstr "Grades"
@@ -4124,6 +4220,9 @@ msgstr "inv"
 msgid "Invalid Invite"
 msgstr "Invitation invalide"
 
+msgid "inventory"
+msgstr ""
+
 msgid "Inventory"
 msgstr "Inventaire"
 
@@ -4259,8 +4358,14 @@ msgstr "L'article {scannedItem} n'est pas le même que l'article {expectedItem}"
 msgid "Item filters"
 msgstr "Filtres d'articles"
 
+msgid "item group"
+msgstr ""
+
 msgid "Item Group"
 msgstr "Groupe d'articles"
+
+msgid "item groups"
+msgstr ""
 
 msgid "Item groups"
 msgstr "Groupes d'articles"
@@ -4519,11 +4624,17 @@ msgstr "Chargement..."
 msgid "Loading…"
 msgstr "Chargement…"
 
+msgid "location"
+msgstr ""
+
 msgid "Location"
 msgstr "Emplacement"
 
 msgid "Location Name"
 msgstr "Nom du lieu"
+
+msgid "locations"
+msgstr ""
 
 msgid "Locations"
 msgstr "Emplacements"
@@ -4720,6 +4831,9 @@ msgstr "correspond"
 msgid "Matching Pairs"
 msgstr "Paires d'appariement"
 
+msgid "material"
+msgstr ""
+
 msgid "Material"
 msgstr "Matériau"
 
@@ -4768,11 +4882,20 @@ msgstr "Substance Matérielle"
 msgid "Material Substances"
 msgstr "Substances Matérielles"
 
+msgid "material type"
+msgstr ""
+
 msgid "Material Type"
 msgstr "Type de matériau"
 
+msgid "material types"
+msgstr ""
+
 msgid "Material Types"
 msgstr "Types de matériaux"
+
+msgid "materials"
+msgstr ""
 
 msgid "Materials"
 msgstr "Matériaux"
@@ -5259,6 +5382,10 @@ msgstr "Non"
 #. placeholder {0}: node.name.toLowerCase()
 msgid "No {0} found"
 msgstr "Aucun {0} trouvé"
+
+#. placeholder {0}: copy.pluralNoun
+msgid "No {0} yet"
+msgstr ""
 
 msgid "No abilities added"
 msgstr "Aucune compétence ajoutée"
@@ -5804,6 +5931,9 @@ msgstr "Unité de stockage parent"
 msgid "Pareto by Type"
 msgstr "Pareto par Type"
 
+msgid "part"
+msgstr ""
+
 msgid "Part"
 msgstr "Pièce"
 
@@ -5825,6 +5955,9 @@ msgstr "Partenaire"
 msgid "Partners"
 msgstr "Partenaires"
 
+msgid "parts"
+msgstr ""
+
 msgid "Parts"
 msgstr "Pièces"
 
@@ -5840,8 +5973,14 @@ msgstr "Paiement"
 msgid "Payment Method"
 msgstr "Méthode de paiement"
 
+msgid "payment term"
+msgstr ""
+
 msgid "Payment Term"
 msgstr "Condition de paiement"
+
+msgid "payment terms"
+msgstr ""
 
 msgid "Payment Terms"
 msgstr "Conditions de paiement"
@@ -5866,6 +6005,9 @@ msgstr "Filigrane PDF"
 
 msgid "Pending"
 msgstr "En attente"
+
+msgid "people"
+msgstr ""
 
 msgid "People"
 msgstr "Personnes"
@@ -6166,11 +6308,20 @@ msgstr "Politique de confidentialité"
 msgid "Private"
 msgstr "Privé"
 
+msgid "procedure"
+msgstr ""
+
 msgid "Procedure"
 msgstr "Procédure"
 
+msgid "procedures"
+msgstr ""
+
 msgid "Procedures"
 msgstr "Procédures"
+
+msgid "process"
+msgstr ""
 
 msgid "Process"
 msgstr "Processus"
@@ -6181,8 +6332,14 @@ msgstr "Nom du processus"
 msgid "Process Type"
 msgstr "Type de processus"
 
+msgid "processes"
+msgstr ""
+
 msgid "Processes"
 msgstr "Processus"
+
+msgid "production"
+msgstr ""
 
 msgid "Production"
 msgstr "Production"
@@ -6318,6 +6475,9 @@ msgstr "Unité d'achat :"
 msgid "Purchased"
 msgstr "Acheté"
 
+msgid "purchasing"
+msgstr ""
+
 msgid "Purchasing"
 msgstr "Approvisionnement"
 
@@ -6354,6 +6514,9 @@ msgstr "Qté. Retravaillée"
 
 msgid "Qty. Scrapped"
 msgstr "Qté. Rebut"
+
+msgid "quality"
+msgstr ""
 
 msgid "Quality"
 msgstr "Qualité"
@@ -6756,6 +6919,9 @@ msgstr "Résolvez ces problèmes avant de terminer l'NCR : chaque ligne doit avo
 msgid "Resolved Price"
 msgstr "Prix résolu"
 
+msgid "resources"
+msgstr ""
+
 msgid "Resources"
 msgstr "Ressources"
 
@@ -6899,6 +7065,9 @@ msgstr "Stock de sécurité :"
 msgid "Sale Price"
 msgstr "Prix de vente"
 
+msgid "sales"
+msgstr ""
+
 msgid "Sales"
 msgstr "Ventes"
 
@@ -7038,8 +7207,14 @@ msgstr "Quantité de rebut"
 msgid "Scrap Quantity Per Job"
 msgstr "Quantité de rebut par travail"
 
+msgid "scrap reason"
+msgstr ""
+
 msgid "Scrap Reason"
 msgstr "Raison de rebut"
+
+msgid "scrap reasons"
+msgstr ""
 
 msgid "Scrap Reasons"
 msgstr "Raisons de rebut"
@@ -7189,6 +7364,9 @@ msgstr "Sélectionner le type d'article"
 msgid "Select items"
 msgstr "Sélectionner les articles"
 
+msgid "Select method..."
+msgstr ""
+
 msgid "Select Printer"
 msgstr "Sélectionner l'imprimante"
 
@@ -7283,6 +7461,12 @@ msgstr "Suivi en série"
 msgid "Serial/Batch #"
 msgstr "Numéro de série/lot"
 
+msgid "service"
+msgstr ""
+
+msgid "services"
+msgstr ""
+
 msgid "Set Clock Out"
 msgstr "Définir l'heure de départ"
 
@@ -7332,8 +7516,14 @@ msgstr "Sévérités"
 msgid "Severity"
 msgstr "Gravité"
 
+msgid "shape"
+msgstr ""
+
 msgid "Shape"
 msgstr "Forme"
+
+msgid "shapes"
+msgstr ""
 
 msgid "Shapes"
 msgstr "Formes"
@@ -7368,11 +7558,17 @@ msgstr "Durée de vie"
 msgid "Shelf-Life History"
 msgstr "Historique de la durée de conservation"
 
+msgid "shift"
+msgstr ""
+
 msgid "Shift"
 msgstr "Quart"
 
 msgid "Shift Name"
 msgstr "Nom du quart"
+
+msgid "shifts"
+msgstr ""
 
 msgid "Shifts"
 msgstr "Quarts"
@@ -7425,8 +7621,14 @@ msgstr "Client de livraison"
 msgid "Shipping Location"
 msgstr "Lieu d'expédition"
 
+msgid "shipping method"
+msgstr ""
+
 msgid "Shipping Method"
 msgstr "Méthode d'expédition"
+
+msgid "shipping methods"
+msgstr ""
 
 msgid "Shipping Methods"
 msgstr "Méthodes d'expédition"
@@ -7520,6 +7722,9 @@ msgstr "Ignorer la maintenance programmée lors des jours fériés de l'entrepri
 
 msgid "Skipped"
 msgstr "Ignoré"
+
+msgid "so you can assign it here."
+msgstr ""
 
 msgid "Something went wrong"
 msgstr ""
@@ -7705,14 +7910,26 @@ msgstr "Client de stockage non disponible"
 msgid "Storage Rules"
 msgstr "Règles de stockage"
 
+msgid "storage type"
+msgstr ""
+
 msgid "Storage Type"
 msgstr "Type de stockage"
+
+msgid "storage types"
+msgstr ""
 
 msgid "Storage Types"
 msgstr "Types de stockage"
 
+msgid "storage unit"
+msgstr ""
+
 msgid "Storage Unit"
 msgstr "Unité de stockage"
+
+msgid "storage units"
+msgstr ""
 
 msgid "Storage Units"
 msgstr "Unités de stockage"
@@ -7750,8 +7967,14 @@ msgstr "Soumettre l'inspection"
 msgid "Submitted By"
 msgstr "Soumis par"
 
+msgid "substance"
+msgstr ""
+
 msgid "Substance"
 msgstr "Substance"
+
+msgid "substances"
+msgstr ""
 
 msgid "Substances"
 msgstr "Substances"
@@ -7788,6 +8011,9 @@ msgstr "Suggestions"
 
 msgid "Sunday"
 msgstr "Dimanche"
+
+msgid "supplier"
+msgstr ""
 
 msgid "Supplier"
 msgstr "Fournisseur"
@@ -7828,6 +8054,12 @@ msgstr "Numéro de pièce fournisseur"
 msgid "Supplier Parts"
 msgstr "Pièces du fournisseur"
 
+msgid "supplier process"
+msgstr ""
+
+msgid "supplier processes"
+msgstr ""
+
 msgid "Supplier Processes"
 msgstr "Processus Fournisseur"
 
@@ -7858,8 +8090,14 @@ msgstr "Référence Fournisseur"
 msgid "Supplier Status"
 msgstr "Statut du fournisseur"
 
+msgid "supplier type"
+msgstr ""
+
 msgid "Supplier Type"
 msgstr "Type de fournisseur"
+
+msgid "supplier types"
+msgstr ""
 
 msgid "Supplier Types"
 msgstr "Types de fournisseurs"
@@ -7872,6 +8110,9 @@ msgstr "Fournisseur mis à jour"
 
 msgid "Supplier:"
 msgstr "Fournisseur :"
+
+msgid "suppliers"
+msgstr ""
 
 msgid "Suppliers"
 msgstr "Fournisseurs"
@@ -8243,6 +8484,9 @@ msgstr "Tol+"
 msgid "Tolerance (+/-)"
 msgstr "Tolérance (+/-)"
 
+msgid "tool"
+msgstr ""
+
 msgid "Tool"
 msgstr "Outil"
 
@@ -8251,6 +8495,9 @@ msgstr "Détails de l'outil"
 
 msgid "Tool ID"
 msgstr "ID Outil"
+
+msgid "tools"
+msgstr ""
 
 msgid "Tools"
 msgstr "Outils"
@@ -8423,6 +8670,9 @@ msgstr "Unité"
 msgid "Unit Cost"
 msgstr "Coût unitaire"
 
+msgid "unit of measure"
+msgstr ""
+
 msgid "Unit of Measure"
 msgstr "Unité de mesure"
 
@@ -8440,6 +8690,9 @@ msgstr "Prix de vente unitaire"
 
 msgid "Units"
 msgstr "Unités"
+
+msgid "units of measure"
+msgstr ""
 
 msgid "Unknown"
 msgstr "Inconnu"
@@ -8624,6 +8877,9 @@ msgstr "Utilisé pour catégoriser les articles à des fins de rapports et d'ana
 
 msgid "User"
 msgstr "Utilisateur"
+
+msgid "users"
+msgstr ""
 
 msgid "Users"
 msgstr "Utilisateurs"
@@ -8968,11 +9224,17 @@ msgstr "Wordmark Mode Sombre"
 msgid "Wordmark Light Mode"
 msgstr "Wordmark Mode Clair"
 
+msgid "work center"
+msgstr ""
+
 msgid "Work Center"
 msgstr "Centre de travail"
 
 msgid "Work Center Utilization"
 msgstr "Utilisation du centre de travail"
+
+msgid "work centers"
+msgstr ""
 
 msgid "Work Centers"
 msgstr "Centres de travail"

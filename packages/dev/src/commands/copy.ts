@@ -1,6 +1,6 @@
 import { copyFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { intro, log, outro } from "@clack/prompts";
-import { dirname, join, relative } from "pathe";
+import { dirname, isAbsolute, join, relative, resolve } from "pathe";
 import pc from "picocolors";
 import { mainCheckoutRoot } from "../git.js";
 import { isAtLeastAsNew } from "../helpers.js";
@@ -80,8 +80,14 @@ export async function copy(files: string[]) {
 
   let copied = 0;
   for (const file of files) {
-    // Resolve relative to worktree root so paths are consistent.
-    const rel = relative(cwd, join(cwd, file));
+    // Resolve against the worktree root, then reject anything that escapes it
+    // (`../../x`, absolute paths) — copy mirrors the same relative path from
+    // main, it must not read/write outside the worktree.
+    const rel = relative(cwd, resolve(cwd, file));
+    if (rel === "" || rel.startsWith("..") || isAbsolute(rel)) {
+      log.warn(`${pc.dim(file)} escapes the worktree — skipped`);
+      continue;
+    }
     const src = join(mainRoot, rel);
     const dest = join(cwd, rel);
     if (!existsSync(src)) {

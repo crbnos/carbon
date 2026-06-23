@@ -7,6 +7,7 @@ import { useUser } from "~/hooks";
 import type { getWorkCentersList } from "~/modules/resources";
 import WorkCenterForm from "~/modules/resources/ui/WorkCenters/WorkCenterForm";
 import { path } from "~/utils/path";
+import { useEmptyState } from "./emptyStates";
 
 type WorkCenterSelectProps = Omit<CreatableMultiSelectProps, "options"> & {
   processId?: string;
@@ -20,6 +21,10 @@ const WorkCenters = (props: WorkCenterSelectProps) => {
 
   const options = useWorkCenters();
 
+  const emptyMessage = useEmptyState("workCenter", {
+    onCreate: () => newWorkCenterModal.onOpen()
+  });
+
   return (
     <>
       <CreatableMultiSelect
@@ -27,6 +32,7 @@ const WorkCenters = (props: WorkCenterSelectProps) => {
         options={options}
         {...props}
         label={props?.label ?? "Work Center"}
+        emptyMessage={emptyMessage}
         onCreateOption={(option) => {
           newWorkCenterModal.onOpen();
           setCreated(option);

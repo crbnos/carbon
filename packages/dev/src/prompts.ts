@@ -118,7 +118,7 @@ export async function promptBranch(initial?: string): Promise<string> {
           `  Materialize the existing branch with:  ${pc.cyan(`crbn checkout ${trimmed}`)}`
       );
       const recreate = await confirm({
-        message: `Delete '${trimmed}' (force) and create fresh branch?`,
+        message: `Delete '${trimmed}' (force — discards any unmerged commits) and create fresh branch?`,
         initialValue: false
       });
       if (isCancel(recreate)) abort();

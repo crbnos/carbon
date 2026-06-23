@@ -8,7 +8,8 @@ import {
   methodOperationOrders,
   methodType,
   operationTypes,
-  standardFactorType
+  standardFactorType,
+  taxExemptionReasons
 } from "../shared";
 
 export const KPIs = [
@@ -77,19 +78,6 @@ export const customerValidator = z.object({
   website: zfd.text(z.string().optional())
   // defaultCc: z.array(z.string().email()).default([])
 });
-
-export const taxExemptionReasons = [
-  "Resale",
-  "Government",
-  "Nonprofit",
-  "Agriculture",
-  "Industrial",
-  "Export",
-  "Medical",
-  "Educational",
-  "Religious",
-  "Other"
-] as const;
 
 export const customerTaxValidator = z
   .object({

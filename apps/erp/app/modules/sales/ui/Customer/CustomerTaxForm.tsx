@@ -19,7 +19,8 @@ import { FileDropzone } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { Boolean, Hidden, Input, Select, Submit } from "~/components/Form";
 import { usePermissions, useUser } from "~/hooks";
-import { customerTaxValidator, taxExemptionReasons } from "../../sales.models";
+import { taxExemptionReasons } from "~/modules/shared";
+import { customerTaxValidator } from "../../sales.models";
 
 type CustomerTaxFormProps = {
   initialValues: z.infer<typeof customerTaxValidator> & {

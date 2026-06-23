@@ -7,6 +7,7 @@ import type { getSupplierProcessesByProcess } from "~/modules/purchasing";
 import { SupplierProcessForm } from "~/modules/purchasing/ui/Supplier";
 import { useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
+import { useEmptyState } from "./emptyStates";
 
 type SupplierProcessSelectProps = Omit<ComboboxProps, "options"> & {
   processId?: string;
@@ -32,6 +33,11 @@ const SupplierProcess = ({
     };
   });
 
+  const emptyMessage = useEmptyState(
+    "supplierProcess",
+    processId ? { onCreate: () => newSupplierProcessModal.onOpen() } : undefined
+  );
+
   return (
     <>
       <CreatableCombobox
@@ -40,6 +46,7 @@ const SupplierProcess = ({
         {...props}
         // @ts-ignore
         label={props?.label ?? "Work Center"}
+        emptyMessage={emptyMessage}
         onCreateOption={(option) => {
           newSupplierProcessModal.onOpen();
         }}

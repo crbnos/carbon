@@ -269,12 +269,12 @@ const JobBoMExplorer = ({ method }: JobBoMExplorerProps) => {
               getNodeProps={getNodeProps}
               getTreeProps={getTreeProps}
               renderNode={({ node, state }) => (
-                <HoverCard openDelay={500} closeDelay={0}>
+                <HoverCard openDelay={500} closeDelay={150}>
                   <HoverCardTrigger asChild>
                     <div
                       key={node.id}
                       className={cn(
-                        "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2 gap-1",
+                        "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-3 gap-1",
                         state.selected
                           ? "bg-muted hover:bg-accent"
                           : "bg-transparent hover:bg-accent"
@@ -332,8 +332,8 @@ const JobBoMExplorer = ({ method }: JobBoMExplorerProps) => {
                         </div>
                       </div>
 
-                      <div className="flex w-full items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 overflow-x-hidden">
+                      <div className="flex w-full items-center justify-between gap-2 min-w-0">
+                        <div className="flex items-center gap-2 overflow-x-hidden min-w-0">
                           {bomIdMap.get(node.id) && (
                             <Badge variant="outline" className="flex-shrink-0">
                               {bomIdMap.get(node.id)}
@@ -341,9 +341,12 @@ const JobBoMExplorer = ({ method }: JobBoMExplorerProps) => {
                           )}
                           <NodeText node={node} />
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 flex-shrink-0">
                           {node.data.isRoot ? (
-                            <Badge variant="outline">
+                            <Badge
+                              variant="outline"
+                              className="whitespace-nowrap"
+                            >
                               V{node.data.version}
                             </Badge>
                           ) : (
@@ -353,10 +356,7 @@ const JobBoMExplorer = ({ method }: JobBoMExplorerProps) => {
                       </div>
                     </div>
                   </HoverCardTrigger>
-                  <HoverCardContent
-                    side="right"
-                    className="pointer-events-none"
-                  >
+                  <HoverCardContent side="right">
                     <NodePreview node={node} />
                   </HoverCardContent>
                 </HoverCard>
@@ -373,7 +373,7 @@ export default JobBoMExplorer;
 
 function NodeText({ node }: { node: FlatTreeItem<JobMethod> }) {
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-1 min-w-0">
       <span className="font-medium text-sm truncate">
         {node.data.description || node.data.itemReadableId}
       </span>

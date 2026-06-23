@@ -314,6 +314,11 @@ export async function waitForProxyReady(timeoutMs = 30_000) {
     }
     await sleep(500);
   }
+  // Don't return silently — the caller would report "proxy listening" for a
+  // proxy that never came up, then apps fail with NXDOMAIN.
+  throw new Error(
+    `portless proxy did not start within ${timeoutMs / 1_000}s. Check \`portless proxy start\` manually, or run \`crbn up --no-portless\` for localhost URLs.`
+  );
 }
 
 export async function registerAliases(
@@ -322,7 +327,7 @@ export async function registerAliases(
   ports: PortMap
 ) {
   const aliases = aliasMap(branchPrefix, ports);
-  await Promise.all(
+  const results = await Promise.all(
     aliases.map((a) =>
       execa("portless", ["alias", a.name, String(a.port), "--force"], {
         cwd: root,
@@ -334,12 +339,20 @@ export async function registerAliases(
       })
     )
   );
-  return aliases.length;
+  // reject:false means failures don't throw — count actual successes so the
+  // caller doesn't report "7 registered" when portless is wedged and 0 took.
+  const registered = results.filter((r) => r.exitCode === 0).length;
+  return { registered, total: aliases.length };
 }
 
 export async function unregisterAliases(root: string, branchPrefix: string) {
   // Use a dummy PortMap — only the names matter for removal, not ports.
-  const names = aliasMap(branchPrefix, {} as PortMap).map((a) => a.name);
+  // Keep the shared STABLE_OAUTH_ALIAS ("api.carbon"): it's branch-independent
+  // ("last `crbn up` wins") and shared across worktrees, so tearing down one
+  // worktree must not remove it and break OAuth for the others still running.
+  const names = aliasMap(branchPrefix, {} as PortMap)
+    .map((a) => a.name)
+    .filter((name) => name !== STABLE_OAUTH_ALIAS);
   await Promise.all(
     names.map((name) =>
       execa("portless", ["alias", "--remove", name], {

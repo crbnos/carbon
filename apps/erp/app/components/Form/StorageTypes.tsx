@@ -6,6 +6,7 @@ import { useFetcher } from "react-router";
 import type { getStorageTypesList } from "~/modules/inventory";
 import StorageTypeForm from "~/modules/inventory/ui/StorageTypes/StorageTypeForm";
 import { path } from "~/utils/path";
+import { useEmptyState } from "./emptyStates";
 
 type StorageTypesSelectProps = Omit<CreatableMultiSelectProps, "options">;
 
@@ -16,11 +17,16 @@ const StorageTypes = (props: StorageTypesSelectProps) => {
 
   const options = useStorageTypes();
 
+  const emptyMessage = useEmptyState("storageType", {
+    onCreate: () => newTypeModal.onOpen()
+  });
+
   return (
     <>
       <CreatableMultiSelect
         ref={triggerRef}
         options={options}
+        emptyMessage={emptyMessage}
         {...props}
         label={props?.label ?? "Storage Types"}
         onCreateOption={(option) => {

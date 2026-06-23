@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, symlinkSync } from "node:fs";
+import { mkdtempSync, rmSync, symlinkSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "pathe";
 import { afterAll, describe, expect, it } from "vitest";
@@ -43,7 +43,9 @@ describe("sameWorktreePath", () => {
   symlinkSync(real, link);
 
   afterAll(() => {
-    rmSync(link, { force: true });
+    // `link` is a symlink to a directory; unlink removes the link itself
+    // (rmSync without `recursive` throws EISDIR on a dir symlink on macOS).
+    unlinkSync(link);
     rmSync(real, { recursive: true, force: true });
   });
 

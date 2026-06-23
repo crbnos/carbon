@@ -71,7 +71,7 @@ msgid "+{0} more"
 msgstr "+{0} 更多"
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
-msgstr "<0>为此项目添加供应商零件</0>以设置首选供应商。"
+msgstr ""
 
 msgid "0-4 weeks"
 msgstr ""
@@ -169,8 +169,14 @@ msgstr "工具是用于制造零件的物理项目，可以在多个工作中使
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "用户在收到货物时在每个批次或序列号上记录过期日期。当供应商发货的批次具有不同的过期日期时使用。"
 
+msgid "abilities"
+msgstr ""
+
 msgid "Abilities"
 msgstr "能力"
+
+msgid "ability"
+msgstr ""
 
 msgid "About"
 msgstr "关于"
@@ -198,6 +204,9 @@ msgstr "账户设置"
 
 msgid "Account Type"
 msgstr "账户类型"
+
+msgid "accounting"
+msgstr ""
 
 msgid "Accounting"
 msgstr "会计"
@@ -405,6 +414,10 @@ msgstr "添加工时卡"
 
 msgid "Add to stock for future use"
 msgstr "添加到库存以供将来使用"
+
+#. placeholder {0}: copy.noun
+msgid "Add your first {0}"
+msgstr ""
 
 msgid "Add-On"
 msgstr "附加费"
@@ -942,11 +955,22 @@ msgstr "作为公司所有者，您可以将所有权转移给另一名员工。
 msgid "Ascending"
 msgstr "升序"
 
+#. placeholder {0}: copy.moduleLabel
+#. placeholder {1}: copy.noun
+msgid "Ask an admin with {0} permission to add the first {1}."
+msgstr ""
+
 msgid "Assembly:"
 msgstr "装配体："
 
 msgid "Asset"
 msgstr "资产"
+
+msgid "asset class"
+msgstr ""
+
+msgid "asset classes"
+msgstr ""
 
 msgid "Asset Classes"
 msgstr "资产类别"
@@ -1638,6 +1662,9 @@ msgstr "控制台模式已启用"
 msgid "Console Operator"
 msgstr "控制台操作员"
 
+msgid "consumable"
+msgstr ""
+
 msgid "Consumable"
 msgstr "消耗品"
 
@@ -1647,17 +1674,26 @@ msgstr "易耗品详情"
 msgid "Consumable ID"
 msgstr "消耗品ID"
 
+msgid "consumables"
+msgstr ""
+
 msgid "Consumables"
 msgstr "消耗品"
 
 msgid "Consumed"
 msgstr "已消耗"
 
+msgid "contact"
+msgstr ""
+
 msgid "Contact"
 msgstr "联系人"
 
 msgid "Contact (optional)"
 msgstr "联系人（可选）"
+
+msgid "contacts"
+msgstr ""
 
 msgid "Contacts"
 msgstr "联系人"
@@ -1833,8 +1869,14 @@ msgstr "正确答案"
 msgid "Correct Answers"
 msgstr "正确答案"
 
+msgid "cost center"
+msgstr ""
+
 msgid "Cost Center"
 msgstr "成本中心"
+
+msgid "cost centers"
+msgstr ""
 
 msgid "Cost Centers"
 msgstr "成本中心"
@@ -2094,6 +2136,9 @@ msgstr "自定义字段"
 msgid "Custom Fields"
 msgstr "自定义字段"
 
+msgid "customer"
+msgstr ""
+
 msgid "Customer"
 msgstr "客户"
 
@@ -2157,17 +2202,32 @@ msgstr "客户询价"
 msgid "Customer Scope"
 msgstr "客户范围"
 
+msgid "customer status"
+msgstr ""
+
 msgid "Customer Status"
 msgstr "客户状态"
+
+msgid "customer statuses"
+msgstr ""
 
 msgid "Customer Statuses"
 msgstr "客户状态"
 
+msgid "customer type"
+msgstr ""
+
 msgid "Customer Type"
 msgstr "客户类型"
 
+msgid "customer types"
+msgstr ""
+
 msgid "Customer Types"
 msgstr "客户类型"
+
+msgid "customers"
+msgstr ""
 
 msgid "Customers"
 msgstr "客户"
@@ -2572,11 +2632,17 @@ msgstr "需求预测"
 msgid "Demand-Based"
 msgstr "基于需求"
 
+msgid "department"
+msgstr ""
+
 msgid "Department"
 msgstr "部门"
 
 msgid "Department Name"
 msgstr "部门名称"
+
+msgid "departments"
+msgstr ""
 
 msgid "Departments"
 msgstr "部门"
@@ -2608,8 +2674,14 @@ msgstr "数字报价"
 msgid "Digital Quotes"
 msgstr "数字报价"
 
+msgid "dimension"
+msgstr ""
+
 msgid "Dimension"
 msgstr "尺寸"
+
+msgid "dimensions"
+msgstr ""
 
 msgid "Dimensions"
 msgstr "尺寸"
@@ -3053,6 +3125,9 @@ msgstr "电子邮件"
 msgid "Emoji"
 msgstr "表情符号"
 
+msgid "employee"
+msgstr ""
+
 msgid "Employee"
 msgstr "员工"
 
@@ -3064,6 +3139,9 @@ msgstr "员工类型"
 
 msgid "Employee Types"
 msgstr "员工类型"
+
+msgid "employees"
+msgstr ""
 
 msgid "Employees"
 msgstr "员工"
@@ -3745,11 +3823,17 @@ msgstr "筛选"
 msgid "Finalize"
 msgstr "完成"
 
+msgid "finish"
+msgstr ""
+
 msgid "Finish"
 msgstr "完成"
 
 msgid "Finish To"
 msgstr "完成至"
+
+msgid "finishes"
+msgstr ""
 
 msgid "Finishes"
 msgstr "表面处理"
@@ -3818,6 +3902,9 @@ msgstr "从存储单位"
 msgid "Fully trained for"
 msgstr "完全培训"
 
+msgid "gauge"
+msgstr ""
+
 msgid "Gauge"
 msgstr "量规"
 
@@ -3835,6 +3922,9 @@ msgstr "仪表类型"
 
 msgid "Gauge Types"
 msgstr "量规类型"
+
+msgid "gauges"
+msgstr ""
 
 msgid "Gauges"
 msgstr "量规"
@@ -3881,8 +3971,14 @@ msgstr "早上好，{0}"
 msgid "Google Places API key not configured"
 msgstr "Google Places API 密钥未配置"
 
+msgid "grade"
+msgstr ""
+
 msgid "Grade"
 msgstr "等级"
+
+msgid "grades"
+msgstr ""
 
 msgid "Grades"
 msgstr "等级"
@@ -4124,6 +4220,9 @@ msgstr "库存"
 msgid "Invalid Invite"
 msgstr "无效邀请"
 
+msgid "inventory"
+msgstr ""
+
 msgid "Inventory"
 msgstr "库存"
 
@@ -4259,8 +4358,14 @@ msgstr "项目 {scannedItem} 与项目 {expectedItem} 不相同"
 msgid "Item filters"
 msgstr "项目筛选器"
 
+msgid "item group"
+msgstr ""
+
 msgid "Item Group"
 msgstr "物品组"
+
+msgid "item groups"
+msgstr ""
 
 msgid "Item groups"
 msgstr "物品组"
@@ -4519,11 +4624,17 @@ msgstr "加载中..."
 msgid "Loading…"
 msgstr "加载中…"
 
+msgid "location"
+msgstr ""
+
 msgid "Location"
 msgstr "位置"
 
 msgid "Location Name"
 msgstr "位置名称"
+
+msgid "locations"
+msgstr ""
 
 msgid "Locations"
 msgstr "位置"
@@ -4720,6 +4831,9 @@ msgstr "匹配"
 msgid "Matching Pairs"
 msgstr "匹配对"
 
+msgid "material"
+msgstr ""
+
 msgid "Material"
 msgstr "材料"
 
@@ -4768,11 +4882,20 @@ msgstr "物质材料"
 msgid "Material Substances"
 msgstr "物质材料"
 
+msgid "material type"
+msgstr ""
+
 msgid "Material Type"
 msgstr "材料类型"
 
+msgid "material types"
+msgstr ""
+
 msgid "Material Types"
 msgstr "材料类型"
+
+msgid "materials"
+msgstr ""
 
 msgid "Materials"
 msgstr "材料"
@@ -5259,6 +5382,10 @@ msgstr "否"
 #. placeholder {0}: node.name.toLowerCase()
 msgid "No {0} found"
 msgstr "未找到 {0}"
+
+#. placeholder {0}: copy.pluralNoun
+msgid "No {0} yet"
+msgstr ""
 
 msgid "No abilities added"
 msgstr "未添加任何能力"
@@ -5804,6 +5931,9 @@ msgstr "父存储单元"
 msgid "Pareto by Type"
 msgstr "按类型的帕累托"
 
+msgid "part"
+msgstr ""
+
 msgid "Part"
 msgstr "零件"
 
@@ -5825,6 +5955,9 @@ msgstr "合作伙伴"
 msgid "Partners"
 msgstr "合作伙伴"
 
+msgid "parts"
+msgstr ""
+
 msgid "Parts"
 msgstr "零件"
 
@@ -5840,8 +5973,14 @@ msgstr "付款"
 msgid "Payment Method"
 msgstr "支付方式"
 
+msgid "payment term"
+msgstr ""
+
 msgid "Payment Term"
 msgstr "付款条款"
+
+msgid "payment terms"
+msgstr ""
 
 msgid "Payment Terms"
 msgstr "付款条款"
@@ -5866,6 +6005,9 @@ msgstr "PDF 水印"
 
 msgid "Pending"
 msgstr "待处理"
+
+msgid "people"
+msgstr ""
 
 msgid "People"
 msgstr "人员"
@@ -6166,11 +6308,20 @@ msgstr "隐私政策"
 msgid "Private"
 msgstr "私密"
 
+msgid "procedure"
+msgstr ""
+
 msgid "Procedure"
 msgstr "程序"
 
+msgid "procedures"
+msgstr ""
+
 msgid "Procedures"
 msgstr "程序"
+
+msgid "process"
+msgstr ""
 
 msgid "Process"
 msgstr "工艺"
@@ -6181,8 +6332,14 @@ msgstr "流程名称"
 msgid "Process Type"
 msgstr "流程类型"
 
+msgid "processes"
+msgstr ""
+
 msgid "Processes"
 msgstr "流程"
+
+msgid "production"
+msgstr ""
 
 msgid "Production"
 msgstr "生产"
@@ -6318,6 +6475,9 @@ msgstr "采购单位："
 msgid "Purchased"
 msgstr "已购买"
 
+msgid "purchasing"
+msgstr ""
+
 msgid "Purchasing"
 msgstr "采购"
 
@@ -6354,6 +6514,9 @@ msgstr "数量。返工"
 
 msgid "Qty. Scrapped"
 msgstr "数量. 报废"
+
+msgid "quality"
+msgstr ""
 
 msgid "Quality"
 msgstr "质量"
@@ -6756,6 +6919,9 @@ msgstr "在完成NCR之前解决这些问题：每一行必须有一个非待处
 msgid "Resolved Price"
 msgstr "已解决价格"
 
+msgid "resources"
+msgstr ""
+
 msgid "Resources"
 msgstr "资源"
 
@@ -6899,6 +7065,9 @@ msgstr "安全库存："
 msgid "Sale Price"
 msgstr "销售价格"
 
+msgid "sales"
+msgstr ""
+
 msgid "Sales"
 msgstr "销售"
 
@@ -7038,8 +7207,14 @@ msgstr "废料数量"
 msgid "Scrap Quantity Per Job"
 msgstr "每个工作的报废数量"
 
+msgid "scrap reason"
+msgstr ""
+
 msgid "Scrap Reason"
 msgstr "报废原因"
+
+msgid "scrap reasons"
+msgstr ""
 
 msgid "Scrap Reasons"
 msgstr "报废原因"
@@ -7189,6 +7364,9 @@ msgstr "选择项目类型"
 msgid "Select items"
 msgstr "选择项目"
 
+msgid "Select method..."
+msgstr ""
+
 msgid "Select Printer"
 msgstr "选择打印机"
 
@@ -7283,6 +7461,12 @@ msgstr "序列追踪"
 msgid "Serial/Batch #"
 msgstr "序列号/批次 #"
 
+msgid "service"
+msgstr ""
+
+msgid "services"
+msgstr ""
+
 msgid "Set Clock Out"
 msgstr "设置打卡下班时间"
 
@@ -7332,8 +7516,14 @@ msgstr "严重程度"
 msgid "Severity"
 msgstr "严重程度"
 
+msgid "shape"
+msgstr ""
+
 msgid "Shape"
 msgstr "形状"
+
+msgid "shapes"
+msgstr ""
 
 msgid "Shapes"
 msgstr "形状"
@@ -7368,11 +7558,17 @@ msgstr "保质期"
 msgid "Shelf-Life History"
 msgstr "保质期历史"
 
+msgid "shift"
+msgstr ""
+
 msgid "Shift"
 msgstr "班次"
 
 msgid "Shift Name"
 msgstr "班次名称"
+
+msgid "shifts"
+msgstr ""
 
 msgid "Shifts"
 msgstr "班次"
@@ -7425,8 +7621,14 @@ msgstr "配送客户"
 msgid "Shipping Location"
 msgstr "配送地点"
 
+msgid "shipping method"
+msgstr ""
+
 msgid "Shipping Method"
 msgstr "配送方式"
+
+msgid "shipping methods"
+msgstr ""
 
 msgid "Shipping Methods"
 msgstr "运输方式"
@@ -7520,6 +7722,9 @@ msgstr "跳过公司假期的计划维护"
 
 msgid "Skipped"
 msgstr "已跳过"
+
+msgid "so you can assign it here."
+msgstr ""
 
 msgid "Something went wrong"
 msgstr ""
@@ -7705,14 +7910,26 @@ msgstr "存储客户端不可用"
 msgid "Storage Rules"
 msgstr "存储规则"
 
+msgid "storage type"
+msgstr ""
+
 msgid "Storage Type"
 msgstr "存储类型"
+
+msgid "storage types"
+msgstr ""
 
 msgid "Storage Types"
 msgstr "存储类型"
 
+msgid "storage unit"
+msgstr ""
+
 msgid "Storage Unit"
 msgstr "存储单位"
+
+msgid "storage units"
+msgstr ""
 
 msgid "Storage Units"
 msgstr "存储单位"
@@ -7750,8 +7967,14 @@ msgstr "提交检验"
 msgid "Submitted By"
 msgstr "提交者"
 
+msgid "substance"
+msgstr ""
+
 msgid "Substance"
 msgstr "物质"
+
+msgid "substances"
+msgstr ""
 
 msgid "Substances"
 msgstr "物质"
@@ -7788,6 +8011,9 @@ msgstr "建议"
 
 msgid "Sunday"
 msgstr "星期日"
+
+msgid "supplier"
+msgstr ""
 
 msgid "Supplier"
 msgstr "供应商"
@@ -7828,6 +8054,12 @@ msgstr "供应商零件号"
 msgid "Supplier Parts"
 msgstr "供应商零件"
 
+msgid "supplier process"
+msgstr ""
+
+msgid "supplier processes"
+msgstr ""
+
 msgid "Supplier Processes"
 msgstr "供应商流程"
 
@@ -7858,8 +8090,14 @@ msgstr "供应商参考"
 msgid "Supplier Status"
 msgstr "供应商状态"
 
+msgid "supplier type"
+msgstr ""
+
 msgid "Supplier Type"
 msgstr "供应商类型"
+
+msgid "supplier types"
+msgstr ""
 
 msgid "Supplier Types"
 msgstr "供应商类型"
@@ -7872,6 +8110,9 @@ msgstr "供应商已更新"
 
 msgid "Supplier:"
 msgstr "供应商："
+
+msgid "suppliers"
+msgstr ""
 
 msgid "Suppliers"
 msgstr "供应商"
@@ -8243,6 +8484,9 @@ msgstr "公差+"
 msgid "Tolerance (+/-)"
 msgstr "容差 (+/-)"
 
+msgid "tool"
+msgstr ""
+
 msgid "Tool"
 msgstr "工具"
 
@@ -8251,6 +8495,9 @@ msgstr "工具详情"
 
 msgid "Tool ID"
 msgstr "工具ID"
+
+msgid "tools"
+msgstr ""
 
 msgid "Tools"
 msgstr "工具"
@@ -8423,6 +8670,9 @@ msgstr "单位"
 msgid "Unit Cost"
 msgstr "单位成本"
 
+msgid "unit of measure"
+msgstr ""
+
 msgid "Unit of Measure"
 msgstr "计量单位"
 
@@ -8440,6 +8690,9 @@ msgstr "单位销售价格"
 
 msgid "Units"
 msgstr "单位"
+
+msgid "units of measure"
+msgstr ""
 
 msgid "Unknown"
 msgstr "未知"
@@ -8624,6 +8877,9 @@ msgstr "用于对项目进行分类以用于报告和分析"
 
 msgid "User"
 msgstr "用户"
+
+msgid "users"
+msgstr ""
 
 msgid "Users"
 msgstr "用户"
@@ -8968,11 +9224,17 @@ msgstr "字标深色模式"
 msgid "Wordmark Light Mode"
 msgstr "字标浅色模式"
 
+msgid "work center"
+msgstr ""
+
 msgid "Work Center"
 msgstr "工作中心"
 
 msgid "Work Center Utilization"
 msgstr "工作中心利用率"
+
+msgid "work centers"
+msgstr ""
 
 msgid "Work Centers"
 msgstr "工作中心"

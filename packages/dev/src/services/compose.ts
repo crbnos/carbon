@@ -20,8 +20,19 @@ function composeFile(root: string): string {
 
 // Shared redis runs as a single plain container (not a compose stack) — one per
 // host, reused across worktrees via per-worktree logical DB indexes.
-const REDIS_CONTAINER = "carbon-redis";
+export const REDIS_CONTAINER = "carbon-redis";
 const REDIS_VOLUME = "carbon-redis-data";
+
+// Fail fast with an actionable message when the Docker daemon is unreachable,
+// instead of a cryptic `Cannot connect to the Docker daemon` deep in the boot.
+export async function ensureDockerRunning() {
+  const r = await execa("docker", ["info"], { reject: false, stdio: "ignore" });
+  if (r.exitCode !== 0) {
+    throw new Error(
+      "Docker isn't running. Start Docker Desktop (or your docker daemon) and re-run `crbn up`."
+    );
+  }
+}
 
 type Publisher = { PublishedPort: number; TargetPort: number };
 

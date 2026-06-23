@@ -12,6 +12,7 @@ import type {
 } from "~/modules/sales";
 import CustomerStatusForm from "~/modules/sales/ui/CustomerStatuses/CustomerStatusForm";
 import { path } from "~/utils/path";
+import { useEmptyState } from "./emptyStates";
 
 type CustomerStatusSelectProps = Omit<ComboboxProps, "options">;
 
@@ -23,6 +24,10 @@ const CustomerStatus = (props: CustomerStatusSelectProps) => {
 
   const options = useCustomerStatuses();
 
+  const emptyMessage = useEmptyState("customerStatus", {
+    onCreate: () => newCustomerStatusModal.onOpen()
+  });
+
   return (
     <>
       <CreatableCombobox
@@ -33,6 +38,7 @@ const CustomerStatus = (props: CustomerStatusSelectProps) => {
             label: <Enumerable value={i18n._(o.label)} />
           })) ?? []
         }
+        emptyMessage={emptyMessage}
         {...props}
         label={props?.label ?? t`Customer Status`}
         onCreateOption={(option) => {

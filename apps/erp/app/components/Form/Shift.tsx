@@ -4,6 +4,7 @@ import { useEffect, useMemo } from "react";
 import { useFetcher } from "react-router";
 import type { getShiftsList } from "~/modules/people";
 import { path } from "~/utils/path";
+import { useEmptyState } from "./emptyStates";
 
 type ShiftSelectProps = Omit<SelectProps, "options"> & {
   location?: string;
@@ -14,8 +15,15 @@ const Shift = (props: ShiftSelectProps) => {
     location: props.location
   });
 
+  const emptyMessage = useEmptyState("shift");
+
   return (
-    <Select options={options} {...props} label={props?.label ?? "Shift"} />
+    <Select
+      options={options}
+      emptyMessage={emptyMessage}
+      {...props}
+      label={props?.label ?? "Shift"}
+    />
   );
 };
 
