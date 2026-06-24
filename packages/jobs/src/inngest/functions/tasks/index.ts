@@ -1,14 +1,16 @@
 export { companyExportFunction } from "./company-export";
 export { companyImportFunction } from "./company-import";
-export { companyRevertFunction } from "./company-revert";
+export {
+  companyRestoreFinalizeFunction,
+  companyRestoreFunction,
+  companyRestoreRevertFunction
+} from "./company-restore";
 export { modelThumbnailFunction } from "./model-thumbnail";
 export { onboardFunction } from "./onboard";
 export { postTransactionFunction } from "./post-transaction";
 export { printJobFunction } from "./print-job";
 export { printJobDeliverFunction } from "./print-job-deliver";
-export { publishDemoFunction } from "./publish-demo";
 export { recalculateFunction } from "./recalculate";
-export { refreshDemoCatalogFunction } from "./refresh-demo-catalog";
 export { rescheduleJobFunction } from "./reschedule-job";
 export { updatePermissionsFunction } from "./update-permissions";
 export { userAdminFunction } from "./user-admin";

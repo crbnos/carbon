@@ -1,8 +1,11 @@
-import { gunzipSync } from "node:zlib";
+import { promisify } from "node:util";
+import { gunzip } from "node:zlib";
+
+const gunzipAsync = promisify(gunzip);
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { chunkArray } from "@carbon/utils";
 import { sql } from "kysely";
-import { nanoid } from "nanoid";
 import { inngest } from "../../client";
 import type { ColumnInfo, CompanyBackup, TableInfo } from "./company-backup";
 import {
@@ -14,8 +17,13 @@ import {
   filterUnpopulated,
   getCompanyTableCatalog,
   getJobDatabaseClient,
+  newIdForTable,
   RESEED_SKIPPED_TABLES,
-  SECRET_TABLES
+  rewriteStoragePath,
+  rewriteToTemplateAssetPath,
+  SECRET_TABLES,
+  STORAGE_BUCKET,
+  STORAGE_PATH_COLUMNS
 } from "./company-backup";
 
 const INSERT_CHUNK_SIZE = 200;
@@ -37,8 +45,22 @@ export const companyImportFunction = inngest.createFunction(
   },
   { event: "carbon/company-import" },
   async ({ event, step }) => {
-    const { companyId, userId, filePath, mode, importRunId, autoFinalize } =
-      event.data;
+    const {
+      companyId,
+      userId,
+      filePath,
+      mode,
+      importRunId,
+      autoFinalize,
+      templateIndustryId
+    } = event.data;
+
+    // Onboarding demo templates reference shared assets at
+    // `_templates/<industryId>/` (uploaded once per workspace at deploy) rather
+    // than copying every file into this company's `{companyId}/` prefix. Real
+    // backups have no industryId and stay self-contained (files embedded + copied).
+    const referencedTemplate =
+      typeof templateIndustryId === "string" && templateIndustryId.length > 0;
 
     return await step.run("import-company", async () => {
       const client = getCarbonServiceRole();
@@ -65,7 +87,9 @@ export const companyImportFunction = inngest.createFunction(
       }
 
       const backup = JSON.parse(
-        gunzipSync(Buffer.from(await download.data.arrayBuffer())).toString()
+        (
+          await gunzipAsync(Buffer.from(await download.data.arrayBuffer()))
+        ).toString()
       ) as CompanyBackup;
 
       if (backup.manifest?.kind !== BACKUP_KIND) {
@@ -115,6 +139,7 @@ export const companyImportFunction = inngest.createFunction(
           `This backup can't be restored: ${compatibility.reason}.`
         );
       }
+      const catalogTableNames = new Set(catalog.tables.map((t) => t.name));
 
       const skipped = new Set([
         ...SECRET_TABLES,
@@ -152,10 +177,19 @@ export const companyImportFunction = inngest.createFunction(
           if (!table.hasId) continue;
           const map = new Map<string, string>();
           for (const row of backup.data[table.name]!) {
-            if (typeof row.id === "string") map.set(row.id, nanoid());
+            if (typeof row.id === "string")
+              map.set(row.id, newIdForTable(table));
           }
           idMaps.set(table.name, map);
         }
+      }
+
+      // Flat old-id → new-id lookup across every remapped table, used to rewrite
+      // ids embedded in storage paths (e.g. `{co}/models/{modelId}.stl`) so the
+      // restored files and their DB path columns line up. Empty in preserve mode.
+      const idRewrite = new Map<string, string>();
+      for (const map of idMaps.values()) {
+        for (const [oldId, newId] of map) idRewrite.set(oldId, newId);
       }
 
       // Group-scoped data needs a destination group on the target company.
@@ -172,6 +206,11 @@ export const companyImportFunction = inngest.createFunction(
 
       const sourceCompanyId = backup.manifest.sourceCompanyId;
       let scrubCounter = 0;
+      // FK columns pointing at a tenant table we did NOT import (it was already
+      // populated by the target's own seed, or skipped). Their non-null source
+      // ids don't exist here; collected so a dangling, non-nullable ref is
+      // surfaced rather than silently corrupting referential integrity.
+      const unresolvedRefs = new Set<string>();
 
       // What happens to a column depends only on its metadata and the mode,
       // never on the row — so compile one transform per column per table and
@@ -200,6 +239,29 @@ export const companyImportFunction = inngest.createFunction(
             base = () => companyId;
           } else if (col.name === "companyGroupId") {
             base = () => targetGroupId;
+          } else if (STORAGE_PATH_COLUMNS.has(col.name)) {
+            // Storage path columns embed the companyId + an id that was just
+            // remapped. A referenced template points them at the shared
+            // `_templates/<industryId>/` asset (ids kept, not remapped); a real
+            // backup points them at the per-company files restored below.
+            base = referencedTemplate
+              ? (v) =>
+                  typeof v === "string"
+                    ? rewriteToTemplateAssetPath(
+                        v,
+                        sourceCompanyId,
+                        templateIndustryId
+                      )
+                    : v
+              : (v) =>
+                  typeof v === "string"
+                    ? rewriteStoragePath(
+                        v,
+                        sourceCompanyId,
+                        companyId,
+                        idRewrite
+                      )
+                    : v;
           } else if (fk) {
             if (USER_REF_TABLES.has(fk.refTable)) {
               base = (v) => (v == null ? v : userId);
@@ -212,6 +274,29 @@ export const companyImportFunction = inngest.createFunction(
             } else if (fk.refColumn === "id" && idMaps.has(fk.refTable)) {
               const map = idMaps.get(fk.refTable)!;
               base = (v) => (v == null ? v : (map.get(v as string) ?? v));
+            } else if (
+              fk.refColumn === "id" &&
+              catalogTableNames.has(fk.refTable)
+            ) {
+              // Ref to a tenant table that wasn't imported (filtered out as
+              // already-populated, or skipped + non-nullable). Source ids don't
+              // exist in the target. Null it when allowed; otherwise keep the
+              // value but record it — a non-null ref would dangle once FK
+              // enforcement comes back after the transaction. (Refs to global,
+              // non-tenant tables — country, currency, … — fall through to
+              // identity: their ids are stable across companies.)
+              if (col.isNullable) {
+                base = () => null;
+              } else {
+                base = (v) => {
+                  if (v != null) {
+                    unresolvedRefs.add(
+                      `${table.name}.${col.name} -> ${fk.refTable}`
+                    );
+                  }
+                  return v;
+                };
+              }
             }
           }
 
@@ -260,13 +345,19 @@ export const companyImportFunction = inngest.createFunction(
 
           const transforms = buildColumnTransforms(table, columns);
           const originalRows = backup.data[table.name]!;
-          let rows = originalRows.map((row) => {
+          // Hot path: indexed loops (no per-row `forEach` closure), packed
+          // output array, `out` keys in fixed column order (one hidden class
+          // per table).
+          const colCount = columns.length;
+          let rows: Record<string, unknown>[] = [];
+          for (let r = 0; r < originalRows.length; r++) {
+            const row = originalRows[r]!;
             const out: Record<string, unknown> = {};
-            columns.forEach((col, i) => {
-              out[col.name] = transforms[i]!(row[col.name]);
-            });
-            return out;
-          });
+            for (let c = 0; c < colCount; c++) {
+              out[columns[c]!.name] = transforms[c]!(row[columns[c]!.name]);
+            }
+            rows.push(out);
+          }
 
           // Collapsing user references onto one user can produce duplicate
           // primary keys in user-keyed tables — keep the first of each.
@@ -348,17 +439,43 @@ export const companyImportFunction = inngest.createFunction(
         }
       });
 
+      if (unresolvedRefs.size > 0) {
+        console.warn(
+          "Reseed kept non-nullable references to tables it did not import " +
+            "(the target already had them, so source ids could not be " +
+            "remapped). These may dangle — the template likely needs those " +
+            "columns made nullable or those tables left out of the seed:",
+          [...unresolvedRefs]
+        );
+      }
+
       // Storage files travel outside the transaction — failures here leave
-      // the imported rows intact and are surfaced as warnings.
+      // the imported rows intact and are surfaced as warnings. Restore into the
+      // shared `private` bucket with the path rewritten for the target company
+      // (and remapped ids on reseed), matching the path columns rewritten above.
+      //
+      // A referenced template skips this entirely: its assets already live once
+      // per workspace at `_templates/<industryId>/` (the path columns above now
+      // point there), so copying them into `{companyId}/` would defeat the
+      // purpose. The embedded bytes in the gz are ignored here — they exist for
+      // the deploy step that seeds the shared prefix.
       let storageUploaded = 0;
-      if (backup.storage) {
+      if (backup.storage && !referencedTemplate) {
         for (const [path, base64] of Object.entries(backup.storage)) {
+          const targetPath = rewriteStoragePath(
+            path,
+            sourceCompanyId,
+            companyId,
+            idRewrite
+          );
           const upload = await client.storage
-            .from(companyId)
-            .upload(path, Buffer.from(base64, "base64"), { upsert: false });
+            .from(STORAGE_BUCKET)
+            .upload(targetPath, Buffer.from(base64, "base64"), {
+              upsert: true
+            });
           if (upload.error) {
             console.warn("Failed to upload storage file", {
-              path,
+              path: targetPath,
               error: upload.error.message
             });
           } else {
@@ -389,7 +506,10 @@ export const companyImportFunction = inngest.createFunction(
           mode,
           tables: Object.keys(counts).length,
           rows: totalRows,
-          storageUploaded
+          storageUploaded,
+          ...(referencedTemplate
+            ? { referencedTemplate: templateIndustryId }
+            : {})
         }
       );
 

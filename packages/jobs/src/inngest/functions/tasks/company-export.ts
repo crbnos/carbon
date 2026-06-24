@@ -1,4 +1,8 @@
-import { gzipSync } from "node:zlib";
+import { promisify } from "node:util";
+import { gzip } from "node:zlib";
+
+const gzipAsync = promisify(gzip);
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { sql } from "kysely";
 import { inngest } from "../../client";
@@ -11,7 +15,8 @@ import {
   encodeValue,
   getCompanyTableCatalog,
   getJobDatabaseClient,
-  SECRET_TABLES
+  SECRET_TABLES,
+  STORAGE_BUCKET
 } from "./company-backup";
 
 /** Per-file and total caps for embedded storage files (base64 inflates ~33%). */
@@ -22,10 +27,8 @@ type ServiceRole = ReturnType<typeof getCarbonServiceRole>;
 type JobDatabase = ReturnType<typeof getJobDatabaseClient>;
 
 /**
- * Build a gzipped company backup (data + optional storage files). Shared by the
- * export job (writes the backup to the company's own bucket) and the
- * demo-catalog refresh (writes to the shared bucket) so the export logic lives
- * in exactly one place.
+ * Build a gzipped company backup (data + optional storage files). Exported so
+ * the same logic that backs the export job can author onboarding templates.
  */
 export async function buildCompanyBackup(
   client: ServiceRole,
@@ -106,31 +109,30 @@ export async function buildCompanyBackup(
     });
   }
 
-  // Optionally embed storage files from the per-company bucket, skipping prior
-  // exports and anything over the size caps.
+  // Optionally embed the company's storage assets so the backup is a
+  // self-contained unit. These live in the shared `private` bucket under a
+  // `{companyId}/` prefix (3D models, item thumbnails, attachments) — NOT in
+  // the per-company bucket. Skip anything over the size caps.
   const storageManifest: Manifest["storage"] = [];
   let storageFiles: Record<string, string> | undefined;
 
   if (includeStorage === "all") {
     storageFiles = {};
     let totalBytes = 0;
-    const paths = await listBucketFilesRecursive(client, companyId);
+    const paths = await listBucketFilesRecursive(
+      client,
+      STORAGE_BUCKET,
+      companyId
+    );
 
     for (const file of paths) {
-      if (
-        file.path === EXPORTS_PREFIX ||
-        file.path.startsWith(`${EXPORTS_PREFIX}/`)
-      ) {
-        continue;
-      }
-
       let included =
         file.size <= MAX_STORAGE_FILE_BYTES &&
         totalBytes + file.size <= MAX_STORAGE_TOTAL_BYTES;
 
       if (included) {
         const download = await client.storage
-          .from(companyId)
+          .from(STORAGE_BUCKET)
           .download(file.path);
         if (download.error || !download.data) {
           console.error("Failed to download storage file", {
@@ -167,7 +169,7 @@ export async function buildCompanyBackup(
   };
 
   const backup: CompanyBackup = { manifest, data, storage: storageFiles };
-  const compressed = gzipSync(Buffer.from(JSON.stringify(backup)));
+  const compressed = await gzipAsync(Buffer.from(JSON.stringify(backup)));
   const rows = tableManifest.reduce((sum, t) => sum + t.rows, 0);
   return { compressed, manifest, rows };
 }

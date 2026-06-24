@@ -1,9 +1,11 @@
+import { randomUUID } from "node:crypto";
 import {
   getPostgresClient,
   getPostgresConnectionPool,
   type KyselyDatabase
 } from "@carbon/database/client";
 import { type Kysely, PostgresDriver, sql } from "kysely";
+import { nanoid } from "nanoid";
 
 /**
  * Shared core for company backup export/import.
@@ -17,8 +19,90 @@ export const BACKUP_KIND = "carbon-company-backup";
 export const BACKUP_VERSION = 1;
 export const BACKUP_INTEGRATION = "company-backup";
 export const EXPORTS_PREFIX = "exports";
-/** Shared, env-agnostic bucket backing the demo catalog. */
-export const DEMO_BUCKET = "company-demos";
+/** Shared, env-agnostic bucket holding the onboarding backup templates. */
+export const TEMPLATE_BUCKET = "company-templates";
+
+/**
+ * The bucket the app stores per-company assets in (3D models, item thumbnails,
+ * document attachments), all under a `{companyId}/` prefix. A self-contained
+ * backup must embed these — they are NOT in the per-company bucket.
+ */
+export const STORAGE_BUCKET = "private";
+
+/**
+ * TEXT columns that hold a storage path (`{companyId}/…/{id}.ext`). On reseed
+ * the companyId and the embedded ids both change, so these must be rewritten in
+ * lock-step with the files they point at (see `rewriteStoragePath`).
+ */
+export const STORAGE_PATH_COLUMNS = new Set(["modelPath", "thumbnailPath"]);
+
+/**
+ * Prefix in the `private` bucket where onboarding demo-template assets live ONCE
+ * per workspace (3D models, etc.), uploaded at deploy from the committed
+ * template gz. A template import references these instead of copying the files
+ * into every onboarded company's `{companyId}/` prefix.
+ *
+ * NOTE: `ci/src/upload-backup-templates.ts` (a plain Node script that can't
+ * import this Deno/Inngest module cheaply) hardcodes the same literal — keep
+ * the two in sync.
+ */
+export const TEMPLATE_ASSET_PREFIX = "_templates";
+
+/**
+ * Rewrite a `{sourceCompanyId}/…` storage path to its shared template location
+ * `_templates/{industryId}/…`, keeping the trailing segments (and their ids)
+ * intact — the canonical asset is shared across every company onboarded from
+ * the template, so ids are NOT remapped. Used both when fanning a template's
+ * assets into the shared prefix at deploy and when pointing a referenced
+ * import's path columns at them. A no-op if the path isn't under the source
+ * company prefix.
+ */
+export function rewriteToTemplateAssetPath(
+  path: string,
+  sourceCompanyId: string,
+  industryId: string
+): string {
+  if (path.startsWith(`${sourceCompanyId}/`)) {
+    return `${TEMPLATE_ASSET_PREFIX}/${industryId}/${path.slice(
+      sourceCompanyId.length + 1
+    )}`;
+  }
+  return path;
+}
+
+/**
+ * Rewrite a storage path for the target company. Swaps the leading
+ * `{sourceCompanyId}/` and any path segment whose id was remapped on reseed
+ * (e.g. `{co}/models/{modelId}.stl`, `{co}/thumbnails/{itemId}/{file}`). A
+ * no-op for preserve-mode (same company, empty `idRewrite`). The same function
+ * is applied to both the uploaded file path and the DB path columns so they
+ * stay consistent.
+ */
+export function rewriteStoragePath(
+  path: string,
+  sourceCompanyId: string,
+  targetCompanyId: string,
+  idRewrite: Map<string, string>
+): string {
+  let p = path;
+  if (
+    sourceCompanyId !== targetCompanyId &&
+    p.startsWith(`${sourceCompanyId}/`)
+  ) {
+    p = `${targetCompanyId}/${p.slice(sourceCompanyId.length + 1)}`;
+  }
+  if (idRewrite.size === 0) return p;
+  return p
+    .split("/")
+    .map((seg) => {
+      const dot = seg.indexOf(".");
+      const idPart = dot >= 0 ? seg.slice(0, dot) : seg;
+      const rest = dot >= 0 ? seg.slice(dot) : "";
+      const mapped = idRewrite.get(idPart);
+      return mapped ? mapped + rest : seg;
+    })
+    .join("/");
+}
 
 /**
  * Tables whose contents must never travel in a backup — credentials,
@@ -52,6 +136,23 @@ export const RESEED_SKIPPED_TABLES = [
   "invite",
   "externalIntegrationMapping"
 ];
+
+/**
+ * Tables an in-place restore must NOT wipe or reload — the caller's own access
+ * and identity. Wiping these mid-restore would lock the user out of the company
+ * they're restoring. The backup still carries them; they're simply left as-is.
+ */
+export const IN_PLACE_SKIPPED_TABLES = new Set([
+  "userToCompany",
+  "employee",
+  "employeeType",
+  "employeeTypePermission",
+  "invite",
+  "externalIntegrationMapping"
+]);
+
+/** Integration key for the in-place restore marker (holds the snapshot path). */
+export const RESTORE_INTEGRATION = "company-restore";
 
 export type ColumnInfo = {
   name: string;
@@ -378,6 +479,17 @@ export function topologicalSort(tables: TableInfo[]): TableInfo[] {
   return sorted;
 }
 
+/**
+ * A fresh primary-key value for a table, matching its `id` column's type as the
+ * schema defines it — a real UUID for `uuid` columns, otherwise a nanoid (what
+ * the `id()` default produces). Used wherever reseed/restore remaps ids, so we
+ * never feed a nanoid into a uuid column.
+ */
+export function newIdForTable(table: TableInfo): string {
+  const idCol = table.columns.find((c) => c.name === "id");
+  return idCol?.udtName === "uuid" ? randomUUID() : nanoid();
+}
+
 /** Convert a pg-returned value into a JSON-safe backup value. */
 export function encodeValue(value: unknown, col: ColumnInfo): unknown {
   if (value === null || value === undefined) return null;
@@ -450,5 +562,84 @@ export async function canSetReplicationRole(
     return true;
   } catch (err) {
     return err instanceof Error && err.message === "__rollback__";
+  }
+}
+
+/**
+ * The companyId-scoped tables an in-place restore may clear and reload: minus
+ * the access/identity tables (kept, so the user isn't locked out) and secrets
+ * (never travel). companyGroupId-scoped tables (chart of accounts, currencies)
+ * are excluded — shared across the group, so a single company's restore must
+ * not touch them. Returned in catalog (topological) order.
+ *
+ * The full set is WIPED (so a table empty in the backup ends up empty, matching
+ * the snapshot exactly); only the subset with rows in the backup is reloaded.
+ */
+export function selectWipeableTables(
+  catalog: Catalog,
+  opts: { includeGroup?: boolean } = {}
+): TableInfo[] {
+  const skip = new Set([...SECRET_TABLES, ...IN_PLACE_SKIPPED_TABLES]);
+  return catalog.tables.filter(
+    (t) =>
+      !skip.has(t.name) &&
+      (t.scopeColumn === "companyId" ||
+        (opts.includeGroup === true && t.scopeColumn === "companyGroupId"))
+  );
+}
+
+/**
+ * Guard the in-place restore invariant: a KEPT table (access/secret tables that
+ * survive a wipe) must not hold a NOT-NULL foreign key into a WIPED table. If it
+ * did, wiping the referenced table would dangle the kept row (own restore could
+ * leave it pointing at an emptied table; foreign restore remaps to new ids).
+ * Currently holds — this catches future schema drift before it corrupts data.
+ */
+export function assertWipeSafe(
+  catalog: Catalog
+): { ok: true } | { ok: false; reason: string } {
+  const wipeable = new Set(
+    selectWipeableTables(catalog, { includeGroup: true }).map((t) => t.name)
+  );
+  const kept = new Set([...IN_PLACE_SKIPPED_TABLES, ...SECRET_TABLES]);
+  for (const table of catalog.tables) {
+    if (!kept.has(table.name)) continue;
+    const colByName = new Map(table.columns.map((c) => [c.name, c]));
+    for (const fk of table.foreignKeys) {
+      const col = colByName.get(fk.column);
+      if (col && !col.isNullable && wipeable.has(fk.refTable)) {
+        return {
+          ok: false,
+          reason: `"${table.name}.${fk.column}" requires "${fk.refTable}", which a restore wipes — it would be left dangling`
+        };
+      }
+    }
+  }
+  return { ok: true };
+}
+
+/**
+ * Delete every row of the given tables for one company, in REVERSE topological
+ * order (children before parents) so FK constraints hold by construction.
+ * `tables` is expected in catalog (referenced-first) order; this reverses it.
+ * Each table is scoped by its own column — companyId-scoped by `companyId`,
+ * companyGroupId-scoped by `companyGroupId`. Run inside the caller's
+ * transaction, ideally with `session_replication_role = 'replica'` set.
+ */
+export async function wipeScopedData(
+  trx: Kysely<KyselyDatabase>,
+  tables: TableInfo[],
+  scope: { companyId: string; companyGroupId: string | null }
+): Promise<void> {
+  for (const table of [...tables].reverse()) {
+    const value =
+      table.scopeColumn === "companyGroupId"
+        ? scope.companyGroupId
+        : scope.companyId;
+    if (value == null) continue;
+    await sql`
+      DELETE FROM ${sql.id(table.name)}
+      WHERE ${sql.id(table.scopeColumn)} = ${value}
+    `.execute(trx);
   }
 }

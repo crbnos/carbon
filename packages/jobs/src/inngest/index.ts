@@ -41,15 +41,15 @@ import {
 import {
   companyExportFunction,
   companyImportFunction,
-  companyRevertFunction,
+  companyRestoreFinalizeFunction,
+  companyRestoreFunction,
+  companyRestoreRevertFunction,
   modelThumbnailFunction,
   onboardFunction,
   postTransactionFunction,
   printJobDeliverFunction,
   printJobFunction,
-  publishDemoFunction,
   recalculateFunction,
-  refreshDemoCatalogFunction,
   rescheduleJobFunction,
   updatePermissionsFunction,
   userAdminFunction
@@ -72,7 +72,9 @@ export const functions = [
   // Tasks
   companyExportFunction,
   companyImportFunction,
-  companyRevertFunction,
+  companyRestoreFunction,
+  companyRestoreFinalizeFunction,
+  companyRestoreRevertFunction,
   modelThumbnailFunction,
   updatePermissionsFunction,
   recalculateFunction,
@@ -82,8 +84,6 @@ export const functions = [
   onboardFunction,
   printJobFunction,
   printJobDeliverFunction,
-  publishDemoFunction,
-  refreshDemoCatalogFunction,
   // Scheduled
   cleanupFunction,
   dispatchFunction,
