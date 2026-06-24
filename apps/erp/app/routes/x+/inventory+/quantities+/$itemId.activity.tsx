@@ -2,7 +2,7 @@ import { error, notFound, useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Trans } from "@lingui/react/macro";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
 import InfiniteScroll from "~/components/InfiniteScroll";
@@ -23,6 +23,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
   let locationId = searchParams.get("location");
+  const highlightId = searchParams.get("highlight");
 
   if (!locationId) {
     const userDefaults = await getUserDefaults(client, userId, companyId);
@@ -74,12 +75,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     initialItemLedgers: itemLedgerRecords.data,
     itemId,
     companyId,
-    locationId
+    locationId,
+    highlightId
   };
 }
 
 export default function ItemInventoryActivityRoute() {
-  const { initialItemLedgers, itemId, companyId, locationId } =
+  const { initialItemLedgers, itemId, companyId, locationId, highlightId } =
     useLoaderData<typeof loader>();
 
   const { carbon } = useCarbon();
@@ -117,6 +119,19 @@ export default function ItemInventoryActivityRoute() {
     setIsLoading(false);
   }, [page, carbon, companyId, locationId, itemId, isLoading, hasMore]);
 
+  // When arriving via a `highlight` param, keep paging until that entry is loaded
+  // (it may be far down the history), so InventoryActivity can scroll to + flash
+  // it no matter how old it is. Bounded by `hasMore` — stops at the end of the list.
+  const isHighlightLoaded = highlightId
+    ? itemLedgers.some((ledger) => ledger.id === highlightId)
+    : true;
+
+  useEffect(() => {
+    if (highlightId && !isHighlightLoaded && hasMore && !isLoading) {
+      loadMoreItemLedgers();
+    }
+  }, [highlightId, isHighlightLoaded, hasMore, isLoading, loadMoreItemLedgers]);
+
   return (
     <>
       <div className="w-full space-y-4 pt-6 px-4">
@@ -129,6 +144,7 @@ export default function ItemInventoryActivityRoute() {
           items={itemLedgers}
           loadMore={loadMoreItemLedgers}
           hasMore={hasMore}
+          highlightId={highlightId ?? undefined}
         />
       </div>
     </>

@@ -2737,6 +2737,9 @@ msgstr "Doküman Kontrolü"
 msgid "Document Templates"
 msgstr "Belge Şablonları"
 
+msgid "Document Type"
+msgstr ""
+
 msgid "Document:"
 msgstr "Belge:"
 
@@ -3235,6 +3238,9 @@ msgstr "Varlık"
 
 msgid "Entity is {status}"
 msgstr "Varlık {status}'da"
+
+msgid "Entry Type"
+msgstr ""
 
 msgid "EORI"
 msgstr "EORI"
@@ -7885,6 +7891,9 @@ msgstr "Adım Kayıtları"
 
 msgid "Steps"
 msgstr "Adımlar"
+
+msgid "Stock Movements"
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "Stok Transfer Kimliği"

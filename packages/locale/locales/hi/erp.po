@@ -2737,6 +2737,9 @@ msgstr "दस्तावेज़ नियंत्रण"
 msgid "Document Templates"
 msgstr "दस्तावेज़ टेम्पलेट"
 
+msgid "Document Type"
+msgstr ""
+
 msgid "Document:"
 msgstr "दस्तावेज़:"
 
@@ -3235,6 +3238,9 @@ msgstr "इकाई"
 
 msgid "Entity is {status}"
 msgstr "Entity {status} है"
+
+msgid "Entry Type"
+msgstr ""
 
 msgid "EORI"
 msgstr "EORI"
@@ -7885,6 +7891,9 @@ msgstr "चरण रिकॉर्ड"
 
 msgid "Steps"
 msgstr "चरण"
+
+msgid "Stock Movements"
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "स्टॉक ट्रांसफर आईडी"

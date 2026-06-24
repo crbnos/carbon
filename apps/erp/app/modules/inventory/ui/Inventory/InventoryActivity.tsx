@@ -1,10 +1,20 @@
-import { LuArrowRightLeft, LuCircleMinus, LuCirclePlus } from "react-icons/lu";
-import { Hyperlink } from "~/components";
+import {
+  LuArrowRightLeft,
+  LuExternalLink,
+  LuMoveDown,
+  LuMoveUp
+} from "react-icons/lu";
+import { Link } from "react-router";
 import Activity from "~/components/Activity";
 import { path } from "~/utils/path";
 import type { ItemLedger } from "../../types";
 
 const getActivityText = (ledgerRecord: ItemLedger) => {
+  // Prefer the entity's readable serial/batch number; fall back to the raw
+  // tracked-entity id when it has none (e.g. unnumbered receipt batches).
+  const trackedEntityLabel =
+    ledgerRecord.trackedEntity?.readableId || ledgerRecord.trackedEntityId;
+
   switch (ledgerRecord.documentType) {
     case "Purchase Receipt":
       return `received ${ledgerRecord.quantity} units${
@@ -12,10 +22,10 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
           ? ` to ${ledgerRecord.storageUnit.name}`
           : ""
       }${
-        ledgerRecord.trackedEntityId
+        trackedEntityLabel
           ? ` from ${
               Math.abs(ledgerRecord.quantity) > 1 ? "batch" : "serial"
-            } ${ledgerRecord.trackedEntityId}`
+            } ${trackedEntityLabel}`
           : ""
       }`;
     case "Purchase Invoice":
@@ -30,10 +40,8 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
           ? ` from ${ledgerRecord.storageUnit.name}`
           : ""
       }${
-        ledgerRecord.trackedEntityId
-          ? ` of ${Math.abs(ledgerRecord.quantity) > 1 ? "batch" : "serial"} ${
-              ledgerRecord.trackedEntityId
-            }`
+        trackedEntityLabel
+          ? ` of ${Math.abs(ledgerRecord.quantity) > 1 ? "batch" : "serial"} ${trackedEntityLabel}`
           : ""
       }`;
     case "Sales Invoice":
@@ -129,33 +137,39 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
           {ledgerRecord.storageUnit?.name
             ? `from ${ledgerRecord.storageUnit.name} `
             : ""}
-          {ledgerRecord.trackedEntityId ? (
+          {trackedEntityLabel ? (
             <>
               from {Math.abs(ledgerRecord.quantity) > 1 ? "batch" : "serial"}{" "}
-              {ledgerRecord.trackedEntityId}{" "}
+              {trackedEntityLabel}{" "}
             </>
           ) : null}
           {ledgerRecord.documentLineId && ledgerRecord.documentId ? (
             <>
               to a{" "}
-              <Hyperlink
-                className="inline-flex"
+              <Link
+                className="inline-flex items-center gap-1 font-medium text-foreground hover:text-primary"
                 to={`${path.to.jobProductionEvents(
                   ledgerRecord.documentId!
                 )}?filter=jobOperationId:eq:${ledgerRecord.documentLineId}`}
+                target="_blank"
+                rel="noopener noreferrer"
               >
-                job operation
-              </Hyperlink>
+                <span>job operation</span>
+                <LuExternalLink className="size-3.5" />
+              </Link>
             </>
           ) : ledgerRecord.documentId ? (
             <>
               to a{" "}
-              <Hyperlink
-                className="inline-flex"
+              <Link
+                className="inline-flex items-center gap-1 font-medium text-foreground hover:text-primary"
                 to={path.to.jobDetails(ledgerRecord.documentId!)}
+                target="_blank"
+                rel="noopener noreferrer"
               >
-                job
-              </Hyperlink>
+                <span>job</span>
+                <LuExternalLink className="size-3.5" />
+              </Link>
             </>
           ) : null}
         </span>
@@ -167,21 +181,24 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
           {ledgerRecord.storageUnit?.name
             ? `from ${ledgerRecord.storageUnit.name} `
             : ""}
-          {ledgerRecord.trackedEntityId ? (
+          {trackedEntityLabel ? (
             <>
               from {Math.abs(ledgerRecord.quantity) > 1 ? "batch" : "serial"}{" "}
-              {ledgerRecord.trackedEntityId}{" "}
+              {trackedEntityLabel}{" "}
             </>
           ) : null}
           {ledgerRecord.documentId ? (
             <>
               to a{" "}
-              <Hyperlink
-                className="inline-flex"
+              <Link
+                className="inline-flex items-center gap-1 font-medium text-foreground hover:text-primary"
                 to={path.to.maintenanceDispatch(ledgerRecord.documentId!)}
+                target="_blank"
+                rel="noopener noreferrer"
               >
-                maintenance dispatch
-              </Hyperlink>
+                <span>maintenance dispatch</span>
+                <LuExternalLink className="size-3.5" />
+              </Link>
             </>
           ) : null}
         </span>
@@ -196,12 +213,15 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
               : ""}{" "}
             from a
           </span>{" "}
-          <Hyperlink
-            className="inline-flex"
+          <Link
+            className="inline-flex items-center gap-1 font-medium text-foreground hover:text-primary"
             to={path.to.jobDetails(ledgerRecord.documentId!)}
+            target="_blank"
+            rel="noopener noreferrer"
           >
-            job
-          </Hyperlink>
+            <span>job</span>
+            <LuExternalLink className="size-3.5" />
+          </Link>
         </>
       );
     default:
@@ -215,10 +235,8 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
           ? ` to ${ledgerRecord.storageUnit?.name}`
           : ""
       }${
-        ledgerRecord.trackedEntityId
-          ? ` for ${Math.abs(ledgerRecord.quantity) > 1 ? "batch" : "serial"} ${
-              ledgerRecord.trackedEntityId
-            }`
+        trackedEntityLabel
+          ? ` for ${Math.abs(ledgerRecord.quantity) > 1 ? "batch" : "serial"} ${trackedEntityLabel}`
           : ""
       }`;
     case "Negative Adjmt.":
@@ -227,10 +245,8 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
           ? ` to ${ledgerRecord.storageUnit.name}`
           : ""
       }${
-        ledgerRecord.trackedEntityId
-          ? ` for ${Math.abs(ledgerRecord.quantity) > 1 ? "batch" : "serial"} ${
-              ledgerRecord.trackedEntityId
-            }`
+        trackedEntityLabel
+          ? ` for ${Math.abs(ledgerRecord.quantity) > 1 ? "batch" : "serial"} ${trackedEntityLabel}`
           : ""
       }`;
     default:
@@ -241,12 +257,12 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
 const getActivityIcon = (ledgerRecord: ItemLedger) => {
   switch (ledgerRecord.entryType) {
     case "Transfer":
-      return <LuArrowRightLeft className="text-blue-500 w-5 h-5" />;
+      return <LuArrowRightLeft className="text-blue-500 text-lg" />;
     case "Positive Adjmt.":
-      return <LuCirclePlus className="text-emerald-500 w-5 h-5" />;
+      return <LuMoveUp className="text-emerald-500 text-lg" />;
     case "Negative Adjmt.":
     case "Consumption":
-      return <LuCircleMinus className="text-red-500 w-5 h-5" />;
+      return <LuMoveDown className="text-red-500 text-lg" />;
     default:
       return "";
   }
@@ -254,9 +270,10 @@ const getActivityIcon = (ledgerRecord: ItemLedger) => {
 
 type InventoryActivityProps = {
   item: ItemLedger;
+  highlightId?: string;
 };
 
-const InventoryActivity = ({ item }: InventoryActivityProps) => {
+const InventoryActivity = ({ item, highlightId }: InventoryActivityProps) => {
   return (
     <Activity
       employeeId={item.createdBy}
@@ -264,6 +281,7 @@ const InventoryActivity = ({ item }: InventoryActivityProps) => {
       activityTime={item.createdAt}
       activityIcon={getActivityIcon(item)}
       comment={item.comment}
+      highlighted={highlightId === item.id}
     />
   );
 };

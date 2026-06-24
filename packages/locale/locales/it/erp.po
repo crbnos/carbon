@@ -2737,6 +2737,9 @@ msgstr "Controllo Documenti"
 msgid "Document Templates"
 msgstr "Modelli di Documento"
 
+msgid "Document Type"
+msgstr ""
+
 msgid "Document:"
 msgstr "Documento:"
 
@@ -3235,6 +3238,9 @@ msgstr "Entità"
 
 msgid "Entity is {status}"
 msgstr "L'entità è {status}"
+
+msgid "Entry Type"
+msgstr ""
 
 msgid "EORI"
 msgstr "EORI"
@@ -7885,6 +7891,9 @@ msgstr "Registri dei Passaggi"
 
 msgid "Steps"
 msgstr "Passaggi"
+
+msgid "Stock Movements"
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "ID Trasferimento Magazzino"

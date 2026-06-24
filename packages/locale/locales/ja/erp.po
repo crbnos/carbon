@@ -2737,6 +2737,9 @@ msgstr "ドキュメント管理"
 msgid "Document Templates"
 msgstr "ドキュメントテンプレート"
 
+msgid "Document Type"
+msgstr ""
+
 msgid "Document:"
 msgstr "ドキュメント:"
 
@@ -3235,6 +3238,9 @@ msgstr "エンティティ"
 
 msgid "Entity is {status}"
 msgstr "エンティティは {status} です"
+
+msgid "Entry Type"
+msgstr ""
 
 msgid "EORI"
 msgstr "EORI"
@@ -7885,6 +7891,9 @@ msgstr "ステップレコード"
 
 msgid "Steps"
 msgstr "ステップ"
+
+msgid "Stock Movements"
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "在庫移動ID"

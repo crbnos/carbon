@@ -2737,6 +2737,9 @@ msgstr "Управление документами"
 msgid "Document Templates"
 msgstr "Шаблоны документов"
 
+msgid "Document Type"
+msgstr ""
+
 msgid "Document:"
 msgstr "Документ:"
 
@@ -3235,6 +3238,9 @@ msgstr "Сущность"
 
 msgid "Entity is {status}"
 msgstr "Сущность имеет статус {status}"
+
+msgid "Entry Type"
+msgstr ""
 
 msgid "EORI"
 msgstr "EORI"
@@ -7885,6 +7891,9 @@ msgstr "Записи этапов"
 
 msgid "Steps"
 msgstr "Шаги"
+
+msgid "Stock Movements"
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "ID передачи запасов"

@@ -2737,6 +2737,9 @@ msgstr "Document Control"
 msgid "Document Templates"
 msgstr "Document Templates"
 
+msgid "Document Type"
+msgstr "Document Type"
+
 msgid "Document:"
 msgstr "Document:"
 
@@ -3235,6 +3238,9 @@ msgstr "Entity"
 
 msgid "Entity is {status}"
 msgstr "Entity is {status}"
+
+msgid "Entry Type"
+msgstr "Entry Type"
 
 msgid "EORI"
 msgstr "EORI"
@@ -7885,6 +7891,9 @@ msgstr "Step Records"
 
 msgid "Steps"
 msgstr "Steps"
+
+msgid "Stock Movements"
+msgstr "Stock Movements"
 
 msgid "Stock Transfer ID"
 msgstr "Stock Transfer ID"

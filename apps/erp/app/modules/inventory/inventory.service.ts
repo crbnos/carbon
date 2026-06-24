@@ -169,7 +169,9 @@ export async function getItemLedgerPage(
 
   let query = client
     .from("itemLedger")
-    .select("*, storageUnit(name)", { count: "exact" })
+    .select("*, storageUnit(name), trackedEntity(readableId)", {
+      count: "exact"
+    })
     .eq("itemId", itemId)
     .eq("companyId", companyId)
     .eq("locationId", locationId)
@@ -906,6 +908,33 @@ export async function searchStorageUnitsWithAncestors(
     expandedParentIds: Array.from(expanded),
     error: null
   };
+}
+
+export async function getStockMovements(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+  }
+) {
+  let query = client
+    .from("itemLedgers")
+    .select("*", {
+      count: "exact"
+    })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.or(
+      `itemReadableId.ilike.%${args.search}%,itemDescription.ilike.%${args.search}%,locationName.ilike.%${args.search}%,storageUnitName.ilike.%${args.search}%,trackedEntityReadableId.ilike.%${args.search}%`
+    );
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "createdAt", ascending: false },
+    { column: "entryNumber", ascending: false }
+  ]);
+  return query;
 }
 
 export async function getShipments(

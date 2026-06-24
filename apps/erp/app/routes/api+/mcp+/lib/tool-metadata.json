@@ -1,6 +1,6 @@
 {
-  "generated": "2026-06-21T22:03:32.744Z",
-  "totalTools": 1209,
+  "generated": "2026-06-24T11:48:23.987Z",
+  "totalTools": 1210,
   "modules": 15,
   "tools": [
     {
@@ -4625,6 +4625,45 @@
           "locationId",
           "search"
         ]
+      }
+    },
+    {
+      "name": "inventory_getStockMovements",
+      "module": "inventory",
+      "classification": "READ",
+      "description": "get stock movements",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "companyId",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "args": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 100
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0
+              },
+              "search": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
       }
     },
     {

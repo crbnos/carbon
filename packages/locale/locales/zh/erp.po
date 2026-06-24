@@ -2737,6 +2737,9 @@ msgstr "文件控制"
 msgid "Document Templates"
 msgstr "文档模板"
 
+msgid "Document Type"
+msgstr ""
+
 msgid "Document:"
 msgstr "文档："
 
@@ -3235,6 +3238,9 @@ msgstr "实体"
 
 msgid "Entity is {status}"
 msgstr "实体为 {status}"
+
+msgid "Entry Type"
+msgstr ""
 
 msgid "EORI"
 msgstr "EORI"
@@ -7885,6 +7891,9 @@ msgstr "步骤记录"
 
 msgid "Steps"
 msgstr "步骤"
+
+msgid "Stock Movements"
+msgstr ""
 
 msgid "Stock Transfer ID"
 msgstr "库存转移ID"

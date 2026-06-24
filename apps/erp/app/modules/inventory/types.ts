@@ -11,6 +11,7 @@ import type {
   getShipments,
   getShipmentTracking,
   getShippingMethods,
+  getStockMovements,
   getStockTransferLines,
   getStockTransfers,
   getTrackedEntities,
@@ -56,6 +57,10 @@ export type ReceiptSourceDocument =
 
 export type Shipment = NonNullable<
   Awaited<ReturnType<typeof getShipments>>["data"]
+>[number];
+
+export type StockMovement = NonNullable<
+  Awaited<ReturnType<typeof getStockMovements>>["data"]
 >[number];
 
 export type ShipmentLine = NonNullable<

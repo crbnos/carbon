@@ -1,5 +1,6 @@
 import { useLingui } from "@lingui/react/macro";
 import {
+  LuArrowDownUp,
   LuArrowRightLeft,
   LuClipboardList,
   LuHandCoins,
@@ -73,6 +74,13 @@ export default function useInventorySubmodules() {
           role: "employee",
           icon: <LuTally5 />,
           table: "inventory"
+        },
+        {
+          name: t`Stock Movements`,
+          to: path.to.stockMovements,
+          role: "employee",
+          icon: <LuArrowDownUp />,
+          table: "itemLedger"
         },
         {
           name: t`Tracked Entities`,

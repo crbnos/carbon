@@ -6,10 +6,11 @@ import { useInView } from "react-intersection-observer";
 import Empty from "./Empty";
 
 interface InfiniteScrollProps<T extends { id: string }> {
-  component: React.FC<{ item: T }>;
+  component: React.FC<{ item: T; highlightId?: string }>;
   items: T[];
   loadMore: () => Promise<void>;
   hasMore: boolean;
+  highlightId?: string;
 }
 
 export function LoadingSkeleton({
@@ -48,7 +49,8 @@ export default function InfiniteScroll<T extends { id: string }>({
   component: Component,
   items,
   loadMore,
-  hasMore
+  hasMore,
+  highlightId
 }: InfiniteScrollProps<T>) {
   const { ref, inView } = useInView({
     threshold: 0
@@ -68,7 +70,9 @@ export default function InfiniteScroll<T extends { id: string }>({
             <Empty />
           </div>
         ) : (
-          items.map((item) => <Component key={item.id} item={item} />)
+          items.map((item) => (
+            <Component key={item.id} item={item} highlightId={highlightId} />
+          ))
         )}
         <div ref={ref}>{hasMore && <LoadingSkeleton />}</div>
       </ul>
