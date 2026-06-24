@@ -439,6 +439,7 @@ export const path = {
     },
     onboarding: {
       company: `${onboarding}/company`,
+      industry: `${onboarding}/industry`,
       location: `${onboarding}/location`,
       plan: `${onboarding}/plan`,
       root: `${onboarding}`,
@@ -1866,6 +1867,7 @@ export const onboardingSequence = [
   path.to.onboarding.theme,
   path.to.onboarding.user,
   path.to.onboarding.company,
+  path.to.onboarding.industry,
   path.to.onboarding.plan
 ] as const;
 

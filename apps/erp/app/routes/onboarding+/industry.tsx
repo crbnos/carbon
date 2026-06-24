@@ -479,7 +479,6 @@ export default function OnboardingIndustry() {
               <Hidden name="dataChoice" value="demo" />
               <Hidden name="industryId" value={selectedIndustryId} />
               <ChoiceCardGroup
-                direction="row"
                 value={selectedIndustryId}
                 onChange={setSelectedIndustryId}
                 options={industryOptions}

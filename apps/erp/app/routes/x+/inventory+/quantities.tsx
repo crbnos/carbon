@@ -51,7 +51,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const userDefaults = await getUserDefaults(client, userId, companyId);
     if (userDefaults.error) {
       throw redirect(
-        path.to.inventory,
+        path.to.authenticatedRoot,
         await flash(
           request,
           error(userDefaults.error, "Failed to load default location")
@@ -65,11 +65,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (!locationId) {
     const locations = await getLocationsList(client, companyId);
     if (locations.error || !locations.data?.length) {
+      // `path.to.inventory` *is* this route — redirecting here loops forever.
+      // On error bail to the app root; with zero locations (a company that
+      // can't show inventory at all) send them to create one.
       throw redirect(
-        path.to.inventory,
+        locations.error ? path.to.authenticatedRoot : path.to.locations,
         await flash(
           request,
-          error(locations.error, "Failed to load any locations")
+          error(
+            locations.error,
+            locations.error
+              ? "Failed to load any locations"
+              : "Create a location to manage inventory"
+          )
         )
       );
     }
