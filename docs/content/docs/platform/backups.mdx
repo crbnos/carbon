@@ -1,0 +1,85 @@
+---
+title: Backups
+description: Snapshot a company's data and files, restore it in place with one-click revert, or stand up a new company from a demo template.
+---
+
+A backup is a single self-contained snapshot of one company: every record it owns, and optionally the files it has uploaded. You make one from **Settings → Backups**, and you do two things with it. You **restore** it in place over the same company (with a one-click revert if the result is wrong), or you use it as the starting data for a brand-new company at sign-up. Same file, two jobs: undo and clone.
+
+Backups are scoped to a single company and gated to its owner. Opening **Settings → Backups** as anyone else returns "Only the company owner can access backups".
+
+<Callout type="warning" title="A backup is not disaster recovery">
+This is a logical, per-company snapshot for cloning environments and undoing a bad change, not a full database dump. It captures one company's tenant data, not the whole Postgres instance, and there is no scheduling or point-in-time recovery. Treat it as a working tool, not your only copy.
+</Callout>
+
+## What a backup contains
+
+The contents are derived from the schema, not a hand-picked list: every table that carries a `companyId` (the company's own data) and the group-scoped configuration it shares (chart of accounts, currencies, dimensions) travels in the file. In practice that spans the whole business.
+
+<FieldTable>
+  <Field name="Sales">Customers, quotes, sales orders, sales invoices, shipments.</Field>
+  <Field name="Purchasing">Suppliers, purchase orders, purchase invoices, receipts.</Field>
+  <Field name="Items">Parts, materials, tools, and their methods.</Field>
+  <Field name="Production">Jobs, work centers, processes.</Field>
+  <Field name="Accounting">Chart of accounts, currencies, dimensions, journal lines, and the item, cost, and supplier ledgers.</Field>
+  <Field name="Quality &amp; people">Non-conformances, gauges, employees.</Field>
+</FieldTable>
+
+You can see the live counts before you export. The **i** button next to "Create a backup" opens a "What's in a backup" summary with a row count per entity for the current company.
+
+<Callout type="warning" title="Secrets never travel">
+API keys, integration connections, OAuth tokens, and webhooks are deliberately left out of every backup. They stay with the source company, so a restored or cloned environment never carries another company's credentials. Re-connect integrations after a restore.
+</Callout>
+
+When you export, **Include** offers two options:
+
+<FieldTable>
+  <Field name="Data only">Customers, items, orders and every record. Smaller and faster.</Field>
+  <Field name="Data + files">Also bundles uploaded files, such as 3D models, documents and images.</Field>
+</FieldTable>
+
+## Create a backup
+
+On **Settings → Backups**, the "Create a backup" card snapshots all of the company's non-sensitive data into a backup. Give it an optional label, choose **Data only** or **Data + files**, and select **Create backup**. The job runs in the background and the finished file lands in the list below, where you can download or delete it.
+
+<Screenshot label="Settings → Backups, the Create a backup card with the Data only / Data + files choice and the i contents button" caption="Export snapshots the company's non-sensitive data; the contents popover shows live row counts." ratio="wide" />
+
+## Restore in place
+
+Restoring replaces the current company's data with a backup. Use the "Restore from a backup" card: pick a **Source** backup, choose whether to also restore its files, and select **Restore**.
+
+Carbon does this safely. Before it wipes anything, it takes an automatic snapshot of the company's current state, then loads the backup over the top. Because the pre-restore snapshot is kept, a restore is always reversible.
+
+<Callout type="note" title="One restore at a time">
+A restore stays open for review until you act on it. Starting another while one is pending returns "Finish your current restore — keep or revert it — first." This keeps the auto-snapshot unambiguous, so a revert always returns you to the state from just before the last restore.
+</Callout>
+
+When the load finishes, the "Restored — review" card appears. A restore replaced this company's data, so you decide what happens next:
+
+<StatusFlow>
+  <Status name="running">The backup is loading over the current company. The auto-snapshot has already been taken.</Status>
+  <Status name="ready" accent>The load finished. **Keep** it, or **Revert** to the pre-restore snapshot.</Status>
+  <Status name="reverting" branch>You chose revert; the pre-restore data is being restored.</Status>
+  <Status name="failed" terminal>The restore did not complete. The company is intact, and you can dismiss the notice.</Status>
+</StatusFlow>
+
+Choosing **Keep** accepts the restored data. **Revert** rolls the company back to the automatic snapshot taken just before the restore.
+
+<Callout type="warning" title="The shared chart of accounts is protected">
+Accounts, currencies and dimensions are shared across every company in a <Term>company group</Term>. A single company's restore will not touch them unless that company is the only one in its group. Restoring a backup from another company onto a shared group is refused rather than risk rewriting accounting data the other companies rely on.
+</Callout>
+
+## Start a company from a template
+
+The same backup format powers onboarding. When you create a new company, the industry step asks how to seed it:
+
+<FieldTable>
+  <Field name="Use a demo template">Adds sample customers, suppliers, parts and quotes for the chosen industry, so you can explore Carbon with realistic data.</Field>
+  <Field name="Restore from a backup">Sets the new company up from a Carbon backup of another company.</Field>
+  <Field name="I don't need data">Starts with a clean, empty environment.</Field>
+</FieldTable>
+
+A demo template is just a committed backup, one per industry. Picking it imports that backup into the fresh company.
+
+<Callout type="note" title="Templates reference shared assets">
+A demo template's files, such as 3D models, are stored once per workspace and referenced by every company onboarded from that template, rather than copied into each new company's storage. Cloning an environment from a template does no per-company file duplication.
+</Callout>
