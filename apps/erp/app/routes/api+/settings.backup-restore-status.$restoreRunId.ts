@@ -1,4 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { isInternalEmail } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { getCompanyRestoreRuns } from "~/modules/settings";
 
@@ -7,9 +8,10 @@ import { getCompanyRestoreRuns } from "~/modules/settings";
 // "ready" for keep/revert. Once kept or reverted the marker is gone again — the
 // client knows which phase it's in, so it interprets absence accordingly.
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId, email } = await requirePermissions(request, {
     update: "settings"
   });
+  if (!isInternalEmail(email)) throw new Response("Not found", { status: 404 });
   const restoreRunId = params.restoreRunId;
 
   const runs = await getCompanyRestoreRuns(client, companyId);

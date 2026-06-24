@@ -1,4 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { isInternalEmail } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "react-router";
 
@@ -88,10 +89,11 @@ async function countEntity(
 // Lazy-loaded by the backup-contents popover (only when opened). Returns a
 // headline row count per entity, grouped, plus a grand total.
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
+  const { client, companyId, companyGroupId, email } = await requirePermissions(
     request,
     { view: "settings" }
   );
+  if (!isInternalEmail(email)) throw new Response("Not found", { status: 404 });
 
   const groups = await Promise.all(
     GROUPS.map(async (group) => {

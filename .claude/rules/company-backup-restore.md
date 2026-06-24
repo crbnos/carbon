@@ -29,6 +29,12 @@ User-facing rules of the feature: backups are **company-owner only**
 (`group.ownerId === userId` check in the route), exclude secrets, and a restore is
 reversible via an auto-snapshot.
 
+**Currently internal-only** (`isInternalEmail`, `@carbon/utils`) while the
+multi-tenant caveats below are unhardened: the nav entry is in `internalOnlyRoutes`
+(`useSettingsSubmodules.tsx`), and `requireOwner` (route loader/action) plus both
+`api+/settings.backup-*` loaders 404/redirect non-internal users. Internal =
+`@carbon.ms` / `@carbon.us.org`. Drop the gates to ship publicly.
+
 ## Shared engine — `company-backup.ts`
 
 The catalog is **schema-introspected**, not a hand-maintained list:
