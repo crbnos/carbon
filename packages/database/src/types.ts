@@ -2443,7 +2443,6 @@ export type Database = {
           parentCompanyId: string | null
           phone: string | null
           postalCode: string | null
-          seedDemoData: boolean
           selectedModules: string[] | null
           slackChannel: string | null
           stateProvince: string | null
@@ -2480,7 +2479,6 @@ export type Database = {
           parentCompanyId?: string | null
           phone?: string | null
           postalCode?: string | null
-          seedDemoData?: boolean
           selectedModules?: string[] | null
           slackChannel?: string | null
           stateProvince?: string | null
@@ -2517,7 +2515,6 @@ export type Database = {
           parentCompanyId?: string | null
           phone?: string | null
           postalCode?: string | null
-          seedDemoData?: boolean
           selectedModules?: string[] | null
           slackChannel?: string | null
           stateProvince?: string | null
@@ -12349,82 +12346,35 @@ export type Database = {
       industry: {
         Row: {
           active: boolean
-          backupPath: string | null
           createdAt: string
           description: string | null
           iconName: string | null
           id: string
-          includesStorage: boolean
           name: string
-          rowCount: number | null
-          schemaVersion: string | null
           sortOrder: number
-          sourceCompanyId: string | null
-          sourceCompanyName: string | null
           updatedAt: string | null
         }
         Insert: {
           active?: boolean
-          backupPath?: string | null
           createdAt?: string
           description?: string | null
           iconName?: string | null
           id: string
-          includesStorage?: boolean
           name: string
-          rowCount?: number | null
-          schemaVersion?: string | null
           sortOrder?: number
-          sourceCompanyId?: string | null
-          sourceCompanyName?: string | null
           updatedAt?: string | null
         }
         Update: {
           active?: boolean
-          backupPath?: string | null
           createdAt?: string
           description?: string | null
           iconName?: string | null
           id?: string
-          includesStorage?: boolean
           name?: string
-          rowCount?: number | null
-          schemaVersion?: string | null
           sortOrder?: number
-          sourceCompanyId?: string | null
-          sourceCompanyName?: string | null
           updatedAt?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "industry_sourceCompanyId_fkey"
-            columns: ["sourceCompanyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "industry_sourceCompanyId_fkey"
-            columns: ["sourceCompanyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "industry_sourceCompanyId_fkey"
-            columns: ["sourceCompanyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "industry_sourceCompanyId_fkey"
-            columns: ["sourceCompanyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-        ]
+        Relationships: []
       }
       inspectionDocument: {
         Row: {
@@ -39329,91 +39279,7 @@ export type Database = {
           },
         ]
       }
-      searchIndex_5vc9HeNXFrB4HAR527xQUK: {
-        Row: {
-          createdAt: string
-          description: string | null
-          entityId: string
-          entityType: string
-          id: number
-          link: string
-          metadata: Json | null
-          searchVector: unknown
-          tags: string[] | null
-          title: string
-          updatedAt: string | null
-        }
-        Insert: {
-          createdAt?: string
-          description?: string | null
-          entityId: string
-          entityType: string
-          id?: number
-          link: string
-          metadata?: Json | null
-          searchVector?: unknown
-          tags?: string[] | null
-          title: string
-          updatedAt?: string | null
-        }
-        Update: {
-          createdAt?: string
-          description?: string | null
-          entityId?: string
-          entityType?: string
-          id?: number
-          link?: string
-          metadata?: Json | null
-          searchVector?: unknown
-          tags?: string[] | null
-          title?: string
-          updatedAt?: string | null
-        }
-        Relationships: []
-      }
-      searchIndex_d8tiub7do0h02h7o0p3g: {
-        Row: {
-          createdAt: string
-          description: string | null
-          entityId: string
-          entityType: string
-          id: number
-          link: string
-          metadata: Json | null
-          searchVector: unknown
-          tags: string[] | null
-          title: string
-          updatedAt: string | null
-        }
-        Insert: {
-          createdAt?: string
-          description?: string | null
-          entityId: string
-          entityType: string
-          id?: number
-          link: string
-          metadata?: Json | null
-          searchVector?: unknown
-          tags?: string[] | null
-          title: string
-          updatedAt?: string | null
-        }
-        Update: {
-          createdAt?: string
-          description?: string | null
-          entityId?: string
-          entityType?: string
-          id?: number
-          link?: string
-          metadata?: Json | null
-          searchVector?: unknown
-          tags?: string[] | null
-          title?: string
-          updatedAt?: string | null
-        }
-        Relationships: []
-      }
-      searchIndex_W8C1N2pNjnEbpWf1kpi39Y: {
+      searchIndex_d8u0tkkrs0h02bo0k2m0: {
         Row: {
           createdAt: string
           description: string | null
@@ -55538,14 +55404,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -61220,14 +61086,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
