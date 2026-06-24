@@ -1,9 +1,10 @@
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-// Company backup export/import. Edge functions are thin auth boundaries;
-// the heavy lifting runs in the carbon/company-export and
-// carbon/company-import inngest jobs (packages/jobs).
+// Company backup data access. The export edge function is a thin auth boundary;
+// the heavy lifting runs in the carbon/company-export inngest job. Restore is
+// enqueued server-side (see backups.server.ts) and tracked via the
+// externalIntegrationMapping marker (getCompanyRestoreRuns).
 
 export async function exportCompanyBackup(
   client: SupabaseClient<Database>,
@@ -15,34 +16,6 @@ export async function exportCompanyBackup(
   }
 ) {
   return client.functions.invoke("export-company", { body: args });
-}
-
-export async function importCompanyBackup(
-  client: SupabaseClient<Database>,
-  args: {
-    companyId: string;
-    userId: string;
-    filePath: string;
-    mode?: "preserve" | "reseed";
-  }
-) {
-  return client.functions.invoke<{ importRunId: string }>("import-company", {
-    body: args
-  });
-}
-
-export async function finalizeCompanyBackupImport(
-  client: SupabaseClient<Database>,
-  args: { companyId: string; importRunId: string; userId: string }
-) {
-  return client.functions.invoke("finalize-import", { body: args });
-}
-
-export async function revertCompanyBackupImport(
-  client: SupabaseClient<Database>,
-  args: { companyId: string; importRunId: string; userId: string }
-) {
-  return client.functions.invoke("revert-import", { body: args });
 }
 
 export async function listCompanyBackupExports(
@@ -72,68 +45,40 @@ export async function deleteCompanyBackupExport(
 }
 
 /**
- * Load modelUpload rows created by the given import run that still need a
- * thumbnail rendered. Used to fan out `model-thumbnail` jobs when an import
- * is finalized so the imported models get previews.
+ * Pending in-place restore runs. One marker row per restore (integration =
+ * 'company-restore'), holding the pre-restore snapshot path in metadata. A row
+ * exists between the restore completing and the user keeping or reverting it.
  */
-export async function getCompanyBackupImportedModels(
-  client: SupabaseClient<Database>,
-  args: { companyId: string; importRunId: string }
-) {
-  const mappings = await client
-    .from("externalIntegrationMapping")
-    .select("entityId")
-    .eq("integration", "company-backup")
-    .eq("entityType", "modelUpload")
-    .eq("companyId", args.companyId)
-    .filter("metadata->>importRunId", "eq", args.importRunId);
-
-  if (mappings.error) return mappings;
-
-  const ids = (mappings.data ?? []).map((m) => m.entityId);
-  if (ids.length === 0) return { data: [], error: null };
-
-  return client
-    .from("modelUpload")
-    .select("id, thumbnailPath, modelPath")
-    .in("id", ids)
-    .not("modelPath", "is", null)
-    .is("thumbnailPath", null);
-}
-
-/**
- * Pending company backup import runs, derived from the revert ledger.
- * Rows exist between import-company and finalize/revert.
- */
-export async function getCompanyBackupImportRuns(
+export async function getCompanyRestoreRuns(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  const mappings = await client
+  const markers = await client
     .from("externalIntegrationMapping")
-    .select("metadata, createdAt")
-    .eq("integration", "company-backup")
+    .select("entityId, metadata, createdAt")
+    .eq("integration", "company-restore")
     .eq("companyId", companyId)
-    .order("createdAt", { ascending: true })
-    .limit(10000);
+    .order("createdAt", { ascending: false });
 
-  if (mappings.error) return { data: null, error: mappings.error };
+  if (markers.error) return { data: null, error: markers.error };
 
-  const runs = new Map<
-    string,
-    { importRunId: string; rows: number; startedAt: string }
-  >();
-  for (const m of mappings.data ?? []) {
-    const importRunId = (m.metadata as { importRunId?: string } | null)
-      ?.importRunId;
-    if (!importRunId) continue;
-    const existing = runs.get(importRunId);
-    if (existing) {
-      existing.rows += 1;
-    } else {
-      runs.set(importRunId, { importRunId, rows: 1, startedAt: m.createdAt });
-    }
-  }
+  const runs = (markers.data ?? []).map((m) => {
+    const meta = (m.metadata ?? {}) as {
+      restoreRunId?: string;
+      status?: "running" | "ready" | "failed" | "reverting";
+      rows?: number;
+      label?: string | null;
+      error?: string | null;
+    };
+    return {
+      restoreRunId: meta.restoreRunId ?? m.entityId,
+      status: meta.status ?? "running",
+      rows: meta.rows ?? 0,
+      label: meta.label ?? null,
+      error: meta.error ?? null,
+      startedAt: m.createdAt
+    };
+  });
 
-  return { data: [...runs.values()], error: null };
+  return { data: runs, error: null };
 }

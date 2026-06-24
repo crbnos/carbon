@@ -1,43 +1,61 @@
-// Settings → Backups (company export/import). Renamed from data-management.
+// Settings → Backups (company export / in-place restore).
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
-import { ValidatedForm, validationError, validator } from "@carbon/form";
-import { batchTrigger, trigger } from "@carbon/jobs";
+import {
+  Hidden,
+  Input,
+  Submit,
+  ValidatedForm,
+  validationError,
+  validator
+} from "@carbon/form";
 import {
   Button,
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
   Heading,
   HStack,
   ScrollArea,
+  toast,
   VStack
 } from "@carbon/react";
-import { convertKbToString, isInternalEmail } from "@carbon/utils";
+import { convertKbToString } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { useEffect, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, Form, redirect, useLoaderData } from "react-router";
+import { data, Form, redirect, useFetcher, useLoaderData } from "react-router";
 import { z } from "zod";
-import { Hidden, Input, Select, Submit } from "~/components/Form";
 import {
-  BackupUpload,
   deleteCompanyBackupExport,
   exportCompanyBackup,
-  finalizeCompanyBackupImport,
-  getCompanyBackupImportedModels,
-  getCompanyBackupImportRuns,
   getCompanyBackupSignedUrl,
-  getIndustries,
-  importCompanyBackup,
-  listCompanyBackupExports,
-  revertCompanyBackupImport
+  getCompanyRestoreRuns,
+  listCompanyBackupExports
 } from "~/modules/settings";
-import { getUser } from "~/modules/users/users.server";
+import {
+  finalizeCompanyRestore,
+  revertCompanyRestore,
+  startCompanyRestore
+} from "~/modules/settings/backups.server";
+import {
+  BackupContentsInfo,
+  BackupSourcePicker,
+  formatBackupDate,
+  formatBackupName,
+  IncludeStorageChoice,
+  JobProgressModal,
+  RestoreIncludeChoice,
+  RestoreReviewRow,
+  RestoreSubmit
+} from "~/modules/settings/ui/Backups";
+import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -46,22 +64,22 @@ export const handle: Handle = {
   to: path.to.backups
 };
 
+// Hidden pre-restore snapshots are named `_pre-restore-<runId>` — never shown
+// in the backups list or offered as a restore source.
+const SNAPSHOT_PREFIX = "_pre-restore-";
+
 const exportValidator = z.object({
   intent: z.literal("export"),
   label: z.string().optional(),
   includeStorage: z.enum(["none", "all"])
 });
 
-const importValidator = z.object({
-  intent: z.literal("import"),
-  filePath: z.string().min(1, { message: "Select an export to import" }),
-  mode: z.enum(["reseed", "preserve"])
-});
-
-// Internal-only: publish this company as the reusable demo for an industry.
-const publishValidator = z.object({
-  intent: z.literal("publish"),
-  industryId: z.string().min(1, { message: "Industry is required" }),
+// `source` is `backup:<path>` — one of this company's own exports (or an
+// uploaded copy of one). Restore is always in-place into the current company.
+// `includeStorage` picks whether uploaded files (3D models, docs) come along.
+const restoreValidator = z.object({
+  intent: z.literal("restore"),
+  source: z.string().min(1, { message: "Choose a backup to restore" }),
   includeStorage: z.enum(["none", "all"])
 });
 
@@ -97,17 +115,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
   await requireOwner(request, client, companyGroupId, userId);
 
-  const [exportsList, importRuns, user, industries] = await Promise.all([
+  const [exportsList, restoreRuns] = await Promise.all([
     listCompanyBackupExports(client, companyId),
-    getCompanyBackupImportRuns(client, companyId),
-    getUser(client, userId),
-    getIndustries(client)
+    getCompanyRestoreRuns(client, companyId)
   ]);
-  const isInternal = isInternalEmail(user.data?.email);
 
   const files = await Promise.all(
     (exportsList.data ?? [])
-      .filter((f) => f.id !== null)
+      // Drop folders and the hidden pre-restore snapshots.
+      .filter((f) => f.id !== null && !f.name.startsWith(SNAPSHOT_PREFIX))
       .map(async (f) => {
         const filePath = `exports/${f.name}`;
         const signed = await getCompanyBackupSignedUrl(
@@ -128,9 +144,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return {
     companyId,
     files,
-    importRuns: importRuns.data ?? [],
-    isInternal,
-    industries: industries.data ?? []
+    restoreRuns: restoreRuns.data ?? []
   };
 }
 
@@ -158,105 +172,89 @@ export async function action({ request }: ActionFunctionArgs) {
         includeStorage
       });
       if (result.error)
-        return data(
-          {},
-          await flash(request, error(result.error, "Failed to start export"))
-        );
-      return data(
-        {},
-        await flash(
-          request,
-          success("Export started — it will appear below shortly")
-        )
-      );
+        return {
+          success: false,
+          message: await getEdgeFunctionErrorMessage(
+            result.error,
+            "Failed to start backup"
+          )
+        };
+      return {
+        success: true,
+        message: "Backup started",
+        started: "export" as const
+      };
     }
 
-    case "import": {
-      const validation = await validator(importValidator).validate(formData);
+    // Restore replaces the current company's data with a backup, in place. The
+    // job snapshots first so it can be reverted. We return the run id so the
+    // client can open the progress modal and poll for completion.
+    case "restore": {
+      const validation = await validator(restoreValidator).validate(formData);
       if (validation.error) return validationError(validation.error);
 
-      const { filePath, mode } = validation.data;
-      const result = await importCompanyBackup(client, {
-        companyId,
-        userId,
-        filePath,
-        mode
-      });
-      if (result.error)
-        return data(
-          {},
-          await flash(request, error(result.error, "Failed to start import"))
-        );
-      return data(
-        {},
-        await flash(
-          request,
-          success(
-            "Import started — review the pending run below once it completes"
-          )
-        )
-      );
-    }
-
-    case "finalize": {
-      const importRunId = String(formData.get("importRunId") ?? "");
-      if (!importRunId)
-        return data(
-          {},
-          await flash(request, error(null, "Missing import run"))
-        );
-
-      // Fan out thumbnail rendering for imported models before the ledger
-      // (which we use to find them) is deleted by finalize.
-      const models = await getCompanyBackupImportedModels(client, {
-        companyId,
-        importRunId
-      });
-      if (models.data && models.data.length > 0) {
-        await batchTrigger(
-          "model-thumbnail",
-          models.data.map((m) => ({ payload: { modelId: m.id, companyId } }))
-        );
+      const filePath = validation.data.source.replace(/^backup:/, "");
+      if (!filePath.startsWith("exports/")) {
+        return { success: false, message: "Choose one of your backups" };
       }
 
-      const result = await finalizeCompanyBackupImport(client, {
-        companyId,
-        importRunId,
-        userId
-      });
-      if (result.error)
-        return data(
-          {},
-          await flash(request, error(result.error, "Failed to finalize import"))
-        );
-      return data({}, await flash(request, success("Import finalized")));
+      // One restore at a time. A second restore while one is still pending review
+      // would snapshot the already-restored state and tangle the revert chain.
+      const inFlight = await getCompanyRestoreRuns(client, companyId);
+      if (inFlight.data?.some((r) => r.status !== "failed")) {
+        return {
+          success: false,
+          message: "Finish your current restore — keep or revert it — first."
+        };
+      }
+
+      try {
+        const restoreRunId = await startCompanyRestore({
+          companyId,
+          userId,
+          filePath,
+          includeStorage: validation.data.includeStorage,
+          label: filePath.split("/").pop()
+        });
+        return { success: true, message: "Restore started", restoreRunId };
+      } catch (err) {
+        return {
+          success: false,
+          message:
+            err instanceof Error ? err.message : "Failed to start restore"
+        };
+      }
+    }
+
+    // keep / dismiss / revert / delete are fetcher buttons (modal + review card
+    // use them) and return JSON so the UI can react in place.
+    case "keep": {
+      const restoreRunId = String(formData.get("restoreRunId") ?? "");
+      if (!restoreRunId)
+        return { success: false, message: "Missing restore run" };
+      await finalizeCompanyRestore({ companyId, restoreRunId });
+      return { success: true, message: "Restore kept" };
+    }
+
+    // Same cleanup as keep (drop the snapshot + marker), but for a FAILED run —
+    // nothing was changed, so it's a dismissal, not a "keep".
+    case "dismiss": {
+      const restoreRunId = String(formData.get("restoreRunId") ?? "");
+      if (!restoreRunId)
+        return { success: false, message: "Missing restore run" };
+      await finalizeCompanyRestore({ companyId, restoreRunId });
+      return { success: true, message: "Dismissed" };
     }
 
     case "revert": {
-      const importRunId = String(formData.get("importRunId") ?? "");
-      if (!importRunId)
-        return data(
-          {},
-          await flash(request, error(null, "Missing import run"))
-        );
-
-      const result = await revertCompanyBackupImport(client, {
-        companyId,
-        importRunId,
-        userId
-      });
-      if (result.error)
-        return data(
-          {},
-          await flash(request, error(result.error, "Failed to revert import"))
-        );
-      return data(
-        {},
-        await flash(
-          request,
-          success("Revert started — the pending run will clear shortly")
-        )
-      );
+      const restoreRunId = String(formData.get("restoreRunId") ?? "");
+      if (!restoreRunId)
+        return { success: false, message: "Missing restore run" };
+      await revertCompanyRestore({ companyId, restoreRunId });
+      return {
+        success: true,
+        message: "Reverting — your previous data is being restored"
+      };
     }
 
     case "delete": {
@@ -272,34 +270,9 @@ export async function action({ request }: ActionFunctionArgs) {
       if (result.error)
         return data(
           {},
-          await flash(request, error(result.error, "Failed to delete export"))
+          await flash(request, error(result.error, "Failed to delete backup"))
         );
-      return data({}, await flash(request, success("Export deleted")));
-    }
-
-    case "publish": {
-      // Internal-only on top of the owner gate already enforced above.
-      const user = await getUser(client, userId);
-      if (!isInternalEmail(user.data?.email))
-        return data({}, await flash(request, error(null, "Not authorized")));
-
-      const validation = await validator(publishValidator).validate(formData);
-      if (validation.error) return validationError(validation.error);
-
-      const { industryId, includeStorage } = validation.data;
-      trigger("publish-demo", {
-        companyId,
-        userId,
-        industryId,
-        includeStorage
-      });
-      return data(
-        {},
-        await flash(
-          request,
-          success("Publishing demo — it will appear in the catalog shortly")
-        )
-      );
+      return data({}, await flash(request, success("Backup deleted")));
     }
 
     default:
@@ -308,205 +281,166 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function BackupsRoute() {
-  const { companyId, files, importRuns, isInternal, industries } =
-    useLoaderData<typeof loader>();
+  const { companyId, files, restoreRuns } = useLoaderData<typeof loader>();
+  const fetcher = useFetcher<{
+    success?: boolean;
+    message?: string;
+    restoreRunId?: string;
+    started?: "export";
+  }>();
+  const [active, setActive] = useState<{
+    runId?: string;
+    mode: "export" | "restore" | "revert";
+  } | null>(null);
+  const startRevert = (runId: string) => {
+    fetcher.submit(
+      { intent: "revert", restoreRunId: runId },
+      { method: "post" }
+    );
+    setActive({ runId, mode: "revert" });
+  };
+
+  useEffect(() => {
+    const result = fetcher.data;
+    if (result?.message === undefined) return;
+    // Export and restore open a progress modal — let it own the feedback instead
+    // of also firing a toast. Everything else (keep/revert/dismiss/errors) toasts.
+    if (result.success && result.started === "export") {
+      setActive({ mode: "export" });
+      return;
+    }
+    if (result.success && result.restoreRunId) {
+      setActive({ runId: result.restoreRunId, mode: "restore" });
+      return;
+    }
+    if (result.success) toast.success(result.message);
+    else toast.error(result.message);
+  }, [fetcher.data]);
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-49px)]">
-      <VStack
-        spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
-      >
+      <div className="py-12 px-4 max-w-[72rem] mx-auto flex flex-col gap-4">
         <Heading size="h3">Backups</Heading>
-        <Card>
-          <CardHeader>
-            <CardTitle>Create a backup</CardTitle>
-            <CardDescription>
-              Snapshot all of this company's data into a downloadable backup.
-              Credentials, integration tokens and webhooks are never included.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+
+        {/* Create + Restore — equal-height cards, footers aligned. */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
+          <Card className="flex flex-col">
             <ValidatedForm
               method="post"
               validator={exportValidator}
               defaultValues={{ label: "", includeStorage: "none" }}
-              className="w-full"
+              fetcher={fetcher}
+              className="flex flex-1 flex-col"
             >
-              <Hidden name="intent" value="export" />
-              <VStack spacing={4} className="max-w-md">
-                <Input name="label" label="Label (optional)" />
-                <Select
-                  name="includeStorage"
-                  label="Files"
-                  options={[
-                    { value: "none", label: "Data only" },
-                    { value: "all", label: "Data + uploaded files" }
-                  ]}
-                />
+              <CardHeader>
+                <CardTitle className="flex items-center gap-1.5">
+                  Create a backup
+                  <BackupContentsInfo />
+                </CardTitle>
+                <CardDescription>
+                  Snapshot all of this company's non-sensitive data into a
+                  downloadable file.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1">
+                <Hidden name="intent" value="export" />
+                <div className="flex flex-col gap-6">
+                  <Input name="label" label="Label" />
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-sm">Include</span>
+                    <IncludeStorageChoice />
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter>
                 <Submit>Create backup</Submit>
-              </VStack>
+              </CardFooter>
             </ValidatedForm>
-          </CardContent>
-        </Card>
-
-        {isInternal && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Publish to demo catalog</CardTitle>
-              <CardDescription>
-                Internal only. Publish this company as the reusable demo for an
-                industry — new companies onboard from it, and it's re-exported
-                automatically after each migration.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ValidatedForm
-                method="post"
-                validator={publishValidator}
-                defaultValues={{
-                  industryId: "",
-                  includeStorage: "none"
-                }}
-                className="w-full"
-              >
-                <Hidden name="intent" value="publish" />
-                <VStack spacing={4} className="max-w-md">
-                  <Select
-                    name="industryId"
-                    label="Industry"
-                    options={industries.map((i) => ({
-                      value: i.id,
-                      label: i.name
-                    }))}
-                  />
-                  <Select
-                    name="includeStorage"
-                    label="Files"
-                    options={[
-                      { value: "none", label: "Data only" },
-                      { value: "all", label: "Data + uploaded files" }
-                    ]}
-                  />
-                  <Submit>Publish demo</Submit>
-                </VStack>
-              </ValidatedForm>
-            </CardContent>
           </Card>
-        )}
 
-        {importRuns.length > 0 && (
+          <Card className="flex flex-col">
+            <ValidatedForm
+              method="post"
+              validator={restoreValidator}
+              defaultValues={{ source: "", includeStorage: "all" }}
+              fetcher={fetcher}
+              className="flex flex-1 flex-col"
+            >
+              <CardHeader>
+                <CardTitle>Restore from a backup</CardTitle>
+                <CardDescription>
+                  Replace this company's data with any backup — snapshotted
+                  first, so you can revert.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1">
+                <Hidden name="intent" value="restore" />
+                <div className="flex flex-col gap-6">
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-sm">Source</span>
+                    <BackupSourcePicker backups={files} companyId={companyId} />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-sm">Include</span>
+                    <RestoreIncludeChoice />
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <RestoreSubmit />
+              </CardFooter>
+            </ValidatedForm>
+          </Card>
+        </div>
+
+        {restoreRuns.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle>Pending restore</CardTitle>
+              <CardTitle>Restored — review</CardTitle>
               <CardDescription>
-                Review the restored data, then finalize to keep it or revert to
-                delete everything the restore created.
+                A restore replaced this company's data. Keep it, or revert to
+                put back exactly what was here before.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <VStack spacing={2}>
-                {importRuns.map((run) => (
-                  <HStack
-                    key={run.importRunId}
-                    className="w-full justify-between border rounded-lg p-3"
-                  >
-                    <VStack spacing={0}>
-                      <span className="text-sm font-medium">
-                        Run {run.importRunId.slice(0, 8)}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(run.startedAt).toLocaleString()} ·{" "}
-                        {run.rows.toLocaleString()} rows
-                      </span>
-                    </VStack>
-                    <HStack spacing={2}>
-                      <Form method="post">
-                        <input type="hidden" name="intent" value="finalize" />
-                        <input
-                          type="hidden"
-                          name="importRunId"
-                          value={run.importRunId}
-                        />
-                        <Button type="submit">Finalize</Button>
-                      </Form>
-                      <Form method="post">
-                        <input type="hidden" name="intent" value="revert" />
-                        <input
-                          type="hidden"
-                          name="importRunId"
-                          value={run.importRunId}
-                        />
-                        <Button type="submit" variant="destructive">
-                          Revert
-                        </Button>
-                      </Form>
-                    </HStack>
-                  </HStack>
+                {restoreRuns.map((run) => (
+                  <RestoreReviewRow
+                    key={run.restoreRunId}
+                    run={run}
+                    onKeep={() =>
+                      fetcher.submit(
+                        { intent: "keep", restoreRunId: run.restoreRunId },
+                        { method: "post" }
+                      )
+                    }
+                    onRevert={() => startRevert(run.restoreRunId)}
+                    onDismiss={() =>
+                      fetcher.submit(
+                        { intent: "dismiss", restoreRunId: run.restoreRunId },
+                        { method: "post" }
+                      )
+                    }
+                  />
                 ))}
               </VStack>
             </CardContent>
           </Card>
         )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Restore from a backup</CardTitle>
-            <CardDescription>
-              Upload a .carbon.json.gz backup — created here or downloaded from
-              another company — then restore it. Reseed assigns new ids and
-              scrubs emails; preserve restores an exact copy into the company it
-              was backed up from.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <VStack spacing={4} className="max-w-md">
-              <BackupUpload companyId={companyId} />
-              {files.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  No backups yet — upload one above to restore.
-                </p>
-              ) : (
-                <ValidatedForm
-                  method="post"
-                  validator={importValidator}
-                  defaultValues={{ filePath: "", mode: "reseed" }}
-                  className="w-full"
-                >
-                  <Hidden name="intent" value="import" />
-                  <VStack spacing={4}>
-                    <Select
-                      name="filePath"
-                      label="Backup"
-                      options={files.map((f) => ({
-                        value: f.path,
-                        label: f.name
-                      }))}
-                    />
-                    <Select
-                      name="mode"
-                      label="Mode"
-                      options={[
-                        {
-                          value: "reseed",
-                          label: "Reseed — new ids, scrubbed"
-                        },
-                        { value: "preserve", label: "Preserve — exact restore" }
-                      ]}
-                    />
-                    <Submit>Restore</Submit>
-                  </VStack>
-                </ValidatedForm>
-              )}
-            </VStack>
-          </CardContent>
-        </Card>
+        {active && (
+          <JobProgressModal
+            mode={active.mode}
+            runId={active.runId}
+            onClose={() => setActive(null)}
+          />
+        )}
 
         <Card>
           <CardHeader>
             <CardTitle>Backups</CardTitle>
             <CardDescription>
-              Past backups stored in this company's bucket under exports/.
+              Past backups stored in this company's bucket.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -520,11 +454,11 @@ export default function BackupsRoute() {
                     className="w-full justify-between border rounded-lg p-3"
                   >
                     <VStack spacing={0}>
-                      <span className="text-sm font-medium">{file.name}</span>
+                      <span className="text-sm font-medium">
+                        {formatBackupName(file.name)}
+                      </span>
                       <span className="text-xs text-muted-foreground">
-                        {file.createdAt
-                          ? new Date(file.createdAt).toLocaleString()
-                          : ""}
+                        {formatBackupDate(file.createdAt)}
                         {file.size ? (
                           <>
                             {" · "}
@@ -559,7 +493,7 @@ export default function BackupsRoute() {
             )}
           </CardContent>
         </Card>
-      </VStack>
+      </div>
     </ScrollArea>
   );
 }

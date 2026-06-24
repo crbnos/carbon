@@ -89,20 +89,19 @@ const company = {
 
 export const companyValidator = z.object(company);
 
-// The onboarding company step collects only the address; industry + demo
-// choice come from the dedicated industry step that follows.
+// The onboarding company step collects only the address; the industry choice
+// comes from the dedicated industry step that follows.
 export const addressValidator = z.object({
   ...companyAddress,
   next: z.string().min(1, { message: "Next is required" })
 });
 
-// Onboarding-only: the industry + demo-data fields live on the company row but
-// are not part of the general company validator (kept off the settings forms).
+// Onboarding-only: the industry fields live on the company row but are not part
+// of the general company validator (kept off the settings forms).
 export const onboardingCompanyValidator = z.object({
   ...company,
   industryId: zfd.text(z.string().optional()),
   customIndustryDescription: z.string().optional(),
-  seedDemoData: zfd.checkbox(),
   next: z.string().min(1, { message: "Next is required" })
 });
 
