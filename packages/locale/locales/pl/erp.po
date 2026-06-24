@@ -54,6 +54,11 @@ msgstr "{0} przesłano pomyślnie"
 msgid "{0} values missing"
 msgstr "{0} brakujących wartości"
 
+#. placeholder {0}: errors.length
+#. placeholder {1}: skipped.length
+msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
+msgstr ""
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB limit"
 
@@ -472,6 +477,9 @@ msgstr "Wszystkie zadania ukończone"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Wszyscy członkowie wybranych grup i wybrane osoby będą mogły zatwierdzać żądania"
+
+msgid "All rows imported — {inserted} inserted, {updated} updated."
+msgstr ""
 
 msgid "All Suppliers"
 msgstr "Wszyscy dostawcy"
@@ -2755,6 +2763,10 @@ msgstr "Gotowe"
 msgid "Download"
 msgstr "Pobierz"
 
+#. placeholder {0}: errors.length
+msgid "Download {0} row(s) to fix"
+msgstr ""
+
 msgid "Download CSV"
 msgstr "Pobierz CSV"
 
@@ -3340,6 +3352,9 @@ msgstr "Zdarzenia"
 
 msgid "Every condition must match"
 msgstr "Każdy warunek musi się zgadzać"
+
+msgid "Every row was imported successfully."
+msgstr ""
 
 msgid "Everything from Starter"
 msgstr "Wszystko z pakietu Starter"
@@ -4081,6 +4096,9 @@ msgstr "Wsparcie wdrażania"
 
 msgid "Import {label} CSV"
 msgstr "Importuj {label} CSV"
+
+msgid "Import results"
+msgstr ""
 
 msgid "In order to convert this RFQ to a quote, all lines must have an internal part number."
 msgstr "Aby przekonwertować to RFQ na ofertę, wszystkie linie muszą mieć wewnętrzny numer części."
@@ -5112,6 +5130,9 @@ msgstr "Potrzebne do"
 msgid "Need the right columns?"
 msgstr "Potrzebujesz odpowiednich kolumn?"
 
+msgid "Needs fixing"
+msgstr ""
+
 msgid "Negative Adjustment"
 msgstr "Ujemna Korekta"
 
@@ -5573,6 +5594,9 @@ msgstr "Brak wyników"
 
 msgid "No results found"
 msgstr "Nie znaleziono wyników"
+
+msgid "No rows here."
+msgstr ""
 
 msgid "No rules assigned"
 msgstr "Brak przypisanych reguł"
@@ -8875,6 +8899,9 @@ msgstr "Używane na ekranie głównym w trybie ciemnym"
 msgid "Used to categorize items for reporting and analysis"
 msgstr "Używane do kategoryzacji pozycji do raportowania i analizy"
 
+msgid "Used when a cell is empty or doesn't match an option above. Clear it to leave those rows blank."
+msgstr ""
+
 msgid "User"
 msgstr "Użytkownik"
 
@@ -9109,8 +9136,8 @@ msgstr "Ostrzeżenie"
 msgid "Watch full video"
 msgstr "Obejrzyj pełne wideo"
 
-msgid "We've mapped each column to what we believe is correct, but please review the data below to confirm it's accurate."
-msgstr "Zmapowaliśmy każdą kolumnę na to, co uważamy za prawidłowe, ale prosimy przejrzeć poniższe dane, aby potwierdzić, że są dokładne."
+msgid "We auto-matched each column. Review the values below before continuing."
+msgstr ""
 
 msgid "We've sent a verification code to {email}"
 msgstr "Wysłaliśmy kod weryfikacyjny na adres {email}"

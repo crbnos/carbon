@@ -54,6 +54,11 @@ msgstr "{0} uploaded successfully"
 msgid "{0} values missing"
 msgstr "{0} values missing"
 
+#. placeholder {0}: errors.length
+#. placeholder {1}: skipped.length
+msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
+msgstr "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB limit"
 
@@ -472,6 +477,9 @@ msgstr "All jobs completed"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "All members of selected groups and selected individuals will be able to approve requests"
+
+msgid "All rows imported — {inserted} inserted, {updated} updated."
+msgstr "All rows imported — {inserted} inserted, {updated} updated."
 
 msgid "All Suppliers"
 msgstr "All Suppliers"
@@ -2755,6 +2763,10 @@ msgstr "Done"
 msgid "Download"
 msgstr "Download"
 
+#. placeholder {0}: errors.length
+msgid "Download {0} row(s) to fix"
+msgstr "Download {0} row(s) to fix"
+
 msgid "Download CSV"
 msgstr "Download CSV"
 
@@ -3340,6 +3352,9 @@ msgstr "Events"
 
 msgid "Every condition must match"
 msgstr "Every condition must match"
+
+msgid "Every row was imported successfully."
+msgstr "Every row was imported successfully."
 
 msgid "Everything from Starter"
 msgstr "Everything from Starter"
@@ -4081,6 +4096,9 @@ msgstr "Implementation Support"
 
 msgid "Import {label} CSV"
 msgstr "Import {label} CSV"
+
+msgid "Import results"
+msgstr "Import results"
 
 msgid "In order to convert this RFQ to a quote, all lines must have an internal part number."
 msgstr "In order to convert this RFQ to a quote, all lines must have an internal part number."
@@ -5112,6 +5130,9 @@ msgstr "Need by"
 msgid "Need the right columns?"
 msgstr "Need the right columns?"
 
+msgid "Needs fixing"
+msgstr "Needs fixing"
+
 msgid "Negative Adjustment"
 msgstr "Negative Adjustment"
 
@@ -5573,6 +5594,9 @@ msgstr "No results"
 
 msgid "No results found"
 msgstr "No results found"
+
+msgid "No rows here."
+msgstr "No rows here."
 
 msgid "No rules assigned"
 msgstr "No rules assigned"
@@ -8875,6 +8899,9 @@ msgstr "Used on the home screen in dark mode"
 msgid "Used to categorize items for reporting and analysis"
 msgstr "Used to categorize items for reporting and analysis"
 
+msgid "Used when a cell is empty or doesn't match an option above. Clear it to leave those rows blank."
+msgstr "Used when a cell is empty or doesn't match an option above. Clear it to leave those rows blank."
+
 msgid "User"
 msgstr "User"
 
@@ -9109,8 +9136,8 @@ msgstr "Warning"
 msgid "Watch full video"
 msgstr "Watch full video"
 
-msgid "We've mapped each column to what we believe is correct, but please review the data below to confirm it's accurate."
-msgstr "We've mapped each column to what we believe is correct, but please review the data below to confirm it's accurate."
+msgid "We auto-matched each column. Review the values below before continuing."
+msgstr "We auto-matched each column. Review the values below before continuing."
 
 msgid "We've sent a verification code to {email}"
 msgstr "We've sent a verification code to {email}"

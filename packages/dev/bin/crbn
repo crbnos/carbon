@@ -144,9 +144,9 @@ Usage: crbn checkout <name> [--path PATH] [--up]
   worktree, cd in. Fails if the branch already exists.
 
   PR shortcut: a purely-numeric <name> is treated as a GitHub PR number.
-  Fetches `pull/<num>/head` from origin, materializes a local branch
-  `pr-<num>` + worktree. Works for fork PRs too. If `gh` is on PATH it's
-  used for a nicer banner; not required.
+  With `gh` on PATH: checks out the PR's head branch into a worktree with
+  push-back tracking, so `git push` updates the PR (same-repo and forks).
+  Without `gh`: read-only fetch into a `pr-<num>` worktree (can't push back).
 
   --path PATH    Override the default worktree directory.
   --base REF     (with -b) base ref for the new branch. Default: HEAD.
@@ -295,19 +295,39 @@ cmd_checkout() {
   maybe_up "$target" "$do_up"
 }
 
-# Fetch a GitHub PR head into a local `pr-<num>` branch and worktree it.
-# Same stdout contract as cmd_checkout (only `cd '<path>'` goes to stdout).
+# Fetch a GitHub PR into a worktree whose branch pushes BACK to the PR.
+# `gh pr checkout` configures the local branch's push tracking (remote + merge
+# ref) for both same-repo and fork PRs — run it *inside* the worktree so commits
+# push to the PR, not a new branch. Falls back to a read-only pure-git fetch when
+# `gh` is absent. Same stdout contract as cmd_checkout (only `cd '<path>'`).
 _checkout_pr() {
   local num="$1" do_up="$2"
-  local root parent base target branch
+  local root parent base
   root="$(repo_root)"
   parent="$(dirname "$root")"
   base="$(basename "$root")"
   base="${base%%-[a-z0-9-]*}"
-  branch="pr-${num}"
-  target="$parent/${base}-${branch}"
 
-  # Fast-path: worktree already exists for this PR.
+  if ! command -v gh >/dev/null 2>&1; then
+    _checkout_pr_no_gh "$num" "$do_up" "$root" "$parent" "$base"
+    return
+  fi
+
+  # Resolve the PR's head branch — used verbatim as the local branch name so a
+  # plain `git push` (push.default=simple) targets that ref and updates the PR.
+  local metadata head_ref title branch target
+  if ! metadata=$(gh pr view "$num" --json headRefName,title \
+                    -q '.headRefName + "\t" + .title' 2>/dev/null); then
+    fail "could not read PR #${num} via gh (correct number? run \`gh auth login\`?)"
+    exit 1
+  fi
+  head_ref="${metadata%%$'\t'*}"
+  title="${metadata#*$'\t'}"
+  branch="$head_ref"
+  target="$parent/${base}-$(slugify_branch "$branch")"
+  info "PR #${num} — ${C_BOLD}${title}${C_RESET} (${C_DIM}${head_ref}${C_RESET})"
+
+  # Fast-path: a worktree is already on this branch.
   local existing
   existing="$(worktree_path_for_branch "$branch")"
   if [[ -n "$existing" ]]; then
@@ -317,28 +337,50 @@ _checkout_pr() {
     return 0
   fi
 
-  # Optional banner via gh (purely cosmetic — pure-git path works without it).
-  local metadata="" title="" head_ref=""
-  if command -v gh >/dev/null 2>&1; then
-    if metadata=$(gh pr view "$num" --json headRefName,title \
-                    -q '.headRefName + "\t" + .title' 2>/dev/null); then
-      head_ref="${metadata%%$'\t'*}"
-      title="${metadata#*$'\t'}"
-      info "PR #${num} — ${C_BOLD}${title}${C_RESET} (${C_DIM}${head_ref}${C_RESET})"
-    fi
-  fi
-  if [[ -z "$metadata" ]]; then
-    info "fetching PR #${num} from ${C_BOLD}origin${C_RESET}"
+  if [[ -e "$target" ]]; then
+    fail "target path already exists: $target"
+    exit 1
   fi
 
-  # If the local branch already exists, reuse it instead of re-fetching.
-  # Keeps `pr-<num>` stable across re-runs and avoids accidental overwrites
-  # of in-progress local edits on top of the PR ref.
+  # Detached worktree first, then `gh pr checkout` creates the PR branch inside
+  # it with push-back tracking. On failure, roll back the empty worktree.
+  info "git worktree add ${C_DIM}${target}${C_RESET}"
+  git -C "$root" worktree add --detach "$target" >&2
+  if ! ( cd "$target" && gh pr checkout "$num" --branch "$branch" >&2 ); then
+    fail "gh pr checkout failed — removing worktree"
+    git -C "$root" worktree remove --force "$target" 2>/dev/null || true
+    exit 1
+  fi
+  ok "worktree at $target — \`git push\` updates PR #${num}"
+  do_post_create "$target"
+  printf "cd %q\n" "$target"
+  maybe_up "$target" "$do_up"
+}
+
+# No `gh`: read-only pure-git fetch of the PR head into a local `pr-<num>`
+# branch. Commits CANNOT be pushed back (the `pull/<num>/head` ref is read-only
+# and no push tracking is set) — install `gh` to push to the PR.
+_checkout_pr_no_gh() {
+  local num="$1" do_up="$2" root="$3" parent="$4" base="$5"
+  local branch="pr-${num}" target="$parent/${base}-pr-${num}"
+
+  local existing
+  existing="$(worktree_path_for_branch "$branch")"
+  if [[ -n "$existing" ]]; then
+    info "worktree for PR #${num} exists at ${C_DIM}${existing}${C_RESET}"
+    printf "cd %q\n" "$existing"
+    maybe_up "$existing" "$do_up"
+    return 0
+  fi
+
+  warn "gh not found — fetching PR #${num} read-only (push-back disabled; install gh to push to the PR)"
+  # Reuse an existing local branch instead of re-fetching (avoids clobbering
+  # in-progress edits stacked on the PR ref).
   if git -C "$root" show-ref --verify --quiet "refs/heads/${branch}"; then
     info "local branch '${branch}' exists — skipping fetch"
   else
     if ! git -C "$root" fetch origin "pull/${num}/head:${branch}" --quiet; then
-      fail "could not fetch PR #${num} from origin (is the number correct? is the PR open on this repo?)"
+      fail "could not fetch PR #${num} from origin (correct number? PR open on this repo?)"
       exit 1
     fi
   fi
@@ -388,7 +430,7 @@ crbn — Carbon dev CLI
   Worktrees:
     crbn checkout <branch>          Switch into worktree (creates if missing).
     crbn checkout -b <branch>       New branch + worktree (--base REF).
-    crbn checkout <pr-number>       Fetch PR head into pr-<num> worktree.
+    crbn checkout <pr-number>       PR → worktree; git push updates the PR (needs gh).
     crbn new [branch]               Interactive worktree creation.
     crbn list                       Show all worktrees with stack status.
     crbn remove [--prune]           Multi-select worktrees to delete.

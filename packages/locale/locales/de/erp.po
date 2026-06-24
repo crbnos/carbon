@@ -54,6 +54,11 @@ msgstr "{0} erfolgreich hochgeladen"
 msgid "{0} values missing"
 msgstr "{0} Werte fehlen"
 
+#. placeholder {0}: errors.length
+#. placeholder {1}: skipped.length
+msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
+msgstr ""
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB-Limit"
 
@@ -472,6 +477,9 @@ msgstr "Alle Aufträge abgeschlossen"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Alle Mitglieder der ausgewählten Gruppen und ausgewählten Personen können Anfragen genehmigen"
+
+msgid "All rows imported — {inserted} inserted, {updated} updated."
+msgstr ""
 
 msgid "All Suppliers"
 msgstr "Alle Lieferanten"
@@ -2755,6 +2763,10 @@ msgstr "Fertig"
 msgid "Download"
 msgstr "Herunterladen"
 
+#. placeholder {0}: errors.length
+msgid "Download {0} row(s) to fix"
+msgstr ""
+
 msgid "Download CSV"
 msgstr "CSV herunterladen"
 
@@ -3340,6 +3352,9 @@ msgstr "Ereignisse"
 
 msgid "Every condition must match"
 msgstr "Jede Bedingung muss erfüllt sein"
+
+msgid "Every row was imported successfully."
+msgstr ""
 
 msgid "Everything from Starter"
 msgstr "Alles aus dem Starter-Plan"
@@ -4081,6 +4096,9 @@ msgstr "Implementierungsunterstützung"
 
 msgid "Import {label} CSV"
 msgstr "Importiere {label} CSV"
+
+msgid "Import results"
+msgstr ""
 
 msgid "In order to convert this RFQ to a quote, all lines must have an internal part number."
 msgstr "Um diese Anfrage in ein Angebot umzuwandeln, müssen alle Positionen eine interne Teilenummer haben."
@@ -5112,6 +5130,9 @@ msgstr "Benötigt bis"
 msgid "Need the right columns?"
 msgstr "Benötigen Sie die richtigen Spalten?"
 
+msgid "Needs fixing"
+msgstr ""
+
 msgid "Negative Adjustment"
 msgstr "Negative Anpassung"
 
@@ -5573,6 +5594,9 @@ msgstr "Keine Ergebnisse"
 
 msgid "No results found"
 msgstr "Keine Ergebnisse gefunden"
+
+msgid "No rows here."
+msgstr ""
 
 msgid "No rules assigned"
 msgstr "Keine Regeln zugewiesen"
@@ -8875,6 +8899,9 @@ msgstr "Wird auf dem Startbildschirm im dunklen Modus verwendet"
 msgid "Used to categorize items for reporting and analysis"
 msgstr "Wird verwendet, um Artikel für Berichterstellung und Analyse zu kategorisieren"
 
+msgid "Used when a cell is empty or doesn't match an option above. Clear it to leave those rows blank."
+msgstr ""
+
 msgid "User"
 msgstr "Benutzer"
 
@@ -9109,8 +9136,8 @@ msgstr "Warnung"
 msgid "Watch full video"
 msgstr "Video vollständig ansehen"
 
-msgid "We've mapped each column to what we believe is correct, but please review the data below to confirm it's accurate."
-msgstr "Wir haben jede Spalte dem zugeordnet, was wir für korrekt halten, aber bitte überprüfen Sie die Daten unten, um zu bestätigen, dass sie genau sind."
+msgid "We auto-matched each column. Review the values below before continuing."
+msgstr ""
 
 msgid "We've sent a verification code to {email}"
 msgstr "Wir haben einen Verifizierungscode an {email} gesendet"

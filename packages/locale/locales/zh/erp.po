@@ -54,6 +54,11 @@ msgstr "{0} 上传成功"
 msgid "{0} values missing"
 msgstr "{0} 个值缺失"
 
+#. placeholder {0}: errors.length
+#. placeholder {1}: skipped.length
+msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
+msgstr ""
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 限制"
 
@@ -472,6 +477,9 @@ msgstr "所有工作已完成"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "所选组的所有成员和所选个人将能够批准请求"
+
+msgid "All rows imported — {inserted} inserted, {updated} updated."
+msgstr ""
 
 msgid "All Suppliers"
 msgstr "所有供应商"
@@ -2755,6 +2763,10 @@ msgstr "完成"
 msgid "Download"
 msgstr "下载"
 
+#. placeholder {0}: errors.length
+msgid "Download {0} row(s) to fix"
+msgstr ""
+
 msgid "Download CSV"
 msgstr "下载 CSV"
 
@@ -3340,6 +3352,9 @@ msgstr "事件"
 
 msgid "Every condition must match"
 msgstr "每个条件都必须匹配"
+
+msgid "Every row was imported successfully."
+msgstr ""
 
 msgid "Everything from Starter"
 msgstr "Starter 中的所有功能"
@@ -4081,6 +4096,9 @@ msgstr "实施支持"
 
 msgid "Import {label} CSV"
 msgstr "导入 {label} CSV"
+
+msgid "Import results"
+msgstr ""
 
 msgid "In order to convert this RFQ to a quote, all lines must have an internal part number."
 msgstr "为了将此RFQ转换为报价，所有行必须具有内部零件编号。"
@@ -5112,6 +5130,9 @@ msgstr "需要日期"
 msgid "Need the right columns?"
 msgstr "需要正确的列吗？"
 
+msgid "Needs fixing"
+msgstr ""
+
 msgid "Negative Adjustment"
 msgstr "负调整"
 
@@ -5573,6 +5594,9 @@ msgstr "无结果"
 
 msgid "No results found"
 msgstr "未找到结果"
+
+msgid "No rows here."
+msgstr ""
 
 msgid "No rules assigned"
 msgstr "未分配规则"
@@ -8875,6 +8899,9 @@ msgstr "在深色模式下用于主屏幕"
 msgid "Used to categorize items for reporting and analysis"
 msgstr "用于对项目进行分类以用于报告和分析"
 
+msgid "Used when a cell is empty or doesn't match an option above. Clear it to leave those rows blank."
+msgstr ""
+
 msgid "User"
 msgstr "用户"
 
@@ -9109,8 +9136,8 @@ msgstr "警告"
 msgid "Watch full video"
 msgstr "观看完整视频"
 
-msgid "We've mapped each column to what we believe is correct, but please review the data below to confirm it's accurate."
-msgstr "我们已将每一列映射到我们认为正确的内容，但请查看下面的数据以确认其准确性。"
+msgid "We auto-matched each column. Review the values below before continuing."
+msgstr ""
 
 msgid "We've sent a verification code to {email}"
 msgstr "我们已向 {email} 发送了验证码"

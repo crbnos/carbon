@@ -54,6 +54,11 @@ msgstr "{0} успешно загружен"
 msgid "{0} values missing"
 msgstr "{0} значений отсутствует"
 
+#. placeholder {0}: errors.length
+#. placeholder {1}: skipped.length
+msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
+msgstr ""
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}МБ максимум"
 
@@ -472,6 +477,9 @@ msgstr "Все работы завершены"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Все члены выбранных групп и выбранные лица смогут одобрять запросы"
+
+msgid "All rows imported — {inserted} inserted, {updated} updated."
+msgstr ""
 
 msgid "All Suppliers"
 msgstr "Все поставщики"
@@ -2755,6 +2763,10 @@ msgstr "Готово"
 msgid "Download"
 msgstr "Скачать"
 
+#. placeholder {0}: errors.length
+msgid "Download {0} row(s) to fix"
+msgstr ""
+
 msgid "Download CSV"
 msgstr "Загрузить CSV"
 
@@ -3340,6 +3352,9 @@ msgstr "События"
 
 msgid "Every condition must match"
 msgstr "Каждое условие должно совпадать"
+
+msgid "Every row was imported successfully."
+msgstr ""
 
 msgid "Everything from Starter"
 msgstr "Всё из Starter"
@@ -4081,6 +4096,9 @@ msgstr "Поддержка внедрения"
 
 msgid "Import {label} CSV"
 msgstr "Импорт {label} CSV"
+
+msgid "Import results"
+msgstr ""
 
 msgid "In order to convert this RFQ to a quote, all lines must have an internal part number."
 msgstr "Чтобы преобразовать это РЗП в предложение, все строки должны иметь внутренний номер детали."
@@ -5112,6 +5130,9 @@ msgstr "Требуется к"
 msgid "Need the right columns?"
 msgstr "Нужны правильные столбцы?"
 
+msgid "Needs fixing"
+msgstr ""
+
 msgid "Negative Adjustment"
 msgstr "Отрицательная корректировка"
 
@@ -5573,6 +5594,9 @@ msgstr "Нет результатов"
 
 msgid "No results found"
 msgstr "Результатов не найдено"
+
+msgid "No rows here."
+msgstr ""
 
 msgid "No rules assigned"
 msgstr "Нет назначенных правил"
@@ -8875,6 +8899,9 @@ msgstr "Используется на главном экране в темно�
 msgid "Used to categorize items for reporting and analysis"
 msgstr "Используется для категоризации товаров в целях отчетности и анализа"
 
+msgid "Used when a cell is empty or doesn't match an option above. Clear it to leave those rows blank."
+msgstr ""
+
 msgid "User"
 msgstr "Пользователь"
 
@@ -9109,8 +9136,8 @@ msgstr "Предупреждение"
 msgid "Watch full video"
 msgstr "Смотреть полное видео"
 
-msgid "We've mapped each column to what we believe is correct, but please review the data below to confirm it's accurate."
-msgstr "Мы сопоставили каждый столбец с тем, что считаем правильным, но пожалуйста, проверьте данные ниже, чтобы подтвердить их точность."
+msgid "We auto-matched each column. Review the values below before continuing."
+msgstr ""
 
 msgid "We've sent a verification code to {email}"
 msgstr "Мы отправили код подтверждения на {email}"

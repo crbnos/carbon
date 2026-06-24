@@ -570,6 +570,14 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
           {
             table: "part" as const,
             label: t`Parts`
+          },
+          {
+            table: "bom" as const,
+            label: "BOM"
+          },
+          {
+            table: "operations" as const,
+            label: "Operations"
           }
         ]}
         primaryAction={

@@ -54,6 +54,11 @@ msgstr "{0} başarıyla yüklendi"
 msgid "{0} values missing"
 msgstr "{0} değeri eksik"
 
+#. placeholder {0}: errors.length
+#. placeholder {1}: skipped.length
+msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
+msgstr ""
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB sınırı"
 
@@ -472,6 +477,9 @@ msgstr "Tüm işler tamamlandı"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Seçilen gruplardaki ve bireylerdeki tüm üyeler talepleri onaylayabilecektir"
+
+msgid "All rows imported — {inserted} inserted, {updated} updated."
+msgstr ""
 
 msgid "All Suppliers"
 msgstr "Tüm Tedarikçiler"
@@ -2755,6 +2763,10 @@ msgstr "Tamamlandı"
 msgid "Download"
 msgstr "İndir"
 
+#. placeholder {0}: errors.length
+msgid "Download {0} row(s) to fix"
+msgstr ""
+
 msgid "Download CSV"
 msgstr "CSV İndir"
 
@@ -3340,6 +3352,9 @@ msgstr "Etkinlikler"
 
 msgid "Every condition must match"
 msgstr "Her koşul eşleşmelidir"
+
+msgid "Every row was imported successfully."
+msgstr ""
 
 msgid "Everything from Starter"
 msgstr "Başlangıç'tan her şey"
@@ -4081,6 +4096,9 @@ msgstr "Kurulum Desteği"
 
 msgid "Import {label} CSV"
 msgstr "İçe aktarılacak {label} CSV"
+
+msgid "Import results"
+msgstr ""
 
 msgid "In order to convert this RFQ to a quote, all lines must have an internal part number."
 msgstr "Bu Fiyat Teklifi'ni (RFQ) bir teklife dönüştürmek için tüm satırların dahili bir parça numarasına sahip olması gerekir."
@@ -5112,6 +5130,9 @@ msgstr "Gerektiğinde"
 msgid "Need the right columns?"
 msgstr "Doğru sütunlara ihtiyacınız var mı?"
 
+msgid "Needs fixing"
+msgstr ""
+
 msgid "Negative Adjustment"
 msgstr "Negatif Ayarlama"
 
@@ -5573,6 +5594,9 @@ msgstr "Sonuç bulunamadı"
 
 msgid "No results found"
 msgstr "Sonuç bulunamadı"
+
+msgid "No rows here."
+msgstr ""
 
 msgid "No rules assigned"
 msgstr "Atanmış kural yok"
@@ -8875,6 +8899,9 @@ msgstr "Karanlık modda ana ekranda kullanılır"
 msgid "Used to categorize items for reporting and analysis"
 msgstr "Raporlama ve analiz için ürünleri kategorize etmek amacıyla kullanılır"
 
+msgid "Used when a cell is empty or doesn't match an option above. Clear it to leave those rows blank."
+msgstr ""
+
 msgid "User"
 msgstr "Kullanıcı"
 
@@ -9109,8 +9136,8 @@ msgstr "Uyarı"
 msgid "Watch full video"
 msgstr "Tüm videoyu izle"
 
-msgid "We've mapped each column to what we believe is correct, but please review the data below to confirm it's accurate."
-msgstr "Her kolonunu doğru olduğuna inandığımız şeye eşledik, ancak doğruluğunu onaylamak için lütfen aşağıdaki verileri gözden geçirin."
+msgid "We auto-matched each column. Review the values below before continuing."
+msgstr ""
 
 msgid "We've sent a verification code to {email}"
 msgstr "Doğrulama kodunu {email} adresine gönderdik"

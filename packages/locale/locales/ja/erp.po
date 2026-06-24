@@ -54,6 +54,11 @@ msgstr "{0}が正常にアップロードされました"
 msgid "{0} values missing"
 msgstr "{0}個の値が見つかりません"
 
+#. placeholder {0}: errors.length
+#. placeholder {1}: skipped.length
+msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
+msgstr ""
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB制限"
 
@@ -472,6 +477,9 @@ msgstr "すべてのジョブが完了しました"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "選択されたグループのすべてのメンバーと選択された個人が承認リクエストを承認できます"
+
+msgid "All rows imported — {inserted} inserted, {updated} updated."
+msgstr ""
 
 msgid "All Suppliers"
 msgstr "すべてのサプライヤー"
@@ -2755,6 +2763,10 @@ msgstr "完了"
 msgid "Download"
 msgstr "ダウンロード"
 
+#. placeholder {0}: errors.length
+msgid "Download {0} row(s) to fix"
+msgstr ""
+
 msgid "Download CSV"
 msgstr "CSVをダウンロード"
 
@@ -3340,6 +3352,9 @@ msgstr "イベント"
 
 msgid "Every condition must match"
 msgstr "すべての条件が一致する必要があります"
+
+msgid "Every row was imported successfully."
+msgstr ""
 
 msgid "Everything from Starter"
 msgstr "スターターのすべての機能"
@@ -4081,6 +4096,9 @@ msgstr "実装サポート"
 
 msgid "Import {label} CSV"
 msgstr "{label} CSV をインポート"
+
+msgid "Import results"
+msgstr ""
 
 msgid "In order to convert this RFQ to a quote, all lines must have an internal part number."
 msgstr "このRFQを見積に変換するには、すべての行に内部部品番号が必要です。"
@@ -5112,6 +5130,9 @@ msgstr "必要日"
 msgid "Need the right columns?"
 msgstr "正しい列が必要ですか？"
 
+msgid "Needs fixing"
+msgstr ""
+
 msgid "Negative Adjustment"
 msgstr "負の調整"
 
@@ -5573,6 +5594,9 @@ msgstr "結果がありません"
 
 msgid "No results found"
 msgstr "検索結果が見つかりません"
+
+msgid "No rows here."
+msgstr ""
 
 msgid "No rules assigned"
 msgstr "ルールが割り当てられていません"
@@ -8875,6 +8899,9 @@ msgstr "ダークモードのホーム画面で使用されます"
 msgid "Used to categorize items for reporting and analysis"
 msgstr "レポートと分析のためにアイテムを分類するために使用されます"
 
+msgid "Used when a cell is empty or doesn't match an option above. Clear it to leave those rows blank."
+msgstr ""
+
 msgid "User"
 msgstr "ユーザー"
 
@@ -9109,8 +9136,8 @@ msgstr "警告"
 msgid "Watch full video"
 msgstr "フル動画を視聴"
 
-msgid "We've mapped each column to what we believe is correct, but please review the data below to confirm it's accurate."
-msgstr "各列を正しいと思われるものにマッピングしましたが、以下のデータを確認して、正確であることを確認してください。"
+msgid "We auto-matched each column. Review the values below before continuing."
+msgstr ""
 
 msgid "We've sent a verification code to {email}"
 msgstr "検証コードを {email} に送信しました"

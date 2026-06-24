@@ -558,6 +558,14 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
           {
             table: "tool",
             label: t`Tools`
+          },
+          {
+            table: "bom" as const,
+            label: "BOM"
+          },
+          {
+            table: "operations" as const,
+            label: "Operations"
           }
         ]}
         primaryAction={
