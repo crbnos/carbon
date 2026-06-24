@@ -51,7 +51,7 @@ import {
   updateCompany
 } from "~/modules/settings";
 import {
-  fetchDemoBackup,
+  fetchTemplateBackup,
   provisionCompanyData
 } from "~/services/onboarding.server";
 import {
@@ -60,17 +60,17 @@ import {
   type OnboardingDraft
 } from "~/services/onboarding-draft.server";
 
-type DataChoice = "demo" | "import" | "none";
+type DataChoice = "template" | "import" | "none";
 
 const onboardingIndustryValidator = z
   .object({
     industryId: z.string().optional(),
     customIndustryDescription: z.string().optional(),
-    dataChoice: z.enum(["demo", "import", "none"]).default("none"),
+    dataChoice: z.enum(["template", "import", "none"]).default("none"),
     next: z.string()
   })
-  .refine((data) => !(data.dataChoice === "demo" && !data.industryId), {
-    message: "Please select an industry type for demo data",
+  .refine((data) => !(data.dataChoice === "template" && !data.industryId), {
+    message: "Please select an industry for the demo template",
     path: ["industryId"]
   });
 
@@ -141,8 +141,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { next, ...d } = validation.data;
   const companyData = {
     ...d,
-    industryId: d.industryId || null,
-    seedDemoData: dataChoice === "demo"
+    industryId: d.industryId || null
   };
 
   let companyId: string | undefined;
@@ -199,19 +198,26 @@ export async function action({ request }: ActionFunctionArgs) {
       throw new Error("Fatal: failed to get company ID");
     }
 
-    // Demo and "restore from a backup" both resolve to a backup file;
-    // "none" → a clean seed. provisionCompanyData imports the backup or seeds.
+    // A demo template and "restore from a backup" both resolve to a backup
+    // file; "none" → a clean seed. provisionCompanyData imports it or seeds.
     const backupFile = formData.get("backup");
     const backup: Blob | null =
       dataChoice === "import" &&
       backupFile instanceof File &&
       backupFile.size > 0
         ? backupFile
-        : dataChoice === "demo"
-          ? await fetchDemoBackup(serviceRole, finalIndustryId)
+        : dataChoice === "template"
+          ? await fetchTemplateBackup(serviceRole, finalIndustryId)
           : null;
 
-    await provisionCompanyData(serviceRole, { companyId, userId, backup });
+    await provisionCompanyData(serviceRole, {
+      companyId,
+      userId,
+      backup,
+      // Only a demo template references shared assets; a user's own uploaded
+      // backup ("import") stays self-contained and is copied per company.
+      templateIndustryId: dataChoice === "template" ? finalIndustryId : null
+    });
 
     if (CarbonEdition === Edition.Cloud) {
       trigger("onboard", {
@@ -279,7 +285,7 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 }
 
-type Step = "demo-data-question" | "industry-selection" | "import-upload";
+type Step = "data-question" | "industry-selection" | "import-upload";
 
 export default function OnboardingIndustry() {
   const { company, industries } = useLoaderData<typeof loader>();
@@ -287,14 +293,14 @@ export default function OnboardingIndustry() {
 
   // Determine initial step based on existing company data
   const getInitialStep = (): Step => {
-    if (company?.seedDemoData) {
+    if (company?.industryId) {
       return "industry-selection";
     }
-    return "demo-data-question";
+    return "data-question";
   };
 
   const [step, setStep] = useState<Step>(getInitialStep);
-  const [dataChoice, setDataChoice] = useState<DataChoice>("demo");
+  const [dataChoice, setDataChoice] = useState<DataChoice>("template");
   const [importFile, setImportFile] = useState<File | null>(null);
   const [selectedIndustryId, setSelectedIndustryId] = useState<string>(
     company?.industryId ?? ""
@@ -315,15 +321,15 @@ export default function OnboardingIndustry() {
   }));
 
   const handleNext = () => {
-    if (dataChoice === "demo") setStep("industry-selection");
+    if (dataChoice === "template") setStep("industry-selection");
     else if (dataChoice === "import") setStep("import-upload");
     // "none" submits the form directly via the Submit button
   };
 
   const dataChoiceOptions: ChoiceCardOption<DataChoice>[] = [
     {
-      value: "demo",
-      title: "Use demo data",
+      value: "template",
+      title: "Use a demo template",
       description:
         "We'll add sample customers, suppliers, parts and quotes to explore Carbon",
       icon: <LuDatabase className="h-5 w-5" />
@@ -393,7 +399,7 @@ export default function OnboardingIndustry() {
                 variant="solid"
                 size="md"
                 type="button"
-                onClick={() => setStep("demo-data-question")}
+                onClick={() => setStep("data-question")}
               >
                 Previous
               </Button>
@@ -419,7 +425,7 @@ export default function OnboardingIndustry() {
         defaultValues={initialValues}
         method="post"
       >
-        {step === "demo-data-question" ? (
+        {step === "data-question" ? (
           <>
             <CardHeader>
               <CardTitle>How would you like to start?</CardTitle>
@@ -471,12 +477,12 @@ export default function OnboardingIndustry() {
             <CardHeader>
               <CardTitle>Which best describes your company?</CardTitle>
               <CardDescription>
-                We'll customize the demo data to match your industry
+                We'll set up demo data to match your industry
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Hidden name="next" value={next} />
-              <Hidden name="dataChoice" value="demo" />
+              <Hidden name="dataChoice" value="template" />
               <Hidden name="industryId" value={selectedIndustryId} />
               <ChoiceCardGroup
                 value={selectedIndustryId}
@@ -491,7 +497,7 @@ export default function OnboardingIndustry() {
                   variant="solid"
                   size="md"
                   type="button"
-                  onClick={() => setStep("demo-data-question")}
+                  onClick={() => setStep("data-question")}
                 >
                   Previous
                 </Button>

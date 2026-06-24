@@ -17,7 +17,6 @@ export type OnboardingDraft = {
   industry?: {
     industryId: string;
     customIndustryDescription?: string;
-    seedDemoData: boolean;
   };
   company?: {
     name?: string;

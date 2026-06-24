@@ -5,23 +5,28 @@ import { seedCompany } from "~/modules/settings";
 
 type ServiceRole = ReturnType<typeof getCarbonServiceRole>;
 
-/** Pull the most recent published demo for an industry from the catalog bucket,
- *  or null when none exists yet (caller falls back to a clean company). */
-export async function fetchDemoBackup(
+/** Pull the onboarding backup template for an industry from the shared
+ *  company-templates bucket, or null when none is committed yet for that
+ *  industry (caller falls back to a clean company). Templates are uploaded at
+ *  deploy from packages/database/supabase/backups/<industryId>.carbon.json.gz. */
+export async function fetchTemplateBackup(
   serviceRole: ServiceRole,
   industryId: string | null
 ): Promise<Blob | null> {
   if (!industryId) return null;
-  const industry = await serviceRole
-    .from("industry")
-    .select("backupPath")
-    .eq("id", industryId)
-    .maybeSingle();
-  if (!industry.data?.backupPath) return null;
-
   const download = await serviceRole.storage
-    .from("company-demos")
-    .download(industry.data.backupPath);
+    .from("company-templates")
+    .download(`templates/${industryId}.carbon.json.gz`);
+  if (download.error) {
+    // A missing template is expected (none authored for this industry yet) and
+    // falls back to a clean seed. Log so a transient storage failure isn't
+    // silently swallowed into an empty company.
+    console.warn(
+      `No backup template for industry "${industryId}":`,
+      download.error.message
+    );
+    return null;
+  }
   return download.data ?? null;
 }
 
@@ -37,8 +42,17 @@ export async function provisionCompanyData(
   {
     companyId,
     userId,
-    backup
-  }: { companyId: string; userId: string; backup: Blob | null }
+    backup,
+    templateIndustryId
+  }: {
+    companyId: string;
+    userId: string;
+    backup: Blob | null;
+    /** Set when `backup` is a demo template (vs a user's own uploaded backup).
+     *  Makes the import reference the template's shared assets instead of
+     *  copying its files into this company's storage prefix. */
+    templateIndustryId?: string | null;
+  }
 ): Promise<void> {
   if (!backup) {
     const seed = await seedCompany(serviceRole, companyId, userId);
@@ -81,7 +95,8 @@ export async function provisionCompanyData(
       filePath,
       mode: "reseed",
       importRunId: nanoid(),
-      autoFinalize: true
+      autoFinalize: true,
+      ...(templateIndustryId ? { templateIndustryId } : {})
     });
   } catch (err) {
     console.error(err);
