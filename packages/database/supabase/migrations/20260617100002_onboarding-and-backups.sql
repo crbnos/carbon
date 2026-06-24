@@ -1,14 +1,15 @@
--- Onboarding industry fields + the reusable-environment demo catalog.
---   1. The industry list (each industry carries its own demo backup) + the
---      industry / demo-choice fields on the company shell.
---   2. The shared bucket holding the demo backups.
+-- Onboarding industry picker + the backup-template bucket.
+--   1. The industry list + the industry / data-choice fields on the company shell.
+--   2. The shared bucket holding the backup templates onboarding provisions from.
 
 -- ─── 1. Industry catalog + onboarding fields on company ─────────────────────
--- Industries are data, not an enum, so the demo-environment list can be curated
+-- Industries are data, not an enum, so the picker list can be curated
 -- (added / renamed) without a migration. Companies FK to it by id; a NULL
--- industryId means "custom" (free-text in customIndustryDescription). Each
--- industry also carries its one demo backup (the columns below), so onboarding
--- provisions a new company straight from industry.backupPath.
+-- industryId means "custom" (free-text in customIndustryDescription). The
+-- onboarding demo template for an industry is a repo-committed backup file
+-- (packages/database/supabase/backups/<industryId>.carbon.json.gz), published to
+-- the company-templates bucket by a manual step (ci/src/upload-backup-templates.ts)
+-- — it is not tracked on this table.
 
 CREATE TABLE "industry" (
   "id"          TEXT PRIMARY KEY,
@@ -17,17 +18,6 @@ CREATE TABLE "industry" (
   "iconName"    TEXT,
   "sortOrder"   INTEGER NOT NULL DEFAULT 0,
   "active"      BOOLEAN NOT NULL DEFAULT TRUE,
-  -- The demo backup onboarding provisions a new company from (all NULL until a
-  -- demo is published for this industry). `sourceCompanyId` is the persistent
-  -- company the refresh job re-exports after each migration; `backupPath`
-  -- points into the company-demos bucket; `schemaVersion` records the
-  -- backup's schema for the import compatibility guard.
-  "sourceCompanyId"   TEXT REFERENCES "company"("id") ON DELETE SET NULL,
-  "sourceCompanyName" TEXT,
-  "backupPath"        TEXT,
-  "schemaVersion"     TEXT,
-  "includesStorage"   BOOLEAN NOT NULL DEFAULT FALSE,
-  "rowCount"          INTEGER,
   "createdAt"   TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   "updatedAt"   TIMESTAMP WITH TIME ZONE
 );
@@ -58,20 +48,15 @@ ALTER TABLE "company"
   ADD COLUMN IF NOT EXISTS "customIndustryDescription" TEXT,
   ADD COLUMN IF NOT EXISTS "selectedModules" TEXT[],
   ADD COLUMN IF NOT EXISTS "featureRequests" TEXT,
-  ADD COLUMN IF NOT EXISTS "seedDemoData" BOOLEAN NOT NULL DEFAULT FALSE,
   ADD COLUMN IF NOT EXISTS "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW();
 
 CREATE INDEX IF NOT EXISTS "company_industryId_idx" ON "company"("industryId");
 
--- ─── 2. Demo backup bucket ──────────────────────────────────────────────────
--- The demo catalog lives on the `industry` table above (one demo per industry,
--- in its sourceCompanyId / backupPath / schemaVersion columns). Those demo
--- columns are written only by the service role (the publish + refresh jobs);
--- the industry SELECT policy gives end users read access to the metadata.
-
--- Shared, env-agnostic, private bucket holding every published backup. A
--- per-company bucket can't back a catalog (onboarding runs outside the target
--- company, and tenants can't read each other's buckets). Access is service-role
--- only: the service role writes here, the onboarding consume step reads here.
+-- ─── 2. Backup-template bucket ──────────────────────────────────────────────
+-- Shared, env-agnostic, private bucket holding the onboarding demo templates
+-- (one repo-committed backup per industry, uploaded at deploy). A per-company
+-- bucket can't serve these (onboarding runs outside the target company, and
+-- tenants can't read each other's buckets). Access is service-role only: the
+-- manual publish script writes here, the onboarding consume step reads here.
 INSERT INTO storage.buckets (id, name, public)
-VALUES ('company-demos', 'company-demos', FALSE);
+VALUES ('company-templates', 'company-templates', FALSE);
