@@ -124,7 +124,13 @@ GOTRUE_JWT_SECRET: __JWT_SECRET__
 | Back up | `./scripts/backup.sh` (Postgres dump + storage archive) |
 | Stop | `./deploy.sh down` (add `--volumes` to also wipe data) |
 
-**Database admin.** Studio is internal-only by default. Reach the database over SSH with `docker exec -it $(docker ps -qf name=carbon_postgres.1) psql -U postgres` (the `.1` avoids also matching `carbon_postgrest`), or expose Studio behind HTTP basic-auth by setting `STUDIO_HOST` and uncommenting the studio block in the `Caddyfile`.
+**Database admin.** Studio is internal-only by default. Reach the database over SSH with:
+
+```bash
+docker exec -it $(docker ps -qf name=carbon_postgres.1) psql -U postgres
+```
+
+The `.1` avoids also matching `carbon_postgrest`. Or expose Studio behind HTTP basic-auth by setting `STUDIO_HOST` and uncommenting the studio block in the `Caddyfile`.
 
 **Rotate a secret.** Swarm secrets are immutable while in use, so bring the stack down first:
 
