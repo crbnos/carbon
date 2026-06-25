@@ -47,7 +47,7 @@ type TriggerProps = TooltipPrimitive.Trigger.Props & {
   asChild?: boolean;
 };
 
-const TooltipTrigger = forwardRef<HTMLElement, TriggerProps>(
+const TooltipTrigger = forwardRef<HTMLButtonElement, TriggerProps>(
   ({ asChild, children, ...props }, ref) => {
     if (asChild && isValidElement(children)) {
       return (
