@@ -18,7 +18,8 @@ import {
 import { EmployeeAvatar, Hyperlink, ItemThumbnail, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
-import { useDateFormatter, useRealtime } from "~/hooks";
+import { useDateFormatter, useUser } from "~/hooks";
+import { useDebouncedRealtime } from "~/hooks/useDebouncedRealtime";
 import type { MethodItemType } from "~/modules/shared";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -35,15 +36,15 @@ type StockMovementsTableProps = {
 
 const StockMovementsTable = memo(
   ({ data, count }: StockMovementsTableProps) => {
-    useRealtime(
-      "itemLedger",
-      data.length ? `id=in.(${data.map((d) => d.id).join(",")})` : undefined
-    );
-
     const { t } = useLingui();
     const { formatDate } = useDateFormatter();
+    const { company } = useUser();
     const [people] = usePeople();
     const locations = useLocations();
+
+    // Company-wide realtime (no debounce): every itemLedger change revalidates
+    // the route immediately. A single posting can fire many events at once.
+    useDebouncedRealtime("itemLedger", `companyId=eq.${company.id}`);
 
     const columns = useMemo<ColumnDef<StockMovement>[]>(() => {
       return [

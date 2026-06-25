@@ -4612,6 +4612,9 @@ msgstr "सूची पैरामीटर"
 msgid "Live reloading"
 msgstr "लाइव रीलोडिंग"
 
+msgid "Load newer"
+msgstr ""
+
 msgid "Load Templates"
 msgstr "टेम्पलेट लोड करें"
 

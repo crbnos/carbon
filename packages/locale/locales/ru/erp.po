@@ -4612,6 +4612,9 @@ msgstr "Параметры списка"
 msgid "Live reloading"
 msgstr "Живая перезагрузка"
 
+msgid "Load newer"
+msgstr ""
+
 msgid "Load Templates"
 msgstr "Загрузить шаблоны"
 

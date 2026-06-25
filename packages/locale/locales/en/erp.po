@@ -4612,6 +4612,9 @@ msgstr "List Parameters"
 msgid "Live reloading"
 msgstr "Live reloading"
 
+msgid "Load newer"
+msgstr "Load newer"
+
 msgid "Load Templates"
 msgstr "Load Templates"
 

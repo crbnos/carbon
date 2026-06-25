@@ -4612,6 +4612,9 @@ msgstr "リストパラメータ"
 msgid "Live reloading"
 msgstr "ライブリロード中"
 
+msgid "Load newer"
+msgstr ""
+
 msgid "Load Templates"
 msgstr "テンプレートを読み込む"
 

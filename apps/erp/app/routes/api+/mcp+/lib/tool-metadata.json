@@ -1,6 +1,6 @@
 {
-  "generated": "2026-06-24T11:48:23.987Z",
-  "totalTools": 1210,
+  "generated": "2026-06-25T12:23:59.190Z",
+  "totalTools": 1211,
   "modules": 15,
   "tools": [
     {
@@ -3595,6 +3595,48 @@
           "locationId",
           "sortDescending",
           "page"
+        ]
+      }
+    },
+    {
+      "name": "inventory_getItemLedgerActivity",
+      "module": "inventory",
+      "classification": "READ",
+      "description": "get item ledger activity",
+      "paramCount": 5,
+      "serviceParams": [
+        "client",
+        "args"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "omit to start from the newest entry. */\n    entryNumber": {
+            "type": "number"
+          },
+          "direction": {
+            "type": "string",
+            "enum": [
+              "older",
+              "newer"
+            ]
+          },
+          "/** include the cursor row itself (used for the anchored first load). */\n    inclusive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "itemId",
+          "locationId"
         ]
       }
     },

@@ -193,6 +193,66 @@ export async function getItemLedgerPage(
   };
 }
 
+/**
+ * Keyset-paginated item-ledger activity for the per-item Activity panel.
+ *
+ * Pages on `entryNumber` (a NOT NULL, per-company-unique, monotonic insertion
+ * sequence that is co-ordered with `createdAt`), which lets us:
+ *  - anchor the first load directly on a specific entry (`inclusive` + the
+ *    entry's `entryNumber`) instead of paging from newest, and
+ *  - load in both directions (`older` below, `newer` above).
+ *
+ * Returns rows newest→oldest regardless of direction. No `count` — `hasMore` is
+ * inferred from a full page, so there's no whole-table count per request.
+ */
+export async function getItemLedgerActivity(
+  client: SupabaseClient<Database>,
+  args: {
+    itemId: string;
+    companyId: string;
+    locationId: string;
+    /** entryNumber to page from; omit to start from the newest entry. */
+    entryNumber?: number;
+    direction?: "older" | "newer";
+    /** include the cursor row itself (used for the anchored first load). */
+    inclusive?: boolean;
+  }
+) {
+  const pageSize = 20;
+  const direction = args.direction ?? "older";
+
+  let query = client
+    .from("itemLedger")
+    .select("*, storageUnit(name), trackedEntity(readableId)")
+    .eq("itemId", args.itemId)
+    .eq("companyId", args.companyId)
+    .eq("locationId", args.locationId);
+
+  if (args.entryNumber !== undefined) {
+    if (direction === "older") {
+      query = args.inclusive
+        ? query.lte("entryNumber", args.entryNumber)
+        : query.lt("entryNumber", args.entryNumber);
+    } else {
+      query = args.inclusive
+        ? query.gte("entryNumber", args.entryNumber)
+        : query.gt("entryNumber", args.entryNumber);
+    }
+  }
+
+  // Scan toward the requested direction so the page is contiguous with the
+  // cursor, then always hand back newest→oldest for rendering/prepending.
+  query = query
+    .order("entryNumber", { ascending: direction === "newer" })
+    .limit(pageSize);
+
+  const { data, error } = await query;
+
+  const rows =
+    direction === "newer" ? (data ?? []).slice().reverse() : (data ?? []);
+  return { data: rows, hasMore: (data?.length ?? 0) === pageSize, error };
+}
+
 export async function getBatchProperties(
   client: SupabaseClient<Database>,
   itemIds: string[],

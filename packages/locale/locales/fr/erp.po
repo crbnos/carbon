@@ -4612,6 +4612,9 @@ msgstr "Paramètres de liste"
 msgid "Live reloading"
 msgstr "Rechargement en direct"
 
+msgid "Load newer"
+msgstr ""
+
 msgid "Load Templates"
 msgstr "Charger les modèles"
 

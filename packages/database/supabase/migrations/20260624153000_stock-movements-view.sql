@@ -31,3 +31,5 @@ LEFT JOIN "trackedEntity" te ON te."id" = il."trackedEntityId";
 -- entryNumber tiebreaker also keeps offset pagination stable when createdAt ties.
 CREATE INDEX IF NOT EXISTS "itemLedger_companyId_createdAt_entryNumber_idx"
   ON "itemLedger" ("companyId", "createdAt" DESC, "entryNumber" DESC);
+
+ALTER PUBLICATION supabase_realtime ADD TABLE "itemLedger";

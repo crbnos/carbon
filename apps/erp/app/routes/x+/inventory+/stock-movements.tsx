@@ -38,7 +38,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (movements.error) {
     throw redirect(
       path.to.authenticatedRoot,
-      await flash(request, error(null, "Error loading stock movements"))
+      await flash(
+        request,
+        error(movements.error, "Error loading stock movements")
+      )
     );
   }
 

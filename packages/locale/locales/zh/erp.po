@@ -4612,6 +4612,9 @@ msgstr "列表参数"
 msgid "Live reloading"
 msgstr "实时重新加载"
 
+msgid "Load newer"
+msgstr ""
+
 msgid "Load Templates"
 msgstr "加载模板"
 

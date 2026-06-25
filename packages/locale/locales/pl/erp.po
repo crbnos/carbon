@@ -4612,6 +4612,9 @@ msgstr "Parametry listy"
 msgid "Live reloading"
 msgstr "Odświeżanie na żywo"
 
+msgid "Load newer"
+msgstr ""
+
 msgid "Load Templates"
 msgstr "Załaduj szablony"
 

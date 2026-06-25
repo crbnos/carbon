@@ -42,7 +42,14 @@ export const itemLedgerDocumentTypes = [
   "Posted Assembly",
   "Inventory Receipt",
   "Inventory Shipment",
-  "Direct Transfer"
+  "Direct Transfer",
+  "Job Consumption",
+  "Job Receipt",
+  "Batch Split",
+  "Purchase Order",
+  "Maintenance Consumption",
+  "Non-Conformance",
+  "Inbound Inspection"
 ] as const;
 
 export const trackedEntityStatus = [

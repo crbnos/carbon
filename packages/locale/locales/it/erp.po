@@ -4612,6 +4612,9 @@ msgstr "Parametri Elenco"
 msgid "Live reloading"
 msgstr "Ricaricamento in tempo reale"
 
+msgid "Load newer"
+msgstr ""
+
 msgid "Load Templates"
 msgstr "Carica Modelli"
 
