@@ -314,7 +314,7 @@ export function ItemCostHistoryChart({
                             {h.documentId &&
                               h.documentType === "Purchase Invoice" && (
                                 <Tooltip>
-                                  <TooltipTrigger>
+                                  <TooltipTrigger asChild>
                                     <Button variant="link" size="sm" asChild>
                                       <Link
                                         to={path.to.purchaseInvoice(

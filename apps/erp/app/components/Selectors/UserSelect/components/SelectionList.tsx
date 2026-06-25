@@ -84,7 +84,7 @@ const SelectionList = () => {
 
               {!!canExpand && (
                 <Tooltip>
-                  <TooltipTrigger>
+                  <TooltipTrigger asChild>
                     <IconButton
                       aria-label={t`Expand ${item.label}`}
                       icon={<LuListPlus />}
@@ -102,7 +102,7 @@ const SelectionList = () => {
 
               {!readOnly && !alwaysSelected.includes(item.id) && (
                 <Tooltip>
-                  <TooltipTrigger>
+                  <TooltipTrigger asChild>
                     <IconButton
                       aria-label={t`Remove ${item.label}`}
                       icon={<LuX />}
