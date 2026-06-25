@@ -24,14 +24,17 @@
 
 -- Shared trigger: derive companyId from a parent. TG_ARGV = (parent_table, fk_column).
 -- Reuses the canonical get_company_id_from_foreign_key() helper (same one the RLS
--- policies on these tables use), and builds to_jsonb(NEW) once to read the dynamic
--- FK column. Skips when the row already carries companyId (e.g. a backup restore).
+-- policies on these tables use). AUTHORITATIVE — it ALWAYS overwrites companyId
+-- from the parent, ignoring any caller-supplied value, so a crafted insert
+-- (parentId in my company, companyId of another) can't mis-scope the row across
+-- tenants (the RLS INSERT policy gates on the parent, not on this column). The
+-- restore/import load runs under session_replication_role='replica' (triggers
+-- off) and sets companyId itself; when replica is unavailable the trigger derives
+-- the same value from the already-loaded parent, so this is safe on every path.
 CREATE OR REPLACE FUNCTION set_company_id_from_parent() RETURNS trigger AS $$
 DECLARE
-  v_row jsonb := to_jsonb(NEW);
-  v_fkval text := v_row ->> TG_ARGV[1];
+  v_fkval text := to_jsonb(NEW) ->> TG_ARGV[1];
 BEGIN
-  IF (v_row ->> 'companyId') IS NOT NULL THEN RETURN NEW; END IF;
   IF v_fkval IS NOT NULL THEN
     NEW."companyId" := get_company_id_from_foreign_key(v_fkval, TG_ARGV[0]);
   END IF;
@@ -39,12 +42,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Singleton trigger: the row IS the company, so companyId = its own id.
+-- Singleton trigger: the row IS the company, so companyId is always its own id
+-- (authoritative, same reasoning as above).
 CREATE OR REPLACE FUNCTION set_company_id_from_self() RETURNS trigger AS $$
 BEGIN
-  IF NEW."companyId" IS NULL THEN
-    NEW."companyId" := NEW."id";
-  END IF;
+  NEW."companyId" := NEW."id";
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
