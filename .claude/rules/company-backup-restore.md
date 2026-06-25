@@ -49,10 +49,18 @@ The catalog is **schema-introspected**, not a hand-maintained list:
   accounts, currencies, dimensions).
 - Skip/scope sets: `SECRET_TABLES` (`apiKey`, `companyIntegration`, `webhook`,
   `oauthClient`, `oauthToken` — never travel), `STRUCTURAL_TABLES` (`company` —
-  excluded from catalog), `RESEED_SKIPPED_TABLES` (memberships/invites/employee/
-  externalIntegrationMapping — skipped on onboarding reseed),
-  `IN_PLACE_SKIPPED_TABLES` (access/identity tables a restore must keep so the
-  user isn't locked out).
+  excluded from catalog), `TRANSIENT_TABLES` (`demandForecastSource`,
+  `demandActual`, `supplyForecast`, `supplyActual` — MRP planning output the
+  `mrp` edge fn regenerates wholesale every run; excluded from the catalog
+  entirely alongside `STRUCTURAL_TABLES`, so they're never exported/wiped/loaded
+  and the next MRP run rebuilds them. `demandForecastSource`'s discriminator
+  CHECK (`sourceType` ↔ which of `jobId`/`salesOrderLineId`/`demandProjectionId`
+  is non-null) made a remapped restore crash — the FK-nulling dangling-ref policy
+  in `buildRowTransforms` nulls a set FK and violates the CHECK. `demandForecast`
+  is deliberately kept: it has a user-forecast write path and no such CHECK),
+  `RESEED_SKIPPED_TABLES` (memberships/invites/employee/externalIntegrationMapping
+  — skipped on onboarding reseed), `IN_PLACE_SKIPPED_TABLES` (access/identity
+  tables a restore must keep so the user isn't locked out).
 - Format: the gz is **NDJSON** — line 1 is `{ manifest }`, every later line is one
   `{ t, r }` table row. Written/read a line at a time (`serializeBackup` /
   `deserializeBackup` in `company-backup.ts`) so a large backup never materializes

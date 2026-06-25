@@ -151,6 +151,24 @@ export const COMPANY_SINGLETON_TABLES = [
 export const STRUCTURAL_TABLES = ["company"];
 
 /**
+ * MRP planning output — the `mrp` edge function deletes then re-inserts these
+ * wholesale per company on every run, and nothing else writes them. They hold
+ * no user-authored data, so a backup must not carry them: restoring stale
+ * projections is pure bloat (the next MRP run rebuilds them), and
+ * `demandForecastSource`'s discriminator CHECK (`sourceType` ↔ which FK is
+ * non-null) makes a remapped restore brittle — the FK-nulling dangling-ref
+ * policy silently violates it. Excluded from the catalog entirely, so they are
+ * never exported, wiped, or loaded. (`demandForecast` is deliberately NOT here:
+ * it also has a user-forecast write path and carries no such CHECK.)
+ */
+export const TRANSIENT_TABLES = [
+  "demandForecastSource",
+  "demandActual",
+  "supplyForecast",
+  "supplyActual"
+] as const satisfies readonly TableName[];
+
+/**
  * Additional tables skipped in `reseed` mode — memberships, invites and
  * integration state belong to the source company's users, not to a copy.
  * The importing company already has its admin membership from onboarding.
@@ -465,7 +483,12 @@ export async function getCompanyTableCatalog(
   `.execute(db);
 
   // companyId wins when a table carries both columns.
-  const structural = new Set(STRUCTURAL_TABLES);
+  // Excluded from the catalog entirely: the company shell + MRP planning output
+  // (regenerated every run, never user data — see TRANSIENT_TABLES).
+  const structural = new Set<string>([
+    ...STRUCTURAL_TABLES,
+    ...TRANSIENT_TABLES
+  ]);
   const scopeByTable = new Map<string, "companyId" | "companyGroupId">();
   for (const r of scopeRows.rows) {
     if (structural.has(r.name)) continue;
