@@ -166,11 +166,20 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
             align="start"
             onWheel={(e) => e.stopPropagation()}
             onTouchMove={(e) => e.stopPropagation()}
-            className="min-w-[var(--radix-popover-trigger-width)] max-w-[min(560px,calc(100vw-2rem))] p-1"
+            className={cn(
+              "max-w-[min(560px,calc(100vw-2rem))] p-1",
+              // Inline mode's trigger is a small icon button, so falling back to
+              // the trigger width collapses the popover. Floor it to a usable width.
+              inline
+                ? "min-w-[220px]"
+                : "min-w-[var(--radix-popover-trigger-width)]"
+            )}
             style={{
               width: dropdownContentWidthCh
                 ? `min(560px, max(var(--radix-popover-trigger-width), ${dropdownContentWidthCh}ch))`
-                : "var(--radix-popover-trigger-width)"
+                : inline
+                  ? "240px"
+                  : "var(--radix-popover-trigger-width)"
             }}
           >
             {emptyMessage && options.length === 0 ? (

@@ -66,6 +66,7 @@ const SupplierShippingForm = ({ initialValues }: SupplierShippingFormProps) => {
               name="shippingSupplierId"
               label={t`Shipping Supplier`}
               onChange={(value) => setSupplier(value?.value as string)}
+              termId="shipping-supplier"
             />
             <SupplierLocation
               name="shippingSupplierLocationId"
@@ -88,6 +89,7 @@ const SupplierShippingForm = ({ initialValues }: SupplierShippingFormProps) => {
               isClearable
               options={incoterms.map((i) => ({ value: i, label: i }))}
               onChange={(v) => setIncoterm(v?.value as string)}
+              termId="supplier-incoterm"
             />
             {incoterm && (
               <Input name="incotermLocation" label={t`Incoterm Location`} />

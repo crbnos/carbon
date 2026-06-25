@@ -1,3 +1,4 @@
+import type { Database } from "@carbon/database";
 import type {
   getActiveProductionEvents,
   getFailureMode,
@@ -101,6 +102,49 @@ export type JobOperation = NonNullable<
 export type JobPurchaseOrderLine = NonNullable<
   Awaited<ReturnType<typeof getJobPurchaseOrderLines>>["data"]
 >[number];
+
+export type JobMaterialPurchaseOrderLine = {
+  itemId: string | null;
+  purchaseQuantity: number | null;
+  quantityReceived: number | null;
+  status: Database["public"]["Enums"]["purchaseOrderStatus"] | null;
+};
+
+// An active job that produces a (manufactured) material item — the supply-side
+// counterpart to JobMaterialPurchaseOrderLine.
+export type JobMaterialSupplyJobLine = {
+  itemId: string | null;
+  status: Database["public"]["Enums"]["jobStatus"] | null;
+};
+
+export type PurchaseOrderStatus =
+  Database["public"]["Enums"]["purchaseOrderStatus"];
+
+export type JobStatus = Database["public"]["Enums"]["jobStatus"];
+
+export type ItemOrderStatus = {
+  needsOrder: boolean;
+  shortfall: number;
+  status: PurchaseOrderStatus | null;
+  supplyJobStatus: JobStatus | null;
+  coveredByOnHand: boolean;
+  ordered: number;
+  received: number;
+};
+
+export type JobOrderStatusCategory =
+  | "needsOrder"
+  | "planned"
+  | "plannedJob"
+  | "awaitingApproval"
+  | "onOrder"
+  | "received"
+  | "inStock";
+
+export type ItemShortfall = {
+  shortfall: number;
+  coveredByOnHand: boolean;
+};
 
 export type ProductionEvent = NonNullable<
   Awaited<ReturnType<typeof getProductionEvents>>["data"]

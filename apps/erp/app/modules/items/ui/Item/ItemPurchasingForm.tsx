@@ -83,6 +83,7 @@ const ItemPurchasingForm = ({
             <Select
               name="preferredSupplierId"
               label={t`Preferred Supplier`}
+              termId="item-preferred-supplier"
               options={allowedSuppliersOptions}
               emptyMessage={
                 <FieldEmptyState
@@ -101,11 +102,12 @@ const ItemPurchasingForm = ({
             <Number
               name="leadTime"
               label={t`Lead Time (Days)`}
-              termId="lead-time"
+              termId="item-purchasing-lead-time"
             />
             <UnitOfMeasure
               name="purchasingUnitOfMeasureCode"
               label={t`Purchasing Unit of Measure`}
+              termId="item-purchasing-uom"
               onChange={(newValue) => {
                 if (newValue) setPurchasingCode(newValue.value);
               }}
@@ -115,6 +117,7 @@ const ItemPurchasingForm = ({
               isReadOnly={!purchasingCode || !inventoryCode}
               purchasingCode={purchasingCode ?? undefined}
               inventoryCode={inventoryCode ?? undefined}
+              termId="conversion-factor"
             />
             {/* <Boolean name="purchasingBlocked" label={t`Purchasing Blocked`} /> */}
           </div>

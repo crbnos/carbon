@@ -289,14 +289,14 @@ const MaterialForm = ({
                 <Select
                   name="itemTrackingType"
                   label={t`Tracking Type`}
-                  termId="tracked-entity"
+                  termId="item-tracking-type"
                   options={itemTrackingTypeOptions}
                 />
 
                 <DefaultMethodType
                   name="defaultMethodType"
                   label={t`Default Method Type`}
-                  termId="method-type"
+                  termId="item-default-method-type"
                   replenishmentSystem="Buy"
                   value={defaultMethodType}
                   onChange={(newValue) =>
@@ -321,9 +321,10 @@ const MaterialForm = ({
                 <ItemPostingGroup
                   name="postingGroupId"
                   label={t`Item Group`}
+                  termId="item-group"
                   isClearable
                 />
-                <Array name="sizes" label={t`Sizes`} />
+                <Array name="sizes" label={t`Sizes`} termId="material-sizes" />
 
                 <ItemStorageFields />
 

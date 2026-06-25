@@ -100,7 +100,9 @@ const IssueForm = ({
         className="w-full"
       >
         <CardHeader>
-          <CardTitle>{isEditing ? "Issue" : "New Issue"}</CardTitle>
+          <CardTitle>
+            {isEditing ? <Trans>Issue</Trans> : <Trans>New Issue</Trans>}
+          </CardTitle>
           {!isEditing && (
             <CardDescription>
               <Trans>
@@ -131,7 +133,7 @@ const IssueForm = ({
               <Select
                 name="nonConformanceTypeId"
                 label={t`Issue Type`}
-                termId="nonconformance"
+                termId="issue-issue-type"
                 options={nonConformanceTypes.map((type) => ({
                   label: type.name,
                   value: type.id
@@ -143,6 +145,7 @@ const IssueForm = ({
               <CreatableCombobox
                 name="nonConformanceWorkflowId"
                 label={t`Workflow`}
+                termId="issue-workflow"
                 options={nonConformanceWorkflows.map((workflow) => ({
                   label: workflow.name,
                   value: workflow.id
@@ -168,6 +171,7 @@ const IssueForm = ({
               <MultiSelect
                 name="requiredActionIds"
                 label={t`Required Actions`}
+                termId="issue-required-actions"
                 options={requiredActions.map((action) => ({
                   label: action.name,
                   value: action.id
@@ -183,6 +187,7 @@ const IssueForm = ({
               <MultiSelect
                 name="approvalRequirements"
                 label={t`Approval Requirements`}
+                termId="issue-approval-requirements"
                 options={nonConformanceApprovalRequirement.map(
                   (requirement) => ({
                     label: requirement,
@@ -222,6 +227,7 @@ const IssueForm = ({
               <SelectControlled
                 name="source"
                 label={t`Source`}
+                termId="issue-source"
                 options={nonConformanceSource.map((source) => ({
                   label: (
                     <div className="flex gap-2 items-center">
@@ -254,7 +260,7 @@ const IssueForm = ({
                 : !permissions.can("create", "quality")
             }
           >
-            Save
+            <Trans>Save</Trans>
           </Submit>
         </CardFooter>
       </ValidatedForm>

@@ -106,7 +106,7 @@ msgid "available"
 msgstr "利用可能"
 
 msgid "Back Home"
-msgstr ""
+msgstr "ホームに戻る"
 
 msgid "Batch"
 msgstr "バッチ"
@@ -329,7 +329,7 @@ msgid "Error"
 msgstr "エラー"
 
 msgid "Error!"
-msgstr ""
+msgstr "エラー!"
 
 msgid "Estimated"
 msgstr "見積"
@@ -470,6 +470,9 @@ msgstr "キット"
 
 msgid "Labor"
 msgstr "作業"
+
+msgid "Learn more"
+msgstr "詳細情報"
 
 msgid "Leave this page"
 msgstr "このページを離れる"
@@ -967,7 +970,7 @@ msgid "Size"
 msgstr "サイズ"
 
 msgid "Something went wrong"
-msgstr ""
+msgstr "エラーが発生しました"
 
 msgid "Source"
 msgstr "ソース"
@@ -1098,6 +1101,9 @@ msgstr "メンテナンスディスパッチを表示"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "アカウントにサインインするためのマジックリンクをお送りしました。"
+
+msgid "What is {translatedTerm}?"
+msgstr "{translatedTerm}とは何ですか?"
 
 msgid "WIP"
 msgstr "仕掛品"

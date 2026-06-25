@@ -232,6 +232,7 @@ const ReceiptForm = ({
                 <Select
                   name="sourceDocument"
                   label={t`Source Document`}
+                  termId="receipt-source-document"
                   options={receiptSourceDocumentType.map((v) => ({
                     label: v,
                     value: v
@@ -248,6 +249,7 @@ const ReceiptForm = ({
                 <Combobox
                   name="sourceDocumentId"
                   label={t`Source Document ID`}
+                  termId="receipt-source-document-id"
                   options={sourceDocuments.map((d) => ({
                     label: d.name,
                     value: d.id
@@ -257,6 +259,7 @@ const ReceiptForm = ({
                 <Input
                   name="externalDocumentId"
                   label={t`External Reference`}
+                  termId="receipt-external-reference"
                   isDisabled={isPosted}
                 />
                 <CustomFormFields table="receipt" />

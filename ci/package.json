@@ -13,6 +13,7 @@
     "ci:migrations": "tsx src/migrations.ts",
     "ci:deploy": "tsx src/deploy.ts",
     "ci:jobs": "tsx src/jobs.ts",
+    "ci:upload-backup-templates": "tsx src/upload-backup-templates.ts",
     "test": "echo \"no tests\""
   },
   "devDependencies": {

@@ -1,3 +1,4 @@
+import type { Database } from "@carbon/database";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
@@ -8,6 +9,12 @@ import {
   procedureStepType,
   standardFactorType
 } from "../shared";
+import type {
+  ItemOrderStatus,
+  JobOrderStatusCategory,
+  JobStatus,
+  PurchaseOrderStatus
+} from "./types";
 
 export const KPIs = [
   {
@@ -1012,3 +1019,83 @@ export const demandProjectionValidator = z.object({
     ])
   )
 });
+
+// Must match the demand window in get_job_quantity_on_hand and the scheduling
+// sequence.
+export const ACTIVE_JOB_STATUSES: Database["public"]["Enums"]["jobStatus"][] = [
+  "Planned",
+  "Ready",
+  "In Progress",
+  "Paused"
+];
+
+// Explicit list, not the complement of ACTIVE_JOB_STATUSES — active-but-late
+// states like Overdue still surface indicators.
+const JOB_STATUSES_WITHOUT_ORDER_STATUS = [
+  "Draft",
+  "Completed",
+  "Cancelled",
+  "Closed"
+];
+
+export function isJobOrderStatusHidden(
+  jobStatus: string | null | undefined
+): boolean {
+  return !!jobStatus && JOB_STATUSES_WITHOUT_ORDER_STATUS.includes(jobStatus);
+}
+
+// Highest priority first. Draft, cancelled, closed and rejected are
+// intentionally excluded — a dead PO isn't a real order.
+export const PO_STATUS_PRIORITY: PurchaseOrderStatus[] = [
+  "To Receive",
+  "To Receive and Invoice",
+  "Needs Approval",
+  "To Review",
+  "Planned",
+  "To Invoice",
+  "Completed"
+];
+
+// Highest priority first — picks the representative supply-job status when an
+// item is produced by more than one active job. In-flight states outrank merely
+// planned ones, mirroring PO_STATUS_PRIORITY.
+export const JOB_SUPPLY_STATUS_PRIORITY: JobStatus[] = [
+  "In Progress",
+  "Paused",
+  "Ready",
+  "Planned"
+];
+
+// The single source of truth for order-status precedence. Both the status filter
+// and JobOrderStatusBadge derive from this (the badge maps each category to its
+// icon/label), so they can never disagree. Order of the checks below IS the
+// precedence — keep the highest-priority indicator first.
+export function getJobOrderStatusCategory(
+  status: ItemOrderStatus | undefined
+): JobOrderStatusCategory | null {
+  // A still-unmet, priority-adjusted shortfall outranks the supply indicators —
+  // see JobOrderStatusBadge for why.
+  if (status?.needsOrder) return "needsOrder";
+
+  if (status?.coveredByOnHand) return "inStock";
+
+  switch (status?.status) {
+    case "Planned":
+      return "planned";
+    case "Needs Approval":
+    case "To Review":
+      return "awaitingApproval";
+    case "To Receive":
+    case "To Receive and Invoice": {
+      const fraction =
+        status.ordered > 0 ? status.received / status.ordered : 0;
+      if (fraction < 1) {
+        return status.received > 0 ? "received" : "onOrder";
+      }
+      break;
+    }
+  }
+
+  if (status?.supplyJobStatus) return "plannedJob";
+  return null;
+}

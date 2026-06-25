@@ -6,6 +6,7 @@ import {
   FormLabel,
   HStack,
   Input,
+  LabelWithHelp,
   Modal,
   ModalBody,
   ModalContent,
@@ -74,6 +75,7 @@ const CreateCustomerModal = () => {
               <Customer
                 name="customer"
                 label={t`Customer`}
+                termId="create-customer-account-customer"
                 onChange={(newValue) =>
                   setCustomer(newValue?.value as string | undefined)
                 }
@@ -198,7 +200,9 @@ const CustomerContact = ({
   return (
     <FormControl isInvalid={!!error}>
       <FormLabel htmlFor={name} isOptional={isCustomerContactOptional}>
-        <Trans>Customer Contact</Trans>
+        <LabelWithHelp termId="create-customer-account-contact">
+          <Trans>Customer Contact</Trans>
+        </LabelWithHelp>
       </FormLabel>
       <input type="hidden" name={name} id={name} value={value ?? ""} />
       <Combobox

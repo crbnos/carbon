@@ -10,7 +10,7 @@ import {
   ModalDrawerTitle,
   VStack
 } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
@@ -64,7 +64,11 @@ const QualityDocumentForm = ({
           >
             <ModalDrawerHeader>
               <ModalDrawerTitle>
-                {type === "copy" ? "Copy" : "New"} Quality Document
+                {type === "copy" ? (
+                  <Trans>Copy Quality Document</Trans>
+                ) : (
+                  <Trans>New Quality Document</Trans>
+                )}
               </ModalDrawerTitle>
             </ModalDrawerHeader>
             <ModalDrawerBody>
@@ -80,12 +84,13 @@ const QualityDocumentForm = ({
                 {type === "new" && <Input name="name" label={t`Name`} />}
                 <Number
                   name="version"
-                  label={type === "copy" ? "New Version" : "Version"}
+                  label={type === "copy" ? t`New Version` : t`Version`}
+                  termId="quality-document-version"
                   minValue={0}
                   helperText={
                     type === "copy"
-                      ? "The new version number of the document"
-                      : "The version of the new document"
+                      ? t`The new version number of the document`
+                      : t`The version of the new document`
                   }
                 />
               </VStack>
@@ -96,7 +101,7 @@ const QualityDocumentForm = ({
                   isLoading={fetcher.state !== "idle"}
                   isDisabled={fetcher.state !== "idle" || isDisabled}
                 >
-                  Save
+                  <Trans>Save</Trans>
                 </Submit>
               </HStack>
             </ModalDrawerFooter>

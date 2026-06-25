@@ -1,6 +1,6 @@
 {
-  "generated": "2026-06-25T12:23:59.190Z",
-  "totalTools": 1211,
+  "generated": "2026-06-25T12:35:10.698Z",
+  "totalTools": 1217,
   "modules": 15,
   "tools": [
     {
@@ -15080,6 +15080,106 @@
       }
     },
     {
+      "name": "production_getJobMaterialItemIds",
+      "module": "production",
+      "classification": "READ",
+      "description": "get job material item ids",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "jobId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "jobId"
+        ]
+      }
+    },
+    {
+      "name": "production_getJobMaterialShortfallByItem",
+      "module": "production",
+      "classification": "READ",
+      "description": "get job material shortfall by item",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "jobId",
+        "companyId",
+        "locationId",
+        "materials"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "materials": {
+            "type": "array",
+            "items": {}
+          }
+        },
+        "required": [
+          "jobId",
+          "locationId",
+          "materials"
+        ]
+      }
+    },
+    {
+      "name": "production_getJobOrderStatusMap",
+      "module": "production",
+      "classification": "READ",
+      "description": "get job order status map",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "jobId",
+        "companyId",
+        "locationId",
+        "jobStatus",
+        "materials"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "jobStatus": {},
+          "materials": {}
+        },
+        "required": [
+          "jobId",
+          "locationId",
+          "jobStatus",
+          "materials"
+        ]
+      }
+    },
+    {
       "name": "production_getJobMethodTree",
       "module": "production",
       "classification": "READ",
@@ -18167,6 +18267,63 @@
           "jobId",
           "mode",
           "direction"
+        ]
+      }
+    },
+    {
+      "name": "production_getJobMaterialPurchaseOrderLines",
+      "module": "production",
+      "classification": "READ",
+      "description": "get job material purchase order lines",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "materials",
+        "locationId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "materials": {},
+          "locationId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "materials",
+          "locationId"
+        ]
+      }
+    },
+    {
+      "name": "production_getJobMaterialSupplyJobLines",
+      "module": "production",
+      "classification": "READ",
+      "description": "get job material supply job lines",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "materials",
+        "companyId",
+        "locationId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "materials": {},
+          "locationId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "materials",
+          "locationId"
         ]
       }
     },
@@ -33390,6 +33547,23 @@
       "serviceParams": [
         "client",
         "userId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "settings_getIndustries",
+      "module": "settings",
+      "classification": "READ",
+      "description": "get industries",
+      "paramCount": 0,
+      "serviceParams": [
+        "client"
       ],
       "injectAuth": [
         "companyId"

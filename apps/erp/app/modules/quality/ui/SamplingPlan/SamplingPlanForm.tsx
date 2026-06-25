@@ -8,9 +8,10 @@ import {
   CardTitle,
   HStack,
   Label,
+  LabelWithHelp,
   VStack
 } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import {
   Hidden,
@@ -43,28 +44,33 @@ type SamplingPlanFormProps = {
   } | null;
 };
 
-const typeOptions: { value: SamplingPlanType; label: string }[] = [
-  { value: "All", label: "Inspect All" },
-  { value: "First", label: "Inspect First N" },
-  { value: "Percentage", label: "Percentage" },
-  { value: "AQL", label: "AQL (Z1.4 / ISO 2859-1)" }
-];
+function useSamplingPlanOptions() {
+  const { t } = useLingui();
+  const typeOptions: { value: SamplingPlanType; label: string }[] = [
+    { value: "All", label: t`Inspect All` },
+    { value: "First", label: t`Inspect First N` },
+    { value: "Percentage", label: t`Percentage` },
+    { value: "AQL", label: t`AQL (Z1.4 / ISO 2859-1)` }
+  ];
 
-const inspectionLevelOptions: { value: InspectionLevel; label: string }[] = [
-  { value: "S1", label: "S-1 (coarsest special)" },
-  { value: "S2", label: "S-2" },
-  { value: "S3", label: "S-3" },
-  { value: "S4", label: "S-4 (finest special)" },
-  { value: "I", label: "I (reduced)" },
-  { value: "II", label: "II (normal default)" },
-  { value: "III", label: "III (tightened)" }
-];
+  const inspectionLevelOptions: { value: InspectionLevel; label: string }[] = [
+    { value: "S1", label: t`S-1 (coarsest special)` },
+    { value: "S2", label: t`S-2` },
+    { value: "S3", label: t`S-3` },
+    { value: "S4", label: t`S-4 (finest special)` },
+    { value: "I", label: t`I (reduced)` },
+    { value: "II", label: t`II (normal default)` },
+    { value: "III", label: t`III (tightened)` }
+  ];
 
-const severityOptions: { value: InspectionSeverity; label: string }[] = [
-  { value: "Normal", label: "Normal" },
-  { value: "Tightened", label: "Tightened" },
-  { value: "Reduced", label: "Reduced" }
-];
+  const severityOptions: { value: InspectionSeverity; label: string }[] = [
+    { value: "Normal", label: t`Normal` },
+    { value: "Tightened", label: t`Tightened` },
+    { value: "Reduced", label: t`Reduced` }
+  ];
+
+  return { typeOptions, inspectionLevelOptions, severityOptions };
+}
 
 // Canonical string form of an AQL value, so options match stored values.
 // DB returns NUMERIC(5,3) as e.g. "1.500" — normalize everything to "1.5".
@@ -98,6 +104,8 @@ export default function SamplingPlanForm({
 }: SamplingPlanFormProps) {
   const permissions = usePermissions();
   const canUpdate = permissions.can("update", "quality");
+  const { typeOptions, inspectionLevelOptions, severityOptions } =
+    useSamplingPlanOptions();
 
   const initialType = initial?.type ?? "All";
   const initialSampleSize = initial?.sampleSize ?? null;
@@ -186,7 +194,9 @@ export default function SamplingPlanForm({
           <VStack spacing={4} className="w-full">
             <div className="flex flex-col gap-2 w-full">
               <Label>
-                <Trans>Plan Type</Trans>
+                <LabelWithHelp termId="sampling-plan-type">
+                  <Trans>Plan Type</Trans>
+                </LabelWithHelp>
               </Label>
               <Select
                 name="type"
@@ -198,7 +208,9 @@ export default function SamplingPlanForm({
             {type === "First" && (
               <div className="flex flex-col gap-2 w-full">
                 <Label>
-                  <Trans>Sample Size</Trans>
+                  <LabelWithHelp termId="sampling-plan-sample-size">
+                    <Trans>Sample Size</Trans>
+                  </LabelWithHelp>
                 </Label>
                 <NumberInput
                   name="sampleSize"
@@ -211,7 +223,9 @@ export default function SamplingPlanForm({
             {type === "Percentage" && (
               <div className="flex flex-col gap-2 w-full">
                 <Label>
-                  <Trans>Percentage of Lot</Trans>
+                  <LabelWithHelp termId="sampling-plan-percentage">
+                    <Trans>Percentage of Lot</Trans>
+                  </LabelWithHelp>
                 </Label>
                 <NumberInput
                   name="percentage"
@@ -226,7 +240,9 @@ export default function SamplingPlanForm({
               <div className="grid grid-cols-3 gap-4 w-full">
                 <div className="flex flex-col gap-2">
                   <Label>
-                    <Trans>AQL</Trans>
+                    <LabelWithHelp termId="sampling-plan-aql">
+                      <Trans>AQL</Trans>
+                    </LabelWithHelp>
                   </Label>
                   <Select
                     name="aql"
@@ -236,7 +252,9 @@ export default function SamplingPlanForm({
                 </div>
                 <div className="flex flex-col gap-2">
                   <Label>
-                    <Trans>Inspection Level</Trans>
+                    <LabelWithHelp termId="sampling-plan-inspection-level">
+                      <Trans>Inspection Level</Trans>
+                    </LabelWithHelp>
                   </Label>
                   <Select
                     name="inspectionLevel"
@@ -248,7 +266,9 @@ export default function SamplingPlanForm({
                 </div>
                 <div className="flex flex-col gap-2">
                   <Label>
-                    <Trans>Severity</Trans>
+                    <LabelWithHelp termId="sampling-plan-severity">
+                      <Trans>Severity</Trans>
+                    </LabelWithHelp>
                   </Label>
                   <Select
                     name="severity"

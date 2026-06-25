@@ -153,6 +153,7 @@ const RiskRegisterForm = ({
                   <SelectControlled
                     name="type"
                     label={t`Type`}
+                    termId="risk-register-type"
                     value={selectedType}
                     onChange={(value) =>
                       // @ts-expect-error TS2345 - TODO: fix type
@@ -179,6 +180,7 @@ const RiskRegisterForm = ({
                   <Select
                     name="severity"
                     label={t`Severity`}
+                    termId="risk-register-severity"
                     options={Array.from({ length: 5 }, (_, index) => ({
                       value: (index + 1).toString(),
                       label: <RiskRating rating={index + 1} />
@@ -187,6 +189,7 @@ const RiskRegisterForm = ({
                   <Select
                     name="likelihood"
                     label={t`Likelihood`}
+                    termId="risk-register-likelihood"
                     options={Array.from({ length: 5 }, (_, index) => ({
                       value: (index + 1).toString(),
                       label: <RiskRating rating={index + 1} />

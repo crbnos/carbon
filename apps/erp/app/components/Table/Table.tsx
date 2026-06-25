@@ -714,14 +714,14 @@ const Table = <T extends object>({
   const filters = useMemo(
     () =>
       columns.reduce<ColumnFilter[]>((acc, column) => {
-        if (
-          column.meta?.filter &&
-          column.header &&
+        const header =
           typeof column.header === "string"
-        ) {
+            ? column.header
+            : column.meta?.filterHeader;
+        if (column.meta?.filter && header) {
           const filter: ColumnFilter = {
             accessorKey: getAccessorKey(column) ?? column.id!,
-            header: column.header,
+            header,
             pluralHeader: column.meta.pluralHeader,
             filter: column.meta.filter,
             icon: column.meta.icon

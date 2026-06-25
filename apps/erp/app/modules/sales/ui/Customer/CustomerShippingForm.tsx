@@ -65,6 +65,7 @@ const CustomerShippingForm = ({ initialValues }: CustomerShippingFormProps) => {
             <Customer
               name="shippingCustomerId"
               label={t`Shipping Customer`}
+              termId="shipping-customer"
               onChange={(value) => setCustomer(value?.value as string)}
             />
             <CustomerLocation
@@ -85,6 +86,7 @@ const CustomerShippingForm = ({ initialValues }: CustomerShippingFormProps) => {
             <Select
               name="incoterm"
               label={t`Incoterm`}
+              termId="customer-incoterm"
               isClearable
               options={incoterms.map((i) => ({ value: i, label: i }))}
               onChange={(v) => setIncoterm(v?.value as string)}

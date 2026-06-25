@@ -10,6 +10,7 @@ import {
   ModalDrawerTitle,
   VStack
 } from "@carbon/react";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect } from "react";
 import type { z } from "zod";
 import {
@@ -36,6 +37,7 @@ const IntercompanyTransactionForm = ({
   open = true,
   onClose
 }: IntercompanyTransactionFormProps) => {
+  const { t } = useLingui();
   const permissions = usePermissions();
   const isDisabled = !permissions.can("create", "accounting");
 
@@ -60,37 +62,49 @@ const IntercompanyTransactionForm = ({
             className="flex flex-col h-full"
           >
             <ModalDrawerHeader>
-              <ModalDrawerTitle>New IC Transaction</ModalDrawerTitle>
+              <ModalDrawerTitle>
+                <Trans>New IC Transaction</Trans>
+              </ModalDrawerTitle>
             </ModalDrawerHeader>
             <ModalDrawerBody>
               <Hidden name="type" value="drawer" />
               <VStack spacing={4}>
                 <Select
                   name="sourceCompanyId"
-                  label="Source Company"
+                  label={t`Source Company`}
                   options={companyOptions}
                 />
                 <Select
                   name="targetCompanyId"
-                  label="Target Company"
+                  label={t`Target Company`}
                   options={companyOptions}
                 />
-                <Number name="amount" label="Amount" minValue={0} />
+                <Number name="amount" label={t`Amount`} minValue={0} />
                 <SourceCurrencySync companies={companies} />
-                <Input name="description" label="Description" />
-                <Account name="debitAccountId" label="Debit Account" />
-                <Account name="creditAccountId" label="Credit Account" />
+                <Input name="description" label={t`Description`} />
+                <Account
+                  name="debitAccountId"
+                  label={t`Debit Account`}
+                  termId="intercompany-debit-account"
+                />
+                <Account
+                  name="creditAccountId"
+                  label={t`Credit Account`}
+                  termId="intercompany-credit-account"
+                />
                 <Input
                   name="postingDate"
-                  label="Posting Date"
-                  termId="posting"
+                  label={t`Posting Date`}
+                  termId="intercompany-posting-date"
                   type="date"
                 />
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>
               <HStack>
-                <Submit isDisabled={isDisabled}>Save</Submit>
+                <Submit isDisabled={isDisabled}>
+                  <Trans>Save</Trans>
+                </Submit>
               </HStack>
             </ModalDrawerFooter>
           </ValidatedForm>

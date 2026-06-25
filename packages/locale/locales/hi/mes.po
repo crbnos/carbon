@@ -106,7 +106,7 @@ msgid "available"
 msgstr "उपलब्ध"
 
 msgid "Back Home"
-msgstr ""
+msgstr "घर वापस"
 
 msgid "Batch"
 msgstr "बैच"
@@ -329,7 +329,7 @@ msgid "Error"
 msgstr "त्रुटि"
 
 msgid "Error!"
-msgstr ""
+msgstr "त्रुटि!"
 
 msgid "Estimated"
 msgstr "अनुमानित"
@@ -470,6 +470,9 @@ msgstr "किट"
 
 msgid "Labor"
 msgstr "श्रम"
+
+msgid "Learn more"
+msgstr "अधिक जानें"
 
 msgid "Leave this page"
 msgstr "इस पृष्ठ को छोड़ें"
@@ -967,7 +970,7 @@ msgid "Size"
 msgstr "आकार"
 
 msgid "Something went wrong"
-msgstr ""
+msgstr "कुछ गलत हो गया"
 
 msgid "Source"
 msgstr "स्रोत"
@@ -1098,6 +1101,9 @@ msgstr "रखरखाव डिस्पैच देखें"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "हमने आपके खाते में साइन इन करने के लिए आपको एक जादुई लिंक भेजा है।"
+
+msgid "What is {translatedTerm}?"
+msgstr "{translatedTerm} क्या है?"
 
 msgid "WIP"
 msgstr "WIP"

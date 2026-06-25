@@ -1,12 +1,14 @@
 import { useControlField } from "@carbon/form";
+import type { TermId } from "@carbon/glossary";
 import {
   ChoiceCardGroup,
   FormControl,
   FormHelperText,
   FormLabel,
+  LabelWithHelp,
   useMount
 } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import { LuCalendarArrowDown, LuCalendarArrowUp } from "react-icons/lu";
 import { useFetcher } from "react-router";
@@ -21,6 +23,8 @@ type ProcessProps = {
   /** Form field name for the trigger process id (TEXT). */
   processName: string;
   label: string;
+  /** Glossary term wired to a `<LabelWithHelp>` info icon next to the label. */
+  termId?: TermId;
   /**
    * Item whose recipe scopes the picker. When provided, options are filtered
    * to processes referenced by methodOperation rows on the item's active
@@ -34,6 +38,7 @@ type ProcessProps = {
 export const ShelfLifeStartProcess = ({
   processName,
   label,
+  termId,
   itemId
 }: ProcessProps) => {
   const allowed = useItemRecipeProcessIds(itemId);
@@ -49,7 +54,9 @@ export const ShelfLifeStartProcess = ({
 
   return (
     <FormControl>
-      <FormLabel isOptional>{label}</FormLabel>
+      <FormLabel isOptional>
+        <LabelWithHelp termId={termId}>{label}</LabelWithHelp>
+      </FormLabel>
       <Process
         name={processName}
         label=""
@@ -57,7 +64,9 @@ export const ShelfLifeStartProcess = ({
         isReadOnly={recipeEmpty}
       />
       {recipeEmpty && (
-        <FormHelperText>Define a manufacturing operation first.</FormHelperText>
+        <FormHelperText>
+          <Trans>Define a manufacturing operation first.</Trans>
+        </FormHelperText>
       )}
     </FormControl>
   );
@@ -70,9 +79,15 @@ type TimingProps = {
   /** Form field name for the trigger timing ('Before' | 'After'). */
   timingName: string;
   label: string;
+  /** Glossary term wired to a `<LabelWithHelp>` info icon next to the label. */
+  termId?: TermId;
 };
 
-export const ShelfLifeStartTiming = ({ timingName, label }: TimingProps) => {
+export const ShelfLifeStartTiming = ({
+  timingName,
+  label,
+  termId
+}: TimingProps) => {
   const { t } = useLingui();
   const [timing, setTiming] = useControlField<Timing | undefined>(timingName);
 
@@ -81,7 +96,9 @@ export const ShelfLifeStartTiming = ({ timingName, label }: TimingProps) => {
 
   return (
     <FormControl>
-      <FormLabel>{label}</FormLabel>
+      <FormLabel>
+        <LabelWithHelp termId={termId}>{label}</LabelWithHelp>
+      </FormLabel>
       <ChoiceCardGroup<Timing>
         value={current}
         onChange={setTiming}

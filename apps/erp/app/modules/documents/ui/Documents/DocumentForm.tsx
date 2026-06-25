@@ -65,11 +65,13 @@ const DocumentForm = ({ initialValues, ownerId }: DocumentFormProps) => {
                 alwaysSelected={[ownerId]}
                 name="readGroups"
                 label={t`View Permissions`}
+                termId="document-view-permissions"
               />
               <Users
                 alwaysSelected={[ownerId]}
                 name="writeGroups"
                 label={t`Edit Permissions`}
+                termId="document-edit-permissions"
               />
             </VStack>
           </DrawerBody>

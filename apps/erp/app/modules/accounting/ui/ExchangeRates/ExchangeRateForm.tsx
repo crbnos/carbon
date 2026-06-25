@@ -35,6 +35,7 @@ import {
   ChartTooltip,
   ChartTooltipContent
 } from "@carbon/react/Chart";
+import { useLingui } from "@lingui/react/macro";
 import { json2csv } from "json-2-csv";
 import { useCallback, useMemo, useState } from "react";
 import { LuDownload } from "react-icons/lu";
@@ -73,6 +74,7 @@ const CurrencyForm = ({
   initialValues,
   exchangeRateHistory = []
 }: CurrencyFormProps) => {
+  const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
   const onClose = () => navigate(-1);
@@ -146,14 +148,16 @@ const CurrencyForm = ({
               <Input name="code" label="Code" isReadOnly />
               <NumberField
                 name="decimalPlaces"
-                label="Decimal Places"
+                label={t`Decimal Places`}
+                termId="decimal-places-currency"
                 minValue={0}
                 maxValue={4}
                 onChange={setDecimalPlaces}
               />
               <NumberField
                 name="exchangeRate"
-                label="Exchange Rate"
+                label={t`Exchange Rate`}
+                termId="exchange-rate"
                 minValue={isBaseCurrency ? 1 : 0}
                 maxValue={isBaseCurrency ? 1 : undefined}
                 formatOptions={{
@@ -164,7 +168,8 @@ const CurrencyForm = ({
               {!isBaseCurrency && (
                 <NumberField
                   name="historicalExchangeRate"
-                  label="Historical Rate (Equity)"
+                  label={t`Historical Rate (Equity)`}
+                  termId="historical-exchange-rate"
                   minValue={0}
                   formatOptions={{
                     minimumFractionDigits: decimalPlaces ?? 0

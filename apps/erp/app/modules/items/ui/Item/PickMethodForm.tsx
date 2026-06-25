@@ -190,6 +190,7 @@ const PickMethodForm = ({
             <StorageUnit
               name="defaultStorageUnitId"
               label={t`Default Storage Unit`}
+              termId="item-default-storage-unit"
               locationId={initialValues.locationId}
             />
 
@@ -197,6 +198,7 @@ const PickMethodForm = ({
               <Select
                 name="sortMethod"
                 label={t`Pick Order`}
+                termId="item-pick-order"
                 options={pickOrderOptions}
               />
             )}
@@ -413,7 +415,7 @@ function ShelfLifeFields({
           <NumberControlled
             name="shelfLifeDays"
             label={t`Shelf Life (Days)`}
-            termId="shelf-life"
+            termId="item-shelf-life-days"
             minValue={1}
             value={shelfLifeDays ?? defaultShelfLifeDays}
           />
@@ -422,6 +424,7 @@ function ShelfLifeFields({
               <ShelfLifeStartProcess
                 processName="shelfLifeTriggerProcessId"
                 label={t`Shelf Life Start Process`}
+                termId="item-shelf-life-start-process"
                 itemId={itemId}
               />
               {shelfLifeTriggerProcessId && (
@@ -429,6 +432,7 @@ function ShelfLifeFields({
                   <ShelfLifeStartTiming
                     timingName="shelfLifeTriggerTiming"
                     label={t`Start Expiration`}
+                    termId="item-shelf-life-start-timing"
                   />
                 </div>
               )}
@@ -440,7 +444,7 @@ function ShelfLifeFields({
                 <Boolean
                   name="shelfLifeCalculateFromBom"
                   label={t`Calculate from BOM`}
-                  termId="bom"
+                  termId="item-calculate-from-bom"
                   description={t`Output never outlasts its raw materials. Falls back to the fixed duration when no input has an expiry date.`}
                   value={!!shelfLifeCalculateFromBom}
                   onChange={(v) => setShelfLifeCalculateFromBom(v)}

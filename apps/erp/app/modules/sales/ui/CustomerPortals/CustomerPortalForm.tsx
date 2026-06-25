@@ -88,7 +88,11 @@ const CustomerPortalForm = ({
               <Hidden name="id" />
               <Hidden name="type" value={type} />
               <VStack spacing={4}>
-                <Customer name="customerId" label={t`Customer`} />
+                <Customer
+                  name="customerId"
+                  label={t`Customer`}
+                  termId="customer-portal-customer"
+                />
                 <CustomFormFields table="externalLink" />
               </VStack>
             </ModalDrawerBody>

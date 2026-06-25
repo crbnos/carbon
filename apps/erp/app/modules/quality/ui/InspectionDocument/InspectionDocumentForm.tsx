@@ -59,6 +59,7 @@ export default function InspectionDocumentForm({
               <Input
                 name="drawingNumber"
                 label={t`Drawing Number`}
+                termId="inspection-document-drawing-number"
                 placeholder={t`e.g. DWG-1234`}
               />
             </VStack>

@@ -243,6 +243,7 @@ const PurchasingRFQLineForm = ({
                       <UnitOfMeasure
                         name="purchaseUnitOfMeasureCode"
                         label={t`Purchase Unit of Measure`}
+                        termId="item-purchasing-uom"
                         value={itemData.purchaseUom}
                         onChange={(newValue) =>
                           setItemData((d) => ({
@@ -253,6 +254,7 @@ const PurchasingRFQLineForm = ({
                       />
                       <ConversionFactor
                         name="conversionFactor"
+                        termId="conversion-factor"
                         purchasingCode={itemData.purchaseUom}
                         inventoryCode={itemData.inventoryUom}
                         value={itemData.conversionFactor}
@@ -270,6 +272,7 @@ const PurchasingRFQLineForm = ({
                       <ArrayNumeric
                         name="quantity"
                         label={t`Quantity`}
+                        termId="quantity-breaks"
                         defaults={[1, 25, 50, 100]}
                         isDisabled={isLocked}
                       />

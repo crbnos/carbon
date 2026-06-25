@@ -11,6 +11,7 @@ import {
   ModalDrawerTitle,
   VStack
 } from "@carbon/react";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useFetcher } from "react-router";
 import { DatePicker, Number, Submit } from "~/components/Form";
 import { usePermissions, useUser } from "~/hooks";
@@ -21,6 +22,7 @@ type FixedAssetRegisterFormProps = {
 };
 
 const FixedAssetRegisterForm = ({ onClose }: FixedAssetRegisterFormProps) => {
+  const { t } = useLingui();
   const permissions = usePermissions();
   const { company } = useUser();
   const fetcher = useFetcher();
@@ -47,24 +49,30 @@ const FixedAssetRegisterForm = ({ onClose }: FixedAssetRegisterFormProps) => {
             }}
           >
             <ModalDrawerHeader>
-              <ModalDrawerTitle>Register Existing Asset</ModalDrawerTitle>
+              <ModalDrawerTitle>
+                <Trans>Register Existing Asset</Trans>
+              </ModalDrawerTitle>
             </ModalDrawerHeader>
             <ModalDrawerBody>
               <VStack spacing={4}>
                 <Number
                   name="acquisitionCost"
-                  label="Acquisition Cost"
+                  label={t`Acquisition Cost`}
+                  termId="fixed-asset-acquisition-cost"
                   minValue={0}
                   formatOptions={{
                     style: "currency",
                     currency: company?.baseCurrencyCode ?? "USD"
                   }}
                 />
-                <DatePicker name="acquisitionDate" label="Acquisition Date" />
+                <DatePicker
+                  name="acquisitionDate"
+                  label={t`Acquisition Date`}
+                />
                 <Number
                   name="accumulatedDepreciation"
-                  label="Accumulated Depreciation"
-                  termId="depreciation"
+                  label={t`Accumulated Depreciation`}
+                  termId="fixed-asset-opening-accumulated-depreciation"
                   minValue={0}
                   formatOptions={{
                     style: "currency",
@@ -73,18 +81,18 @@ const FixedAssetRegisterForm = ({ onClose }: FixedAssetRegisterFormProps) => {
                 />
                 <DatePicker
                   name="depreciationStartDate"
-                  label="Depreciation Start Date"
-                  termId="depreciation"
+                  label={t`Depreciation Start Date`}
+                  termId="fixed-asset-depreciation-start-date"
                 />
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>
               <HStack>
                 <Submit isDisabled={!permissions.can("update", "accounting")}>
-                  Register
+                  <Trans>Register</Trans>
                 </Submit>
                 <Button size="md" variant="solid" onClick={() => onClose?.()}>
-                  Cancel
+                  <Trans>Cancel</Trans>
                 </Button>
               </HStack>
             </ModalDrawerFooter>

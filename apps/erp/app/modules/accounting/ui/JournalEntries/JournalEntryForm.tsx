@@ -14,10 +14,12 @@ import {
   Heading,
   HStack,
   IconButton,
+  LabelWithHelp,
   Status,
   useDisclosure,
   VStack
 } from "@carbon/react";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useMemo, useState } from "react";
 import {
   LuCheckCheck,
@@ -93,6 +95,7 @@ const JournalEntryForm = ({
   lineDimensions,
   isDisabled = false
 }: JournalEntryFormProps) => {
+  const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
   const deleteModal = useDisclosure();
@@ -265,25 +268,26 @@ const JournalEntryForm = ({
               {/* Entry Details */}
               <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full">
                 <div className="col-span-3">
-                  <Input autoFocus name="description" label="Description" />
+                  <Input autoFocus name="description" label={t`Description`} />
                 </div>
                 <Input
                   name="company"
-                  label="Company"
+                  label={t`Company`}
                   value={companyName}
                   isReadOnly
                 />
                 <Select
                   name="sourceType"
-                  label="Source"
+                  label={t`Source`}
+                  termId="journal-entry-source"
                   value={sourceType}
                   options={sourceTypeOptions}
                   isReadOnly
                 />
                 <DatePicker
                   name="postingDate"
-                  label="Posting Date"
-                  termId="posting"
+                  label={t`Posting Date`}
+                  termId="journal-entry-posting-date"
                   isDisabled={isDisabled}
                 />
               </div>
@@ -293,9 +297,27 @@ const JournalEntryForm = ({
                 {/* Column Headers */}
                 <div className="grid grid-cols-[auto_1fr_140px_140px_40px] items-center gap-3 px-4 py-2.5 text-sm text-muted-foreground font-medium bg-muted/50 border-b border-border">
                   <div className="w-6" />
-                  <div className="pl-3">Account & Details</div>
-                  <div className="text-right pr-3">Debit</div>
-                  <div className="text-right pr-3">Credit</div>
+                  <div className="pl-3">
+                    <Trans>Account & Details</Trans>
+                  </div>
+                  <div className="text-right pr-3">
+                    <LabelWithHelp
+                      variant="inline"
+                      termId="journal-line-debit"
+                      className="justify-end"
+                    >
+                      <Trans>Debit</Trans>
+                    </LabelWithHelp>
+                  </div>
+                  <div className="text-right pr-3">
+                    <LabelWithHelp
+                      variant="inline"
+                      termId="journal-line-credit"
+                      className="justify-end"
+                    >
+                      <Trans>Credit</Trans>
+                    </LabelWithHelp>
+                  </div>
                   <div />
                 </div>
 

@@ -218,6 +218,14 @@ export async function getEmployeeCompanies(
   };
 }
 
+export async function getIndustries(client: SupabaseClient<Database>) {
+  return client
+    .from("industry")
+    .select("id, name, description, iconName")
+    .eq("active", true)
+    .order("sortOrder");
+}
+
 export async function getCompany(
   client: SupabaseClient<Database>,
   companyId: string
@@ -743,13 +751,14 @@ export async function seedCompany(
   client: SupabaseClient<Database>,
   companyId: string,
   userId: string,
-  parentCompanyId?: string
+  opts?: { parentCompanyId?: string; identityOnly?: boolean }
 ) {
   return client.functions.invoke("seed-company", {
     body: {
       companyId,
       userId,
-      parentCompanyId
+      parentCompanyId: opts?.parentCompanyId,
+      identityOnly: opts?.identityOnly ?? false
     }
   });
 }

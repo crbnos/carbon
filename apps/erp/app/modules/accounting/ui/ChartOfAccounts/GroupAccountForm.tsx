@@ -2,6 +2,7 @@ import { ValidatedForm } from "@carbon/form";
 import {
   Button,
   HStack,
+  LabelWithHelp,
   ModalDrawer,
   ModalDrawerBody,
   ModalDrawerContent,
@@ -158,6 +159,7 @@ const GroupAccountForm = ({
                 <Combobox
                   name="accountType"
                   label={t`Account Type`}
+                  termId="group-account-account-type"
                   options={accountTypes.map((t) => ({
                     label: t,
                     value: t
@@ -167,6 +169,7 @@ const GroupAccountForm = ({
                   <Combobox
                     name="_class"
                     label={t`Class`}
+                    termId="group-account-class"
                     options={(parentIsSystem
                       ? (incomeBalanceToClasses[incomeBalance] ??
                         accountClassTypes)
@@ -188,13 +191,17 @@ const GroupAccountForm = ({
                   <>
                     <div className="space-y-1">
                       <label className="text-sm font-medium text-muted-foreground">
-                        <Trans>Income/Balance</Trans>
+                        <LabelWithHelp termId="group-account-income-balance-inherited">
+                          <Trans>Income/Balance</Trans>
+                        </LabelWithHelp>
                       </label>
                       <p className="text-sm">{incomeBalance}</p>
                     </div>
                     <div className="space-y-1">
                       <label className="text-sm font-medium text-muted-foreground">
-                        <Trans>Class</Trans>
+                        <LabelWithHelp termId="group-account-class-inherited">
+                          <Trans>Class</Trans>
+                        </LabelWithHelp>
                       </label>
                       <p className="text-sm">{accountClass}</p>
                     </div>

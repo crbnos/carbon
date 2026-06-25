@@ -1,3 +1,10 @@
+export { companyExportFunction } from "./company-export";
+export { companyImportFunction } from "./company-import";
+export {
+  companyRestoreFinalizeFunction,
+  companyRestoreFunction,
+  companyRestoreRevertFunction
+} from "./company-restore";
 export { modelThumbnailFunction } from "./model-thumbnail";
 export { onboardFunction } from "./onboard";
 export { postTransactionFunction } from "./post-transaction";

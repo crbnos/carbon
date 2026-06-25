@@ -11,6 +11,7 @@ import {
   VStack
 } from "@carbon/react";
 import { getLocalTimeZone, startOfWeek, today } from "@internationalized/date";
+import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { useFetcher, useLoaderData } from "react-router";
 import type { z } from "zod";
@@ -36,7 +37,7 @@ const DemandProjectionsForm = ({
   onClose
 }: DemandProjectionsFormProps) => {
   const permissions = usePermissions();
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const fetcher = useFetcher<{ id: string }>();
   const loaderData = useLoaderData<LoaderData>();
   const periods = loaderData?.periods ?? [];
@@ -53,11 +54,15 @@ const DemandProjectionsForm = ({
     ? !permissions.can("update", "production")
     : !permissions.can("create", "production");
 
-  // Generate week labels based on periods
-  const startDate = startOfWeek(today(getLocalTimeZone()), "en-US");
+  const timeZone = getLocalTimeZone();
+  const startDate = startOfWeek(today(timeZone), "en-US");
   const weekLabels = Array.from({ length: 52 }, (_, i) => {
-    const weekDate = startDate.add({ weeks: i });
-    return `Week ${i + 1} (${weekDate.month}/${weekDate.day})`;
+    const weekDate = startDate.add({ weeks: i }).toDate(timeZone);
+    const formattedDate = i18n.date(weekDate, {
+      month: "numeric",
+      day: "numeric"
+    });
+    return i18n._(msg`Week ${i + 1} (${formattedDate})`);
   });
 
   return (
@@ -85,10 +90,12 @@ const DemandProjectionsForm = ({
         >
           <DrawerHeader>
             <CardTitle>
-              {isEditing ? "Edit" : "New"} Production Projection
+              {isEditing
+                ? t`Edit Production Projection`
+                : t`New Production Projection`}
             </CardTitle>
             <CardDescription>
-              Set demand projection values for each week
+              {t`Set demand projection values for each week`}
             </CardDescription>
           </DrawerHeader>
           <DrawerBody>
@@ -134,7 +141,7 @@ const DemandProjectionsForm = ({
                 isLoading={fetcher.state !== "idle"}
                 isDisabled={fetcher.state !== "idle" || isDisabled}
               >
-                {isEditing ? "Update" : "Create"} Projection
+                {isEditing ? t`Update Projection` : t`Create Projection`}
               </Submit>
             </HStack>
           </DrawerFooter>

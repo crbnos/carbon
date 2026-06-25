@@ -1,0 +1,58 @@
+---
+title: Backups
+description: Snapshot a company's data and files, restore it in place with one-click revert, or stand up a new company from a demo template.
+---
+
+A backup is a single snapshot of one company: its records, and optionally the files it has uploaded. You make one from **Settings → Backups**, and you do two things with it. You **restore** it over the same company to undo a bad change, or you use it as the starting data for a brand-new company at sign-up. Same file, two jobs.
+
+Backups are available to anyone with permission to manage **Settings**.
+
+<Callout type="warning" title="A backup is not disaster recovery">
+This is a per-company snapshot for cloning environments and undoing a bad change, not a full database dump, and there is no scheduling or point-in-time recovery. Treat it as a working tool, not your only copy.
+</Callout>
+
+## What a backup contains
+
+A backup captures the company's business data across the whole app: sales, purchasing, items, production, accounting, quality and people. The **i** button next to "Create a backup" opens a "What's in a backup" summary with a live count per area.
+
+<Callout type="warning" title="Secrets never travel">
+API keys, integration connections and webhooks are deliberately left out of every backup, so a restored or cloned company never carries another company's credentials. Re-connect your integrations after a restore.
+</Callout>
+
+When you export, **Include** offers two options:
+
+<FieldTable>
+  <Field name="Data only">Customers, items, orders and every record. Smaller and faster.</Field>
+  <Field name="Data + files">Also bundles uploaded files, such as 3D models, documents and images.</Field>
+</FieldTable>
+
+## Create a backup
+
+On **Settings → Backups**, the "Create a backup" card snapshots the company's data. Give it an optional label, choose **Data only** or **Data + files**, and select **Create backup**. It runs in the background and the finished file appears in the list below, where you can download or delete it.
+
+<Screenshot label="Settings → Backups, the Create a backup card with the Data only / Data + files choice and the i contents button" caption="Export snapshots the company's data; the contents popover shows a live count per area." ratio="wide" />
+
+## Restore in place
+
+Restoring replaces the current company's data with a backup. In the "Restore from a backup" card, pick a **Source** backup, choose whether to also restore its files, and select **Restore**.
+
+It is safe to try. Before anything is replaced, Carbon automatically snapshots the company's current state, so a restore is always reversible. When it finishes, the "Restored — review" card asks you to decide:
+
+- **Keep** accepts the restored data.
+- **Revert** rolls the company back to the snapshot taken just before the restore.
+
+<Callout type="note" title="One restore at a time">
+A restore stays open for review until you keep or revert it. Starting another beforehand is blocked, so the revert always returns you to the state from just before the last restore.
+</Callout>
+
+## Start a company from a template
+
+The same backups power onboarding. When you create a new company, the industry step asks how to seed it:
+
+<FieldTable>
+  <Field name="Use a demo template">Adds sample customers, suppliers, parts and quotes for the chosen industry, so you can explore Carbon with realistic data.</Field>
+  <Field name="Restore from a backup">Sets the new company up from a Carbon backup of another company.</Field>
+  <Field name="I don't need data">Starts with a clean, empty environment.</Field>
+</FieldTable>
+
+A demo template is just a ready-made backup, one per industry, imported into the fresh company.

@@ -27,6 +27,7 @@ import {
   Submit,
   UnitOfMeasure
 } from "~/components/Form";
+import { itemTypeLabel } from "~/components/Form/itemTypeLabel";
 import { usePermissions, useRouteData, useUrlParams } from "~/hooks";
 import type { MethodItemType, MethodType } from "~/modules/shared";
 import { useItems } from "~/stores";
@@ -47,7 +48,7 @@ const JobMaterialForm = ({
   operations
 }: JobMaterialFormProps) => {
   const fetcher = useFetcher<{ id: string; methodType: MethodType }>();
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const { carbon } = useCarbon();
   const permissions = usePermissions();
   const navigate = useNavigate();
@@ -180,7 +181,7 @@ const JobMaterialForm = ({
             <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
               <Item
                 name="itemId"
-                label={itemType}
+                label={i18n._(itemTypeLabel(itemType))}
                 type={itemType}
                 includeInactive
                 locationId={jobData?.job?.locationId ?? undefined}
@@ -216,7 +217,11 @@ const JobMaterialForm = ({
                 value={itemData.methodType}
                 replenishmentSystem={itemData.itemReplenishmentSystem}
               />
-              <Number name="quantity" label={t`Quantity per Parent`} />
+              <Number
+                name="quantity"
+                label={t`Quantity per Parent`}
+                termId="job-material-quantity-per-parent"
+              />
               <UnitOfMeasure
                 name="unitOfMeasureCode"
                 value={itemData.unitOfMeasureCode}

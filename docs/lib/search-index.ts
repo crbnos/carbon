@@ -1,7 +1,12 @@
 import "server-only";
 import type { AdvancedIndex } from "fumadocs-core/search/server";
 import { apiModules } from "@/lib/api-data";
-import { glossaryEntries, termSlug } from "@carbon/glossary";
+import {
+  getDefinitionText,
+  getTermText,
+  glossaryEntries,
+  termSlug,
+} from "@carbon/glossary";
 import { guideSource, source } from "@/lib/source";
 import { toolModules } from "@/lib/tools-data";
 
@@ -121,8 +126,14 @@ function glossaryIndex(page: IndexablePage): AdvancedIndex {
     tag: "docs",
     breadcrumbs: ["Glossary"],
     structuredData: {
-      headings: entries.map((e) => ({ id: termSlug(e.term), content: e.term })),
-      contents: entries.map((e) => ({ heading: termSlug(e.term), content: e.definition })),
+      headings: entries.map((e) => {
+        const term = getTermText(e);
+        return { id: termSlug(term), content: term };
+      }),
+      contents: entries.map((e) => ({
+        heading: termSlug(getTermText(e)),
+        content: getDefinitionText(e),
+      })),
     },
   };
 }

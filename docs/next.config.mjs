@@ -8,6 +8,14 @@ const config = {
   // Consume the shared status→color constants (@carbon/utils/status-colors) — a pure-TS
   // workspace module, so Next must transpile it.
   transpilePackages: ["@carbon/utils"],
+  // `@carbon/glossary` uses Lingui `msg` macros so ERP/MES can translate entries
+  // at render. Without an SWC transform, Turbopack bundles `@lingui/core/macro`
+  // → `@lingui/conf` → Node `fs`, which breaks the build. The SWC plugin
+  // compiles the macro down to plain `{ id, message }` literals so docs reads
+  // `.message` directly without pulling the macro runtime.
+  experimental: {
+    swcPlugins: [["@lingui/swc-plugin", {}]],
+  },
   // The monorepo pins React 18 (catalog) while this app runs React 19, so two
   // @types/react versions coexist and `next build` trips on the ReactNode /
   // ReactPortal type skew (a types-only artifact, not a runtime bug). Skip Next's

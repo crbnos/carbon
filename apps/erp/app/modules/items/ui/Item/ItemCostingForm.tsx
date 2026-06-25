@@ -59,6 +59,7 @@ const ItemCostingForm = ({ initialValues }: ItemCostingFormProps) => {
             <ItemPostingGroup
               name="itemPostingGroupId"
               label={t`Item Group`}
+              termId="item-group"
               helperText={t`Used to categorize items for reporting and analysis`}
               isClearable
             />

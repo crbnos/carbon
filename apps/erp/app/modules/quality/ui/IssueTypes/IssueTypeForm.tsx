@@ -89,11 +89,7 @@ const IssueTypeForm = ({
               <Hidden name="id" />
               <Hidden name="type" value={type} />
               <VStack spacing={4}>
-                <Input
-                  name="name"
-                  label={t`Non Conformance Type`}
-                  termId="nonconformance"
-                />
+                <Input name="name" label={t`Non Conformance Type`} />
                 <CustomFormFields table="nonConformanceType" />
               </VStack>
             </ModalDrawerBody>

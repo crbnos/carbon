@@ -18,7 +18,8 @@ export default defineConfig({
         "apps/erp/app",
         "packages/react/src",
         "packages/form/src",
-        "packages/printing/src/ui"
+        "packages/printing/src/ui",
+        "packages/glossary/src"
       ],
       exclude: ["**/*.server.*", "**/*.test.*", "**/*.spec.*"]
     },

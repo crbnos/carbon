@@ -471,6 +471,9 @@ msgstr "Set"
 msgid "Labor"
 msgstr "İşgücü"
 
+msgid "Learn more"
+msgstr "Daha fazla bilgi edinin"
+
 msgid "Leave this page"
 msgstr "Bu sayfadan ayrıl"
 
@@ -1098,6 +1101,9 @@ msgstr "Bakım sevkıyatını görüntüle"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "Hesabınıza giriş yapmak için size bir sihirli bağlantı gönderdik."
+
+msgid "What is {translatedTerm}?"
+msgstr "{translatedTerm} nedir?"
 
 msgid "WIP"
 msgstr "Yarı Mamul"

@@ -271,6 +271,7 @@ const SalesRFQLineForm = ({
                         }}
                         onBlur={(e) => onCustomerPartChange(e.target.value)}
                         autoFocus
+                        termId="customer-part-id"
                       />
                       <InputControlled
                         name="customerPartRevision"
@@ -285,6 +286,7 @@ const SalesRFQLineForm = ({
                         onBlur={(e) =>
                           onCustomerPartRevisionChange(e.target.value)
                         }
+                        termId="customer-part-revision"
                       />
                       <Item
                         name="itemId"
@@ -323,6 +325,7 @@ const SalesRFQLineForm = ({
                         name="quantity"
                         label={t`Quantity`}
                         defaults={[1, 25, 50, 100]}
+                        termId="quantity-breaks"
                       />
                     </div>
                   </div>

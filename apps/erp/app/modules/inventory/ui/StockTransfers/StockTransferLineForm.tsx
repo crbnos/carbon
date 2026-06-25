@@ -153,7 +153,17 @@ const StockTransferLineForm = ({
               <VStack spacing={4}>
                 <Item
                   name="itemId"
-                  label={itemType}
+                  label={
+                    itemType === "Part"
+                      ? t`Part`
+                      : itemType === "Material"
+                        ? t`Material`
+                        : itemType === "Tool"
+                          ? t`Tool`
+                          : itemType === "Consumable"
+                            ? t`Consumable`
+                            : t`Item`
+                  }
                   // @ts-ignore
                   type={itemType}
                   locationId={locationId}

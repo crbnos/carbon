@@ -400,7 +400,7 @@ const PartProperties = ({ data }: PartPropertiesProps) => {
         <Select
           name="itemTrackingType"
           label={t`Tracking Type`}
-          termId="tracked-entity"
+          termId="item-tracking-type"
           inline={(value) => (
             <Badge variant="secondary">
               <TrackingTypeIcon type={value} className="mr-2" />
@@ -449,7 +449,7 @@ const PartProperties = ({ data }: PartPropertiesProps) => {
         <Select
           name="defaultMethodType"
           label={t`Default Method Type`}
-          termId="method-type"
+          termId="item-default-method-type"
           inline={(value) => (
             <Badge variant="secondary">
               <MethodIcon type={value} className="mr-2" />

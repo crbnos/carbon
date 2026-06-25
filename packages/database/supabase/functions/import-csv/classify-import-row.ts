@@ -10,7 +10,7 @@
 export type RowDecision =
   | { action: "insert" }
   | { action: "update"; entityId: string }
-  | { action: "skip"; reason: string };
+  | { action: "skip"; reason: string; category: "error" | "skipped" };
 
 export function classifyImportRow(params: {
   id: string;
@@ -24,13 +24,21 @@ export function classifyImportRow(params: {
 
   // `name` can be undefined at runtime when the CSV's Name column is unmapped.
   if (!name || name.trim() === "") {
-    return { action: "skip", reason: "Missing required Name" };
+    return { action: "skip", reason: "Missing required Name", category: "error" };
   }
   if (id && seenIds.has(id)) {
-    return { action: "skip", reason: `Duplicate ID "${id}" in file` };
+    return {
+      action: "skip",
+      reason: `Duplicate ID "${id}" in file`,
+      category: "skipped",
+    };
   }
   if (seenNames.has(name)) {
-    return { action: "skip", reason: `Duplicate name "${name}" in file` };
+    return {
+      action: "skip",
+      reason: `Duplicate name "${name}" in file`,
+      category: "skipped",
+    };
   }
 
   // The CSV name is matched as-is. Whitespace/case normalization is intentionally

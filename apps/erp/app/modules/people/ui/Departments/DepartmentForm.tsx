@@ -101,6 +101,7 @@ const DepartmentForm = ({
                 <Department
                   name="parentDepartmentId"
                   label={t`Parent Department`}
+                  termId="department-parent"
                 />
                 <CustomFormFields table="department" />
               </VStack>

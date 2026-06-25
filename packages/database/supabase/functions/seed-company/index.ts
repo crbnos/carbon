@@ -31,13 +31,15 @@ serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
-  const { companyId: id, userId, parentCompanyId } = await req.json();
+  const { companyId: id, userId, parentCompanyId, identityOnly } =
+    await req.json();
 
   console.log({
     function: "seed-company",
     id,
     userId,
     parentCompanyId,
+    identityOnly: identityOnly === true,
   });
 
   try {
@@ -58,6 +60,28 @@ serve(async (req: Request) => {
       .single();
     if (company.error) throw new Error(company.error.message);
     if (!company.data) throw new Error("Company not found");
+
+    // Idempotency guard. The whole seed runs in a single transaction, so a
+    // committed run has inserted `userToCompany(userId, companyId)`. The
+    // service-role client retries on timeout / transient 5xx (fetchWithRetry),
+    // so a seed that committed but whose HTTP response was lost gets re-invoked
+    // with the same payload — re-running would throw 23505 on the identity
+    // inserts. If the link already exists, the prior run finished: no-op.
+    const existingLink = await client
+      .from("userToCompany")
+      .select("userId", { count: "exact", head: true })
+      .eq("userId", userId)
+      .eq("companyId", companyId);
+      
+    if ((existingLink.count ?? 0) > 0) {
+      return new Response(
+        JSON.stringify({ success: true, alreadySeeded: true }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        }
+      );
+    }
 
     // Determine if this is a new root company or joining an existing group
     let companyGroupId = company.data.companyGroupId;
@@ -125,7 +149,10 @@ serve(async (req: Request) => {
         .values([{ userId, companyId, role: "employee" }])
         .execute();
 
-      // high-order groups
+      // high-order groups — identity infrastructure: the employeeType insert
+      // below fires a trigger that creates a membership row referencing these,
+      // so they must exist even in identity-only mode. (The onboarding import
+      // skips `group` so the template doesn't duplicate them.)
       await trx
         .insertInto("group")
         .values(
@@ -200,6 +227,11 @@ serve(async (req: Request) => {
         ])
         .execute();
 
+      // Reference + accounting data (customer statuses, UoMs, sequences,
+      // chart of accounts, …). Skipped in identity-only mode — a company
+      // backup carries all of this, so onboarding-from-a-backup seeds only
+      // the identity layer above and lets the import provide the rest.
+      if (!identityOnly) {
       // customer status
       await trx
         .insertInto("customerStatus")
@@ -357,6 +389,7 @@ serve(async (req: Request) => {
           }))
         )
         .execute();
+      } // end if (!identityOnly)
 
       const user = await client
         .from("userPermission")

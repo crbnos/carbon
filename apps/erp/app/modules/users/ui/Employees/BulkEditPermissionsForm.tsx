@@ -110,6 +110,7 @@ const BulkEditPermissions = ({
                 <Radios
                   name="editType"
                   label={t`Type of Permission Update`}
+                  termId="bulk-permissions-update-type"
                   options={[
                     {
                       label: t`Add Permissions`,

@@ -112,7 +112,7 @@ const QuoteShipmentForm = forwardRef<
               label={t`Shipment Location`}
               isReadOnly={isCustomer}
               isClearable
-              termId="shipment"
+              termId="quote-shipment-from-location"
             />
             <ShippingMethod
               name="shippingMethodId"
@@ -121,6 +121,7 @@ const QuoteShipmentForm = forwardRef<
             <Select
               name="incoterm"
               label={t`Incoterm`}
+              termId="customer-incoterm"
               isClearable
               options={incoterms.map((i) => ({ value: i, label: i }))}
               onChange={(v) => setIncoterm(v?.value as string)}
@@ -129,7 +130,11 @@ const QuoteShipmentForm = forwardRef<
               <Input name="incotermLocation" label={t`Incoterm Location`} />
             )}
 
-            <DatePicker name="receiptRequestedDate" label={t`Requested Date`} />
+            <DatePicker
+              name="receiptRequestedDate"
+              label={t`Requested Date`}
+              termId="quote-shipment-receipt-requested-date"
+            />
           </div>
         </CardContent>
         <CardFooter>

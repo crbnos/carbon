@@ -123,11 +123,12 @@ const SupplierProcessForm = ({
                     currency: baseCurrency
                   }}
                   minValue={0}
+                  termId="supplier-process-minimum-cost"
                 />
                 <Number
                   name="leadTime"
                   label={t`Standard Lead Time`}
-                  termId="lead-time"
+                  termId="supplier-process-lead-time"
                   minValue={0}
                 />
 

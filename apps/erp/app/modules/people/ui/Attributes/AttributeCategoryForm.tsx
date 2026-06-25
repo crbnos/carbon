@@ -72,6 +72,7 @@ const AttributeCategoryForm = ({
               <Boolean
                 name="isPublic"
                 label={t`Public`}
+                termId="attribute-category-public"
                 description={t`Visible on a user's public profile`}
               />
             </VStack>

@@ -2,7 +2,7 @@ import { CarbonEdition } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { TooltipProvider, useMode } from "@carbon/react";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
-import { Edition } from "@carbon/utils";
+import { Edition, isInternalEmail } from "@carbon/utils";
 import { MeshGradient } from "@paper-design/shaders-react";
 import { useEffect, useState } from "react";
 import type {
@@ -18,7 +18,11 @@ import { onboardingSequence, path } from "~/utils/path";
 export const shouldRevalidate: ShouldRevalidateFunction = () => true;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { client, companyId, userId, email } = await requirePermissions(
+    request,
+    {}
+  );
+  const isInternal = isInternalEmail(email);
 
   const [company, stripeCustomer, locations] = await Promise.all([
     getCompany(client, companyId),
@@ -41,10 +45,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
   }
 
-  const onboardingSteps =
-    CarbonEdition === Edition.Cloud
-      ? onboardingSequence
-      : onboardingSequence.filter((p) => p !== path.to.onboarding.plan);
+  // The data-choice step (demo template / backup import) is internal-only; the
+  // plan step is Cloud-only. Everyone else creates their company in the company
+  // step directly.
+  const onboardingSteps = onboardingSequence.filter((p) => {
+    if (p === path.to.onboarding.plan) return CarbonEdition === Edition.Cloud;
+    if (p === path.to.onboarding.industry) return isInternal;
+    return true;
+  });
 
   const pathIndex = onboardingSteps.findIndex((p) => p === pathname);
 

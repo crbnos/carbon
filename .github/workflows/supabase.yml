@@ -39,3 +39,8 @@ jobs:
 
       - name: Run migrations
         run: pnpm --filter ci ci:migrations
+
+      # NOTE: onboarding backup templates are NOT published here. They change
+      # rarely and are large, so publishing is a deliberate, manual step run via
+      # the "Publish backup templates" workflow (.github/workflows/publish-templates.yml)
+      # or `pnpm --filter ci ci:upload-backup-templates` — never on every migration.

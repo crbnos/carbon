@@ -103,6 +103,7 @@ const EmployeeTypeForm = ({ initialValues }: EmployeeTypeFormProps) => {
               <PermissionMatrix
                 matrix={matrix}
                 label={t`Default Permissions`}
+                termId="employee-type-default-permissions"
               />
             </div>
           </ModalBody>

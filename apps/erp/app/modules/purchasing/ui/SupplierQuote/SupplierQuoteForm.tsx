@@ -157,7 +157,11 @@ const SupplierQuoteForm = ({ initialValues }: SupplierQuoteFormProps) => {
                 label={t`Supplier`}
                 onChange={onSupplierChange}
               />
-              <Input name="supplierReference" label={t`Supplier Ref. Number`} />
+              <Input
+                name="supplierReference"
+                label={t`Supplier Ref. Number`}
+                termId="supplier-quote-ref-number"
+              />
 
               <SupplierLocation
                 name="supplierLocationId"
@@ -176,6 +180,7 @@ const SupplierQuoteForm = ({ initialValues }: SupplierQuoteFormProps) => {
               <DatePicker
                 name="expirationDate"
                 label={t`Expiration Date`}
+                termId="supplier-quote-expiration-date"
                 minValue={today(getLocalTimeZone())}
               />
 
@@ -224,6 +229,7 @@ const SupplierQuoteForm = ({ initialValues }: SupplierQuoteFormProps) => {
               <Select
                 name="supplierQuoteType"
                 label={t`Type`}
+                termId="supplier-quote-type"
                 options={purchaseOrderTypeType.map((type) => ({
                   label: type,
                   value: type

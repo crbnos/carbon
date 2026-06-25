@@ -6,6 +6,7 @@
 // Backed by the same `useStorageUnitsTree` data hook as `<StorageUnit>`.
 
 import { useControlField, useField } from "@carbon/form";
+import type { TermId } from "@carbon/glossary";
 import {
   cn,
   FormControl,
@@ -13,6 +14,7 @@ import {
   FormHelperText,
   FormLabel,
   Input,
+  LabelWithHelp,
   Popover,
   PopoverContent,
   PopoverTrigger
@@ -336,6 +338,7 @@ function DrillSelect({
 type StorageUnitParentSelectProps = {
   name: string;
   label?: string;
+  termId?: TermId;
   helperText?: string;
   locationId: string | null | undefined;
   isReadOnly?: boolean;
@@ -347,6 +350,7 @@ type StorageUnitParentSelectProps = {
 export function StorageUnitParentSelect({
   name,
   label,
+  termId,
   helperText,
   locationId,
   isReadOnly,
@@ -360,7 +364,7 @@ export function StorageUnitParentSelect({
     <FormControl isInvalid={!!error}>
       {label && (
         <FormLabel htmlFor={name} isOptional={isOptional ?? fieldIsOptional}>
-          {label}
+          <LabelWithHelp termId={termId}>{label}</LabelWithHelp>
         </FormLabel>
       )}
       <input

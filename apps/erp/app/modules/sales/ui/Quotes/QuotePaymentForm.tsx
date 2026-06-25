@@ -67,6 +67,7 @@ const QuotePaymentForm = ({ initialValues }: QuotePaymentFormProps) => {
             <Customer
               name="invoiceCustomerId"
               label={t`Invoice Customer`}
+              termId="invoice-customer"
               onChange={(value) => setCustomer(value?.value as string)}
             />
             <CustomerLocation
@@ -80,7 +81,11 @@ const QuotePaymentForm = ({ initialValues }: QuotePaymentFormProps) => {
               customer={customer}
             />
 
-            <PaymentTerm name="paymentTermId" label={t`Payment Term`} />
+            <PaymentTerm
+              name="paymentTermId"
+              label={t`Payment Term`}
+              termId="customer-payment-term"
+            />
           </div>
         </CardContent>
         <CardFooter>

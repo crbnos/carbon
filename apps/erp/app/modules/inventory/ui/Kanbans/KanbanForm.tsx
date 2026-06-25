@@ -247,6 +247,7 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
                     <UnitOfMeasure
                       name="purchaseUnitOfMeasureCode"
                       label={t`Purchase Unit of Measure`}
+                      termId="purchase-unit-of-measure"
                       value={purchaseUnitOfMeasureCode}
                       onChange={(value) => {
                         if (
@@ -264,6 +265,7 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
                     <ConversionFactor
                       name="conversionFactor"
                       label={t`Conversion Factor`}
+                      termId="conversion-factor"
                       inventoryCode={inventoryUnitOfMeasureCode}
                       purchasingCode={purchaseUnitOfMeasureCode}
                       value={conversionFactor}
@@ -295,6 +297,7 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
                     <Boolean
                       name="autoRelease"
                       label={t`Auto Release`}
+                      termId="kanban-auto-release"
                       value={autoRelease}
                       onChange={(value) => {
                         setAutoRelease(value);
@@ -307,6 +310,7 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
                     <Boolean
                       name="autoStartJob"
                       label={t`Auto Start Job`}
+                      termId="kanban-auto-start-job"
                       value={autoStartJob}
                       onChange={setAutoStartJob}
                       isDisabled={!autoRelease}
@@ -319,6 +323,7 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
                     <SequenceOrCustomId
                       name="completedBarcodeOverride"
                       label={t`Completion Barcode`}
+                      termId="kanban-completion-barcode"
                       table="kanban"
                       placeholder={t`Auto-generated QR Code`}
                     />

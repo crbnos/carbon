@@ -1,7 +1,11 @@
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import { incoterms } from "./shared.models";
+import {
+  incoterms,
+  procedureStepType,
+  standardFactorType
+} from "./shared.models";
 
 // to avoid a circular dependency
 const methodType = [
@@ -16,6 +20,10 @@ const itemTrackingTypes = [
   "Serial",
   "Batch"
 ] as const;
+// Shared so the four-value explanation stays in one place (it had drifted to a
+// stale two-value description duplicated across every item type).
+const itemTrackingTypeDescription =
+  "How the item's stock is tracked: Inventory (stocked and counted), Non-Inventory (not stocked, e.g. services), Batch (tracked by lot), or Serial (tracked per individual unit).";
 const supplierStatusTypes = [
   "Active",
   "Inactive",
@@ -35,8 +43,16 @@ export type CreatableLookup = (typeof creatableLookups)[number];
 
 // Rich lookups need more than a name (Net days, carrier, ...), so during a CSV
 // import they are created through their existing form modal, pre-filled with
-// the typed value. Client-only: maps a field to the form it opens.
+// the typed value. Client-only: maps a field to the form it opens and the
+// module whose create permission gates it.
 export type CreatableForm = "paymentTerm" | "shippingMethod";
+export const creatableFormPermissions: Record<
+  CreatableForm,
+  "accounting" | "inventory"
+> = {
+  paymentTerm: "accounting",
+  shippingMethod: "inventory"
+};
 
 // Shared supplier-part import fields. Spread into every item-type entry
 // (part / material / tool / fixture / consumable) so a single CSV row can
@@ -127,6 +143,385 @@ const itemPurchasingImportFields = {
     required: false,
     type: "string"
   }
+} as const;
+
+// Item-level cost. Spread into every real item-type entry; written to the
+// item's "itemCost" row (auto-created by the create_item_related_records
+// trigger) in the edge function's post-pass.
+const itemCostImportFields = {
+  unitCost: {
+    label: "Unit Cost",
+    required: false,
+    type: "string"
+  }
+} as const;
+
+// Method (BOM/BOP) import — one row-type-multiplexed format (ADR-0002). The focused
+// BOM file carries BOM rows; the Operations file carries BOP/STEP/TOOL/PARAM rows,
+// each naming its parent part explicitly so multi-level BOMs need no positional Level
+// column. Field-level `required` here is kept loose because a column's necessity
+// depends on the row kind — the authoritative per-row validation lives in the
+// import-csv edge function (ADR-0001).
+const methodRowTypes = ["PART", "BOM", "BOP", "STEP", "TOOL", "PARAM"] as const;
+
+const unitOfMeasureFetcher = async (
+  client: SupabaseClient<Database>,
+  companyId: string
+) => {
+  const { data, error } = await client
+    .from("unitOfMeasure")
+    .select("name, code")
+    .eq("companyId", companyId);
+  if (error) return { data: null, error };
+  return { data: data.map((u) => ({ name: u.name, id: u.code })) };
+};
+
+// Row-type discriminator + explicit parent key. Spread into every method entry.
+const methodParentKeyFields = {
+  rowType: {
+    label: "Row Type",
+    required: false,
+    type: "enum",
+    enumData: {
+      description:
+        "Which kind of row this is: PART, BOM, BOP, STEP, TOOL, or PARAM",
+      options: methodRowTypes
+    }
+  },
+  parentId: {
+    label: "Parent ID",
+    required: false,
+    type: "string"
+  },
+  parentRevision: {
+    label: "Parent Revision",
+    required: false,
+    type: "string",
+    default: "0"
+  },
+  makeMethodVersion: {
+    label: "Make Method Version",
+    required: false,
+    type: "string"
+  }
+} as const;
+
+// Correlation key for an operation, referenced by its STEP/TOOL/PARAM children.
+const methodOpNoField = {
+  opNo: {
+    label: "Op No",
+    required: false,
+    type: "string"
+  }
+} as const;
+
+// BOM line. methodType / sourcingType are intentionally absent — they are derived
+// from the component item, never read from the import (PRD / commit #903).
+const methodBomFields = {
+  componentId: {
+    label: "Material ID",
+    required: false,
+    type: "string"
+  },
+  componentRevision: {
+    label: "Material Revision",
+    required: false,
+    type: "string",
+    default: "0"
+  },
+  quantity: {
+    label: "Quantity",
+    required: false,
+    type: "number"
+  },
+  unitOfMeasureCode: {
+    label: "Unit of Measure",
+    required: false,
+    type: "enum",
+    enumData: {
+      description: "The unit of measure of the component (default EA)",
+      fetcher: unitOfMeasureFetcher,
+      default: "EA"
+    }
+  },
+  kit: {
+    label: "Kit",
+    required: false,
+    type: "boolean"
+  }
+} as const;
+
+// BOP operation. Inside operations require time units; Outside operations carry
+// costing and an optional supplier-process link — enforced in the edge function.
+const methodBopFields = {
+  operationType: {
+    label: "Operation Type",
+    required: false,
+    type: "enum",
+    enumData: {
+      description: "Whether the operation is performed in-house or outsourced",
+      options: ["Inside", "Outside"],
+      default: "Inside"
+    }
+  },
+  operationOrder: {
+    label: "Operation Order",
+    required: false,
+    type: "enum",
+    enumData: {
+      description:
+        "Whether the operation runs after the previous one or in parallel with it",
+      options: ["After Previous", "With Previous"],
+      default: "After Previous"
+    }
+  },
+  process: {
+    label: "Process",
+    required: false,
+    type: "string"
+  },
+  workCenter: {
+    label: "Work Center",
+    required: false,
+    type: "string"
+  },
+  operationDescription: {
+    label: "Operation Description",
+    required: false,
+    type: "string"
+  },
+  setupTime: {
+    label: "Setup Time",
+    required: false,
+    type: "number"
+  },
+  setupUnit: {
+    label: "Setup Unit",
+    required: false,
+    type: "enum",
+    enumData: {
+      description: "Time unit for setup (required for Inside operations)",
+      options: standardFactorType,
+      default: "Total Minutes"
+    }
+  },
+  laborTime: {
+    label: "Labor Time",
+    required: false,
+    type: "number"
+  },
+  laborUnit: {
+    label: "Labor Unit",
+    required: false,
+    type: "enum",
+    enumData: {
+      description: "Time unit for labor (required for Inside operations)",
+      options: standardFactorType,
+      default: "Minutes/Piece"
+    }
+  },
+  machineTime: {
+    label: "Machine Time",
+    required: false,
+    type: "number"
+  },
+  machineUnit: {
+    label: "Machine Unit",
+    required: false,
+    type: "enum",
+    enumData: {
+      description: "Time unit for machine (required for Inside operations)",
+      options: standardFactorType,
+      default: "Minutes/Piece"
+    }
+  },
+  operationUnitCost: {
+    label: "Unit Cost",
+    required: false,
+    type: "number"
+  },
+  operationMinimumCost: {
+    label: "Minimum Cost",
+    required: false,
+    type: "number"
+  },
+  operationLeadTime: {
+    label: "Lead Time",
+    required: false,
+    type: "number"
+  },
+  supplier: {
+    label: "Operation Supplier",
+    required: false,
+    type: "string"
+  },
+  supplierProcess: {
+    label: "Supplier Process",
+    required: false,
+    type: "string"
+  }
+} as const;
+
+// Procedure step under an operation. Measurement steps require a unit of measure;
+// List steps require pipe-delimited values — enforced in the edge function.
+const methodStepFields = {
+  stepName: {
+    label: "Step Name",
+    required: false,
+    type: "string"
+  },
+  stepDescription: {
+    label: "Step Description",
+    required: false,
+    type: "string"
+  },
+  stepType: {
+    label: "Step Type",
+    required: false,
+    type: "enum",
+    enumData: {
+      description: "The kind of procedure step",
+      options: procedureStepType,
+      default: "Task"
+    }
+  },
+  stepRequired: {
+    label: "Step Required",
+    required: false,
+    type: "boolean"
+  },
+  stepUnitOfMeasureCode: {
+    label: "Step Unit of Measure",
+    required: false,
+    type: "enum",
+    enumData: {
+      description: "Unit of measure for a Measurement step",
+      fetcher: unitOfMeasureFetcher
+    }
+  },
+  stepMinValue: {
+    label: "Step Min Value",
+    required: false,
+    type: "number"
+  },
+  stepMaxValue: {
+    label: "Step Max Value",
+    required: false,
+    type: "number"
+  },
+  stepListValues: {
+    label: "Step List Values",
+    required: false,
+    type: "string"
+  }
+} as const;
+
+// Tool required by an operation, referenced by readable id + revision.
+const methodToolFields = {
+  toolId: {
+    label: "Tool ID",
+    required: false,
+    type: "string"
+  },
+  toolRevision: {
+    label: "Tool Revision",
+    required: false,
+    type: "string",
+    default: "0"
+  },
+  toolQuantity: {
+    label: "Tool Quantity",
+    required: false,
+    type: "number"
+  }
+} as const;
+
+// Process parameter (key/value) on an operation.
+const methodParamFields = {
+  paramKey: {
+    label: "Parameter Key",
+    required: false,
+    type: "string"
+  },
+  paramValue: {
+    label: "Parameter Value",
+    required: false,
+    type: "string"
+  }
+} as const;
+
+// Part import fields for the standalone `part` import.
+const partImportFields = {
+  id: {
+    label: "Unique ID",
+    required: true,
+    type: "string"
+  },
+  readableId: {
+    label: "Part Number",
+    required: true,
+    type: "string"
+  },
+  revision: {
+    label: "Revision",
+    required: true,
+    type: "string",
+    default: "0"
+  },
+  name: {
+    label: "Description",
+    required: true,
+    type: "string"
+  },
+  active: {
+    label: "Active",
+    required: false,
+    type: "boolean"
+  },
+  replenishmentSystem: {
+    label: "Replenishment System",
+    required: false,
+    type: "enum",
+    enumData: {
+      description:
+        "Whether demand for a part should be fulfilled by buying or making",
+      options: itemReplenishmentSystems,
+      default: "Buy and Make"
+    }
+  },
+  defaultMethodType: {
+    label: "Default Method",
+    required: false,
+    type: "enum",
+    enumData: {
+      description:
+        "How a part should be produced when it is required in production",
+      options: methodType,
+      default: "Make"
+    }
+  },
+  itemTrackingType: {
+    label: "Tracking Type",
+    required: false,
+    type: "enum",
+    enumData: {
+      description: itemTrackingTypeDescription,
+      options: itemTrackingTypes,
+      default: "Inventory"
+    }
+  },
+  unitOfMeasureCode: {
+    label: "Unit of Measure",
+    required: false,
+    type: "enum",
+    enumData: {
+      description: "The unit of measure of the part",
+      fetcher: unitOfMeasureFetcher,
+      default: "EA"
+    }
+  },
+  ...supplierPartImportFields,
+  ...itemPurchasingImportFields
 } as const;
 
 // Shared address + payment + incoterm fields. Spread into supplier and
@@ -543,95 +938,8 @@ export const fieldMappings = {
     }
   },
   part: {
-    id: {
-      label: "Unique ID",
-      required: true,
-      type: "string"
-    },
-    readableId: {
-      label: "Part Number",
-      required: true,
-      type: "string"
-    },
-    revision: {
-      label: "Revision",
-      required: true,
-      type: "string",
-      default: "0"
-    },
-    name: {
-      label: "Description",
-      required: true,
-      type: "string"
-    },
-    active: {
-      label: "Active",
-      required: false,
-      type: "boolean"
-    },
-    replenishmentSystem: {
-      label: "Replenishment System",
-      required: false,
-      type: "enum",
-      enumData: {
-        description:
-          "Whether demand for a part should be fulfilled by buying or making",
-        options: itemReplenishmentSystems,
-        default: "Buy and Make"
-      }
-    },
-    defaultMethodType: {
-      label: "Default Method",
-      required: false,
-      type: "enum",
-      enumData: {
-        description:
-          "How a part should be produced when it is required in production",
-        options: methodType,
-        default: "Make"
-      }
-    },
-    itemTrackingType: {
-      label: "Tracking Type",
-      required: false,
-      type: "enum",
-      enumData: {
-        description: "Whether a part is tracked as inventory or not",
-        options: itemTrackingTypes,
-        default: "Inventory"
-      }
-    },
-    unitOfMeasureCode: {
-      label: "Unit of Measure",
-      required: false,
-      type: "enum",
-      enumData: {
-        description: "The unit of measure of the part",
-        fetcher: async (
-          client: SupabaseClient<Database>,
-          companyId: string
-        ) => {
-          const { data, error } = await client
-            .from("unitOfMeasure")
-            .select("name, code")
-            .eq("companyId", companyId);
-
-          if (error) {
-            return { data: null, error };
-          }
-
-          return {
-            data: data.map((item) => ({
-              name: item.name,
-              id: item.code
-            }))
-          };
-        },
-        default: "EA"
-      }
-    },
-    ...supplierPartImportFields,
-    ...itemPurchasingImportFields
+    ...partImportFields,
+    ...itemCostImportFields
   },
   tool: {
     id: {
@@ -687,7 +995,7 @@ export const fieldMappings = {
       required: false,
       type: "enum",
       enumData: {
-        description: "Whether a part is tracked as inventory or not",
+        description: itemTrackingTypeDescription,
         options: itemTrackingTypes,
         default: "Inventory"
       }
@@ -722,7 +1030,8 @@ export const fieldMappings = {
       }
     },
     ...supplierPartImportFields,
-    ...itemPurchasingImportFields
+    ...itemPurchasingImportFields,
+    ...itemCostImportFields
   },
   fixture: {
     id: {
@@ -778,7 +1087,7 @@ export const fieldMappings = {
       required: false,
       type: "enum",
       enumData: {
-        description: "Whether a part is tracked as inventory or not",
+        description: itemTrackingTypeDescription,
         options: itemTrackingTypes,
         default: "Inventory"
       }
@@ -813,7 +1122,8 @@ export const fieldMappings = {
       }
     },
     ...supplierPartImportFields,
-    ...itemPurchasingImportFields
+    ...itemPurchasingImportFields,
+    ...itemCostImportFields
   },
   consumable: {
     id: {
@@ -869,7 +1179,7 @@ export const fieldMappings = {
       required: false,
       type: "enum",
       enumData: {
-        description: "Whether a part is tracked as inventory or not",
+        description: itemTrackingTypeDescription,
         options: itemTrackingTypes,
         default: "Inventory"
       }
@@ -904,7 +1214,8 @@ export const fieldMappings = {
       }
     },
     ...supplierPartImportFields,
-    ...itemPurchasingImportFields
+    ...itemPurchasingImportFields,
+    ...itemCostImportFields
   },
   material: {
     id: {
@@ -987,7 +1298,7 @@ export const fieldMappings = {
       required: false,
       type: "enum",
       enumData: {
-        description: "Whether a part is tracked as inventory or not",
+        description: itemTrackingTypeDescription,
         options: itemTrackingTypes,
         default: "Inventory"
       }
@@ -1037,70 +1348,30 @@ export const fieldMappings = {
       }
     },
     ...supplierPartImportFields,
-    ...itemPurchasingImportFields
+    ...itemPurchasingImportFields,
+    ...itemCostImportFields
   },
-  methodMaterial: {
-    level: {
-      label: "Level",
-      required: false,
-      type: "string"
-    },
-    partId: {
-      label: "Part ID",
-      required: true,
-      type: "string"
-    },
-    description: {
-      label: "Description",
-      required: false,
-      type: "string"
-    },
-    methodType: {
-      label: "Method Type",
-      required: true,
-      type: "enum",
-      enumData: {
-        description:
-          "The method type of the part, which describes whether it is bought or made",
-        options: methodType,
-        default: "Pull from Inventory"
-      }
-    },
-    quantity: {
-      label: "Quantity",
-      required: true,
-      type: "number"
-    },
-    unitOfMeasureCode: {
-      label: "Unit of Measure",
-      required: true,
-      type: "enum",
-      enumData: {
-        description: "The unit of measure of the part",
-        fetcher: async (
-          client: SupabaseClient<Database>,
-          companyId: string
-        ) => {
-          const { data, error } = await client
-            .from("unitOfMeasure")
-            .select("name, code")
-            .eq("companyId", companyId);
-
-          if (error) {
-            return { data: null, error };
-          }
-
-          return {
-            data: data.map((item) => ({
-              name: item.name,
-              id: item.code
-            }))
-          };
-        },
-        default: "EA"
-      }
-    },
-    ...supplierPartImportFields
+  // Focused BOM file — BOM lines against parts that already exist. Every row is a
+  // BOM line (rowType defaults to BOM), keyed to its parent part.
+  bom: {
+    ...methodParentKeyFields,
+    parentId: { ...methodParentKeyFields.parentId, required: true },
+    ...methodBomFields,
+    componentId: { ...methodBomFields.componentId, required: true },
+    quantity: { ...methodBomFields.quantity, required: true }
+  },
+  // Focused Operations file — operations plus their steps/tools/parameters against
+  // parts that already exist. Carries every method row type except BOM and PART,
+  // so Row Type is required to discriminate BOP / STEP / TOOL / PARAM rows.
+  operations: {
+    ...methodParentKeyFields,
+    rowType: { ...methodParentKeyFields.rowType, required: true },
+    parentId: { ...methodParentKeyFields.parentId, required: true },
+    ...methodOpNoField,
+    ...methodBopFields,
+    ...methodStepFields,
+    ...methodToolFields,
+    ...methodParamFields
   },
   workCenter: {
     id: {
@@ -1297,7 +1568,8 @@ export const importPermissions: Record<keyof typeof fieldMappings, string> = {
   supplierContact: "purchasing",
   part: "parts",
   material: "parts",
-  methodMaterial: "parts",
+  bom: "parts",
+  operations: "parts",
   tool: "parts",
   fixture: "parts",
   consumable: "parts",
@@ -1306,6 +1578,54 @@ export const importPermissions: Record<keyof typeof fieldMappings, string> = {
   fixedAsset: "accounting"
 };
 
+// Zod fragments for the method imports. Every method cell is an optional string at
+// the mapping layer (a column's necessity depends on the row kind); the import-csv
+// edge function performs the authoritative per-row validation (ADR-0001).
+const methodParentKeySchema = {
+  rowType: z.string().optional(),
+  parentId: z.string().optional(),
+  parentRevision: z.string().optional(),
+  makeMethodVersion: z.string().optional()
+};
+const methodBomSchema = {
+  componentId: z.string().optional(),
+  componentRevision: z.string().optional(),
+  quantity: z.string().optional(),
+  unitOfMeasureCode: z.string().optional(),
+  kit: z.string().optional()
+};
+const methodOpSchema = {
+  opNo: z.string().optional(),
+  operationType: z.string().optional(),
+  operationOrder: z.string().optional(),
+  process: z.string().optional(),
+  workCenter: z.string().optional(),
+  operationDescription: z.string().optional(),
+  setupTime: z.string().optional(),
+  setupUnit: z.string().optional(),
+  laborTime: z.string().optional(),
+  laborUnit: z.string().optional(),
+  machineTime: z.string().optional(),
+  machineUnit: z.string().optional(),
+  operationUnitCost: z.string().optional(),
+  operationMinimumCost: z.string().optional(),
+  operationLeadTime: z.string().optional(),
+  supplier: z.string().optional(),
+  supplierProcess: z.string().optional(),
+  stepName: z.string().optional(),
+  stepDescription: z.string().optional(),
+  stepType: z.string().optional(),
+  stepRequired: z.string().optional(),
+  stepUnitOfMeasureCode: z.string().optional(),
+  stepMinValue: z.string().optional(),
+  stepMaxValue: z.string().optional(),
+  stepListValues: z.string().optional(),
+  toolId: z.string().optional(),
+  toolRevision: z.string().optional(),
+  toolQuantity: z.string().optional(),
+  paramKey: z.string().optional(),
+  paramValue: z.string().optional()
+};
 export const importSchemas: Record<
   keyof typeof fieldMappings,
   z.ZodObject<any>
@@ -1532,7 +1852,8 @@ export const importSchemas: Record<
     orderMultiple: z.string().optional(),
     conversionFactor: z.string().optional(),
     unitPrice: z.string().optional(),
-    leadTime: z.string().optional()
+    leadTime: z.string().optional(),
+    unitCost: z.string().optional()
   }),
   tool: z.object({
     id: z
@@ -1575,7 +1896,8 @@ export const importSchemas: Record<
     orderMultiple: z.string().optional(),
     conversionFactor: z.string().optional(),
     unitPrice: z.string().optional(),
-    leadTime: z.string().optional()
+    leadTime: z.string().optional(),
+    unitCost: z.string().optional()
   }),
   fixture: z.object({
     id: z
@@ -1618,7 +1940,8 @@ export const importSchemas: Record<
     orderMultiple: z.string().optional(),
     conversionFactor: z.string().optional(),
     unitPrice: z.string().optional(),
-    leadTime: z.string().optional()
+    leadTime: z.string().optional(),
+    unitCost: z.string().optional()
   }),
   consumable: z.object({
     id: z
@@ -1661,7 +1984,8 @@ export const importSchemas: Record<
     orderMultiple: z.string().optional(),
     conversionFactor: z.string().optional(),
     unitPrice: z.string().optional(),
-    leadTime: z.string().optional()
+    leadTime: z.string().optional(),
+    unitCost: z.string().optional()
   }),
   material: z.object({
     id: z
@@ -1711,26 +2035,40 @@ export const importSchemas: Record<
     orderMultiple: z.string().optional(),
     conversionFactor: z.string().optional(),
     unitPrice: z.string().optional(),
-    leadTime: z.string().optional()
+    leadTime: z.string().optional(),
+    unitCost: z.string().optional()
   }),
-  methodMaterial: z.object({
-    level: z.string().optional().describe("The level of the material"),
-    partId: z
+  bom: z.object({
+    ...methodParentKeySchema,
+    parentId: z
       .string()
-      .min(1, { message: "Part ID is required" })
-      .describe("The id of the part"),
-    description: z.string().optional().describe("The description of the part"),
-    quantity: z.string().describe("The quantity of the part"),
-    methodType: z
+      .min(1, { message: "Parent ID is required" })
+      .describe("The readable id of the parent part this BOM line belongs to"),
+    ...methodBomSchema,
+    componentId: z
       .string()
-      .optional()
-      .describe(
-        "The method type of the part, which describes whether it is bought or made"
-      ),
-    unitOfMeasureCode: z
+      .min(1, { message: "Material ID is required" })
+      .describe("The readable id of the component consumed by this BOM line"),
+    quantity: z
       .string()
-      .optional()
-      .describe("The unit of measure of the part")
+      .min(1, { message: "Quantity is required" })
+      .describe("The quantity of the component consumed")
+  }),
+  operations: z.object({
+    ...methodParentKeySchema,
+    rowType: z
+      .string()
+      .min(1, { message: "Row Type is required" })
+      .describe("BOP, STEP, TOOL, or PARAM"),
+    parentId: z
+      .string()
+      .min(1, { message: "Parent ID is required" })
+      .describe("The readable id of the parent part this row belongs to"),
+    ...methodOpSchema,
+    opNo: z
+      .string()
+      .min(1, { message: "Op No is required" })
+      .describe("The operation number, unique within the parent part")
   }),
   workCenter: z.object({
     id: z

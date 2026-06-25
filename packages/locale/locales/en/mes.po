@@ -471,6 +471,9 @@ msgstr "Kit"
 msgid "Labor"
 msgstr "Labor"
 
+msgid "Learn more"
+msgstr "Learn more"
+
 msgid "Leave this page"
 msgstr "Leave this page"
 
@@ -1098,6 +1101,9 @@ msgstr "View maintenance dispatch"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "We've sent you a magic link to sign in to your account."
+
+msgid "What is {translatedTerm}?"
+msgstr "What is {translatedTerm}?"
 
 msgid "WIP"
 msgstr "WIP"

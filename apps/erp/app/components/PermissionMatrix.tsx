@@ -1,4 +1,14 @@
-import { Checkbox, Table, Tbody, Td, Th, Thead, Tr } from "@carbon/react";
+import type { TermId } from "@carbon/glossary";
+import {
+  Checkbox,
+  LabelWithHelp,
+  Table,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tr
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { UsePermissionMatrixReturn } from "~/hooks/usePermissionMatrix";
 import { capitalize } from "~/utils/string";
@@ -8,9 +18,10 @@ type PermissionMatrixProps = {
   matrix: UsePermissionMatrixReturn;
   /** Optional section label (default: "Permissions") */
   label?: string;
+  termId?: TermId;
 };
 
-const PermissionMatrix = ({ matrix, label }: PermissionMatrixProps) => {
+const PermissionMatrix = ({ matrix, label, termId }: PermissionMatrixProps) => {
   const { t } = useLingui();
   const resolvedLabel = label ?? t`Permissions`;
   const {
@@ -31,7 +42,7 @@ const PermissionMatrix = ({ matrix, label }: PermissionMatrixProps) => {
     <div className="w-full">
       {resolvedLabel && (
         <label className="block text-sm font-medium leading-none mb-2">
-          {resolvedLabel}
+          <LabelWithHelp termId={termId}>{resolvedLabel}</LabelWithHelp>
         </label>
       )}
       <div className="rounded-md border overflow-hidden">

@@ -9,6 +9,7 @@ import {
   generateHTML,
   Heading,
   HStack,
+  LabelWithHelp,
   toast,
   VStack
 } from "@carbon/react";
@@ -172,12 +173,21 @@ const IssueWorkflowForm = ({
         <HStack className="w-full justify-between">
           <VStack spacing={0}>
             <Heading size="h3">
-              {isEditing ? "Edit" : "New"}{" "}
-              <span className="hidden md:inline">Issue</span> Workflow
+              {isEditing ? (
+                <Trans>
+                  Edit <span className="hidden md:inline">Issue</span> Workflow
+                </Trans>
+              ) : (
+                <Trans>
+                  New <span className="hidden md:inline">Issue</span> Workflow
+                </Trans>
+              )}
             </Heading>
             <p className="text-sm text-muted-foreground">
-              Issue workflows defined the preset values for an issue. For
-              example, you can have an 8D workflow or a containment workflow.
+              <Trans>
+                Issue workflows defined the preset values for an issue. For
+                example, you can have an 8D workflow or a containment workflow.
+              </Trans>
             </p>
           </VStack>
         </HStack>
@@ -187,7 +197,9 @@ const IssueWorkflowForm = ({
             htmlFor="content"
             className="text-xs text-muted-foreground font-medium"
           >
-            Issue Template
+            <LabelWithHelp termId="issue-workflow-issue-template">
+              <Trans>Issue Template</Trans>
+            </LabelWithHelp>
           </label>
           <Card className="p-0 bg-transparent dark:from-transparent  dark:via-transparent dark:to-transparent">
             <CardContent className="flex flex-col gap-0 p-6">
@@ -240,7 +252,9 @@ const IssueWorkflowForm = ({
               htmlFor="requiredActions"
               className="text-xs text-muted-foreground font-medium"
             >
-              Required Actions (in order)
+              <LabelWithHelp termId="issue-workflow-required-actions">
+                <Trans>Required Actions (in order)</Trans>
+              </LabelWithHelp>
             </label>
 
             {orderedActions.length > 0 && (
@@ -262,14 +276,14 @@ const IssueWorkflowForm = ({
 
             {orderedActions.length === 0 && (
               <p className="text-sm text-muted-foreground italic">
-                No actions selected
+                <Trans>No actions selected</Trans>
               </p>
             )}
           </VStack>
 
           <VStack spacing={2}>
             <p className="text-xs text-muted-foreground font-medium">
-              Available Actions (click to add)
+              <Trans>Available Actions (click to add)</Trans>
             </p>
             {availableActions.length > 0 ? (
               <div className="flex flex-col gap-2">
@@ -291,7 +305,7 @@ const IssueWorkflowForm = ({
               </div>
             ) : (
               <p className="text-sm text-muted-foreground italic">
-                All actions selected
+                <Trans>All actions selected</Trans>
               </p>
             )}
           </VStack>
@@ -300,6 +314,7 @@ const IssueWorkflowForm = ({
         <MultiSelect
           name="approvalRequirements"
           label={t`Approval Requirements`}
+          termId="issue-workflow-approval-requirements"
           options={nonConformanceApprovalRequirement.map((requirement) => ({
             label: requirement,
             value: requirement

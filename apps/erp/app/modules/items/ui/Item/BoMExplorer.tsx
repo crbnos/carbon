@@ -379,8 +379,8 @@ const BoMExplorer = ({
                         </div>
                       </div>
 
-                      <div className="flex w-full items-center justify-between gap-2 min-w-0">
-                        <div className="flex items-center gap-2 overflow-x-hidden min-w-0">
+                      <div className="flex w-full min-w-0 items-center justify-between gap-2">
+                        <div className="flex flex-1 min-w-0 items-center gap-2 overflow-hidden">
                           {bomIdMap.get(node.id) && (
                             <Badge variant="outline" className="flex-shrink-0">
                               {bomIdMap.get(node.id)}
@@ -388,7 +388,7 @@ const BoMExplorer = ({
                           )}
                           <NodeText node={node} />
                         </div>
-                        <div className="flex items-center gap-1 flex-shrink-0">
+                        <div className="flex flex-shrink-0 items-center gap-1">
                           {node.data.isRoot ? (
                             <Badge
                               variant="outline"
@@ -414,7 +414,7 @@ const BoMExplorer = ({
       </VStack>
       {importBomDisclosure.isOpen && (
         <ImportCSVModal
-          table={"methodMaterial"}
+          table={"bom"}
           onClose={() => importBomDisclosure.onClose()}
         />
       )}
@@ -512,7 +512,7 @@ export function BoMActions({ makeMethodId }: { makeMethodId: string }) {
 
 function NodeText({ node }: { node: FlatTreeItem<Method> }) {
   return (
-    <div className="flex items-start gap-1 min-w-0">
+    <div className="flex min-w-0 items-start gap-1">
       <span className="text-sm truncate font-medium">
         {node.data.description || node.data.itemReadableId}
       </span>
