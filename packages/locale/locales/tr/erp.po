@@ -54,6 +54,9 @@ msgstr "{0} başarıyla yüklendi"
 msgid "{0} values missing"
 msgstr "{0} değeri eksik"
 
+msgid "{chainLabel}. Consider pointing this part directly at the final successor."
+msgstr ""
+
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
@@ -70,6 +73,11 @@ msgstr "{scopeCount} izinleri"
 
 msgid "/month/user"
 msgstr "/ay/kullanıcı"
+
+#. placeholder {0}: numberFormatter.format(redirectedTotal)
+#. placeholder {1}: redirectedParts.join(", ")
+msgid "↩ {0} redirected from superseded {1}"
+msgstr ""
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>Bu ürün için bir tedarikçi parçası ekleyin</0> tercih edilen tedarikçi ayarlamak için."
@@ -1387,6 +1395,10 @@ msgstr "Batch takibi"
 msgid "Batch Tracking"
 msgstr "Lot Takibi"
 
+#. placeholder {0}: successorItem.readableIdWithRevision
+msgid "Being phased out — successor: <0>{0}</0>"
+msgstr ""
+
 msgid "Below safety stock"
 msgstr "Emniyet stoğunun altında"
 
@@ -2034,6 +2046,9 @@ msgstr "Yüklenici"
 
 msgid "Contractors"
 msgstr "Yükleniciler"
+
+msgid "Controls how planning handles a discontinued item: Consume First exhausts on-hand before switching to the successor, Prefer New redirects new demand to the successor immediately, Stock Only keeps only a minimum service reserve, and No Stock drops the item from planning entirely."
+msgstr ""
 
 msgid "Convention"
 msgstr "Sözleşme"
@@ -3200,6 +3215,9 @@ msgstr "Devre Dışı"
 msgid "Discard"
 msgstr "Atıkla"
 
+msgid "Discontinuation Date"
+msgstr ""
+
 msgid "Discount"
 msgstr "İskonto"
 
@@ -3687,6 +3705,12 @@ msgstr "Webhook Düzenle"
 
 msgid "Edit Work Center"
 msgstr "İş Merkezi Düzenle"
+
+msgid "Effective From"
+msgstr ""
+
+msgid "Effective To"
+msgstr ""
 
 msgid "Email"
 msgstr "E-posta"
@@ -4556,6 +4580,10 @@ msgstr "Sıklık"
 msgid "Friday"
 msgstr "Cuma"
 
+#. placeholder {0}: routeDataFromRoute.supersession.successorEffectivityDate
+msgid "From {0}"
+msgstr ""
+
 msgid "From Location"
 msgstr "Kaynak Konum"
 
@@ -4876,6 +4904,9 @@ msgstr "Bu tedarikçi fatura tarihinden itibaren kaç gün ödeme bekler; fatura
 
 msgid "How many fractional digits to keep when rounding amounts in this currency."
 msgstr "Bu para biriminde tutarlar yuvarlanırken kaç kesirli rakam tutulur."
+
+msgid "How many of the successor replace one old part"
+msgstr ""
 
 msgid "How many of this material it takes to build one of the job's parent item; multiplied by job quantity to size the consumption."
 msgstr "İşin ana öğesinin birini oluşturmak için bu malzemeden ne kadar gerekir; tüketimi boyutlandırmak için iş miktarı ile çarpılır."
@@ -5531,6 +5562,9 @@ msgstr "Müşterilerden toplanan satış vergisi için borç hesabı"
 msgid "Liability account for tax paid on purchases"
 msgstr "Satın almalar üzerinde ödenen vergi için borç hesabı"
 
+msgid "Lifecycle"
+msgstr ""
+
 msgid "Lifetime Usage (units)"
 msgstr "Yaşam Boyu Kullanım (birimler)"
 
@@ -6009,6 +6043,9 @@ msgstr "Minimum Sipariş Miktarı"
 
 msgid "Minimum Order:"
 msgstr "Minimum Siparişi:"
+
+msgid "Minimum Reserve Quantity"
+msgstr ""
 
 msgid "Minutes/100 Pieces"
 msgstr "Dakika/100 Parça"
@@ -6756,6 +6793,9 @@ msgstr "Tamam"
 msgid "Oldest first"
 msgstr "En eski önce"
 
+msgid "On hand"
+msgstr ""
+
 msgid "On Hand"
 msgstr "Stokta"
 
@@ -6776,6 +6816,12 @@ msgstr "Satış Siparişi'nde"
 
 msgid "On Storage Unit"
 msgstr "Depolizdeki"
+
+msgid "On-hand floor to maintain for service use at this location"
+msgstr ""
+
+msgid "On-hand inventory remains"
+msgstr ""
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Carbon'un bireysel olarak takip ettiği bir seri birim veya bir batch, sona erme tarihi gibi kendi durumu ve öznitelikleri taşıyan."
@@ -7161,6 +7207,9 @@ msgstr "Kalıcı Olarak Sil"
 
 msgid "Permissions"
 msgstr "İzinler"
+
+msgid "Phasing out an item in favor of a successor part, so planning redirects the old item's demand — times a conversion factor — to the new one."
+msgstr ""
 
 msgid "Phone"
 msgstr "Telefon"
@@ -8164,6 +8213,9 @@ msgstr "Kontrol Gerektirir"
 
 msgid "Requires Repair"
 msgstr "Onarım Gerektirir"
+
+msgid "Reserve floor"
+msgstr ""
 
 msgid "Reserved"
 msgstr "Ayrılmış"
@@ -9281,8 +9333,18 @@ msgstr "Stok Transfer Sihirbazı"
 msgid "Stock Transfers"
 msgstr "Stok Transferleri"
 
+#. placeholder {0}: successorItem.readableIdWithRevision
+msgid "Stocked for spares only — successor: <0>{0}</0>"
+msgstr ""
+
+msgid "Stocked for spares only."
+msgstr ""
+
 msgid "Stockout"
 msgstr "Stok tükenmesi"
+
+msgid "Stop raising purchase orders after this date"
+msgstr ""
 
 msgid "Storage client not available"
 msgstr "Depolama istemcisi kullanılamıyor"
@@ -9368,6 +9430,9 @@ msgstr "Maddeler"
 msgid "Substances"
 msgstr "Madde Maddeleri"
 
+msgid "substituted from"
+msgstr ""
+
 msgid "Subtotal"
 msgstr "Ara Toplamı"
 
@@ -9382,6 +9447,12 @@ msgstr "Başarıyla kopyalandı"
 
 msgid "Successfully created a new revision"
 msgstr "Başarıyla yeni bir revizyon oluşturuldu"
+
+msgid "Successor Effectivity Date"
+msgstr ""
+
+msgid "Successor Part"
+msgstr ""
 
 msgid "Suffix"
 msgstr "Sonek"
@@ -9400,6 +9471,21 @@ msgstr "Öneriler"
 
 msgid "Sunday"
 msgstr "Pazar"
+
+msgid "Superseded By"
+msgstr ""
+
+msgid "Supersedes"
+msgstr ""
+
+msgid "Supersession"
+msgstr ""
+
+msgid "Supersession chain detected"
+msgstr ""
+
+msgid "Supersession Mode"
+msgstr ""
 
 msgid "supplier"
 msgstr "Tedarikçi"
@@ -10230,6 +10316,18 @@ msgstr "Bu işin malzeme için kendi gerekli miktarı."
 msgid "This lot is expired and can't be picked."
 msgstr "Bu parti süresi dolmuş ve alınamaz."
 
+msgid "This part has {quantityOnHand} on hand at this location. No Stock means it will be neither planned nor consumed."
+msgstr ""
+
+msgid "This part is being phased out."
+msgstr ""
+
+msgid "This part is obsolete (No Stock)."
+msgstr ""
+
+msgid "This part is superseded and set to Stock Only — it's replenished to its spares reserve floor, independent of demand."
+msgstr ""
+
 msgid "This sales order has associated jobs. Choose what to do with them."
 msgstr "Bu satış siparişi ilgili işlere sahiptir. Onlarla ne yapılacağına karar verin."
 
@@ -10780,6 +10878,12 @@ msgstr "Gezinavigasyda ve satış siparişleri gibi belgelerde kullanılır"
 msgid "Used in the navigation in dark mode"
 msgstr "Koyu modda navigasyonda kullanılır"
 
+msgid "Used on builds on/after this date (blank = always)"
+msgstr ""
+
+msgid "Used on builds on/before this date (blank = always)"
+msgstr ""
+
 msgid "Used on the home screen and digital quotes"
 msgstr "Ana sayfada ve dijital tekliflerde kullanılır"
 
@@ -11168,6 +11272,9 @@ msgstr "Carbon'un malların gelmesini taahhüt ettiği zaman; gönderme yöntemi
 
 msgid "When expired stock is used"
 msgstr "Süresi dolmuş stok kullanıldığında"
+
+msgid "When MRP uses the successor for new demand"
+msgstr ""
 
 msgid "When on, attributes in this category show up on a person's public profile; otherwise they're visible to admins only."
 msgstr "Etkinleştirildiğinde, bu kategorideki öznitelikler bir kişinin genel profilinde görünür; aksi takdirde yalnızca yöneticiler tarafından görülebilir."

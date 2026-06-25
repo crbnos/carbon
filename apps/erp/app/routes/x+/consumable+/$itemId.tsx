@@ -17,6 +17,8 @@ import type { ConsumableSummary, ItemFile } from "~/modules/items";
 import {
   getConsumable,
   getItemFiles,
+  getItemSupersededBy,
+  getItemSupersession,
   getMaterialUsedIn,
   getPickMethods,
   getSupplierParts
@@ -46,13 +48,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [consumableSummary, supplierParts, pickMethods, tags] =
-    await Promise.all([
-      getConsumable(client, itemId, companyId),
-      getSupplierParts(client, itemId, companyId),
-      getPickMethods(client, itemId, companyId),
-      getTagsList(client, companyId, "consumable")
-    ]);
+  const [
+    consumableSummary,
+    supplierParts,
+    pickMethods,
+    tags,
+    supersession,
+    supersededBy
+  ] = await Promise.all([
+    getConsumable(client, itemId, companyId),
+    getSupplierParts(client, itemId, companyId),
+    getPickMethods(client, itemId, companyId),
+    getTagsList(client, companyId, "consumable"),
+    getItemSupersession(client, itemId, companyId),
+    getItemSupersededBy(client, itemId, companyId)
+  ]);
 
   if (consumableSummary.error) {
     throw redirect(
@@ -66,6 +76,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     consumableSummary: consumableSummary.data,
+    supersession: supersession.data,
+    supersededBy: supersededBy.data ?? [],
     files: getItemFiles(client, itemId, companyId),
     supplierParts: supplierParts.data ?? [],
     pickMethods: pickMethods.data ?? [],

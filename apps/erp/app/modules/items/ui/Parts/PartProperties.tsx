@@ -84,6 +84,22 @@ const PartProperties = ({ data }: PartPropertiesProps) => {
     pickMethods: PickMethod[];
     makeMethods: Promise<PostgrestResponse<MakeMethod>>;
     tags: { name: string }[];
+    supersession?: {
+      successorItemId: string | null;
+      successorEffectivityDate: string | null;
+      successor: {
+        id: string;
+        readableIdWithRevision: string;
+        name: string;
+      } | null;
+    } | null;
+    supersededBy?: Array<{
+      predecessor: {
+        id: string;
+        readableIdWithRevision: string;
+        name: string;
+      } | null;
+    }>;
   }>(path.to.part(itemId));
   const routeData = data ?? routeDataFromRoute;
 
@@ -609,6 +625,45 @@ const PartProperties = ({ data }: PartPropertiesProps) => {
             }}
           />
         </ValidatedForm>
+      )}
+      {routeDataFromRoute?.supersession?.successor && (
+        <div className="w-full">
+          <h3 className="text-xs text-muted-foreground mb-1">
+            <Trans>Superseded By</Trans>
+          </h3>
+          <Link
+            to={path.to.part(routeDataFromRoute.supersession.successor.id)}
+            className="text-sm text-primary hover:underline"
+          >
+            {routeDataFromRoute.supersession.successor.readableIdWithRevision}
+          </Link>
+          {routeDataFromRoute.supersession.successorEffectivityDate && (
+            <p className="text-xs text-muted-foreground">
+              <Trans>
+                From {routeDataFromRoute.supersession.successorEffectivityDate}
+              </Trans>
+            </p>
+          )}
+        </div>
+      )}
+      {(routeDataFromRoute?.supersededBy?.length ?? 0) > 0 && (
+        <div className="w-full">
+          <h3 className="text-xs text-muted-foreground mb-1">
+            <Trans>Supersedes</Trans>
+          </h3>
+          {routeDataFromRoute?.supersededBy?.map(
+            (ref) =>
+              ref.predecessor && (
+                <Link
+                  key={ref.predecessor.id}
+                  to={path.to.part(ref.predecessor.id)}
+                  className="block text-sm text-primary hover:underline"
+                >
+                  {ref.predecessor.readableIdWithRevision}
+                </Link>
+              )
+          )}
+        </div>
       )}
       <ValidatedForm
         defaultValues={{

@@ -13,34 +13,41 @@ export type BomChild = {
   itemId: string;
   quantity: number;
   methodType: MethodType;
+  // Set when this child was substituted by supersession (the original/old item).
+  redirectedFromItemId?: string;
+  // BOM line-item effectivity ("YYYY-MM-DD"); NULL = always effective. The line
+  // is only exploded for builds whose period falls within [from, to].
+  effectiveFrom?: string | null;
+  effectiveTo?: string | null;
+};
+
+type DemandContributorBase = {
+  parentItemId: string;
+  quantity: number;
+  // The discontinued part this demand was redirected from, if any.
+  redirectedFromItemId?: string;
 };
 
 export type DemandContributor =
-  | {
+  | (DemandContributorBase & {
       sourceType: "Job Material";
       jobId: string;
-      parentItemId: string;
-      quantity: number;
-    }
-  | {
+    })
+  | (DemandContributorBase & {
       sourceType: "Sales Order";
       salesOrderLineId: string;
-      parentItemId: string;
-      quantity: number;
-    }
-  | {
+    })
+  | (DemandContributorBase & {
       sourceType: "Demand Projection";
       demandProjectionId: string;
-      parentItemId: string;
-      quantity: number;
-    };
+    });
 
 export type BomExplosionInput = {
   grossDemand: Map<string, number>;
   bomByItem: Map<string, BomChild[]>;
   replenishmentSystemByItem: Map<string, ReplenishmentSystem>;
   leadTimeByItem: Map<string, number>;
-  periods: { id: string }[];
+  periods: { id: string; startDate?: string }[];
   onHandByLocationItem: Map<string, number>;
   jobSupplyByLocationPeriodItem: Map<string, number>;
   topLevelContributors: Map<string, DemandContributor[]>;
@@ -168,6 +175,17 @@ export function explodeBom(input: BomExplosionInput): BomExplosionOutput {
 
         const children = bomByItem.get(itemId) ?? [];
         for (const child of children) {
+          // BOM line-item effectivity: skip a line whose effective range does
+          // not cover this build period (string "YYYY-MM-DD" comparison).
+          const buildDate = period.startDate;
+          if (
+            buildDate &&
+            ((child.effectiveFrom && buildDate < child.effectiveFrom) ||
+              (child.effectiveTo && buildDate > child.effectiveTo))
+          ) {
+            continue;
+          }
+
           const childEffRepSys = effectiveReplenishment(
             replenishmentSystemByItem.get(child.itemId)
           );
@@ -213,6 +231,10 @@ export function explodeBom(input: BomExplosionInput): BomExplosionOutput {
               childContributors.push({
                 ...pc,
                 quantity: pc.quantity * child.quantity,
+                // A substituted child carries the old part it replaced so the
+                // demand can be shown as "redirected from <old part>".
+                redirectedFromItemId:
+                  child.redirectedFromItemId ?? pc.redirectedFromItemId,
               });
             }
             demandContributors.set(childKey, childContributors);

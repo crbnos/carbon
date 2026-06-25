@@ -39,6 +39,7 @@ import { useEffect, useMemo, useState } from "react";
 import { LuBox, LuChevronRight, LuLandmark, LuReceipt } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import type { z } from "zod";
+import { ItemLifecycleBadge } from "~/components";
 import {
   Account,
   ConversionFactor,
@@ -491,14 +492,26 @@ const PurchaseOrderLineForm = ({
                           "text-muted-foreground"
                       )}
                     >
-                      {isEditing
-                        ? isFixedAsset
-                          ? initialValues.assetReadableId || "Fixed Asset"
-                          : isGLAccount
-                            ? indirectData.description || "G/L Account"
-                            : getItemReadableId(items, itemData?.itemId) ||
-                              "..."
-                        : "New Purchase Order Line"}
+                      {isEditing ? (
+                        isFixedAsset ? (
+                          initialValues.assetReadableId || "Fixed Asset"
+                        ) : isGLAccount ? (
+                          indirectData.description || "G/L Account"
+                        ) : (
+                          <span className="inline-flex items-center gap-2">
+                            {getItemReadableId(items, itemData?.itemId) ||
+                              "..."}
+                            <ItemLifecycleBadge
+                              mode={
+                                items.find((i) => i.id === itemData?.itemId)
+                                  ?.supersessionMode
+                              }
+                            />
+                          </span>
+                        )
+                      ) : (
+                        "New Purchase Order Line"
+                      )}
                     </ModalCardTitle>
                     <ModalCardDescription>
                       {isOutsideProcessing ? (

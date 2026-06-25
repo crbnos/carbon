@@ -28,7 +28,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { LuFilter } from "react-icons/lu";
+import { LuFilter, LuTriangleAlert } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import ConsumableForm from "~/modules/items/ui/Consumables/ConsumableForm";
 import MaterialForm from "~/modules/items/ui/Materials/MaterialForm";
@@ -39,6 +39,7 @@ import { methodItemType } from "~/modules/shared";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import { MethodItemTypeIcon } from "../Icons";
+import { ItemLifecycleBadge } from "../ItemLifecycleBadge";
 import type { EntityKey } from "./emptyStates";
 import { useEmptyState } from "./emptyStates";
 
@@ -136,7 +137,14 @@ const Item = ({
           : item.quantityOnHand;
         return {
           value: item.id,
-          label: item.readableIdWithRevision,
+          label: item.supersessionMode ? (
+            <span className="flex items-center gap-1.5">
+              {item.readableIdWithRevision}
+              <ItemLifecycleBadge mode={item.supersessionMode} />
+            </span>
+          ) : (
+            item.readableIdWithRevision
+          ),
           helper: item.name,
           helperRight:
             scopedQuantity !== undefined
@@ -190,6 +198,28 @@ const Item = ({
   const canSwitchItemType = typeof onTypeChange === "function";
   const submitRef = useRef<HTMLButtonElement>(null);
 
+  // Surface a soft, non-blocking notice when the selected part is superseded.
+  const selectedItem = items.find((i) => i.id === value);
+  const successorItem = selectedItem?.successorItemId
+    ? items.find((i) => i.id === selectedItem.successorItemId)
+    : null;
+
+  // Prefer an explicit label (e.g. "Successor Part") for the field label; fall
+  // back to the item-type name. Standard type-name labels are translated so the
+  // wording matches the type.
+  const fieldLabel =
+    label === "Item"
+      ? t`Item`
+      : label === "Part"
+        ? t`Part`
+        : label === "Material"
+          ? t`Material`
+          : label === "Tool"
+            ? t`Tool`
+            : label === "Consumable"
+              ? t`Consumable`
+              : (label ?? translateItemType(type));
+
   const entityKey: EntityKey =
     type === "Part"
       ? "part"
@@ -225,7 +255,7 @@ const Item = ({
             isOptional={resolvedIsOptional}
             onConfigure={onConfigure}
           >
-            {translateItemType(type)}
+            {fieldLabel}
           </FormLabel>
         )}
         <input
@@ -346,6 +376,42 @@ const Item = ({
             </DropdownMenu>
           )}
         </div>
+        {selectedItem?.supersessionMode && (
+          <div className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+            <LuTriangleAlert className="size-3 shrink-0" />
+            {selectedItem.supersessionMode === "No Stock" ? (
+              <span>
+                <Trans>This part is obsolete (No Stock).</Trans>
+              </span>
+            ) : selectedItem.supersessionMode === "Stock Only" ? (
+              <span>
+                {successorItem ? (
+                  <Trans>
+                    Stocked for spares only — successor:{" "}
+                    <span className="font-medium">
+                      {successorItem.readableIdWithRevision}
+                    </span>
+                  </Trans>
+                ) : (
+                  <Trans>Stocked for spares only.</Trans>
+                )}
+              </span>
+            ) : successorItem ? (
+              <span>
+                <Trans>
+                  Being phased out — successor:{" "}
+                  <span className="font-medium">
+                    {successorItem.readableIdWithRevision}
+                  </span>
+                </Trans>
+              </span>
+            ) : (
+              <span>
+                <Trans>This part is being phased out.</Trans>
+              </span>
+            )}
+          </div>
+        )}
         {error ? (
           <FormErrorMessage>{error}</FormErrorMessage>
         ) : (

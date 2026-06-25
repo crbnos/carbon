@@ -30,6 +30,8 @@ import { flattenTree } from "~/components/TreeView";
 import type { ItemFile, PartSummary } from "~/modules/items";
 import {
   getItemFiles,
+  getItemSupersededBy,
+  getItemSupersession,
   getMakeMethodById,
   getMakeMethods,
   getMethodTree,
@@ -66,11 +68,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [partSummary, supplierParts, pickMethods, tags] = await Promise.all([
+  const [
+    partSummary,
+    supplierParts,
+    pickMethods,
+    tags,
+    supersession,
+    supersededBy
+  ] = await Promise.all([
     getPart(client, itemId, companyId),
     getSupplierParts(client, itemId, companyId),
     getPickMethods(client, itemId, companyId),
-    getTagsList(client, companyId, "part")
+    getTagsList(client, companyId, "part"),
+    getItemSupersession(client, itemId, companyId),
+    getItemSupersededBy(client, itemId, companyId)
   ]);
 
   if (partSummary.data?.companyId !== companyId) {
@@ -122,6 +133,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     partSummary: partSummary.data,
+    supersession: supersession.data,
+    supersededBy: supersededBy.data ?? [],
     files: getItemFiles(client, itemId, companyId),
     supplierParts: supplierParts.data ?? [],
     pickMethods: pickMethods.data ?? [],

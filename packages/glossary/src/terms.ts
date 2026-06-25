@@ -1022,6 +1022,17 @@ export const terms = {
     definition: msg`Planning's upper bound on a single suggested replenishment; quantities above this are split into multiple orders.`
   },
 
+  // ── Items: Supersession (ItemSupersessionForm) ──────────────────────────
+  supersession: {
+    term: msg`Supersession`,
+    definition: msg`Phasing out an item in favor of a successor part, so planning redirects the old item's demand — times a conversion factor — to the new one.`
+  },
+  "supersession-mode": {
+    term: msg`Supersession Mode`,
+    definition: msg`Controls how planning handles a discontinued item: Consume First exhausts on-hand before switching to the successor, Prefer New redirects new demand to the successor immediately, Stock Only keeps only a minimum service reserve, and No Stock drops the item from planning entirely.`,
+    aliases: ["phase-out", "spares-only", "obsolete"]
+  },
+
   // ── Items: Pick method / shelf life (PickMethodForm) ────────────────────
   "item-default-storage-unit": {
     term: msg`Default Storage Unit`,

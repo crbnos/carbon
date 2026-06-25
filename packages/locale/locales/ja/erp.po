@@ -54,6 +54,9 @@ msgstr "{0}が正常にアップロードされました"
 msgid "{0} values missing"
 msgstr "{0}個の値が見つかりません"
 
+msgid "{chainLabel}. Consider pointing this part directly at the final successor."
+msgstr ""
+
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
@@ -70,6 +73,11 @@ msgstr "{scopeCount} 個の権限"
 
 msgid "/month/user"
 msgstr "/月/ユーザー"
+
+#. placeholder {0}: numberFormatter.format(redirectedTotal)
+#. placeholder {1}: redirectedParts.join(", ")
+msgid "↩ {0} redirected from superseded {1}"
+msgstr ""
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>この商品の仕入先部品を追加</0>して、優先仕入先を設定してください。"
@@ -1387,6 +1395,10 @@ msgstr "バッチ追跡"
 msgid "Batch Tracking"
 msgstr "バッチ追跡"
 
+#. placeholder {0}: successorItem.readableIdWithRevision
+msgid "Being phased out — successor: <0>{0}</0>"
+msgstr ""
+
 msgid "Below safety stock"
 msgstr "安全在庫以下"
 
@@ -2034,6 +2046,9 @@ msgstr "請負業者"
 
 msgid "Contractors"
 msgstr "請負業者"
+
+msgid "Controls how planning handles a discontinued item: Consume First exhausts on-hand before switching to the successor, Prefer New redirects new demand to the successor immediately, Stock Only keeps only a minimum service reserve, and No Stock drops the item from planning entirely."
+msgstr ""
 
 msgid "Convention"
 msgstr "慣例"
@@ -3200,6 +3215,9 @@ msgstr "無効"
 msgid "Discard"
 msgstr "破棄"
 
+msgid "Discontinuation Date"
+msgstr ""
+
 msgid "Discount"
 msgstr "割引"
 
@@ -3687,6 +3705,12 @@ msgstr "Webhookを編集"
 
 msgid "Edit Work Center"
 msgstr "ワークセンターを編集"
+
+msgid "Effective From"
+msgstr ""
+
+msgid "Effective To"
+msgstr ""
 
 msgid "Email"
 msgstr "メール"
@@ -4556,6 +4580,10 @@ msgstr "頻度"
 msgid "Friday"
 msgstr "金曜日"
 
+#. placeholder {0}: routeDataFromRoute.supersession.successorEffectivityDate
+msgid "From {0}"
+msgstr ""
+
 msgid "From Location"
 msgstr "出発地"
 
@@ -4876,6 +4904,9 @@ msgstr "この仕入先が請求日から支払いを期待する日数; 請求�
 
 msgid "How many fractional digits to keep when rounding amounts in this currency."
 msgstr "この通貨で金額を丸める場合に保持する小数位の数。"
+
+msgid "How many of the successor replace one old part"
+msgstr ""
 
 msgid "How many of this material it takes to build one of the job's parent item; multiplied by job quantity to size the consumption."
 msgstr "ジョブの親アイテムの1つを構築するために必要なこの材料の量; ジョブ数量を乗じて消費をサイズ化します。"
@@ -5531,6 +5562,9 @@ msgstr "顧客から徴収された売上税の負債勘定"
 msgid "Liability account for tax paid on purchases"
 msgstr "購入に支払う税金の負債勘定"
 
+msgid "Lifecycle"
+msgstr ""
+
 msgid "Lifetime Usage (units)"
 msgstr "ライフタイム使用（ユニット）"
 
@@ -6009,6 +6043,9 @@ msgstr "最小注文数量"
 
 msgid "Minimum Order:"
 msgstr "最小注文数:"
+
+msgid "Minimum Reserve Quantity"
+msgstr ""
 
 msgid "Minutes/100 Pieces"
 msgstr "分/100個"
@@ -6756,6 +6793,9 @@ msgstr "OK"
 msgid "Oldest first"
 msgstr "最も古いものから"
 
+msgid "On hand"
+msgstr ""
+
 msgid "On Hand"
 msgstr "手持在庫"
 
@@ -6776,6 +6816,12 @@ msgstr "販売注文中"
 
 msgid "On Storage Unit"
 msgstr "保管ユニット上"
+
+msgid "On-hand floor to maintain for service use at this location"
+msgstr ""
+
+msgid "On-hand inventory remains"
+msgstr ""
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Carbonが個別に追跡する1つのシリアルユニットまたは1つのバッチであり、有効期限などの独自のステータスと属性を持ちます。"
@@ -7161,6 +7207,9 @@ msgstr "完全に削除"
 
 msgid "Permissions"
 msgstr "権限"
+
+msgid "Phasing out an item in favor of a successor part, so planning redirects the old item's demand — times a conversion factor — to the new one."
+msgstr ""
 
 msgid "Phone"
 msgstr "電話"
@@ -8164,6 +8213,9 @@ msgstr "検査が必要"
 
 msgid "Requires Repair"
 msgstr "修理が必要"
+
+msgid "Reserve floor"
+msgstr ""
 
 msgid "Reserved"
 msgstr "予約済み"
@@ -9281,8 +9333,18 @@ msgstr "在庫転送ウィザード"
 msgid "Stock Transfers"
 msgstr "在庫移動"
 
+#. placeholder {0}: successorItem.readableIdWithRevision
+msgid "Stocked for spares only — successor: <0>{0}</0>"
+msgstr ""
+
+msgid "Stocked for spares only."
+msgstr ""
+
 msgid "Stockout"
 msgstr "在庫切れ"
+
+msgid "Stop raising purchase orders after this date"
+msgstr ""
 
 msgid "Storage client not available"
 msgstr "ストレージクライアントが利用できません"
@@ -9368,6 +9430,9 @@ msgstr "物質"
 msgid "Substances"
 msgstr "物質"
 
+msgid "substituted from"
+msgstr ""
+
 msgid "Subtotal"
 msgstr "小計"
 
@@ -9382,6 +9447,12 @@ msgstr "見積書を正常にコピーしました"
 
 msgid "Successfully created a new revision"
 msgstr "新しいリビジョンが正常に作成されました"
+
+msgid "Successor Effectivity Date"
+msgstr ""
+
+msgid "Successor Part"
+msgstr ""
 
 msgid "Suffix"
 msgstr "サフィックス"
@@ -9400,6 +9471,21 @@ msgstr "提案"
 
 msgid "Sunday"
 msgstr "日曜日"
+
+msgid "Superseded By"
+msgstr ""
+
+msgid "Supersedes"
+msgstr ""
+
+msgid "Supersession"
+msgstr ""
+
+msgid "Supersession chain detected"
+msgstr ""
+
+msgid "Supersession Mode"
+msgstr ""
 
 msgid "supplier"
 msgstr "仕入先"
@@ -10230,6 +10316,18 @@ msgstr "この材料に対するこのジョブ自体の必要数量。"
 msgid "This lot is expired and can't be picked."
 msgstr "このロットは期限切れであり、ピックできません。"
 
+msgid "This part has {quantityOnHand} on hand at this location. No Stock means it will be neither planned nor consumed."
+msgstr ""
+
+msgid "This part is being phased out."
+msgstr ""
+
+msgid "This part is obsolete (No Stock)."
+msgstr ""
+
+msgid "This part is superseded and set to Stock Only — it's replenished to its spares reserve floor, independent of demand."
+msgstr ""
+
 msgid "This sales order has associated jobs. Choose what to do with them."
 msgstr "この販売注文には関連するジョブがあります。それらをどうするかを選択してください。"
 
@@ -10780,6 +10878,12 @@ msgstr "ナビゲーションおよび販売注文などのドキュメントで
 msgid "Used in the navigation in dark mode"
 msgstr "ダークモードのナビゲーションで使用されます"
 
+msgid "Used on builds on/after this date (blank = always)"
+msgstr ""
+
+msgid "Used on builds on/before this date (blank = always)"
+msgstr ""
+
 msgid "Used on the home screen and digital quotes"
 msgstr "ホーム画面とデジタル見積書で使用されます"
 
@@ -11168,6 +11272,9 @@ msgstr "カーボンが商品の到着を約束したいつ。配送方法の輸
 
 msgid "When expired stock is used"
 msgstr "期限切れの在庫が使用される場合"
+
+msgid "When MRP uses the successor for new demand"
+msgstr ""
 
 msgid "When on, attributes in this category show up on a person's public profile; otherwise they're visible to admins only."
 msgstr "有効にすると、このカテゴリーの属性がユーザーの公開プロフィールに表示されます。そうでない場合は、管理者のみが表示できます。"

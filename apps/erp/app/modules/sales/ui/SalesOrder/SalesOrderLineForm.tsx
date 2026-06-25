@@ -53,7 +53,7 @@ import {
 } from "react-icons/lu";
 import { useParams } from "react-router";
 import type { z } from "zod";
-import { MethodIcon } from "~/components";
+import { ItemLifecycleBadge, MethodIcon } from "~/components";
 import {
   CustomFormFields,
   DatePicker,
@@ -438,11 +438,24 @@ const SalesOrderLineForm = ({
                           "text-muted-foreground"
                       )}
                     >
-                      {isEditing
-                        ? isFixedAsset
-                          ? initialValues.assetReadableId || "Fixed Asset"
-                          : getItemReadableId(items, itemData?.itemId) || "..."
-                        : t`New Sales Order Line`}
+                      {isEditing ? (
+                        isFixedAsset ? (
+                          initialValues.assetReadableId || "Fixed Asset"
+                        ) : (
+                          <span className="inline-flex items-center gap-2">
+                            {getItemReadableId(items, itemData?.itemId) ||
+                              "..."}
+                            <ItemLifecycleBadge
+                              mode={
+                                items.find((i) => i.id === itemData?.itemId)
+                                  ?.supersessionMode
+                              }
+                            />
+                          </span>
+                        )
+                      ) : (
+                        t`New Sales Order Line`
+                      )}
                     </ModalCardTitle>
                     <ModalCardDescription>
                       {isEditing ? (

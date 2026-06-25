@@ -13,7 +13,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Suspense, useCallback, useEffect } from "react";
 import { LuCopy, LuLink } from "react-icons/lu";
-import { Await, useFetcher, useParams } from "react-router";
+import { Await, Link, useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/components";
@@ -80,6 +80,22 @@ const ConsumableProperties = ({ data }: ConsumablePropertiesProps) => {
     supplierParts: SupplierPart[];
     pickMethods: PickMethod[];
     tags: { name: string }[];
+    supersession?: {
+      successorItemId: string | null;
+      successorEffectivityDate: string | null;
+      successor: {
+        id: string;
+        readableIdWithRevision: string;
+        name: string;
+      } | null;
+    } | null;
+    supersededBy?: Array<{
+      predecessor: {
+        id: string;
+        readableIdWithRevision: string;
+        name: string;
+      } | null;
+    }>;
   }>(path.to.consumable(itemId));
   const routeData = data ?? routeDataFromRoute;
 
@@ -468,6 +484,47 @@ const ConsumableProperties = ({ data }: ConsumablePropertiesProps) => {
             }}
           />
         </ValidatedForm>
+      )}
+      {routeDataFromRoute?.supersession?.successor && (
+        <div className="w-full">
+          <h3 className="text-xs text-muted-foreground mb-1">
+            <Trans>Superseded By</Trans>
+          </h3>
+          <Link
+            to={path.to.consumable(
+              routeDataFromRoute.supersession.successor.id
+            )}
+            className="text-sm text-primary hover:underline"
+          >
+            {routeDataFromRoute.supersession.successor.readableIdWithRevision}
+          </Link>
+          {routeDataFromRoute.supersession.successorEffectivityDate && (
+            <p className="text-xs text-muted-foreground">
+              <Trans>
+                From {routeDataFromRoute.supersession.successorEffectivityDate}
+              </Trans>
+            </p>
+          )}
+        </div>
+      )}
+      {(routeDataFromRoute?.supersededBy?.length ?? 0) > 0 && (
+        <div className="w-full">
+          <h3 className="text-xs text-muted-foreground mb-1">
+            <Trans>Supersedes</Trans>
+          </h3>
+          {routeDataFromRoute?.supersededBy?.map(
+            (ref) =>
+              ref.predecessor && (
+                <Link
+                  key={ref.predecessor.id}
+                  to={path.to.consumable(ref.predecessor.id)}
+                  className="block text-sm text-primary hover:underline"
+                >
+                  {ref.predecessor.readableIdWithRevision}
+                </Link>
+              )
+          )}
+        </div>
       )}
       <ValidatedForm
         defaultValues={{

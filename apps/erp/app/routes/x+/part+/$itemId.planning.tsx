@@ -8,10 +8,18 @@ import { redirect, useLoaderData } from "react-router";
 import { useRouteData } from "~/hooks";
 import {
   getItemPlanning,
+  getItemQuantities,
+  getItemSupersession,
+  getSupersessionChain,
   itemPlanningValidator,
-  upsertItemPlanning
+  itemSupersessionValidator,
+  upsertItemPlanning,
+  upsertItemSupersession
 } from "~/modules/items";
-import { ItemPlanningForm } from "~/modules/items/ui/Item";
+import {
+  ItemPlanningForm,
+  ItemSupersessionForm
+} from "~/modules/items/ui/Item";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
@@ -60,12 +68,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let partPlanning = await getItemPlanning(
-    client,
-    itemId,
-    companyId,
-    locationId
-  );
+  const [partPlanning, supersession, supersessionChain, quantities] =
+    await Promise.all([
+      getItemPlanning(client, itemId, companyId, locationId),
+      getItemSupersession(client, itemId, companyId),
+      getSupersessionChain(client, itemId, companyId),
+      getItemQuantities(client, itemId, companyId, locationId)
+    ]);
 
   if (partPlanning.error || !partPlanning.data) {
     throw redirect(
@@ -79,13 +88,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     partPlanning: partPlanning.data,
+    supersession: supersession.data,
+    supersessionChain: supersessionChain.chain,
+    quantityOnHand: quantities.data?.quantityOnHand ?? 0,
     locationId
   };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -93,6 +105,44 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!itemId) throw new Error("Could not find itemId");
 
   const formData = await request.formData();
+
+  if (formData.get("intent") === "supersession") {
+    const supersessionValidation = await validator(
+      itemSupersessionValidator
+    ).validate(formData);
+
+    if (supersessionValidation.error) {
+      return validationError(supersessionValidation.error);
+    }
+
+    const updateSupersession = await upsertItemSupersession(client, {
+      ...supersessionValidation.data,
+      itemId,
+      companyId,
+      createdBy: userId,
+      updatedBy: userId
+    });
+    if (updateSupersession.error) {
+      throw redirect(
+        path.to.part(itemId),
+        await flash(
+          request,
+          error(updateSupersession.error, "Failed to update supersession")
+        )
+      );
+    }
+
+    throw redirect(
+      supersessionValidation.data.locationId
+        ? path.to.partPlanningLocation(
+            itemId,
+            supersessionValidation.data.locationId
+          )
+        : path.to.partPlanning(itemId),
+      await flash(request, success("Updated supersession"))
+    );
+  }
+
   const validation = await validator(itemPlanningValidator).validate(formData);
 
   if (validation.error) {
@@ -126,7 +176,19 @@ export default function PartPlanningRoute() {
     locations: ListItem[];
   }>(path.to.partRoot);
 
-  const { partPlanning, locationId } = useLoaderData<typeof loader>();
+  const {
+    partPlanning,
+    supersession,
+    supersessionChain,
+    quantityOnHand,
+    locationId
+  } = useLoaderData<typeof loader>();
+
+  // partSummary (with the readable id) lives on the part layout route, not the
+  // parts list root.
+  const partLayoutData = useRouteData<{
+    partSummary?: { readableIdWithRevision?: string | null } | null;
+  }>(path.to.part(partPlanning.itemId));
 
   if (!sharedPartsData) throw new Error("Could not load shared parts data");
 
@@ -140,6 +202,28 @@ export default function PartPlanningRoute() {
         }}
         locations={sharedPartsData.locations ?? []}
         type="Part"
+      />
+      <ItemSupersessionForm
+        key={`supersession:${partPlanning.itemId}`}
+        initialValues={{
+          itemId: partPlanning.itemId,
+          supersessionMode: supersession?.supersessionMode ?? undefined,
+          successorItemId: supersession?.successorItemId ?? undefined,
+          discontinuationDate: supersession?.discontinuationDate ?? undefined,
+          successorEffectivityDate:
+            supersession?.successorEffectivityDate ?? undefined,
+          conversionFactor: supersession?.conversionFactor ?? 1,
+          locationId,
+          minimumReserveQuantity: partPlanning.minimumReserveQuantity ?? 0
+        }}
+        type="Part"
+        locationId={locationId}
+        itemReadableId={
+          partLayoutData?.partSummary?.readableIdWithRevision ??
+          partPlanning.itemId
+        }
+        quantityOnHand={quantityOnHand}
+        chain={supersessionChain}
       />
       <ItemPlanningChart
         itemId={partPlanning.itemId}

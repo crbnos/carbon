@@ -27,6 +27,7 @@ import {
   TimeTypeIcon,
   TrackingTypeIcon
 } from "./Icons";
+import { ItemLifecycleBadge } from "./ItemLifecycleBadge";
 import ItemThumbnail from "./ItemThumbnail";
 import Location from "./Location";
 import New from "./New";
@@ -58,6 +59,7 @@ export {
   Empty,
   FileDropzone,
   Hyperlink,
+  ItemLifecycleBadge,
   ItemThumbnail,
   Location,
   MethodBadge,

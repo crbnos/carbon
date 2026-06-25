@@ -9,6 +9,7 @@ import {
   Heading,
   HStack,
   IconButton,
+  Status,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -21,6 +22,7 @@ import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import type { Material } from "../../types";
+import { getItemLifecycleStatus } from "../Item/ItemSupersessionForm";
 import { useMaterialNavigation } from "./useMaterialNavigation";
 
 const MaterialHeader = () => {
@@ -39,8 +41,19 @@ const MaterialHeader = () => {
     variant: "dropdown"
   });
 
-  const routeData = useRouteData<{ materialSummary: Material }>(
-    path.to.material(itemId)
+  const routeData = useRouteData<{
+    materialSummary: Material;
+    supersession: {
+      supersessionMode:
+        | "Consume First"
+        | "Prefer New"
+        | "Stock Only"
+        | "No Stock";
+    } | null;
+  }>(path.to.material(itemId));
+
+  const lifecycleStatus = getItemLifecycleStatus(
+    routeData?.supersession?.supersessionMode
   );
 
   return (
@@ -59,6 +72,11 @@ const MaterialHeader = () => {
             <Copy
               text={routeData?.materialSummary?.readableIdWithRevision ?? ""}
             />
+            {lifecycleStatus && (
+              <Status color={lifecycleStatus.color}>
+                {lifecycleStatus.label}
+              </Status>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <IconButton

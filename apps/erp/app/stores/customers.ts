@@ -3,7 +3,7 @@ import { useNanoStore } from "~/hooks";
 import type { ListItem } from "~/types";
 
 const $customersStore = atom<
-  (ListItem & {
+  (Omit<ListItem, "readableId"> & {
     website?: string | null;
     readableId?: string | null;
   })[]

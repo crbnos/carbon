@@ -54,6 +54,9 @@ msgstr "{0} przesłano pomyślnie"
 msgid "{0} values missing"
 msgstr "{0} brakujących wartości"
 
+msgid "{chainLabel}. Consider pointing this part directly at the final successor."
+msgstr ""
+
 #. placeholder {0}: errors.length
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
@@ -70,6 +73,11 @@ msgstr "{scopeCount} uprawnień"
 
 msgid "/month/user"
 msgstr "/miesiąc/użytkownik"
+
+#. placeholder {0}: numberFormatter.format(redirectedTotal)
+#. placeholder {1}: redirectedParts.join(", ")
+msgid "↩ {0} redirected from superseded {1}"
+msgstr ""
 
 msgid "<0>Add a supplier part</0> for this item to set a preferred supplier."
 msgstr "<0>Dodaj część dostawcy</0> do tego artykułu, aby ustawić preferowanego dostawcę."
@@ -1387,6 +1395,10 @@ msgstr "Śledzenie partii"
 msgid "Batch Tracking"
 msgstr "Śledzenie partii"
 
+#. placeholder {0}: successorItem.readableIdWithRevision
+msgid "Being phased out — successor: <0>{0}</0>"
+msgstr ""
+
 msgid "Below safety stock"
 msgstr "Poniżej zapasu bezpieczeństwa"
 
@@ -2034,6 +2046,9 @@ msgstr "Wykonawca"
 
 msgid "Contractors"
 msgstr "Kontrahenci"
+
+msgid "Controls how planning handles a discontinued item: Consume First exhausts on-hand before switching to the successor, Prefer New redirects new demand to the successor immediately, Stock Only keeps only a minimum service reserve, and No Stock drops the item from planning entirely."
+msgstr ""
 
 msgid "Convention"
 msgstr "Konwencja"
@@ -3200,6 +3215,9 @@ msgstr "Wyłączone"
 msgid "Discard"
 msgstr "Odrzuć"
 
+msgid "Discontinuation Date"
+msgstr ""
+
 msgid "Discount"
 msgstr "Rabat"
 
@@ -3687,6 +3705,12 @@ msgstr "Edytuj Webhook"
 
 msgid "Edit Work Center"
 msgstr "Edytuj Centrum Pracy"
+
+msgid "Effective From"
+msgstr ""
+
+msgid "Effective To"
+msgstr ""
 
 msgid "Email"
 msgstr "E-mail"
@@ -4556,6 +4580,10 @@ msgstr "Częstotliwość"
 msgid "Friday"
 msgstr "Piątek"
 
+#. placeholder {0}: routeDataFromRoute.supersession.successorEffectivityDate
+msgid "From {0}"
+msgstr ""
+
 msgid "From Location"
 msgstr "Z lokalizacji"
 
@@ -4876,6 +4904,9 @@ msgstr "Ile dni od daty faktury ten dostawca oczekuje płatności; określa domy
 
 msgid "How many fractional digits to keep when rounding amounts in this currency."
 msgstr "Ile cyfr ułamkowych pozostawić przy zaokrąglaniu kwot w tej walucie."
+
+msgid "How many of the successor replace one old part"
+msgstr ""
 
 msgid "How many of this material it takes to build one of the job's parent item; multiplied by job quantity to size the consumption."
 msgstr "Ile tego materiału potrzeba do zbudowania jednego artykułu nadrzędnego pracy; pomnożyć przez ilość pracy, aby zmienić rozmiar zużycia."
@@ -5531,6 +5562,9 @@ msgstr "Konto zobowiązań dla podatku od sprzedaży pobranego od klientów"
 msgid "Liability account for tax paid on purchases"
 msgstr "Konto zobowiązań dla podatku zapłaconego na zakupach"
 
+msgid "Lifecycle"
+msgstr ""
+
 msgid "Lifetime Usage (units)"
 msgstr "Użycie Całożycia (jednostki)"
 
@@ -6009,6 +6043,9 @@ msgstr "Minimalna Ilość Zamówienia"
 
 msgid "Minimum Order:"
 msgstr "Minimalne zamówienie:"
+
+msgid "Minimum Reserve Quantity"
+msgstr ""
 
 msgid "Minutes/100 Pieces"
 msgstr "Minuty/100 Sztuk"
@@ -6756,6 +6793,9 @@ msgstr "OK"
 msgid "Oldest first"
 msgstr "Najstarsze najpierw"
 
+msgid "On hand"
+msgstr ""
+
 msgid "On Hand"
 msgstr "W magazynie"
 
@@ -6776,6 +6816,12 @@ msgstr "Na zamówieniu sprzedaży"
 
 msgid "On Storage Unit"
 msgstr "Na jednostce magazynowej"
+
+msgid "On-hand floor to maintain for service use at this location"
+msgstr ""
+
+msgid "On-hand inventory remains"
+msgstr ""
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Jedna jednostka szeregowa lub jedna partia, którą Carbon śledzi indywidualnie, mając własny status i atrybuty, takie jak data ważności."
@@ -7161,6 +7207,9 @@ msgstr "Trwale usunąć"
 
 msgid "Permissions"
 msgstr "Uprawnienia"
+
+msgid "Phasing out an item in favor of a successor part, so planning redirects the old item's demand — times a conversion factor — to the new one."
+msgstr ""
 
 msgid "Phone"
 msgstr "Telefon"
@@ -8164,6 +8213,9 @@ msgstr "Wymaga inspekcji"
 
 msgid "Requires Repair"
 msgstr "Wymaga naprawy"
+
+msgid "Reserve floor"
+msgstr ""
 
 msgid "Reserved"
 msgstr "Zarezerwowane"
@@ -9281,8 +9333,18 @@ msgstr "Kreator Transferu Zapasów"
 msgid "Stock Transfers"
 msgstr "Transfery Zapasów"
 
+#. placeholder {0}: successorItem.readableIdWithRevision
+msgid "Stocked for spares only — successor: <0>{0}</0>"
+msgstr ""
+
+msgid "Stocked for spares only."
+msgstr ""
+
 msgid "Stockout"
 msgstr "Brak zapasów"
+
+msgid "Stop raising purchase orders after this date"
+msgstr ""
 
 msgid "Storage client not available"
 msgstr "Klient magazynu niedostępny"
@@ -9368,6 +9430,9 @@ msgstr "Substancje"
 msgid "Substances"
 msgstr "Substancje"
 
+msgid "substituted from"
+msgstr ""
+
 msgid "Subtotal"
 msgstr "Razem netto"
 
@@ -9382,6 +9447,12 @@ msgstr "Pomyślnie skopiowano ofertę"
 
 msgid "Successfully created a new revision"
 msgstr "Pomyślnie utworzono nową wersję"
+
+msgid "Successor Effectivity Date"
+msgstr ""
+
+msgid "Successor Part"
+msgstr ""
 
 msgid "Suffix"
 msgstr "Sufiks"
@@ -9400,6 +9471,21 @@ msgstr "Sugestie"
 
 msgid "Sunday"
 msgstr "Niedziela"
+
+msgid "Superseded By"
+msgstr ""
+
+msgid "Supersedes"
+msgstr ""
+
+msgid "Supersession"
+msgstr ""
+
+msgid "Supersession chain detected"
+msgstr ""
+
+msgid "Supersession Mode"
+msgstr ""
 
 msgid "supplier"
 msgstr "Dostawca"
@@ -10230,6 +10316,18 @@ msgstr "Własna wymagana ilość materiału dla tego zadania."
 msgid "This lot is expired and can't be picked."
 msgstr "Ta partia wygasła i nie można jej pobrać."
 
+msgid "This part has {quantityOnHand} on hand at this location. No Stock means it will be neither planned nor consumed."
+msgstr ""
+
+msgid "This part is being phased out."
+msgstr ""
+
+msgid "This part is obsolete (No Stock)."
+msgstr ""
+
+msgid "This part is superseded and set to Stock Only — it's replenished to its spares reserve floor, independent of demand."
+msgstr ""
+
 msgid "This sales order has associated jobs. Choose what to do with them."
 msgstr "To zamówienie sprzedaży ma powiązane zadania. Wybierz, co z nimi zrobić."
 
@@ -10780,6 +10878,12 @@ msgstr "Używane w nawigacji i w dokumentach takich jak zamówienia sprzedaży"
 msgid "Used in the navigation in dark mode"
 msgstr "Używane w nawigacji w trybie ciemnym"
 
+msgid "Used on builds on/after this date (blank = always)"
+msgstr ""
+
+msgid "Used on builds on/before this date (blank = always)"
+msgstr ""
+
 msgid "Used on the home screen and digital quotes"
 msgstr "Używane na ekranie głównym i cyfrowych ofertach"
 
@@ -11168,6 +11272,9 @@ msgstr "Kiedy Carbon zobowiązała się do przywiezienia towaru; w połączeniu 
 
 msgid "When expired stock is used"
 msgstr "Gdy używany jest wygasły zapas"
+
+msgid "When MRP uses the successor for new demand"
+msgstr ""
 
 msgid "When on, attributes in this category show up on a person's public profile; otherwise they're visible to admins only."
 msgstr "Gdy włączone, atrybuty w tej kategorii pojawiają się w profilu publicznym osoby; w przeciwnym razie są widoczne tylko dla administratorów."

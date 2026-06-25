@@ -102,7 +102,7 @@ function getCacheKey(
     return itemPlanning[key] ?? 0;
   }).join(",");
 
-  return `${itemPlanning.id}_${itemPlanning.reorderingPolicy}_${itemPlanning.reorderPoint}_${itemPlanning.reorderQuantity}_${itemPlanning.maximumInventoryQuantity}_${itemPlanning.demandAccumulationPeriod}_${itemPlanning.demandAccumulationSafetyStock}_${itemPlanning.leadTime}_${itemPlanning.lotSize}_${itemPlanning.minimumOrderQuantity}_${itemPlanning.maximumOrderQuantity}_${itemPlanning.orderMultiple}_${periodIds}_${weekValues}`;
+  return `${itemPlanning.id}_${itemPlanning.reorderingPolicy}_${itemPlanning.reorderPoint}_${itemPlanning.reorderQuantity}_${itemPlanning.maximumInventoryQuantity}_${itemPlanning.demandAccumulationPeriod}_${itemPlanning.demandAccumulationSafetyStock}_${itemPlanning.leadTime}_${itemPlanning.lotSize}_${itemPlanning.minimumOrderQuantity}_${itemPlanning.maximumOrderQuantity}_${itemPlanning.orderMultiple}_${itemPlanning.supersessionMode}_${itemPlanning.minimumReserveQuantity}_${itemPlanning.quantityOnHand}_${itemPlanning.quantityToOrder}_${periodIds}_${weekValues}`;
 }
 
 function calculateOrders({ itemPlanning, periods }: BaseOrderParams): {
@@ -127,6 +127,51 @@ function calculateOrders({ itemPlanning, periods }: BaseOrderParams): {
   if (cached) {
     return cached;
   }
+
+  // Stock Only supersession overrides every reordering policy: replenish only to
+  // the minimum service-stock floor, ignoring demand. The server already computes
+  // this in get_*_planning (reserve − on-hand − incoming supply), so we reuse its
+  // quantityToOrder rather than recomputing — keeping the drawer and the table in
+  // exact agreement (and correctly accounting for what's already on order).
+  if (itemPlanning.supersessionMode === "Stock Only") {
+    const reserveOrders: {
+      startDate: string;
+      dueDate: string;
+      quantity: number;
+      periodId: string;
+      isASAP: boolean;
+      policyName?: string;
+      triggerValues?: {
+        projectedStock?: number;
+        safetyStock?: number;
+        reorderPoint?: number;
+        reorderQuantity?: number;
+        lotSize?: number;
+        leadTime?: number;
+      };
+    }[] = [];
+    const reserveShortfall = Math.max(0, itemPlanning.quantityToOrder ?? 0);
+    if (reserveShortfall > 0 && periods.length > 0) {
+      const dueDate = parseDate(periods[0].startDate);
+      const startDate = dueDate.subtract({ days: itemPlanning.leadTime ?? 0 });
+      reserveOrders.push({
+        startDate: startDate.toString(),
+        dueDate: dueDate.toString(),
+        quantity: reserveShortfall,
+        periodId: periods[0].id,
+        isASAP: startDate.compare(today(getLocalTimeZone())) < 0,
+        policyName: "Stock Only",
+        triggerValues: {
+          projectedStock: itemPlanning.quantityOnHand ?? 0,
+          reorderPoint: itemPlanning.minimumReserveQuantity ?? 0,
+          leadTime: itemPlanning.leadTime ?? 0
+        }
+      });
+    }
+    ordersCache.set(cacheKey, reserveOrders);
+    return reserveOrders;
+  }
+
   if (itemPlanning.reorderingPolicy === "Manual Reorder") {
     const emptyOrders: {
       startDate: string;

@@ -32,6 +32,10 @@ import {
 import { KyselyDatabase } from "../lib/postgres/index.ts";
 import { importTypeScript } from "../lib/sandbox.ee.ts";
 import { getStorageUnitId } from "../lib/storage-units.ts";
+import {
+  buildSupersessionRedirectMap,
+  isLineEffective,
+} from "../lib/supersession-pick.ts";
 import { toTiptapDoc } from "../shared/tiptap.ts";
 import {
     getNextRevisionSequence,
@@ -331,7 +335,7 @@ serve(async (req: Request) => {
               .eq("companyId", companyId),
             client
               .from("job")
-              .select("locationId, quantity")
+              .select("locationId, quantity, startDate, dueDate")
               .eq("id", jobId)
               .eq("companyId", companyId)
               .single(),
@@ -352,6 +356,17 @@ serve(async (req: Request) => {
         if (job.error) {
           throw new Error("Failed to get job");
         }
+
+        // Way 1 — supersession swap at job creation. Build "old item -> effective
+        // successor (x conversion factor)" for this company, gated by the job's
+        // build date, using the SAME shared logic as MRP so the job's materials
+        // match what planning already redirected. Applied to Buy/Pick lines in the
+        // mapper below.
+        const supersessionRedirect = await loadSupersessionRedirect(
+          client,
+          companyId,
+          job.data
+        );
 
         const hydratedConfiguration = await hydrateConfiguration(
           client,
@@ -845,6 +860,22 @@ serve(async (req: Request) => {
               let requiresBatchTracking =
                 child.data.itemTrackingType === "Batch";
 
+              // Supersession swap (Buy/Pick lines only). A Make-to-Order line
+              // would need its successor's own sub-method re-exploded (a later
+              // layer), so we leave those on the old part. The re-derive block
+              // just below refreshes the successor's item fields automatically.
+              let substitutedFromItemId: string | null = null;
+              let substitutionFactor: number | null = null;
+              if (methodType !== "Make to Order") {
+                const redirect = supersessionRedirect.get(itemId);
+                if (redirect) {
+                  substitutedFromItemId = itemId;
+                  substitutionFactor = redirect.factor;
+                  itemId = redirect.to;
+                  quantity = quantity * redirect.factor;
+                }
+              }
+
               if (itemId !== child.data.itemId) {
                 const item = await client
                   .from("item")
@@ -921,6 +952,8 @@ serve(async (req: Request) => {
                 unitOfMeasureCode,
                 unitCost: unitCost ?? 0,
                 itemScrapPercentage,
+                substitutedFromItemId,
+                substitutionFactor,
                 companyId,
                 createdBy: userId,
                 customFields: {},
@@ -1024,8 +1057,27 @@ serve(async (req: Request) => {
                   (material?.estimatedQuantity ?? 0) +
                   (material?.scrapQuantity ?? 0);
 
+                // Made sub-assembly supersession: if this made component has an
+                // effective successor that is ITSELF a made item, point the job
+                // material at the successor and explode the SUCCESSOR's method
+                // (not the old part's). A Make -> Buy successor is a structural
+                // flip we leave on the old part (handled/flagged elsewhere).
+                const madeSwapHandled = await swapMadeSubAssembly({
+                  client,
+                  trx,
+                  companyId,
+                  job: job.data,
+                  child,
+                  material,
+                  materialId,
+                  supersessionRedirect,
+                  newMakeMethodId,
+                  childTotalForCascade,
+                  traverseMethod,
+                });
+
                 // prevent an infinite loop
-                if (child.data.itemId !== itemId) {
+                if (!madeSwapHandled && child.data.itemId !== itemId) {
                   await traverseMethod(
                     child,
                     newMakeMethodId,
@@ -1052,6 +1104,8 @@ serve(async (req: Request) => {
           }
           logTree(methodTree);
 
+          // Drop BOM lines not effective for the job's build date before traversal.
+          pruneMethodTreeByEffectivity(methodTree, jobBuildDate(job.data));
           // Start traversal with job quantity as the root's target/parent estimated quantity
           await traverseMethod(
             methodTree,
@@ -1131,7 +1185,7 @@ serve(async (req: Request) => {
         const [job, methodTrees, configurationRules] = await Promise.all([
           client
             .from("job")
-            .select("locationId")
+            .select("locationId, startDate, dueDate")
             .eq("id", jobMakeMethod.data.jobId)
             .eq("companyId", companyId)
             .single(),
@@ -1453,6 +1507,35 @@ serve(async (req: Request) => {
               }
             }
 
+            // Supersession swap when pulling a method onto an existing job
+            // (itemToJobMakeMethod): same shared logic + build-date gating as the
+            // other paths. Made materials are left for their own sub-explosion.
+            const supersessionRedirect = await loadSupersessionRedirect(
+              client,
+              companyId,
+              job.data
+            );
+            for (const m of pickedOrBoughtMaterials) {
+              const sup = await resolveJobMaterialSupersession(
+                client,
+                companyId,
+                supersessionRedirect,
+                { itemId: m.itemId, methodType: m.methodType }
+              );
+              if (!sup) continue;
+              m.substitutedFromItemId = sup.substitutedFromItemId;
+              m.substitutionFactor = sup.factor;
+              m.itemId = sup.itemId;
+              m.itemType = sup.itemType;
+              m.description = sup.description;
+              m.unitCost = sup.unitCost ?? m.unitCost;
+              m.requiresSerialTracking = sup.requiresSerialTracking;
+              m.requiresBatchTracking = sup.requiresBatchTracking;
+              m.quantity = (m.quantity ?? 0) * sup.factor;
+              m.estimatedQuantity = (m.estimatedQuantity ?? 0) * sup.factor;
+              m.scrapQuantity = (m.scrapQuantity ?? 0) * sup.factor;
+            }
+
             if (madeMaterials.length > 0) {
               const madeMaterialsWithIds = madeMaterials.map((m) => ({
                 ...m,
@@ -1485,8 +1568,26 @@ serve(async (req: Request) => {
                   (material?.estimatedQuantity ?? 0) +
                   (material?.scrapQuantity ?? 0);
 
+                // Made sub-assembly supersession (see itemToJob for rationale):
+                // if a made component has an effective successor that is itself
+                // made, point the job material at the successor and explode the
+                // SUCCESSOR's method instead of the old part's.
+                const madeSwapHandled = await swapMadeSubAssembly({
+                  client,
+                  trx,
+                  companyId,
+                  job: job.data,
+                  child,
+                  material,
+                  materialId,
+                  supersessionRedirect,
+                  newMakeMethodId,
+                  childTotalForCascade,
+                  traverseMethod,
+                });
+
                 // prevent an infinite loop
-                if (child.data.itemId !== itemId) {
+                if (!madeSwapHandled && child.data.itemId !== itemId) {
                   await traverseMethod(
                     child,
                     newMakeMethodId,
@@ -1505,6 +1606,8 @@ serve(async (req: Request) => {
             } // end if (parts.billOfMaterial)
           }
 
+          // Drop BOM lines not effective for the job's build date before traversal.
+          pruneMethodTreeByEffectivity(methodTree, jobBuildDate(job.data));
           // Start traversal with the parent's estimated quantity
           await traverseMethod(
             methodTree,
@@ -4129,7 +4232,7 @@ serve(async (req: Request) => {
         ] = await Promise.all([
           client
             .from("job")
-            .select("locationId, quantity")
+            .select("locationId, quantity, startDate, dueDate")
             .eq("id", jobId)
             .eq("companyId", companyId)
             .single(),
@@ -4385,6 +4488,35 @@ serve(async (req: Request) => {
               }
 
               if (parts.billOfMaterial && jobMaterialInserts.length > 0) {
+                // Supersession swap at job creation (quote -> job): same shared
+                // logic + build-date gating as the itemToJob path. Built here so
+                // it's in scope for the post-build override below.
+                const supersessionRedirect = await loadSupersessionRedirect(
+                  client,
+                  companyId,
+                  job.data
+                );
+                // Swap any Buy/Pick line whose item has an effective successor.
+                for (const m of jobMaterialInserts) {
+                  const sup = await resolveJobMaterialSupersession(
+                    client,
+                    companyId,
+                    supersessionRedirect,
+                    { itemId: m.itemId, methodType: m.methodType }
+                  );
+                  if (!sup) continue;
+                  m.substitutedFromItemId = sup.substitutedFromItemId;
+                  m.substitutionFactor = sup.factor;
+                  m.itemId = sup.itemId;
+                  m.itemType = sup.itemType;
+                  m.description = sup.description;
+                  m.unitCost = sup.unitCost ?? m.unitCost;
+                  m.requiresSerialTracking = sup.requiresSerialTracking;
+                  m.requiresBatchTracking = sup.requiresBatchTracking;
+                  m.quantity = (m.quantity ?? 0) * sup.factor;
+                  m.estimatedQuantity = (m.estimatedQuantity ?? 0) * sup.factor;
+                  m.scrapQuantity = (m.scrapQuantity ?? 0) * sup.factor;
+                }
                 await trx
                   .insertInto("jobMaterial")
                   .values(jobMaterialInserts)
@@ -5384,6 +5516,194 @@ export function getMethodTreeArray(
   return client.rpc("get_method_tree", {
     uid: makeMethodId,
   });
+}
+
+// Build date for a job's supersession / effectivity decisions: prefer the planned
+// start, fall back to the due date, then to today. Used wherever the method tree is
+// instantiated so swaps and BOM-line effectivity are evaluated as-of the same day.
+function jobBuildDate(
+  job: { startDate?: string | null; dueDate?: string | null } | null | undefined
+): string {
+  return job?.startDate ?? job?.dueDate ?? new Date().toISOString().slice(0, 10);
+}
+
+// Load every supersession for the company and collapse it into the redirect map
+// (chain-collapsed, mode-gated, conversion-factored) as-of the job's build date.
+// Every *-ToJob path needs the same map, so this is the single load point.
+async function loadSupersessionRedirect(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  job: { startDate?: string | null; dueDate?: string | null } | null | undefined
+): Promise<Map<string, { to: string; factor: number }>> {
+  const supersessionRows = await client
+    .from("itemSupersession")
+    .select(
+      "itemId, supersessionMode, successorItemId, successorEffectivityDate, conversionFactor"
+    )
+    .eq("companyId", companyId);
+  return buildSupersessionRedirectMap(
+    supersessionRows.data ?? [],
+    jobBuildDate(job)
+  );
+}
+
+// Made-component supersession at job creation: if a made child has an effective
+// successor that is ITSELF a made item, repoint the job material at the successor
+// and explode the SUCCESSOR's method (date-pruned) instead of the old part's,
+// scaling the cascade by the conversion factor. A Make -> Buy successor is a
+// structural flip we leave on the old part (handled elsewhere). Returns true when
+// the swap was applied, so the caller can skip the default traversal.
+async function swapMadeSubAssembly(opts: {
+  client: SupabaseClient<Database>;
+  trx: Transaction<DB>;
+  companyId: string;
+  job: { startDate?: string | null; dueDate?: string | null } | null | undefined;
+  child: MethodTreeItem;
+  material:
+    | {
+        quantity?: number | null;
+        estimatedQuantity?: number | null;
+        scrapQuantity?: number | null;
+      }
+    | undefined;
+  materialId: string;
+  supersessionRedirect: Map<string, { to: string; factor: number }>;
+  newMakeMethodId: string;
+  childTotalForCascade: number;
+  traverseMethod: (
+    node: MethodTreeItem,
+    parentJobMakeMethodId: string | null,
+    parentEstimatedQuantity: number
+  ) => Promise<unknown>;
+}): Promise<boolean> {
+  const {
+    client,
+    trx,
+    companyId,
+    job,
+    child,
+    material,
+    materialId,
+    supersessionRedirect,
+    newMakeMethodId,
+    childTotalForCascade,
+    traverseMethod,
+  } = opts;
+
+  const madeRedirect = supersessionRedirect.get(child.data.itemId);
+  if (!madeRedirect) return false;
+
+  const successorMakeMethod = await client
+    .from("activeMakeMethods")
+    .select("id")
+    .eq("itemId", madeRedirect.to)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  const successorItem = successorMakeMethod.data
+    ? await client
+        .from("item")
+        .select("type, name, itemTrackingType, itemCost(unitCost)")
+        .eq("id", madeRedirect.to)
+        .eq("companyId", companyId)
+        .single()
+    : null;
+  if (!successorMakeMethod.data || !successorItem?.data) return false;
+
+  await trx
+    .updateTable("jobMaterial")
+    .set({
+      itemId: madeRedirect.to,
+      itemType: successorItem.data.type,
+      description: successorItem.data.name,
+      unitCost: successorItem.data.itemCost?.[0]?.unitCost ?? 0,
+      requiresSerialTracking: successorItem.data.itemTrackingType === "Serial",
+      requiresBatchTracking: successorItem.data.itemTrackingType === "Batch",
+      quantity: (material?.quantity ?? 0) * madeRedirect.factor,
+      estimatedQuantity:
+        (material?.estimatedQuantity ?? 0) * madeRedirect.factor,
+      scrapQuantity: (material?.scrapQuantity ?? 0) * madeRedirect.factor,
+      substitutedFromItemId: child.data.itemId,
+      substitutionFactor: madeRedirect.factor,
+    })
+    .where("id", "=", materialId)
+    .execute();
+
+  const successorTree = await getMethodTree(client, successorMakeMethod.data.id);
+  const successorRoot = successorTree.data?.[0];
+  if (successorRoot) {
+    pruneMethodTreeByEffectivity(successorRoot, jobBuildDate(job));
+    await traverseMethod(
+      successorRoot,
+      newMakeMethodId,
+      (childTotalForCascade || 1) * madeRedirect.factor
+    );
+  }
+  return true;
+}
+
+// Shared by every *-ToJob path. For a Buy/Pick job-material row whose item has an
+// effective supersession successor (per the redirect map), returns the successor's
+// item fields so the row points at the right part with consistent tracking / type /
+// cost. Make-to-Order lines are never swapped here (the successor's own sub-method
+// would need re-exploding — a later layer), so the caller passes only Buy/Pick rows
+// or this returns null for them. The line's unit of measure and methodType are
+// intentionally preserved — the conversion factor translates the quantity.
+async function resolveJobMaterialSupersession(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  redirect: Map<string, { to: string; factor: number }>,
+  line: { itemId: string; methodType: string }
+): Promise<{
+  itemId: string;
+  factor: number;
+  substitutedFromItemId: string;
+  itemType: string;
+  description: string;
+  unitCost: number | null;
+  requiresSerialTracking: boolean;
+  requiresBatchTracking: boolean;
+} | null> {
+  if (line.methodType === "Make to Order") return null;
+  const r = redirect.get(line.itemId);
+  if (!r) return null;
+  const successor = await client
+    .from("item")
+    .select("type, name, itemTrackingType, itemCost(unitCost)")
+    .eq("id", r.to)
+    .eq("companyId", companyId)
+    .single();
+  if (!successor.data) return null;
+  return {
+    itemId: r.to,
+    factor: r.factor,
+    substitutedFromItemId: line.itemId,
+    itemType: successor.data.type,
+    description: successor.data.name,
+    unitCost: successor.data.itemCost?.[0]?.unitCost ?? null,
+    requiresSerialTracking: successor.data.itemTrackingType === "Serial",
+    requiresBatchTracking: successor.data.itemTrackingType === "Batch",
+  };
+}
+
+// BOM-line effectivity at job creation: drop any method-tree node (and its whole
+// subtree) whose effective window does not cover the job's build date, so the job
+// is instantiated with only the date-appropriate components — the same filter MRP
+// applies when exploding demand. Mutates and returns the node. The root has no
+// methodMaterial (NULL dates) so it is always kept.
+function pruneMethodTreeByEffectivity(
+  node: MethodTreeItem,
+  buildDate: string
+): MethodTreeItem {
+  node.children = node.children
+    .filter((c) => {
+      const data = c.data as {
+        effectiveFrom?: string | null;
+        effectiveTo?: string | null;
+      };
+      return isLineEffective(data.effectiveFrom, data.effectiveTo, buildDate);
+    })
+    .map((c) => pruneMethodTreeByEffectivity(c, buildDate));
+  return node;
 }
 
 function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {

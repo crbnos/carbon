@@ -2,6 +2,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  Status,
   Tooltip,
   TooltipContent,
   TooltipTrigger
@@ -16,6 +17,7 @@ import type { PlannedOrder } from "~/modules/purchasing/purchasing.models";
 import { useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 import { ItemReorderPolicy } from "./ItemReorderPolicy";
+import { getItemLifecycleStatus } from "./ItemSupersessionForm";
 
 type Props = {
   order: PlannedOrder;
@@ -41,6 +43,13 @@ export function PlannedOrderDetailsPopover({
   const hasLinkedPo = !!order.existingLineId;
   const inventoryQty = (order.quantity ?? 0) * conversionFactor;
   const isAsap = (order as { isASAP?: boolean }).isASAP === true;
+
+  // Stock Only supersession replaces the reorder policy with a spares-reserve
+  // refill, so the "why" reads as a lifecycle decision rather than a policy.
+  const isSupersessionReserve = order.policyName === "Stock Only";
+  const lifecycle = isSupersessionReserve
+    ? getItemLifecycleStatus("Stock Only")
+    : null;
 
   return (
     <Popover>
@@ -153,28 +162,63 @@ export function PlannedOrderDetailsPopover({
               <div className="text-sm font-medium">
                 <Trans>Why is this included?</Trans>
               </div>
+              {isSupersessionReserve && (
+                <div className="text-xs text-muted-foreground">
+                  <Trans>
+                    This part is superseded and set to Stock Only — it's
+                    replenished to its spares reserve floor, independent of
+                    demand.
+                  </Trans>
+                </div>
+              )}
               <dl className="grid grid-cols-[max-content_1fr] gap-x-3 gap-y-1 text-sm">
                 <dt className="text-muted-foreground">
-                  <Trans>Policy</Trans>
+                  {isSupersessionReserve ? (
+                    <Trans>Lifecycle</Trans>
+                  ) : (
+                    <Trans>Policy</Trans>
+                  )}
                 </dt>
                 <dd>
-                  {order.policyName && (
-                    <ItemReorderPolicy
-                      reorderingPolicy={
-                        order.policyName as
-                          | "Demand-Based Reorder"
-                          | "Fixed Reorder Quantity"
-                          | "Manual Reorder"
-                          | "Maximum Quantity"
-                      }
-                    />
+                  {isSupersessionReserve && lifecycle ? (
+                    <Status color={lifecycle.color}>{lifecycle.label}</Status>
+                  ) : (
+                    order.policyName && (
+                      <ItemReorderPolicy
+                        reorderingPolicy={
+                          order.policyName as
+                            | "Demand-Based Reorder"
+                            | "Fixed Reorder Quantity"
+                            | "Manual Reorder"
+                            | "Maximum Quantity"
+                        }
+                      />
+                    )
                   )}
                 </dd>
+
+                {isSupersessionReserve &&
+                  order.triggerValues?.reorderPoint != null && (
+                    <>
+                      <dt className="text-muted-foreground">
+                        <Trans>Reserve floor</Trans>
+                      </dt>
+                      <dd>
+                        {numberFormatter.format(
+                          order.triggerValues.reorderPoint
+                        )}
+                      </dd>
+                    </>
+                  )}
 
                 {order.triggerValues?.projectedStock != null && (
                   <>
                     <dt className="text-muted-foreground">
-                      <Trans>Projected stock</Trans>
+                      {isSupersessionReserve ? (
+                        <Trans>On hand</Trans>
+                      ) : (
+                        <Trans>Projected stock</Trans>
+                      )}
                     </dt>
                     <dd>
                       {numberFormatter.format(

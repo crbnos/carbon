@@ -28,6 +28,7 @@ import {
 import { useFetcher, useParams } from "react-router";
 import {
   Hyperlink,
+  ItemLifecycleBadge,
   ItemThumbnail,
   MethodIcon,
   Table,
@@ -60,6 +61,21 @@ function HeaderTooltip({ label, hint }: { label: ReactNode; hint: ReactNode }) {
       <TooltipContent className="max-w-xs">{hint}</TooltipContent>
     </Tooltip>
   );
+}
+
+// Pull the supersession mode off a job-material row (RPC column not yet in the
+// generated type). Drives the lifecycle badge on the material's item cell.
+function rowSupersession(row: JobMaterial) {
+  return (
+    row as {
+      supersessionMode?:
+        | "Consume First"
+        | "Prefer New"
+        | "Stock Only"
+        | "No Stock"
+        | null;
+    }
+  ).supersessionMode;
 }
 
 const JobMaterialsTable = memo(
@@ -117,43 +133,60 @@ const JobMaterialsTable = memo(
         {
           accessorKey: "jobMaterialItemId",
           header: t`Item`,
-          cell: ({ row }) => (
-            <HStack className="py-1">
-              <ItemThumbnail
-                size="md"
-                // @ts-ignore
-                type={row.original.itemType}
-              />
+          cell: ({ row }) => {
+            const substitutedFromId = (
+              row.original as { substitutedFromItemId?: string | null }
+            ).substitutedFromItemId;
+            const substitutedFrom = substitutedFromId
+              ? (items.find((i) => i.id === substitutedFromId)
+                  ?.readableIdWithRevision ?? substitutedFromId)
+              : null;
+            return (
+              <HStack className="py-1">
+                <ItemThumbnail
+                  size="md"
+                  // @ts-ignore
+                  type={row.original.itemType}
+                />
 
-              <VStack spacing={0}>
-                <HStack spacing={2}>
-                  <Hyperlink
-                    to={path.to.jobMakeMethod(
-                      jobId,
-                      row.original.jobMakeMethodId
-                    )}
-                    onClick={() => {
-                      setSearchParams({ materialId: row.original.id ?? null });
-                    }}
-                    className="max-w-[260px] truncate"
-                  >
-                    {row.original.itemReadableId}
-                  </Hyperlink>
-                  {nearExpiryWarningDays !== null &&
-                    nearExpiryWarningDays !== undefined &&
-                    row.original.hasExpiredBatch && (
-                      <Badge variant="red" className="gap-1 text-xs shrink-0">
-                        <LuCalendarX className="size-3" />
-                        <Trans>Expired batch</Trans>
-                      </Badge>
-                    )}
-                </HStack>
-                <div className="w-full truncate text-muted-foreground text-xs">
-                  {row.original.description}
-                </div>
-              </VStack>
-            </HStack>
-          ),
+                <VStack spacing={0}>
+                  <HStack spacing={2}>
+                    <Hyperlink
+                      to={path.to.jobMakeMethod(
+                        jobId,
+                        row.original.jobMakeMethodId
+                      )}
+                      onClick={() => {
+                        setSearchParams({
+                          materialId: row.original.id ?? null
+                        });
+                      }}
+                      className="max-w-[260px] truncate"
+                    >
+                      {row.original.itemReadableId}
+                    </Hyperlink>
+                    <ItemLifecycleBadge mode={rowSupersession(row.original)} />
+                    {nearExpiryWarningDays !== null &&
+                      nearExpiryWarningDays !== undefined &&
+                      row.original.hasExpiredBatch && (
+                        <Badge variant="red" className="gap-1 text-xs shrink-0">
+                          <LuCalendarX className="size-3" />
+                          <Trans>Expired batch</Trans>
+                        </Badge>
+                      )}
+                  </HStack>
+                  <div className="w-full truncate text-muted-foreground text-xs">
+                    {row.original.description}
+                  </div>
+                  {substitutedFrom && (
+                    <div className="w-full truncate text-xs text-blue-700 dark:text-blue-300">
+                      ↩ <Trans>substituted from</Trans> {substitutedFrom}
+                    </div>
+                  )}
+                </VStack>
+              </HStack>
+            );
+          },
           meta: {
             icon: <LuBookMarked />,
             // Filter by item id (a real column) so it filters server-side;

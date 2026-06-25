@@ -2,6 +2,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  Status,
   Table,
   Tbody,
   Td,
@@ -83,6 +84,20 @@ export function DemandForecastSourcesPopover({
     );
   }
 
+  // Demand redirected here from superseded (phased-out) parts.
+  const redirectedSources = sources.filter((s) => s.redirectedFromItem);
+  const redirectedTotal = redirectedSources.reduce(
+    (sum, s) => sum + s.quantity,
+    0
+  );
+  const redirectedParts = Array.from(
+    new Set(
+      redirectedSources.map(
+        (s) => s.redirectedFromItem?.readableIdWithRevision ?? ""
+      )
+    )
+  ).filter(Boolean);
+
   return (
     <Popover>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
@@ -100,19 +115,30 @@ export function DemandForecastSourcesPopover({
               active jobs, and production projections.
             </Trans>
           </div>
-          <Table>
+          <div>
+            {redirectedTotal > 0 && (
+              <Status color="blue">
+                <Trans>
+                  ↩ {numberFormatter.format(redirectedTotal)} redirected from
+                  superseded {redirectedParts.join(", ")}
+                </Trans>
+              </Status>
+            )}
+          </div>
+
+          <Table className="w-full table-fixed">
             <Thead>
               <Tr>
-                <Th>
+                <Th className="w-[24%]">
                   <Trans>Source</Trans>
                 </Th>
-                <Th>
+                <Th className="w-[30%]">
                   <Trans>Parent Item</Trans>
                 </Th>
-                <Th>
+                <Th className="w-[32%]">
                   <Trans>Due</Trans>
                 </Th>
-                <Th className="text-right">
+                <Th className="w-[14%] text-right">
                   <Trans>Qty</Trans>
                 </Th>
               </Tr>
@@ -163,9 +189,6 @@ export function DemandForecastSourcesPopover({
                             title={s.demandProjection.notes ?? undefined}
                           >
                             <Trans>Projection</Trans>
-                            {/* <span className="ml-1 text-xs text-muted-foreground font-mono">
-                            {s.demandProjection.forecastMethod ?? "manual"}
-                          </span> */}
                           </Link>
                         ) : (
                           <span
@@ -184,14 +207,29 @@ export function DemandForecastSourcesPopover({
                     </Td>
                     <Td>
                       {s.parentItem ? (
-                        <span title={s.parentItem.name}>
+                        <span
+                          title={s.parentItem.name}
+                          className="block truncate"
+                        >
                           {s.parentItem.readableId}
                         </span>
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
+                      {s.redirectedFromItem ? (
+                        <Link
+                          to={path.to.part(s.redirectedFromItem.id)}
+                          target="_blank"
+                          className="block truncate text-xs text-blue-700 hover:underline dark:text-blue-300"
+                          title={
+                            s.redirectedFromItem.readableIdWithRevision ?? ""
+                          }
+                        >
+                          ↩ {s.redirectedFromItem.readableIdWithRevision}
+                        </Link>
+                      ) : null}
                     </Td>
-                    <Td>
+                    <Td className="whitespace-nowrap">
                       {sourceDate ? (
                         formatDate(sourceDate)
                       ) : (
