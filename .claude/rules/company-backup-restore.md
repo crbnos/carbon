@@ -57,7 +57,10 @@ The catalog is **schema-introspected**, not a hand-maintained list:
   CHECK (`sourceType` ↔ which of `jobId`/`salesOrderLineId`/`demandProjectionId`
   is non-null) made a remapped restore crash — the FK-nulling dangling-ref policy
   in `buildRowTransforms` nulls a set FK and violates the CHECK. `demandForecast`
-  is deliberately kept: it has a user-forecast write path and no such CHECK),
+  is deliberately kept: it has a user-forecast write path and no such CHECK. The
+  two excluded sets are unioned into `CATALOG_EXCLUDED_TABLES`, which
+  `assertBackupImportable` also skips — an OLDER backup that still carries an
+  excluded table is not schema drift, its rows are just ignored on load),
   `RESEED_SKIPPED_TABLES` (memberships/invites/employee/externalIntegrationMapping
   — skipped on onboarding reseed), `IN_PLACE_SKIPPED_TABLES` (access/identity
   tables a restore must keep so the user isn't locked out).

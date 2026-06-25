@@ -169,6 +169,18 @@ export const TRANSIENT_TABLES = [
 ] as const satisfies readonly TableName[];
 
 /**
+ * Tables deliberately kept out of the catalog: the company shell + MRP planning
+ * output. The catalog skips them so they're never exported/wiped/loaded, and
+ * `assertBackupImportable` skips them too — an older backup that still carries
+ * one of these (made before it was excluded) is NOT schema drift; its rows are
+ * simply ignored on load (the next MRP run rebuilds the data).
+ */
+export const CATALOG_EXCLUDED_TABLES = new Set<string>([
+  ...STRUCTURAL_TABLES,
+  ...TRANSIENT_TABLES
+]);
+
+/**
  * Additional tables skipped in `reseed` mode — memberships, invites and
  * integration state belong to the source company's users, not to a copy.
  * The importing company already has its admin membership from onboarding.
@@ -484,11 +496,8 @@ export async function getCompanyTableCatalog(
 
   // companyId wins when a table carries both columns.
   // Excluded from the catalog entirely: the company shell + MRP planning output
-  // (regenerated every run, never user data — see TRANSIENT_TABLES).
-  const structural = new Set<string>([
-    ...STRUCTURAL_TABLES,
-    ...TRANSIENT_TABLES
-  ]);
+  // (regenerated every run, never user data — see CATALOG_EXCLUDED_TABLES).
+  const structural = CATALOG_EXCLUDED_TABLES;
   const scopeByTable = new Map<string, "companyId" | "companyGroupId">();
   for (const r of scopeRows.rows) {
     if (structural.has(r.name)) continue;
@@ -723,6 +732,9 @@ export function assertBackupImportable(
 
   const liveByName = new Map(catalog.tables.map((t) => [t.name, t]));
   for (const backupTable of manifest.tables) {
+    // A backup table the catalog now excludes by design (MRP output, the company
+    // shell) is not schema drift — skip it; its rows are ignored on load.
+    if (CATALOG_EXCLUDED_TABLES.has(backupTable.name)) continue;
     const live = liveByName.get(backupTable.name);
     if (!live) {
       return {
