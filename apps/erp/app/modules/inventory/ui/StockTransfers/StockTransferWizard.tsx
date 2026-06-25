@@ -1177,7 +1177,7 @@ function PaginationButtons({
         {count}
       </div>
       <Tooltip>
-        <TooltipTrigger>
+        <TooltipTrigger asChild>
           <Button
             variant="secondary"
             isDisabled={!canPreviousPage}
@@ -1192,7 +1192,7 @@ function PaginationButtons({
         </TooltipContent>
       </Tooltip>
       <Tooltip>
-        <TooltipTrigger>
+        <TooltipTrigger asChild>
           <Button
             variant="secondary"
             isDisabled={!canNextPage}

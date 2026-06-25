@@ -50,12 +50,12 @@ const Timezone = ({
       )}
       <input
         {...getInputProps({
-          id: name
+          id: name,
+          value: value ?? ""
         })}
         type="hidden"
         name={name}
         id={name}
-        value={value ?? undefined}
       />
       <HStack spacing={1}>
         <SelectBase

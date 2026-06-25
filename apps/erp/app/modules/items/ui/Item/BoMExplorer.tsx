@@ -176,7 +176,7 @@ const BoMExplorer = ({
             </InputGroup>
 
             <DropdownMenu>
-              <DropdownMenuTrigger>
+              <DropdownMenuTrigger asChild>
                 <IconButton
                   aria-label={t`Actions`}
                   variant="secondary"
@@ -428,7 +428,7 @@ export function BoMActions({ makeMethodId }: { makeMethodId: string }) {
   const { t } = useLingui();
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger>
+      <DropdownMenuTrigger asChild>
         <IconButton
           aria-label={t`Actions`}
           variant="secondary"

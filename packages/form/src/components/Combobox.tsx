@@ -77,12 +77,12 @@ const Combobox = ({
       )}
       <input
         {...getInputProps({
-          id: name
+          id: name,
+          value: value ?? ""
         })}
         type="hidden"
         name={name}
         id={name}
-        value={value}
       />
       <ComboboxBase
         {...props}

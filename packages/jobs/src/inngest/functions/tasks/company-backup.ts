@@ -215,6 +215,14 @@ export type TableInfo = {
   scopeColumn: "companyId" | "companyGroupId";
   /** primary key column names (empty when the table has no PK) */
   pkColumns: string[];
+  /**
+   * Every column that participates in ANY uniqueness constraint — primary key,
+   * unique constraint, or bare unique index (deduped). A foreign restore that
+   * collapses a user FK in one of these would collide, so it's the signal for
+   * `isUserScopedIdentityTable` (PK alone misses unique-index keys like
+   * `trainingCompletion(trainingAssignmentId, employeeId, period)`).
+   */
+  uniqueColumns: string[];
   /** true when the primary key is exactly the single column "id" */
   hasId: boolean;
   foreignKeys: ForeignKey[];
@@ -476,6 +484,18 @@ export async function getCompanyTableCatalog(
     ORDER BY tc.table_name, kcu.ordinal_position
   `.execute(db);
 
+  // Columns in ANY unique index (covers PKs, unique constraints, and bare
+  // CREATE UNIQUE INDEX — the last is how training tables key their employee).
+  // `attnum = ANY(indkey)` skips expression-index entries (attnum 0).
+  const uniqueColumns = await sql<{ table_name: string; column_name: string }>`
+    SELECT t.relname AS table_name, a.attname AS column_name
+    FROM pg_index ix
+    JOIN pg_class t ON t.oid = ix.indrelid
+    JOIN pg_namespace nsp ON nsp.oid = t.relnamespace
+    JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY (ix.indkey)
+    WHERE ix.indisunique AND nsp.nspname = 'public'
+  `.execute(db);
+
   const foreignKeys = await sql<{
     table_name: string;
     column_name: string;
@@ -574,6 +594,13 @@ export async function getCompanyTableCatalog(
     pkColumnsByTable.set(p.table_name, list);
   }
 
+  const uniqueColumnsByTable = new Map<string, Set<string>>();
+  for (const u of uniqueColumns.rows) {
+    const set = uniqueColumnsByTable.get(u.table_name) ?? new Set<string>();
+    set.add(u.column_name);
+    uniqueColumnsByTable.set(u.table_name, set);
+  }
+
   const fksByTable = new Map<string, ForeignKey[]>();
   for (const f of foreignKeys.rows) {
     if (!tableSet.has(f.table_name)) continue;
@@ -594,6 +621,7 @@ export async function getCompanyTableCatalog(
       scope: scope.get(name)!,
       scopeColumn: scopeRoot.get(name)!,
       pkColumns,
+      uniqueColumns: [...(uniqueColumnsByTable.get(name) ?? [])],
       hasId: pkColumns.length === 1 && pkColumns[0] === "id",
       foreignKeys: fksByTable.get(name) ?? []
     };
@@ -663,6 +691,201 @@ export function assertBackupImportable(
     }
   }
   return { ok: true };
+}
+
+/** FKs to these collapse to the importing user when re-stamping a foreign backup. */
+export const USER_REF_TABLES = new Set(["user", "employee"]);
+
+/**
+ * FK targets a restore resolves WITHOUT the referenced row being in the backup:
+ * `user` (global identity table, never in the catalog) and `company` (structural),
+ * plus `employee` (collapsed to the importer) and `companyGroup` (re-stamped to the
+ * target group). A FK to any of these can't be a closure gap.
+ */
+export const RETAINED_REF_TABLES = new Set([
+  "user",
+  "employee",
+  "company",
+  "companyGroup"
+]);
+
+export type DanglingRef = {
+  table: string;
+  column: string;
+  refTable: string;
+  /** false → restore nulls it (warning); true → NOT NULL, restore cannot resolve. */
+  fatal: boolean;
+  sampleValue: string;
+  count: number;
+};
+
+/**
+ * Find FK values that point at a scoped row the backup does NOT contain — the exact
+ * gap that makes a restore dangle. A backup is "referentially closed" when this
+ * returns no `fatal` entries. Pure (no DB), so the SAME check runs as a unit test
+ * AND as the pre-wipe restore guard — there is one definition of closure, not two
+ * that can drift. Skips refs to `RETAINED_REF_TABLES` (resolved by collapse/identity)
+ * and to non-scoped global tables (`currency`, `country`, … — stable ids present in
+ * every target), since neither is a gap.
+ */
+export function findDanglingReferences(
+  catalog: Catalog,
+  dataByTable: Record<string, Array<{ [col: string]: unknown }>>
+): DanglingRef[] {
+  const catalogNames = new Set(catalog.tables.map((t) => t.name));
+  const idsByTable = new Map<string, Set<unknown>>();
+  for (const t of catalog.tables) {
+    if (!t.hasId) continue;
+    const ids = new Set<unknown>();
+    for (const row of dataByTable[t.name] ?? []) ids.add(row.id);
+    idsByTable.set(t.name, ids);
+  }
+
+  const found = new Map<string, DanglingRef>();
+  for (const t of catalog.tables) {
+    const rows = dataByTable[t.name];
+    if (!rows?.length) continue;
+    const colByName = new Map(t.columns.map((c) => [c.name, c]));
+    for (const fk of t.foreignKeys) {
+      if (fk.refColumn !== "id") continue;
+      if (RETAINED_REF_TABLES.has(fk.refTable)) continue;
+      if (!catalogNames.has(fk.refTable)) continue; // non-scoped global → stable ids
+      const col = colByName.get(fk.column);
+      if (!col) continue;
+      const refIds = idsByTable.get(fk.refTable) ?? new Set();
+      for (const row of rows) {
+        const v = row[fk.column];
+        if (v == null) continue;
+        if (refIds.has(v)) continue;
+        const key = `${t.name}.${fk.column}->${fk.refTable}`;
+        const existing = found.get(key);
+        if (existing) {
+          existing.count++;
+        } else {
+          found.set(key, {
+            table: t.name,
+            column: fk.column,
+            refTable: fk.refTable,
+            fatal: !col.isNullable,
+            sampleValue: String(v),
+            count: 1
+          });
+        }
+      }
+    }
+  }
+  return [...found.values()];
+}
+
+/**
+ * Pre-wipe restore guard: refuse a backup that isn't referentially closed. A
+ * NOT-NULL FK pointing at a missing row would commit under relaxed FK checks and
+ * corrupt the restore, so this reports EVERY fatal gap at once — the whole list is
+ * surfaced before any data is touched, instead of one throw at a time mid-load.
+ */
+export function assertReferentiallyClosed(
+  catalog: Catalog,
+  backup: CompanyBackup
+): { ok: true } | { ok: false; reason: string } {
+  const fatal = findDanglingReferences(catalog, backup.data).filter(
+    (d) => d.fatal
+  );
+  if (fatal.length === 0) return { ok: true };
+  const lines = fatal
+    .map(
+      (d) =>
+        `  ${d.table}.${d.column} → ${d.refTable} (${d.count} row${
+          d.count === 1 ? "" : "s"
+        }, e.g. ${d.sampleValue})`
+    )
+    .join("\n");
+  return {
+    ok: false,
+    reason: `the backup is not self-contained — ${fatal.length} reference${
+      fatal.length === 1 ? "" : "s"
+    } point at rows it doesn't include:\n${lines}`
+  };
+}
+
+export type RowTransform = (value: unknown) => unknown;
+
+/**
+ * Per-column transforms used when re-stamping a FOREIGN backup onto this company:
+ * every id is remapped to a fresh one, companyId/companyGroupId point at the
+ * target, FKs follow the id remap, user refs collapse to the importing user, and
+ * storage paths are rewritten. For an OWN backup (remap=false) every column is
+ * identity — ids and scope already belong here. Pure (no DB), so it lives here
+ * with the other catalog helpers and is unit-tested directly.
+ */
+export function buildRowTransforms(
+  table: TableInfo,
+  columns: ColumnInfo[],
+  ctx: {
+    remap: boolean;
+    companyId: string;
+    userId: string;
+    targetGroupId: string | null;
+    sourceCompanyId: string;
+    idMaps: Map<string, Map<string, string>>;
+    idRewrite: Map<string, string>;
+  }
+): RowTransform[] {
+  const identity: RowTransform = (v) => v;
+  if (!ctx.remap) return columns.map(() => identity);
+
+  const fkByColumn = new Map(table.foreignKeys.map((fk) => [fk.column, fk]));
+  return columns.map((col) => {
+    const fk = fkByColumn.get(col.name);
+    // Only id-keyed tables with a text/uuid id get an idMap (int/serial ids reuse
+    // verbatim — see idMaps build). Gate on the map's presence, not `hasId`, or an
+    // int-id table dereferences an undefined map.
+    const idMap = ctx.idMaps.get(table.name);
+    if (col.name === "id" && idMap) {
+      return (v) => idMap.get(v as string) ?? v;
+    }
+    if (col.name === "companyId") return () => ctx.companyId;
+    if (col.name === "companyGroupId") return () => ctx.targetGroupId;
+    if (STORAGE_PATH_COLUMNS.has(col.name)) {
+      return (v) =>
+        typeof v === "string"
+          ? rewriteStoragePath(
+              v,
+              ctx.sourceCompanyId,
+              ctx.companyId,
+              ctx.idRewrite
+            )
+          : v;
+    }
+    if (fk) {
+      if (USER_REF_TABLES.has(fk.refTable)) {
+        return (v) => (v == null ? v : ctx.userId);
+      }
+      if (fk.refTable === "company") {
+        return (v) => (v === ctx.sourceCompanyId ? ctx.companyId : v);
+      }
+      if (fk.refTable === "companyGroup") {
+        return (v) => (v == null ? v : ctx.targetGroupId);
+      }
+      if (fk.refColumn === "id" && ctx.idMaps.has(fk.refTable)) {
+        const map = ctx.idMaps.get(fk.refTable)!;
+        return (v) => {
+          if (v == null) return v;
+          const mapped = map.get(v as string);
+          if (mapped) return mapped;
+          // The referenced row isn't in the backup. Keeping the stale id would
+          // dangle (FK checks are relaxed during load, so it would commit and
+          // only fail later in MRP/etc). Drop it when nullable; otherwise abort
+          // the whole restore — never commit a corrupt reference.
+          if (col.isNullable) return null;
+          throw new Error(
+            `Backup is inconsistent: ${table.name}.${col.name} references a ` +
+              `${fk.refTable} (${String(v)}) that isn't in the backup.`
+          );
+        };
+      }
+    }
+    return identity;
+  });
 }
 
 /**
@@ -785,6 +1008,67 @@ export function buildScopeFilter(
 }
 
 /**
+ * Export-time closure guard — refuse to PRODUCE a backup that could never be
+ * restored. For each NOT-NULL FK from an exportable scoped table to another
+ * exportable scoped table, count rows in this company's export scope whose
+ * reference falls OUTSIDE the referenced table's export scope (a cross-company /
+ * out-of-scope ref: the child row would be dumped but its parent would not).
+ * DB-level and count-only, so no rows are held in memory. This is the export
+ * mirror of the restore-side `assertReferentiallyClosed`. Skips nullable FKs
+ * (restore nulls a missing nullable ref) and refs to retained/global/secret
+ * tables (`user`, `company`, …, and anything not exported).
+ */
+export async function findExportScopeViolations(
+  db: Kysely<KyselyDatabase>,
+  exportable: TableInfo[],
+  byName: Map<string, TableInfo>,
+  companyId: string,
+  companyGroupId: string | null
+): Promise<string[]> {
+  const exportableNames = new Set(exportable.map((t) => t.name));
+  const checks: Array<{ desc: string; query: RawBuilder<{ n: string }> }> = [];
+  for (const t of exportable) {
+    const colByName = new Map(t.columns.map((c) => [c.name, c]));
+    for (const fk of t.foreignKeys) {
+      if (fk.refColumn !== "id") continue;
+      if (RETAINED_REF_TABLES.has(fk.refTable)) continue;
+      if (!exportableNames.has(fk.refTable)) continue; // global/secret → not in closure
+      const col = colByName.get(fk.column);
+      if (!col || col.isNullable) continue; // nullable → restore nulls a missing ref
+      const parent = byName.get(fk.refTable)!;
+      const childScope = buildScopeFilter(t, byName, companyId, companyGroupId);
+      const parentScope = buildScopeFilter(
+        parent,
+        byName,
+        companyId,
+        companyGroupId
+      );
+      checks.push({
+        desc: `${t.name}.${fk.column} → ${fk.refTable}`,
+        query: sql<{ n: string }>`
+          SELECT count(*)::text AS n
+          FROM ${sql.id(t.name)}
+          WHERE ${childScope}
+            AND ${sql.id(fk.column)} IS NOT NULL
+            AND ${sql.id(fk.column)} NOT IN (
+              SELECT ${sql.id(fk.refColumn)}
+              FROM ${sql.id(parent.name)}
+              WHERE ${parentScope}
+            )`
+      });
+    }
+  }
+
+  const violations: string[] = [];
+  await mapWithConcurrency(checks, 6, async (c) => {
+    const r = await c.query.execute(db);
+    const n = Number(r.rows[0]?.n ?? 0);
+    if (n > 0) violations.push(`${c.desc} (${n} row${n === 1 ? "" : "s"})`);
+  });
+  return violations;
+}
+
+/**
  * Of the given tables, return only those the target has NOT yet populated in
  * its scope (companyId or companyGroupId). Reseed import uses this so it
  * never overwrites data the target already owns — a bare clone keeps every
@@ -844,29 +1128,41 @@ export async function canSetReplicationRole(
  * A table whose primary key is keyed by a `user`/`employee` FK (e.g. `employeeJob`,
  * `customerAccount`, `supplierAccount`, `userToCompany`) is per-source-user
  * identity. A foreign restore / reseed collapses every user FK onto the single
- * importing user, so all such rows would land on the same `(id, companyId)` PK and
- * collide. They can never be meaningfully copied to another company — skip them on
- * both load paths (the source's belong to the source's users; the target keeps its
- * own). Derived from the catalog so a new table of this shape is covered
- * automatically rather than silently reintroducing the collision.
+ * importing user, so all such rows would collide on whatever uniqueness constraint
+ * the user column participates in — a composite PK like `(id, companyId)`, OR a
+ * unique index like `trainingCompletion(trainingAssignmentId, employeeId, period)`.
+ * They can never be meaningfully copied to another company — skip them on both load
+ * paths (the source's belong to the source's users; the target keeps its own).
+ * Keys off every unique column (not just the PK) so a table that keys its user via
+ * a unique index is covered automatically rather than silently colliding on load.
  */
 export function isUserScopedIdentityTable(table: TableInfo): boolean {
+  const uniqueCols = new Set(
+    table.uniqueColumns.length > 0 ? table.uniqueColumns : table.pkColumns
+  );
   return table.foreignKeys.some(
     (fk) =>
-      table.pkColumns.includes(fk.column) &&
+      uniqueCols.has(fk.column) &&
       (fk.refTable === "user" || fk.refTable === "employee")
   );
 }
 
 export function selectWipeableTables(
   catalog: Catalog,
-  opts: { includeGroup?: boolean } = {}
+  opts: { includeGroup?: boolean; remap?: boolean } = {}
 ): TableInfo[] {
   const skip = new Set([...SECRET_TABLES, ...IN_PLACE_SKIPPED_TABLES]);
   return catalog.tables.filter(
     (t) =>
       !skip.has(t.name) &&
-      !isUserScopedIdentityTable(t) &&
+      // Identity tables (per-source-user rows) are normally KEPT. But a FOREIGN
+      // restore (remap) re-keys their parents' ids, and `ON DELETE CASCADE` does
+      // NOT fire under `session_replication_role='replica'` — so a kept child would
+      // be left dangling at a deleted/remapped parent. On remap we therefore WIPE
+      // them (reverse-topo wipe clears children before parents) and never reload
+      // them (the load set drops them separately). On an own restore parent ids are
+      // stable, so keeping them is safe.
+      (opts.remap === true || !isUserScopedIdentityTable(t)) &&
       (t.scopeColumn === "companyId" ||
         (opts.includeGroup === true && t.scopeColumn === "companyGroupId"))
   );

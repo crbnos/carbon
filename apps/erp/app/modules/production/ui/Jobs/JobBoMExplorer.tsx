@@ -212,7 +212,7 @@ const JobBoMExplorer = ({ method, orderStatus }: JobBoMExplorerProps) => {
               </InputGroup>
               {jobId && (
                 <DropdownMenu>
-                  <DropdownMenuTrigger>
+                  <DropdownMenuTrigger asChild>
                     <IconButton
                       aria-label={t`Actions`}
                       variant="ghost"

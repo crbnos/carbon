@@ -22,14 +22,19 @@
 -- successor's record. The per-location minimum service-stock reserve lives on
 -- itemPlanning (one row per item + location).
 
-CREATE TYPE "supersessionMode" AS ENUM (
-  'Consume First',
-  'Prefer New',
-  'Stock Only',
-  'No Stock'
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'supersessionMode') THEN
+    CREATE TYPE "supersessionMode" AS ENUM (
+      'Consume First',
+      'Prefer New',
+      'Stock Only',
+      'No Stock'
+    );
+  END IF;
+END $$;
 
-CREATE TABLE "itemSupersession" (
+CREATE TABLE IF NOT EXISTS "itemSupersession" (
   "itemId" TEXT NOT NULL,
   "companyId" TEXT NOT NULL,
   "supersessionMode" "supersessionMode" NOT NULL,
@@ -63,14 +68,15 @@ CREATE TABLE "itemSupersession" (
     )
 );
 
-CREATE INDEX "itemSupersession_companyId_idx" ON "itemSupersession" ("companyId");
+CREATE INDEX IF NOT EXISTS "itemSupersession_companyId_idx" ON "itemSupersession" ("companyId");
 -- Powers the "Supersedes" back-reference lookup on the successor's record.
-CREATE INDEX "itemSupersession_successorItemId_idx"
+CREATE INDEX IF NOT EXISTS "itemSupersession_successorItemId_idx"
   ON "itemSupersession" ("successorItemId")
   WHERE "successorItemId" IS NOT NULL;
 
 ALTER TABLE "public"."itemSupersession" ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "SELECT" ON "public"."itemSupersession";
 CREATE POLICY "SELECT" ON "public"."itemSupersession"
 FOR SELECT USING (
   "companyId" = ANY (
@@ -78,6 +84,7 @@ FOR SELECT USING (
   )
 );
 
+DROP POLICY IF EXISTS "INSERT" ON "public"."itemSupersession";
 CREATE POLICY "INSERT" ON "public"."itemSupersession"
 FOR INSERT WITH CHECK (
   "companyId" = ANY (
@@ -85,6 +92,7 @@ FOR INSERT WITH CHECK (
   )
 );
 
+DROP POLICY IF EXISTS "UPDATE" ON "public"."itemSupersession";
 CREATE POLICY "UPDATE" ON "public"."itemSupersession"
 FOR UPDATE USING (
   "companyId" = ANY (
@@ -92,6 +100,7 @@ FOR UPDATE USING (
   )
 );
 
+DROP POLICY IF EXISTS "DELETE" ON "public"."itemSupersession";
 CREATE POLICY "DELETE" ON "public"."itemSupersession"
 FOR DELETE USING (
   "companyId" = ANY (
@@ -101,7 +110,7 @@ FOR DELETE USING (
 
 -- Per-location minimum service-stock floor (used by 'Stock Only' / 'Prefer New').
 ALTER TABLE "itemPlanning"
-  ADD COLUMN "minimumReserveQuantity" NUMERIC NOT NULL DEFAULT 0;
+  ADD COLUMN IF NOT EXISTS "minimumReserveQuantity" NUMERIC NOT NULL DEFAULT 0;
 
 
 -- =====================================================================

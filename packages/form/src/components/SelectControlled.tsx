@@ -74,12 +74,12 @@ const SelectControlled = ({
       )}
       <input
         {...getInputProps({
-          id: name
+          id: name,
+          value: controlValue ?? ""
         })}
         type="hidden"
         name={name}
         id={name}
-        value={controlValue}
       />
       <SelectBase
         {...props}

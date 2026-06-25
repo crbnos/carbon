@@ -131,7 +131,7 @@ export const PaginationButtons = ({
       {condensed ? (
         <>
           <Tooltip>
-            <TooltipTrigger>
+            <TooltipTrigger asChild>
               <IconButton
                 aria-label={t`Previous`}
                 icon={<BsChevronLeft />}
@@ -145,7 +145,7 @@ export const PaginationButtons = ({
             </TooltipContent>
           </Tooltip>
           <Tooltip>
-            <TooltipTrigger>
+            <TooltipTrigger asChild>
               <IconButton
                 aria-label={t`Next`}
                 icon={<BsChevronRight />}
@@ -166,7 +166,7 @@ export const PaginationButtons = ({
             <Trans>of</Trans> {count}
           </div>
           <Tooltip>
-            <TooltipTrigger>
+            <TooltipTrigger asChild>
               <Button
                 ref={previousButtonRef}
                 variant="secondary"
@@ -182,7 +182,7 @@ export const PaginationButtons = ({
             </TooltipContent>
           </Tooltip>
           <Tooltip>
-            <TooltipTrigger>
+            <TooltipTrigger asChild>
               <Button
                 ref={nextButtonRef}
                 variant="secondary"
