@@ -129,12 +129,18 @@ export const SECRET_TABLES = [
 ];
 
 /**
- * Company-scoped tables that are deliberately excluded — billing/subscription
- * identity that is tied to the source company and its external (Stripe) account,
- * never a copy. Excluded from the export alongside {@link SECRET_TABLES}.
+ * Company-singleton config tables: one row per company, keyed by `id` (the row's
+ * `id` IS the company id, via an `id -> company` FK), with no `companyId` column.
+ * They're a company's data, so the catalog includes them scoped by `id` directly
+ * (`WHERE id = companyId`) — no redundant `companyId` column needed. `companyPlan`
+ * is a singleton too but is deliberately NOT listed: it's billing/Stripe identity
+ * tied to the target company and must never travel.
  */
-export const BILLING_TABLES = [
-  "companyPlan"
+export const COMPANY_SINGLETON_TABLES = [
+  "companySettings",
+  "terms",
+  "companyAccountsPayableBillingAddress",
+  "companyAccountsReceivableBillingAddress"
 ] as const satisfies readonly TableName[];
 
 /**
@@ -199,7 +205,9 @@ export type ForeignKey = {
 
 /**
  * How a table's rows are scoped to a company:
- * - `direct`: the table itself has a `companyId`/`companyGroupId` column.
+ * - `direct`: the table itself has a scope column — `companyId`/`companyGroupId`,
+ *   or `id` for a company-singleton (whose `id` IS the company id, see
+ *   {@link COMPANY_SINGLETON_TABLES}).
  * - `via`: the table has no scope column but a FK (`column` → `parent.refColumn`)
  *   to a table that IS scoped (possibly transitively). It inherits that scope —
  *   e.g. `customerContact.customerId → customer`. Resolved from the FK graph so
@@ -207,7 +215,7 @@ export type ForeignKey = {
  *   parent without a hand-maintained list.
  */
 export type Scope =
-  | { kind: "direct"; column: "companyId" | "companyGroupId" }
+  | { kind: "direct"; column: "companyId" | "companyGroupId" | "id" }
   | { kind: "via"; column: string; refColumn: string; parent: string };
 
 export type TableInfo = {
@@ -554,6 +562,16 @@ export async function getCompanyTableCatalog(
   for (const [name, column] of scopeByTable) {
     scope.set(name, { kind: "direct", column });
     scopeRoot.set(name, column);
+  }
+  // Company-singletons: keyed by `id` (= the company id via an id->company FK),
+  // with no companyId column. Scope them by `id` directly — a company's data
+  // without a redundant column. Inject BEFORE via-resolution so a FK to a scoped
+  // table (e.g. a notification-group ref) can't mis-scope them through it.
+  const existingTables = new Set(columns.rows.map((c) => c.table_name));
+  for (const name of COMPANY_SINGLETON_TABLES) {
+    if (!existingTables.has(name) || scope.has(name)) continue;
+    scope.set(name, { kind: "direct", column: "id" });
+    scopeRoot.set(name, "companyId");
   }
   let resolvedMore = true;
   while (resolvedMore) {

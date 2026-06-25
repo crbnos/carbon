@@ -6,7 +6,6 @@ import {
   BACKUP_INTEGRATION,
   BACKUP_KIND,
   BACKUP_VERSION,
-  BILLING_TABLES,
   backupAssetsDir,
   backupTablePath,
   buildScopeFilter,
@@ -93,13 +92,14 @@ export async function buildCompanyBackup(
   const name = opts.name ?? `${exportedAt.replace(/[:.]/g, "-")}${slug}`;
 
   const catalog = await getCompanyTableCatalog(db);
-  // Secrets (credentials/tokens) and billing identity (Stripe-linked) never
-  // travel — they belong to the source company, not a copy.
-  const skipTables = new Set<string>([...SECRET_TABLES, ...BILLING_TABLES]);
+  // Secrets (credentials/tokens) never travel — they belong to the source
+  // company, not a copy. (Billing identity like companyPlan never enters the
+  // catalog: it's a company-singleton deliberately left out of the scoped set.)
+  const secretTables = new Set<string>(SECRET_TABLES);
   const excludedTables = catalog.tables
-    .filter((t) => skipTables.has(t.name))
+    .filter((t) => secretTables.has(t.name))
     .map((t) => t.name);
-  const exportable = catalog.tables.filter((t) => !skipTables.has(t.name));
+  const exportable = catalog.tables.filter((t) => !secretTables.has(t.name));
   const byName = new Map(catalog.tables.map((t) => [t.name, t]));
 
   // Closure guard — never write a backup that couldn't be restored. A NOT-NULL FK

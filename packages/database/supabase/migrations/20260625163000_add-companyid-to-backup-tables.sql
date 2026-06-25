@@ -1,26 +1,23 @@
 -- Make "a company's data" an explicit, directly-queryable fact for the company
--- backup/export: give a denormalized `companyId` to company-owned tables that
--- previously derived scope from a parent FK (so the export catalog scopes them
--- with a direct `companyId = $` predicate instead of an inferred FK path), and to
--- the company-SINGLETON tables (one row per company, keyed by `id -> company`)
--- that the catalog skipped entirely because their only scope link is to the
--- structural `company` table.
+-- backup/export: give a denormalized `companyId` to company-owned CHILD tables
+-- that previously derived scope from a parent FK, so the export catalog scopes
+-- them with a direct `companyId = $` predicate instead of an inferred FK path.
+--
+-- Company-SINGLETON config tables (companySettings, terms, AP/AR billing — one
+-- row per company, keyed by `id -> company`) are NOT touched here: the export
+-- catalog scopes them by their `id` directly (it IS the company id), so they need
+-- no redundant `companyId` column. companyPlan is a singleton too but deliberately
+-- excluded (Stripe billing identity, must never travel).
 --
 -- Supersedes PR #946 (`20260625101500_add-companyid-to-child-tables.sql`): this
 -- migration covers the FULL set in one place — the contact/location/line-price
--- child tables from #946, PLUS the order/invoice status + activity history,
--- contractor ability links, and the four company-singleton config tables. Close
--- #946 in favor of this. The shared `set_company_id_from_parent` trigger is
--- defined here, so this applies standalone.
+-- child tables from #946, PLUS the order/invoice status + activity history and
+-- contractor ability links. Close #946 in favor of this. The shared
+-- `set_company_id_from_parent` trigger is defined here, so this applies standalone.
 --
--- companyId is backfilled from each table's parent (or from the row's own `id`
--- for singletons) and kept populated on INSERT by a BEFORE-INSERT trigger, so no
--- app insert code changes. All parent FK columns are NOT NULL with no orphans, so
--- the backfill fills every row.
---
--- NOTE: companyPlan is deliberately NOT given a companyId — it carries Stripe
--- billing identity tied to the source company and must never travel in a backup
--- (enforced in code by BILLING_TABLES). It stays out of the catalog.
+-- companyId is backfilled from each table's parent and kept populated on INSERT by
+-- a BEFORE-INSERT trigger, so no app insert code changes. All parent FK columns are
+-- NOT NULL with no orphans, so the backfill fills every row.
 
 -- Shared trigger: derive companyId from a parent. TG_ARGV = (parent_table, fk_column).
 -- Reuses the canonical get_company_id_from_foreign_key() helper (same one the RLS
@@ -38,15 +35,6 @@ BEGIN
   IF v_fkval IS NOT NULL THEN
     NEW."companyId" := get_company_id_from_foreign_key(v_fkval, TG_ARGV[0]);
   END IF;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Singleton trigger: the row IS the company, so companyId is always its own id
--- (authoritative, same reasoning as above).
-CREATE OR REPLACE FUNCTION set_company_id_from_self() RETURNS trigger AS $$
-BEGIN
-  NEW."companyId" := NEW."id";
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -195,32 +183,3 @@ CREATE TRIGGER "set_company_id" BEFORE INSERT ON "documentTransaction" FOR EACH 
 ALTER TABLE "documentTransaction" ALTER COLUMN "companyId" SET NOT NULL;
 ALTER TABLE "documentTransaction" ADD CONSTRAINT "documentTransaction_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE;
 CREATE INDEX "documentTransaction_companyId_idx" ON "documentTransaction" ("companyId");
-
--- ─── company-singleton config tables (companyId = own id) ───────────────────
--- companySettings ─────────────────────────────────────────────────────────────
-ALTER TABLE "companySettings" ADD COLUMN "companyId" TEXT;
-UPDATE "companySettings" SET "companyId" = "id";
-CREATE TRIGGER "set_company_id" BEFORE INSERT ON "companySettings" FOR EACH ROW EXECUTE FUNCTION set_company_id_from_self();
-ALTER TABLE "companySettings" ALTER COLUMN "companyId" SET NOT NULL;
-CREATE INDEX "companySettings_companyId_idx" ON "companySettings" ("companyId");
-
--- terms ───────────────────────────────────────────────────────────────────────
-ALTER TABLE "terms" ADD COLUMN "companyId" TEXT;
-UPDATE "terms" SET "companyId" = "id";
-CREATE TRIGGER "set_company_id" BEFORE INSERT ON "terms" FOR EACH ROW EXECUTE FUNCTION set_company_id_from_self();
-ALTER TABLE "terms" ALTER COLUMN "companyId" SET NOT NULL;
-CREATE INDEX "terms_companyId_idx" ON "terms" ("companyId");
-
--- companyAccountsPayableBillingAddress ─────────────────────────────────────────
-ALTER TABLE "companyAccountsPayableBillingAddress" ADD COLUMN "companyId" TEXT;
-UPDATE "companyAccountsPayableBillingAddress" SET "companyId" = "id";
-CREATE TRIGGER "set_company_id" BEFORE INSERT ON "companyAccountsPayableBillingAddress" FOR EACH ROW EXECUTE FUNCTION set_company_id_from_self();
-ALTER TABLE "companyAccountsPayableBillingAddress" ALTER COLUMN "companyId" SET NOT NULL;
-CREATE INDEX "companyAccountsPayableBillingAddress_companyId_idx" ON "companyAccountsPayableBillingAddress" ("companyId");
-
--- companyAccountsReceivableBillingAddress ──────────────────────────────────────
-ALTER TABLE "companyAccountsReceivableBillingAddress" ADD COLUMN "companyId" TEXT;
-UPDATE "companyAccountsReceivableBillingAddress" SET "companyId" = "id";
-CREATE TRIGGER "set_company_id" BEFORE INSERT ON "companyAccountsReceivableBillingAddress" FOR EACH ROW EXECUTE FUNCTION set_company_id_from_self();
-ALTER TABLE "companyAccountsReceivableBillingAddress" ALTER COLUMN "companyId" SET NOT NULL;
-CREATE INDEX "companyAccountsReceivableBillingAddress_companyId_idx" ON "companyAccountsReceivableBillingAddress" ("companyId");
