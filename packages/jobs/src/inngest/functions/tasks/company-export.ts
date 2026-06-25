@@ -11,6 +11,7 @@ import {
   buildScopeFilter,
   copyAssetsToBackup,
   encodeValue,
+  findExportScopeViolations,
   getCompanyTableCatalog,
   getJobDatabaseClient,
   mapWithConcurrency,
@@ -97,6 +98,26 @@ export async function buildCompanyBackup(
     .map((t) => t.name);
   const exportable = catalog.tables.filter((t) => !secretTables.has(t.name));
   const byName = new Map(catalog.tables.map((t) => [t.name, t]));
+
+  // Closure guard — never write a backup that couldn't be restored. A NOT-NULL FK
+  // pointing outside the company's scope (cross-company / out-of-scope) would dump
+  // the child but not its parent, dangling on restore. Fail BEFORE writing any
+  // table file, listing every offending FK.
+  const scopeViolations = await findExportScopeViolations(
+    db,
+    exportable,
+    byName,
+    companyId,
+    companyGroupId
+  );
+  if (scopeViolations.length > 0) {
+    throw new Error(
+      `Refusing to export ${companyId}: ${scopeViolations.length} NOT-NULL reference(s) ` +
+        `escape company scope, so the backup could never be restored:\n  ${scopeViolations.join(
+          "\n  "
+        )}`
+    );
+  }
 
   // Dump each non-empty table to its own `tables/<table>.ndjson.gz`, in parallel.
   const tableManifest: Manifest["tables"] = [];

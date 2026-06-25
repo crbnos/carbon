@@ -222,9 +222,9 @@ export const companyImportFunction = inngest.createFunction(
           let base = identity;
           const fk = fkByColumn.get(col.name);
 
-          if (col.name === "id" && table.hasId) {
-            const map = idMaps.get(table.name)!;
-            base = (v) => map.get(v as string) ?? v;
+          const idMap = idMaps.get(table.name);
+          if (col.name === "id" && idMap) {
+            base = (v) => idMap.get(v as string) ?? v;
           } else if (col.name === "companyId") {
             base = () => companyId;
           } else if (col.name === "companyGroupId") {
