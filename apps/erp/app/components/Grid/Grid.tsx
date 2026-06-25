@@ -169,20 +169,18 @@ const Grid = <T extends object>({
   const onCellClick = useCallback(
     (row: number, column: number) => {
       // ignore row select checkbox column
-      if (
-        selectedCell?.row === row &&
-        selectedCell?.column === column &&
-        isColumnEditable(column)
-      ) {
+      if (column === -1) return;
+      // Editable cells enter edit mode on a single click (the editable input
+      // then auto-focuses and selects its text), instead of select-then-click.
+      if (isColumnEditable(column)) {
+        onSelectedCellChange({ row, column });
         setIsEditing(true);
         return;
       }
-      // ignore row select checkbox column
-      if (column === -1) return;
       setIsEditing(false);
       onSelectedCellChange({ row, column });
     },
-    [selectedCell, isColumnEditable, onSelectedCellChange]
+    [isColumnEditable, onSelectedCellChange]
   );
 
   const onCellUpdate = useCallback(
