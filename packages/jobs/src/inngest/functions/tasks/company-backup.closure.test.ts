@@ -1,16 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
-  assertReferentiallyClosed,
-  buildRowTransforms,
   type Catalog,
   type ColumnInfo,
   type CompanyBackup,
   type ForeignKey,
-  findDanglingReferences,
   isUserScopedIdentityTable,
   selectWipeableTables,
   type TableInfo
 } from "./company-backup";
+import {
+  assertReferentiallyClosed,
+  buildRowTransforms,
+  findDanglingReferences
+} from "./company-backup.transforms";
 
 // ── Tiny synthetic-catalog builders ─────────────────────────────────────────
 // The closure check is a pure function of (catalog, data), so these tests need

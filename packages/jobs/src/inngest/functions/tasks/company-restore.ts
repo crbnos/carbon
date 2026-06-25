@@ -5,18 +5,15 @@ import { inngest } from "../../client";
 import type { Catalog, CompanyBackup } from "./company-backup";
 import {
   assertBackupImportable,
-  assertReferentiallyClosed,
   assertWipeSafe,
   backupAssetsDir,
   backupDir,
   backupNameFromSource,
   bindValue,
-  buildRowTransforms,
   canSetReplicationRole,
   getCompanyTableCatalog,
   getJobDatabaseClient,
   isUserScopedIdentityTable,
-  loadSubstrateIds,
   newIdForTable,
   RESTORE_INTEGRATION,
   readBackup,
@@ -26,6 +23,11 @@ import {
   wipeScopedData,
   writeBackupManifest
 } from "./company-backup";
+import {
+  assertReferentiallyClosed,
+  buildRowTransforms,
+  loadSubstrateIds
+} from "./company-backup.transforms";
 import { buildCompanyBackup } from "./company-export";
 
 const INSERT_CHUNK_SIZE = 200;

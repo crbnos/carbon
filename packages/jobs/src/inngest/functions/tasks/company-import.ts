@@ -8,19 +8,21 @@ import {
   backupAssetsDir,
   backupNameFromSource,
   bindValue,
-  buildRowTransforms,
   canSetReplicationRole,
   filterUnpopulated,
   getCompanyTableCatalog,
   getJobDatabaseClient,
   isUserScopedIdentityTable,
-  loadSubstrateIds,
   newIdForTable,
   RESEED_SKIPPED_TABLES,
   readBackup,
   restoreAssetsFromBackup,
   SECRET_TABLES
 } from "./company-backup";
+import {
+  buildRowTransforms,
+  loadSubstrateIds
+} from "./company-backup.transforms";
 
 const INSERT_CHUNK_SIZE = 200;
 
