@@ -138,6 +138,37 @@ describe("findDanglingReferences", () => {
     expect(findDanglingReferences(cat, data, substrate)).toEqual([]);
   });
 
+  it("resolves a FK into a composite-PK parent (`(id, companyId)`, hasId=false)", () => {
+    // ~25 Carbon tables key on a composite ("id", "companyId") PK (stockTransfer,
+    // supplierPart, …) so `hasId` is false. Their `id` is still the referenced
+    // column, so their rows MUST be tracked — gating on `hasId` left them
+    // untracked and falsely flagged every child as dangling, refusing the
+    // restore of an otherwise self-contained backup.
+    const stockTransfer = table(
+      "stockTransfer",
+      [col("id"), col("companyId")],
+      [],
+      { pkColumns: ["id", "companyId"] }
+    );
+    const stockTransferLine = table(
+      "stockTransferLine",
+      [col("id"), col("stockTransferId"), col("companyId")],
+      [fk("stockTransferId", "stockTransfer")],
+      { pkColumns: ["id", "companyId"] }
+    );
+    expect(stockTransfer.hasId).toBe(false);
+    const result = findDanglingReferences(
+      catalog([stockTransfer, stockTransferLine]),
+      {
+        stockTransfer: [{ id: "st1", companyId: "c1" }],
+        stockTransferLine: [
+          { id: "stl1", stockTransferId: "st1", companyId: "c1" }
+        ]
+      }
+    );
+    expect(result).toEqual([]);
+  });
+
   it("still flags a missing NOT-NULL FK into an ordinary company table (revert did not loosen general closure)", () => {
     // A non-reference company table (item) is NOT in the deferral set, so a
     // dangling NOT-NULL ref to it is a fatal closure gap, as before.

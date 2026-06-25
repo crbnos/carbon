@@ -122,6 +122,10 @@ export function rewriteStoragePath(
  */
 export const SECRET_TABLES = [
   "apiKey",
+  // Worthless without its (secret, stripped) apiKey, which it references via a
+  // NOT-NULL FK — exporting it alone dangles every row on restore. It's also an
+  // UNLOGGED operational rate-limit counter, never user data.
+  "apiKeyRateLimit",
   "companyIntegration",
   "webhook",
   "oauthClient",

@@ -47,8 +47,11 @@ The catalog is **schema-introspected**, not a hand-maintained list:
 - `scopeColumn: "companyId" | "companyGroupId"`. `companyId` = the company's own
   data; `companyGroupId` = config shared across a company group (chart of
   accounts, currencies, dimensions).
-- Skip/scope sets: `SECRET_TABLES` (`apiKey`, `companyIntegration`, `webhook`,
-  `oauthClient`, `oauthToken` — never travel), `STRUCTURAL_TABLES` (`company` —
+- Skip/scope sets: `SECRET_TABLES` (`apiKey`, `apiKeyRateLimit`,
+  `companyIntegration`, `webhook`, `oauthClient`, `oauthToken` — never travel;
+  `apiKeyRateLimit` is here because its NOT-NULL `apiKeyId` references the stripped
+  secret `apiKey`, so exporting it alone would dangle every row on restore — and
+  it's UNLOGGED operational counters, not user data), `STRUCTURAL_TABLES` (`company` —
   excluded from catalog), `TRANSIENT_TABLES` (`demandForecastSource`,
   `demandActual`, `supplyForecast`, `supplyActual` — MRP planning output the
   `mrp` edge fn regenerates wholesale every run; excluded from the catalog
@@ -141,6 +144,13 @@ Forward flow:
      `targetGroupId`; on a foreign/remap load it mints new ids (text/uuid only) and
      remaps FKs, with a dangling-ref guard (nullable FK → null, non-nullable →
      throw).
+   - Closure preflight (`assertReferentiallyClosed` → `findDanglingReferences`)
+     runs before the wipe and refuses a backup whose NOT-NULL FK points at a row
+     it doesn't include. It tracks a parent's ids for **any table with an `id`
+     column**, not only `hasId` (sole-`id` PK) tables — the ~25 composite
+     `("id","companyId")`-PK tables (`stockTransfer`, `supplierPart`, …) are
+     referenced by their `id` too, and gating on `hasId` falsely flagged every
+     child of them and refused otherwise-valid restores.
 5. `restoreAssetsFromBackup` (outside the txn, non-transactional) copies the files
    from the backup's `.assets/` folder back to `private/<rewritten path>`,
    server-side. It runs **before** the `ready` marker (step below) so the progress

@@ -52,7 +52,13 @@ export function findDanglingReferences(
   const catalogNames = new Set(catalog.tables.map((t) => t.name));
   const idsByTable = new Map<string, Set<unknown>>();
   for (const t of catalog.tables) {
-    if (!t.hasId) continue;
+    // FKs are only ever checked against `refColumn === "id"` below, so any table
+    // with an `id` column can be a referenced parent — NOT only those whose PK is
+    // exactly `id` (`hasId`). Most Carbon tables key on `id` alone, but ~25 use a
+    // composite `("id", "companyId")` PK (stockTransfer, supplierPart, …); gating
+    // on `hasId` left those untracked, so every child row pointing at them was
+    // falsely reported as dangling and refused the restore.
+    if (!t.columns.some((c) => c.name === "id")) continue;
     const ids = new Set<unknown>();
     for (const row of dataByTable[t.name] ?? []) ids.add(row.id);
     idsByTable.set(t.name, ids);
