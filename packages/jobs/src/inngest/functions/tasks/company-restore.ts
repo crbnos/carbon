@@ -16,6 +16,7 @@ import {
   getCompanyTableCatalog,
   getJobDatabaseClient,
   isUserScopedIdentityTable,
+  loadSubstrateIds,
   newIdForTable,
   RESTORE_INTEGRATION,
   readBackup,
@@ -52,9 +53,20 @@ async function wipeAndLoad(
     remap: boolean;
     includeGroup: boolean;
     targetGroupId: string | null;
+    /** Target substrate ids (global rows the backup omits); only consulted on a
+     *  remap (foreign/template) load so a FK into a seeded global row is kept
+     *  verbatim instead of treated as a dangling gap. */
+    substrateIds?: Map<string, Set<unknown>>;
   }
 ): Promise<{ rows: number; idRewrite: Map<string, string> }> {
-  const { companyId, userId, remap, includeGroup, targetGroupId } = opts;
+  const {
+    companyId,
+    userId,
+    remap,
+    includeGroup,
+    targetGroupId,
+    substrateIds
+  } = opts;
 
   // Refuse if the schema would let a kept row dangle once we wipe (drift guard).
   const safe = assertWipeSafe(catalog);
@@ -138,7 +150,8 @@ async function wipeAndLoad(
           targetGroupId,
           sourceCompanyId: backup.manifest.sourceCompanyId,
           idMaps,
-          idRewrite
+          idRewrite,
+          substrateIds
         });
         for (let r = 0; r < sourceRows.length; r++) {
           const row = sourceRows[r]!;
@@ -378,8 +391,17 @@ export const companyRestoreFunction = inngest.createFunction(
         // Referential-closure preflight — BEFORE the snapshot/wipe so a backup
         // that would dangle a NOT-NULL FK fails with the complete list of gaps
         // and leaves the company's data untouched, rather than throwing on the
-        // first bad row partway through the load.
-        const closure = assertReferentiallyClosed(catalog, backup);
+        // first bad row partway through the load. A company row's FK into shared
+        // substrate (global `material*`/currency rows the backup omits) is not a
+        // gap when the row exists in THIS target's seed — loadSubstrateIds probes
+        // the live target for exactly those ids so the guard doesn't false-flag
+        // them, while still catching a ref present in neither backup nor target.
+        const substrateIds = await loadSubstrateIds(db, catalog, backup.data);
+        const closure = assertReferentiallyClosed(
+          catalog,
+          backup,
+          substrateIds
+        );
         if (!closure.ok) {
           throw new Error(`This backup can't be restored: ${closure.reason}`);
         }
@@ -425,7 +447,8 @@ export const companyRestoreFunction = inngest.createFunction(
           userId,
           remap: foreign,
           includeGroup,
-          targetGroupId
+          targetGroupId,
+          substrateIds
         });
 
         // 3. Files (best-effort, non-transactional) — copied BEFORE marking ready

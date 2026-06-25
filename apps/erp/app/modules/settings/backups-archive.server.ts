@@ -17,12 +17,16 @@ export async function unpackBackupArchive(
   client: SupabaseClient<Database>,
   companyId: string,
   source: Readable
-): Promise<{ name: string; fileErrors: number }> {
+): Promise<{ name: string; assetErrors: number }> {
   const ts = new Date().toISOString().replace(/[:.]/g, "-");
   const name = `${ts}_uploaded`;
   const dir = `exports/${name}`;
   let manifestSeen = false;
-  let fileErrors = 0;
+  // Split critical (manifest + table) failures from asset failures: a missing
+  // table breaks the load, but assets are best-effort downstream (the restore
+  // only warns on a failed asset copy), so a hiccuped asset must not block it.
+  let criticalErrors = 0;
+  let assetErrors = 0;
 
   const extract = tarExtract();
   const gunzip = createGunzip();
@@ -42,11 +46,18 @@ export async function unpackBackupArchive(
             next();
             return;
           }
-          if (rel === "manifest.json") manifestSeen = true;
           const up = await client.storage
             .from(companyId)
             .upload(`${dir}/${rel}`, Buffer.concat(chunks), { upsert: true });
-          if (up.error) fileErrors++;
+          if (up.error) {
+            if (rel.startsWith("assets/")) assetErrors++;
+            else criticalErrors++;
+          } else if (rel === "manifest.json") {
+            // Only mark the manifest seen once it's actually landed — an
+            // interrupted/failed upload must not pass the completeness check
+            // below and yield a phantom folder a restore would fire against.
+            manifestSeen = true;
+          }
           next();
         } catch (err) {
           next(err as Error);
@@ -61,5 +72,13 @@ export async function unpackBackupArchive(
   if (!manifestSeen) {
     throw new Error("Archive is missing manifest.json");
   }
-  return { name, fileErrors };
+  if (criticalErrors > 0) {
+    // A manifest or table file failed to land — the folder is unrestorable.
+    // Surface it rather than return a name a restore would later fail on with
+    // an opaque "manifest not found".
+    throw new Error(
+      `${criticalErrors} critical file(s) failed to upload — the backup is incomplete. Retry the upload.`
+    );
+  }
+  return { name, assetErrors };
 }

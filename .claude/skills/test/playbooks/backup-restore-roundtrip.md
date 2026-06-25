@@ -1,7 +1,9 @@
 # Company Backup / Restore round-trip
 
-Last tested: 2026-06-25
+Last tested: 2026-06-25 (re-verified after the closure/transform-unification refactor — own export→restore→revert all PASS; restore marker: 362 rows, foreign=false, includeGroup=true)
 Route: `/x/settings/backups` (internal-gated — needs an `@carbon.ms` / `@carbon.us.org` user; `test@carbon.ms` qualifies)
+
+> NOT covered by the own round-trip: the FOREIGN restore (`remap=true`) path — that's where the unified `buildRowTransforms` substrate pass-through + reseed/template logic actually run. And the `20260625163000_add-companyid-to-backup-tables` migration (singletons + audit tables) must be applied before its new coverage shows up.
 
 ## Prerequisites
 - Logged in (see `/login`). Dev server up.
