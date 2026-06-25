@@ -74,8 +74,8 @@ export function findDanglingReferences(
       for (const row of rows) {
         const v = row[fk.column];
         if (v == null) continue;
-        if (refIds.has(v)) continue; // resolves within the backup
-        if (substrateIds?.has(v)) continue; // resolves to a target global/substrate row
+        if (refIds.has(v)) continue;
+        if (substrateIds?.has(v)) continue;
         const key = `${t.name}.${fk.column}->${fk.refTable}`;
         const existing = found.get(key);
         if (existing) {
@@ -308,10 +308,10 @@ export function buildRowTransforms(
         return (v) => {
           if (v == null) return v;
           const mapped = map?.get(v as string);
-          if (mapped) return mapped; // a remapped company row
-          if (substrate?.has(v)) return v; // a seeded global row in the target
-          if (!isTenantRef) return v; // global-reference id — stable across envs
-          // A tenant row that's in neither the backup nor the target.
+          if (mapped) return mapped;
+          if (substrate?.has(v)) return v;
+          if (!isTenantRef) return v; // global-reference id, stable across envs
+          // A tenant row in neither the backup nor the target.
           if (nullable) return null;
           if (onUnresolvedRef) {
             onUnresolvedRef(`${table.name}.${colName} -> ${refTable}`);
