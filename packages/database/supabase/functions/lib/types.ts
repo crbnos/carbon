@@ -2777,10 +2777,13 @@ export type Database = {
           companyGroupId: string | null
           countryCode: string | null
           createdAt: string
+          customIndustryDescription: string | null
           email: string | null
           eori: string | null
           fax: string | null
+          featureRequests: string | null
           id: string
+          industryId: string | null
           isEliminationEntity: boolean
           logoDark: string | null
           logoDarkIcon: string | null
@@ -2791,6 +2794,7 @@ export type Database = {
           parentCompanyId: string | null
           phone: string | null
           postalCode: string | null
+          selectedModules: string[] | null
           slackChannel: string | null
           stateProvince: string | null
           suggestionNotificationGroup: string[]
@@ -2809,10 +2813,13 @@ export type Database = {
           companyGroupId?: string | null
           countryCode?: string | null
           createdAt?: string
+          customIndustryDescription?: string | null
           email?: string | null
           eori?: string | null
           fax?: string | null
+          featureRequests?: string | null
           id?: string
+          industryId?: string | null
           isEliminationEntity?: boolean
           logoDark?: string | null
           logoDarkIcon?: string | null
@@ -2823,6 +2830,7 @@ export type Database = {
           parentCompanyId?: string | null
           phone?: string | null
           postalCode?: string | null
+          selectedModules?: string[] | null
           slackChannel?: string | null
           stateProvince?: string | null
           suggestionNotificationGroup?: string[]
@@ -2841,10 +2849,13 @@ export type Database = {
           companyGroupId?: string | null
           countryCode?: string | null
           createdAt?: string
+          customIndustryDescription?: string | null
           email?: string | null
           eori?: string | null
           fax?: string | null
+          featureRequests?: string | null
           id?: string
+          industryId?: string | null
           isEliminationEntity?: boolean
           logoDark?: string | null
           logoDarkIcon?: string | null
@@ -2855,6 +2866,7 @@ export type Database = {
           parentCompanyId?: string | null
           phone?: string | null
           postalCode?: string | null
+          selectedModules?: string[] | null
           slackChannel?: string | null
           stateProvince?: string | null
           suggestionNotificationGroup?: string[]
@@ -2911,6 +2923,13 @@ export type Database = {
             columns: ["companyGroupId"]
             isOneToOne: false
             referencedRelation: "companyGroup"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_industryId_fkey"
+            columns: ["industryId"]
+            isOneToOne: false
+            referencedRelation: "industry"
             referencedColumns: ["id"]
           },
           {
@@ -12674,6 +12693,39 @@ export type Database = {
             referencedColumns: ["userId"]
           },
         ]
+      }
+      industry: {
+        Row: {
+          active: boolean
+          createdAt: string
+          description: string | null
+          iconName: string | null
+          id: string
+          name: string
+          sortOrder: number
+          updatedAt: string | null
+        }
+        Insert: {
+          active?: boolean
+          createdAt?: string
+          description?: string | null
+          iconName?: string | null
+          id: string
+          name: string
+          sortOrder?: number
+          updatedAt?: string | null
+        }
+        Update: {
+          active?: boolean
+          createdAt?: string
+          description?: string | null
+          iconName?: string | null
+          id?: string
+          name?: string
+          sortOrder?: number
+          updatedAt?: string | null
+        }
+        Relationships: []
       }
       inspectionDocument: {
         Row: {
