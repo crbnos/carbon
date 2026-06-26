@@ -11,11 +11,8 @@ import { useEffect, useState } from "react";
 import { LuCheck, LuLoaderCircle, LuTriangleAlert } from "react-icons/lu";
 import { useFetcher, useRevalidator } from "react-router";
 
-// Every job reports REAL progress: it writes a `{ phase, done, total }` heartbeat
-// into its marker. `phase` is a stable key; these map it to ordered, human labels
-// per mode (the job never bakes in display copy). The checklist shows the real
-// phase, the bar fills with the real done/total. Until the first heartbeat lands,
-// the same labels animate on a cadence so the wait stays legible.
+// The job reports progress as a stable phase KEY + done/total; these order the
+// keys and map them to labels per mode (display copy stays out of the job).
 const PHASE_ORDER: Record<"export" | "restore" | "revert", string[]> = {
   export: ["tables", "files"],
   restore: ["snapshot", "wipe", "load", "files"],
@@ -217,11 +214,9 @@ export function JobProgressModal({
     };
   }, [isExport, done, revalidator, loadExport]);
 
-  // The visible checklist + bar fill — driven ENTIRELY by the job's real phase +
-  // done/total. Before the first heartbeat we sit on the first phase (active, no
-  // advance) rather than faking forward motion — a synthetic advance would snap
-  // BACKWARD the moment real progress arrives, which reads as broken. So the wait
-  // shows phase 1 working + elapsed until the first real event lands.
+  // Checklist + bar from the real phase + done/total. Before the first heartbeat
+  // we hold phase 1 rather than fake-advancing (which would snap backward once
+  // real progress arrives).
   const order = PHASE_ORDER[mode];
   const checklist = (() => {
     const labels = order.map((k) => PHASE_LABELS[mode][k] ?? k);

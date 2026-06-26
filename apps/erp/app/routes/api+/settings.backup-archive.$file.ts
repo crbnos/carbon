@@ -33,20 +33,12 @@ async function listRelative(
 const DOWNLOAD_CONCURRENCY = 6;
 
 /**
- * Stream a self-contained `.carbon.tar.gz` of a backup: the whole
- * `exports/<name>/` folder (manifest, per-table files, assets) bundled into one
- * gzipped tar so a cross-environment import carries everything. Storage keeps the
- * folder layout; the tar only exists in transit.
- *
- * Throughput: objects are prefetched in a bounded window (downloads overlap)
- * while tar entries are still written strictly in order (tar-stream packs one
- * entry at a time). Memory stays bounded to ~DOWNLOAD_CONCURRENCY buffered files,
- * so a large backup never materializes whole. (Per-entry streaming and parallel
- * transfer are mutually exclusive — the window is the bounded-memory synthesis.)
- * The outer gzip runs at level 1: the per-table `*.ndjson.gz` files and most
- * assets are already compressed, so a higher level would burn CPU for ~no gain,
- * but the stream must stay a valid gzip tar — `backups-archive.server.ts` unpacks
- * it with gunzip + tar-extract on re-import.
+ * Stream a self-contained `.carbon.tar.gz` of a backup's `exports/<name>/` folder
+ * (manifest, per-table files, assets) so a cross-environment import carries
+ * everything. Objects are prefetched in a bounded window (overlapping downloads)
+ * but packed in order, so memory stays bounded to ~DOWNLOAD_CONCURRENCY files.
+ * Outer gzip is level 1 — the entries are already compressed — but stays a valid
+ * gzip tar, which `backups-archive.server.ts` unpacks on re-import.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, email } = await requirePermissions(request, {

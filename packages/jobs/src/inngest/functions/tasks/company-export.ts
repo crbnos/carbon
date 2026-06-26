@@ -233,11 +233,9 @@ export async function buildCompanyBackup(
   return { name, manifest, rows, assetSourcePaths };
 }
 
-// A single company-scoped progress marker (exports run one-at-a-time per company,
-// so no per-run id is needed). The UI polls it for live phase/done/total while the
-// run is in flight; it's cleared when the run ends (success or failure), and the
-// backup list appearing is what signals completion. Distinct integration from the
-// restore marker so the two never collide.
+// One company-scoped progress marker (exports run one-at-a-time, so no run id).
+// The UI polls it for live phase/done/total; it's cleared when the run ends, and
+// the backup appearing in the list is what signals completion.
 const EXPORT_INTEGRATION = "company-export";
 type ExportProgress = { phase: string; done: number; total: number };
 

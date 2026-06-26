@@ -314,13 +314,9 @@ async function writeRestoreMarker(
   }
 }
 
-/**
- * A throttled progress reporter bound to one run. Writes `progress` into the
- * marker, but coalesces noise: a same-phase tick within {@link THROTTLE_MS} of
- * the last write is dropped. A phase change or a terminal `done === total` always
- * flushes, so the UI never misses a boundary. Marker writes go to a separate
- * connection, so calling this inside the wipe+load transaction is safe.
- */
+// Throttled progress writer: drop same-phase ticks within the window, always
+// flush a phase change or a terminal done===total. The marker write is a separate
+// connection, so this is safe to call inside the wipe+load transaction.
 const PROGRESS_THROTTLE_MS = 250;
 function makeProgressReporter(
   client: ServiceRole,
