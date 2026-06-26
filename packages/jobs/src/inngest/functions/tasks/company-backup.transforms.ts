@@ -8,6 +8,7 @@ import {
   RETAINED_REF_TABLES,
   rewriteStoragePath,
   rewriteToTemplateAssetPath,
+  SECRET_TABLES,
   STORAGE_PATH_COLUMNS,
   type TableInfo
 } from "./company-backup";
@@ -50,6 +51,13 @@ export function findDanglingReferences(
   knownSubstrateIds?: Map<string, Set<unknown>>
 ): DanglingRef[] {
   const catalogNames = new Set(catalog.tables.map((t) => t.name));
+  // Secret tables (credentials/tokens) are never written to a backup and never
+  // loaded on restore, so they can be neither a row source nor a resolvable ref
+  // target here. An OLDER backup made before a table joined SECRET_TABLES may
+  // still carry its rows (e.g. `apiKeyRateLimit` → the stripped `apiKey`) — those
+  // are ignored on load, so the preflight must ignore them too rather than report
+  // a gap that can't exist for the restore.
+  const secret = new Set<string>(SECRET_TABLES);
   const idsByTable = new Map<string, Set<unknown>>();
   for (const t of catalog.tables) {
     // FKs are only ever checked against `refColumn === "id"` below, so any table
@@ -68,9 +76,11 @@ export function findDanglingReferences(
   for (const t of catalog.tables) {
     const rows = dataByTable[t.name];
     if (!rows?.length) continue;
+    if (secret.has(t.name)) continue; // not loaded → its refs are moot
     const colByName = new Map(t.columns.map((c) => [c.name, c]));
     for (const fk of t.foreignKeys) {
       if (fk.refColumn !== "id") continue;
+      if (secret.has(fk.refTable)) continue; // parent never present in any backup
       if (RETAINED_REF_TABLES.has(fk.refTable)) continue;
       if (!catalogNames.has(fk.refTable)) continue; // non-scoped global → stable ids
       const col = colByName.get(fk.column);

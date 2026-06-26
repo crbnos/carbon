@@ -169,6 +169,24 @@ describe("findDanglingReferences", () => {
     expect(result).toEqual([]);
   });
 
+  it("ignores a secret table's rows referencing another stripped secret (old backup)", () => {
+    // apiKeyRateLimit joined SECRET_TABLES, but a backup made before that still
+    // carries its rows pointing at the always-stripped secret `apiKey`. Those
+    // rows are skipped on load, so the preflight must not report them as a gap.
+    const apiKey = table("apiKey", [col("id"), col("companyId")]);
+    const apiKeyRateLimit = table(
+      "apiKeyRateLimit",
+      [col("apiKeyId"), col("companyId")],
+      [fk("apiKeyId", "apiKey")],
+      { pkColumns: ["apiKeyId"] }
+    );
+    const result = findDanglingReferences(catalog([apiKey, apiKeyRateLimit]), {
+      apiKey: [], // secret → never exported
+      apiKeyRateLimit: [{ apiKeyId: "api_x", companyId: "c1" }]
+    });
+    expect(result).toEqual([]);
+  });
+
   it("still flags a missing NOT-NULL FK into an ordinary company table (revert did not loosen general closure)", () => {
     // A non-reference company table (item) is NOT in the deferral set, so a
     // dangling NOT-NULL ref to it is a fatal closure gap, as before.

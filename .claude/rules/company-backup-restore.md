@@ -150,7 +150,11 @@ Forward flow:
      column**, not only `hasId` (sole-`id` PK) tables — the ~25 composite
      `("id","companyId")`-PK tables (`stockTransfer`, `supplierPart`, …) are
      referenced by their `id` too, and gating on `hasId` falsely flagged every
-     child of them and refused otherwise-valid restores.
+     child of them and refused otherwise-valid restores. It also skips
+     `SECRET_TABLES` on both sides (a secret table is never written to a backup
+     and never loaded) — an OLDER backup that predates a table joining
+     `SECRET_TABLES` still carries its rows (e.g. `apiKeyRateLimit` → the stripped
+     `apiKey`); they're ignored on load, so the preflight ignores them too.
 5. `restoreAssetsFromBackup` (outside the txn, non-transactional) copies the files
    from the backup's `.assets/` folder back to `private/<rewritten path>`,
    server-side. It runs **before** the `ready` marker (step below) so the progress
