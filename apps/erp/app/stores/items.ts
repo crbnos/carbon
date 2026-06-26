@@ -13,6 +13,8 @@ export type Item = ListItem & {
   active: boolean;
   quantityOnHand?: number;
   quantityByLocation?: Record<string, number>;
+  supersessionMode?: Database["public"]["Enums"]["supersessionMode"] | null;
+  successorItemId?: string | null;
 };
 
 const $itemsStore = atom<Item[]>([]);

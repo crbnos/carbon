@@ -104,7 +104,7 @@ const ItemPostingGroupForm = ({
                   <Trans>Save</Trans>
                 </Submit>
                 <Button size="md" variant="solid" onClick={() => onClose()}>
-                  Cancel
+                  <Trans>Cancel</Trans>
                 </Button>
               </HStack>
             </ModalDrawerFooter>

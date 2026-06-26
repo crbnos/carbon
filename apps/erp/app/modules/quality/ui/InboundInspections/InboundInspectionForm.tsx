@@ -36,11 +36,6 @@ type InboundInspectionFormProps = {
   onClose: () => void;
 };
 
-const statusOptions = [
-  { value: "Passed", label: "Pass" },
-  { value: "Failed", label: "Fail" }
-];
-
 const InboundInspectionForm = ({
   inspectionId,
   itemReadableId,
@@ -58,6 +53,11 @@ const InboundInspectionForm = ({
   const { t } = useLingui();
   const permissions = usePermissions();
   const fetcher = useFetcher<{}>();
+
+  const statusOptions = [
+    { value: "Passed", label: t`Pass` },
+    { value: "Failed", label: t`Fail` }
+  ];
 
   const showFourEyesWarning =
     enforceFourEyes && !!receiverId && receiverId === currentUserId;
@@ -133,6 +133,7 @@ const InboundInspectionForm = ({
                 <Select
                   name="status"
                   label={t`Disposition`}
+                  termId="inbound-inspection-disposition"
                   options={statusOptions}
                 />
 

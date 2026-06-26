@@ -54,11 +54,15 @@ const ItemManufacturingForm = ({
           <Hidden name="intent" value="manufacturing" />
           <Hidden name="itemId" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
-            <Number name="lotSize" label={t`Batch Size`} />
+            <Number
+              name="lotSize"
+              label={t`Batch Size`}
+              termId="part-batch-size"
+            />
             <Number
               name="scrapPercentage"
               label={t`Scrap Percent`}
-              termId="scrap"
+              termId="item-scrap-percent"
               formatOptions={{
                 style: "percent"
               }}
@@ -66,7 +70,7 @@ const ItemManufacturingForm = ({
             <Number
               name="leadTime"
               label={t`Lead Time (Days)`}
-              termId="lead-time"
+              termId="item-manufacturing-lead-time"
             />
             {/* <Boolean
               name="manufacturingBlocked"
@@ -77,6 +81,7 @@ const ItemManufacturingForm = ({
               <Boolean
                 name="requiresConfiguration"
                 label={t`Configured`}
+                termId="item-configured"
                 bordered
                 description={t`Part is configured for manufacturing`}
                 className="col-span-3"
@@ -90,7 +95,7 @@ const ItemManufacturingForm = ({
             withBlocker={false}
             isDisabled={!permissions.can("update", "parts")}
           >
-            Save
+            <Trans>Save</Trans>
           </Submit>
         </CardFooter>
       </ValidatedForm>

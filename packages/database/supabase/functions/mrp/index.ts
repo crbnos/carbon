@@ -21,6 +21,7 @@ import z from "npm:zod@^3.24.1";
 import { corsHeaders } from "../lib/headers.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
+import { buildSupersessionRedirectMap } from "../lib/supersession-pick.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -161,6 +162,46 @@ serve(async (req: Request) => {
       leadTimeByItem.set(rep.itemId, rep.leadTime ?? 7);
     }
 
+    // Supersession config per discontinued item (drives demand redirection).
+    // Loaded via the supabase client (like the other demand inputs) so DATE
+    // columns come back as "YYYY-MM-DD" strings — Kysely/node-pg would hand back
+    // JS Date objects, which parseDate() can't take.
+    const supersessions = await client
+      .from("itemSupersession")
+      .select(
+        "itemId, supersessionMode, successorItemId, successorEffectivityDate, conversionFactor"
+      )
+      .eq("companyId", companyId);
+    if (supersessions.error) throw new Error("Failed to load supersessions");
+    const supersessionByItem = new Map<
+      string,
+      {
+        supersessionMode: string;
+        successorItemId: string | null;
+        successorEffectivityDate: string | null;
+        conversionFactor: number;
+      }
+    >();
+    for (const s of supersessions.data) {
+      supersessionByItem.set(s.itemId, {
+        supersessionMode: s.supersessionMode,
+        successorItemId: s.successorItemId,
+        successorEffectivityDate: s.successorEffectivityDate,
+        conversionFactor: Number(s.conversionFactor ?? 1) || 1,
+      });
+    }
+
+    // Resolve which superseded items currently redirect to a successor (effective
+    // phase-out modes), collapsing multi-hop chains with the cumulative conversion
+    // factor. Shared with job creation (get-method) via lib/supersession-pick so the
+    // two can never diverge — MRP gates on `today`, get-method gates on the job's
+    // build date. (supersessionByItem above is kept for the Consume-First on-hand
+    // draw-down below.)
+    const redirectByItem = buildSupersessionRedirectMap(
+      supersessions.data ?? [],
+      today.toString()
+    );
+
     // Bulk-load inventory by location+item
     const inventoryRows = await db
       .selectFrom("itemLedger")
@@ -203,6 +244,8 @@ serve(async (req: Request) => {
       itemId: string;
       quantity: number;
       methodType: MethodType;
+      effectiveFrom: string | null;
+      effectiveTo: string | null;
     }[] = [];
 
     if (allMethodIds.length > 0) {
@@ -216,6 +259,8 @@ serve(async (req: Request) => {
           "quantity",
           "methodType",
         ])
+        .select(sql<string | null>`"effectiveFrom"::text`.as("effectiveFrom"))
+        .select(sql<string | null>`"effectiveTo"::text`.as("effectiveTo"))
         .where("companyId", "=", companyId)
         .where("makeMethodId", "in", allMethodIds)
         .execute()) as typeof allMaterials;
@@ -240,6 +285,8 @@ serve(async (req: Request) => {
           itemId: mat.itemId,
           quantity: Number(mat.quantity) || 1,
           methodType: mat.methodType as MethodType,
+          effectiveFrom: mat.effectiveFrom,
+          effectiveTo: mat.effectiveTo,
         });
       }
       if (children.length > 0) {
@@ -404,6 +451,60 @@ serve(async (req: Request) => {
     }
 
     // ──────────────────────────────────────────────────────────────
+    // PHASE 4.5: Supersession demand redirection
+    // ──────────────────────────────────────────────────────────────
+    // Once a discontinued item's successor is effective, move its demand to the
+    // successor before BOM explosion. Consume First exhausts the old item's
+    // on-hand first (per location, earliest periods first); Prefer New switches
+    // outright (the old part stays available only as a manual fallback). The
+    // effectivity check is item-level: redirection begins on the first MRP run
+    // on/after successorEffectivityDate.
+    for (const [oldItemId, { to: successorId, factor }] of redirectByItem) {
+      const consumeOnHand =
+        supersessionByItem.get(oldItemId)?.supersessionMode === "Consume First";
+
+      for (const location of locations.data) {
+        // Consume First draws down the old item's on-hand before redirecting.
+        let oldOnHand = consumeOnHand
+          ? (baseInventoryByLocationItem.get(`${location.id}-${oldItemId}`) ?? 0)
+          : 0;
+
+        for (const period of periods) {
+          const oldKey = `${location.id}-${period.id ?? ""}-${oldItemId}`;
+          const demand = grossDemand.get(oldKey);
+          if (!demand) continue;
+
+          const consumed = Math.min(oldOnHand, demand);
+          oldOnHand -= consumed;
+          // Convert the redirected (old-part) shortfall into successor units.
+          const redirect = (demand - consumed) * factor;
+
+          grossDemand.delete(oldKey);
+          const contributors = topLevelContributors.get(oldKey);
+          topLevelContributors.delete(oldKey);
+
+          if (redirect > 0) {
+            const newKey = `${location.id}-${period.id ?? ""}-${successorId}`;
+            grossDemand.set(newKey, (grossDemand.get(newKey) ?? 0) + redirect);
+            if (contributors) {
+              // Mark the moved demand so it can be shown as redirected from the
+              // old part on the successor's planning row (in successor units).
+              const stamped = contributors.map((c) => ({
+                ...c,
+                quantity: c.quantity * factor,
+                redirectedFromItemId: oldItemId,
+              }));
+              topLevelContributors.set(
+                newKey,
+                (topLevelContributors.get(newKey) ?? []).concat(stamped)
+              );
+            }
+          }
+        }
+      }
+    }
+
+    // ──────────────────────────────────────────────────────────────
     // PHASE 5: Level-by-level BOM explosion with inventory netting
     // ──────────────────────────────────────────────────────────────
 
@@ -421,12 +522,33 @@ serve(async (req: Request) => {
       );
     }
 
+    // Substitute superseded components in the BOMs so a parent's explosion
+    // generates the successor's demand instead of the old part's. (Top-level
+    // demand was handled above; component demand is created here, during
+    // explosion, so it must be redirected at the BOM level.)
+    if (redirectByItem.size > 0) {
+      for (const children of bomByItem.values()) {
+        for (const child of children) {
+          const redirect = redirectByItem.get(child.itemId);
+          if (redirect) {
+            child.redirectedFromItemId = child.itemId;
+            child.itemId = redirect.to;
+            // 1 old part = `factor` successors.
+            child.quantity = child.quantity * redirect.factor;
+          }
+        }
+      }
+    }
+
     const { bomDerivedDemand, demandContributors } = explodeBom({
       grossDemand,
       bomByItem,
       replenishmentSystemByItem,
       leadTimeByItem,
-      periods: periods.map((p) => ({ id: p.id ?? "" })),
+      periods: periods.map((p) => ({
+        id: p.id ?? "",
+        startDate: p.startDate ?? undefined,
+      })),
       onHandByLocationItem: new Map(baseInventoryByLocationItem),
       jobSupplyByLocationPeriodItem: jobAndPoSupplyByLocationPeriodItem,
       topLevelContributors,
@@ -477,6 +599,7 @@ serve(async (req: Request) => {
             demandProjectionId: null,
             parentItemId: c.parentItemId,
             quantity: c.quantity,
+            redirectedFromItemId: c.redirectedFromItemId ?? null,
             companyId,
           });
         } else if (c.sourceType === "Sales Order") {
@@ -490,6 +613,7 @@ serve(async (req: Request) => {
             demandProjectionId: null,
             parentItemId: c.parentItemId,
             quantity: c.quantity,
+            redirectedFromItemId: c.redirectedFromItemId ?? null,
             companyId,
           });
         } else {
@@ -504,6 +628,7 @@ serve(async (req: Request) => {
             demandProjectionId: c.demandProjectionId,
             parentItemId: c.parentItemId,
             quantity: c.quantity,
+            redirectedFromItemId: c.redirectedFromItemId ?? null,
             companyId,
           });
         }

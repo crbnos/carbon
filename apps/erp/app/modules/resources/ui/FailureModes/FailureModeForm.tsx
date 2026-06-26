@@ -105,6 +105,7 @@ const FailureModeForm = ({
                 <Select
                   name="type"
                   label={t`Type`}
+                  termId="failure-mode-type"
                   options={maintenanceFailureModeType.map((t) => ({
                     value: t,
                     label: <Enumerable value={t} />

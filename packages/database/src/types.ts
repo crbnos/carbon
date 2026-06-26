@@ -2426,10 +2426,13 @@ export type Database = {
           companyGroupId: string | null
           countryCode: string | null
           createdAt: string
+          customIndustryDescription: string | null
           email: string | null
           eori: string | null
           fax: string | null
+          featureRequests: string | null
           id: string
+          industryId: string | null
           isEliminationEntity: boolean
           logoDark: string | null
           logoDarkIcon: string | null
@@ -2440,6 +2443,7 @@ export type Database = {
           parentCompanyId: string | null
           phone: string | null
           postalCode: string | null
+          selectedModules: string[] | null
           slackChannel: string | null
           stateProvince: string | null
           suggestionNotificationGroup: string[]
@@ -2458,10 +2462,13 @@ export type Database = {
           companyGroupId?: string | null
           countryCode?: string | null
           createdAt?: string
+          customIndustryDescription?: string | null
           email?: string | null
           eori?: string | null
           fax?: string | null
+          featureRequests?: string | null
           id?: string
+          industryId?: string | null
           isEliminationEntity?: boolean
           logoDark?: string | null
           logoDarkIcon?: string | null
@@ -2472,6 +2479,7 @@ export type Database = {
           parentCompanyId?: string | null
           phone?: string | null
           postalCode?: string | null
+          selectedModules?: string[] | null
           slackChannel?: string | null
           stateProvince?: string | null
           suggestionNotificationGroup?: string[]
@@ -2490,10 +2498,13 @@ export type Database = {
           companyGroupId?: string | null
           countryCode?: string | null
           createdAt?: string
+          customIndustryDescription?: string | null
           email?: string | null
           eori?: string | null
           fax?: string | null
+          featureRequests?: string | null
           id?: string
+          industryId?: string | null
           isEliminationEntity?: boolean
           logoDark?: string | null
           logoDarkIcon?: string | null
@@ -2504,6 +2515,7 @@ export type Database = {
           parentCompanyId?: string | null
           phone?: string | null
           postalCode?: string | null
+          selectedModules?: string[] | null
           slackChannel?: string | null
           stateProvince?: string | null
           suggestionNotificationGroup?: string[]
@@ -2560,6 +2572,13 @@ export type Database = {
             columns: ["companyGroupId"]
             isOneToOne: false
             referencedRelation: "companyGroup"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_industryId_fkey"
+            columns: ["industryId"]
+            isOneToOne: false
+            referencedRelation: "industry"
             referencedColumns: ["id"]
           },
           {
@@ -7018,6 +7037,7 @@ export type Database = {
           parentItemId: string
           periodId: string
           quantity: number
+          redirectedFromItemId: string | null
           salesOrderLineId: string | null
           sourceType: Database["public"]["Enums"]["demandForecastSourceType"]
         }
@@ -7032,6 +7052,7 @@ export type Database = {
           parentItemId: string
           periodId: string
           quantity: number
+          redirectedFromItemId?: string | null
           salesOrderLineId?: string | null
           sourceType: Database["public"]["Enums"]["demandForecastSourceType"]
         }
@@ -7046,6 +7067,7 @@ export type Database = {
           parentItemId?: string
           periodId?: string
           quantity?: number
+          redirectedFromItemId?: string | null
           salesOrderLineId?: string | null
           sourceType?: Database["public"]["Enums"]["demandForecastSourceType"]
         }
@@ -7202,6 +7224,48 @@ export type Database = {
             columns: ["periodId"]
             isOneToOne: false
             referencedRelation: "period"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandForecastSource_redirectedFromItemId_fkey"
+            columns: ["redirectedFromItemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandForecastSource_redirectedFromItemId_fkey"
+            columns: ["redirectedFromItemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandForecastSource_redirectedFromItemId_fkey"
+            columns: ["redirectedFromItemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandForecastSource_redirectedFromItemId_fkey"
+            columns: ["redirectedFromItemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandForecastSource_redirectedFromItemId_fkey"
+            columns: ["redirectedFromItemId"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandForecastSource_redirectedFromItemId_fkey"
+            columns: ["redirectedFromItemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -12908,6 +12972,39 @@ export type Database = {
           },
         ]
       }
+      industry: {
+        Row: {
+          active: boolean
+          createdAt: string
+          description: string | null
+          iconName: string | null
+          id: string
+          name: string
+          sortOrder: number
+          updatedAt: string | null
+        }
+        Insert: {
+          active?: boolean
+          createdAt?: string
+          description?: string | null
+          iconName?: string | null
+          id: string
+          name: string
+          sortOrder?: number
+          updatedAt?: string | null
+        }
+        Update: {
+          active?: boolean
+          createdAt?: string
+          description?: string | null
+          iconName?: string | null
+          id?: string
+          name?: string
+          sortOrder?: number
+          updatedAt?: string | null
+        }
+        Relationships: []
+      }
       inspectionDocument: {
         Row: {
           companyId: string
@@ -14234,6 +14331,7 @@ export type Database = {
           maximumInventoryQuantity: number
           maximumOrderQuantity: number
           minimumOrderQuantity: number
+          minimumReserveQuantity: number
           orderMultiple: number
           reorderingPolicy: Database["public"]["Enums"]["itemReorderingPolicy"]
           reorderPoint: number
@@ -14256,6 +14354,7 @@ export type Database = {
           maximumInventoryQuantity?: number
           maximumOrderQuantity?: number
           minimumOrderQuantity?: number
+          minimumReserveQuantity?: number
           orderMultiple?: number
           reorderingPolicy?: Database["public"]["Enums"]["itemReorderingPolicy"]
           reorderPoint?: number
@@ -14278,6 +14377,7 @@ export type Database = {
           maximumInventoryQuantity?: number
           maximumOrderQuantity?: number
           minimumOrderQuantity?: number
+          minimumReserveQuantity?: number
           orderMultiple?: number
           reorderingPolicy?: Database["public"]["Enums"]["itemReorderingPolicy"]
           reorderPoint?: number
@@ -15199,6 +15299,231 @@ export type Database = {
           },
           {
             foreignKeyName: "itemShelfLife_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      itemSupersession: {
+        Row: {
+          companyId: string
+          conversionFactor: number
+          createdAt: string
+          createdBy: string
+          discontinuationDate: string | null
+          itemId: string
+          successorEffectivityDate: string | null
+          successorItemId: string | null
+          supersessionMode: Database["public"]["Enums"]["supersessionMode"]
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          conversionFactor?: number
+          createdAt?: string
+          createdBy: string
+          discontinuationDate?: string | null
+          itemId: string
+          successorEffectivityDate?: string | null
+          successorItemId?: string | null
+          supersessionMode: Database["public"]["Enums"]["supersessionMode"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          conversionFactor?: number
+          createdAt?: string
+          createdBy?: string
+          discontinuationDate?: string | null
+          itemId?: string
+          successorEffectivityDate?: string | null
+          successorItemId?: string | null
+          supersessionMode?: Database["public"]["Enums"]["supersessionMode"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "itemSupersession_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemSupersession_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemSupersession_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "itemSupersession_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "itemSupersession_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemSupersession_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemSupersession_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemSupersession_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemSupersession_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "itemSupersession_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: true
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemSupersession_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: true
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemSupersession_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: true
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemSupersession_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: true
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemSupersession_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: true
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemSupersession_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: true
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemSupersession_successorItemId_fkey"
+            columns: ["successorItemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemSupersession_successorItemId_fkey"
+            columns: ["successorItemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemSupersession_successorItemId_fkey"
+            columns: ["successorItemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemSupersession_successorItemId_fkey"
+            columns: ["successorItemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemSupersession_successorItemId_fkey"
+            columns: ["successorItemId"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemSupersession_successorItemId_fkey"
+            columns: ["successorItemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemSupersession_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemSupersession_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemSupersession_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemSupersession_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemSupersession_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
@@ -16161,6 +16486,8 @@ export type Database = {
           requiresSerialTracking: boolean
           scrapQuantity: number
           storageUnitId: string | null
+          substitutedFromItemId: string | null
+          substitutionFactor: number | null
           unitCost: number
           unitOfMeasureCode: string | null
           updatedAt: string | null
@@ -16191,6 +16518,8 @@ export type Database = {
           requiresSerialTracking?: boolean
           scrapQuantity?: number
           storageUnitId?: string | null
+          substitutedFromItemId?: string | null
+          substitutionFactor?: number | null
           unitCost?: number
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
@@ -16221,6 +16550,8 @@ export type Database = {
           requiresSerialTracking?: boolean
           scrapQuantity?: number
           storageUnitId?: string | null
+          substitutedFromItemId?: string | null
+          substitutionFactor?: number | null
           unitCost?: number
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
@@ -21480,6 +21811,8 @@ export type Database = {
           createdAt: string
           createdBy: string
           customFields: Json | null
+          effectiveFrom: string | null
+          effectiveTo: string | null
           id: string
           itemId: string
           itemType: string
@@ -21504,6 +21837,8 @@ export type Database = {
           createdAt?: string
           createdBy: string
           customFields?: Json | null
+          effectiveFrom?: string | null
+          effectiveTo?: string | null
           id?: string
           itemId: string
           itemType?: string
@@ -21528,6 +21863,8 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
+          effectiveFrom?: string | null
+          effectiveTo?: string | null
           id?: string
           itemId?: string
           itemType?: string
@@ -39811,49 +40148,7 @@ export type Database = {
           },
         ]
       }
-      searchIndex_8SZw3sKRdsqY4cWBfzXCdJ: {
-        Row: {
-          createdAt: string
-          description: string | null
-          entityId: string
-          entityType: string
-          id: number
-          link: string
-          metadata: Json | null
-          searchVector: unknown
-          tags: string[] | null
-          title: string
-          updatedAt: string | null
-        }
-        Insert: {
-          createdAt?: string
-          description?: string | null
-          entityId: string
-          entityType: string
-          id?: number
-          link: string
-          metadata?: Json | null
-          searchVector?: unknown
-          tags?: string[] | null
-          title: string
-          updatedAt?: string | null
-        }
-        Update: {
-          createdAt?: string
-          description?: string | null
-          entityId?: string
-          entityType?: string
-          id?: number
-          link?: string
-          metadata?: Json | null
-          searchVector?: unknown
-          tags?: string[] | null
-          title?: string
-          updatedAt?: string | null
-        }
-        Relationships: []
-      }
-      searchIndex_d8ttuu1ei0h02d37g8qg: {
+      searchIndex_d8u703oeq0gg2jnc1k2g: {
         Row: {
           createdAt: string
           description: string | null
@@ -51103,6 +51398,9 @@ export type Database = {
             | null
           revision: string | null
           revisions: Json | null
+          supersessionMode:
+            | Database["public"]["Enums"]["supersessionMode"]
+            | null
           supplierIds: string | null
           tags: string[] | null
           thumbnailPath: string | null
@@ -55133,6 +55431,9 @@ export type Database = {
             | null
           revision: string | null
           revisions: Json | null
+          supersessionMode:
+            | Database["public"]["Enums"]["supersessionMode"]
+            | null
           supplierIds: string | null
           tags: string[] | null
           thumbnailPath: string | null
@@ -56056,6 +56357,9 @@ export type Database = {
           revision: string | null
           revisions: Json | null
           sourcingType: Database["public"]["Enums"]["sourcingType"] | null
+          supersessionMode:
+            | Database["public"]["Enums"]["supersessionMode"]
+            | null
           supplierIds: string | null
           tags: string[] | null
           thumbnailPath: string | null
@@ -57646,14 +57950,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -61660,14 +61964,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -64381,6 +64685,9 @@ export type Database = {
           revision: string | null
           revisions: Json | null
           sourcingType: Database["public"]["Enums"]["sourcingType"] | null
+          supersessionMode:
+            | Database["public"]["Enums"]["supersessionMode"]
+            | null
           supplierIds: string | null
           tags: string[] | null
           thumbnailPath: string | null
@@ -65993,6 +66300,8 @@ export type Database = {
         Args: { uid: string }
         Returns: {
           description: string
+          effectiveFrom: string
+          effectiveTo: string
           externalId: Json
           isPickDescendant: boolean
           isRoot: boolean
@@ -66175,6 +66484,7 @@ export type Database = {
           maximumInventoryQuantity: number
           maximumOrderQuantity: number
           minimumOrderQuantity: number
+          minimumReserveQuantity: number
           name: string
           orderMultiple: number
           quantityOnHand: number
@@ -66184,6 +66494,7 @@ export type Database = {
           reorderPoint: number
           reorderQuantity: number
           replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          supersessionMode: string
           thumbnailPath: string
           type: Database["public"]["Enums"]["itemType"]
           unitOfMeasureCode: string
@@ -66334,6 +66645,7 @@ export type Database = {
           maximumInventoryQuantity: number
           maximumOrderQuantity: number
           minimumOrderQuantity: number
+          minimumReserveQuantity: number
           name: string
           orderMultiple: number
           preferredSupplierId: string
@@ -66346,6 +66658,7 @@ export type Database = {
           reorderPoint: number
           reorderQuantity: number
           replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          supersessionMode: string
           suppliers: Json
           thumbnailPath: string
           type: Database["public"]["Enums"]["itemType"]
@@ -67773,6 +68086,11 @@ export type Database = {
       sourcingType: "Specified" | "Drop Ship" | "Ship from Inventory"
       stockTransferStatus: "Draft" | "Released" | "In Progress" | "Completed"
       storageRuleTargetType: "item" | "workCenter"
+      supersessionMode:
+        | "Consume First"
+        | "Prefer New"
+        | "Stock Only"
+        | "No Stock"
       supplierLedgerDocumentType:
         | "Payment"
         | "Invoice"
@@ -69112,6 +69430,12 @@ export const Constants = {
       sourcingType: ["Specified", "Drop Ship", "Ship from Inventory"],
       stockTransferStatus: ["Draft", "Released", "In Progress", "Completed"],
       storageRuleTargetType: ["item", "workCenter"],
+      supersessionMode: [
+        "Consume First",
+        "Prefer New",
+        "Stock Only",
+        "No Stock",
+      ],
       supplierLedgerDocumentType: [
         "Payment",
         "Invoice",

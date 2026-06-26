@@ -1,0 +1,24 @@
+name: Agent Labels
+
+# Create/update the agent:* labels the outer-loop orchestrator drives.
+# Manual trigger only — run once from the Actions tab (or after editing the
+# label set in .github/scripts/setup-agent-labels.sh). Not on push, to avoid noise.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+          show-progress: false
+      - name: Sync agent:* labels
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/setup-agent-labels.sh

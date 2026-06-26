@@ -55,6 +55,7 @@ services:
       GOTRUE_DISABLE_SIGNUP: "false"
       GOTRUE_JWT_SECRET: ${SUPABASE_JWT_SECRET}
       GOTRUE_JWT_EXP: 3600
+      GOTRUE_SECURITY_REFRESH_TOKEN_REUSE_INTERVAL: 10
       GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
       GOTRUE_JWT_ADMIN_ROLES: service_role
       GOTRUE_JWT_AUD: authenticated
@@ -204,6 +205,13 @@ services:
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
       SUPABASE_DB_URL: postgresql://postgres:postgres@postgres:5432/postgres
       VERIFY_JWT: "false"
+      # Backups edge fns (export/import/revert) send Inngest events. The edge
+      # runtime is a separate env from the ERP app, so without these its
+      # inngest.send() defaults to Inngest Cloud → 401. Point it at the local
+      # dev server via the compose-network alias (NOT localhost — that's the
+      # edge container itself).
+      INNGEST_DEV: "1"
+      INNGEST_BASE_URL: http://inngest:8288
     volumes:
       - ./packages/database/supabase/functions:/home/deno/functions:ro
       - ./packages/database/src:/home/src:ro

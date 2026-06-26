@@ -9,12 +9,14 @@ const Copy = ({
   text,
   icon,
   className,
+  tooltipClassName,
   withTextInTooltip = false,
   size = "sm"
 }: {
   text: string;
   icon?: JSX.Element;
   className?: string;
+  tooltipClassName?: string;
   withTextInTooltip?: boolean;
   size?: "sm" | "md" | "lg";
 }) => {
@@ -42,7 +44,7 @@ const Copy = ({
           onClick={handleCopy}
         />
       </TooltipTrigger>
-      <TooltipContent>
+      <TooltipContent className={tooltipClassName}>
         <span>
           {isCopied
             ? "Copied!"

@@ -44,7 +44,7 @@ const EditableNumber =
       >
         <NumberInput
           size="sm"
-          className="w-full rounded-none outline-none border-none focus-visible:ring-0"
+          className="w-full rounded-none outline-none border-none shadow-none focus-visible:ring-0"
           autoFocus
           onFocus={(e) => e.currentTarget.select()}
         />

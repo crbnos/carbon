@@ -6,6 +6,7 @@ import {
   LuClipboardCheck,
   LuCreditCard,
   LuCrown,
+  LuDatabase,
   LuFactory,
   LuFileText,
   LuHistory,
@@ -28,7 +29,10 @@ import { useFlags } from "~/hooks/useFlags";
 import type { AuthenticatedRouteGroup, Role } from "~/types";
 import { path } from "~/utils/path";
 
-const internalOnlyRoutes = new Set<string>([path.to.companies]);
+const internalOnlyRoutes = new Set<string>([
+  path.to.companies,
+  path.to.backups
+]);
 
 export default function useSettingsSubmodules() {
   const { t } = useLingui();
@@ -74,6 +78,12 @@ export default function useSettingsSubmodules() {
             to: path.to.logos,
             role: "employee",
             icon: <LuImage />
+          },
+          {
+            name: t`Backups`,
+            to: path.to.backups,
+            role: "employee",
+            icon: <LuDatabase />
           },
           {
             name: t`Printing`,

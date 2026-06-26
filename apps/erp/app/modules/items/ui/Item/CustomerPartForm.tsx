@@ -65,10 +65,15 @@ const CustomerPartForm = ({ initialValues }: CustomerPartFormProps) => {
             <VStack spacing={4}>
               <Input name="readableId" label={t`Part ID`} isDisabled />
               <Customer name="customerId" label={t`Customer`} />
-              <Input name="customerPartId" label={t`Customer Part ID`} />
+              <Input
+                name="customerPartId"
+                label={t`Customer Part ID`}
+                termId="customer-part-id"
+              />
               <Input
                 name="customerPartRevision"
                 label={t`Customer Part Revision`}
+                termId="customer-part-revision"
               />
             </VStack>
           </DrawerBody>
@@ -78,7 +83,7 @@ const CustomerPartForm = ({ initialValues }: CustomerPartFormProps) => {
                 <Trans>Save</Trans>
               </Submit>
               <Button size="md" variant="solid" onClick={onClose}>
-                Cancel
+                <Trans>Cancel</Trans>
               </Button>
             </HStack>
           </DrawerFooter>

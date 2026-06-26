@@ -106,7 +106,7 @@ msgid "available"
 msgstr "可用"
 
 msgid "Back Home"
-msgstr ""
+msgstr "返回主页"
 
 msgid "Batch"
 msgstr "批次"
@@ -329,7 +329,7 @@ msgid "Error"
 msgstr "错误"
 
 msgid "Error!"
-msgstr ""
+msgstr "错误!"
 
 msgid "Estimated"
 msgstr "估计"
@@ -470,6 +470,9 @@ msgstr "套件"
 
 msgid "Labor"
 msgstr "人工"
+
+msgid "Learn more"
+msgstr "了解更多"
 
 msgid "Leave this page"
 msgstr "离开此页面"
@@ -967,7 +970,7 @@ msgid "Size"
 msgstr "大小"
 
 msgid "Something went wrong"
-msgstr ""
+msgstr "出错了"
 
 msgid "Source"
 msgstr "来源"
@@ -1098,6 +1101,9 @@ msgstr "查看维护工单"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "我们已向您发送了登录链接，请查收。"
+
+msgid "What is {translatedTerm}?"
+msgstr "{translatedTerm}是什么?"
 
 msgid "WIP"
 msgstr "在制品"

@@ -98,7 +98,11 @@ const LocationForm = ({
               <VStack spacing={4}>
                 <Input name="name" label={t`Location Name`} />
                 <AddressAutocomplete />
-                <Timezone name="timezone" label={t`Timezone`} />
+                <Timezone
+                  name="timezone"
+                  label={t`Timezone`}
+                  termId="location-timezone"
+                />
                 {/* <Number name="latitude" label="Latitude" minValue={-90} maxValue={90} />
               <Number name="longitude" label="Longitude" minVale={-180} maxValue={180} /> */}
                 <CustomFormFields table="location" />

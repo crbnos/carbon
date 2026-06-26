@@ -74,6 +74,7 @@ const PurchaseOrderPaymentForm = ({
             <Supplier
               name="invoiceSupplierId"
               label={t`Invoice Supplier`}
+              termId="invoice-supplier"
               onChange={(value) => setSupplier(value?.value as string)}
             />
             <SupplierLocation
@@ -87,7 +88,11 @@ const PurchaseOrderPaymentForm = ({
               supplier={supplier}
             />
 
-            <PaymentTerm name="paymentTermId" label={t`Payment Terms`} />
+            <PaymentTerm
+              name="paymentTermId"
+              label={t`Payment Terms`}
+              termId="supplier-payment-term"
+            />
 
             <CustomFormFields table="purchaseOrderPayment" />
           </div>

@@ -8,7 +8,9 @@ import { redirect, useLoaderData } from "react-router";
 import { usePanels } from "~/components/Layout";
 import {
   getJob,
-  getJobMaterialsWithQuantityOnHand
+  getJobMaterialItemIds,
+  getJobMaterialsWithQuantityOnHand,
+  getJobOrderStatusMap
 } from "~/modules/production";
 import { JobMaterialsTable } from "~/modules/production/ui/Jobs";
 import { getCompanySettings } from "~/modules/settings";
@@ -38,19 +40,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const materials = await getJobMaterialsWithQuantityOnHand(
-    client,
-    jobId,
-    companyId,
-    job.data.locationId ?? "",
-    {
+  const locationId = job.data.locationId ?? "";
+
+  // Independent — run in parallel.
+  const [materials, settings, jobItems] = await Promise.all([
+    getJobMaterialsWithQuantityOnHand(client, jobId, companyId, locationId, {
       search,
       limit,
       offset,
       sorts,
-      filters
-    }
-  );
+      // orderStatus is filtered client-side — not a column the RPC can filter on.
+      filters: (filters ?? []).filter((f) => f.column !== "orderStatus")
+    }),
+    getCompanySettings(client, companyId),
+    getJobMaterialItemIds(client, jobId, companyId)
+  ]);
 
   if (materials.error) {
     redirect(
@@ -62,48 +66,83 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const settings = await getCompanySettings(client, companyId);
-  const inventoryShelfLife = settings.data?.inventoryShelfLife as {
-    nearExpiryWarningDays?: number | null;
-  } | null;
+  const rows = materials.data ?? [];
   const nearExpiryWarningDays =
-    inventoryShelfLife?.nearExpiryWarningDays ?? null;
+    (
+      settings.data?.inventoryShelfLife as {
+        nearExpiryWarningDays?: number | null;
+      } | null
+    )?.nearExpiryWarningDays ?? null;
 
-  let expiredItemIds = new Set<string>();
-  if (nearExpiryWarningDays !== null && materials.data) {
-    const itemIds = materials.data
-      .map((m) => m.jobMaterialItemId)
-      .filter(Boolean) as string[];
-    if (itemIds.length > 0) {
-      const todayStr = today(getLocalTimeZone()).toString();
-      const { data: expired } = await client
-        .from("trackedEntity")
-        .select("sourceDocumentId")
-        .in("sourceDocumentId", itemIds)
-        .eq("companyId", companyId)
-        .not("expirationDate", "is", null)
-        .lt("expirationDate", todayStr);
-      expiredItemIds = new Set(
-        (expired ?? [])
-          .map((e) => e.sourceDocumentId)
-          .filter(Boolean) as string[]
-      );
-    }
-  }
+  // Both depend on the materials but not on each other.
+  const [expiredItemIds, orderStatusByMaterialId] = await Promise.all([
+    getExpiredItemIds(client, companyId, rows, nearExpiryWarningDays),
+    getJobOrderStatusMap(
+      client,
+      jobId,
+      companyId,
+      locationId,
+      job.data.status,
+      rows
+    )
+  ]);
+
+  const jobItemIds = Array.from(
+    new Set(
+      (jobItems.data ?? [])
+        .map((row) => row.itemId)
+        .filter((id): id is string => Boolean(id))
+    )
+  );
 
   return {
     count: materials.count ?? 0,
-    materials: (materials.data ?? []).map((m) => ({
+    jobItemIds,
+    materials: rows.map((m) => ({
       ...m,
       hasExpiredBatch: expiredItemIds.has(m.jobMaterialItemId ?? "")
     })),
-    nearExpiryWarningDays
+    nearExpiryWarningDays,
+    orderStatusByMaterialId
   };
 }
 
+// Item ids with stock already past its expiration date (the "Expired batch" badge).
+async function getExpiredItemIds(
+  client: Parameters<typeof getJob>[0],
+  companyId: string,
+  materials: { jobMaterialItemId: string | null }[],
+  nearExpiryWarningDays: number | null
+): Promise<Set<string>> {
+  if (nearExpiryWarningDays === null) return new Set();
+  const itemIds = materials
+    .map((m) => m.jobMaterialItemId)
+    .filter((id): id is string => Boolean(id));
+  if (itemIds.length === 0) return new Set();
+
+  const { data } = await client
+    .from("trackedEntity")
+    .select("sourceDocumentId")
+    .in("sourceDocumentId", itemIds)
+    .eq("companyId", companyId)
+    .not("expirationDate", "is", null)
+    .lt("expirationDate", today(getLocalTimeZone()).toString());
+
+  return new Set(
+    (data ?? [])
+      .map((e) => e.sourceDocumentId)
+      .filter((id): id is string => Boolean(id))
+  );
+}
+
 export default function JobMaterialsRoute() {
-  const { count, materials, nearExpiryWarningDays } =
-    useLoaderData<typeof loader>();
+  const {
+    count,
+    materials,
+    nearExpiryWarningDays,
+    jobItemIds,
+    orderStatusByMaterialId
+  } = useLoaderData<typeof loader>();
   const { setIsExplorerCollapsed } = usePanels();
 
   useMount(() => {
@@ -116,6 +155,8 @@ export default function JobMaterialsRoute() {
         data={materials}
         count={count}
         nearExpiryWarningDays={nearExpiryWarningDays}
+        jobItemIds={jobItemIds}
+        orderStatusByMaterialId={orderStatusByMaterialId}
       />
     </VStack>
   );

@@ -64,6 +64,7 @@ const GroupForm = ({ initialValues }: GroupFormProps) => {
                 name="selections"
                 selectionsMaxHeight={"calc(100vh - 330px)"}
                 label={t`Group Members`}
+                termId="group-members"
                 verbose
               />
             </VStack>

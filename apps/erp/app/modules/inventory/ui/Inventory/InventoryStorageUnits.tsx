@@ -392,6 +392,7 @@ const InventoryStorageUnits = ({
                   <Select
                     name="adjustmentType"
                     label={t`Adjustment Type`}
+                    termId="inventory-adjustment-type"
                     options={
                       isEditing && (isSerial || isBatch)
                         ? [
@@ -427,13 +428,17 @@ const InventoryStorageUnits = ({
                       <Input
                         name="readableId"
                         label={isSerial ? t`Serial Number` : t`Batch Number`}
-                        termId={isSerial ? "serial" : "batch"}
+                        termId={
+                          isSerial
+                            ? "inventory-adjustment-serial-number"
+                            : "inventory-adjustment-batch-number"
+                        }
                       />
                       {showExpirationField && (
                         <DatePicker
                           name="expirationDate"
                           label={t`Expiration Date`}
-                          termId="shelf-life"
+                          termId="inventory-adjustment-expiration-date"
                         />
                       )}
                     </>

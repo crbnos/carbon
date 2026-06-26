@@ -5,8 +5,6 @@ import {
   CardHeader,
   CardTitle,
   HStack,
-  NumberField,
-  NumberInput,
   Table,
   Tbody,
   Td,
@@ -19,6 +17,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router";
+import EditableNumberCell from "~/components/EditableNumberCell";
 import { Enumerable } from "~/components/Enumerable";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import {
@@ -179,7 +178,7 @@ const SupplierQuoteLinePricing = ({
                     key={quantity.toString()}
                     className="group-hover:bg-muted/50"
                   >
-                    <NumberField
+                    <EditableNumberCell
                       value={leadTime}
                       formatOptions={{
                         style: "unit",
@@ -187,19 +186,11 @@ const SupplierQuoteLinePricing = ({
                         unitDisplay: "long"
                       }}
                       minValue={0}
-                      onChange={(value) => {
-                        if (Number.isFinite(value) && value !== leadTime) {
-                          onUpdatePrice("leadTime", quantity, value);
-                        }
-                      }}
-                    >
-                      <NumberInput
-                        className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
-                        isDisabled={!isEditable}
-                        size="sm"
-                        min={0}
-                      />
-                    </NumberField>
+                      isEditable={isEditable}
+                      onChange={(value) =>
+                        onUpdatePrice("leadTime", quantity, value)
+                      }
+                    />
                   </Td>
                 );
               })}
@@ -224,26 +215,18 @@ const SupplierQuoteLinePricing = ({
                   editableFields.prices[quantity]?.supplierUnitPrice ?? 0;
                 return (
                   <Td key={quantity.toString()}>
-                    <NumberField
+                    <EditableNumberCell
                       value={price}
                       formatOptions={{
                         style: "currency",
                         currency: routeData?.quote?.currencyCode ?? baseCurrency
                       }}
                       minValue={0}
-                      onChange={(value) => {
-                        if (Number.isFinite(value) && value !== price) {
-                          onUpdatePrice("supplierUnitPrice", quantity, value);
-                        }
-                      }}
-                    >
-                      <NumberInput
-                        className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
-                        isDisabled={!isEditable}
-                        size="sm"
-                        min={0}
-                      />
-                    </NumberField>
+                      isEditable={isEditable}
+                      onChange={(value) =>
+                        onUpdatePrice("supplierUnitPrice", quantity, value)
+                      }
+                    />
                   </Td>
                 );
               })}
@@ -287,30 +270,18 @@ const SupplierQuoteLinePricing = ({
                   editableFields.prices[quantity]?.supplierShippingCost ?? 0;
                 return (
                   <Td key={quantity.toString()}>
-                    <NumberField
+                    <EditableNumberCell
                       value={shippingCost}
                       formatOptions={{
                         style: "currency",
                         currency: routeData?.quote?.currencyCode ?? baseCurrency
                       }}
                       minValue={0}
-                      onChange={(value) => {
-                        if (Number.isFinite(value) && value !== shippingCost) {
-                          onUpdatePrice(
-                            "supplierShippingCost",
-                            quantity,
-                            value
-                          );
-                        }
-                      }}
-                    >
-                      <NumberInput
-                        className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
-                        isDisabled={!isEditable}
-                        size="sm"
-                        min={0}
-                      />
-                    </NumberField>
+                      isEditable={isEditable}
+                      onChange={(value) =>
+                        onUpdatePrice("supplierShippingCost", quantity, value)
+                      }
+                    />
                   </Td>
                 );
               })}
@@ -327,26 +298,18 @@ const SupplierQuoteLinePricing = ({
                   editableFields.prices[quantity]?.supplierTaxAmount ?? 0;
                 return (
                   <Td key={index} className="group-hover:bg-muted/50">
-                    <NumberField
+                    <EditableNumberCell
                       value={taxAmount}
                       formatOptions={{
                         style: "currency",
                         currency: routeData?.quote?.currencyCode ?? baseCurrency
                       }}
                       minValue={0}
-                      onChange={(value) => {
-                        if (Number.isFinite(value) && value !== taxAmount) {
-                          onUpdatePrice("supplierTaxAmount", quantity, value);
-                        }
-                      }}
-                    >
-                      <NumberInput
-                        className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
-                        isDisabled={!isEditable}
-                        size="sm"
-                        min={0}
-                      />
-                    </NumberField>
+                      isEditable={isEditable}
+                      onChange={(value) =>
+                        onUpdatePrice("supplierTaxAmount", quantity, value)
+                      }
+                    />
                   </Td>
                 );
               })}

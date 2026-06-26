@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { glossaryEntries, termSlug } from "@carbon/glossary";
+import {
+  getDefinitionText,
+  getTermText,
+  glossaryEntries,
+  termSlug
+} from "@carbon/glossary";
 
 /**
  * Glossary — the whole `lib/glossary.ts` rendered as one reference page, in the
@@ -17,7 +22,7 @@ export function Glossary() {
   // Group into alphabetical sections (digits → "#").
   const groups = new Map<string, typeof entries>();
   for (const entry of entries) {
-    const first = entry.term[0].toUpperCase();
+    const first = getTermText(entry)[0]?.toUpperCase() ?? "#";
     const letter = /[A-Z]/.test(first) ? first : "#";
     if (!groups.has(letter)) groups.set(letter, []);
     groups.get(letter)!.push(entry);
@@ -34,24 +39,27 @@ export function Glossary() {
             {letter}
           </h2>
           <div className="divide-y divide-ed-hairline border-y border-ed-hairline">
-            {items.map((entry) => (
-              <div key={entry.term} id={termSlug(entry.term)} className="scroll-mt-22 py-[15px]">
-                <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-[3px]">
-                  <span className="text-ed-15 font-semi text-ed-ink">{entry.term}</span>
-                  {entry.href && (
-                    <Link
-                      href={entry.href}
-                      className="shrink-0 text-ed-12 font-medium text-ed-brand-ink no-underline hover:text-ed-blue-text"
-                    >
-                      Learn more <span aria-hidden>→</span>
-                    </Link>
-                  )}
+            {items.map((entry) => {
+              const term = getTermText(entry);
+              return (
+                <div key={term} id={termSlug(term)} className="scroll-mt-22 py-[15px]">
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-[3px]">
+                    <span className="text-ed-15 font-semi text-ed-ink">{term}</span>
+                    {entry.href && (
+                      <Link
+                        href={entry.href}
+                        className="shrink-0 text-ed-12 font-medium text-ed-brand-ink no-underline hover:text-ed-blue-text"
+                      >
+                        Learn more <span aria-hidden>→</span>
+                      </Link>
+                    )}
+                  </div>
+                  <p className="m-0 mt-[5px] text-ed-14 leading-[155%] text-ed-ink/66">
+                    {getDefinitionText(entry)}
+                  </p>
                 </div>
-                <p className="m-0 mt-[5px] text-ed-14 leading-[155%] text-ed-ink/66">
-                  {entry.definition}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       ))}

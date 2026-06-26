@@ -112,6 +112,7 @@ const AttributeForm = ({
               <Select
                 name="attributeDataTypeId"
                 label={t`Data Type`}
+                termId="attribute-data-type"
                 isReadOnly={isEditing}
                 helperText={
                   isEditing ? t`Data type cannot be changed` : undefined
@@ -119,10 +120,17 @@ const AttributeForm = ({
                 options={options}
                 onChange={onChangeCheckForListType}
               />
-              {isList && <Array name="listOptions" label={t`List Options`} />}
+              {isList && (
+                <Array
+                  name="listOptions"
+                  label={t`List Options`}
+                  termId="attribute-list-options"
+                />
+              )}
               <Boolean
                 name="canSelfManage"
                 label={t`Self Managed`}
+                termId="attribute-self-managed"
                 description={t`Users can update this value for themselves`}
               />
             </VStack>

@@ -6,6 +6,7 @@ import {
   FormLabel,
   HStack,
   Input,
+  LabelWithHelp,
   Modal,
   ModalBody,
   ModalContent,
@@ -74,6 +75,7 @@ const CreateSupplierModal = () => {
               <Supplier
                 name="supplier"
                 label={t`Supplier`}
+                termId="create-supplier-account-supplier"
                 onChange={(newValue) =>
                   setSupplier(newValue?.value as string | undefined)
                 }
@@ -198,7 +200,9 @@ const SupplierContact = ({
   return (
     <FormControl isInvalid={!!error}>
       <FormLabel htmlFor={name} isOptional={isSupplierContactOptional}>
-        <Trans>Supplier Contact</Trans>
+        <LabelWithHelp termId="create-supplier-account-contact">
+          <Trans>Supplier Contact</Trans>
+        </LabelWithHelp>
       </FormLabel>
       <input type="hidden" name={name} id={name} value={value ?? ""} />
       <Combobox

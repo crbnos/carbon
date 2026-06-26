@@ -112,6 +112,7 @@ const PaymentTermForm = ({
                 <Select
                   name="calculationMethod"
                   label={t`After`}
+                  termId="payment-term-calculation-method"
                   options={calculationMethodOptions}
                   onChange={(value) => {
                     setSelectedCalculationMethod(
@@ -122,18 +123,21 @@ const PaymentTermForm = ({
                 <Number
                   name="daysDue"
                   label={t`Due Days after ${selectedCalculationMethod}`}
+                  termId="payment-term-due-days"
                   minValue={0}
                   helperText={t`The amount of days after the calculation method that the payment is due`}
                 />
                 <Number
                   name="daysDiscount"
                   label={t`Discount Days after ${selectedCalculationMethod}`}
+                  termId="payment-term-discount-days"
                   minValue={0}
                   helperText={t`The amount of days after the calculation method that the cash discount is available`}
                 />
                 <Number
                   name="discountPercentage"
                   label={t`Discount Percent`}
+                  termId="payment-term-discount-percent"
                   minValue={0}
                   maxValue={100}
                   helperText={t`The percentage of the cash discount. Use 0 for no discount.`}

@@ -10,6 +10,7 @@ import {
   HStack,
   VStack
 } from "@carbon/react";
+import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { useNavigate } from "react-router";
@@ -40,13 +41,19 @@ const ProductionQuantityForm = ({
   operationOptions
 }: ProductionQuantityFormProps) => {
   const permissions = usePermissions();
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const navigate = useNavigate();
   const onClose = () => navigate(-1);
 
   const [type, setType] = useState<"Production" | "Scrap" | "Rework">(
     initialValues.type
   );
+
+  const quantityTypeOptions = [
+    { label: i18n._(msg`Production`), value: "Production" },
+    { label: i18n._(msg`Scrap`), value: "Scrap" },
+    { label: i18n._(msg`Rework`), value: "Rework" }
+  ];
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
@@ -68,9 +75,11 @@ const ProductionQuantityForm = ({
         >
           <DrawerHeader>
             <DrawerTitle>
-              {isEditing
-                ? "Edit Production Quantity"
-                : "Create Production Quantity"}
+              {isEditing ? (
+                <Trans>Edit Production Quantity</Trans>
+              ) : (
+                <Trans>Create Production Quantity</Trans>
+              )}
             </DrawerTitle>
           </DrawerHeader>
           <DrawerBody>
@@ -91,11 +100,8 @@ const ProductionQuantityForm = ({
               <Select
                 name="type"
                 label={t`Quantity Type`}
-                options={[
-                  { label: "Production", value: "Production" },
-                  { label: "Scrap", value: "Scrap" },
-                  { label: "Rework", value: "Rework" }
-                ]}
+                termId="production-quantity-type"
+                options={quantityTypeOptions}
                 onChange={(value) =>
                   setType(value?.value as "Production" | "Scrap" | "Rework")
                 }
@@ -104,7 +110,7 @@ const ProductionQuantityForm = ({
                 <ScrapReason
                   name="scrapReasonId"
                   label={t`Scrap Reason`}
-                  termId="scrap"
+                  termId="production-quantity-scrap-reason"
                 />
               )}
               <TextArea name="notes" label={t`Notes`} />
@@ -116,7 +122,7 @@ const ProductionQuantityForm = ({
                 <Trans>Save</Trans>
               </Submit>
               <Button variant="solid" onClick={onClose}>
-                Cancel
+                <Trans>Cancel</Trans>
               </Button>
             </HStack>
           </DrawerFooter>

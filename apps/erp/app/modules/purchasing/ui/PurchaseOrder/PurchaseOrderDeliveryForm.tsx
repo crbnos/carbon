@@ -125,6 +125,7 @@ const PurchaseOrderDeliveryForm = forwardRef<
             <Location
               name="locationId"
               label={t`Delivery Location`}
+              termId="purchase-order-delivery-location"
               isReadOnly={isSupplier}
               isClearable
             />
@@ -135,6 +136,7 @@ const PurchaseOrderDeliveryForm = forwardRef<
             <Select
               name="incoterm"
               label={t`Incoterm`}
+              termId="supplier-incoterm"
               isClearable
               options={incoterms.map((i) => ({ value: i, label: i }))}
               onChange={(v) => setIncoterm(v?.value as string)}
@@ -143,9 +145,21 @@ const PurchaseOrderDeliveryForm = forwardRef<
               <Input name="incotermLocation" label={t`Incoterm Location`} />
             )}
 
-            <DatePicker name="receiptRequestedDate" label={t`Requested Date`} />
-            <DatePicker name="receiptPromisedDate" label={t`Promised Date`} />
-            <DatePicker name="deliveryDate" label={t`Delivery Date`} />
+            <DatePicker
+              name="receiptRequestedDate"
+              label={t`Requested Date`}
+              termId="purchase-order-delivery-requested-date"
+            />
+            <DatePicker
+              name="receiptPromisedDate"
+              label={t`Promised Date`}
+              termId="purchase-order-delivery-promised-date"
+            />
+            <DatePicker
+              name="deliveryDate"
+              label={t`Delivery Date`}
+              termId="purchase-order-delivery-actual-date"
+            />
 
             <Input name="trackingNumber" label={t`Tracking Number`} />
             <div className="col-span-3">

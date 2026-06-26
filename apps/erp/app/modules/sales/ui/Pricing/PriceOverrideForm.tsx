@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  LabelWithHelp,
   ModalDrawer,
   ModalDrawerBody,
   ModalDrawerContent,
@@ -199,11 +200,13 @@ const PriceOverrideForm = ({
                   <BooleanField
                     name="active"
                     label={t`Active`}
+                    termId="price-override-active"
                     isDisabled={lifecycleLocked}
                   />
                   <BooleanField
                     name="applyRulesOnTop"
                     label={t`Apply pricing rules`}
+                    termId="price-override-apply-rules-on-top"
                   />
                 </div>
 
@@ -441,7 +444,12 @@ function PriceBreaks({
 
   return (
     <div className="space-y-3 w-full">
-      <span className="font-medium text-sm">{t`Price Breaks`}</span>
+      <span className="font-medium text-sm">
+        <LabelWithHelp
+          termId="price-override-price-breaks"
+          variant="inline"
+        >{t`Price Breaks`}</LabelWithHelp>
+      </span>
       <Grid<PriceOverrideBreak>
         data={breaks}
         columns={columns}

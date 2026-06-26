@@ -121,6 +121,7 @@ const EmployeePermissionsForm = ({
                 <Select
                   name="employeeType"
                   label={t`Employee Type`}
+                  termId="employee-permissions-employee-type-override"
                   options={employeeTypeOptions}
                   placeholder={t`Select Employee Type`}
                   onChange={handleEmployeeTypeChange}

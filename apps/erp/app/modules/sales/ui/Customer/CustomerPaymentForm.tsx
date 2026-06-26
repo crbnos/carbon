@@ -53,6 +53,7 @@ const CustomerPaymentForm = ({ initialValues }: CustomerPaymentFormProps) => {
             <Customer
               name="invoiceCustomerId"
               label={t`Invoice Customer`}
+              termId="invoice-customer"
               onChange={(value) => setCustomer(value?.value as string)}
             />
             <CustomerLocation
@@ -66,7 +67,11 @@ const CustomerPaymentForm = ({ initialValues }: CustomerPaymentFormProps) => {
               customer={customer}
             />
 
-            <PaymentTerm name="paymentTermId" label={t`Payment Term`} />
+            <PaymentTerm
+              name="paymentTermId"
+              label={t`Payment Term`}
+              termId="customer-payment-term"
+            />
             <CustomFormFields table="customerPayment" />
           </div>
         </CardContent>

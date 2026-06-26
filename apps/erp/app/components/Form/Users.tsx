@@ -1,10 +1,13 @@
 import { useField } from "@carbon/form";
+import type { TermId } from "@carbon/glossary";
 import {
   FormControl,
   FormErrorMessage,
   FormHelperText,
-  FormLabel
+  FormLabel,
+  LabelWithHelp
 } from "@carbon/react";
+import type { ReactNode } from "react";
 import { useState } from "react";
 import { UserSelect } from "../Selectors";
 import type {
@@ -14,7 +17,8 @@ import type {
 
 export type UsersProps = {
   name: string;
-  label?: string;
+  label?: ReactNode;
+  termId?: TermId;
   helperText?: string;
   verbose?: boolean; // prepends "user_" or "group_" to the value
 } & UserSelectProps;
@@ -22,6 +26,7 @@ export type UsersProps = {
 const Users = ({
   name,
   label,
+  termId,
   type,
   helperText,
   verbose = false,
@@ -50,7 +55,7 @@ const Users = ({
     <FormControl isInvalid={!!error}>
       {label && (
         <FormLabel htmlFor={name} isOptional={fieldIsOptional}>
-          {label}
+          <LabelWithHelp termId={termId}>{label}</LabelWithHelp>
         </FormLabel>
       )}
       {selections.map((selection, index) => (

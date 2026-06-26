@@ -56,8 +56,9 @@ const EditableText =
       <Input
         autoFocus
         defaultValue={value as string}
-        className="border-0 rounded-none w-full"
+        className="border-0 rounded-none w-full shadow-none"
         size="sm"
+        onFocus={(e) => e.currentTarget.select()}
         onBlur={onBlur}
         onKeyDown={onKeyDown}
       />

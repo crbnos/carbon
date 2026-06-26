@@ -159,6 +159,7 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
               <Input
                 name="supplierReference"
                 label={t`Supplier Order Number`}
+                termId="purchase-order-supplier-order-number"
               />
               <SupplierLocation
                 name="supplierLocationId"
@@ -172,7 +173,11 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
                 value={supplier.supplierContactId}
               />
 
-              <Location name="locationId" label={t`Delivery Location`} />
+              <Location
+                name="locationId"
+                label={t`Delivery Location`}
+                termId="purchase-order-delivery-location"
+              />
               <Currency
                 name="currencyCode"
                 label={t`Currency`}
@@ -189,6 +194,7 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
               <Select
                 name="purchaseOrderType"
                 label={t`Type`}
+                termId="purchase-order-type"
                 options={purchaseOrderTypeType.map((type) => ({
                   label: type,
                   value: type

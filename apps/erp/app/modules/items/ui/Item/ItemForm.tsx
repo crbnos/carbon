@@ -32,11 +32,11 @@ import {
   TextArea,
   UnitOfMeasure
 } from "~/components/Form";
+import { itemTypeIdLabel } from "~/components/Form/itemTypeLabel";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { usePermissions } from "~/hooks";
 import type { MethodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
-import { capitalize } from "~/utils/string";
 import {
   itemReplenishmentSystems,
   itemTrackingTypes,
@@ -48,13 +48,9 @@ type ItemFormProps = {
   type: Database["public"]["Enums"]["itemType"];
 };
 
-function getLabel(type: Database["public"]["Enums"]["itemType"]) {
-  return capitalize(type);
-}
-
 const ItemForm = ({ initialValues, type }: ItemFormProps) => {
   const permissions = usePermissions();
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const fetcher = useFetcher<{}>();
 
   const translateItemTrackingType = (v: string) =>
@@ -82,6 +78,8 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
   const [defaultMethodType, setDefaultMethodType] = useState<string>(
     initialValues.defaultMethodType ?? "Purchase to Order"
   );
+  const readableIdLabel = i18n._(itemTypeIdLabel(type));
+
   const itemReplenishmentSystemOptions =
     itemReplenishmentSystems.map((itemReplenishmentSystem) => ({
       label: (
@@ -138,11 +136,7 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
           <Hidden name="id" />
           <Hidden name="type" />
           <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 md:grid-cols-3">
-            <Input
-              isReadOnly
-              name="readableId"
-              label={`${getLabel(type)} ID`}
-            />
+            <Input isReadOnly name="readableId" label={readableIdLabel} />
 
             <Input
               name="name"
@@ -152,7 +146,7 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
             <Select
               name="itemTrackingType"
               label={t`Tracking Type`}
-              termId="tracked-entity"
+              termId="item-tracking-type"
               options={itemTrackingTypeOptions}
             />
 
@@ -173,7 +167,7 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
             <DefaultMethodType
               name="defaultMethodType"
               label={t`Default Method Type`}
-              termId="method-type"
+              termId="item-default-method-type"
               replenishmentSystem={replenishmentSystem}
               value={defaultMethodType}
               onChange={(newValue) =>

@@ -16,6 +16,8 @@ import { ResizablePanels } from "~/components/Layout";
 import type { ItemFile, MaterialSummary } from "~/modules/items";
 import {
   getItemFiles,
+  getItemSupersededBy,
+  getItemSupersession,
   getMakeMethods,
   getMaterial,
   getMaterialUsedIn,
@@ -47,14 +49,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [materialSummary, supplierParts, pickMethods, tags] = await Promise.all(
-    [
-      getMaterial(client, itemId, companyId),
-      getSupplierParts(client, itemId, companyId),
-      getPickMethods(client, itemId, companyId),
-      getTagsList(client, companyId, "material")
-    ]
-  );
+  const [
+    materialSummary,
+    supplierParts,
+    pickMethods,
+    tags,
+    supersession,
+    supersededBy
+  ] = await Promise.all([
+    getMaterial(client, itemId, companyId),
+    getSupplierParts(client, itemId, companyId),
+    getPickMethods(client, itemId, companyId),
+    getTagsList(client, companyId, "material"),
+    getItemSupersession(client, itemId, companyId),
+    getItemSupersededBy(client, itemId, companyId)
+  ]);
 
   if (materialSummary.error) {
     throw redirect(
@@ -68,6 +77,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     materialSummary: materialSummary.data,
+    supersession: supersession.data,
+    supersededBy: supersededBy.data ?? [],
     files: getItemFiles(client, itemId, companyId),
     supplierParts: supplierParts.data ?? [],
     pickMethods: pickMethods.data ?? [],

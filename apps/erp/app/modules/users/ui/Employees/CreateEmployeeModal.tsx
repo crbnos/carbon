@@ -77,10 +77,15 @@ const CreateEmployeeModal = ({ invitable }: CreateEmployeeModalProps) => {
               <Select
                 name="employeeType"
                 label={t`Employee Type`}
+                termId="create-employee-employee-type"
                 options={employeeTypeOptions}
                 placeholder={t`Select Employee Type`}
               />
-              <Location name="locationId" label={t`Location`} />
+              <Location
+                name="locationId"
+                label={t`Location`}
+                termId="create-employee-location"
+              />
             </VStack>
           </ModalBody>
           <ModalFooter>

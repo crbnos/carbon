@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  LabelWithHelp,
   ModalDrawer,
   ModalDrawerBody,
   ModalDrawerContent,
@@ -122,6 +123,7 @@ const ProcessForm = ({
                 <Select
                   name="processType"
                   label={t`Process Type`}
+                  termId="process-type"
                   options={processTypes.map((pt) => ({
                     value: pt,
                     label: pt
@@ -137,6 +139,7 @@ const ProcessForm = ({
                     <StandardFactor
                       name="defaultStandardFactor"
                       label={t`Default Unit`}
+                      termId="process-default-unit"
                       value={initialValues.defaultStandardFactor}
                     />
                     <WorkCenters
@@ -151,8 +154,8 @@ const ProcessForm = ({
                 )}
                 <Boolean
                   name="completeAllOnScan"
-                  label=""
-                  description={t`Complete all quantities on barcode scan`}
+                  label={t`Complete all quantities on barcode scan`}
+                  termId="process-complete-all-on-scan"
                 />
                 <CustomFormFields table="process" />
               </VStack>
@@ -189,7 +192,11 @@ function SupplierProcesses({ processId }: { processId?: string }) {
       <div className="flex flex-col gap-2 w-full">
         {processes.length > 0 && (
           <>
-            <label className="text-muted-foreground text-xs">{t`Suppliers`}</label>
+            <label className="text-muted-foreground text-xs">
+              <LabelWithHelp termId="process-suppliers">
+                {t`Suppliers`}
+              </LabelWithHelp>
+            </label>
             {processes.map((sp) => (
               <HStack
                 key={sp.id}

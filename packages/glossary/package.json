@@ -14,11 +14,16 @@
     "test:watch": "vitest",
     "typecheck": "tsgo --noEmit"
   },
+  "dependencies": {
+    "@lingui/core": "catalog:"
+  },
   "devDependencies": {
     "@carbon/config": "workspace:*",
+    "@lingui/vite-plugin": "catalog:",
     "rimraf": "catalog:",
     "tsup": "catalog:",
     "typescript": "catalog:",
+    "vite-plugin-babel-macros": "catalog:",
     "vitest": "catalog:"
   }
 }

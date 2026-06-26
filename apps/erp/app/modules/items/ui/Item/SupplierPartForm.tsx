@@ -179,7 +179,11 @@ const SupplierPartForm = ({
             <VStack spacing={4}>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
                 <Supplier name="supplierId" label={t`Supplier`} />
-                <Input name="supplierPartId" label={t`Supplier Part ID`} />
+                <Input
+                  name="supplierPartId"
+                  label={t`Supplier Part ID`}
+                  termId="supplier-part-id"
+                />
                 <Number
                   name="unitPrice"
                   label={t`Unit Price`}
@@ -207,11 +211,13 @@ const SupplierPartForm = ({
                   name="minimumOrderQuantity"
                   label={t`Minimum Order Quantity`}
                   minValue={0}
+                  termId="supplier-part-moq"
                 />
                 <Number
                   name="orderMultiple"
                   label={t`Order Multiple`}
                   minValue={1}
+                  termId="supplier-part-order-multiple"
                 />
                 <CustomFormFields table="partSupplier" />
               </div>
@@ -238,10 +244,10 @@ const SupplierPartForm = ({
                 isLoading={fetcher.state !== "idle"}
                 withBlocker={false}
               >
-                Save
+                <Trans>Save</Trans>
               </Submit>
               <Button size="md" variant="solid" onClick={onClose}>
-                Cancel
+                <Trans>Cancel</Trans>
               </Button>
             </HStack>
           </DrawerFooter>
@@ -433,7 +439,9 @@ function PriceBreaks({
 
   return (
     <div className="space-y-3 w-full">
-      <span className="font-medium text-sm">Price Breaks</span>
+      <span className="font-medium text-sm">
+        <Trans>Price Breaks</Trans>
+      </span>
       <Grid<PriceBreakRow>
         data={priceBreaks}
         columns={columns}

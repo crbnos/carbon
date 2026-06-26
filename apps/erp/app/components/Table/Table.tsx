@@ -554,20 +554,18 @@ const Table = <T extends object>({
   const onCellClick = useCallback(
     (row: number, column: number) => {
       // ignore row select checkbox column
-      if (
-        selectedCell?.row === row &&
-        selectedCell?.column === column &&
-        isColumnEditable(column)
-      ) {
+      if (column === -1) return;
+      // Editable cells enter edit mode on a single click (the editable input
+      // then auto-focuses and selects its text), instead of select-then-click.
+      if (isColumnEditable(column)) {
+        onSelectedCellChange({ row, column });
         setIsEditing(true);
         return;
       }
-      // ignore row select checkbox column
-      if (column === -1) return;
       setIsEditing(false);
       onSelectedCellChange({ row, column });
     },
-    [selectedCell, isColumnEditable, onSelectedCellChange]
+    [isColumnEditable, onSelectedCellChange]
   );
 
   const onCellUpdate = useCallback(
@@ -714,14 +712,14 @@ const Table = <T extends object>({
   const filters = useMemo(
     () =>
       columns.reduce<ColumnFilter[]>((acc, column) => {
-        if (
-          column.meta?.filter &&
-          column.header &&
+        const header =
           typeof column.header === "string"
-        ) {
+            ? column.header
+            : column.meta?.filterHeader;
+        if (column.meta?.filter && header) {
           const filter: ColumnFilter = {
             accessorKey: getAccessorKey(column) ?? column.id!,
-            header: column.header,
+            header,
             pluralHeader: column.meta.pluralHeader,
             filter: column.meta.filter,
             icon: column.meta.icon

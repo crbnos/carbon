@@ -262,6 +262,7 @@ function SupplierQuoteLineItem({
   const { id, lineId } = useParams();
   if (!id) throw new Error("Could not find id");
   const [items] = useItems();
+  const itemType = items.find((i) => i.id === line.itemId)?.type;
   const permissions = usePermissions();
   const disclosure = useDisclosure();
   const location = useOptimisticLocation();
@@ -331,25 +332,29 @@ function SupplierQuoteLineItem({
                   <Trans>Delete Line</Trans>
                 </DropdownMenuItem>
 
-                {/* @ts-expect-error */}
-                {methodItemType.includes(line.supplierQuoteLineType ?? "") && (
-                  <DropdownMenuItem
-                    asChild
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <Link
-                      to={getLinkToItemDetails(
-                        line.supplierQuoteLineType as MethodItemType,
-                        line.itemId!
-                      )}
+                {itemType &&
+                  methodItemType.includes(itemType as MethodItemType) && (
+                    <DropdownMenuItem
+                      asChild
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      <DropdownMenuIcon
-                        icon={<MethodItemTypeIcon type="Part" />}
-                      />
-                      <Trans>View Item Master</Trans>
-                    </Link>
-                  </DropdownMenuItem>
-                )}
+                      <Link
+                        to={getLinkToItemDetails(
+                          itemType as MethodItemType,
+                          line.itemId!
+                        )}
+                      >
+                        <DropdownMenuIcon
+                          icon={
+                            <MethodItemTypeIcon
+                              type={itemType as MethodItemType}
+                            />
+                          }
+                        />
+                        <Trans>View Item Master</Trans>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

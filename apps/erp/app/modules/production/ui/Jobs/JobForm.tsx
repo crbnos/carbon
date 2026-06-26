@@ -35,6 +35,7 @@ import {
   SequenceOrCustomId,
   Submit
 } from "~/components/Form";
+import { itemTypeLabel } from "~/components/Form/itemTypeLabel";
 import { usePermissions, useUser } from "~/hooks";
 import type {
   ConfigurationParameter,
@@ -63,7 +64,7 @@ type JobFormProps = {
 
 const JobForm = ({ initialValues }: JobFormProps) => {
   const permissions = usePermissions();
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const { company } = useUser();
   const { carbon } = useCarbon();
   const [type, setType] = useState<MethodItemType>(
@@ -278,7 +279,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
 
                       <Item
                         name="itemId"
-                        label={type}
+                        label={i18n._(itemTypeLabel(type))}
                         type={type}
                         value={itemData.itemId}
                         locationId={initialValues.locationId ?? undefined}
@@ -317,6 +318,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                       <NumberControlled
                         name="scrapQuantity"
                         label={t`Estimated Scrap Quantity`}
+                        termId="job-estimated-scrap-quantity"
                         value={itemData.scrapQuantity}
                         onChange={(value) =>
                           setItemData((prev) => ({
@@ -339,6 +341,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                       <Select
                         name="deadlineType"
                         label={t`Deadline Type`}
+                        termId="job-deadline-type"
                         options={deadlineTypes.map((d) => ({
                           value: d,
                           label: (
@@ -429,7 +432,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                       >
                         <Item
                           name="itemId"
-                          label={type}
+                          label={i18n._(itemTypeLabel(type))}
                           type={type}
                           value={itemData.itemId}
                           locationId={initialValues.locationId ?? undefined}
@@ -443,6 +446,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                         <NumberControlled
                           name="totalQuantity"
                           label={t`Total Quantity`}
+                          termId="job-bulk-total-quantity"
                           value={itemData.quantity}
                           onChange={(value) =>
                             setItemData((prev) => ({
@@ -456,6 +460,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                         <NumberControlled
                           name="quantityPerJob"
                           label={t`Quantity Per Job`}
+                          termId="job-bulk-quantity-per-job"
                           value={itemData.quantityPerJob}
                           onChange={(value) =>
                             setItemData((prev) => ({
@@ -469,6 +474,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                         <NumberControlled
                           name="scrapQuantityPerJob"
                           label={t`Scrap Quantity Per Job`}
+                          termId="job-bulk-scrap-quantity-per-job"
                           value={itemData.scrapQuantity}
                           onChange={(value) =>
                             setItemData((prev) => ({
@@ -482,12 +488,14 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                         <DatePicker
                           name="dueDateOfFirstJob"
                           label={t`Due Date of First Job`}
+                          termId="job-bulk-due-date-first"
                           isDisabled={isCustomer}
                         />
 
                         <DatePicker
                           name="dueDateOfLastJob"
                           label={t`Due Date of Last Job`}
+                          termId="job-bulk-due-date-last"
                           isDisabled={isCustomer}
                         />
 
@@ -495,6 +503,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                         <Select
                           name="deadlineType"
                           label={t`Deadline Type`}
+                          termId="job-deadline-type"
                           options={deadlineTypes.map((d) => ({
                             value: d,
                             label: (

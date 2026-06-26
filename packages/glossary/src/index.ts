@@ -1,5 +1,7 @@
 export {
+  getDefinitionText,
   getEntry,
+  getTermText,
   glossaryEntries,
   hasEntry,
   listEntries,

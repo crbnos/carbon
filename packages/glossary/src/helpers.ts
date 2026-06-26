@@ -13,12 +13,11 @@ export function termSlug(term: string): string {
 
 /** Literal union of every canonical term id in the glossary — gives compile-time
  * typo protection at the call site (`useFieldHelp("typo")` is a type error).
- * Note: aliases (e.g. `cost-of-goods-sold` for `cogs`) are NOT in this union —
- * they resolve at runtime via `hasEntry`/`getEntry`. App call-sites should use
+ * Aliases (e.g. `cost-of-goods-sold` for `cogs`) are NOT in this union — they
+ * resolve at runtime via `hasEntry`/`lookupEntry`. App call-sites should use
  * the canonical id; aliases exist so docs prose can write the spelled-out form. */
 export type TermId = keyof typeof terms;
 
-/** Lazy-built alias → canonical id index. Built once on first call. */
 let aliasIndex: Map<string, TermId> | undefined;
 function getAliasIndex(): Map<string, TermId> {
   if (aliasIndex) return aliasIndex;
@@ -57,6 +56,19 @@ export function hasEntry(id: string): boolean {
   return Object.hasOwn(terms, id) || getAliasIndex().has(id);
 }
 
+/** Source English of a glossary entry's term. Use this in non-Lingui contexts
+ * (the docs Next.js site, server-side logs); ERP/MES UI should resolve through
+ * `i18n._(entry.term)` so the user sees the active locale. */
+export function getTermText(entry: GlossaryEntry): string {
+  return entry.term.message ?? "";
+}
+
+/** Source English of a glossary entry's definition. See `getTermText` for when
+ * to use this vs. `i18n._(entry.definition)`. */
+export function getDefinitionText(entry: GlossaryEntry): string {
+  return entry.definition.message ?? "";
+}
+
 /** Every canonical entry tagged with its slug, in insertion order. Aliases are
  * not included as separate rows. Useful for tables or list renders that need
  * both pieces. */
@@ -67,11 +79,11 @@ export function listEntries(): Array<{ id: TermId; entry: GlossaryEntry }> {
   }));
 }
 
-/** Canonical entries, alphabetically sorted by display term. The on-page docs
- * glossary and the search index both consume this. Aliases are not surfaced
- * as separate rows. */
+/** Canonical entries, alphabetically sorted by display term (source English).
+ * The on-page docs glossary and the search index both consume this — neither
+ * runs Lingui at render, so sorting by the English source is correct there. */
 export function glossaryEntries(): GlossaryEntry[] {
   return Object.values(terms).sort((a, b) =>
-    a.term.toLowerCase().localeCompare(b.term.toLowerCase())
+    getTermText(a).toLowerCase().localeCompare(getTermText(b).toLowerCase())
   );
 }

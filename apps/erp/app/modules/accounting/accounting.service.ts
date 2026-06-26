@@ -1,5 +1,10 @@
 import type { Database, Json } from "@carbon/database";
-import { getDateNYearsAgo, toStoredAmount } from "@carbon/utils";
+import {
+  getDateNYearsAgo,
+  toDisplayCredit,
+  toDisplayDebit,
+  toStoredAmount
+} from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import { getNextSequence } from "~/modules/settings";
@@ -1838,10 +1843,25 @@ export async function postJournalEntry(
     return { data: null, error: { message: "Journal entry has no lines" } };
   }
 
-  // 2. Validate balance (sum of amounts should be 0)
-  const total = lines.reduce((sum, l) => sum + Number(l.amount), 0);
+  // 2. Validate balance. Amounts are stored in natural-balance convention
+  // (toStoredAmount), so a balanced entry has Σdebits === Σcredits, not
+  // Σamount === 0 (that only holds if every account were natural-debit).
+  let debits = 0;
+  let credits = 0;
+  for (const line of lines) {
+    const accountClass = line.account?.class;
+    if (!accountClass) {
+      return {
+        data: null,
+        error: { message: "Journal line is missing an account" }
+      };
+    }
+    const amount = Number(line.amount);
+    debits += toDisplayDebit(amount, accountClass);
+    credits += toDisplayCredit(amount, accountClass);
+  }
 
-  if (Math.abs(total) > 0.001) {
+  if (Math.abs(debits - credits) > 0.001) {
     return {
       data: null,
       error: { message: "Total debits must equal total credits" }

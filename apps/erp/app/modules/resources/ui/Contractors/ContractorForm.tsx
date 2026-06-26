@@ -97,6 +97,7 @@ const ContractorForm = ({ initialValues }: ContractorFormProps) => {
               <Number
                 name="hoursPerWeek"
                 label={t`Hours per Week`}
+                termId="contractor-hours-per-week"
                 helperText={t`The number of hours per week the contractor is available to work.`}
                 minValue={0}
                 maxValue={10000}

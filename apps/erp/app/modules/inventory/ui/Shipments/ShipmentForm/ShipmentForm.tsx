@@ -258,6 +258,7 @@ const ShipmentForm = ({
                 <Select
                   name="sourceDocument"
                   label={t`Source Document`}
+                  termId="shipment-source-document"
                   options={shipmentSourceDocumentType.map((v) => ({
                     label: v,
                     value: v
@@ -274,6 +275,7 @@ const ShipmentForm = ({
                 <Combobox
                   name="sourceDocumentId"
                   label={t`Source Document ID`}
+                  termId="shipment-source-document-id"
                   options={sourceDocuments.map((d) => ({
                     label: d.name,
                     value: d.id

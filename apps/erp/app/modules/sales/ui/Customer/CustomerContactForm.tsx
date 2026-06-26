@@ -43,7 +43,6 @@ const CustomerContactForm = ({
   onClose
 }: CustomerContactFormProps) => {
   const { t } = useLingui();
-  const { t: tShared } = useLingui();
   const fetcher = useAsyncFetcher<{ success?: boolean; message: string }>({
     onStateChange(state) {
       if (state === "idle" && fetcher.data && !fetcher.data.success) {
@@ -95,9 +94,9 @@ const CustomerContactForm = ({
             <Hidden name="type" value={type} />
             <Hidden name="contactId" />
             <VStack spacing={4}>
-              <Input name="email" label={tShared`Email`} />
-              <Input name="firstName" label={tShared`First Name`} />
-              <Input name="lastName" label={tShared`Last Name`} />
+              <Input name="email" label={t`Email`} />
+              <Input name="firstName" label={t`First Name`} />
+              <Input name="lastName" label={t`Last Name`} />
               <Input name="title" label={t`Title`} />
               <PhoneInput name="mobilePhone" label={t`Mobile Phone`} />
               <PhoneInput name="homePhone" label={t`Home Phone`} />

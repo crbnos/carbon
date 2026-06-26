@@ -70,6 +70,7 @@ const SalesOrderPaymentForm = ({
               name="invoiceCustomerId"
               label={t`Invoice Customer`}
               onChange={(value) => setCustomer(value?.value as string)}
+              termId="invoice-customer"
             />
             <CustomerLocation
               name="invoiceCustomerLocationId"
@@ -82,7 +83,11 @@ const SalesOrderPaymentForm = ({
               customer={customer}
             />
 
-            <PaymentTerm name="paymentTermId" label={t`Payment Term`} />
+            <PaymentTerm
+              name="paymentTermId"
+              label={t`Payment Term`}
+              termId="customer-payment-term"
+            />
           </div>
         </CardContent>
         <CardFooter>

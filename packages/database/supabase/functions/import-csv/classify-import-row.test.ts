@@ -11,7 +11,7 @@ const base = () => ({
 Deno.test("skips a row whose name is blank", () => {
   assertEquals(
     classifyImportRow({ ...base(), id: "X", name: "   " }),
-    { action: "skip", reason: "Missing required Name" }
+    { action: "skip", reason: "Missing required Name", category: "error" }
   );
 });
 
@@ -56,7 +56,7 @@ Deno.test("skips a duplicate non-empty id within the file", () => {
       name: "Acme 2",
       seenIds: new Set(["SUP-1"]),
     }),
-    { action: "skip", reason: 'Duplicate ID "SUP-1" in file' }
+    { action: "skip", reason: 'Duplicate ID "SUP-1" in file', category: "skipped" }
   );
 });
 
@@ -68,7 +68,7 @@ Deno.test("skips a duplicate name within the file", () => {
       name: "Acme",
       seenNames: new Set(["Acme"]),
     }),
-    { action: "skip", reason: 'Duplicate name "Acme" in file' }
+    { action: "skip", reason: 'Duplicate name "Acme" in file', category: "skipped" }
   );
 });
 
@@ -79,7 +79,7 @@ Deno.test("skips a repeated non-empty id once the caller has recorded it", () =>
   ctx.seenIds.add("SUP-1");
   ctx.seenNames.add("Acme");
   const d2 = classifyImportRow({ ...ctx, id: "SUP-1", name: "Acme 2" });
-  assertEquals(d2, { action: "skip", reason: 'Duplicate ID "SUP-1" in file' });
+  assertEquals(d2, { action: "skip", reason: 'Duplicate ID "SUP-1" in file', category: "skipped" });
 });
 
 Deno.test("falls back to name match when a non-empty id has no id match", () => {

@@ -2,6 +2,7 @@ import { ValidatedForm } from "@carbon/form";
 import {
   Button,
   HStack,
+  LabelWithHelp,
   ModalDrawer,
   ModalDrawerBody,
   ModalDrawerContent,
@@ -123,6 +124,7 @@ const ChartOfAccountForm = ({
                 <Combobox
                   name="parentId"
                   label={t`Group`}
+                  termId="chart-of-account-group"
                   options={groupAccounts
                     .filter((a) => a.class !== null)
                     .map((a) => ({
@@ -138,20 +140,26 @@ const ChartOfAccountForm = ({
                     {accountType && (
                       <div className="space-y-1">
                         <label className="text-sm font-medium text-muted-foreground">
-                          <Trans>Account Type</Trans>
+                          <LabelWithHelp termId="chart-of-account-account-type-inherited">
+                            <Trans>Account Type</Trans>
+                          </LabelWithHelp>
                         </label>
                         <p className="text-sm">{accountType}</p>
                       </div>
                     )}
                     <div className="space-y-1">
                       <label className="text-sm font-medium text-muted-foreground">
-                        <Trans>Income/Balance</Trans>
+                        <LabelWithHelp termId="chart-of-account-income-balance-inherited">
+                          <Trans>Income/Balance</Trans>
+                        </LabelWithHelp>
                       </label>
                       <p className="text-sm">{incomeBalance}</p>
                     </div>
                     <div className="space-y-1">
                       <label className="text-sm font-medium text-muted-foreground">
-                        <Trans>Class</Trans>
+                        <LabelWithHelp termId="chart-of-account-class-inherited">
+                          <Trans>Class</Trans>
+                        </LabelWithHelp>
                       </label>
                       <p className="text-sm">{accountClass}</p>
                     </div>

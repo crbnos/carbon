@@ -11,6 +11,7 @@
 // Storage Unit form.
 
 import { CreatableCombobox } from "@carbon/form";
+import type { TermId } from "@carbon/glossary";
 import {
   CreatableCombobox as CreatableComboboxBase,
   useDisclosure
@@ -249,6 +250,8 @@ type StorageUnitProps = {
   onClick?: MouseEventHandler<HTMLButtonElement>;
   locationId?: string | null;
   itemId?: string;
+  /** Glossary term wired to a `<LabelWithHelp>` info icon next to the label. */
+  termId?: TermId;
   /** Render a compact inline preview (table cells) once a value is set. */
   inline?: boolean;
   /** Show the "+ New storage unit" create option. Defaults to `true`. */
@@ -274,6 +277,7 @@ function StorageUnit({
   onClick,
   locationId,
   itemId,
+  termId,
   inline,
   allowCreate = true,
   onChange
@@ -297,6 +301,7 @@ function StorageUnit({
           value={value ?? undefined}
           options={options}
           label={label ?? "Storage Unit"}
+          termId={termId}
           helperText={helperText}
           placeholder={placeholder}
           isReadOnly={readOnly}

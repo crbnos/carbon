@@ -11,6 +11,7 @@ import { IconButton } from "../IconButton";
 import { InputGroup } from "../Input";
 import {
   Popover,
+  PopoverAnchor,
   PopoverContent,
   PopoverFooter,
   PopoverTrigger
@@ -102,11 +103,14 @@ const DatePicker = (
                     <LuBan className="!text-destructive-foreground absolute right-[12px] top-[12px]" />
                   )}
                 </div>
-                <div className="flex-shrink-0 -mt-px">
-                  <PopoverTrigger tabIndex={-1}>
+                {/* Anchor (not Trigger) so the calendar button isn't wrapped
+                    in a second <button>; the popover open state is driven by
+                    react-aria's buttonProps on FieldButton. */}
+                <PopoverAnchor asChild>
+                  <div className="flex-shrink-0 -mt-px">
                     <FieldButton {...buttonProps} isPressed={state.isOpen} />
-                  </PopoverTrigger>
-                </div>
+                  </div>
+                </PopoverAnchor>
               </InputGroup>
             </>
           )}

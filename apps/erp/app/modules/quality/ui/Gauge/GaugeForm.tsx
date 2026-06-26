@@ -123,7 +123,11 @@ const GaugeForm = ({
                   <HStack className="w-full justify-between pr-8">
                     <VStack>
                       <ModalDrawerTitle>
-                        {isEditing ? `${initialValues.gaugeId}` : "New Gauge"}
+                        {isEditing ? (
+                          `${initialValues.gaugeId}`
+                        ) : (
+                          <Trans>New Gauge</Trans>
+                        )}
                       </ModalDrawerTitle>
                       <ModalDrawerDescription>
                         {isEditing ? initialValues.description : undefined}
@@ -231,7 +235,9 @@ const GaugeForm = ({
                                                         }
                                                       </p>
                                                       <span className="text-xs text-muted-foreground">
-                                                        Calibration Record
+                                                        <Trans>
+                                                          Calibration Record
+                                                        </Trans>
                                                       </span>
                                                     </VStack>
                                                   </HStack>
@@ -390,6 +396,7 @@ function GaugeFormContent({
         <Select
           name="gaugeRole"
           label={t`Role`}
+          termId="gauge-role"
           options={gaugeRole.map((role) => ({
             label: <GaugeRole role={role} />,
             value: role
@@ -407,6 +414,7 @@ function GaugeFormContent({
         <DatePicker
           name="lastCalibrationDate"
           label={t`Last Calibration Date`}
+          termId="gauge-last-calibration-date"
           value={calibrationInterval.lastCalibrationDate}
           onChange={(value) => {
             setCalibrationInterval({
@@ -425,6 +433,7 @@ function GaugeFormContent({
         <DatePicker
           name="nextCalibrationDate"
           label={t`Next Calibration Date`}
+          termId="gauge-next-calibration-date"
           value={calibrationInterval.nextCalibrationDate}
           onChange={(value) => {
             setCalibrationInterval({
@@ -446,6 +455,7 @@ function GaugeFormContent({
         <NumberControlled
           name="calibrationIntervalInMonths"
           label={t`Calibration Interval (Months)`}
+          termId="gauge-calibration-interval-months"
           value={calibrationInterval.calibrationIntervalInMonths}
           onChange={(value) => {
             setCalibrationInterval({

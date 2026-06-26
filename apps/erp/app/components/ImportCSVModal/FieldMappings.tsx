@@ -43,7 +43,7 @@ import type {
   CreatableLookup,
   importSchemas
 } from "~/modules/shared";
-import { fieldMappings } from "~/modules/shared";
+import { creatableFormPermissions, fieldMappings } from "~/modules/shared";
 import type { action } from "~/routes/api+/ai+/csv+/$table.columns";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
@@ -232,7 +232,7 @@ export function FieldMapping({
 
         <ModalDescription>
           {currentStep === 0
-            ? t`We've mapped each column to what we believe is correct, but please review the data below to confirm it's accurate.`
+            ? t`We auto-matched each column. Review the values below before continuing.`
             : enumFields[currentStep - 1][1].enumData.description}
         </ModalDescription>
       </ModalHeader>
@@ -525,10 +525,8 @@ function EnumMappingStep({
   const creatableForm = enumData.creatableForm;
   const permissions = usePermissions();
   const canCreateViaForm =
-    (creatableForm === "paymentTerm" &&
-      permissions.can("create", "accounting")) ||
-    (creatableForm === "shippingMethod" &&
-      permissions.can("create", "inventory"));
+    !!creatableForm &&
+    permissions.can("create", creatableFormPermissions[creatableForm]);
   const formModal = useDisclosure();
   const [formCreatedName, setFormCreatedName] = useState("");
   const pendingFormCsvValueRef = useRef<string | null>(null);
@@ -595,19 +593,38 @@ function EnumMappingStep({
             name: `${name}-${csvValue}`,
             value: mappings[csvValue],
             options,
+            // Optional so the combobox shows a clear (×) affordance. Clearing
+            // resets the row to empty — this lets a mis-pick be undone, and
+            // clearing the Default row sets the field back to "leave blank".
+            isOptional: true,
             onChange: (value: { value: string; label: ReactNode } | null) => {
-              if (value?.value) {
-                onEnumMappingChange(name, csvValue, value.value);
-              }
+              onEnumMappingChange(name, csvValue, value?.value ?? "");
             }
           };
           return (
             <Fragment key={csvValue}>
-              <div className="relative flex min-w-0 items-center gap-2">
-                <div>{csvValue}</div>
-                <div className="flex items-center justify-end">
-                  <LuMoveRight className="text-muted-foreground" />
+              <div className="flex min-w-0 items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-1.5">
+                  <div className="min-w-0 truncate" title={csvValue}>
+                    {csvValue}
+                  </div>
+                  {csvValue === "Default" && (
+                    <TooltipProvider delayDuration={50}>
+                      <Tooltip>
+                        <TooltipTrigger className="flex-shrink-0">
+                          <LuInfo className="text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-64 p-2 text-sm">
+                          <Trans>
+                            Used when a cell is empty or doesn't match an option
+                            above. Clear it to leave those rows blank.
+                          </Trans>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                 </div>
+                <LuMoveRight className="flex-shrink-0 text-muted-foreground" />
               </div>
               {creatableLookup ? (
                 <CreatableCombobox

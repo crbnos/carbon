@@ -54,6 +54,7 @@ const SupplierPaymentForm = ({ initialValues }: SupplierPaymentFormProps) => {
               name="invoiceSupplierId"
               label={t`Invoice Supplier`}
               onChange={(value) => setSupplier(value?.value as string)}
+              termId="invoice-supplier"
             />
             <SupplierLocation
               name="invoiceSupplierLocationId"
@@ -66,7 +67,11 @@ const SupplierPaymentForm = ({ initialValues }: SupplierPaymentFormProps) => {
               supplier={supplier}
             />
 
-            <PaymentTerm name="paymentTermId" label={t`Payment Term`} />
+            <PaymentTerm
+              name="paymentTermId"
+              label={t`Payment Term`}
+              termId="supplier-payment-term"
+            />
             <CustomFormFields table="supplierPayment" />
           </div>
         </CardContent>

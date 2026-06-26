@@ -1,6 +1,6 @@
 {
-  "generated": "2026-06-21T22:03:32.744Z",
-  "totalTools": 1209,
+  "generated": "2026-06-26T23:06:34.350Z",
+  "totalTools": 1219,
   "modules": 15,
   "tools": [
     {
@@ -9250,6 +9250,84 @@
       }
     },
     {
+      "name": "items_getItemSupersession",
+      "module": "items",
+      "classification": "READ",
+      "description": "get item supersession",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "itemId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemId"
+        ]
+      }
+    },
+    {
+      "name": "items_getItemSupersededBy",
+      "module": "items",
+      "classification": "READ",
+      "description": "get item superseded by",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "itemId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemId"
+        ]
+      }
+    },
+    {
+      "name": "items_getSupersessionChain",
+      "module": "items",
+      "classification": "READ",
+      "description": "get supersession chain",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "itemId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "itemId"
+        ]
+      }
+    },
+    {
       "name": "items_getItemStorageUnitQuantities",
       "module": "items",
       "classification": "READ",
@@ -11577,6 +11655,31 @@
         },
         "required": [
           "itemId"
+        ]
+      }
+    },
+    {
+      "name": "items_upsertItemSupersession",
+      "module": "items",
+      "classification": "WRITE",
+      "description": "upsert item supersession",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "itemSupersession"
+      ],
+      "injectAuth": [
+        "companyId",
+        "createdBy",
+        "updatedBy"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "itemSupersession": {}
+        },
+        "required": [
+          "itemSupersession"
         ]
       }
     },
@@ -14999,6 +15102,106 @@
       }
     },
     {
+      "name": "production_getJobMaterialItemIds",
+      "module": "production",
+      "classification": "READ",
+      "description": "get job material item ids",
+      "paramCount": 1,
+      "serviceParams": [
+        "client",
+        "jobId",
+        "companyId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "jobId"
+        ]
+      }
+    },
+    {
+      "name": "production_getJobMaterialShortfallByItem",
+      "module": "production",
+      "classification": "READ",
+      "description": "get job material shortfall by item",
+      "paramCount": 3,
+      "serviceParams": [
+        "client",
+        "jobId",
+        "companyId",
+        "locationId",
+        "materials"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "materials": {
+            "type": "array",
+            "items": {}
+          }
+        },
+        "required": [
+          "jobId",
+          "locationId",
+          "materials"
+        ]
+      }
+    },
+    {
+      "name": "production_getJobOrderStatusMap",
+      "module": "production",
+      "classification": "READ",
+      "description": "get job order status map",
+      "paramCount": 4,
+      "serviceParams": [
+        "client",
+        "jobId",
+        "companyId",
+        "locationId",
+        "jobStatus",
+        "materials"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string"
+          },
+          "locationId": {
+            "type": "string"
+          },
+          "jobStatus": {},
+          "materials": {}
+        },
+        "required": [
+          "jobId",
+          "locationId",
+          "jobStatus",
+          "materials"
+        ]
+      }
+    },
+    {
       "name": "production_getJobMethodTree",
       "module": "production",
       "classification": "READ",
@@ -18086,6 +18289,63 @@
           "jobId",
           "mode",
           "direction"
+        ]
+      }
+    },
+    {
+      "name": "production_getJobMaterialPurchaseOrderLines",
+      "module": "production",
+      "classification": "READ",
+      "description": "get job material purchase order lines",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "materials",
+        "locationId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "materials": {},
+          "locationId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "materials",
+          "locationId"
+        ]
+      }
+    },
+    {
+      "name": "production_getJobMaterialSupplyJobLines",
+      "module": "production",
+      "classification": "READ",
+      "description": "get job material supply job lines",
+      "paramCount": 2,
+      "serviceParams": [
+        "client",
+        "materials",
+        "companyId",
+        "locationId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {
+          "materials": {},
+          "locationId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "materials",
+          "locationId"
         ]
       }
     },
@@ -33309,6 +33569,23 @@
       "serviceParams": [
         "client",
         "userId"
+      ],
+      "injectAuth": [
+        "companyId"
+      ],
+      "schema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "settings_getIndustries",
+      "module": "settings",
+      "classification": "READ",
+      "description": "get industries",
+      "paramCount": 0,
+      "serviceParams": [
+        "client"
       ],
       "injectAuth": [
         "companyId"

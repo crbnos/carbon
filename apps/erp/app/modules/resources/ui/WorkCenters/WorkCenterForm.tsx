@@ -109,7 +109,11 @@ const WorkCenterForm = ({
               <VStack spacing={4}>
                 <Input name="name" label={t`Name`} />
                 {showProcesses && (
-                  <Processes name="processes" label={t`Processes`} />
+                  <Processes
+                    name="processes"
+                    label={t`Processes`}
+                    termId="work-center-processes"
+                  />
                 )}
                 <TextArea name="description" label={t`Description`} />
                 <Location name="locationId" label={t`Location`} />
@@ -118,6 +122,7 @@ const WorkCenterForm = ({
                 <Number
                   name="laborRate"
                   label={t`Labor Rate (Hourly)`}
+                  termId="work-center-labor-rate"
                   formatOptions={{
                     style: "currency",
                     currency: baseCurrency
@@ -126,6 +131,7 @@ const WorkCenterForm = ({
                 <Number
                   name="machineRate"
                   label={t`Machine Rate (Hourly)`}
+                  termId="work-center-machine-rate"
                   formatOptions={{
                     style: "currency",
                     currency: baseCurrency
@@ -134,6 +140,7 @@ const WorkCenterForm = ({
                 <Number
                   name="overheadRate"
                   label={t`Overhead Rate (Hourly)`}
+                  termId="work-center-overhead-rate"
                   formatOptions={{
                     style: "currency",
                     currency: baseCurrency
@@ -143,6 +150,7 @@ const WorkCenterForm = ({
                 <StandardFactor
                   name="defaultStandardFactor"
                   label={t`Default Unit`}
+                  termId="work-center-default-unit"
                   value={initialValues.defaultStandardFactor}
                 />
                 {/* <Ability

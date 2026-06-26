@@ -1,75 +1,116 @@
-import type { Result } from "@carbon/auth";
 import {
   Badge,
   Button,
-  Count,
   HStack,
-  IconButton,
   MenuIcon,
   MenuItem,
-  ScrollArea,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  useMount,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, type ReactNode, useMemo } from "react";
 import {
   LuArrowDown,
   LuArrowLeftRight,
   LuArrowUp,
   LuBookMarked,
   LuCalendarX,
-  LuCheckCheck,
+  LuFactory,
   LuFlag,
   LuHash,
-  LuMaximize2,
-  LuMinus,
   LuRefreshCcwDot,
-  LuShoppingCart,
-  LuTrash2,
-  LuTruck,
-  LuX
+  LuShoppingCart
 } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import {
   Hyperlink,
+  ItemLifecycleBadge,
   ItemThumbnail,
   MethodIcon,
   Table,
   TrackingTypeIcon
 } from "~/components";
+import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { usePermissions, useRouteData, useUrlParams } from "~/hooks";
-import { useItems } from "~/stores";
-import {
-  addToStockTransferSession,
-  removeFromStockTransferSession,
-  useOrderItems,
-  useStockTransferSession,
-  useStockTransferSessionItemsCount,
-  useTransferItems
-} from "~/stores/stock-transfer";
+import { type Item, useItems } from "~/stores";
 import { path } from "~/utils/path";
-import type { Job, JobMaterial } from "../../types";
+import {
+  ACTIVE_JOB_STATUSES,
+  getJobOrderStatusCategory
+} from "../../production.models";
+import type { ItemOrderStatus, Job, JobMaterial } from "../../types";
+import { JobOrderStatusBadge } from "./JobOrderStatus";
 
 type JobMaterialsTableProps = {
   data: JobMaterial[];
   count: number;
   nearExpiryWarningDays?: number | null;
+  jobItemIds: string[];
+  orderStatusByMaterialId: Record<string, ItemOrderStatus>;
 };
+function HeaderTooltip({ label, hint }: { label: ReactNode; hint: ReactNode }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="cursor-help">{label}</span>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-xs">{hint}</TooltipContent>
+    </Tooltip>
+  );
+}
+
+// Pull the supersession mode off a job-material row (RPC column not yet in the
+// generated type). Drives the lifecycle badge on the material's item cell.
+function rowSupersession(row: JobMaterial) {
+  return (
+    row as {
+      supersessionMode?:
+        | "Consume First"
+        | "Prefer New"
+        | "Stock Only"
+        | "No Stock"
+        | null;
+    }
+  ).supersessionMode;
+}
+
 const JobMaterialsTable = memo(
-  ({ data, count, nearExpiryWarningDays }: JobMaterialsTableProps) => {
+  ({
+    data,
+    count,
+    nearExpiryWarningDays,
+    jobItemIds,
+    orderStatusByMaterialId
+  }: JobMaterialsTableProps) => {
     const { jobId } = useParams();
     const { t } = useLingui();
     if (!jobId) throw new Error("Job ID is required");
 
+    // orderStatus is a derived value, not a real column, so its URL filter is
+    // applied to the already-loaded rows here rather than in the query.
+    const { getFilter } = useFilters();
+    const orderStatusFilterKey = getFilter("orderStatus").join(",");
+
+    const jobItemIdSet = useMemo(() => new Set(jobItemIds), [jobItemIds]);
+
+    const filteredData = useMemo(() => {
+      if (!orderStatusFilterKey) return data;
+      const selected = new Set(orderStatusFilterKey.split(","));
+      return data.filter((material) => {
+        const category = getJobOrderStatusCategory(
+          material.id ? orderStatusByMaterialId[material.id] : undefined
+        );
+        return category !== null && selected.has(category);
+      });
+    }, [data, orderStatusFilterKey, orderStatusByMaterialId]);
+
     const routeData = useRouteData<{ job: Job }>(path.to.job(jobId));
-    const isRequired = ["Planned", "Ready", "In Progress", "Paused"].includes(
-      routeData?.job?.status ?? ""
+    const isRequired = ACTIVE_JOB_STATUSES.includes(
+      routeData?.job?.status as (typeof ACTIVE_JOB_STATUSES)[number]
     );
 
     const fetcher = useFetcher<{}>();
@@ -78,155 +119,145 @@ const JobMaterialsTable = memo(
     const [items] = useItems();
     const [, setSearchParams] = useUrlParams();
 
-    const sessionItemsCount = useStockTransferSessionItemsCount();
-    const [session, setStockTransferSession] = useStockTransferSession();
-
-    useMount(() => {
-      // Pre-populate stock transfer session with all parts that need transferred or ordered
-      const itemsToAdd: Array<{
-        id: string; // Job material ID
-        itemId: string; // Actual item ID
-        itemReadableId: string;
-        description: string;
-        action: "transfer" | "order";
-        quantity: number;
-        requiresSerialTracking: boolean;
-        requiresBatchTracking: boolean;
-        storageUnitId?: string;
-      }> = [];
-
-      data.forEach((material) => {
-        if (
-          material.itemTrackingType === "Non-Inventory" ||
-          material.methodType === "Make to Order" ||
-          !material.id
-        ) {
-          return;
-        }
-
-        const quantityRequiredByStorageUnit = isRequired
-          ? material.quantityFromProductionOrderInStorageUnit
-          : material.quantityFromProductionOrderInStorageUnit +
-            material.estimatedQuantity;
-
-        // Check if transfer is needed
-        const quantityOnHandInStorageUnit =
-          material.quantityOnHandInStorageUnit;
-        const quantityInTransitToStorageUnit =
-          material.quantityInTransitToStorageUnit;
-        const hasStorageUnitQuantityFlag =
-          quantityOnHandInStorageUnit + quantityInTransitToStorageUnit <
-          quantityRequiredByStorageUnit;
-
-        if (hasStorageUnitQuantityFlag) {
-          itemsToAdd.push({
-            id: material.id, // Job material ID
-            itemId: material.jobMaterialItemId, // Actual item ID
-            itemReadableId: material.itemReadableId,
-            description: material.description,
-            action: "transfer",
-            quantity:
-              quantityRequiredByStorageUnit - quantityOnHandInStorageUnit,
-            requiresSerialTracking: material.itemTrackingType === "Serial",
-            requiresBatchTracking: material.itemTrackingType === "Batch",
-            storageUnitId: material.storageUnitId
-          });
-        }
-
-        // Check if order is needed
-        const quantityOnHand =
-          material.quantityOnHandInStorageUnit +
-          material.quantityOnHandNotInStorageUnit;
-
-        const incoming =
-          material.quantityOnPurchaseOrder + material.quantityOnProductionOrder;
-
-        const required =
-          material.quantityFromProductionOrderInStorageUnit +
-          material.quantityFromProductionOrderNotInStorageUnit +
-          material.quantityOnSalesOrder;
-
-        const hasTotalQuantityFlag = quantityOnHand + incoming - required < 0;
-
-        if (hasTotalQuantityFlag) {
-          itemsToAdd.push({
-            id: material.id, // Job material ID
-            itemId: material.jobMaterialItemId, // Actual item ID
-            itemReadableId: material.itemReadableId,
-            description: material.description,
-            action: "order",
-            quantity:
-              (material.estimatedQuantity ?? 0) -
-              (quantityOnHand + incoming - required),
-            requiresSerialTracking: material.itemTrackingType === "Serial",
-            requiresBatchTracking: material.itemTrackingType === "Batch",
-            storageUnitId: material.storageUnitId
-          });
-        }
-      });
-
-      if (itemsToAdd.length > 0) {
-        setStockTransferSession({ items: itemsToAdd });
+    const replenishmentByItemId = useMemo(() => {
+      const map = new Map<string, Item["replenishmentSystem"]>();
+      for (const item of items) {
+        map.set(item.id, item.replenishmentSystem);
       }
-    });
+      return map;
+    }, [items]);
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const columns = useMemo<ColumnDef<JobMaterial>[]>(() => {
       return [
         {
-          accessorKey: "readableIdWithRevision",
+          accessorKey: "jobMaterialItemId",
           header: t`Item`,
-          cell: ({ row }) => (
-            <HStack className="py-1">
-              <ItemThumbnail
-                size="md"
-                // @ts-ignore
-                type={row.original.itemType}
-              />
+          cell: ({ row }) => {
+            const substitutedFromId = (
+              row.original as { substitutedFromItemId?: string | null }
+            ).substitutedFromItemId;
+            const substitutedFrom = substitutedFromId
+              ? (items.find((i) => i.id === substitutedFromId)
+                  ?.readableIdWithRevision ?? substitutedFromId)
+              : null;
+            return (
+              <HStack className="py-1">
+                <ItemThumbnail
+                  size="md"
+                  // @ts-ignore
+                  type={row.original.itemType}
+                />
 
-              <VStack spacing={0}>
-                <HStack spacing={2}>
-                  <Hyperlink
-                    to={path.to.jobMakeMethod(
-                      jobId,
-                      row.original.jobMakeMethodId
-                    )}
-                    onClick={() => {
-                      setSearchParams({ materialId: row.original.id ?? null });
-                    }}
-                    className="max-w-[260px] truncate"
-                  >
-                    {row.original.itemReadableId}
-                  </Hyperlink>
-                  {nearExpiryWarningDays !== null &&
-                    nearExpiryWarningDays !== undefined &&
-                    row.original.hasExpiredBatch && (
-                      <Badge variant="red" className="gap-1 text-xs shrink-0">
-                        <LuCalendarX className="size-3" />
-                        <Trans>Expired batch</Trans>
-                      </Badge>
-                    )}
-                </HStack>
-                <div className="w-full truncate text-muted-foreground text-xs">
-                  {row.original.description}
-                </div>
-              </VStack>
-            </HStack>
-          ),
+                <VStack spacing={0}>
+                  <HStack spacing={2}>
+                    <Hyperlink
+                      to={path.to.jobMakeMethod(
+                        jobId,
+                        row.original.jobMakeMethodId
+                      )}
+                      onClick={() => {
+                        setSearchParams({
+                          materialId: row.original.id ?? null
+                        });
+                      }}
+                      className="max-w-[260px] truncate"
+                    >
+                      {row.original.itemReadableId}
+                    </Hyperlink>
+                    <ItemLifecycleBadge mode={rowSupersession(row.original)} />
+                    {nearExpiryWarningDays !== null &&
+                      nearExpiryWarningDays !== undefined &&
+                      row.original.hasExpiredBatch && (
+                        <Badge variant="red" className="gap-1 text-xs shrink-0">
+                          <LuCalendarX className="size-3" />
+                          <Trans>Expired batch</Trans>
+                        </Badge>
+                      )}
+                  </HStack>
+                  <div className="w-full truncate text-muted-foreground text-xs">
+                    {row.original.description}
+                  </div>
+                  {substitutedFrom && (
+                    <div className="w-full truncate text-xs text-blue-700 dark:text-blue-300">
+                      ↩ <Trans>substituted from</Trans> {substitutedFrom}
+                    </div>
+                  )}
+                </VStack>
+              </HStack>
+            );
+          },
           meta: {
             icon: <LuBookMarked />,
+            // Filter by item id (a real column) so it filters server-side;
+            // scoped to items on this job, with the readable id as the label.
             filter: {
               type: "static",
-              options: items.map((item) => ({
-                value: item.readableIdWithRevision,
-                label: item.readableIdWithRevision
-              }))
+              options: items
+                .filter((item) => jobItemIdSet.has(item.id))
+                .map((item) => ({
+                  value: item.id,
+                  label: item.readableIdWithRevision
+                }))
+            }
+          }
+        },
+        {
+          id: "orderStatus",
+          header: () => (
+            <HeaderTooltip
+              label={t`Status`}
+              hint={
+                <Trans>
+                  Procurement status — needs ordering, planned, on order, or
+                  received. The same indicator shown in the BoM tree.
+                </Trans>
+              }
+            />
+          ),
+          cell: ({ row }) => (
+            <JobOrderStatusBadge
+              status={
+                row.original.id
+                  ? orderStatusByMaterialId[row.original.id]
+                  : undefined
+              }
+            />
+          ),
+          meta: {
+            icon: <LuShoppingCart />,
+            // `header` is JSX (tooltip), so name the column for the filter UI.
+            filterHeader: t`Status`,
+            // Categories must match getJobOrderStatusCategory's return values.
+            filter: {
+              type: "static",
+              isArray: true,
+              options: [
+                { value: "needsOrder", label: t`Needs ordering` },
+                { value: "needsJob", label: t`Needs job` },
+                { value: "planned", label: t`Planned` },
+                { value: "plannedJob", label: t`Planned job` },
+                { value: "awaitingApproval", label: t`Awaiting approval` },
+                { value: "onOrder", label: t`On order` },
+                { value: "received", label: t`Pending` },
+                { value: "inStock", label: t`In stock` },
+                { value: "issued", label: t`Issued` }
+              ]
             }
           }
         },
         {
           accessorKey: "estimatedQuantity",
-          header: t`Required`,
+          header: () => (
+            <HeaderTooltip
+              label={t`Required`}
+              hint={
+                <Trans>
+                  This job's own required quantity for the material.
+                </Trans>
+              }
+            />
+          ),
           cell: ({ row }) => formatter.format(row.original.estimatedQuantity),
           meta: {
             icon: <LuHash />
@@ -234,7 +265,17 @@ const JobMaterialsTable = memo(
         },
         {
           id: "method",
-          header: t`Method`,
+          header: () => (
+            <HeaderTooltip
+              label={t`Method`}
+              hint={
+                <Trans>
+                  How the material is sourced (make, purchase, or pull from
+                  inventory) and the storage unit it's pulled from.
+                </Trans>
+              }
+            />
+          ),
           cell: ({ row }) => (
             <HStack>
               <Badge variant="secondary">
@@ -253,7 +294,18 @@ const JobMaterialsTable = memo(
 
         {
           id: "quantityOnHandInStorageUnit",
-          header: t`On Storage Unit`,
+          header: () => (
+            <HeaderTooltip
+              label={t`On Storage Unit`}
+              hint={
+                <Trans>
+                  Quantity physically on the material's assigned storage unit
+                  (shelf). Turns red when it's below what that unit needs to
+                  supply.
+                </Trans>
+              }
+            />
+          ),
           cell: ({ row }) => {
             const isInventoried =
               row.original.itemTrackingType !== "Non-Inventory";
@@ -336,7 +388,18 @@ const JobMaterialsTable = memo(
         },
         {
           id: "quantityOnHand",
-          header: t`On Hand`,
+          header: () => (
+            <HeaderTooltip
+              label={t`On Hand`}
+              hint={
+                <Trans>
+                  Total quantity on hand for the item across all storage units
+                  at this location. Turns red when on hand plus incoming can't
+                  cover total demand.
+                </Trans>
+              }
+            />
+          ),
           cell: ({ row }) => {
             if (
               row.original.itemTrackingType === "Non-Inventory" ||
@@ -403,20 +466,38 @@ const JobMaterialsTable = memo(
         },
         {
           id: "required",
-          header: t`Required`,
+          header: () => (
+            <HeaderTooltip
+              label={t`Required`}
+              hint={
+                <Trans>
+                  Total quantity required across all active jobs and sales
+                  orders at this location — not just this job.
+                </Trans>
+              }
+            />
+          ),
           cell: ({ row }) =>
             formatter.format(
               row.original.quantityFromProductionOrderInStorageUnit +
                 row.original.quantityFromProductionOrderNotInStorageUnit +
                 row.original.quantityOnSalesOrder
             ),
-          meta: {
-            icon: <LuArrowDown className="text-red-600" />
-          }
+          meta: { icon: <LuArrowDown className="text-red-600" /> }
         },
         {
           id: "incoming",
-          header: t`Incoming`,
+          header: () => (
+            <HeaderTooltip
+              label={t`Incoming`}
+              hint={
+                <Trans>
+                  Quantity arriving — on open purchase orders plus on production
+                  (make) orders.
+                </Trans>
+              }
+            />
+          ),
           cell: ({ row }) =>
             formatter.format(
               row.original.quantityOnPurchaseOrder +
@@ -428,7 +509,17 @@ const JobMaterialsTable = memo(
         },
         {
           id: "transfer",
-          header: t`Transfer`,
+          header: () => (
+            <HeaderTooltip
+              label={t`Transfer`}
+              hint={
+                <Trans>
+                  Quantity in transit to the storage unit via open stock
+                  transfers.
+                </Trans>
+              }
+            />
+          ),
           cell: ({ row }) =>
             formatter.format(row.original.quantityInTransitToStorageUnit),
           meta: {
@@ -442,133 +533,82 @@ const JobMaterialsTable = memo(
       setSearchParams,
       isRequired,
       formatter,
-      sessionItemsCount
+      jobItemIdSet,
+      orderStatusByMaterialId
     ]);
 
     const renderContextMenu = useMemo(() => {
       return (row: JobMaterial) => {
-        // Skip non-inventory items and make items
-        if (
-          row.itemTrackingType === "Non-Inventory" ||
-          row.methodType === "Make to Order" ||
-          !row.id
-        ) {
-          return null;
-        }
+        // Route by how the item is replenished, not the job's method type:
+        // buy items plan in Purchasing, make items in Production. "Buy and Make"
+        // items can go to either.
+        const replenishment = replenishmentByItemId.get(row.jobMaterialItemId);
+        const canPurchase =
+          replenishment === "Buy" || replenishment === "Buy and Make";
+        const canProduce =
+          replenishment === "Make" || replenishment === "Buy and Make";
 
-        const quantityRequiredByStorageUnit = isRequired
-          ? row.quantityFromProductionOrderInStorageUnit
-          : row.quantityFromProductionOrderInStorageUnit +
-            row.estimatedQuantity;
+        if (!canPurchase && !canProduce) return null;
 
-        const quantityOnHandInStorageUnit = row.quantityOnHandInStorageUnit;
-
-        const quantityOnHand =
-          row.quantityOnHandInStorageUnit + row.quantityOnHandNotInStorageUnit;
-        const incoming =
-          row.quantityOnPurchaseOrder + row.quantityOnProductionOrder;
-        const required =
-          row.quantityFromProductionOrderInStorageUnit +
-          row.quantityFromProductionOrderNotInStorageUnit +
-          row.quantityOnSalesOrder;
-
-        // Check if items are already in session
-        const isInSessionForTransfer = session.items.some(
-          (item) => item.id === row.id && item.action === "transfer"
-        );
-        const isInSessionForOrder = session.items.some(
-          (item) => item.id === row.id && item.action === "order"
-        );
+        const search = encodeURIComponent(row.itemReadableId);
 
         return (
           <>
-            <MenuItem
-              destructive={isInSessionForTransfer}
-              onClick={() => {
-                if (isInSessionForTransfer) {
-                  removeFromStockTransferSession(row.id!, "transfer");
-                } else {
-                  addToStockTransferSession({
-                    id: row.id!, // Job material ID
-                    itemId: row.jobMaterialItemId, // Actual item ID
-                    itemReadableId: row.itemReadableId,
-                    description: row.description,
-                    action: "transfer",
-                    quantity:
-                      quantityRequiredByStorageUnit -
-                      quantityOnHandInStorageUnit,
-                    requiresSerialTracking: row.itemTrackingType === "Serial",
-                    requiresBatchTracking: row.itemTrackingType === "Batch",
-                    storageUnitId: row.storageUnitId
-                  });
-                }
-              }}
-            >
-              <MenuIcon icon={<LuTruck />} />
-              {isInSessionForTransfer ? t`Remove Transfer` : t`Transfer`}
-            </MenuItem>
-            <MenuItem
-              destructive={isInSessionForOrder}
-              onClick={() => {
-                if (isInSessionForOrder) {
-                  removeFromStockTransferSession(row.id!, "order");
-                } else {
-                  addToStockTransferSession({
-                    id: row.id!, // Job material ID
-                    itemId: row.jobMaterialItemId, // Actual item ID
-                    itemReadableId: row.itemReadableId,
-                    description: row.description,
-                    action: "order",
-                    quantity:
-                      (row.estimatedQuantity ?? 0) -
-                      (quantityOnHand + incoming - required),
-                    requiresSerialTracking: row.itemTrackingType === "Serial",
-                    requiresBatchTracking: row.itemTrackingType === "Batch",
-                    storageUnitId: row.storageUnitId
-                  });
-                }
-              }}
-            >
-              <MenuIcon icon={<LuShoppingCart />} />
-              {isInSessionForOrder ? t`Remove Order` : t`Order`}
-            </MenuItem>
+            {canPurchase && (
+              <MenuItem asChild>
+                <a
+                  href={`${path.to.purchasingPlanning}?search=${search}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <MenuIcon icon={<LuShoppingCart />} />
+                  {t`Purchase planning`}
+                </a>
+              </MenuItem>
+            )}
+            {canProduce && (
+              <MenuItem asChild>
+                <a
+                  href={`${path.to.productionPlanning}?search=${search}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <MenuIcon icon={<LuFactory />} />
+                  {t`Production planning`}
+                </a>
+              </MenuItem>
+            )}
           </>
         );
       };
-    }, [isRequired, session.items, t]);
+    }, [t, replenishmentByItemId]);
 
     const permissions = usePermissions();
 
     return (
-      <>
-        <Table<JobMaterial>
-          compact
-          count={count}
-          columns={columns}
-          data={data}
-          primaryAction={
-            data.length > 0 && permissions.can("update", "production") ? (
-              <fetcher.Form
-                action={path.to.jobRecalculate(jobId)}
-                method="post"
+      <Table<JobMaterial>
+        compact
+        count={orderStatusFilterKey ? filteredData.length : count}
+        columns={columns}
+        data={filteredData}
+        primaryAction={
+          data.length > 0 && permissions.can("update", "production") ? (
+            <fetcher.Form action={path.to.jobRecalculate(jobId)} method="post">
+              <Button
+                leftIcon={<LuRefreshCcwDot />}
+                isLoading={fetcher.state !== "idle"}
+                isDisabled={fetcher.state !== "idle"}
+                type="submit"
+                variant="secondary"
               >
-                <Button
-                  leftIcon={<LuRefreshCcwDot />}
-                  isLoading={fetcher.state !== "idle"}
-                  isDisabled={fetcher.state !== "idle"}
-                  type="submit"
-                  variant="secondary"
-                >
-                  <Trans>Recalculate</Trans>
-                </Button>
-              </fetcher.Form>
-            ) : undefined
-          }
-          renderContextMenu={renderContextMenu}
-          title={t`Materials`}
-        />
-        <StockTransferSessionWidget jobId={jobId} />
-      </>
+                <Trans>Recalculate</Trans>
+              </Button>
+            </fetcher.Form>
+          ) : undefined
+        }
+        renderContextMenu={renderContextMenu}
+        title={t`Materials`}
+      />
     );
   }
 );
@@ -576,297 +616,3 @@ const JobMaterialsTable = memo(
 JobMaterialsTable.displayName = "JobMaterialsTable";
 
 export default JobMaterialsTable;
-
-const StockTransferSessionWidget = ({ jobId }: { jobId: string }) => {
-  const fetcher = useFetcher<Result>();
-  const { t } = useLingui();
-
-  const [session, setStockTransferSession] = useStockTransferSession();
-  const sessionItemsCount = useStockTransferSessionItemsCount();
-  const orderItems = useOrderItems();
-  const transferItems = useTransferItems();
-
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [isMinimized, setIsMinimized] = useState(false);
-
-  const allItems = [...orderItems, ...transferItems];
-
-  const onRemoveItem = (itemId: string, action: "order" | "transfer") => {
-    const updatedItems = session.items.filter(
-      (sessionItem) =>
-        !(sessionItem.id === itemId && sessionItem.action === action)
-    );
-    setStockTransferSession({ items: updatedItems });
-  };
-
-  const onClearAll = () => {
-    setStockTransferSession({ items: [] });
-  };
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (fetcher.data?.success) {
-      onClearAll();
-    }
-  }, [fetcher.data?.success]);
-
-  if (sessionItemsCount === 0) {
-    return null;
-  }
-
-  if (isMinimized) {
-    return (
-      <div className="fixed bottom-6 right-6 z-50">
-        <button
-          onClick={() => setIsMinimized(false)}
-          className="relative flex items-center justify-center w-16 h-16 bg-card border-2 border-border rounded-full shadow-2xl hover:scale-105 transition-transform duration-200"
-        >
-          <LuShoppingCart className="w-6 h-6 text-foreground" />
-          {allItems.length > 0 && (
-            <Badge className="absolute -top-2 -right-2 h-7 w-7 flex items-center justify-center p-0 border-2 border-background">
-              {allItems.length}
-            </Badge>
-          )}
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="fixed bottom-6 right-6 z-[9999]">
-      <div
-        className={`bg-card border-2 border-border rounded-2xl shadow-2xl transition-all duration-300 ease-in-out ${
-          isExpanded ? "w-96 h-[32rem]" : "w-80 h-auto"
-        }`}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b-2 border-border">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 bg-primary rounded-lg">
-              <LuCheckCheck className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-card-foreground text-base">
-                <Trans>Action Items</Trans>
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                {allItems.length} {allItems.length === 1 ? t`item` : t`items`}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-1">
-            <IconButton
-              variant="ghost"
-              size="sm"
-              aria-label={isExpanded ? t`Minimize` : t`Expand`}
-              icon={
-                isExpanded ? (
-                  <LuMinus className="size-4" />
-                ) : (
-                  <LuMaximize2 className="size-4" />
-                )
-              }
-              onClick={() => setIsExpanded(!isExpanded)}
-            />
-            <IconButton
-              variant="ghost"
-              size="sm"
-              aria-label={t`Close`}
-              icon={<LuX className="size-4" />}
-              onClick={() => setIsMinimized(true)}
-            />
-          </div>
-        </div>
-
-        {/* Content */}
-        {isExpanded ? (
-          <div className="flex flex-col h-[calc(32rem-5rem)]">
-            <ScrollArea className="flex-1 p-4">
-              {allItems.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center py-12">
-                  <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-                    <LuShoppingCart className="w-8 h-8 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    <Trans>No parts added yet</Trans>
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    <Trans>Start adding parts to your stock transfer</Trans>
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {orderItems.length > 0 && (
-                    <div className="mb-4">
-                      <HStack className="mb-2">
-                        <LuShoppingCart className="h-3 w-3" />
-                        <span className="text-sm font-medium">
-                          <Trans>Orders</Trans>{" "}
-                          <Count count={orderItems.length} />
-                        </span>
-                      </HStack>
-                      <div className="space-y-2">
-                        {orderItems.map((item) => (
-                          <div
-                            key={`${item.id}-order`}
-                            className="group bg-secondary/50 border border-border rounded-lg p-3 hover:bg-secondary transition-colors"
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between gap-2 mb-1">
-                                  <span className="font-mono text-xs font-semibold">
-                                    {item.itemReadableId}
-                                  </span>
-                                  <Badge variant="outline">
-                                    <Trans>Order</Trans>
-                                  </Badge>
-                                </div>
-                                <p className="text-sm text-card-foreground font-medium truncate">
-                                  {item.description}
-                                </p>
-                              </div>
-                              <IconButton
-                                variant="secondary"
-                                aria-label={t`Remove item`}
-                                icon={<LuTrash2 />}
-                                size="sm"
-                                onClick={() => onRemoveItem(item.id, "order")}
-                              />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {transferItems.length > 0 && (
-                    <div>
-                      <HStack className="mb-2">
-                        <LuTruck className="h-3 w-3" />
-                        <span className="text-sm font-medium">
-                          <Trans>Transfers</Trans>{" "}
-                          <Count count={transferItems.length} />
-                        </span>
-                      </HStack>
-                      <div className="space-y-2">
-                        {transferItems.map((item) => (
-                          <div
-                            key={`${item.id}-transfer`}
-                            className="group bg-secondary/50 border border-border rounded-lg p-3 hover:bg-secondary transition-colors"
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between gap-2 mb-1">
-                                  <span className="font-mono text-xs font-semibold">
-                                    {item.itemReadableId}
-                                  </span>
-                                  <Badge variant="outline">
-                                    <Trans>Transfer</Trans>
-                                  </Badge>
-                                </div>
-                                <p className="text-sm text-card-foreground font-medium truncate">
-                                  {item.description}
-                                </p>
-                              </div>
-                              <IconButton
-                                variant="secondary"
-                                aria-label={t`Remove item`}
-                                icon={<LuTrash2 />}
-                                size="sm"
-                                onClick={() =>
-                                  onRemoveItem(item.id, "transfer")
-                                }
-                              />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </ScrollArea>
-
-            {/* Footer */}
-            {allItems.length > 0 && (
-              <div className="p-4 border-t-2 border-border space-y-2 w-full">
-                <fetcher.Form
-                  method="post"
-                  action={path.to.newJobMaterialsSession(jobId)}
-                >
-                  <input type="hidden" name="jobId" value={jobId} />
-                  <input
-                    type="hidden"
-                    name="items"
-                    value={JSON.stringify(allItems)}
-                  />
-                  <Button
-                    isLoading={fetcher.state !== "idle"}
-                    isDisabled={fetcher.state !== "idle"}
-                    size="lg"
-                    className="w-full"
-                    type="submit"
-                  >
-                    <Trans>Create</Trans>
-                  </Button>
-                </fetcher.Form>
-                <Button variant="ghost" className="w-full" onClick={onClearAll}>
-                  <Trans>Clear All</Trans>
-                </Button>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="p-4 space-y-4">
-            {allItems.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-2">
-                <Trans>No parts added yet</Trans>
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {allItems.slice(0, 3).map((item) => (
-                  <div
-                    key={`${item.id}-${item.action}`}
-                    className="flex items-center justify-between text-sm"
-                  >
-                    <span className="font-mono text-xs">
-                      {item.itemReadableId}
-                    </span>
-                    <Badge variant="outline">{item.action}</Badge>
-                  </div>
-                ))}
-                {allItems.length > 3 && (
-                  <p className="text-xs text-muted-foreground text-center pt-1">
-                    <Trans>+{allItems.length - 3} more</Trans>
-                  </p>
-                )}
-              </div>
-            )}
-            {allItems.length > 0 && (
-              <fetcher.Form
-                method="post"
-                action={path.to.newJobMaterialsSession(jobId)}
-              >
-                <input type="hidden" name="jobId" value={jobId} />
-                <input
-                  type="hidden"
-                  name="items"
-                  value={JSON.stringify(allItems)}
-                />
-                <Button
-                  isLoading={fetcher.state !== "idle"}
-                  isDisabled={fetcher.state !== "idle"}
-                  size="lg"
-                  className="w-full"
-                  type="submit"
-                >
-                  Create
-                </Button>
-              </fetcher.Form>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};

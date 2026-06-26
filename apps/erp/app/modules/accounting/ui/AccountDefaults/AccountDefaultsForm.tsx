@@ -1,6 +1,7 @@
 import { ValidatedForm } from "@carbon/form";
-import { Badge, Button, HStack } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
+import type { TermId } from "@carbon/glossary";
+import { Badge, Button, HStack, LabelWithHelp } from "@carbon/react";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import { useNavigate } from "react-router";
 import { Combobox, Hidden, Submit } from "~/components/Form";
@@ -19,6 +20,7 @@ type AccountDefaultField = {
   description: string;
   accountType: AccountType;
   badgeType: BadgeType;
+  termId: TermId;
 };
 
 type CategoryGroup = {
@@ -39,385 +41,6 @@ const badgeColors: Record<
   Expense: "orange"
 };
 
-const categoryGroups: CategoryGroup[] = [
-  // --- Assets ---
-  {
-    id: "cash-banking",
-    title: "Cash & Banking",
-    description: "Configure default accounts for cash and bank transactions",
-    fields: [
-      {
-        name: "bankCashAccount",
-        label: "Bank - Cash",
-        description: "Primary cash account for bank transactions",
-        accountType: "balance",
-        badgeType: "Asset"
-      },
-      {
-        name: "bankLocalCurrencyAccount",
-        label: "Bank - Local Currency",
-        description: "Bank account denominated in the local currency",
-        accountType: "balance",
-        badgeType: "Asset"
-      },
-      {
-        name: "bankForeignCurrencyAccount",
-        label: "Bank - Foreign Currency",
-        description: "Bank account denominated in a foreign currency",
-        accountType: "balance",
-        badgeType: "Asset"
-      }
-    ]
-  },
-  {
-    id: "receivables",
-    title: "Accounts Receivable",
-    description: "Default accounts for customer transactions and receivables",
-    fields: [
-      {
-        name: "receivablesAccount",
-        label: "Receivables",
-        description: "Accounts receivable for amounts owed by customers",
-        accountType: "balance",
-        badgeType: "Asset"
-      },
-      {
-        name: "prepaymentAccount",
-        label: "Prepayments",
-        description:
-          "Account for advance payments made before goods or services are received",
-        accountType: "balance",
-        badgeType: "Asset"
-      }
-    ]
-  },
-  {
-    id: "inventory",
-    title: "Inventory",
-    description: "Configure default accounts for inventory management",
-    fields: [
-      {
-        name: "inventoryAccount",
-        label: "Inventory",
-        description: "Primary account for on-hand inventory valuation",
-        accountType: "balance",
-        badgeType: "Asset"
-      },
-      {
-        name: "workInProgressAccount",
-        label: "Work in Progress (WIP)",
-        description: "Account for production orders not yet completed",
-        accountType: "balance",
-        badgeType: "Asset"
-      },
-      {
-        name: "inventoryShippedNotInvoicedAccount",
-        label: "Inventory Shipped Not Invoiced",
-        description:
-          "Accrual for inventory shipped but not yet invoiced to customer",
-        accountType: "balance",
-        badgeType: "Asset"
-      }
-    ]
-  },
-  {
-    id: "fixed-assets",
-    title: "Fixed Assets",
-    description: "Default accounts for long-term assets and depreciation",
-    fields: [
-      {
-        name: "assetAquisitionCostAccount",
-        label: "Asset Acquisition Cost",
-        description: "Account for the purchase cost of fixed assets",
-        accountType: "balance",
-        badgeType: "Asset"
-      },
-      {
-        name: "assetAquisitionCostOnDisposalAccount",
-        label: "Asset Cost on Disposal",
-        description: "Account for the cost of fixed assets when disposed",
-        accountType: "balance",
-        badgeType: "Asset"
-      },
-      {
-        name: "accumulatedDepreciationAccount",
-        label: "Accumulated Depreciation",
-        description:
-          "Contra-asset account for total depreciation of fixed assets",
-        accountType: "balance",
-        badgeType: "Asset"
-      },
-      {
-        name: "accumulatedDepreciationOnDisposalAccount",
-        label: "Accumulated Depreciation on Disposal",
-        description: "Depreciation reversal when a fixed asset is disposed",
-        accountType: "balance",
-        badgeType: "Asset"
-      }
-    ]
-  },
-  // --- Liabilities ---
-  {
-    id: "payables",
-    title: "Accounts Payable",
-    description:
-      "Configure default accounts for vendor and supplier transactions",
-    fields: [
-      {
-        name: "payablesAccount",
-        label: "Payables",
-        description: "Accounts payable for amounts owed to suppliers",
-        accountType: "balance",
-        badgeType: "Liability"
-      },
-      {
-        name: "goodsReceivedNotInvoicedAccount",
-        label: "GR/IR Clearing",
-        description:
-          "Clearing account for goods received / invoice received matching",
-        accountType: "balance",
-        badgeType: "Liability"
-      }
-    ]
-  },
-  {
-    id: "taxes",
-    title: "Taxes",
-    description: "Default accounts for tax-related transactions",
-    fields: [
-      {
-        name: "salesTaxPayableAccount",
-        label: "Sales Tax Payable",
-        description: "Liability account for sales tax collected from customers",
-        accountType: "balance",
-        badgeType: "Liability"
-      },
-      {
-        name: "purchaseTaxPayableAccount",
-        label: "Purchase Tax Payable",
-        description: "Liability account for tax paid on purchases",
-        accountType: "balance",
-        badgeType: "Liability"
-      },
-      {
-        name: "reverseChargeSalesTaxPayableAccount",
-        label: "Reverse Charge Sales Tax",
-        description: "Tax liability for reverse-charge transactions",
-        accountType: "balance",
-        badgeType: "Liability"
-      },
-      {
-        name: "deferredTaxLiabilityAccountId",
-        label: "Deferred Tax Liability",
-        description:
-          "Liability account for deferred taxes from accelerated depreciation",
-        accountType: "balance",
-        badgeType: "Liability"
-      }
-    ]
-  },
-  // --- Equity ---
-  {
-    id: "equity",
-    title: "Equity",
-    description: "Configure default equity and retained earnings accounts",
-    fields: [
-      {
-        name: "retainedEarningsAccount",
-        label: "Retained Earnings",
-        description: "Equity account for accumulated profits or losses",
-        accountType: "balance",
-        badgeType: "Equity"
-      },
-      {
-        name: "currencyTranslationAccount",
-        label: "Currency Translation",
-        description:
-          "Equity account for currency translation adjustments (CTA)",
-        accountType: "balance",
-        badgeType: "Equity"
-      }
-    ]
-  },
-  // --- Revenue ---
-  {
-    id: "revenue",
-    title: "Sales & Revenue",
-    description: "Default accounts for sales and income",
-    fields: [
-      {
-        name: "salesAccount",
-        label: "Sales",
-        description: "Default account for posting sales revenue from invoices",
-        accountType: "income",
-        badgeType: "Revenue"
-      },
-      {
-        name: "salesDiscountAccount",
-        label: "Sales Discounts",
-        description: "Contra-revenue account for discounts given on sales",
-        accountType: "income",
-        badgeType: "Revenue"
-      }
-    ]
-  },
-  // --- Expenses ---
-  {
-    id: "cogs",
-    title: "Purchasing & Cost of Goods",
-    description: "Configure default accounts for purchasing and COGS",
-    fields: [
-      {
-        name: "costOfGoodsSoldAccount",
-        label: "Cost of Goods Sold",
-        description: "Expense account for the cost of items sold",
-        accountType: "income",
-        badgeType: "Expense"
-      },
-      {
-        name: "indirectCostAccount",
-        label: "Indirect Materials & Services",
-        description:
-          "Expense account for non-inventory purchases (services, supplies)",
-        accountType: "income",
-        badgeType: "Expense"
-      },
-      {
-        name: "laborAbsorptionAccount",
-        label: "Labor & Machine Absorption",
-        description:
-          "Credit account when labor/machine time is absorbed into WIP",
-        accountType: "income",
-        badgeType: "Expense"
-      },
-      {
-        name: "purchaseVarianceAccount",
-        label: "Purchase Price Variance",
-        description: "Variance between actual purchase price and standard cost",
-        accountType: "income",
-        badgeType: "Expense"
-      },
-      {
-        name: "inventoryAdjustmentVarianceAccount",
-        label: "Inventory Adjustment",
-        description: "Variance from physical inventory count adjustments",
-        accountType: "income",
-        badgeType: "Expense"
-      },
-      {
-        name: "materialVarianceAccount",
-        label: "Material Usage Variance",
-        description:
-          "Variance between actual and standard BOM component consumption",
-        accountType: "income",
-        badgeType: "Expense"
-      },
-      {
-        name: "laborAndMachineVarianceAccount",
-        label: "Labor & Machine Variance",
-        description:
-          "Variance between actual and standard routing hours and rates",
-        accountType: "income",
-        badgeType: "Expense"
-      },
-      {
-        name: "overheadVarianceAccount",
-        label: "Overhead Variance",
-        description:
-          "Variance between applied and actual manufacturing overhead",
-        accountType: "income",
-        badgeType: "Expense"
-      },
-      {
-        name: "lotSizeVarianceAccount",
-        label: "Lot Size Variance",
-        description:
-          "Fixed cost amortization variance when batch size differs from standard",
-        accountType: "income",
-        badgeType: "Expense"
-      },
-      {
-        name: "subcontractingVarianceAccount",
-        label: "Subcontracting Variance",
-        description: "Variance in outside processing costs",
-        accountType: "income",
-        badgeType: "Expense"
-      }
-    ]
-  },
-  {
-    id: "expenses",
-    title: "Operating Expenses",
-    description: "Default accounts for business expenses",
-    fields: [
-      {
-        name: "maintenanceAccount",
-        label: "Maintenance Expense",
-        description: "Expense account for equipment and facility maintenance",
-        accountType: "income",
-        badgeType: "Expense"
-      },
-      {
-        name: "assetDepreciationExpenseAccount",
-        label: "Depreciation Expense",
-        description: "Periodic depreciation expense for fixed assets",
-        accountType: "income",
-        badgeType: "Expense"
-      },
-      {
-        name: "assetGainsAndLossesAccount",
-        label: "Gains and Losses",
-        description: "Gains or losses recognized on disposal of fixed assets",
-        accountType: "income",
-        badgeType: "Expense"
-      },
-      {
-        name: "serviceChargeAccount",
-        label: "Service Charges",
-        description: "Bank and financial service charge expenses",
-        accountType: "income",
-        badgeType: "Expense"
-      },
-      {
-        name: "interestAccount",
-        label: "Interest",
-        description: "Interest income or expense from banking activities",
-        accountType: "income",
-        badgeType: "Expense"
-      },
-      {
-        name: "supplierPaymentDiscountAccount",
-        label: "Supplier Payment Discounts",
-        description: "Discounts earned for early payment to suppliers",
-        accountType: "income",
-        badgeType: "Expense"
-      },
-      {
-        name: "customerPaymentDiscountAccount",
-        label: "Customer Payment Discounts",
-        description: "Discounts given to customers for early payment",
-        accountType: "income",
-        badgeType: "Expense"
-      },
-      {
-        name: "roundingAccount",
-        label: "Rounding Account",
-        description: "Account for small rounding differences in transactions",
-        accountType: "income",
-        badgeType: "Expense"
-      },
-      {
-        name: "deferredTaxExpenseAccountId",
-        label: "Deferred Tax Expense",
-        description:
-          "Expense account for deferred tax adjustments on depreciation",
-        accountType: "income",
-        badgeType: "Expense"
-      }
-    ]
-  }
-];
-
 type AccountDefaultsFormProps = {
   balanceSheetAccounts: AccountListItem[];
   incomeStatementAccounts: AccountListItem[];
@@ -429,11 +52,419 @@ const AccountDefaultsForm = ({
   incomeStatementAccounts,
   initialValues
 }: AccountDefaultsFormProps) => {
+  const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
   const onClose = () => navigate(-1);
 
   const isDisabled = !permissions.can("update", "accounting");
+
+  // Built inside the component so labels/descriptions go through `t`. The
+  // tooltip body comes from the glossary via `termId`; the on-row `description`
+  // is the short context shown below the label.
+  const categoryGroups: CategoryGroup[] = useMemo(
+    () => [
+      {
+        id: "cash-banking",
+        title: t`Cash & Banking`,
+        description: t`Configure default accounts for cash and bank transactions`,
+        fields: [
+          {
+            name: "bankCashAccount",
+            label: t`Bank - Cash`,
+            description: t`Primary cash account for bank transactions`,
+            accountType: "balance",
+            badgeType: "Asset",
+            termId: "account-default-bank-cash"
+          },
+          {
+            name: "bankLocalCurrencyAccount",
+            label: t`Bank - Local Currency`,
+            description: t`Bank account denominated in the local currency`,
+            accountType: "balance",
+            badgeType: "Asset",
+            termId: "account-default-bank-local-currency"
+          },
+          {
+            name: "bankForeignCurrencyAccount",
+            label: t`Bank - Foreign Currency`,
+            description: t`Bank account denominated in a foreign currency`,
+            accountType: "balance",
+            badgeType: "Asset",
+            termId: "account-default-bank-foreign-currency"
+          }
+        ]
+      },
+      {
+        id: "receivables",
+        title: t`Accounts Receivable`,
+        description: t`Default accounts for customer transactions and receivables`,
+        fields: [
+          {
+            name: "receivablesAccount",
+            label: t`Receivables`,
+            description: t`Accounts receivable for amounts owed by customers`,
+            accountType: "balance",
+            badgeType: "Asset",
+            termId: "account-default-receivables"
+          },
+          {
+            name: "prepaymentAccount",
+            label: t`Prepayments`,
+            description: t`Account for advance payments made before goods or services are received`,
+            accountType: "balance",
+            badgeType: "Asset",
+            termId: "account-default-prepayments"
+          }
+        ]
+      },
+      {
+        id: "inventory",
+        title: t`Inventory`,
+        description: t`Configure default accounts for inventory management`,
+        fields: [
+          {
+            name: "inventoryAccount",
+            label: t`Inventory`,
+            description: t`Primary account for on-hand inventory valuation`,
+            accountType: "balance",
+            badgeType: "Asset",
+            termId: "account-default-inventory"
+          },
+          {
+            name: "workInProgressAccount",
+            label: t`Work in Progress (WIP)`,
+            description: t`Account for production orders not yet completed`,
+            accountType: "balance",
+            badgeType: "Asset",
+            termId: "account-default-wip"
+          },
+          {
+            name: "inventoryShippedNotInvoicedAccount",
+            label: t`Inventory Shipped Not Invoiced`,
+            description: t`Accrual for inventory shipped but not yet invoiced to customer`,
+            accountType: "balance",
+            badgeType: "Asset",
+            termId: "account-default-inventory-shipped-not-invoiced"
+          }
+        ]
+      },
+      {
+        id: "fixed-assets",
+        title: t`Fixed Assets`,
+        description: t`Default accounts for long-term assets and depreciation`,
+        fields: [
+          {
+            name: "assetAquisitionCostAccount",
+            label: t`Asset Acquisition Cost`,
+            description: t`Account for the purchase cost of fixed assets`,
+            accountType: "balance",
+            badgeType: "Asset",
+            termId: "account-default-asset-acquisition-cost"
+          },
+          {
+            name: "assetAquisitionCostOnDisposalAccount",
+            label: t`Asset Cost on Disposal`,
+            description: t`Account for the cost of fixed assets when disposed`,
+            accountType: "balance",
+            badgeType: "Asset",
+            termId: "account-default-asset-cost-on-disposal"
+          },
+          {
+            name: "accumulatedDepreciationAccount",
+            label: t`Accumulated Depreciation`,
+            description: t`Contra-asset account for total depreciation of fixed assets`,
+            accountType: "balance",
+            badgeType: "Asset",
+            termId: "account-default-accumulated-depreciation"
+          },
+          {
+            name: "accumulatedDepreciationOnDisposalAccount",
+            label: t`Accumulated Depreciation on Disposal`,
+            description: t`Depreciation reversal when a fixed asset is disposed`,
+            accountType: "balance",
+            badgeType: "Asset",
+            termId: "account-default-accumulated-depreciation-on-disposal"
+          }
+        ]
+      },
+      {
+        id: "payables",
+        title: t`Accounts Payable`,
+        description: t`Configure default accounts for vendor and supplier transactions`,
+        fields: [
+          {
+            name: "payablesAccount",
+            label: t`Payables`,
+            description: t`Accounts payable for amounts owed to suppliers`,
+            accountType: "balance",
+            badgeType: "Liability",
+            termId: "account-default-payables"
+          },
+          {
+            name: "goodsReceivedNotInvoicedAccount",
+            label: t`GR/IR Clearing`,
+            description: t`Clearing account for goods received / invoice received matching`,
+            accountType: "balance",
+            badgeType: "Liability",
+            termId: "account-default-gr-ir"
+          }
+        ]
+      },
+      {
+        id: "taxes",
+        title: t`Taxes`,
+        description: t`Default accounts for tax-related transactions`,
+        fields: [
+          {
+            name: "salesTaxPayableAccount",
+            label: t`Sales Tax Payable`,
+            description: t`Liability account for sales tax collected from customers`,
+            accountType: "balance",
+            badgeType: "Liability",
+            termId: "account-default-sales-tax-payable"
+          },
+          {
+            name: "purchaseTaxPayableAccount",
+            label: t`Purchase Tax Payable`,
+            description: t`Liability account for tax paid on purchases`,
+            accountType: "balance",
+            badgeType: "Liability",
+            termId: "account-default-purchase-tax-payable"
+          },
+          {
+            name: "reverseChargeSalesTaxPayableAccount",
+            label: t`Reverse Charge Sales Tax`,
+            description: t`Tax liability for reverse-charge transactions`,
+            accountType: "balance",
+            badgeType: "Liability",
+            termId: "account-default-reverse-charge-sales-tax"
+          },
+          {
+            name: "deferredTaxLiabilityAccountId",
+            label: t`Deferred Tax Liability`,
+            description: t`Liability account for deferred taxes from accelerated depreciation`,
+            accountType: "balance",
+            badgeType: "Liability",
+            termId: "account-default-deferred-tax-liability"
+          }
+        ]
+      },
+      {
+        id: "equity",
+        title: t`Equity`,
+        description: t`Configure default equity and retained earnings accounts`,
+        fields: [
+          {
+            name: "retainedEarningsAccount",
+            label: t`Retained Earnings`,
+            description: t`Equity account for accumulated profits or losses`,
+            accountType: "balance",
+            badgeType: "Equity",
+            termId: "account-default-retained-earnings"
+          },
+          {
+            name: "currencyTranslationAccount",
+            label: t`Currency Translation`,
+            description: t`Equity account for currency translation adjustments (CTA)`,
+            accountType: "balance",
+            badgeType: "Equity",
+            termId: "account-default-currency-translation"
+          }
+        ]
+      },
+      {
+        id: "revenue",
+        title: t`Sales & Revenue`,
+        description: t`Default accounts for sales and income`,
+        fields: [
+          {
+            name: "salesAccount",
+            label: t`Sales`,
+            description: t`Default account for posting sales revenue from invoices`,
+            accountType: "income",
+            badgeType: "Revenue",
+            termId: "account-default-sales"
+          },
+          {
+            name: "salesDiscountAccount",
+            label: t`Sales Discounts`,
+            description: t`Contra-revenue account for discounts given on sales`,
+            accountType: "income",
+            badgeType: "Revenue",
+            termId: "account-default-sales-discounts"
+          }
+        ]
+      },
+      {
+        id: "cogs",
+        title: t`Purchasing & Cost of Goods`,
+        description: t`Configure default accounts for purchasing and COGS`,
+        fields: [
+          {
+            name: "costOfGoodsSoldAccount",
+            label: t`Cost of Goods Sold`,
+            description: t`Expense account for the cost of items sold`,
+            accountType: "income",
+            badgeType: "Expense",
+            termId: "account-default-cogs"
+          },
+          {
+            name: "indirectCostAccount",
+            label: t`Indirect Materials & Services`,
+            description: t`Expense account for non-inventory purchases (services, supplies)`,
+            accountType: "income",
+            badgeType: "Expense",
+            termId: "account-default-indirect-materials-services"
+          },
+          {
+            name: "laborAbsorptionAccount",
+            label: t`Labor & Machine Absorption`,
+            description: t`Credit account when labor/machine time is absorbed into WIP`,
+            accountType: "income",
+            badgeType: "Expense",
+            termId: "account-default-labor-machine-absorption"
+          },
+          {
+            name: "purchaseVarianceAccount",
+            label: t`Purchase Price Variance`,
+            description: t`Variance between actual purchase price and standard cost`,
+            accountType: "income",
+            badgeType: "Expense",
+            termId: "account-default-purchase-price-variance"
+          },
+          {
+            name: "inventoryAdjustmentVarianceAccount",
+            label: t`Inventory Adjustment`,
+            description: t`Variance from physical inventory count adjustments`,
+            accountType: "income",
+            badgeType: "Expense",
+            termId: "account-default-inventory-adjustment"
+          },
+          {
+            name: "materialVarianceAccount",
+            label: t`Material Usage Variance`,
+            description: t`Variance between actual and standard BOM component consumption`,
+            accountType: "income",
+            badgeType: "Expense",
+            termId: "account-default-material-usage-variance"
+          },
+          {
+            name: "laborAndMachineVarianceAccount",
+            label: t`Labor & Machine Variance`,
+            description: t`Variance between actual and standard routing hours and rates`,
+            accountType: "income",
+            badgeType: "Expense",
+            termId: "account-default-labor-machine-variance"
+          },
+          {
+            name: "overheadVarianceAccount",
+            label: t`Overhead Variance`,
+            description: t`Variance between applied and actual manufacturing overhead`,
+            accountType: "income",
+            badgeType: "Expense",
+            termId: "account-default-overhead-variance"
+          },
+          {
+            name: "lotSizeVarianceAccount",
+            label: t`Lot Size Variance`,
+            description: t`Fixed cost amortization variance when batch size differs from standard`,
+            accountType: "income",
+            badgeType: "Expense",
+            termId: "account-default-lot-size-variance"
+          },
+          {
+            name: "subcontractingVarianceAccount",
+            label: t`Subcontracting Variance`,
+            description: t`Variance in outside processing costs`,
+            accountType: "income",
+            badgeType: "Expense",
+            termId: "account-default-subcontracting-variance"
+          }
+        ]
+      },
+      {
+        id: "expenses",
+        title: t`Operating Expenses`,
+        description: t`Default accounts for business expenses`,
+        fields: [
+          {
+            name: "maintenanceAccount",
+            label: t`Maintenance Expense`,
+            description: t`Expense account for equipment and facility maintenance`,
+            accountType: "income",
+            badgeType: "Expense",
+            termId: "account-default-maintenance-expense"
+          },
+          {
+            name: "assetDepreciationExpenseAccount",
+            label: t`Depreciation Expense`,
+            description: t`Periodic depreciation expense for fixed assets`,
+            accountType: "income",
+            badgeType: "Expense",
+            termId: "account-default-depreciation-expense"
+          },
+          {
+            name: "assetGainsAndLossesAccount",
+            label: t`Gains and Losses`,
+            description: t`Gains or losses recognized on disposal of fixed assets`,
+            accountType: "income",
+            badgeType: "Expense",
+            termId: "account-default-gains-and-losses"
+          },
+          {
+            name: "serviceChargeAccount",
+            label: t`Service Charges`,
+            description: t`Bank and financial service charge expenses`,
+            accountType: "income",
+            badgeType: "Expense",
+            termId: "account-default-service-charges"
+          },
+          {
+            name: "interestAccount",
+            label: t`Interest`,
+            description: t`Interest income or expense from banking activities`,
+            accountType: "income",
+            badgeType: "Expense",
+            termId: "account-default-interest"
+          },
+          {
+            name: "supplierPaymentDiscountAccount",
+            label: t`Supplier Payment Discounts`,
+            description: t`Discounts earned for early payment to suppliers`,
+            accountType: "income",
+            badgeType: "Expense",
+            termId: "account-default-supplier-payment-discounts"
+          },
+          {
+            name: "customerPaymentDiscountAccount",
+            label: t`Customer Payment Discounts`,
+            description: t`Discounts given to customers for early payment`,
+            accountType: "income",
+            badgeType: "Expense",
+            termId: "account-default-customer-payment-discounts"
+          },
+          {
+            name: "roundingAccount",
+            label: t`Rounding Account`,
+            description: t`Account for small rounding differences in transactions`,
+            accountType: "income",
+            badgeType: "Expense",
+            termId: "account-default-rounding-account"
+          },
+          {
+            name: "deferredTaxExpenseAccountId",
+            label: t`Deferred Tax Expense`,
+            description: t`Expense account for deferred tax adjustments on depreciation`,
+            accountType: "income",
+            badgeType: "Expense",
+            termId: "account-default-deferred-tax-expense"
+          }
+        ]
+      }
+    ],
+    [t]
+  );
 
   const accountOptions: Record<
     AccountType,
@@ -518,7 +549,12 @@ const AccountDefaultsForm = ({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <h3 className="text-sm font-medium text-foreground">
-                            {field.label}
+                            <LabelWithHelp
+                              variant="inline"
+                              termId={field.termId}
+                            >
+                              {field.label}
+                            </LabelWithHelp>
                           </h3>
                           <Badge variant={badgeColors[field.badgeType]}>
                             {field.badgeType}

@@ -38,7 +38,8 @@
     "@types/nodemailer": "6.4.23",
     "@types/react": "catalog:",
     "tsx": "catalog:",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "exports": {
     ".": "./src/index.ts",
@@ -51,6 +52,7 @@
   "private": true,
   "scripts": {
     "dev:jobs": "pnpm dlx inngest-cli@latest dev --no-discovery -u http://localhost:3000/api/inngest",
+    "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "type": "module",

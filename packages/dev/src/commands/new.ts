@@ -11,23 +11,44 @@ import {
 } from "../prompts.js";
 import { getWorktreeRoot, slugify } from "../worktree.js";
 
-export async function newWorktree(opts?: { branch?: string }) {
+export async function newWorktree(opts?: {
+  branch?: string;
+  base?: string;
+  dir?: string;
+  copyEnv?: boolean;
+  yes?: boolean;
+}) {
   intro("Carbon · new worktree");
 
   const here = await getWorktreeRoot();
   const parentDir = dirname(here);
   const repoBaseName = basename(here).replace(/-[a-z0-9-]+$/i, "");
 
-  const branch = await promptBranch(opts?.branch);
+  // Non-interactive (`--yes`): skip every prompt, use flags/defaults.
+  // Base defaults to origin/main so loops always branch off latest main.
+  const nonInteractive = opts?.yes === true;
+
+  const branch = nonInteractive
+    ? opts?.branch
+    : await promptBranch(opts?.branch);
+  if (!branch) {
+    throw new Error("crbn new --yes requires a branch name");
+  }
 
   const defaultDir = `${repoBaseName}-${slugify(branch)}`;
-  const dirName = await promptDirName(parentDir, defaultDir);
+  const dirName = nonInteractive
+    ? (opts?.dir ?? defaultDir)
+    : await promptDirName(parentDir, defaultDir);
   const targetPath = resolve(parentDir, dirName);
 
   const cur = await currentBranch(here);
-  const baseRef = await promptBaseRef(cur || null);
+  const baseRef = nonInteractive
+    ? (opts?.base ?? "origin/main")
+    : await promptBaseRef(cur || null);
 
-  const copyEnv = await promptCopyEnv();
+  const copyEnv = nonInteractive
+    ? (opts?.copyEnv ?? true)
+    : await promptCopyEnv();
 
   await tasks([
     {

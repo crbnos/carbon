@@ -652,7 +652,7 @@ const InventoryTable = memo(
             />
             <mrpFetcher.Form method="post" action={path.to.api.mrp(locationId)}>
               <Tooltip>
-                <TooltipTrigger>
+                <TooltipTrigger asChild>
                   <Button
                     type="submit"
                     variant="secondary"

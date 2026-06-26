@@ -42,15 +42,14 @@ interface PanelProviderProps {
 }
 
 export function PanelProvider({ children }: PanelProviderProps) {
-  const isBrowser = typeof window !== "undefined";
   const isMobile = useIsMobile();
 
-  const [isExplorerCollapsed, setIsExplorerCollapsed] = useState(
-    isBrowser ? isMobile : false
-  );
-  const [isPropertiesCollapsed, setIsPropertiesCollapsed] = useState(
-    isBrowser ? window.innerWidth < 1024 : false
-  );
+  // Seed both to `false` so the first client render matches the server (which
+  // has no `window`); collapsing based on viewport happens post-mount in the
+  // effect below. Reading `window.innerWidth` during render forks server vs
+  // client output and triggers a hydration mismatch.
+  const [isExplorerCollapsed, setIsExplorerCollapsed] = useState(false);
+  const [isPropertiesCollapsed, setIsPropertiesCollapsed] = useState(false);
 
   const value = {
     isExplorerCollapsed,
@@ -66,8 +65,10 @@ export function PanelProvider({ children }: PanelProviderProps) {
     if (isMobile) {
       setIsExplorerCollapsed(true);
       setIsPropertiesCollapsed(true);
+    } else if (window.innerWidth < 1024) {
+      setIsPropertiesCollapsed(true);
     }
-  }, [isBrowser, isMobile]);
+  }, [isMobile]);
 
   return (
     <PanelContext.Provider value={value}>{children}</PanelContext.Provider>

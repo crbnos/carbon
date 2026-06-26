@@ -106,6 +106,7 @@ const StorageUnitForm = ({
                 <StorageUnitParentSelect
                   name="parentId"
                   label={t`Parent Storage Unit`}
+                  termId="storage-unit-parent"
                   locationId={locationId}
                   isOptional
                   helperText={t`Must be in the same location`}
@@ -114,6 +115,7 @@ const StorageUnitForm = ({
                 <StorageTypes
                   name="storageTypeIds"
                   label={t`Storage Types`}
+                  termId="storage-unit-storage-types"
                   isOptional
                 />
                 {inheritedWorkCenter ? (
@@ -133,6 +135,7 @@ const StorageUnitForm = ({
                   <WorkCenter
                     name="workCenterId"
                     label={t`Work Center`}
+                    termId="storage-unit-work-center"
                     locationId={locationId}
                     isOptional
                     helperText={t`Assigns this storage unit to a work center (lineside)`}

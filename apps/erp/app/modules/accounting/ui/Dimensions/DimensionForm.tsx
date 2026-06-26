@@ -9,6 +9,7 @@ import {
   HStack,
   VStack
 } from "@carbon/react";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import type { z } from "zod";
 import { Array, Boolean, Hidden, Input, Submit } from "~/components/Form";
@@ -38,6 +39,7 @@ const entityTypeLabels: Record<string, string> = {
 };
 
 const DimensionForm = ({ initialValues, onClose }: DimensionFormProps) => {
+  const { t } = useLingui();
   const permissions = usePermissions();
 
   const isEditing = initialValues.id !== undefined;
@@ -80,18 +82,25 @@ const DimensionForm = ({ initialValues, onClose }: DimensionFormProps) => {
           className="flex flex-col h-full"
         >
           <DrawerHeader>
-            <DrawerTitle>{isEditing ? "Edit" : "New"} Dimension</DrawerTitle>
+            <DrawerTitle>
+              {isEditing ? (
+                <Trans>Edit Dimension</Trans>
+              ) : (
+                <Trans>New Dimension</Trans>
+              )}
+            </DrawerTitle>
           </DrawerHeader>
           <DrawerBody>
             <Hidden name="id" />
             <VStack spacing={4}>
-              <Input name="name" label="Name" />
+              <Input name="name" label={t`Name`} />
               <SelectControlled
                 name="entityType"
-                label="Entity Type"
+                label={t`Entity Type`}
+                termId="dimension-entity-type"
                 isReadOnly={isEditing}
                 helperText={
-                  isEditing ? "Entity type cannot be changed" : undefined
+                  isEditing ? t`Entity type cannot be changed` : undefined
                 }
                 options={entityTypeOptions}
                 value={entityType}
@@ -101,13 +110,21 @@ const DimensionForm = ({ initialValues, onClose }: DimensionFormProps) => {
                   }
                 }}
               />
-              {isCustom && <Array name="dimensionValues" label="Values" />}
-              <Boolean name="active" label="Active" />
+              {isCustom && (
+                <Array
+                  name="dimensionValues"
+                  label={t`Values`}
+                  termId="dimension-values"
+                />
+              )}
+              <Boolean name="active" label={t`Active`} />
             </VStack>
           </DrawerBody>
           <DrawerFooter>
             <HStack>
-              <Submit isDisabled={isDisabled}>Save</Submit>
+              <Submit isDisabled={isDisabled}>
+                <Trans>Save</Trans>
+              </Submit>
             </HStack>
           </DrawerFooter>
         </ValidatedForm>

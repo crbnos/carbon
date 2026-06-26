@@ -5,6 +5,7 @@ import {
   FormLabel,
   HStack,
   IconButton,
+  LabelWithHelp,
   Select as SelectBase,
   SelectContent,
   SelectGroup,
@@ -26,6 +27,7 @@ type TimezoneProps = Omit<SelectProps, "options"> & {
 const Timezone = ({
   name,
   label,
+  termId,
   helperText,
   isReadOnly: isReadOnlyProp,
   isClearable,
@@ -43,17 +45,17 @@ const Timezone = ({
     <FormControl isInvalid={!!error}>
       {label && (
         <FormLabel htmlFor={name} isOptional={fieldIsOptional ?? false}>
-          {label}
+          <LabelWithHelp termId={termId}>{label}</LabelWithHelp>
         </FormLabel>
       )}
       <input
         {...getInputProps({
-          id: name
+          id: name,
+          value: value ?? ""
         })}
         type="hidden"
         name={name}
         id={name}
-        value={value ?? undefined}
       />
       <HStack spacing={1}>
         <SelectBase

@@ -106,7 +106,7 @@ msgid "available"
 msgstr "disponibile"
 
 msgid "Back Home"
-msgstr ""
+msgstr "Torna a casa"
 
 msgid "Batch"
 msgstr "Lotto"
@@ -329,7 +329,7 @@ msgid "Error"
 msgstr "Errore"
 
 msgid "Error!"
-msgstr ""
+msgstr "Errore!"
 
 msgid "Estimated"
 msgstr "Stimato"
@@ -470,6 +470,9 @@ msgstr "Kit"
 
 msgid "Labor"
 msgstr "Manodopera"
+
+msgid "Learn more"
+msgstr "Per saperne di più"
 
 msgid "Leave this page"
 msgstr "Lascia questa pagina"
@@ -967,7 +970,7 @@ msgid "Size"
 msgstr "Dimensione"
 
 msgid "Something went wrong"
-msgstr ""
+msgstr "Qualcosa è andato storto"
 
 msgid "Source"
 msgstr "Origine"
@@ -1098,6 +1101,9 @@ msgstr "Visualizza intervento di manutenzione"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "Ti abbiamo inviato un link di accesso al tuo account."
+
+msgid "What is {translatedTerm}?"
+msgstr "Cos'è {translatedTerm}?"
 
 msgid "WIP"
 msgstr "WIP"

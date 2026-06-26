@@ -294,12 +294,21 @@ const GaugeCalibrationRecordForm = ({
                   label={t`Calibration Supplier`}
                   isOptional
                 />
-                <Boolean name="requiresAction" label={t`Requires Action`} />
+                <Boolean
+                  name="requiresAction"
+                  label={t`Requires Action`}
+                  termId="calibration-requires-action"
+                />
                 <Boolean
                   name="requiresAdjustment"
                   label={t`Requires Adjustment`}
+                  termId="calibration-requires-adjustment"
                 />
-                <Boolean name="requiresRepair" label={t`Requires Repair`} />
+                <Boolean
+                  name="requiresRepair"
+                  label={t`Requires Repair`}
+                  termId="calibration-requires-repair"
+                />
                 <Number
                   name="temperature"
                   label={t`Temperature`}
@@ -321,9 +330,10 @@ const GaugeCalibrationRecordForm = ({
                 <Input
                   name="measurementStandard"
                   label={t`Measurement Standard`}
+                  termId="calibration-measurement-standard"
                 />
                 <span className="text-xs font-medium text-muted-foreground">
-                  Calibration Attempts
+                  <Trans>Calibration Attempts</Trans>
                 </span>
                 <Card className="flex-grow px-0">
                   <Table>

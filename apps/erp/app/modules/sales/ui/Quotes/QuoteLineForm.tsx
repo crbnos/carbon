@@ -414,6 +414,7 @@ const QuoteLineForm = ({
                       <Select
                         name="status"
                         label={t`Line Status`}
+                        termId="quote-line-status"
                         options={quoteLineStatusType.map((s) => ({
                           label: (
                             <span className="flex items-center gap-2">
@@ -428,6 +429,7 @@ const QuoteLineForm = ({
                       <InputControlled
                         name="customerPartId"
                         label={t`Customer Part Number`}
+                        termId="customer-part-id"
                         value={itemData.customerPartId}
                         onChange={(newValue) => {
                           setItemData((d) => ({
@@ -440,6 +442,7 @@ const QuoteLineForm = ({
                       <InputControlled
                         name="customerPartRevision"
                         label={t`Customer Part Revision`}
+                        termId="customer-part-revision"
                         value={itemData.customerPartRevision}
                         onChange={(newValue) => {
                           setItemData((d) => ({
@@ -469,6 +472,7 @@ const QuoteLineForm = ({
                         <TextArea
                           name="noQuoteReason"
                           label={t`No Quote Reason`}
+                          termId="quote-line-no-quote-reason"
                         />
                       )}
                     </div>
@@ -476,6 +480,7 @@ const QuoteLineForm = ({
                       <ArrayNumeric
                         name="quantity"
                         label={t`Quantity`}
+                        termId="quantity-breaks"
                         defaults={[1, 25, 50, 100]}
                         isDisabled={!isEditable}
                       />

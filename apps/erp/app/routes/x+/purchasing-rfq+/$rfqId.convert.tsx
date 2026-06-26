@@ -11,6 +11,8 @@ import {
   updatePurchasingRFQStatus,
   upsertSupplierQuoteLine
 } from "~/modules/purchasing";
+import type { MethodItemType } from "~/modules/shared";
+import { methodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -107,7 +109,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
       await upsertSupplierQuoteLine(client, {
         supplierQuoteId,
-        supplierQuoteLineType: "Part",
+        supplierQuoteLineType: methodItemType.includes(
+          line.itemType as MethodItemType
+        )
+          ? (line.itemType as MethodItemType)
+          : "Part",
         itemId: line.itemId,
         description: line.description ?? "",
         quantity: line.quantity ?? [1],

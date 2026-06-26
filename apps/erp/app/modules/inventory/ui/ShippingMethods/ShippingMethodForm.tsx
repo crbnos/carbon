@@ -111,10 +111,12 @@ const ShippingMethodForm = ({
                   classes={["Expense"]}
                   name="carrierAccountId"
                   label={t`Carrier Account`}
+                  termId="shipping-method-carrier-account"
                 />
                 <Input
                   name="trackingUrl"
                   label={t`Tracking URL`}
+                  termId="shipping-method-tracking-url"
                   prefix="https://"
                 />
                 <CustomFormFields table="shippingMethod" />

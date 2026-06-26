@@ -329,6 +329,7 @@ const SupplierQuoteLineForm = ({
                           <InputControlled
                             name="supplierPartId"
                             label={t`Supplier Part Number`}
+                            termId="supplier-part-id"
                             value={itemData.supplierPartId}
                             onChange={(newValue) => {
                               setItemData((d) => ({
@@ -341,6 +342,7 @@ const SupplierQuoteLineForm = ({
                           <UnitOfMeasure
                             name="purchaseUnitOfMeasureCode"
                             label={t`Purchase Unit of Measure`}
+                            termId="item-purchasing-uom"
                             value={itemData.purchaseUom}
                             onChange={(newValue) => {
                               if (newValue) {
@@ -353,6 +355,7 @@ const SupplierQuoteLineForm = ({
                           />
                           <ConversionFactor
                             name="conversionFactor"
+                            termId="conversion-factor"
                             purchasingCode={itemData.purchaseUom}
                             inventoryCode={itemData.inventoryUom}
                             value={itemData.conversionFactor}
@@ -370,6 +373,7 @@ const SupplierQuoteLineForm = ({
                           <ArrayNumeric
                             name="quantity"
                             label={t`Quantity`}
+                            termId="quantity-breaks"
                             defaults={[1, 25, 50, 100]}
                             isDisabled={isLocked}
                           />
@@ -386,6 +390,7 @@ const SupplierQuoteLineForm = ({
                           <Account
                             name="accountId"
                             label={t`GL Account`}
+                            termId="purchase-indirect-gl-account"
                             classes={["Asset", "Expense"]}
                             isOptional={false}
                           />

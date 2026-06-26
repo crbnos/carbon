@@ -146,15 +146,18 @@ const SupplierForm = ({
                     label={t`Supplier Status`}
                     placeholder={t`Select Supplier Status`}
                     disabled={supplierApprovalRequired}
+                    termId="supplier-status"
                   />
                   <SupplierType
                     name="supplierTypeId"
                     label={t`Supplier Type`}
                     placeholder={t`Select Supplier Type`}
+                    termId="supplier-type-field"
                   />
                   <Employee
                     name="accountManagerId"
                     label={t`Account Manager`}
+                    termId="supplier-account-manager"
                   />
                   {isEditing && (
                     <>

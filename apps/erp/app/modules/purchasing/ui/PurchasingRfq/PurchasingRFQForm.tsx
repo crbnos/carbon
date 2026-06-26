@@ -80,11 +80,24 @@ const PurchasingRFQForm = ({ initialValues }: PurchasingRFQFormProps) => {
                   table="purchasingRfq"
                 />
               )}
-              <Suppliers name="supplierIds" label={t`Suppliers`} />
+              <Suppliers
+                name="supplierIds"
+                label={t`Suppliers`}
+                termId="purchasing-rfq-suppliers"
+              />
               <DatePicker name="rfqDate" label={t`RFQ Date`} />
-              <DatePicker name="expirationDate" label={t`Due Date`} />
+              <DatePicker
+                name="expirationDate"
+                label={t`Due Date`}
+                termId="purchasing-rfq-due-date"
+              />
               <Location name="locationId" label={t`Receiving Location`} />
-              <Employee name="employeeId" label={t`Buyer`} isOptional />
+              <Employee
+                name="employeeId"
+                label={t`Buyer`}
+                termId="purchasing-rfq-buyer"
+                isOptional
+              />
               <CustomFormFields table="purchasingRfq" />
             </div>
           </VStack>
