@@ -3302,9 +3302,6 @@ msgstr "Error removing model from sales order line"
 msgid "Error validating serial number"
 msgstr "Error validating serial number"
 
-msgid "Error!"
-msgstr "Error!"
-
 msgid "Escalation"
 msgstr "Escalation"
 
@@ -3950,8 +3947,14 @@ msgstr "Generated IDs are enabled"
 msgid "Get Method"
 msgstr "Get Method"
 
+msgid "Get Started"
+msgstr "Get Started"
+
 msgid "GL Account"
 msgstr "GL Account"
+
+msgid "Go to implementation hub"
+msgstr "Go to implementation hub"
 
 #. placeholder {0}: user.firstName
 msgid "Good afternoon, {0}"

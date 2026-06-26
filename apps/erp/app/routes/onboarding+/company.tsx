@@ -130,6 +130,10 @@ export async function action({ request }: ActionFunctionArgs) {
         companyId,
         userId
       });
+
+      // Implementation Hub enrollment is manual for now — a Carbon employee
+      // enrolls a company from the app. Flip to auto-enroll new Cloud signups
+      // here (enrollImplementation, self-serve tier) when we turn it on.
     }
 
     // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration

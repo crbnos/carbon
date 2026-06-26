@@ -3302,9 +3302,6 @@ msgstr "Błąd podczas usuwania modelu z linii zamówienia sprzedaży"
 msgid "Error validating serial number"
 msgstr "Błąd podczas walidacji numeru seryjnego"
 
-msgid "Error!"
-msgstr ""
-
 msgid "Escalation"
 msgstr "Eskalacja"
 
@@ -3950,8 +3947,14 @@ msgstr "Wygenerowane identyfikatory są włączone"
 msgid "Get Method"
 msgstr "Pobierz metodę"
 
+msgid "Get Started"
+msgstr ""
+
 msgid "GL Account"
 msgstr "Konto księgi głównej"
+
+msgid "Go to implementation hub"
+msgstr ""
 
 #. placeholder {0}: user.firstName
 msgid "Good afternoon, {0}"

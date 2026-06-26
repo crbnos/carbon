@@ -65,6 +65,15 @@ export const trainingConfig: Record<string, TrainingVideo> = {
     videoType: "loom",
     academyUrl: "https://learn.carbon.ms/course/buying/purchasing-basics"
   },
+  bom: {
+    title: "Bill of Materials in Carbon",
+    description:
+      "Learn how to bring a bill of materials into Carbon and structure it for manufacturing.",
+    videoUrl:
+      "https://www.loom.com/share/acad6206adde4d1185e83f57393f36e9?sid=3cec60b1-91e3-454b-a6dd-f08fe1035ef2",
+    videoType: "loom",
+    academyUrl: "https://learn.carbon.ms/lesson/bill-of-materials"
+  },
   parts: {
     title: "Parts & Materials in Carbon",
     description:

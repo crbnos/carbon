@@ -1,12 +1,97 @@
-import { cn } from "@carbon/react";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import {
+  type CheckStateRow,
+  gatesDone,
+  type HubStatus,
+  labelForTier,
+  nextAction,
+  type Signals,
+  SPINE,
+  spineForTier,
+  stateMap,
+  type Tier
+} from "@carbon/onboarding";
+import {
+  detectImplementationSignals,
+  getImplementationCheckStates,
+  getImplementationHub
+} from "@carbon/onboarding/server";
+import { OnboardingHubSummary } from "@carbon/onboarding/ui";
+import { Button, cn, useRouteData } from "@carbon/react";
+import { isInternalEmail } from "@carbon/utils";
 import { getLocalTimeZone } from "@internationalized/date";
 import { useLocale } from "@react-aria/i18n";
 import type { ComponentProps } from "react";
 import { useMemo } from "react";
-import { Link } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { Link, redirect, useFetcher } from "react-router";
 import { Greeting } from "~/components/Greeting";
-import { useModules } from "~/hooks";
+import { useModules, useUser } from "~/hooks";
+import { useFlags } from "~/hooks/useFlags";
+import { useHubDismissed } from "~/hooks/useHubDismissed";
 import type { Authenticated, NavItem } from "~/types";
+import { path } from "~/utils/path";
+
+// The onboarding hub is internal-only and, while it's active (not yet finished),
+// it replaces the home page — so an internal user lands straight in it until
+// every checkpoint is done.
+export async function loader({ request }: LoaderFunctionArgs) {
+  const { client, companyId, email } = await requirePermissions(request, {});
+  if (isInternalEmail(email)) {
+    const hub = await getImplementationHub(client, companyId);
+    const status = hub.data?.status;
+    if (hub.data && status !== "complete" && status !== "archived") {
+      const [states, signals] = await Promise.all([
+        getImplementationCheckStates(client, companyId),
+        detectImplementationSignals(client, companyId)
+      ]);
+      const spine = spineForTier(SPINE, hub.data.tier);
+      const done = gatesDone(spine, stateMap(states.data ?? []), signals);
+      if (done < spine.length) throw redirect(path.to.getStarted);
+    }
+  }
+  return null;
+}
+
+const NO_SIGNALS: Signals = {
+  hasItems: false,
+  hasMakeMethod: false,
+  hasJob: false,
+  hasSalesOrder: false,
+  hasTrackedEntity: false
+};
+
+function useImplementationSummary() {
+  const data = useRouteData<{
+    implementationHub: { tier: Tier; status: HubStatus } | null;
+    implementationCheckStates: CheckStateRow[];
+    implementationSignals: Signals | null;
+  }>(path.to.authenticatedRoot);
+  const { company } = useUser();
+  const [dismissed, dismiss] = useHubDismissed(company.id);
+
+  const hub = data?.implementationHub;
+  // Shown only to enrolled companies — a hub row exists once Carbon enrolls them.
+  if (!hub || hub.status === "complete" || hub.status === "archived") {
+    return null;
+  }
+  const map = stateMap(data?.implementationCheckStates ?? []);
+  const signals = data?.implementationSignals ?? NO_SIGNALS;
+  const spine = spineForTier(SPINE, hub.tier);
+  const done = gatesDone(spine, map, signals);
+  const total = spine.length;
+  // Auto-hide once everything's done, or once the user dismissed it.
+  if (done === total || dismissed) return null;
+
+  const next = nextAction(spine, map, signals);
+  return {
+    label: labelForTier(hub.tier),
+    done,
+    total,
+    nextLabel: next?.title,
+    dismiss
+  };
+}
 
 export default function AppIndexRoute() {
   const modules = useModules();
@@ -21,11 +106,61 @@ export default function AppIndexRoute() {
       }),
     [locale]
   );
+  const implementation = useImplementationSummary();
+  const layout = useRouteData<{ implementationHub: unknown | null }>(
+    path.to.authenticatedRoot
+  );
+  const { isInternal } = useFlags();
+  const enrollFetcher = useFetcher();
+  const canEnroll = isInternal && !layout?.implementationHub;
+
   return (
     <div className="p-8 w-full h-full bg-muted">
       <Greeting size="h3" />
       <Subheading>{formatter.format(date)}</Subheading>
       <Hr />
+      {implementation ? (
+        <OnboardingHubSummary
+          label={implementation.label}
+          done={implementation.done}
+          total={implementation.total}
+          nextLabel={implementation.nextLabel}
+          onDismiss={implementation.dismiss}
+          action={
+            <Button asChild>
+              <Link to={path.to.getStarted} prefetch="intent">
+                Open
+              </Link>
+            </Button>
+          }
+        />
+      ) : null}
+      {canEnroll ? (
+        <enrollFetcher.Form
+          method="post"
+          action={path.to.getStartedEnroll}
+          className="mb-6"
+        >
+          <div className="rounded-2xl border border-dashed bg-card shadow-button-base p-6 flex items-center gap-5">
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base font-semibold tracking-tight">
+                Enroll this company in the Implementation Hub
+              </h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Carbon-only · creates the hub for the current company so you can
+                preview it.
+              </p>
+            </div>
+            <Button
+              type="submit"
+              isLoading={enrollFetcher.state !== "idle"}
+              isDisabled={enrollFetcher.state !== "idle"}
+            >
+              Enroll
+            </Button>
+          </div>
+        </enrollFetcher.Form>
+      ) : null}
       <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-6 mb-8">
         {modules
           .filter((mod) => mod.key !== "settings")

@@ -3302,9 +3302,6 @@ msgstr "बिक्रय आदेश लाइन से मॉडल हट�
 msgid "Error validating serial number"
 msgstr "सीरियल नंबर को मान्य करने में त्रुटि"
 
-msgid "Error!"
-msgstr ""
-
 msgid "Escalation"
 msgstr "संवर्धन"
 
@@ -3950,8 +3947,14 @@ msgstr "जेनरेट की गई आईडी सक्षम हैं"
 msgid "Get Method"
 msgstr "विधि प्राप्त करें"
 
+msgid "Get Started"
+msgstr ""
+
 msgid "GL Account"
 msgstr "जीएल खाता"
+
+msgid "Go to implementation hub"
+msgstr ""
 
 #. placeholder {0}: user.firstName
 msgid "Good afternoon, {0}"

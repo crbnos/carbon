@@ -3302,9 +3302,6 @@ msgstr "販売注文行からモデルを削除するエラー"
 msgid "Error validating serial number"
 msgstr "シリアル番号の検証エラー"
 
-msgid "Error!"
-msgstr ""
-
 msgid "Escalation"
 msgstr "エスカレーション"
 
@@ -3950,8 +3947,14 @@ msgstr "生成されたIDが有効です"
 msgid "Get Method"
 msgstr "メソッドを取得"
 
+msgid "Get Started"
+msgstr ""
+
 msgid "GL Account"
 msgstr "GLアカウント"
+
+msgid "Go to implementation hub"
+msgstr ""
 
 #. placeholder {0}: user.firstName
 msgid "Good afternoon, {0}"

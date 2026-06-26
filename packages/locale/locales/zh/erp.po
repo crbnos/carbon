@@ -3302,9 +3302,6 @@ msgstr "从销售订单行中删除模型时出错"
 msgid "Error validating serial number"
 msgstr "验证序列号时出错"
 
-msgid "Error!"
-msgstr ""
-
 msgid "Escalation"
 msgstr "升级"
 
@@ -3950,8 +3947,14 @@ msgstr "生成的ID已启用"
 msgid "Get Method"
 msgstr "获取方法"
 
+msgid "Get Started"
+msgstr ""
+
 msgid "GL Account"
 msgstr "总账账户"
+
+msgid "Go to implementation hub"
+msgstr ""
 
 #. placeholder {0}: user.firstName
 msgid "Good afternoon, {0}"

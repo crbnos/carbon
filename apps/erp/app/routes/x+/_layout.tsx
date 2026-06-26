@@ -12,6 +12,11 @@ import {
   updateCompanySession
 } from "@carbon/auth/session.server";
 import { isAuditLogEnabled } from "@carbon/database/audit";
+import {
+  detectImplementationSignals,
+  getImplementationCheckStates,
+  getImplementationHub
+} from "@carbon/onboarding/server";
 import type { PrintingSettings } from "@carbon/printing";
 import { getPrinterRoutes } from "@carbon/printing";
 import { PrintingProvider } from "@carbon/printing/ui";
@@ -73,6 +78,7 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
     currentUrl.pathname.startsWith("/x/users") ||
     currentUrl.pathname.startsWith("/refresh-session") ||
     currentUrl.pathname.startsWith("/x/acknowledge") ||
+    currentUrl.pathname.startsWith("/x/get-started") ||
     currentUrl.pathname.startsWith("/x/shared/views")
   ) {
     return true;
@@ -117,7 +123,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     defaults,
     auditLogEnabled,
     modulePreferences,
-    printerRoutes
+    printerRoutes,
+    implementationHub,
+    implementationCheckStates
   ] = await Promise.all([
     getCompanies(client, userId),
     getEmployeeCompanies(client, userId),
@@ -132,7 +140,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getUserDefaults(client, userId, companyId),
     isAuditLogEnabled(client, companyId),
     getModulePreferences(client, userId, companyId),
-    getPrinterRoutes(client, companyId)
+    getPrinterRoutes(client, companyId),
+    getImplementationHub(client, companyId),
+    getImplementationCheckStates(client, companyId)
   ]);
 
   if (!claims || user.error || !user.data || !groups.data) {
@@ -188,6 +198,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw redirect(path.to.onboarding.root);
   }
 
+  // Only probe product signals when the company is actually enrolled, so the
+  // home card + nav badge count gates the same way the hub page does.
+  const implementationSignals = implementationHub.data
+    ? await detectImplementationSignals(client, companyId)
+    : null;
+
   return data({
     session: {
       accessToken,
@@ -209,6 +225,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     modulePreferences: modulePreferences.data ?? [],
     savedViews: savedViews.data ?? [],
     printerRoutes: printerRoutes.data ?? [],
+    implementationHub: implementationHub.data ?? null,
+    implementationCheckStates: implementationCheckStates.data ?? [],
+    implementationSignals,
     supplierApprovalRequired: isApprovalRequired(client, "supplier", companyId),
     openClockEntry: companySettings.data?.timeCardEnabled
       ? getOpenClockEntry(client, userId, companyId)

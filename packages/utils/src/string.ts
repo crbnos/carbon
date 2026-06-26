@@ -36,3 +36,14 @@ export function pluralize(
 ): string {
   return count === 1 ? singular : (plural ?? `${singular}s`);
 }
+
+// Email domains that mark a Carbon staff member. Single source of truth for both
+// the client `useFlags().isInternal` and server-side loader gates.
+export const INTERNAL_EMAIL_DOMAINS = ["@carbon.us.org", "@carbon.ms"] as const;
+
+/** Whether an email belongs to a Carbon staff member (internal). */
+export function isInternalEmail(email: string | null | undefined): boolean {
+  if (!email) return false;
+  const normalized = email.toLowerCase().trim();
+  return INTERNAL_EMAIL_DOMAINS.some((domain) => normalized.endsWith(domain));
+}

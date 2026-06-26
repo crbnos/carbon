@@ -3302,9 +3302,6 @@ msgstr "Ошибка при удалении модели из строки за
 msgid "Error validating serial number"
 msgstr "Ошибка при проверке серийного номера"
 
-msgid "Error!"
-msgstr ""
-
 msgid "Escalation"
 msgstr "Эскалация"
 
@@ -3950,8 +3947,14 @@ msgstr "Сгенерированные ID включены"
 msgid "Get Method"
 msgstr "Получить метод"
 
+msgid "Get Started"
+msgstr ""
+
 msgid "GL Account"
 msgstr "Счет ГЛ"
+
+msgid "Go to implementation hub"
+msgstr ""
 
 #. placeholder {0}: user.firstName
 msgid "Good afternoon, {0}"

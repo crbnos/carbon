@@ -18,7 +18,7 @@ import {
 } from "@carbon/react";
 import type { Theme } from "@carbon/utils";
 import { getPreferenceHeaders, modeValidator, themes } from "@carbon/utils";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Trans } from "@lingui/react/macro";
 import { I18nProvider } from "@react-aria/i18n";
 import { QueryClient } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/react";
@@ -92,10 +92,10 @@ export const links: LinksFunction = () => {
   ];
 };
 
-export const meta: MetaFunction = () => {
+export const meta: MetaFunction = ({ error }) => {
   return [
     {
-      title: "Carbon"
+      title: error ? "Carbon | Error" : "Carbon"
     }
   ];
 };
@@ -191,13 +191,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export function Document({
   children,
-  title = "Carbon",
   lang = "en",
   mode = "light",
   theme = "zinc"
 }: {
   children: React.ReactNode;
-  title?: string;
   lang?: string;
   mode?: "light" | "dark";
   theme?: string;
@@ -243,7 +241,6 @@ export function Document({
           content="width=device-width, initial-scale=1, maximum-scale=1"
         />
         <Meta />
-        <title>{title}</title>
         <Links />
       </head>
       <body className="h-full bg-background antialiased selection:bg-primary/10 selection:text-primary">
@@ -318,7 +315,6 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
 }
 
 function ErrorBoundaryContent({ error }: { error: unknown }) {
-  const { t } = useLingui();
   const message = isRouteErrorResponse(error)
     ? (error.data.message ?? error.data)
     : error instanceof Error
@@ -326,7 +322,7 @@ function ErrorBoundaryContent({ error }: { error: unknown }) {
       : String(error);
 
   return (
-    <Document title={t`Error!`}>
+    <Document>
       <div className="light">
         <div className="flex flex-col w-full h-screen items-center justify-center space-y-4 ">
           <img

@@ -19,10 +19,11 @@ import {
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { LuKeySquare } from "react-icons/lu";
+import { LuKeySquare, LuRocket } from "react-icons/lu";
 import type { ActionFunctionArgs } from "react-router";
-import { data } from "react-router";
+import { data, Link } from "react-router";
 import { useRouteData } from "~/hooks";
+import { useImplementationReopenItem } from "~/hooks/useImplementationNavItem";
 import type { Company as CompanyType } from "~/modules/settings";
 import {
   CompanyForm,
@@ -73,6 +74,10 @@ export default function Company() {
   const company = routeData?.company;
   if (!company) throw new Error("Company not found");
 
+  // Buried reopen entry for a finished implementation hub — only present once the
+  // company was enrolled and onboarding was wrapped up (status complete/archived).
+  const reopenHub = useImplementationReopenItem();
+
   const initialValues = {
     name: company.name,
     taxId: company.taxId ?? undefined,
@@ -121,12 +126,31 @@ export default function Company() {
         </HStack>
         <Card>
           <CardHeader>
-            <CardTitle>
-              <Trans>Basic Information</Trans>
-            </CardTitle>
-            <CardDescription>
-              <Trans>This information will be used on document headers</Trans>
-            </CardDescription>
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex flex-col gap-1.5">
+                <CardTitle>
+                  <Trans>Basic Information</Trans>
+                </CardTitle>
+                <CardDescription>
+                  <Trans>
+                    This information will be used on document headers
+                  </Trans>
+                </CardDescription>
+              </div>
+              {reopenHub ? (
+                <Button
+                  asChild
+                  variant="secondary"
+                  size="sm"
+                  leftIcon={<LuRocket />}
+                  className="shrink-0"
+                >
+                  <Link to={reopenHub.to}>
+                    <Trans>Go to implementation hub</Trans>
+                  </Link>
+                </Button>
+              ) : null}
+            </div>
           </CardHeader>
           <CardContent>
             {/* @ts-ignore */}

@@ -3302,9 +3302,6 @@ msgstr "Satır satış siparişinden model kaldırma hatası"
 msgid "Error validating serial number"
 msgstr "Seri numarası doğrulama hatası"
 
-msgid "Error!"
-msgstr "Hata!"
-
 msgid "Escalation"
 msgstr "Yükseltme"
 
@@ -3950,8 +3947,14 @@ msgstr "Oluşturulan Kimlikler etkinleştirilmiş"
 msgid "Get Method"
 msgstr "Yöntemi Al"
 
+msgid "Get Started"
+msgstr ""
+
 msgid "GL Account"
 msgstr "BÜTÇE HESABI"
+
+msgid "Go to implementation hub"
+msgstr ""
 
 #. placeholder {0}: user.firstName
 msgid "Good afternoon, {0}"
