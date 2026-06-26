@@ -1109,9 +1109,12 @@ export async function wipeScopedData(
   trx: Kysely<KyselyDatabase>,
   tables: TableInfo[],
   byName: Map<string, TableInfo>,
-  scope: { companyId: string; companyGroupId: string | null }
+  scope: { companyId: string; companyGroupId: string | null },
+  onProgress?: (done: number, total: number) => Promise<void>
 ): Promise<void> {
-  for (const table of [...tables].reverse()) {
+  const ordered = [...tables].reverse();
+  for (let i = 0; i < ordered.length; i++) {
+    const table = ordered[i]!;
     // buildScopeFilter scopes by parent FK for `via` tables; a null
     // companyGroupId yields `= NULL` (no match), so group data is left untouched
     // when the company has no group.
@@ -1119,6 +1122,7 @@ export async function wipeScopedData(
       DELETE FROM ${sql.id(table.name)}
       WHERE ${buildScopeFilter(table, byName, scope.companyId, scope.companyGroupId)}
     `.execute(trx);
+    await onProgress?.(i + 1, ordered.length);
   }
 }
 
@@ -1159,7 +1163,8 @@ async function copyStorageObject(
  */
 export async function copyAssetsToBackup(
   client: SupabaseClient,
-  args: { sourcePaths: string[]; destBucket: string; destPrefix: string }
+  args: { sourcePaths: string[]; destBucket: string; destPrefix: string },
+  onProgress?: (done: number, total: number) => Promise<void>
 ): Promise<{ copied: number; failed: number }> {
   const { sourcePaths, destBucket, destPrefix } = args;
   let copied = 0;
@@ -1177,6 +1182,7 @@ export async function copyAssetsToBackup(
       failed++;
       console.warn("Failed to copy backup asset", { path, error });
     }
+    await onProgress?.(copied + failed, sourcePaths.length);
   }
   return { copied, failed };
 }
@@ -1197,12 +1203,15 @@ export async function restoreAssetsFromBackup(
     sourceCompanyId: string;
     companyId: string;
     idRewrite: Map<string, string>;
-  }
+  },
+  onProgress?: (done: number, total: number) => Promise<void>
 ): Promise<{ copied: number; failed: number }> {
   const { files, srcBucket, srcPrefix, sourceCompanyId, companyId, idRewrite } =
     args;
+  const total = files.filter((f) => f.included).length;
   let copied = 0;
   let failed = 0;
+  let processed = 0;
   for (const file of files) {
     if (!file.included) continue;
     const targetPath = rewriteStoragePath(
@@ -1216,6 +1225,7 @@ export async function restoreAssetsFromBackup(
         path: file.path,
         targetPath
       });
+      await onProgress?.(++processed, total);
       continue;
     }
     const { ok, error } = await copyStorageObject(client, {
@@ -1234,6 +1244,7 @@ export async function restoreAssetsFromBackup(
         error
       });
     }
+    await onProgress?.(++processed, total);
   }
   return { copied, failed };
 }

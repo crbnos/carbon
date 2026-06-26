@@ -163,6 +163,8 @@ export async function getCompanyRestoreRuns(
       rows?: number;
       label?: string | null;
       error?: string | null;
+      startedAt?: string;
+      progress?: { phase: string; done: number; total: number };
     };
     return {
       restoreRunId: meta.restoreRunId ?? m.entityId,
@@ -170,9 +172,49 @@ export async function getCompanyRestoreRuns(
       rows: meta.rows ?? 0,
       label: meta.label ?? null,
       error: meta.error ?? null,
-      startedAt: m.createdAt
+      progress: meta.progress ?? null,
+      startedAt: meta.startedAt ?? m.createdAt
     };
   });
 
   return { data: runs, error: null };
+}
+
+/**
+ * The in-flight export's live progress, or null when none is running. One marker
+ * per company (integration = 'company-export'), written by the export job and
+ * cleared when it finishes — so its absence means "not running" (the new backup
+ * appearing in the list is what signals completion).
+ */
+export async function getCompanyExportRun(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<{
+  data: {
+    progress: { phase: string; done: number; total: number } | null;
+    startedAt: string | null;
+  } | null;
+  error: Error | null;
+}> {
+  const marker = await client
+    .from("externalIntegrationMapping")
+    .select("metadata, createdAt")
+    .eq("integration", "company-export")
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  if (marker.error) return { data: null, error: marker.error };
+  if (!marker.data) return { data: null, error: null };
+
+  const meta = (marker.data.metadata ?? {}) as {
+    startedAt?: string;
+    progress?: { phase: string; done: number; total: number };
+  };
+  return {
+    data: {
+      progress: meta.progress ?? null,
+      startedAt: meta.startedAt ?? marker.data.createdAt
+    },
+    error: null
+  };
 }

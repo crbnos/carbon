@@ -59,6 +59,8 @@ async function wipeAndLoad(
      *  remap (foreign/template) load so a FK into a seeded global row is kept
      *  verbatim instead of treated as a dangling gap. */
     substrateIds?: Map<string, Set<unknown>>;
+    /** Live phase progress (`wipe` then `load`). Throttled by the caller. */
+    onProgress?: (p: JobProgress) => Promise<void>;
   }
 ): Promise<{ rows: number; idRewrite: Map<string, string> }> {
   const {
@@ -67,7 +69,8 @@ async function wipeAndLoad(
     remap,
     includeGroup,
     targetGroupId,
-    substrateIds
+    substrateIds,
+    onProgress
   } = opts;
 
   // Refuse if the schema would let a kept row dangle once we wipe (drift guard).
@@ -122,12 +125,19 @@ async function wipeAndLoad(
       await sql`SET LOCAL session_replication_role = 'replica'`.execute(trx);
     }
 
-    await wipeScopedData(trx, wipeTables, byName, {
-      companyId,
-      companyGroupId: targetGroupId
-    });
+    await onProgress?.({ phase: "wipe", done: 0, total: wipeTables.length });
+    await wipeScopedData(
+      trx,
+      wipeTables,
+      byName,
+      { companyId, companyGroupId: targetGroupId },
+      onProgress
+        ? (done, total) => onProgress({ phase: "wipe", done, total })
+        : undefined
+    );
 
-    for (const table of loadTables) {
+    for (let t = 0; t < loadTables.length; t++) {
+      const table = loadTables[t]!;
       const backupCols =
         backupColumns.get(table.name) ??
         new Set(Object.keys(backup.data[table.name]![0] ?? {}));
@@ -190,6 +200,11 @@ async function wipeAndLoad(
         `.execute(trx);
       }
       inserted += rows.length;
+      await onProgress?.({
+        phase: "load",
+        done: t + 1,
+        total: loadTables.length
+      });
     }
   });
 
@@ -197,6 +212,10 @@ async function wipeAndLoad(
 }
 
 type RestoreStatus = "running" | "ready" | "failed" | "reverting";
+/** Live progress of the current phase. `phase` is a stable KEY
+ *  (`snapshot`/`wipe`/`load`/`files`); the UI maps it to a human label per mode
+ *  (restore vs revert), so the job never bakes in display copy. */
+type JobProgress = { phase: string; done: number; total: number };
 type RestoreMeta = {
   restoreRunId: string;
   status: RestoreStatus;
@@ -204,6 +223,10 @@ type RestoreMeta = {
   rows?: number;
   label?: string | null;
   error?: string | null;
+  /** ISO timestamp of the first heartbeat — the UI shows elapsed time from it. */
+  startedAt?: string;
+  /** Current phase + done/total; updated as the run progresses (throttled). */
+  progress?: JobProgress;
   /** True when the restored backup came from another company (its rows were
    *  re-stamped onto this one). */
   foreign?: boolean;
@@ -291,6 +314,41 @@ async function writeRestoreMarker(
   }
 }
 
+/**
+ * A throttled progress reporter bound to one run. Writes `progress` into the
+ * marker, but coalesces noise: a same-phase tick within {@link THROTTLE_MS} of
+ * the last write is dropped. A phase change or a terminal `done === total` always
+ * flushes, so the UI never misses a boundary. Marker writes go to a separate
+ * connection, so calling this inside the wipe+load transaction is safe.
+ */
+const PROGRESS_THROTTLE_MS = 250;
+function makeProgressReporter(
+  client: ServiceRole,
+  companyId: string,
+  restoreRunId: string
+): (p: JobProgress) => Promise<void> {
+  let lastAt = 0;
+  let lastPhase = "";
+  return async (progress) => {
+    const now = Date.now();
+    const terminal = progress.done >= progress.total;
+    if (
+      progress.phase === lastPhase &&
+      !terminal &&
+      now - lastAt < PROGRESS_THROTTLE_MS
+    ) {
+      return;
+    }
+    lastPhase = progress.phase;
+    lastAt = now;
+    await writeRestoreMarker(client, {
+      companyId,
+      restoreRunId,
+      patch: { progress }
+    });
+  };
+}
+
 async function deleteRestoreMarker(
   client: ServiceRole,
   companyId: string,
@@ -344,8 +402,13 @@ export const companyRestoreFunction = inngest.createFunction(
         companyId,
         userId,
         restoreRunId,
-        patch: { status: "running", label: label ?? null }
+        patch: {
+          status: "running",
+          label: label ?? null,
+          startedAt: existing?.metadata.startedAt ?? new Date().toISOString()
+        }
       });
+      const report = makeProgressReporter(client, companyId, restoreRunId);
 
       try {
         const name = backupNameFromSource(filePath);
@@ -414,6 +477,7 @@ export const companyRestoreFunction = inngest.createFunction(
         //    capture the WIPED state and overwrite the real pre-restore copy.
         let snapshotPath = existing?.metadata.snapshotPath ?? undefined;
         if (!snapshotPath) {
+          await report({ phase: "snapshot", done: 0, total: 1 });
           // buildCompanyBackup writes the snapshot's table files; the manifest is
           // written last (its presence marks the snapshot complete). The marker
           // stores the folder name.
@@ -437,6 +501,7 @@ export const companyRestoreFunction = inngest.createFunction(
             restoreRunId,
             patch: { snapshotPath, foreign, includeGroup }
           });
+          await report({ phase: "snapshot", done: 1, total: 1 });
         }
 
         // 2. Wipe + load (atomic). If this throws, the transaction rolls back —
@@ -450,7 +515,8 @@ export const companyRestoreFunction = inngest.createFunction(
           remap: foreign,
           includeGroup,
           targetGroupId,
-          substrateIds
+          substrateIds,
+          onProgress: report
         });
 
         // 3. Files (best-effort, non-transactional) — copied BEFORE marking ready
@@ -460,15 +526,22 @@ export const companyRestoreFunction = inngest.createFunction(
         //    so a storage hiccup still can't flip a committed restore to "failed".
         //    A revert restores files from the snapshot.
         if (includeStorage === "all") {
+          const fileCount =
+            backup.manifest.storage?.filter((f) => f.included).length ?? 0;
           try {
-            await restoreAssetsFromBackup(client, {
-              files: backup.manifest.storage,
-              srcBucket: companyId,
-              srcPrefix: backupAssetsDir(name),
-              sourceCompanyId: backup.manifest.sourceCompanyId,
-              companyId,
-              idRewrite
-            });
+            await report({ phase: "files", done: 0, total: fileCount });
+            await restoreAssetsFromBackup(
+              client,
+              {
+                files: backup.manifest.storage,
+                srcBucket: companyId,
+                srcPrefix: backupAssetsDir(name),
+                sourceCompanyId: backup.manifest.sourceCompanyId,
+                companyId,
+                idRewrite
+              },
+              (done, total) => report({ phase: "files", done, total })
+            );
           } catch (storageErr) {
             console.warn("Restore: file restore failed (data is intact)", {
               restoreRunId,
@@ -582,8 +655,9 @@ export const companyRestoreRevertFunction = inngest.createFunction(
       await writeRestoreMarker(client, {
         companyId,
         restoreRunId,
-        patch: { status: "reverting" }
+        patch: { status: "reverting", startedAt: new Date().toISOString() }
       });
+      const report = makeProgressReporter(client, companyId, restoreRunId);
 
       try {
         // The snapshot is THIS company's own pre-restore data — ids and scope
@@ -599,16 +673,24 @@ export const companyRestoreRevertFunction = inngest.createFunction(
           userId: "",
           remap: false,
           includeGroup: marker?.metadata.includeGroup ?? false,
-          targetGroupId
+          targetGroupId,
+          onProgress: report
         });
-        await restoreAssetsFromBackup(client, {
-          files: snapshot.manifest.storage,
-          srcBucket: companyId,
-          srcPrefix: backupAssetsDir(snapshotPath),
-          sourceCompanyId: companyId,
-          companyId,
-          idRewrite
-        });
+        const fileCount =
+          snapshot.manifest.storage?.filter((f) => f.included).length ?? 0;
+        await report({ phase: "files", done: 0, total: fileCount });
+        await restoreAssetsFromBackup(
+          client,
+          {
+            files: snapshot.manifest.storage,
+            srcBucket: companyId,
+            srcPrefix: backupAssetsDir(snapshotPath),
+            sourceCompanyId: companyId,
+            companyId,
+            idRewrite
+          },
+          (done, total) => report({ phase: "files", done, total })
+        );
 
         await removeStoragePrefix(client, companyId, backupDir(snapshotPath));
         await deleteRestoreMarker(client, companyId, restoreRunId);
