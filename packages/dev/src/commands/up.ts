@@ -72,6 +72,12 @@ type UpOpts = {
   borrow?: boolean;
   /** When false, skip portless proxy and use localhost URLs. */
   portless?: boolean;
+  /**
+   * Boot apps, wait until reachable, run this shell command, then tear the
+   * stack down. Scopes the stack's lifetime to the command (headless/CI use):
+   * `crbn up` exits with the command's exit code. No detached daemon to reap.
+   */
+  run?: string;
 };
 
 type Ctx = {
@@ -192,6 +198,21 @@ export async function up(opts: UpOpts = {}) {
   // Startup done — hand teardown ownership to the app supervisor (or, for
   // services-only, to a later manual `crbn down`).
   detachEarly();
+
+  // --run: scope the stack's lifetime to a command (headless/CI). Boot apps,
+  // wait until reachable, run it, then tear everything down. No daemon to reap.
+  if (opts.run !== undefined) {
+    outro("apps starting, then running command");
+    await runAppsThenCommand(
+      root,
+      selectedApps,
+      ctx.ports,
+      portless,
+      opts.run,
+      stripeChild
+    );
+    return;
+  }
 
   if (selectedApps.length === 0) {
     // Services-only: the stack stays up after crbn exits, so let the stripe
@@ -536,6 +557,95 @@ async function runAppsThenTeardown(
   } finally {
     detach();
   }
+}
+
+// Port each app's dev server binds (mirrors apps.ts APP_PORT_KEYS).
+const APP_PORT_KEY: Partial<Record<AppId, keyof PortMap>> = {
+  erp: "PORT_ERP",
+  mes: "PORT_MES"
+};
+
+/** A single readiness probe — any HTTP status means the dev server is up. */
+async function appResponds(port: number): Promise<boolean> {
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/`, {
+      signal: AbortSignal.timeout(4000)
+    });
+    return res.status > 0;
+  } catch {
+    return false;
+  }
+}
+
+/** Poll each selected app's port until it serves (or the deadline passes). */
+async function waitForApps(
+  selectedApps: AppId[],
+  ports: PortMap,
+  timeoutMs = 180_000
+): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  for (const id of selectedApps) {
+    const key = APP_PORT_KEY[id];
+    const port = key ? ports[key] : undefined;
+    if (port === undefined) continue;
+    let up = false;
+    while (Date.now() < deadline) {
+      if (await appResponds(port)) {
+        up = true;
+        break;
+      }
+      await new Promise((r) => setTimeout(r, 1500));
+    }
+    if (up) log.info(`${id} reachable on :${port}`);
+    else log.warn(`${id} not reachable on :${port} — running command anyway`);
+  }
+}
+
+/**
+ * Boot apps in the background, wait until reachable, run `command`, then tear
+ * the whole stack down. The stack's lifetime is exactly the command's — the
+ * headless/CI counterpart to the interactive Ctrl+C flow. Reuses the
+ * AbortSignal teardown `spawnApps` already exposes, so there's no detached
+ * daemon to track or reap. `crbn up` exits with the command's exit code.
+ */
+async function runAppsThenCommand(
+  root: string,
+  selectedApps: AppId[],
+  ports: PortMap,
+  portless: boolean,
+  command: string,
+  stripeChild?: ExecaChildProcess
+) {
+  const controller = new AbortController();
+  const appsDone = spawnApps({
+    root,
+    apps: selectedApps,
+    ports,
+    portless,
+    signal: controller.signal
+    // biome-ignore lint/suspicious/noEmptyBlockStatements: supervisor errors surface via teardown
+  }).catch(() => {});
+  const detach = onShutdown(() => controller.abort());
+
+  let exitCode = 0;
+  try {
+    await waitForApps(selectedApps, ports);
+    log.step(`running: ${command}`);
+    const res = await execa(command, {
+      cwd: root,
+      shell: true,
+      stdio: "inherit",
+      reject: false
+    });
+    exitCode = res.exitCode ?? 0;
+  } finally {
+    controller.abort(); // stop the app supervisors
+    await appsDone;
+    killStripe(stripeChild);
+    await down({ silent: true });
+    detach();
+  }
+  process.exitCode = exitCode;
 }
 
 // ---------------------------------------------------------------------------

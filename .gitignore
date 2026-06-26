@@ -67,3 +67,8 @@ packages/database/supabase/seed.sql
 apps/*/portless.json
 packages/database/supabase/snippets/**
 .pr-review
+
+# Loop run artifacts (conductor bindings, ledgers, screenshots) — runtime, not source.
+# The ledger summary goes in the PR body; screenshots are hosted on the PR.
+llm/loops/*
+!llm/loops/README.md
