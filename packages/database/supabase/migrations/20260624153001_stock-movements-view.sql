@@ -32,4 +32,14 @@ LEFT JOIN "trackedEntity" te ON te."id" = il."trackedEntityId";
 CREATE INDEX IF NOT EXISTS "itemLedger_companyId_createdAt_entryNumber_idx"
   ON "itemLedger" ("companyId", "createdAt" DESC, "entryNumber" DESC);
 
-ALTER PUBLICATION supabase_realtime ADD TABLE "itemLedger";
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime'
+      AND schemaname = 'public'
+      AND tablename = 'itemLedger'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE "itemLedger";
+  END IF;
+END $$;
