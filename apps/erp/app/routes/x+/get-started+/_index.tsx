@@ -1,4 +1,4 @@
-import { planAnchorId } from "@carbon/onboarding";
+import { planAnchorId, SUPPORT_BOOKING_URL } from "@carbon/onboarding";
 import { OnboardingHub } from "@carbon/onboarding/ui";
 import {
   Button,
@@ -12,14 +12,10 @@ import {
 import { useEffect, useRef, useState } from "react";
 import Confetti from "react-confetti";
 import { createPortal } from "react-dom";
-import { useFetcher, useNavigate } from "react-router";
+import { useFetcher, useLocation, useNavigate } from "react-router";
 import { useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import { trainingConfig } from "~/utils/training";
-
-// Calendly booking for the Guided-implementation upsell (self-serve only).
-const CARBON_SUPPORT_URL =
-  "https://calendly.com/chase-carbon-introduction/30min?month=2026-06";
 
 // Each nested product step opens where you do it. "Set up your data" lands on
 // the Setup Map — the configuration checklist that deep-links each ERP screen —
@@ -37,6 +33,7 @@ const PRODUCT_PATH: Record<string, string> = {
 export default function GetStartedStartRoute() {
   const { company } = useUser();
   const navigate = useNavigate();
+  const location = useLocation();
   const [celebrate, setCelebrate] = useState(false);
   const [exitOpen, setExitOpen] = useState(false);
   // Viewport size for the full-screen canvas (window is undefined during SSR).
@@ -49,9 +46,19 @@ export default function GetStartedStartRoute() {
     return () => window.removeEventListener("resize", update);
   }, []);
 
-  // Every gate done → confetti. Fires on mount when complete too, so a
-  // just-completed customer routed here still gets the celebration. The finish
-  // dialog is opened explicitly via the hub's exit button, not auto-shown.
+  // Celebrate when the layout routes here right after the final checkpoint
+  // clears (it passes `justCompleted`). Cleared from history so a refresh or
+  // back-nav doesn't replay the confetti.
+  const justCompleted = (location.state as { justCompleted?: boolean } | null)
+    ?.justCompleted;
+  useEffect(() => {
+    if (justCompleted) {
+      setCelebrate(true);
+      navigate(".", { replace: true, state: {} });
+    }
+  }, [justCompleted, navigate]);
+
+  // Also fire if the final gate flips while the user is already on this screen.
   const onComplete = () => {
     setCelebrate(true);
   };
@@ -109,7 +116,7 @@ export default function GetStartedStartRoute() {
         onComplete={onComplete}
         onExit={() => setExitOpen(true)}
         onContactExpert={() =>
-          window.open(CARBON_SUPPORT_URL, "_blank", "noopener,noreferrer")
+          window.open(SUPPORT_BOOKING_URL, "_blank", "noopener,noreferrer")
         }
         onOpenProduct={(key) =>
           navigate(PRODUCT_PATH[key] ?? path.to.getStarted)

@@ -7,8 +7,7 @@ import {
   LuCircleHelp,
   LuPartyPopper,
   LuPlay,
-  LuRocket,
-  LuSparkles
+  LuRocket
 } from "react-icons/lu";
 import { SPINE } from "../content/spine";
 import {
@@ -22,12 +21,9 @@ import {
   spineForTier
 } from "../logic";
 import type { GateValue, StepDef, Tier } from "../types";
+import { GuidedUpsellCard } from "./GuidedUpsellCard";
 import { OWNER_TOKENS } from "./primitives";
 import { useCheckMap, useSignals, useTier } from "./state";
-
-// Marketing stat for the Guided-implementation upsell. PLACEHOLDER — swap in the
-// real, verified figure (and source) before this is shown to customers.
-const GUIDED_SUCCESS_LIFT = "2×";
 
 // Carbon-app routing + video resolution are injected by the ERP route (they use
 // `path.to` / trainingConfig). Hub state comes from the store.
@@ -70,11 +66,12 @@ export function OnboardingHub({
   const remaining = total - done;
   const next = nextAction(spine, map, signals);
 
-  // Fire onComplete on the transition into "all done" (and on mount if already
-  // complete, so a reload still celebrates). The ref guard prevents re-firing on
-  // unrelated re-renders.
+  // Fire onComplete only on a live transition into "all done" within this mount.
+  // The ref seeds from the current value, so an already-complete hub (reload or
+  // revisit) does NOT re-celebrate — the post-completion navigation carries its
+  // own celebrate flag instead (see the ERP route).
   const isComplete = total > 0 && done === total;
-  const wasComplete = useRef(false);
+  const wasComplete = useRef(isComplete);
   useEffect(() => {
     if (isComplete && !wasComplete.current) onComplete?.();
     wasComplete.current = isComplete;
@@ -185,49 +182,7 @@ export function OnboardingHub({
       </div>
 
       {tier === "self_serve" && onContactExpert ? (
-        <section className="rounded-2xl border border-blue-500/30 bg-blue-500/[0.04] shadow-button-base p-6 flex items-start gap-4">
-          <div className="shrink-0 size-11 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
-            <LuSparkles className="text-xl" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-xxs uppercase tracking-wide font-medium text-blue-600 dark:text-blue-400">
-              Guided implementation
-            </div>
-            <div className="text-base font-semibold tracking-tight mt-0.5 text-balance">
-              Shops we guide are{" "}
-              <span className="text-blue-600 dark:text-blue-400">
-                {GUIDED_SUCCESS_LIFT}
-              </span>{" "}
-              more likely to go live on time
-            </div>
-            <p className="text-sm text-muted-foreground mt-1 text-pretty">
-              You drive it — we make sure it's done right. Expert eyes on your
-              setup, data, and go-live.
-            </p>
-            <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
-              {[
-                "Expert guidance",
-                "In the loop together",
-                "Set up the right way"
-              ].map((point) => (
-                <li
-                  key={point}
-                  className="flex items-center gap-1.5 text-xs text-muted-foreground"
-                >
-                  <LuCheck className="size-3.5 shrink-0 text-blue-600 dark:text-blue-400" />
-                  {point}
-                </li>
-              ))}
-            </ul>
-            <Button
-              className="mt-4"
-              onClick={onContactExpert}
-              rightIcon={<LuArrowRight />}
-            >
-              Book a call with Carbon
-            </Button>
-          </div>
-        </section>
+        <GuidedUpsellCard onContactExpert={onContactExpert} />
       ) : null}
     </div>
   );

@@ -14,5 +14,6 @@ export * from "./requirements";
 export * from "./roles";
 export * from "./scope";
 export * from "./spine";
+export * from "./support";
 export * from "./team";
 export * from "./value";

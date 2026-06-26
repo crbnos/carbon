@@ -11,14 +11,13 @@ import {
   upsertCheckState,
   upsertFieldValue
 } from "@carbon/onboarding/server";
+import { isInternalEmail } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 
-const INTERNAL_DOMAINS = ["@carbon.us.org", "@carbon.ms"];
-
 // Single action endpoint for every hub state mutation. Toggles + customer/shared
-// fields + custom rows are open to any company employee; structural edits
-// (tier/status/exclusions/contacts) require an internal Carbon user.
+// fields + custom rows + finishing (setStatus) are open to any company employee;
+// structural edits (tier/exclusions/contacts) require an internal Carbon user.
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId, email } = await requirePermissions(
@@ -34,9 +33,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const a = validation.data;
-  const isInternal = INTERNAL_DOMAINS.some((domain) =>
-    email.toLowerCase().trim().endsWith(domain)
-  );
+  const isInternal = isInternalEmail(email);
 
   const fail = async (e: unknown) =>
     data(
@@ -128,9 +125,18 @@ export async function action({ request }: ActionFunctionArgs) {
       if (result.error) return fail(result.error);
       break;
     }
+    case "setStatus": {
+      // Finishing (or reopening) the hub is the customer's own action on their
+      // own hub — open to any company member, unlike the structural edits below.
+      const result = await updateImplementationHub(client, companyId, {
+        status: a.status,
+        userId
+      });
+      if (result.error) return fail(result.error);
+      break;
+    }
     case "setExclusions":
     case "setTier":
-    case "setStatus":
     case "setContacts": {
       if (!isInternal) {
         return data(
@@ -149,9 +155,7 @@ export async function action({ request }: ActionFunctionArgs) {
           ? { exclusions: JSON.parse(a.exclusions), userId }
           : a.intent === "setTier"
             ? { tier: a.tier, userId }
-            : a.intent === "setStatus"
-              ? { status: a.status, userId }
-              : { contacts: JSON.parse(a.contacts), userId };
+            : { contacts: JSON.parse(a.contacts), userId };
       const result = await updateImplementationHub(client, companyId, patch);
       if (result.error) return fail(result.error);
       break;

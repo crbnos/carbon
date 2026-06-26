@@ -184,7 +184,7 @@ export default function GetStartedLayout() {
       loaderData.hub.status !== "complete" &&
       location.pathname !== path.to.getStarted
     ) {
-      navigate(path.to.getStarted);
+      navigate(path.to.getStarted, { state: { justCompleted: true } });
     }
     wasAllDone.current = allPhasesDone;
   }, [allPhasesDone, loaderData.hub.status, location.pathname, navigate]);
