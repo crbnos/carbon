@@ -577,6 +577,10 @@ export const path = {
       generatePath(`${x}/settings/company/switch/${companyId}`),
     backups: `${x}/settings/backups`,
     companies: `${x}/settings/companies`,
+    getStarted: `${x}/get-started`,
+    getStartedPage: (slug: string) => generatePath(`${x}/get-started/${slug}`),
+    getStartedState: `${x}/get-started/state`,
+    getStartedEnroll: `${x}/get-started/enroll`,
     completeTrainingAssignment: (id: string) =>
       generatePath(`${share}/training/${id}`),
     configurationParameter: (itemId: string) =>

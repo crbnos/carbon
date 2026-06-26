@@ -12,6 +12,7 @@ import { sanitize } from "~/utils/supabase";
 import { getDefaultStorageUnitForJob } from "../inventory";
 import { getEmployeeJob } from "../people";
 import type {
+  MethodType,
   operationParameterValidator,
   operationStepValidator,
   operationToolValidator
@@ -997,10 +998,21 @@ type JobItemAvailability = {
   quantityOnProductionOrder: number | null;
 };
 
-// Per-item shortfall for one job: its remaining need (quantityToIssue) minus its
-// share of the available pool (on hand + incoming), handed out to jobs by
-// priority (job.priority ascending). Stock is shared with no per-job
-// reservation, so allocation order matters.
+// Pull-from-Inventory lines consume on-hand before other (e.g. Purchase to Order)
+// lines, matching their sourcing intent.
+function methodAllocationRank(methodType: MethodType | null): number {
+  return methodType === "Pull from Inventory" ? 0 : 1;
+}
+
+// Per-LINE shortfall for one job. Two-level allocation of each item's available
+// pool (on hand + incoming):
+//   1. Across all active jobs by priority (job.priority ascending) — higher
+//      priority jobs take their full need first.
+//   2. Within THIS job, split its share across its own BoM lines for the item
+//      (Pull-from-Inventory first), so an item on multiple lines can read
+//      "in stock" on one line and "needs order" on another.
+// Stock is shared with no per-job reservation, so order matters. Result is keyed
+// by jobMaterial id (the line), not item id.
 export async function getJobMaterialShortfallByItem(
   client: SupabaseClient<Database>,
   jobId: string,
@@ -1009,12 +1021,9 @@ export async function getJobMaterialShortfallByItem(
   materials: JobItemAvailability[]
 ): Promise<Record<string, ItemShortfall>> {
   // Two pools per item, kept separate so allocation can hand out already-received
-  // on-hand stock BEFORE incoming supply — that's what lets a fulfilled
-  // high-priority job read "in stock" while a lower-priority job sharing the same
-  // partially-received PO reads "receiving". (The RPC repeats item-level values.)
-  // quantityOnPurchaseOrder / quantityOnProductionOrder already include
-  // planned/pending POs and planned jobs (conversion-factor applied), so incoming
-  // supply is taken straight from the RPC here.
+  // on-hand stock BEFORE incoming supply. quantityOnPurchaseOrder /
+  // quantityOnProductionOrder already include planned/pending POs and planned
+  // jobs (conversion-factor applied), so incoming is taken straight from the RPC.
   const onHandByItem = new Map<string, number>();
   const incomingByItem = new Map<string, number>();
   for (const material of materials) {
@@ -1039,7 +1048,7 @@ export async function getJobMaterialShortfallByItem(
   const { data } = await client
     .from("jobMaterial")
     .select(
-      "itemId, jobId, quantityToIssue, job!inner(priority, status, locationId)"
+      "id, itemId, jobId, methodType, quantityToIssue, job!inner(priority, status, locationId)"
     )
     .in("itemId", itemIds)
     .eq("companyId", companyId)
@@ -1047,8 +1056,17 @@ export async function getJobMaterialShortfallByItem(
     .in("job.status", ACTIVE_JOB_STATUSES)
     .eq("job.locationId", locationId);
 
+  // Other jobs' demand is lumped per (item, job); THIS job's demand is also kept
+  // per-line so its allocation can be split across its own BoM lines.
   type Demand = { jobId: string; priority: number; remaining: number };
+  type Line = {
+    materialId: string;
+    remaining: number;
+    methodType: MethodType | null;
+  };
   const demandByItem = new Map<string, Map<string, Demand>>();
+  const thisJobLinesByItem = new Map<string, Line[]>();
+
   for (const row of data ?? []) {
     const itemId = row.itemId;
     const rowJobId = row.jobId;
@@ -1067,12 +1085,15 @@ export async function getJobMaterialShortfallByItem(
     const existing = jobs.get(rowJobId);
     if (existing) existing.remaining += remaining;
     else jobs.set(rowJobId, { jobId: rowJobId, priority, remaining });
+
+    if (rowJobId === jobId && row.id) {
+      const lines = thisJobLinesByItem.get(itemId) ?? [];
+      lines.push({ materialId: row.id, remaining, methodType: row.methodType });
+      thisJobLinesByItem.set(itemId, lines);
+    }
   }
 
-  // Allocate each item's pools by priority (lower first): on-hand first, then
-  // incoming. Record this job's shortfall and whether its whole need came from
-  // on-hand (no incoming was needed → "in stock").
-  const shortfallByItem: Record<string, ItemShortfall> = {};
+  const shortfallByMaterial: Record<string, ItemShortfall> = {};
   for (const [itemId, jobsMap] of demandByItem) {
     let onHand = onHandByItem.get(itemId) ?? 0;
     let incoming = incomingByItem.get(itemId) ?? 0;
@@ -1082,14 +1103,36 @@ export async function getJobMaterialShortfallByItem(
         (a.jobId < b.jobId ? -1 : a.jobId > b.jobId ? 1 : 0)
     );
     for (const job of jobs) {
-      const fromOnHand = Math.min(job.remaining, Math.max(onHand, 0));
-      onHand -= fromOnHand;
-      let need = job.remaining - fromOnHand;
-      const fromIncoming = Math.min(need, Math.max(incoming, 0));
-      incoming -= fromIncoming;
-      need -= fromIncoming;
-      if (job.jobId === jobId) {
-        shortfallByItem[itemId] = {
+      if (job.jobId !== jobId) {
+        // Other jobs consume their lump share off the top of the pools.
+        const fromOnHand = Math.min(job.remaining, Math.max(onHand, 0));
+        onHand -= fromOnHand;
+        const need = job.remaining - fromOnHand;
+        incoming -= Math.min(need, Math.max(incoming, 0));
+        continue;
+      }
+      // THIS job: split the remaining pool across its lines (Pull-from-Inventory
+      // first, then a stable order by material id).
+      const lines = (thisJobLinesByItem.get(itemId) ?? [])
+        .slice()
+        .sort(
+          (a, b) =>
+            methodAllocationRank(a.methodType) -
+              methodAllocationRank(b.methodType) ||
+            (a.materialId < b.materialId
+              ? -1
+              : a.materialId > b.materialId
+                ? 1
+                : 0)
+        );
+      for (const line of lines) {
+        const fromOnHand = Math.min(line.remaining, Math.max(onHand, 0));
+        onHand -= fromOnHand;
+        let need = line.remaining - fromOnHand;
+        const fromIncoming = Math.min(need, Math.max(incoming, 0));
+        incoming -= fromIncoming;
+        need -= fromIncoming;
+        shortfallByMaterial[line.materialId] = {
           shortfall: need > 0 ? need : 0,
           // Fully met without leaning on incoming supply.
           coveredByOnHand: need <= 0 && fromIncoming === 0
@@ -1097,12 +1140,14 @@ export async function getJobMaterialShortfallByItem(
       }
     }
   }
-  return shortfallByItem;
+  return shortfallByMaterial;
 }
 
 type OrderStatusMaterial = {
   itemTrackingType: string | null;
-  methodType: string | null;
+  methodType: MethodType | null;
+  estimatedQuantity: number | null;
+  quantityIssued: number | null;
 };
 
 type OrderStatusBuildMaterial = OrderStatusMaterial & {
@@ -1119,6 +1164,10 @@ function getJobMaterialOrderStatus(
   shortfall: number,
   coveredByOnHand: boolean
 ): ItemOrderStatus {
+  // Fully pulled into the job (its whole requirement has been issued/consumed).
+  const estimated = material.estimatedQuantity ?? 0;
+  const isIssued = estimated > 0 && (material.quantityIssued ?? 0) >= estimated;
+
   const needsOrder =
     material.itemTrackingType !== "Non-Inventory" &&
     material.methodType !== "Make to Order" &&
@@ -1134,6 +1183,13 @@ function getJobMaterialOrderStatus(
       supplyJobLines.some((line) => line.status === candidate)
     ) ?? null;
 
+  // A made-to-order material with no job producing it yet still needs to be made
+  // — the make-side counterpart to needsOrder.
+  const needsJob =
+    material.methodType === "Make to Order" &&
+    !isIssued &&
+    supplyJobStatus === null;
+
   let ordered = 0;
   let received = 0;
   if (status) {
@@ -1146,10 +1202,12 @@ function getJobMaterialOrderStatus(
 
   return {
     needsOrder,
+    needsJob,
     shortfall,
     status,
     supplyJobStatus,
     coveredByOnHand,
+    isIssued,
     ordered,
     received
   };
@@ -1161,7 +1219,7 @@ function getJobOrderStatusByMaterial(
   materials: OrderStatusBuildMaterial[],
   purchaseOrderLines: JobMaterialPurchaseOrderLine[],
   supplyJobLines: JobMaterialSupplyJobLine[],
-  shortfallByItemId: Record<string, ItemShortfall>
+  shortfallByMaterialId: Record<string, ItemShortfall>
 ): Record<string, ItemOrderStatus> {
   const linesByItemId = new Map<string, JobMaterialPurchaseOrderLine[]>();
   for (const line of purchaseOrderLines) {
@@ -1188,15 +1246,13 @@ function getJobOrderStatusByMaterial(
     const jobLines = material.jobMaterialItemId
       ? (jobLinesByItemId.get(material.jobMaterialItemId) ?? [])
       : [];
-    const itemShortfall = material.jobMaterialItemId
-      ? shortfallByItemId[material.jobMaterialItemId]
-      : undefined;
+    const lineShortfall = shortfallByMaterialId[material.id];
     byMaterialId[material.id] = getJobMaterialOrderStatus(
       material,
       poLines,
       jobLines,
-      itemShortfall?.shortfall ?? 0,
-      itemShortfall?.coveredByOnHand ?? false
+      lineShortfall?.shortfall ?? 0,
+      lineShortfall?.coveredByOnHand ?? false
     );
   }
   return byMaterialId;
@@ -1219,7 +1275,7 @@ export async function getJobOrderStatusMap(
 
   // PO lines + supply jobs drive the badge's status/supply indicators; the
   // shortfall reads incoming supply from the RPC totals, so all three run together.
-  const [purchaseOrderLines, supplyJobLines, shortfallByItemId] =
+  const [purchaseOrderLines, supplyJobLines, shortfallByMaterialId] =
     await Promise.all([
       getJobMaterialPurchaseOrderLines(client, materials, locationId),
       getJobMaterialSupplyJobLines(client, materials, companyId, locationId),
@@ -1236,7 +1292,7 @@ export async function getJobOrderStatusMap(
     materials,
     purchaseOrderLines,
     supplyJobLines,
-    shortfallByItemId
+    shortfallByMaterialId
   );
 }
 

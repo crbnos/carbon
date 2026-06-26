@@ -135,11 +135,23 @@ export async function applyMigrations(
   const dbUrl = `postgresql://supabase_admin:postgres@localhost:${dbPort}/postgres`;
   const args = ["migration", "up", "--include-all", "--db-url", dbUrl];
   const cwd = join(root, "packages/database");
-  const r = await execa("supabase", args, {
-    cwd,
-    reject: false,
-    preferLocal: true
-  });
+
+  // Retry up to 3 times on deadlock — background services (PostgREST,
+  // Realtime) hold catalog locks that race with CREATE POLICY / ALTER TABLE.
+  const MAX_RETRIES = 3;
+  const execOpts = { cwd, reject: false, preferLocal: true };
+  // Inferred from the call so `r` is the string-encoded result (not execa's
+  // buffer overload) and is definitely assigned after the loop.
+  let r = await execa("supabase", args, execOpts);
+  for (let attempt = 1; attempt < MAX_RETRIES && r.exitCode !== 0; attempt++) {
+    const output = `${r.stderr ?? ""}\n${r.stdout ?? ""}`;
+    if (!/deadlock detected/i.test(output)) break;
+    log.warn(
+      `deadlock during migration (attempt ${attempt}/${MAX_RETRIES}) — retrying in 3s`
+    );
+    await sleep(3000);
+    r = await execa("supabase", args, execOpts);
+  }
   if (r.exitCode !== 0) {
     const output = `${r.stderr ?? ""}\n${r.stdout ?? ""}`;
     // Auto-repair: DB has migration versions not present locally (stale from

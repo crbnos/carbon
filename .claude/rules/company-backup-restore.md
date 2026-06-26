@@ -47,12 +47,26 @@ The catalog is **schema-introspected**, not a hand-maintained list:
 - `scopeColumn: "companyId" | "companyGroupId"`. `companyId` = the company's own
   data; `companyGroupId` = config shared across a company group (chart of
   accounts, currencies, dimensions).
-- Skip/scope sets: `SECRET_TABLES` (`apiKey`, `companyIntegration`, `webhook`,
-  `oauthClient`, `oauthToken` — never travel), `STRUCTURAL_TABLES` (`company` —
-  excluded from catalog), `RESEED_SKIPPED_TABLES` (memberships/invites/employee/
-  externalIntegrationMapping — skipped on onboarding reseed),
-  `IN_PLACE_SKIPPED_TABLES` (access/identity tables a restore must keep so the
-  user isn't locked out).
+- Skip/scope sets: `SECRET_TABLES` (`apiKey`, `apiKeyRateLimit`,
+  `companyIntegration`, `webhook`, `oauthClient`, `oauthToken` — never travel;
+  `apiKeyRateLimit` is here because its NOT-NULL `apiKeyId` references the stripped
+  secret `apiKey`, so exporting it alone would dangle every row on restore — and
+  it's UNLOGGED operational counters, not user data), `STRUCTURAL_TABLES` (`company` —
+  excluded from catalog), `TRANSIENT_TABLES` (`demandForecastSource`,
+  `demandActual`, `supplyForecast`, `supplyActual` — MRP planning output the
+  `mrp` edge fn regenerates wholesale every run; excluded from the catalog
+  entirely alongside `STRUCTURAL_TABLES`, so they're never exported/wiped/loaded
+  and the next MRP run rebuilds them. `demandForecastSource`'s discriminator
+  CHECK (`sourceType` ↔ which of `jobId`/`salesOrderLineId`/`demandProjectionId`
+  is non-null) made a remapped restore crash — the FK-nulling dangling-ref policy
+  in `buildRowTransforms` nulls a set FK and violates the CHECK. `demandForecast`
+  is deliberately kept: it has a user-forecast write path and no such CHECK. The
+  two excluded sets are unioned into `CATALOG_EXCLUDED_TABLES`, which
+  `assertBackupImportable` also skips — an OLDER backup that still carries an
+  excluded table is not schema drift, its rows are just ignored on load),
+  `RESEED_SKIPPED_TABLES` (memberships/invites/employee/externalIntegrationMapping
+  — skipped on onboarding reseed), `IN_PLACE_SKIPPED_TABLES` (access/identity
+  tables a restore must keep so the user isn't locked out).
 - Format: the gz is **NDJSON** — line 1 is `{ manifest }`, every later line is one
   `{ t, r }` table row. Written/read a line at a time (`serializeBackup` /
   `deserializeBackup` in `company-backup.ts`) so a large backup never materializes
@@ -130,6 +144,17 @@ Forward flow:
      `targetGroupId`; on a foreign/remap load it mints new ids (text/uuid only) and
      remaps FKs, with a dangling-ref guard (nullable FK → null, non-nullable →
      throw).
+   - Closure preflight (`assertReferentiallyClosed` → `findDanglingReferences`)
+     runs before the wipe and refuses a backup whose NOT-NULL FK points at a row
+     it doesn't include. It tracks a parent's ids for **any table with an `id`
+     column**, not only `hasId` (sole-`id` PK) tables — the ~25 composite
+     `("id","companyId")`-PK tables (`stockTransfer`, `supplierPart`, …) are
+     referenced by their `id` too, and gating on `hasId` falsely flagged every
+     child of them and refused otherwise-valid restores. It also skips
+     `SECRET_TABLES` on both sides (a secret table is never written to a backup
+     and never loaded) — an OLDER backup that predates a table joining
+     `SECRET_TABLES` still carries its rows (e.g. `apiKeyRateLimit` → the stripped
+     `apiKey`); they're ignored on load, so the preflight ignores them too.
 5. `restoreAssetsFromBackup` (outside the txn, non-transactional) copies the files
    from the backup's `.assets/` folder back to `private/<rewritten path>`,
    server-side. It runs **before** the `ready` marker (step below) so the progress

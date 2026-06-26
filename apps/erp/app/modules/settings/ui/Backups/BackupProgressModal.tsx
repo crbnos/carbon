@@ -11,24 +11,39 @@ import { useEffect, useState } from "react";
 import { LuCheck, LuLoaderCircle, LuTriangleAlert } from "react-icons/lu";
 import { useFetcher, useRevalidator } from "react-router";
 
-// Simulated step labels per job. Restore/revert resolve from a real poll; export
-// has no signal, so its steps play out then settle. Either way the steps make the
-// wait legible — "what is it doing right now".
-const STEP_SETS: Record<"export" | "restore" | "revert", string[]> = {
-  export: [
-    "Collecting records",
-    "Bundling files",
-    "Compressing",
-    "Saving backup"
-  ],
-  restore: [
-    "Snapshotting current data",
-    "Clearing existing data",
-    "Loading backup",
-    "Restoring files"
-  ],
-  revert: ["Clearing restored data", "Restoring your snapshot"]
+// The job reports progress as a stable phase KEY + done/total; these order the
+// keys and map them to labels per mode (display copy stays out of the job).
+const PHASE_ORDER: Record<"export" | "restore" | "revert", string[]> = {
+  export: ["tables", "files"],
+  restore: ["snapshot", "wipe", "load", "files"],
+  revert: ["wipe", "load", "files"]
 };
+const PHASE_LABELS: Record<
+  "export" | "restore" | "revert",
+  Record<string, string>
+> = {
+  export: {
+    tables: "Collecting records",
+    files: "Bundling files"
+  },
+  restore: {
+    snapshot: "Snapshotting current data",
+    wipe: "Clearing existing data",
+    load: "Loading backup",
+    files: "Restoring files"
+  },
+  revert: {
+    wipe: "Clearing restored data",
+    load: "Restoring your snapshot",
+    files: "Restoring files"
+  }
+};
+
+function formatElapsed(ms: number): string {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const m = Math.floor(s / 60);
+  return m > 0 ? `${m}m ${s % 60}s` : `${s}s`;
+}
 
 // The animated step checklist. Completed steps get a check that pops in
 // (ease-out), the active step spins (constant motion → linear), pending steps sit
@@ -36,21 +51,26 @@ const STEP_SETS: Record<"export" | "restore" | "revert", string[]> = {
 function StepChecklist({
   steps,
   step,
-  done
+  fraction,
+  done,
+  detail
 }: {
   steps: string[];
   step: number;
+  /** 0..1 bar fill. Real for restore/revert (phase + intra-phase done/total),
+   *  synthetic for export. */
+  fraction: number;
   done: boolean;
+  /** Optional line under the list, e.g. "23 / 50 · 4s". */
+  detail?: string;
 }) {
-  const fraction = done
-    ? 1
-    : (Math.min(step, steps.length - 1) + 0.5) / steps.length;
+  const f = done ? 1 : Math.max(0, Math.min(1, fraction));
   return (
     <div className="flex w-full flex-col gap-4 py-2">
       <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
         <div
           className="h-full origin-left rounded-full bg-primary transition-transform duration-700 ease-out motion-reduce:transition-none"
-          style={{ transform: `scaleX(${fraction})` }}
+          style={{ transform: `scaleX(${f})` }}
         />
       </div>
       <div className="flex flex-col gap-2.5">
@@ -83,6 +103,9 @@ function StepChecklist({
           );
         })}
       </div>
+      {detail ? (
+        <p className="text-xs tabular-nums text-muted-foreground">{detail}</p>
+      ) : null}
     </div>
   );
 }
@@ -105,26 +128,47 @@ export function JobProgressModal({
   const isExport = mode === "export";
   const isRevert = mode === "revert";
   const revalidator = useRevalidator();
-  const steps = STEP_SETS[mode];
 
   const statusFetcher = useFetcher<{
     status: "running" | "ready" | "failed" | "reverting" | "gone";
     rows: number;
     error: string | null;
+    progress: { phase: string; done: number; total: number } | null;
+    startedAt: string | null;
+  }>();
+  // Export reports progress via a separate company-scoped marker (no run id).
+  const exportFetcher = useFetcher<{
+    progress: { phase: string; done: number; total: number } | null;
+    startedAt: string | null;
   }>();
   const raw = statusFetcher.data?.status;
   const failed = !isExport && raw === "failed";
   const restoreReady = mode === "restore" && raw === "ready";
   const revertDone = isRevert && raw === "gone";
 
-  const [step, setStep] = useState(0);
   const success = restoreReady || revertDone || (isExport && !!completed);
   const done = success || failed;
 
   const rows = statusFetcher.data?.rows ?? 0;
   const error = statusFetcher.data?.error;
+  const progress = isExport
+    ? (exportFetcher.data?.progress ?? null)
+    : (statusFetcher.data?.progress ?? null);
+  const startedAt = isExport
+    ? (exportFetcher.data?.startedAt ?? null)
+    : (statusFetcher.data?.startedAt ?? null);
+  // Watchdog thresholds are in 500ms ticks: ~120s "slow", ~60s "stalled".
   const [ticks, setTicks] = useState(0);
-  const slow = !done && ticks > 80;
+  const slow = !done && ticks > 240;
+
+  // Elapsed clock — refresh once a second while the job runs.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (done || !startedAt) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [done, startedAt]);
+  const elapsedMs = startedAt ? now - new Date(startedAt).getTime() : 0;
 
   // Pre-heartbeat watchdog: if a restore never writes its first marker (the job
   // failed to start / never reached Inngest), the status stays "gone" forever.
@@ -133,7 +177,7 @@ export function JobProgressModal({
   useEffect(() => {
     if (raw && raw !== "gone") setSawMarker(true);
   }, [raw]);
-  const stalled = mode === "restore" && !done && !sawMarker && ticks > 40;
+  const stalled = mode === "restore" && !done && !sawMarker && ticks > 120;
 
   // Poll the real job status (restore / revert only).
   const load = statusFetcher.load;
@@ -148,34 +192,55 @@ export function JobProgressModal({
     const id = setInterval(() => {
       load(href);
       setTicks((t) => t + 1);
-    }, 1500);
+    }, 500);
     return () => clearInterval(id);
   }, [isExport, runId, done, load, revalidator]);
 
-  // Export has no status marker — poll by revalidating the backups list until the
-  // new backup actually appears (the parent flips `completed` when it does). The
-  // dialog never claims success before the file exists.
+  // Export: poll the marker fast for smooth live counts, but revalidate the (much
+  // heavier) backup list slower — completion is just the new backup appearing.
+  const loadExport = exportFetcher.load;
   useEffect(() => {
     if (!isExport || done) return;
-    const id = setInterval(() => {
-      revalidator.revalidate();
+    const href = `/api/settings/backup-export-status`;
+    loadExport(href);
+    const poll = setInterval(() => {
+      loadExport(href);
       setTicks((t) => t + 1);
-    }, 2000);
-    return () => clearInterval(id);
-  }, [isExport, done, revalidator]);
+    }, 500);
+    const reval = setInterval(() => revalidator.revalidate(), 2000);
+    return () => {
+      clearInterval(poll);
+      clearInterval(reval);
+    };
+  }, [isExport, done, revalidator, loadExport]);
 
-  // Advance the visible steps on a cadence while the job runs.
-  useEffect(() => {
-    if (done) {
-      setStep(steps.length);
-      return;
+  // Checklist + bar from the real phase + done/total. Before the first heartbeat
+  // we hold phase 1 rather than fake-advancing (which would snap backward once
+  // real progress arrives).
+  const order = PHASE_ORDER[mode];
+  const checklist = (() => {
+    const labels = order.map((k) => PHASE_LABELS[mode][k] ?? k);
+    const elapsed = startedAt ? formatElapsed(elapsedMs) : null;
+    if (progress) {
+      const idx = order.indexOf(progress.phase);
+      const activeStep = idx >= 0 ? idx : 0;
+      const sub = progress.total > 0 ? progress.done / progress.total : 0;
+      const fraction = done ? 1 : (activeStep + sub) / order.length;
+      const counts =
+        progress.total > 1
+          ? `${progress.done.toLocaleString()} / ${progress.total.toLocaleString()}`
+          : null;
+      const detail = [counts, elapsed].filter(Boolean).join(" · ") || undefined;
+      return { steps: labels, step: activeStep, fraction, detail };
     }
-    const id = setInterval(
-      () => setStep((s) => Math.min(s + 1, steps.length - 1)),
-      900
-    );
-    return () => clearInterval(id);
-  }, [done, steps.length]);
+    // No heartbeat yet: first phase active, bar empty, no fake advance.
+    return {
+      steps: labels,
+      step: 0,
+      fraction: done ? 1 : 0,
+      detail: elapsed ?? undefined
+    };
+  })();
 
   const workingTitle = isExport
     ? "Creating backup…"
@@ -236,7 +301,13 @@ export function JobProgressModal({
             </div>
           ) : (
             <>
-              <StepChecklist steps={steps} step={step} done={done} />
+              <StepChecklist
+                steps={checklist.steps}
+                step={checklist.step}
+                fraction={checklist.fraction}
+                done={done}
+                detail={checklist.detail}
+              />
               {stalled ? (
                 <p className="text-center text-xs text-muted-foreground">
                   Couldn't confirm the restore started. It may still be running

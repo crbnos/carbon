@@ -3925,9 +3925,6 @@ msgstr "Satır satış siparişinden model kaldırma hatası"
 msgid "Error validating serial number"
 msgstr "Seri numarası doğrulama hatası"
 
-msgid "Error!"
-msgstr "Hata!"
-
 msgid "Escalation"
 msgstr "Yükseltme"
 
@@ -4662,6 +4659,9 @@ msgstr "Oluşturulan Kimlikler etkinleştirilmiş"
 msgid "Get Method"
 msgstr "Yöntemi Al"
 
+msgid "Get Started"
+msgstr ""
+
 msgid "GL Account"
 msgstr "BÜTÇE HESABI"
 
@@ -4775,6 +4775,9 @@ msgstr "Stok dışı satın almalar (malzemeleri, hizmetleri) için GL gider hes
 
 msgid "GL liability account credited for sales tax collected from customers."
 msgstr "Müşterilerden toplanan satış vergisi için alacaklandırılan GL yükümlülük hesabı."
+
+msgid "Go to implementation hub"
+msgstr ""
 
 #. placeholder {0}: user.firstName
 msgid "Good afternoon, {0}"
@@ -5309,6 +5312,9 @@ msgstr "İş Akışları"
 
 msgid "Issue workflows defined the preset values for an issue. For example, you can have an 8D workflow or a containment workflow."
 msgstr "Sorun iş akışları bir sorun için önceden ayarlanmış değerleri tanımladı. Örneğin, 8D iş akışına veya kapsama iş akışına sahip olabilirsiniz."
+
+msgid "Issued"
+msgstr ""
 
 msgid "Issued Date"
 msgstr "Düzenlenme Tarihi"
@@ -6171,6 +6177,9 @@ msgstr "Doğru sütunlara ihtiyacınız var mı?"
 
 msgid "Needs fixing"
 msgstr "Onarılması gerekir"
+
+msgid "Needs job"
+msgstr ""
 
 msgid "Needs ordering"
 msgstr "Sipariş gerekli"

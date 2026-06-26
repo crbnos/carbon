@@ -124,16 +124,20 @@ export type JobStatus = Database["public"]["Enums"]["jobStatus"];
 
 export type ItemOrderStatus = {
   needsOrder: boolean;
+  needsJob: boolean;
   shortfall: number;
   status: PurchaseOrderStatus | null;
   supplyJobStatus: JobStatus | null;
   coveredByOnHand: boolean;
+  isIssued: boolean;
   ordered: number;
   received: number;
 };
 
 export type JobOrderStatusCategory =
+  | "issued"
   | "needsOrder"
+  | "needsJob"
   | "planned"
   | "plannedJob"
   | "awaitingApproval"

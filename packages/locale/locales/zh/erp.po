@@ -3925,9 +3925,6 @@ msgstr "从销售订单行中删除模型时出错"
 msgid "Error validating serial number"
 msgstr "验证序列号时出错"
 
-msgid "Error!"
-msgstr "错误!"
-
 msgid "Escalation"
 msgstr "升级"
 
@@ -4662,6 +4659,9 @@ msgstr "生成的ID已启用"
 msgid "Get Method"
 msgstr "获取方法"
 
+msgid "Get Started"
+msgstr ""
+
 msgid "GL Account"
 msgstr "总账账户"
 
@@ -4775,6 +4775,9 @@ msgstr "非库存购买（用品、服务）的GL支出账户。"
 
 msgid "GL liability account credited for sales tax collected from customers."
 msgstr "从客户征收的销售税的GL负债账户。"
+
+msgid "Go to implementation hub"
+msgstr ""
 
 #. placeholder {0}: user.firstName
 msgid "Good afternoon, {0}"
@@ -5309,6 +5312,9 @@ msgstr "问题工作流"
 
 msgid "Issue workflows defined the preset values for an issue. For example, you can have an 8D workflow or a containment workflow."
 msgstr "问题工作流定义了问题的预设值。例如，您可以有8D工作流或遏制工作流。"
+
+msgid "Issued"
+msgstr ""
 
 msgid "Issued Date"
 msgstr "签发日期"
@@ -6171,6 +6177,9 @@ msgstr "需要正确的列吗？"
 
 msgid "Needs fixing"
 msgstr "需要修复"
+
+msgid "Needs job"
+msgstr ""
 
 msgid "Needs ordering"
 msgstr "需要订购"

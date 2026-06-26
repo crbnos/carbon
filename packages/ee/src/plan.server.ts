@@ -1,4 +1,5 @@
 import { CarbonEdition, error, STRIPE_BYPASS_COMPANY_IDS } from "@carbon/auth";
+import { isCarbonOwnedCompany } from "@carbon/auth/company.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import { Edition, normalizePlanId, type Plan } from "@carbon/utils";
@@ -41,7 +42,8 @@ export async function companyHasPlan(
   if (isBypassCompany(companyId)) return true;
 
   const current = await getCompanyPlan(client, companyId);
-  return planMeetsRequirement(current, resolveRequirement(spec));
+  if (planMeetsRequirement(current, resolveRequirement(spec))) return true;
+  return isCarbonOwnedCompany(companyId);
 }
 
 type RequirePlanArgs = {
@@ -67,7 +69,10 @@ export async function requirePlan({
   const requirement = resolveRequirement(spec as GateSpec);
   const current = await getCompanyPlan(client, companyId);
 
-  if (!planMeetsRequirement(current, requirement)) {
+  if (
+    !planMeetsRequirement(current, requirement) &&
+    !(await isCarbonOwnedCompany(companyId))
+  ) {
     throw redirect(
       redirectTo,
       await flash(

@@ -23,6 +23,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     status: run?.status ?? ("gone" as const),
     rows: run?.rows ?? 0,
-    error: run?.error ?? null
+    error: run?.error ?? null,
+    progress: run?.progress ?? null,
+    startedAt: run?.startedAt ?? null
   };
 }

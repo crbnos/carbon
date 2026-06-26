@@ -1,4 +1,5 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { isCarbonOwnedCompany } from "@carbon/auth/company.server";
 import type { Database } from "@carbon/database";
 import {
   CarbonEdition,
@@ -153,6 +154,19 @@ export async function getStripeCustomerByCompanyId(
 
   const customerId = await getStripeCustomerId(companyId);
   if (!customerId) {
+    // Carbon-owned companies get Business-tier access without subscribing.
+    if (await isCarbonOwnedCompany(companyId)) {
+      return {
+        subscriptionId: "carbon-owned-subscription",
+        status: "active" as const,
+        priceId: "carbon-owned-price",
+        planId: Plan.Business,
+        currentPeriodStart: Math.floor(Date.now() / 1000),
+        currentPeriodEnd: Math.floor(Date.now() / 1000) + 365 * 24 * 60 * 60,
+        cancelAtPeriodEnd: false,
+        paymentMethod: null
+      };
+    }
     return null;
   }
   const customer = await getStripeCustomer(customerId, companyId);

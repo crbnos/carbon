@@ -1073,9 +1073,16 @@ export const JOB_SUPPLY_STATUS_PRIORITY: JobStatus[] = [
 export function getJobOrderStatusCategory(
   status: ItemOrderStatus | undefined
 ): JobOrderStatusCategory | null {
+  // Already pulled into the job — procurement is moot, so this outranks all
+  // other indicators (and hides any stale PO still attached to the item).
+  if (status?.isIssued) return "issued";
+
   // A still-unmet, priority-adjusted shortfall outranks the supply indicators —
   // see JobOrderStatusBadge for why.
   if (status?.needsOrder) return "needsOrder";
+
+  // Made-to-order with no job producing it yet — the make-side of needsOrder.
+  if (status?.needsJob) return "needsJob";
 
   if (status?.coveredByOnHand) return "inStock";
 

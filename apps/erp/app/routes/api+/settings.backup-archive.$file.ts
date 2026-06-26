@@ -28,12 +28,17 @@ async function listRelative(
   return out;
 }
 
+/** How many objects to download concurrently while packing the tar in order.
+ *  Bounds memory to ~this many buffered files (NOT the whole backup). */
+const DOWNLOAD_CONCURRENCY = 6;
+
 /**
- * Stream a self-contained `.carbon.tar.gz` of a backup: the whole
- * `exports/<name>/` folder (manifest, per-table files, assets) bundled into one
- * gzipped tar so a cross-environment import carries everything. Storage keeps the
- * folder layout; the tar only exists in transit, and one file is buffered at a
- * time, so a large backup streams at flat memory.
+ * Stream a self-contained `.carbon.tar.gz` of a backup's `exports/<name>/` folder
+ * (manifest, per-table files, assets) so a cross-environment import carries
+ * everything. Objects are prefetched in a bounded window (overlapping downloads)
+ * but packed in order, so memory stays bounded to ~DOWNLOAD_CONCURRENCY files.
+ * Outer gzip is level 1 — the entries are already compressed — but stays a valid
+ * gzip tar, which `backups-archive.server.ts` unpacks on re-import.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, email } = await requirePermissions(request, {
@@ -60,14 +65,31 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       );
     });
 
+  const downloadAt = (i: number): Promise<Buffer | null> =>
+    client.storage
+      .from(companyId)
+      .download(`${dir}/${relPaths[i]}`)
+      .then((f) =>
+        f.error || !f.data
+          ? null
+          : f.data.arrayBuffer().then((b) => Buffer.from(b))
+      )
+      .catch(() => null); // best-effort: a missing/failed object is skipped
+
   (async () => {
     try {
-      for (const rel of relPaths) {
-        const f = await client.storage
-          .from(companyId)
-          .download(`${dir}/${rel}`);
-        if (f.error || !f.data) continue; // best-effort
-        await addEntry(rel, Buffer.from(await f.data.arrayBuffer()));
+      // Sliding window: keep up to DOWNLOAD_CONCURRENCY downloads in flight, but
+      // write entries to the tar strictly in index order.
+      const inflight = new Map<number, Promise<Buffer | null>>();
+      const prime = Math.min(DOWNLOAD_CONCURRENCY, relPaths.length);
+      for (let i = 0; i < prime; i++) inflight.set(i, downloadAt(i));
+
+      for (let i = 0; i < relPaths.length; i++) {
+        const buf = await inflight.get(i)!;
+        inflight.delete(i);
+        const next = i + DOWNLOAD_CONCURRENCY;
+        if (next < relPaths.length) inflight.set(next, downloadAt(next));
+        if (buf) await addEntry(relPaths[i], buf);
       }
       archive.finalize();
     } catch (err) {
@@ -77,7 +99,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // tar -> gzip -> web stream. (Readable.toWeb yields a byte stream undici rejects
   // with "highWaterMark is required", so drain the gzip output by hand.)
-  const gzip = createGzip();
+  const gzip = createGzip({ level: 1 });
   archive.on("error", (err) => gzip.destroy(err));
   archive.pipe(gzip);
   const stream = new ReadableStream({

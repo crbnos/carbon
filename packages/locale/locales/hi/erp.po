@@ -3925,9 +3925,6 @@ msgstr "बिक्रय आदेश लाइन से मॉडल हट�
 msgid "Error validating serial number"
 msgstr "सीरियल नंबर को मान्य करने में त्रुटि"
 
-msgid "Error!"
-msgstr "त्रुटि!"
-
 msgid "Escalation"
 msgstr "संवर्धन"
 
@@ -4662,6 +4659,9 @@ msgstr "जेनरेट की गई आईडी सक्षम हैं"
 msgid "Get Method"
 msgstr "विधि प्राप्त करें"
 
+msgid "Get Started"
+msgstr ""
+
 msgid "GL Account"
 msgstr "जीएल खाता"
 
@@ -4775,6 +4775,9 @@ msgstr "गैर-इन्वेंटरी खरीद के लिए GL �
 
 msgid "GL liability account credited for sales tax collected from customers."
 msgstr "ग्राहकों से एकत्र किए गए बिक्री कर के लिए GL देयता खाता।"
+
+msgid "Go to implementation hub"
+msgstr ""
 
 #. placeholder {0}: user.firstName
 msgid "Good afternoon, {0}"
@@ -5309,6 +5312,9 @@ msgstr "समस्या वर्कफ़्लो"
 
 msgid "Issue workflows defined the preset values for an issue. For example, you can have an 8D workflow or a containment workflow."
 msgstr "समस्या वर्कफ़्लो ने किसी समस्या के लिए पूर्वनिर्धारित मान परिभाषित किए। उदाहरण के लिए, आपके पास 8D वर्कफ़्लो या निरोध वर्कफ़्लो हो सकता है।"
+
+msgid "Issued"
+msgstr ""
 
 msgid "Issued Date"
 msgstr "जारी तारीख"
@@ -6171,6 +6177,9 @@ msgstr "क्या आपको सही कॉलम चाहिए?"
 
 msgid "Needs fixing"
 msgstr "मरम्मत की आवश्यकता है"
+
+msgid "Needs job"
+msgstr ""
 
 msgid "Needs ordering"
 msgstr "ऑर्डर करने की आवश्यकता"

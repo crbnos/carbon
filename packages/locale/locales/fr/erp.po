@@ -3925,9 +3925,6 @@ msgstr "Erreur lors de la suppression du modèle de la ligne de commande client"
 msgid "Error validating serial number"
 msgstr "Erreur lors de la validation du numéro de série"
 
-msgid "Error!"
-msgstr "Erreur !"
-
 msgid "Escalation"
 msgstr "Escalade"
 
@@ -4662,6 +4659,9 @@ msgstr "Les IDs générés sont activés"
 msgid "Get Method"
 msgstr "Obtenir la méthode"
 
+msgid "Get Started"
+msgstr ""
+
 msgid "GL Account"
 msgstr "Compte GL"
 
@@ -4775,6 +4775,9 @@ msgstr "Compte GL de dépenses pour les achats non inventoriables (fournitures, 
 
 msgid "GL liability account credited for sales tax collected from customers."
 msgstr "Compte GL de passif crédité pour la taxe de vente collectée auprès des clients."
+
+msgid "Go to implementation hub"
+msgstr ""
 
 #. placeholder {0}: user.firstName
 msgid "Good afternoon, {0}"
@@ -5309,6 +5312,9 @@ msgstr "Flux de travail des problèmes"
 
 msgid "Issue workflows defined the preset values for an issue. For example, you can have an 8D workflow or a containment workflow."
 msgstr "Les flux de travail de problèmes ont défini les valeurs par défaut pour un problème. Par exemple, vous pouvez avoir un flux de travail 8D ou un flux de travail de confinement."
+
+msgid "Issued"
+msgstr ""
 
 msgid "Issued Date"
 msgstr "Date d'émission"
@@ -6171,6 +6177,9 @@ msgstr "Besoin des bonnes colonnes ?"
 
 msgid "Needs fixing"
 msgstr "Doit être réparé"
+
+msgid "Needs job"
+msgstr ""
 
 msgid "Needs ordering"
 msgstr "À commander"

@@ -3925,9 +3925,6 @@ msgstr "販売注文行からモデルを削除するエラー"
 msgid "Error validating serial number"
 msgstr "シリアル番号の検証エラー"
 
-msgid "Error!"
-msgstr "エラー!"
-
 msgid "Escalation"
 msgstr "エスカレーション"
 
@@ -4662,6 +4659,9 @@ msgstr "生成されたIDが有効です"
 msgid "Get Method"
 msgstr "メソッドを取得"
 
+msgid "Get Started"
+msgstr ""
+
 msgid "GL Account"
 msgstr "GLアカウント"
 
@@ -4775,6 +4775,9 @@ msgstr "非インベントリ購入（用品、サービス）のためのGL支�
 
 msgid "GL liability account credited for sales tax collected from customers."
 msgstr "顧客から徴収された売上税についてクレジットされるGL負債勘定。"
+
+msgid "Go to implementation hub"
+msgstr ""
 
 #. placeholder {0}: user.firstName
 msgid "Good afternoon, {0}"
@@ -5309,6 +5312,9 @@ msgstr "問題ワークフロー"
 
 msgid "Issue workflows defined the preset values for an issue. For example, you can have an 8D workflow or a containment workflow."
 msgstr "問題ワークフローは、問題の事前設定値を定義しました。例えば、8Dワークフローまたは封じ込めワークフローを使用できます。"
+
+msgid "Issued"
+msgstr ""
 
 msgid "Issued Date"
 msgstr "発行日"
@@ -6171,6 +6177,9 @@ msgstr "正しい列が必要ですか？"
 
 msgid "Needs fixing"
 msgstr "修理が必要です"
+
+msgid "Needs job"
+msgstr ""
 
 msgid "Needs ordering"
 msgstr "発注が必要"

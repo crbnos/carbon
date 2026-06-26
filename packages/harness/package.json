@@ -1,0 +1,26 @@
+{
+  "name": "@carbon/harness",
+  "version": "0.0.0",
+  "private": true,
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "clean": "rimraf .turbo node_modules dist",
+    "lint": "biome lint --write ",
+    "test": "vitest run",
+    "typecheck": "tsgo --noEmit",
+    "gates": "tsx src/scripts/run-gates.ts",
+    "loop": "tsx src/scripts/run-loop.ts",
+    "gc": "tsx src/scripts/prune-runs.ts"
+  },
+  "devDependencies": {
+    "@carbon/config": "workspace:*",
+    "@types/node": "^22",
+    "rimraf": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

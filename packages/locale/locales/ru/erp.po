@@ -3925,9 +3925,6 @@ msgstr "Ошибка при удалении модели из строки за
 msgid "Error validating serial number"
 msgstr "Ошибка при проверке серийного номера"
 
-msgid "Error!"
-msgstr "Ошибка!"
-
 msgid "Escalation"
 msgstr "Эскалация"
 
@@ -4662,6 +4659,9 @@ msgstr "Сгенерированные ID включены"
 msgid "Get Method"
 msgstr "Получить метод"
 
+msgid "Get Started"
+msgstr ""
+
 msgid "GL Account"
 msgstr "Счет ГЛ"
 
@@ -4775,6 +4775,9 @@ msgstr "Счет GL расходов для покупок, не входящи�
 
 msgid "GL liability account credited for sales tax collected from customers."
 msgstr "Счет GL обязательств, кредитуемый по налогу с продаж, собранному у клиентов."
+
+msgid "Go to implementation hub"
+msgstr ""
 
 #. placeholder {0}: user.firstName
 msgid "Good afternoon, {0}"
@@ -5309,6 +5312,9 @@ msgstr "Рабочие процессы проблем"
 
 msgid "Issue workflows defined the preset values for an issue. For example, you can have an 8D workflow or a containment workflow."
 msgstr "Рабочие процессы проблем определили предустановленные значения для проблемы. Например, у вас может быть рабочий процесс 8D или рабочий процесс сдерживания."
+
+msgid "Issued"
+msgstr ""
 
 msgid "Issued Date"
 msgstr "Дата выпуска"
@@ -6171,6 +6177,9 @@ msgstr "Нужны правильные столбцы?"
 
 msgid "Needs fixing"
 msgstr "Требуется исправление"
+
+msgid "Needs job"
+msgstr ""
 
 msgid "Needs ordering"
 msgstr "Требуется заказ"

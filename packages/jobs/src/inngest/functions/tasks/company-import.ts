@@ -2,7 +2,6 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { chunkArray } from "@carbon/utils";
 import { sql } from "kysely";
 import { inngest } from "../../client";
-import type { ColumnInfo, TableInfo } from "./company-backup";
 import {
   assertBackupImportable,
   BACKUP_INTEGRATION,
@@ -18,16 +17,14 @@ import {
   RESEED_SKIPPED_TABLES,
   readBackup,
   restoreAssetsFromBackup,
-  rewriteStoragePath,
-  rewriteToTemplateAssetPath,
-  SECRET_TABLES,
-  STORAGE_PATH_COLUMNS
+  SECRET_TABLES
 } from "./company-backup";
+import {
+  buildRowTransforms,
+  loadSubstrateIds
+} from "./company-backup.transforms";
 
 const INSERT_CHUNK_SIZE = 200;
-
-/** FKs to these tables collapse to the importing user in reseed mode. */
-const USER_REF_TABLES = new Set(["user", "employee"]);
 
 type LedgerRow = {
   entityType: string;
@@ -165,6 +162,10 @@ export const companyImportFunction = inngest.createFunction(
       if (mode === "reseed") {
         for (const table of importTables) {
           if (!table.hasId) continue;
+          // Only text/uuid ids get remapped — an int/serial id can't take a
+          // nanoid (same gate as the restore path, so the two don't drift).
+          const idType = table.columns.find((c) => c.name === "id")?.udtName;
+          if (idType !== "uuid" && idType !== "text") continue;
           const map = new Map<string, string>();
           for (const row of backup.data[table.name]!) {
             if (typeof row.id === "string")
@@ -202,108 +203,18 @@ export const companyImportFunction = inngest.createFunction(
       // surfaced rather than silently corrupting referential integrity.
       const unresolvedRefs = new Set<string>();
 
-      // What happens to a column depends only on its metadata and the mode,
-      // never on the row — so compile one transform per column per table and
-      // keep the per-row path a flat loop.
-      type Transform = (value: unknown) => unknown;
-      const identity: Transform = (v) => v;
-
-      const buildColumnTransforms = (
-        table: TableInfo,
-        columns: ColumnInfo[]
-      ): Transform[] => {
-        if (mode !== "reseed") return columns.map(() => identity);
-
-        const fkByColumn = new Map(
-          table.foreignKeys.map((fk) => [fk.column, fk])
-        );
-
-        return columns.map((col) => {
-          let base = identity;
-          const fk = fkByColumn.get(col.name);
-
-          const idMap = idMaps.get(table.name);
-          if (col.name === "id" && idMap) {
-            base = (v) => idMap.get(v as string) ?? v;
-          } else if (col.name === "companyId") {
-            base = () => companyId;
-          } else if (col.name === "companyGroupId") {
-            base = () => targetGroupId;
-          } else if (STORAGE_PATH_COLUMNS.has(col.name)) {
-            // Storage path columns embed the companyId + an id that was just
-            // remapped. A referenced template points them at the shared
-            // `_templates/<industryId>/` asset (ids kept, not remapped); a real
-            // backup points them at the per-company files restored below.
-            base = referencedTemplate
-              ? (v) =>
-                  typeof v === "string"
-                    ? rewriteToTemplateAssetPath(
-                        v,
-                        sourceCompanyId,
-                        templateIndustryId
-                      )
-                    : v
-              : (v) =>
-                  typeof v === "string"
-                    ? rewriteStoragePath(
-                        v,
-                        sourceCompanyId,
-                        companyId,
-                        idRewrite
-                      )
-                    : v;
-          } else if (fk) {
-            if (USER_REF_TABLES.has(fk.refTable)) {
-              base = (v) => (v == null ? v : userId);
-            } else if (fk.refTable === "company") {
-              base = (v) => (v === sourceCompanyId ? companyId : v);
-            } else if (fk.refTable === "companyGroup") {
-              base = (v) => (v == null ? v : targetGroupId);
-            } else if (skipped.has(fk.refTable) && col.isNullable) {
-              base = () => null;
-            } else if (fk.refColumn === "id" && idMaps.has(fk.refTable)) {
-              const map = idMaps.get(fk.refTable)!;
-              base = (v) => (v == null ? v : (map.get(v as string) ?? v));
-            } else if (
-              fk.refColumn === "id" &&
-              catalogTableNames.has(fk.refTable)
-            ) {
-              // Ref to a tenant table that wasn't imported (filtered out as
-              // already-populated, or skipped + non-nullable). Source ids don't
-              // exist in the target. Null it when allowed; otherwise keep the
-              // value but record it — a non-null ref would dangle once FK
-              // enforcement comes back after the transaction. (Refs to global,
-              // non-tenant tables — country, currency, … — fall through to
-              // identity: their ids are stable across companies.)
-              if (col.isNullable) {
-                base = () => null;
-              } else {
-                base = (v) => {
-                  if (v != null) {
-                    unresolvedRefs.add(
-                      `${table.name}.${col.name} -> ${fk.refTable}`
-                    );
-                  }
-                  return v;
-                };
-              }
-            }
-          }
-
-          // PII scrub — emails in a copied template never belong to the
-          // target company's people.
-          if (/email/i.test(col.name)) {
-            const inner = base;
-            return (v) => {
-              const value = inner(v);
-              return typeof value === "string" && value.includes("@")
-                ? `import-${++scrubCounter}@example.test`
-                : value;
-            };
-          }
-          return base;
-        });
-      };
+      // One transform builder for both restore and reseed import
+      // (buildRowTransforms in company-backup.ts) — the reseed-only policies are
+      // passed as knobs; preserve mode (remap=false) copies verbatim.
+      const remap = mode === "reseed";
+      // Global substrate (companyId IS NULL) ids the backup omits but the target
+      // holds by seed — a template's FK into a seeded global row resolves against
+      // these instead of dangling.
+      const substrateIds = remap
+        ? await loadSubstrateIds(db, catalog, backup.data)
+        : undefined;
+      const scrubEmail = () => `import-${++scrubCounter}@example.test`;
+      const recordUnresolvedRef = (desc: string) => unresolvedRefs.add(desc);
 
       const replicaMode = await canSetReplicationRole(db);
       if (!replicaMode) {
@@ -333,7 +244,23 @@ export const companyImportFunction = inngest.createFunction(
           );
           if (columns.length === 0) continue;
 
-          const transforms = buildColumnTransforms(table, columns);
+          const transforms = buildRowTransforms(table, columns, {
+            remap,
+            companyId,
+            userId,
+            targetGroupId,
+            sourceCompanyId,
+            idMaps,
+            idRewrite,
+            substrateIds,
+            templateIndustryId: referencedTemplate
+              ? templateIndustryId
+              : undefined,
+            skippedRefTables: skipped,
+            catalogTableNames,
+            onUnresolvedRef: recordUnresolvedRef,
+            scrubEmail
+          });
           const originalRows = backup.data[table.name]!;
           // Hot path: indexed loops (no per-row `forEach` closure), packed
           // output array, `out` keys in fixed column order (one hidden class

@@ -1,7 +1,13 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { LuCircleAlert, LuCircleCheck, LuClock, LuStamp } from "react-icons/lu";
+import {
+  LuCircleAlert,
+  LuCircleCheck,
+  LuClock,
+  LuPackageCheck,
+  LuStamp
+} from "react-icons/lu";
 import { AlmostDoneIcon } from "~/assets/icons/AlmostDoneIcon";
 import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
 import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
@@ -27,6 +33,11 @@ export function JobOrderStatusBadge({
   const category = getJobOrderStatusCategory(status);
 
   switch (category) {
+    case "issued":
+      return badge(
+        <LuPackageCheck className="text-muted-foreground" />,
+        <Trans>Issued</Trans>
+      );
     case "inStock":
       return badge(
         <LuCircleCheck className="text-emerald-600" />,
@@ -36,6 +47,11 @@ export function JobOrderStatusBadge({
       return badge(
         <LuCircleAlert className="text-red-500" />,
         <Trans>Order {status?.shortfall} for this job</Trans>
+      );
+    case "needsJob":
+      return badge(
+        <LuClock className="text-red-500" />,
+        <Trans>Needs job</Trans>
       );
     case "planned":
       return badge(

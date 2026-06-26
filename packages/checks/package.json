@@ -1,0 +1,28 @@
+{
+  "name": "@carbon/checks",
+  "version": "0.0.0",
+  "private": true,
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "clean": "rimraf .turbo node_modules dist",
+    "lint": "biome lint --write ",
+    "test": "vitest run",
+    "typecheck": "tsgo --noEmit",
+    "baseline": "tsx src/scripts/generate-baseline.ts",
+    "invariants": "tsx src/scripts/run-invariants.ts",
+    "clobbers": "tsx src/scripts/check-clobbers.ts"
+  },
+  "devDependencies": {
+    "@carbon/config": "workspace:*",
+    "@types/node": "^22",
+    "@types/pg": "8.15.6",
+    "pg": "8.20.0",
+    "rimraf": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

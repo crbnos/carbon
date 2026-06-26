@@ -1,16 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
-  assertReferentiallyClosed,
-  buildRowTransforms,
   type Catalog,
   type ColumnInfo,
   type CompanyBackup,
   type ForeignKey,
-  findDanglingReferences,
   isUserScopedIdentityTable,
   selectWipeableTables,
   type TableInfo
 } from "./company-backup";
+import {
+  assertReferentiallyClosed,
+  buildRowTransforms,
+  findDanglingReferences
+} from "./company-backup.transforms";
 
 // ── Tiny synthetic-catalog builders ─────────────────────────────────────────
 // The closure check is a pure function of (catalog, data), so these tests need
@@ -106,6 +108,102 @@ describe("findDanglingReferences", () => {
     });
     expect(result).toHaveLength(1);
     expect(result[0]?.fatal).toBe(false);
+  });
+
+  it("resolves a NOT-NULL FK against target substrate ids (a global row the backup omits)", () => {
+    // A company's materialDimension points at a globally-seeded materialForm
+    // (companyId IS NULL) that the backup deliberately omits. With no knowledge
+    // of the target it reads as a gap; once the target is known to hold that
+    // global row (substrate), it resolves. No allow-list, no nullable-column
+    // heuristic — driven by the actual ids present in the target.
+    const materialForm = table("materialForm", [col("id"), col("companyId")]);
+    const materialDimension = table(
+      "materialDimension",
+      [col("id"), col("materialFormId"), col("companyId")],
+      [fk("materialFormId", "materialForm")]
+    );
+    const cat = catalog([materialForm, materialDimension]);
+    const data = {
+      materialForm: [], // global rows live in the target seed, not the backup
+      materialDimension: [
+        { id: "md1", materialFormId: "round-bar", companyId: "c1" }
+      ]
+    };
+    // Without target knowledge the omitted global ref looks like a gap…
+    expect(findDanglingReferences(cat, data)).toHaveLength(1);
+    // …but when the target is known to hold that global row, it resolves.
+    const substrate = new Map([
+      ["materialForm", new Set<unknown>(["round-bar"])]
+    ]);
+    expect(findDanglingReferences(cat, data, substrate)).toEqual([]);
+  });
+
+  it("resolves a FK into a composite-PK parent (`(id, companyId)`, hasId=false)", () => {
+    // ~25 Carbon tables key on a composite ("id", "companyId") PK (stockTransfer,
+    // supplierPart, …) so `hasId` is false. Their `id` is still the referenced
+    // column, so their rows MUST be tracked — gating on `hasId` left them
+    // untracked and falsely flagged every child as dangling, refusing the
+    // restore of an otherwise self-contained backup.
+    const stockTransfer = table(
+      "stockTransfer",
+      [col("id"), col("companyId")],
+      [],
+      { pkColumns: ["id", "companyId"] }
+    );
+    const stockTransferLine = table(
+      "stockTransferLine",
+      [col("id"), col("stockTransferId"), col("companyId")],
+      [fk("stockTransferId", "stockTransfer")],
+      { pkColumns: ["id", "companyId"] }
+    );
+    expect(stockTransfer.hasId).toBe(false);
+    const result = findDanglingReferences(
+      catalog([stockTransfer, stockTransferLine]),
+      {
+        stockTransfer: [{ id: "st1", companyId: "c1" }],
+        stockTransferLine: [
+          { id: "stl1", stockTransferId: "st1", companyId: "c1" }
+        ]
+      }
+    );
+    expect(result).toEqual([]);
+  });
+
+  it("ignores a secret table's rows referencing another stripped secret (old backup)", () => {
+    // apiKeyRateLimit joined SECRET_TABLES, but a backup made before that still
+    // carries its rows pointing at the always-stripped secret `apiKey`. Those
+    // rows are skipped on load, so the preflight must not report them as a gap.
+    const apiKey = table("apiKey", [col("id"), col("companyId")]);
+    const apiKeyRateLimit = table(
+      "apiKeyRateLimit",
+      [col("apiKeyId"), col("companyId")],
+      [fk("apiKeyId", "apiKey")],
+      { pkColumns: ["apiKeyId"] }
+    );
+    const result = findDanglingReferences(catalog([apiKey, apiKeyRateLimit]), {
+      apiKey: [], // secret → never exported
+      apiKeyRateLimit: [{ apiKeyId: "api_x", companyId: "c1" }]
+    });
+    expect(result).toEqual([]);
+  });
+
+  it("still flags a missing NOT-NULL FK into an ordinary company table (revert did not loosen general closure)", () => {
+    // A non-reference company table (item) is NOT in the deferral set, so a
+    // dangling NOT-NULL ref to it is a fatal closure gap, as before.
+    const result = findDanglingReferences(catalog([ITEM, NCI]), {
+      item: [],
+      nonConformanceItem: [{ id: "nc1", itemId: "gone", companyId: "c1" }]
+    });
+    expect(result).toEqual([
+      {
+        table: "nonConformanceItem",
+        column: "itemId",
+        refTable: "item",
+        fatal: true,
+        sampleValue: "gone",
+        count: 1
+      }
+    ]);
   });
 
   it("ignores a null FK value", () => {
@@ -264,7 +362,7 @@ describe("buildRowTransforms", () => {
     expect(out.parentId).toBeNull();
   });
 
-  it("throws on a NOT-NULL FK to a scoped row missing from the backup", () => {
+  it("throws on a NOT-NULL FK to a row in neither the backup nor the target", () => {
     const t = table(
       "nonConformanceItem",
       [col("id"), col("companyId"), col("itemId")],
@@ -280,7 +378,124 @@ describe("buildRowTransforms", () => {
         { id: "nc1", companyId: "src-co", itemId: "ghost" },
         ctx({ idMaps })
       )
-    ).toThrow(/isn't in the backup/);
+    ).toThrow(/isn't in the backup or the target/);
+  });
+
+  it("keeps a NOT-NULL FK to a target substrate id (a global row the backup omits)", () => {
+    // materialDimension → a globally-seeded materialForm (companyId IS NULL) the
+    // backup doesn't carry. Its stable id is present in the target, so the remap
+    // keeps it verbatim instead of treating it as a dangling gap.
+    const t = table(
+      "materialDimension",
+      [col("id"), col("companyId"), col("materialFormId")],
+      [fk("materialFormId", "materialForm")]
+    );
+    const idMaps = new Map([
+      ["materialDimension", new Map([["md1", "mdX"]])],
+      ["materialForm", new Map([["co-form", "co-formX"]])] // company forms remap
+    ]);
+    const substrateIds = new Map([
+      ["materialForm", new Set<unknown>(["angle"])] // global form present in target
+    ]);
+    const out = apply(
+      t,
+      { id: "md1", companyId: "src-co", materialFormId: "angle" },
+      ctx({ idMaps, substrateIds })
+    );
+    expect(out.materialFormId).toBe("angle");
+  });
+
+  it("remaps a company-singleton's id to the target company (its id IS the company)", () => {
+    const t = table(
+      "companySettings",
+      [col("id"), col("companyId"), col("useMetric")],
+      [fk("id", "company")]
+    );
+    const out = apply(
+      t,
+      { id: "src-co", companyId: "src-co", useMetric: true },
+      ctx()
+    );
+    expect(out).toEqual({
+      id: "target-co",
+      companyId: "target-co",
+      useMetric: true
+    });
+  });
+
+  it("rewrites a storage path to the shared template prefix when templateIndustryId is set", () => {
+    const t = table("item", [
+      col("id"),
+      col("companyId"),
+      col("modelPath", { nullable: true })
+    ]);
+    const out = apply(
+      t,
+      { id: "i1", companyId: "src-co", modelPath: "src-co/models/x.stl" },
+      ctx({ templateIndustryId: "metal" })
+    );
+    expect(out.modelPath).toBe("_templates/metal/models/x.stl");
+  });
+
+  it("nulls a nullable FK into a skipped (not-imported) table", () => {
+    const t = table(
+      "thing",
+      [col("id"), col("companyId"), col("inviteId", { nullable: true })],
+      [fk("inviteId", "invite")]
+    );
+    const out = apply(
+      t,
+      { id: "t1", companyId: "src-co", inviteId: "inv1" },
+      ctx({ skippedRefTables: new Set(["invite"]) })
+    );
+    expect(out.inviteId).toBeNull();
+  });
+
+  it("soft-records a non-nullable FK to a tenant table not imported, keeping the value", () => {
+    const recorded: string[] = [];
+    const t = table(
+      "thing",
+      [col("id"), col("companyId"), col("locationId")],
+      [fk("locationId", "location")]
+    );
+    const out = apply(
+      t,
+      { id: "t1", companyId: "src-co", locationId: "loc1" },
+      ctx({
+        catalogTableNames: new Set(["location"]),
+        onUnresolvedRef: (d) => recorded.push(d)
+      })
+    );
+    expect(out.locationId).toBe("loc1");
+    expect(recorded).toEqual(["thing.locationId -> location"]);
+  });
+
+  it("keeps a FK to a global-reference table verbatim (stable ids, not in catalog)", () => {
+    const t = table(
+      "item",
+      [col("id"), col("companyId"), col("uomCode")],
+      [fk("uomCode", "unitOfMeasure")]
+    );
+    const out = apply(
+      t,
+      { id: "i1", companyId: "src-co", uomCode: "EA" },
+      ctx()
+    );
+    expect(out.uomCode).toBe("EA");
+  });
+
+  it("scrubs an email column via the scrubEmail hook", () => {
+    const t = table("contact", [
+      col("id"),
+      col("companyId"),
+      col("email", { nullable: true })
+    ]);
+    const out = apply(
+      t,
+      { id: "c1", companyId: "src-co", email: "real@person.com" },
+      ctx({ scrubEmail: () => "redacted@example.test" })
+    );
+    expect(out.email).toBe("redacted@example.test");
   });
 });
 

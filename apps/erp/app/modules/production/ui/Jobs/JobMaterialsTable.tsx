@@ -234,12 +234,14 @@ const JobMaterialsTable = memo(
               isArray: true,
               options: [
                 { value: "needsOrder", label: t`Needs ordering` },
+                { value: "needsJob", label: t`Needs job` },
                 { value: "planned", label: t`Planned` },
                 { value: "plannedJob", label: t`Planned job` },
                 { value: "awaitingApproval", label: t`Awaiting approval` },
                 { value: "onOrder", label: t`On order` },
                 { value: "received", label: t`Pending` },
-                { value: "inStock", label: t`In stock` }
+                { value: "inStock", label: t`In stock` },
+                { value: "issued", label: t`Issued` }
               ]
             }
           }
