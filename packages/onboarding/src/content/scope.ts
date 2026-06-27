@@ -69,7 +69,7 @@ const SCOPE_ASSUMPTIONS_SELF_SERVE: string[] = [
   "You're setting Carbon up yourself, at your own pace",
   "Your team can free up time to learn Carbon and load your data",
   "Your data is accessible and reasonably clean",
-  "Standard cloud Carbon fits how your shop runs"
+  "Standard cloud Carbon fits how your company runs"
 ];
 
 export function scopeAssumptionsForTier(tier: Tier): string[] {
@@ -81,7 +81,7 @@ export function scopeAssumptionsForTier(tier: Tier): string[] {
 // "How we know we're done" copy, by tier. Self-serve has no acceptance/sign-off.
 export function scopeDoneForTier(tier: Tier): string {
   return tier === "self_serve"
-    ? "Carbon is configured the way your shop runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
+    ? "Carbon is configured the way your company runs, your data is loaded, and your team is confident using it. When that's true, you're ready to go live."
     : "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live.";
 }
 

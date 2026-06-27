@@ -31,7 +31,7 @@ export const TRAINING_TRACKS: TrainingTrack[] = [
       },
       {
         key: "found-2",
-        course: "How your shop's process maps to Carbon",
+        course: "How your company's process maps to Carbon",
         audience: "Champions",
         format: "Hands-on",
         length: "2h"

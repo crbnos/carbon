@@ -94,7 +94,7 @@ export function OnboardingHub({
           {companyName ? `Welcome, ${companyName}` : "Getting set up"}
         </h1>
         <p className="text-base text-muted-foreground max-w-xl text-pretty">
-          {total} phases to get your shop live on Carbon. Each one ends at a
+          {total} phases to get your company live on Carbon. Each one ends at a
           checkpoint. You and the Carbon team work from the same view.
         </p>
       </header>

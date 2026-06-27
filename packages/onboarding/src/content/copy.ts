@@ -50,7 +50,7 @@ export const PAGE_COPY = {
   },
   training: {
     title: "Training Plan",
-    lead: "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when shops get busy."
+    lead: "Who gets trained on what, in what format. Your part: protect the hands-on session time on your champions' calendars early. It's what slips most when companies get busy."
   },
   team: {
     title: "Your Project Team",

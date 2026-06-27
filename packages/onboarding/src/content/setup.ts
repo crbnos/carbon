@@ -15,7 +15,7 @@ export interface SetupGroup {
 }
 
 // The first-run configuration map, grouped by Carbon module. Every master /
-// reference / config entity a new shop sets up before transacting, labelled as
+// reference / config entity a new company sets up before transacting, labelled as
 // it appears in that module's navigation. Transactional documents (orders,
 // receipts, timecards…) and runtime admin (billing, API keys, webhooks, audit
 // logs) are intentionally excluded. Module-tagged rows drop out when their
@@ -44,7 +44,7 @@ export const SETUP_GROUPS: SetupGroup[] = [
       {
         key: "printing",
         object: "Printing",
-        detail: "The label and document printers your shop prints to"
+        detail: "The label and document printers your company prints to"
       },
       {
         key: "sequences",
@@ -59,7 +59,7 @@ export const SETUP_GROUPS: SetupGroup[] = [
       {
         key: "integrations",
         object: "Integrations",
-        detail: "Connect the outside tools your shop already runs on"
+        detail: "Connect the outside tools your company already runs on"
       },
       {
         key: "approval-rules",

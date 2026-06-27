@@ -19,7 +19,7 @@ export const SPINE: StepDef[] = [
     // Paid-tier only — self-serve has no scoping/discovery phase; they configure
     // directly.
     tiers: ["guided", "enterprise"],
-    desc: "Confirm how your shop runs and lock the scope."
+    desc: "Confirm how your company runs and lock the scope."
   },
   {
     key: "gate:configure",
@@ -32,7 +32,7 @@ export const SPINE: StepDef[] = [
     // deep-links each item to its ERP screen.
     refSlug: "setup",
     gantt: { color: "#2FA350", startWeek: 1, weeks: 4 },
-    desc: "Set Carbon up around how your shop runs: sites, parts, BOMs, Bill of Process, and the flows you use.",
+    desc: "Set Carbon up around how your company runs: sites, parts, BOMs, Bill of Process, and the flows you use.",
     nested: [
       {
         key: "prod:configure-data",
